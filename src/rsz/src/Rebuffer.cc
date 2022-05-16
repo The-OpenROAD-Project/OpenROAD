@@ -92,64 +92,62 @@ Resizer::rebuffer(const Pin *drvr_pin)
       && !hasTopLevelOutputPort(net)) {
     const Corner *corner = sta_->cmdCorner();
     BufferedNetPtr bnet = makeBufferedNet(drvr_pin, corner);
-    if (bnet == nullptr) {
-      logger_->setDebugLevel(RSZ, "groute_bnet", 3);
-      logger_->setDebugLevel(RSZ, "make_buffered_net", 4);
-      bnet = makeBufferedNet(drvr_pin, corner);
-      logger_->setDebugLevel(RSZ, "groute_bnet", 0);
-      logger_->setDebugLevel(RSZ, "make_buffered_net", 0);
-    }
-    debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
-               sdc_network_->pathName(drvr_pin));
-    sta_->findRequireds();
-    BufferedNetSeq Z = rebufferBottomUp(bnet, corner, 1);
-    Required best_slack_penalized = -INF;
-    BufferedNetPtr best_option = nullptr;
-    int best_index = 0;
-    int i = 1;
-    for (BufferedNetPtr p : Z) {
-      // Find slack for drvr_pin into option.
-      const PathRef &req_path = p->requiredPath();
-      if (!req_path.isNull()) {
-        Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
-                                     p->cap(), req_path.dcalcAnalysisPt(sta_));
-        Slack slack = p->required(sta_) - drvr_delay;
-        int buffer_count = p->bufferCount();
-        double buffer_penalty = buffer_count * rebuffer_buffer_penalty;
-        double slack_penalized = slack * (1.0 - (slack > 0 ? buffer_penalty : -buffer_penalty));
-        debugPrint(logger_, RSZ, "rebuffer", 2,
-                   "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
-                   i,
-                   p->bufferCount(),
-                   delayAsString(p->required(sta_), this, 3),
-                   delayAsString(drvr_delay, this, 3),
-                   delayAsString(slack, this, 3),
-                   buffer_penalty,
-                   delayAsString(slack_penalized, this, 3),
-                   units_->capacitanceUnit()->asString(p->cap()));
-        if (logger_->debugCheck(RSZ, "rebuffer", 4))
-          p->reportTree(this);
-        if (best_option == nullptr
-            || fuzzyGreater(slack_penalized, best_slack_penalized)) {
-          best_slack_penalized = slack_penalized;
-          best_option = p;
-          best_index = i;
+    if (bnet) {
+      debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
+                 sdc_network_->pathName(drvr_pin));
+      sta_->findRequireds();
+      BufferedNetSeq Z = rebufferBottomUp(bnet, corner, 1);
+      Required best_slack_penalized = -INF;
+      BufferedNetPtr best_option = nullptr;
+      int best_index = 0;
+      int i = 1;
+      for (BufferedNetPtr p : Z) {
+        // Find slack for drvr_pin into option.
+        const PathRef &req_path = p->requiredPath();
+        if (!req_path.isNull()) {
+          Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
+                                       p->cap(), req_path.dcalcAnalysisPt(sta_));
+          Slack slack = p->required(sta_) - drvr_delay;
+          int buffer_count = p->bufferCount();
+          double buffer_penalty = buffer_count * rebuffer_buffer_penalty;
+          double slack_penalized = slack * (1.0 - (slack > 0 ? buffer_penalty : -buffer_penalty));
+          debugPrint(logger_, RSZ, "rebuffer", 2,
+                     "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
+                     i,
+                     p->bufferCount(),
+                     delayAsString(p->required(sta_), this, 3),
+                     delayAsString(drvr_delay, this, 3),
+                     delayAsString(slack, this, 3),
+                     buffer_penalty,
+                     delayAsString(slack_penalized, this, 3),
+                     units_->capacitanceUnit()->asString(p->cap()));
+          if (logger_->debugCheck(RSZ, "rebuffer", 4))
+            p->reportTree(this);
+          if (best_option == nullptr
+              || fuzzyGreater(slack_penalized, best_slack_penalized)) {
+            best_slack_penalized = slack_penalized;
+            best_option = p;
+            best_index = i;
+          }
+          i++;
         }
-        i++;
+      }
+      if (best_option) {
+        debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
+        int before = inserted_buffer_count_;
+        rebufferTopDown(best_option, net, 1);
+        if (inserted_buffer_count_ != before) {
+          rebuffer_net_count_++;
+          inserted_buffer_count = inserted_buffer_count_ - before;
+          debugPrint(logger_, RSZ, "rebuffer", 2, "rebuffer {} inserted {}",
+                     network_->pathName(drvr_pin),
+                     inserted_buffer_count);
+        }
       }
     }
-    if (best_option) {
-      debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
-      int before = inserted_buffer_count_;
-      rebufferTopDown(best_option, net, 1);
-      if (inserted_buffer_count_ != before) {
-        rebuffer_net_count_++;
-        inserted_buffer_count = inserted_buffer_count_ - before;
-        debugPrint(logger_, RSZ, "rebuffer", 2, "rebuffer {} inserted {}",
-                   network_->pathName(drvr_pin),
-                   inserted_buffer_count);
-      }
-    }
+    else 
+      logger_->warn(RSZ, 75, "makeBufferedNet failed for driver {}",
+                    network_->pathName(drvr_pin));
   }
   return inserted_buffer_count;
 }

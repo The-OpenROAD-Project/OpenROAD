@@ -479,7 +479,6 @@ BufferedNetPtr
 Resizer::makeBufferedNetGroute(const Pin *drvr_pin,
                                const Corner *corner)
 {
-  grt::NetRouteMap& route_map = global_router_->getRoutes();
   const Net *net = network_->isTopLevelPort(drvr_pin)
     ? network_->net(db_network_->term(drvr_pin))
     : network_->net(drvr_pin);
@@ -487,58 +486,66 @@ Resizer::makeBufferedNetGroute(const Pin *drvr_pin,
   std::vector<grt::PinGridLocation> pin_grid_locs = 
     global_router_->getPinGridPositions(db_net);
   LocPinMap loc_pin_map;
-  Point drvr_pt;
+  bool found_drvr_grid_pt = false;
+  Point drvr_grid_pt;
   for (grt::PinGridLocation &pin_loc : pin_grid_locs) {
     Pin *pin = pin_loc.iterm_
       ? db_network_->dbToSta(pin_loc.iterm_)
       : db_network_->dbToSta(pin_loc.bterm_);
     Point &loc = pin_loc.pt_;
     debugPrint(logger_, RSZ, "groute_bnet", 3,
-               "pin {} ({} {})",
+               "pin {}{} grid ({} {})",
                network_->pathName(pin),
+               (pin == drvr_pin) ? " drvr" : "",
                loc.x(),
                loc.y());
     loc_pin_map[loc].push_back(pin);
-    if (pin == drvr_pin)
-      drvr_pt = loc;
-  }
-
-  debugPrint(logger_, RSZ, "groute_bnet", 1,
-             "drvr {} {}", drvr_pt.x(), drvr_pt.y());
-  RoutePt drvr_route_pt;
-  bool found_drvr = false;
-  grt::GRoute &route = route_map[db_network_->staToDb(net)];
-  GRoutePtAdjacents adjacents(route.size());
-  for (grt::GSegment &seg : route) {
-    if (!seg.isVia()) {
-      RoutePt from(seg.init_x, seg.init_y, seg.init_layer);
-      RoutePt to(seg.final_x, seg.final_y, seg.final_layer);
-      debugPrint(logger_, RSZ, "groute_bnet", 2,
-                 "route {} {} -> {} {}",
-                 seg.init_x, seg.init_y,
-                 seg.final_x, seg.final_y);
-      adjacents[from].push_back(to);
-      adjacents[to].push_back(from);
-      if (from.x() == drvr_pt.x()
-          && from.y() == drvr_pt.y()) {
-        drvr_route_pt = from;
-        found_drvr = true;
-      }
-      if (to.x() == drvr_pt.x()
-          && to.y() == drvr_pt.y()) {        
-        drvr_route_pt = to;
-        found_drvr = true;
-      }
+    if (pin == drvr_pin) {
+      drvr_grid_pt = loc;
+      found_drvr_grid_pt = true;
     }
   }
-  if (found_drvr) {
-    RoutePt null_route_pt(0, 0, 0);
-    return rsz::makeBufferedNet(null_route_pt, drvr_route_pt,
-                                adjacents, loc_pin_map, 0,
-                                corner, this, logger_, db_network_);
+
+  if (found_drvr_grid_pt) {
+    RoutePt drvr_route_pt;
+    bool found_drvr_route_pt = false;
+    grt::NetRouteMap& route_map = global_router_->getRoutes();
+    grt::GRoute &route = route_map[db_network_->staToDb(net)];
+    GRoutePtAdjacents adjacents(route.size());
+    for (grt::GSegment &seg : route) {
+      if (!seg.isVia()) {
+        RoutePt from(seg.init_x, seg.init_y, seg.init_layer);
+        RoutePt to(seg.final_x, seg.final_y, seg.final_layer);
+        debugPrint(logger_, RSZ, "groute_bnet", 2,
+                   "route {} {} -> {} {}",
+                   seg.init_x, seg.init_y,
+                   seg.final_x, seg.final_y);
+        adjacents[from].push_back(to);
+        adjacents[to].push_back(from);
+        if (from.x() == drvr_grid_pt.x()
+            && from.y() == drvr_grid_pt.y()) {
+          drvr_route_pt = from;
+          found_drvr_route_pt = true;
+        }
+        if (to.x() == drvr_grid_pt.x()
+            && to.y() == drvr_grid_pt.y()) {        
+          drvr_route_pt = to;
+          found_drvr_route_pt = true;
+        }
+      }
+    }
+    if (found_drvr_route_pt) {
+      RoutePt null_route_pt(0, 0, 0);
+      return rsz::makeBufferedNet(null_route_pt, drvr_route_pt,
+                                  adjacents, loc_pin_map, 0,
+                                  corner, this, logger_, db_network_);
+    }
+    else
+      logger_->warn(RSZ, 73, "driver pin {} not found in global routes",
+                    db_network_->pathName(drvr_pin));
   }
   else
-    logger_->warn(RSZ, 73, "driver pin {} not found in routes",
+    logger_->warn(RSZ, 74, "driver pin {} not found in global route grid points",
                   db_network_->pathName(drvr_pin));
   return nullptr;
 }
