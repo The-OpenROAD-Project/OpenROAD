@@ -46,6 +46,7 @@ class Logger;
 namespace pdr {
 
 using std::ofstream;
+using std::pair;
 using std::vector;
 using utl::Logger;
 
@@ -70,7 +71,7 @@ class Graph
 
  private:
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
-  int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
+  int calc_overlap_x_or_y(vector<Node>& sorted, const Node& curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
   void generate_permutations(vector<vector<int>> lists,
                              vector<vector<int>>& result,
@@ -86,7 +87,7 @@ class Graph
 
   void get_children_of_node();
   void print_tree();
-  float calc_tree_det_cost();
+  float calc_tree_detour_cost();
   int calc_tree_pl();
   bool make_unique(vector<Node>& vec);
 
@@ -97,15 +98,15 @@ class Graph
   void FreeManhDist();
 
   // Aux functions
-  void intersection(const std::vector<std::pair<double, double>> l1,
-                    const std::vector<std::pair<double, double>> l2,
-                    std::vector<std::pair<double, double>>& out);
-  double length(std::vector<std::pair<double, double>> l);
-  bool segmentIntersection(std::pair<double, double> A,
-                           std::pair<double, double> B,
-                           std::pair<double, double> C,
-                           std::pair<double, double> D,
-                           std::pair<double, double>& out);
+  void intersection(const vector<pair<double, double>>& l1,
+                    const vector<pair<double, double>>& l2,
+                    vector<pair<double, double>>& out);
+  double length(const vector<pair<double, double>>& l);
+  bool segmentIntersection(pair<double, double> A,
+                           pair<double, double> B,
+                           pair<double, double> C,
+                           pair<double, double> D,
+                           pair<double, double>& out);
   bool nodeLessY(const int i, const int j);
 
   vector<Edge> edges_;

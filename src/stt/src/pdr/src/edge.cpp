@@ -42,9 +42,9 @@ Edge::Edge(int _idx, int _head, int _tail)
   idx = _idx;
   head = _head;
   tail = _tail;
-  lower_ov = 0;
-  upper_ov = 0;
-  best_ov = 0;
+  lower_overlap = 0;
+  upper_overlap = 0;
+  best_overlap = 0;
   best_shape = 5;
   final_best_shape = 5;
   lower_idx_of_cn_x = std::numeric_limits<int>::max();
