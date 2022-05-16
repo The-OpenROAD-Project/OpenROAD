@@ -279,7 +279,7 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
       text_line += "...";
     }
 
-    output.append(text_line);
+    output.append(text_line.toHtmlEscaped());
   }
 
   // output new text
