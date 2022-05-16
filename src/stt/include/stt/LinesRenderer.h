@@ -42,16 +42,16 @@ namespace stt {
 // Simple general purpose render for a group of lines.
 class LinesRenderer : public gui::Renderer
 {
-public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>> &lines,
+ public:
+  void highlight(std::vector<std::pair<odb::Point, odb::Point>>& lines,
                  gui::Painter::Color color);
   virtual void drawObjects(gui::Painter& /* painter */) override;
   // singleton for debug functions
-  static LinesRenderer *lines_renderer;
+  static LinesRenderer* lines_renderer;
 
-private:
+ private:
   std::vector<std::pair<odb::Point, odb::Point>> lines_;
   gui::Painter::Color color_;
 };
 
-}
+}  // namespace stt

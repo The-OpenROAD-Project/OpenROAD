@@ -36,8 +36,8 @@
 #include <ostream>
 #include <vector>
 
-#include "pdrevII.h"
 #include "node.h"
+#include "pdrevII.h"
 
 namespace pdr {
 
@@ -45,7 +45,7 @@ using std::ostream;
 
 class Edge
 {
-public:
+ public:
   Edge(int _idx, int _head, int _tail);
   ~Edge();
 
@@ -54,8 +54,8 @@ public:
   int tail;
   int best_shape;        // 0 = lower L, 1 = upper L
   int final_best_shape;  // 0 = lower L, 1 = upper L
-  int best_ov;
-  int lower_ov, upper_ov;
+  int best_overlap;
+  int lower_overlap, upper_overlap;
   vector<int> upper_best_config, lower_best_config;
   int lower_idx_of_cn_x, lower_idx_of_cn_y;
   int upper_idx_of_cn_x, upper_idx_of_cn_y;
@@ -67,4 +67,4 @@ public:
   friend ostream& operator<<(ostream& os, const Edge& n);
 };
 
-}  // namespace
+}  // namespace pdr

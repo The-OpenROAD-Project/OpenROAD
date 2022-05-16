@@ -35,10 +35,10 @@
 
 #include "stt/MakeSteinerTreeBuilder.h"
 
-#include "stt/SteinerTreeBuilder.h"
-#include "stt/flute.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "stt/SteinerTreeBuilder.h"
+#include "stt/flute.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -68,7 +68,8 @@ void initSteinerTreeBuilder(OpenRoad* openroad)
   // Define swig TCL commands.
   Stt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
-  openroad->getSteinerTreeBuilder()->init(openroad->getDb(), openroad->getLogger());
+  openroad->getSteinerTreeBuilder()->init(openroad->getDb(),
+                                          openroad->getLogger());
 }
 
 }  // namespace ord
