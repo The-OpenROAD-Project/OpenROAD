@@ -66,9 +66,9 @@ class Node
   int K_t;               // No. of downstream sinks
   int level;             // Level in tree
 
-  bool conn_to_par;
+  bool conn_to_parent;
   vector<int> sp_chil;
-  int idx_of_cn_x, idx_of_cn_y;
+  int idx_of_current_node_x, idx_of_current_node_y;
   int detour_cost_node;  // Detour cost of the node j = Sum of all the detour
                          // costs of the edges from the source to the node j
   int maxPLToChild;
