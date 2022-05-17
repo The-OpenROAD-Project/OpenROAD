@@ -311,7 +311,7 @@ RepairDesign::repairNet(Net *net,
                  sdc_network_->pathName(drvr_pin));
       // Resize the driver to normalize slews before repairing limit violations.
       if (resize_drvr)
-        resizer_->resizeToTargetSlew(drvr_pin, resize_count_);
+        resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
       // For tristate nets all we can do is resize the driver.
       if (!resizer_->isTristateDriver(drvr_pin)) {
         resizer_->ensureWireParasitic(drvr_pin, net);
@@ -413,7 +413,7 @@ RepairDesign::repairNet(Net *net,
           repaired_net_count++;
 
           if (resize_drvr)
-            resizer_->resizeToTargetSlew(drvr_pin, resize_count_);
+            resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
         }
       }
     }
@@ -1009,13 +1009,10 @@ RepairDesign::makeRepeater(const char *where,
     }
   }
 
-  Instance *buffer = resizer_->makeInstance(buffer_cell,
-                                            buffer_name.c_str(),
-                                            parent);
-  resizer_->journalMakeBuffer(buffer);
   Point buf_loc(x, y);
-  resizer_->setLocation(buffer, buf_loc);
-  resizer_->designAreaIncr(resizer_->area(db_network_->cell(buffer_cell)));
+  Instance *buffer = resizer_->makeBuffer(buffer_cell,
+                                          buffer_name.c_str(),
+                                          parent, buf_loc);
   inserted_buffer_count_++;
 
   sta_->connectPin(buffer, buffer_input_port, in_net);
@@ -1027,8 +1024,7 @@ RepairDesign::makeRepeater(const char *where,
   // Resize repeater as we back up by levels.
   if (resize) {
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
-    int ignore;
-    resizer_->resizeToTargetSlew(drvr_pin, ignore);
+    resizer_->resizeToTargetSlew(drvr_pin);
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   }

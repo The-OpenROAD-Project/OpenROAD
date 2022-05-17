@@ -137,11 +137,9 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
       }
       if (best_option) {
         debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
-        int before = inserted_buffer_count_;
-        rebufferTopDown(best_option, net, 1);
-        if (inserted_buffer_count_ != before) {
+        inserted_buffer_count = rebufferTopDown(best_option, net, 1);
+        if (inserted_buffer_count > 0) {
           rebuffer_net_count_++;
-          inserted_buffer_count = inserted_buffer_count_ - before;
           debugPrint(logger_, RSZ, "rebuffer", 2, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
                      inserted_buffer_count);
@@ -393,7 +391,7 @@ RepairSetup::bufferInputCapacitance(LibertyCell *buffer_cell,
   return corner_input->capacitance();
 }
 
-void
+int
 RepairSetup::rebufferTopDown(BufferedNetPtr choice,
                              Net *net,
                              int level)
@@ -404,12 +402,10 @@ RepairSetup::rebufferTopDown(BufferedNetPtr choice,
     string buffer_name = resizer_->makeUniqueInstName("rebuffer");
     Net *net2 = resizer_->makeUniqueNet();
     LibertyCell *buffer_cell = choice->bufferCell();
-    Instance *buffer = resizer_->makeInstance(buffer_cell,
-                                              buffer_name.c_str(),
-                                              parent);
-    resizer_->journalMakeBuffer(buffer);
-    inserted_buffer_count_++;
-    resizer_->design_area_ += resizer_->area(db_network_->cell(buffer_cell));
+    Instance *buffer = resizer_->makeBuffer(buffer_cell,
+                                            buffer_name.c_str(),
+                                            parent,
+                                            choice->location());
     resizer_->level_drvr_vertices_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -421,21 +417,18 @@ RepairSetup::rebufferTopDown(BufferedNetPtr choice,
                sdc_network_->pathName(net2));
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
-    resizer_->setLocation(buffer, choice->location());
-    rebufferTopDown(choice->ref(), net2, level + 1);
+    int buffer_count = rebufferTopDown(choice->ref(), net2, level + 1);
     resizer_->parasiticsInvalid(net);
     resizer_->parasiticsInvalid(net2);
-    break;
+    return buffer_count + 1;
   }
   case BufferedNetType::wire:
     debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
-    rebufferTopDown(choice->ref(), net, level + 1);
-    break;
+    return rebufferTopDown(choice->ref(), net, level + 1);
   case BufferedNetType::junction: {
     debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
-    rebufferTopDown(choice->ref(), net, level + 1);
-    rebufferTopDown(choice->ref2(), net, level + 1);
-    break;
+    return rebufferTopDown(choice->ref(), net, level + 1)
+      + rebufferTopDown(choice->ref2(), net, level + 1);
   }
   case BufferedNetType::load: {
     Pin *load_pin = choice->loadPin();
@@ -451,9 +444,10 @@ RepairSetup::rebufferTopDown(BufferedNetPtr choice,
       sta_->connectPin(load_inst, load_port, net);
       resizer_->parasiticsInvalid(load_net);
     }
-    break;
+    return 0;
   }
   }
+  return 0;
 }
 
 } // namespace

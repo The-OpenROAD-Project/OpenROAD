@@ -109,9 +109,9 @@ private:
   BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
                                   const Corner *corner,
                                   int level);
-  void rebufferTopDown(BufferedNetPtr choice,
-                       Net *net,
-                       int level);
+  int rebufferTopDown(BufferedNetPtr choice,
+                      Net *net,
+                      int level);
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,

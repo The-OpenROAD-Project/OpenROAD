@@ -428,14 +428,12 @@ RepairHold::makeHoldDelay(Vertex *drvr,
   buffer_cell->bufferPorts(input, output);
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
   string buffer_name = resizer_->makeUniqueInstName("hold");
-  buffer = resizer_->makeInstance(buffer_cell, buffer_name.c_str(), parent);
-  resizer_->journalMakeBuffer(buffer);
+  buffer = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(),
+                                parent, loc);
   inserted_buffer_count_++;
-  resizer_->designAreaIncr(resizer_->area(db_network_->cell(buffer_cell)));
 
   sta_->connectPin(buffer, input, buf_in_net);
   sta_->connectPin(buffer, output, out_net);
-  resizer_->setLocation(buffer, loc);
   resizer_->parasiticsInvalid(out_net);
 
   for (Pin *load_pin : load_pins) {
@@ -455,7 +453,7 @@ RepairHold::makeHoldDelay(Vertex *drvr,
   Vertex *buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin))
-    resizer_->resizeToTargetSlew(buffer_out_pin, resize_count_);
+    resize_count_ += resizer_->resizeToTargetSlew(buffer_out_pin);
 }
 
 bool

@@ -87,6 +87,7 @@ using odb::Rect;
 using odb::dbOrientType;
 using odb::dbMPin;
 using odb::dbBox;
+using odb::dbMaster;
 
 using sta::evalTclInit;
 using sta::makeBlockSta;
@@ -500,62 +501,29 @@ Resizer::bufferInput(const Pin *top_pin,
   string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
   Net *buffer_out = makeUniqueNet();
-  Instance *buffer = makeInstance(buffer_cell,
-                                  buffer_name.c_str(),
-                                  parent);
-  if (buffer) {
-    journalMakeBuffer(buffer);
-    Point pin_loc = db_network_->location(top_pin);
-    setLocation(buffer, pin_loc);
-    designAreaIncr(area(db_network_->cell(buffer_cell)));
-    inserted_buffer_count_++;
+  Point pin_loc = db_network_->location(top_pin);
+  Instance *buffer = makeBuffer(buffer_cell,
+                                buffer_name.c_str(),
+                                parent, pin_loc);
+  inserted_buffer_count_++;
 
-    NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
-    while (pin_iter->hasNext()) {
-      Pin *pin = pin_iter->next();
-      // Leave input port pin connected to input_net.
-      if (pin != top_pin) {
-        sta_->disconnectPin(pin);
-        Port *pin_port = db_network_->port(pin);
-        sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
-      }
+  NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    // Leave input port pin connected to input_net.
+    if (pin != top_pin) {
+      sta_->disconnectPin(pin);
+      Port *pin_port = db_network_->port(pin);
+      sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
     }
-    delete pin_iter;
-    sta_->connectPin(buffer, input, input_net);
-    sta_->connectPin(buffer, output, buffer_out);
-
-    parasiticsInvalid(input_net);
-    parasiticsInvalid(buffer_out);
   }
+  delete pin_iter;
+  sta_->connectPin(buffer, input, input_net);
+  sta_->connectPin(buffer, output, buffer_out);
+
+  parasiticsInvalid(input_net);
+  parasiticsInvalid(buffer_out);
   return buffer;
-}
-
-void
-Resizer::setLocation(Instance *inst,
-                     Point pt)
-{
-  dbInst *dinst = db_network_->staToDb(inst);
-  int x = pt.x();
-  int y = pt.y();
-  // Stay inside the lines.
-  if (core_exists_) {
-    dbMaster *master = dinst->getMaster();
-    int width = master->getWidth();
-    if (x < core_.xMin())
-      x = core_.xMin();
-    else if (x > core_.xMax() - width)
-      // Make sure the instance is entirely inside core.
-      x = core_.xMax() - width;
-
-    int height = master->getHeight();
-    if (y < core_.yMin())
-      y = core_.yMin();
-    else if (y > core_.yMax() - height)
-      y = core_.yMax() - height;
-  }
-
-  dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(x, y);
 }
 
 void
@@ -622,32 +590,28 @@ Resizer::bufferOutput(Pin *top_pin,
   string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
   Net *buffer_in = makeUniqueNet();
-  Instance *buffer = makeInstance(buffer_cell,
-                                  buffer_name.c_str(),
-                                  parent);
-  if (buffer) {
-    journalMakeBuffer(buffer);
-    setLocation(buffer, db_network_->location(top_pin));
-    designAreaIncr(area(db_network_->cell(buffer_cell)));
-    inserted_buffer_count_++;
+  Instance *buffer = makeBuffer(buffer_cell,
+                                buffer_name.c_str(),
+                                parent,
+                                db_network_->location(top_pin));
+  inserted_buffer_count_++;
 
-    NetPinIterator *pin_iter = network->pinIterator(output_net);
-    while (pin_iter->hasNext()) {
-      Pin *pin = pin_iter->next();
-      if (pin != top_pin) {
-        // Leave output port pin connected to output_net.
-        sta_->disconnectPin(pin);
-        Port *pin_port = network->port(pin);
-        sta_->connectPin(network->instance(pin), pin_port, buffer_in);
-      }
+  NetPinIterator *pin_iter = network->pinIterator(output_net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (pin != top_pin) {
+      // Leave output port pin connected to output_net.
+      sta_->disconnectPin(pin);
+      Port *pin_port = network->port(pin);
+      sta_->connectPin(network->instance(pin), pin_port, buffer_in);
     }
-    delete pin_iter;
-    sta_->connectPin(buffer, input, buffer_in);
-    sta_->connectPin(buffer, output, output_net);
-
-    parasiticsInvalid(buffer_in);
-    parasiticsInvalid(output_net);
   }
+  delete pin_iter;
+  sta_->connectPin(buffer, input, buffer_in);
+  sta_->connectPin(buffer, output, output_net);
+
+  parasiticsInvalid(buffer_in);
+  parasiticsInvalid(output_net);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -748,7 +712,7 @@ Resizer::resizeToTargetSlew()
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
         && !db_network_->isSpecial(net)) {
-      resizeToTargetSlew(drvr_pin, resize_count_);
+      resize_count_ += resizeToTargetSlew(drvr_pin);
       if (overMaxArea()) {
         logger_->error(RSZ, 24, "Max utilization reached.");
         break;
@@ -795,9 +759,8 @@ targetLoadDist(float load_cap,
   return abs(load_cap - target_load);
 }
 
-bool
-Resizer::resizeToTargetSlew(const Pin *drvr_pin,
-                            int &resize_count)
+int
+Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 {
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
@@ -821,11 +784,11 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin,
                    target_cell->name());
         if (replaceCell(inst, target_cell, true)
             && !revisiting_inst)
-          resize_count++;
+          return 1;
       }
     }
   }
-  return false;
+  return 0;
 }
 
 LibertyCell *
@@ -1479,8 +1442,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             const char *inst_name = network_->name(load_inst);
             string tie_name = makeUniqueInstName(inst_name, true);
             Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
-                                         top_inst);
-            setLocation(tie, tie_loc);
+                                         top_inst, tie_loc);
 
             // Put the tie cell instance in the same module with the load
             // it drives.
@@ -2283,11 +2245,10 @@ Resizer::cloneClkInverter(Instance *inv)
       Pin *load_pin = load_iter->next();
       if (load_pin != out_pin) {
         string clone_name = makeUniqueInstName(inv_name, true);
-        Instance *clone = makeInstance(inv_cell, clone_name.c_str(),
-                                       top_inst);
         Point clone_loc = db_network_->location(load_pin);
+        Instance *clone = makeInstance(inv_cell, clone_name.c_str(),
+                                       top_inst, clone_loc);
         journalMakeBuffer(clone);
-        setLocation(clone, clone_loc);
 
         Net *clone_out_net = makeUniqueNet();
         dbNet *clone_out_net_db = db_network_->staToDb(clone_out_net);
@@ -2422,15 +2383,56 @@ Resizer::journalRestore(int &resize_count,
 ////////////////////////////////////////////////////////////////
 
 Instance *
+Resizer::makeBuffer(LibertyCell *cell,
+                    const char *name,
+                    Instance *parent,
+                    Point loc)
+{
+  Instance *inst = makeInstance(cell, name, parent, loc);
+  journalMakeBuffer(inst);
+  return inst;
+}
+
+Instance *
 Resizer::makeInstance(LibertyCell *cell,
                       const char *name,
-                      Instance *parent)
+                      Instance *parent,
+                      Point loc)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
   Instance *inst = db_network_->makeInstance(cell, name, parent);
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
+  setLocation(db_inst, loc);
+  designAreaIncr(area(db_inst->getMaster()));
   return inst;
+}
+
+void
+Resizer::setLocation(dbInst *db_inst,
+                     Point pt)
+{
+  int x = pt.x();
+  int y = pt.y();
+  // Stay inside the lines.
+  if (core_exists_) {
+    dbMaster *master = db_inst->getMaster();
+    int width = master->getWidth();
+    if (x < core_.xMin())
+      x = core_.xMin();
+    else if (x > core_.xMax() - width)
+      // Make sure the instance is entirely inside core.
+      x = core_.xMax() - width;
+
+    int height = master->getHeight();
+    if (y < core_.yMin())
+      y = core_.yMin();
+    else if (y > core_.yMax() - height)
+      y = core_.yMax() - height;
+  }
+
+  db_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  db_inst->setLocation(x, y);
 }
 
 float

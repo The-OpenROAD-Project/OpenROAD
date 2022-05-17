@@ -66,6 +66,7 @@ using odb::dbNet;
 using odb::dbMaster;
 using odb::dbBlock;
 using odb::dbTechLayer;
+using odb::dbInst;
 
 using stt::SteinerTreeBuilder;
 
@@ -212,9 +213,8 @@ public:
   void resizeToTargetSlew();
   // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
-  // Return true if resized.
-  bool resizeToTargetSlew(const Pin *drvr_pin,
-                          int &resize_count);
+  // Return 1 if resized.
+  int resizeToTargetSlew(const Pin *drvr_pin);
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
@@ -426,8 +426,6 @@ protected:
   bool hasPort(const Net *net);
   bool hasInputPort(const Net *net);
   Point location(Instance *inst);
-  void setLocation(Instance *inst,
-                   Point pt);
   double area(dbMaster *master);
   double area(Cell *cell);
   double splitWireDelayDiff(double wire_length,
@@ -479,7 +477,14 @@ protected:
   void removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
-                         Instance *parent);
+                         Instance *parent,
+                         Point loc);
+  Instance *makeBuffer(LibertyCell *cell,
+                       const char *name,
+                       Instance *parent,
+                       Point loc);
+  void setLocation(dbInst *db_inst,
+                   Point pt);
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);

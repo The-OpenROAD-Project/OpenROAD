@@ -405,18 +405,15 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   string buffer_name = resizer_->makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
   LibertyCell *buffer_cell = resizer_->buffer_lowest_drive_;
-  Instance *buffer = resizer_->makeInstance(buffer_cell,
-                                            buffer_name.c_str(),
-                                            parent);
-  resizer_->journalMakeBuffer(buffer);
+  Point drvr_loc = db_network_->location(drvr_pin);
+  Instance *buffer = resizer_->makeBuffer(buffer_cell,
+                                          buffer_name.c_str(),
+                                          parent, drvr_loc);
   inserted_buffer_count_++;
-  resizer_->designAreaIncr(resizer_->area(db_network_->cell(buffer_cell)));
 
   Net *out_net = resizer_->makeUniqueNet();
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  Point drvr_loc = db_network_->location(drvr_pin);
-  resizer_->setLocation(buffer, drvr_loc);
 
   // Split the loads with extra slack to an inserted buffer.
   // before
@@ -442,8 +439,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
-  int ignore;
-  resizer_->resizeToTargetSlew(buffer_out_pin, ignore);
+  resizer_->resizeToTargetSlew(buffer_out_pin);
 }
 
 int
