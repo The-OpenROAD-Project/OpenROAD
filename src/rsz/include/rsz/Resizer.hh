@@ -49,10 +49,6 @@ class GlobalRouter;
 class IncrementalGRoute;
 }
 
-namespace sta {
-class PathExpanded;
-}
-
 namespace rsz {
 
 using std::array;
@@ -107,7 +103,6 @@ using sta::Delay;
 using sta::Slew;
 using sta::ArcDelay;
 using sta::Required;
-using sta::Slack;
 using sta::Corner;
 using sta::DcalcAnalysisPt;
 using sta::ParasiticAnalysisPt;
@@ -116,9 +111,8 @@ using sta::Pvt;
 using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
-using sta::PathRef;
-using sta::PathExpanded;
 using sta::PinSeq;
+using sta::Slack;
 
 class BufferedNet;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
@@ -126,9 +120,10 @@ enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
-typedef vector<vector<SteinerPt>> SteinerPtAdjacents;
 
 class RepairDesign;
+class RepairSetup;
+class RepairHold;
 
 class NetHash
 {
@@ -139,7 +134,6 @@ public:
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
-typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
 typedef Vector<BufferedNetPtr> BufferedNetSeq;
 
 enum class ParasiticsSrc { none, placement, global_routing };
@@ -317,14 +311,14 @@ public:
   double maxLoadManhattenDistance(const Net *net);
 
   ////////////////////////////////////////////////////////////////
-  // Slack API for timing driven placement.
+  // API for timing driven placement.
   // Each pass (findResizeSlacks)
   //  estiimate parasitics
   //  repair design
   //  save slacks
   //  remove inserted buffers
   //  restore resized gates
-  // Preamble must be called before the first findResizeSlacks.
+  // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
   void findResizeSlacks();
   // Return 10% of nets with worst slack.
@@ -479,11 +473,9 @@ protected:
                      LibertyCell *buffer_cell,
                      Point loc);
   bool checkMaxSlewCap(const Pin *drvr_pin);
-  int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
                          // Return value.
                          InstanceSeq &insts);
-  int fanout(Pin *drvr_pin);
   void findLoads(Pin *drvr_pin,
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
@@ -516,20 +508,6 @@ protected:
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
 
-  bool repairSetup(PathRef &path,
-                   Slack path_slack);
-  bool upsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded);
-  void splitLoads(PathRef *drvr_path,
-                  int drvr_index,
-                  Slack drvr_slack,
-                  PathExpanded *expanded);
-  LibertyCell *upsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell,
                    bool journal);
@@ -572,7 +550,8 @@ protected:
   void journalBegin();
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
-  void journalRestore();
+  void journalRestore(int &resize_count,
+                      int &inserted_buffer_count);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
@@ -584,7 +563,11 @@ protected:
 
   Logger *logger() const { return logger_; }
 
+  // Components
   RepairDesign *repair_design_;
+  RepairSetup *repair_setup_;
+  RepairHold *repair_hold_;
+  SteinerRenderer *steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
@@ -638,7 +621,6 @@ protected:
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
-  SteinerRenderer *steiner_renderer_;
 
   int rebuffer_net_count_;
 
@@ -650,8 +632,6 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
-  static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr double rebuffer_buffer_penalty = .005;
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
@@ -660,6 +640,8 @@ protected:
 
   friend class BufferedNet;
   friend class RepairDesign;
+  friend class RepairSetup;
+  friend class RepairHold;
 };
 
 } // namespace

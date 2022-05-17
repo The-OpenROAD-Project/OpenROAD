@@ -36,6 +36,8 @@
 #include "rsz/Resizer.hh"
 #include "BufferedNet.hh"
 #include "RepairDesign.hh"
+#include "RepairSetup.hh"
+#include "RepairHold.hh"
 
 #include "utl/Logger.h"
 #include "db_sta/dbNetwork.hh"
@@ -137,6 +139,9 @@ extern int Rsz_Init(Tcl_Interp *interp);
 Resizer::Resizer() :
   StaState(),
   repair_design_(new RepairDesign()),
+  repair_setup_(new RepairSetup()),
+  repair_hold_(new RepairHold()),
+  steiner_renderer_(nullptr),
   wire_signal_res_(0.0),
   wire_signal_cap_(0.0),
   wire_clk_res_(0.0),
@@ -166,7 +171,6 @@ Resizer::Resizer() :
   resize_count_(0),
   inserted_buffer_count_(0),
   max_wire_length_(0),
-  steiner_renderer_(nullptr),
   rebuffer_net_count_(0),
   hold_buffer_count_(0)
 {
@@ -175,6 +179,8 @@ Resizer::Resizer() :
 Resizer::~Resizer()
 {
   delete repair_design_;
+  delete repair_setup_;
+  delete repair_hold_;
 }
 
 void
@@ -291,6 +297,8 @@ Resizer::init()
   ensureLevelDrvrVertices();
   sta_->ensureClkNetwork();
   repair_design_->init(this);
+  repair_setup_->init(this);
+  repair_hold_->init(this);
 }
 
 void
@@ -932,6 +940,8 @@ Resizer::hasMultipleOutputs(const Instance *inst)
 
 ////////////////////////////////////////////////////////////////
 
+// API for timing driven placement.
+
 void
 Resizer::resizeSlackPreamble()
 {
@@ -953,7 +963,7 @@ Resizer::findResizeSlacks()
                                repaired_net_count, slew_violations, cap_violations,
                                fanout_violations, length_violations);
   findResizeSlacks1();
-  journalRestore();
+  journalRestore(resize_count_, inserted_buffer_count_);
 }
   
 void
@@ -2031,20 +2041,6 @@ Resizer::ensureDesignArea()
   }
 }
 
-int
-Resizer::fanout(Pin *drvr_pin)
-{
-  int fanout = 0;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (pin != drvr_pin)
-      fanout++;
-  }
-  delete pin_iter;
-  return fanout;
-}
-
 bool
 Resizer::isFuncOneZero(const Pin *drvr_pin)
 {
@@ -2187,6 +2183,21 @@ Resizer::cloneClkInverter(Instance *inv)
 
 ////////////////////////////////////////////////////////////////
 
+void
+Resizer::repairSetup(float slack_margin,
+                     int max_passes)
+{
+  repair_setup_->repairSetup(slack_margin, max_passes);
+}
+
+void
+Resizer::repairSetup(Pin *end_pin)
+{
+  repair_setup_->repairSetup(end_pin);
+}
+
+////////////////////////////////////////////////////////////////
+
 // Journal to roll back changes (OpenDB not up to the task).
 void
 Resizer::journalBegin()
@@ -2217,7 +2228,8 @@ Resizer::journalMakeBuffer(Instance *buffer)
 }
 
 void
-Resizer::journalRestore()
+Resizer::journalRestore(int &resize_count,
+                        int &inserted_buffer_count)
 {
   for (auto inst_cell : resized_inst_map_) {
     Instance *inst = inst_cell.first;
@@ -2227,14 +2239,14 @@ Resizer::journalRestore()
                  network_->pathName(inst),
                  lib_cell->name());
       replaceCell(inst, lib_cell, false);
-      resize_count_--;
+      resize_count--;
     }
   }
   for (Instance *buffer : inserted_buffers_) {
     debugPrint(logger_, RSZ, "journal", 1, "journal remove {}",
                network_->pathName(buffer));
     removeBuffer(buffer);
-    inserted_buffer_count_--;
+    inserted_buffer_count--;
   }
 }
 

@@ -37,6 +37,7 @@
 
 #include "BufferedNet.hh"
 
+#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
 
 #include "sta/LibertyClass.hh"

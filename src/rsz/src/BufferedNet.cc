@@ -331,6 +331,8 @@ Resizer::makeBufferedNet(const Pin *drvr_pin,
   return nullptr;
 }
 
+typedef vector<vector<SteinerPt>> SteinerPtAdjacents;
+
 static BufferedNetPtr
 makeBufferedNet(SteinerTree *tree,
                 SteinerPt from,

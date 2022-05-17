@@ -33,6 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "RepairHold.hh"
 #include "rsz/Resizer.hh"
 #include "RepairDesign.hh"
 
@@ -82,6 +83,30 @@ using sta::fuzzyGreaterEqual;
 using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
+
+RepairHold::RepairHold() :
+  StaState(),
+  logger_(nullptr),
+  sta_(nullptr),
+  db_network_(nullptr),
+  resizer_(nullptr),
+  resize_count_(0),
+  inserted_buffer_count_(0),
+  min_(MinMax::min()),
+  max_(MinMax::max())
+{
+}
+
+void
+RepairHold::init(Resizer *resizer)
+{
+  resizer_ = resizer;
+  logger_ = resizer->logger_;
+  sta_ = resizer->sta_;
+  db_network_ = resizer->db_network_;
+
+  copyState(sta_);
+}
 
 void
 Resizer::repairHold(float slack_margin,

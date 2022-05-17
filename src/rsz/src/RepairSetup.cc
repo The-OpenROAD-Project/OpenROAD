@@ -33,6 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "RepairSetup.hh"
 #include "rsz/Resizer.hh"
 
 #include "utl/Logger.h"
@@ -79,12 +80,37 @@ using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
 
+RepairSetup::RepairSetup() :
+  StaState(),
+  logger_(nullptr),
+  sta_(nullptr),
+  db_network_(nullptr),
+  resizer_(nullptr),
+  resize_count_(0),
+  inserted_buffer_count_(0),
+  min_(MinMax::min()),
+  max_(MinMax::max())
+{
+}
+
 void
-Resizer::repairSetup(float slack_margin,
-                     int max_passes)
+RepairSetup::init(Resizer *resizer)
+{
+  resizer_ = resizer;
+  logger_ = resizer->logger_;
+  sta_ = resizer->sta_;
+  db_network_ = resizer->db_network_;
+
+  copyState(sta_);
+}
+
+void
+RepairSetup::repairSetup(float slack_margin,
+                         int max_passes)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+
   Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(max_, worst_slack, worst_vertex);
@@ -93,12 +119,12 @@ Resizer::repairSetup(float slack_margin,
   Slack prev_worst_slack = -INF;
   int pass = 1;
   int decreasing_slack_passes = 0;
-  incrementalParasiticsBegin();
+  resizer_->incrementalParasiticsBegin();
   while (fuzzyLess(worst_slack, slack_margin)
          && pass <= max_passes) {
     PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
     bool changed = repairSetup(worst_path, worst_slack);
-    updateParasitics();
+    resizer_->updateParasitics();
     sta_->findRequireds();
     sta_->worstSlack(max_, worst_slack, worst_vertex);
     bool decreasing_slack = fuzzyLessEqual(worst_slack, prev_worst_slack);
@@ -113,7 +139,7 @@ Resizer::repairSetup(float slack_margin,
       if (!changed
           || decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
-        journalRestore();
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
         debugPrint(logger_, RSZ, "repair_setup", 1,
                    "decreasing slack for {} passes. Restoring best slack {}",
                    decreasing_slack_passes,
@@ -125,15 +151,15 @@ Resizer::repairSetup(float slack_margin,
       prev_worst_slack = worst_slack;
       decreasing_slack_passes = 0;
       // Progress, start journal so we can back up to here.
-      journalBegin();
+      resizer_->journalBegin();
     }
-    if (overMaxArea())
+    if (resizer_->overMaxArea())
       break;
     pass++;
   }
   // Leave the parasitics up to date.
-  updateParasitics();
-  incrementalParasiticsEnd();
+  resizer_->updateParasitics();
+  resizer_->incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
@@ -141,24 +167,25 @@ Resizer::repairSetup(float slack_margin,
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
   if (fuzzyLess(worst_slack, slack_margin))
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
-  if (overMaxArea())
+  if (resizer_->overMaxArea())
     logger_->error(RSZ, 25, "max utilization reached.");
 }
 
 // For testing.
 void
-Resizer::repairSetup(Pin *end_pin)
+RepairSetup::repairSetup(Pin *end_pin)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
-  incrementalParasiticsBegin();
+  resizer_->incrementalParasiticsBegin();
   repairSetup(path, slack);
   // Leave the parasitices up to date.
-  updateParasitics();
-  incrementalParasiticsEnd();
+  resizer_->updateParasitics();
+  resizer_->incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
@@ -167,8 +194,8 @@ Resizer::repairSetup(Pin *end_pin)
 }
 
 bool
-Resizer::repairSetup(PathRef &path,
-                     Slack path_slack)
+RepairSetup::repairSetup(PathRef &path,
+                         Slack path_slack)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -224,16 +251,17 @@ Resizer::repairSetup(PathRef &path,
       }
 
       // For tristate nets all we can do is resize the driver.
-      bool tristate_drvr = isTristateDriver(drvr_pin);
+      bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
           && !tristate_drvr) { 
-        int rebuffer_count = rebuffer(drvr_pin);
+        int rebuffer_count = resizer_->rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
                      rebuffer_count);
+          inserted_buffer_count_ += rebuffer_count;
           changed = true;
           break;
         }
@@ -252,9 +280,9 @@ Resizer::repairSetup(PathRef &path,
 }
 
 bool
-Resizer::upsizeDrvr(PathRef *drvr_path,
-                    int drvr_index,
-                    PathExpanded *expanded)
+RepairSetup::upsizeDrvr(PathRef *drvr_path,
+                        int drvr_index,
+                        PathExpanded *expanded)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
@@ -286,7 +314,7 @@ Resizer::upsizeDrvr(PathRef *drvr_path,
                network_->pathName(drvr_pin),
                drvr_port->libertyCell()->name(),
                upsize->name());
-    if (replaceCell(drvr, upsize, true)) {
+    if (resizer_->replaceCell(drvr, upsize, true)) {
       resize_count_++;
       return true;
     }
@@ -295,11 +323,11 @@ Resizer::upsizeDrvr(PathRef *drvr_path,
 }
 
 LibertyCell *
-Resizer::upsizeCell(LibertyPort *in_port,
-                    LibertyPort *drvr_port,
-                    float load_cap,
-                    float prev_drive,
-                    const DcalcAnalysisPt *dcalc_ap)
+RepairSetup::upsizeCell(LibertyPort *in_port,
+                        LibertyPort *drvr_port,
+                        float load_cap,
+                        float prev_drive,
+                        const DcalcAnalysisPt *dcalc_ap)
 {
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
@@ -315,7 +343,7 @@ Resizer::upsizeCell(LibertyPort *in_port,
            return port1->driveResistance() > port2->driveResistance();
          });
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
-    float delay = gateDelay(drvr_port, load_cap, tgt_slew_dcalc_ap_)
+    float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
       + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
@@ -323,9 +351,9 @@ Resizer::upsizeCell(LibertyPort *in_port,
       LibertyPort *equiv_input = equiv_corner->findLibertyPort(in_port_name);
       float equiv_drive = equiv_drvr->driveResistance();
       // Include delay of previous driver into equiv gate.
-      float equiv_delay = gateDelay(equiv_drvr, load_cap, dcalc_ap)
+      float equiv_delay = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
         + prev_drive * equiv_input->capacitance();
-      if (!dontUse(equiv)
+      if (!resizer_->dontUse(equiv)
           && equiv_drive < drive
           && equiv_delay < delay)
         return equiv;
@@ -335,10 +363,10 @@ Resizer::upsizeCell(LibertyPort *in_port,
 }
 
 void
-Resizer::splitLoads(PathRef *drvr_path,
-                    int drvr_index,
-                    Slack drvr_slack,
-                    PathExpanded *expanded)
+RepairSetup::splitLoads(PathRef *drvr_path,
+                        int drvr_index,
+                        Slack drvr_slack,
+                        PathExpanded *expanded)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   PathRef *load_path = expanded->path(drvr_index + 1);
@@ -374,21 +402,21 @@ Resizer::splitLoads(PathRef *drvr_path,
 
   Net *net = network_->net(drvr_pin);
 
-  string buffer_name = makeUniqueInstName("split");
+  string buffer_name = resizer_->makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
-  LibertyCell *buffer_cell = buffer_lowest_drive_;
-  Instance *buffer = makeInstance(buffer_cell,
-                                  buffer_name.c_str(),
-                                  parent);
-  journalMakeBuffer(buffer);
+  LibertyCell *buffer_cell = resizer_->buffer_lowest_drive_;
+  Instance *buffer = resizer_->makeInstance(buffer_cell,
+                                            buffer_name.c_str(),
+                                            parent);
+  resizer_->journalMakeBuffer(buffer);
   inserted_buffer_count_++;
-  designAreaIncr(area(db_network_->cell(buffer_cell)));
+  resizer_->designAreaIncr(resizer_->area(db_network_->cell(buffer_cell)));
 
-  Net *out_net = makeUniqueNet();
+  Net *out_net = resizer_->makeUniqueNet();
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   Point drvr_loc = db_network_->location(drvr_pin);
-  setLocation(buffer, drvr_loc);
+  resizer_->setLocation(buffer, drvr_loc);
 
   // Split the loads with extra slack to an inserted buffer.
   // before
@@ -397,7 +425,7 @@ Resizer::splitLoads(PathRef *drvr_path,
   // drvr_pin -> net -> load_pins with low slack
   //                 -> buffer_in -> net -> rest of loads
   sta_->connectPin(buffer, input, net);
-  parasiticsInvalid(net);
+  resizer_->parasiticsInvalid(net);
   sta_->connectPin(buffer, output, out_net);
   int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
@@ -414,11 +442,12 @@ Resizer::splitLoads(PathRef *drvr_path,
     }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
-  resizeToTargetSlew(buffer_out_pin, resize_count_);
+  int ignore;
+  resizer_->resizeToTargetSlew(buffer_out_pin, ignore);
 }
 
 int
-Resizer::fanout(Vertex *vertex)
+RepairSetup::fanout(Vertex *vertex)
 {
   int fanout = 0;
   VertexOutEdgeIterator edge_iter(vertex, graph_);
