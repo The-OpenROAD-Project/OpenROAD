@@ -87,14 +87,6 @@ public:
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
 
-  void checkLoadSlews(const Pin *drvr_pin,
-                      double slew_margin,
-                      // Return values.
-                      Slew &slew,
-                      float &limit,
-                      float &slack,
-                      const Corner *&corner);
-
 private:
   void repairNet(Net *net,
                  const Pin *drvr_pin,

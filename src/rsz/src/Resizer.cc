@@ -131,6 +131,7 @@ using sta::Unit;
 using sta::ArcDelayCalc;
 using sta::Corners;
 using sta::InputDrive;
+using sta::PinConnectedPinIterator;
 
 extern "C" {
 extern int Rsz_Init(Tcl_Interp *interp);
@@ -170,9 +171,7 @@ Resizer::Resizer() :
   unique_inst_index_(1),
   resize_count_(0),
   inserted_buffer_count_(0),
-  max_wire_length_(0),
-  rebuffer_net_count_(0),
-  hold_buffer_count_(0)
+  max_wire_length_(0)
 {
 }
 
@@ -2198,6 +2197,36 @@ Resizer::repairSetup(Pin *end_pin)
 
 ////////////////////////////////////////////////////////////////
 
+void
+Resizer::repairHold(float slack_margin,
+                    bool allow_setup_violations,
+                    // Max buffer count as percent of design instance count.
+                    float max_buffer_percent,
+                    int max_passes)
+{
+  repair_hold_->repairHold(slack_margin, allow_setup_violations,
+                           max_buffer_percent, max_passes);
+}
+
+void
+Resizer::repairHold(Pin *end_pin,
+                    float slack_margin,
+                    bool allow_setup_violations,
+                    float max_buffer_percent,
+                    int max_passes)
+{
+  repair_hold_->repairHold(end_pin, slack_margin, allow_setup_violations,
+                           max_buffer_percent, max_passes);
+}
+
+int
+Resizer::holdBufferCount() const
+{
+  return repair_hold_->holdBufferCount();
+}
+
+////////////////////////////////////////////////////////////////
+
 // Journal to roll back changes (OpenDB not up to the task).
 void
 Resizer::journalBegin()
@@ -2417,6 +2446,42 @@ Resizer::maxInputSlew(const LibertyPort *input,
   if (limit == 0.0)
     limit = INF;
   return limit;
+}
+
+void
+Resizer::checkLoadSlews(const Pin *drvr_pin,
+                        double slew_margin,
+                        // Return values.
+                        Slew &slew,
+                        float &limit,
+                        float &slack,
+                        const Corner *&corner)
+{
+  slack = INF;
+  limit = INF;
+  PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (pin != drvr_pin) {
+      const Corner *corner1;
+      const RiseFall *tr1;
+      Slew slew1;
+      float limit1, slack1;
+      sta_->checkSlew(pin, nullptr, max_, false,
+                      corner1, tr1, slew1, limit1, slack1);
+      if (corner1) {
+        limit1 *= (1.0 - slew_margin / 100.0);
+        limit = min(limit, limit1);
+        slack1 = limit1 - slew1;
+        if (slack1 < slack) {
+          slew = slew1;
+          slack = slack1;
+          corner = corner1;
+        }
+      }
+    }
+  }
+  delete pin_iter;
 }
 
 } // namespace

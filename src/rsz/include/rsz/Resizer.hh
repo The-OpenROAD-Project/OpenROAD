@@ -222,6 +222,16 @@ public:
 
   ////////////////////////////////////////////////////////////////
 
+  void repairSetup(float slack_margin,
+                   int max_passes);
+  // For testing.
+  void repairSetup(Pin *drvr_pin);
+  // Rebuffer one net (for testing).
+  // resizerPreamble() required.
+  void rebuffer1(const Pin *drvr_pin);
+
+  ////////////////////////////////////////////////////////////////
+
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -232,17 +242,7 @@ public:
                   bool allow_setup_violations,
                   float max_buffer_percent,
                   int max_passes);
-  int holdBufferCount() const { return hold_buffer_count_; }
-
-  ////////////////////////////////////////////////////////////////
-
-  void repairSetup(float slack_margin,
-                   int max_passes);
-  // For testing.
-  void repairSetup(Pin *drvr_pin);
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebuffer1(const Pin *drvr_pin);
+  int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
 
@@ -441,38 +441,6 @@ protected:
                          LibertyPort *load_port,
                          double wire_length,
                          double max_slew);
-  LibertyCell *findHoldBuffer();
-  float bufferHoldDelay(LibertyCell *buffer);
-  void bufferHoldDelays(LibertyCell *buffer,
-                        // Return values.
-                        Delay delays[RiseFall::index_count]);
-  void findHoldViolations(VertexSeq &ends,
-                          float slack_margin,
-                          // Return values.
-                          Slack &worst_slack,
-                          VertexSeq &hold_violations);
-  void repairHold(VertexSeq &ends,
-                  LibertyCell *buffer_cell,
-                  float slack_margin,
-                  bool allow_setup_violations,
-                  int max_buffer_count,
-                  int max_passes);
-  void repairHoldPass(VertexSeq &ends,
-                      LibertyCell *buffer_cell,
-                      float slack_margin,
-                      bool allow_setup_violations,
-                      int max_buffer_count);
-  void repairEndHold(Vertex *worst_vertex,
-                     LibertyCell *buffer_cell,
-                     float slack_margin,
-                     bool allow_setup_violations,
-                     int max_buffer_count);
-  void makeHoldDelay(Vertex *drvr,
-                     PinSeq &load_pins,
-                     bool loads_have_out_port,
-                     LibertyCell *buffer_cell,
-                     Point loc);
-  bool checkMaxSlewCap(const Pin *drvr_pin);
   void findCellInstances(LibertyCell *cell,
                          // Return value.
                          InstanceSeq &insts);
@@ -543,6 +511,13 @@ protected:
                                        const Corner *corner);
   float maxInputSlew(const LibertyPort *input,
                      const Corner *corner) const;
+  void checkLoadSlews(const Pin *drvr_pin,
+                      double slew_margin,
+                      // Return values.
+                      Slew &slew,
+                      float &limit,
+                      float &slack,
+                      const Corner *&corner);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -617,14 +592,11 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  int rebuffer_net_count_;
   // Slack map variables.
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
-
-  int rebuffer_net_count_;
-
-  int hold_buffer_count_;
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
@@ -636,7 +608,6 @@ protected:
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
-  static constexpr float hold_slack_limit_ratio_max_ = 0.2;
 
   friend class BufferedNet;
   friend class RepairDesign;

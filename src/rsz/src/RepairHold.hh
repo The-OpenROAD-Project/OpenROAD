@@ -47,18 +47,72 @@ class Resizer;
 
 using utl::Logger;
 
+using odb::Point;
+
 using sta::StaState;
 using sta::dbSta;
 using sta::dbNetwork;
 using sta::MinMax;
+using sta::Pin;
+using sta::LibertyCell;
+using sta::RiseFall;
+using sta::Slack;
+using sta::Delay;
+using sta::Vertex;
+using sta::PinSeq;
+using sta::VertexSeq;
 
 class RepairHold : StaState
 {
 public:
   RepairHold();
   void init(Resizer *resizer);
+  void repairHold(float slack_margin,
+                  bool allow_setup_violations,
+                  // Max buffer count as percent of design instance count.
+                  float max_buffer_percent,
+                  int max_passes);
+  void repairHold(Pin *end_pin,
+                  float slack_margin,
+                  bool allow_setup_violations,
+                  float max_buffer_percent,
+                  int max_passes);
+  int holdBufferCount() const { return inserted_buffer_count_; }
 
 private:
+  LibertyCell *findHoldBuffer();
+  float bufferHoldDelay(LibertyCell *buffer);
+  void bufferHoldDelays(LibertyCell *buffer,
+                        // Return values.
+                        Delay delays[RiseFall::index_count]);
+  void findHoldViolations(VertexSeq &ends,
+                          float slack_margin,
+                          // Return values.
+                          Slack &worst_slack,
+                          VertexSeq &hold_violations);
+  void repairHold(VertexSeq &ends,
+                  LibertyCell *buffer_cell,
+                  float slack_margin,
+                  bool allow_setup_violations,
+                  int max_buffer_count,
+                  int max_passes);
+  void repairHoldPass(VertexSeq &ends,
+                      LibertyCell *buffer_cell,
+                      float slack_margin,
+                      bool allow_setup_violations,
+                      int max_buffer_count);
+  void repairEndHold(Vertex *worst_vertex,
+                     LibertyCell *buffer_cell,
+                     float slack_margin,
+                     bool allow_setup_violations,
+                     int max_buffer_count);
+  void makeHoldDelay(Vertex *drvr,
+                     PinSeq &load_pins,
+                     bool loads_have_out_port,
+                     LibertyCell *buffer_cell,
+                     Point loc);
+  bool checkMaxSlewCap(const Pin *drvr_pin);
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -68,6 +122,8 @@ private:
   int inserted_buffer_count_;
   const MinMax *min_;
   const MinMax *max_;
+
+  static constexpr float hold_slack_limit_ratio_max_ = 0.2;
 };
 
 } // namespace

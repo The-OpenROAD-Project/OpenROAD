@@ -65,7 +65,6 @@ using sta::Port;
 using sta::NetPinIterator;
 using sta::InstancePinIterator;
 using sta::NetIterator;
-using sta::PinConnectedPinIterator;
 using sta::Clock;
 using sta::INF;
 
@@ -386,7 +385,8 @@ RepairDesign::repairNet(Net *net,
           // input pins.
           // Max slew violations at the load pins are repaired by inserting buffers
           // and reducing the wire length to the load.
-          checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
+          resizer_->checkLoadSlews(drvr_pin, slew_margin, slew1,
+                                   max_slew1, slew_slack1, corner1);
           if (slew_slack1 < 0.0) {
             debugPrint(logger_, RSZ, "repair_net", 2,
                        "load slew violation load_slew={} max_slew={}",
@@ -452,7 +452,8 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
     checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
-    checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
+    resizer_->checkLoadSlews(drvr_pin, slew_margin, slew1,
+                             max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
   }
@@ -488,42 +489,6 @@ RepairDesign::checkSlew(const Pin *drvr_pin,
       corner = corner1;
     }
   }
-}
-
-void
-RepairDesign::checkLoadSlews(const Pin *drvr_pin,
-                             double slew_margin,
-                             // Return values.
-                             Slew &slew,
-                             float &limit,
-                             float &slack,
-                             const Corner *&corner)
-{
-  slack = INF;
-  limit = INF;
-  PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (pin != drvr_pin) {
-      const Corner *corner1;
-      const RiseFall *tr1;
-      Slew slew1;
-      float limit1, slack1;
-      sta_->checkSlew(pin, nullptr, max_, false,
-                      corner1, tr1, slew1, limit1, slack1);
-      if (corner1) {
-        limit1 *= (1.0 - slew_margin / 100.0);
-        limit = min(limit, limit1);
-        slack1 = limit1 - slew1;
-        if (slack1 < slack) {
-          slew = slew1;
-          slack = slack1;
-          corner = corner1;
-        }
-      }
-    }
-  }
-  delete pin_iter;
 }
 
 float
