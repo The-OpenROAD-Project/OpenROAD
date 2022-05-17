@@ -89,7 +89,8 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       if (shape->hasNet()) {
         owner = shape->getNet()->getFrNet();
       } else {
-        logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
+        logger_->error(
+            DRT, 38, "init_design_helper shape does not have dr net.");
       }
       break;
     }
@@ -135,32 +136,36 @@ void FlexGCWorker::Impl::initObj(const Rect& box,
 
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 {
-  if (targetObj_ == nullptr) { return false; }
-  auto type = obj->typeId();
-  switch(targetObj_->typeId()) {
-    case frcInst: {
-      if (type == frcInstTerm
-          && static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
-        return false;
-      } else if (type == frcInstBlockage
-                 && static_cast<frInstBlockage*>(obj)->getInst()
-                        == targetObj_) {
-        return false;
-      } else {
-        return true;
-      }
-      break;
-    }
-    case frcBTerm: {
-      return !(type == frcBTerm
-        && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
-      break;
-    }
-    default:
-      logger_->error(
-          DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+  if (targetObjs_.empty()) {
+    return false;
   }
-  return false;
+  auto type = obj->typeId();
+  for (auto targetObj : targetObjs_) {
+    switch (targetObj->typeId()) {
+      case frcInst: {
+        if (type == frcInstTerm
+            && static_cast<frInstTerm*>(obj)->getInst() == targetObj) {
+          return false;
+        } else if (type == frcInstBlockage
+                   && static_cast<frInstBlockage*>(obj)->getInst()
+                          == targetObj) {
+          return false;
+        }
+        break;
+      }
+      case frcBTerm: {
+        if (type == frcBTerm
+            && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj)) {
+          return false;
+        }
+        break;
+      }
+      default:
+        logger_->error(
+            DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+    }
+  }
+  return true;
 }
 
 void FlexGCWorker::Impl::initDesign(const frDesign* design)
@@ -762,9 +767,8 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
   rectangle->setLayerNum(i);
   rectangle->addToPin(pin);
   rectangle->addToNet(net);
-  if (fixedMaxRectangles[i].find(
-          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
-                    Point(gtl::xh(rect), gtl::yh(rect))))
+  if (fixedMaxRectangles[i].find(make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                                           Point(gtl::xh(rect), gtl::yh(rect))))
       != fixedMaxRectangles[i].end()) {
     // fixed max rectangles
     rectangle->setFixed(true);

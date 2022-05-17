@@ -72,7 +72,6 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       targetNet_(nullptr),
       minLayerNum_(std::numeric_limits<frLayerNum>::min()),
       maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
-      targetObj_(nullptr),
       ignoreDB_(false),
       ignoreMinArea_(false),
       ignoreLongSideEOL_(false),
@@ -187,9 +186,14 @@ void FlexGCWorker::resetTargetNet()
   impl_->targetNet_ = nullptr;
 }
 
-void FlexGCWorker::setTargetObj(frBlockObject* in)
+void FlexGCWorker::addTargetObj(frBlockObject* in)
 {
-  impl_->targetObj_ = in;
+  impl_->targetObjs_.insert(in);
+}
+
+void FlexGCWorker::setTargetObjs(const std::set<frBlockObject*>& targetObjs)
+{
+  impl_->targetObjs_ = targetObjs;
 }
 
 void FlexGCWorker::setIgnoreDB()
@@ -233,7 +237,7 @@ void FlexGCWorker::Impl::serialize(Archive& ar, const unsigned int version)
   (ar) & targetNet_;
   (ar) & minLayerNum_;
   (ar) & maxLayerNum_;
-  (ar) & targetObj_;
+  (ar) & targetObjs_;
   (ar) & ignoreDB_;
   (ar) & ignoreMinArea_;
   (ar) & surgicalFixEnabled_;

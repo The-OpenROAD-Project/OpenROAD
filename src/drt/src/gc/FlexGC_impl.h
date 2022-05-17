@@ -171,7 +171,7 @@ class FlexGCWorker::Impl
   frLayerNum maxLayerNum_;
 
   // for pin prep
-  frBlockObject* targetObj_;
+  std::set<frBlockObject*> targetObjs_;
   bool ignoreDB_;
   bool ignoreMinArea_;
   bool ignoreLongSideEOL_;
