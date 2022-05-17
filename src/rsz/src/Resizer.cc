@@ -886,7 +886,6 @@ Resizer::resizeSlackPreamble()
   resizePreamble();
   // Save max_wire_length for multiple repairDesign calls.
   max_wire_length_ = findMaxWireLength1();
-  net_slack_map_.clear();
 }
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
@@ -910,6 +909,7 @@ Resizer::findResizeSlacks1()
 {
   // Use driver pin slacks rather than Sta::netSlack to save visiting
   // the net pins and min'ing the slack.
+  net_slack_map_.clear();
   NetSeq nets;
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_vertices_[i];
