@@ -77,8 +77,7 @@ typedef vector<BufferedNetPtr> BufferedNetSeq;
 class RepairSetup : StaState
 {
 public:
-  RepairSetup();
-  void init(Resizer *resizer);
+  RepairSetup(Resizer *resizer);
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -88,6 +87,7 @@ public:
   void rebufferNet(const Pin *drvr_pin);
 
 private:
+  void init();
   bool repairSetup(PathRef &path,
                    Slack path_slack);
   bool upsizeDrvr(PathRef *drvr_path,

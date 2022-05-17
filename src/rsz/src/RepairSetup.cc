@@ -80,12 +80,12 @@ using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
 
-RepairSetup::RepairSetup() :
+RepairSetup::RepairSetup(Resizer *resizer) :
   StaState(),
   logger_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
-  resizer_(nullptr),
+  resizer_(resizer),
   resize_count_(0),
   inserted_buffer_count_(0),
   min_(MinMax::min()),
@@ -94,12 +94,11 @@ RepairSetup::RepairSetup() :
 }
 
 void
-RepairSetup::init(Resizer *resizer)
+RepairSetup::init()
 {
-  resizer_ = resizer;
-  logger_ = resizer->logger_;
-  sta_ = resizer->sta_;
-  db_network_ = resizer->db_network_;
+  logger_ = resizer_->logger_;
+  sta_ = resizer_->sta_;
+  db_network_ = resizer_->db_network_;
 
   copyState(sta_);
 }
@@ -108,6 +107,7 @@ void
 RepairSetup::repairSetup(float slack_margin,
                          int max_passes)
 {
+  init();
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
 
@@ -175,6 +175,7 @@ RepairSetup::repairSetup(float slack_margin,
 void
 RepairSetup::repairSetup(Pin *end_pin)
 {
+  init();
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
 

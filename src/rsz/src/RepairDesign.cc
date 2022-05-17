@@ -68,12 +68,12 @@ using sta::NetIterator;
 using sta::Clock;
 using sta::INF;
 
-RepairDesign::RepairDesign() :
+RepairDesign::RepairDesign(Resizer *resizer) :
   StaState(),
   logger_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
-  resizer_(nullptr),
+  resizer_(resizer),
   dbu_(0),
   resize_count_(0),
   inserted_buffer_count_(0),
@@ -83,13 +83,12 @@ RepairDesign::RepairDesign() :
 }
 
 void
-RepairDesign::init(Resizer *resizer)
+RepairDesign::init()
 {
-  resizer_ = resizer;
-  logger_ = resizer->logger_;
-  sta_ = resizer->sta_;
-  db_network_ = resizer->db_network_;
-  dbu_ = resizer->dbu_;
+  logger_ = resizer_->logger_;
+  sta_ = resizer_->sta_;
+  db_network_ = resizer_->db_network_;
+  dbu_ = resizer_->dbu_;
 
   copyState(sta_);
 }
@@ -102,6 +101,7 @@ RepairDesign::repairDesign(double max_wire_length,
                            double slew_margin,
                            double max_cap_margin)
 {
+  init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length, slew_margin, max_cap_margin,
@@ -134,6 +134,8 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            int &fanout_violations,
                            int &length_violations)
 {
+  init();
+
   slew_violations = 0;
   cap_violations = 0;
   fanout_violations = 0;
@@ -185,6 +187,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
 void
 RepairDesign::repairClkNets(double max_wire_length)
 {
+  init();
   // Need slews to resize inserted buffers.
   sta_->findDelays();
 
@@ -237,6 +240,8 @@ RepairDesign::repairNet(Net *net,
                         double slew_margin,
                         double max_cap_margin)
 {
+  init();
+
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;

@@ -7,5 +7,4 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-rsz::resizer_preamble
 rsz::repair_net_cmd [get_net out1] 0 0 0

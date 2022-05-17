@@ -65,8 +65,7 @@ using sta::VertexSeq;
 class RepairHold : StaState
 {
 public:
-  RepairHold();
-  void init(Resizer *resizer);
+  RepairHold(Resizer *resizer);
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -80,6 +79,7 @@ public:
   int holdBufferCount() const { return inserted_buffer_count_; }
 
 private:
+  void init();
   LibertyCell *findHoldBuffer();
   float bufferHoldDelay(LibertyCell *buffer);
   void bufferHoldDelays(LibertyCell *buffer,

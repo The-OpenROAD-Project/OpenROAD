@@ -157,6 +157,7 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
 void
 RepairSetup::rebufferNet(const Pin *drvr_pin)
 {
+  init();
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
   resizer_->incrementalParasiticsBegin();

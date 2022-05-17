@@ -321,14 +321,6 @@ set_dont_use_cmd(LibertyCellSeq *dont_use)
 }
 
 void
-resizer_preamble()
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->resizePreamble();
-}
-
-void
 buffer_inputs()
 {
   ensureLinked();
@@ -349,7 +341,7 @@ resize_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(drvr_pin);
+  resizer->resizeDrvrToTargetSlew(drvr_pin);
 }
 
 double

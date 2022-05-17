@@ -170,6 +170,17 @@ to repair hold violations as a percentage of the number of instances
 in the design. The default value for `buffer_percent` is 20, for 20%.
 
 
+### Repair Clock Nets
+
+```
+repair_clock_nets [-max_wire_length max_wire_length]
+```
+
+The 'clock_tree_synthesis' command inserts a clock tree in the design
+but may leave a long wire from the clock input pin to the clock tree
+root buffer. The `repair_clock_nets` command inserts buffers in the
+wire from the clock input pin to the clock root buffer.
+
 ### Report Design Area
 
 ```

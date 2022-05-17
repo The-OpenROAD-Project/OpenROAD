@@ -10,7 +10,6 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-rsz::resizer_preamble
 set_load 30 r1q
 rsz::resize_to_target_slew [get_pin r1/Q]
 report_instance r1

@@ -315,7 +315,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
 void
 Resizer::estimateWireParasitics()
 {
-  ensureBlock();
+  initBlock();
   if (!wire_signal_cap_.empty()) {
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.

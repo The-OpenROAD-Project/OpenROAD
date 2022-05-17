@@ -203,17 +203,16 @@ public:
   bool dontUse(LibertyCell *cell);
 
   void setMaxUtilization(double max_utilization);
-  void resizePreamble();
   // Remove all buffers from the netlist.
   void removeBuffers();
   void bufferInputs();
   void bufferOutputs();
 
-  // Resize inst to target slew (public for testing).
-  // resizerPreamble() required.
-  // Return 1 if resized.
-  int resizeToTargetSlew(const Pin *drvr_pin);
+  // Resize drvr_pin instance to target slew.
+  void resizeDrvrToTargetSlew(const Pin *drvr_pin);
+  // Accessor for debugging.
   Slew targetSlew(const RiseFall *tr);
+  // Accessor for debugging.
   float targetLoadCap(LibertyCell *cell);
 
   ////////////////////////////////////////////////////////////////
@@ -325,8 +324,8 @@ public:
 
 protected:
   void init();
-  void ensureBlock();
-  void ensureDesignArea();
+  void initBlock();
+  void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance *bufferInput(const Pin *top_pin,
                         LibertyCell *buffer_cell);
@@ -357,6 +356,11 @@ protected:
                              int counts[]);
   bool hasMultipleOutputs(const Instance *inst);
 
+  void resizePreamble();
+  // Resize drvr_pin instance to target slew.
+  // Return 1 if resized.
+  int resizeToTargetSlew(const Pin *drvr_pin);
+
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(VertexSeq &drvrs);
@@ -367,6 +371,7 @@ protected:
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
+  double findMaxWireLength1();
   float portFanoutLoad(LibertyPort *port) const;
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;

@@ -11,7 +11,6 @@ estimate_parasitics -placement
 
 set_load  5 r1q
 set_load 40 r1qn
-rsz::resizer_preamble
 rsz::resize_to_target_slew [get_pin r1/Q]
 rsz::resize_to_target_slew [get_pin r1/QN]
 report_instance r1

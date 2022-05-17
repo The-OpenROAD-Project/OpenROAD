@@ -66,8 +66,7 @@ using sta::MinMax;
 class RepairDesign : StaState
 {
 public:
-  RepairDesign();
-  void init(Resizer *resizer);
+  RepairDesign(Resizer *resizer);
   void repairDesign(double max_wire_length,
                     double slew_margin,
                     double cap_margin);
@@ -88,6 +87,7 @@ public:
   void repairClkInverters();
 
 private:
+  void init();
   void repairNet(Net *net,
                  const Pin *drvr_pin,
                  Vertex *drvr,

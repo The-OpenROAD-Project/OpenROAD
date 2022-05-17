@@ -84,12 +84,12 @@ using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
 
-RepairHold::RepairHold() :
+RepairHold::RepairHold(Resizer *resizer) :
   StaState(),
   logger_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
-  resizer_(nullptr),
+  resizer_(resizer),
   resize_count_(0),
   inserted_buffer_count_(0),
   min_(MinMax::min()),
@@ -98,12 +98,11 @@ RepairHold::RepairHold() :
 }
 
 void
-RepairHold::init(Resizer *resizer)
+RepairHold::init()
 {
-  resizer_ = resizer;
-  logger_ = resizer->logger_;
-  sta_ = resizer->sta_;
-  db_network_ = resizer->db_network_;
+  logger_ = resizer_->logger_;
+  sta_ = resizer_->sta_;
+  db_network_ = resizer_->db_network_;
 
   copyState(sta_);
 }
@@ -115,7 +114,7 @@ RepairHold::repairHold(float slack_margin,
                        float max_buffer_percent,
                        int max_passes)
 {
-  resizer_->init();
+  init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell *buffer_cell = findHoldBuffer();
@@ -145,7 +144,7 @@ RepairHold::repairHold(Pin *end_pin,
                        float max_buffer_percent,
                        int max_passes)
 {
-  resizer_->init();
+  init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell *buffer_cell = findHoldBuffer();

@@ -14,6 +14,5 @@ set_wire_rc -layer met2
 estimate_parasitics -placement
 
 report_checks -fields {slew input_pin} -digits 3
-rsz::resizer_preamble
 rsz::resize_to_target_slew [get_pin "u1/X"]
 report_checks -fields {slew input_pin} -digits 3
