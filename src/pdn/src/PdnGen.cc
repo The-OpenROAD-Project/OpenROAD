@@ -669,7 +669,8 @@ void PdnGen::makeRing(Grid* grid,
                       const std::array<int, 4>& offset,
                       const std::array<int, 4>& pad_offset,
                       bool extend,
-                      const std::vector<odb::dbTechLayer*>& pad_pin_layers)
+                      const std::vector<odb::dbTechLayer*>& pad_pin_layers,
+                      const std::vector<odb::dbNet*>& nets)
 {
   std::array<Rings::Layer, 2> layers{Rings::Layer{layer0, width0, spacing0},
                                      Rings::Layer{layer1, width1, spacing1}};
@@ -683,6 +684,7 @@ void PdnGen::makeRing(Grid* grid,
   if (starts_with != GRID) {
     ring->setStartWithPower(starts_with == POWER);
   }
+  ring->setNets(nets);
   grid->addRing(std::move(ring));
   if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
@@ -710,7 +712,8 @@ void PdnGen::makeStrap(Grid* grid,
                        int number_of_straps,
                        bool snap,
                        StartsWith starts_with,
-                       ExtensionMode extend)
+                       ExtensionMode extend,
+                       const std::vector<odb::dbNet*>& nets)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
@@ -720,6 +723,7 @@ void PdnGen::makeStrap(Grid* grid,
   if (starts_with != GRID) {
     strap->setStartWithPower(starts_with == POWER);
   }
+  strap->setNets(nets);
   grid->addStrap(std::move(strap));
 }
 

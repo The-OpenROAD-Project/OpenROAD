@@ -247,7 +247,8 @@ void make_ring(const char* grid_name,
                int pad_offset_x1,
                int pad_offset_y1, 
                bool extend,
-               const std::vector<odb::dbTechLayer*>& pad_pin_layers)
+               const std::vector<odb::dbTechLayer*>& pad_pin_layers,
+               const std::vector<odb::dbNet*>& nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = GRID;
@@ -266,7 +267,8 @@ void make_ring(const char* grid_name,
                      {core_offset_x0, core_offset_y0, core_offset_x1, core_offset_y1},
                      {pad_offset_x0, pad_offset_y0, pad_offset_x1, pad_offset_y1},
                      extend,
-                     pad_pin_layers);
+                     pad_pin_layers,
+                     nets);
   }
 }
 
@@ -291,7 +293,8 @@ void make_strap(const char* grid_name,
                 bool snap,
                 bool use_grid_power_order,
                 bool starts_with_power,
-                pdn::ExtensionMode extend)
+                pdn::ExtensionMode extend,
+                const std::vector<odb::dbNet*>& nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = GRID;
@@ -303,7 +306,17 @@ void make_strap(const char* grid_name,
     }
   }
   for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeStrap(grid, layer, width, spacing, pitch, offset, number_of_straps, snap, starts_with, extend);
+    pdngen->makeStrap(grid,
+                      layer,
+                      width,
+                      spacing,
+                      pitch,
+                      offset,
+                      number_of_straps,
+                      snap,
+                      starts_with,
+                      extend,
+                      nets);
   }
 }
 
