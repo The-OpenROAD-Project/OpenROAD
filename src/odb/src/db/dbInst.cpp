@@ -146,6 +146,7 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       _module_next(i._module_next),
       _group_next(i._group_next),
       _region_prev(i._region_prev),
+      _module_prev(i._module_prev),
       _hierarchy(i._hierarchy),
       _iterms(i._iterms),
       _halo(i._halo),
@@ -181,6 +182,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst._module_next;
   stream << inst._group_next;
   stream << inst._region_prev;
+  stream << inst._module_prev;
   stream << inst._hierarchy;
   stream << inst._iterms;
   stream << inst._halo;
@@ -206,6 +208,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._module_next;
   stream >> inst._group_next;
   stream >> inst._region_prev;
+  stream >> inst._module_prev;
   stream >> inst._hierarchy;
   stream >> inst._iterms;
   stream >> inst._halo;
@@ -292,6 +295,9 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 
   if (_region_prev != rhs._region_prev)
     return false;
+  
+  if (_module_prev != rhs._module_prev)
+    return false;
 
   if (_hierarchy != rhs._hierarchy)
     return false;
@@ -339,6 +345,7 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_module_next);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_region_prev);
+  DIFF_FIELD(_module_prev);
   DIFF_FIELD(_hierarchy);
   DIFF_OBJECT(_halo, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
   DIFF_FIELD(pin_access_idx_);
@@ -395,6 +402,7 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_module_next);
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_region_prev);
+  DIFF_OUT_FIELD(_module_prev);
   DIFF_OUT_FIELD(_hierarchy);
   DIFF_OUT_FIELD(pin_access_idx_);
 

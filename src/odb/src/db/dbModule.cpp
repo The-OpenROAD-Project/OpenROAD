@@ -212,35 +212,55 @@ void dbModule::addInst(dbInst* inst)
   }
 
   _inst->_module = module->getOID();
-  _inst->_module_next = module->_insts;
+
+  if (module->_insts != 0) {
+    _dbInst* tail = block->_inst_tbl->getPtr(module->_insts);
+    _inst->_module_next = module->_insts;
+    _inst->_module_prev = 0;
+    tail->_module_prev = _inst->getOID();
+  } else {
+    _inst->_module_next = 0;
+    _inst->_module_prev = 0;
+  }
+
   module->_insts = _inst->getOID();
 }
 
+
 void _dbModule::removeInst(dbInst* inst)
 {
+  _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
   if (_inst->_module != getOID())
     return;
   _dbBlock* block = (_dbBlock*) getOwner();
   uint id = _inst->getOID();
 
-  _dbInst* prev = NULL;
-  uint cur = _insts;
-  while (cur) {
-    _dbInst* c = block->_inst_tbl->getPtr(cur);
-    if (cur == id) {
-      if (prev == NULL)
-        _insts = _inst->_module_next;
-      else
-        prev->_module_next = _inst->_module_next;
-      break;
+
+  if (module->_insts == id) {
+    module->_insts = _inst->_module_next;
+
+    if (module->_insts != 0) {
+      _dbInst* t = block->_inst_tbl->getPtr(module->_insts);
+      t->_module_prev = 0;
     }
-    prev = c;
-    cur = c->_module_next;
+  } else {
+    if (_inst->_module_next != 0) {
+      _dbInst* next = block->_inst_tbl->getPtr(_inst->_module_next);
+      next->_module_prev = _inst->_module_prev;
+    }
+
+    if (_inst->_module_prev != 0) {
+      _dbInst* prev = block->_inst_tbl->getPtr(_inst->_module_prev);
+      prev->_module_next = _inst->_module_next;
+    }
   }
+
   _inst->_module = 0;
   _inst->_module_next = 0;
+  _inst->_module_prev = 0;
 }
+
 
 dbSet<dbModInst> dbModule::getChildren()
 {
