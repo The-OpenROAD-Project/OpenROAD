@@ -889,7 +889,8 @@ Resizer::resizeSlackPreamble()
   net_slack_map_.clear();
 }
 
-// Run repair design to find the slacks but save/restore all changes to the netlist.
+// Run repair_design to repair long wires and max slew, capacitance and fanout
+// violations. Find the slacks, and then undo all changes to the netlist.
 void
 Resizer::findResizeSlacks()
 {
