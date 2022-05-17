@@ -9,8 +9,8 @@ def make_rect(design, xl, yl, xh, yh):
     return odb.Rect(xl, yl, xh, yh)
 
 tech = Tech()
-tech.readLEF("Nangate45/Nangate45_tech.lef", "tech")
-tech.readLEF("Nangate45/Nangate45_stdcell.lef", "stdcells")
+tech.readLEF("Nangate45/Nangate45_tech.lef")
+tech.readLEF("Nangate45/Nangate45_stdcell.lef")
 
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 

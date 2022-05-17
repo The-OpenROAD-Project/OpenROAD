@@ -51,8 +51,7 @@ class Tech
 {
  public:
   Tech();
-  void readLEF(const std::string& file_name,
-               const std::string& lib_name);
+  void readLEF(const std::string& file_name);
   void readLiberty(const std::string& file_name);
   odb::dbDatabase* getDB();
 

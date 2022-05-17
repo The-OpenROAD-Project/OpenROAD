@@ -52,11 +52,23 @@ odb::dbDatabase* Tech::getDB()
   return db_;
 }
 
-void Tech::readLEF(const std::string& file_name, const std::string& lib_name)
+void Tech::readLEF(const std::string& file_name)
 {
   auto app = OpenRoad::openRoad();
   const bool make_tech = db_->getTech() == nullptr;
   const bool make_library = true;
+  std::string lib_name = file_name;
+
+  // Hacky but easier than dealing with stdc++fs linking
+  auto slash_pos = lib_name.find_last_of('/');
+  if (slash_pos != std::string::npos) {
+    lib_name.erase(0, slash_pos + 1);
+  }
+  auto dot_pos = lib_name.find_last_of('.');
+  if (dot_pos != std::string::npos) {
+    lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
+  }
+
   app->readLef(file_name.c_str(), lib_name.c_str(), make_tech, make_library);
 }
 
