@@ -69,9 +69,9 @@ using sta::StaState;
 using sta::DcalcAnalysisPt;
 using sta::Corner;
 
-class BufferedNet;
 class Resizer;
 
+class BufferedNet;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 typedef array<Required, RiseFall::index_count> Requireds;
 

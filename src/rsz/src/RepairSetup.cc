@@ -256,7 +256,7 @@ RepairSetup::repairSetup(PathRef &path,
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
           && !tristate_drvr) { 
-        int rebuffer_count = resizer_->rebuffer(drvr_pin);
+        int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),

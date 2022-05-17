@@ -114,12 +114,12 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
-class BufferedNet;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
+
+class BufferedNet;
+typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 
 class RepairDesign;
 class RepairSetup;
@@ -134,7 +134,6 @@ public:
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
-typedef Vector<BufferedNetPtr> BufferedNetSeq;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
@@ -228,7 +227,7 @@ public:
   void repairSetup(Pin *drvr_pin);
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
-  void rebuffer1(const Pin *drvr_pin);
+  void rebufferNet(const Pin *drvr_pin);
 
   ////////////////////////////////////////////////////////////////
 
@@ -386,10 +385,6 @@ protected:
   int maxLoadManhattenDistance(Vertex *drvr);
 
   float portFanoutLoad(LibertyPort *port) const;
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
-  float bufferInputCapacitance(LibertyCell *buffer_cell,
-                               const DcalcAnalysisPt *dcalc_ap);
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
   void gateDelays(LibertyPort *drvr_port,
@@ -480,19 +475,6 @@ protected:
                    LibertyCell *cell,
                    bool journal);
 
-  int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
-                                  const Corner *corner,
-                                  int level);
-  void rebufferTopDown(BufferedNetPtr choice,
-                       Net *net,
-                       int level);
-  BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
-                   const Corner *corner,
-                   int level);
-  bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
@@ -592,7 +574,6 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
-  int rebuffer_net_count_;
   // Slack map variables.
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
@@ -604,7 +585,6 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr double rebuffer_buffer_penalty = .005;
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;

@@ -505,7 +505,7 @@ rebuffer_net(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->rebuffer1(drvr_pin);
+  resizer->rebufferNet(drvr_pin);
 }
 
 void

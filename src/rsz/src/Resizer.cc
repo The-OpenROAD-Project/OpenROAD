@@ -1028,6 +1028,140 @@ Resizer::resizeNetSlack(const dbNet *db_net)
 
 ////////////////////////////////////////////////////////////////
 
+// API for logic resynthesis
+PinSet
+Resizer::findFaninFanouts(PinSet *end_pins)
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+
+  VertexSet ends(graph_);
+  for (Pin *pin : *end_pins) {
+    Vertex *end = graph_->pinLoadVertex(pin);
+    ends.insert(end);
+  }
+  PinSet fanin_fanout_pins;
+  VertexSet fanin_fanouts = findFaninFanouts(ends);
+  for (Vertex *vertex : fanin_fanouts)
+    fanin_fanout_pins.insert(vertex->pin());
+  return fanin_fanout_pins;
+}
+
+VertexSet
+Resizer::findFaninFanouts(VertexSet &ends)
+{
+  // Search backwards from ends to fanin register outputs and input ports.
+  VertexSet fanin_roots = findFaninRoots(ends);
+  // Search forward from register outputs.
+  VertexSet fanouts = findFanouts(fanin_roots);
+  return fanouts;
+}
+
+// Find source pins for logic fanin of ends.
+PinSet
+Resizer::findFanins(PinSet *end_pins)
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+
+  VertexSet ends(graph_);
+  for (Pin *pin : *end_pins) {
+    Vertex *end = graph_->pinLoadVertex(pin);
+    ends.insert(end);
+  }
+
+  SearchPredNonReg2 pred(sta_);
+  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *vertex : ends)
+    iter.enqueueAdjacentVertices(vertex);
+
+  PinSet fanins;
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    if (isRegOutput(vertex)
+        || network_->isTopLevelPort(vertex->pin()))
+      continue;
+    else {
+      iter.enqueueAdjacentVertices(vertex);
+      fanins.insert(vertex->pin());
+    }
+  }
+  return fanins;
+}
+
+// Find roots for logic fanin of ends.
+VertexSet
+Resizer::findFaninRoots(VertexSet &ends)
+{
+  SearchPredNonReg2 pred(sta_);
+  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *vertex : ends)
+    iter.enqueueAdjacentVertices(vertex);
+
+  VertexSet roots(graph_);
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    if (isRegOutput(vertex)
+        || network_->isTopLevelPort(vertex->pin()))
+      roots.insert(vertex);
+    else
+      iter.enqueueAdjacentVertices(vertex);
+  }
+  return roots;
+}
+
+bool
+Resizer::isRegOutput(Vertex *vertex)
+{
+  LibertyPort *port = network_->libertyPort(vertex->pin());
+  if (port) {
+    LibertyCell *cell = port->libertyCell();
+    LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
+    while (arc_set_iter.hasNext()) {
+      TimingArcSet *arc_set = arc_set_iter.next();
+      if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
+        return true;
+    }
+  }
+  return false;
+}
+
+VertexSet
+Resizer::findFanouts(VertexSet &reg_outs)
+{
+  VertexSet fanouts(graph_);
+  sta::SearchPredNonLatch2 pred(sta_);
+  BfsFwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *reg_out : reg_outs)
+    iter.enqueueAdjacentVertices(reg_out);
+
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    if (!isRegister(vertex)) {
+      fanouts.insert(vertex);
+      iter.enqueueAdjacentVertices(vertex);
+    }
+  }
+  return fanouts;
+}
+
+bool
+Resizer::isRegister(Vertex *vertex)
+{
+  LibertyPort *port = network_->libertyPort(vertex->pin());
+  if (port) {
+    LibertyCell *cell = port->libertyCell();
+    return cell && cell->hasSequentials();
+  }
+  return false;
+}
+
+////////////////////////////////////////////////////////////////
+
 double
 Resizer::area(Cell *cell)
 {
@@ -2195,6 +2329,12 @@ Resizer::repairSetup(Pin *end_pin)
   repair_setup_->repairSetup(end_pin);
 }
 
+void
+Resizer::rebufferNet(const Pin *drvr_pin)
+{
+  repair_setup_->rebufferNet(drvr_pin);
+}
+
 ////////////////////////////////////////////////////////////////
 
 void
@@ -2280,138 +2420,6 @@ Resizer::journalRestore(int &resize_count,
 }
 
 ////////////////////////////////////////////////////////////////
-
-// API for logic resynthesis
-PinSet
-Resizer::findFaninFanouts(PinSet *end_pins)
-{
-  // Abbreviated copyState
-  db_network_ = sta_->getDbNetwork();
-  sta_->ensureLevelized();
-  graph_ = sta_->graph();
-
-  VertexSet ends(graph_);
-  for (Pin *pin : *end_pins) {
-    Vertex *end = graph_->pinLoadVertex(pin);
-    ends.insert(end);
-  }
-  PinSet fanin_fanout_pins;
-  VertexSet fanin_fanouts = findFaninFanouts(ends);
-  for (Vertex *vertex : fanin_fanouts)
-    fanin_fanout_pins.insert(vertex->pin());
-  return fanin_fanout_pins;
-}
-
-VertexSet
-Resizer::findFaninFanouts(VertexSet &ends)
-{
-  // Search backwards from ends to fanin register outputs and input ports.
-  VertexSet fanin_roots = findFaninRoots(ends);
-  // Search forward from register outputs.
-  VertexSet fanouts = findFanouts(fanin_roots);
-  return fanouts;
-}
-
-// Find source pins for logic fanin of ends.
-PinSet
-Resizer::findFanins(PinSet *end_pins)
-{
-  // Abbreviated copyState
-  db_network_ = sta_->getDbNetwork();
-  sta_->ensureLevelized();
-  graph_ = sta_->graph();
-
-  VertexSet ends(graph_);
-  for (Pin *pin : *end_pins) {
-    Vertex *end = graph_->pinLoadVertex(pin);
-    ends.insert(end);
-  }
-
-  SearchPredNonReg2 pred(sta_);
-  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex *vertex : ends)
-    iter.enqueueAdjacentVertices(vertex);
-
-  PinSet fanins;
-  while (iter.hasNext()) {
-    Vertex *vertex = iter.next();
-    if (isRegOutput(vertex)
-        || network_->isTopLevelPort(vertex->pin()))
-      continue;
-    else {
-      iter.enqueueAdjacentVertices(vertex);
-      fanins.insert(vertex->pin());
-    }
-  }
-  return fanins;
-}
-
-// Find roots for logic fanin of ends.
-VertexSet
-Resizer::findFaninRoots(VertexSet &ends)
-{
-  SearchPredNonReg2 pred(sta_);
-  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex *vertex : ends)
-    iter.enqueueAdjacentVertices(vertex);
-
-  VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    Vertex *vertex = iter.next();
-    if (isRegOutput(vertex)
-        || network_->isTopLevelPort(vertex->pin()))
-      roots.insert(vertex);
-    else
-      iter.enqueueAdjacentVertices(vertex);
-  }
-  return roots;
-}
-
-bool
-Resizer::isRegOutput(Vertex *vertex)
-{
-  LibertyPort *port = network_->libertyPort(vertex->pin());
-  if (port) {
-    LibertyCell *cell = port->libertyCell();
-    LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
-    while (arc_set_iter.hasNext()) {
-      TimingArcSet *arc_set = arc_set_iter.next();
-      if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
-        return true;
-    }
-  }
-  return false;
-}
-
-VertexSet
-Resizer::findFanouts(VertexSet &reg_outs)
-{
-  VertexSet fanouts(graph_);
-  sta::SearchPredNonLatch2 pred(sta_);
-  BfsFwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex *reg_out : reg_outs)
-    iter.enqueueAdjacentVertices(reg_out);
-
-  while (iter.hasNext()) {
-    Vertex *vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
-  return fanouts;
-}
-
-bool
-Resizer::isRegister(Vertex *vertex)
-{
-  LibertyPort *port = network_->libertyPort(vertex->pin());
-  if (port) {
-    LibertyCell *cell = port->libertyCell();
-    return cell && cell->hasSequentials();
-  }
-  return false;
-}
 
 Instance *
 Resizer::makeInstance(LibertyCell *cell,
