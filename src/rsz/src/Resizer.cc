@@ -694,38 +694,6 @@ Resizer::bufferDriveResistance(const LibertyCell *buffer) const
 
 ////////////////////////////////////////////////////////////////
 
-void
-Resizer::resizeToTargetSlew()
-{
-  resize_count_ = 0;
-  resized_multi_output_insts_.clear();
-  incrementalParasiticsBegin();
-  // Resize in reverse level order.
-  for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    Vertex *drvr = level_drvr_vertices_[i];
-    Pin *drvr_pin = drvr->pin();
-    Net *net = network_->net(drvr_pin);
-    if (net
-        && !drvr->isConstant()
-        && hasFanout(drvr)
-        // Hands off the clock nets.
-        && !sta_->isClock(drvr_pin)
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)) {
-      resize_count_ += resizeToTargetSlew(drvr_pin);
-      if (overMaxArea()) {
-        logger_->error(RSZ, 24, "Max utilization reached.");
-        break;
-      }
-    }
-  }
-  updateParasitics();
-  incrementalParasiticsEnd();
-
-  if (resize_count_ > 0)
-    logger_->info(RSZ, 29, "Resized {} instances.", resize_count_);
-}
-
 bool
 Resizer::hasFanout(Vertex *drvr)
 {
@@ -1757,49 +1725,6 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
              gate_delays[RiseFall::fallIndex()]);
 }
 
-float
-Resizer::bufferSlew(LibertyCell *buffer_cell,
-                    float load_cap,
-                    const DcalcAnalysisPt *dcalc_ap)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return max(slews[RiseFall::riseIndex()],
-             slews[RiseFall::fallIndex()]);
-}
-
-// Self delay; buffer -> buffer
-float
-Resizer::bufferSelfDelay(LibertyCell *buffer_cell)
-{
-  const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  float load_cap = input->capacitance();
-  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return max(gate_delays[RiseFall::riseIndex()],
-             gate_delays[RiseFall::fallIndex()]);
-}
-
-float
-Resizer::bufferSelfDelay(LibertyCell *buffer_cell,
-                         const RiseFall *rf)
-{
-  const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  float load_cap = input->capacitance();
-  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return gate_delays[rf->index()];
-}
-
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
 void
@@ -2052,57 +1977,6 @@ Resizer::makeWireParasitic(Net *net,
   parasitics->incrCap(n1, wire_cap / 2.0, parasitics_ap);
   parasitics->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
   parasitics->incrCap(n2, wire_cap / 2.0, parasitics_ap);
-}
-
-////////////////////////////////////////////////////////////////
-
-double
-Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
-                               LibertyPort *load_port,
-                               double max_slew,
-                               const Corner *corner)
-{
-  ensureBlock();
-  // wire_length1 lower bound
-  // wire_length2 upper bound
-  double wire_length1 = 0.0;
-  double wire_length2 = std::sqrt(max_slew /(wireSignalResistance(corner)
-                                             * wireSignalCapacitance(corner)));
-  double tol = .01; // 1%
-  double diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
-  // binary search for diff = 0.
-  while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
-    if (diff1 < 0.0) {
-      wire_length1 = wire_length2;
-      wire_length2 *= 2;
-      diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
-    }
-    else {
-      double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length3, max_slew);
-      if (diff2 < 0.0) {
-        wire_length1 = wire_length3;
-      }
-      else {
-        wire_length2 = wire_length3;
-        diff1 = diff2;
-      }
-    }
-  }
-  return wire_length1;
-}
-
-// objective function
-double
-Resizer::maxSlewWireDiff(LibertyPort *drvr_port,
-                         LibertyPort *load_port,
-                         double wire_length,
-                         double max_slew)
-{
-  Delay delay;
-  Slew slew;
-  cellWireDelay(drvr_port, load_port, wire_length, delay, slew);
-  return slew - max_slew;
 }
 
 ////////////////////////////////////////////////////////////////

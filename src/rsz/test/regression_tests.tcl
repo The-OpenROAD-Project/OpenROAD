@@ -13,8 +13,6 @@ record_tests {
   make_parasitics5
   make_parasitics6
   resize1
-  resize2
-  resize3
   resize4
   resize5
   resize6

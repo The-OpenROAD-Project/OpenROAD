@@ -12,5 +12,5 @@ estimate_parasitics -placement
 
 rsz::resizer_preamble
 set_load 30 r1q
-rsz::resize_driver_to_target_slew [get_pin r1/Q]
+rsz::resize_to_target_slew [get_pin r1/Q]
 report_instance r1

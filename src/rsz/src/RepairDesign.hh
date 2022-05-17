@@ -174,6 +174,9 @@ private:
                     float &repeater_max_slew);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
+  float bufferSlew(LibertyCell *buffer_cell,
+                   float load_cap,
+                   const DcalcAnalysisPt *dcalc_ap);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 

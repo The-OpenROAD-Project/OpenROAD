@@ -208,14 +208,11 @@ public:
   void removeBuffers();
   void bufferInputs();
   void bufferOutputs();
-  // Resize all instances in the network.
-  // resizerPreamble() required.
-  void resizeToTargetSlew();
+
   // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin *drvr_pin);
-
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
 
@@ -258,15 +255,6 @@ public:
                        double wire_length, // meters
                        Delay &delay,
                        Slew &slew);
-  void cellWireDelay(LibertyPort *drvr_port,
-                     LibertyPort *load_port,
-                     double wire_length, // meters
-                     // Return values.
-                     Delay &delay,
-                     Slew &slew);
-  float bufferSelfDelay(LibertyCell *buffer_cell);
-  float bufferSelfDelay(LibertyCell *buffer_cell,
-                        const RiseFall *rf);
 
   ////////////////////////////////////////////////////////////////
 
@@ -301,11 +289,6 @@ public:
                            const Corner *corner);
   double findMaxWireLength(LibertyPort *drvr_port,
                            const Corner *corner);
-  // Find the max wire length with load slew < max_slew (in meters).
-  double findMaxSlewWireLength(LibertyPort *drvr_port,
-                               LibertyPort *load_port,
-                               double max_slew,
-                               const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
 
@@ -407,9 +390,12 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
+  void cellWireDelay(LibertyPort *drvr_port,
+                     LibertyPort *load_port,
+                     double wire_length, // meters
+                     // Return values.
+                     Delay &delay,
+                     Slew &slew);
   void makeWireParasitic(Net *net,
                          Pin *drvr_pin,
                          Pin *load_pin,

@@ -1053,8 +1053,8 @@ RepairDesign::findBufferUnderSlew(float max_slew,
     for (LibertyCell *buffer : *equiv_cells) {
       if (!resizer_->dontUse(buffer)
           && resizer_->isLinkCell(buffer)) {
-        float slew = resizer_->bufferSlew(buffer, load_cap,
-                                          resizer_->tgt_slew_dcalc_ap_);
+        float slew = bufferSlew(buffer, load_cap,
+                                resizer_->tgt_slew_dcalc_ap_);
         debugPrint(logger_, RSZ, "buffer_under_slew", 1, "{:{}s}pt ({} {})",
                    buffer->name(),
                    units_->timeUnit()->asString(slew));
@@ -1070,6 +1070,20 @@ RepairDesign::findBufferUnderSlew(float max_slew,
   }
   // Could not find a buffer under max_slew but this is min slew achievable.
   return min_slew_buffer;
+}
+
+float
+RepairDesign::bufferSlew(LibertyCell *buffer_cell,
+                         float load_cap,
+                         const DcalcAnalysisPt *dcalc_ap)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  ArcDelay gate_delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+  return max(slews[RiseFall::riseIndex()],
+             slews[RiseFall::fallIndex()]);
 }
 
 double
