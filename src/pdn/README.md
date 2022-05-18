@@ -253,7 +253,8 @@ add_pdn_stripe [-grid grid_name] \
                 [-extend_to_boundary] \
                 [-extend_to_core_ring] \
                 [-snap_to_grid] \
-                [-number_of_straps count]
+                [-number_of_straps count] \
+                [-nets list_of_nets]
 ```
 
 ##### Options
@@ -271,6 +272,7 @@ add_pdn_stripe [-grid grid_name] \
 | `-extend_to_boundary` | Extend the stripes to the boundary of the grid |
 | `-snap_to_grid` | Snap the stripes to the defined routing grid |
 | `-number_of_straps` | Number of power/ground pairs to add |
+| `-nets` | Limit straps to just this list of nets |
 
 ##### Examples
 ```
@@ -294,7 +296,8 @@ add_pdn_ring [-grid grid_name] \
              [-extend_to_boundary] \
              [-connect_to_pads] \
              [-connect_to_pad_layers layers] \
-             [-starts_with (POWER|GROUND)] 
+             [-starts_with (POWER|GROUND)] \
+             [-nets list_of_nets]
 ```
 
 ##### Options
@@ -312,6 +315,7 @@ add_pdn_ring [-grid grid_name] \
 | `-connect_to_pads` | The core side of the pad pins will be connected to the ring |
 | `-connect_to_pad_layers` | Restrict the pad pins layers to this list |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
+| `-nets` | Limit straps to just this list of nets |
 
 ##### Examples
 ```
