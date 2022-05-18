@@ -179,7 +179,10 @@ Resizer::wireSignalCapacitance(const Pin *drvr_pin,
                                                     corner->findParasiticAnalysisPt(MinMax::max()));
     
     double net_cap = parasitics->capacitance(parasitic) - pinCap(drvr_pin, corner);
-    double cap = net_cap / grouteLength(net);
+    double wire_length = grouteLength(net);
+    double cap = (wire_length > 0.0)
+      ? net_cap / wire_length
+      : wireSignalCapacitance(corner);
     return cap;
   }
   case ParasiticsSrc::none:
