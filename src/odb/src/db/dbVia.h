@@ -55,7 +55,7 @@ struct _dbViaFlags
   uint _is_tech_via : 1;
   uint _has_params : 1;
   dbOrientType::Value _orient : 4;
-  bool added_by_router_ : 1;
+  bool default_ : 1;
   uint _spare_bits : 24;
 };
 

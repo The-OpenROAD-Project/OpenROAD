@@ -332,7 +332,7 @@ void io::Parser::setVias(odb::dbBlock* block)
         }
         cnt++;
       }
-      if (via->isAddedByRouter())
+      if (via->isDefault())
         viaDef->setDefault(true);
       tech->addVia(std::move(viaDef));
     }
@@ -2765,7 +2765,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
                     via->getName());
     }
     odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
-    _db_via->setAddedByRouter(true);
+    _db_via->setDefault(true);
     for (auto& fig : via->getLayer2Figs()) {
       fig->getBBox(box);
       odb::dbBox::create(
