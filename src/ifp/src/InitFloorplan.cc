@@ -503,4 +503,60 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
                 tie_term->getName());
 }
 
+void InitFloorplan::makeTracks()
+{
+  for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
+    if (layer->getType() == dbTechLayerType::ROUTING
+        && layer->getRoutingLevel() != 0) {
+      makeTracks(layer,
+                 layer->getOffsetX(),
+                 layer->getPitchX(),
+                 layer->getOffsetY(),
+                 layer->getPitchY());
+    }
+  }
+}
+
+void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
+                               int x_offset,
+                               int x_pitch,
+                               int y_offset,
+                               int y_pitch)
+{
+  Rect die_area;
+  block_->getDieArea(die_area);
+  auto grid = block_->findTrackGrid(layer);
+  if (!grid) {
+    grid = dbTrackGrid::create(block_, layer);
+  }
+
+  if (y_offset == 0) {
+    y_offset = y_pitch;
+  }
+  if (x_offset > die_area.dx()) {
+    logger_->warn(
+        IFP,
+        21,
+        "Track pattern for {} will be skipped due to x_offset > die width.",
+        layer->getName());
+    return;
+  }
+  if (y_offset > die_area.dy()) {
+    logger_->warn(
+        IFP,
+        22,
+        "Track pattern for {} will be skipped due to y_offset > die height.",
+        layer->getName());
+    return;
+  }
+  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  grid->addGridPatternX(die_area.xMin() + x_offset, x_track_count, x_pitch);
+
+  if (x_offset == 0) {
+    x_offset = x_pitch;
+  }
+  auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
+  grid->addGridPatternY(die_area.yMin() + y_offset, y_track_count, y_pitch);
+}
+
 }  // namespace ifp

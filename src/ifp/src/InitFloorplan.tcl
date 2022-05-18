@@ -138,7 +138,6 @@ sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_offset x_offset]\
                                       [-y_offset y_offset]}
 
-# Look Ma, no c++!
 proc make_tracks { args } {
   sta::parse_key_args "make_tracks" args \
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
@@ -150,16 +149,7 @@ proc make_tracks { args } {
   set tech [ord::get_db_tech]
 
   if { [llength $args] == 0 } {
-    foreach layer [$tech getLayers] {
-        if { [$layer getType] == "ROUTING"
-             && [$layer getRoutingLevel] != 0} {
-        set x_pitch [$layer getPitchX]
-        set x_offset [$layer getOffsetX]
-        set y_pitch [$layer getPitchY]
-        set y_offset [$layer getOffsetY]
-        ifp::make_layer_tracks $layer $x_offset $x_pitch $y_offset $y_pitch
-      }
-    }
+      ifp::make_layer_tracks
   } elseif { [llength $args] == 1 } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
@@ -259,39 +249,6 @@ namespace eval ifp {
 proc to_dbu { coord } {
     set in_meters [sta::distance_ui_sta $coord]
     return [ord::microns_to_dbu [expr $in_meters * 1e6]]
-}
-
-proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
-  set block [ord::get_db_block]
-  if { $block == "NULL"} {
-    utl::error IFP 24 "No block defined."
-  } else {
-    set die_area [$block getDieArea]
-    set grid [$block findTrackGrid $layer]
-    if { $grid == "NULL" } {
-      set grid [odb::dbTrackGrid_create $block $layer]
-    }
-
-    if { $y_offset == 0 } {
-      set y_offset $y_pitch
-    }
-    if { $x_offset > [$die_area dx] } {
-        utl::warn "IFP" 21 "Track pattern for [$layer getName] will be skipped due to x_offset > die width."
-        return
-    }
-    if { $y_offset > [$die_area dy] } {
-        utl::warn "IFP" 22 "Track pattern for [$layer getName] will be skipped due to y_offset > die height."
-        return
-    }
-    set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
-    $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
-
-    if { $x_offset == 0 } {
-      set x_offset $x_pitch
-    }
-    set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
-    $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
-  }
 }
 
 proc microns_to_mfg_grid { microns } {
