@@ -1352,11 +1352,10 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
 
 void io::Parser::addDefaultMasterSliceLayer()
 {
-  // TODO REPLACE WITH ACTUAL MASTERSLICE NAME
   unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
   tmpMSLayer->setLayerNum(readLayerCnt++);
-  tmpMSLayer->setName("FR_MASTERSLICE");
+  tmpMSLayer->setName(masterSliceLayerName);
   tech->addLayer(std::move(uMSLayer));
   tmpMSLayer->setType(dbTechLayerType::MASTERSLICE);
 }
