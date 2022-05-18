@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <dst/JobMessage.h>
 #include <omp.h>
 #include <stdio.h>
@@ -40,7 +42,6 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"

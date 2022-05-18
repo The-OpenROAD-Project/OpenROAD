@@ -446,9 +446,25 @@ int GridComponent::getShapeCount() const
   return count;
 }
 
+void GridComponent::setNets(const std::vector<odb::dbNet*>& nets)
+{
+  const auto grid_nets = grid_->getNets();
+  for (auto* net : nets) {
+    if (std::find(grid_nets.begin(), grid_nets.end(), net) == grid_nets.end()) {
+      getLogger()->error(utl::PDN, 224, "{} is not a net in {}.", net->getName(), grid_->getLongName());
+    }
+  }
+
+  nets_ = nets;
+}
+
 std::vector<odb::dbNet*> GridComponent::getNets() const
 {
-  return grid_->getNets(starts_with_power_);
+  if (nets_.empty()) {
+    return grid_->getNets(starts_with_power_);
+  } else {
+    return nets_;
+  }
 }
 
 int GridComponent::getNetCount() const

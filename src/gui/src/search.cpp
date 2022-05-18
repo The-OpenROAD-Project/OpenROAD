@@ -163,12 +163,12 @@ void Search::inDbRegionDestroy(odb::dbRegion* region)
 
 void Search::inDbRowCreate(odb::dbRow* row)
 {
-  emit modified();
+  clearRows();
 }
 
 void Search::inDbRowDestroy(odb::dbRow* row)
 {
-  emit modified();
+  clearRows();
 }
 
 void Search::setBlock(odb::dbBlock* block)
@@ -188,6 +188,17 @@ void Search::setBlock(odb::dbBlock* block)
   emit newBlock(block);
 }
 
+void Search::announceModified(bool& flag)
+{
+  const bool current_flag = flag;
+
+  flag = false;
+
+  if (flag != current_flag) {
+    emit modified();
+  }
+}
+
 void Search::clear()
 {
   clearShapes();
@@ -200,54 +211,38 @@ void Search::clear()
 
 void Search::clearShapes()
 {
-  shapes_.clear();
-  shapes_init_ = false;
-
-  emit modified();
+  announceModified(shapes_init_);
 }
 
 void Search::clearFills()
 {
-  fills_.clear();
-  fills_init_ = false;
-
-  emit modified();
+  announceModified(fills_init_);
 }
 
 void Search::clearInsts()
 {
-  insts_.clear();
-  insts_init_ = false;
-
-  emit modified();
+  announceModified(insts_init_);
 }
 
 void Search::clearBlockages()
 {
-  blockages_.clear();
-  blockages_init_ = false;
-
-  emit modified();
+  announceModified(blockages_init_);
 }
 
 void Search::clearObstructions()
 {
-  obstructions_.clear();
-  obstructions_init_ = false;
-
-  emit modified();
+  announceModified(obstructions_init_);
 }
 
 void Search::clearRows()
 {
-  rows_.clear();
-  rows_init_ = false;
-
-  emit modified();
+  announceModified(rows_init_);
 }
 
 void Search::updateShapes()
 {
+  shapes_.clear();
+
   for (odb::dbNet* net : block_->getNets()) {
     addNet(net);
     addSNet(net);
@@ -279,6 +274,8 @@ void Search::updateShapes()
 
 void Search::updateFills()
 {
+  fills_.clear();
+
   for (odb::dbFill* fill : block_->getFills()) {
     odb::Rect rect;
     fill->getRect(rect);
@@ -293,6 +290,8 @@ void Search::updateFills()
 
 void Search::updateInsts()
 {
+  insts_.clear();
+
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isPlaced()) {
         addInst(inst);
@@ -304,6 +303,8 @@ void Search::updateInsts()
 
 void Search::updateBlockages()
 {
+  blockages_.clear();
+
   for (odb::dbBlockage* blockage : block_->getBlockages()) {
     addBlockage(blockage);
   }
@@ -313,6 +314,8 @@ void Search::updateBlockages()
 
 void Search::updateObstructions()
 {
+  obstructions_.clear();
+
   for (odb::dbObstruction* obs : block_->getObstructions()) {
     addObstruction(obs);
   }
@@ -322,6 +325,8 @@ void Search::updateObstructions()
 
 void Search::updateRows()
 {
+  rows_.clear();
+
   for (odb::dbRow* row : block_->getRows()) {
     addRow(row);
   }

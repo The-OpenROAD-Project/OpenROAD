@@ -409,13 +409,11 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         bool via
             = (draw_drc
-               && grid_graph_->hasRouteShapeCostAdj(
-                   x, y, z, frDirEnum::U))
+               && grid_graph_->hasRouteShapeCostAdj(x, y, z, frDirEnum::U))
               || (draw_marker
                   && grid_graph_->hasMarkerCostAdj(x, y, z, frDirEnum::U))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCostAdj(
-                      x, y, z, frDirEnum::U))
+                  && grid_graph_->hasFixedShapeCostAdj(x, y, z, frDirEnum::U))
               || (draw_gCostEdges && grid_graph_->hasGridCostU(x, y, z))
               || (draw_blockedEdges
                   && grid_graph_->isBlocked(x, y, z, frDirEnum::U))

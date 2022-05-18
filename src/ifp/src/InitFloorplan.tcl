@@ -59,11 +59,6 @@ proc initialize_floorplan { args } {
   sta::check_argc_eq0 "initialize_floorplan" $args
   if [info exists keys(-utilization)] {
     set util $keys(-utilization)
-    sta::check_positive_float "-utilization" $util
-    if { $util > 100 } {
-      utl::error IFP 12 "-utilization must be from 0% to 100%"
-    }
-    set util [expr $util / 100.0]
     if [info exists keys(-core_space)] {
       set core_sp $keys(-core_space)
       if { [llength $core_sp] == 1} {
@@ -94,10 +89,10 @@ proc initialize_floorplan { args } {
       set aspect_ratio 1.0
     }
     ifp::init_floorplan_util $util $aspect_ratio \
-      [sta::distance_ui_sta $core_sp_bottom] \
-      [sta::distance_ui_sta $core_sp_top] \
-      [sta::distance_ui_sta $core_sp_left] \
-      [sta::distance_ui_sta $core_sp_right] \
+      [ifp::to_dbu $core_sp_bottom] \
+      [ifp::to_dbu $core_sp_top] \
+      [ifp::to_dbu $core_sp_left] \
+      [ifp::to_dbu $core_sp_right] \
       $site_name
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
@@ -124,22 +119,16 @@ proc initialize_floorplan { args } {
 
       # convert die/core coordinates to meters.
       ifp::init_floorplan_core \
-	[sta::distance_ui_sta $die_lx] [sta::distance_ui_sta $die_ly] \
-	[sta::distance_ui_sta $die_ux] [sta::distance_ui_sta $die_uy] \
-	[sta::distance_ui_sta $core_lx] [sta::distance_ui_sta $core_ly] \
-	[sta::distance_ui_sta $core_ux] [sta::distance_ui_sta $core_uy] \
+	[ifp::to_dbu $die_lx] [ifp::to_dbu $die_ly] \
+	[ifp::to_dbu $die_ux] [ifp::to_dbu $die_uy] \
+	[ifp::to_dbu $core_lx] [ifp::to_dbu $core_ly] \
+	[ifp::to_dbu $core_ux] [ifp::to_dbu $core_uy] \
 	$site_name
     } else {
       utl::error IFP 17 "no -core_area specified."
     }
   } else {
     utl::error IFP 19 "no -utilization or -die_area specified."
-  }
-
-  set block [ord::get_db_block]
-  set placement_blockages [$block getBlockages]
-  if {[llength $placement_blockages] > 0} {
-    ifp::cut_rows $block $placement_blockages
   }
 }
 
@@ -267,6 +256,11 @@ proc insert_tiecells { args } {
 
 namespace eval ifp {
 
+proc to_dbu { coord } {
+    set in_meters [sta::distance_ui_sta $coord]
+    return [ord::microns_to_dbu [expr $in_meters * 1e6]]
+}
+
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   set block [ord::get_db_block]
   if { $block == "NULL"} {
@@ -309,71 +303,6 @@ proc microns_to_mfg_grid { microns } {
   } else {
     return [ord::microns_to_dbu $microns]
   }  
-}
-
-proc cut_row {block row row_blockages min_row_width halo_x halo_y} {
-  set row_name [$row getName]
-  set row_bb [$row getBBox]
-
-  set row_site [$row getSite]
-  set site_width [$row_site getWidth]
-
-  set start_origin_x [$row_bb xMin]
-  set start_origin_y [$row_bb yMin]
-
-  set curr_min_row_width [expr $min_row_width + 2*$site_width]
-
-  set row_blockage_bboxs [dict get $row_blockages $row_name]
-  set row_blockage_xs []
-  foreach row_blockage_bbox [dict get $row_blockages $row_name] {
-    lappend row_blockage_xs "[$row_blockage_bbox xMin] [$row_blockage_bbox xMax]"
-  }
-  set row_blockage_xs [lsort -integer -index 0 $row_blockage_xs]
-
-  set row_sub_idx 1
-  foreach blockage $row_blockage_xs {
-    lassign $blockage blockage_x0 blockage_x1
-    # ensure rows are an integer length of sitewidth
-    set new_row_end_x [tap::make_site_loc [expr $blockage_x0 - $halo_x] $site_width 1 $start_origin_x]
-    tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x $new_row_end_x $start_origin_y $row $curr_min_row_width
-    incr row_sub_idx
-
-    set start_origin_x [tap::make_site_loc [expr $blockage_x1 + $halo_x] $site_width 0 $start_origin_x]
-  }
-
-  # Make last row
-  tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x [$row_bb xMax] $start_origin_y $row $curr_min_row_width
-
-  # Remove current row
-  odb::dbRow_destroy $row
-}
-
-proc cut_rows {block placement_blockages} {
-  utl::info "IFP" 6 "Placement blockages found: [llength $placement_blockages]"
-
-  # Gather rows needing to be cut because of placement blockages
-  set rows_to_cut []
-  set row_placement_blockages [dict create]
-  foreach blockage $placement_blockages {
-    if {![$blockage isSoft]} {
-      foreach row [$block getRows] {
-        set row_name [$row getName]
-        if {![dict exists $row_placement_blockages $row_name]} {
-          if {[tap::overlaps [$blockage getBBox] $row 0 0]} {
-            lappend rows_to_cut $row
-          }
-          dict lappend row_placement_blockages $row_name [$blockage getBBox]
-        }
-      }
-    }
-  }
-
-  # cut rows around placement blockages
-  foreach row $rows_to_cut {
-    ifp::cut_row $block $row $row_placement_blockages 0 0 0
-  }
-
-  utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
 }
 
 }

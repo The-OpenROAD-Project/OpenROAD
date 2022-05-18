@@ -42,6 +42,7 @@
 #include <QScrollArea>
 #include <QShortcut>
 #include <QTimer>
+#include <chrono>
 #include <map>
 #include <memory>
 #include <vector>
@@ -236,6 +237,8 @@ class LayoutViewer : public QWidget
 
  private slots:
   void setBlock(odb::dbBlock* block);
+  void setResetRepaintInterval();
+  void setLongRepaintInterval();
 
  private:
   struct Boxes
@@ -398,6 +401,8 @@ class LayoutViewer : public QWidget
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
   bool repaint_requested_;
+  std::chrono::time_point<std::chrono::system_clock> last_paint_time_;
+  int repaint_interval_; // milliseconds
 
   utl::Logger* logger_;
 

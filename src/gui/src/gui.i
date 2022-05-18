@@ -99,6 +99,8 @@ namespace std {
   %template(DisplayControlMap) map<string, bool>;
 }
 
+%rename(pause) gui_pause;
+
 %inline %{
 
 bool enabled()
@@ -420,7 +422,9 @@ const std::string input_dialog(const char* title, const char* question)
   return gui->requestUserInput(title, question);
 }
 
-void pause(int timeout = 0)
+// glib has pause() so this is %rename'd to pause in the scripting
+// language to avoid conflicts in C++.
+void gui_pause(int timeout = 0)
 {
   if (!check_gui("pause")) {
     return;

@@ -35,6 +35,8 @@
 #include "dbLogger.h"
 #include "wire.h"
 
+namespace odb {
+
 //#define SINGLE_WIRE
 
 Ath__box::Ath__box()
@@ -3280,3 +3282,5 @@ void Ath__gridTable::getIds(uint wid, uint* id1, uint* id2, uint* wtype)
   *id1 = w->_boxId;
   *id2 = w->_otherId;
 }
+
+}  // namespace odb

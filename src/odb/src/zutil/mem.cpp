@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+namespace odb {
+
 void ATH__failMessage(const char* msg)
 {
   fprintf(stderr, "%s\n", msg);
@@ -68,3 +70,5 @@ void ATH__deallocCharWord(const char* a)
   }
   delete[] a;
 }
+
+}  // namespace odb

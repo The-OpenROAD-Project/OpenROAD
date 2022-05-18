@@ -2556,7 +2556,8 @@ Resizer::repairSetup(PathRef &path,
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
       const Pin *path_pin = path->pin(sta_);
-      if (network_->isDriver(path_pin)
+      if (i > 0
+          && network_->isDriver(path_pin)
           && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
         TimingArc *corner_arc = prev_arc->cornerArc(lib_ap);
