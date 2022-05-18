@@ -1552,9 +1552,12 @@ dbSet<dbITerm> dbNet::getITerms()
 dbITerm* dbNet::get1stITerm()
 {
   dbSet<dbITerm> iterms = getITerms();
-  ;
+
+  dbITerm* it = nullptr;
   dbSet<dbITerm>::iterator iitr = iterms.begin();
-  dbITerm* it = *iitr;
+  if (iitr != iterms.end()) {
+    it = *iitr;
+  }
   return it;
 }
 
@@ -1568,9 +1571,12 @@ dbSet<dbBTerm> dbNet::getBTerms()
 dbBTerm* dbNet::get1stBTerm()
 {
   dbSet<dbBTerm> bterms = getBTerms();
-  ;
+
+  dbBTerm* bt = nullptr;
   dbSet<dbBTerm>::iterator bitr = bterms.begin();
-  dbBTerm* bt = *bitr;
+  if (bitr != bterms.end()) {
+    bt = *bitr;
+  }
   return bt;
 }
 dbITerm* dbNet::getFirstOutput()
