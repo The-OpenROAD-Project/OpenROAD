@@ -523,6 +523,13 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
                                int y_offset,
                                int y_pitch)
 {
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("layer", layer, 38);
+  v.check_non_negative("x_offset", x_offset, 39);
+  v.check_positive("x_pitch", x_offset, 40);
+  v.check_non_negative("y_offset", x_offset, 41);
+  v.check_positive("y_pitch", x_offset, 42);
+
   Rect die_area;
   block_->getDieArea(die_area);
   auto grid = block_->findTrackGrid(layer);
