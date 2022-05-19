@@ -44,7 +44,7 @@
 #include "gseq.h"
 #include "rcx.h"
 
-using namespace odb;
+namespace odb {
 
 enum Ath__overlapAdjust
 {
@@ -829,3 +829,5 @@ class Ath__gridTable
 
   uint getWireCnt();
 };
+
+}  // namespace odb

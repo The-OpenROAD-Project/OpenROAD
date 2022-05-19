@@ -59,11 +59,6 @@ proc initialize_floorplan { args } {
   sta::check_argc_eq0 "initialize_floorplan" $args
   if [info exists keys(-utilization)] {
     set util $keys(-utilization)
-    sta::check_positive_float "-utilization" $util
-    if { $util > 100 } {
-      utl::error IFP 12 "-utilization must be from 0% to 100%"
-    }
-    set util [expr $util / 100.0]
     if [info exists keys(-core_space)] {
       set core_sp $keys(-core_space)
       if { [llength $core_sp] == 1} {
@@ -135,12 +130,6 @@ proc initialize_floorplan { args } {
   } else {
     utl::error IFP 19 "no -utilization or -die_area specified."
   }
-
-  set block [ord::get_db_block]
-  set placement_blockages [$block getBlockages]
-  if {[llength $placement_blockages] > 0} {
-    ifp::cut_rows $block $placement_blockages
-  }
 }
 
 sta::define_cmd_args "make_tracks" {[layer]\
@@ -149,7 +138,6 @@ sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_offset x_offset]\
                                       [-y_offset y_offset]}
 
-# Look Ma, no c++!
 proc make_tracks { args } {
   sta::parse_key_args "make_tracks" args \
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
@@ -161,16 +149,7 @@ proc make_tracks { args } {
   set tech [ord::get_db_tech]
 
   if { [llength $args] == 0 } {
-    foreach layer [$tech getLayers] {
-        if { [$layer getType] == "ROUTING"
-             && [$layer getRoutingLevel] != 0} {
-        set x_pitch [$layer getPitchX]
-        set x_offset [$layer getOffsetX]
-        set y_pitch [$layer getPitchY]
-        set y_offset [$layer getOffsetY]
-        ifp::make_layer_tracks $layer $x_offset $x_pitch $y_offset $y_pitch
-      }
-    }
+      ifp::make_layer_tracks
   } elseif { [llength $args] == 1 } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
@@ -213,16 +192,6 @@ proc make_tracks { args } {
       set y_offset [$layer getOffsetY]
     }
     ifp::make_layer_tracks $layer $x_offset $x_pitch $y_offset $y_pitch
-  }
-}
-
-sta::define_cmd_args "auto_place_pins" {pin_layer}
-
-proc auto_place_pins { pin_layer } {
-  if { [[ord::get_db_tech] findLayer $pin_layer] != "NULL" } {
-    ifp::auto_place_pins_cmd $pin_layer
-  } else {
-    utl::error IFP 20 "layer $pin_layer not found."
   }
 }
 
@@ -272,39 +241,6 @@ proc to_dbu { coord } {
     return [ord::microns_to_dbu [expr $in_meters * 1e6]]
 }
 
-proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
-  set block [ord::get_db_block]
-  if { $block == "NULL"} {
-    utl::error IFP 24 "No block defined."
-  } else {
-    set die_area [$block getDieArea]
-    set grid [$block findTrackGrid $layer]
-    if { $grid == "NULL" } {
-      set grid [odb::dbTrackGrid_create $block $layer]
-    }
-
-    if { $y_offset == 0 } {
-      set y_offset $y_pitch
-    }
-    if { $x_offset > [$die_area dx] } {
-        utl::warn "IFP" 21 "Track pattern for [$layer getName] will be skipped due to x_offset > die width."
-        return
-    }
-    if { $y_offset > [$die_area dy] } {
-        utl::warn "IFP" 22 "Track pattern for [$layer getName] will be skipped due to y_offset > die height."
-        return
-    }
-    set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
-    $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
-
-    if { $x_offset == 0 } {
-      set x_offset $x_pitch
-    }
-    set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
-    $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
-  }
-}
-
 proc microns_to_mfg_grid { microns } {
   set tech [ord::get_db_tech]
   if { [$tech hasManufacturingGrid] } {
@@ -314,71 +250,6 @@ proc microns_to_mfg_grid { microns } {
   } else {
     return [ord::microns_to_dbu $microns]
   }  
-}
-
-proc cut_row {block row row_blockages min_row_width halo_x halo_y} {
-  set row_name [$row getName]
-  set row_bb [$row getBBox]
-
-  set row_site [$row getSite]
-  set site_width [$row_site getWidth]
-
-  set start_origin_x [$row_bb xMin]
-  set start_origin_y [$row_bb yMin]
-
-  set curr_min_row_width [expr $min_row_width + 2*$site_width]
-
-  set row_blockage_bboxs [dict get $row_blockages $row_name]
-  set row_blockage_xs []
-  foreach row_blockage_bbox [dict get $row_blockages $row_name] {
-    lappend row_blockage_xs "[$row_blockage_bbox xMin] [$row_blockage_bbox xMax]"
-  }
-  set row_blockage_xs [lsort -integer -index 0 $row_blockage_xs]
-
-  set row_sub_idx 1
-  foreach blockage $row_blockage_xs {
-    lassign $blockage blockage_x0 blockage_x1
-    # ensure rows are an integer length of sitewidth
-    set new_row_end_x [tap::make_site_loc [expr $blockage_x0 - $halo_x] $site_width 1 $start_origin_x]
-    tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x $new_row_end_x $start_origin_y $row $curr_min_row_width
-    incr row_sub_idx
-
-    set start_origin_x [tap::make_site_loc [expr $blockage_x1 + $halo_x] $site_width 0 $start_origin_x]
-  }
-
-  # Make last row
-  tap::build_row $block "${row_name}_$row_sub_idx" $row_site $start_origin_x [$row_bb xMax] $start_origin_y $row $curr_min_row_width
-
-  # Remove current row
-  odb::dbRow_destroy $row
-}
-
-proc cut_rows {block placement_blockages} {
-  utl::info "IFP" 6 "Placement blockages found: [llength $placement_blockages]"
-
-  # Gather rows needing to be cut because of placement blockages
-  set rows_to_cut []
-  set row_placement_blockages [dict create]
-  foreach blockage $placement_blockages {
-    if {![$blockage isSoft]} {
-      foreach row [$block getRows] {
-        set row_name [$row getName]
-        if {![dict exists $row_placement_blockages $row_name]} {
-          if {[tap::overlaps [$blockage getBBox] $row 0 0]} {
-            lappend rows_to_cut $row
-          }
-          dict lappend row_placement_blockages $row_name [$blockage getBBox]
-        }
-      }
-    }
-  }
-
-  # cut rows around placement blockages
-  foreach row $rows_to_cut {
-    ifp::cut_row $block $row $row_placement_blockages 0 0 0
-  }
-
-  utl::info "IFP" 23 "Cut rows: [llength $rows_to_cut]"
 }
 
 }

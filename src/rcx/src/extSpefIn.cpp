@@ -39,6 +39,7 @@
 
 namespace rcx {
 
+using namespace odb;
 using utl::RCX;
 
 dbInst* extSpef::getDbInst(uint id) {

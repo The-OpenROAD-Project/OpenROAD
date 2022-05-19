@@ -46,10 +46,9 @@ void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
-void FlexDRWorker::endRemoveNets_pathSeg(
-    frDesign* design,
-    frPathSeg* pathSeg,
-    set<pair<Point, frLayerNum>>& boundPts)
+void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
+                                         frPathSeg* pathSeg,
+                                         set<pair<Point, frLayerNum>>& boundPts)
 {
   Point begin, end;
   pathSeg->getPoints(begin, end);

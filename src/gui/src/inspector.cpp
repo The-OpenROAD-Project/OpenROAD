@@ -177,7 +177,9 @@ QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item, const Itera
     name_item->appendRow({index_item, selected_item});
   }
 
-  return makeItem(QString::number(index) + " items");
+  QString items = QString::number(index) + " items";
+
+  return makeItem(items);
 }
 
 template<typename Iterator>
@@ -188,7 +190,9 @@ QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item, con
     name_item->appendRow({makeItem(name, true), makeItem(value)});
   }
 
-  return makeItem(QString::number(name_item->rowCount()) + " items");
+  QString items = QString::number(name_item->rowCount()) + " items";
+
+  return makeItem(items);
 }
 
 void SelectedItemModel::makeItemEditor(const std::string& name,

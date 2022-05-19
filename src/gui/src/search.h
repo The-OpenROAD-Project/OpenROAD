@@ -206,6 +206,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   void clear();
 
+  void announceModified(bool& flag);
+
   odb::dbBlock* block_;
 
   // The net is used for filter shapes by net type

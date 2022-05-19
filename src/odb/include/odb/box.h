@@ -37,6 +37,8 @@
 
 #include "util.h"
 
+namespace odb {
+
 using uint = unsigned int;
 
 bool Ath__intersect(int X1, int DX, int x1, int dx, int* ix1, int* ix2);
@@ -75,3 +77,5 @@ class Ath__box
   bool outside(int x1, int y1, int x2, int y2);
   uint getOwner();
 };
+
+}  // namespace odb

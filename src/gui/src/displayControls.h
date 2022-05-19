@@ -308,6 +308,17 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow clock_gates;
   };
 
+  struct PadModels
+  {
+    ModelRow input;
+    ModelRow output;
+    ModelRow inout;
+    ModelRow power;
+    ModelRow spacer;
+    ModelRow areaio;
+    ModelRow other;
+  };
+
   struct PhysicalModels
   {
     ModelRow fill;
@@ -428,6 +439,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   StdCellModels stdcell_instances_;
   BufferInverterModels bufinv_instances_;
   ClockTreeModels clock_tree_instances_;
+  PadModels pad_instances_;
   PhysicalModels physical_instances_;
 
   InstanceShapeModels instance_shapes_;

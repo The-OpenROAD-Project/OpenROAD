@@ -428,6 +428,18 @@ std::string DbInstDescriptor::getInstanceTypeText(Type type) const
     return "Macro";
   case PAD:
     return "Pad";
+  case PAD_INPUT:
+    return "Input pad";
+  case PAD_OUTPUT:
+    return "Output pad";
+  case PAD_INOUT:
+    return "Input/output pad";
+  case PAD_POWER:
+    return "Power pad";
+  case PAD_SPACER:
+    return"Pad spacer";
+  case PAD_AREAIO:
+    return "Area IO";
   case ENDCAP:
     return "Endcap";
   case FILL:
@@ -477,6 +489,19 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) cons
   if (master->isBlock()) {
     return BLOCK;
   } else if (master->isPad()) {
+    if (master_type == odb::dbMasterType::PAD_INPUT) {
+      return PAD_INPUT;
+    } else if (master_type == odb::dbMasterType::PAD_OUTPUT) {
+      return PAD_OUTPUT;
+    } else if (master_type == odb::dbMasterType::PAD_INOUT) {
+      return PAD_INOUT;
+    } else if (master_type == odb::dbMasterType::PAD_POWER) {
+      return PAD_POWER;
+    } else if (master_type == odb::dbMasterType::PAD_SPACER) {
+      return PAD_SPACER;
+    } else if (master_type == odb::dbMasterType::PAD_AREAIO) {
+      return PAD_AREAIO;
+    }
     return PAD;
   } else if (master->isEndCap()) {
     return ENDCAP;

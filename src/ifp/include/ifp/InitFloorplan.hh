@@ -40,55 +40,74 @@ class Logger;
 }
 
 namespace odb {
+class dbBlock;
 class dbDatabase;
 class dbMTerm;
-}
+class dbSite;
+class dbTechLayer;
+class Rect;
+}  // namespace odb
 
 namespace sta {
 class dbNetwork;
 class Report;
-}
+}  // namespace sta
 
 namespace ifp {
 
+using odb::dbBlock;
 using odb::dbDatabase;
+using odb::dbSite;
 using sta::dbNetwork;
 using utl::Logger;
 
-void
-initFloorplan(int die_lx,
-	      int die_ly,
-	      int die_ux,
-	      int die_uy,
-	      int core_lx,
-	      int core_ly,
-	      int core_ux,
-	      int core_uy,
-	      const char *site_name,
-	      dbDatabase *db,
-	      Logger *logger);
+class InitFloorplan
+{
+ public:
+  InitFloorplan(dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
-void
-initFloorplan(double util,
-	      double aspect_ratio,
-	      int core_space_bottom,
-	      int core_space_top,
-	      int core_space_left,
-	      int core_space_right,
-	      const char *site_name,
-	      dbDatabase *db,
-	      Logger *logger);
+  // utilization is in [0, 100]%
+  void initFloorplan(double utilization,
+                     double aspect_ratio,
+                     int core_space_bottom,
+                     int core_space_top,
+                     int core_space_left,
+                     int core_space_right,
+                     const std::string& site_name);
 
-void
-autoPlacePins(const char *pin_layer_name,
-	      dbDatabase *db,
-	      Logger *logger);
+  void initFloorplan(const odb::Rect& die,
+                     const odb::Rect& core,
+                     const std::string& site_name);
 
-void
-insertTiecells(odb::dbMTerm* tie_term,
-        const char* prefix,
-        dbDatabase *db,
-        dbNetwork* network,
-        Logger *logger);
+  void insertTiecells(odb::dbMTerm* tie_term, const std::string& prefix);
 
-} // namespace
+  void makeTracks();
+  void makeTracks(odb::dbTechLayer* layer,
+                  int x_offset,
+                  int x_pitch,
+                  int y_offset,
+                  int y_pitch);
+
+ protected:
+  double designArea();
+  void makeRows(dbSite* site,
+                int core_lx,
+                int core_ly,
+                int core_ux,
+                int core_uy);
+  odb::dbSite* findSite(const char* site_name);
+  void makeTracks(const char* tracks_file, odb::Rect& die_area);
+  void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
+  int snapToMfgGrid(int coord) const;
+  void updateVoltageDomain(odb::dbSite* site,
+                           int core_lx,
+                           int core_ly,
+                           int core_ux,
+                           int core_uy);
+
+  dbBlock* block_;
+  Logger* logger_;
+  sta::dbNetwork* network_;
+};
+
+}  // namespace ifp

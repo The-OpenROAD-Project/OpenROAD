@@ -47,6 +47,7 @@
 //#define SKIP_SOLVER
 namespace rcx {
 
+using namespace odb;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;

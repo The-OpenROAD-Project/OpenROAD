@@ -39,32 +39,7 @@
 namespace rcx {
 
 using utl::RCX;
-
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbCapNode;
-using odb::dbCCSeg;
-using odb::dbChip;
-using odb::dbDatabase;
-using odb::dbNet;
-using odb::dbRSeg;
-using odb::dbSet;
-using odb::dbShape;
-using odb::dbSigType;
-using odb::dbTech;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
-using odb::dbWire;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
-using odb::gs;
-using odb::ISdb;
-using odb::Rect;
-using odb::SEQ;
-using odb::ZPtr;
+using namespace odb;
 
 void extMain::init(odb::dbDatabase* db, Logger* logger) {
   _db = db;

@@ -52,7 +52,7 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      output_(new QTextEdit(this)),
+      output_(new QPlainTextEdit(this)),
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
@@ -208,6 +208,9 @@ int ScriptWidget::executeTclCommand(const QString& command)
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
 
+  emit commandAboutToExecute();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   pauser_->setText("Idle");
@@ -268,9 +271,6 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
     output_text.chop(1);
   }
 
-  // set new text color
-  output_->setTextColor(color);
-
   QStringList output;
   for (QString& text_line : output_text.split('\n')) {
     // check for line length limits
@@ -279,10 +279,15 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
       text_line += "...";
     }
 
-    output.append(text_line);
+    output.append(text_line.toHtmlEscaped());
   }
+
   // output new text
-  output_->append(output.join("\n"));
+  // set new text color
+  QString html = "<p style=\"color:" + color.name() + ";white-space: pre;\">";
+  html += output.join("<br>");
+  html += "</p>";
+  output_->appendHtml(html);
 }
 
 void ScriptWidget::goForwardHistory()
@@ -339,6 +344,8 @@ void ScriptWidget::pause(int timeout)
   pauser_->setEnabled(true);
   paused_ = true;
 
+  emit executionPaused();
+
   input_->setReadOnly(true);
 
   triggerPauseCountDown(timeout);
@@ -353,6 +360,8 @@ void ScriptWidget::pause(int timeout)
   pauser_->setEnabled(prior_enable);
 
   input_->setReadOnly(false);
+
+  emit commandAboutToExecute();
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
