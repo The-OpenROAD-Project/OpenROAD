@@ -64,7 +64,10 @@ using sta::PinSet;
 using sta::NetConnectedPinIterator;
 using sta::PathAnalysisPt;
 using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
+using sta::fuzzyLessEqual;
+using sta::fuzzyEqual;
 using sta::fuzzyInf;
 using sta::INF;
 
@@ -74,30 +77,29 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
 {
   int inserted_buffer_count = 0;
   Net *net;
-  LibertyPort *drvr_port;
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
     LibertyCell *buffer_cell = resizer_->buffer_lowest_drive_;
     // Should use sdc external driver here.
     LibertyPort *input;
-    buffer_cell->bufferPorts(input, drvr_port);
+    buffer_cell->bufferPorts(input, drvr_port_);
   }
   else {
     net = network_->net(drvr_pin);
-    drvr_port = network_->libertyPort(drvr_pin);
+    drvr_port_ = network_->libertyPort(drvr_pin);
   }
-  if (drvr_port
+  if (drvr_port_
       && net
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    const Corner *corner = sta_->cmdCorner();
-    BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner);
+    corner_ = sta_->cmdCorner();
+    BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
     if (bnet) {
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
-      BufferedNetSeq Z = rebufferBottomUp(bnet, corner, 1);
+      BufferedNetSeq Z = rebufferBottomUp(bnet, 1);
       Required best_slack_penalized = -INF;
       BufferedNetPtr best_option = nullptr;
       int best_index = 0;
@@ -106,26 +108,7 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
         // Find slack for drvr_pin into option.
         const PathRef &req_path = p->requiredPath();
         if (!req_path.isNull()) {
-          Delay drvr_delay = resizer_->gateDelay(drvr_port, req_path.transition(sta_),
-                                                 p->cap(), req_path.dcalcAnalysisPt(sta_));
-          Slack slack = p->required(sta_) - drvr_delay;
-          int buffer_count = p->bufferCount();
-          double buffer_penalty = buffer_count * rebuffer_buffer_penalty_;
-          double slack_penalized = slack * (1.0 - (slack > 0
-                                                   ? buffer_penalty
-                                                   : -buffer_penalty));
-          debugPrint(logger_, RSZ, "rebuffer", 2,
-                     "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
-                     i,
-                     p->bufferCount(),
-                     delayAsString(p->required(sta_), this, 3),
-                     delayAsString(drvr_delay, this, 3),
-                     delayAsString(slack, this, 3),
-                     buffer_penalty,
-                     delayAsString(slack_penalized, this, 3),
-                     units_->capacitanceUnit()->asString(p->cap()));
-          if (logger_->debugCheck(RSZ, "rebuffer", 4))
-            p->reportTree(resizer_);
+          Slack slack_penalized = slackPenalized(p, i);
           if (best_option == nullptr
               || fuzzyGreater(slack_penalized, best_slack_penalized)) {
             best_slack_penalized = slack_penalized;
@@ -153,15 +136,50 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
   return inserted_buffer_count;
 }
 
+Slack
+RepairSetup::slackPenalized(BufferedNetPtr bnet)
+{
+  return slackPenalized(bnet, 0);
+}
+
+Slack
+RepairSetup::slackPenalized(BufferedNetPtr bnet,
+                            int index)
+{
+  const PathRef &req_path = bnet->requiredPath();
+  if (!req_path.isNull()) {
+    Delay drvr_delay = resizer_->gateDelay(drvr_port_, req_path.transition(sta_),
+                                           bnet->cap(), req_path.dcalcAnalysisPt(sta_));
+    Slack slack = bnet->required(sta_) - drvr_delay;
+    int buffer_count = bnet->bufferCount();
+    double buffer_penalty = buffer_count * rebuffer_buffer_penalty_;
+    double slack_penalized = slack * (1.0 - (slack > 0
+                                             ? buffer_penalty
+                                             : -buffer_penalty));
+    if (index > 0)
+      debugPrint(logger_, RSZ, "rebuffer", 2,
+                 "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
+                 index,
+                 bnet->bufferCount(),
+                 delayAsString(bnet->required(sta_), this, 3),
+                 delayAsString(drvr_delay, this, 3),
+                 delayAsString(slack, this, 3),
+                 buffer_penalty,
+                 delayAsString(slack_penalized, this, 3),
+                 units_->capacitanceUnit()->asString(bnet->cap()));
+    return slack_penalized;
+  }
+  else
+    return INF;
+}
+
 // For testing.
 void
 RepairSetup::rebufferNet(const Pin *drvr_pin)
 {
   init();
-  inserted_buffer_count_ = 0;
-  rebuffer_net_count_ = 0;
   resizer_->incrementalParasiticsBegin();
-  rebuffer(drvr_pin);
+  inserted_buffer_count_ = rebuffer(drvr_pin);
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -186,23 +204,22 @@ RepairSetup::hasTopLevelOutputPort(Net *net)
 
 BufferedNetSeq
 RepairSetup::rebufferBottomUp(BufferedNetPtr bnet,
-                              const Corner *corner,
                               int level)
 {
   switch (bnet->type()) {
   case BufferedNetType::wire: {
-    BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), corner, level + 1);
-    return addWireAndBuffer(Z, bnet, corner, level);
+    BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), level + 1);
+    return addWireAndBuffer(Z, bnet, level);
   }
   case BufferedNetType::junction: {
-    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), corner, level + 1);
-    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), corner, level + 1);
+    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), level + 1);
+    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
     // Combine the options from both branches.
     for (BufferedNetPtr p : Z1) {
       for (BufferedNetPtr q : Z2) {
         BufferedNetPtr min_req = fuzzyLess(p->required(sta_),
-                                         q->required(sta_)) ? p : q;
+                                           q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
                                                        bnet->location(),
                                                        p, q);
@@ -212,13 +229,19 @@ RepairSetup::rebufferBottomUp(BufferedNetPtr bnet,
         Z.push_back(junc);
       }
     }
-    // Prune the options. This is fanout^2.
+    // Prune the options if there exists another option with
+    // larger required and smaller capacitance.
+    // This is fanout^2.
     // Presort options to hit better options sooner.
-    sort(Z.begin(), Z.end(), [=](BufferedNetPtr option1,
-                                 BufferedNetPtr option2)
-    { return fuzzyGreater(option1->required(sta_),
-                          option2->required(sta_));
-    });
+    sort(Z.begin(), Z.end(),
+         [=](BufferedNetPtr option1,
+             BufferedNetPtr option2)
+         { Slack slack1 = slackPenalized(option1);
+           Slack slack2 = slackPenalized(option2);
+           return fuzzyGreater(slack1, slack2)
+             || (fuzzyEqual(slack1, slack2)
+                 && fuzzyLess(option1->cap(), option2->cap()));
+         });
     int si = 0;
     for (size_t pi = 0; pi < Z.size(); pi++) {
       BufferedNetPtr p = Z[pi];
@@ -278,7 +301,6 @@ RepairSetup::pinCapacitance(const Pin *pin,
 BufferedNetSeq
 RepairSetup::addWireAndBuffer(BufferedNetSeq Z,
                               BufferedNetPtr bnet_wire,
-                              const Corner *corner,
                               int level)
 {
   BufferedNetSeq Z1;
@@ -306,7 +328,7 @@ RepairSetup::addWireAndBuffer(BufferedNetSeq Z,
     z->setRequiredPath(req_path);
     // account for wire delay
     z->setRequiredDelay(p->requiredDelay() + wire_delay);
-    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire wl {} {}",
+    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}wire wl {} {}",
                "", level,
                wire_length_dbu,
                z->to_string(resizer_));
@@ -318,18 +340,18 @@ RepairSetup::addWireAndBuffer(BufferedNetSeq Z,
       Required best_req = -INF;
       BufferedNetPtr best_option = nullptr;
       for (BufferedNetPtr z : Z1) {
-        Required req = INF;
         PathRef req_path = z->requiredPath();
+        // Do not buffer unconstrained paths.
         if (!req_path.isNull()) {
           const DcalcAnalysisPt *dcalc_ap = req_path.dcalcAnalysisPt(sta_);
           Delay buffer_delay = resizer_->bufferDelay(buffer_cell,
                                                      req_path.transition(sta_),
                                                      z->cap(), dcalc_ap);
-          req = z->required(sta_) - buffer_delay;
-        }
-        if (fuzzyGreater(req, best_req)) {
-          best_req = req;
-          best_option = z;
+          Required req = z->required(sta_) - buffer_delay;
+          if (fuzzyGreater(req, best_req)) {
+            best_req = req;
+            best_option = z;
+          }
         }
       }
       if (best_option) {
@@ -350,8 +372,8 @@ RepairSetup::addWireAndBuffer(BufferedNetSeq Z,
         // another existing buffer option.
         bool prune = false;
         for (BufferedNetPtr buffer_option : buffered_options) {
-          if (buffer_option->cap() <= buffer_cap
-              && buffer_option->required(sta_) >= required) {
+          if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
+              && fuzzyGreaterEqual(buffer_option->required(sta_), required)) {
             prune = true;
             break;
           }
@@ -362,10 +384,10 @@ RepairSetup::addWireAndBuffer(BufferedNetSeq Z,
                                                       wire_end,
                                                       buffer_cell,
                                                       best_option,
-                                                      corner, resizer_);
+                                                      corner_, resizer_);
           z->setCapacitance(buffer_cap);
           z->setRequiredPath(req_path);
-          z->setRequiredDelay(best_option->requiredDelay()+buffer_delay);
+          z->setRequiredDelay(best_option->requiredDelay() + buffer_delay);
           debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer cap {} req {} -> {}",
                      "", level,
                      units_->capacitanceUnit()->asString(best_option->cap()),

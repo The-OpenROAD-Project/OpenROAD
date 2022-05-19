@@ -107,7 +107,6 @@ private:
 
   int rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
-                                  const Corner *corner,
                                   int level);
   int rebufferTopDown(BufferedNetPtr choice,
                       Net *net,
@@ -115,17 +114,21 @@ private:
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
-                   const Corner *corner,
                    int level);
   float pinCapacitance(const Pin *pin,
                        const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
+  Slack slackPenalized(BufferedNetPtr bnet);
+  Slack slackPenalized(BufferedNetPtr bnet,
+                       int index);
 
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
   Resizer *resizer_;
+  const Corner *corner_;
+  LibertyPort *drvr_port_;
 
   int resize_count_;
   int inserted_buffer_count_;

@@ -205,19 +205,22 @@ BufferedNet::to_string(const Resizer *resizer) const
                        x, y, cap,
                        delayAsString(required(resizer), resizer));
   case BufferedNetType::wire:
-    return fmt::format("wire ({}, {}) cap {} req {}",
+    return fmt::format("wire ({}, {}) cap {} req {} buffers {}",
                        x, y, cap,
-                       delayAsString(required(resizer), resizer));
+                       delayAsString(required(resizer), resizer),
+                       bufferCount());
   case BufferedNetType::buffer:
-    return fmt::format("buffer ({}, {}) {} cap {} req {}",
+    return fmt::format("buffer ({}, {}) {} cap {} req {} buffers {}",
                        x, y,
                        buffer_cell_->name(),
                        cap,
-                       delayAsString(required(resizer), resizer));
+                       delayAsString(required(resizer), resizer),
+                       bufferCount());
   case BufferedNetType::junction:
-    return fmt::format("junction ({}, {}) cap {} req {}",
+    return fmt::format("junction ({}, {}) cap {} req {} buffers {}",
                        x, y, cap,
-                       delayAsString(required(resizer), resizer));
+                       delayAsString(required(resizer), resizer),
+                       bufferCount());
   }
   // suppress gcc warning
   return "";

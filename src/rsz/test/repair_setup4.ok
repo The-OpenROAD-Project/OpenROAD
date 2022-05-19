@@ -48,7 +48,7 @@ Corner: slow
            -1.955   slack (VIOLATED)
 
 
-[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0041] Resized 17 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -62,19 +62,19 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X2)
-   0.448    0.448 ^ r1/Q (DFF_X2)
-   0.004    0.452 ^ u1/A (BUF_X4)
-   0.095    0.547 ^ u1/Z (BUF_X4)
-   0.004    0.551 ^ u2/A (BUF_X8)
-   0.068    0.619 ^ u2/Z (BUF_X8)
-   0.004    0.623 ^ u3/A (BUF_X8)
-   0.061    0.684 ^ u3/Z (BUF_X8)
-   0.004    0.688 ^ u4/A (BUF_X8)
-   0.067    0.754 ^ u4/Z (BUF_X8)
-   0.006    0.760 ^ u5/A (BUF_X16)
-   0.067    0.827 ^ u5/Z (BUF_X16)
-   0.042    0.869 ^ r2/D (DFF_X1)
-            0.869   data arrival time
+   0.450    0.450 ^ r1/Q (DFF_X2)
+   0.004    0.455 ^ u1/A (BUF_X4)
+   0.095    0.550 ^ u1/Z (BUF_X4)
+   0.004    0.554 ^ u2/A (BUF_X8)
+   0.068    0.622 ^ u2/Z (BUF_X8)
+   0.004    0.625 ^ u3/A (BUF_X8)
+   0.061    0.687 ^ u3/Z (BUF_X8)
+   0.004    0.690 ^ u4/A (BUF_X8)
+   0.067    0.757 ^ u4/Z (BUF_X8)
+   0.006    0.763 ^ u5/A (BUF_X16)
+   0.067    0.830 ^ u5/Z (BUF_X16)
+   0.042    0.872 ^ r2/D (DFF_X1)
+            0.872   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -84,8 +84,8 @@ Corner: slow
             0.212   data required time
 -----------------------------------------------------------
             0.212   data required time
-           -0.869   data arrival time
+           -0.872   data arrival time
 -----------------------------------------------------------
-           -0.656   slack (VIOLATED)
+           -0.659   slack (VIOLATED)
 
 

@@ -2175,12 +2175,14 @@ Resizer::repairSetup(float slack_margin,
 void
 Resizer::repairSetup(Pin *end_pin)
 {
+  resizePreamble();
   repair_setup_->repairSetup(end_pin);
 }
 
 void
 Resizer::rebufferNet(const Pin *drvr_pin)
 {
+  resizePreamble();
   repair_setup_->rebufferNet(drvr_pin);
 }
 
