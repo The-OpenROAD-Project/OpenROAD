@@ -123,6 +123,22 @@ insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
   get_floorplan().insertTiecells(tie_term, prefix);
 }
 
+void
+make_layer_tracks()
+{
+  get_floorplan().makeTracks();
+}
+
+void
+make_layer_tracks(odb::dbTechLayer* layer,
+                  int x_offset,
+                  int x_pitch,
+                  int y_offset,
+                  int y_pitch)
+{
+  get_floorplan().makeTracks(layer, x_offset, x_pitch, y_offset, y_pitch);
+}
+
 } // namespace
 
 %} // inline

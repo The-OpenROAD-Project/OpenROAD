@@ -83,6 +83,13 @@ class InitFloorplan
 
   void insertTiecells(odb::dbMTerm* tie_term, const char* prefix);
 
+  void makeTracks();
+  void makeTracks(odb::dbTechLayer* layer,
+                  int x_offset,
+                  int x_pitch,
+                  int y_offset,
+                  int y_pitch);
+
  protected:
   double designArea();
   void makeRows(dbSite* site,
