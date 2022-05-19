@@ -107,7 +107,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const char* site_name)
+                                  const std::string& site_name)
 {
   utl::Validator v(logger_, IFP);
   v.check_percentage("utilization", utilization, 12);
@@ -116,7 +116,6 @@ void InitFloorplan::initFloorplan(double utilization,
   v.check_non_negative("core_space_left", core_space_left, 34);
   v.check_non_negative("core_space_right", core_space_right, 35);
   v.check_non_negative("aspect_ratio", aspect_ratio, 36);
-  v.check_non_null("site_name", site_name, 37);
 
   utilization /= 100;
   const double design_area = designArea();
@@ -156,7 +155,7 @@ static int divCeil(int dividend, int divisor)
 
 void InitFloorplan::initFloorplan(const odb::Rect& die,
                                   const odb::Rect& core,
-                                  const char* site_name)
+                                  const std::string& site_name)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
@@ -164,8 +163,8 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
 
-  if (site_name && site_name[0] && core.xMin() >= 0 && core.yMin() >= 0) {
-    dbSite* site = findSite(site_name);
+  if (!site_name.empty() && core.xMin() >= 0 && core.yMin() >= 0) {
+    dbSite* site = findSite(site_name.c_str());
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
@@ -379,69 +378,6 @@ dbSite* InitFloorplan::findSite(const char* site_name)
 
 ////////////////////////////////////////////////////////////////
 
-void InitFloorplan::autoPlacePins(const char* pin_layer_name)
-{
-  dbTech* tech = block_->getDataBase()->getTech();
-  dbTechLayer* pin_layer = tech->findLayer(pin_layer_name);
-  if (pin_layer) {
-    odb::Rect core;
-    block_->getCoreArea(core);
-    autoPlacePins(pin_layer, core);
-  } else
-    logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
-}
-
-void InitFloorplan::autoPlacePins(dbTechLayer* pin_layer, Rect& core)
-{
-  dbSet<dbBTerm> bterms = block_->getBTerms();
-  int pin_count = bterms.size();
-
-  if (pin_count > 0) {
-    int dx = core.dx();
-    int dy = core.dy();
-    int perimeter = dx * 2 + dy * 2;
-    double location = 0.0;
-    int pin_dist = perimeter / pin_count;
-
-    for (dbBTerm* bterm : bterms) {
-      int x, y;
-      dbOrientType orient;
-      if (location < dx) {
-        // bottom
-        x = core.xMin() + location;
-        y = core.yMin();
-        orient = dbOrientType::R180;  // S
-      } else if (location < (dx + dy)) {
-        // right
-        x = core.xMax();
-        y = core.yMin() + (location - dx);
-        orient = dbOrientType::R270;  // E
-      } else if (location < (dx * 2 + dy)) {
-        // top
-        x = core.xMax() - (location - (dx + dy));
-        y = core.yMax();
-        orient = dbOrientType::R0;  // N
-      } else {
-        // left
-        x = core.xMin();
-        y = core.yMax() - (location - (dx * 2 + dy));
-        orient = dbOrientType::R90;  // W
-      }
-
-      // Delete existing BPins.
-      dbSet<dbBPin> bpins = bterm->getBPins();
-      for (auto bpin_itr = bpins.begin(); bpin_itr != bpins.end();)
-        bpin_itr = dbBPin::destroy(bpin_itr);
-
-      dbBPin* bpin = dbBPin::create(bterm);
-      bpin->setPlacementStatus(dbPlacementStatus::FIRM);
-      dbBox::create(bpin, pin_layer, x, y, x, y);
-
-      location += pin_dist;
-    }
-  }
-}
-
 int InitFloorplan::snapToMfgGrid(int coord) const
 {
   dbTech* tech = block_->getDataBase()->getTech();
@@ -453,8 +389,12 @@ int InitFloorplan::snapToMfgGrid(int coord) const
   return coord;
 }
 
-void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
+void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
+                                   const std::string& prefix)
 {
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("tie_term", tie_term, 43);
+
   auto* master = tie_term->getMaster();
 
   auto* port = network_->dbToSta(tie_term);
@@ -485,8 +425,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
       continue;
     }
 
-    std::string inst_name = prefix;
-    inst_name += net->getName();
+    const std::string inst_name = prefix + net->getName();
 
     auto* inst = odb::dbInst::create(block_, master, inst_name.c_str());
     auto* iterm = inst->findITerm(tie_term->getConstName());
@@ -523,6 +462,13 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
                                int y_offset,
                                int y_pitch)
 {
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("layer", layer, 38);
+  v.check_non_negative("x_offset", x_offset, 39);
+  v.check_positive("x_pitch", x_pitch, 40);
+  v.check_non_negative("y_offset", y_offset, 41);
+  v.check_positive("y_pitch", y_pitch, 42);
+
   Rect die_area;
   block_->getDieArea(die_area);
   auto grid = block_->findTrackGrid(layer);

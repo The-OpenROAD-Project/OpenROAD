@@ -111,13 +111,6 @@ init_floorplan_util(double util,
 }
 
 void
-auto_place_pins_cmd(const char *pin_layer)
-{
-  get_floorplan().autoPlacePins(pin_layer);
-}
-
-
-void
 insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
 {
   get_floorplan().insertTiecells(tie_term, prefix);
