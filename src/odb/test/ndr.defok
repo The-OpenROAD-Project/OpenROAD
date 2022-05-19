@@ -43,7 +43,7 @@ COMPONENTS 12 ;
     - _g1_ NOR2X1 ;
     - _g2_ NOR2X1 ;
 END COMPONENTS
-PINS 13 ;
+PINS 12 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
     - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL
       + PORT
