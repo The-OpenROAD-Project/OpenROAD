@@ -695,13 +695,7 @@ void defout_impl::writeBTerms(dbBlock* block)
     if (net && _select_net_map && !(*_select_net_map)[net])
       continue;
 
-    dbSet<dbBPin> bpins = bterm->getBPins();
-    uint pcnt = bpins.size();
-
-    if (pcnt == 0)
-      n += 1;
-    else
-      n += pcnt;
+    ++n;
   }
 
   fprintf(_out, "PINS %u ;\n", n);
