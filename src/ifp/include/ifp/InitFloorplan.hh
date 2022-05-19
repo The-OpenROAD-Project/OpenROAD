@@ -79,8 +79,6 @@ class InitFloorplan
                      const odb::Rect& core,
                      const char* site_name);
 
-  void autoPlacePins(const char* pin_layer_name);
-
   void insertTiecells(odb::dbMTerm* tie_term, const char* prefix);
 
   void makeTracks();

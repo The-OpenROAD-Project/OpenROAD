@@ -379,69 +379,6 @@ dbSite* InitFloorplan::findSite(const char* site_name)
 
 ////////////////////////////////////////////////////////////////
 
-void InitFloorplan::autoPlacePins(const char* pin_layer_name)
-{
-  dbTech* tech = block_->getDataBase()->getTech();
-  dbTechLayer* pin_layer = tech->findLayer(pin_layer_name);
-  if (pin_layer) {
-    odb::Rect core;
-    block_->getCoreArea(core);
-    autoPlacePins(pin_layer, core);
-  } else
-    logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
-}
-
-void InitFloorplan::autoPlacePins(dbTechLayer* pin_layer, Rect& core)
-{
-  dbSet<dbBTerm> bterms = block_->getBTerms();
-  int pin_count = bterms.size();
-
-  if (pin_count > 0) {
-    int dx = core.dx();
-    int dy = core.dy();
-    int perimeter = dx * 2 + dy * 2;
-    double location = 0.0;
-    int pin_dist = perimeter / pin_count;
-
-    for (dbBTerm* bterm : bterms) {
-      int x, y;
-      dbOrientType orient;
-      if (location < dx) {
-        // bottom
-        x = core.xMin() + location;
-        y = core.yMin();
-        orient = dbOrientType::R180;  // S
-      } else if (location < (dx + dy)) {
-        // right
-        x = core.xMax();
-        y = core.yMin() + (location - dx);
-        orient = dbOrientType::R270;  // E
-      } else if (location < (dx * 2 + dy)) {
-        // top
-        x = core.xMax() - (location - (dx + dy));
-        y = core.yMax();
-        orient = dbOrientType::R0;  // N
-      } else {
-        // left
-        x = core.xMin();
-        y = core.yMax() - (location - (dx * 2 + dy));
-        orient = dbOrientType::R90;  // W
-      }
-
-      // Delete existing BPins.
-      dbSet<dbBPin> bpins = bterm->getBPins();
-      for (auto bpin_itr = bpins.begin(); bpin_itr != bpins.end();)
-        bpin_itr = dbBPin::destroy(bpin_itr);
-
-      dbBPin* bpin = dbBPin::create(bterm);
-      bpin->setPlacementStatus(dbPlacementStatus::FIRM);
-      dbBox::create(bpin, pin_layer, x, y, x, y);
-
-      location += pin_dist;
-    }
-  }
-}
-
 int InitFloorplan::snapToMfgGrid(int coord) const
 {
   dbTech* tech = block_->getDataBase()->getTech();

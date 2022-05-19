@@ -195,16 +195,6 @@ proc make_tracks { args } {
   }
 }
 
-sta::define_cmd_args "auto_place_pins" {pin_layer}
-
-proc auto_place_pins { pin_layer } {
-  if { [[ord::get_db_tech] findLayer $pin_layer] != "NULL" } {
-    ifp::auto_place_pins_cmd $pin_layer
-  } else {
-    utl::error IFP 20 "layer $pin_layer not found."
-  }
-}
-
 sta::define_cmd_args "insert_tiecells" {tie_pin \
                                         [-prefix prefix]
 }
