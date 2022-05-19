@@ -73,15 +73,20 @@ class InitFloorplan
                      int core_space_top,
                      int core_space_left,
                      int core_space_right,
-                     const char* site_name);
+                     const std::string& site_name);
 
   void initFloorplan(const odb::Rect& die,
                      const odb::Rect& core,
-                     const char* site_name);
+                     const std::string& site_name);
 
-  void autoPlacePins(const char* pin_layer_name);
+  void insertTiecells(odb::dbMTerm* tie_term, const std::string& prefix);
 
-  void insertTiecells(odb::dbMTerm* tie_term, const char* prefix);
+  void makeTracks();
+  void makeTracks(odb::dbTechLayer* layer,
+                  int x_offset,
+                  int x_pitch,
+                  int y_offset,
+                  int y_pitch);
 
  protected:
   double designArea();

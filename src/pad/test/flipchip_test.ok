@@ -9,5 +9,7 @@
 [WARNING IFP-0028] Core area lower left (180.012, 180.096) snapped to (180.120, 180.600).
 [INFO IFP-0001] Added 2599 rows of 19157 sites.
 [INFO PAD-0053] Creating padring nets: DVSS, SNS, RETN, DVDD.
+[INFO PAD-0051] Creating padring net: VDD.
+[INFO PAD-0051] Creating padring net: VSS.
 [INFO PDN-9015] Writing to database.
 No differences found.

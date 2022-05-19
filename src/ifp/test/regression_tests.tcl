@@ -12,7 +12,6 @@ record_tests {
   make_tracks3
   make_tracks4
   make_tracks5
-  auto_place_pins1
   placement_blockage1
   placement_blockage2
   tiecells

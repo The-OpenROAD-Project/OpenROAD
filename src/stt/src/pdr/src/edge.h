@@ -57,8 +57,8 @@ class Edge
   int best_overlap;
   int lower_overlap, upper_overlap;
   vector<int> upper_best_config, lower_best_config;
-  int lower_idx_of_cn_x, lower_idx_of_cn_y;
-  int upper_idx_of_cn_x, upper_idx_of_cn_y;
+  int lower_idx_of_current_node_x, lower_idx_of_current_node_y;
+  int upper_idx_of_current_node_x, upper_idx_of_current_node_y;
 
   vector<Node> STNodes;
   vector<Node> lower_sps_to_be_added_x, lower_sps_to_be_added_y;

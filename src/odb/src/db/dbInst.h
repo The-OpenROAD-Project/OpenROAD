@@ -98,6 +98,7 @@ class _dbInst : public _dbObject
   dbId<_dbInst> _module_next;
   dbId<_dbInst> _group_next;
   dbId<_dbInst> _region_prev;
+  dbId<_dbInst> _module_prev;
   dbId<_dbHier> _hierarchy;
   dbVector<uint> _iterms;
   dbId<_dbBox> _halo;
