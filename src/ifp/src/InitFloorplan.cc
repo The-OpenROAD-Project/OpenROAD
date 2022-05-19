@@ -465,9 +465,9 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   utl::Validator v(logger_, IFP);
   v.check_non_null("layer", layer, 38);
   v.check_non_negative("x_offset", x_offset, 39);
-  v.check_positive("x_pitch", x_offset, 40);
-  v.check_non_negative("y_offset", x_offset, 41);
-  v.check_positive("y_pitch", x_offset, 42);
+  v.check_positive("x_pitch", x_pitch, 40);
+  v.check_non_negative("y_offset", y_offset, 41);
+  v.check_positive("y_pitch", y_pitch, 42);
 
   Rect die_area;
   block_->getDieArea(die_area);
