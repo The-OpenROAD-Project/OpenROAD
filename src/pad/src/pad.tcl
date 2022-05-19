@@ -2486,22 +2486,22 @@ namespace eval ICeWall {
     }
   }
 
-  proc connect_to_bondpad_or_bump {inst pin_shape padcell} {
+  proc connect_to_bondpad_or_bump {inst pin_shape signal_name} {
     variable block
     variable tech
     variable nets_created
     variable pins_created
 
-    set assigned_name [get_padcell_assigned_name $padcell]
-    if {[is_power_net $assigned_name]} {
+    # debug "signal_name: $signal_name"
+    if {[is_power_net $signal_name]} {
       set type "POWER"
-    } elseif {[is_ground_net $assigned_name]} {
+    } elseif {[is_ground_net $signal_name]} {
       set type "GROUND"
     } else {
       set type "SIGNAL"
     }
 
-    set term [$block findBTerm [get_padcell_signal_name $padcell]]
+    set term [$block findBTerm $signal_name]
     if {$term != "NULL"} {
       set net [$term getNet]
       foreach iterm [$net getITerms] {
@@ -2509,37 +2509,28 @@ namespace eval ICeWall {
       }
     } else {
       if {$type != "SIGNAL"} {
-        set net [$block findNet $assigned_name]
+        set net [$block findNet $signal_name]
         if {$net == "NULL"} {
           if {$type == "POWER" || $type == "GROUND"} {
-            utl::info "PAD" 51 "Creating padring net: $assigned_name."
-            set net [odb::dbNet_create $block $assigned_name]
+            utl::info "PAD" 51 "Creating padring net: $signal_name."
+            set net [odb::dbNet_create $block $signal_name]
             lappend nets_created $net
           }
           if {$net == "NULL"} {
             continue
           }
         }
-        if {[set term [$block findBTerm $assigned_name]] == "NULL"} {
-          set term [odb::dbBTerm_create $net $assigned_name]
+        if {[set term [$block findBTerm $signal_name]] == "NULL"} {
+          set term [odb::dbBTerm_create $net $signal_name]
           $term setSigType $type
         }
-      } elseif {[is_padcell_unassigned $padcell]} {
-        set idx 0
-        while {[$block findNet "_UNASSIGNED_$idx"] != "NULL"} {
-          incr idx
-        }
-        utl::info "PAD" 52 "Creating padring net: _UNASSIGNED_$idx."
-        set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
-        lappend nets_created $net
-        set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
-        utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]."
+        utl::warn "PAD" 12 "Cannot find a terminal $signal_name to associate with bondpad [$inst getName]."
         return
       }
     }
 
-    # debug "padcell: $padcell, net: $net"
+    # debug "padcell: $signal_name, net: $net"
     $net setSpecial
     $net setSigType $type
     # debug "net: [$net getName], signalType: $type"
@@ -2560,6 +2551,8 @@ namespace eval ICeWall {
     } else {
       odb::dbBox_create $pin $layer {*}$pin_shape
     }
+    # debug "pin on term: [$term getName] shaoe: $pin_shape"
+
     $pin setPlacementStatus "FIRM"
   }
 
@@ -2631,7 +2624,7 @@ namespace eval ICeWall {
           if {[llength $pin_shape] != 4} {
             set pin_shape $center
           }
-          connect_to_bondpad_or_bump $inst $pin_shape $padcell
+          connect_to_bondpad_or_bump $inst $pin_shape [get_padcell_assigned_name $padcell]
         } else {
           if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
             utl::warn "PAD" 48 "No padcell instance found for $padcell."
@@ -3397,8 +3390,9 @@ namespace eval ICeWall {
         $inst setPlacementStatus "FIRM"
 
         set padcell [get_padcell_at_row_col $row $col]
+	# debug "bump_name: $bump_name, inst: [$inst getName], padcell: $padcell"
+        set pin_shape {}
         if {$padcell != ""} {
-          set pin_shape {}
           if {[has_library_pad_pin_name "bump"]} {
             set pin_name [get_library_pad_pin_name "bump"]
             set pin_shape [get_pin_shape $inst $pin_name]
@@ -3411,13 +3405,31 @@ namespace eval ICeWall {
               }
               set iterm [$inst getITerm $mterm]
               $iterm connect $net
-            }
+	    }
           }
-          if {[llength $pin_shape] != 4} {
-            set pin_shape [get_bump_center $row $col]
-          }
-          connect_to_bondpad_or_bump $inst $pin_shape $padcell
         }
+
+        if {[llength $pin_shape] != 4} {
+          set pin_shape [get_bump_center $row $col]
+        }
+
+        if {[is_padcell_unassigned $padcell]} {
+          set idx 0
+          while {[$block findNet "_UNASSIGNED_$idx"] != "NULL"} {
+            incr idx
+          }
+          utl::info "PAD" 52 "Creating padring net: _UNASSIGNED_$idx."
+          set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
+          lappend nets_created $net
+          set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
+	  set signal_name [$net getName]
+	} elseif {$padcell != ""} {
+	  set signal_name [get_padcell_assigned_name $padcell]
+	} else {
+	  set signal_name [get_bump_signal_name $row $col]
+	}
+
+        connect_to_bondpad_or_bump $inst $pin_shape $signal_name
       }
     }
     # debug "end"
