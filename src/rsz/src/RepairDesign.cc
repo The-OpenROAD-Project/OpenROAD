@@ -645,6 +645,8 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                                                       load_cap, false);
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
+  float ref_cap = bnet->ref()->cap();
+
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
              && load_cap > max_cap_)
@@ -672,7 +674,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  units_->capacitanceUnit()->asString(load_cap, 3),
                  units_->capacitanceUnit()->asString(max_cap_, 3));
       split_length = min(split_length,
-                         metersToDbu((max_cap_ - bnet->ref()->cap()) / wire_cap));
+                         metersToDbu((max_cap_ - ref_cap) / wire_cap));
       split_wire = true;
     }
     if (load_slew > max_load_slew) { 
@@ -729,6 +731,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
 
       float length1 = dbuToMeters(length);
       load_cap = repeater_cap + length1 * wire_cap;
+      ref_cap = repeater_cap;
       load_slew = (r_drvr + length1 * wire_res) * load_cap * elmore_skew_factor_;
       buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                              load_cap, false);
