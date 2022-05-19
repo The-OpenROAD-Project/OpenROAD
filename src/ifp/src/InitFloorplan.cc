@@ -107,7 +107,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const char* site_name)
+                                  const std::string& site_name)
 {
   utl::Validator v(logger_, IFP);
   v.check_percentage("utilization", utilization, 12);
@@ -116,7 +116,6 @@ void InitFloorplan::initFloorplan(double utilization,
   v.check_non_negative("core_space_left", core_space_left, 34);
   v.check_non_negative("core_space_right", core_space_right, 35);
   v.check_non_negative("aspect_ratio", aspect_ratio, 36);
-  v.check_non_null("site_name", site_name, 37);
 
   utilization /= 100;
   const double design_area = designArea();
@@ -156,7 +155,7 @@ static int divCeil(int dividend, int divisor)
 
 void InitFloorplan::initFloorplan(const odb::Rect& die,
                                   const odb::Rect& core,
-                                  const char* site_name)
+                                  const std::string& site_name)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
@@ -164,8 +163,8 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
 
-  if (site_name && site_name[0] && core.xMin() >= 0 && core.yMin() >= 0) {
-    dbSite* site = findSite(site_name);
+  if (!site_name.empty() && core.xMin() >= 0 && core.yMin() >= 0) {
+    dbSite* site = findSite(site_name.c_str());
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
@@ -390,8 +389,12 @@ int InitFloorplan::snapToMfgGrid(int coord) const
   return coord;
 }
 
-void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
+void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
+                                   const std::string& prefix)
 {
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("tie_term", tie_term, 43);
+
   auto* master = tie_term->getMaster();
 
   auto* port = network_->dbToSta(tie_term);
@@ -422,8 +425,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
       continue;
     }
 
-    std::string inst_name = prefix;
-    inst_name += net->getName();
+    const std::string inst_name = prefix + net->getName();
 
     auto* inst = odb::dbInst::create(block_, master, inst_name.c_str());
     auto* iterm = inst->findITerm(tie_term->getConstName());
