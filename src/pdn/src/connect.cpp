@@ -172,7 +172,7 @@ std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateViaRects(const odb
 
 std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const
 {
-  auto adjust_rect = [&lower, &upper](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
+  auto adjust_rect = [](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
     const int width = is_x ? intersection.dx() : intersection.dy();
     if (width < min_width) {
       // fix intersection to meet min width

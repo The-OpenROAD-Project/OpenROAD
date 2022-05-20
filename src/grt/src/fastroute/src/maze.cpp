@@ -2109,13 +2109,11 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
-  int total_cap = 0;
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].usage;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-      total_cap += h_edges_[i][j].cap;
       if (overflow > 0) {
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2128,7 +2126,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     for (int j = 0; j < x_grid_; j++) {
       total_usage += v_edges_[i][j].usage;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-      total_cap += v_edges_[i][j].cap;
       if (overflow > 0) {
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2179,13 +2176,11 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   int numedges = 0;
 
   int total_usage = 0;
-  int total_cap = 0;
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].est_usage;
       const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
-      total_cap += h_edges_[i][j].cap;
       hCap += h_edges_[i][j].cap;
       if (overflow > 0) {
         H_overflow += overflow;
@@ -2199,7 +2194,6 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     for (int j = 0; j < x_grid_; j++) {
       total_usage += v_edges_[i][j].est_usage;
       const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
-      total_cap += v_edges_[i][j].cap;
       vCap += v_edges_[i][j].cap;
       if (overflow > 0) {
         V_overflow += overflow;
@@ -2246,14 +2240,12 @@ int FastRouteCore::getOverflow3D()
   int max_V_overflow = 0;
 
   int total_usage = 0;
-  int cap = 0;
 
   for (int k = 0; k < num_layers_; k++) {
     for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_ - 1; j++) {
         total_usage += h_edges_3D_[k][i][j].usage;
         overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
-        cap += h_edges_3D_[k][i][j].cap;
 
         if (overflow > 0) {
           H_overflow += overflow;
@@ -2265,8 +2257,6 @@ int FastRouteCore::getOverflow3D()
       for (int j = 0; j < x_grid_; j++) {
         total_usage += v_edges_3D_[k][i][j].usage;
         overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-        cap += v_edges_3D_[k][i][j].cap;
-
         if (overflow > 0) {
           V_overflow += overflow;
           max_V_overflow = std::max(max_V_overflow, overflow);

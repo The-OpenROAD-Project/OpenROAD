@@ -232,14 +232,10 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
       addSpcRectangle(spcRect.get(), allSpcRectangles);
   }
 
-  int cntRTPolygonEdge = 0;
-  int cntRTMaxRectangle = 0;
    for (int i = 0; i < numLayers; i++) {
     polygon_edges_[i] = boost::move(RTree<gcSegment*, segment_t>(allPolygonEdges[i]));
     max_rectangles_[i] = boost::move(RTree<gcRect*>(allMaxRectangles[i]));
     spc_rectangles_[i] = boost::move(RTree<gcRect>(allSpcRectangles[i]));
-    cntRTPolygonEdge += polygon_edges_[i].size();
-    cntRTMaxRectangle += max_rectangles_[i].size();
   }
 }
 

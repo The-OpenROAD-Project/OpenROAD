@@ -3391,22 +3391,20 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1, dbRSeg* rseg2, int ouCovered,
         _extMain->updateRes(rseg2, res, jj);
     }
 
-    double tot = 0;
     double fr = 0;
     double cc = 0;
     if (lenOverSub > 0) {
       if (_sameNetFlag) {  // TO OPTIMIZE
         fr = SUB_MULT * rc->getFringe() * lenOverSub;
-        tot = _extMain->updateTotalCap(rseg1, fr, jj);
+        _extMain->updateTotalCap(rseg1, fr, jj);
       } else {
         double fr = SUB_MULT * rc->getFringe() * lenOverSub;
-        tot = _extMain->updateTotalCap(rseg1, fr, jj);
+        _extMain->updateTotalCap(rseg1, fr, jj);
         _extMain->updateTotalCap(rseg2, fr, jj);
 
         if (_dist > 0) {  // dist based
           cc = SUB_MULT * rc->getCoupling() * lenOverSub;
           _extMain->updateCoupCap(rseg1, rseg2, jj, cc);
-          tot += cc;
         }
       }
     }
@@ -3520,19 +3518,15 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
           totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
         }
       } */
-      double tot1 = 0;
-      double tot2 = 0;
       if (_rc[jj]->_fringe > 0) {
         ou = true;
-        tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
-        tot2 = _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
+        _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
+        _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
       }
       if (_rc[jj]->_coupling > 0) {
         ou = true;
         _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
       }
-      tot1 += _rc[jj]->_coupling;
-      tot2 += _rc[jj]->_coupling;
       if (ou && IsDebugNet())
         _rc[jj]->printDebugRC_values("OverUnder Total Dist");
     }
