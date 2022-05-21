@@ -1834,8 +1834,6 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
 GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
 {
-  odb::Rect die_bounds = grid_->getGridArea();
-
   const int x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
   const int y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
 
