@@ -2302,19 +2302,13 @@ void GlobalRouter::initGrid(int max_layer)
   int x_grids = upper_rightX / tile_size;
   int y_grids = upper_rightY / tile_size;
 
-  bool perfect_regular_x = false;
-  bool perfect_regular_y = false;
+  bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
+  bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
 
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
   }
-
-  if ((x_grids * tile_size) == upper_rightX)
-    perfect_regular_x = true;
-
-  if ((y_grids * tile_size) == upper_rightY)
-    perfect_regular_y = true;
 
   grid_->init(rect,
               tile_size,
