@@ -55,6 +55,7 @@ sta::define_cmd_args "detailed_route" {
     [-remote_port port]
     [-shared_volume vol]
     [-clean_patches]
+    [-no_pin_access]
 }
 
 proc detailed_route { args } {
@@ -63,11 +64,12 @@ proc detailed_route { args } {
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
-    flags {-disable_via_gen -distributed -clean_patches -single_step_dr}
+    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
   set clean_patches [expr [info exists flags(-clean_patches)]]
+  set no_pin_access [expr [info exists flags(-no_pin_access)]]
   # single_step_dr is not a user option but is intended for algorithm
   # development.  It is not listed in the help string intentionally.
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
@@ -177,7 +179,7 @@ proc detailed_route { args } {
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $single_step_dr
+      $clean_patches $no_pin_access $single_step_dr
   }
 }
 

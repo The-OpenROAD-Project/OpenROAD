@@ -471,7 +471,7 @@ dbITerm* dbBTerm::getITerm()
   return (dbITerm*) parent->_iterm_tbl->getPtr(bterm->_parent_iterm);
 }
 
-dbBlock* dbBTerm::getBlock()
+dbBlock* dbBTerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }

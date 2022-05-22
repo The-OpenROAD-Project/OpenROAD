@@ -338,9 +338,11 @@ int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   initDesign();
-  FlexPA pa(getDesign(), logger_);
-  pa.setDebug(debug_.get(), db_);
-  pa.main();
+  if (DO_PA) {
+    FlexPA pa(getDesign(), logger_);
+    pa.setDebug(debug_.get(), db_);
+    pa.main();
+  }
   initGuide();
   if (GUIDE_FILE == string("")) {
     gr();
@@ -488,6 +490,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   CLEAN_PATCHES = params.cleanPatches;
+  DO_PA = params.doPa;
   SINGLE_STEP_DR = params.singleStepDR;
   if (!params.viaInPinBottomLayer.empty()) {
     VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;

@@ -57,6 +57,17 @@
         "type": "dbVector<dbId<_dbITerm>>",
         "comment" : "//list of iterms that prefer this access point",
         "flags" : ["private"]
+      },
+      {
+        "name": "vias_",
+        "type": "dbVector<dbVector<std::pair<dbObjectType,dbId<_dbObject>>>>",
+        "comment" : "//list of vias by num of cuts",
+        "flags" : ["private"]
+      },
+      {
+        "name": "path_segs_",
+        "type": "dbVector<std::tuple<Rect, bool, bool>>",
+        "flags": ["private", "no-template"]
       }
     ],
     "h_includes": [
