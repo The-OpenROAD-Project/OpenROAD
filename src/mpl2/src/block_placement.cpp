@@ -1048,7 +1048,6 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   // we define the notch threshold
   const float threshold_H = outline_width_ / 4.0;
   const float threshold_V = outline_height_ / 4.0;
-  int num_notch = 0;
 
   for (int i = 0; i < num_x; i++) {
     for (int j = 0; j < num_y; j++) {
@@ -1095,7 +1094,6 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
           const float width = x_grid[i + 1] - x_grid[i];
           const float height = y_grid[j + 1] - y_grid[j];
           if (width <= threshold_H || height <= threshold_V) {
-            num_notch += 1;
             notch_penalty_
                 += sqrt(width * height / (outline_width_ * outline_height_));
           }
@@ -1352,7 +1350,6 @@ void SimulatedAnnealingCore::FastSA()
   float delta_cost = 0.0;
   float best_cost = cost;
   int step = 1;
-  float rej_num = 0.0;
   float T = init_T_;
 
   const int max_num_restart = 2;
@@ -1362,9 +1359,6 @@ void SimulatedAnnealingCore::FastSA()
   const int modulo_base = int(max_num_step_ * shrink_freq_);
 
   while (step < max_num_step_) {
-    rej_num = 0.0;
-    float accept_rate = 0.0;
-    float avg_delta_cost = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
       Perturb();
       CalculateWirelength();
@@ -1384,10 +1378,8 @@ void SimulatedAnnealingCore::FastSA()
       delta_cost = cost - pre_cost;
       float num = distribution_(generator_);
       float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / T) : 1;
-      avg_delta_cost += abs(delta_cost);
       if (delta_cost < 0 || num < prob) {
         pre_cost = cost;
-        accept_rate += 1.0;
         if (cost < best_cost) {
           best_cost = cost;
           if ((num_shrink <= max_num_shrink) && (step % modulo_base == 0)
@@ -1412,7 +1404,6 @@ void SimulatedAnnealingCore::FastSA()
           }
         }
       } else {
-        rej_num += 1.0;
         Restore();
       }
     }

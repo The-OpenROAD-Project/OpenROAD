@@ -84,11 +84,22 @@ class frDesign
   }
   // others
   friend class io::Parser;
-  bool isHorizontalLayer(frLayerNum l)
+  bool isHorizontalLayer(frLayerNum l) const
   {
     return getTech()->isHorizontalLayer(l);
   }
-  bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
+  bool isVerticalLayer(frLayerNum l)  const
+  {
+      return getTech()->isVerticalLayer(l);
+  }
+  std::vector<frTrackPattern*> getPrefDirTracks(frCoord layerNum) const {
+        return getTopBlock()->getTrackPatterns(layerNum, 
+                                                isVerticalLayer(layerNum));
+  }
+  std::vector<frTrackPattern*> getNonPrefDirTracks(frCoord layerNum) const {
+        return getTopBlock()->getTrackPatterns(layerNum, 
+                                                !isVerticalLayer(layerNum));
+  }
 
   void addUpdate(const drUpdate& update)
   {

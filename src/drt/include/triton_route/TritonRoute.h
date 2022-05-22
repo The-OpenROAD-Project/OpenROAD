@@ -84,7 +84,7 @@ struct ParamStruct
   std::string topRoutingLayer;
   int verbose = 1;
   bool cleanPatches = false;
-  bool noPa = false;
+  bool doPa = false;
   bool singleStepDR = false;
 };
 

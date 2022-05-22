@@ -3504,9 +3504,9 @@ class dbVia : public dbObject
   //
   dbVia* getBlockVia();
 
-  void setAddedByRouter(bool);
+  void setDefault(bool);
 
-  bool isAddedByRouter();
+  bool isDefault();
 
   ///
   /// Create a block specific via.

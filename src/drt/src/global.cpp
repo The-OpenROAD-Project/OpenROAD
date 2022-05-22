@@ -68,7 +68,7 @@ bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
 bool CLEAN_PATCHES = false;
-bool NO_PA = false;
+bool DO_PA = true;
 bool SINGLE_STEP_DR = false;
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;

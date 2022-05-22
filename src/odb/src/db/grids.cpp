@@ -35,6 +35,8 @@
 #include "dbLogger.h"
 #include "wire.h"
 
+namespace odb {
+
 //#define SINGLE_WIRE
 
 Ath__box::Ath__box()
@@ -2038,7 +2040,6 @@ uint Ath__grid::search(Ath__searchBox* bb,
   uint hiMarker = getBucketNum(hiXY);
 
   Ath__track* tstrack;
-  uint cnt = 0;
   for (uint ii = loTrackNum; ii <= hiTrackNum; ii++) {
     Ath__track* track = _trackTable[ii];
     if (track == NULL)
@@ -2048,9 +2049,9 @@ uint Ath__grid::search(Ath__searchBox* bb,
     bool tohi = true;
     while ((tstrack = track->getNextSubTrack(tstrack, tohi)) != nullptr) {
       if (_schema > 0)
-        cnt += tstrack->search1(loXY, hiXY, loMarker, hiMarker, &wireIdTable);
+        tstrack->search1(loXY, hiXY, loMarker, hiMarker, &wireIdTable);
       else
-        cnt += tstrack->search(loXY, hiXY, loMarker, hiMarker, idtable);
+        tstrack->search(loXY, hiXY, loMarker, hiMarker, idtable);
     }
   }
   if (wireIdFlag)
@@ -2084,7 +2085,6 @@ uint Ath__grid::search(Ath__searchBox* bb,
   uint loMarker = getBucketNum(loXY);
   uint hiMarker = getBucketNum(hiXY);
 
-  uint cnt = 0;
   for (uint ii = loTrackNum; ii <= hiTrackNum; ii++) {
     Ath__track* track = _trackTable[ii];
     if (track == NULL)
@@ -2094,8 +2094,6 @@ uint Ath__grid::search(Ath__searchBox* bb,
     uint cnt1 = track->search1(loXY, hiXY, loMarker, hiMarker, &wireIdTable);
     if (cnt1 <= 0)
       continue;
-
-    cnt += cnt1;
 
     Ath__wire* w0 = _wirePoolPtr->get(wireIdTable.get(0));
     Ath__wire* w1 = w0->makeWire(wirePool, w0->_xy, w0->_len);
@@ -3100,7 +3098,6 @@ bool Ath__gridTable::isOrdered(bool /* unused: ascending */)
 {
   bool ordered = true;
 
-  uint cnt = 0;
   for (uint ii = 0; ii < _rowCnt; ii++) {
     for (uint jj = 0; jj < _colCnt; jj++) {
       uint cnt1 = 0;
@@ -3115,7 +3112,6 @@ bool Ath__gridTable::isOrdered(bool /* unused: ascending */)
         fprintf(
             stdout, "Ordered grid [%d][%d] -- has %d wires\n", ii, jj, cnt1);
       }
-      cnt += cnt1;
     }
   }
   return ordered;
@@ -3280,3 +3276,5 @@ void Ath__gridTable::getIds(uint wid, uint* id1, uint* id2, uint* wtype)
   *id1 = w->_boxId;
   *id2 = w->_otherId;
 }
+
+}  // namespace odb

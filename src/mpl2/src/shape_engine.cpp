@@ -617,9 +617,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
   words = Split(content[4]);
   outline_ly = stof(words[words.size() - 1]);
 
-  float macro_area = 0.0;
-  float std_cell_area = 0.0;
-
   int i = 0;
   while (i < content.size()) {
     words = Split(content[i]);
@@ -646,9 +643,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
 
       if (block_area > 0.0) {
         area = block_area;
-        macro_area += block_area;
-      } else {
-        std_cell_area += area;
       }
 
       cluster->SetArea(area);

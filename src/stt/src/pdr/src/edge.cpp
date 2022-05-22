@@ -42,15 +42,15 @@ Edge::Edge(int _idx, int _head, int _tail)
   idx = _idx;
   head = _head;
   tail = _tail;
-  lower_ov = 0;
-  upper_ov = 0;
-  best_ov = 0;
+  lower_overlap = 0;
+  upper_overlap = 0;
+  best_overlap = 0;
   best_shape = 5;
   final_best_shape = 5;
-  lower_idx_of_cn_x = std::numeric_limits<int>::max();
-  lower_idx_of_cn_y = std::numeric_limits<int>::max();
-  upper_idx_of_cn_x = std::numeric_limits<int>::max();
-  upper_idx_of_cn_y = std::numeric_limits<int>::max();
+  lower_idx_of_current_node_x = std::numeric_limits<int>::max();
+  lower_idx_of_current_node_y = std::numeric_limits<int>::max();
+  upper_idx_of_current_node_x = std::numeric_limits<int>::max();
+  upper_idx_of_current_node_y = std::numeric_limits<int>::max();
 }
 
 Edge::~Edge()
@@ -74,8 +74,7 @@ ostream& operator<<(ostream& os, const Edge& n)
     for (int i = 0; i < n.lower_sps_to_be_added_x.size(); ++i) {
       os << " (" << n.lower_sps_to_be_added_x[i].x << " "
          << n.lower_sps_to_be_added_x[i].y << ") Child: ";
-      for (int j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size();
-           ++j) {
+      for (int j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size(); ++j) {
         os << n.lower_sps_to_be_added_x[i].sp_chil[j] << " ";
       }
       os << "/";
@@ -93,4 +92,4 @@ ostream& operator<<(ostream& os, const Edge& n)
   return os;
 }
 
-} // namespace
+}  // namespace pdr

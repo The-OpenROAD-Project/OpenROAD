@@ -1088,12 +1088,10 @@ PlacerBase::printInfo() const {
   log_->info(GPL, 11, "NumPins: {}", pins_.size());
 
   int maxFanout = INT_MIN;
-  int sumFanout = 0;
   for(auto& net : nets_) {
     if( maxFanout < (int)net->pins().size() ) {
       maxFanout = (int)net->pins().size();
     }
-    sumFanout += (int)net->pins().size();
   }
 
   log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy() );

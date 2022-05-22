@@ -32,7 +32,7 @@
 
 #include "rcx/extRCap.h"
 
-#include <wire.h>
+#include "odb/wire.h"
 
 #ifdef _WIN32
 #include "direct.h"
@@ -46,6 +46,7 @@
 
 namespace rcx {
 
+using namespace odb;
 using utl::RCX;
 
 typedef struct {

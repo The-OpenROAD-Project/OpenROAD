@@ -628,6 +628,32 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
   frCoord coordHigh = isH ? gBox.yMax() : gBox.xMax();
   coordHigh--;  // to avoid higher track == guide top/right
+  if (getTech()->getLayer(lNum)->isUnidirectional()) {
+    const Rect& dieBx = design_->getTopBlock()->getDieBox();
+    frViaDef* via = nullptr;
+    Rect testBox;
+    if (lNum + 1 <= getTech()->getTopLayerNum()) {
+        via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+        testBox = via->getLayer1ShapeBox();
+        testBox.merge(via->getLayer2ShapeBox());
+    } else {
+        via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+        testBox = via->getLayer1ShapeBox();
+        testBox.merge(via->getLayer2ShapeBox());
+    }
+    int diffLow, diffHigh;
+    if (isH) {
+        diffLow = dieBx.yMin() - (coordLow - testBox.dy()/2);
+        diffHigh = coordHigh + testBox.dy()/2 - dieBx.yMax();
+    } else {
+        diffLow = dieBx.xMin() - (coordLow - testBox.dx()/2);
+        diffHigh = coordHigh + testBox.dx()/2 - dieBx.xMax();
+    }
+    if (diffLow > 0)
+        coordLow += diffLow;
+    if (diffHigh > 0)
+        coordHigh -= diffHigh;
+  }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
 }
 

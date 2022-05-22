@@ -16,6 +16,6 @@
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
-[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [ERROR GRT-0147] Vertical tracks for layer li1 not found.
 GRT-0147

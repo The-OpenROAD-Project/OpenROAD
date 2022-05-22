@@ -787,11 +787,11 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
-  if (distributed_ && NO_PA) {
+  if (distributed_ && !DO_PA) {
     asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initDesign();
-  if (!NO_PA) {
+  if (DO_PA) {
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
@@ -957,7 +957,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   CLEAN_PATCHES = params.cleanPatches;
-  NO_PA = params.noPa;
+  DO_PA = params.doPa;
   SINGLE_STEP_DR = params.singleStepDR;
   if (!params.viaInPinBottomLayer.empty()) {
     VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;

@@ -118,6 +118,7 @@ class GridComponent
   // returns the order in which to lay out the straps
   virtual std::vector<odb::dbNet*> getNets() const;
   int getNetCount() const;
+  void setNets(const std::vector<odb::dbNet*>& nets);
 
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
@@ -132,6 +133,7 @@ class GridComponent
  private:
   Grid* grid_;
   bool starts_with_power_;
+  std::vector<odb::dbNet*> nets_;
 
   ShapeTreeMap shapes_;
 };

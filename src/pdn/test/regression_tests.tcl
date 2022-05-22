@@ -43,6 +43,7 @@ record_tests {
   core_grid_no_trim
   
   core_grid_offset_strap
+  core_grid_with_rings_with_limit_straps
 
   macros
   macros_with_halo

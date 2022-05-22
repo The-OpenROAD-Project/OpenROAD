@@ -72,6 +72,10 @@ proc rtl_macro_placer { args } {
     set macro_blockage_file "macro_blockage.txt"
     set prefer_location_file "location.txt"
 
+    if { [info exists keys(-report_file)] } {
+        set report_file $keys(-report_file)
+    }
+
     if { [info exists keys(-area_weight)] } {
         set area_wt $keys(-area_weight)
     }

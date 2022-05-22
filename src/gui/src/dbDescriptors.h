@@ -58,6 +58,12 @@ class DbInstDescriptor : public Descriptor
   enum Type {
     BLOCK,
     PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
+    PAD_SPACER,
+    PAD_AREAIO,
     ENDCAP,
     FILL,
     TAPCELL,

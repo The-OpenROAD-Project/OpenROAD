@@ -33,15 +33,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "tap/tapcell.h"
-
 #include <map>
 #include <string>
 #include <utility>
 
 #include "odb/db.h"
+#include "odb/util.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "tap/tapcell.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -118,7 +118,9 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                   int dist)
 {
   vector<odb::dbBox*> blockages = findBlockages();
-  cutRows(endcap_master, blockages, halo_x, halo_y);
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const int min_row_width = endcap_master ? 2 * endcap_master->getWidth() : 0;
+  odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
   vector<vector<odb::dbRow*>> rows = organizeRows();
   CornercapMasters masters;
   masters.nwin_master = cnrcap_nwin_master;
@@ -160,108 +162,6 @@ void Tapcell::run(odb::dbMaster* endcap_master,
     insertTapcells(rows, tapcell_master, dist);
   }
   filled_sites_.clear();
-}
-
-void Tapcell::cutRows(odb::dbMaster* endcap_master,
-                      const vector<odb::dbBox*>& blockages,
-                      int halo_x,
-                      int halo_y)
-{
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  const int rows_count = (block->getRows()).size();
-  const int block_count = blockages.size();
-
-  const int min_row_width
-      = (endcap_master != nullptr) ? 2 * endcap_master->getWidth() : 0;
-
-  // Gather rows needing to be cut up front
-  vector<odb::dbRow*> blocked_rows;
-  std::map<odb::dbRow*, vector<odb::dbBox*>> row_blockages;
-  for (odb::dbBox* blockage : blockages) {
-    for (odb::dbRow* row : block->getRows()) {
-      if (overlaps(blockage, row, halo_x, halo_y)) {
-        if (row_blockages.find(row) == row_blockages.end()) {
-          blocked_rows.push_back(row);
-        }
-        row_blockages[row].push_back(blockage);
-      }
-    }
-  }
-
-  // Cut rows around macros
-  for (auto& [k, ignored] : row_blockages) {
-    cutRow(block, k, row_blockages[k], min_row_width, halo_x, halo_y);
-  }
-  const int cut_rows_count = block->getRows().size() - rows_count;
-  logger_->info(utl::TAP, 1, "Found {} macro blocks.", block_count);
-  logger_->info(utl::TAP, 2, "Original rows: {}", rows_count);
-  logger_->info(utl::TAP,
-                3,
-                "Created {} rows for a total of {} rows.",
-                cut_rows_count,
-                cut_rows_count + rows_count);
-}
-
-void Tapcell::cutRow(odb::dbBlock* block,
-                     odb::dbRow* row,
-                     vector<odb::dbBox*>& row_blockages,
-                     int min_row_width,
-                     int halo_x,
-                     int halo_y)
-{
-  string row_name = row->getName();
-  odb::Rect row_bb;
-  row->getBBox(row_bb);
-
-  odb::dbSite* row_site = row->getSite();
-  const int site_width = row_site->getWidth();
-  odb::dbOrientType orient = row->getOrient();
-  odb::dbRowDir direction = row->getDirection();
-
-  const int curr_min_row_width = min_row_width + 2 * site_width;
-
-  vector<odb::dbBox*> row_blockage_bboxs = row_blockages;
-  vector<std::pair<int, int>> row_blockage_xs;
-  for (odb::dbBox* row_blockage_bbox : row_blockages) {
-    row_blockage_xs.push_back(
-        std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
-  }
-
-  std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
-
-  int start_origin_x = row_bb.xMin();
-  int start_origin_y = row_bb.yMin();
-  int row_sub_idx = 1;
-  for (std::pair<int, int> blockage : row_blockage_xs) {
-    const int blockage_x0 = blockage.first;
-    const int new_row_end_x
-        = makeSiteLoc(blockage_x0 - halo_x, site_width, 1, start_origin_x);
-    buildRow(block,
-             row_name + "_" + std::to_string(row_sub_idx),
-             row_site,
-             start_origin_x,
-             new_row_end_x,
-             start_origin_y,
-             orient,
-             direction,
-             curr_min_row_width);
-    row_sub_idx++;
-    const int blockage_x1 = blockage.second;
-    start_origin_x
-        = makeSiteLoc(blockage_x1 + halo_x, site_width, 0, start_origin_x);
-  }
-  // Make last row
-  buildRow(block,
-           row_name + "_" + std::to_string(row_sub_idx),
-           row_site,
-           start_origin_x,
-           row_bb.xMax(),
-           start_origin_y,
-           orient,
-           direction,
-           curr_min_row_width);
-  // Remove current row
-  odb::dbRow::destroy(row);
 }
 
 int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
@@ -515,7 +415,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
 
       const int site_width = row->getSite()->getWidth();
       for (int x = llx + offset; x < urx; x += pitch) {
-        x = makeSiteLoc(x, site_width, 1, llx);
+        x = odb::makeSiteLoc(x, site_width, 1, llx);
         // Check if site is filled
         const int tap_width = tapcell_master->getWidth();
         odb::dbOrientType ori = row->getOrient();
@@ -1134,37 +1034,6 @@ std::map<std::pair<int, int>, vector<int>> Tapcell::getMacroOutlines(
   return macro_outlines_array;
 }
 
-// function to detect if blockage overlaps with row
-bool Tapcell::overlaps(odb::dbBox* blockage,
-                       odb::dbRow* row,
-                       int halo_x,
-                       int halo_y)
-{
-  odb::Rect rowBB;
-  row->getBBox(rowBB);
-
-  // Check if Y has overlap first since rows are long and skinny
-  const int blockage_lly = blockage->yMin() - halo_y;
-  const int blockage_ury = blockage->yMax() + halo_y;
-  const int row_lly = rowBB.yMin();
-  const int row_ury = rowBB.yMax();
-
-  if (blockage_lly >= row_ury || row_lly >= blockage_ury) {
-    return false;
-  }
-
-  const int blockage_llx = blockage->xMin() - halo_x;
-  const int blockage_urx = blockage->xMax() + halo_x;
-  const int row_llx = rowBB.xMin();
-  const int row_urx = rowBB.xMax();
-
-  if (blockage_llx >= row_urx || row_llx >= blockage_urx) {
-    return false;
-  }
-
-  return true;
-}
-
 vector<odb::dbBox*> Tapcell::findBlockages()
 {
   vector<odb::dbBox*> blockages;
@@ -1181,16 +1050,6 @@ vector<odb::dbBox*> Tapcell::findBlockages()
   return blockages;
 }
 
-int Tapcell::makeSiteLoc(int x,
-                         double site_width,
-                         bool at_left_from_macro,
-                         int offset)
-{
-  double site_x = (x - offset) / site_width;
-  int site_x1 = at_left_from_macro ? floor(site_x) : ceil(site_x);
-  return site_x1 * site_width + offset;
-}
-
 void Tapcell::makeInstance(odb::dbBlock* block,
                            odb::dbMaster* master,
                            odb::dbOrientType orientation,
@@ -1202,7 +1061,9 @@ void Tapcell::makeInstance(odb::dbBlock* block,
     return;
   }
   string name = prefix + std::to_string(phy_idx_);
-  odb::dbInst* inst = odb::dbInst::create(block, master, name.c_str(),
+  odb::dbInst* inst = odb::dbInst::create(block,
+                                          master,
+                                          name.c_str(),
                                           /* physical_only */ true);
   if (inst == nullptr) {
     logger_->error(utl::TAP,
@@ -1224,33 +1085,6 @@ void Tapcell::makeInstance(odb::dbBlock* block,
   filled_sites_.push_back(filled);
 
   phy_idx_++;
-}
-
-void Tapcell::buildRow(odb::dbBlock* block,
-                       const string& name,
-                       odb::dbSite* site,
-                       int start_x,
-                       int end_x,
-                       int y,
-                       odb::dbOrientType& orient,
-                       odb::dbRowDir& direction,
-                       int min_row_width)
-{
-  const int site_width = site->getWidth();
-  const int new_row_num_sites = (end_x - start_x) / site_width;
-  const int new_row_width = new_row_num_sites * site_width;
-
-  if (new_row_num_sites > 0 && new_row_width >= min_row_width) {
-    odb::dbRow::create(block,
-                       name.c_str(),
-                       site,
-                       start_x,
-                       y,
-                       orient,
-                       direction,
-                       new_row_num_sites,
-                       site_width);
-  }
 }
 
 // Return rows vector organized according to yMin value,

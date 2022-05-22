@@ -1834,8 +1834,6 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
 GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
 {
-  odb::Rect die_bounds = grid_->getGridArea();
-
   const int x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
   const int y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
 
@@ -3422,8 +3420,7 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
   if (default_vias.empty()) {
     if (verbose_)
-      if (verbose_)
-        logger_->warn(GRT, 43, "No OR_DEFAULT vias defined.");
+      logger_->info(GRT, 43, "No OR_DEFAULT vias defined.");
     for (int i = 1; i <= max_routing_layer; i++) {
       for (odb::dbTechVia* via : vias) {
         if (via->getBottomLayer()->getRoutingLevel() == i) {

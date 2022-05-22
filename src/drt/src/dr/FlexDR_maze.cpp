@@ -43,7 +43,6 @@ using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
 
-
 int beginDebugIter = std::numeric_limits<int>().max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
 
@@ -229,17 +228,17 @@ void FlexDRWorker::modCornerToCornerSpacing_helper(const Rect& box,
     for (int j = p1.y(); j <= p2.y(); j++) {
       switch (type) {
         case subRouteShape:
-            gridGraph_.subRouteShapeCostPlanar(i, j, z);
-            break;
+          gridGraph_.subRouteShapeCostPlanar(i, j, z);
+          break;
         case addRouteShape:
-            gridGraph_.addRouteShapeCostPlanar(i, j, z);
-            break;
+          gridGraph_.addRouteShapeCostPlanar(i, j, z);
+          break;
         case subFixedShape:
-            gridGraph_.subFixedShapeCostPlanar(i, j, z);
-            break;
+          gridGraph_.subFixedShapeCostPlanar(i, j, z);
+          break;
         case addFixedShape:
-            gridGraph_.addFixedShapeCostPlanar(i, j, z);
-            break;
+          gridGraph_.addFixedShapeCostPlanar(i, j, z);
+          break;
         default:;
       }
     }
@@ -277,7 +276,7 @@ void FlexDRWorker::modCornerToCornerSpacing(const Rect& box,
             box.xMax() + bloatDist,
             box.yMin());  // lr box corner
     modCornerToCornerSpacing_helper(bx, z, type);
-    }
+  }
 }
 
 void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
@@ -329,12 +328,15 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   FlexMazeIdx mIdx2, mPinUR;
   // assumes width always > 2
   Rect bx(box.xMin() - bloatDist - halfwidth2 + 1,
-           box.yMin() - bloatDist - halfwidth2 + 1,
-           box.xMax() + bloatDist + halfwidth2 - 1,
-           box.yMax() + bloatDist + halfwidth2 - 1);
+          box.yMin() - bloatDist - halfwidth2 + 1,
+          box.xMax() + bloatDist + halfwidth2 - 1,
+          box.yMax() + bloatDist + halfwidth2 - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
   if (isMacroPin && type == ModCostType::resetBlocked) {
-    Rect sBox(box.xMin() + width2/2, box.yMin() + width2/2, box.xMax() - width2/2, box.yMax() - width2/2);
+    Rect sBox(box.xMin() + width2 / 2,
+              box.yMin() + width2 / 2,
+              box.xMax() - width2 / 2,
+              box.yMax() - width2 / 2);
     gridGraph_.getIdxBox(mPinLL, mPinUR, sBox);
   }
   Point pt, pt1, pt2, pt3, pt4;
@@ -373,31 +375,31 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
           case resetBlocked:
             if (isMacroPin) {
               if (j >= mPinLL.y() && j <= mPinUR.y()) {
-                gridGraph_.resetBlocked(i, j, z, frDirEnum::E); 
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::E);
                 if (i == 0)
-                  gridGraph_.resetBlocked(i, j, z, frDirEnum::W); 
+                  gridGraph_.resetBlocked(i, j, z, frDirEnum::W);
               }
               if (i >= mPinLL.x() && i <= mPinUR.x()) {
-                gridGraph_.resetBlocked(i, j, z, frDirEnum::N); 
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::N);
                 if (j == 0)
-                  gridGraph_.resetBlocked(i, j, z, frDirEnum::S); 
+                  gridGraph_.resetBlocked(i, j, z, frDirEnum::S);
               }
             } else {
-              gridGraph_.resetBlocked(i, j, z, frDirEnum::E); 
-              gridGraph_.resetBlocked(i, j, z, frDirEnum::N); 
+              gridGraph_.resetBlocked(i, j, z, frDirEnum::E);
+              gridGraph_.resetBlocked(i, j, z, frDirEnum::N);
               if (i == 0)
-                gridGraph_.resetBlocked(i, j, z, frDirEnum::W); 
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::W);
               if (j == 0)
-                gridGraph_.resetBlocked(i, j, z, frDirEnum::S); 
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::S);
             }
             break;
           case setBlocked:  // set blocked
-            gridGraph_.setBlocked(i, j, z, frDirEnum::E); 
-            gridGraph_.setBlocked(i, j, z, frDirEnum::N); 
+            gridGraph_.setBlocked(i, j, z, frDirEnum::E);
+            gridGraph_.setBlocked(i, j, z, frDirEnum::N);
             if (i == 0)
-              gridGraph_.setBlocked(i, j, z, frDirEnum::W); 
+              gridGraph_.setBlocked(i, j, z, frDirEnum::W);
             if (j == 0)
-              gridGraph_.setBlocked(i, j, z, frDirEnum::S); 
+              gridGraph_.setBlocked(i, j, z, frDirEnum::S);
             break;
           default:;
         }
@@ -708,11 +710,10 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
   // assumes width always > 2
-  Rect bx(
-      box.xMin() - max(bloatDist, bloatDistEolX) - (viaBox.xMax() - 0) + 1,
-      box.yMin() - max(bloatDist, bloatDistEolY) - (viaBox.yMax() - 0) + 1,
-      box.xMax() + max(bloatDist, bloatDistEolX) + (0 - viaBox.xMin()) - 1,
-      box.yMax() + max(bloatDist, bloatDistEolY) + (0 - viaBox.yMin()) - 1);
+  Rect bx(box.xMin() - max(bloatDist, bloatDistEolX) - (viaBox.xMax() - 0) + 1,
+          box.yMin() - max(bloatDist, bloatDistEolY) - (viaBox.yMax() - 0) + 1,
+          box.xMax() + max(bloatDist, bloatDistEolX) + (0 - viaBox.xMin()) - 1,
+          box.yMax() + max(bloatDist, bloatDistEolY) + (0 - viaBox.yMin()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
   Point pt;
   Rect tmpBx;
@@ -777,21 +778,21 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
       if (ndr)
         reqDist = max(reqDist, ndr->getSpacing(z));
       if (distSquare < (frSquaredDistance) reqDist * reqDist) {
-          switch (type) {
-            case subRouteShape:
-              gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
-              break;
-            case addRouteShape:
-              gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
-              break;
-            case subFixedShape:
-              gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
-              break;
-            case addFixedShape:
-              gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
-              break;
-            default:;
-          }
+        switch (type) {
+          case subRouteShape:
+            gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+            break;
+          case addRouteShape:
+            gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+            break;
+          case subFixedShape:
+            gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+            break;
+          case addFixedShape:
+            gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+            break;
+          default:;
+        }
       }
       // eol, other obj to curr obj
       modMinSpacingCostVia_eol(box, tmpBx, type, isUpperVia, drCon, i, j, z);
@@ -1136,9 +1137,9 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   FlexMazeIdx mIdx2;
   // assumes width always > 2
   Rect bx(box.xMin() - bloatDist - (viaBox.xMax() - 0) + 1,
-           box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
-           box.xMax() + bloatDist + (0 - viaBox.xMin()) - 1,
-           box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
+          box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
+          box.xMax() + bloatDist + (0 - viaBox.xMin()) - 1,
+          box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
 
   Point pt;
@@ -1154,8 +1155,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-        if (i == avoidI && j == avoidJ)
-            continue;
+      if (i == avoidI && j == avoidJ)
+        continue;
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
@@ -1314,9 +1315,9 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   FlexMazeIdx mIdx2;
   // assumes width always > 2
   Rect bx(box.xMin() - bloatDist - (viaBox.xMax() - 0) + 1,
-           box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
-           box.xMax() + bloatDist + (0 - viaBox.xMin()) - 1,
-           box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
+          box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
+          box.xMax() + bloatDist + (0 - viaBox.xMin()) - 1,
+          box.yMax() + bloatDist + (0 - viaBox.yMin()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
 
   Point pt;
@@ -1441,7 +1442,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
     if (modEol)
-        modEolSpacingRulesCost(box, zIdx, type);
+      modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1643,93 +1644,95 @@ void FlexDRWorker::route_queue()
   if (graphics_) {
     graphics_->show(true);
   }
-  
+
   if (getDRIter() >= 7 && getDRIter() <= 30)
     identifyCongestionLevel();
 }
 
-void FlexDRWorker::identifyCongestionLevel() {
-    vector<drNet*> bpNets;
-    for (auto& uNet : nets_) {
-        drNet* net = uNet.get();
-        bool bpLow = false, bpHigh = false;
-        for (auto& uPin : net->getPins()) {
-            drPin* pin = uPin.get();
-            if (pin->hasFrTerm())
-                continue;
-            for (auto& uAP : pin->getAccessPatterns()) {
-                drAccessPattern* ap = uAP.get();
-                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
-                    if (ap->getPoint().y() == getRouteBox().yMin())
-                        bpLow = true;
-                    else if (ap->getPoint().y() == getRouteBox().yMax())
-                        bpHigh = true;
-                } else {
-                    if (ap->getPoint().x() == getRouteBox().xMin())
-                        bpLow = true;
-                    else if (ap->getPoint().x() == getRouteBox().xMax())
-                        bpHigh = true;
-                }
-            }
-        }
-        if (bpLow && bpHigh)
-             bpNets.push_back(net);
-    }
-    vector<int> nLowBorderCross(gridGraph_.getLayerCount(), 0);
-    vector<int> nHighBorderCross(gridGraph_.getLayerCount(), 0);
-    for (drNet*net : bpNets) {
-        for (auto& uPin : net->getPins()) {
-            drPin* pin = uPin.get();
-            if (pin->hasFrTerm())
-                continue;
-            for (auto& uAP : pin->getAccessPatterns()) {
-                drAccessPattern* ap = uAP.get();
-                frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
-                if (z < 4) 
-                	continue;
-                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
-                    if (ap->getPoint().y() == getRouteBox().yMin())
-                        nLowBorderCross[z]++;
-                    else if (ap->getPoint().y() == getRouteBox().yMax())
-                        nHighBorderCross[z]++;
-                } else {
-                    if (ap->getPoint().x() == getRouteBox().xMin())
-                        nLowBorderCross[z]++;
-                    else if (ap->getPoint().x() == getRouteBox().xMax())
-                        nHighBorderCross[z]++;
-                }
-            }
-        }
-    }
-    for (int z = 0; z < gridGraph_.getLayerCount(); z++) {
-        frLayerNum lNum = gridGraph_.getLayerNum(z);
-        auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
-        frTrackPattern* tp = nullptr;
-        int workerSize;
-        if (design_->isHorizontalLayer(lNum)) { 
-            for (auto& utp : trackPatterns) {
-                if (!utp->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
-                    tp = utp.get();
-            }
-            workerSize = getRouteBox().dy();
+void FlexDRWorker::identifyCongestionLevel()
+{
+  vector<drNet*> bpNets;
+  for (auto& uNet : nets_) {
+    drNet* net = uNet.get();
+    bool bpLow = false, bpHigh = false;
+    for (auto& uPin : net->getPins()) {
+      drPin* pin = uPin.get();
+      if (pin->hasFrTerm())
+        continue;
+      for (auto& uAP : pin->getAccessPatterns()) {
+        drAccessPattern* ap = uAP.get();
+        if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+          if (ap->getPoint().y() == getRouteBox().yMin())
+            bpLow = true;
+          else if (ap->getPoint().y() == getRouteBox().yMax())
+            bpHigh = true;
         } else {
-            for (auto& utp : trackPatterns) {
-                if (utp->isHorizontal())
-                    tp = utp.get();
-            }
-            workerSize = getRouteBox().dx();
+          if (ap->getPoint().x() == getRouteBox().xMin())
+            bpLow = true;
+          else if (ap->getPoint().x() == getRouteBox().xMax())
+            bpHigh = true;
         }
-        if (tp == nullptr)
-            continue;
-        int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
-        float congestionFactorLow = nLowBorderCross[z]/(float)nTracks;
-        float congestionFactorHigh = nHighBorderCross[z]/(float)nTracks;
-        float finalFactor = max(congestionFactorLow, congestionFactorHigh);
-        if (finalFactor >= CONGESTION_THRESHOLD) {
-            isCongested_ = true;
-            return;
-        }
+      }
     }
+    if (bpLow && bpHigh)
+      bpNets.push_back(net);
+  }
+  vector<int> nLowBorderCross(gridGraph_.getLayerCount(), 0);
+  vector<int> nHighBorderCross(gridGraph_.getLayerCount(), 0);
+  for (drNet* net : bpNets) {
+    for (auto& uPin : net->getPins()) {
+      drPin* pin = uPin.get();
+      if (pin->hasFrTerm())
+        continue;
+      for (auto& uAP : pin->getAccessPatterns()) {
+        drAccessPattern* ap = uAP.get();
+        frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
+        if (z < 4)
+          continue;
+        if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+          if (ap->getPoint().y() == getRouteBox().yMin())
+            nLowBorderCross[z]++;
+          else if (ap->getPoint().y() == getRouteBox().yMax())
+            nHighBorderCross[z]++;
+        } else {
+          if (ap->getPoint().x() == getRouteBox().xMin())
+            nLowBorderCross[z]++;
+          else if (ap->getPoint().x() == getRouteBox().xMax())
+            nHighBorderCross[z]++;
+        }
+      }
+    }
+  }
+  for (int z = 0; z < gridGraph_.getLayerCount(); z++) {
+    frLayerNum lNum = gridGraph_.getLayerNum(z);
+    auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
+    frTrackPattern* tp = nullptr;
+    int workerSize;
+    if (design_->isHorizontalLayer(lNum)) {
+      for (auto& utp : trackPatterns) {
+        if (!utp->isHorizontal())  // reminder: trackPattern isHorizontal means
+                                   // vertical tracks
+          tp = utp.get();
+      }
+      workerSize = getRouteBox().dy();
+    } else {
+      for (auto& utp : trackPatterns) {
+        if (utp->isHorizontal())
+          tp = utp.get();
+      }
+      workerSize = getRouteBox().dx();
+    }
+    if (tp == nullptr)
+      continue;
+    int nTracks = workerSize / tp->getTrackSpacing();  // 1 track error margin
+    float congestionFactorLow = nLowBorderCross[z] / (float) nTracks;
+    float congestionFactorHigh = nHighBorderCross[z] / (float) nTracks;
+    float finalFactor = max(congestionFactorLow, congestionFactorHigh);
+    if (finalFactor >= CONGESTION_THRESHOLD) {
+      isCongested_ = true;
+      return;
+    }
+  }
 }
 
 void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
@@ -1827,7 +1830,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
-        if (getDRIter() >= beginDebugIter && !getGCWorker()->getMarkers().empty()) {
+        if (getDRIter() >= beginDebugIter
+            && !getGCWorker()->getMarkers().empty()) {
           logger_->info(DRT,
                         2003,
                         "Ending net {} with markers:",
@@ -1910,7 +1914,7 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape,
     }
   }
 }
-//mods eol cost for an eol edge
+// mods eol cost for an eol edge
 void FlexDRWorker::modEolCost(frCoord low,
                               frCoord high,
                               frCoord line,
@@ -1923,14 +1927,18 @@ void FlexDRWorker::modEolCost(frCoord low,
   auto eol = layer->getDrEolSpacingConstraint();
   if (isVertical) {
     if (innerDirIsIncreasing)
-      testBox.init(line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
-    else 
-      testBox.init(line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
+      testBox.init(
+          line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
+    else
+      testBox.init(
+          line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
   } else {
     if (innerDirIsIncreasing)
-      testBox.init(low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
-    else 
-      testBox.init(low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
+      testBox.init(
+          low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
+    else
+      testBox.init(
+          low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
   }
   frMIdx z = gridGraph_.getMazeZIdx(layer->getLayerNum());
   modEolSpacingCost_helper(testBox, z, modType, 0);
@@ -1940,35 +1948,36 @@ void FlexDRWorker::modEolCost(frCoord low,
 
 void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
 {
-    vector<vector<float>> areaMap(getTech()->getTopLayerNum()+1);
-    vector<drPatchWire*> patchesToRemove;
-    for (auto& shape : net->getRouteConnFigs()) {
-        if (shape->typeId() != frBlockObjectEnum::drcPatchWire)
-            continue;
-        drPatchWire* patch = static_cast<drPatchWire*>(shape.get());
-        gtl::point_data<frCoord> pt(patch->getOrigin().x(), patch->getOrigin().y());
-        frLayerNum lNum = patch->getLayerNum();
-        frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
-        if (areaMap[lNum].empty())
-            areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
-        for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
-            auto& pin = drcNet->getPins(lNum)[i];
-            if (!gtl::contains(*pin->getPolygon(), pt))
-                continue;
-            frCoord area;
-            if (areaMap[lNum][i] == -1)
-                areaMap[lNum][i] = gtl::area(*pin->getPolygon());
-            area = areaMap[lNum][i];
-            if (area - patch->getOffsetBox().area() >= minArea) {
-                patchesToRemove.push_back(patch);
-                areaMap[lNum][i] -= patch->getOffsetBox().area();
-            }
-        }
+  vector<vector<float>> areaMap(getTech()->getTopLayerNum() + 1);
+  vector<drPatchWire*> patchesToRemove;
+  for (auto& shape : net->getRouteConnFigs()) {
+    if (shape->typeId() != frBlockObjectEnum::drcPatchWire)
+      continue;
+    drPatchWire* patch = static_cast<drPatchWire*>(shape.get());
+    gtl::point_data<frCoord> pt(patch->getOrigin().x(), patch->getOrigin().y());
+    frLayerNum lNum = patch->getLayerNum();
+    frCoord minArea
+        = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
+    if (areaMap[lNum].empty())
+      areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
+    for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
+      auto& pin = drcNet->getPins(lNum)[i];
+      if (!gtl::contains(*pin->getPolygon(), pt))
+        continue;
+      frCoord area;
+      if (areaMap[lNum][i] == -1)
+        areaMap[lNum][i] = gtl::area(*pin->getPolygon());
+      area = areaMap[lNum][i];
+      if (area - patch->getOffsetBox().area() >= minArea) {
+        patchesToRemove.push_back(patch);
+        areaMap[lNum][i] -= patch->getOffsetBox().area();
+      }
     }
-    for (auto patch : patchesToRemove) {
-        getWorkerRegionQuery().remove(patch);
-        net->removeShape(patch);
-    }
+  }
+  for (auto patch : patchesToRemove) {
+    getWorkerRegionQuery().remove(patch);
+    net->removeShape(patch);
+  }
 }
 
 void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
@@ -2316,10 +2325,10 @@ void FlexDRWorker::routeNet_postAstarWritePath(
   if (it != mazeIdx2TaperBox.end())
     srcBox = it->second;
   if (points.size() == 1) {
-      if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()), 
-                                gridGraph_.yCoord(points[0].y()),
-                                gridGraph_.getLayerNum(points[0].z())))
-          addApPathSegs(points[0], net);
+    if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()),
+                              gridGraph_.yCoord(points[0].y()),
+                              gridGraph_.getLayerNum(points[0].z())))
+      addApPathSegs(points[0], net);
   }
   for (int i = 0; i < (int) points.size() - 1; ++i) {
     FlexMazeIdx start, end;
@@ -2430,15 +2439,15 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         pin may still be over an unseen AP (this is checked by
         checkViaConnectivity) */
         if (realPinApMazeIdx.find(mzIdxBot) != realPinApMazeIdx.end()) {
-            if (!addApPathSegs(mzIdxBot, net)) 
-                currVia->setBottomConnected(true);
+          if (!addApPathSegs(mzIdxBot, net))
+            currVia->setBottomConnected(true);
         } else {
           checkViaConnectivityToAP(
               currVia.get(), true, net->getFrNet(), apMazeIdx, mzIdxBot);
         }
         if (realPinApMazeIdx.find(mzIdxTop) != realPinApMazeIdx.end()) {
-            if (!addApPathSegs(mzIdxTop, net)) 
-                currVia->setTopConnected(true);
+          if (!addApPathSegs(mzIdxTop, net))
+            currVia->setTopConnected(true);
         } else {
           checkViaConnectivityToAP(
               currVia.get(), false, net->getFrNet(), apMazeIdx, mzIdxTop);
@@ -2446,7 +2455,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         unique_ptr<drConnFig> tmp(std::move(currVia));
         workerRegionQuery.add(tmp.get());
         net->addRoute(std::move(tmp));
-        if (gridGraph_.hasRouteShapeCostAdj(startX, startY, currZ, frDirEnum::U)) {
+        if (gridGraph_.hasRouteShapeCostAdj(
+                startX, startY, currZ, frDirEnum::U)) {
           net->addMarker();
         }
       }
@@ -2458,65 +2468,67 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     }
   }
 }
-bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
-    frCoord x = gridGraph_.xCoord(apIdx.x());
-    frCoord y = gridGraph_.yCoord(apIdx.y());
-    frLayerNum lNum = gridGraph_.getLayerNum(apIdx.z());
-    frBlockObject* owner = nullptr;
-    frAccessPoint* ap = net->getFrAccessPoint(x, y, lNum, &owner);
-    if (!ap)    //on-the-fly ap
-        return false;
-    assert(owner != nullptr);
-    frInst* inst = nullptr;
-    if (owner->typeId() == frBlockObjectEnum::frcInstTerm)
-        inst = static_cast<frInstTerm*>(owner)->getInst();
-    assert(ap != nullptr);
-    if (ap->getPathSegs().empty())
-        return false; 
-    for (auto& ps : ap->getPathSegs()) {
-        unique_ptr<drPathSeg> drPs = make_unique<drPathSeg>();
-        Point begin = ps.getBeginPoint();
-        Point end = ps.getEndPoint();
-        Point* connecting = nullptr;
-        if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle))
-            connecting = &begin;
-        else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
-            connecting = &end;
-        if (inst) {
-            dbTransform trans;
-            inst->getTransform(trans);
-            trans.apply(begin);
-            trans.apply(end);
-            if (end < begin) { //if rotation swaped order, correct it
-                if (connecting == &begin)
-                    connecting = &end;
-                else 
-                    connecting = &begin;
-                Point tmp = begin;
-                begin = end;
-                end = tmp;
-            }
-        }
-        drPs->setPoints(begin, end);
-        drPs->setLayerNum(lNum);
-        drPs->addToNet(net);
-        auto currStyle = getTech()->getLayer(lNum)->getDefaultSegStyle();
+bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
+{
+  frCoord x = gridGraph_.xCoord(apIdx.x());
+  frCoord y = gridGraph_.yCoord(apIdx.y());
+  frLayerNum lNum = gridGraph_.getLayerNum(apIdx.z());
+  frBlockObject* owner = nullptr;
+  frAccessPoint* ap = net->getFrAccessPoint(x, y, lNum, &owner);
+  if (!ap)  // on-the-fly ap
+    return false;
+  assert(owner != nullptr);
+  frInst* inst = nullptr;
+  if (owner->typeId() == frBlockObjectEnum::frcInstTerm)
+    inst = static_cast<frInstTerm*>(owner)->getInst();
+  assert(ap != nullptr);
+  if (ap->getPathSegs().empty())
+    return false;
+  for (auto& ps : ap->getPathSegs()) {
+    unique_ptr<drPathSeg> drPs = make_unique<drPathSeg>();
+    Point begin = ps.getBeginPoint();
+    Point end = ps.getEndPoint();
+    Point* connecting = nullptr;
+    if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle))
+      connecting = &begin;
+    else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
+      connecting = &end;
+    if (inst) {
+      dbTransform trans;
+      inst->getTransform(trans);
+      trans.apply(begin);
+      trans.apply(end);
+      if (end < begin) {  // if rotation swaped order, correct it
         if (connecting == &begin)
-            currStyle.setBeginStyle(frcTruncateEndStyle, 0);
-        else if (connecting == &end)
-            currStyle.setEndStyle(frcTruncateEndStyle, 0);
-
-        if (net->getFrNet()->getNondefaultRule()) 
-            drPs->setTapered(true); //these tiny access pathsegs should all be tapered
-        drPs->setStyle(currStyle);
-        FlexMazeIdx startIdx, endIdx;
-        gridGraph_.getMazeIdx(startIdx, begin, lNum);
-        gridGraph_.getMazeIdx(endIdx, end, lNum);
-        drPs->setMazeIdx(startIdx, endIdx);
-        getWorkerRegionQuery().add(drPs.get());
-        net->addRoute(std::move(drPs));
+          connecting = &end;
+        else
+          connecting = &begin;
+        Point tmp = begin;
+        begin = end;
+        end = tmp;
+      }
     }
-    return true;
+    drPs->setPoints(begin, end);
+    drPs->setLayerNum(lNum);
+    drPs->addToNet(net);
+    auto currStyle = getTech()->getLayer(lNum)->getDefaultSegStyle();
+    if (connecting == &begin)
+      currStyle.setBeginStyle(frcTruncateEndStyle, 0);
+    else if (connecting == &end)
+      currStyle.setEndStyle(frcTruncateEndStyle, 0);
+
+    if (net->getFrNet()->getNondefaultRule())
+      drPs->setTapered(
+          true);  // these tiny access pathsegs should all be tapered
+    drPs->setStyle(currStyle);
+    FlexMazeIdx startIdx, endIdx;
+    gridGraph_.getMazeIdx(startIdx, begin, lNum);
+    gridGraph_.getMazeIdx(endIdx, end, lNum);
+    drPs->setMazeIdx(startIdx, endIdx);
+    getWorkerRegionQuery().add(drPs.get());
+    net->addRoute(std::move(drPs));
+  }
+  return true;
 }
 bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 frMIdx& midY,
@@ -2602,14 +2614,14 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   FlexMazeIdx start(startX, startY, z), end(endX, endY, z);
   auto currStyle = getTech()->getLayer(currLayerNum)->getDefaultSegStyle();
   if (realApMazeIdx.find(start) != realApMazeIdx.end()) {
-      if (!addApPathSegs(start, net))
-            currStyle.setBeginStyle(frcTruncateEndStyle, 0);
+    if (!addApPathSegs(start, net))
+      currStyle.setBeginStyle(frcTruncateEndStyle, 0);
   } else {
     checkPathSegStyle(currPathSeg.get(), true, currStyle, apMazeIdx, start);
   }
   if (realApMazeIdx.find(end) != realApMazeIdx.end()) {
-      if (!addApPathSegs(end, net))
-            currStyle.setEndStyle(frcTruncateEndStyle, 0);
+    if (!addApPathSegs(end, net))
+      currStyle.setEndStyle(frcTruncateEndStyle, 0);
   } else {
     checkPathSegStyle(currPathSeg.get(), false, currStyle, apMazeIdx, end);
   }
@@ -2637,7 +2649,8 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   bool prevHasCost = false;
   int endI = vertical ? endY : endX;
   for (int i = (vertical ? startY : startX); i < endI; i++) {
-    if ((vertical && gridGraph_.hasRouteShapeCostAdj(startX, i, z, frDirEnum::E))
+    if ((vertical
+         && gridGraph_.hasRouteShapeCostAdj(startX, i, z, frDirEnum::E))
         || (!vertical
             && gridGraph_.hasRouteShapeCostAdj(i, startY, z, frDirEnum::N))) {
       if (!prevHasCost) {
@@ -2673,12 +2686,12 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
       && !isInWorkerBorder(pt.x(), pt.y()))
     return;
   if (hasAccessPoint(pt, ps->getLayerNum(), ps->getNet()->getFrNet())) {
-      if (!addApPathSegs(idx, ps->getNet())) {
-        if (isBegin)
-          style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
-        else
-          style.setEndStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
-      }
+    if (!addApPathSegs(idx, ps->getNet())) {
+      if (isBegin)
+        style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+      else
+        style.setEndStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+    }
   }
 }
 
@@ -2721,14 +2734,16 @@ void FlexDRWorker::checkViaConnectivityToAP(drVia* via,
       && !isInWorkerBorder(via->getOrigin().x(), via->getOrigin().y()))
     return;
   if (isBottom) {
-    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer1Num(), net)) {
-        if (!addApPathSegs(idx, via->getNet())) 
-            via->setBottomConnected(true);
+    if (hasAccessPoint(
+            via->getOrigin(), via->getViaDef()->getLayer1Num(), net)) {
+      if (!addApPathSegs(idx, via->getNet()))
+        via->setBottomConnected(true);
     }
   } else {
-    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer2Num(), net)) {
-        if (!addApPathSegs(idx, via->getNet())) 
-            via->setTopConnected(true);
+    if (hasAccessPoint(
+            via->getOrigin(), via->getViaDef()->getLayer2Num(), net)) {
+      if (!addApPathSegs(idx, via->getNet()))
+        via->setTopConnected(true);
     }
   }
 }
@@ -2818,9 +2833,11 @@ void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
   if (path.size() <= 1)
     return;
   for (unsigned long i = 1; i < path.size(); i++) {
-    if (path[i].z() != path[i-1].z()) {
-      frMIdx z = min (path[i].z(), path[i-1].z());
-      frViaDef* viaDef = design_->getTech()->getLayer(gridGraph_.getLayerNum(z)+1)->getDefaultViaDef();
+    if (path[i].z() != path[i - 1].z()) {
+      frMIdx z = min(path[i].z(), path[i - 1].z());
+      frViaDef* viaDef = design_->getTech()
+                             ->getLayer(gridGraph_.getLayerNum(z) + 1)
+                             ->getDefaultViaDef();
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
       dbTransform xform(Point(x, y));

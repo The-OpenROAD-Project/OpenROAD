@@ -45,7 +45,7 @@ using std::vector;
 
 class Node
 {
-public:
+ public:
   Node(int _idx, int _x, int _y);
   void report(ostream& os, int level) const;
 
@@ -53,7 +53,7 @@ public:
   int x;
   int y;
 
-  int parent;       // parent's node index
+  int parent;            // parent's node index
   vector<int> children;  // immediate children's indices
   int size_of_chi;
   int min_dist;  // source to sink manhattan dist
@@ -64,13 +64,13 @@ public:
   int src_to_sink_dist;  // source to sink distance tranversing from the node to
                          // the source through the tree
   int K_t;               // No. of downstream sinks
-  int level;        // Level in tree
+  int level;             // Level in tree
 
-  bool conn_to_par;
+  bool conn_to_parent;
   vector<int> sp_chil;
-  int idx_of_cn_x, idx_of_cn_y;
-  int det_cost_node;  // Detour cost of the node j = Sum of all the detour costs
-                      // of the edges from the source to the node j
+  int idx_of_current_node_x, idx_of_current_node_y;
+  int detour_cost_node;  // Detour cost of the node j = Sum of all the detour
+                         // costs of the edges from the source to the node j
   int maxPLToChild;
 
   friend ostream& operator<<(ostream& os, const Node& n);
@@ -81,14 +81,15 @@ public:
   vector<int> S;
   vector<int> E;
   vector<int> W;
-  vector<int> nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
+  vector<int>
+      nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
   vector<vector<int>> swap_space;
 #endif
 };
 
 class Node1
 {
-public:
+ public:
   Node1(int _idx, int _x, int _y);
 
   int idx;
@@ -96,4 +97,4 @@ public:
   int y;
 };
 
-}  // namespace
+}  // namespace pdr

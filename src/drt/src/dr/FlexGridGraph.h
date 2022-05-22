@@ -242,13 +242,8 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  dbTechLayerDir getZDir(frMIdx in) const
-  {
-    return layerRouteDirections_[in];
-  }
-  int getLayerCount() {
-      return zCoords_.size();
-  }
+  dbTechLayerDir getZDir(frMIdx in) const { return layerRouteDirections_[in]; }
+  int getLayerCount() { return zCoords_.size(); }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     correct(x, y, z, dir);
@@ -1215,6 +1210,7 @@ class FlexGridGraph
 
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);
+  bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
   template <class Archive>

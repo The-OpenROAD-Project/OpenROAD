@@ -18,6 +18,7 @@ namespace rcx {
 
 using utl::RCX;
 
+using odb::Ath__double2int;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
@@ -528,13 +529,8 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
   int n =
       measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
 
-  double pitchUp_print = measure->_topWidth;
-  double pitch_print = 0.001 * (measure->_minWidth + measure->_minSpace);
-
   uint w_layout = measure->_minWidth;
   uint s_layout = measure->_minSpace;
-
-  double x = -(measure->_topWidth * 0.5 + pitchUp_print + pitch_print);
 
   uint WW = measure->_w_nm;
   uint SS1 = measure->_s_nm;
@@ -564,7 +560,6 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
     for (; ii < n - 1; ii++) {
       measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
-      x -= pitch_print;
     }
   }
 
@@ -587,11 +582,8 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure) {
       idCnt++;
     }
 
-    //	x= measure->_topWidth*0.5+pitchUp_print+0.001*measure->_minSpace;
-    x = measure->_topWidth * 0.5 + 0.001 * (WW2 + SS2 + measure->_minSpace);
     for (int jj = 0; jj < n - 1; jj++) {
       cnt++;
-      x += pitch_print;
       measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
     }
@@ -627,13 +619,8 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
   if (measure->_s_nm == 0 && !measure->_diag)
     n = 1;
 
-  double pitchUp_print = measure->_topWidth;
-  double pitch_print = 0.001 * (measure->_minWidth + measure->_minSpace);
-
   uint w_layout = measure->_minWidth;
   uint s_layout = measure->_minSpace;
-
-  double x = -(measure->_topWidth * 0.5 + pitchUp_print + pitch_print);
 
   measure->clean2dBoxTable(measure->_met, false);
 
@@ -642,7 +629,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
   for (ii = 0; ii < n - 1; ii++) {
     measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
     idCnt++;
-    x -= pitch_print;
   }
 
   ii--;
@@ -689,10 +675,8 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure) {
     }
 
     //	x= measure->_topWidth*0.5+pitchUp_print+0.001*measure->_minSpace;
-    x = measure->_topWidth * 0.5 + 0.001 * (WW2 + SS2 + measure->_minSpace);
     for (int jj = 0; jj < n - 1; jj++) {
       cnt++;
-      x += pitch_print;
       measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
       idCnt++;
     }

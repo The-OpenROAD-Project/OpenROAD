@@ -336,7 +336,22 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(instances_.stdcells);
 
   makeLeafItem(instances_.blocks, "Macro", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.pads, "Pad", instances_parent, Qt::Checked, true);
+
+  auto pad_parent = makeParentItem(
+      instances_.pads,
+      "Pads",
+      instances_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(pad_instances_.input, "Input", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.output, "Output", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.input, "Inout", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.power, "Power", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.spacer, "Spacer", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.areaio, "Area IO", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.other, "Other", pad_parent, Qt::Checked, true);
+  toggleParent(instances_.pads);
+
   auto phys_parent = makeParentItem(
       instances_.physical,
       "Physical",
@@ -1276,7 +1291,19 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
   case DbInstDescriptor::BLOCK:
     return &instances_.blocks;
   case DbInstDescriptor::PAD:
-    return &instances_.pads;
+    return &pad_instances_.other;
+  case DbInstDescriptor::PAD_INPUT:
+    return &pad_instances_.input;
+  case DbInstDescriptor::PAD_OUTPUT:
+    return &pad_instances_.output;
+  case DbInstDescriptor::PAD_INOUT:
+    return &pad_instances_.inout;
+  case DbInstDescriptor::PAD_POWER:
+    return &pad_instances_.power;
+  case DbInstDescriptor::PAD_SPACER:
+    return &pad_instances_.spacer;
+  case DbInstDescriptor::PAD_AREAIO:
+    return &pad_instances_.areaio;
   case DbInstDescriptor::ENDCAP:
     return &physical_instances_.endcap;
   case DbInstDescriptor::FILL:
