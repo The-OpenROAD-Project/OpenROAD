@@ -6890,7 +6890,17 @@ class dbTechLayer : public dbObject
     DIFFUSION,
     TRIMPOLY,
     MIMCAP,
-    STACKEDMIMCAP
+    STACKEDMIMCAP,
+    TSVMETAL,
+    TSV,
+    PASSIVATION,
+    HIGHR,
+    TRIMMETAL,
+    REGION,
+    MEOL,
+    WELLDISTANCE,
+    CPODE,
+    PADMETAL
   };
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums
