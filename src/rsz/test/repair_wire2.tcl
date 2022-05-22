@@ -10,8 +10,10 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire2.def
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
+
 # zero estimated parasitics to output ports
 set_load 0 [get_net out1]
 set_load 0 [get_net out2]

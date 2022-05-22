@@ -47,6 +47,7 @@
 #include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

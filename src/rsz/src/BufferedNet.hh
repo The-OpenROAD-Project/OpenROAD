@@ -36,6 +36,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 
 #include "utl/Logger.h"
 #include "spdlog/fmt/fmt.h"
@@ -66,10 +67,14 @@ using sta::PathRef;
 using sta::Delay;
 using sta::StaState;
 using sta::DcalcAnalysisPt;
-
-typedef array<Required, RiseFall::index_count> Requireds;
+using sta::Corner;
 
 class Resizer;
+
+class BufferedNet;
+typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
+typedef array<Required, RiseFall::index_count> Requireds;
+
 enum class BufferedNetType { load, junction, wire, buffer };
 
 // The routing tree is represented a binary tree with the sinks being the leaves
@@ -78,65 +83,104 @@ enum class BufferedNetType { load, junction, wire, buffer };
 class BufferedNet
 {
 public:
+  // load
   BufferedNet(BufferedNetType type,
               Point location,
-              float cap,
               Pin *load_pin,
-              PathRef load_req_path,
-              Delay required_delay,
-              LibertyCell *buffer,
-              BufferedNet *ref,
-              BufferedNet *ref2);
+              const Corner *corner,
+              const Resizer *resizer);
+  // wire
   BufferedNet(BufferedNetType type,
               Point location,
-              float cap,
-              Pin *load_pin,
-              BufferedNet *ref,
-              BufferedNet *ref2);
-  ~BufferedNet();
-  string to_string(Resizer *resizer);
-  void reportTree(Resizer *resizer);
+              int layer,
+              BufferedNetPtr ref,
+              const Corner *corner,
+              const Resizer *resizer);
+  // junc
+  BufferedNet(BufferedNetType type,
+              Point location,
+              BufferedNetPtr ref,
+              BufferedNetPtr ref2);
+  // buffer
+  BufferedNet(BufferedNetType type,
+              Point location,
+              LibertyCell *buffer_cell,
+              BufferedNetPtr ref,
+              const Corner *corner,
+              const Resizer *resizer);
+  string to_string(const Resizer *resizer) const;
+  void reportTree(const Resizer *resizer) const;
   void reportTree(int level,
-                  Resizer *resizer);
+                  const Resizer *resizer) const;
   BufferedNetType type() const { return type_; }
-  float cap() const { return cap_; }
-  Required required(StaState *sta);
-  const PathRef &requiredPath() const { return required_path_; }
-  Delay requiredDelay() const { return required_delay_; }
-  // driver   driver pin location
   // junction steiner point location connecting ref/ref2
-  // wire     location opposite end of wire to location(ref_)
+  // wire     wire is from loc to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
   Point location() const { return location_; }
-  // Downstream buffer count.
-  int bufferCount() const;
-  // buffer
-  LibertyCell *bufferCell() const { return buffer_cell_; }
+  float cap() const { return cap_; }
+  void setCapacitance(float cap);
+  float fanout() const { return fanout_; }
+  void setFanout(float fanout);
+  float maxLoadSlew() const { return max_load_slew_; }
+  void setMaxLoadSlew(float max_slew);
   // load
   Pin *loadPin() const { return load_pin_; }
+  // wire
+  int length() const;
+  // routing level
+  int layer() const { return layer_; }
+  void wireRC(const Corner *corner,
+              const Resizer *resizer,
+              // Return values.
+              double &cap,
+              double &res);
+  // buffer
+  LibertyCell *bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
-  BufferedNet *ref() const { return ref_; }
+  BufferedNetPtr ref() const { return ref_; }
   // junction  right
-  BufferedNet *ref2() const { return ref2_; }
+  BufferedNetPtr ref2() const { return ref2_; }
+
+  // repairNet
+  int maxLoadWireLength() const;
+
+  // Rebuffer
+  Required required(const StaState *sta) const;
+  const PathRef &requiredPath() const { return required_path_; }
+  void setRequiredPath(const PathRef &path_ref);
+  Delay requiredDelay() const { return required_delay_; }
+  void setRequiredDelay(Delay delay);
+  // Downstream buffer count.
+  int bufferCount() const;
+
+  static constexpr int null_layer = -1;
 
 private:
   BufferedNetType type_;
-  // Capacitance looking into Net.
-  float cap_;
   Point location_;
+  // Capacitance looking downstream from here.
+  float cap_;
+  float fanout_;
+  float max_load_slew_;
+  // load
+  Pin *load_pin_;
+  // buffer
+  LibertyCell *buffer_cell_;
+  // wire
+  int layer_;
+  // load wire junc
+  BufferedNetPtr ref_;
+  // junc
+  BufferedNetPtr ref2_;
+
+  // Rebuffer annotations
   // PathRef for worst required path at load.
   PathRef required_path_;
-  // Delay from this BufferedNet to the load.
+  // Max delay from here to the loads.
   Delay required_delay_;
-  // Type load.
-  Pin *load_pin_;
-  // Type buffer.
-  LibertyCell *buffer_cell_;
-  BufferedNet *ref_;
-  BufferedNet *ref2_;
 };
 
 } // namespace

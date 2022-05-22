@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "GRoute.h"
+#include "RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -121,24 +122,16 @@ enum class NetType
   All
 };
 
-class RoutePt
+struct PinGridLocation
 {
- public:
-  RoutePt() = default;
-  RoutePt(int x, int y, int layer);
-  int x() { return _x; };
-  int y() { return _y; };
-  int layer() { return _layer; };
+  PinGridLocation(odb::dbITerm* iterm,
+                  odb::dbBTerm* bterm,
+                  odb::Point pt);
 
-  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
-
- private:
-  int _x;
-  int _y;
-  int _layer;
+  odb::dbITerm* iterm_;
+  odb::dbBTerm* bterm_;
+  odb::Point pt_;
 };
-
-bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
 {
@@ -239,6 +232,7 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
+  std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
 
  private:
   // Net functions
