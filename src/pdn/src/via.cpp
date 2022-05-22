@@ -1000,6 +1000,7 @@ bool ViaGenerator::isPreferredOver(const ViaGenerator* other) const
                "ViaPreference",
                2,
                "Comparing {} has more area by {}",
+               getName(),
                cut_area_diff);
     return true;
   } else if (cut_area_diff == 0) {
