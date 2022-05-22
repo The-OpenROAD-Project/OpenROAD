@@ -920,11 +920,15 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
 
 ViaGenerator::ViaGenerator(utl::Logger* logger,
                            const odb::Rect& lower_rect,
-                           const odb::Rect& upper_rect)
+                           const Constraint& lower_constraint,
+                           const odb::Rect& upper_rect,
+                           const Constraint& upper_constraint)
     : logger_(logger),
       lower_rect_(lower_rect),
       upper_rect_(upper_rect),
       intersection_rect_(),
+      lower_constraint_(lower_constraint),
+      upper_constraint_(upper_constraint),
       cut_(),
       cutclass_(nullptr),
       cut_pitch_x_(0),
@@ -1457,8 +1461,8 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
              2,
              "Bottom constraints: use_minimum {}, must_fix_x {}, must_fit_y {}.",
              use_bottom_min_enclosure,
-             getLowerConstraint().must_fit_x,
-             getLowerConstraint().must_fit_y);
+             lower_constraint_.must_fit_x,
+             lower_constraint_.must_fit_y);
   debugPrint(logger_,
              utl::PDN,
              "ViaEnclosure",
@@ -1474,8 +1478,8 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
              2,
              "Top constraints: use_minimum {}, must_fix_x {}, must_fit_y {}.",
              use_top_min_enclosure,
-             getUpperConstraint().must_fit_x,
-             getUpperConstraint().must_fit_y);
+             upper_constraint_.must_fit_x,
+             upper_constraint_.must_fit_y);
 
   // determine rows and columns possible
   int cols;
@@ -1645,25 +1649,25 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
               true,
               bottom_min_enclosure.getX(),
               double_enc_x / 2,
-              getLowerConstraint()));
+              lower_constraint_));
           bottom_enclosure_->setY(determine_enclosure(
               use_bottom_min_enclosure,
               false,
               bottom_min_enclosure.getY(),
               double_enc_y / 2,
-              getLowerConstraint()));
+              lower_constraint_));
           top_enclosure_->setX(determine_enclosure(
               use_top_min_enclosure,
               true,
               top_min_enclosure.getX(),
               double_enc_x / 2,
-              getUpperConstraint()));
+              upper_constraint_));
           top_enclosure_->setY(determine_enclosure(
               use_top_min_enclosure,
               false,
               top_min_enclosure.getY(),
               double_enc_y / 2,
-              getUpperConstraint()));
+              upper_constraint_));
 
           max_cut_area = total_cut_area;
         }
@@ -1699,25 +1703,25 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
           true,
           bottom_min_enclosure.getX(),
           double_enc_x / 2,
-          getLowerConstraint()));
+          lower_constraint_));
       bottom_enclosure_->setY(determine_enclosure(
           use_bottom_min_enclosure,
           false,
           bottom_min_enclosure.getY(),
           double_enc_y / 2,
-          getLowerConstraint()));
+          lower_constraint_));
       top_enclosure_->setX(determine_enclosure(
           use_top_min_enclosure,
           true,
           top_min_enclosure.getX(),
           double_enc_x / 2,
-          getUpperConstraint()));
+          upper_constraint_));
       top_enclosure_->setY(determine_enclosure(
           use_top_min_enclosure,
           false,
           top_min_enclosure.getY(),
           double_enc_y / 2,
-          getUpperConstraint()));
+          upper_constraint_));
     }
 
     if (isSplitCutArray()) {
@@ -1952,8 +1956,11 @@ void ViaGenerator::determineCutSpacing()
 GenerateViaGenerator::GenerateViaGenerator(utl::Logger* logger,
                                            odb::dbTechViaGenerateRule* rule,
                                            const odb::Rect& lower_rect,
-                                           const odb::Rect& upper_rect)
-    : ViaGenerator(logger, lower_rect, upper_rect), rule_(rule)
+                                           const Constraint& lower_constraint,
+                                           const odb::Rect& upper_rect,
+                                           const Constraint& upper_constraint)
+    : ViaGenerator(logger, lower_rect, lower_constraint, upper_rect, upper_constraint),
+      rule_(rule)
 {
   const uint layer_count = rule_->getViaLayerRuleCount();
 
@@ -2144,15 +2151,13 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
                                    const Constraint& lower_constraint,
                                    const odb::Rect& upper_rect,
                                    const Constraint& upper_constraint)
-    : ViaGenerator(logger, lower_rect, upper_rect),
+    : ViaGenerator(logger, lower_rect, lower_constraint, upper_rect, upper_constraint),
       via_(via),
       cuts_(0),
       cut_outline_(),
       bottom_(via_->getBottomLayer()),
       cut_(nullptr),
-      top_(via_->getTopLayer()),
-      lower_constraint_(lower_constraint),
-      upper_constraint_(upper_constraint)
+      top_(via_->getTopLayer())
 {
   cut_outline_.mergeInit();
   for (auto* box : via_->getBoxes()) {
@@ -2234,12 +2239,12 @@ bool TechViaGenerator::fitsShapes() const
   odb::Rect top_rect = via.getViaRect(true, false, true);
 
   transform.apply(bottom_rect);
-  if (!mostlyContains(getLowerRect(), intersection, bottom_rect, lower_constraint_)) {
+  if (!mostlyContains(getLowerRect(), intersection, bottom_rect, getLowerConstraint())) {
     return false;
   }
 
   transform.apply(top_rect);
-  if (!mostlyContains(getUpperRect(), intersection, top_rect, upper_constraint_)) {
+  if (!mostlyContains(getUpperRect(), intersection, top_rect, getUpperConstraint())) {
     return false;
   }
 

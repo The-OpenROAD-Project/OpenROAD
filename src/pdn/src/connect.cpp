@@ -600,6 +600,13 @@ DbVia* Connect::generateDbVia(
                  "{} was not buildable.",
                  via->getName());
       continue;
+    } else {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "{} was buildable.",
+                 via->getName());
     }
 
     vias.push_back(via.get());
@@ -640,7 +647,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
       for (odb::dbTechViaGenerateRule* db_via : generate_via_rules_) {
         std::unique_ptr<GenerateViaGenerator> rule
             = std::make_unique<GenerateViaGenerator>(
-                grid_->getLogger(), db_via, lower_rect, upper_rect);
+                grid_->getLogger(),
+                db_via,
+                lower_rect,
+                lower_constraint,
+                upper_rect,
+                upper_constraint);
 
         if (!rule->isSetupValid(lower, upper)) {
           continue;
