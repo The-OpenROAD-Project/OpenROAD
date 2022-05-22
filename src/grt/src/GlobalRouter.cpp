@@ -282,7 +282,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int max_routing_layer)
 {
   NetRouteMap routes;
-  if (getNetCount() > 0) {
+  if (!nets.empty()) {
     routes = fastroute_->run();
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
@@ -750,7 +750,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   fastroute_->setNumberNets(valid_nets);
-  fastroute_->setMaxNetDegree(getMaxNetDegree());
 
   if (seed_ != 0) {
     std::mt19937 g;
@@ -821,6 +820,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
       }
     }
   }
+  fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
@@ -2265,24 +2265,6 @@ void GlobalRouter::initAdjustments()
   if (adjustments_.empty()) {
     adjustments_.resize(db_->getTech()->getRoutingLayerCount() + 1, 0);
   }
-}
-
-int GlobalRouter::getNetCount() const
-{
-  return db_net_map_.size();
-}
-
-int GlobalRouter::getMaxNetDegree()
-{
-  int max_degree = -1;
-  for (auto net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    int netDegree = net->getNumPins();
-    if (netDegree > max_degree) {
-      max_degree = netDegree;
-    }
-  }
-  return max_degree;
 }
 
 std::vector<Pin*> GlobalRouter::getAllPorts()

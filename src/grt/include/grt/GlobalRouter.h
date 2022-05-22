@@ -242,10 +242,8 @@ class GlobalRouter
 
  private:
   // Net functions
-  int getNetCount() const;
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
-  int getMaxNetDegree();
 
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
