@@ -34,12 +34,11 @@
 
 #pragma once
 
-#include "odb/db.h"
-#include "odb/geom.h"
+#include <vector>
+#include <map>
 
 namespace odb {
 class dbNet;
-class Rect;
 }  // namespace odb
 
 namespace grt {
@@ -108,10 +107,7 @@ class Capacities
 
 struct cmpById
 {
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const
-  {
-    return net1->getId() < net2->getId();
-  }
+  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
 };
 
 // class Route is defined in fastroute core.

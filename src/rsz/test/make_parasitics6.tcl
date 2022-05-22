@@ -13,6 +13,7 @@ set r 5.43e-3
 # fF/micron
 set c 6.013e-2
 
+source Nangate45/Nangate45.rc
 set_layer_rc -layer metal1 -corner ff \
   -resistance [expr $r * 0.8] -capacitance [expr $c * 0.8]
 set_layer_rc -layer metal1 -corner ss \

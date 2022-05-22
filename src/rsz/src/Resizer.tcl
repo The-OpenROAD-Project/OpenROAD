@@ -266,7 +266,6 @@ proc buffer_ports { args } {
   sta::check_argc_eq0 "buffer_ports" $args
   
   rsz::set_max_utilization [rsz::parse_max_util keys]
-  rsz::resizer_preamble
   if { $buffer_inputs } {
     rsz::buffer_inputs
   }
@@ -299,7 +298,6 @@ proc repair_design { args } {
   
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
-  rsz::resizer_preamble
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin
 }
@@ -316,12 +314,11 @@ proc repair_clock_nets { args } {
 
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
-  rsz::resizer_preamble
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
 
-sta::define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}
+sta::define_cmd_args "repair_clock_inverters" {}
 
 proc repair_clock_inverters { args } {
   sta::check_argc_eq0 "repair_clock_inverters" $args
@@ -398,7 +395,6 @@ proc repair_timing { args } {
   }
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
-  rsz::resizer_preamble
   if { $setup } {
     rsz::repair_setup $slack_margin $max_passes
   }
@@ -455,18 +451,9 @@ sta::proc_redirect report_long_wires {
 
 namespace eval rsz {
   
-# for testing resizing separately
-proc resize { args } {
-  sta::check_argc_eq0 "resize" $args
-  check_parasitics
-  resizer_preamble
-  resize_to_target_slew
-}
-  
 # for testing
 proc repair_setup_pin { end_pin } {
   check_parasitics
-  resizer_preamble
   repair_setup_pin_cmd $end_pin
 }
   
@@ -536,7 +523,6 @@ proc check_corner_wire_caps {} {
 
 proc check_max_wire_length { max_wire_length } {
   if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
-    # Must follow rsz::resizer_preamble so buffers are known.
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {

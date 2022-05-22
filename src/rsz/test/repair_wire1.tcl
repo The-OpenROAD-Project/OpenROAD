@@ -5,13 +5,9 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire1.def
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-
-set max_slew [rsz::default_max_slew]
-puts "Max slew [sta::format_time $max_slew 3]ns"
-set max_length [rsz::find_max_slew_wire_length [get_lib_pin BUF_X1/Z] [get_lib_pin BUF_X1/A] $max_slew [sta::cmd_corner]]
-puts "Max wire length [sta::format_distance $max_length 0]u"
 
 # zero estimated parasitics to output port
 set_load 0 [get_net out1]
