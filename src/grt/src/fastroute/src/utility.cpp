@@ -141,34 +141,24 @@ static bool comparePVPV(const OrderNetPin& a, const OrderNetPin& b)
 
 void FastRouteCore::netpinOrderInc()
 {
-  int j, d, ind, totalLength, xmin;
-  TreeNode* treenodes;
-  StTree* stree;
-
-  float npvalue;
-
-  for (j = 0; j < num_valid_nets_; j++) {
-    d = sttrees_[j].deg;
-  }
-
   tree_order_pv_.clear();
 
   tree_order_pv_.resize(num_valid_nets_);
 
-  for (j = 0; j < num_valid_nets_; j++) {
-    xmin = BIG_INT;
-    totalLength = 0;
-    treenodes = sttrees_[j].nodes;
-    stree = &(sttrees_[j]);
-    d = stree->deg;
-    for (ind = 0; ind < 2 * d - 3; ind++) {
+  for (int j = 0; j < num_valid_nets_; j++) {
+    int xmin = BIG_INT;
+    int totalLength = 0;
+    TreeNode* treenodes = sttrees_[j].nodes;
+    StTree* stree = &(sttrees_[j]);
+    int d = stree->deg;
+    for (int ind = 0; ind < 2 * d - 3; ind++) {
       totalLength += stree->edges[ind].len;
       if (xmin < treenodes[stree->edges[ind].n1].x) {
         xmin = treenodes[stree->edges[ind].n1].x;
       }
     }
 
-    npvalue = (float) totalLength / d;
+    float npvalue = (float) totalLength / d;
 
     tree_order_pv_[j].npv = npvalue;
     tree_order_pv_[j].treeIndex = j;
