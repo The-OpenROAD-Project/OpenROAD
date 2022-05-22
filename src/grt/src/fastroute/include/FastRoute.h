@@ -41,6 +41,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -143,7 +144,7 @@ class FastRouteCore
                                   int first_tile_reduce,
                                   int last_tile_reduce);
   void initAuxVar();
-  NetRouteMap run();
+  NetRouteMap route(std::vector<odb::dbNet*> &db_nets);
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
@@ -187,6 +188,7 @@ class FastRouteCore
   void setDebugTree3D(bool tree3D);
 
  private:
+  NetRouteMap routeNets();
   NetRouteMap getRoutes();
   void init_usage();
 
@@ -480,6 +482,7 @@ class FastRouteCore
   int ahth_;
   int num_valid_nets_;  // # nets need to be routed (having pins in different
                         // grids)
+  std::vector<int> route_net_ids_; // IDs of nets to route
   int num_layers_;
   int total_overflow_;  // total # overflow
   bool has_2D_overflow_;
@@ -510,6 +513,7 @@ class FastRouteCore
   std::vector<int> seglist_cnt_;    // the number of segements for each net
 
   std::vector<FrNet*> nets_;
+  std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
   std::vector<OrderNetEdge> net_eo_;
   std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE

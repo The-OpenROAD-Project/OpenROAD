@@ -283,7 +283,10 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-    routes = fastroute_->run();
+    std::vector<odb::dbNet*> db_nets;
+    for (Net *net : nets)
+      db_nets.push_back(net->getDbNet());
+    routes = fastroute_->route(db_nets);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {

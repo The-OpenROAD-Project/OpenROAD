@@ -67,7 +67,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // check embedded trees only when maze router is called
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID : route_net_ids_) {
       checkAndFixEmbeddedTree(netID);
     }
   }
@@ -463,7 +463,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 
 void FastRouteCore::convertToMazeroute()
 {
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     convertToMazerouteNet(netID);
   }
 
@@ -2257,6 +2257,7 @@ int FastRouteCore::getOverflow3D()
       for (int j = 0; j < x_grid_; j++) {
         total_usage += v_edges_3D_[k][i][j].usage;
         overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+
         if (overflow > 0) {
           V_overflow += overflow;
           max_V_overflow = std::max(max_V_overflow, overflow);

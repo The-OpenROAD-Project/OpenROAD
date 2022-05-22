@@ -1061,10 +1061,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
-  int netID, edgeID;
-
-  for (netID = 0; netID < num_valid_nets_; netID++) {
-    for (edgeID = 0; edgeID < sttrees_[netID].deg * 2 - 3; edgeID++) {
+  for (int netID : route_net_ids_) {
+    for (int edgeID = 0; edgeID < sttrees_[netID].deg * 2 - 3; edgeID++) {
       routeMonotonic(
           netID,
           edgeID,
@@ -1246,14 +1244,14 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 
 void FastRouteCore::spiralRouteAll()
 {
-  int netID, d, k, edgeID, nodeID, deg, numpoints, n1, n2;
+  int d, k, edgeID, nodeID, deg, numpoints, n1, n2;
   int na;
   bool redundant;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
   std::queue<int> edgeQueue;
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1299,7 +1297,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
@@ -1324,7 +1322,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     newRipupNet(netID);
 
     treeedges = sttrees_[netID].edges;
@@ -1378,7 +1376,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1680,7 +1678,7 @@ void FastRouteCore::routeLVEnew(int netID,
 
 void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 {
-  int netID, edgeID, numEdges, i, forange;
+  int edgeID, numEdges, i, forange;
   debugPrint(logger_,
              GRT,
              "patternRouting",
@@ -1700,7 +1698,7 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d1(boost::extents[y_range_][x_range_]);
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     numEdges = 2 * sttrees_[netID].deg - 3;
     for (edgeID = 0; edgeID < numEdges; edgeID++) {
       routeLVEnew(netID,

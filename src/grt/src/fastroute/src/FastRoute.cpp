@@ -177,6 +177,7 @@ void FastRouteCore::clearNets()
     delete net;
   }
   nets_.clear();
+  db_net_id_map_.clear();
   new_net_id_ = 0;
   num_nets_ = 0;
   pin_ind_ = 0;
@@ -305,7 +306,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           std::vector<int> edge_cost_per_layer)
 {
   const int netID = new_net_id_;
-  FrNet* net = nets_[new_net_id_];
+  FrNet* net = nets_[netID];
   pin_ind_ = num_pins;
   net->db_net = db_net;
   net->numPins = num_pins;
@@ -316,6 +317,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->minLayer = min_layer;
   net->maxLayer = max_layer;
   net->edge_cost_per_layer = edge_cost_per_layer;
+
+  db_net_id_map_[db_net] = netID;
 
   seglist_index_[new_net_id_] = seg_count_;
   new_net_id_++;
@@ -714,7 +717,7 @@ void FastRouteCore::initAuxVar()
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     odb::dbNet* db_net = nets_[netID]->db_net;
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
@@ -787,7 +790,21 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
-NetRouteMap FastRouteCore::run()
+NetRouteMap FastRouteCore::route(std::vector<odb::dbNet*> &db_nets)
+{
+  route_net_ids_.resize(num_valid_nets_);
+  route_net_ids_.clear();
+  for (odb::dbNet *db_net : db_nets) {
+    auto net_id_itr = db_net_id_map_.find(db_net);
+    if (net_id_itr != db_net_id_map_.end()) {
+      int netID = net_id_itr->second;
+      route_net_ids_.push_back(netID);
+    }
+  }
+  return routeNets();
+}
+
+NetRouteMap FastRouteCore::routeNets()
 {
   int tUsage;
   int cost_step;
@@ -796,11 +813,11 @@ NetRouteMap FastRouteCore::run()
   int bwcnt = 0;
 
   // TODO: check this size
-  max_degree_ = 2 * max_degree_;
-  xcor_.resize(max_degree_);
-  ycor_.resize(max_degree_);
-  dcor_.resize(max_degree_);
-  net_eo_.reserve(max_degree_);
+  int max_degree2 = 2 * max_degree_;
+  xcor_.resize(max_degree2);
+  ycor_.resize(max_degree2);
+  dcor_.resize(max_degree2);
+  net_eo_.reserve(max_degree2);
 
   int THRESH_M = 20;
   const int ENLARGE = 15;  // 5
@@ -904,7 +921,7 @@ NetRouteMap FastRouteCore::run()
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn_ && debug_->rectilinearSTree_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID : route_net_ids_) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
@@ -1155,7 +1172,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID : route_net_ids_) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
@@ -1197,7 +1214,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID : route_net_ids_) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
