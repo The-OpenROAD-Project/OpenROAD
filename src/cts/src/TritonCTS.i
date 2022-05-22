@@ -66,6 +66,12 @@ set_sink_clustering(bool enable)
 }
 
 void
+set_plot_option(bool plot)
+{
+  getTritonCts()->getParms()->setPlotSolution(plot);
+}
+
+void
 set_sink_clustering_levels(unsigned levels)
 {
   getTritonCts()->getParms()->setSinkClusteringLevels(levels);
