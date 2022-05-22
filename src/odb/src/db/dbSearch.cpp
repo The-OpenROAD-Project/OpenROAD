@@ -774,8 +774,6 @@ void dbBlockSearch::getInstShapes(bool vias, bool pins, bool obs)
   if (!(obsFlag || pinFlag))
     return;
 
-  uint cnt = 0;
-
   int x1, y1, x2, y2;
   _dcr->getBbox(&x1, &y1, &x2, &y2);
 
@@ -798,7 +796,7 @@ void dbBlockSearch::getInstShapes(bool vias, bool pins, bool obs)
     /* DKF 07/05/05		dbBox *bb= dbBox::getBox(_block, dbBoxId);
                     dbInst *inst= (dbInst *) bb->getBoxOwner();
     */
-    cnt += addInstShapes(inst, vias, pinFlag, obsFlag);
+    addInstShapes(inst, vias, pinFlag, obsFlag);
   }
 }
 /*
@@ -1656,12 +1654,12 @@ void dbBlockSearch::addInstConnList(dbInst* inst, bool ignoreFlags)
   std::vector<dbInst*>::iterator inst_itr;
 
   _dcr->setInstMarker();
-  uint cnt = addInstBoxes(inst, instBoxes, termShapes, instObs, false);
+  addInstBoxes(inst, instBoxes, termShapes, instObs, false);
 
   for (inst_itr = connectivity.begin(); inst_itr != connectivity.end();
        ++inst_itr) {
     dbInst* inst1 = *inst_itr;
-    cnt += addInstBoxes(inst1, instBoxes, termShapes, instObs, false);
+    addInstBoxes(inst1, instBoxes, termShapes, instObs, false);
   }
 }
 

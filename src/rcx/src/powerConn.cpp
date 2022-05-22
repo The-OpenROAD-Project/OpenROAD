@@ -2233,8 +2233,8 @@ uint extMain::viaAndInstConn(uint dir, uint width, odb::dbTechLayer* layer,
   std::vector<odb::dbBox*> processedViaTable;
 
   addPowerSources(viaTable, isVDDnet, level, w);
-  uint gViaCnt = addGroupVias(level + 1, w, viaTable);
-  gViaCnt += addGroupVias(level, w, viaTable);
+  addGroupVias(level + 1, w, viaTable);
+  addGroupVias(level, w, viaTable);
   sortViasXY(dir, viaTable);
   uint jid = 0;
   viaCnt = viaTable.size();

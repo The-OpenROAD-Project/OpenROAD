@@ -71,6 +71,9 @@ bool _dbVia::operator==(const _dbVia& rhs) const
 
   if (_flags._orient != rhs._flags._orient)
     return false;
+  
+  if (_flags.default_ != rhs._flags.default_)
+    return false;
 
   if (_name && rhs._name) {
     if (strcmp(_name, rhs._name) != 0)
@@ -120,6 +123,7 @@ void _dbVia::differences(dbDiff& diff,
   DIFF_FIELD(_flags._is_tech_via);
   DIFF_FIELD(_flags._has_params);
   DIFF_FIELD(_flags._orient);
+  DIFF_FIELD(_flags.default_);
   DIFF_FIELD(_pattern);
   DIFF_OBJECT(_bbox, lhs_block->_box_tbl, rhs_block->_box_tbl);
   DIFF_SET(_boxes, lhs_block->_box_itr, rhs_block->_box_itr);
@@ -140,6 +144,7 @@ void _dbVia::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._is_tech_via);
   DIFF_OUT_FIELD(_flags._has_params);
   DIFF_OUT_FIELD(_flags._orient);
+  DIFF_OUT_FIELD(_flags.default_);
   DIFF_OUT_FIELD(_pattern);
   DIFF_OUT_OBJECT(_bbox, block->_box_tbl);
   DIFF_OUT_SET(_boxes, block->_box_itr);
@@ -180,6 +185,7 @@ _dbVia::_dbVia(_dbDatabase*)
   _flags._is_tech_via = 0;
   _flags._has_params = 0;
   _flags._orient = dbOrientType::R0;
+  _flags.default_ = false;
   _flags._spare_bits = 0;
   _name = 0;
   _pattern = 0;
@@ -416,6 +422,18 @@ void dbVia::getViaParams(dbViaParams& params)
     _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
     params._tech = (dbTech*) tech;
   }
+}
+
+void dbVia::setDefault(bool val)
+{
+  _dbVia* via = (_dbVia*) this;
+  via->_flags.default_ = val;
+}
+
+bool dbVia::isDefault()
+{
+  _dbVia* via = (_dbVia*) this;
+  return via->_flags.default_;
 }
 
 dbVia* dbVia::create(dbBlock* block_, const char* name_)
