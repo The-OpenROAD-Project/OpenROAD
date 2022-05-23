@@ -240,6 +240,10 @@ bool rtl_macro_placer(const char* config_file,
                                                         num_run,
                                                         seed);
 
+  if (clusters.empty()) {
+    return true; // nothing to place
+  }
+
   vector<Block> blocks = block_placement::Floorplan(clusters,
                                                     logger,
                                                     outline_width,
