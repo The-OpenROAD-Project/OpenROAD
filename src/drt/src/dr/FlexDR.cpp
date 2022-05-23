@@ -92,6 +92,17 @@ static void deserialize_worker(FlexDRWorker* worker,
   ar >> *worker;
 }
 
+static void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+{
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(false);
+  register_types(ar);
+  ar << viaData;
+  serializedStr = stream.str();
+}
+
 static bool serialize_design(SerializationType type,
                              frDesign* design,
                              const std::string& name)
@@ -1745,9 +1756,11 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile(batch_name.c_str());
         if (dist_on_) {
           router_->dist_pool_.join();
-          if (vers++ == 0 && !design_->hasUpdates())
-            router_->sendGlobalsUpdates(globals_path_);
-          else
+          if (vers++ == 0 && !design_->hasUpdates()) {
+            std::string serializedViaData;
+            serializeViaData(via_data_, serializedViaData);
+            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
+          } else
             router_->sendDesignUpdates(globals_path_);
         }
         {
@@ -2175,8 +2188,7 @@ void FlexDR::sendWorkers(
     rjd->setDesignPath(design_path_);
     rjd->setGlobalsPath(globals_path_);
     rjd->setSharedDir(dist_dir_);
-    rjd->reply_serialized_ = true;
-    rjd->send_every_ = 20;
+    rjd->setSendEvery(20);
     msg.setJobDescription(std::move(desc));
     ProfileTask task("DIST: SENDJOB");
     bool ok = dist_->sendJobMultiResult(
@@ -2209,7 +2221,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
     frDesign* design = ar.getDesign();
     design_ = design;
   }
-  (ar) & via_data_;
   (ar) & routeBox_;
   (ar) & extBox_;
   (ar) & drcBox_;

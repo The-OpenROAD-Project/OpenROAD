@@ -39,6 +39,7 @@
 
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
+#include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
@@ -82,17 +83,15 @@ class RoutingCallBack : public dst::JobCallBack
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < workers.size(); i++) {
       std::pair<int, std::string> result
-          = {workers.at(i).first, router_->runDRWorker(workers.at(i).second)};
+          = {workers.at(i).first,
+             router_->runDRWorker(workers.at(i).second, &via_data_)};
 #pragma omp critical
       {
-        if (desc->reply_serialized_)
-          results.push_back(result);
-        else
-          results.push_back({result.first, ""});
+        results.push_back(result);
         ++cnt;
         if (cnt * 1.0 / size >= prev_perc / 100.0 + 0.1 && prev_perc < 90) {
           prev_perc += 10;
-          if (prev_perc % desc->send_every_ == 0) {
+          if (prev_perc % desc->getSendEvery() == 0) {
             asio::post(reply_pool,
                        boost::bind(&RoutingCallBack::sendResult,
                                    this,
@@ -143,7 +142,8 @@ class RoutingCallBack : public dst::JobCallBack
     if (desc->getGuidePath() != "") {
       GUIDE_FILE = desc->getGuidePath();
     }
-    if ((desc->isDesignUpdate() && !desc->getUpdates().empty()) || desc->getDesignPath() != "") {
+    if ((desc->isDesignUpdate() && !desc->getUpdates().empty())
+        || desc->getDesignPath() != "") {
       frTime t;
       logger_->report("Design Update");
       if (desc->isDesignUpdate())
@@ -151,6 +151,14 @@ class RoutingCallBack : public dst::JobCallBack
       else
         router_->resetDb(desc->getDesignPath().c_str());
       t.print(logger_);
+    }
+    if (!desc->getViaData().empty()) {
+      std::stringstream stream(
+          desc->getViaData(),
+          std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+      frIArchive ar(stream);
+      ar.setDeepSerialize(false);
+      ar >> via_data_;
     }
     dist_->sendResult(result, sock);
     sock.close();
@@ -163,6 +171,7 @@ class RoutingCallBack : public dst::JobCallBack
   std::string design_path_;
   std::string globals_path_;
   bool init_;
+  FlexDRViaData via_data_;
 };
 
 }  // namespace fr

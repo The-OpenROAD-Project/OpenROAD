@@ -180,7 +180,7 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-std::string TritonRoute::runDRWorker(const std::string& workerStr)
+std::string TritonRoute::runDRWorker(const std::string& workerStr, FlexDRViaData* viaData)
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
@@ -189,6 +189,7 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr)
                                           : nullptr;
   auto worker
       = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
+  worker->setViaData(viaData);
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_)
@@ -721,7 +722,7 @@ static void serializeUpdatesBatch(const std::vector<drUpdate>& batch,
   file.close();
 }
 
-void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
+void TritonRoute::sendGlobalsUpdates(const std::string& globals_path, const std::string& serializedViaData)
 {
   if (!distributed_)
     return;
@@ -734,6 +735,7 @@ void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
   rjd->setGlobalsPath(globals_path);
   rjd->setSharedDir(shared_volume_);
+  rjd->setViaData(serializedViaData);
   msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (!ok)

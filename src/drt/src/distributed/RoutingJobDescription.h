@@ -39,10 +39,7 @@ namespace fr {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription()
-      : reply_serialized_(false), send_every_(10), design_update_(false)
-  {
-  }
+  RoutingJobDescription() : design_update_(false), send_every_(10) {}
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
@@ -55,6 +52,8 @@ class RoutingJobDescription : public dst::JobDescription
   {
     updates_ = updates;
   }
+  void setSendEvery(int val) { send_every_ = val; }
+  void setViaData(const std::string& val) { via_data_ = val; }
   void setDesignUpdate(const bool& value) { design_update_ = value; }
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
@@ -64,13 +63,10 @@ class RoutingJobDescription : public dst::JobDescription
   {
     return workers_;
   }
-  const std::vector<std::string>& getUpdates()
-  {
-    return updates_;
-  }
+  const std::vector<std::string>& getUpdates() { return updates_; }
   bool isDesignUpdate() const { return design_update_; }
-  bool reply_serialized_;
-  int send_every_;
+  int getSendEvery() const { return send_every_; }
+  const std::string& getViaData() const { return via_data_; }
 
  private:
   std::string globals_path_;
@@ -79,21 +75,23 @@ class RoutingJobDescription : public dst::JobDescription
   std::string guide_path_;
   std::vector<std::pair<int, std::string>> workers_;
   std::vector<std::string> updates_;
+  std::string via_data_;
   bool design_update_;
+  int send_every_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & design_update_;
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
     (ar) & guide_path_;
-    (ar) & reply_serialized_;
-    (ar) & send_every_;
     (ar) & workers_;
     (ar) & updates_;
+    (ar) & via_data_;
+    (ar) & design_update_;
+    (ar) & send_every_;
   }
   friend class boost::serialization::access;
 };

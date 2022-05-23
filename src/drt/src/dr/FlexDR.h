@@ -296,7 +296,7 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data, frDesign* design, Logger* logger)
+  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger)
       : design_(design),
         logger_(logger),
         graphics_(nullptr),
@@ -423,7 +423,7 @@ class FlexDRWorker
     graphics_ = in;
     gridGraph_.setGraphics(in);
   }
-
+  void setViaData(FlexDRViaData* viaData) { via_data_ = viaData; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
@@ -522,7 +522,7 @@ class FlexDRWorker
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
   frDebugSettings* debugSettings_;
-  const FlexDRViaData* via_data_;
+  FlexDRViaData* via_data_;
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
