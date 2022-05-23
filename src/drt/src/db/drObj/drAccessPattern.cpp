@@ -45,54 +45,8 @@ void drAccessPattern::serialize(Archive& ar, const unsigned int version)
   (ar) & onTrackX_;
   (ar) & onTrackY_;
   (ar) & pinCost_;
-  // vU_ and vD_ are pointers to vectors based on previous implementation of dr.
-  // Each read serialization, new vU_ and vD_ are created and kept in heap
-  // without deletion.
-  // TODO: fix memory leaked here.
-  if (is_loading(ar)) {
-    int sz;
-    (ar) & sz;
-    if (sz == -1) {
-      vU_ = nullptr;
-    } else {
-      vU_ = new vector<frViaDef*>();
-      while (sz--) {
-        frViaDef* viadef;
-        serializeViaDef(ar, viadef);
-        vU_->push_back(viadef);
-      }
-    }
-    vD_ = new vector<frViaDef*>();
-    (ar) & sz;
-    if (sz == -1) {
-      vD_ = nullptr;
-    } else {
-      vD_ = new vector<frViaDef*>();
-      while (sz--) {
-        frViaDef* viadef;
-        serializeViaDef(ar, viadef);
-        vD_->push_back(viadef);
-      }
-    }
-  } else {
-    int sz;
-    if (vU_ == nullptr)
-      sz = -1;
-    else
-      sz = vU_->size();
-    (ar) & sz;
-    if (vU_ != nullptr)
-      for (auto viadef : *vU_)
-        serializeViaDef(ar, viadef);
-    if (vD_ == nullptr)
-      sz = -1;
-    else
-      sz = vD_->size();
-    (ar) & sz;
-    if (vD_ != nullptr)
-      for (auto viadef : *vD_)
-        serializeViaDef(ar, viadef);
-  }
+  // vU_ and vD_ are initialized at init and never used in end.(No Need to
+  // serialize)
 }
 
 // Explicit instantiations
