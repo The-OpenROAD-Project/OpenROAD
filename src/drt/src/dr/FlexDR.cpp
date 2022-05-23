@@ -227,6 +227,11 @@ int FlexDRWorker::main(frDesign* design)
     serializeUpdates(design_->getUpdates(),
                      fmt::format("{}/updates.bin", debugSettings_->dumpDir));
     design_->clearUpdates();
+    std::string viaDataStr;
+    serializeViaData(*via_data_, viaDataStr);
+    ofstream viaDataFile(
+        fmt::format("{}/viadata.bin", debugSettings_->dumpDir).c_str());
+    viaDataFile << viaDataStr;
     std::string workerStr;
     serialize_worker(this, workerStr);
     ofstream workerFile(

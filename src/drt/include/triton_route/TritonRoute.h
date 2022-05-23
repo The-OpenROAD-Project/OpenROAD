@@ -142,7 +142,7 @@ class TritonRoute
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr, fr::FlexDRViaData* viaData);
-  void debugSingleWorker(const std::string& worker_path, const std::string& drc_rpt);
+  void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void resetDesign(const char* file_name);

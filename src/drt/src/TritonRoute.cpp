@@ -198,15 +198,21 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr, FlexDRViaData
   return result;
 }
 
-void TritonRoute::debugSingleWorker(const std::string& worker_path,
-                                    const std::string& drc_rpt)
+void TritonRoute::debugSingleWorker(const std::string& dumpDir,
+                                    const std::string& drcRpt)
 {
   bool on = debug_->debugDR;
+  FlexDRViaData viaData;
+  std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir), std::ios::binary);
+  frIArchive ar(viaDataFile);
+  ar >> viaData;
+  
+
   std::unique_ptr<FlexDRGraphics> graphics_
       = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
-  std::ifstream workerFile(worker_path, std::ios::binary);
+  std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir), std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
                         std::istreambuf_iterator<char>());
   workerFile.close();
@@ -224,6 +230,7 @@ void TritonRoute::debugSingleWorker(const std::string& worker_path,
     worker->setFollowGuide((debug_->followGuide == 1));
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
+  worker->setViaData(&viaData);
   if (graphics_)
     graphics_->startIter(worker->getDRIter());
   std::string result = worker->reloadedMain();
@@ -236,7 +243,7 @@ void TritonRoute::debugSingleWorker(const std::string& worker_path,
              worker->getBestNumMarkers(),
              updated);
   if (updated)
-    reportDRC(drc_rpt, worker.get());
+    reportDRC(drcRpt, worker.get());
 }
 
 void TritonRoute::updateGlobals(const char* file_name)
@@ -800,12 +807,17 @@ int TritonRoute::main()
     if (distributed_ || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
-      asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
+      if(distributed_)
+        asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));      
     }
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
         fmt::format("{}/design.db", debug_->dumpDir).c_str());
+    std::ifstream src(GUIDE_FILE, std::ios::binary);
+    std::ofstream dst(fmt::format("{}/guide.in", debug_->dumpDir).c_str(), std::ios::binary);
+    dst << src.rdbuf();
+    dst.close();
   }
   initGuide();
   if (GUIDE_FILE == string("")) {

@@ -40,6 +40,7 @@
 #include "triton_route/TritonRoute.h"
 #include <fstream>
 #include <streambuf>
+#include "utl/Logger.h"
 %}
 
 %include "../../Exception.i"
@@ -181,15 +182,15 @@ set_worker_debug_params(int maze_end_iter,
 }
 
 void
-run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_path, const char* worker_path, const char* updates, const char* drc_rpt)
+run_worker_cmd(const char* dump_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setGuideFile(guide_path);
-  router->resetDb(db_path);
-  router->updateGlobals(globals_path);
-  router->updateDesign(updates);
+  router->setGuideFile(fmt::format("{}/guide.in", dump_dir).c_str());
+  router->resetDb(fmt::format("{}/design.db", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/globals.bin", dump_dir).c_str());
+  router->updateDesign(fmt::format("{}/updates.bin", dump_dir).c_str());
   
-  router->debugSingleWorker(worker_path, drc_rpt);
+  router->debugSingleWorker(dump_dir, drc_rpt);
 }
 
 void detailed_route_step_drt(int size,

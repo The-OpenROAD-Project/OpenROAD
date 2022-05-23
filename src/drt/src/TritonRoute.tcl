@@ -299,11 +299,29 @@ proc pin_access { args } {
   }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
 }
+
+sta::define_cmd_args "detailed_route_run_worker" {
+    [-dump_dir dir]
+    [-drc_rpt drc]
+}
+
 proc detailed_route_run_worker { args } {
-  if { [llength $args] != 6 } {
-    utl::error DRT 319 "detailed_route_run_worker requires six positional arguments."
+  sta::parse_key_args "detailed_route_run_worker" args \
+      keys {-dump_dir -drc_rpt} \
+      flags {}
+  sta::check_argc_eq0 "detailed_route_run_worker" $args
+  if { [info exists keys(-dump_dir)] } {
+    set dump_dir $keys(-dump_dir)
+  } else {
+    utl::error DRT 517 "-dump_dir is required for detailed_route_run_worker command"
   }
-  drt::run_worker_cmd  [lindex $args 0] [lindex $args 1]  [lindex $args 2] [lindex $args 3] [lindex $args 4] [lindex $args 5]
+
+  if { [info exists keys(-drc_rpt)] } {
+    set drc_rpt $keys(-drc_rpt)
+  } else {
+    utl::error DRT 518 "-drc_rpt is required for detailed_route_run_worker command"
+  }
+  drt::run_worker_cmd  $dump_dir $drc_rpt
 }
 
 sta::define_cmd_args "detailed_route_worker_debug" {
