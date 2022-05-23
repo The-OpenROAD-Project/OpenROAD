@@ -596,6 +596,36 @@
 		case odb::dbTechLayer::STACKEDMIMCAP:
 			obj = Tcl_NewStringObj("STACKEDMIMCAP", -1);
 			break;
+		case odb::dbTechLayer::TSVMETAL:
+			obj = Tcl_NewStringObj("TSVMETAL", -1);
+			break;
+		case odb::dbTechLayer::TSV:
+			obj = Tcl_NewStringObj("TSV", -1);
+			break;
+		case odb::dbTechLayer::PASSIVATION:
+			obj = Tcl_NewStringObj("PASSIVATION", -1);
+			break;
+		case odb::dbTechLayer::HIGHR:
+			obj = Tcl_NewStringObj("HIGHR", -1);
+			break;
+		case odb::dbTechLayer::TRIMMETAL:
+			obj = Tcl_NewStringObj("TRIMMETAL", -1);
+			break;
+		case odb::dbTechLayer::REGION:
+			obj = Tcl_NewStringObj("REGION", -1);
+			break;
+		case odb::dbTechLayer::MEOL:
+			obj = Tcl_NewStringObj("MEOL", -1);
+			break;
+		case odb::dbTechLayer::WELLDISTANCE:
+			obj = Tcl_NewStringObj("WELLDISTANCE", -1);
+			break;
+		case odb::dbTechLayer::CPODE:
+			obj = Tcl_NewStringObj("CPODE", -1);
+			break;
+		case odb::dbTechLayer::PADMETAL:
+			obj = Tcl_NewStringObj("PADMETAL", -1);
+			break;
 	 	case odb::dbTechLayer::NONE:
 			obj = Tcl_NewStringObj("NONE", -1);
 			break;
@@ -637,6 +667,26 @@
 		$1 = odb::dbTechLayer::LEF58_TYPE::MIMCAP;
 	} else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::STACKEDMIMCAP;
+	} else if (strcasecmp(str, "TSVMETAL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::TSVMETAL;
+	} else if (strcasecmp(str, "TSV") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::TSV;
+	} else if (strcasecmp(str, "PASSIVATION") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::PASSIVATION;
+	} else if (strcasecmp(str, "HIGHR") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::HIGHR;
+	} else if (strcasecmp(str, "TRIMMETAL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::TRIMMETAL;
+	} else if (strcasecmp(str, "REGION") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::REGION;
+	} else if (strcasecmp(str, "MEOL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::MEOL;
+	} else if (strcasecmp(str, "WELLDISTANCE") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::WELLDISTANCE;
+	} else if (strcasecmp(str, "CPODE") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::CPODE;
+	} else if (strcasecmp(str, "PADMETAL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::PADMETAL;
 	}
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
@@ -682,6 +732,26 @@
 		} 	else if (strcasecmp(str, "MIMCAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "TSVMETAL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "TSV") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PASSIVATION") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "HIGHR") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "TRIMMETAL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "REGION") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "MEOL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "WELLDISTANCE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "CPODE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PADMETAL") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "NONE") == 0) {
 			found = true;
