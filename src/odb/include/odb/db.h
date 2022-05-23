@@ -6907,7 +6907,8 @@ class dbTechLayer : public dbObject
     MEOL,
     WELLDISTANCE,
     CPODE,
-    PADMETAL
+    PADMETAL,
+    POLYROUTING
   };
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums
@@ -9127,7 +9128,9 @@ class dbAccessPoint : public dbObject
 
   void addBlockVia(int num_cuts, dbVia* via);
 
-  void addSegment(const Rect& segment, const bool& begin_style_trunc, const bool& end_style_trunc);
+  void addSegment(const Rect& segment,
+                  const bool& begin_style_trunc,
+                  const bool& end_style_trunc);
 
   const std::vector<std::tuple<Rect, bool, bool>>& getSegments() const;
 

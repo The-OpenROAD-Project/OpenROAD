@@ -1159,6 +1159,8 @@ std::string dbTechLayer::getLef58TypeString() const
       return "TSVMETAL";
     case PADMETAL:
       return "PADMETAL";
+    case POLYROUTING:
+      return "POLYROUTING";
   }
 
   return "Unknown";

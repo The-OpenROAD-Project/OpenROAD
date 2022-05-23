@@ -626,6 +626,9 @@
 		case odb::dbTechLayer::PADMETAL:
 			obj = Tcl_NewStringObj("PADMETAL", -1);
 			break;
+		case odb::dbTechLayer::POLYROUTING:
+			obj = Tcl_NewStringObj("POLYROUTING", -1);
+			break;
 	 	case odb::dbTechLayer::NONE:
 			obj = Tcl_NewStringObj("NONE", -1);
 			break;
@@ -687,6 +690,8 @@
 		$1 = odb::dbTechLayer::LEF58_TYPE::CPODE;
 	} else if (strcasecmp(str, "PADMETAL") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::PADMETAL;
+	} else if (strcasecmp(str, "POLYROUTING") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::POLYROUTING;
 	}
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
@@ -753,7 +758,9 @@
 			found = true;
 		} 	else if (strcasecmp(str, "PADMETAL") == 0) {
 			found = true;
-		} 	else if (strcasecmp(str, "NONE") == 0) {
+		} 	else if (strcasecmp(str, "POLYROUTING") == 0) {
+			found = true;
+		} 	 	else if (strcasecmp(str, "NONE") == 0) {
 			found = true;
 		}
 	}
