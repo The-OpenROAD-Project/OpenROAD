@@ -41,10 +41,13 @@ namespace odb {
 class dbBlock;
 }  // namespace odb
 
+namespace ifp {
+class InitFloorplan;
+}
+
 namespace ord {
 
 class Tech;
-class Floorplan;
 
 class Design
 {
@@ -62,7 +65,7 @@ class Design
   int micronToDBU(double coord);
 
   // Services
-  Floorplan getFloorplan();
+  ifp::InitFloorplan* getFloorplan();
 
  private:
   Tech* tech_;

@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace utl {
 class Logger;
 }

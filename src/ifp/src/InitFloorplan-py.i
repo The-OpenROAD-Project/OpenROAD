@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,39 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%{
+#include "ifp/InitFloorplan.hh"
+%}
 
-// Temporary until ifp/include/ifp/InitFloorplan.hh can be swig'ed
+%include <std_string.i>
 
-#include <string>
-
-namespace odb {
-class Rect;
-}  // namespace odb
-
-namespace ord {
-
-class Design;
-
-class Floorplan
-{
- public:
-  Floorplan(Design& design);
-  // Operations
-  void initialize(const odb::Rect& die_area,
-                  const odb::Rect& core_area,
-                  const std::string& site_name);
-
-  void initialize(double utilization,
-                  double aspect_ratio,
-                  int core_space_bottom,
-                  int core_space_top,
-                  int core_space_left,
-                  int core_space_right,
-                  const std::string& site_name);
-
- private:
-  Design& design_;
-};
-
-}  // namespace ord
+%include "ifp/InitFloorplan.hh"

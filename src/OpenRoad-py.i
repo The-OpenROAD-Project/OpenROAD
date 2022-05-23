@@ -40,7 +40,6 @@
 #include "odb/db.h"
 #include "ord/Tech.h"
 #include "ord/Design.h"
-#include "ord/Floorplan.h"
 
 using odb::dbDatabase;
 using odb::dbBlock;
@@ -69,7 +68,8 @@ get_db_block();
 
 %include "ord/Tech.h"
 %include "ord/Design.h"
-%include "ord/Floorplan.h"
+
+%newobject Design::getFloorplan();
 
 const char *
 openroad_version();

@@ -35,7 +35,7 @@
 
 #include "odb/db.h"
 #include "ord/Design.h"
-#include "ord/Floorplan.h"
+#include "ifp/InitFloorplan.hh"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
 #include "utl/Logger.h"
@@ -81,9 +81,14 @@ void Design::writeDef(const std::string& file_name)
   app->writeDef(file_name.c_str(), "5.8");
 }
 
-Floorplan Design::getFloorplan()
+ifp::InitFloorplan* Design::getFloorplan()
 {
-  return Floorplan(*this);
+  auto app = OpenRoad::openRoad();
+  auto block = getBlock();
+  if (!block) {
+    getLogger()->error(utl::ORD, 37, "No block loaded.");
+  }
+  return new ifp::InitFloorplan(block, app->getLogger(), app->getDbNetwork());
 }
 
 utl::Logger* Design::getLogger()

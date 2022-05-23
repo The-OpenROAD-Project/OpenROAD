@@ -76,7 +76,7 @@ function(swig_lib)
   )
 
   # Disable problematic compiler warnings on generated files.
-  # At this point the only the swig generated sources are present.
+  # At this point only the swig generated sources are present.
   get_target_property(GEN_SRCS ${ARG_NAME} SOURCES)
 
   foreach(GEN_SRC ${GEN_SRCS})
