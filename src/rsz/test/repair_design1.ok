@@ -11,13 +11,13 @@
 [INFO ODB-0132]     Created 2 special nets and 22 connections.
 [INFO ODB-0133]     Created 2 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: ./results/repair_slew1.def
-[INFO RSZ-0058] Using max wire length 1003um.
+[INFO RSZ-0058] Using max wire length 850um.
 [INFO RSZ-0034] Found 1 slew violations.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-load9/D                                 0.00    0.03   -0.03 (VIOLATED)
+load9/D                                 0.00    0.04   -0.04 (VIOLATED)
 
 max fanout
 
@@ -29,5 +29,5 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                  0.00   13.90  -13.90 (VIOLATED)
+drvr/Q                                  0.00   15.00  -15.00 (VIOLATED)
 

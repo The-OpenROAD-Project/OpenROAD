@@ -11,6 +11,7 @@ read_def $def_filename
 create_clock -period 10 clk1
 set_max_fanout 10 [current_design]
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal1
 estimate_parasitics -placement
 

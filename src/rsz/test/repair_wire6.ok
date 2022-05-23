@@ -18,29 +18,29 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.009    0.000    0.000    0.000 ^ in1 (in)
+   1.024    0.000    0.000    0.000 ^ in1 (in)
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
+   1.008    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  78.399    0.133    0.146    0.162 ^ u2/Z (BUF_X1)
-            0.257    0.181    0.343 ^ out1 (out)
-                              0.343   data arrival time
+ 112.761    0.189    0.202    0.218 ^ u2/Z (BUF_X1)
+            0.370    0.260    0.478 ^ out1 (out)
+                              0.478   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-u2/Z manhtn 1500.3 steiner 1500.3 0.21
+u2/Z manhtn 1500.3 steiner 1500.3 0.30
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
-[WARNING RSZ-0065] max wire length less than 853u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
-repeater1/Z manhtn 569.1 steiner 569.1 0.03
-repeater2/Z manhtn 568.6 steiner 568.6 0.03
-u2/Z manhtn 359.5 steiner 359.5 0.01
+repeater2/Z manhtn 568.6 steiner 568.6 0.04
+repeater1/Z manhtn 567.3 steiner 567.3 0.04
+u2/Z manhtn 358.1 steiner 358.1 0.02
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -50,17 +50,17 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.009    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   6.609    0.018    0.031    0.031 ^ u1/Z (BUF_X1)
-            0.018    0.000    0.031 ^ u2/A (BUF_X8)
-  25.374    0.008    0.025    0.055 ^ u2/Z (BUF_X8)
-            0.021    0.016    0.071 ^ repeater2/A (BUF_X8)
-  36.296    0.009    0.027    0.098 ^ repeater2/Z (BUF_X8)
-            0.041    0.033    0.131 ^ repeater1/A (BUF_X8)
-  29.736    0.010    0.030    0.161 ^ repeater1/Z (BUF_X8)
-            0.029    0.023    0.184 ^ out1 (out)
-                              0.184   data arrival time
+   1.456    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (CLKBUF_X2)
+  12.443    0.017    0.035    0.035 ^ u1/Z (CLKBUF_X2)
+            0.017    0.000    0.035 ^ u2/A (BUF_X16)
+  33.502    0.006    0.023    0.058 ^ u2/Z (BUF_X16)
+            0.024    0.019    0.077 ^ repeater2/A (BUF_X8)
+  55.143    0.011    0.029    0.107 ^ repeater2/Z (BUF_X8)
+            0.065    0.052    0.159 ^ repeater1/A (BUF_X16)
+  42.637    0.009    0.031    0.189 ^ repeater1/Z (BUF_X16)
+            0.039    0.032    0.221 ^ out1 (out)
+                              0.221   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

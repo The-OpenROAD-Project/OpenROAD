@@ -41,22 +41,20 @@
 #include "utl/Logger.h"
 
 #include "sta/Hash.hh"
-#include "sta/UnorderedMap.hh"
 
 #include "odb/geom.h"
-
-#include "db_sta/dbNetwork.hh"
 
 #include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
+
+using std::vector;
 
 using utl::Logger;
 
 using odb::Point;
 
 using sta::UnorderedMap;
-using sta::Vector;
 using sta::Network;
 using sta::dbNetwork;
 using sta::Net;
@@ -66,42 +64,22 @@ using sta::hashIncr;
 
 using stt::SteinerTreeBuilder;
 
-class SteinerTree;
-
 class PointHash
 {
 public:
-  size_t operator()(const Point &pt) const
-  {
-    size_t hash = sta::hash_init_value;
-    hashIncr(hash, pt.x());
-    hashIncr(hash, pt.y());
-    return hash;
-  }
+  size_t operator()(const Point &pt) const;
 };
 
 class PointEqual
 {
 public:
   bool operator()(const Point &pt1,
-                  const Point &pt2) const
-  {
-    return pt1.x() == pt2.x()
-      && pt1.y() == pt2.y();
-  }
+                  const Point &pt2) const;
 };
 
-typedef Vector<SteinerPt> SteinerPtSeq;
-typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+typedef std::unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 
-// Returns nullptr if net has less than 2 pins or any pin is not placed.
-SteinerTree *
-makeSteinerTree(const Pin *drvr_pin,
-                bool find_left_rights,
-                int max_pin_count,
-                SteinerTreeBuilder *stt_builder,
-                dbNetwork *network,
-                Logger *logger);
+class SteinerTree;
 
 // Wrapper for stt::Tree
 //
@@ -112,7 +90,6 @@ makeSteinerTree(const Pin *drvr_pin,
 // pd/pdrev
 //   preserves pin order
 //   removes duplicate locations
-
 class SteinerTree
 {
 public:
@@ -127,6 +104,7 @@ public:
               Point &pt2,
               int &steiner_pt2,
               int &wire_length);
+  stt::Branch &branch(int index) { return tree_.branch[index]; }
   void report(Logger *logger,
               const Network *network);
   // Return the steiner pt connected to the driver pin.
@@ -137,10 +115,6 @@ public:
                    const Network *network);
   const PinSeq *pins(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
-  SteinerPt left(SteinerPt pt);
-  SteinerPt right(SteinerPt pt);
-  void findLeftRights(const Network *network,
-                      Logger *logger);
   void setTree(stt::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
@@ -149,19 +123,6 @@ public:
   static SteinerPt null_pt;
 
 protected:
-  void findLeftRights(SteinerPt from,
-                      SteinerPt to,
-                      SteinerPtSeq &adj1,
-                      SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3,
-                      Logger *logger);
-  void findLeftRights(SteinerPt from,
-                      SteinerPt to,
-                      SteinerPt adj,
-                      SteinerPtSeq &adj1,
-                      SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3,
-                      Logger *logger);
   void locAddPin(Point &loc,
                  Pin *pin);
 
@@ -171,15 +132,8 @@ protected:
   PinSeq pins_;
   // location -> pins
   LocPinMap loc_pin_map_;
-  SteinerPtSeq left_;
-  SteinerPtSeq right_;
 
-  friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
-                                      bool find_left_rights,
-                                      int max_pin_count,
-                                      SteinerTreeBuilder *stt_builder,
-                                      dbNetwork *network,
-                                      Logger *logger);
+  friend class Resizer;
 };
 
 } // namespace

@@ -9,6 +9,7 @@ create_clock -period 2 clk
 set_output_delay -clock clk -min -0.3 out
 set_propagated_clock clk
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal1
 estimate_parasitics -placement
 

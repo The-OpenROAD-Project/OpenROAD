@@ -17,6 +17,7 @@ write_hi_fanout_def1 $def_file 20 \
 read_def $def_file
 create_clock -period 1 clk1
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
