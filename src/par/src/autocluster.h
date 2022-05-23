@@ -264,6 +264,14 @@ class AutoClusterMgr
   std::vector<float> L_pin_;
   std::vector<float> R_pin_;
 
+
+  // This is for Pads
+  void PrintPadPos(odb::dbModule* module, std::ostream &out);
+  void PrintIOPadNet(std::ostream &out);
+  std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
+  std::map<odb::dbInst*, odb::dbBTerm*> pad_io_map_;
+
+
   // Map all the BTerms to an IORegion
   std::map<const odb::dbBTerm*, IORegion> bterm_map_;
   std::map<IORegion, int> bundled_io_map_;

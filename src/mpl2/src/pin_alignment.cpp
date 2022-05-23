@@ -380,6 +380,9 @@ void SimulatedAnnealingCore::Restore()
 void SimulatedAnnealingCore::CalculateOutlinePenalty()
 {
   outline_penalty_ = 0.0;
+  
+  float ar = height_ / width_ - outline_height_ / outline_width_;
+  //outline_penalty_ = ar * ar;
 
   if (width_ > outline_width_ && height_ > outline_height_)
     outline_penalty_ = width_ * height_ - outline_width_ * outline_height_;
@@ -473,6 +476,7 @@ void SimulatedAnnealingCore::Initialize()
   norm_wirelength_ = norm_wirelength_ / perturb_per_step_;
   norm_outline_penalty_ = norm_outline_penalty_ / perturb_per_step_;
 
+
   vector<float> norm_cost_list;
   float norm_cost = 0.0;
   for (int i = 0; i < area_list.size(); i++) {
@@ -486,7 +490,8 @@ void SimulatedAnnealingCore::Initialize()
     delta_cost += abs(norm_cost_list[i] - norm_cost_list[i - 1]);
 
   delta_cost = delta_cost / (norm_cost_list.size() - 1);
-  init_T_ = (-1) * delta_cost / log(init_prob_);
+  //init_T_ = (-1) * delta_cost / log(init_prob_);
+  init_T_ =  100;
 }
 
 void SimulatedAnnealingCore::FastSA()
@@ -511,18 +516,19 @@ void SimulatedAnnealingCore::FastSA()
 
       if (delta_cost <= 0 || num <= prob) {
         pre_cost = cost;
-        if (cost < best_cost)
-          best_cost = cost;
-      } else
+      } else {
         Restore();
+      }
     }
     step++;
+
     if (step == max_num_step_) {
       flip_prob_ = 1.0;  // force the agent to focus on flipping only
       perturb_per_step_ = perturb_per_step_ * 10;
     }
     T = T * cooling_rate_;
   }
+
   PackFloorplan();
 }
 
@@ -571,13 +577,13 @@ bool PinAlignmentSingleCluster(
   int max_num_step = 3000;
   int k = 5;
   float c = 100.0;
-  float alpha = 0.3;
-  float beta = 0.4;
+  float alpha = 0.5;
+  float beta = 0.2;
   float gamma = 0.3;
-  float flip_prob = 0.2;
-  float pos_swap_prob = 0.3;
-  float neg_swap_prob = 0.3;
-  float double_swap_prob = 0.2;
+  float flip_prob = 0.1;
+  float pos_swap_prob = 0.4;
+  float neg_swap_prob = 0.4;
+  float double_swap_prob = 0.1;
 
   string name = cluster->GetName();
   for (int j = 0; j < name.size(); j++)
@@ -594,12 +600,13 @@ bool PinAlignmentSingleCluster(
   const float outline_width = ux - lx;
   const float outline_height = uy - ly;
 
+
   // deal with macros
   vector<Macro> macros = cluster->GetMacros();
   const string macro_file
       = string(report_directory) + string("/") + name + string(".txt.block");
   ParseMacroFile(macros, halo_width, macro_file);
-  const int perturb_per_step = 5 * macros.size();
+  const int perturb_per_step = 10 * macros.size();
   std::mt19937 rand_generator(seed);
   vector<int> seed_list;
   for (int j = 0; j < num_thread; j++)
@@ -693,6 +700,9 @@ bool PinAlignment(const vector<Cluster*>& clusters,
                   unsigned seed)
 {
   logger->info(MPL, 3001, "Starting pin alignment.");
+
+  // test
+  num_run = 1;
 
   unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;

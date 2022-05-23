@@ -107,7 +107,7 @@ bool rtl_macro_placer(const char* config_file,
   //  Default for Parameters
   //
   // These parameters are related to shape engine
-  float min_aspect_ratio = 0.39;
+  float min_aspect_ratio = 0.29;
   float dead_space = 0.05;
 
   string region_file = string(macro_blockage_file);
@@ -154,7 +154,7 @@ bool rtl_macro_placer(const char* config_file,
   int k = 5000000;
   float c = 1000.0;
   int max_num_step = 4000;
-  int perturb_per_step = 300;
+  int perturb_per_step = 400;
 
   int snap_layer = 4;
 
