@@ -5,5 +5,6 @@ record_tests {
   graph_hybrid
   
   partition
+  change_eval_method
   verilog_write
 }
