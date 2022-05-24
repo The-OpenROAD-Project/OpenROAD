@@ -256,7 +256,7 @@ about this tool.
 
 ## Authors
 
-PartitionMgr is written by Mateus Fogaça and Isadora Oliveira from the
+PartitionMgr is written by Mateus Foga&ccedil;a and Isadora Oliveira from the
 Federal University of Rio Grande do Sul (UFRGS), Brazil, and Marcelo Danigno
 from the Federal University of Rio Grande (FURG), Brazil.
 
