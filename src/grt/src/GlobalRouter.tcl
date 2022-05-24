@@ -315,14 +315,12 @@ proc draw_route_guides { args } {
     utl::error GRT 223 "Missing dbBlock."
   }
 
-  if {[llength $net_names] > 0} {
-    foreach net [get_nets $net_names] {
-      if { $net != "NULL" } {
-        grt::highlight_net_route [sta::sta_to_db_net $net] [info exists flags(-show_pin_locations)]
-      }
+  grt::clear_route_guides
+  set show_pins [info exists flags(-show_pin_locations)]
+  foreach net [get_nets $net_names] {
+    if { $net != "NULL" } {
+      grt::highlight_net_route [sta::sta_to_db_net $net] $show_pins
     }
-  } else {
-    grt::erase_routes
   }
 }
 

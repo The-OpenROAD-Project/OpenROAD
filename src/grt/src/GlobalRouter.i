@@ -230,7 +230,7 @@ void report_net_wire_length(odb::dbNet *net, bool global_route, bool detailed_ro
 }
 
 void
-erase_routes()
+clear_route_guides()
 {
   getGlobalRouter()->clearRouteGui();
 }

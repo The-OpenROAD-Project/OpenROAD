@@ -853,18 +853,18 @@ void FastRouteCore::newLayerAssignmentV4()
 
 void FastRouteCore::newLA()
 {
-  int netID, d, k, edgeID, deg, numpoints, n1, n2;
+  int k, edgeID, deg, numpoints, n1, n2;
   bool redundant;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID : route_net_ids_) {
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
     numpoints = 0;
 
-    for (d = 0; d < 2 * deg - 2; d++) {
+    for (int d = 0; d < 2 * deg - 2; d++) {
       treenodes[d].topL = -1;
       treenodes[d].botL = num_layers_;
       // treenodes[d].l = 0;
