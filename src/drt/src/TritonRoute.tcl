@@ -178,6 +178,7 @@ proc detailed_route { args } {
       drt::detailed_route_distributed $host $port $vol
     }
     if { [info exists keys(-min_access_points)] } {
+      sta::check_cardinal "-min_access_points" $keys(-min_access_points)
       set min_access_points $keys(-min_access_points)
     } else {
       set min_access_points -1
@@ -291,11 +292,12 @@ proc pin_access { args } {
   } else {
     set verbose 1
   }
-    if { [info exists keys(-min_access_points)] } {
-      set min_access_points $keys(-min_access_points)
-    } else {
-      set min_access_points -1
-    }
+  if { [info exists keys(-min_access_points)] } {
+    sta::check_cardinal "-min_access_points" $keys(-min_access_points)
+    set min_access_points $keys(-min_access_points)
+  } else {
+    set min_access_points -1
+  }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }
 proc detailed_route_run_worker { args } {
