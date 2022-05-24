@@ -42,6 +42,7 @@ extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
 extern std::string CMAP_FILE;
+extern std::string GUIDE_REPORT_FILE;
 // to be removed
 extern int OR_SEED;
 extern double OR_K;
