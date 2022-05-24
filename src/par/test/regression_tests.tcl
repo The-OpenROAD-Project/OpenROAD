@@ -7,4 +7,5 @@ record_tests {
   partition
   change_eval_method
   verilog_write
+  report_netlist_partitions
 }
