@@ -6,7 +6,7 @@ record_tests {
   
   partition
   change_eval_method
-  verilog_write
+  #verilog_write
   report_netlist_partitions
   read_partitioning
 }
