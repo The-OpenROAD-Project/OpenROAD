@@ -237,6 +237,20 @@ evaluate_partitioning -partition_ids $id -evaluation_function "hyperedges"
 report_netlist_partitions -partitioning_id $id
 ```
 
+### `read_partitioning`
+
+Reads in a graph file from an external partitioner.
+
+```
+read_partitioning -read_file graph_file
+                  -instance_map_file instance_map_file
+```
+
+Argument description:
+
+-   `graph_file` (Mandatory) is the path to the graph file.
+-   `instance_map_file` (Optional) is the path to the instance map file, if needed.
+
 ## Regression tests
 
 ## Limitations
