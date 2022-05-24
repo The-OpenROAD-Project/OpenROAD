@@ -457,7 +457,7 @@ void PartitionMgr::writePartitionVerilog(const char* path,
 
   reinterpret_cast<ConcreteNetwork*>(network)->setTopInstance(top_inst);
 
-  writeVerilog(path, false, false, {}, network);
+  writeVerilog(path, true, false, {}, network);
 
   delete network;
 }
