@@ -313,7 +313,9 @@ Instance* PartitionMgr::buildPartitionedInstance(
 
   // create nets for ports in cell
   for (auto& [db_net, port] : *port_map) {
-    network->makeNet(network->name(port), inst);
+    Net* net = network->makeNet(network->name(port), inst);
+    Pin* pin = network->makePin(inst, port, nullptr);
+    network->makeTerm(pin, net);
   }
 
   // create and connect instances
