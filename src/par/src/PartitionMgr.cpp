@@ -1269,7 +1269,7 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
 
 // Read partitioning input file
 
-void PartitionMgr::readPartitioningFile(std::string filename)
+unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const std::string& instance_map_file)
 {
   hypergraph();
   PartSolutions currentResults;
@@ -1279,20 +1279,72 @@ void PartitionMgr::readPartitioningFile(std::string filename)
   const std::string evaluationFunction = options_.getEvaluationFunction();
   options_.setTargetPartitions(options_.getFinalPartitions());
 
+  const auto& inst_map = hypergraph_->getMap();
+
+  // determine order the instances will be in the input file
+  std::vector<std::string> instance_order;
+  if (!instance_map_file.empty()) {
+    std::ifstream map_file(instance_map_file);
+    if (map_file.is_open()) {
+      std::string line;
+      while (getline(map_file, line)) {
+        if (line.empty()) {
+          continue;
+        }
+        instance_order.push_back(line);
+      }
+      map_file.close();
+    } else {
+      logger_->error(PAR, 73, "Unable to open file {}.", instance_map_file);
+    }
+  } else {
+    instance_order.resize(inst_map.size());
+    for (const auto& [inst, idx] : inst_map) {
+      instance_order[idx] = inst;
+    }
+  }
+
   std::ifstream file(filename);
-  std::string line;
-  std::vector<unsigned long> partitions;
+  std::vector<unsigned long> inst_partitions;
   if (file.is_open()) {
+    std::string line;
     while (getline(file, line)) {
-      partitions.push_back(std::stoi(line));
+      if (line.empty()) {
+        continue;
+      }
+      try {
+        inst_partitions.push_back(std::stoi(line));
+      } catch (const std::invalid_argument&) {
+        logger_->error(PAR, 71, "Unable to read file: {}", filename);
+      } catch (const std::out_of_range&) {
+        logger_->error(PAR, 72, "Unable to read file: {}", filename);
+      }
     }
     file.close();
   } else {
     logger_->error(PAR, 22, "Unable to open file {}.", filename);
   }
+
+  if (inst_partitions.size() != instance_order.size()) {
+    logger_->error(PAR, 74, "Instances in partitioning does not match instances in netlist.");
+  }
+
+  std::vector<unsigned long> partitions(inst_partitions.size());
+  for (size_t i = 0; i < inst_partitions.size(); i++) {
+    const auto& inst_name = instance_order[i];
+    const auto& inst_part = inst_partitions[i];
+
+    auto inst_find = inst_map.find(inst_name);
+    if (inst_find == inst_map.end()) {
+      logger_->error(PAR, 75, "Instance {} not in the netlist.", inst_name);
+    }
+    partitions[inst_find->second] = inst_part;
+  }
+
   currentResults.addAssignment(partitions, 0, 1);
   results_.push_back(currentResults);
-  computePartitionResult(partitionId, evaluationFunction);
+
+  return partitionId;
 }
 
 void PartitionMgr::runClustering()

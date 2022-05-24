@@ -488,28 +488,22 @@ proc report_netlist_partitions { args } {
   par::report_netlist_partitions $partitioning_id
 }
 
-sta::define_cmd_args "read_partitioning" { [-read_file name] \
-  [-final_partitions] \
-}
+sta::define_cmd_args "read_partitioning" { [-read_file name] [-instance_map_file file_path] }
 
 proc read_partitioning { args } {
   sta::parse_key_args "read_partitioning" args \
     keys { -read_file \
-      -final_partitions \
+      -instance_map_file
     } flags { }
 
-  par::set_final_partitions $keys(-final_partitions)
-    if { ![info exists keys(-read_file)] } {
-      utl::error PAR 51 "Missing mandatory argument -read_file"
-    } else {
-      par::read_file $keys(-read_file)
-    }
-
-
-  if { ![info exists keys(-final_partitions)] } {
-    utl::error PAR 52 "Missing mandatory argument \"-final_partitions \[2, 32768\]\"."
-  } else {
+  if { ![info exists keys(-read_file)] } {
+    utl::error PAR 51 "Missing mandatory argument -read_file"
   }
+  set instance_file ""
+  if { [info exists keys(-instance_map_file)] } {
+    set instance_file $keys(-instance_map_file)
+  }
+  return [par::read_file $keys(-read_file) $instance_file]
 }
 
 sta::define_cmd_args "run_clustering" { [-scheme name] \

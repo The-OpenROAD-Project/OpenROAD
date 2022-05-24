@@ -8,4 +8,5 @@ record_tests {
   change_eval_method
   verilog_write
   report_netlist_partitions
+  read_partitioning
 }
