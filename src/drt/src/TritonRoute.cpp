@@ -509,4 +509,8 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (!params.topRoutingLayer.empty()) {
     TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
   }
+  if (params.minAccessPoints > 0) {
+    MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
+    MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
+  }
 }
