@@ -609,6 +609,13 @@ find_fanin_fanouts(PinSet *pins)
   return resizer->findFaninFanouts(pins);
 }
 
+void
+set_debug_pin(const Pin *pin)
+{
+  Resizer *resizer = getResizer();
+  resizer->setDebugPin(pin);
+}
+
 } // namespace
 
 %} // inline

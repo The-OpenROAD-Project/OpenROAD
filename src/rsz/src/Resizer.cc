@@ -157,6 +157,7 @@ Resizer::Resizer() :
   db_(nullptr),
   block_(nullptr),
   dbu_(0),
+  debug_pin_(nullptr),
   core_exists_(false),
   parasitics_src_(ParasiticsSrc::none),
   design_area_(0.0),
@@ -2384,6 +2385,12 @@ Resizer::checkLoadSlews(const Pin *drvr_pin,
     }
   }
   delete pin_iter;
+}
+
+void
+Resizer::setDebugPin(const Pin *pin)
+{
+  debug_pin_ = pin;
 }
 
 } // namespace
