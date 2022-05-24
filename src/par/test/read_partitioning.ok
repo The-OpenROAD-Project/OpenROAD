@@ -3,10 +3,6 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-Running MLPart.
-[INFO PAR-0059] [MLPart] Partitioned graph for seed 50.
-[INFO PAR-0060] [MLPart] Run completed. Partition ID = 0. Total runs = 1.
 Writing partition id's to DB.
 Writing done.
-Writing partition to verilog.
 No differences found.
