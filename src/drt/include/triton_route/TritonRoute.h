@@ -80,6 +80,7 @@ struct ParamStruct
   bool cleanPatches = false;
   bool doPa = false;
   bool singleStepDR = false;
+  int minAccessPoints = -1;
 };
 
 class TritonRoute

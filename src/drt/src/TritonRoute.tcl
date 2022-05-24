@@ -56,6 +56,7 @@ sta::define_cmd_args "detailed_route" {
     [-shared_volume vol]
     [-clean_patches]
     [-no_pin_access]
+    [-min_access_points count]
 }
 
 proc detailed_route { args } {
@@ -63,7 +64,8 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
+      -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
+      -min_access_points } \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr}
   sta::check_argc_eq0 "detailed_route" $args
 
@@ -175,11 +177,16 @@ proc detailed_route { args } {
       }
       drt::detailed_route_distributed $host $port $vol
     }
+    if { [info exists keys(-min_access_points)] } {
+      set min_access_points $keys(-min_access_points)
+    } else {
+      set min_access_points -1
+    }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $no_pin_access $single_step_dr
+      $clean_patches $no_pin_access $single_step_dr $min_access_points
   }
 }
 
@@ -254,11 +261,13 @@ sta::define_cmd_args "pin_access" {
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-min_access_points count]
     [-verbose level]
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
-      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose} \
+      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
+            -min_access_points } \
       flags {}
   sta::check_argc_eq0 "detailed_route_debug" $args
   if [info exists keys(-db_process_node)] {
@@ -282,7 +291,12 @@ proc pin_access { args } {
   } else {
     set verbose 1
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
+    if { [info exists keys(-min_access_points)] } {
+      set min_access_points $keys(-min_access_points)
+    } else {
+      set min_access_points -1
+    }
+  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }
 proc detailed_route_run_worker { args } {
   sta::check_argc_eq1 "detailed_route_run_worker" $args
