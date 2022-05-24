@@ -500,9 +500,8 @@ void PartitionMgr::runMlPart()
     currentResults.addAssignment(clusters, runtime, seed);
     logger_->info(PAR,
                   59,
-                  "[MLPart] Partitioned graph for seed {} in {} ms.",
-                  seed,
-                  runtime);
+                  "[MLPart] Partitioned graph for seed {}.",
+                  seed);
 
     std::fill(clusters.begin(), clusters.end(), 0);
   }
@@ -806,8 +805,6 @@ void PartitionMgr::reportPartitionResult(const unsigned partitionId)
       PAR, 11, "Cluster Area SD = {}.", currentResults.getBestSetArea());
   logger_->info(
       PAR, 12, "Total Hop Weight = {}.", currentResults.getBestHopWeigth());
-  logger_->info(
-      PAR, 13, "Total Runtime = {}.", currentResults.getBestRuntime());
 }
 
 // Write Partitioning To DB
