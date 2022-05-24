@@ -54,6 +54,7 @@ namespace par {
 using utl::PAR;
 
 using sta::Cell;
+using sta::CellPortBitIterator;
 using sta::ConcreteNetwork;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -376,6 +377,16 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   std::string instname = name;
   instname += "_inst";
   Instance* inst = network->makeInstance(cell, instname.c_str(), nullptr);
+
+  CellPortBitIterator* port_iter = network->portBitIterator(cell);
+  while (port_iter->hasNext()) {
+    Port* port = port_iter->next();
+    const char* port_name = network->name(port);
+    Net* net = network->makeNet(port_name, inst);
+    Pin* pin = network->makePin(inst, port, nullptr);
+    network->makeTerm(pin, net);
+  }
+  delete port_iter;
 
   return inst;
 }
