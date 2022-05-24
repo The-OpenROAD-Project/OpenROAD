@@ -75,6 +75,7 @@ RepairDesign::RepairDesign(Resizer *resizer) :
   db_network_(nullptr),
   resizer_(resizer),
   dbu_(0),
+  corner_(nullptr),
   resize_count_(0),
   inserted_buffer_count_(0),
   min_(MinMax::min()),
@@ -157,9 +158,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
-    const char *dbg_net_name = nullptr;
-    bool debug = net && dbg_net_name
-      && sta::stringEq(sdc_network_->pathName(net), dbg_net_name);
+    bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
@@ -769,8 +768,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   BufferedNetPtr left = bnet->ref();
   int wire_length_left = 0;
   PinSeq loads_left;
-  if (left)
-    repairNet(left, level+1, wire_length_left, loads_left);
+  repairNet(left, level+1, wire_length_left, loads_left);
   float cap_left = left->cap();
   float fanout_left = left->fanout();
   float max_load_slew_left = left->maxLoadSlew();
@@ -778,8 +776,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   BufferedNetPtr right = bnet->ref2();
   int wire_length_right = 0;
   PinSeq loads_right;
-  if (right)
-    repairNet(right, level+1, wire_length_right, loads_right);
+  repairNet(right, level+1, wire_length_right, loads_right);
   float cap_right = right->cap();
   float fanout_right = right->fanout();
   float max_load_slew_right = right->maxLoadSlew();
