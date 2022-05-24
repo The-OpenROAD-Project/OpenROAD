@@ -1,4 +1,4 @@
-from openroad import *
+from openroad import Tech, Design
 import helpers
 
 tech = Tech()
