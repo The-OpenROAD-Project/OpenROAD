@@ -1834,8 +1834,6 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
 GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
 {
-  odb::Rect die_bounds = grid_->getGridArea();
-
   const int x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
   const int y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
 
@@ -3422,8 +3420,7 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
   if (default_vias.empty()) {
     if (verbose_)
-      if (verbose_)
-        logger_->warn(GRT, 43, "No OR_DEFAULT vias defined.");
+      logger_->info(GRT, 43, "No OR_DEFAULT vias defined.");
     for (int i = 1; i <= max_routing_layer; i++) {
       for (odb::dbTechVia* via : vias) {
         if (via->getBottomLayer()->getRoutingLevel() == i) {
@@ -3813,6 +3810,28 @@ void GlobalRouter::setDebugTree3D(bool tree3D)
   fastroute_->setDebugTree3D(tree3D);
 }
 
+// For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be
+// exported.
+std::vector<PinGridLocation>
+GlobalRouter::getPinGridPositions(odb::dbNet *db_net)
+{
+  Net* net = getNet(db_net);
+  std::vector<PinGridLocation> pin_locs;
+  for (Pin& pin : net->getPins())
+    pin_locs.push_back(PinGridLocation(pin.getITerm(), pin.getBTerm(),
+                                       pin.getOnGridPosition()));
+  return pin_locs;
+}
+
+PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
+                                 odb::dbBTerm* bterm,
+                                 odb::Point pt) :
+  iterm_(iterm),
+  bterm_(bterm),
+  pt_(pt)
+{
+}
+
 ////////////////////////////////////////////////////////////////
 
 RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
@@ -4038,6 +4057,11 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
   grouter_->addDirtyNet(bterm->getNet());
+}
+
+bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
+{
+  return net1->getId() < net2->getId();
 }
 
 }  // namespace grt

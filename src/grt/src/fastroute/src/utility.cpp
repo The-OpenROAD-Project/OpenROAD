@@ -147,10 +147,8 @@ void FastRouteCore::netpinOrderInc()
 
   float npvalue;
 
-  int numTreeedges = 0;
   for (j = 0; j < num_valid_nets_; j++) {
     d = sttrees_[j].deg;
-    numTreeedges += 2 * d - 3;
   }
 
   tree_order_pv_.clear();

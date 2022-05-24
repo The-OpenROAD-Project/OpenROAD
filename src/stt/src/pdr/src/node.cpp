@@ -33,6 +33,8 @@
 
 #include "node.h"
 
+#include <limits>
+
 namespace pdr {
 
 using std::ostream;

@@ -235,9 +235,6 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   int nnodes = m_network->getNumNodes();
   int nsegs = m_mgr->getNumSegments();
 
-  std::vector<Node*>::iterator it;
-
-
   // We need to add dummy cells to the left and the
   // right of every segment.
   m_dummiesLeft.resize(nsegs);

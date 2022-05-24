@@ -54,6 +54,7 @@ class frAccessPoint : public frBlockObject
         pathSegs_()
   {
   }
+  frAccessPoint() : frAccessPoint({0, 0}, 0) {}
   // getters
   void getPoint(Point& in) const { in = point_; }
   const Point& getPoint() const { return point_; }
@@ -116,6 +117,10 @@ class frAccessPoint : public frBlockObject
   {
     return viaDefs_[numCut - 1];
   }
+  const std::vector<std::vector<frViaDef*>>& getAllViaDefs() const
+  {
+    return viaDefs_;
+  }
   // e.g., getViaDef()     --> get best one-cut viadef
   // e.g., getViaDef(1)    --> get best one-cut viadef
   // e.g., getViaDef(2)    --> get best two-cut viadef
@@ -136,6 +141,7 @@ class frAccessPoint : public frBlockObject
   }
   // setters
   void setPoint(const Point& in) { point_ = in; }
+  void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
   {
     switch (dir) {
@@ -204,8 +210,6 @@ class frAccessPoint : public frBlockObject
     (ar) & aps_;
     (ar) & pathSegs_;
   }
-
-  frAccessPoint() = default;  // for serialization
 
   friend class boost::serialization::access;
 };

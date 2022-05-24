@@ -1,4 +1,4 @@
-# find_fanin_fanouts
+# find_fanin_fanouts (API for logic resynthesis)
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def fanin_fanout1.def

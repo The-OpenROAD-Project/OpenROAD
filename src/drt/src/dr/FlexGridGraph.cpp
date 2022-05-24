@@ -88,11 +88,47 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx z,
                                 const Rect& dieBox)
 {
-  frViaDef* via = getTech()->getLayer(getLayerNum(z) + 1)->getDefaultViaDef();
-  Rect viaBox(via->getLayer1ShapeBox());
-  viaBox.merge(via->getLayer2ShapeBox());
-  viaBox.moveDelta(xCoords_[x], yCoords_[y]);
-  return !dieBox.contains(viaBox);
+    frLayerNum lNum = getLayerNum(z) + 1;
+    if (lNum > getTech()->getTopLayerNum())
+        return false;
+    frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+    Rect viaBox(via->getLayer1ShapeBox());
+    viaBox.merge(via->getLayer2ShapeBox());
+    viaBox.moveDelta(xCoords_[x], yCoords_[y]);
+    return !dieBox.contains(viaBox);
+}
+bool FlexGridGraph::hasOutOfDieViol(frMIdx x,
+                                    frMIdx y,
+                                    frMIdx z)
+{
+    frLayerNum lNum = getLayerNum(z);
+    if (!getTech()->getLayer(lNum)->isUnidirectional())
+        return false;
+    frViaDef* via = nullptr;
+    Rect testBoxUp;
+    if (lNum + 1 <= getTech()->getTopLayerNum()) {
+        via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+        testBoxUp = via->getLayer1ShapeBox();
+        testBoxUp.merge(via->getLayer2ShapeBox());
+        testBoxUp.moveDelta(xCoords_[x], yCoords_[y]);
+    }
+    Rect testBoxDown;
+    if (lNum - 1 >= getTech()->getBottomLayerNum()) {
+        via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+        testBoxDown = via->getLayer1ShapeBox();
+        testBoxDown.merge(via->getLayer2ShapeBox());
+        testBoxDown.moveDelta(xCoords_[x], yCoords_[y]);
+    }
+    if (getTech()->getLayer(lNum)->isVertical()) {
+        if ((testBoxUp.xMax() > dieBox_.xMax() || testBoxUp.xMin() < dieBox_.xMin()) 
+            && (testBoxDown.xMax() > dieBox_.xMax() || testBoxDown.xMin() < dieBox_.xMin()))
+            return true;
+    }
+    //layer is horizontal
+    if ((testBoxUp.yMax() > dieBox_.yMax() || testBoxUp.yMin() < dieBox_.yMin()) 
+        && (testBoxDown.yMax() > dieBox_.yMax() || testBoxDown.yMin() < dieBox_.yMin()))
+        return true;
+    return false;
 }
 
 bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
@@ -165,23 +201,23 @@ void FlexGridGraph::initEdges(
         bool xFound2 = (xIt2 != xSubMap.end());
         bool xFound3 = (xIt3 != xSubMap.end());
         // add cost to out-of-die edge
-        bool outOfDiePlanar = false;
+        bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
         // add edge for preferred direction
         if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || yIt->second != nullptr) {
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) && 
+                    (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || yIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
-              if (yIt->second == nullptr || outOfDiePlanar
-                  || isWorkerBorder(yIdx, false)) {
+              if (yIt->second == nullptr || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
             }
           }
           // via to upper layer
           if (xFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
+            if (!isOutOfDieVia) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -193,18 +229,18 @@ void FlexGridGraph::initEdges(
         } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || xIt->second != nullptr) {
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) 
+                && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || xIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
-              if (xIt->second == nullptr || outOfDiePlanar
-                  || isWorkerBorder(xIdx, true)) {
+              if (xIt->second == nullptr || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
             }
           }
           // via to upper layer
           if (yFound2) {
-            if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox_)) {
+            if (!isOutOfDieVia) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);

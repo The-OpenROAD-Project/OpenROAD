@@ -346,11 +346,9 @@ void extMain::getShapeRC(dbNet* net, dbShape& s, Point& prevPoint,
     } else {
       if (USE_DB_UNITS)
         width = GetDBcoords2(width);
-      double SUB_MULT = 1.0;
 
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-        double c1 = getFringe(level, width, ii, areaCap);
-        c1 *= SUB_MULT;
+        getFringe(level, width, ii, areaCap);
 #ifdef HI_ACC_10312011
         if (width < 400)
           _tmpCapTable[ii] =

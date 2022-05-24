@@ -1666,7 +1666,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the block of this block-terminal.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the hierarchical parent iterm of this bterm.
@@ -1836,6 +1836,7 @@ class dbBPin : public dbObject
   int getMinSpacing();
 
   std::vector<dbAccessPoint*> getAccessPoints() const;
+
   ///
   /// Create a new block-terminal-pin
   ///
@@ -3502,6 +3503,10 @@ class dbVia : public dbObject
   /// Returns NULL if this via does not represent a block via
   //
   dbVia* getBlockVia();
+
+  void setDefault(bool);
+
+  bool isDefault();
 
   ///
   /// Create a block specific via.
@@ -5637,6 +5642,8 @@ class dbMPin : public dbObject
   ///
   Rect getBBox();
 
+  std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
+
   ///
   /// Create a new physical pin.
   ///
@@ -6890,7 +6897,18 @@ class dbTechLayer : public dbObject
     DIFFUSION,
     TRIMPOLY,
     MIMCAP,
-    STACKEDMIMCAP
+    STACKEDMIMCAP,
+    TSVMETAL,
+    TSV,
+    PASSIVATION,
+    HIGHR,
+    TRIMMETAL,
+    REGION,
+    MEOL,
+    WELLDISTANCE,
+    CPODE,
+    PADMETAL,
+    POLYROUTING
   };
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums
@@ -9104,11 +9122,23 @@ class dbAccessPoint : public dbObject
 
   dbBPin* getBPin() const;
 
+  std::vector<std::vector<dbObject*>> getVias() const;
+
+  void addTechVia(int num_cuts, dbTechVia* via);
+
+  void addBlockVia(int num_cuts, dbVia* via);
+
+  void addSegment(const Rect& segment,
+                  const bool& begin_style_trunc,
+                  const bool& end_style_trunc);
+
+  const std::vector<std::tuple<Rect, bool, bool>>& getSegments() const;
+
   static dbAccessPoint* create(dbBlock* block,
                                dbMPin* pin,
                                uint pin_access_idx);
 
-  static dbAccessPoint* create(dbBPin* pin);
+  static dbAccessPoint* create(dbBPin*);
 
   static dbAccessPoint* getAccessPoint(dbBlock* block, uint dbid);
 

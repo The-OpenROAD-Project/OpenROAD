@@ -18,31 +18,31 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
- 105.522    0.000    0.000    0.000 ^ in1 (in)
-            0.322    0.264    0.264 ^ u1/A (BUF_X1)
-   0.998    0.016    0.028    0.291 ^ u1/Z (BUF_X1)
-            0.016    0.000    0.291 ^ u2/A (BUF_X1)
-   0.998    0.006    0.023    0.314 ^ u2/Z (BUF_X1)
-            0.006    0.000    0.314 ^ u3/A (BUF_X1)
-   0.058    0.004    0.016    0.330 ^ u3/Z (BUF_X1)
-            0.004    0.000    0.330 ^ out1 (out)
-                              0.330   data arrival time
+ 151.344    0.000    0.000    0.000 ^ in1 (in)
+            0.461    0.377    0.377 ^ u1/A (BUF_X1)
+   1.008    0.020    0.025    0.402 ^ u1/Z (BUF_X1)
+            0.020    0.000    0.402 ^ u2/A (BUF_X1)
+   1.008    0.006    0.024    0.426 ^ u2/Z (BUF_X1)
+            0.006    0.000    0.426 ^ u3/A (BUF_X1)
+   0.083    0.004    0.016    0.443 ^ u3/Z (BUF_X1)
+            0.004    0.000    0.443 ^ out1 (out)
+                              0.443   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-in1 manhtn 2000.7 steiner 2000.7 0.37
+in1 manhtn 2000.7 steiner 2000.7 0.54
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 u2/Z manhtn 0.4 steiner 0.4 0.00
-[WARNING RSZ-0065] max wire length less than 853u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 Driver    length delay
-repeater1/Z manhtn 568.7 steiner 568.7 0.03
-repeater2/Z manhtn 568.4 steiner 568.4 0.03
-repeater3/Z manhtn 568.4 steiner 568.4 0.03
+repeater3/Z manhtn 568.4 steiner 568.4 0.04
+repeater2/Z manhtn 567.0 steiner 567.0 0.04
+repeater1/Z manhtn 566.9 steiner 566.9 0.04
 in1 manhtn 291.4 steiner 291.4 0.01
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -52,21 +52,21 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-  21.812    0.000    0.000    0.000 ^ in1 (in)
-            0.013    0.010    0.010 ^ repeater3/A (BUF_X8)
-  36.289    0.009    0.024    0.035 ^ repeater3/Z (BUF_X8)
-            0.041    0.033    0.068 ^ repeater2/A (BUF_X8)
-  36.289    0.010    0.030    0.098 ^ repeater2/Z (BUF_X8)
-            0.041    0.033    0.131 ^ repeater1/A (BUF_X8)
-  30.694    0.010    0.030    0.161 ^ repeater1/Z (BUF_X8)
-            0.030    0.024    0.185 ^ u1/A (BUF_X1)
-   0.998    0.006    0.026    0.211 ^ u1/Z (BUF_X1)
-            0.006    0.000    0.211 ^ u2/A (BUF_X1)
-   0.998    0.006    0.019    0.230 ^ u2/Z (BUF_X1)
-            0.006    0.000    0.230 ^ u3/A (BUF_X1)
-   0.058    0.004    0.016    0.246 ^ u3/Z (BUF_X1)
-            0.004    0.000    0.246 ^ out1 (out)
-                              0.246   data arrival time
+  28.486    0.000    0.000    0.000 ^ in1 (in)
+            0.015    0.013    0.013 ^ repeater3/A (BUF_X8)
+  55.135    0.011    0.028    0.040 ^ repeater3/Z (BUF_X8)
+            0.065    0.052    0.092 ^ repeater2/A (BUF_X16)
+  55.028    0.009    0.031    0.123 ^ repeater2/Z (BUF_X16)
+            0.061    0.050    0.173 ^ repeater1/A (BUF_X16)
+  43.586    0.009    0.030    0.203 ^ repeater1/Z (BUF_X16)
+            0.040    0.033    0.236 ^ u1/A (BUF_X1)
+   1.008    0.007    0.028    0.264 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.264 ^ u2/A (BUF_X1)
+   1.008    0.006    0.019    0.283 ^ u2/Z (BUF_X1)
+            0.006    0.000    0.283 ^ u3/A (BUF_X1)
+   0.083    0.004    0.016    0.299 ^ u3/Z (BUF_X1)
+            0.004    0.000    0.299 ^ out1 (out)
+                              0.299   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

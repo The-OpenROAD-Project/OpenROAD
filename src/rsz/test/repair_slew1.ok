@@ -6,10 +6,10 @@
 [INFO ODB-0127] Reading DEF file: ./results/repair_slew1.def
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
-[INFO ODB-0131]     Created 31 components and 186 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 62 connections.
-[INFO ODB-0133]     Created 2 nets and 62 connections.
+[INFO ODB-0131]     Created 21 components and 126 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 42 connections.
+[INFO ODB-0133]     Created 2 nets and 42 connections.
 [INFO ODB-0134] Finished DEF file: ./results/repair_slew1.def
-Found 31 violations
-[INFO RSZ-0058] Using max wire length 853um.
+Found 21 violations
+[INFO RSZ-0058] Using max wire length 720um.
 [INFO RSZ-0039] Resized 1 instances.

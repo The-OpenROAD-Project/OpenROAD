@@ -33,13 +33,14 @@
 #include "dbMPin.h"
 
 #include "db.h"
+#include "dbAccessPoint.h"
+#include "dbBlock.h"
 #include "dbBoxItr.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbAccessPoint.h"
 
 namespace odb {
 
@@ -117,12 +118,12 @@ void _dbMPin::out(dbDiff& diff, char side, const char* field) const
 
 void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
 {
-   if(aps_.size() <= idx)
-   {
-     aps_.resize(idx+1);
-   }
-   aps_[idx].push_back(ap->getOID());
+  if (aps_.size() <= idx) {
+    aps_.resize(idx + 1);
+  }
+  aps_[idx].push_back(ap->getOID());
 }
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbMPin - Methods
@@ -160,6 +161,21 @@ Rect dbMPin::getBBox()
   return bbox;
 }
 
+std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
+{
+  _dbMPin* pin = (_dbMPin*) this;
+  // TODO: fix for multi chip block heirarchy
+  _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
+  std::vector<std::vector<odb::dbAccessPoint*>> result;
+  for (auto pa : pin->aps_) {
+    result.push_back(std::vector<odb::dbAccessPoint*>());
+    for (auto ap : pa) {
+      result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
+    }
+  }
+  return result;
+}
+
 dbMPin* dbMPin::create(dbMTerm* mterm_)
 {
   _dbMTerm* mterm = (_dbMTerm*) mterm_;
@@ -176,6 +192,5 @@ dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->_mpin_tbl->getPtr(dbid_);
 }
-
 
 }  // namespace odb
