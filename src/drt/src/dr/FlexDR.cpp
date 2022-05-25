@@ -2328,12 +2328,89 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
           /* 63 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
 }
 
+void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
+{
+  using namespace boost::polygon::operators;
+  gtl::polygon_90_data<frCoord> poly;
+  vector<gtl::point_data<frCoord>> points;
+  for (auto point : rect.getPoints()) {
+    points.push_back({point.x(), point.y()});
+  }
+  poly.set(points.begin(), points.end());
+  polySet += poly;
+}
+
 void FlexDR::reportGuideCoverage()
 {
   using namespace boost::polygon::operators;
 
-  ofstream file(GUIDE_REPORT_FILE);
+  auto numLayers = getTech()->getLayers().size();
+  std::vector<unsigned long long> totalAreaByLayerNum(numLayers, 0);
+  std::vector<unsigned long long> totalCoveredAreaByLayerNum(numLayers, 0);
+  map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
+  omp_set_num_threads(MAX_THREADS);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < nets.size(); i++) {
+    const auto& net = nets.at(i);
+    std::vector<gtl::polygon_90_set_data<frCoord>> routeSetByLayerNum(
+        numLayers),
+        guideSetByLayerNum(numLayers);
+    for (const auto& shape : net->getShapes()) {
+      odb::Rect rect;
+      shape->getBBox(rect);
+      addRectToPolySet(routeSetByLayerNum[shape->getLayerNum()], rect);
+    }
+    for (const auto& pwire : net->getPatchWires()) {
+      odb::Rect rect;
+      pwire->getBBox(rect);
+      addRectToPolySet(routeSetByLayerNum[pwire->getLayerNum()], rect);
+    }
+    for (const auto& via : net->getVias()) {
+      {
+        odb::Rect rect;
+        via->getLayer1BBox(rect);
+        addRectToPolySet(routeSetByLayerNum[via->getViaDef()->getLayer1Num()],
+                         rect);
+      }
+      {
+        odb::Rect rect;
+        via->getLayer2BBox(rect);
+        addRectToPolySet(routeSetByLayerNum[via->getViaDef()->getLayer2Num()],
+                         rect);
+      }
+    }
+
+    for (const auto& shape : net->getOrigGuides()) {
+      odb::Rect rect;
+      shape.getBBox(rect);
+      addRectToPolySet(guideSetByLayerNum[shape.getLayerNum()], rect);
+    }
+
+    for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
+      if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
+          || lNum > TOP_ROUTING_LAYER)
+        continue;
+      float coveredPercentage = -1.0;
+      unsigned long long routingArea = 0;
+      unsigned long long coveredArea = 0;
+      if (!routeSetByLayerNum[lNum].empty()) {
+        routingArea = gtl::area(routeSetByLayerNum[lNum]);
+        coveredArea
+            = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
+        coveredPercentage = (coveredArea / (double) routingArea) * 100;
+      }
+
+#pragma omp critical
+      {
+        netsCoverage[net.get()].push_back(coveredPercentage);
+        totalAreaByLayerNum[lNum] += routingArea;
+        totalCoveredAreaByLayerNum[lNum] += coveredArea;
+      }
+    }
+  }
+
+  ofstream file(GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
@@ -2342,101 +2419,6 @@ void FlexDR::reportGuideCoverage()
     }
   }
   file << std::endl;
-
-  std::vector<unsigned long long> totalAreaByLayerNum(
-      getTech()->getLayers().size(), 0);
-  std::vector<unsigned long long> totalCovereAreaByLayerNum(
-      getTech()->getLayers().size(), 0);
-  map<frNet*, std::vector<float>> netsCoverage;
-
-  omp_set_num_threads(MAX_THREADS);
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < nets.size(); i++) {
-    const auto& net = nets.at(i);
-    std::vector<gtl::polygon_90_set_data<frCoord>> routeSetByLayerNum,
-        guideSetByLayerNum;
-    routeSetByLayerNum.resize(getTech()->getLayers().size());
-    guideSetByLayerNum.resize(getTech()->getLayers().size());
-    for (const auto& shape : net->getShapes()) {
-      odb::Rect rect;
-      shape->getBBox(rect);
-      gtl::polygon_90_data<frCoord> poly;
-      vector<gtl::point_data<frCoord>> points;
-      for (auto point : rect.getPoints()) {
-        points.push_back({point.x(), point.y()});
-      }
-      poly.set(points.begin(), points.end());
-      routeSetByLayerNum[shape->getLayerNum()] += poly;
-    }
-    for (const auto& pwire : net->getPatchWires()) {
-      odb::Rect rect;
-      pwire->getBBox(rect);
-      gtl::polygon_90_data<frCoord> poly;
-      vector<gtl::point_data<frCoord>> points;
-      for (auto point : rect.getPoints()) {
-        points.push_back({point.x(), point.y()});
-      }
-      poly.set(points.begin(), points.end());
-      routeSetByLayerNum[pwire->getLayerNum()] += poly;
-    }
-    for (const auto& via : net->getVias()) {
-      {
-        odb::Rect rect;
-        via->getLayer1BBox(rect);
-        gtl::polygon_90_data<frCoord> poly;
-        vector<gtl::point_data<frCoord>> points;
-        for (auto point : rect.getPoints()) {
-          points.push_back({point.x(), point.y()});
-        }
-        poly.set(points.begin(), points.end());
-        routeSetByLayerNum[via->getViaDef()->getLayer1Num()] += poly;
-      }
-      {
-        odb::Rect rect;
-        via->getLayer2BBox(rect);
-        gtl::polygon_90_data<frCoord> poly;
-        vector<gtl::point_data<frCoord>> points;
-        for (auto point : rect.getPoints()) {
-          points.push_back({point.x(), point.y()});
-        }
-        poly.set(points.begin(), points.end());
-        routeSetByLayerNum[via->getViaDef()->getLayer2Num()] += poly;
-      }
-    }
-
-    for (const auto& shape : net->getOrigGuides()) {
-      odb::Rect rect;
-      shape.getBBox(rect);
-      gtl::polygon_90_data<frCoord> poly;
-      vector<gtl::point_data<frCoord>> points;
-      for (auto point : rect.getPoints()) {
-        points.push_back({point.x(), point.y()});
-      }
-      poly.set(points.begin(), points.end());
-      guideSetByLayerNum[shape.getLayerNum()] += poly;
-    }
-
-    for (frLayerNum lNum = 0; lNum < getTech()->getLayers().size(); lNum++) {
-      if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
-          || lNum > TOP_ROUTING_LAYER)
-        continue;
-      if (routeSetByLayerNum[lNum].empty()) {
-        #pragma omp critical
-        netsCoverage[net.get()].push_back(-1.0);
-        continue;
-      }
-      auto routingArea = gtl::area(routeSetByLayerNum[lNum]);
-      auto coveredArea
-          = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-      auto coveredPercentage = (coveredArea / (routingArea * 1.0)) * 100;
-      #pragma omp critical
-      {
-        netsCoverage[net.get()].push_back(coveredPercentage);
-        totalAreaByLayerNum[lNum] += routingArea;
-        totalCovereAreaByLayerNum[lNum] += coveredArea;
-      }
-    }
-  }
   for (auto [net, coverage] : netsCoverage) {
     file << net->getName() << ",";
     for (auto coveredPercentage : coverage)
@@ -2457,15 +2439,15 @@ void FlexDR::reportGuideCoverage()
         continue;
       }
       totalArea += totalAreaByLayerNum[layer->getLayerNum()];
-      totalCoveredArea += totalCovereAreaByLayerNum[layer->getLayerNum()];
+      totalCoveredArea += totalCoveredAreaByLayerNum[layer->getLayerNum()];
       auto coveredPercentage
-          = (totalCovereAreaByLayerNum[layer->getLayerNum()]
-             / (totalAreaByLayerNum[layer->getLayerNum()] * 1.0))
+          = (totalCoveredAreaByLayerNum[layer->getLayerNum()]
+             / (double) totalAreaByLayerNum[layer->getLayerNum()])
             * 100;
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  auto totalCoveredPercentage = (totalCoveredArea / (totalArea * 1.0)) * 100;
+  auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
   file << fmt::format("{:.2f}%,", totalCoveredPercentage);
   file.close();
 }
