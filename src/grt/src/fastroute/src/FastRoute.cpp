@@ -103,22 +103,18 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
 
 FastRouteCore::~FastRouteCore()
 {
-  deleteComponents();
+  clearNets();
 }
 
 void FastRouteCore::clear()
 {
-  deleteComponents();
+  clearNets();
+
   num_adjust_ = 0;
   v_capacity_ = 0;
   h_capacity_ = 0;
   total_overflow_ = 0;
   has_2D_overflow_ = false;
-}
-
-void FastRouteCore::deleteComponents()
-{
-  clearNets();
 
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
@@ -173,39 +169,22 @@ void FastRouteCore::deleteComponents()
 
 void FastRouteCore::clearNets()
 {
-  for (FrNet* net : nets_) {
-    delete net;
-  }
-  nets_.clear();
-  db_net_id_map_.clear();
-  new_net_id_ = 0;
-  num_nets_ = 0;
-  pin_ind_ = 0;
-  seg_count_ = 0;
-
   if (!sttrees_.empty()) {
     for (int i = 0; i < num_valid_nets_; i++) {
-      int deg = sttrees_[i].deg;
-      int numEdges = 2 * deg - 3;
-      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
-        if (treeedge->len > 0) {
-          treeedge->route.gridsX.clear();
-          treeedge->route.gridsY.clear();
-          treeedge->route.gridsL.clear();
-        }
-      }
-
-      if (sttrees_[i].nodes != nullptr)
-        delete[] sttrees_[i].nodes;
-      sttrees_[i].nodes = nullptr;
-
-      if (sttrees_[i].edges != nullptr)
-        delete[] sttrees_[i].edges;
-      sttrees_[i].edges = nullptr;
+      delete[] sttrees_[i].nodes;
+      delete[] sttrees_[i].edges;
     }
     sttrees_.clear();
   }
+
+  for (FrNet* net : nets_)
+    delete net;
+  nets_.clear();
+  new_net_id_ = 0;
+  num_nets_ = 0;
+  db_net_id_map_.clear();
+  pin_ind_ = 0;
+  seg_count_ = 0;
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)

@@ -102,7 +102,6 @@ class FastRouteCore
                 gui::Gui* gui);
   ~FastRouteCore();
 
-  void deleteComponents();
   void clear();
   void clearNets();
   void setGridsAndLayers(int x, int y, int nLayers);

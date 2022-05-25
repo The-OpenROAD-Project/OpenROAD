@@ -905,7 +905,7 @@ void FastRouteCore::newLA()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
     treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
