@@ -486,6 +486,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   OUT_MAZE_FILE = params.outputMazeFile;
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
+  GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;

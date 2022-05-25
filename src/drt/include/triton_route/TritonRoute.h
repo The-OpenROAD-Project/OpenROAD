@@ -67,6 +67,7 @@ struct ParamStruct
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::string outputCmapFile;
+  std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
   int drouteEndIter = -1;
