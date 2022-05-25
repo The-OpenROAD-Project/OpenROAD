@@ -4992,6 +4992,11 @@ class dbRegion : public dbObject
   void removeInst(dbInst* inst);
 
   ///
+  /// Remove this group from the region
+  ///
+  void removeGroup(dbGroup* group);
+
+  ///
   /// Get the parent of this region. Returns null of this region has no parent.
   ///
   dbRegion* getParent();
@@ -5007,6 +5012,16 @@ class dbRegion : public dbObject
   /// This method will do nothing if this child already has a parent.
   ///
   void addChild(dbRegion* region);
+
+  ///
+  /// Add group to this region.
+  ///
+  void addGroup(dbGroup* group);
+
+  ///
+  /// Get the groups of this region.
+  ///
+  dbSet<dbGroup> getGroups();
 
   ///
   /// Get the block of this region
@@ -8842,6 +8857,10 @@ class dbGroup : public dbObject
 
   dbGroup* getParentGroup() const;
 
+  void setRegion(dbRegion* region);
+
+  dbRegion* getRegion() const;
+
   // User Code Begin dbGroup
 
   void setType(dbGroupType type);
@@ -8888,6 +8907,8 @@ class dbGroup : public dbObject
                          int y1,
                          int x2,
                          int y2);
+
+  static dbGroup* create(dbRegion* parent, const char* name);
 
   static dbGroup* create(dbGroup* parent, const char* name);
 
@@ -9117,7 +9138,9 @@ class dbAccessPoint : public dbObject
 
   void addBlockVia(int num_cuts, dbVia* via);
 
-  void addSegment(const Rect& segment, const bool& begin_style_trunc, const bool& end_style_trunc);
+  void addSegment(const Rect& segment,
+                  const bool& begin_style_trunc,
+                  const bool& end_style_trunc);
 
   const std::vector<std::tuple<Rect, bool, bool>>& getSegments() const;
 

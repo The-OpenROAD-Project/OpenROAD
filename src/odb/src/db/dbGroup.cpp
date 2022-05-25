@@ -50,6 +50,7 @@
 // User Code Begin Includes
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
+#include "dbRegion.h"
 // User Code End Includes
 namespace odb {
 
@@ -87,6 +88,15 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (_groups != rhs._groups)
     return false;
 
+  if (region_next_ != rhs.region_next_)
+    return false;
+
+  if (region_prev_ != rhs.region_prev_)
+    return false;
+
+  if (region_ != rhs.region_)
+    return false;
+
   // User Code Begin ==
   if (_power_nets != rhs._power_nets)
     return false;
@@ -102,8 +112,6 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
   if (strcmp(_name, rhs._name) >= 0)
     return false;
   if (flags_._type >= rhs.flags_._type)
-    return false;
-  if (_box >= rhs._box)
     return false;
   // User Code End <
   return true;
@@ -124,12 +132,12 @@ void _dbGroup::differences(dbDiff& diff,
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_groups);
+  DIFF_FIELD(region_next_);
+  DIFF_FIELD(region_prev_);
+  DIFF_FIELD(region_);
   // User Code Begin Differences
-
   DIFF_VECTOR(_power_nets);
-
   DIFF_VECTOR(_ground_nets);
-
   // User Code End Differences
   DIFF_END
 }
@@ -146,13 +154,13 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_insts);
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_groups);
+  DIFF_OUT_FIELD(region_next_);
+  DIFF_OUT_FIELD(region_prev_);
+  DIFF_OUT_FIELD(region_);
 
   // User Code Begin Out
-
   DIFF_OUT_VECTOR(_power_nets);
-
   DIFF_OUT_VECTOR(_ground_nets);
-
   // User Code End Out
   DIFF_END
 }
@@ -176,6 +184,9 @@ _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
   _insts = r._insts;
   _modinsts = r._modinsts;
   _groups = r._groups;
+  region_next_ = r.region_next_;
+  region_prev_ = r.region_prev_;
+  region_ = r.region_;
   // User Code Begin CopyConstructor
   _power_nets = r._power_nets;
   _ground_nets = r._ground_nets;
@@ -196,6 +207,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   stream >> obj._groups;
   stream >> obj._power_nets;
   stream >> obj._ground_nets;
+  stream >> obj.region_next_;
+  stream >> obj.region_prev_;
+  stream >> obj.region_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -214,6 +228,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   stream << obj._groups;
   stream << obj._power_nets;
   stream << obj._ground_nets;
+  stream << obj.region_next_;
+  stream << obj.region_prev_;
+  stream << obj.region_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -262,6 +279,22 @@ dbGroup* dbGroup::getParentGroup() const
     return NULL;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
+}
+
+void dbGroup::setRegion(dbRegion* region)
+{
+  _dbGroup* obj = (_dbGroup*) this;
+
+  obj->region_ = region->getImpl()->getOID();
+}
+
+dbRegion* dbGroup::getRegion() const
+{
+  _dbGroup* obj = (_dbGroup*) this;
+  if (obj->region_ == 0)
+    return NULL;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
 
 // User Code Begin dbGroupPublicMethods
@@ -559,6 +592,21 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
   return (dbGroup*) _group;
 }
 
+dbGroup* dbGroup::create(dbRegion* region, const char* name)
+{
+  _dbRegion* _region = (_dbRegion*) region;
+  _dbBlock* _block = (_dbBlock*) _region->getOwner();
+  if (_block->_group_hash.hasMember(name))
+    return nullptr;
+  _dbGroup* _group = _block->_group_tbl->create();
+  _group->_name = strdup(name);
+  ZALLOCATED(_group->_name);
+  _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
+  _block->_group_hash.insert(_group);
+  region->addGroup((dbGroup*) _group);
+  return (dbGroup*) _group;
+}
+
 void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
@@ -566,13 +614,15 @@ void dbGroup::destroy(dbGroup* group)
   for (auto inst : group->getInsts()) {
     group->removeInst(inst);
   }
+  if (_group->region_.isValid())
+    group->getRegion()->removeGroup(group);
   for (auto modinst : group->getModInsts()) {
     group->removeModInst(modinst);
   }
   for (auto child : group->getGroups()) {
     group->removeGroup(child);
   }
-  if (_group->_parent_group != 0)
+  if (_group->_parent_group.isValid())
     group->getParentGroup()->removeGroup(group);
   dbProperty::destroyProperties(_group);
   block->_group_hash.remove(_group);

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,57 +30,41 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "geom.h"
+#include "dbIterator.h"
 #include "odb.h"
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
-class _dbDatabase;
-class _dbInst;
-class _dbBox;
 class _dbGroup;
-class dbIStream;
-class dbOStream;
-class dbDiff;
-
-struct _dbRegionFlags
+template <class T>
+class dbTable;
+// User Code Begin classes
+// User Code End classes
+class dbRegionGroupItr : public dbIterator
 {
-  dbRegionType::Value _type : 4;
-  uint _invalid : 1;
-  uint _spare_bits : 27;
-};
-
-class _dbRegion : public _dbObject
-{
+  dbTable<_dbGroup>* _group_tbl;
+  // User Code Begin Fields
+  // User Code End Fields
  public:
-  // PERSISTANT-MEMBERS
-  _dbRegionFlags _flags;
-  char* _name;
-  dbId<_dbInst> _insts;
-  dbId<_dbBox> _boxes;
-  dbId<_dbRegion> _parent;
-  dbId<_dbRegion> _children;
-  dbId<_dbRegion> _next_child;
-  dbId<_dbGroup> groups_;
+  dbRegionGroupItr(dbTable<_dbGroup>* group_tbl) { _group_tbl = group_tbl; }
 
-  _dbRegion(_dbDatabase*);
-  _dbRegion(_dbDatabase*, const _dbRegion& b);
-  ~_dbRegion();
-
-  bool operator==(const _dbRegion& rhs) const;
-  bool operator!=(const _dbRegion& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbRegion& rhs) const;
-
-  void differences(dbDiff& diff, const char* field, const _dbRegion& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
+  dbObject* getObject(uint id, ...);
+  // User Code Begin Methods
+  // User Code End Methods
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbRegion& r);
-dbIStream& operator>>(dbIStream& stream, _dbRegion& r);
 
 }  // namespace odb
+   // Generator Code End Header

@@ -1121,24 +1121,24 @@ dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
 std::string dbTechLayer::getLef58TypeString() const
 {
   switch (getLef58Type()) {
-  case NONE:
-    return "NONE";
-  case NWELL:
-    return "NWELL";
-  case PWELL:
-    return "PWELL";
-  case ABOVEDIEEDGE:
-    return "ABOVEDIEEDGE";
-  case BELOWDIEEDGE:
-    return "BELOWDIEEDGE";
-  case DIFFUSION:
-    return "DIFFUSION";
-  case TRIMPOLY:
-    return "TRIMPOLY";
-  case MIMCAP:
-    return "MIMCAP";
-  case STACKEDMIMCAP:
-    return "STACKEDMIMCAP";
+    case NONE:
+      return "NONE";
+    case NWELL:
+      return "NWELL";
+    case PWELL:
+      return "PWELL";
+    case ABOVEDIEEDGE:
+      return "ABOVEDIEEDGE";
+    case BELOWDIEEDGE:
+      return "BELOWDIEEDGE";
+    case DIFFUSION:
+      return "DIFFUSION";
+    case TRIMPOLY:
+      return "TRIMPOLY";
+    case MIMCAP:
+      return "MIMCAP";
+    case STACKEDMIMCAP:
+      return "STACKEDMIMCAP";
   }
 
   return "Unknown";

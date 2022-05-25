@@ -100,6 +100,7 @@ class dbInstITermItr;
 class dbRegionInstItr;
 class dbModuleInstItr;
 class dbModuleModInstItr;
+class dbRegionGroupItr;
 class dbGroupItr;
 class dbGroupInstItr;
 class dbGroupModInstItr;
@@ -235,6 +236,7 @@ class _dbBlock : public _dbObject
   dbRegionInstItr* _region_inst_itr;
   dbModuleInstItr* _module_inst_itr;
   dbModuleModInstItr* _module_modinst_itr;
+  dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
   dbGroupInstItr* _group_inst_itr;
   dbGroupModInstItr* _group_modinst_itr;

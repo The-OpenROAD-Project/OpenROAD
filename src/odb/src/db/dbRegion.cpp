@@ -44,6 +44,8 @@
 #include "dbRegionItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbGroup.h"
+#include "dbRegionGroupItr.h"
 
 namespace odb {
 
@@ -308,6 +310,35 @@ void dbRegion::removeInst(dbInst* inst_)
 
   inst->_region = 0;
 }
+void dbRegion::removeGroup(dbGroup* group)
+{
+  _dbRegion* region = (_dbRegion*) this;
+  _dbGroup* _group = (_dbGroup*) group;
+  _dbBlock* block = (_dbBlock*) region->getOwner();
+
+  uint id = _group->getOID();
+
+  if (region->groups_ == id) {
+    region->groups_ = _group->region_next_;
+
+    if (region->groups_ != 0) {
+      _dbGroup* t = block->_group_tbl->getPtr(region->groups_);
+      t->region_prev_ = 0;
+    }
+  } else {
+    if (_group->region_next_ != 0) {
+      _dbGroup* next = block->_group_tbl->getPtr(_group->region_next_);
+      next->region_prev_ = _group->region_prev_;
+    }
+
+    if (_group->region_prev_ != 0) {
+      _dbGroup* prev = block->_group_tbl->getPtr(_group->region_prev_);
+      prev->region_next_ = _group->region_next_;
+    }
+  }
+
+  _group->region_ = 0;
+}
 
 dbRegion* dbRegion::getParent()
 {
@@ -347,6 +378,26 @@ void dbRegion::addChild(dbRegion* child_)
 dbBlock* dbRegion::getBlock()
 {
   return (dbBlock*) getImpl()->getOwner();
+}
+
+void dbRegion::addGroup(dbGroup* group)
+{
+  _dbRegion* _region = (_dbRegion*) this;
+  _dbGroup* _group = (_dbGroup*) group;
+  if(_group->region_)
+    return;
+  _group->region_ = _region->getOID();
+  _group->region_next_ = _region->groups_;
+  _region->groups_ = _group->getOID();
+}
+
+dbSet<dbGroup> dbRegion::getGroups()
+{
+  _dbRegion* _region = (_dbRegion*) this;
+  _dbBlock* _block = (_dbBlock*) _region->getOwner();
+
+  dbSet<dbGroup> groups(_region, _block->_region_group_itr);
+  return groups;
 }
 
 dbRegion* dbRegion::create(dbBlock* block_, const char* name)
@@ -415,6 +466,16 @@ void dbRegion::destroy(dbRegion* region_)
     dbProperty::destroyProperties(box);
     block->_box_tbl->destroy((_dbBox*) box);
     bitr = next;
+  }
+
+  dbSet<dbGroup> groups = region_->getGroups();
+  dbSet<dbGroup>::iterator gitr;
+
+  for (gitr = groups.begin(); gitr != groups.end(); gitr = groups.begin()) {
+    _dbGroup* _group =(_dbGroup*) *gitr;
+    _group->region_ = 0;
+    _group->region_next_ = 0;
+    _group->region_prev_ = 0;
   }
 
   if (region->_parent) {
