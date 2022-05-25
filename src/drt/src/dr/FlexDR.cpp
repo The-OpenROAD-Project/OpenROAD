@@ -2344,7 +2344,7 @@ void FlexDR::reportGuideCoverage()
 {
   using namespace boost::polygon::operators;
 
-  auto numLayers = getTech()->getLayers().size();
+  const auto numLayers = getTech()->getLayers().size();
   std::vector<unsigned long long> totalAreaByLayerNum(numLayers, 0);
   std::vector<unsigned long long> totalCoveredAreaByLayerNum(numLayers, 0);
   map<frNet*, std::vector<float>> netsCoverage;
