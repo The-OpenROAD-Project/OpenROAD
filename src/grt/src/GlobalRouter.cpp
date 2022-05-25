@@ -3853,7 +3853,8 @@ void GlobalRouter::highlightRoute(odb::dbNet* net, bool show_pin_locations)
 
 void GlobalRouter::clearRouteGui()
 {
-  groute_renderer_->clear();
+  if (groute_renderer_)
+    groute_renderer_->clear();
 }
 
 void GrouteRenderer::clear()
