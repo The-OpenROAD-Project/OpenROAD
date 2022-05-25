@@ -233,7 +233,11 @@ class AutoClusterMgr
                        unsigned int timing_weight,
                        bool std_cell_timing_flag,
                        const char* report_directory,
-                       const char* file_name);
+                       const char* file_name,
+                       float keepin_lx,
+                       float keepin_ly,
+                       float keepin_ux,
+                       float keepin_uy);
 
  private:
   ord::dbNetwork* network_ = nullptr;

@@ -1743,7 +1743,11 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                                      unsigned int timing_weight,
                                      bool std_cell_timing_flag,
                                      const char* report_directory,
-                                     const char* file_name)
+                                     const char* file_name,
+                                     float keepin_lx,
+                                     float keepin_ly,
+                                     float keepin_ux, 
+                                     float keepin_uy)
 {
   logger_->report("Running Partition Design...");
 
@@ -1964,6 +1968,24 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();
   floorplan_uy_ = die_box.yMax();
+
+  // convert the metrics to dbu
+  keepin_lx *= dbu_;
+  keepin_ly *= dbu_;
+  keepin_ux *= dbu_;
+  keepin_uy *= dbu_;
+
+  // check if the keepin is within the core area
+  if (keepin_lx >= floorplan_lx_ && 
+      keepin_ly >= floorplan_ly_ &&
+      keepin_ux <= floorplan_ux_ &&
+      keepin_uy <= floorplan_uy_) {
+    floorplan_lx_ = keepin_lx;
+    floorplan_ly_ = keepin_ly;
+    floorplan_ux_ = keepin_ux;
+    floorplan_uy_ = keepin_uy;
+  }
+
 
   //
   // generate block file

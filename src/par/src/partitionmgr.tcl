@@ -599,6 +599,10 @@ proc partition_design { args } {
     set num_hop 4
     set timing_weight 0
     set std_cell_timing_flag false
+    set keepin_lx  -1
+    set keepin_ly  -1
+    set keepin_ux  -1
+    set keepin_uy  -1
     set keepin false
 
     if { [info exists keys(-max_num_macro)] } {
@@ -662,5 +666,7 @@ proc partition_design { args } {
 
     file mkdir $report_directory
 
-    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $num_hop $timing_weight $std_cell_timing_flag $report_directory $report_file
+    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight \
+                              $ignore_net_threshold $num_hop $timing_weight $std_cell_timing_flag $report_directory $report_file \
+                              $keepin_lx $keepin_ly $keepin_ux $keepin_uy
 }
