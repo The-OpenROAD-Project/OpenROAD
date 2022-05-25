@@ -488,7 +488,7 @@ proc report_netlist_partitions { args } {
   par::report_netlist_partitions $partitioning_id
 }
 
-sta::define_cmd_args "read_partitioning" { [-read_file name] [-instance_map_file file_path] }
+sta::define_cmd_args "read_partitioning" { -read_file name [-instance_map_file file_path] }
 
 proc read_partitioning { args } {
   sta::parse_key_args "read_partitioning" args \

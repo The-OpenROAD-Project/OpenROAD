@@ -239,17 +239,18 @@ report_netlist_partitions -partitioning_id $id
 
 ### `read_partitioning`
 
-Reads in a graph file from an external partitioner.
+Reads in a graph file from an external partitioner, and returns
+the id (partition_id) of the partitioning solution read in.
 
 ```
 read_partitioning -read_file graph_file
-                  -instance_map_file instance_map_file
+                  [-instance_map_file instance_map_file]
 ```
 
 Argument description:
 
 -   `graph_file` (Mandatory) is the path to the graph file.
--   `instance_map_file` (Optional) is the path to the instance map file, if needed.
+-   `instance_map_file` (Optional) is the path to the instance map file, if needed. This file should contain one instance name per line to correspond to the partitions in the `graph_file`.
 
 ## Regression tests
 
