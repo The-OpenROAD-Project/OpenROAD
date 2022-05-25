@@ -1312,9 +1312,9 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
       try {
         inst_partitions.push_back(std::stoi(line));
       } catch (const std::invalid_argument&) {
-        logger_->error(PAR, 71, "Unable to read file: {}", filename);
+        logger_->error(PAR, 71, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
       } catch (const std::out_of_range&) {
-        logger_->error(PAR, 72, "Unable to read file: {}", filename);
+        logger_->error(PAR, 72, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
       }
     }
     file.close();
@@ -1323,7 +1323,9 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
   }
 
   if (inst_partitions.size() != instance_order.size()) {
-    logger_->error(PAR, 74, "Instances in partitioning does not match instances in netlist.");
+    logger_->error(PAR, 74, "Instances in partitioning ({}) does not match instances in netlist ({}).",
+        inst_partitions.size(),
+        instance_order.size());
   }
 
   std::vector<unsigned long> partitions(inst_partitions.size());
