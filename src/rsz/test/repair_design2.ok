@@ -13,4 +13,4 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: repair_design2.def
 [INFO RSZ-0058] Using max wire length 2393um.
-[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0039] Resized 3 instances.

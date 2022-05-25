@@ -60,7 +60,7 @@ Path Type: max
            0.00    0.00    0.00 v u1/A (CLKBUF_X2)
   11.20    0.02    0.04    0.04 v u1/Z (CLKBUF_X2)
            0.02    0.00    0.04 v u2/A (BUF_X16)
-  41.84    0.01    0.03    0.06 v u2/Z (BUF_X16)
+  41.82    0.01    0.03    0.06 v u2/Z (BUF_X16)
            0.04    0.03    0.09 v repeater2/A (BUF_X8)
   63.03    0.01    0.04    0.13 v repeater2/Z (BUF_X8)
            0.08    0.07    0.20 v repeater1/A (BUF_X8)
@@ -74,6 +74,6 @@ Path Type: max
 
 
 Driver    length delay
-repeater1/Z manhtn 759.1 steiner 759.1 0.00
-repeater2/Z manhtn 758.6 steiner 758.6 0.00
-u2/Z manhtn 476.3 steiner 476.3 0.00
+repeater1/Z manhtn 759.0 steiner 759.0 0.00
+repeater2/Z manhtn 758.5 steiner 758.5 0.00
+u2/Z manhtn 476.2 steiner 476.2 0.00

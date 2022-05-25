@@ -308,16 +308,16 @@ RepairDesign::repairNet(Net *net,
 {
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
-    const Corner *corner = sta_->cmdCorner();
-    BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
-    if (bnet) {
-      debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
-                 sdc_network_->pathName(drvr_pin));
-      // Resize the driver to normalize slews before repairing limit violations.
-      if (resize_drvr)
-        resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
-      // For tristate nets all we can do is resize the driver.
-      if (!resizer_->isTristateDriver(drvr_pin)) {
+    debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
+               sdc_network_->pathName(drvr_pin));
+    // Resize the driver to normalize slews before repairing limit violations.
+    if (resize_drvr)
+      resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+    // For tristate nets all we can do is resize the driver.
+    if (!resizer_->isTristateDriver(drvr_pin)) {
+      const Corner *corner = sta_->cmdCorner();
+      BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
+      if (bnet) {
         resizer_->ensureWireParasitic(drvr_pin, net);
         graph_delay_calc_->findDelays(drvr);
 

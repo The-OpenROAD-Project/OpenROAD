@@ -2059,6 +2059,7 @@ Resizer::repairNet(Net *net,
                    double slew_margin,
                    double cap_margin)
 {
+  resizePreamble();
   repair_design_->repairNet(net, max_wire_length, slew_margin, cap_margin);
 }
 

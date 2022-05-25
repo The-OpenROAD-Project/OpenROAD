@@ -394,14 +394,16 @@ makeBufferedNet(SteinerTree *tree,
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(BufferedNetType::load,
                                                         tree->location(to), pin,
                                                         corner, resizer);
-        debugPrint(logger, RSZ, "make_buffered_net", 4, "{:{}s}{}",
-                   "", level, bnet1->to_string(resizer));
-        if (bnet && bnet1)
-          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                          tree->location(to),
-                                          bnet, bnet1);
-        else
-          bnet = bnet1;
+        if (bnet1) {
+          debugPrint(logger, RSZ, "make_buffered_net", 4, "{:{}s}{}",
+                     "", level, bnet1->to_string(resizer));
+          if (bnet)
+            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                            tree->location(to),
+                                            bnet, bnet1);
+          else
+            bnet = bnet1;
+        }
       }
     }
   }
@@ -411,12 +413,14 @@ makeBufferedNet(SteinerTree *tree,
       BufferedNetPtr bnet1 = makeBufferedNet(tree, to, adj,
                                              adjacents, level + 1,
                                              corner, resizer, logger, network);
-      if (bnet && bnet1)
-        bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        tree->location(to),
-                                        bnet, bnet1);
-      else
-        bnet = bnet1;
+      if (bnet1) {
+        if (bnet)
+          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                          tree->location(to),
+                                          bnet, bnet1);
+        else
+          bnet = bnet1;
+      }
     }
   }
   if (bnet
