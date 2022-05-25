@@ -422,8 +422,6 @@ void AutoClusterMgr::createBundledIO()
           PAR, 400, "Floorplan has not been initialized? Pin location error.");
     }
   }
-
-  //std::cout << "Finish Bundled IOs" << std::endl;
 }
 
 void AutoClusterMgr::createCluster(int& cluster_id)
@@ -535,6 +533,8 @@ void AutoClusterMgr::updateConnection()
     cluster->initConnection();
 
   calculateConnection();
+
+
   calculateBufferNetConnection();
 }
 
@@ -903,6 +903,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   }
 
   int count = 0;
+  
   MLPartNetUtil(block_->getTopModule(),
                 src_id,
                 count,
@@ -921,6 +922,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                       node_map,
                       idx_to_inst,
                       inst_to_idx);
+
 
   row_ptr.push_back(count);
 
@@ -970,7 +972,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                 1,  // Number of Runs
                 0,  // Debug Level
                 seed);
-
+  
   const string name_part0 = cluster->getName() + string("_cluster_0");
   const string name_part1 = cluster->getName() + string("_cluster_1");
   Cluster* cluster_part0 = new Cluster(++cluster_id, name_part0);
@@ -1026,7 +1028,12 @@ void AutoClusterMgr::MLPartNetUtil(dbModule* module,
 
     for (dbITerm* iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
-      int id = inst_map_[inst];
+       int id = -1;
+       if (inst->getMaster()->isPad())
+         id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
+       else
+         id = inst_map_[inst];
+      
       if (id == src_id)
         id = inst_to_idx[inst];
       else
@@ -1083,7 +1090,12 @@ void AutoClusterMgr::MLPartBufferNetUtil(const int src_id,
         dbInst* inst = iterm->getInst();
         const LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell->isBuffer() == false) {
-          int id = inst_map_[inst];
+          int id = -1;
+          if (inst->getMaster()->isPad())
+            id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
+          else
+            id = inst_map_[inst];
+ 
           if (id == src_id)
             id = inst_to_idx[inst];
           else
@@ -1766,10 +1778,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   PrintIOPadNet(*fp);
   pos_file_out.close();
   
-  std::cout << "Done Partitioning" << std::endl;
-
-  //return;
-
 
   createBundledIO();
   int cluster_id = 0;
@@ -1857,6 +1865,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     }
   }
 
+
   for (int i = 0; i < par_cluster_vec.size(); i++) {
     Cluster* cluster_old = par_cluster_vec[i];
     int id = (-1) * cluster_old->getId();
@@ -1876,6 +1885,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     cluster_old->removeMacro();
   }
   par_cluster_vec.clear();
+
   updateConnection();
 
   //
@@ -1911,6 +1921,8 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     updateConnection();
     mergeMacro(name, std_cell_id);
   }
+
+
 
   //
   // group macros based on area footprint, This will allow for more efficient
