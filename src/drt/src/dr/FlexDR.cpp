@@ -59,7 +59,6 @@ using namespace fr;
 using utl::ThreadException;
 
 BOOST_CLASS_EXPORT(RoutingJobDescription)
-BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 
 enum class SerializationType
 {

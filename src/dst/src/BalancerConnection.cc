@@ -32,6 +32,9 @@
 
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/export.hpp>
 #include <thread>
 
 #include "LoadBalancer.h"
@@ -40,7 +43,10 @@
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 
-namespace dst {
+using namespace dst;
+
+BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
+
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
                                        LoadBalancer* owner,
                                        utl::Logger* logger)
@@ -152,4 +158,3 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     sock_.close();
   }
 }
-}  // namespace dst
