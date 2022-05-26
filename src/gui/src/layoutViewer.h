@@ -252,21 +252,6 @@ class LayoutViewer : public QWidget
     std::vector<QRect> mterms;
   };
 
-  struct GCellData
-  {
-    int hor_capacity_;
-    int hor_usage_;
-    int ver_capacity_;
-    int ver_usage_;
-
-    GCellData(int h_cap = 0, int h_usage = 0, int v_cap = 0, int v_usage = 0)
-        : hor_capacity_(h_cap),
-          hor_usage_(h_usage),
-          ver_capacity_(v_cap),
-          ver_usage_(v_usage)
-    {
-    }
-  };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
   using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
 
