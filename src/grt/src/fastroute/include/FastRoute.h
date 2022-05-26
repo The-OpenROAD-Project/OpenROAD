@@ -37,9 +37,6 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
 
 #include "DataType.h"

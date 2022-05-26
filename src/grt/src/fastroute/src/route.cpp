@@ -30,11 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include <algorithm>
 #include <queue>
 

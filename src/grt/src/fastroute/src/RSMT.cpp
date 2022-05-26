@@ -30,12 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
-#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
