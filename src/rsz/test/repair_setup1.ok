@@ -71,8 +71,8 @@ Path Type: max
    0.021    0.228 ^ u4/Z (BUF_X8)
    0.005    0.234 ^ u5/A (BUF_X16)
    0.022    0.255 ^ u5/Z (BUF_X16)
-   0.038    0.293 ^ r2/D (DFF_X1)
-            0.293   data arrival time
+   0.038    0.294 ^ r2/D (DFF_X1)
+            0.294   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -82,7 +82,7 @@ Path Type: max
             0.258   data required time
 -----------------------------------------------------------
             0.258   data required time
-           -0.293   data arrival time
+           -0.294   data arrival time
 -----------------------------------------------------------
            -0.035   slack (VIOLATED)
 

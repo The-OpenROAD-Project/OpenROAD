@@ -254,6 +254,7 @@ public:
                        double wire_length, // meters
                        Delay &delay,
                        Slew &slew);
+  void setDebugPin(const Pin *pin);
 
   ////////////////////////////////////////////////////////////////
 
@@ -545,6 +546,7 @@ protected:
   dbDatabase *db_;
   dbBlock *block_;
   int dbu_;
+  const Pin *debug_pin_;
 
   Rect core_;
   bool core_exists_;

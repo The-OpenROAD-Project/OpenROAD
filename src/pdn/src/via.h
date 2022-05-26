@@ -405,7 +405,11 @@ class ViaGenerator
     bool must_fit_y;
   };
 
-  ViaGenerator(utl::Logger* logger, const odb::Rect& lower_rect, const odb::Rect& upper_rect);
+  ViaGenerator(utl::Logger* logger,
+               const odb::Rect& lower_rect,
+               const Constraint& lower_constraint,
+               const odb::Rect& upper_rect,
+               const Constraint& upper_constraint);
   virtual ~ViaGenerator() = default;
 
   virtual const std::string getName() const = 0;
@@ -496,8 +500,8 @@ class ViaGenerator
   utl::Logger* getLogger() const { return logger_; }
   odb::dbTech* getTech() const;
 
-  virtual const Constraint getLowerConstraint() const = 0;
-  virtual const Constraint getUpperConstraint() const = 0;
+  const Constraint& getLowerConstraint() const { return lower_constraint_; }
+  const Constraint& getUpperConstraint() const { return upper_constraint_; }
 
  protected:
   int getLowerWidth(bool only_real = true) const;
@@ -513,6 +517,9 @@ class ViaGenerator
   odb::Rect lower_rect_;
   odb::Rect upper_rect_;
   odb::Rect intersection_rect_;
+
+  Constraint lower_constraint_;
+  Constraint upper_constraint_;
 
   odb::Rect cut_;
 
@@ -562,7 +569,9 @@ class GenerateViaGenerator : public ViaGenerator
   GenerateViaGenerator(utl::Logger* logger,
                        odb::dbTechViaGenerateRule* rule,
                        const odb::Rect& lower_rect,
-                       const odb::Rect& upper_rect);
+                       const Constraint& lower_constraint,
+                       const odb::Rect& upper_rect,
+                       const Constraint& upper_constraint);
 
   virtual const std::string getName() const override;
   const std::string getRuleName() const;
@@ -583,9 +592,6 @@ class GenerateViaGenerator : public ViaGenerator
                                  int col_pitch) const override;
 
  protected:
-  virtual const Constraint getLowerConstraint() const override { return {true, true}; }
-  virtual const Constraint getUpperConstraint() const override { return {true, true}; }
-
   virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
 
  private:
@@ -635,8 +641,6 @@ class TechViaGenerator : public ViaGenerator
 
  protected:
   virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
-  virtual const Constraint getLowerConstraint() const override { return lower_constraint_; }
-  virtual const Constraint getUpperConstraint() const override { return upper_constraint_; }
 
  private:
   odb::dbTechVia* via_;
@@ -647,9 +651,6 @@ class TechViaGenerator : public ViaGenerator
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* cut_;
   odb::dbTechLayer* top_;
-
-  Constraint lower_constraint_;
-  Constraint upper_constraint_;
 
   bool fitsShapes() const;
   bool mostlyContains(const odb::Rect& full_shape,

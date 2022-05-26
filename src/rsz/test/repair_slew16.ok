@@ -37,7 +37,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-load6/D                                 0.05    0.04    0.01 (MET)
+load19/D                                0.05    0.04    0.01 (MET)
 
 max capacitance
 

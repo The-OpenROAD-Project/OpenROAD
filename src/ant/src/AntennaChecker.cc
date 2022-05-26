@@ -1714,10 +1714,8 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
             num_total_net);
     return {num_violated_pins, num_violated_net, num_total_net};
   } else {
-    logger_->error(ANT,
-                   7,
-                   "Cannot open report file (%s) for writing",
-                   report_filename.c_str());
+    logger_->error(
+        ANT, 7, "Cannot open report file ({}) for writing", report_filename);
     return {0, 0, 0};
   }
 }

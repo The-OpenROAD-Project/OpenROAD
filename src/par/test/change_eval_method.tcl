@@ -10,8 +10,7 @@ set num_partitions 4
 
 set ids {}
 lappend ids [partition_netlist -tool mlpart  -num_partitions $num_partitions -num_starts $num_starts]
-lappend ids [partition_netlist -tool gpmetis -num_partitions $num_partitions -num_starts $num_starts]
-lappend ids [partition_netlist -tool chaco   -num_partitions $num_partitions -num_starts $num_starts]
+lappend ids [partition_netlist -tool mlpart  -num_partitions $num_partitions -seeds {-289663928 1914837114}]
 
-set bestId [evaluate_partitioning -partition_ids $ids -evaluation_function area]
-set bestId [evaluate_partitioning -partition_ids $ids -evaluation_function size]
+evaluate_partitioning -partition_ids $ids -evaluation_function area
+evaluate_partitioning -partition_ids $ids -evaluation_function size

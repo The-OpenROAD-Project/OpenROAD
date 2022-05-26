@@ -46,6 +46,7 @@ string OUTGUIDE_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
+string GUIDE_REPORT_FILE;
 
 // to be removed
 int OR_SEED = -1;
