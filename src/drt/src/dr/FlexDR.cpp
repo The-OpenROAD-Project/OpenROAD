@@ -2398,7 +2398,10 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        coveredPercentage = (coveredArea / (double) routingArea) * 100;
+        if(routingArea == 0.0)
+          coveredPercentage = -1.0;
+        else
+          coveredPercentage = (coveredArea / (double) routingArea) * 100;
       }
 
 #pragma omp critical
@@ -2447,8 +2450,12 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
-  file << fmt::format("{:.2f}%,", totalCoveredPercentage);
+  if(totalArea == 0)
+    file << "NA";
+  else {
+    auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
+    file << fmt::format("{:.2f}%,", totalCoveredPercentage);
+  }
   file.close();
 }
 
