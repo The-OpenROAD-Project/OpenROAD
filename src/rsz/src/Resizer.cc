@@ -843,14 +843,16 @@ Resizer::replaceCell(Instance *inst,
     sta_->replaceCell(inst, replacement_cell1);
     designAreaIncr(area(replacement_master));
 
-    // Invalidate estimated parasitics on all instance pins.
-    // Input nets change pin cap, outputs change location (slightly).
     if (haveEstimatedParasitics()) {
       InstancePinIterator *pin_iter = network_->pinIterator(inst);
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
         const Net *net = network_->net(pin);
-        if (net)
+        // Invalidate estimated parasitics on all instance input pins.
+        // Outputs change location (slightly) but do not update because
+        // tristate nets have multiple drivers and this is drivers^2 if
+        // they the parasitics are updated for each resize.
+        if (net && network_->direction(pin)->isAnyInput())
           parasiticsInvalid(net);
       }
       delete pin_iter;
