@@ -107,24 +107,7 @@ class RoutingCallBack : public dst::JobCallBack
     reply_pool.join();
     sendResult(results, sock, true, cnt);
   }
-  void sendResult(std::vector<std::pair<int, std::string>> results,
-                  dst::socket& sock,
-                  bool finish,
-                  int cnt)
-  {
-    dst::JobMessage result;
-    if (finish)
-      result.setJobType(dst::JobMessage::SUCCESS);
-    else
-      result.setJobType(dst::JobMessage::NONE);
-    auto uResultDesc = std::make_unique<RoutingJobDescription>();
-    auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
-    resultDesc->setWorkers(results);
-    result.setJobDescription(std::move(uResultDesc));
-    dist_->sendResult(result, sock);
-    if (finish)
-      sock.close();
-  }
+
   void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN)
@@ -164,6 +147,25 @@ class RoutingCallBack : public dst::JobCallBack
   }
 
  private:
+  void sendResult(std::vector<std::pair<int, std::string>> results,
+                  dst::socket& sock,
+                  bool finish,
+                  int cnt)
+  {
+    dst::JobMessage result;
+    if (finish)
+      result.setJobType(dst::JobMessage::SUCCESS);
+    else
+      result.setJobType(dst::JobMessage::NONE);
+    auto uResultDesc = std::make_unique<RoutingJobDescription>();
+    auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
+    resultDesc->setWorkers(results);
+    result.setJobDescription(std::move(uResultDesc));
+    dist_->sendResult(result, sock);
+    if (finish)
+      sock.close();
+  }
+  
   triton_route::TritonRoute* router_;
   dst::Distributed* dist_;
   utl::Logger* logger_;

@@ -422,7 +422,7 @@ void serialize(Archive& ar,
 namespace fr {
 
 template <class Archive>
-void register_types(Archive& ar)
+void registerTypes(Archive& ar)
 {
   // The serialization library needs to be told about these classes
   // as we often only encounter them through their base classes.
@@ -611,7 +611,7 @@ void serializeViaDef(Archive& ar, frViaDef*& viadef)
 }
 
 template <class Archive>
-void serialize_globals(Archive& ar)
+void serializeGlobals(Archive& ar)
 {
   (ar) & GUIDE_FILE;
   (ar) & OUTGUIDE_FILE;

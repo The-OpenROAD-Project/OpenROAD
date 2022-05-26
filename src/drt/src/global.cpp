@@ -115,7 +115,6 @@ int MISALIGNMENTCOST = 8;
 int CONGCOST = 8;
 int HISTCOST = 32;
 
-int REMOTE_BATCH_SIZE = 32;
 namespace fr {
 
 ostream& operator<<(ostream& os, const frRect& pinFigIn)

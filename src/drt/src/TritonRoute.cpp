@@ -252,8 +252,8 @@ void TritonRoute::updateGlobals(const char* file_name)
   if (!file.good())
     return;
   frIArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
+  registerTypes(ar);
+  serializeGlobals(ar);
   file.close();
 }
 
@@ -272,10 +272,6 @@ void TritonRoute::resetDb(const char* file_name)
   design_->getRegionQuery()->initDRObj();
 }
 
-void TritonRoute::resetDesign(const char* file_name)
-{
-}
-
 static void deserializeUpdate(frDesign* design,
                               const std::string& updateStr,
                               std::vector<drUpdate>& updates)
@@ -283,7 +279,7 @@ static void deserializeUpdate(frDesign* design,
   std::ifstream file(updateStr.c_str());
   frIArchive ar(file);
   ar.setDesign(design);
-  register_types(ar);
+  registerTypes(ar);
   ar >> updates;
   file.close();
 }
@@ -295,7 +291,7 @@ static void deserializeUpdates(frDesign* design,
   std::ifstream file(updateStr.c_str());
   frIArchive ar(file);
   ar.setDesign(design);
-  register_types(ar);
+  registerTypes(ar);
   ar >> updates;
   file.close();
 }
@@ -623,15 +619,10 @@ bool TritonRoute::writeGlobals(const std::string& name)
   if (!file.good())
     return false;
   frOArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
+  registerTypes(ar);
+  serializeGlobals(ar);
   file.close();
   return true;
-}
-
-void TritonRoute::sendFrDesignDist()
-{
-  
 }
 
 void TritonRoute::sendDesignDist()
@@ -670,7 +661,7 @@ static void serializeUpdatesBatch(const std::vector<drUpdate>& batch,
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
-  register_types(ar);
+  registerTypes(ar);
   ar << batch;
   file.close();
 }
@@ -778,7 +769,6 @@ int TritonRoute::main()
   prep();
   ta();
   if (distributed_) {
-    // sendDesignUpdates("");
     asio::post(dist_pool_,
                boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }

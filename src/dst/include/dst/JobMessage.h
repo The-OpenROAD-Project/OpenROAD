@@ -87,7 +87,7 @@ class JobMessage
     descs_.push_back(std::move(in));
     // desc_ = std::move(in);
   }
-  const std::vector<std::unique_ptr<JobDescription>>& getAccumelatedDescriptions()
+  const std::vector<std::unique_ptr<JobDescription>>& getAllJobDescriptions()
   {
     return descs_;
   }

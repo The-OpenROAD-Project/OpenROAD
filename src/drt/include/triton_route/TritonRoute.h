@@ -145,14 +145,12 @@ class TritonRoute
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
-  void resetDesign(const char* file_name);
   void updateDesign(const std::vector<std::string>& updates);
   void updateDesign(const std::string& updates);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
-  void sendFrDesignDist();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
   void sendDesignUpdates(const std::string& globals_path);

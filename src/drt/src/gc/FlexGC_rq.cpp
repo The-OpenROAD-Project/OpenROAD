@@ -30,7 +30,6 @@
 
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
-#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;

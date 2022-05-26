@@ -38,8 +38,6 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
-#include <fstream>
-#include <streambuf>
 #include "utl/Logger.h"
 %}
 

@@ -67,17 +67,17 @@ enum class SerializationType
   WRITE
 };
 
-static void serialize_worker(FlexDRWorker* worker, std::string& workerStr)
+void serializeWorker(FlexDRWorker* worker, std::string& workerStr)
 {
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
   frOArchive ar(stream);
-  register_types(ar);
+  registerTypes(ar);
   ar << *worker;
   workerStr = stream.str();
 }
 
-static void deserialize_worker(FlexDRWorker* worker,
+void deserializeWorker(FlexDRWorker* worker,
                                frDesign* design,
                                const std::string& workerStr)
 {
@@ -86,16 +86,16 @@ static void deserialize_worker(FlexDRWorker* worker,
       std::ios_base::binary | std::ios_base::in | std::ios_base::out);
   frIArchive ar(stream);
   ar.setDesign(design);
-  register_types(ar);
+  registerTypes(ar);
   ar >> *worker;
 }
 
-static void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
 {
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
   frOArchive ar(stream);
-  register_types(ar);
+  registerTypes(ar);
   ar << viaData;
   serializedStr = stream.str();
 }
@@ -128,10 +128,6 @@ void FlexDR::setDebug(frDebugSettings* settings)
             : nullptr;
 }
 
-// Used when reloaded a serialized worker.  init() will already have
-// been run. We don't support end() in this case as it is intended for
-// debugging route_queue().  The gc worker will have beeen reloaded
-// from the serialization.
 std::string FlexDRWorker::reloadedMain()
 {
   init(design_);
@@ -144,23 +140,17 @@ std::string FlexDRWorker::reloadedMain()
   route_queue();
   setGCWorker(nullptr);
   cleanup();
-  // std::string name = fmt::format("{}iter{}_x{}_y{}.worker.out",
-  //                                dist_dir_,
-  //                                getDRIter(),
-  //                                getGCellBox().xMin(),
-  //                                getGCellBox().yMin());
   std::string workerStr;
-  serialize_worker(this, workerStr);
+  serializeWorker(this, workerStr);
   return workerStr;
-  // reply with file path
 }
 
-static void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
+void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
                              const std::string& file_name)
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
-  register_types(ar);
+  registerTypes(ar);
   ar << updates;
   file.close();
 }
@@ -194,7 +184,7 @@ int FlexDRWorker::main(frDesign* design)
         fmt::format("{}/viadata.bin", debugSettings_->dumpDir).c_str());
     viaDataFile << viaDataStr;
     std::string workerStr;
-    serialize_worker(this, workerStr);
+    serializeWorker(this, workerStr);
     ofstream workerFile(
         fmt::format("{}/worker.bin", debugSettings_->dumpDir).c_str());
     workerFile << workerStr;
@@ -202,8 +192,8 @@ int FlexDRWorker::main(frDesign* design)
     std::ofstream file(
         fmt::format("{}/globals.bin", debugSettings_->dumpDir).c_str());
     frOArchive ar(file);
-    register_types(ar);
-    serialize_globals(ar);
+    registerTypes(ar);
+    serializeGlobals(ar);
     file.close();
   }
   if (!skipRouting_) {
@@ -1611,8 +1601,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      // if (iter != 0)
-      //   std::remove(globals_path_.c_str());
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
       router_->writeGlobals(globals_path_.c_str());
     }
@@ -1709,7 +1697,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
 
   omp_set_num_threads(MAX_THREADS);
-  int vers = 0;
+  int version = 0;
   increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
@@ -1722,7 +1710,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile(batch_name.c_str());
         if (dist_on_) {
           router_->dist_pool_.join();
-          if (vers++ == 0 && !design_->hasUpdates()) {
+          if (version++ == 0 && !design_->hasUpdates()) {
             std::string serializedViaData;
             serializeViaData(via_data_, serializedViaData);
             router_->sendGlobalsUpdates(globals_path_, serializedViaData);
@@ -1789,7 +1777,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
               ProfileTask task("DIST: DESERIALIZING_BATCH");
 #pragma omp parallel for schedule(dynamic)
               for (int i = 0; i < workers.size(); i++) {
-                deserialize_worker(workersInBatch.at(workers.at(i).first).get(),
+                deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
                                    design_,
                                    workers.at(i).second);
               }
@@ -2123,7 +2111,7 @@ void FlexDR::sendWorkers(
     ProfileTask task("DIST: SERIALIZE_BATCH");
     for (auto& [idx, worker] : remote_batch) {
       std::string workerStr;
-      serialize_worker(worker, workerStr);
+      serializeWorker(worker, workerStr);
       workers.push_back({idx, workerStr});
     }
   }
@@ -2151,8 +2139,6 @@ void FlexDR::sendWorkers(
     RoutingJobDescription* rjd
         = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setWorkers(workers);
-    rjd->setDesignPath(design_path_);
-    rjd->setGlobalsPath(globals_path_);
     rjd->setSharedDir(dist_dir_);
     rjd->setSendEvery(20);
     msg.setJobDescription(std::move(desc));
@@ -2162,7 +2148,7 @@ void FlexDR::sendWorkers(
     if (!ok) {
       logger_->error(utl::DRT, 500, "Sending worker {} failed");
     }
-    for (const auto& one_desc : result.getAccumelatedDescriptions()) {
+    for (const auto& one_desc : result.getAllJobDescriptions()) {
       RoutingJobDescription* result_desc
           = static_cast<RoutingJobDescription*>(one_desc.get());
       router_->addWorkerResults(result_desc->getWorkers());
@@ -2244,7 +2230,7 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
-  deserialize_worker(worker.get(), design, workerStr);
+  deserializeWorker(worker.get(), design, workerStr);
 
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.

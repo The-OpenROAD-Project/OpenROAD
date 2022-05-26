@@ -175,8 +175,6 @@ class FlexDR
   unsigned short dist_port_;
   std::string dist_dir_;
   std::string globals_path_;
-  std::string design_path_;
-  bool design_updated_;
   bool increaseClipsize_;
   float clipSizeInc_;
   int iter_;
