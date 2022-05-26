@@ -2490,6 +2490,9 @@ int FlexDR::main()
     args.size = clipSize;
 
     searchRepair(args);
+    if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
+      break;
+    }
   }
 
   end(/* done */ true);
