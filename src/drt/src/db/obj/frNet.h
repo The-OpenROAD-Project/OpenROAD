@@ -225,6 +225,11 @@ class frNet : public frBlockObject
   bool isSpecial() const { return isSpecial_; }
   void setIsSpecial(bool s) { isSpecial_ = s; }
   frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
+  void setOrigGuides(const std::vector<frRect>& guides)
+  {
+    orig_guides_ = guides;
+  }
+  const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
 
  protected:
   frString name_;
@@ -246,6 +251,7 @@ class frNet : public frBlockObject
   frNode* firstNonRPinNode_;
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
+  std::vector<frRect> orig_guides_;
   dbSigType type_;
   bool modified_;
   bool isFakeNet_;  // indicate floating PG nets

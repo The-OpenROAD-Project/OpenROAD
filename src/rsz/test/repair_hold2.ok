@@ -55,10 +55,10 @@ Path Type: min
    0.16    0.16   clock network delay (propagated)
    0.00    0.16   clock reconvergence pessimism
            0.16 ^ r3/CK (DFF_X1)
-   0.00    0.16   library hold time
-           0.16   data required time
+   0.00    0.17   library hold time
+           0.17   data required time
 ---------------------------------------------------------
-           0.16   data required time
+           0.17   data required time
           -0.13   data arrival time
 ---------------------------------------------------------
           -0.04   slack (VIOLATED)
@@ -75,8 +75,8 @@ Path Type: min
    0.16    0.16   clock network delay (propagated)
    0.00    0.16 ^ r3/CK (DFF_X1)
    0.09    0.25 v r3/Q (DFF_X1)
-   0.00    0.25 v out (out)
-           0.25   data arrival time
+   0.00    0.26 v out (out)
+           0.26   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
@@ -85,19 +85,19 @@ Path Type: min
            0.30   data required time
 ---------------------------------------------------------
            0.30   data required time
-          -0.25   data arrival time
+          -0.26   data arrival time
 ---------------------------------------------------------
-          -0.05   slack (VIOLATED)
+          -0.04   slack (VIOLATED)
 
 
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 11 hold buffers.
-worst slack 0.01
+[INFO RSZ-0032] Inserted 10 hold buffers.
+worst slack 0.00
 worst slack 1.88
 Net in2
  Pin capacitance: 1.25-1.42
- Wire capacitance: 3.69
- Total capacitance: 4.94-5.11
+ Wire capacitance: 5.22
+ Total capacitance: 6.47-6.64
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -106,18 +106,18 @@ Driver pins
  in2 input port (20, 0)
 
 Load pins
- hold11/A input (CLKBUF_X3) 1.25-1.42 (40, 41)
+ hold10/A input (CLKBUF_X3) 1.25-1.42 (40, 41)
 
 Net out
  Pin capacitance: 0.00
- Wire capacitance: 4.93
- Total capacitance: 4.93
+ Wire capacitance: 6.96
+ Total capacitance: 6.96
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- hold9/Z output (CLKBUF_X3) (41, 41)
+ hold2/Z output (CLKBUF_X3) (41, 41)
 
 Load pins
  out output port (0, 0)

@@ -140,12 +140,12 @@ PINPROPERTIES 2 ;
   - _d0_ CLK + PROPERTY PP 1  ;
 END PINPROPERTIES
 BLOCKAGES 9 ;
-    - LAYER metal1 + COMPONENT _d0_ + DESIGNRULEWIDTH 6 RECT ( 1 2 ) ( 3 4 ) ;
-    - LAYER metal1 + COMPONENT _d0_ + DESIGNRULEWIDTH 6 RECT ( 5 6 ) ( 7 8 ) ;
-    - LAYER metal2 + SLOTS + SPACING 5 RECT ( 1 2 ) ( 3 4 ) ;
-    - LAYER metal2 + PUSHDOWN RECT ( 5 6 ) ( 7 8 ) ;
     - LAYER metal3 + FILLS RECT ( 0 0 ) ( 5 2 ) ;
+    - LAYER metal1 + COMPONENT _d0_ + DESIGNRULEWIDTH 6 RECT ( 1 2 ) ( 3 4 ) ;
+    - LAYER metal2 + SLOTS + SPACING 5 RECT ( 1 2 ) ( 3 4 ) ;
     - LAYER metal3 + FILLS RECT ( 3 2 ) ( 5 5 ) ;
+    - LAYER metal1 + COMPONENT _d0_ + DESIGNRULEWIDTH 6 RECT ( 5 6 ) ( 7 8 ) ;
+    - LAYER metal2 + PUSHDOWN RECT ( 5 6 ) ( 7 8 ) ;
     - PLACEMENT + COMPONENT _d0_ RECT ( 1 2 ) ( 3 4 ) ;
     - PLACEMENT + PARTIAL 12.340000 + PUSHDOWN RECT ( 1 2 ) ( 3 4 ) ;
     - PLACEMENT + SOFT RECT ( 1 2 ) ( 3 4 ) ;

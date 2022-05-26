@@ -74,6 +74,7 @@ struct ParamStruct
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::string outputCmapFile;
+  std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
   int drouteEndIter = -1;
@@ -87,6 +88,7 @@ struct ParamStruct
   bool cleanPatches = false;
   bool doPa = false;
   bool singleStepDR = false;
+  int minAccessPoints = -1;
 };
 
 class TritonRoute

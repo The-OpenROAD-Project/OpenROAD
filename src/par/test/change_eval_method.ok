@@ -1,0 +1,35 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+Running MLPart.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -1731515372.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -1723748676.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -1151077270.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -946219961.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -873841229.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -211680420.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed 670094950.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed 787846414.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed 1608637542.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed 1914837113.
+[INFO PAR-0060] [MLPart] Run completed. Partition ID = 0. Total runs = 10.
+Running MLPart.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed -289663928.
+[INFO PAR-0059] [MLPart] Partitioned graph for seed 1914837114.
+[INFO PAR-0060] [MLPart] Run completed. Partition ID = 1. Total runs = 2.
+[INFO PAR-0006] Partitioning Results for ID = 1 and Tool = mlpart.
+[INFO PAR-0007] Best results used seed 1914837114.
+[INFO PAR-0008] Number of Hyperedge Cuts = 53.
+[INFO PAR-0009] Number of Terminals = 116.
+[INFO PAR-0010] Cluster Size SD = 63.215405559088204.
+[INFO PAR-0011] Cluster Area SD = 756.9479423976262.
+[INFO PAR-0012] Total Hop Weight = 5300.
+[INFO PAR-0006] Partitioning Results for ID = 0 and Tool = mlpart.
+[INFO PAR-0007] Best results used seed -1731515372.
+[INFO PAR-0008] Number of Hyperedge Cuts = 52.
+[INFO PAR-0009] Number of Terminals = 113.
+[INFO PAR-0010] Cluster Size SD = 62.31121488143206.
+[INFO PAR-0011] Cluster Area SD = 804.9718550980525.
+[INFO PAR-0012] Total Hop Weight = 5200.

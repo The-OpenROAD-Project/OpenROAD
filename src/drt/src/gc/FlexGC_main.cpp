@@ -2201,7 +2201,12 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
 
     auto cutClassIdx = layer->getCutClassIdx(ptr->width(), ptr->length());
     if (cutClassIdx == conCutClassIdx) {
+        if (con->isNoPrl()) {
+            if ((objBox.xMin() >= gtl::xh(*rect) || objBox.xMax() <= gtl::xl(*rect)) 
+                && (objBox.yMin() >= gtl::yh(*rect) || objBox.yMax() <= gtl::yl(*rect)))
       cnt++;
+        } else
+            cnt++;
     }
   }
   if (cnt >= reqNumCut) {
@@ -2352,13 +2357,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
         DRT,
         48,
         " Unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isNoPrl()) {
-    logger_->warn(
-        DRT,
-        49,
-        " Unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut.");
     return;
   }
   if (con->hasEnclosure()) {

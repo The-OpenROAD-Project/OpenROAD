@@ -265,6 +265,11 @@ BOOST_AUTO_TEST_CASE(test_default)
   auto array_spacing_map = aspRule->getCutsArraySpacing();
   BOOST_TEST(array_spacing_map.size() == 1);
   BOOST_TEST(array_spacing_map[3] == 0.30 * distFactor);
+
+  layer = dbTech->findLayer("contact");
+  BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
+  layer = dbTech->findLayer("metal2");
+  BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::TSVMETAL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -153,6 +153,7 @@ class FlexDR
       const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
+  void reportGuideCoverage();
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;

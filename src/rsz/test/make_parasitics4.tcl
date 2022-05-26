@@ -5,6 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_lef pad.lef
 read_def make_parasitics4.def
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 report_net -connections -verbose in1

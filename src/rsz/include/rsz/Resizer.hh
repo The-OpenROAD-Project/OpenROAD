@@ -49,10 +49,6 @@ class GlobalRouter;
 class IncrementalGRoute;
 }
 
-namespace sta {
-class PathExpanded;
-}
-
 namespace rsz {
 
 using std::array;
@@ -70,6 +66,7 @@ using odb::dbNet;
 using odb::dbMaster;
 using odb::dbBlock;
 using odb::dbTechLayer;
+using odb::dbInst;
 
 using stt::SteinerTreeBuilder;
 
@@ -107,7 +104,6 @@ using sta::Delay;
 using sta::Slew;
 using sta::ArcDelay;
 using sta::Required;
-using sta::Slack;
 using sta::Corner;
 using sta::DcalcAnalysisPt;
 using sta::ParasiticAnalysisPt;
@@ -116,15 +112,19 @@ using sta::Pvt;
 using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
-using sta::PathRef;
-using sta::PathExpanded;
 using sta::PinSeq;
+using sta::Slack;
 
-class BufferedNet;
-enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
+
+class BufferedNet;
+typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
+
+class RepairDesign;
+class RepairSetup;
+class RepairHold;
 
 class NetHash
 {
@@ -135,8 +135,6 @@ public:
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
-typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
-typedef Vector<BufferedNet*> BufferedNetSeq;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
@@ -144,6 +142,7 @@ class Resizer : public StaState
 {
 public:
   Resizer();
+  ~Resizer();
   void init(OpenRoad *openroad,
             Tcl_Interp *interp,
             Logger *logger,
@@ -152,7 +151,6 @@ public:
             dbSta *sta,
             SteinerTreeBuilder *stt_builder,
             GlobalRouter *global_router);
-
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,
@@ -161,7 +159,12 @@ public:
                const Corner *corner,
                // Return values.
                double &res,
-               double &cap);
+               double &cap) const;
+  void layerRC(int routing_level,
+               const Corner *corner,
+               // Return values.
+               double &res,
+               double &cap) const;
   // Set the resistance and capacitance used for parasitics on signal nets.
   void setWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
@@ -170,12 +173,16 @@ public:
   void setWireClkRC(const Corner *corner,
                     double res,
                     double cap); // farads/meter
-  // ohms/meter
-  double wireSignalResistance(const Corner *corner);
-  double wireClkResistance(const Corner *corner);
+  // ohms/meter, farads/meter
+  void wireSignalRC(const Corner *corner,
+                    // Return values.
+                    double &res,
+                    double &cap) const;
+  double wireSignalResistance(const Corner *corner) const;
+  double wireClkResistance(const Corner *corner) const;
   // farads/meter
-  double wireSignalCapacitance(const Corner *corner);
-  double wireClkCapacitance(const Corner *corner);
+  double wireSignalCapacitance(const Corner *corner) const;
+  double wireClkCapacitance(const Corner *corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
@@ -196,22 +203,30 @@ public:
   bool dontUse(LibertyCell *cell);
 
   void setMaxUtilization(double max_utilization);
-  void resizePreamble();
   // Remove all buffers from the netlist.
   void removeBuffers();
   void bufferInputs();
   void bufferOutputs();
-  // Resize all instances in the network.
-  // resizerPreamble() required.
-  void resizeToTargetSlew();
-  // Resize inst to target slew (public for testing).
-  // resizerPreamble() required.
-  // Return true if resized.
-  bool resizeToTargetSlew(const Pin *drvr_pin,
-                          bool update_count);
 
+  // Resize drvr_pin instance to target slew.
+  void resizeDrvrToTargetSlew(const Pin *drvr_pin);
+  // Accessor for debugging.
   Slew targetSlew(const RiseFall *tr);
+  // Accessor for debugging.
   float targetLoadCap(LibertyCell *cell);
+
+  ////////////////////////////////////////////////////////////////
+
+  void repairSetup(float slack_margin,
+                   int max_passes);
+  // For testing.
+  void repairSetup(Pin *drvr_pin);
+  // Rebuffer one net (for testing).
+  // resizerPreamble() required.
+  void rebufferNet(const Pin *drvr_pin);
+
+  ////////////////////////////////////////////////////////////////
+
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -222,11 +237,10 @@ public:
                   bool allow_setup_violations,
                   float max_buffer_percent,
                   int max_passes);
-  int holdBufferCount() const { return hold_buffer_count_; }
-  void repairSetup(float slack_margin,
-                   int max_passes);
-  // For testing.
-  void repairSetup(Pin *drvr_pin);
+  int holdBufferCount() const;
+
+  ////////////////////////////////////////////////////////////////
+
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -240,33 +254,32 @@ public:
                        double wire_length, // meters
                        Delay &delay,
                        Slew &slew);
-  void cellWireDelay(LibertyPort *drvr_port,
-                     LibertyPort *load_port,
-                     double wire_length, // meters
-                     // Return values.
-                     Delay &delay,
-                     Slew &slew);
-  float bufferSelfDelay(LibertyCell *buffer_cell);
-  float bufferSelfDelay(LibertyCell *buffer_cell,
-                        const RiseFall *rf);
+  void setDebugPin(const Pin *pin);
+
+  ////////////////////////////////////////////////////////////////
+
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
                     double cap_margin); // 0.0-1.0
-  int repairDesignBufferCount() const { return repair_design_buffer_count_; }
-  // repairDesign but restricted to clock network and
+  int repairDesignBufferCount() const;
+  // for debugging
+  void repairNet(Net *net,
+                 double max_wire_length, // meters
+                 double slew_margin,
+                 double cap_margin);
+
+  // Repair long wires from clock input pins to clock tree root buffer
+  // because CTS ignores the issue.
   // no max_fanout/max_cap checks.
+  // Use max_wire_length zero for none (meters)
   void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
   // and TritonCTS is too stupid to balance clock networks with inverters.
   void repairClkInverters();
-  // for debugging
-  void repairNet(Net *net,
-                 double max_wire_length, // meters
-                 double slew_margin,
-                 double cap_margin);
+
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
@@ -276,27 +289,18 @@ public:
                            const Corner *corner);
   double findMaxWireLength(LibertyPort *drvr_port,
                            const Corner *corner);
-  // Find the max wire length with load slew < max_slew (in meters).
-  double findMaxSlewWireLength(LibertyPort *drvr_port,
-                               LibertyPort *load_port,
-                               double max_slew,
-                               const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
 
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebuffer1(const Pin *drvr_pin);
-
   ////////////////////////////////////////////////////////////////
-  // Slack API for timing driven placement.
+  // API for timing driven placement.
   // Each pass (findResizeSlacks)
   //  estiimate parasitics
   //  repair design
   //  save slacks
   //  remove inserted buffers
   //  restore resized gates
-  // Preamble must be called before the first findResizeSlacks.
+  // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
   void findResizeSlacks();
   // Return 10% of nets with worst slack.
@@ -321,8 +325,8 @@ public:
 
 protected:
   void init();
-  void ensureBlock();
-  void ensureDesignArea();
+  void initBlock();
+  void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance *bufferInput(const Pin *top_pin,
                         LibertyCell *buffer_cell);
@@ -352,119 +356,26 @@ protected:
                              Slew slews[],
                              int counts[]);
   bool hasMultipleOutputs(const Instance *inst);
+
+  void resizePreamble();
+  // Resize drvr_pin instance to target slew.
+  // Return 1 if resized.
+  int resizeToTargetSlew(const Pin *drvr_pin);
+
+  ////////////////////////////////////////////////////////////////
+
   void findLongWires(VertexSeq &drvrs);
-  void findLongWiresSteiner(VertexSeq &drvrs);
-  int findMaxSteinerDist(Vertex *drvr);
-  int findMaxSteinerDist(SteinerTree *tree);
-  int findMaxSteinerDist(SteinerTree *tree,
-                         SteinerPt pt,
-                         int dist_from_drvr);
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    double slew_margin,
-                    double cap_margin,
-                    int &repair_count,
-                    int &slew_violations,
-                    int &cap_violations,
-                    int &fanout_violations,
-                    int &length_violations);
-  void repairNet(Net *net,
-                 const Pin *drvr_pin,
-                 Vertex *drvr,
-                 double slew_margin,
-                 double cap_margin,
-                 bool check_slew,
-                 bool check_cap,
-                 bool check_fanout,
-                 int max_length, // dbu
-                 bool resize_drvr,
-                 int &repair_count,
-                 int &slew_violations,
-                 int &cap_violations,
-                 int &fanout_violations,
-                 int &length_violations);
-  bool checkLimits(const Pin *drvr_pin,
-                   double slew_margin,
-                   double cap_margin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
-  void checkSlew(const Pin *drvr_pin,
-                 double slew_margin,
-                 // Return values.
-                 Slew &slew,
-                 float &limit,
-                 float &slack,
-                 const Corner *&corner);
-  void checkLoadSlews(const Pin *drvr_pin,
-                      double slew_margin,
-                      // Return values.
-                      Slew &slew,
-                      float &limit,
-                      float &slack,
-                      const Corner *&corner);
-  float bufferInputMaxSlew(LibertyCell *buffer,
-                           const Corner *corner) const;
-  float maxInputSlew(const LibertyPort *input,
-                     const Corner *corner) const;
-  void repairNet(SteinerTree *tree,
-                 SteinerPt pt,
-                 SteinerPt prev_pt,
-                 Net *net,
-                 const Pin *drvr_pin,
-                 float max_cap,
-                 float max_fanout,
-                 int max_length,
-                 const Corner *corner,
-                 int level,
-                 // Return values.
-                 int &wire_length,
-                 float &pin_cap,
-                 float &fanout,
-                 PinSeq &load_pins,
-                 float &max_load_slew);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew,
+  int findMaxSteinerDist(Vertex *drvr,
                          const Corner *corner);
-  double gateSlewDiff(LibertyPort *drvr_port,
-                      double load_cap,
-                      double slew,
-                      const DcalcAnalysisPt *dcalc_ap);
-  void makeRepeater(const char *where,
-                    SteinerTree *tree,
-                    SteinerPt pt,
-                    LibertyCell *buffer_cell,
-                    const Corner *corner,
-                    bool resize,
-                    int level,
-                    int &wire_length,
-                    float &pin_cap,
-                    float &fanout,
-                    PinSeq &load_pins,
-                    float &max_load_slew);
-  void makeRepeater(const char *where,
-                    int x,
-                    int y,
-                    LibertyCell *buffer_cell,
-                    const Corner *corner,
-                    bool resize,
-                    int level,
-                    int &wire_length,
-                    float &pin_cap,
-                    float &fanout,
-                    PinSeq &load_pins,
-                    float &max_load_slew);
-  LibertyCell *findBufferUnderSlew(float max_slew,
-                                   float load_cap);
   float driveResistance(const Pin *drvr_pin);
   float bufferDriveResistance(const LibertyCell *buffer) const;
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
-  float portFanoutLoad(LibertyPort *port);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
-  float bufferInputCapacitance(LibertyCell *buffer_cell,
-                               const DcalcAnalysisPt *dcalc_ap);
+  double findMaxWireLength1();
+  float portFanoutLoad(LibertyPort *port) const;
+  float portCapacitance(LibertyPort *input,
+                        const Corner *corner) const;
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -485,9 +396,12 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
+  void cellWireDelay(LibertyPort *drvr_port,
+                     LibertyPort *load_port,
+                     double wire_length, // meters
+                     // Return values.
+                     Delay &delay,
+                     Slew &slew);
   void makeWireParasitic(Net *net,
                          Pin *drvr_pin,
                          Pin *load_pin,
@@ -503,10 +417,7 @@ protected:
   bool bufferBetweenPorts(Instance *buffer);
   bool hasPort(const Net *net);
   bool hasInputPort(const Net *net);
-  bool hasOutputPort(const Net *net);
   Point location(Instance *inst);
-  void setLocation(Instance *inst,
-                   Point pt);
   double area(dbMaster *master);
   double area(Cell *cell);
   double splitWireDelayDiff(double wire_length,
@@ -515,43 +426,9 @@ protected:
                          LibertyPort *load_port,
                          double wire_length,
                          double max_slew);
-  LibertyCell *findHoldBuffer();
-  float bufferHoldDelay(LibertyCell *buffer);
-  void bufferHoldDelays(LibertyCell *buffer,
-                        // Return values.
-                        Delay delays[RiseFall::index_count]);
-  void findHoldViolations(VertexSeq &ends,
-                          float slack_margin,
-                          // Return values.
-                          Slack &worst_slack,
-                          VertexSeq &hold_violations);
-  void repairHold(VertexSeq &ends,
-                  LibertyCell *buffer_cell,
-                  float slack_margin,
-                  bool allow_setup_violations,
-                  int max_buffer_count,
-                  int max_passes);
-  void repairHoldPass(VertexSeq &ends,
-                      LibertyCell *buffer_cell,
-                      float slack_margin,
-                      bool allow_setup_violations,
-                      int max_buffer_count);
-  void repairEndHold(Vertex *worst_vertex,
-                     LibertyCell *buffer_cell,
-                     float slack_margin,
-                     bool allow_setup_violations,
-                     int max_buffer_count);
-  void makeHoldDelay(Vertex *drvr,
-                     PinSeq &load_pins,
-                     bool loads_have_out_port,
-                     LibertyCell *buffer_cell,
-                     Point loc);
-  bool checkMaxSlewCap(const Pin *drvr_pin);
-  int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
                          // Return value.
                          InstanceSeq &insts);
-  int fanout(Pin *drvr_pin);
   void findLoads(Pin *drvr_pin,
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
@@ -583,75 +460,43 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
-  double wireSignalCapacitance(const Pin *drvr_pin,
-                               const Net *net,
-                               const Corner *corner);
-  float pinCap(const Pin *drvr_pin,
-               const Corner *corner);
-  double grouteLength(const Net *net);
 
-  bool repairSetup(PathRef &path,
-                   Slack path_slack);
-  bool upsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded);
-  void splitLoads(PathRef *drvr_path,
-                  int drvr_index,
-                  Slack drvr_slack,
-                  PathExpanded *expanded);
-  LibertyCell *upsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell,
                    bool journal);
 
-  int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
-                                  SteinerPt k,
-                                  SteinerPt prev,
-                                  int level,
-                                  double wire_signal_cap);
-  void rebufferTopDown(BufferedNet *choice,
-                       Net *net,
-                       int level);
-  BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   SteinerTree *tree,
-                   SteinerPt k,
-                   SteinerPt prev,
-                   int level,
-                   double wire_signal_cap);
-  BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
-  BufferedNet *makeBufferedNet(SteinerTree *tree,
-                               SteinerPt k,
-                               SteinerPt prev,
-                               int level);
-  BufferedNet *makeBufferedNetWire(SteinerTree *tree,
-                                   SteinerPt from,
-                                   SteinerPt to,
-                                   int level);
-  // BufferedNet factory.
-  BufferedNet *makeBufferedNet(BufferedNetType type,
-                               Point location,
-                               float cap,
-                               Pin *load_pin,
-                               PathRef req_path,
-                               Delay req_delay,
-                               LibertyCell *buffer_cell,
-                               BufferedNet *ref,
-                               BufferedNet *ref2);
-  bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
-                         Instance *parent);
+                         Instance *parent,
+                         Point loc);
+  Instance *makeBuffer(LibertyCell *cell,
+                       const char *name,
+                       Instance *parent,
+                       Point loc);
+  void setLocation(dbInst *db_inst,
+                   Point pt);
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
+  // Returns nullptr if net has less than 2 pins or any pin is not placed.
+  SteinerTree *makeSteinerTree(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNet(const Pin *drvr_pin,
+                                 const Corner *corner);
+  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin,
+                                        const Corner *corner);
+  BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin,
+                                       const Corner *corner);
+  float maxInputSlew(const LibertyPort *input,
+                     const Corner *corner) const;
+  void checkLoadSlews(const Pin *drvr_pin,
+                      double slew_margin,
+                      // Return values.
+                      Slew &slew,
+                      float &limit,
+                      float &slack,
+                      const Corner *&corner);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -659,7 +504,8 @@ protected:
   void journalBegin();
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
-  void journalRestore();
+  void journalRestore(int &resize_count,
+                      int &inserted_buffer_count);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
@@ -669,10 +515,14 @@ protected:
   bool isRegOutput(Vertex *vertex);
   bool isRegister(Vertex *vertex);
 
-  ////////////////////////////////////////////////////////////////
-  Logger *logger() { return logger_; }
+  Logger *logger() const { return logger_; }
 
-  // These are command args values.
+  // Components
+  RepairDesign *repair_design_;
+  RepairSetup *repair_setup_;
+  RepairHold *repair_hold_;
+  SteinerRenderer *steiner_renderer_;
+
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
@@ -690,12 +540,14 @@ protected:
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;
   IncrementalGRoute *incr_groute_;
-
   Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
+  int dbu_;
+  const Pin *debug_pin_;
+
   Rect core_;
   bool core_exists_;
 
@@ -707,8 +559,6 @@ protected:
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
-  LibertyCell *buffer_med_drive_;
-  LibertyCell *buffer_highest_drive_;
 
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_vertices_;
@@ -721,18 +571,11 @@ protected:
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;
-  int repair_design_buffer_count_;
   int inserted_buffer_count_;
   // Slack map variables.
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
-  SteinerRenderer *steiner_renderer_;
-
-  int rebuffer_net_count_;
-  BufferedNetSeq rebuffer_options_;
-
-  int hold_buffer_count_;
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
@@ -740,15 +583,13 @@ protected:
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
-  static constexpr int rebuffer_max_fanout_ = 20;
-  static constexpr double rebuffer_buffer_penalty = .005;
-  static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
-  static constexpr float hold_slack_limit_ratio_max_ = 0.2;
 
   friend class BufferedNet;
+  friend class RepairDesign;
+  friend class RepairSetup;
+  friend class RepairHold;
 };
 
 } // namespace

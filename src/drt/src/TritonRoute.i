@@ -74,6 +74,7 @@ void detailed_route_cmd(const char* guideFile,
                         const char* outputMazeFile,
                         const char* outputDrcFile,
                         const char* outputCmapFile,
+                        const char* outputGuideCoverageFile,
                         const char* dbProcessNode,
                         bool enableViaGen,
                         int drouteEndIter,
@@ -86,7 +87,8 @@ void detailed_route_cmd(const char* guideFile,
                         int verbose,
                         bool cleanPatches,
                         bool noPa,
-                        bool singleStepDR)
+                        bool singleStepDR,
+                        int minAccessPoints)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -94,6 +96,7 @@ void detailed_route_cmd(const char* guideFile,
                     outputMazeFile,
                     outputDrcFile,
                     outputCmapFile,
+                    outputGuideCoverageFile,
                     dbProcessNode,
                     enableViaGen,
                     drouteEndIter,
@@ -106,14 +109,16 @@ void detailed_route_cmd(const char* guideFile,
                     verbose,
                     cleanPatches,
                     !noPa,
-                    singleStepDR});
+                    singleStepDR,
+                    minAccessPoints});
   router->main();
 }
 
 void pin_access_cmd(const char* dbProcessNode,
                     const char* bottomRoutingLayer,
                     const char* topRoutingLayer,
-                    int verbose)
+                    int verbose,
+                    int minAccessPoints)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   triton_route::ParamStruct params;
@@ -121,6 +126,7 @@ void pin_access_cmd(const char* dbProcessNode,
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
+  params.minAccessPoints = minAccessPoints;
   router->setParams(params);
   router->pinAccess();
 }

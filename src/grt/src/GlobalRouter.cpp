@@ -3810,6 +3810,28 @@ void GlobalRouter::setDebugTree3D(bool tree3D)
   fastroute_->setDebugTree3D(tree3D);
 }
 
+// For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be
+// exported.
+std::vector<PinGridLocation>
+GlobalRouter::getPinGridPositions(odb::dbNet *db_net)
+{
+  Net* net = getNet(db_net);
+  std::vector<PinGridLocation> pin_locs;
+  for (Pin& pin : net->getPins())
+    pin_locs.push_back(PinGridLocation(pin.getITerm(), pin.getBTerm(),
+                                       pin.getOnGridPosition()));
+  return pin_locs;
+}
+
+PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
+                                 odb::dbBTerm* bterm,
+                                 odb::Point pt) :
+  iterm_(iterm),
+  bterm_(bterm),
+  pt_(pt)
+{
+}
+
 ////////////////////////////////////////////////////////////////
 
 RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
@@ -4035,6 +4057,11 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
   grouter_->addDirtyNet(bterm->getNet());
+}
+
+bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
+{
+  return net1->getId() < net2->getId();
 }
 
 }  // namespace grt

@@ -1,0 +1,41 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN shorted_outputs ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 25000 25000 ) ;
+
+COMPONENTS 3 ;
+# intentionally overlap the instances to tickle a prior bug
+- u1 sky130_fd_sc_hd__ebufn_1 + PLACED   ( 0 0 ) N ;
+- u2 sky130_fd_sc_hd__ebufn_1 + PLACED   ( 0 0 ) N ;
+- u3 sky130_fd_sc_hd__buf_1 + PLACED   ( 0 0 ) N ;
+END COMPONENTS
+
+PINS 3 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER met1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- in2 + NET in2 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER met1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 2000 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER met1 ( 100 0 ) ( 100 100 ) + FIXED ( 15000 0 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 4 ;
+- in1 ( PIN in1 ) ( u1 A ) ;
+- in2 ( PIN in2 ) ( u2 A ) ;
+- n1 ( u1 Z ) ( u2 Z ) ( u3 A ) ;
+- out1 ( PIN out1 ) ( u3 X ) ;
+END NETS
+
+END DESIGN
