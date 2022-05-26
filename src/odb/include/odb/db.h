@@ -8853,11 +8853,7 @@ class dbGroup : public dbObject
 
   Rect getBox() const;
 
-  void setParentGroup(dbGroup* parent_group);
-
   dbGroup* getParentGroup() const;
-
-  void setRegion(dbRegion* region);
 
   dbRegion* getRegion() const;
 

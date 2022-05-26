@@ -38,7 +38,7 @@
     {
       "name":"_parent_group",
       "type":"dbId<_dbGroup>",
-      "flags":[],
+      "flags":["no-set"],
       "parent":"dbBlock"
     },
     {
@@ -82,7 +82,7 @@
     {
       "name":"region_",
       "type":"dbId<_dbRegion>",
-      "flags":[],
+      "flags":["no-set"],
       "parent":"dbBlock"
     }
   ],

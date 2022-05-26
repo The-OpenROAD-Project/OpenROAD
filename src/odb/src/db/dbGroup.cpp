@@ -265,13 +265,6 @@ Rect dbGroup::getBox() const
   return obj->_box;
 }
 
-void dbGroup::setParentGroup(dbGroup* parent_group)
-{
-  _dbGroup* obj = (_dbGroup*) this;
-
-  obj->_parent_group = parent_group->getImpl()->getOID();
-}
-
 dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
@@ -279,13 +272,6 @@ dbGroup* dbGroup::getParentGroup() const
     return NULL;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
-}
-
-void dbGroup::setRegion(dbRegion* region)
-{
-  _dbGroup* obj = (_dbGroup*) this;
-
-  obj->region_ = region->getImpl()->getOID();
 }
 
 dbRegion* dbGroup::getRegion() const
