@@ -125,20 +125,6 @@ class frGuide : public frConnFig
   frNet* net_;
   int order_in_owner_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frConnFig>(*this);
-    (ar) & begin_;
-    (ar) & end_;
-    (ar) & beginLayer_;
-    (ar) & endLayer_;
-    (ar) & routeObj_;
-    (ar) & net_;
-    (ar) & order_in_owner_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

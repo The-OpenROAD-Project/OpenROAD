@@ -31,7 +31,6 @@
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
 
-#include "distributed/frArchive.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
@@ -89,46 +88,6 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
   void addGRObj(grShape* in);
   void addGRObj(grVia* in);
-  template <class T>
-  static inline void updateRTree(RTree<T>& tree)
-  {
-    std::vector<std::pair<Rect, T>> objects(tree.begin(), tree.end());
-    tree = boost::move(RTree<T, Rect>(objects));
-  }
-  template <class T>
-  static inline void updateRTreeByLayer(RTreesByLayer<T>& trees)
-  {
-    for (auto& tree : trees)
-      updateRTree(tree);
-  }
-  // Flatten the rtree into a vector and load it back into the rtree to match
-  // the process of serialization of rtrees. This is to match the results from
-  // distributed routing with non-distributed routing.
-  void dummyUpdate()
-  {
-    updateRTreeByLayer(shapes_);
-    updateRTreeByLayer(guides_);
-    updateRTreeByLayer(origGuides_);
-    updateRTree(grPins_);
-    updateRTreeByLayer(rpins_);
-    updateRTreeByLayer(grObjs_);
-    updateRTreeByLayer(drObjs_);
-    updateRTreeByLayer(markers_);
-  }
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & design_;
-    (ar) & shapes_;
-    (ar) & guides_;
-    (ar) & origGuides_;
-    (ar) & grPins_;
-    (ar) & rpins_;
-    (ar) & grObjs_;
-    (ar) & drObjs_;
-    (ar) & markers_;
-  }
-  friend class boost::serialization::access;
 };
 
 frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
@@ -147,11 +106,6 @@ frRegionQuery::~frRegionQuery() = default;
 frDesign* frRegionQuery::getDesign() const
 {
   return impl_->design_;
-}
-
-void frRegionQuery::dummyUpdate()
-{
-  impl_->dummyUpdate();
 }
 
 void frRegionQuery::Impl::add(frShape* shape,
@@ -1126,18 +1080,3 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
-
-template <class Archive>
-void frRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void frRegionQuery::serialize<frIArchive>(
-    frIArchive& ar,
-    const unsigned int file_version);
-
-template void frRegionQuery::serialize<frOArchive>(
-    frOArchive& ar,
-    const unsigned int file_version);

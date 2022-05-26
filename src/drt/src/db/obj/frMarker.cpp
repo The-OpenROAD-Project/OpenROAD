@@ -44,66 +44,60 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
   (ar) & vioHasDir_;
   (ar) & vioIsH_;
   (ar) & index_in_owner_;
-  if (ar.isDeepSerialize()) {
-    (ar) & constraint_;
-    (ar) & srcs_;
-    (ar) & victims_;
-    (ar) & aggressors_;
-  } else {
-    if (is_loading(ar)) {
-      int conId;
-      (ar) & conId;
-      if (conId >= 0)
-        constraint_ = design->getTech()->getConstraint(conId);
-      else
-        constraint_ = nullptr;
-      int sz;
-      (ar) & sz;
-      while (sz--) {
-        frBlockObject* obj;
-        serializeBlockObject(ar, obj);
-        srcs_.insert(obj);
-      }
-      (ar) & sz;
-      while (sz--) {
-        frBlockObject* obj;
-        serializeBlockObject(ar, obj);
-        std::tuple<frLayerNum, Rect, bool> tup;
-        (ar) & tup;
-        victims_.push_back({obj, tup});
-      }
-      (ar) & sz;
-      while (sz--) {
-        frBlockObject* obj;
-        serializeBlockObject(ar, obj);
-        std::tuple<frLayerNum, Rect, bool> tup;
-        (ar) & tup;
-        aggressors_.push_back({obj, tup});
-      }
 
-    } else {
-      int conId;
-      if (constraint_ != nullptr)
-        conId = constraint_->getId();
-      else
-        conId = -1;
-      (ar) & conId;
-      int sz = srcs_.size();
-      (ar) & sz;
-      for (auto obj : srcs_)
-        serializeBlockObject(ar, obj);
-      sz = victims_.size();
-      (ar) & sz;
-      for (auto [obj, tup] : victims_) {
-        serializeBlockObject(ar, obj);
-        (ar) & tup;
-      }
-      sz = aggressors_.size();
-      (ar) & sz;
-      for (auto [obj, tup] : victims_) {
-        serializeBlockObject(ar, obj);
-        (ar) & tup;
-      }
+  if (is_loading(ar)) {
+    int conId;
+    (ar) & conId;
+    if (conId >= 0)
+      constraint_ = design->getTech()->getConstraint(conId);
+    else
+      constraint_ = nullptr;
+    int sz;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      srcs_.insert(obj);
+    }
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      std::tuple<frLayerNum, Rect, bool> tup;
+      (ar) & tup;
+      victims_.push_back({obj, tup});
+    }
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      std::tuple<frLayerNum, Rect, bool> tup;
+      (ar) & tup;
+      aggressors_.push_back({obj, tup});
+    }
+
+  } else {
+    int conId;
+    if (constraint_ != nullptr)
+      conId = constraint_->getId();
+    else
+      conId = -1;
+    (ar) & conId;
+    int sz = srcs_.size();
+    (ar) & sz;
+    for (auto obj : srcs_)
+      serializeBlockObject(ar, obj);
+    sz = victims_.size();
+    (ar) & sz;
+    for (auto [obj, tup] : victims_) {
+      serializeBlockObject(ar, obj);
+      (ar) & tup;
+    }
+    sz = aggressors_.size();
+    (ar) & sz;
+    for (auto [obj, tup] : victims_) {
+      serializeBlockObject(ar, obj);
+      (ar) & tup;
     }
   }
 }

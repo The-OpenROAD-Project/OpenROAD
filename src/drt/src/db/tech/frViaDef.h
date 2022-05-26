@@ -75,16 +75,6 @@ class frLef58CutClass
                    // calculating resistance, currently ignored in rule checking
                    // process
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & name;
-    (ar) & viaWidth;
-    (ar) & viaLength;
-    (ar) & numCut;
-  }
-
-  friend class boost::serialization::access;
 };
 
 class frViaDef
@@ -223,25 +213,6 @@ class frViaDef
   Rect layer1ShapeBox;
   Rect layer2ShapeBox;
   Rect cutShapeBox;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & id_;
-    (ar) & name;
-    (ar) & isDefault;
-    (ar) & layer1Figs;
-    (ar) & layer2Figs;
-    (ar) & cutFigs;
-    (ar) & cutClass;
-    (ar) & cutClassIdx;
-    (ar) & addedByRouter;
-    (ar) & layer1ShapeBox;
-    (ar) & layer2ShapeBox;
-    (ar) & cutShapeBox;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 #endif

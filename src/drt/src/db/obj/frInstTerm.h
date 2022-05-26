@@ -83,20 +83,6 @@ class frInstTerm : public frBlockObject
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & order_id_;
-    (ar) & inst_;
-    (ar) & term_;
-    // (ar) & net_; handled by net
-    (ar) & ap_;
-  }
-
-  frInstTerm() : net_(nullptr) {};  // for serialization
-
-  friend class boost::serialization::access;
 };
 
 }  // namespace fr

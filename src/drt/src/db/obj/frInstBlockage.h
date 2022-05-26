@@ -58,19 +58,6 @@ class frInstBlockage : public frBlockObject
   int order_id_;
   frInst* inst_;
   frBlockage* blockage_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & order_id_;
-    (ar) & inst_;
-    (ar) & blockage_;
-  }
-
-  frInstBlockage() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -85,24 +85,8 @@ class frTerm : public frBlockObject
   int _order_id;
   Rect bbox_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frTerm() : net_(nullptr) {};  // for serialization
-
-  friend class boost::serialization::access;
 };
 
-template <class Archive>
-void frTerm::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & type_;
-  (ar) & direction_;
-  (ar) & _order_id;
-  (ar) & bbox_;
-}
 }  // namespace fr
 
 #endif

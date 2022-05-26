@@ -380,30 +380,6 @@ class frTechObject
     return included;
   }
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & dbUnit;
-    (ar) & manufacturingGrid;
-    (ar) & layers;
-    (ar) & name2layer;
-    (ar) & name2via;
-    (ar) & vias;
-    (ar) & layer2Name2CutClass;
-    (ar) & layerCutClass;
-    (ar) & name2viaRuleGenerate;
-    (ar) & viaRuleGenerates;
-    (ar) & uConstraints;
-    (ar) & nonDefaultRules;
-    (ar) & via2ViaForbiddenLen;
-    (ar) & viaForbiddenTurnLen;
-    (ar) & viaForbiddenPlanarLen;
-    (ar) & line2LineForbiddenLen;
-    (ar) & viaForbiddenThrough;
-    (ar) & hasVia2viaMinStep_;
-  }
-
-  friend class boost::serialization::access;
   friend class FlexRP;
 };
 }  // namespace fr

@@ -133,16 +133,6 @@ class frDesign
   int updates_sz_;
   std::vector<std::string> user_selected_vias_;
   int version_;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & topBlock_;
-    (ar) & name2master_;
-    (ar) & masters_;
-    (ar) & tech_;
-    (ar) & rq_;
-  }
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

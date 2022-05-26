@@ -110,7 +110,6 @@ class frRegionQuery
                    const frLayerNum layerNum,
                    std::vector<frMarker*>& result) const;
   void queryMarker(const Rect& box, std::vector<frMarker*>& result) const;
-  void dummyUpdate();
 
   void clearGuides();
   void removeDRObj(frShape* in);
@@ -142,10 +141,6 @@ class frRegionQuery
 
   frRegionQuery();
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

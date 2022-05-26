@@ -72,7 +72,6 @@ static void serialize_worker(FlexDRWorker* worker, std::string& workerStr)
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
   frOArchive ar(stream);
-  ar.setDeepSerialize(false);
   register_types(ar);
   ar << *worker;
   workerStr = stream.str();
@@ -86,7 +85,6 @@ static void deserialize_worker(FlexDRWorker* worker,
       workerStr,
       std::ios_base::binary | std::ios_base::in | std::ios_base::out);
   frIArchive ar(stream);
-  ar.setDeepSerialize(false);
   ar.setDesign(design);
   register_types(ar);
   ar >> *worker;
@@ -97,45 +95,9 @@ static void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
   frOArchive ar(stream);
-  ar.setDeepSerialize(false);
   register_types(ar);
   ar << viaData;
   serializedStr = stream.str();
-}
-
-static bool serialize_design(SerializationType type,
-                             frDesign* design,
-                             const std::string& name)
-{
-  if (type == SerializationType::READ) {
-    std::ifstream file(name);
-    if (!file.good())
-      return false;
-    frIArchive ar(file);
-    ar.setDeepSerialize(true);
-    register_types(ar);
-    ar >> *design;
-    file.close();
-  } else {
-    ProfileTask t1("DIST: SERIALIZE_DESIGN");
-    ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
-    std::stringstream stream(std::ios_base::binary | std::ios_base::in
-                             | std::ios_base::out);
-    frOArchive ar(stream);
-    ar.setDeepSerialize(true);
-    register_types(ar);
-    ar << *design;
-    t1.done();
-    t1_version.done();
-    ProfileTask t2("DIST: WRITE_DESIGN");
-    ProfileTask t2_version(std::string("DIST: WRITE" + name).c_str());
-    std::ofstream file(name);
-    if (!file.good())
-      return false;
-    file << stream.rdbuf();
-    file.close();
-  }
-  return true;
 }
 
 FlexDR::FlexDR(triton_route::TritonRoute* router,
@@ -198,7 +160,6 @@ static void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
-  ar.setDeepSerialize(false);
   register_types(ar);
   ar << updates;
   file.close();
@@ -2248,7 +2209,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & gridGraph_;
   (ar) & markers_;
   (ar) & bestMarkers_;
-  (ar) & rq_;
   (ar) & isCongested_;
   if (is_loading(ar)) {
     // boundaryPin_

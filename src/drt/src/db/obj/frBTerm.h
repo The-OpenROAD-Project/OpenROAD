@@ -124,22 +124,7 @@ class frBTerm : public frTerm
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   frNet* net_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frBTerm() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
-
-template <class Archive>
-void frBTerm::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frTerm>(*this);
-  (ar) & block_;
-  (ar) & pins_;
-  // (ar) & net_;
-}
 
 }  // namespace fr
 

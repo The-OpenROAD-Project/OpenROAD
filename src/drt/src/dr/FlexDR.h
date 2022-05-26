@@ -242,17 +242,10 @@ class FlexDRWorkerRegionQuery
   void init();
   void cleanup();
   bool isEmpty() const;
-  void dummyUpdate();
 
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
-  FlexDRWorkerRegionQuery() : FlexDRWorkerRegionQuery(nullptr) {}
-  // We will have to use explicit instantiation because the impl is private
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 
 class FlexDRMinAreaVio
@@ -337,7 +330,7 @@ class FlexDRWorker
         debugSettings_(nullptr),
         via_data_(nullptr),
         boundaryPin_(),
-        rq_(nullptr),
+        rq_(this),
         gcWorker_(nullptr),
         dist_on_(false),
         isCongested_(false),

@@ -26,7 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "frRTree.h"
 
@@ -49,32 +48,12 @@ struct FlexDRWorkerRegionQuery::Impl
       std::vector<std::vector<rq_box_value_t<drConnFig*>>>& allShapes);
 
  private:
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & drWorker;
-    (ar) & shapes_;
-  }
-
-  friend class boost::serialization::access;
 };
 
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
     : impl_(make_unique<Impl>())
 {
   impl_->drWorker = in;
-}
-
-// Flatten the rtree into a vector and load it back into the rtree to match
-// the process of serialization of rtrees. This is to match the results from
-// distributed routing with non-distributed routing.
-void FlexDRWorkerRegionQuery::dummyUpdate()
-{
-  for (auto& tree : impl_->shapes_) {
-    std::vector<std::pair<Rect, drConnFig*>> objects(tree.begin(),
-                                                     tree.end());
-    tree = boost::move(RTree<drConnFig*, Rect>(objects));
-  }
 }
 
 FlexDRWorkerRegionQuery::~FlexDRWorkerRegionQuery() = default;
@@ -289,18 +268,3 @@ bool FlexDRWorkerRegionQuery::isEmpty() const
 {
   return impl_->shapes_.empty();
 }
-
-template <class Archive>
-void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<frIArchive>(
-    frIArchive& ar,
-    const unsigned int file_version);
-
-template void FlexDRWorkerRegionQuery::serialize<frOArchive>(
-    frOArchive& ar,
-    const unsigned int file_version);

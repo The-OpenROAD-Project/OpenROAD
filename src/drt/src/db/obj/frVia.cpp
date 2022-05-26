@@ -32,7 +32,6 @@
 #include "serialization.h"
 #include "distributed/frArchive.h"
 
-
 using namespace std;
 using namespace fr;
 
@@ -66,16 +65,9 @@ void frVia::serialize(Archive& ar, const unsigned int version)
     tmp = topConnected_;
     (ar) & tmp;
   }
-  // iter is handled by the owner
   (ar) & order_in_owner_;
-  if(ar.isDeepSerialize())
-  {
-    (ar) & viaDef_;
-    (ar) & owner_;
-  } else {
-    serializeViaDef(ar, viaDef_);
-    serializeBlockObject(ar, owner_);
-  }
+  serializeViaDef(ar, viaDef_);
+  serializeBlockObject(ar, owner_);
 }
 
 

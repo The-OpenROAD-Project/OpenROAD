@@ -67,13 +67,7 @@ void frShape::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frPinFig>(*this);
   (ar) & order_in_owner_;
-  if(ar.isDeepSerialize())
-  {
-    (ar) & owner_;
-  } else 
-  {
-    serializeBlockObject(ar, owner_);
-  }
+  serializeBlockObject(ar, owner_);
 }
 
 

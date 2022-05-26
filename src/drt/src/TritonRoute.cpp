@@ -274,15 +274,6 @@ void TritonRoute::resetDb(const char* file_name)
 
 void TritonRoute::resetDesign(const char* file_name)
 {
-  std::ifstream file(file_name);
-  if (!file.good())
-    return;
-  design_ = std::make_unique<frDesign>(logger_);
-  frIArchive ar(file);
-  ar.setDeepSerialize(true);
-  register_types(ar);
-  ar >> *(design_.get());
-  file.close();
 }
 
 static void deserializeUpdate(frDesign* design,
@@ -291,7 +282,6 @@ static void deserializeUpdate(frDesign* design,
 {
   std::ifstream file(updateStr.c_str());
   frIArchive ar(file);
-  ar.setDeepSerialize(false);
   ar.setDesign(design);
   register_types(ar);
   ar >> updates;
@@ -304,7 +294,6 @@ static void deserializeUpdates(frDesign* design,
 {
   std::ifstream file(updateStr.c_str());
   frIArchive ar(file);
-  ar.setDeepSerialize(false);
   ar.setDesign(design);
   register_types(ar);
   ar >> updates;
@@ -639,52 +628,10 @@ bool TritonRoute::writeGlobals(const std::string& name)
   file.close();
   return true;
 }
-static bool serialize_design(frDesign* design, const std::string& name)
-{
-  ProfileTask t1("DIST: SERIALIZE_DESIGN");
-  ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in
-                           | std::ios_base::out);
-  frOArchive ar(stream);
-  ar.setDeepSerialize(true);
-  register_types(ar);
-  ar << *design;
-  t1.done();
-  t1_version.done();
-  ProfileTask t2("DIST: WRITE_DESIGN");
-  ProfileTask t2_version(std::string("DIST: WRITE" + name).c_str());
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  file << stream.rdbuf();
-  file.close();
-  return true;
-}
+
 void TritonRoute::sendFrDesignDist()
 {
-  if (distributed_) {
-    std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
-    std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
-    serialize_design(design_.get(), design_path);
-    writeGlobals(globals_path.c_str());
-    dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                        dst::JobMessage::BROADCAST),
-        result(dst::JobMessage::NONE);
-    std::unique_ptr<dst::JobDescription> desc
-        = std::make_unique<RoutingJobDescription>();
-    RoutingJobDescription* rjd
-        = static_cast<RoutingJobDescription*>(desc.get());
-    rjd->setDesignPath(design_path);
-    rjd->setSharedDir(shared_volume_);
-    rjd->setGlobalsPath(globals_path);
-    rjd->setDesignUpdate(false);
-    msg.setJobDescription(std::move(desc));
-    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-    if (!ok)
-      logger_->error(DRT, 13304, "Updating design remotely failed");
-  }
-  design_->getRegionQuery()->dummyUpdate();
-  design_->clearUpdates();
+  
 }
 
 void TritonRoute::sendDesignDist()
@@ -723,7 +670,6 @@ static void serializeUpdatesBatch(const std::vector<drUpdate>& batch,
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
-  ar.setDeepSerialize(false);
   register_types(ar);
   ar << batch;
   file.close();

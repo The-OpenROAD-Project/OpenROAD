@@ -47,22 +47,9 @@
 #include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frBox.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockage.h"
-#include "db/obj/frBoundary.h"
-#include "db/obj/frGCellPattern.h"
-#include "db/obj/frGuide.h"
-#include "db/obj/frInst.h"
-#include "db/obj/frInstBlockage.h"
 #include "db/obj/frMarker.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frNode.h"
-#include "db/obj/frPin.h"
-#include "db/obj/frRPin.h"
 #include "db/obj/frShape.h"
-#include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
-#include "db/tech/frConstraint.h"
 #include "frDesign.h"
 #include "global.h"
 #include "odb/dbTypes.h"
@@ -447,51 +434,6 @@ void register_types(Archive& ar)
   ar.template register_type<frPathSeg>();
   ar.template register_type<frPatchWire>();
   ar.template register_type<frPolygon>();
-  ar.template register_type<frInstTerm>();
-  ar.template register_type<frBTerm>();
-  ar.template register_type<frMTerm>();
-  ar.template register_type<frMaster>();
-  ar.template register_type<frNet>();
-
-  ar.template register_type<frLef58CutClassConstraint>();
-  ar.template register_type<frRecheckConstraint>();
-  ar.template register_type<frShortConstraint>();
-  ar.template register_type<frNonSufficientMetalConstraint>();
-  ar.template register_type<frOffGridConstraint>();
-  ar.template register_type<frMinEnclosedAreaConstraint>();
-  ar.template register_type<frLef58MinStepConstraint>();
-  ar.template register_type<frMinStepConstraint>();
-  ar.template register_type<frMinimumcutConstraint>();
-  ar.template register_type<frAreaConstraint>();
-  ar.template register_type<frMinWidthConstraint>();
-  ar.template register_type<
-      frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
-  ar.template register_type<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
-  ar.template register_type<
-      frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
-  ar.template register_type<
-      frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
-  ar.template register_type<frLef58SpacingEndOfLineWithinConstraint>();
-  ar.template register_type<frLef58SpacingEndOfLineConstraint>();
-  ar.template register_type<frLef58EolKeepOutConstraint>();
-  ar.template register_type<frLef58CornerSpacingSpacingConstraint>();
-  ar.template register_type<frSpacingConstraint>();
-  ar.template register_type<frSpacingSamenetConstraint>();
-  ar.template register_type<frSpacingTableInfluenceConstraint>();
-  ar.template register_type<frLef58CutSpacingTableConstraint>();
-  ar.template register_type<frSpacingEndOfLineConstraint>();
-  ar.template register_type<frSpacingTablePrlConstraint>();
-  ar.template register_type<frSpacingTableTwConstraint>();
-  ar.template register_type<frSpacingTableConstraint>();
-  ar.template register_type<frLef58SpacingTableConstraint>();
-  ar.template register_type<frCutSpacingConstraint>();
-  ar.template register_type<frLef58CutSpacingConstraint>();
-  ar.template register_type<frLef58CornerSpacingConstraint>();
-  ar.template register_type<frLef58CornerSpacingSpacingConstraint>();
-  ar.template register_type<frLef58CornerSpacingSpacing1DConstraint>();
-  ar.template register_type<frLef58CornerSpacingSpacing2DConstraint>();
-  ar.template register_type<frLef58RectOnlyConstraint>();
-  ar.template register_type<frLef58RightWayOnGridOnlyConstraint>();
 
   ar.template register_type<drPathSeg>();
   ar.template register_type<drVia>();
@@ -501,26 +443,8 @@ void register_types(Archive& ar)
   ar.template register_type<drNet>();
   ar.template register_type<drPin>();
 
-  ar.template register_type<gcNet>();
-  ar.template register_type<gcPin>();
-  ar.template register_type<gcSegment>();
-  ar.template register_type<gcPolygon>();
-  ar.template register_type<gcRect>();
-  ar.template register_type<frAccessPoint>();
-  ar.template register_type<frPinAccess>();
-  ar.template register_type<frBlockage>();
-  ar.template register_type<frBoundary>();
-  ar.template register_type<frGCellPattern>();
-  ar.template register_type<frGuide>();
-  ar.template register_type<frInst>();
-  ar.template register_type<frInstBlockage>();
   ar.template register_type<frMarker>();
-  ar.template register_type<frNode>();
-  ar.template register_type<frBPin>();
-  ar.template register_type<frMPin>();
-  ar.template register_type<frRPin>();
   ar.template register_type<frVia>();
-  ar.template register_type<frTrackPattern>();
   ar.template register_type<frBox3D>();
 }
 

@@ -409,46 +409,9 @@ class frBlock : public frBlockObject
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
   Rect dieBox_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frBlock() = default;  // for serialization
-
-  friend class boost::serialization::access;
   friend class io::Parser;
 };
 
-template <class Archive>
-void frBlock::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & dbUnit_;
-  (ar) & insts_;
-  (ar) & terms_;
-  (ar) & nets_;
-  (ar) & snets_;
-  (ar) & fakeSNets_;
-  (ar) & name2inst_;
-  (ar) & name2term_;
-  (ar) & name2net_;
-  (ar) & name2snet_;
-  (ar) & blockages_;
-  (ar) & boundaries_;
-  (ar) & trackPatterns_;
-  (ar) & gCellPatterns_;
-  (ar) & markers_;
-  (ar) & dieBox_;
-
-  // The list members can container an iterator representing their position
-  // in the list for fast removal.  It is tricky to serialize the iterator
-  // so just reset them from the list after loading.
-  if (is_loading(ar)) {
-    for (auto it = markers_.begin(); it != markers_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-  }
-}
 }  // namespace fr
 
 #endif

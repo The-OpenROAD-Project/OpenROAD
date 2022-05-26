@@ -157,7 +157,6 @@ class RoutingCallBack : public dst::JobCallBack
           desc->getViaData(),
           std::ios_base::binary | std::ios_base::in | std::ios_base::out);
       frIArchive ar(stream);
-      ar.setDeepSerialize(false);
       ar >> via_data_;
     }
     dist_->sendResult(result, sock);

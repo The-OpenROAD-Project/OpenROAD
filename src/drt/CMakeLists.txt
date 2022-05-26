@@ -104,7 +104,6 @@ target_sources(drt
     src/db/obj/frVia.cpp
     src/db/obj/frAccess.cpp
     src/db/obj/frRPin.cpp
-    src/db/obj/frNet.cpp
     src/db/obj/frNode.cpp
     src/db/obj/frInstTerm.cpp
     src/db/obj/frMarker.cpp

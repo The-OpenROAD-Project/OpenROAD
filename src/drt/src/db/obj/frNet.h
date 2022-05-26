@@ -257,12 +257,6 @@ class frNet : public frBlockObject
 
   std::vector<frPinFig*> all_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frNet() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 
