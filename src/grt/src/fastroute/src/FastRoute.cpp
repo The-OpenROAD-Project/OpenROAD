@@ -103,22 +103,18 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
 
 FastRouteCore::~FastRouteCore()
 {
-  deleteComponents();
+  clearNets();
 }
 
 void FastRouteCore::clear()
 {
-  deleteComponents();
+  clearNets();
+
   num_adjust_ = 0;
   v_capacity_ = 0;
   h_capacity_ = 0;
   total_overflow_ = 0;
   has_2D_overflow_ = false;
-}
-
-void FastRouteCore::deleteComponents()
-{
-  clearNets();
 
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
@@ -173,38 +169,21 @@ void FastRouteCore::deleteComponents()
 
 void FastRouteCore::clearNets()
 {
-  for (FrNet* net : nets_) {
-    delete net;
+  if (!sttrees_.empty()) {
+    for (int i = 0; i < num_valid_nets_; i++) {
+      delete[] sttrees_[i].nodes;
+      delete[] sttrees_[i].edges;
+    }
+    sttrees_.clear();
   }
+
+  for (FrNet* net : nets_)
+    delete net;
   nets_.clear();
   new_net_id_ = 0;
   num_nets_ = 0;
   pin_ind_ = 0;
   seg_count_ = 0;
-
-  if (!sttrees_.empty()) {
-    for (int i = 0; i < num_valid_nets_; i++) {
-      int deg = sttrees_[i].deg;
-      int numEdges = 2 * deg - 3;
-      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
-        if (treeedge->len > 0) {
-          treeedge->route.gridsX.clear();
-          treeedge->route.gridsY.clear();
-          treeedge->route.gridsL.clear();
-        }
-      }
-
-      if (sttrees_[i].nodes != nullptr)
-        delete[] sttrees_[i].nodes;
-      sttrees_[i].nodes = nullptr;
-
-      if (sttrees_[i].edges != nullptr)
-        delete[] sttrees_[i].edges;
-      sttrees_[i].edges = nullptr;
-    }
-    sttrees_.clear();
-  }
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -305,7 +284,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           std::vector<int> edge_cost_per_layer)
 {
   const int netID = new_net_id_;
-  FrNet* net = nets_[new_net_id_];
+  FrNet* net = nets_[netID];
   pin_ind_ = num_pins;
   net->db_net = db_net;
   net->numPins = num_pins;
@@ -796,11 +775,11 @@ NetRouteMap FastRouteCore::run()
   int bwcnt = 0;
 
   // TODO: check this size
-  max_degree_ = 2 * max_degree_;
-  xcor_.resize(max_degree_);
-  ycor_.resize(max_degree_);
-  dcor_.resize(max_degree_);
-  net_eo_.reserve(max_degree_);
+  int max_degree2 = 2 * max_degree_;
+  xcor_.resize(max_degree2);
+  ycor_.resize(max_degree2);
+  dcor_.resize(max_degree2);
+  net_eo_.reserve(max_degree2);
 
   int THRESH_M = 20;
   const int ENLARGE = 15;  // 5

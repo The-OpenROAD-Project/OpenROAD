@@ -282,7 +282,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int max_routing_layer)
 {
   NetRouteMap routes;
-  if (getNetCount() > 0) {
+  if (!nets.empty()) {
     routes = fastroute_->run();
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
@@ -750,7 +750,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   fastroute_->setNumberNets(valid_nets);
-  fastroute_->setMaxNetDegree(getMaxNetDegree());
 
   if (seed_ != 0) {
     std::mt19937 g;
@@ -821,6 +820,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
       }
     }
   }
+  fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
@@ -2267,24 +2267,6 @@ void GlobalRouter::initAdjustments()
   }
 }
 
-int GlobalRouter::getNetCount() const
-{
-  return db_net_map_.size();
-}
-
-int GlobalRouter::getMaxNetDegree()
-{
-  int max_degree = -1;
-  for (auto net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    int netDegree = net->getNumPins();
-    if (netDegree > max_degree) {
-      max_degree = netDegree;
-    }
-  }
-  return max_degree;
-}
-
 std::vector<Pin*> GlobalRouter::getAllPorts()
 {
   std::vector<Pin*> ports;
@@ -2320,19 +2302,13 @@ void GlobalRouter::initGrid(int max_layer)
   int x_grids = upper_rightX / tile_size;
   int y_grids = upper_rightY / tile_size;
 
-  bool perfect_regular_x = false;
-  bool perfect_regular_y = false;
+  bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
+  bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
 
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
   }
-
-  if ((x_grids * tile_size) == upper_rightX)
-    perfect_regular_x = true;
-
-  if ((y_grids * tile_size) == upper_rightY)
-    perfect_regular_y = true;
 
   grid_->init(rect,
               tile_size,
@@ -3874,7 +3850,8 @@ void GlobalRouter::highlightRoute(odb::dbNet* net, bool show_pin_locations)
 
 void GlobalRouter::clearRouteGui()
 {
-  groute_renderer_->clear();
+  if (groute_renderer_)
+    groute_renderer_->clear();
 }
 
 void GrouteRenderer::clear()
