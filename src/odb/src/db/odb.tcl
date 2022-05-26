@@ -211,12 +211,18 @@ proc create_voltage_domain { args } {
     utl::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
-  set group [odb::dbGroup_create $block $domain_name \
+  set region [odb::dbRegion_create $block $domain_name]
+  if { $region == "NULL" } {
+    utl::error "duplicate region name"
+  }
+  set box [odb::dbBox_create $region \
 		[ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
 		[ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
+  set group [odb::dbGroup_create $region $domain_name]
   if { $group == "NULL" } {
     utl::error "duplicate group name"
   }
+  $group setType VOLTAGE_DOMAIN
 }
 
 sta::define_cmd_args "delete_physical_cluster" {cluster_name}

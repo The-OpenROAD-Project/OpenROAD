@@ -56,8 +56,7 @@ class _dbRegion;
 struct dbGroupFlags
 {
   uint _type : 2;
-  uint _box : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits_ : 30;
 };
 // User Code Begin Structs
 // User Code End Structs
@@ -70,7 +69,6 @@ class _dbGroup : public _dbObject
 
   dbGroupFlags flags_;
   char* _name;
-  Rect _box;
   dbId<_dbGroup> _next_entry;
   dbId<_dbGroup> _group_next;
   dbId<_dbGroup> _parent_group;

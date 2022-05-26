@@ -61,13 +61,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (flags_._type != rhs.flags_._type)
     return false;
 
-  if (flags_._box != rhs.flags_._box)
-    return false;
-
   if (_name != rhs._name)
-    return false;
-
-  if (_box != rhs._box)
     return false;
 
   if (_next_entry != rhs._next_entry)
@@ -123,9 +117,7 @@ void _dbGroup::differences(dbDiff& diff,
   DIFF_BEGIN
 
   DIFF_FIELD(flags_._type);
-  DIFF_FIELD(flags_._box);
   DIFF_FIELD(_name);
-  DIFF_FIELD(_box);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_parent_group);
@@ -145,9 +137,7 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_._type);
-  DIFF_OUT_FIELD(flags_._box);
   DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_box);
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_parent_group);
@@ -174,10 +164,8 @@ _dbGroup::_dbGroup(_dbDatabase* db)
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 {
   flags_._type = r.flags_._type;
-  flags_._box = r.flags_._box;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   _name = r._name;
-  _box = r._box;
   _next_entry = r._next_entry;
   _group_next = r._group_next;
   _parent_group = r._parent_group;
@@ -198,7 +186,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> obj._name;
-  stream >> obj._box;
   stream >> obj._next_entry;
   stream >> obj._group_next;
   stream >> obj._parent_group;
@@ -219,7 +206,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
   stream << obj._name;
-  stream << obj._box;
   stream << obj._next_entry;
   stream << obj._group_next;
   stream << obj._parent_group;
@@ -259,12 +245,6 @@ const char* dbGroup::getName() const
   return obj->_name;
 }
 
-Rect dbGroup::getBox() const
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  return obj->_box;
-}
-
 dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
@@ -296,19 +276,6 @@ dbGroupType dbGroup::getType() const
   _dbGroup* obj = (_dbGroup*) this;
 
   return (dbGroupType::Value) obj->flags_._type;
-}
-
-void dbGroup::setBox(Rect _box)
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  obj->flags_._box = 1;
-  obj->_box = _box;
-}
-
-bool dbGroup::hasBox()
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  return obj->flags_._box;
 }
 
 void dbGroup::addModInst(dbModInst* modinst)
@@ -540,26 +507,6 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
   ZALLOCATED(_group->_name);
   _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
-  return (dbGroup*) _group;
-}
-
-dbGroup* dbGroup::create(dbBlock* block,
-                         const char* name,
-                         int x1,
-                         int y1,
-                         int x2,
-                         int y2)
-{
-  _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_group_hash.hasMember(name))
-    return nullptr;
-  _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = strdup(name);
-  ZALLOCATED(_group->_name);
-  _group->flags_._type = dbGroupType::VOLTAGE_DOMAIN;
-  _group->flags_._box = 1;
-  _block->_group_hash.insert(_group);
-  _group->_box.init(x1, y1, x2, y2);
   return (dbGroup*) _group;
 }
 

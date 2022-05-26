@@ -8851,8 +8851,6 @@ class dbGroup : public dbObject
 
   const char* getName() const;
 
-  Rect getBox() const;
-
   dbGroup* getParentGroup() const;
 
   dbRegion* getRegion() const;
@@ -8862,10 +8860,6 @@ class dbGroup : public dbObject
   void setType(dbGroupType type);
 
   dbGroupType getType() const;
-
-  void setBox(Rect _box);
-
-  bool hasBox();
 
   void addModInst(dbModInst* modinst);
 
@@ -8896,13 +8890,6 @@ class dbGroup : public dbObject
   dbSet<dbNet> getGroundNets();
 
   static dbGroup* create(dbBlock* block, const char* name);
-
-  static dbGroup* create(dbBlock* block,
-                         const char* name,
-                         int x1,
-                         int y1,
-                         int x2,
-                         int y2);
 
   static dbGroup* create(dbRegion* parent, const char* name);
 

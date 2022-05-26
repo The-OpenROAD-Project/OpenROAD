@@ -2165,11 +2165,12 @@ std::string DbGroupDescriptor::getTypeName() const
 bool DbGroupDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* group = std::any_cast<odb::dbGroup*>(object);
-  if (group->hasBox()) {
-    bbox = group->getBox();
+  auto* region = group->getRegion();
+  if(region != nullptr && region->getBoundaries().size() == 1)
+  {
+    region->getBoundaries().begin()->getBox(bbox);
     return true;
   }
-
   return false;
 }
 

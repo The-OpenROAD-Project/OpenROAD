@@ -27,7 +27,8 @@ struct F_DETAILED {
     n2 = block->findNet("n2");
     n3 = block->findNet("n3");
     group  = dbGroup::create(block,"group");
-    domain = dbGroup::create(block,"domain",0,0,100,100);
+    domain = dbGroup::create(block,"domain");
+    domain->setType(dbGroupType::VOLTAGE_DOMAIN);
     child1 = dbGroup::create(block,"child1");
     child2 = dbGroup::create(block,"child2");
     child3 = dbGroup::create(block,"child3");
@@ -86,12 +87,6 @@ BOOST_AUTO_TEST_CASE(test_group_default)
   dbGroup::destroy(new_group);
   BOOST_TEST (block->getGroups().size()==4);
   BOOST_TEST (block->findGroup("group")==nullptr);
-
-  BOOST_TEST((domain->getBox() == Rect(0,0,100,100)));
-  BOOST_TEST(domain->hasBox());
-  BOOST_TEST(!child1->hasBox());
-  domain->setBox(Rect(2,2,50,50));
-  BOOST_TEST((domain->getBox() == Rect(2,2,50,50)));
   
   BOOST_TEST(child1->getType() == dbGroupType::PHYSICAL_CLUSTER);
   BOOST_TEST(domain->getType() == dbGroupType::VOLTAGE_DOMAIN);
