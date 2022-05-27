@@ -3953,8 +3953,7 @@ void GlobalRouter::updateDirtyRoutes()
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
-        debugPrint(
-                   logger_, GRT, "incr", 2, " {}", net->getConstName());
+        debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
     removeDirtyNetsRouting();
 

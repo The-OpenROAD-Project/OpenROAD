@@ -265,24 +265,20 @@ void FastRouteCore::fillVIA()
 
 int FastRouteCore::threeDVIA()
 {
-  int netID, edgeID, deg;
-  int routeLen, numVIA, j;
-  TreeEdge *treeedges, *treeedge;
+  int numVIA = 0;
 
-  numVIA = 0;
+  for (int netID = 0; netID < netCount(); netID++) {
+    TreeEdge* treeedges = sttrees_[netID].edges;
+    int deg = sttrees_[netID].deg;
 
-  for (netID = 0; netID < netCount(); netID++) {
-    treeedges = sttrees_[netID].edges;
-    deg = sttrees_[netID].deg;
-
-    for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      treeedge = &(treeedges[edgeID]);
+    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+      TreeEdge* treeedge = &(treeedges[edgeID]);
 
       if (treeedge->len > 0) {
-        routeLen = treeedge->route.routelen;
+        int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
 
-        for (j = 0; j < routeLen; j++) {
+        for (int j = 0; j < routeLen; j++) {
           if (gridsL[j] != gridsL[j + 1]) {
             numVIA++;
           }
