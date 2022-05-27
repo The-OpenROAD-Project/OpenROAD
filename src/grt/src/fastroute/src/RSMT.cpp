@@ -91,7 +91,7 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   TreeEdge* treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
-  const int sizeV = 2 * nets_[ind]->numPins;
+  const int sizeV = 2 * nets_[ind]->numPins();
   int nbrcnt[sizeV];
   for (int i = 0; i < numnodes; i++)
     nbrcnt[i] = 0;

@@ -278,7 +278,6 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   FrNet* net = nets_[netID];
   pin_ind_ = num_pins;
   net->db_net = db_net;
-  net->numPins = num_pins;
   net->deg = pin_ind_;
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
@@ -1315,7 +1314,6 @@ class FastRouteRenderer : public gui::Renderer
   std::vector<int> pinX_;  // array of X coordinates of pins
   std::vector<int> pinY_;  // array of Y coordinates of pins
   std::vector<int> pinL_;  // array of L coordinates of pins
-  int num_pins_;
 
   odb::dbTech* tech_;
   int tile_size_, x_corner_, y_corner_;
@@ -1327,7 +1325,6 @@ FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech,
                                      int y_corner)
     : treeStructure_(TreeStructure::steinerTreeByStt),
       is3DVisualization_(false),
-      num_pins_(0),
       tech_(tech),
       tile_size_(tile_size),
       x_corner_(x_corner),
@@ -1343,7 +1340,6 @@ void FastRouteRenderer::highlight(const FrNet* net)
   pinX_ = net->pinX;
   pinY_ = net->pinY;
   pinL_ = net->pinL;
-  num_pins_ = net->numPins;
 }
 void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
 {
@@ -1427,7 +1423,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 {
   painter.setPenWidth(700);
-  for (int i = 0; i < num_pins_; i++) {
+  for (auto i = 0; i < pinX_.size(); i++) {
     const int xreal = tile_size_ * (pinX_[i] + 0.5) + x_corner_;
     const int yreal = tile_size_ * (pinY_[i] + 0.5) + y_corner_;
 

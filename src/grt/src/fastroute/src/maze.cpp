@@ -1007,7 +1007,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 
@@ -1185,7 +1185,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 

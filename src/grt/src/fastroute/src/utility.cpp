@@ -1676,11 +1676,11 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   int cost1, cost2, bestPair, Pos, bestPos, numShift = 0;
 
   // TODO: check this size
-  const int sizeV = 2 * nets_[net]->numPins;
+  const int sizeV = 2 * nets_[net]->numPins();
   int nbr[sizeV][3];
   int nbrCnt[sizeV];
-  int pairN1[nets_[net]->numPins];
-  int pairN2[nets_[net]->numPins];
+  int pairN1[nets_[net]->numPins()];
+  int pairN2[nets_[net]->numPins()];
   int costH[y_grid_];
   int costV[x_grid_];
 
@@ -2009,7 +2009,7 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
   numShift = edgeShift(t, net);
   deg = t.deg;
 
-  const int sizeV = nets_[net]->numPins;
+  const int sizeV = nets_[net]->numPins();
   int pairN1[sizeV];
   int pairN2[sizeV];
 
