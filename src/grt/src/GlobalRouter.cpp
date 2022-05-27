@@ -3954,12 +3954,12 @@ void GlobalRouter::updateDirtyRoutes()
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
         debugPrint(
-                   logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+                   logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
     removeDirtyNetsRouting();
 
-    NetRouteMap new_route
-      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+    NetRouteMap new_route = findRouting(dirty_nets, min_routing_layer_,
+                                        max_routing_layer_);
     mergeResults(new_route);
     dirty_nets_.clear();
 
