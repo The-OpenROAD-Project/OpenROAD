@@ -689,8 +689,6 @@ void GlobalRouter::findPins(Net* net,
                             std::vector<RoutePt>& pins_on_grid,
                             int& root_idx)
 {
-  findPins(net);
-
   root_idx = 0;
   for (Pin& pin : net->getPins()) {
     odb::Point pin_position = pin.getOnGridPosition();
@@ -738,26 +736,15 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   checkPinPlacement();
   pad_pins_connections_.clear();
 
-  int valid_nets = 0;
-
   int min_degree = std::numeric_limits<int>::max();
   int max_degree = std::numeric_limits<int>::min();
 
-  for (const Net* net : nets) {
-    if (net->getNumPins() > 1) {
-      valid_nets++;
-    }
-  }
-
-  fastroute_->setNumberNets(valid_nets);
-
-  if (seed_ != 0) {
+  if (nets.size() > 1
+      && seed_ != 0) {
     std::mt19937 g;
     g.seed(seed_);
 
-    if (nets.size() > 1) {
-      utl::shuffle(nets.begin(), nets.end(), g);
-    }
+    utl::shuffle(nets.begin(), nets.end(), g);
   }
 
   for (Net* net : nets) {
@@ -770,54 +757,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
       if (pin_count > max_degree) {
         max_degree = pin_count;
       }
-
-      std::vector<RoutePt> pins_on_grid;
-      int root_idx;
-      findPins(net, pins_on_grid, root_idx);
-
-      // check if net is local in the global routing grid position
-      // the (x,y) pin positions here may be different from the original
-      // (x,y) pin positions because of findFakePinPosition function
-      bool on_grid_local = true;
-      RoutePt position = pins_on_grid[0];
-      for (RoutePt& pin_pos : pins_on_grid) {
-        if (pin_pos.x() != position.x() || pin_pos.y() != position.y()) {
-          on_grid_local = false;
-          break;
-        }
-      }
-
-      if (pins_on_grid.size() > 1 && !on_grid_local) {
-        bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-
-        int num_layers = grid_->getNumLayers();
-        std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
-        int edge_cost_for_net
-            = computeTrackConsumption(net, edge_cost_per_layer);
-
-        // set layer restriction only to clock nets that are not connected to
-        // leaf iterms
-        bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-        int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
-                            ? min_layer_for_clock_
-                            : min_routing_layer_;
-        int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
-                            ? max_layer_for_clock_
-                            : max_routing_layer_;
-
-        int netID = fastroute_->addNet(net->getDbNet(),
-                                       pins_on_grid.size(),
-                                       is_clock,
-                                       root_idx,
-                                       edge_cost_for_net,
-                                       min_layer - 1,
-                                       max_layer - 1,
-                                       edge_cost_per_layer);
-        for (RoutePt& pin_pos : pins_on_grid) {
-          fastroute_->addPin(
-              netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-        }
-      }
+      makeFastrouteNet(net);
     }
   }
   fastroute_->setMaxNetDegree(max_degree);
@@ -826,6 +766,59 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
+}
+
+bool GlobalRouter::makeFastrouteNet(Net* net)
+{
+  std::vector<RoutePt> pins_on_grid;
+  int root_idx;
+  findPins(net, pins_on_grid, root_idx);
+
+  // check if net is local in the global routing grid position
+  // the (x,y) pin positions here may be different from the original
+  // (x,y) pin positions because of findFakePinPosition function
+  bool on_grid_local = true;
+  RoutePt position = pins_on_grid[0];
+  for (RoutePt& pin_pos : pins_on_grid) {
+    if (pin_pos.x() != position.x() || pin_pos.y() != position.y()) {
+      on_grid_local = false;
+      break;
+    }
+  }
+
+  if (pins_on_grid.size() > 1 && !on_grid_local) {
+    bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+
+    int num_layers = grid_->getNumLayers();
+    std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
+    int edge_cost_for_net
+      = computeTrackConsumption(net, edge_cost_per_layer);
+
+    // set layer restriction only to clock nets that are not connected to
+    // leaf iterms
+    bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+    int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
+      ? min_layer_for_clock_
+      : min_routing_layer_;
+    int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
+      ? max_layer_for_clock_
+      : max_routing_layer_;
+
+    int netID = fastroute_->addNet(net->getDbNet(),
+                                   pins_on_grid.size(),
+                                   is_clock,
+                                   root_idx,
+                                   edge_cost_for_net,
+                                   min_layer - 1,
+                                   max_layer - 1,
+                                   edge_cost_per_layer);
+    for (RoutePt& pin_pos : pins_on_grid) {
+      fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(),
+                         pin_pos.layer() - 1);
+    }
+    return true;
+  }
+  return false;
 }
 
 int GlobalRouter::computeTrackConsumption(
@@ -3940,12 +3933,12 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 
 void GlobalRouter::updateDirtyRoutes()
 {
-  // Fastroute barfs if there are no nets. It shouldn't. -cherry
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
 
     updateDirtyNets();
     std::vector<Net*> dirty_nets;
+    dirty_nets.reserve(dirty_nets_.size());
     for (odb::dbNet* db_net : dirty_nets_) {
       dirty_nets.push_back(db_net_map_[db_net]);
     }
@@ -3956,12 +3949,12 @@ void GlobalRouter::updateDirtyRoutes()
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
         debugPrint(
-            logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+                   logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
     }
     removeDirtyNetsRouting();
 
     NetRouteMap new_route
-        = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
     dirty_nets_.clear();
 

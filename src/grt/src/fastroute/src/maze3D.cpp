@@ -868,7 +868,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
-  const int endIND = num_valid_nets_ * 0.9;
+  const int endIND = netCount() * 0.9;
 
   multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
   multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);

@@ -38,6 +38,7 @@
 
 #include <boost/functional/hash.hpp>
 #include <vector>
+#include <unordered_map>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -106,11 +107,9 @@ class FastRouteCore
   void addMinWidth(int width, int layer);
   void addMinSpacing(int spacing, int layer);
   void addViaSpacing(int spacing, int layer);
-  void setNumberNets(int nNets);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
   void setLayerOrientation(int x);
-  void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
              int num_pins,
              bool is_clock,
@@ -119,6 +118,13 @@ class FastRouteCore
              int min_layer,
              int max_layer,
              std::vector<int> edge_cost_per_layer);
+  void setNetDriverIdx(int netID, int root_idx);
+  void addPin(int netID, int x, int y, int layer);
+  void clearPins(int netID);
+  void getNetId(odb::dbNet* db_net,
+                int &net_id,
+                bool &exists);
+  void clearRoute(const int netID);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -140,6 +146,7 @@ class FastRouteCore
                                   int first_tile_reduce,
                                   int last_tile_reduce);
   void initAuxVar();
+  void initNetAuxVars();
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
@@ -442,6 +449,7 @@ class FastRouteCore
   void StTreeVisualization(const StTree& stree,
                            FrNet* net,
                            bool is3DVisualization);
+  int netCount() const { return nets_.size(); }
 
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e9;  // big integer used as infinity
@@ -456,12 +464,10 @@ class FastRouteCore
   odb::dbDatabase* db_;
   gui::Gui* gui_;
   int overflow_iterations_;
-  int num_nets_;
   int layer_orientation_;
   int x_range_;
   int y_range_;
 
-  int new_net_id_;
   int seg_count_;
   int pin_ind_;
   int num_adjust_;
@@ -475,8 +481,7 @@ class FastRouteCore
   int enlarge_;
   int costheight_;
   int ahth_;
-  int num_valid_nets_;  // # nets need to be routed (having pins in different
-                        // grids)
+  std::vector<int> route_net_ids_; // IDs of nets to route
   int num_layers_;
   int total_overflow_;  // total # overflow
   bool has_2D_overflow_;
@@ -507,6 +512,7 @@ class FastRouteCore
   std::vector<int> seglist_cnt_;    // the number of segements for each net
 
   std::vector<FrNet*> nets_;
+  std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id
   std::vector<OrderNetEdge> net_eo_;
   std::vector<std::vector<int>>
       gxs_;  // the copy of xs for nets, used for second FLUTE

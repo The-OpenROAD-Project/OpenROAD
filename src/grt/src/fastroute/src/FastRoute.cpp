@@ -57,11 +57,9 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       db_(db),
       gui_(gui),
       overflow_iterations_(0),
-      num_nets_(0),
       layer_orientation_(0),
       x_range_(0),
       y_range_(0),
-      new_net_id_(0),
       seg_count_(0),
       pin_ind_(0),
       num_adjust_(0),
@@ -75,7 +73,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       enlarge_(0),
       costheight_(0),
       ahth_(0),
-      num_valid_nets_(0),
       num_layers_(0),
       total_overflow_(0),
       has_2D_overflow_(false),
@@ -161,7 +158,7 @@ void FastRouteCore::clear()
 void FastRouteCore::clearNets()
 {
   if (!sttrees_.empty()) {
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       delete[] sttrees_[i].nodes;
       delete[] sttrees_[i].edges;
     }
@@ -171,8 +168,6 @@ void FastRouteCore::clearNets()
   for (FrNet* net : nets_)
     delete net;
   nets_.clear();
-  new_net_id_ = 0;
-  num_nets_ = 0;
   pin_ind_ = 0;
   seg_count_ = 0;
 }
@@ -232,15 +227,6 @@ void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
   h_capacity_ += h_capacity_3D_[layer - 1];
 }
 
-void FastRouteCore::setNumberNets(int nNets)
-{
-  num_nets_ = nNets;
-  nets_.resize(num_nets_);
-  for (int i = 0; i < num_nets_; i++)
-    nets_[i] = new FrNet;
-  seglist_index_.resize(num_nets_ + 1);
-}
-
 void FastRouteCore::setLowerLeft(int x, int y)
 {
   x_corner_ = x;
@@ -265,6 +251,14 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
   net->pinL.push_back(layer);
 }
 
+void FastRouteCore::clearPins(int netID)
+{
+  FrNet* net = nets_[netID];
+  net->pinX.clear();
+  net->pinY.clear();
+  net->pinL.clear();
+}
+
 int FastRouteCore::addNet(odb::dbNet* db_net,
                           int num_pins,
                           bool is_clock,
@@ -274,8 +268,9 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int max_layer,
                           std::vector<int> edge_cost_per_layer)
 {
-  const int netID = new_net_id_;
-  FrNet* net = nets_[netID];
+  FrNet* net = new FrNet;
+  nets_.push_back(net);
+  int netID = nets_.size() - 1;
   pin_ind_ = num_pins;
   net->db_net = db_net;
   net->deg = pin_ind_;
@@ -286,11 +281,38 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->maxLayer = max_layer;
   net->edge_cost_per_layer = edge_cost_per_layer;
 
-  seglist_index_[new_net_id_] = seg_count_;
-  new_net_id_++;
+  db_net_id_map_[db_net] = netID;
+
   // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
   seg_count_ += 2 * pin_ind_ - 3;
+
+  // TODO: check this, there was an if pin_ind_ > 1 && pin_ind_ < 2000
+  if (pin_ind_ > 1) {
+    // the end pointer of the seglist
+    seglist_index_.resize(nets_.size() + 1);
+    seglist_index_[nets_.size()] = seg_count_;
+  }
   return netID;
+}
+
+void FastRouteCore::setNetDriverIdx(int netID, int root_idx)
+{
+  nets_[netID]->driver_idx = root_idx;
+}
+
+void FastRouteCore::getNetId(odb::dbNet* db_net,
+                             int &net_id,
+                             bool &exists)
+{
+  auto itr = db_net_id_map_.find(db_net);
+  exists = itr != db_net_id_map_.end();
+  net_id = exists ? itr->second : 0;
+}
+
+void
+FastRouteCore::clearRoute(const int netID)
+{
+  newRipupNet(netID);
 }
 
 void FastRouteCore::init_usage()
@@ -313,12 +335,6 @@ void FastRouteCore::initEdges()
   const float LB = 0.9;
   v_capacity_lb_ = LB * v_capacity_;
   h_capacity_lb_ = LB * h_capacity_;
-
-  // TODO: check this, there was an if pin_ind_ > 1 && pin_ind_ < 2000
-  if (pin_ind_ > 1) {
-    seglist_index_[new_net_id_] = seg_count_;  // the end pointer of the seglist
-  }
-  num_valid_nets_ = new_net_id_;
 
   // allocate memory and initialize for edges
 
@@ -665,12 +681,7 @@ void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
 
-  seglist_cnt_.resize(num_valid_nets_);
-  seglist_.resize(seg_count_);
-  sttrees_.resize(num_valid_nets_);
-  gxs_.resize(num_valid_nets_);
-  gys_.resize(num_valid_nets_);
-  gs_.resize(num_valid_nets_);
+  initNetAuxVars();
 
   grid_hv_ = x_range_ * y_range_;
 
@@ -680,10 +691,21 @@ void FastRouteCore::initAuxVar()
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
 }
 
+void FastRouteCore::initNetAuxVars()
+{
+  int node_count = netCount();
+  seglist_cnt_.resize(node_count);
+  seglist_.resize(seg_count_);
+  sttrees_.resize(node_count);
+  gxs_.resize(node_count);
+  gys_.resize(node_count);
+  gs_.resize(node_count);
+}
+
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     odb::dbNet* db_net = nets_[netID]->db_net;
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
@@ -873,7 +895,7 @@ NetRouteMap FastRouteCore::run()
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn_ && debug_->rectilinearSTree_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
@@ -1124,7 +1146,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
@@ -1166,7 +1188,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->db_net == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
