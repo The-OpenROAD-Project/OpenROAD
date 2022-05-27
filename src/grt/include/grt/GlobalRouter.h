@@ -200,10 +200,7 @@ class GlobalRouter
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
   void setCapacitiesPerturbationPercentage(float percentage);
-  void setPerturbationAmount(int perturbation)
-  {
-    perturbation_amount_ = perturbation;
-  };
+  void setPerturbationAmount(int perturbation);
   void perturbCapacities();
 
   void initDebugFastRoute();

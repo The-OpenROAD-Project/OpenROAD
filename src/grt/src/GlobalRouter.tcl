@@ -58,7 +58,7 @@ proc set_global_routing_layer_adjustment { args } {
       grt::add_layer_adjustment $layer_idx $adj
     }
   } else {
-    utl::error GRT 44 "Command set_global_routing_layer_adjustment takes two arguments: layer adj."
+    utl::error GRT 44 "set_global_routing_layer_adjustment requires layer and adj arguments."
   }
 }
 
@@ -163,7 +163,7 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-  keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+    keys { -seed -capacities_perturbation_percentage -perturbation_amount }
 
   sta::check_argc_eq0 "set_global_routing_random" $args
 
@@ -171,19 +171,23 @@ proc set_global_routing_random { args } {
     set seed $keys(-seed)
     sta::check_integer "set_global_routing_random" $seed
     grt::set_seed $seed
+  } else {
+    utl::error GRT 242 "-seed argument is required."
   }
 
+  set percentage 0.0
   if { [info exists keys(-capacities_perturbation_percentage)] } {
     set percentage $keys(-capacities_perturbation_percentage)
     sta::check_percent "set_global_routing_random" $percentage
-    grt::set_capacities_perturbation_percentage $percentage
   }
+  grt::set_capacities_perturbation_percentage $percentage
 
+  set perturbation 1
   if { [info exists keys(-perturbation_amount)] } {
     set perturbation $keys(-perturbation_amount)
     sta::check_positive_integer "set_global_routing_random" $perturbation
-    grt::set_perturbation_amount $perturbation
   }
+  grt::set_perturbation_amount $perturbation
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \

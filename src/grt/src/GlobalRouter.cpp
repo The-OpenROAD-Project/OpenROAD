@@ -480,6 +480,11 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
   }
 }
 
+void GlobalRouter::setPerturbationAmount(int perturbation)
+{
+  perturbation_amount_ = perturbation;
+};
+
 int GlobalRouter::getEdgeResource(int x1,
                                   int y1,
                                   int x2,
