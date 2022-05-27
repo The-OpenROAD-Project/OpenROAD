@@ -192,8 +192,8 @@ void report_netlist_partitions(unsigned id) {
         getPartitionMgr()->reportNetlistPartitions(id);
 }
 
-void read_file(const char* filename) {
-        getPartitionMgr()->readPartitioningFile(filename);
+unsigned read_file(const char* filename, const char* instance_map_file) {
+  return getPartitionMgr()->readPartitioningFile(filename, instance_map_file);
 }
 
 void set_final_partitions(unsigned value) {

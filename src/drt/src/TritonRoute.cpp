@@ -486,6 +486,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   OUT_MAZE_FILE = params.outputMazeFile;
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
+  GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
@@ -508,5 +509,9 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   if (!params.topRoutingLayer.empty()) {
     TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
+  }
+  if (params.minAccessPoints > 0) {
+    MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
+    MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
 }

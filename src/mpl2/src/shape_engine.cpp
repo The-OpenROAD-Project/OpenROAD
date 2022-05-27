@@ -738,6 +738,11 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       std_cell_area += area;
   }
 
+  if (macro_area == 0) {
+    logger->info(MPL, 14, "No macros to place.");
+    return {};
+  }
+
   float std_cell_util
       = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
 

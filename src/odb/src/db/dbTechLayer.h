@@ -89,8 +89,8 @@ struct dbTechLayerFlags
   bool right_way_on_grid_only_ : 1;
   bool right_way_on_grid_only_check_mask_ : 1;
   bool rect_only_except_non_core_pins_ : 1;
-  uint lef58_type_ : 3;
-  uint spare_bits_ : 6;
+  uint lef58_type_ : 5;
+  uint spare_bits_ : 4;
 };
 // User Code Begin Structs
 // User Code End Structs

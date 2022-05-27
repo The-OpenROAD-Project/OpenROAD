@@ -144,7 +144,7 @@ class FlexDR
     dist_port_ = port;
     dist_dir_ = dir;
   }
-
+  void reportGuideCoverage();
  private:
   frDesign* design_;
   Logger* logger_;

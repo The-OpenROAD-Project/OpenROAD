@@ -237,6 +237,21 @@ evaluate_partitioning -partition_ids $id -evaluation_function "hyperedges"
 report_netlist_partitions -partitioning_id $id
 ```
 
+### `read_partitioning`
+
+Reads in a graph file from an external partitioner, and returns
+the id (partition_id) of the partitioning solution read in.
+
+```
+read_partitioning -read_file graph_file
+                  [-instance_map_file instance_map_file]
+```
+
+Argument description:
+
+-   `graph_file` (Mandatory) is the path to the graph file.
+-   `instance_map_file` (Optional) is the path to the instance map file, if needed. This file should contain one instance name per line to correspond to the partitions in the `graph_file`.
+
 ## Regression tests
 
 ## Limitations
@@ -256,7 +271,7 @@ about this tool.
 
 ## Authors
 
-PartitionMgr is written by Mateus Fogaça and Isadora Oliveira from the
+PartitionMgr is written by Mateus Foga&ccedil;a and Isadora Oliveira from the
 Federal University of Rio Grande do Sul (UFRGS), Brazil, and Marcelo Danigno
 from the Federal University of Rio Grande (FURG), Brazil.
 
