@@ -457,7 +457,7 @@ void FastRouteCore::addAdjustment(int x1,
     const int cap = v_edges_3D_[k][y1][x1].cap;
     int reduce;
 
-    if (((int) cap - reducedCap) < 0) {
+    if (cap - reducedCap < 0) {
       if (isReduce) {
         if (verbose_)
           logger_->warn(GRT,
