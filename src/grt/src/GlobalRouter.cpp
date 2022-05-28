@@ -1603,15 +1603,12 @@ void GlobalRouter::writeGuides(const char* file_name)
 
 RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
 {
-  RoutingTracks tracks;
-
   for (RoutingTracks routing_tracks : *routing_tracks_) {
     if (routing_tracks.getLayerIndex() == layer) {
-      tracks = routing_tracks;
+      return routing_tracks;
     }
   }
-
-  return tracks;
+  return RoutingTracks();
 }
 
 void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
