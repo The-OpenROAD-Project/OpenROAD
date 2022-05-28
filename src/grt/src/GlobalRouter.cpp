@@ -405,104 +405,10 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
   }
 }
 
-Capacities GlobalRouter::getCapacities()
-{
-  Capacities capacities;
-  CapacitiesVec& h_caps = capacities.getHorCapacities();
-  CapacitiesVec& v_caps = capacities.getVerCapacities();
-
-  h_caps.resize(grid_->getNumLayers());
-  v_caps.resize(grid_->getNumLayers());
-
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-  auto gcell_grid = block_->getGCellGrid();
-  for (int l = 0; l < grid_->getNumLayers(); l++) {
-    h_caps[l].resize(y_grids);
-    for (int i = 0; i < y_grids; i++) {
-      h_caps[l][i].resize(x_grids);
-    }
-
-    v_caps[l].resize(x_grids);
-    for (int i = 0; i < x_grids; i++) {
-      v_caps[l][i].resize(y_grids);
-    }
-
-    auto tech_layer = routing_layers_[l];
-    for (int y = 1; y < y_grids; y++) {
-      for (int x = 1; x < x_grids; x++) {
-        int old_cap
-            = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
-        h_caps[l - 1][y - 1][x - 1] = old_cap;
-
-        old_cap
-            = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
-        v_caps[l - 1][x - 1][y - 1] = old_cap;
-      }
-    }
-  }
-
-  return capacities;
-}
-
-void GlobalRouter::restoreCapacities(Capacities capacities,
-                                     int previous_min_layer,
-                                     int previous_max_layer)
-{
-  // Check if current edge capacity is larger than the old edge capacity
-  // before applying adjustments.
-  // After inserting diodes, edges can have less capacity than before,
-  // and apply adjustment without a check leads to warns and wrong adjustments.
-  const CapacitiesVec& h_caps = capacities.getHorCapacities();
-  const CapacitiesVec& v_caps = capacities.getVerCapacities();
-
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-  for (int layer = previous_min_layer; layer <= previous_max_layer; layer++) {
-    for (int y = 1; y < y_grids; y++) {
-      for (int x = 1; x < x_grids; x++) {
-        int old_cap = h_caps[layer - 1][y - 1][x - 1];
-        int cap
-            = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
-        if (old_cap <= cap) {
-          fastroute_->addAdjustment(
-              x - 1, y - 1, x, y - 1, layer, old_cap, true);
-        }
-
-        old_cap = v_caps[layer - 1][x - 1][y - 1];
-        cap = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
-        if (old_cap <= cap) {
-          fastroute_->addAdjustment(x - 1, y - 1, x - 1, y, layer, old_cap, true);
-        }
-      }
-    }
-  }
-}
-
 void GlobalRouter::setPerturbationAmount(int perturbation)
 {
   perturbation_amount_ = perturbation;
 };
-
-int GlobalRouter::getEdgeResource(int x1,
-                                  int y1,
-                                  int x2,
-                                  int y2,
-                                  odb::dbTechLayer* tech_layer,
-                                  odb::dbGCellGrid* gcell_grid)
-{
-  int resource = 0;
-
-  if (y1 == y2) {
-    resource = gcell_grid->getHorizontalCapacity(tech_layer, x1, y1)
-               - gcell_grid->getHorizontalUsage(tech_layer, x1, y1);
-  } else if (x1 == x2) {
-    resource = gcell_grid->getVerticalCapacity(tech_layer, x1, y1)
-               - gcell_grid->getVerticalUsage(tech_layer, x1, y1);
-  }
-
-  return resource;
-}
 
 void GlobalRouter::removeDirtyNetsRouting()
 {

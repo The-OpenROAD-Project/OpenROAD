@@ -314,17 +314,7 @@ class GlobalRouter
 
   // incremental funcions
   void updateDirtyRoutes();
-  Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
-  void restoreCapacities(Capacities capacities,
-                         int previous_min_layer,
-                         int previous_max_layer);
-  int getEdgeResource(int x1,
-                      int y1,
-                      int x2,
-                      int y2,
-                      odb::dbTechLayer* tech_layer,
-                      odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
   void updateDbCongestion();
