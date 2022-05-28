@@ -3935,6 +3935,12 @@ void GlobalRouter::updateDirtyRoutes()
 {
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
+    if (verbose_)
+      logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
+    if (logger_->debugCheck(GRT, "incr", 2)) {
+      for (auto net : dirty_nets_)
+        debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
+    }
 
     updateDirtyNets();
     std::vector<Net*> dirty_nets;
@@ -3944,12 +3950,6 @@ void GlobalRouter::updateDirtyRoutes()
     }
     initFastRouteIncr(dirty_nets);
 
-    if (verbose_)
-      logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
-    if (logger_->debugCheck(GRT, "incr", 2)) {
-      for (auto net : dirty_nets_)
-        debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
-    }
     removeDirtyNetsRouting();
 
     NetRouteMap new_route = findRouting(dirty_nets, min_routing_layer_,
