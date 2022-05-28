@@ -60,7 +60,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       x_range_(0),
       y_range_(0),
       seg_count_(0),
-      pin_ind_(0),
       num_adjust_(0),
       v_capacity_(0),
       h_capacity_(0),
@@ -167,7 +166,6 @@ void FastRouteCore::clearNets()
   for (FrNet* net : nets_)
     delete net;
   nets_.clear();
-  pin_ind_ = 0;
   seg_count_ = 0;
 }
 
@@ -270,9 +268,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   FrNet* net = new FrNet;
   nets_.push_back(net);
   int netID = nets_.size() - 1;
-  pin_ind_ = num_pins;
   net->db_net = db_net;
-  net->deg = pin_ind_;
+  net->deg = num_pins;
   net->is_clock = is_clock;
   net->driver_idx = driver_idx;
   net->edgeCost = cost;
@@ -283,14 +280,12 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   db_net_id_map_[db_net] = netID;
 
   // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
-  seg_count_ += 2 * pin_ind_ - 3;
+  seg_count_ += 2 * num_pins - 3;
 
-  // TODO: check this, there was an if pin_ind_ > 1 && pin_ind_ < 2000
-  if (pin_ind_ > 1) {
-    // the end pointer of the seglist
-    seglist_index_.resize(nets_.size() + 1);
-    seglist_index_[nets_.size()] = seg_count_;
-  }
+  // the end pointer of the seglist
+  seglist_index_.resize(nets_.size() + 1);
+  seglist_index_[nets_.size()] = seg_count_;
+
   return netID;
 }
 

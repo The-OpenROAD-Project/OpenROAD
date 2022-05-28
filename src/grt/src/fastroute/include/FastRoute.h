@@ -468,7 +468,6 @@ class FastRouteCore
   int y_range_;
 
   int seg_count_;
-  int pin_ind_;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;
