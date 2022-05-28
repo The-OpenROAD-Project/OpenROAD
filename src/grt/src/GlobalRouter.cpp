@@ -463,17 +463,16 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
       for (int x = 1; x < x_grids; x++) {
         int old_cap = h_caps[layer - 1][y - 1][x - 1];
         int cap
-            = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+            = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
         if (old_cap <= cap) {
           fastroute_->addAdjustment(
-              x - 1, y - 1, layer, x, y - 1, layer, old_cap, true);
+              x - 1, y - 1, x, y - 1, layer, old_cap, true);
         }
 
         old_cap = v_caps[layer - 1][x - 1][y - 1];
-        cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
+        cap = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
         if (old_cap <= cap) {
-          fastroute_->addAdjustment(
-              x - 1, y - 1, layer, x - 1, y, layer, old_cap, true);
+          fastroute_->addAdjustment(x - 1, y - 1, x - 1, y, layer, old_cap, true);
         }
       }
     }
@@ -535,12 +534,10 @@ void GlobalRouter::removeDirtyNetsRouting()
 
           for (int x = min_x; x < max_x; x++) {
             int new_cap
-                = fastroute_->getEdgeCurrentResource(
-                      x, y, segment.init_layer, x + 1, y, segment.init_layer)
+                = fastroute_->getEdgeCurrentResource(x, y, x + 1, y, segment.init_layer)
                   + 1;
             fastroute_->addAdjustment(x,
                                       y,
-                                      segment.init_layer,
                                       x + 1,
                                       y,
                                       segment.init_layer,
@@ -561,18 +558,9 @@ void GlobalRouter::removeDirtyNetsRouting()
                   / grid_->getTileSize();
 
           for (int y = min_y; y < max_y; y++) {
-            int new_cap
-                = fastroute_->getEdgeCurrentResource(
-                      x, y, segment.init_layer, x, y + 1, segment.init_layer)
-                  + 1;
-            fastroute_->addAdjustment(x,
-                                      y,
-                                      segment.init_layer,
-                                      x,
-                                      y + 1,
-                                      segment.init_layer,
-                                      new_cap,
-                                      false);
+            int new_cap = fastroute_->getEdgeCurrentResource(x, y, x, y + 1,
+                                                             segment.init_layer) + 1;
+            fastroute_->addAdjustment(x, y, x, y + 1, segment.init_layer, new_cap, false);
           }
         } else {
           logger_->error(
@@ -902,7 +890,6 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
       for (int i = 1; i < y_grids; i++) {
         fastroute_->addAdjustment(x_grids - 1,
                                   i - 1,
-                                  level,
                                   x_grids - 1,
                                   i,
                                   level,
@@ -914,7 +901,6 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
       for (int i = 1; i < x_grids; i++) {
         fastroute_->addAdjustment(i - 1,
                                   y_grids - 1,
-                                  level,
                                   i,
                                   y_grids - 1,
                                   level,
@@ -977,7 +963,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
         int y = 0;
         while (track_location >= grid_->getTileSize()) {
           for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(x - 1, y, level, x, y, level, 0, true);
+            fastroute_->addAdjustment(x - 1, y, x, y, level, 0, true);
           }
           y++;
           track_location -= grid_->getTileSize();
@@ -986,15 +972,14 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
           int remaining_tile = grid_->getTileSize() - track_location;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(
-                x - 1, y, level, x, y, level, new_capacity, true);
+            fastroute_->addAdjustment(x - 1, y, x, y, level, new_capacity, true);
           }
         }
 
         y = grid_->getYGrids() - 1;
         while (remaining_final_space >= grid_->getTileSize() + extra_space) {
           for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(x - 1, y, level, x, y, level, 0, true);
+            fastroute_->addAdjustment(x - 1, y, x, y, level, 0, true);
           }
           y--;
           remaining_final_space -= (grid_->getTileSize() + extra_space);
@@ -1005,8 +990,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
               = (grid_->getTileSize() + extra_space) - remaining_final_space;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(
-                x - 1, y, level, x, y, level, new_capacity, true);
+            fastroute_->addAdjustment(x - 1, y, x, y, level, new_capacity, true);
           }
         }
       }
@@ -1047,7 +1031,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
         int x = 0;
         while (track_location >= grid_->getTileSize()) {
           for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(x, y - 1, level, x, y, level, 0, true);
+            fastroute_->addAdjustment(x, y - 1, x, y, level, 0, true);
           }
           x++;
           track_location -= grid_->getTileSize();
@@ -1056,15 +1040,14 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
           int remaining_tile = grid_->getTileSize() - track_location;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(
-                x, y - 1, level, x, y, level, new_capacity, true);
+            fastroute_->addAdjustment(x, y - 1, x, y, level, new_capacity, true);
           }
         }
 
         x = grid_->getXGrids() - 1;
         while (remaining_final_space >= grid_->getTileSize() + extra_space) {
           for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(x, y - 1, level, x, y, level, 0, true);
+            fastroute_->addAdjustment(x, y - 1, x, y, level, 0, true);
           }
           x--;
           remaining_final_space -= (grid_->getTileSize() + extra_space);
@@ -1075,8 +1058,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
               = (grid_->getTileSize() + extra_space) - remaining_final_space;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(
-                x, y - 1, level, x, y, level, new_capacity, true);
+            fastroute_->addAdjustment(x, y - 1, x, y, level, new_capacity, true);
           }
         }
       }
@@ -1112,12 +1094,10 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
 
         for (int y = 1; y < y_grids; y++) {
           for (int x = 1; x < x_grids; x++) {
-            int edge_cap = fastroute_->getEdgeCapacity(
-                x - 1, y - 1, layer, x, y - 1, layer);
+            int edge_cap = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
-            fastroute_->addAdjustment(
-                x - 1, y - 1, layer, x, y - 1, layer, new_h_capacity, true);
+            fastroute_->addAdjustment(x - 1, y - 1, x, y - 1, layer, new_h_capacity, true);
           }
         }
       }
@@ -1129,12 +1109,10 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
 
         for (int x = 1; x < x_grids; x++) {
           for (int y = 1; y < y_grids; y++) {
-            int edge_cap = fastroute_->getEdgeCapacity(
-                x - 1, y - 1, layer, x - 1, y, layer);
+            int edge_cap = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
             int new_v_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
-            fastroute_->addAdjustment(
-                x - 1, y - 1, layer, x - 1, y, layer, new_v_capacity, true);
+            fastroute_->addAdjustment(x - 1, y - 1, x - 1, y, layer, new_v_capacity, true);
           }
         }
       }
@@ -1353,22 +1331,20 @@ void GlobalRouter::perturbCapacities()
         newCap = newCap < 0 ? 0 : newCap;
         grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
         int edge_cap
-            = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+            = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
         int new_h_capacity = (edge_cap + perturbation);
         new_h_capacity = new_h_capacity < 0 ? 0 : new_h_capacity;
-        fastroute_->addAdjustment(
-            x - 1, y - 1, layer, x, y - 1, layer, new_h_capacity, subtract);
+        fastroute_->addAdjustment(x - 1, y - 1, x, y - 1, layer, new_h_capacity, subtract);
       } else if (vertical_capacities_[layer - 1] != 0) {
         int newCap
             = grid_->getVerticalEdgesCapacities()[layer - 1] + perturbation;
         newCap = newCap < 0 ? 0 : newCap;
         grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
         int edge_cap
-            = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
+            = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
         int new_v_capacity = (edge_cap + perturbation);
         new_v_capacity = new_v_capacity < 0 ? 0 : new_v_capacity;
-        fastroute_->addAdjustment(
-            x - 1, y - 1, layer, x - 1, y, layer, new_v_capacity, subtract);
+        fastroute_->addAdjustment(x - 1, y - 1, x - 1, y, layer, new_v_capacity, subtract);
       }
     }
   }
@@ -1451,9 +1427,8 @@ void GlobalRouter::updateEdgesUsage()
 
       int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize();
       int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize();
-      int l1 = seg.final_layer;
 
-      fastroute_->incrementEdge3DUsage(x0, y0, l0, x1, y1, l1);
+      fastroute_->incrementEdge3DUsage(x0, y0, x1, y1, l0);
     }
   }
 }

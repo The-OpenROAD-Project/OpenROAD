@@ -366,14 +366,13 @@ void FastRouteCore::setNumAdjustments(int nAdjustments)
 
 int FastRouteCore::getEdgeCurrentResource(int x1,
                                           int y1,
-                                          int l1,
                                           int x2,
                                           int y2,
-                                          int l2)
+                                          int layer)
 {
   int resource = 0;
 
-  const int k = l1 - 1;
+  const int k = layer - 1;
   if (y1 == y2) {
     resource = h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
   } else if (x1 == x2) {
@@ -390,14 +389,13 @@ int FastRouteCore::getEdgeCurrentResource(int x1,
 
 int FastRouteCore::getEdgeCurrentUsage(int x1,
                                        int y1,
-                                       int l1,
                                        int x2,
                                        int y2,
-                                       int l2)
+                                       int layer)
 {
   int usage = 0;
 
-  const int k = l1 - 1;
+  const int k = layer - 1;
   if (y1 == y2) {
     usage = h_edges_3D_[k][y1][x1].usage;
   } else if (x1 == x2) {
@@ -417,14 +415,13 @@ void FastRouteCore::setMaxNetDegree(int deg)
 
 void FastRouteCore::addAdjustment(int x1,
                                   int y1,
-                                  int l1,
                                   int x2,
                                   int y2,
-                                  int l2,
+                                  int layer,
                                   int reducedCap,
                                   bool isReduce)
 {
-  const int k = l1 - 1;
+  const int k = layer - 1;
 
   if (y1 == y2) {
     // horizontal edge
@@ -496,19 +493,19 @@ void FastRouteCore::applyVerticalAdjustments(const odb::Point& first_tile,
   for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
       if (x == first_tile.getX()) {
-        int edge_cap = getEdgeCapacity(x, y, layer, x, y + 1, layer);
+        int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
         edge_cap -= first_tile_reduce;
         if (edge_cap < 0)
           edge_cap = 0;
-        addAdjustment(x, y, layer, x, y + 1, layer, edge_cap, true);
+        addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
       } else if (x == last_tile.getX()) {
-        int edge_cap = getEdgeCapacity(x, y, layer, x, y + 1, layer);
+        int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
         edge_cap -= last_tile_reduce;
         if (edge_cap < 0)
           edge_cap = 0;
-        addAdjustment(x, y, layer, x, y + 1, layer, edge_cap, true);
+        addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
       } else {
-        addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
+        addAdjustment(x, y, x, y + 1, layer, 0, true);
       }
     }
   }
@@ -523,19 +520,19 @@ void FastRouteCore::applyHorizontalAdjustments(const odb::Point& first_tile,
   for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
     for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
       if (y == first_tile.getY()) {
-        int edge_cap = getEdgeCapacity(x, y, layer, x + 1, y, layer);
+        int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
         edge_cap -= first_tile_reduce;
         if (edge_cap < 0)
           edge_cap = 0;
-        addAdjustment(x, y, layer, x + 1, y, layer, edge_cap, true);
+        addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
       } else if (y == last_tile.getY()) {
-        int edge_cap = getEdgeCapacity(x, y, layer, x + 1, y, layer);
+        int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
         edge_cap -= last_tile_reduce;
         if (edge_cap < 0)
           edge_cap = 0;
-        addAdjustment(x, y, layer, x + 1, y, layer, edge_cap, true);
+        addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
       } else {
-        addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
+        addAdjustment(x, y, x + 1, y, layer, 0, true);
       }
     }
   }
@@ -543,12 +540,11 @@ void FastRouteCore::applyHorizontalAdjustments(const odb::Point& first_tile,
 
 int FastRouteCore::getEdgeCapacity(int x1,
                                    int y1,
-                                   int l1,
                                    int x2,
                                    int y2,
-                                   int l2)
+                                   int layer)
 {
-  const int k = l1 - 1;
+  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
     return h_edges_3D_[k][y1][x1].cap;
@@ -584,58 +580,55 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
 
 void FastRouteCore::setEdgeCapacity(int x1,
                                     int y1,
-                                    int l1,
                                     int x2,
                                     int y2,
-                                    int l2,
-                                    int newCap)
+                                    int layer,
+                                    int cap)
 {
-  const int k = l1 - 1;
+  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
     const int currCap = h_edges_3D_[k][y1][x1].cap;
-    h_edges_3D_[k][y1][x1].cap = newCap;
+    h_edges_3D_[k][y1][x1].cap = cap;
 
-    const int reduce = currCap - newCap;
+    const int reduce = currCap - cap;
     h_edges_[y1][x1].cap -= reduce;
   } else if (x1 == x2) {  // vertical edge
     const int currCap = v_edges_3D_[k][y1][x1].cap;
-    v_edges_3D_[k][y1][x1].cap = newCap;
+    v_edges_3D_[k][y1][x1].cap = cap;
 
-    const int reduce = currCap - newCap;
+    const int reduce = currCap - cap;
     v_edges_[y1][x1].cap -= reduce;
   }
 }
 
 void FastRouteCore::setEdgeUsage(int x1,
                                  int y1,
-                                 int l1,
                                  int x2,
                                  int y2,
-                                 int l2,
-                                 int newUsage)
+                                 int layer,
+                                 int usage)
 {
-  const int k = l1 - 1;
+  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
-    h_edges_3D_[k][y1][x1].usage = newUsage;
+    h_edges_3D_[k][y1][x1].usage = usage;
 
-    h_edges_[y1][x1].usage += newUsage;
+    h_edges_[y1][x1].usage += usage;
   } else if (x1 == x2) {  // vertical edge
-    v_edges_3D_[k][y1][x1].usage = newUsage;
+    v_edges_3D_[k][y1][x1].usage = usage;
 
-    v_edges_[y1][x1].usage += newUsage;
+    v_edges_[y1][x1].usage += usage;
   }
 }
 
 void FastRouteCore::incrementEdge3DUsage(int x1,
                                          int y1,
-                                         int l1,
                                          int x2,
                                          int y2,
-                                         int l2)
+                                         int layer)
 {
-  const int k = l1 - 1;
+  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {

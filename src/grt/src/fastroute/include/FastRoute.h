@@ -129,10 +129,9 @@ class FastRouteCore
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
                      int y1,
-                     int l1,
                      int x2,
                      int y2,
-                     int l2,
+                     int layer,
                      int reducedCap,
                      bool isReduce);
   void applyVerticalAdjustments(const odb::Point& first_tile,
@@ -154,17 +153,17 @@ class FastRouteCore
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
-  int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
+  int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(int x1, int y1, int l1, int x2, int y2, int l2);
-  int getEdgeCurrentUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  int getEdgeCurrentResource(int x1, int y1, int x2, int y2, int layer);
+  int getEdgeCurrentUsage(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
   void
-  setEdgeUsage(int x1, int y1, int l1, int x2, int y2, int l2, int newUsage);
-  void incrementEdge3DUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
+  void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void
-  setEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2, int newCap);
+  setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);
