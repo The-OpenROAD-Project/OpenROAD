@@ -252,8 +252,7 @@ proc global_route { args } {
   set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
   grt::set_allow_congestion $allow_congestion
 
-  grt::clear
-  grt::run
+  grt::global_route
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)

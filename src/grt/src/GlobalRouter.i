@@ -162,7 +162,7 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-run()
+global_route()
 {
   getGlobalRouter()->globalRoute();
 }
@@ -183,12 +183,6 @@ void
 repair_antennas(LibertyPort* diodePort, int iterations)
 {
   getGlobalRouter()->repairAntennas(diodePort, iterations);
-}
-
-void
-clear()
-{
-  getGlobalRouter()->clear();
 }
 
 void
