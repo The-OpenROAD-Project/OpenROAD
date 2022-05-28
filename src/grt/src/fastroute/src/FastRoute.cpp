@@ -328,37 +328,34 @@ void FastRouteCore::initEdges()
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  // 2D edge initialization
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
+      // 2D edge initialization
       h_edges_[i][j].cap = h_capacity_;
       h_edges_[i][j].usage = 0;
       h_edges_[i][j].est_usage = 0;
       h_edges_[i][j].red = 0;
       h_edges_[i][j].last_usage = 0;
-    }
-  }
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].cap = v_capacity_;
-      v_edges_[i][j].usage = 0;
-      v_edges_[i][j].est_usage = 0;
-      v_edges_[i][j].red = 0;
-      v_edges_[i][j].last_usage = 0;
-    }
-  }
 
-  // 3D edge initialization
-  for (int k = 0; k < num_layers_; k++) {
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_; j++) {
+      // 3D edge initialization
+      for (int k = 0; k < num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
         h_edges_3D_[k][i][j].red = 0;
       }
     }
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_; j++) {
+  }
+  for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int j = 0; j < x_grid_; j++) {
+      // 2D edge initialization
+      v_edges_[i][j].cap = v_capacity_;
+      v_edges_[i][j].usage = 0;
+      v_edges_[i][j].est_usage = 0;
+      v_edges_[i][j].red = 0;
+      v_edges_[i][j].last_usage = 0;
+
+      // 3D edge initialization
+      for (int k = 0; k < num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
         v_edges_3D_[k][i][j].red = 0;
