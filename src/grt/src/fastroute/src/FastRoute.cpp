@@ -434,12 +434,12 @@ void FastRouteCore::addAdjustment(int x1,
 {
   const int k = l1 - 1;
 
-  if (y1 == y2)  // horizontal edge
-  {
+  if (y1 == y2) {
+    // horizontal edge
     const int cap = h_edges_3D_[k][y1][x1].cap;
     int reduce;
 
-    if (((int) cap - reducedCap) < 0) {
+    if (cap - reducedCap < 0) {
       if (isReduce) {
         if (verbose_)
           logger_->warn(GRT,
@@ -556,22 +556,19 @@ int FastRouteCore::getEdgeCapacity(int x1,
                                    int y2,
                                    int l2)
 {
-  int cap = 0;
-
   const int k = l1 - 1;
 
   if (y1 == y2) {  // horizontal edge
-    cap = h_edges_3D_[k][y1][x1].cap;
+    return h_edges_3D_[k][y1][x1].cap;
   } else if (x1 == x2) {  // vertical edge
-    cap = v_edges_3D_[k][y1][x1].cap;
+    return v_edges_3D_[k][y1][x1].cap;
   } else {
     logger_->error(
         GRT,
         214,
         "Cannot get edge capacity: edge is not vertical or horizontal.");
+    return 0;
   }
-
-  return cap;
 }
 
 int FastRouteCore::getEdgeCapacity(FrNet* net,
