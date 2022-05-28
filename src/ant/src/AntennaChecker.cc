@@ -49,6 +49,7 @@ using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
+using odb::dbITermObj;
 using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbMTerm;
@@ -64,6 +65,7 @@ using odb::dbViaParams;
 using odb::dbWire;
 using odb::dbWireGraph;
 using odb::dbWireType;
+using odb::dbIoType;
 
 using utl::ANT;
 
@@ -249,7 +251,7 @@ dbWireGraph::Node* AntennaChecker::findSegmentRoot(dbWireGraph::Node* node,
 
 dbWireGraph::Node* AntennaChecker::findSegmentStart(dbWireGraph::Node* node)
 {
-  if ((node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0)
+  if ((node->object() && node->object()->getObjectType() == dbITermObj)
       || !node->in_edge())
     return node;
   else if (node->in_edge()->type() == dbWireGraph::Edge::Type::VIA
@@ -264,7 +266,7 @@ dbWireGraph::Node* AntennaChecker::findSegmentStart(dbWireGraph::Node* node)
 
 bool AntennaChecker::ifSegmentRoot(dbWireGraph::Node* node, int wire_level)
 {
-  if ((node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0)
+  if ((node->object() && node->object()->getObjectType() == dbITermObj)
       || !node->in_edge())
     return true;
   else if (node->in_edge()->type() == dbWireGraph::Edge::Type::VIA
@@ -678,7 +680,7 @@ void AntennaChecker::buildWireParTable(
 
 bool AntennaChecker::checkIterm(dbWireGraph::Node* node, double iterm_areas[2])
 {
-  if (node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0) {
+  if (node->object() && node->object()->getObjectType() == dbITermObj) {
     dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
                                        node->object()->getId());
     dbMTerm* mterm = iterm->getMTerm();
@@ -1557,11 +1559,11 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
             }
           }
           if (node->object()
-              && strcmp(node->object()->getObjName(), "dbITerm") == 0) {
+              && node->object()->getObjectType() == dbITermObj) {
             dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
                                                node->object()->getId());
             dbMTerm* mterm = iterm->getMTerm();
-            if (strcmp(mterm->getIoType().getString(), "INPUT") == 0)
+            if (mterm->getIoType() == dbIoType::INPUT)
               if (mterm->hasDefaultAntennaModel())
                 gate_iterms.push_back(node);
           }
