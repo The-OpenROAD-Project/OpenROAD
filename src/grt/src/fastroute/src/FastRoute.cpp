@@ -314,21 +314,6 @@ FastRouteCore::clearRoute(const int netID)
   newRipupNet(netID);
 }
 
-void FastRouteCore::init_usage()
-{
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < (x_grid_ - 1); j++) {
-      h_edges_[i][j].usage = 0;
-    }
-  }
-
-  for (int i = 0; i < (y_grid_ - 1); i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].usage = 0;
-    }
-  }
-}
-
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
@@ -339,8 +324,6 @@ void FastRouteCore::initEdges()
 
   h_edges_.resize(boost::extents[y_grid_][x_grid_ - 1]);
   v_edges_.resize(boost::extents[y_grid_ - 1][x_grid_]);
-
-  init_usage();
 
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);

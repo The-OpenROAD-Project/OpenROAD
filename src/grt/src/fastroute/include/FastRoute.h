@@ -192,7 +192,6 @@ class FastRouteCore
 
  private:
   NetRouteMap getRoutes();
-  void init_usage();
 
   // maze functions
   // Maze-routing in different orders
