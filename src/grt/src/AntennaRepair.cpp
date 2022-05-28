@@ -126,12 +126,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
               db_net,
               diode_mterm->getMaster()->getConstName(),
               diode_mterm->getConstName());
-      if (!netViol.empty()) {
+      if (!netViol.empty())
         antenna_violations_[db_net] = netViol;
-        // This should be done with the db callbacks.
-        grouter_->addDirtyNet(db_net);
-      }
-
       odb::dbWire::destroy(wire);
     } else {
       logger_->error(
@@ -167,6 +163,7 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 
   for (auto const& violation : antenna_violations_) {
     odb::dbNet* net = violation.first;
+    grouter_->addDirtyNet(net);
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sink_iterm : violation.second[i].iterms) {
         odb::dbInst* sink_inst = sink_iterm->getInst();
