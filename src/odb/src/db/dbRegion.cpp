@@ -38,14 +38,14 @@
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
+#include "dbGroup.h"
 #include "dbInst.h"
 #include "dbRegion.h"
+#include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbRegionItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbGroup.h"
-#include "dbRegionGroupItr.h"
 
 namespace odb {
 
@@ -314,6 +314,8 @@ void dbRegion::removeGroup(dbGroup* group)
 {
   _dbRegion* region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
+  if (_group->region_ != region->getOID())
+    return;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
   uint id = _group->getOID();
@@ -384,8 +386,13 @@ void dbRegion::addGroup(dbGroup* group)
 {
   _dbRegion* _region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
-  if(_group->region_)
+  if (_group->region_)
     return;
+  if (_region->groups_.isValid()) {
+    _dbGroup* prev_group = (_dbGroup*) dbGroup::getGroup(
+        (dbBlock*) _region->getOwner(), _region->groups_);
+    prev_group->region_prev_ = _group->getOID();
+  }
   _group->region_ = _region->getOID();
   _group->region_next_ = _region->groups_;
   _region->groups_ = _group->getOID();
@@ -472,7 +479,7 @@ void dbRegion::destroy(dbRegion* region_)
   dbSet<dbGroup>::iterator gitr;
 
   for (gitr = groups.begin(); gitr != groups.end(); gitr = groups.begin()) {
-    _dbGroup* _group =(_dbGroup*) *gitr;
+    _dbGroup* _group = (_dbGroup*) *gitr;
     _group->region_ = 0;
     _group->region_next_ = 0;
     _group->region_prev_ = 0;
