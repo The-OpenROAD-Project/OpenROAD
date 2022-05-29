@@ -1139,6 +1139,28 @@ std::string dbTechLayer::getLef58TypeString() const
       return "MIMCAP";
     case STACKEDMIMCAP:
       return "STACKEDMIMCAP";
+    case TSV:
+      return "TSV";
+    case PASSIVATION:
+      return "PASSIVATION";
+    case HIGHR:
+      return "HIGHR";
+    case TRIMMETAL:
+      return "TRIMMETAL";
+    case REGION:
+      return "REGION";
+    case MEOL:
+      return "MEOL";
+    case WELLDISTANCE:
+      return "WELLDISTANCE";
+    case CPODE:
+      return "CPODE";
+    case TSVMETAL:
+      return "TSVMETAL";
+    case PADMETAL:
+      return "PADMETAL";
+    case POLYROUTING:
+      return "POLYROUTING";
   }
 
   return "Unknown";

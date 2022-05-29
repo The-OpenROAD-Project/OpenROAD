@@ -391,17 +391,19 @@ makeBufferedNet(SteinerTree *tree,
   if (pins) {
     for (Pin *pin : *pins) {
       if (network->isLoad(pin)) {
-        auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
-                                                  tree->location(to), pin,
-                                                  corner, resizer);
-        debugPrint(logger, RSZ, "make_buffered_net", 4, "{:{}s}{}",
-                   "", level, load_bnet->to_string(resizer));
-        if (bnet)
-          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                          tree->location(to),
-                                          bnet, load_bnet);
-        else
-          bnet = load_bnet;
+        BufferedNetPtr bnet1 = make_shared<BufferedNet>(BufferedNetType::load,
+                                                        tree->location(to), pin,
+                                                        corner, resizer);
+        if (bnet1) {
+          debugPrint(logger, RSZ, "make_buffered_net", 4, "{:{}s}{}",
+                     "", level, bnet1->to_string(resizer));
+          if (bnet)
+            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                            tree->location(to),
+                                            bnet, bnet1);
+          else
+            bnet = bnet1;
+        }
       }
     }
   }
@@ -411,12 +413,14 @@ makeBufferedNet(SteinerTree *tree,
       BufferedNetPtr bnet1 = makeBufferedNet(tree, to, adj,
                                              adjacents, level + 1,
                                              corner, resizer, logger, network);
-      if (bnet)
-        bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        tree->location(to),
-                                        bnet, bnet1);
-      else
-        bnet = bnet1;
+      if (bnet1) {
+        if (bnet)
+          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                          tree->location(to),
+                                          bnet, bnet1);
+        else
+          bnet = bnet1;
+      }
     }
   }
   if (bnet

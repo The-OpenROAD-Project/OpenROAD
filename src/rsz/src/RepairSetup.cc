@@ -88,6 +88,7 @@ RepairSetup::RepairSetup(Resizer *resizer) :
   resizer_(resizer),
   resize_count_(0),
   inserted_buffer_count_(0),
+  rebuffer_net_count_(0),
   min_(MinMax::min()),
   max_(MinMax::max())
 {

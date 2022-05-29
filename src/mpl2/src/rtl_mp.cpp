@@ -450,7 +450,7 @@ bool rtl_macro_placer(const char* config_file,
 
         auto inst = block->findInst(macro.GetName().c_str());
         inst->setOrient(orientation);
-        inst->setLocation(lx * dbu, ly * dbu);
+        inst->setLocation(round(lx * dbu), round(ly * dbu));
         inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
       }
     }
