@@ -684,19 +684,17 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   }
   treeedge->assigned = true;
 
-  std::vector<int> edge_cost_per_layer = nets_[netID]->edge_cost_per_layer;
-
   for (k = 0; k < routelen; k++) {
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
 
       v_edges_3D_[gridsL[k]][min_y][gridsX[k]].usage
-          += edge_cost_per_layer[gridsL[k]];
+        += net->layerEdgeCost(gridsL[k]);
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
 
       h_edges_3D_[gridsL[k]][gridsY[k]][min_x].usage
-          += edge_cost_per_layer[gridsL[k]];
+        += net->layerEdgeCost(gridsL[k]);
     }
   }
 }
@@ -1177,20 +1175,19 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = true;
 
-  std::vector<int> edge_cost_per_layer = nets_[netID]->edge_cost_per_layer;
-
+  FrNet *net = nets_[netID];
   for (i = 0; i < treeedge->route.routelen; i++) {
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
-            += edge_cost_per_layer[gridsL[i]];
+          += net->layerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
-            += edge_cost_per_layer[gridsL[i]];
+          += net->layerEdgeCost(gridsL[i]);
       }
     }
   }

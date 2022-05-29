@@ -117,7 +117,7 @@ class FastRouteCore
              int cost,
              int min_layer,
              int max_layer,
-             std::vector<int> edge_cost_per_layer);
+             std::vector<int> *edge_cost_per_layer);
   void setNetDriverIdx(int netID, int root_idx);
   void addPin(int netID, int x, int y, int layer);
   void clearPins(int netID);

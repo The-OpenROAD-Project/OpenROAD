@@ -263,7 +263,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int cost,
                           int min_layer,
                           int max_layer,
-                          std::vector<int> edge_cost_per_layer)
+                          std::vector<int> *edge_cost_per_layer)
 {
   FrNet* net = new FrNet;
   nets_.push_back(net);
@@ -1511,6 +1511,21 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
     gui_->redraw();
     gui_->pause();
   }
+}
+
+////////////////////////////////////////////////////////////////
+
+FrNet::~FrNet()
+{
+  delete edge_cost_per_layer;
+}
+
+int FrNet::layerEdgeCost(int layer)
+{
+  if (edge_cost_per_layer)
+    return (*edge_cost_per_layer)[layer];
+  else
+    return 1;
 }
 
 }  // namespace grt

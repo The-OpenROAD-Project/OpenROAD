@@ -687,11 +687,9 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
 
   if (pins_on_grid.size() > 1 && !on_grid_local) {
     bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-
-    int num_layers = grid_->getNumLayers();
-    std::vector<int> edge_cost_per_layer(num_layers + 1, 1);
-    int edge_cost_for_net
-      = computeTrackConsumption(net, edge_cost_per_layer);
+    std::vector<int> *edge_cost_per_layer;
+    int edge_cost_for_net;
+    computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
 
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
@@ -720,14 +718,17 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   return false;
 }
 
-int GlobalRouter::computeTrackConsumption(
-    const Net* net,
-    std::vector<int>& edge_costs_per_layer)
+void GlobalRouter::computeTrackConsumption(const Net* net,
+                                           int &track_consumption,
+                                           std::vector<int> *&edge_costs_per_layer)
 {
-  int track_consumption = 1;
+  edge_costs_per_layer = nullptr;
+  track_consumption = 1;
   odb::dbNet* db_net = net->getDbNet();
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
-  if (ndr != nullptr) {
+  if (ndr) {
+    int num_layers = grid_->getNumLayers();
+    edge_costs_per_layer = new std::vector<int>(num_layers + 1, 1);
     std::vector<odb::dbTechLayerRule*> layer_rules;
     ndr->getLayerRules(layer_rules);
 
@@ -744,13 +745,11 @@ int GlobalRouter::computeTrackConsumption(
                                    + default_width / 2 - default_pitch));
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
-      edge_costs_per_layer[layerIdx - 1] = consumption;
+      (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);
     }
   }
-
-  return track_consumption;
 }
 
 void GlobalRouter::computeGridAdjustments(int min_routing_layer,
