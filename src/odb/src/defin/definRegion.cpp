@@ -56,43 +56,16 @@ void definRegion::init()
   definBase::init();
 }
 
-static void getGroupName(dbBlock* block, std::string& name)
-{
-  dbRegion* region = block->findRegion(name.c_str());
-
-  if (region) {
-    name += "_group";
-    getGroupName(block, name);
-  }
-}
-
-void definRegion::begin(const char* name, bool is_group)
+void definRegion::begin(const char* name)
 {
   _cur_region = _block->findRegion(name);
   std::string region_name(name);
 
   if (_cur_region) {
-    if (!is_group) {
-      _logger->warn(utl::ODB, 152, "Region \"{}\" already exists", name);
-      ++_errors;
-      _cur_region = NULL;
-      return;
-    }
-
-    dbSet<dbBox> boxes
-        = _cur_region->getBoundaries();  // colision with DEF REGION
-
-    if (boxes.empty())
-      return;
-
-    getGroupName(_block, region_name);
-    _logger->warn(
-        utl::ODB,
-        153,
-        "Warning: A REGION with the name \"{}\" already exists, renaming "
-        "this GROUP to \"{}\".",
-        name,
-        region_name.c_str());
+    _logger->warn(utl::ODB, 152, "Region \"{}\" already exists", name);
+    ++_errors;
+    _cur_region = NULL;
+    return;
   }
 
   _cur_region = dbRegion::create(_block, region_name.c_str());
@@ -112,45 +85,6 @@ void definRegion::type(defRegionType type)
 
     else if (type == DEF_FENCE)
       _cur_region->setRegionType(dbRegionType(dbRegionType::EXCLUSIVE));
-  }
-}
-
-void definRegion::inst(const char* name)
-{
-  if (_cur_region) {
-    std::string pname = name;
-    size_t pname_length = pname.length();
-    if (pname[pname.length() - 1] == '*') {
-      size_t prefix_length = pname_length - 1;
-      std::string prefix = pname.substr(0, pname_length - 1);
-      for (dbInst* inst : _block->getInsts()) {
-        const char* inst_name = inst->getConstName();
-        if (strncmp(inst_name, prefix.c_str(), prefix_length) == 0) {
-          _cur_region->addInst(inst);
-        }
-      }
-    } else {
-      dbInst* inst = _block->findInst(name);
-      if (inst == NULL) {
-        _logger->warn(utl::ODB,
-                      154,
-                      "error: netlist component ({}) is not defined",
-                      name);
-        ++_errors;
-        return;
-      }
-      _cur_region->addInst(inst);
-    }
-  }
-}
-
-void definRegion::parent(const char* region)
-{
-  if (_cur_region) {
-    dbRegion* parent = _block->findRegion(region);
-
-    if (parent)
-      parent->addChild(_cur_region);
   }
 }
 

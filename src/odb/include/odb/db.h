@@ -4997,23 +4997,6 @@ class dbRegion : public dbObject
   void removeGroup(dbGroup* group);
 
   ///
-  /// Get the parent of this region. Returns null of this region has no parent.
-  ///
-  dbRegion* getParent();
-
-  ///
-  /// Get the children of this region.
-  ///
-  dbSet<dbRegion> getChildren();
-
-  ///
-  /// Add child region to this region.
-  ///
-  /// This method will do nothing if this child already has a parent.
-  ///
-  void addChild(dbRegion* region);
-
-  ///
   /// Add group to this region.
   ///
   void addGroup(dbGroup* group);
@@ -5033,12 +5016,6 @@ class dbRegion : public dbObject
   /// exists in the block.
   ///
   static dbRegion* create(dbBlock* block, const char* name);
-
-  ///
-  /// Create a new region. The region will become a child region of parent.
-  /// Returns NULL if a region with this name already exists in the block.
-  ///
-  static dbRegion* create(dbRegion* parent, const char* name);
 
   ///
   /// Destroy a region.

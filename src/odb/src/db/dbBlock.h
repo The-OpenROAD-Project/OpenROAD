@@ -106,7 +106,6 @@ class dbGroupInstItr;
 class dbGroupModInstItr;
 class dbGroupPowerNetItr;
 class dbGroupGroundNetItr;
-class dbRegionItr;
 class dbSWireItr;
 class dbNameServer;
 class dbBoxItr;
@@ -243,7 +242,6 @@ class _dbBlock : public _dbObject
   dbGroupPowerNetItr* _group_power_net_itr;
   dbGroupGroundNetItr* _group_ground_net_itr;
   dbBPinItr* _bpin_itr;
-  dbRegionItr* _region_itr;
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
 

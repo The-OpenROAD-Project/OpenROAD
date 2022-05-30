@@ -155,11 +155,7 @@ int VoltageDomain::getRegionRectCount(odb::dbRegion* region) const
   }
 
   auto boundaries = region->getBoundaries();
-  if (boundaries.empty()) {
-    return getRegionRectCount(region->getParent());
-  } else {
-    return boundaries.size();
-  }
+  return boundaries.size();
 }
 
 const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
@@ -174,8 +170,7 @@ const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
     boundaries.begin()->getBox(box_rect);
     return box_rect;
   }
-
-  return getRegionBoundary(region->getParent());
+  return {};
 }
 
 const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const

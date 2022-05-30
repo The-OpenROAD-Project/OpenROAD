@@ -70,7 +70,6 @@ add_library(odb
     dbNullIterator.cpp 
     dbBPin.cpp 
     dbHierInstShapeItr.cpp 
-    dbRegionItr.cpp 
     dbHier.cpp 
     dbTechViaRule.cpp 
     dbTechViaLayerRule.cpp 

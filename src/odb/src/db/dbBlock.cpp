@@ -91,7 +91,6 @@
 #include "dbRSegItr.h"
 #include "dbRegion.h"
 #include "dbRegionInstItr.h"
-#include "dbRegionItr.h"
 #include "dbRow.h"
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
@@ -332,8 +331,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _bpin_itr = new dbBPinItr(_bpin_tbl);
 
-  _region_itr = new dbRegionItr(_region_tbl);
-
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   _num_ext_dbs = 1;
@@ -503,8 +500,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _bpin_itr = new dbBPinItr(_bpin_tbl);
 
-  _region_itr = new dbRegionItr(_region_tbl);
-
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   // ??? Initialize search-db on copy?
@@ -577,7 +572,6 @@ _dbBlock::~_dbBlock()
   delete _group_power_net_itr;
   delete _group_ground_net_itr;
   delete _bpin_itr;
-  delete _region_itr;
   delete _prop_itr;
 
   std::list<dbBlockCallBackObj*>::iterator _cbitr;

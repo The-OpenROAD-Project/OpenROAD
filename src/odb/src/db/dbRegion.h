@@ -63,9 +63,6 @@ class _dbRegion : public _dbObject
   char* _name;
   dbId<_dbInst> _insts;
   dbId<_dbBox> _boxes;
-  dbId<_dbRegion> _parent;
-  dbId<_dbRegion> _children;
-  dbId<_dbRegion> _next_child;
   dbId<_dbGroup> groups_;
 
   _dbRegion(_dbDatabase*);

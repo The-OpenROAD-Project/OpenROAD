@@ -43,7 +43,6 @@
 #include "dbRegion.h"
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
-#include "dbRegionItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 
@@ -63,9 +62,7 @@ _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
       _name(NULL),
       _insts(r._insts),
       _boxes(r._boxes),
-      _parent(r._parent),
-      _children(r._children),
-      _next_child(r._next_child)
+      groups_(r.groups_)
 {
   if (r._name)
     _name = strdup(r._name);
@@ -94,13 +91,7 @@ bool _dbRegion::operator==(const _dbRegion& rhs) const
   if (_insts != rhs._insts)
     return false;
 
-  if (_parent != rhs._parent)
-    return false;
-
-  if (_children != rhs._children)
-    return false;
-
-  if (_next_child != rhs._next_child)
+  if (groups_ != rhs.groups_)
     return false;
 
   return true;
@@ -123,27 +114,8 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
   if (_insts < rhs._insts)
     return true;
 
-  if (_insts > rhs._insts)
-    return false;
-
-  if (_parent < rhs._parent)
+  if (groups_ < rhs.groups_)
     return true;
-
-  if (_parent > rhs._parent)
-    return false;
-
-  if (_children < rhs._children)
-    return true;
-
-  if (_children > rhs._children)
-    return false;
-
-  if (_next_child < rhs._next_child)
-    return true;
-
-  if (_next_child > rhs._next_child)
-    return false;
-
   return _boxes < rhs._boxes;
 }
 
@@ -160,9 +132,7 @@ void _dbRegion::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_insts);
   DIFF_FIELD(_boxes);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_children);
-  DIFF_FIELD(_next_child);
+  DIFF_FIELD(groups_);
   DIFF_END
 }
 
@@ -177,9 +147,7 @@ void _dbRegion::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_insts);
   DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_children);
-  DIFF_OUT_FIELD(_next_child);
+  DIFF_OUT_FIELD(groups_);
   DIFF_END
 }
 
@@ -190,9 +158,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
   stream << r._name;
   stream << r._insts;
   stream << r._boxes;
-  stream << r._parent;
-  stream << r._children;
-  stream << r._next_child;
+  stream << r.groups_;
   return stream;
 }
 
@@ -203,9 +169,7 @@ dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
   stream >> r._name;
   stream >> r._insts;
   stream >> r._boxes;
-  stream >> r._parent;
-  stream >> r._children;
-  stream >> r._next_child;
+  stream >> r.groups_;
 
   return stream;
 }
@@ -342,41 +306,6 @@ void dbRegion::removeGroup(dbGroup* group)
   _group->region_ = 0;
 }
 
-dbRegion* dbRegion::getParent()
-{
-  _dbRegion* region = (_dbRegion*) this;
-  _dbBlock* block = (_dbBlock*) region->getOwner();
-
-  if (region->_parent == 0)
-    return NULL;
-
-  _dbRegion* p = block->_region_tbl->getPtr(region->_parent);
-  return (dbRegion*) p;
-}
-
-dbSet<dbRegion> dbRegion::getChildren()
-{
-  _dbRegion* region = (_dbRegion*) this;
-  _dbBlock* block = (_dbBlock*) region->getOwner();
-
-  dbSet<dbRegion> children(region, block->_region_itr);
-  return children;
-}
-
-void dbRegion::addChild(dbRegion* child_)
-{
-  _dbRegion* child = (_dbRegion*) child_;
-  _dbRegion* parent = (_dbRegion*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-
-  if (child->_parent || (parent == child))
-    return;
-
-  child->_parent = parent->getOID();
-  child->_next_child = parent->_children;
-  parent->_children = child->getOID();
-}
-
 dbBlock* dbRegion::getBlock()
 {
   return (dbBlock*) getImpl()->getOwner();
@@ -422,37 +351,11 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
   return (dbRegion*) region;
 }
 
-dbRegion* dbRegion::create(dbRegion* parent_, const char* name)
-{
-  _dbRegion* parent = (_dbRegion*) parent_;
-  _dbBlock* block = (_dbBlock*) parent->getOwner();
-
-  if (((dbBlock*) block)->findRegion(name))
-    return NULL;
-
-  _dbRegion* region = block->_region_tbl->create();
-  region->_name = strdup(name);
-  ZALLOCATED(region->_name);
-  region->_parent = parent->getOID();
-  region->_next_child = parent->_children;
-  parent->_children = region->getOID();
-  for (auto callback : block->_callbacks)
-    callback->inDbRegionCreate((dbRegion*) region);
-  return (dbRegion*) region;
-}
-
 void dbRegion::destroy(dbRegion* region_)
 {
   _dbRegion* region = (_dbRegion*) region_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  dbSet<dbRegion> children = region_->getChildren();
-  dbSet<dbRegion>::iterator childItr;
-  for (childItr = children.begin(); childItr != children.end();
-       childItr = children.begin()) {
-    dbRegion* child = *childItr;
-    child->destroy(child);
-  }
   for (auto callback : block->_callbacks)
     callback->inDbRegionDestroy((dbRegion*) region);
 
@@ -483,25 +386,6 @@ void dbRegion::destroy(dbRegion* region_)
     _group->region_ = 0;
     _group->region_next_ = 0;
     _group->region_prev_ = 0;
-  }
-
-  if (region->_parent) {
-    _dbRegion* parent = block->_region_tbl->getPtr(region->_parent);
-    _dbRegion* prev = NULL;
-    _dbRegion* cur = block->_region_tbl->getPtr(parent->_children);
-
-    while (cur) {
-      if (cur == region)
-        break;
-
-      prev = cur;
-      cur = block->_region_tbl->getPtr(cur->_next_child);
-    }
-
-    if (prev == NULL)
-      parent->_children = region->_next_child;
-    else
-      prev->_next_child = region->_next_child;
   }
 
   dbProperty::destroyProperties(region);
