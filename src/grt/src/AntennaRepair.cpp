@@ -82,7 +82,6 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     if (wire != nullptr) {
       odb::dbWireEncoder wire_encoder;
       wire_encoder.begin(wire);
-      odb::dbWireType wire_type = odb::dbWireType::ROUTED;
 
       std::vector<GSegment> segments_to_wires;
       for (GSegment& seg : route) {
@@ -103,14 +102,14 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
           if (l1 == l2) {  // Add wire
             if (x1 != x2 || y1 != y2) {
-              wire_encoder.newPath(layer, wire_type);
+              wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
               wire_encoder.addPoint(x2, y2);
               segments_to_wires.push_back(seg);
             }
           } else {  // Add via
-            int bottom_layer = (l1 < l2) ? l1 : l2;
-            wire_encoder.newPath(layer, wire_type);
+            int bottom_layer = std::min(l1, l2);
+            wire_encoder.newPath(layer, odb::dbWireType::ROUTED;);
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addTechVia(default_vias[bottom_layer]);
             segments_to_wires.push_back(seg);
