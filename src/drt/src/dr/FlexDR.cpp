@@ -1793,6 +1793,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   omp_set_num_threads(MAX_THREADS);
 
   increaseClipsize_ = false;
+  numWorkUnits_ = 0;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1842,7 +1843,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end(getDesign());
+          if(workersInBatch[i]->end(getDesign()))
+            numWorkUnits_ += 1;
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
         }
@@ -1871,6 +1873,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  debugPrint(logger_,
+        utl::DRT,
+        "workers",
+        1,
+        "Number of work units = {}.",
+        numWorkUnits_);
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,

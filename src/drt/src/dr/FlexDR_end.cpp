@@ -527,23 +527,23 @@ void FlexDRWorker::cleanup()
   specialAccessAPs.clear();
 }
 
-void FlexDRWorker::end(frDesign* design)
+bool FlexDRWorker::end(frDesign* design)
 {
   if (skipRouting_ == true) {
-    return;
+    return false;
   }
   // skip if current clip does not have input DRCs
   // ripupMode = 0 must have enableDRC = true in previous iteration
   if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
-    return;
+    return false;
     // do not write back if current clip is worse than input
   } else if (getRipupMode() == 0 && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
-    return;
+    return false;
   } else if (getDRIter() && getRipupMode() == 1
              && getBestNumMarkers() > 5 * getInitNumMarkers()) {
-    return;
+    return false;
   }
 
   set<frNet*, frBlockObjectComp> modNets;
@@ -555,5 +555,6 @@ void FlexDRWorker::end(frDesign* design)
                                  // status, then should always write back
   endRemoveMarkers(design);
   endAddMarkers(design);
+  return true;
   // release lock
 }
