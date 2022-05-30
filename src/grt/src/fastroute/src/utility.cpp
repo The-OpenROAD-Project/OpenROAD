@@ -699,7 +699,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   }
 }
 
-void FastRouteCore::newLayerAssignmentV4()
+void FastRouteCore::layerAssignmentV4()
 {
   int i, k, netID, edgeID, nodeID, routeLen;
   int n1, n2, connectionCNT, deg;
@@ -839,7 +839,7 @@ void FastRouteCore::newLayerAssignmentV4()
   }
 }
 
-void FastRouteCore::newLA()
+void FastRouteCore::layerAssignment()
 {
   int netID, d, k, edgeID, deg, numpoints, n1, n2;
   bool redundant;
@@ -914,7 +914,7 @@ void FastRouteCore::newLA()
     }
   }
 
-  newLayerAssignmentV4();
+  layerAssignmentV4();
 
   ConvertToFull3DType2();
 }

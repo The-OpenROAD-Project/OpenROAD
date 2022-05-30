@@ -1145,7 +1145,7 @@ NetRouteMap FastRouteCore::run()
 
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
-  newLA();
+  layerAssignment();
 
   costheight_ = 3;
   via_cost_ = 1;

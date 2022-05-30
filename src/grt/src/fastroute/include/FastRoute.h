@@ -424,7 +424,7 @@ class FastRouteCore
                          int& best_cost);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
-  void newLayerAssignmentV4();
+  void layerAssignmentV4();
   void netpinOrderInc();
   void checkRoute3D();
   void StNetOrder();
@@ -436,7 +436,7 @@ class FastRouteCore
   void printEdge3D(int netID, int edgeID);
   void printTree3D(int netID);
   void check2DEdgesUsage();
-  void newLA();
+  void layerAssignment();
   void copyBR(void);
   void copyRS(void);
   void freeRR(void);
