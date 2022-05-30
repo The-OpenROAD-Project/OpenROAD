@@ -1790,8 +1790,6 @@ void GlobalRouter::computeWirelength()
                   total_wirelength / block_->getDefUnits());
 }
 
-// This needs to be rewritten to shift down undeleted elements instead
-// of using erase.
 void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
 {
   if (!route.empty()) {
