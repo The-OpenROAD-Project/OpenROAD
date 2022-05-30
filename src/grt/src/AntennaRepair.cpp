@@ -34,15 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <iostream>
 #include <limits>
 #include <map>
-#include <set>
 #include <string>
-#include <utility>
 #include <vector>
+#include <unordered_set>
 
 #include "AntennaRepair.h"
 #include "Net.h"
@@ -83,14 +79,13 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
       odb::dbWireEncoder wire_encoder;
       wire_encoder.begin(wire);
 
-      std::vector<GSegment> segments_to_wires;
+      std::unordered_set<GSegment, GSegmentHash> wire_segments;
       for (GSegment& seg : route) {
         if (std::abs(seg.init_layer - seg.final_layer) > 1) {
           logger_->error(GRT, 68, "Global route segment not valid.");
         }
 
-        if (std::find(segments_to_wires.begin(), segments_to_wires.end(), seg)
-            == segments_to_wires.end()) {
+        if (wire_segments.find(seg) == wire_segments.end()) {
           int x1 = seg.init_x;
           int y1 = seg.init_y;
           int x2 = seg.final_x;
@@ -105,14 +100,14 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
               wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
               wire_encoder.addPoint(x2, y2);
-              segments_to_wires.push_back(seg);
+              wire_segments.insert(seg);
             }
           } else {  // Add via
             int bottom_layer = std::min(l1, l2);
             wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addTechVia(default_vias[bottom_layer]);
-            segments_to_wires.push_back(seg);
+            wire_segments.insert(seg);
           }
         }
       }
