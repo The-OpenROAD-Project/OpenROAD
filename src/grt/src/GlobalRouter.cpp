@@ -247,9 +247,9 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
 
   odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
 
-  int violations_cnt = -1;
+  bool violations = true;
   int itr = 0;
-  while (violations_cnt != 0 && itr < iterations) {
+  while (violations && itr < iterations) {
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
@@ -257,10 +257,11 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     // so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
-    violations_cnt = antenna_repair.checkAntennaViolations(
-        routes, max_routing_layer_, diode_mterm);
+    violations = antenna_repair.checkAntennaViolations(routes,
+                                                       max_routing_layer_,
+                                                       diode_mterm);
 
-    if (violations_cnt > 0) {
+    if (violations) {
       antenna_repair.deleteFillerCells();
 
       IncrementalGRoute incr_groute(this, block_);

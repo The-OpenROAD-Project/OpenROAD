@@ -64,9 +64,9 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
   block_ = db_->getChip()->getBlock();
 }
 
-int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-                                          int max_routing_layer,
-                                          odb::dbMTerm* diode_mterm)
+bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
+                                           int max_routing_layer,
+                                           odb::dbMTerm* diode_mterm)
 {
   odb::dbTech* tech = db_->getTech();
 
@@ -109,7 +109,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
             }
           } else {  // Add via
             int bottom_layer = std::min(l1, l2);
-            wire_encoder.newPath(layer, odb::dbWireType::ROUTED;);
+            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addTechVia(default_vias[bottom_layer]);
             segments_to_wires.push_back(seg);
@@ -135,7 +135,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   }
 
   logger_->info(GRT, 12, "Antenna violations: {}", antenna_violations_.size());
-  return antenna_violations_.size();
+  return !antenna_violations_.empty();
 }
 
 void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
