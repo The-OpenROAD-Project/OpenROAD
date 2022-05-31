@@ -158,6 +158,7 @@ class FlexDR
   std::vector<int> numViols_;
   std::unique_ptr<FlexDRGraphics> graphics_;
   std::string debugNetName_;
+  int numWorkUnits_;
 
   // distributed
   dst::Distributed* dist_;
@@ -453,7 +454,7 @@ class FlexDRWorker
   void distributedMain(frDesign* design, const char* globals_path);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
-  void end(frDesign* design);
+  bool end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
   void setLogger(Logger* logger) { logger_ = logger; }
