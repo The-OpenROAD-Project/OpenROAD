@@ -28,7 +28,6 @@
 
 #include "WorkerConnection.h"
 
-
 #include "Worker.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"

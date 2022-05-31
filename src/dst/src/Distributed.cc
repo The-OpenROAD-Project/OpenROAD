@@ -81,11 +81,10 @@ void Distributed::runWorker(const char* ip,
     auto uWorker = std::make_unique<Worker>(this, logger_, ip, port);
     auto worker = uWorker.get();
     workers_.push_back(std::move(uWorker));
-    if(interactive)
-    {
+    if (interactive) {
       boost::thread t(boost::bind(&Worker::run, worker));
       t.detach();
-    } else 
+    } else
       worker->run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
@@ -105,8 +104,7 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
   }
 }
 
-void Distributed::addWorkerAddress(const char* address,
-                                   unsigned short port)
+void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
   end_points_.push_back(EndPoint(address, port));
 }
@@ -138,7 +136,8 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
     return false;
   } else {
     auto bufs = receive_buffer.data();
-    std::string result(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + receive_buffer.size());
+    std::string result(asio::buffers_begin(bufs),
+                       asio::buffers_begin(bufs) + receive_buffer.size());
     dataStr = result;
     if (dataStr == "")
       return false;
@@ -189,13 +188,14 @@ bool Distributed::sendJob(JobMessage& msg,
   return false;
 }
 
-inline bool getNextMsg(std::string& haystack,const std::string& needle, std::string& result)
+inline bool getNextMsg(std::string& haystack,
+                       const std::string& needle,
+                       std::string& result)
 {
   std::size_t found = haystack.find(needle);
-  if (found!=std::string::npos)
-  {
-    result = haystack.substr(0, found+needle.size());
-    haystack.erase(0, found+needle.size());
+  if (found != std::string::npos) {
+    result = haystack.substr(0, found + needle.size());
+    haystack.erase(0, found + needle.size());
     return true;
   }
   return false;
@@ -233,11 +233,9 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
     if (!ok)
       continue;
     std::string split;
-    while(getNextMsg(resultStr, JobMessage::EOP, split))
-    {
+    while (getNextMsg(resultStr, JobMessage::EOP, split)) {
       JobMessage tmp;
-      if(!JobMessage::serializeMsg(JobMessage::READ, tmp, split))
-      {
+      if (!JobMessage::serializeMsg(JobMessage::READ, tmp, split)) {
         logger_->error(utl::DST, 9999, "Problem in deserialize {}", split);
       } else {
         result.addJobDescription(std::move(tmp.getJobDescriptionRef()));

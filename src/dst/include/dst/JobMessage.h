@@ -78,10 +78,7 @@ class JobMessage
   {
     desc_ = std::move(in);
   }
-  std::unique_ptr<JobDescription>& getJobDescriptionRef()
-  {
-    return desc_;
-  }
+  std::unique_ptr<JobDescription>& getJobDescriptionRef() { return desc_; }
   void addJobDescription(std::unique_ptr<JobDescription> in)
   {
     descs_.push_back(std::move(in));
@@ -91,10 +88,7 @@ class JobMessage
   {
     return descs_;
   }
-  void setJobType(JobType in)
-  {
-    job_type_ = in;
-  }
+  void setJobType(JobType in) { job_type_ = in; }
   JobDescription* getJobDescription() { return desc_.get(); }
   JobType getJobType() const { return job_type_; }
   MessageType getMessageType() const { return msg_type_; }
@@ -105,7 +99,8 @@ class JobMessage
   std::unique_ptr<JobDescription> desc_;
   std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
+  static constexpr const char* EOP
+      = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

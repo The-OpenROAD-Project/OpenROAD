@@ -27,9 +27,11 @@
  */
 
 #include "Worker.h"
-#include "utl/Logger.h"
+
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
+
+#include "utl/Logger.h"
 
 namespace ip = asio::ip;
 
@@ -54,7 +56,6 @@ Worker::Worker(Distributed* dist,
       logger_(logger)
 {
   start_accept();
-
 }
 
 Worker::~Worker()

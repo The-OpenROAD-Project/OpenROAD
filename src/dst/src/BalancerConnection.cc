@@ -30,18 +30,18 @@
 
 #include <dst/JobMessage.h>
 
-#include <boost/asio/post.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/thread/thread.hpp>
 #include <thread>
 
 #include "LoadBalancer.h"
-#include "utl/Logger.h"
-#include <boost/thread/thread.hpp>
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
+#include "utl/Logger.h"
 
 using namespace dst;
 
@@ -98,10 +98,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         if (workerAddress.is_unspecified()) {
           logger_->warn(utl::DST, 6, "No workers available");
           sock_.close();
-        }
-        else {
-          if(msg.getJobType() == JobMessage::BALANCER)
-          {
+        } else {
+          if (msg.getJobType() == JobMessage::BALANCER) {
             JobMessage reply(JobMessage::SUCCESS);
             auto uDesc = std::make_unique<BalancerJobDescription>();
             auto desc = uDesc.get();

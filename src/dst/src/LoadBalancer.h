@@ -72,7 +72,7 @@ class LoadBalancer
       return w1.priority > w2.priority;
     }
   };
-  
+
   Distributed* dist_;
   tcp::acceptor acceptor_;
   asio::io_service* service;

@@ -40,15 +40,15 @@ class BalancerJobDescription : public JobDescription
 {
  public:
   BalancerJobDescription() {}
-  void setWorkerIP(const std::string& ip) {worker_ip_ = ip;}
-  void setWorkerPort(unsigned short port) {worker_port_ = port;}
+  void setWorkerIP(const std::string& ip) { worker_ip_ = ip; }
+  void setWorkerPort(unsigned short port) { worker_port_ = port; }
   std::string getWorkerIP() const { return worker_ip_; }
   unsigned short getWorkerPort() const { return worker_port_; }
 
  private:
   std::string worker_ip_;
   unsigned short worker_port_;
-  
+
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -58,4 +58,4 @@ class BalancerJobDescription : public JobDescription
   }
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace dst
