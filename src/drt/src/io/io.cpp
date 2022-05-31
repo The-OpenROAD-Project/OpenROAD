@@ -1897,8 +1897,7 @@ void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
 {
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL
-      && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION
-      && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::MEOL)
+      && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
     masterSliceLayerName = string(layer->getName());
 }
 
