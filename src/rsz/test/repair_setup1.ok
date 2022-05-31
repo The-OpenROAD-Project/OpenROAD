@@ -47,7 +47,7 @@ Path Type: max
            -0.333   slack (VIOLATED)
 
 
-[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0040] Inserted 4 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -60,19 +60,19 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X2)
-   0.123    0.123 ^ r1/Q (DFF_X2)
-   0.004    0.128 ^ u1/A (BUF_X4)
-   0.028    0.155 ^ u1/Z (BUF_X4)
-   0.004    0.159 ^ u2/A (BUF_X8)
-   0.021    0.180 ^ u2/Z (BUF_X8)
-   0.004    0.184 ^ u3/A (BUF_X8)
-   0.020    0.204 ^ u3/Z (BUF_X8)
-   0.004    0.207 ^ u4/A (BUF_X8)
-   0.021    0.228 ^ u4/Z (BUF_X8)
-   0.005    0.234 ^ u5/A (BUF_X16)
-   0.022    0.255 ^ u5/Z (BUF_X16)
-   0.038    0.294 ^ r2/D (DFF_X1)
-            0.294   data arrival time
+   0.122    0.122 ^ r1/Q (DFF_X2)
+   0.004    0.126 ^ u1/A (BUF_X4)
+   0.027    0.153 ^ u1/Z (BUF_X4)
+   0.004    0.157 ^ u2/A (BUF_X8)
+   0.021    0.178 ^ u2/Z (BUF_X8)
+   0.004    0.182 ^ u3/A (BUF_X8)
+   0.020    0.202 ^ u3/Z (BUF_X8)
+   0.004    0.205 ^ u4/A (BUF_X8)
+   0.021    0.226 ^ u4/Z (BUF_X8)
+   0.005    0.232 ^ u5/A (BUF_X16)
+   0.022    0.254 ^ u5/Z (BUF_X16)
+   0.038    0.292 ^ r2/D (DFF_X1)
+            0.292   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -82,8 +82,8 @@ Path Type: max
             0.258   data required time
 -----------------------------------------------------------
             0.258   data required time
-           -0.294   data arrival time
+           -0.292   data arrival time
 -----------------------------------------------------------
-           -0.035   slack (VIOLATED)
+           -0.033   slack (VIOLATED)
 
 

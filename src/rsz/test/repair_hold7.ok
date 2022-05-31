@@ -12,7 +12,7 @@
 [INFO ODB-0134] Finished DEF file: gcd_nangate45_placed.def
 Design area 670 u^2 10% utilization.
 worst slack 0.15
-worst slack 1.33
+worst slack 1.34
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
 [INFO RSZ-0032] Inserted 163 hold buffers.

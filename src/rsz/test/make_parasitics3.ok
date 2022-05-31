@@ -20,13 +20,13 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
    0.00    0.00 ^ clk (in)
-   0.02    0.02 ^ c2/Z (BUF_X1)
-   0.00    0.02 ^ r2/CK (DFF_X1)
-   0.12    0.14 ^ r2/Q (DFF_X1)
-   0.13    0.27 ^ u1/Z (BUF_X1)
-   0.15    0.42 ^ u2/ZN (AND2_X1)
-   0.01    0.44 ^ r3/D (DFF_X1)
-           0.44   data arrival time
+   0.03    0.03 ^ c2/Z (BUF_X1)
+   0.00    0.03 ^ r2/CK (DFF_X1)
+   0.12    0.15 ^ r2/Q (DFF_X1)
+   0.13    0.28 ^ u1/Z (BUF_X1)
+   0.15    0.43 ^ u2/ZN (AND2_X1)
+   0.01    0.45 ^ r3/D (DFF_X1)
+           0.45   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock source latency
@@ -38,8 +38,8 @@ Path Type: max
           10.01   data required time
 ---------------------------------------------------------
           10.01   data required time
-          -0.44   data arrival time
+          -0.45   data arrival time
 ---------------------------------------------------------
-           9.57   slack (MET)
+           9.56   slack (MET)
 
 

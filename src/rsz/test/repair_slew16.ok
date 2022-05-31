@@ -30,7 +30,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                 60.73   31.45   29.28 (MET)
+drvr/Q                                 60.73   31.29   29.44 (MET)
 
 [INFO RSZ-0039] Resized 1 instances.
 max slew

@@ -17,7 +17,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-load9/D                                 0.00    0.04   -0.04 (VIOLATED)
+load5/D                                 0.00    0.04   -0.04 (VIOLATED)
 
 max fanout
 
@@ -29,5 +29,5 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                  0.00   15.00  -15.00 (VIOLATED)
+drvr/Q                                  0.00   14.79  -14.79 (VIOLATED)
 
