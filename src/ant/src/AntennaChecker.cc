@@ -71,6 +71,14 @@ using utl::ANT;
 
 using std::unordered_set;
 
+// Abbreviations Index:
+//   `PAR`: Partial Area Ratio
+//   `CAR`: Cumulative Area Ratio
+//   `Area`: Gate Area
+//   `S. Area`: Side Diffusion Area
+//   `C. Area`: Cumulative Gate Area
+//   `C. S. Area`: Cumulative Side (Diffusion) Area
+
 struct PARinfo
 {
   // std::pair<odb::dbWireGraph::Node*, std::vector<odb::dbWireGraph::Node*>>
