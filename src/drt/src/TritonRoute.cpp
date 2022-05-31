@@ -180,7 +180,8 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-std::string TritonRoute::runDRWorker(const std::string& workerStr, FlexDRViaData* viaData)
+std::string TritonRoute::runDRWorker(const std::string& workerStr,
+                                     FlexDRViaData* viaData)
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
@@ -203,16 +204,17 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
 {
   bool on = debug_->debugDR;
   FlexDRViaData viaData;
-  std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir), std::ios::binary);
+  std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir),
+                            std::ios::binary);
   frIArchive ar(viaDataFile);
   ar >> viaData;
-  
 
   std::unique_ptr<FlexDRGraphics> graphics_
       = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
-  std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir), std::ios::binary);
+  std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir),
+                           std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
                         std::istreambuf_iterator<char>());
   workerFile.close();
@@ -666,7 +668,8 @@ static void serializeUpdatesBatch(const std::vector<drUpdate>& batch,
   file.close();
 }
 
-void TritonRoute::sendGlobalsUpdates(const std::string& globals_path, const std::string& serializedViaData)
+void TritonRoute::sendGlobalsUpdates(const std::string& globals_path,
+                                     const std::string& serializedViaData)
 {
   if (!distributed_)
     return;
@@ -744,15 +747,16 @@ int TritonRoute::main()
     if (distributed_ || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
-      if(distributed_)
-        asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));      
+      if (distributed_)
+        asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
     }
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
         fmt::format("{}/design.db", debug_->dumpDir).c_str());
     std::ifstream src(GUIDE_FILE, std::ios::binary);
-    std::ofstream dst(fmt::format("{}/guide.in", debug_->dumpDir).c_str(), std::ios::binary);
+    std::ofstream dst(fmt::format("{}/guide.in", debug_->dumpDir).c_str(),
+                      std::ios::binary);
     dst << src.rdbuf();
     dst.close();
   }
@@ -981,22 +985,18 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
       marker->getBBox(bbox);
       if (worker != nullptr && !worker->getDrcBox().intersects(bbox))
         continue;
+      auto tech = getDesign()->getTech();
+      auto layer = tech->getLayer(marker->getLayerNum());
+      auto layerType = layer->getType();
+      
       auto con = marker->getConstraint();
       drcRpt << "  violation type: ";
       if (con) {
         switch (con->typeId()) {
           case frConstraintTypeEnum::frcShortConstraint: {
-            if (getDesign()
-                    ->getTech()
-                    ->getLayer(marker->getLayerNum())
-                    ->getType()
-                == dbTechLayerType::ROUTING) {
+            if (layerType == dbTechLayerType::ROUTING) {
               drcRpt << "Short";
-            } else if (getDesign()
-                           ->getTech()
-                           ->getLayer(marker->getLayerNum())
-                           ->getType()
-                       == dbTechLayerType::CUT) {
+            } else if (layerType == dbTechLayerType::CUT) {
               drcRpt << "CShort";
             }
             break;
@@ -1184,21 +1184,11 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
       drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
              << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
              << bbox.yMax() / dbu << " ) on Layer ";
-      if (getDesign()->getTech()->getLayer(marker->getLayerNum())->getType()
-              == dbTechLayerType::CUT
-          && marker->getLayerNum() - 1
-                 >= getDesign()->getTech()->getBottomLayerNum()) {
-        drcRpt << getDesign()
-                      ->getTech()
-                      ->getLayer(marker->getLayerNum() - 1)
-                      ->getName()
-               << "\n";
+      if (layerType == dbTechLayerType::CUT
+          && marker->getLayerNum() - 1 >= tech->getBottomLayerNum()) {
+        drcRpt << tech->getLayer(marker->getLayerNum() - 1)->getName() << "\n";
       } else {
-        drcRpt << getDesign()
-                      ->getTech()
-                      ->getLayer(marker->getLayerNum())
-                      ->getName()
-               << "\n";
+        drcRpt << layer->getName() << "\n";
       }
     }
   } else {
