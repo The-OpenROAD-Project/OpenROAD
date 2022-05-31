@@ -77,6 +77,7 @@ class frLayer
         lef58MinStepConstraints(),
         minWidthConstraint(nullptr),
         minimumcutConstraints(),
+        lef58MinimumcutConstraints(),
         lef58RectOnlyConstraint(nullptr),
         lef58RightWayOnGridOnlyConstraint(nullptr),
         lef58CutSpacingTableSameNetMetalConstraint(nullptr),
@@ -117,6 +118,7 @@ class frLayer
         lef58MinStepConstraints(),
         minWidthConstraint(nullptr),
         minimumcutConstraints(),
+        lef58MinimumcutConstraints(),
         lef58RectOnlyConstraint(nullptr),
         lef58RightWayOnGridOnlyConstraint(nullptr)
   {
@@ -538,6 +540,20 @@ class frLayer
   }
   bool hasMinimumcut() const { return (!minimumcutConstraints.empty()); }
 
+  void addLef58MinimumcutConstraint(frLef58MinimumcutConstraint* in)
+  {
+    lef58MinimumcutConstraints.push_back(in);
+  }
+  const std::vector<frLef58MinimumcutConstraint*>&
+  getLef58MinimumcutConstraints() const
+  {
+    return lef58MinimumcutConstraints;
+  }
+  bool hasLef58Minimumcut() const
+  {
+    return (!lef58MinimumcutConstraints.empty());
+  }
+
   void addMinEnclosedAreaConstraint(frMinEnclosedAreaConstraint* in)
   {
     minEnclosedAreaConstraints.push_back(in);
@@ -663,7 +679,10 @@ class frLayer
     drEolCon.eolWithin = within;
   }
 
-  const drEolSpacingConstraint& getDrEolSpacingConstraint() const { return drEolCon; }
+  const drEolSpacingConstraint& getDrEolSpacingConstraint() const
+  {
+    return drEolCon;
+  }
 
   void printAllConstraints(utl::Logger* logger);
 
@@ -717,6 +736,7 @@ class frLayer
   std::vector<frLef58EolExtensionConstraint*> lef58EolExtConstraints;
   frMinWidthConstraint* minWidthConstraint;
   std::vector<frMinimumcutConstraint*> minimumcutConstraints;
+  std::vector<frLef58MinimumcutConstraint*> lef58MinimumcutConstraints;
   frLef58RectOnlyConstraint* lef58RectOnlyConstraint;
   frLef58RightWayOnGridOnlyConstraint* lef58RightWayOnGridOnlyConstraint;
 

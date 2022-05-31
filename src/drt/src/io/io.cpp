@@ -856,16 +856,17 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
     }
   }
   auto db_path_segs = db_ap->getSegments();
-  for(const auto& [db_rect, begin_style_trunc, end_style_trunc] : db_path_segs) {
+  for (const auto& [db_rect, begin_style_trunc, end_style_trunc] :
+       db_path_segs) {
     frPathSeg path_seg;
     path_seg.setPoints_safe(db_rect.ll(), db_rect.ur());
-    if(begin_style_trunc == true){
+    if (begin_style_trunc == true) {
       path_seg.setBeginStyle(frcTruncateEndStyle);
     }
-    if(end_style_trunc == true){
+    if (end_style_trunc == true) {
       path_seg.setEndStyle(frcTruncateEndStyle);
     }
-    
+
     ap->addPathSeg(path_seg);
   }
 }
@@ -1796,6 +1797,37 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       rptr->setLength(length, distance);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
+  }
+  for (auto rule : layer->getTechLayerMinCutRules()) {
+    if (rule->isAreaValid()) {
+      logger->warn(
+          DRT,
+          309,
+          "LEF58_MINIMUMCUT AREA is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isSameMetalOverlap()) {
+      logger->warn(DRT,
+                   310,
+                   "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
+                   "Skipping for layer {}",
+                   layer->getName());
+      continue;
+    }
+    if (rule->isFullyEnclosed()) {
+      logger->warn(DRT,
+                   311,
+                   "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
+                   "for layer {}",
+                   layer->getName());
+      continue;
+    }
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58MinimumcutConstraint>(rule);
+    auto rptr = static_cast<frLef58MinimumcutConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58MinimumcutConstraint(rptr);
   }
 
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
@@ -2928,7 +2960,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     ++numCuts;
   }
   auto path_segs = ap->getPathSegs();
-  for(const auto& path_seg : path_segs) {
+  for (const auto& path_seg : path_segs) {
     Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
     bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
     bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);

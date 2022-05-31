@@ -43,6 +43,7 @@ using namespace fr;
 void FlexRP::prep()
 {
   ProfileTask profile("RP:prep");
+  convertLef58MinCutConstraints();
   prep_via2viaForbiddenLen();
   prep_viaForbiddenTurnLen();
   prep_viaForbiddenPlanarLen();
@@ -55,6 +56,63 @@ void FlexRP::prep()
     prep_viaForbiddenTurnLen(ndr.get());
   }
   prep_minStepViasCheck();
+}
+
+void FlexRP::convertLef58MinCutConstraints()
+{
+  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    frLayer* layer = tech_->getLayer(lNum);
+    if (layer->getType() != dbTechLayerType::ROUTING)
+      continue;
+    if (!layer->hasLef58Minimumcut())
+      continue;
+    for (auto con : layer->getLef58MinimumcutConstraints()) {
+      auto dbRule = con->getODBRule();
+      unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
+      auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+      if (dbRule->isPerCutClass()) {
+        frViaDef* viaDefBelow = nullptr;
+        if (lNum > bottomLayerNum)
+          viaDefBelow = tech_->getLayer(lNum - 1)->getDefaultViaDef();
+        frViaDef* viaDefAbove = nullptr;
+        if (lNum < topLayerNum)
+          viaDefAbove = tech_->getLayer(lNum + 1)->getDefaultViaDef();
+        bool found = false;
+        rptr->setNumCuts(dbRule->getNumCuts());
+        for (auto [cutclass, numcuts] : dbRule->getCutClassCutsMap()) {
+          if (viaDefBelow && !dbRule->isFromAbove()
+              && viaDefBelow->getCutClass()->getName() == cutclass) {
+            found = true;
+            rptr->setNumCuts(numcuts);
+            break;
+          }
+          if (viaDefAbove && !dbRule->isFromBelow()
+              && viaDefAbove->getCutClass()->getName() == cutclass) {
+            found = true;
+
+            rptr->setNumCuts(numcuts);
+            break;
+          }
+        }
+        if (!found)
+          continue;
+      }
+
+      if (dbRule->isLengthValid())
+        rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
+      rptr->setWidth(dbRule->getWidth());
+      if (dbRule->isWithinCutDistValid())
+        rptr->setWithin(dbRule->getWithinCutDist());
+      if (dbRule->isFromAbove())
+        rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
+      if (dbRule->isFromBelow())
+        rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
+      tech_->addUConstraint(std::move(uCon));
+      layer->addMinimumcutConstraint(rptr);
+    }
+  }
 }
 
 void FlexRP::prep_minStepViasCheck()
@@ -324,7 +382,8 @@ void FlexRP::prep_cutSpcTbl()
       Rect tmpBx;
       via.getCutBBox(tmpBx);
       frString cutClass1 = "";
-      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
+      auto cutClassIdx1
+          = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
       if (cutClassIdx1 >= 0)
         cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
       if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
@@ -421,11 +480,10 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
   tech_->line2LineForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
-void FlexRP::prep_lineForbiddenLen_minSpc(
-    const frLayerNum& lNum,
-    const bool isZShape,
-    const bool isCurrDirX,
-    ForbiddenRanges& forbiddenRanges)
+void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum& lNum,
+                                          const bool isZShape,
+                                          const bool isCurrDirX,
+                                          ForbiddenRanges& forbiddenRanges)
 {
   frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
 
@@ -592,12 +650,11 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
-void FlexRP::prep_viaForbiddenTurnLen_minSpc(
-    const frLayerNum& lNum,
-    frViaDef* viaDef,
-    bool isCurrDirX,
-    ForbiddenRanges& forbiddenRanges,
-    frNonDefaultRule* ndr)
+void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
+                                             frViaDef* viaDef,
+                                             bool isCurrDirX,
+                                             ForbiddenRanges& forbiddenRanges,
+                                             frNonDefaultRule* ndr)
 {
   if (!viaDef) {
     return;
@@ -734,85 +791,83 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
   }
 }
 
-bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum) {
-    gtl::rectangle_data<frCoord> rect1(
-        r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax());
-    gtl::rectangle_data<frCoord> rect2(r2.xMin(),
-                                             r2.yMin(),
-                                             r2.xMax(),
-                                             r2.yMax());
+bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
+{
+  gtl::rectangle_data<frCoord> rect1(
+      r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax());
+  gtl::rectangle_data<frCoord> rect2(
+      r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax());
 
-    // joining the two via rects in one polygon
-    gtl::polygon_90_set_data<frCoord> set;
-    using namespace boost::polygon::operators;
-    set += rect1;
-    set += rect2;
-    std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
-    set.get_polygons(polys);
-    if (polys.size() != 1)
-      return false;
+  // joining the two via rects in one polygon
+  gtl::polygon_90_set_data<frCoord> set;
+  using namespace boost::polygon::operators;
+  set += rect1;
+  set += rect2;
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+  set.get_polygons(polys);
+  if (polys.size() != 1)
+    return false;
 
-    gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-    unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
-    gcNet* testNet = uTestNet.get();
-    unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
-    gcPin* testPin = uTestPin.get();
-    testPin->setNet(testNet);
+  gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
+  unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
+  gcNet* testNet = uTestNet.get();
+  unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
+  gcPin* testPin = uTestPin.get();
+  testPin->setNet(testNet);
 
-    bool first = true;
-    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
-    gtl::point_data<frCoord> prev;
-    for (gtl::point_data<frCoord> cur : poly) {
-      if (first) {
-        prev = cur;
-        first = false;
-      } else {
-        auto edge = make_unique<gcSegment>();
-        edge->setLayerNum(lNum);
-        edge->addToPin(testPin);
-        edge->addToNet(testNet);
-        edge->setSegment(prev, cur);
-        if (!tmpEdges.empty()) {
-          edge->setPrevEdge(tmpEdges.back().get());
-          tmpEdges.back()->setNextEdge(edge.get());
-        }
-        tmpEdges.push_back(std::move(edge));
-        prev = cur;
+  bool first = true;
+  std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+  gtl::point_data<frCoord> prev;
+  for (gtl::point_data<frCoord> cur : poly) {
+    if (first) {
+      prev = cur;
+      first = false;
+    } else {
+      auto edge = make_unique<gcSegment>();
+      edge->setLayerNum(lNum);
+      edge->addToPin(testPin);
+      edge->addToNet(testNet);
+      edge->setSegment(prev, cur);
+      if (!tmpEdges.empty()) {
+        edge->setPrevEdge(tmpEdges.back().get());
+        tmpEdges.back()->setNextEdge(edge.get());
       }
+      tmpEdges.push_back(std::move(edge));
+      prev = cur;
     }
-    // last edge
-    auto edge = make_unique<gcSegment>();
-    edge->setLayerNum(lNum);
-    edge->addToPin(testPin);
-    edge->addToNet(testNet);
-    edge->setSegment(prev, *poly.begin());
-    edge->setPrevEdge(tmpEdges.back().get());
-    tmpEdges.back()->setNextEdge(edge.get());
-    // set first edge
-    tmpEdges.front()->setPrevEdge(edge.get());
-    edge->setNextEdge(tmpEdges.front().get());
-    tmpEdges.push_back(std::move(edge));
-    // add to polygon edges
-    testPin->addPolygonEdges(tmpEdges);
-    // check gc minstep violations
-    FlexGCWorker worker(tech_, logger_);
-    worker.checkMinStep(testPin);
-    return !worker.getMarkers().empty();
+  }
+  // last edge
+  auto edge = make_unique<gcSegment>();
+  edge->setLayerNum(lNum);
+  edge->addToPin(testPin);
+  edge->addToNet(testNet);
+  edge->setSegment(prev, *poly.begin());
+  edge->setPrevEdge(tmpEdges.back().get());
+  tmpEdges.back()->setNextEdge(edge.get());
+  // set first edge
+  tmpEdges.front()->setPrevEdge(edge.get());
+  edge->setNextEdge(tmpEdges.front().get());
+  tmpEdges.push_back(std::move(edge));
+  // add to polygon edges
+  testPin->addPolygonEdges(tmpEdges);
+  // check gc minstep violations
+  FlexGCWorker worker(tech_, logger_);
+  worker.checkMinStep(testPin);
+  return !worker.getMarkers().empty();
 }
 
-void FlexRP::prep_via2viaForbiddenLen_minStep(
-    const frLayerNum& lNum,
-    frViaDef* viaDef1,
-    frViaDef* viaDef2,
-    bool isVertical,
-    ForbiddenRanges& forbiddenRanges)
+void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
+                                              frViaDef* viaDef1,
+                                              frViaDef* viaDef2,
+                                              bool isVertical,
+                                              ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
   }
   frMinStepConstraint* con = tech_->getLayer(lNum)->getMinStepConstraint();
   if (!con)
-      return;
+    return;
   if (viaDef1->getLayer1Num() == viaDef2->getLayer1Num()) {
     return;
   }
@@ -826,126 +881,130 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
     via1.getLayer2BBox(enclosureBox1);
     via2.getLayer1BBox(enclosureBox2);
   }
-  Rect* shifting, *other;
-  //get the rect with lesser width (the shifting one)
+  Rect *shifting, *other;
+  // get the rect with lesser width (the shifting one)
   if (isVertical) {
-      if (enclosureBox1.dx() < enclosureBox2.dx()) {
-          shifting = &enclosureBox1;
-          other = &enclosureBox2;
-      } else if (enclosureBox2.dx() < enclosureBox1.dx()) {
-          shifting = &enclosureBox2;
-          other = &enclosureBox1;
-      } else return;
+    if (enclosureBox1.dx() < enclosureBox2.dx()) {
+      shifting = &enclosureBox1;
+      other = &enclosureBox2;
+    } else if (enclosureBox2.dx() < enclosureBox1.dx()) {
+      shifting = &enclosureBox2;
+      other = &enclosureBox1;
+    } else
+      return;
   } else {
-      if (enclosureBox1.dy() < enclosureBox2.dy()) {
-          shifting = &enclosureBox1;
-          other = &enclosureBox2;
-      } else if (enclosureBox2.dy() < enclosureBox1.dy()) {
-          shifting = &enclosureBox2;
-          other = &enclosureBox1;
-      } else return;
+    if (enclosureBox1.dy() < enclosureBox2.dy()) {
+      shifting = &enclosureBox1;
+      other = &enclosureBox2;
+    } else if (enclosureBox2.dy() < enclosureBox1.dy()) {
+      shifting = &enclosureBox2;
+      other = &enclosureBox1;
+    } else
+      return;
   }
-  //example where shifting is vertical and other is horizontal
-  //     shiftingHigh
-  //     _____
-  //    |     | <-shiftingEdge (the vertical one)
-  //  __|     |__ otherEdge (the horizontal one)
-  // |           |  
-  // |__       __|  
-  //    |     |
-  //    |_____|
-  //    shiftingLow
+  // example where shifting is vertical and other is horizontal
+  //      shiftingHigh
+  //      _____
+  //     |     | <-shiftingEdge (the vertical one)
+  //   __|     |__ otherEdge (the horizontal one)
+  //  |           |
+  //  |__       __|
+  //     |     |
+  //     |_____|
+  //     shiftingLow
   int shiftingEdge, otherEdge, shiftingLow, otherLow, otherHigh, minRange = 0;
   if (other->contains(*shifting)) {
-      if (isVertical) {
-        minRange = other->yMax() - shifting->yMax() + 1;
-        shifting->moveDelta(0, minRange);
-      } else {
-        minRange = other->xMax() - shifting->xMax() + 1;
-        shifting->moveDelta(minRange, 0);
-      }
+    if (isVertical) {
+      minRange = other->yMax() - shifting->yMax() + 1;
+      shifting->moveDelta(0, minRange);
+    } else {
+      minRange = other->xMax() - shifting->xMax() + 1;
+      shifting->moveDelta(minRange, 0);
+    }
   }
   if (isVertical) {
-      shiftingEdge = shifting->yMax() - other->yMax();
-      otherEdge = other->xMax() - shifting->xMax();
-      shiftingLow = shifting->yMin();
-      otherLow = other->yMin();
-      otherHigh = other->yMax();
+    shiftingEdge = shifting->yMax() - other->yMax();
+    otherEdge = other->xMax() - shifting->xMax();
+    shiftingLow = shifting->yMin();
+    otherLow = other->yMin();
+    otherHigh = other->yMax();
   } else {
-      shiftingEdge = shifting->xMax() - other->xMax();
-      otherEdge = other->yMax() - shifting->yMax();
-      shiftingLow = shifting->xMin();
-      otherLow = other->xMin();
-      otherHigh = other->xMax();
+    shiftingEdge = shifting->xMax() - other->xMax();
+    otherEdge = other->yMax() - shifting->yMax();
+    shiftingLow = shifting->xMin();
+    otherLow = other->xMin();
+    otherHigh = other->xMax();
   }
   int shift;
   if (hasMinStepViol(*shifting, *other, lNum)) {
-      if (shiftingEdge < con->getMinStepLength()) {
-          shift = con->getMinStepLength() - shiftingEdge - 1;
-          if (shiftingLow < otherLow)
-              shift = std::max(shift, otherLow - shiftingLow - 1);
-          if (isVertical)
-              shifting->moveDelta(0, shift+1);
-          else shifting->moveDelta(shift+1, 0);
-          if (hasMinStepViol(*shifting, *other, lNum))
-              shift = otherHigh - shiftingLow;
-      } else {
-          assert(otherEdge < con->getMinStepLength());
-          shift = otherHigh - shiftingLow;
-      }
+    if (shiftingEdge < con->getMinStepLength()) {
+      shift = con->getMinStepLength() - shiftingEdge - 1;
+      if (shiftingLow < otherLow)
+        shift = std::max(shift, otherLow - shiftingLow - 1);
+      if (isVertical)
+        shifting->moveDelta(0, shift + 1);
+      else
+        shifting->moveDelta(shift + 1, 0);
+      if (hasMinStepViol(*shifting, *other, lNum))
+        shift = otherHigh - shiftingLow;
+    } else {
+      assert(otherEdge < con->getMinStepLength());
+      shift = otherHigh - shiftingLow;
+    }
   } else {
-      if (shiftingEdge < con->getMinStepLength()) {
-          if (con->getMaxLength() > 0) {
-              int div = 2; 
-              int length = shiftingEdge;
-              int topEdge_shifting = isVertical ? shifting->dx() : shifting->dy();
-              int topEdge_other = isVertical ? other->dy() : other->dx();
-              if (topEdge_shifting < con->getMinStepLength()) {
-                  length += topEdge_shifting + shiftingEdge;
-                  if (otherEdge < con->getMinStepLength()) {
-                    length += 2*otherEdge;
-                    if (topEdge_other < con->getMinStepLength())
-                        return;
-                  }
-              } else if (otherEdge < con->getMinStepLength()) {
-                  length += otherEdge;
-                  div = 1;
-                  if (topEdge_other < con->getMinStepLength())
-                      length += topEdge_other +otherEdge + shiftingEdge;
-              }
-              shift = (con->getMaxLength() - length)/div + 1;
-              if (shift < 0)
-                  return;
-              if (isVertical)
-                  shifting->moveDelta(0, shift);
-              else
-                  shifting->moveDelta(shift, 0);
-              if (hasMinStepViol(*shifting, *other, lNum)) {
-                  minRange = shift;
-                  shift = otherHigh - shiftingLow;
-              } else return;
-          } else return;
-      } else {
-            minRange = otherLow - shiftingLow - con->getMinStepLength() + 1;
-            if (isVertical)
-                  shifting->moveDelta(0, minRange);
-            else
-                shifting->moveDelta(minRange, 0);
-            if (hasMinStepViol(*shifting, *other, lNum)) {
-                shift = con->getMinStepLength()-2;
-                if (isVertical)
-                  shifting->moveDelta(0, shift+1);
-                else
-                  shifting->moveDelta(shift+1, 0);
-              if (hasMinStepViol(*shifting, *other, lNum))
-                  shift = otherHigh - shiftingLow;
-            } else return;
-      }
+    if (shiftingEdge < con->getMinStepLength()) {
+      if (con->getMaxLength() > 0) {
+        int div = 2;
+        int length = shiftingEdge;
+        int topEdge_shifting = isVertical ? shifting->dx() : shifting->dy();
+        int topEdge_other = isVertical ? other->dy() : other->dx();
+        if (topEdge_shifting < con->getMinStepLength()) {
+          length += topEdge_shifting + shiftingEdge;
+          if (otherEdge < con->getMinStepLength()) {
+            length += 2 * otherEdge;
+            if (topEdge_other < con->getMinStepLength())
+              return;
+          }
+        } else if (otherEdge < con->getMinStepLength()) {
+          length += otherEdge;
+          div = 1;
+          if (topEdge_other < con->getMinStepLength())
+            length += topEdge_other + otherEdge + shiftingEdge;
+        }
+        shift = (con->getMaxLength() - length) / div + 1;
+        if (shift < 0)
+          return;
+        if (isVertical)
+          shifting->moveDelta(0, shift);
+        else
+          shifting->moveDelta(shift, 0);
+        if (hasMinStepViol(*shifting, *other, lNum)) {
+          minRange = shift;
+          shift = otherHigh - shiftingLow;
+        } else
+          return;
+      } else
+        return;
+    } else {
+      minRange = otherLow - shiftingLow - con->getMinStepLength() + 1;
+      if (isVertical)
+        shifting->moveDelta(0, minRange);
+      else
+        shifting->moveDelta(minRange, 0);
+      if (hasMinStepViol(*shifting, *other, lNum)) {
+        shift = con->getMinStepLength() - 2;
+        if (isVertical)
+          shifting->moveDelta(0, shift + 1);
+        else
+          shifting->moveDelta(shift + 1, 0);
+        if (hasMinStepViol(*shifting, *other, lNum))
+          shift = otherHigh - shiftingLow;
+      } else
+        return;
+    }
   }
-  forbiddenRanges.push_back(make_pair(minRange-1, minRange+shift+1));
+  forbiddenRanges.push_back(make_pair(minRange - 1, minRange + shift + 1));
 }
-
-
 
 // only partial support of GF14
 void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
@@ -1100,8 +1159,10 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
-  auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.minDXDY(), cutBox1.maxDXDY());
-  auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
+  auto cutClassIdx1
+      = layer1->getCutClassIdx(cutBox1.minDXDY(), cutBox1.maxDXDY());
+  auto cutClassIdx2
+      = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
   frString cutClass1, cutClass2;
   if (cutClassIdx1 != -1)
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
@@ -1110,15 +1171,15 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
-    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
-              > (cutBox1.yMax() - cutBox1.yMin());
-    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
-              > (cutBox2.yMax() - cutBox2.yMin());
+    isSide1
+        = (cutBox1.xMax() - cutBox1.xMin()) > (cutBox1.yMax() - cutBox1.yMin());
+    isSide2
+        = (cutBox2.xMax() - cutBox2.xMin()) > (cutBox2.yMax() - cutBox2.yMin());
   } else {
-    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
-              < (cutBox1.yMax() - cutBox1.yMin());
-    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
-              < (cutBox2.yMax() - cutBox2.yMin());
+    isSide1
+        = (cutBox1.xMax() - cutBox1.xMin()) < (cutBox1.yMax() - cutBox1.yMin());
+    isSide2
+        = (cutBox2.xMax() - cutBox2.xMin()) < (cutBox2.yMax() - cutBox2.yMin());
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
@@ -1350,12 +1411,11 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
   }
 }
 
-void FlexRP::prep_via2viaForbiddenLen_cutSpc(
-    const frLayerNum& lNum,
-    frViaDef* viaDef1,
-    frViaDef* viaDef2,
-    bool isCurrDirX,
-    ForbiddenRanges& forbiddenRanges)
+void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
+                                             frViaDef* viaDef1,
+                                             frViaDef* viaDef2,
+                                             bool isCurrDirX,
+                                             ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -1503,13 +1563,12 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(
   }
 }
 
-void FlexRP::prep_via2viaForbiddenLen_minSpc(
-    frLayerNum lNum,
-    frViaDef* viaDef1,
-    frViaDef* viaDef2,
-    bool isCurrDirX,
-    ForbiddenRanges& forbiddenRanges,
-    frNonDefaultRule* ndr)
+void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
+                                             frViaDef* viaDef1,
+                                             frViaDef* viaDef2,
+                                             bool isCurrDirX,
+                                             ForbiddenRanges& forbiddenRanges,
+                                             frNonDefaultRule* ndr)
 {
   if (!viaDef1 || !viaDef2) {
     return;

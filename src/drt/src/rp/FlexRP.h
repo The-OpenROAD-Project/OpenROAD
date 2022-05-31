@@ -62,6 +62,7 @@ class FlexRP
   void end();
 
   // functions
+  void convertLef58MinCutConstraints();
   void prep_viaForbiddenThrough();
   void prep_minStepViasCheck();
   bool hasMinStepViolation(frMinStepConstraint* minStepCons,

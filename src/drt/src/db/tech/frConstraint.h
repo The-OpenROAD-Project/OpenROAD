@@ -536,6 +536,29 @@ class frMinimumcutConstraint : public frConstraint
   friend class boost::serialization::access;
 };
 
+// LEF58_MINIMUMCUT
+class frLef58MinimumcutConstraint : public frConstraint
+{
+ public:
+  frLef58MinimumcutConstraint(odb::dbTechLayerMinCutRule* rule) : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerMinCutRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58MinimumCutConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_MINIMUMCUT");
+  }
+
+ private:
+  odb::dbTechLayerMinCutRule* db_rule_;
+};
+
 // minArea
 
 class frAreaConstraint : public frConstraint
