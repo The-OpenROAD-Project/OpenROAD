@@ -33,8 +33,8 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QDateTime>
+#include <QDebug>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
@@ -49,12 +49,15 @@
 #include <QScrollBar>
 #include <QSizePolicy>
 #include <QStaticText>
+#include <QTextOption>
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
 #include <deque>
 #include <iostream>
+#include <ostream>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "db.h"
@@ -62,11 +65,10 @@
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
-#include "search.h"
-#include "scriptWidget.h"
-#include "utl/Logger.h"
-
 #include "ruler.h"
+#include "scriptWidget.h"
+#include "search.h"
+#include "utl/Logger.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -224,9 +226,16 @@ class GuiPainter : public Painter
     painter_->drawLine(x - o, y + o, x + o, y - o);
   }
 
-  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false)
+  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false, QRect *bounding_rect = nullptr)
   {
-    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
+    
+    QRect text_bbox;
+    if (bounding_rect) {
+      text_bbox = *bounding_rect;
+    } else {
+      text_bbox = painter_->fontMetrics().boundingRect(text);
+    }
+    
     const QPoint text_bbox_center = text_bbox.center();
 
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
@@ -300,10 +309,11 @@ class GuiPainter : public Painter
   virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
-    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text, &text_bbox);
+
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
-    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const int xMin = origin.x() - text_bbox.left() * scale_adjust;
     const int yMin = origin.y() - text_bbox.bottom() * scale_adjust;
     const int xMax = xMin + text_bbox.width() * scale_adjust;
@@ -434,6 +444,7 @@ LayoutViewer::LayoutViewer(
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     std::function<bool(void)> usingDBU,
+    std::function<bool(void)> showFps,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -450,6 +461,7 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       usingDBU_(usingDBU),
+      showFps_(showFps),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
@@ -1746,6 +1758,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
 
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
+  painter->setRenderHint(QPainter::RenderHint::Antialiasing, false);
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     // setup the instance's transform
@@ -1777,6 +1790,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
       }
     }
   }
+  painter->setRenderHint(QPainter::RenderHint::Antialiasing, true);
   painter->setTransform(initial_xfm);
 }
 
@@ -2003,7 +2017,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
-
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
 
@@ -2023,6 +2036,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawBlockages(painter, bounds);
 
   dbTech* tech = block_->getDataBase()->getTech();
+
   for (dbTechLayer* layer : tech->getLayers()) {
     if (!options_->isVisible(layer)) {
       continue;
@@ -2049,6 +2063,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMax(),
                                      instance_limit);
 
+    painter->setRenderHint(QPainter::RenderHint::Antialiasing, false);
     for (auto& i : iter) {
       if (!isNetVisible(std::get<2>(i))) {
         continue;
@@ -2075,13 +2090,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
       Qt::BrushStyle brush_pattern = getPattern(layer);
       painter->setBrush(QBrush(color, brush_pattern));
       painter->setPen(QPen(color, 0));
-      auto iter = search_.searchFills(layer,
-                                      bounds.xMin(),
-                                      bounds.yMin(),
-                                      bounds.xMax(),
-                                      bounds.yMax(),
-                                      shape_limit);
-
+      auto iter =
+          search_.searchFills(layer, bounds.xMin(), bounds.yMin(),
+                              bounds.xMax(), bounds.yMax(), shape_limit);
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
         const auto& ur = std::get<0>(i).max_corner();
@@ -2089,6 +2100,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
             QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
       }
     }
+    painter->setRenderHint(QPainter::RenderHint::Antialiasing, true);
 
     drawTracks(layer, painter, bounds);
     for (auto* renderer : renderers) {
@@ -2235,6 +2247,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
   QFont marker_font = options_->pinMarkersFont();
+  marker_font.setStyleStrategy(QFont::StyleStrategy::PreferNoShaping);
   qpainter->setFont(marker_font);
 
   const QFontMetrics font_metrics(marker_font);
@@ -2468,7 +2481,8 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   repaint_requested_ = false;
 
   // build new drawing of layout
-  auto* block_drawing = new QPixmap(area.width(), area.height());
+  auto* block_drawing = new QImage(area.width(), area.height(),
+                                   QImage::Format_ARGB32_Premultiplied);
   block_drawing->fill(Qt::transparent);
 
   QPainter block_painter(block_drawing);
@@ -2485,8 +2499,24 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   // paint layout
   drawBlock(&block_painter, dbu_bounds, 0);
 
+  if (showFps_()) {
+    now = std::chrono::system_clock::now();
+    auto frame_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            now - last_paint_time_)
+                            .count();
+    QFont fps_font;
+    fps_font.setPixelSize(25);
+    fps_font.setBold(true);
+    block_painter.resetTransform();
+    block_painter.setFont(fps_font);
+    block_painter.setPen(Qt::yellow);
+    block_painter.translate(10, 40);
+    block_painter.drawText(0, 0,
+                          "fps: " + QString::number(1000.0 / frame_time_ms));
+  }
+
   // save the cached layout
-  block_drawing_ = std::unique_ptr<QPixmap>(block_drawing);
+  block_drawing_ = std::unique_ptr<QImage>(block_drawing);
 }
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
@@ -2515,7 +2545,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   updateBlockPainting(draw_bounds);
 
   // draw cached block
-  painter.drawPixmap(draw_bounds.topLeft(), *block_drawing_);
+  painter.drawImage(draw_bounds.topLeft(), *block_drawing_);
 
   painter.save();
   painter.translate(centering_shift_);
@@ -2860,7 +2890,7 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
   if (!img.isNull()) {
     img.fill(background_);
     // need to remove cache to ensure image is correct
-    std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
+    std::unique_ptr<QImage> saved_cache = std::move(block_drawing_);
     const auto last_paint_time = last_paint_time_;
     block_drawing_ = nullptr;
 

@@ -88,6 +88,7 @@ MainWindow::MainWindow(QWidget* parent)
           rulers_,
           [](const std::any& object) { return Gui::get()->makeSelected(object); },
           [this]() -> bool { return show_dbu_->isChecked(); },
+          [this]() -> bool { return show_fps_->isChecked(); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -347,6 +348,7 @@ MainWindow::MainWindow(QWidget* parent)
   QApplication::setFont(settings.value("font", QApplication::font()).value<QFont>());
   hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
   show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+  show_fps_->setChecked(settings.value("use_fps", show_fps_->isChecked()).toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -478,6 +480,10 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  show_fps_ = new QAction("Show FPS", this);
+  show_fps_->setCheckable(true);
+  show_fps_->setChecked(false);
+
   font_ = new QAction("Application font", this);
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
@@ -497,6 +503,8 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
+
+  connect(show_fps_, SIGNAL(toggled(bool)), viewer_, SLOT(fullRepaint()));
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
 }
@@ -552,6 +560,7 @@ void MainWindow::createMenus()
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
+  option_menu->addAction(show_fps_);
   option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
@@ -1132,6 +1141,7 @@ void MainWindow::saveSettings()
   settings.setValue("font", QApplication::font());
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
+  settings.setValue("use_fps", show_fps_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);

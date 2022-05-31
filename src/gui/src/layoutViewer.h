@@ -43,6 +43,7 @@
 #include <QShortcut>
 #include <QTimer>
 #include <chrono>
+#include <QImage>
 #include <map>
 #include <memory>
 #include <vector>
@@ -126,6 +127,7 @@ class LayoutViewer : public QWidget
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                std::function<bool(void)> usingDBU,
+               std::function<bool(void)> showFps,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -376,6 +378,7 @@ class LayoutViewer : public QWidget
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
   std::function<bool(void)> usingDBU_;
+  std::function<bool(void)> showFps_;
 
   std::map<odb::dbModule*, ModuleSettings> modules_;
 
@@ -399,7 +402,7 @@ class LayoutViewer : public QWidget
   std::unique_ptr<AnimatedSelected> animate_selection_;
 
   // Hold the last painted drawing of the layout
-  std::unique_ptr<QPixmap> block_drawing_;
+  std::unique_ptr<QImage> block_drawing_;
   bool repaint_requested_;
   std::chrono::time_point<std::chrono::system_clock> last_paint_time_;
   int repaint_interval_; // milliseconds
