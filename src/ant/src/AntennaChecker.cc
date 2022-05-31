@@ -1510,20 +1510,16 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
     checkAntennaCell();
 
     dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
-    if (nets.size() == 0)
+    if (nets.empty())
       return {0, 0, 0};
 
-    dbSet<dbNet>::iterator net_itr;
     int num_total_net = 0;
     int num_violated_net = 0;
     int num_violated_pins = 0;
-    for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-      dbNet* net = *net_itr;
-
+    for (dbNet* net : nets) {
       if (net->isSpecial())
         continue;
       num_total_net++;
-      std::string nname = net->getConstName();
       dbWire* wire = net->getWire();
       dbWireGraph graph;
       if (wire) {
@@ -1630,7 +1626,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           }
 
           if ((!report_violating_nets || violation) && print_net) {
-            fprintf(_out, "\nNet - %s\n", nname.c_str());
+            fprintf(_out, "\nNet - %s\n", net->getConstName());
             print_net = false;
           }
 
