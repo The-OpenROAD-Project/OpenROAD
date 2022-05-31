@@ -3,12 +3,6 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./results/clustered_test.def
-[INFO ODB-0128] Design: multi_sink
-[INFO ODB-0130]     Created 1 pins.
-[INFO ODB-0131]     Created 301 components and 1804 component-terminals.
-[INFO ODB-0133]     Created 2 nets and 302 connections.
-[INFO ODB-0134] Finished DEF file: ./results/clustered_test.def
 [INFO CTS-0049] Characterization buffer is: CLKBUF_X3.
 [INFO CTS-0039] Number of created patterns = 2376.
 [INFO CTS-0084] Compiling LUT.
@@ -59,11 +53,8 @@ TritonCTS forced slew degradation on these wires.
     Sub-region size: 3.3730 X 1.5873
 [INFO CTS-0034]     Segment length (rounded): 1.
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
- Out of 16 sinks, 1 sinks closer to other cluster.
- Out of 20 sinks, 1 sinks closer to other cluster.
- Out of 20 sinks, 1 sinks closer to other cluster.
- Out of 20 sinks, 1 sinks closer to other cluster.
- Out of 16 sinks, 1 sinks closer to other cluster.
+ Out of 20 sinks, 2 sinks closer to other cluster.
+ Out of 20 sinks, 2 sinks closer to other cluster.
  Out of 20 sinks, 1 sinks closer to other cluster.
  Out of 16 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
@@ -97,16 +88,16 @@ TritonCTS forced slew degradation on these wires.
     Sub-region size: 3.3730 X 3.1746
 [INFO CTS-0034]     Segment length (rounded): 1.
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
+ Out of 36 sinks, 1 sinks closer to other cluster.
  Level 4
     Direction: Vertical
     Sinks per sub-region: 10
     Sub-region size: 3.3730 X 1.5873
 [INFO CTS-0034]     Segment length (rounded): 1.
     Key: 2376 outSlew: 2 load: 1 length: 1 isBuffered: false
- Out of 14 sinks, 1 sinks closer to other cluster.
- Out of 20 sinks, 1 sinks closer to other cluster.
- Out of 20 sinks, 1 sinks closer to other cluster.
- Out of 16 sinks, 1 sinks closer to other cluster.
+ Out of 19 sinks, 1 sinks closer to other cluster.
+ Out of 20 sinks, 2 sinks closer to other cluster.
+ Out of 20 sinks, 2 sinks closer to other cluster.
  Out of 16 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 150.
@@ -116,21 +107,21 @@ Fixing from level 2 (parent=0 + current=2) to max 5 for driver clk
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 5.
 [INFO CTS-0015]     Created 65 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 7:2, 8:2, 9:6, 10:1, 11:4, 12:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 7:3, 8:3, 9:4, 10:1, 11:1, 12:4..
 [INFO CTS-0017]     Max level of the clock tree: 4.
 [INFO CTS-0018]     Created 17 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 17 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 7:1, 8:4, 9:4, 10:1, 11:2, 12:2, 13:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 7:2, 8:3, 9:4, 10:1, 11:1, 12:3, 13:1..
 [INFO CTS-0017]     Max level of the clock tree: 4.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 300
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 169.27 um
+[INFO CTS-0101]  Average sink wire length 169.48 um
 [INFO CTS-0102]  Path depth 5 - 5
 [INFO CTS-0098] Clock net "clk2"
 [INFO CTS-0099]  Sinks 150
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 67.18 um
+[INFO CTS-0101]  Average sink wire length 67.41 um
 [INFO CTS-0102]  Path depth 2 - 2
