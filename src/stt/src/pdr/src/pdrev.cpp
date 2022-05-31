@@ -76,7 +76,16 @@ Tree primDijkstra(std::vector<int>& x,
                   float alpha,
                   Logger* logger)
 {
-  pdr::PdRev pd(x, y, drvr_index, logger);
+  // pd fails with non-zero root index despite showing signs of supporting
+  // it.
+  std::vector<int> x1(x);
+  std::vector<int> y1(y);
+  // Move driver to pole position until drvr_index arg works.
+  std::swap(x1[0], x1[drvr_index]);
+  std::swap(y1[0], y1[drvr_index]);
+  drvr_index = 0;
+
+  pdr::PdRev pd(x1, y1, drvr_index, logger);
   return pd.primDijkstra(alpha, drvr_index);
 }
 
@@ -117,10 +126,11 @@ Tree PdRev::primDijkstra(float alpha, int root_idx)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
+  // Both of the following are required to get a proper Steiner tree.
+  // HoVW should do the job by itself but it doesn't unless you run
+  // fix_max_dc() too.
   graph_->doSteiner_HoVW();
-  // The following slightly improves wire length but the cost is the use
-  // of absolutely horrid unreliable code.
-  // graph_->fix_max_dc();
+  graph_->fix_max_dc();
   return translateTree();
 }
 
