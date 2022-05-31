@@ -27,6 +27,8 @@ record_tests {
   repair_cap2
   repair_cap3
   repair_design1
+  repair_design2
+  repair_design3
   repair_fanout1
   repair_fanout2
   repair_fanout3

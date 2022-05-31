@@ -1793,6 +1793,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   omp_set_num_threads(MAX_THREADS);
 
   increaseClipsize_ = false;
+  numWorkUnits_ = 0;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1842,7 +1843,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end(getDesign());
+          if(workersInBatch[i]->end(getDesign()))
+            numWorkUnits_ += 1;
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
         }
@@ -1871,6 +1873,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  debugPrint(logger_,
+        utl::DRT,
+        "workers",
+        1,
+        "Number of work units = {}.",
+        numWorkUnits_);
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
@@ -2398,7 +2406,10 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        coveredPercentage = (coveredArea / (double) routingArea) * 100;
+        if(routingArea == 0.0)
+          coveredPercentage = -1.0;
+        else
+          coveredPercentage = (coveredArea / (double) routingArea) * 100;
       }
 
 #pragma omp critical
@@ -2447,8 +2458,12 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
-  file << fmt::format("{:.2f}%,", totalCoveredPercentage);
+  if(totalArea == 0)
+    file << "NA";
+  else {
+    auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
+    file << fmt::format("{:.2f}%,", totalCoveredPercentage);
+  }
   file.close();
 }
 
@@ -2490,6 +2505,9 @@ int FlexDR::main()
     args.size = clipSize;
 
     searchRepair(args);
+    if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
+      break;
+    }
   }
 
   end(/* done */ true);
