@@ -19,7 +19,7 @@ repair_design
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
 repair_timing -setup
-repair_timing -hold -hold_slack_margin .2
+repair_timing -hold -hold_margin .2
 
 report_worst_slack -min
 report_worst_slack -max

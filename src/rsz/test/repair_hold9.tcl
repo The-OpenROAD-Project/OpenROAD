@@ -9,6 +9,6 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 report_design_area
-catch {repair_timing -hold -hold_slack_margin .4 -max_buffer_percent 2} error
+catch {repair_timing -hold -hold_margin .4 -max_buffer_percent 2} error
 puts $error
 report_design_area
