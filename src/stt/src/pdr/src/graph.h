@@ -160,7 +160,7 @@ class Graph
   void SortCNodes(vector<Node>& cNodes, int cIdx, int pIdx, int eShape);
   void UpdateEdges(vector<Node>& STNodes);
   void constructSteiner();
-  float calc_tree_cost();
+  float calc_tree_cost(float alpha, float m);
   void BuildDAG();
   bool IsSubTree(int cIdx, int tIdx);
   void GetSteinerNodes(int idx, vector<Node>& fSTNodes);
@@ -176,18 +176,13 @@ class Graph
   void PrintInfo();
   bool IsSameDir(int cIdx, int nIdx);
 
-  float m_;
-  float alpha2_;
-  float alpha3_;
-  float alpha4_;
-  float pl_margin_;
-  float beta_;
-  int distance_;
+  static constexpr float pl_margin_ = 1.1;
+  static constexpr float beta_ = 1.4;
+  static constexpr int distance_ = 2;
 
   vector<int> dag_;
   int max_pl_;  // max source to sink pathlength
   vector<int> aux_;
-  vector<int> tree_struct_1darr_;
 #endif
 
 #ifdef Guibas_Stolfi

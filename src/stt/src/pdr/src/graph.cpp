@@ -84,6 +84,8 @@ typedef std::unordered_map<Pt, int, PtHash, PtEqual> PtMap;
 Graph::Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger)
     : root_idx_(root_index), heap_size_(0), logger_(logger)
 {
+  max_pl_ = 0;
+  
   PtMap pts;
   for (int i = 0; i < x.size(); ++i) {
     int x1 = x[i];
@@ -108,6 +110,7 @@ Graph::Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger)
   }
 
   num_terminals = nodes.size();
+  aux_.resize(num_terminals);
 
   if (logger_->debugCheck(PDR, "pdrev", 3)) {
     debugPrint(logger_, PDR, "pdrev", 3, "-- Node locations --");
@@ -1601,17 +1604,8 @@ static bool comp_ws(const Node& i, const Node& j)
 
 void Graph::PDBU_new_NN(float alpha)
 {
-  alpha2_ = alpha;
-  alpha3_ = 0;
-  alpha4_ = 0;
-  pl_margin_ = 1.1;
-  beta_ = 1.4;
-  distance_ = 2;
-  max_pl_ = 0;
-  aux_.resize(num_terminals);
-
-  m_ = (1 + beta_ * (1 - alpha2_))
-       / pow((num_terminals - 1), (beta_ * (1 - alpha2_)));
+  const float m = (1 + beta_ * (1 - alpha))
+       / pow((num_terminals - 1), (beta_ * (1 - alpha)));
 
   buildNearestNeighborsForSPT();
 
@@ -1640,7 +1634,7 @@ void Graph::PDBU_new_NN(float alpha)
     update_node_detcost_Kt(j);
   // End tree preparation
 
-  float initial_tree_cost = calc_tree_cost();
+  float initial_tree_cost = calc_tree_cost(alpha, m);
   float final_tree_cost = 0;
   float tree_cost_difference = final_tree_cost - initial_tree_cost;
   int count = 1;
@@ -1814,9 +1808,9 @@ void Graph::PDBU_new_NN(float alpha)
                     * (nodes[nn_node].detour_cost_node
                        + nodes[node_e_new].nn_edge_detcost[oct]
                        - nodes[node_e_new].detour_cost_node);
-              swap_cost = alpha2_ * m_
+              swap_cost = alpha * m
                               * (cumul_detour_cost_term + last_detour_cost_term)
-                          + (1 - alpha2_) * (float) last_len_term;
+                          + (1 - alpha) * (float) last_len_term;
               debugPrint(logger_,
                          PDR,
                          "pdrev",
@@ -1861,7 +1855,7 @@ void Graph::PDBU_new_NN(float alpha)
           overall_min_node, overall_min_nn_idx, distance_, overall_initial_i);
     }
 
-    final_tree_cost = calc_tree_cost();
+    final_tree_cost = calc_tree_cost(alpha, m);
     tree_cost_difference = final_tree_cost - initial_tree_cost;
 
     initial_tree_cost = final_tree_cost;
@@ -1950,107 +1944,7 @@ void Graph::fix_max_dc()
   refineSteiner();
   constructSteiner();
 
-  float st_wl = calc_tree_wl_pd();
-
-  int use_nn = 0;
-
-  float init_wl = st_wl;
-  for (int k = 1; k < tree_struct_1darr_.size(); k++) {
-    int cnode = tree_struct_1darr_[k];
-    float cnode_dc = (float) nodes[cnode].detour_cost_node;
-    if (cnode_dc > 0) {
-      if (use_nn == 1) {
-        buildNearestNeighbors_single_node(cnode);
-        update_detourcosts_to_NNs(cnode);
-      }
-      int cpar = nodes[cnode].parent;
-      int edge_len_to_par = dist(nodes[cnode], nodes[cpar]);
-      int new_edge_len, nn2, detour_cost_new_edge, size = 0, new_tree_wl = 0,
-                                                   diff_in_wl, diff_in_dc = 0;
-      float new_dc, min_dc = cnode_dc;
-      int min_dc_nn = -1, min_dc_new_tree_wl = 0;
-
-      if (use_nn == 1) {
-        size = nn_[cnode].size();
-      } else {
-        size = k;
-      }
-
-      for (int ag = 0; ag < size; ag++) {
-        if (use_nn == 1) {
-          nn2 = nn_[cnode][ag];
-        } else {
-          nn2 = tree_struct_1darr_[ag];
-        }
-        if (nn2 != cpar) {
-          new_edge_len = dist(nodes[cnode], nodes[nn2]);
-          diff_in_wl = new_edge_len - edge_len_to_par;
-          new_tree_wl = init_wl + diff_in_wl;
-          if (((float) (new_tree_wl - st_wl) / (float) st_wl) <= alpha3_) {
-            if (use_nn == 1) {
-              new_dc = nodes[cnode].nn_edge_detcost[ag]
-                       + nodes[nn2].detour_cost_node;
-            } else {
-              detour_cost_new_edge = nodes[nn2].min_dist
-                                     + dist(nodes[nn2], nodes[cnode])
-                                     - nodes[cnode].min_dist;
-              new_dc = detour_cost_new_edge + nodes[nn2].detour_cost_node;
-            }
-            if (new_dc < cnode_dc) {
-              if (new_dc < min_dc) {
-                min_dc = new_dc;
-                min_dc_nn = nn2;
-                min_dc_new_tree_wl = new_tree_wl;
-              }
-            }
-          }
-        }
-      }
-      if (min_dc_nn != -1) {
-        vector<int> chi = nodes[cnode].children, tmp;
-        float init_dc = cnode_dc, final_dc = min_dc,
-              change = init_dc - final_dc;
-        int id = 0, count = 0;
-        while (chi.size() != 0) {
-          tmp = chi;
-          chi.clear();
-          for (id = 0; id < tmp.size(); id++) {
-            init_dc += nodes[tmp[id]].detour_cost_node;
-            count++;
-            chi.insert(chi.end(),
-                       nodes[tmp[id]].children.begin(),
-                       nodes[tmp[id]].children.end());
-          }
-          tmp.clear();
-        }
-        final_dc = init_dc - count * change;
-        chi.clear();
-        tmp.clear();
-        if ((init_dc - final_dc) / init_dc >= alpha4_) {
-          nodes[cnode].parent = min_dc_nn;
-          nodes[cnode].detour_cost_node = min_dc;
-          diff_in_dc = cnode_dc - min_dc;
-          init_wl = min_dc_new_tree_wl;
-          // Update the DCs of the nodes in the subtree of k
-          vector<int> chi = nodes[cnode].children, tmp;
-          int id = 0;
-          while (chi.size() != 0) {
-            tmp = chi;
-            chi.clear();
-            for (id = 0; id < tmp.size(); id++) {
-              nodes[tmp[id]].detour_cost_node -= diff_in_dc;
-              chi.insert(chi.end(),
-                         nodes[tmp[id]].children.begin(),
-                         nodes[tmp[id]].children.end());
-            }
-            tmp.clear();
-          }
-          chi.clear();
-          tmp.clear();
-        }
-      }
-    }
-  }
+  calc_tree_wl_pd();
 }
 
 void Graph::update_detourcosts_to_NNs(int j)
@@ -3336,7 +3230,7 @@ void Graph::BuildDAG()
   }
 }
 
-float Graph::calc_tree_cost()
+float Graph::calc_tree_cost(float alpha, float m)
 {
   float tree_cost = 0;
   int detour_cost = 0, wl = 0;
@@ -3344,7 +3238,7 @@ float Graph::calc_tree_cost()
     wl += abs(nodes[j].cost_edgeToP);
     detour_cost += nodes[j].detour_cost_node;
   }
-  tree_cost = alpha2_ * m_ * (float) detour_cost + (1 - alpha2_) * (float) wl;
+  tree_cost = alpha * m * (float) detour_cost + (1 - alpha) * (float) wl;
   return (tree_cost);
 }
 
