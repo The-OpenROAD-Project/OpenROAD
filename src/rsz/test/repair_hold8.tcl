@@ -16,7 +16,7 @@ estimate_parasitics -placement
 report_worst_slack -min
 report_worst_slack -max
 
-repair_timing -hold -slack_margin .2
+repair_timing -hold -hold_slack_margin .2
 
 report_worst_slack -min
 report_worst_slack -max

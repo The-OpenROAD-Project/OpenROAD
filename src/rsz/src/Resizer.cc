@@ -1735,6 +1735,19 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
              gate_delays[RiseFall::fallIndex()]);
 }
 
+void
+Resizer::bufferDelays(LibertyCell *buffer_cell,
+                      float load_cap,
+                      const DcalcAnalysisPt *dcalc_ap,
+                      // Return values.
+                      ArcDelay delays[RiseFall::index_count],
+                      Slew slews[RiseFall::index_count])
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  gateDelays(output, load_cap, dcalc_ap, delays, slews);
+}
+
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
 void
@@ -2169,11 +2182,11 @@ Resizer::cloneClkInverter(Instance *inv)
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup(float slack_margin,
+Resizer::repairSetup(double setup_margin,
                      int max_passes)
 {
   resizePreamble();
-  repair_setup_->repairSetup(slack_margin, max_passes);
+  repair_setup_->repairSetup(setup_margin, max_passes);
 }
 
 void
@@ -2193,26 +2206,30 @@ Resizer::rebufferNet(const Pin *drvr_pin)
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHold(float slack_margin,
+Resizer::repairHold(double setup_margin,
+                    double hold_margin,
                     bool allow_setup_violations,
                     // Max buffer count as percent of design instance count.
                     float max_buffer_percent,
                     int max_passes)
 {
   resizePreamble();
-  repair_hold_->repairHold(slack_margin, allow_setup_violations,
+  repair_hold_->repairHold(setup_margin, hold_margin,
+                           allow_setup_violations,
                            max_buffer_percent, max_passes);
 }
 
 void
 Resizer::repairHold(Pin *end_pin,
-                    float slack_margin,
+                    double setup_margin,
+                    double hold_margin,
                     bool allow_setup_violations,
                     float max_buffer_percent,
                     int max_passes)
 {
   resizePreamble();
-  repair_hold_->repairHold(end_pin, slack_margin, allow_setup_violations,
+  repair_hold_->repairHold(end_pin, setup_margin, hold_margin,
+                           allow_setup_violations,
                            max_buffer_percent, max_passes);
 }
 

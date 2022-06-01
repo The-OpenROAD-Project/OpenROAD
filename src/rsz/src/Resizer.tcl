@@ -356,20 +356,17 @@ proc repair_tie_fanout { args } {
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
-                                        [-slack_margin slack_margin]\
+                                        [-setup_margin setup_margin]\
+                                        [-hold_margin hold_margin]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-allow_setup_violations]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-slack_margin -libraries -max_utilization
-      -max_buffer_percent -max_passes} \
+    keys {-setup_margin -hold_margin -slack_margin \
+            -libraries -max_utilization -max_buffer_percent -max_passes} \
     flags {-setup -hold -allow_setup_violations}
-  
-  if { [info exists keys(-libraries)] } {
-    utl::warn RSZ 63 "-libraries is deprecated."
-  }
   
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -378,7 +375,20 @@ proc repair_timing { args } {
     set hold 1
   }
   
-  set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  if { [info exists keys(-slack_margin)] } {
+    utl::warn RSZ 76 "-slack_margin is deprecated. Use -setup_margin/-hold_margin"
+    if { !$setup && $hold } {
+      set setup_margin 0.0
+      set hold_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+    } else {
+      set setup_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+      set hold_margin 0.0
+    }
+  } else {
+    set setup_margin [rsz::parse_time_margin_arg "-setup_margin" keys]
+    set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
+  }
+
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
@@ -396,11 +406,11 @@ proc repair_timing { args } {
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   if { $setup } {
-    rsz::repair_setup $slack_margin $max_passes
+    rsz::repair_setup $setup_margin $max_passes
   }
   if { $hold } {
-    rsz::repair_hold $slack_margin $allow_setup_violations \
-      $max_buffer_percent $max_passes
+    rsz::repair_hold $setup_margin $hold_margin \
+      $allow_setup_violations $max_buffer_percent $max_passes
   }
 }
 
