@@ -41,25 +41,25 @@ met4       Vertical        10086          8168          19.02%
 met5       Horizontal       3362          1680          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1703
-[INFO GRT-0198] Via related Steiner nodes: 98
+[INFO GRT-0197] Via related to pin nodes: 1705
+[INFO GRT-0198] Via related Steiner nodes: 95
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2032
-[INFO GRT-0112] Final usage 3D: 9028
+[INFO GRT-0111] Final number of vias: 2033
+[INFO GRT-0112] Final usage 3D: 9026
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             28047          1506            5.37%             0 /  0 /  0
-met2             20120          1426            7.09%             0 /  0 /  0
+met1             28047          1491            5.32%             0 /  0 /  0
+met2             20120          1436            7.14%             0 /  0 /  0
 met3             11840             0            0.00%             0 /  0 /  0
 met4              8168             0            0.00%             0 /  0 /  0
 met5              1680             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            69855          2932            4.20%             0 /  0 /  0
+Total            69855          2927            4.19%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30168 um
+[INFO GRT-0018] Total wirelength: 30124 um
 [INFO GRT-0006] Repairing antennas, iteration 1.
 [INFO GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.

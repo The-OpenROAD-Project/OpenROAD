@@ -41,25 +41,25 @@ met4       Vertical        10086          9768          3.15%
 met5       Horizontal       3362          3280          2.44%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 611
-[INFO GRT-0198] Via related Steiner nodes: 99
+[INFO GRT-0197] Via related to pin nodes: 610
+[INFO GRT-0198] Via related Steiner nodes: 98
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 930
-[INFO GRT-0112] Final usage 3D: 5735
+[INFO GRT-0111] Final number of vias: 929
+[INFO GRT-0112] Final usage 3D: 5729
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-li1              24714          1508            6.10%             0 /  0 /  0
-met1             28047          1437            5.12%             0 /  0 /  0
+li1              24714          1507            6.10%             0 /  0 /  0
+met1             28047          1435            5.12%             0 /  0 /  0
 met2             24920             0            0.00%             0 /  0 /  0
 met3             15040             0            0.00%             0 /  0 /  0
 met4              9768             0            0.00%             0 /  0 /  0
 met5              3280             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           105769          2945            2.78%             0 /  0 /  0
+Total           105769          2942            2.78%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30211 um
+[INFO GRT-0018] Total wirelength: 30189 um
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069
