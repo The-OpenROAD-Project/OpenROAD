@@ -40,6 +40,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QImageWriter>
+#include <QtGlobal>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPaintEvent>
@@ -226,7 +227,7 @@ class GuiPainter : public Painter
     painter_->drawLine(x - o, y + o, x + o, y - o);
   }
 
-  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false, QRect *bounding_rect = nullptr)
+  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false, const QRect *bounding_rect = nullptr)
   {
     
     QRect text_bbox;
@@ -310,7 +311,7 @@ class GuiPainter : public Painter
   {
     const QString text = QString::fromStdString(s);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
-    const odb::Point origin = determineStringOrigin(x, y, anchor, text, &text_bbox);
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text, false, &text_bbox);
 
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
@@ -2247,7 +2248,11 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
   QFont marker_font = options_->pinMarkersFont();
+  
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
   marker_font.setStyleStrategy(QFont::StyleStrategy::PreferNoShaping);
+  #endif
+
   qpainter->setFont(marker_font);
 
   const QFontMetrics font_metrics(marker_font);
