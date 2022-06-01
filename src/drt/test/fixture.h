@@ -50,10 +50,10 @@ class Fixture
   void makeDesign();
 
   frMaster* makeMacro(const char* name,
-                     frCoord originX = 0,
-                     frCoord originY = 0,
-                     frCoord sizeX = 0,
-                     frCoord sizeY = 0);
+                      frCoord originX = 0,
+                      frCoord originY = 0,
+                      frCoord sizeX = 0,
+                      frCoord sizeY = 0);
 
   frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
@@ -138,6 +138,13 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+
+  void makeMinimumCut(frLayerNum layerNum,
+                      frCoord width,
+                      frCoord length,
+                      frCoord distance,
+                      frMinimumcutConnectionEnum connection
+                      = frMinimumcutConnectionEnum::UNKNOWN);
 
   frNet* makeNet(const char* name);
 

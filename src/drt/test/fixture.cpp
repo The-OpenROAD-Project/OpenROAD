@@ -95,10 +95,10 @@ void Fixture::setupTech(frTechObject* tech)
 }
 
 frMaster* Fixture::makeMacro(const char* name,
-                            frCoord originX,
-                            frCoord originY,
-                            frCoord sizeX,
-                            frCoord sizeY)
+                             frCoord originX,
+                             frCoord originY,
+                             frCoord sizeX,
+                             frCoord sizeY)
 {
   auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
@@ -519,6 +519,21 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
   design->getTech()->addConstraint(con);
 }
 
+void Fixture::makeMinimumCut(frLayerNum layerNum,
+                             frCoord width,
+                             frCoord length,
+                             frCoord distance,
+                             frMinimumcutConnectionEnum connection)
+{
+  auto con = make_unique<frMinimumcutConstraint>();
+  auto layer = design->getTech()->getLayer(layerNum);
+  auto rptr = con.get();
+  con->setWidth(width);
+  con->setLength(length, distance);
+  con->setConnection(connection);
+  design->getTech()->addUConstraint(std::move(con));
+  layer->addMinimumcutConstraint(rptr);
+}
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();

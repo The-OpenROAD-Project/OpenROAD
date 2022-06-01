@@ -2201,6 +2201,9 @@ void FlexDR::reportDRC(const string& file_name)
           case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
             drcRpt << "Lef58EolKeepOut";
             break;
+          case frConstraintTypeEnum::frcLef58MinimumCutConstraint:
+            drcRpt << "Lef58MinimumCut";
+            break;
         }
       } else {
         drcRpt << "nullptr";
