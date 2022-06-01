@@ -1712,8 +1712,10 @@ void AutoClusterMgr::PrintIOPadNet(std::ostream &out) {
     for (dbBTerm* bterm : net->getBTerms()) {
       for (dbITerm* iterm : net->getITerms()) {
         odb::dbInst* inst = iterm->getInst();
-        io_pad_map_[bterm] = inst;
-        pad_io_map_[inst]  = bterm;
+        if (inst->getMaster()->isPad() == true) {
+          io_pad_map_[bterm] = inst;
+          pad_io_map_[inst]  = bterm;            
+        }
       }
     }
   }
