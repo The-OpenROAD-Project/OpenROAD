@@ -1402,7 +1402,63 @@ void FlexDRWorker::subPathCost(drConnFig* connFig, bool modEol, bool modCutSpc)
 {
   modPathCost(connFig, ModCostType::subRouteShape, modEol, modCutSpc);
 }
-
+void FlexDRWorker::modMinimumCutCost(const Rect& box,
+                                     frMIdx z,
+                                     ModCostType modType)
+{
+  auto lNum = gridGraph_.getLayerNum(z);
+  auto layer = getTech()->getLayer(lNum);
+  if (!layer->hasMinimumcut())
+    return;
+  auto width = box.minDXDY();
+  auto length = box.maxDXDY();
+  for (auto con : layer->getMinimumcutConstraints()) {
+    if (width < con->getWidth())
+      continue;
+    if (con->hasLength() && length < con->getLength())
+      continue;
+    Rect violBox(box);
+    if (con->hasLength()) {
+      if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+        violBox.set_xlo(box.xMin() - con->getDistance());
+        violBox.set_xhi(box.xMax() + con->getDistance());
+      } else {
+        violBox.set_ylo(box.yMin() - con->getDistance());
+        violBox.set_yhi(box.yMax() + con->getDistance());
+      }
+    }
+    FlexMazeIdx mIdx1;
+    FlexMazeIdx mIdx2;
+    gridGraph_.getIdxBox(mIdx1, mIdx2, violBox);
+    for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
+      for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+        for (int zIdx = z - 1; zIdx <= z + 1; z += 2) {
+          if (zIdx == z - 1
+              && con->getConnection() == frMinimumcutConnectionEnum::FROMABOVE)
+            continue;
+          if (zIdx == z + 1
+              && con->getConnection() == frMinimumcutConnectionEnum::FROMBELOW)
+            continue;
+          switch (modType) {
+            case subRouteShape:
+              gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addRouteShape:
+              gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case subFixedShape:
+              gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addFixedShape:
+              gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            default:;
+          }
+        }
+      }
+    }
+  }
+}
 void FlexDRWorker::modPathCost(drConnFig* connFig,
                                ModCostType type,
                                bool modEol,
@@ -1422,6 +1478,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, bi.z(), type, true, true, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, true, false, ndr);
     modViaForbiddenThrough(bi, ei, type);
+    modMinimumCutCost(box, bi.z(), type);
     if (modEol) {
       // wrong way wire cannot have eol problem: (1) with via at end, then via
       // will add eol cost; (2) with pref-dir wire, then not eol edge
@@ -1438,6 +1495,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     Rect box;
     obj->getBBox(box);
     ndr = connFig->getNet()->getFrNet()->getNondefaultRule();
+    modMinimumCutCost(box, zIdx, type);
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
@@ -1455,6 +1513,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
+    modMinimumCutCost(box, bi.z(), type);
     if (modEol)
       modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
 
@@ -1463,6 +1522,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostPlanar(box, ei.z(), type, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
+    modMinimumCutCost(box, ei.z(), type);
     if (modEol)
       modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
 
