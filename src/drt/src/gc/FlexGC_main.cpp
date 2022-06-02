@@ -3133,34 +3133,26 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
   auto layer = getTech()->getLayer(layerNum);
   auto width = rect->width();
   auto length = rect->length();
-  frNet* net = rect->hasNet() ? rect->getNet()->getFrNet() : nullptr;
-  bool debug = net && net->getName() == "_10467_" && layer->getName() == "K4" && width >= 432;
   for (auto con : layer->getMinimumcutConstraints()) {
     if (width < con->getWidth())
       continue;
-    if (!con->hasLength())
-      continue;
-    if (length < con->getLength())
+    if (con->hasLength() && length < con->getLength())
       continue;
     auto& workerRegionQuery = getWorkerRegionQuery();
-    gtl::rectangle_data<frCoord> wideWire = *rect;
-    gtl::bloat(wideWire, con->getDistance());
+    gtl::rectangle_data<frCoord> queryBox = *rect;
+    if(con->hasLength())
+      gtl::bloat(queryBox, con->getDistance());
     vector<rq_box_value_t<gcRect*>> result;
     if (con->getConnection() != frMinimumcutConnectionEnum::FROMABOVE
         && layerNum > getTech()->getBottomLayerNum()) {
-      if(debug)
-        logger_->report("Searching lower layer");
       vector<rq_box_value_t<gcRect*>> below_result;
-      workerRegionQuery.queryMaxRectangle(wideWire, layerNum - 1, below_result);
+      workerRegionQuery.queryMaxRectangle(queryBox, layerNum - 1, below_result);
       result.insert(result.end(), below_result.begin(), below_result.end());
     }
-    result.clear();
     if (con->getConnection() != frMinimumcutConnectionEnum::FROMBELOW
         && layerNum < getTech()->getTopLayerNum()) {
-      if(debug)
-        logger_->report("Searching upper layer");
       vector<rq_box_value_t<gcRect*>> above_result;
-      workerRegionQuery.queryMaxRectangle(wideWire, layerNum + 1, result);
+      workerRegionQuery.queryMaxRectangle(queryBox, layerNum + 1, result);
       result.insert(result.end(), above_result.begin(), above_result.end());
     }
 
@@ -3171,10 +3163,11 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
         continue;
       if (via->isFixed() && rect->isFixed())
         continue;
-      if(wideRect.contains(viaBox)) {
-        if(debug)
-          logger_->report("The wide rect {} with width {} contains the via {}", wideRect, width, viaBox);
-        continue; // the wideRect is probably the viaBox enclosure
+      if(con->hasLength() && wideRect.contains(viaBox))
+        continue;
+      if(!con->hasLength()) {
+        checkMinimumCut_marker(rect, via, con);
+        continue;
       }
       vector<rq_box_value_t<gcRect*>> encResult;
       workerRegionQuery.queryMaxRectangle(viaBox, layerNum, encResult);
@@ -3189,10 +3182,6 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
           break;
         }
       }
-      if(viol && debug)
-        logger_->report("Found Violation with {} on layer {}", viaBox, tech_->getLayer(via->getLayerNum())->getName());
-      else if (debug)
-        logger_->report("Didn't trigger violation with {} on layer {}", viaBox, tech_->getLayer(via->getLayerNum())->getName());
       if (viol)
         checkMinimumCut_marker(rect, via, con);
     }
