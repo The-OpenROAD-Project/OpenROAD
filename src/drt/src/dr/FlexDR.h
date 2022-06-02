@@ -756,9 +756,6 @@ class FlexDRWorker
                   bool innerIsHigh,
                   frLayer* layer,
                   ModCostType modType);
-  void modMinimumCutCost(const odb::Rect& box,
-                         frMIdx z,
-                         ModCostType modType);
   void route_queue_resetRipup();
   void route_queue_markerCostDecay();
   void route_queue_addMarkerCost(
