@@ -30,84 +30,95 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbRegionItr.h"
+// Generator Code Begin Cpp
+#include "dbRegionGroupItr.h"
 
-#include "dbMaster.h"
-#include "dbRegion.h"
+#include "dbGroup.h"
 #include "dbTable.h"
+// User Code Begin Includes
+#include "dbRegion.h"
+// User Code End Includes
 
 namespace odb {
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbRegionItr - Methods
+// dbRegionGroupItr - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbRegionItr::reversible()
+bool dbRegionGroupItr::reversible()
 {
   return true;
 }
 
-bool dbRegionItr::orderReversed()
+bool dbRegionGroupItr::orderReversed()
 {
   return true;
 }
 
-void dbRegionItr::reverse(dbObject* parent)
+void dbRegionGroupItr::reverse(dbObject* parent)
 {
-  _dbRegion* region = (_dbRegion*) parent;
-  uint id = region->_children;
+  // User Code Begin reverse
+  _dbRegion* _parent = (_dbRegion*) parent;
+  uint id = _parent->groups_;
   uint list = 0;
 
   while (id != 0) {
-    _dbRegion* pin = _region_tbl->getPtr(id);
-    uint n = pin->_next_child;
-    pin->_next_child = list;
+    _dbGroup* _child = _group_tbl->getPtr(id);
+    uint n = _child->region_next_;
+    _child->region_next_ = list;
     list = id;
     id = n;
   }
-
-  region->_children = list;
+  _parent->groups_ = list;
+  // User Code End reverse
 }
 
-uint dbRegionItr::sequential()
+uint dbRegionGroupItr::sequential()
 {
   return 0;
 }
 
-uint dbRegionItr::size(dbObject* parent)
+uint dbRegionGroupItr::size(dbObject* parent)
 {
   uint id;
   uint cnt = 0;
 
-  for (id = dbRegionItr::begin(parent); id != dbRegionItr::end(parent);
-       id = dbRegionItr::next(id))
+  for (id = dbRegionGroupItr::begin(parent);
+       id != dbRegionGroupItr::end(parent);
+       id = dbRegionGroupItr::next(id))
     ++cnt;
 
   return cnt;
 }
 
-uint dbRegionItr::begin(dbObject* parent)
+uint dbRegionGroupItr::begin(dbObject* parent)
 {
-  _dbRegion* region = (_dbRegion*) parent;
-  return region->_children;
+  // User Code Begin begin
+  _dbRegion* _parent = (_dbRegion*) parent;
+  return _parent->groups_;
+  // User Code End begin
 }
 
-uint dbRegionItr::end(dbObject* /* unused: parent */)
+uint dbRegionGroupItr::end(dbObject* /* unused: parent */)
 {
   return 0;
 }
 
-uint dbRegionItr::next(uint id, ...)
+uint dbRegionGroupItr::next(uint id, ...)
 {
-  _dbRegion* region = _region_tbl->getPtr(id);
-  return region->_next_child;
+  // User Code Begin next
+  _dbGroup* _child = _group_tbl->getPtr(id);
+  return _child->region_next_;
+  // User Code End next
 }
 
-dbObject* dbRegionItr::getObject(uint id, ...)
+dbObject* dbRegionGroupItr::getObject(uint id, ...)
 {
-  return _region_tbl->getPtr(id);
+  return _group_tbl->getPtr(id);
 }
-
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
+   // Generator Code End Cpp
