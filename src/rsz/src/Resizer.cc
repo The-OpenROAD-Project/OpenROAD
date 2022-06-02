@@ -2251,6 +2251,14 @@ Resizer::journalBegin()
 }
 
 void
+Resizer::journalEnd()
+{
+  debugPrint(logger_, RSZ, "journal", 1, "journal end");
+  resized_inst_map_.clear();
+  inserted_buffers_.clear();
+}
+
+void
 Resizer::journalInstReplaceCellBefore(Instance *inst)
 {
   LibertyCell *lib_cell = network_->libertyCell(inst);

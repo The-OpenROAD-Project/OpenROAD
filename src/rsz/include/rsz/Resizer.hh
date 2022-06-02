@@ -510,10 +510,11 @@ protected:
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
   void journalBegin();
-  void journalInstReplaceCellBefore(Instance *inst);
-  void journalMakeBuffer(Instance *buffer);
+  void journalEnd();
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count);
+  void journalInstReplaceCellBefore(Instance *inst);
+  void journalMakeBuffer(Instance *buffer);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis

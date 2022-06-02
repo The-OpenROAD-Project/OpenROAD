@@ -253,10 +253,6 @@ proc buffer_ports { args } {
     keys {-buffer_cell -max_utilization} \
     flags {-inputs -outputs}
   
-  if { [info exists keys(-buffer_cell)] } {
-    utl::warn RSZ 15 "-buffer_cell is deprecated."
-  }
-  
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
   if { !$buffer_inputs && !$buffer_outputs } {
