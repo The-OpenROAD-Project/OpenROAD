@@ -128,6 +128,7 @@ class Parser
 
   void setNDRs(odb::dbDatabase* db);
   void createNDR(odb::dbTechNonDefaultRule* ndr);
+  void convertLef58MinCutConstraints();
 
   frDesign* design;
   frTechObject* tech;
