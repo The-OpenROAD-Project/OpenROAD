@@ -209,11 +209,12 @@ BOOST_DATA_TEST_CASE(min_cut,
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeMinimumCut(2, 200, 200, spacing);
   frNet* n1 = makeNet("n1");
-
+  frViaDef* vd1 = makeViaDef("v1", 3, {0, 0}, {200, 200});
+  makeVia(vd1, n1, {0, 0});
   makePathseg(n1, 2, {0, 100}, {200, 100}, 200);
   makePathseg(n1, 2, {200, 100}, {400, 100}, 100);
-  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
-  makeVia(vd, n1, {400, 50});
+  frViaDef* vd2 = makeViaDef("v2", 3, {0, 0}, {100, 100});
+  makeVia(vd2, n1, {400, 50});
   runGC();
 
   // Test the results
