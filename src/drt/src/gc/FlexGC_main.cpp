@@ -3171,8 +3171,11 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
         continue;
       if (via->isFixed() && rect->isFixed())
         continue;
-      if(wideRect.contains(viaBox))
+      if(wideRect.contains(viaBox)) {
+        if(debug)
+          logger_->report("The wide rect {} with width {} contains the via {}", wideRect, width, viaBox);
         continue; // the wideRect is probably the viaBox enclosure
+      }
       vector<rq_box_value_t<gcRect*>> encResult;
       workerRegionQuery.queryMaxRectangle(viaBox, layerNum, encResult);
       bool viol = false;
@@ -3188,6 +3191,8 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
       }
       if(viol && debug)
         logger_->report("Found Violation with {} on layer {}", viaBox, tech_->getLayer(via->getLayerNum())->getName());
+      else if (debug)
+        logger_->report("Didn't trigger violation with {} on layer {}", viaBox, tech_->getLayer(via->getLayerNum())->getName());
       if (viol)
         checkMinimumCut_marker(rect, via, con);
     }
