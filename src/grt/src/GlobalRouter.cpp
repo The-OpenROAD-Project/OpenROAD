@@ -637,7 +637,11 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   pad_pins_connections_.clear();
 
   int min_degree = std::numeric_limits<int>::max();
-  int max_degree = std::numeric_limits<int>::min();
+  // Do NOT use numeric_limits<int>::min() to init
+  // this because if there are no FR nets the max
+  // degree will be big negative and cannot be used
+  // to init the vectors in FR.
+  int max_degree = 1;
 
   if (nets.size() > 1
       && seed_ != 0) {
@@ -3817,6 +3821,7 @@ void GlobalRouter::updateDirtyRoutes()
     if (verbose_)
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
+      debugPrint(logger_, GRT, "incr", 2, "Dirty nets:");
       for (auto net : dirty_nets_)
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
