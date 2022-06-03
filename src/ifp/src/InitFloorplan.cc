@@ -227,16 +227,19 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
     if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
-      dbRegion* domain_region = dbRegion::create(block_, group->getName());
-
+      dbRegion* domain_region = group->getRegion();
+      int domain_xMin = std::numeric_limits<int>::max();
+      int domain_yMin = std::numeric_limits<int>::max();
+      int domain_xMax = std::numeric_limits<int>::min();
+      int domain_yMax = std::numeric_limits<int>::min();
+      for(auto boundary : domain_region->getBoundaries())
+      {
+        domain_xMin = std::min(domain_xMin, boundary->xMin());
+        domain_yMin = std::min(domain_yMin, boundary->yMin());
+        domain_xMax = std::max(domain_xMax, boundary->xMax());
+        domain_yMax = std::max(domain_yMax, boundary->yMax());
+      }
       string domain_name = group->getName();
-      Rect domain_rect = group->getBox();
-      int domain_xMin = domain_rect.xMin();
-      int domain_yMin = domain_rect.yMin();
-      int domain_xMax = domain_rect.xMax();
-      int domain_yMax = domain_rect.yMax();
-      dbBox::create(
-          domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
       dbSet<dbRow> rows = block_->getRows();
       int total_row_count = rows.size();

@@ -246,10 +246,13 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
 
 // User Code Begin dbAccessPointPublicMethods
 
-void dbAccessPoint::addSegment(const Rect& segment, const bool& begin_style_trunc, const bool& end_style_trunc)
+void dbAccessPoint::addSegment(const Rect& segment,
+                               const bool& begin_style_trunc,
+                               const bool& end_style_trunc)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  std::tuple path_seg = std::make_tuple(segment, begin_style_trunc, end_style_trunc);
+  std::tuple path_seg
+      = std::make_tuple(segment, begin_style_trunc, end_style_trunc);
   obj->path_segs_.push_back(std::move(path_seg));
 }
 

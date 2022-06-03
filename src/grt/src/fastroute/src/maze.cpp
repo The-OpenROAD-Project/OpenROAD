@@ -30,14 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
-#include <iomanip>
-#include <set>
-#include <sstream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -67,7 +60,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // check embedded trees only when maze router is called
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID = 0; netID < netCount(); netID++) {
       checkAndFixEmbeddedTree(netID);
     }
   }
@@ -463,7 +456,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 
 void FastRouteCore::convertToMazeroute()
 {
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     convertToMazerouteNet(netID);
   }
 
@@ -1014,7 +1007,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 
@@ -1192,7 +1185,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 
@@ -1342,7 +1335,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
-  for (int nidRPC = 0; nidRPC < num_valid_nets_; nidRPC++) {
+  for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
     const int deg = sttrees_[netID].deg;

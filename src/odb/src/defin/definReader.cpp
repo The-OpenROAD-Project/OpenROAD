@@ -44,6 +44,7 @@
 #include "definComponent.h"
 #include "definFill.h"
 #include "definGCell.h"
+#include "definGroup.h"
 #include "definNet.h"
 #include "definNonDefaultRule.h"
 #include "definPin.h"
@@ -95,6 +96,7 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
   _tracksR = new definTracks;
   _viaR = new definVia;
   _regionR = new definRegion;
+  _groupR = new definGroup;
   _non_default_ruleR = new definNonDefaultRule;
   _prop_defsR = new definPropDefs;
   _pin_propsR = new definPinProps;
@@ -110,6 +112,7 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
   _interfaces.push_back(_tracksR);
   _interfaces.push_back(_viaR);
   _interfaces.push_back(_regionR);
+  _interfaces.push_back(_groupR);
   _interfaces.push_back(_non_default_ruleR);
   _interfaces.push_back(_prop_defsR);
   _interfaces.push_back(_pin_propsR);
@@ -129,6 +132,7 @@ definReader::~definReader()
   delete _tracksR;
   delete _viaR;
   delete _regionR;
+  delete _groupR;
   delete _non_default_ruleR;
   delete _prop_defsR;
   delete _pin_propsR;
@@ -637,7 +641,7 @@ int definReader::groupNameCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  reader->_regionR->begin(name, /* group */ true);
+  reader->_groupR->begin(name);
   return PARSE_OK;
 }
 
@@ -647,7 +651,7 @@ int definReader::groupMemberCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  reader->_regionR->inst(member);
+  reader->_groupR->inst(member);
   return PARSE_OK;
 }
 
@@ -657,13 +661,11 @@ int definReader::groupCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definRegion* regionR = reader->_regionR;
-
-  if (group->hasRegionName()) {
-    regionR->parent(group->regionName());
-  }
-  handle_props(group, regionR);
-  regionR->end();
+  definGroup* groupR = reader->_groupR;
+  if (group->hasRegionName())
+    groupR->region(group->regionName());
+  handle_props(group, groupR);
+  groupR->end();
 
   return PARSE_OK;
 }
@@ -1190,7 +1192,7 @@ int definReader::regionCallback(defrCallbackType_e /* unused: type */,
   CHECKBLOCK
   definRegion* regionR = reader->_regionR;
 
-  regionR->begin(region->name(), /* is_group */ false);
+  regionR->begin(region->name());
 
   for (int i = 0; i < region->numRectangles(); ++i) {
     regionR->boundary(

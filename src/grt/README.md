@@ -101,18 +101,22 @@ set_global_routing_random [-seed seed]
                           [-perturbation_amount value]
 ```
 
-The `set_global_routing_random` command enables randomization of global routing
-results. The randomized global routing shuffles the order of the nets and randomly
-subtracts or adds to the capacities of a random set of edges.  The `-seed`
-option sets the random seed and is required to enable the randomization mode. The
-`-capacities_perturbation_percentage` option sets the percentage of edges
-whose capacities are perturbed. By default, the edge capacities are perturbed by
-adding or subtracting 1 (track) from the original capacity.  The `-perturbation_amount`
-option sets the perturbation value of the edge capacities. This option
-will only have meaning and effect when `-capacities_perturbation_percentage` is used.
-The random seed must be different from 0 to enable randomization of the global routing.
+The `set_global_routing_random` command enables randomization of
+global routing results. The randomized global routing shuffles the
+order of the nets and randomly subtracts or adds to the capacities of
+a random set of edges.  The `-seed` option sets the random seed.  A
+non-zero seed enables randomization. The
+`-capacities_perturbation_percentage` option sets the percentage of
+edges whose capacities are perturbed. By default, the edge capacities
+are perturbed by adding or subtracting 1 (track) from the original
+capacity.  The `-perturbation_amount` option sets the perturbation
+value of the edge capacities. This option is only meaningful when
+`-capacities_perturbation_percentage` is used.
 
-Example: `set_global_routing_random -seed 42 -capacities_perturbation_percentage 50 -perturbation_amount 2`
+Example:
+`set_global_routing_random -seed 42 \
+  -capacities_perturbation_percentage 50 \
+  -perturbation_amount 2`
 
 ```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]

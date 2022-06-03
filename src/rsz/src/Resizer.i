@@ -431,12 +431,12 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_setup(float slack_margin,
+repair_setup(double setup_margin,
              int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(slack_margin, max_passes);
+  resizer->repairSetup(setup_margin, max_passes);
 }
 
 void
@@ -447,28 +447,32 @@ repair_setup_pin_cmd(Pin *end_pin)
   resizer->repairSetup(end_pin);
 }
 
-// requires rsz::resizer_preamble
 void
-repair_hold_pin(Pin *end_pin,
-                bool allow_setup_violations,
-                float max_buffer_percent,
-                int max_passes)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, 0.0, allow_setup_violations,
-                      max_buffer_percent, max_passes);
-}
-
-void
-repair_hold(float slack_margin,
+repair_hold(double setup_margin,
+            double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
             int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(slack_margin, allow_setup_violations,
+  resizer->repairHold(setup_margin, hold_margin,
+                      allow_setup_violations,
+                      max_buffer_percent, max_passes);
+}
+
+void
+repair_hold_pin(Pin *end_pin,
+                double setup_margin,
+                double hold_margin,
+                bool allow_setup_violations,
+                float max_buffer_percent,
+                int max_passes)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(end_pin, setup_margin, hold_margin,
+                      allow_setup_violations,
                       max_buffer_percent, max_passes);
 }
 

@@ -66,9 +66,9 @@ NETS 11 ;
     - out ( PIN out ) ( f1/_277_ Z ) + USE SIGNAL ;
 END NETS
 GROUPS 2 ;
-    - er0_group f0/_281_ f0/_282_ f0/_283_
+    - er0 f0/_281_ f0/_282_ f0/_283_
          f0/_284_ f0/_285_ + REGION er0 ;
-    - er1_group f1/_276_ f1/_277_ f1/_278_
+    - er1 f1/_276_ f1/_277_ f1/_278_
          f1/_279_ f1/_280_ + REGION er1 ;
 END GROUPS
 END DESIGN

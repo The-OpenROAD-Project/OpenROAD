@@ -260,8 +260,7 @@ bool dbFlatten::flatten(dbBlock* parent,
 
   for (rgitr = regions.begin(); rgitr != regions.end(); ++rgitr) {
     dbRegion* rg = *rgitr;
-    if (rg->getParent() == NULL)
-      copyRegion(parent, child->getParentInst(), NULL, rg);
+    copyRegion(parent, child->getParentInst(), rg);
   }
 
   if (_create_boundary_regions) {
@@ -275,13 +274,6 @@ bool dbFlatten::flatten(dbBlock* parent,
     dbBox::create(
         block_region, bndry.xMin(), bndry.yMin(), bndry.xMax(), bndry.yMax());
 
-    for (rgitr = regions.begin(); rgitr != regions.end(); ++rgitr) {
-      dbRegion* rg = *rgitr;
-
-      if (rg->getParent() == NULL)
-        block_region->addChild(_reg_map[rg]);
-    }
-
     for (itr = insts.begin(); itr != insts.end(); ++itr) {
       dbInst* inst = *itr;
 
@@ -290,6 +282,13 @@ bool dbFlatten::flatten(dbBlock* parent,
     }
   }
 
+  ////////////////////////////
+  // Copy groups
+  ////////////////////////////
+  for (auto* group : child->getGroups()) {
+    if (group->getRegion() == nullptr)
+      copyGroup(child, nullptr, child->getParentInst(), group);
+  }
   _net_map.clear();
   _via_map.clear();
   _inst_map.clear();
@@ -980,7 +979,6 @@ void dbFlatten::copyBlockage(dbBlock* dst_block, dbBlockage* src)
 //
 void dbFlatten::copyRegion(dbBlock* parent_block,
                            dbInst* child_inst,
-                           dbRegion* parent_region,
                            dbRegion* src)
 {
   std::string name = child_inst->getName();
@@ -988,11 +986,7 @@ void dbFlatten::copyRegion(dbBlock* parent_block,
   name += src->getName();
 
   dbRegion* dst;
-
-  if (parent_region)
-    dst = dbRegion::create(parent_region, name.c_str());
-  else
-    dst = dbRegion::create(parent_block, name.c_str());
+  dst = dbRegion::create(parent_block, name.c_str());
 
   if (dst == NULL) {
     // TODO:
@@ -1024,12 +1018,34 @@ void dbFlatten::copyRegion(dbBlock* parent_block,
     dst->addInst(_inst_map[inst]);
   }
 
-  dbSet<dbRegion> children = src->getChildren();
-  dbSet<dbRegion>::iterator citr = children.begin();
+  for (auto* group : src->getGroups()) {
+    copyGroup(parent_block, dst, child_inst, group);
+  }
+}
 
-  for (; citr != children.end(); ++citr) {
-    dbRegion* child = *citr;
-    copyRegion(parent_block, child_inst, dst, child);
+//
+// Copy "src" group of the child_inst to parent_block.
+//
+void dbFlatten::copyGroup(dbBlock* parent_block,
+                          dbRegion* parent_region,
+                          dbInst* child_inst,
+                          dbGroup* src)
+{
+  std::string name = child_inst->getName();
+  name += _hier_d;
+  name += src->getName();
+  auto* dst = dbGroup::create(parent_block, name.c_str());
+  if (parent_region)
+    parent_region->addGroup(dst);
+  dst->setType(src->getType());
+  for (auto* inst : src->getInsts()) {
+    dst->addInst(_inst_map[inst]);
+  }
+  for (auto* net : src->getPowerNets()) {
+    dst->addPowerNet(_net_map[net]);
+  }
+  for (auto* net : src->getGroundNets()) {
+    dst->addGroundNet(_net_map[net]);
   }
 }
 
