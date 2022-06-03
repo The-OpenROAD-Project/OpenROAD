@@ -79,9 +79,9 @@ class AntennaRepair
                 odb::dbDatabase* db,
                 utl::Logger* logger);
 
-  int checkAntennaViolations(NetRouteMap& routing,
-                             int max_routing_layer,
-                             odb::dbMTerm* diode_mterm);
+  bool checkAntennaViolations(NetRouteMap& routing,
+                              int max_routing_layer,
+                              odb::dbMTerm* diode_mterm);
   void repairAntennas(odb::dbMTerm* diode_mterm);
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }

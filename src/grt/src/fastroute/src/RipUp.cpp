@@ -30,9 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
 
 #include "DataType.h"
@@ -332,9 +329,8 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
 
 bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 {
-  const std::vector<int>& edge_cost_per_layer
-      = nets_[netID]->edge_cost_per_layer;
-
+  FrNet *net = nets_[netID];
+  
   const TreeEdge* treeedges = sttrees_[netID].edges;
   const TreeEdge* treeedge = &(treeedges[edgeID]);
 
@@ -432,11 +428,11 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
-            -= edge_cost_per_layer[gridsL[i]];
+          -= net->layerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
-            -= edge_cost_per_layer[gridsL[i]];
+          -= net->layerEdgeCost(gridsL[i]);
       } else {
         logger_->error(
             GRT, 122, "Maze ripup wrong for net {}.", netName(nets_[netID]));

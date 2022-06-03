@@ -102,10 +102,10 @@ bool Pin::isDriver()
   if (is_port_) {
     return (bterm_->getIoType() == odb::dbIoType::INPUT);
   } else {
-    odb::dbNet* db_net = iterm_->getNet();
-    odb::dbITerm* driver = db_net->getFirstOutput();
-
-    return (driver == iterm_);
+    odb::dbMTerm* mterm = iterm_->getMTerm();
+    odb::dbIoType type = mterm->getIoType();
+    return type == odb::dbIoType::OUTPUT
+      || type == odb::dbIoType::INOUT;
   }
 }
 
