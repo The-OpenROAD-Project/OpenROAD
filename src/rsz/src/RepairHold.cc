@@ -408,11 +408,14 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               // predict. Use the journal to back out the change if
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
+              Slack setup_slack_before = sta_->worstSlack(max_);
               makeHoldDelay(path_vertex, load_pins, loads_have_out_port,
                             buffer_cell, buffer_loc);
-              Slack setup_slack = sta_->worstSlack(max_);
-              if (setup_slack < setup_margin)
-                resizer_->journalRestore(inserted_buffer_count_, resize_count_);
+              Slack setup_slack_after = sta_->worstSlack(max_);
+              if (!allow_setup_violations
+                  && fuzzyLess(setup_slack_after, setup_slack_before)
+                  && setup_slack_after < setup_margin)
+                resizer_->journalRestore(resize_count_, inserted_buffer_count_);
               resizer_->journalEnd();
             }
           }
