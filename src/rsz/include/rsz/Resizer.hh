@@ -217,7 +217,7 @@ public:
 
   ////////////////////////////////////////////////////////////////
 
-  void repairSetup(float slack_margin,
+  void repairSetup(double setup_margin,
                    int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
@@ -227,13 +227,15 @@ public:
 
   ////////////////////////////////////////////////////////////////
 
-  void repairHold(float slack_margin,
+  void repairHold(double setup_margin,
+                  double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes);
   void repairHold(Pin *end_pin,
-                  float slack_margin,
+                  double setup_margin,
+                  double hold_margin,
                   bool allow_setup_violations,
                   float max_buffer_percent,
                   int max_passes);
@@ -396,6 +398,12 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
+  void bufferDelays(LibertyCell *buffer_cell,
+                    float load_cap,
+                    const DcalcAnalysisPt *dcalc_ap,
+                    // Return values.
+                    ArcDelay delays[RiseFall::index_count],
+                    Slew slews[RiseFall::index_count]);
   void cellWireDelay(LibertyPort *drvr_port,
                      LibertyPort *load_port,
                      double wire_length, // meters
@@ -502,10 +510,11 @@ protected:
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
   void journalBegin();
-  void journalInstReplaceCellBefore(Instance *inst);
-  void journalMakeBuffer(Instance *buffer);
+  void journalEnd();
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count);
+  void journalInstReplaceCellBefore(Instance *inst);
+  void journalMakeBuffer(Instance *buffer);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis

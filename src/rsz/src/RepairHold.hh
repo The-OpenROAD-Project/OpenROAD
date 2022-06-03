@@ -66,13 +66,15 @@ class RepairHold : StaState
 {
 public:
   RepairHold(Resizer *resizer);
-  void repairHold(float slack_margin,
+  void repairHold(double setup_margin,
+                  double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes);
   void repairHold(Pin *end_pin,
-                  float slack_margin,
+                  double setup_margin,
+                  double hold_margin,
                   bool allow_setup_violations,
                   float max_buffer_percent,
                   int max_passes);
@@ -86,24 +88,27 @@ private:
                         // Return values.
                         Delay delays[RiseFall::index_count]);
   void findHoldViolations(VertexSeq &ends,
-                          float slack_margin,
+                          double hold_margin,
                           // Return values.
                           Slack &worst_slack,
                           VertexSeq &hold_violations);
   void repairHold(VertexSeq &ends,
                   LibertyCell *buffer_cell,
-                  float slack_margin,
+                  double setup_margin,
+                  double hold_margin,
                   bool allow_setup_violations,
                   int max_buffer_count,
                   int max_passes);
   void repairHoldPass(VertexSeq &ends,
                       LibertyCell *buffer_cell,
-                      float slack_margin,
+                      double setup_margin,
+                      double hold_margin,
                       bool allow_setup_violations,
                       int max_buffer_count);
   void repairEndHold(Vertex *worst_vertex,
                      LibertyCell *buffer_cell,
-                     float slack_margin,
+                     double setup_margin,
+                     double hold_margin,
                      bool allow_setup_violations,
                      int max_buffer_count);
   void makeHoldDelay(Vertex *drvr,
@@ -122,6 +127,10 @@ private:
   int inserted_buffer_count_;
   const MinMax *min_;
   const MinMax *max_;
+  const int min_index_;
+  const int max_index_;
+  const int rise_index_;
+  const int fall_index_;
 
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
 };
