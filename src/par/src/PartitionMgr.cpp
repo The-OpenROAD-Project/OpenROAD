@@ -1388,18 +1388,9 @@ void PartSolutions::resetEvaluation()
 void PartitionMgr::reportGraph()
 {
   hypergraph();
-  int numNodes;
-  int numEdges;
-  if (options_.getGraphModel() == HYPERGRAPH) {
-    numNodes = hypergraph_->getNumVertex();
-    numEdges = hypergraph_->getNumEdges();
-  } else {
-    toGraph();
-    numNodes = graph_->getNumVertex();
-    numEdges = graph_->getNumEdges();
-  }
-  logger_->info(PAR, 67, "Number of Nodes: {}", numNodes);
-  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", numEdges);
+  toGraph();
+  logger_->info(PAR, 67, "Number of Nodes: {}", graph_->getNumVertex());
+  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
 }
 
 void PartitionMgr::partitionDesign(unsigned int max_num_macro,

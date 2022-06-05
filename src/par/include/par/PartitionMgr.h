@@ -75,8 +75,7 @@ enum GraphType : uint8_t
 {
   CLIQUE,
   HYBRID,
-  STAR,
-  HYPERGRAPH
+  STAR
 };
 
 class PartOptions
@@ -168,7 +167,7 @@ class PartOptions
   bool termProp_ = false;
   double cutHopRatio_ = 1.0;
   std::string tool_ = "chaco";
-  GraphType graphModel_ = HYPERGRAPH;
+  GraphType graphModel_ = HYBRID;
   std::string evaluationFunction_ = "hyperedges";
   unsigned cliqueThreshold_ = 50;
   unsigned weightModel_ = 1;
