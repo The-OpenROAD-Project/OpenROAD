@@ -1,0 +1,31 @@
+{
+    "name": "dbGuide",
+    "parent": "dbObject",
+    "fields": [
+      {
+        "name": "net_",
+        "type": "dbId<_dbNet>",
+        "flags": [
+          "private"
+        ]
+      },
+      {
+        "name": "box_",
+        "type": "Rect",
+        "flags": [
+          "no-set"
+        ]
+      },
+      {
+        "name": "layer_",
+        "type": "dbId<_dbTechLayer>",
+        "flags": [
+          "private"
+        ]
+      }
+    ],
+    "cpp_includes": [
+      "dbTechLayer.h",
+      "dbNet.h"
+    ]
+  }
