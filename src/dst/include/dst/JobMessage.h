@@ -29,6 +29,8 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <vector>
+
 namespace boost::serialization {
 class access;
 }
@@ -54,25 +56,51 @@ class JobDescription
 class JobMessage
 {
  public:
-  enum JobType
+  enum JobType : int8_t
   {
     ROUTING,
+    UPDATE_DESIGN,
+    BALANCER,
+    SUCCESS,
+    ERROR,
     NONE
   };
-  JobMessage(JobType in) : type_(in) {}
+  enum MessageType : int8_t
+  {
+    UNICAST,
+    BROADCAST
+  };
+  JobMessage(JobType job_type = NONE, MessageType msg_type = UNICAST)
+      : msg_type_(msg_type), job_type_(job_type)
+  {
+  }
   void setJobDescription(std::unique_ptr<JobDescription> in)
   {
     desc_ = std::move(in);
   }
+  std::unique_ptr<JobDescription>& getJobDescriptionRef() { return desc_; }
+  void addJobDescription(std::unique_ptr<JobDescription> in)
+  {
+    descs_.push_back(std::move(in));
+    // desc_ = std::move(in);
+  }
+  const std::vector<std::unique_ptr<JobDescription>>& getAllJobDescriptions()
+  {
+    return descs_;
+  }
+  void setJobType(JobType in) { job_type_ = in; }
   JobDescription* getJobDescription() { return desc_.get(); }
-  JobType getType() const { return type_; }
+  JobType getJobType() const { return job_type_; }
+  MessageType getMessageType() const { return msg_type_; }
 
  private:
-  JobType type_;
+  MessageType msg_type_;
+  JobType job_type_;
   std::unique_ptr<JobDescription> desc_;
-  JobMessage() : JobMessage(NONE) {}
+  std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP = "\r\n\r\n";  // ENDOFPACKET SEQUENCE
+  static constexpr const char* EOP
+      = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

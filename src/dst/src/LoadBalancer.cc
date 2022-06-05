@@ -30,10 +30,24 @@
 
 #include <boost/bind/bind.hpp>
 
+#include "utl/Logger.h"
 namespace dst {
 
 void LoadBalancer::start_accept()
 {
+  if (jobs_ != 0 && jobs_ % 100 == 0) {
+    logger_->info(utl::DST, 7, "Processed {} jobs", jobs_);
+    auto copy = workers_;
+    while (!copy.empty()) {
+      auto worker = copy.top();
+      logger_->report("Worker {}/{} handled {} jobs",
+                      worker.ip,
+                      worker.port,
+                      worker.priority);
+      copy.pop();
+    }
+  }
+  jobs_++;
   BalancerConnection::pointer connection
       = BalancerConnection::create(*service, this, logger_);
   acceptor_.async_accept(connection->socket(),
@@ -43,22 +57,24 @@ void LoadBalancer::start_accept()
                                      asio::placeholders::error));
 }
 
-LoadBalancer::LoadBalancer(asio::io_service& io_service,
+LoadBalancer::LoadBalancer(Distributed* dist,
+                           asio::io_service& io_service,
                            utl::Logger* logger,
                            const char* ip,
                            unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
-      logger_(logger)
+    : dist_(dist),
+      acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+      logger_(logger),
+      jobs_(0)
 {
+  // pool_ = std::make_unique<asio::thread_pool>();
   service = &io_service;
   start_accept();
 }
 
-void LoadBalancer::addWorker(std::string ip,
-                             unsigned short port,
-                             unsigned short avail)
+void LoadBalancer::addWorker(std::string ip, unsigned short port)
 {
-  workers_.push(worker(ip::address::from_string(ip), port, avail));
+  workers_.push(worker(ip::address::from_string(ip), port, 0));
 }
 void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
 {
@@ -68,30 +84,30 @@ void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port)
-      worker.priority++;
+      worker.priority--;
     newQueue.push(worker);
   }
   workers_.swap(newQueue);
 }
+void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
+{
+  std::lock_guard<std::mutex> lock(workers_mutex_);
+  if (!workers_.empty()) {
+    worker w = workers_.top();
+    workers_.pop();
+    ip = w.ip;
+    port = w.port;
+    if (w.priority != std::numeric_limits<int>::max())
+      w.priority++;
+    workers_.push(w);
+  }
+}
+
 void LoadBalancer::handle_accept(BalancerConnection::pointer connection,
                                  const boost::system::error_code& err)
 {
-  if (!err) {
-    ip::address workerAddress;
-    unsigned short port = 0;
-    {
-      std::lock_guard<std::mutex> lock(workers_mutex_);
-      if (!workers_.empty()) {
-        worker w = workers_.top();
-        workers_.pop();
-        workerAddress = w.ip;
-        port = w.port;
-        w.priority--;
-        workers_.push(w);
-      }
-    }
-    connection->start(workerAddress, port);
-  }
+  if (!err)
+    connection->start();
   start_accept();
 }
 }  // namespace dst

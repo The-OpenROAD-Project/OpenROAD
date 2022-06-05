@@ -297,7 +297,13 @@ struct frDebugSettings
         iter(0),
         paMarkers(false),
         paEdge(false),
-        paCommit(false)
+        paCommit(false),
+        mazeEndIter(-1),
+        drcCost(-1),
+        markerCost(-1),
+        ripupMode(-1),
+        followGuide(-1)
+
   {
   }
 
@@ -317,6 +323,13 @@ struct frDebugSettings
   bool paMarkers;
   bool paEdge;
   bool paCommit;
+  std::string dumpDir;
+
+  int mazeEndIter;
+  int drcCost;
+  int markerCost;
+  int ripupMode;
+  int followGuide;
 };
 
 // Avoids the need to split the whole serializer like

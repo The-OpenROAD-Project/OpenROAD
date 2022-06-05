@@ -51,22 +51,13 @@ class frInstBlockage : public frBlockObject
   // setters
   // others
   frBlockObjectEnum typeId() const override { return frcInstBlockage; }
+  void setOrderId(int in) { order_id_ = in; }
+  int getOrderId() const { return order_id_; }
 
  private:
+  int order_id_;
   frInst* inst_;
   frBlockage* blockage_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & inst_;
-    (ar) & blockage_;
-  }
-
-  frInstBlockage() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 
