@@ -49,14 +49,14 @@ class _dbDatabase;
 class _dbInst;
 class _dbModInst;
 class _dbNet;
+class _dbRegion;
 // User Code Begin Classes
 // User Code End Classes
 
 struct dbGroupFlags
 {
   uint _type : 2;
-  uint _box : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits_ : 30;
 };
 // User Code Begin Structs
 // User Code End Structs
@@ -69,7 +69,6 @@ class _dbGroup : public _dbObject
 
   dbGroupFlags flags_;
   char* _name;
-  Rect _box;
   dbId<_dbGroup> _next_entry;
   dbId<_dbGroup> _group_next;
   dbId<_dbGroup> _parent_group;
@@ -78,9 +77,11 @@ class _dbGroup : public _dbObject
   dbId<_dbGroup> _groups;
   dbVector<dbId<_dbNet>> _power_nets;
   dbVector<dbId<_dbNet>> _ground_nets;
+  dbId<_dbGroup> region_next_;
+  dbId<_dbGroup> region_prev_;
+  dbId<_dbRegion> region_;
 
   // User Code Begin Fields
-  dbVector<dbId<_dbNet>> _nets;
   // User Code End Fields
   _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);

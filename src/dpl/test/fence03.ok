@@ -5,8 +5,6 @@
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: fence03.def
 [INFO ODB-0128] Design: ten_cells
-[WARNING ODB-0153] Warning: A REGION with the name "er0" already exists, renaming this GROUP to "er0_group".
-[WARNING ODB-0153] Warning: A REGION with the name "er1" already exists, renaming this GROUP to "er1_group".
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.

@@ -845,21 +845,14 @@ void Optdp::setUpPlacementRegions() {
   rptr->setMinY(ymin);
   rptr->setMaxY(ymax);
 
-  // Hmm.  I noticed a comment in the OpenDP interface that
-  // the OpenDB represents groups as regions.  I'll follow
-  // the same approach and hope it is correct.
-  // DEF GROUP => dbRegion with instances, no boundary, parent->region
-  // DEF REGION => dbRegion no instances, boundary, parent = null
-  auto db_regions = block->getRegions();
-  for (auto db_region : db_regions) {
-    dbRegion* parent = db_region->getParent();
-    if (parent) {
+  auto db_groups = block->getGroups();
+  for (auto db_group : db_groups) {
+    dbRegion* parent = db_group->getRegion();
+    if(parent) {
       rptr = arch_->createAndAddRegion();
       rptr->setId(count);
       ++count;
-
-      // Assuming these are the rectangles making up the region...
-      auto boundaries = db_region->getParent()->getBoundaries();
+      auto boundaries = parent->getBoundaries();
       for (dbBox* boundary : boundaries) {
         Rect box;
         boundary->getBox(box);
@@ -882,7 +875,7 @@ void Optdp::setUpPlacementRegions() {
       }
 
       // The instances within this region.
-      for (auto db_inst : db_region->getRegionInsts()) {
+      for (auto db_inst : db_group->getInsts()) {
         it_n = instMap_.find(db_inst);
         if (instMap_.end() != it_n) {
           Node* nd = it_n->second;

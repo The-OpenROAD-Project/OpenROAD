@@ -51,6 +51,7 @@ class dbSWire;
 class dbObstruction;
 class dbBlockage;
 class dbRegion;
+class dbGroup;
 class dbTechLayerRule;
 class dbTechNonDefaultRule;
 class dbProperty;
@@ -108,8 +109,11 @@ class dbFlatten
   void copyBlockage(dbBlock* dst_block, dbBlockage* src);
   void copyRegion(dbBlock* parent_block,
                   dbInst* child_inst,
-                  dbRegion* parent_region,
                   dbRegion* src);
+  void copyGroup(dbBlock* parent_block,
+                 dbRegion* parent_region,
+                 dbInst* child_inst,
+                 dbGroup* src);
   void setShapeProperties(dbWire* wire);
   void setOldShapeIds(dbWire* wire);
   void mapOld2newIds(dbWire* wire, FILE* fp);

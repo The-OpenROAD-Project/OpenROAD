@@ -125,13 +125,14 @@ void orderWires(dbNet* net, bool force, bool verbose)
   bool no_convert = false;
   if (net->getSigType() == dbSigType::POWER
       || net->getSigType() == dbSigType::GROUND) {
-    notice(0, "skipping power net\n");
+    if (verbose)
+      notice(0, "skipping power net\n");
     return;
   }
   _conn->resetSplitCnt();
   _conn->analyzeNet(net, force, verbose, false, no_convert);
   int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0)
+  if (splitcnt != 0 && verbose)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
 }
 

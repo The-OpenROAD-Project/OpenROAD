@@ -168,6 +168,7 @@ class FlexDR
   std::vector<int> numViols_;
   std::unique_ptr<FlexDRGraphics> graphics_;
   std::string debugNetName_;
+  int numWorkUnits_;
 
   // distributed
   dst::Distributed* dist_;

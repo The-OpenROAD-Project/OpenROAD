@@ -2165,11 +2165,12 @@ std::string DbGroupDescriptor::getTypeName() const
 bool DbGroupDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* group = std::any_cast<odb::dbGroup*>(object);
-  if (group->hasBox()) {
-    bbox = group->getBox();
+  auto* region = group->getRegion();
+  if(region != nullptr && region->getBoundaries().size() == 1)
+  {
+    region->getBoundaries().begin()->getBox(bbox);
     return true;
   }
-
   return false;
 }
 
@@ -2302,7 +2303,7 @@ void DbRegionDescriptor::highlight(std::any object,
                                   void* additional_data) const
 {
   auto* region = std::any_cast<odb::dbRegion*>(object);
-  for (auto* child : region->getChildren()) {
+  for (auto* child : region->getGroups()) {
     highlight(child, painter, nullptr);
   }
 
@@ -2319,17 +2320,12 @@ Descriptor::Properties DbRegionDescriptor::getProperties(std::any object) const
   auto* gui = Gui::get();
 
   Properties props({{"Region Type", region->getRegionType().getString()}});
-  auto* parent = region->getParent();
-  if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
-  }
-
   SelectionSet children;
-  for (auto* child : region->getChildren()) {
+  for (auto* child : region->getGroups()) {
     children.insert(gui->makeSelected(child));
   }
   if (!children.empty()) {
-    props.push_back({"Children", children});
+    props.push_back({"Groups", children});
   }
 
   SelectionSet insts;

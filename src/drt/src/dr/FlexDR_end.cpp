@@ -649,6 +649,7 @@ bool FlexDRWorker::end(frDesign* design)
                                  // status, then should always write back
   endRemoveMarkers(design);
   endAddMarkers(design);
+  return true;
   // release lock
   return true;
 }

@@ -4992,21 +4992,19 @@ class dbRegion : public dbObject
   void removeInst(dbInst* inst);
 
   ///
-  /// Get the parent of this region. Returns null of this region has no parent.
+  /// Remove this group from the region
   ///
-  dbRegion* getParent();
+  void removeGroup(dbGroup* group);
 
   ///
-  /// Get the children of this region.
+  /// Add group to this region.
   ///
-  dbSet<dbRegion> getChildren();
+  void addGroup(dbGroup* group);
 
   ///
-  /// Add child region to this region.
+  /// Get the groups of this region.
   ///
-  /// This method will do nothing if this child already has a parent.
-  ///
-  void addChild(dbRegion* region);
+  dbSet<dbGroup> getGroups();
 
   ///
   /// Get the block of this region
@@ -5018,12 +5016,6 @@ class dbRegion : public dbObject
   /// exists in the block.
   ///
   static dbRegion* create(dbBlock* block, const char* name);
-
-  ///
-  /// Create a new region. The region will become a child region of parent.
-  /// Returns NULL if a region with this name already exists in the block.
-  ///
-  static dbRegion* create(dbRegion* parent, const char* name);
 
   ///
   /// Destroy a region.
@@ -8847,21 +8839,15 @@ class dbGroup : public dbObject
 
   const char* getName() const;
 
-  Rect getBox() const;
-
-  void setParentGroup(dbGroup* parent_group);
-
   dbGroup* getParentGroup() const;
+
+  dbRegion* getRegion() const;
 
   // User Code Begin dbGroup
 
   void setType(dbGroupType type);
 
   dbGroupType getType() const;
-
-  void setBox(Rect _box);
-
-  bool hasBox();
 
   void addModInst(dbModInst* modinst);
 
@@ -8893,12 +8879,7 @@ class dbGroup : public dbObject
 
   static dbGroup* create(dbBlock* block, const char* name);
 
-  static dbGroup* create(dbBlock* block,
-                         const char* name,
-                         int x1,
-                         int y1,
-                         int x2,
-                         int y2);
+  static dbGroup* create(dbRegion* parent, const char* name);
 
   static dbGroup* create(dbGroup* parent, const char* name);
 
