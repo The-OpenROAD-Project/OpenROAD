@@ -152,11 +152,6 @@ class PartOptions
   unsigned getFinalPartitions() { return finalPartitions_; }
   void setForceGraph(bool force) { forceGraph_ = force; }
   bool getForceGraph() { return forceGraph_; }
-  void setClusteringScheme(const std::string& scheme)
-  {
-    clusteringScheme_ = scheme;
-  }
-  std::string getClusteringScheme() { return clusteringScheme_; }
 
  private:
   unsigned numStarts_ = 1;
@@ -182,7 +177,6 @@ class PartOptions
   std::vector<int> archTopology_;
   std::set<int> seeds_;
   std::vector<int> partitionsToTest_;
-  std::string clusteringScheme_ = "scheme1";
   std::mt19937 seedGenerator_ = std::mt19937();
 };
 

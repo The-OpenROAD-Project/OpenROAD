@@ -1349,10 +1349,6 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
 void PartitionMgr::runClustering()
 {
   hypergraph();
-  if (options_.getClusteringScheme() == "hem") {
-  } else if (options_.getClusteringScheme() == "scheme2") {
-  } else {
-  }
 }
 
 void PartSolutions::addAssignment(

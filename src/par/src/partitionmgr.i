@@ -204,10 +204,6 @@ void set_force_graph(bool value) {
         getPartitionMgr()->getOptions().setForceGraph(value);
 }
 
-void set_clustering_scheme(const char* name) {
-        getPartitionMgr()->getOptions().setClusteringScheme(name);
-}
-
 void run_clustering() {
         getPartitionMgr()->runClustering();
 }
