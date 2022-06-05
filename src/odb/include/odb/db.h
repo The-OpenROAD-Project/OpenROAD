@@ -991,6 +991,11 @@ class dbBlock : public dbObject
   // void dbBlock::writeDb(char *filename, int allNode=0);
   void writeDb(char* filename, int allNode = 0);
 
+  //
+  // Utility to write guides file
+  //
+  void writeGuides(const char* filename) const;
+
   ///
   /// Find a specific via of this block.
   /// Returns NULL if the object was not found.
@@ -2641,7 +2646,9 @@ class dbNet : public dbObject
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
 
-  dbSet<dbGuide> getGuides();
+  dbSet<dbGuide> getGuides() const;
+
+  void clearGuides();
 };
 
 ///////////////////////////////////////////////////////////////////////////////

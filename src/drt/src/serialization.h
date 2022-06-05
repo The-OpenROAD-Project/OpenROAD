@@ -535,8 +535,6 @@ void register_types(Archive& ar)
 template <class Archive>
 void serialize_globals(Archive& ar)
 {
-  (ar) & GUIDE_FILE;
-  (ar) & OUTGUIDE_FILE;
   (ar) & DBPROCESSNODE;
   (ar) & OUT_MAZE_FILE;
   (ar) & DRC_RPT_FILE;

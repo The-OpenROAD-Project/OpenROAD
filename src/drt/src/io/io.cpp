@@ -856,16 +856,17 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
     }
   }
   auto db_path_segs = db_ap->getSegments();
-  for(const auto& [db_rect, begin_style_trunc, end_style_trunc] : db_path_segs) {
+  for (const auto& [db_rect, begin_style_trunc, end_style_trunc] :
+       db_path_segs) {
     frPathSeg path_seg;
     path_seg.setPoints_safe(db_rect.ll(), db_rect.ur());
-    if(begin_style_trunc == true){
+    if (begin_style_trunc == true) {
       path_seg.setBeginStyle(frcTruncateEndStyle);
     }
-    if(end_style_trunc == true){
+    if (end_style_trunc == true) {
       path_seg.setEndStyle(frcTruncateEndStyle);
     }
-    
+
     ap->addPathSeg(path_seg);
   }
 }
@@ -2245,7 +2246,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   setNDRs(db);
 }
 
-void io::Parser::readDb(odb::dbDatabase* db)
+void io::Parser::readDb()
 {
   if (design->getTopBlock() != nullptr)
     return;
@@ -2297,105 +2298,59 @@ void io::Parser::readDb(odb::dbDatabase* db)
   }
 }
 
-void io::Parser::readGuide()
+bool io::Parser::readGuide()
 {
   ProfileTask profile("IO:readGuide");
-
-  if (VERBOSE > 0) {
-    logger->info(DRT, 151, "Reading guide.");
-  }
-
   int numGuides = 0;
-
-  string netName = "";
-  frNet* net = nullptr;
-
-  ifstream fin(GUIDE_FILE.c_str());
-  string line;
-  Rect box;
-  frLayerNum layerNum;
-
-  if (fin.is_open()) {
-    while (fin.good()) {
-      getline(fin, line);
-      // cout <<line <<endl <<line.size() <<endl;
-      if (line == "(" || line == "")
-        continue;
-      if (line == ")") {
-        continue;
-      }
-
-      stringstream ss(line);
-      string word = "";
-      vector<string> vLine;
-      while (!ss.eof()) {
-        ss >> word;
-        vLine.push_back(word);
-        // cout <<word <<" ";
-      }
-      // cout <<endl;
-
-      if (vLine.size() == 0) {
-        logger->error(DRT, 152, "Error reading guide file {}.", GUIDE_FILE);
-      } else if (vLine.size() == 1) {
-        netName = vLine[0];
-        if (design->topBlock_->name2net_.find(vLine[0])
-            == design->topBlock_->name2net_.end()) {
-          logger->error(DRT, 153, "Cannot find net {}.", vLine[0]);
+  auto block = db->getChip()->getBlock();
+  for (auto dbNet : block->getNets()) {
+    if (dbNet->getGuides().empty())
+      continue;
+    frNet* net = design->topBlock_->findNet(dbNet->getName());
+    if (net == nullptr)
+      logger->error(DRT, 153, "Cannot find net {}.", dbNet->getName());
+    for (auto dbGuide : dbNet->getGuides()) {
+      frLayer* layer = design->tech_->getLayer(dbGuide->getLayer()->getName());
+      if (layer == nullptr)
+        logger->error(
+            DRT, 154, "Cannot find layer {}.", dbGuide->getLayer()->getName());
+      frLayerNum layerNum = layer->getLayerNum();
+      if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
+          || layerNum > TOP_ROUTING_LAYER)
+        logger->error(DRT,
+                      155,
+                      "Guide in net {} uses layer {} ({})"
+                      " that is outside the allowed routing range "
+                      "[{} ({}), ({})].",
+                      net->getName(),
+                      layer->getName(),
+                      layerNum,
+                      tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
+                      BOTTOM_ROUTING_LAYER,
+                      tech->getLayer(TOP_ROUTING_LAYER)->getName(),
+                      TOP_ROUTING_LAYER);
+      frRect rect;
+      rect.setBBox(dbGuide->getBox());
+      rect.setLayerNum(layerNum);
+      tmpGuides[net].push_back(rect);
+      ++numGuides;
+      if (numGuides < 1000000) {
+        if (numGuides % 100000 == 0) {
+          logger->info(DRT, 156, "guideIn read {} guides.", numGuides);
         }
-        net = design->topBlock_->name2net_[netName];
-      } else if (vLine.size() == 5) {
-        if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
-          logger->error(DRT, 154, "Cannot find layer {}.", vLine[4]);
-        }
-        layerNum = tech->name2layer[vLine[4]]->getLayerNum();
-
-        if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
-            || layerNum > TOP_ROUTING_LAYER)
-          logger->error(DRT,
-                        155,
-                        "Guide in net {} uses layer {} ({})"
-                        " that is outside the allowed routing range "
-                        "[{} ({}), ({})].",
-                        netName,
-                        vLine[4],
-                        layerNum,
-                        tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
-                        BOTTOM_ROUTING_LAYER,
-                        tech->getLayer(TOP_ROUTING_LAYER)->getName(),
-                        TOP_ROUTING_LAYER);
-
-        box.init(
-            stoi(vLine[0]), stoi(vLine[1]), stoi(vLine[2]), stoi(vLine[3]));
-        frRect rect;
-        rect.setBBox(box);
-        rect.setLayerNum(layerNum);
-        tmpGuides[net].push_back(rect);
-        ++numGuides;
-        if (numGuides < 1000000) {
-          if (numGuides % 100000 == 0) {
-            logger->info(DRT, 156, "guideIn read {} guides.", numGuides);
-          }
-        } else {
-          if (numGuides % 1000000 == 0) {
-            logger->info(DRT, 157, "guideIn read {} guides.", numGuides);
-          }
-        }
-
       } else {
-        logger->error(DRT, 158, "Error reading guide file {}.", GUIDE_FILE);
+        if (numGuides % 1000000 == 0) {
+          logger->info(DRT, 157, "guideIn read {} guides.", numGuides);
+        }
       }
     }
-    fin.close();
-  } else {
-    logger->error(DRT, 159, "Failed to open guide file {}.", GUIDE_FILE);
   }
-
   if (VERBOSE > 0) {
     logger->report("");
     logger->report("Number of guides:     {}", numGuides);
     logger->report("");
   }
+  return !tmpGuides.empty();
 }
 
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
@@ -2927,7 +2882,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     ++numCuts;
   }
   auto path_segs = ap->getPathSegs();
-  for(const auto& path_seg : path_segs) {
+  for (const auto& path_seg : path_segs) {
     Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
     bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
     bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);

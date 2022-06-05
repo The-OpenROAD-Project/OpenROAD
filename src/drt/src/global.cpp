@@ -41,8 +41,6 @@
 using namespace std;
 using namespace fr;
 
-string GUIDE_FILE;
-string OUTGUIDE_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
@@ -71,6 +69,8 @@ bool ENABLE_VIA_GEN = true;
 bool CLEAN_PATCHES = false;
 bool DO_PA = true;
 bool SINGLE_STEP_DR = false;
+bool SAVE_GUIDE_UPDATES = false;
+
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;
 std::string VIAINPIN_TOPLAYER_NAME;

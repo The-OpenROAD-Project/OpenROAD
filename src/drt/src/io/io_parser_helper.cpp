@@ -666,8 +666,10 @@ void io::Parser::postProcess()
   design->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
-void io::Parser::postProcessGuide(odb::dbDatabase* db)
+void io::Parser::postProcessGuide()
 {
+  if (tmpGuides.empty())
+    return;
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
     logger->info(DRT, 169, "Post process guides.");
@@ -714,16 +716,12 @@ void io::Parser::postProcessGuide(odb::dbDatabase* db)
   logger->info(DRT, 179, "Init gr pin query.");
   design->getRegionQuery()->initGRPin(tmpGRPins);
 
-  if (OUTGUIDE_FILE == string("")) {
+  if (!SAVE_GUIDE_UPDATES) {
     if (VERBOSE > 0) {
-      logger->warn(
-          DRT, 245, "No output guide specified, skipped writing guide.");
+      logger->warn(DRT, 245, "skipped writing guide updates to database.");
     }
   } else {
-    // if (VERBOSE > 0) {
-    //   cout <<endl <<"start writing output guide" <<endl;
-    // }
-    writeGuideFile();
+    saveGuidesUpdates();
   }
 }
 
@@ -1046,38 +1044,38 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
   }
 }
 
-void io::Parser::writeGuideFile()
+void io::Parser::saveGuidesUpdates()
 {
-  ofstream outputGuide(OUTGUIDE_FILE.c_str());
-  if (outputGuide.is_open()) {
-    for (auto& net : design->topBlock_->getNets()) {
-      auto netName = net->getName();
-      outputGuide << netName << endl;
-      outputGuide << "(\n";
-      for (auto& guide : net->getGuides()) {
-        Point bp, ep;
-        guide->getPoints(bp, ep);
-        Point bpIdx, epIdx;
-        design->getTopBlock()->getGCellIdx(bp, bpIdx);
-        design->getTopBlock()->getGCellIdx(ep, epIdx);
-        Rect bbox, ebox;
-        design->getTopBlock()->getGCellBox(bpIdx, bbox);
-        design->getTopBlock()->getGCellBox(epIdx, ebox);
-        frLayerNum bNum = guide->getBeginLayerNum();
-        frLayerNum eNum = guide->getEndLayerNum();
-        // append unit guide in case of stacked via
-        if (bNum != eNum) {
-          auto startLayerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.xMin() << " " << bbox.yMin() << " " << bbox.xMax()
-                      << " " << bbox.yMax() << " " << startLayerName << ".5"
-                      << endl;
-        } else {
-          auto layerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.xMin() << " " << bbox.yMin() << " " << ebox.xMax()
-                      << " " << ebox.yMax() << " " << layerName << endl;
+  auto block = db->getChip()->getBlock();
+  auto dbTech = db->getTech();
+  for (auto& net : design->topBlock_->getNets()) {
+    auto dbNet = block->findNet(net->getName().c_str());
+    dbNet->clearGuides();
+    for (auto& guide : net->getGuides()) {
+      Point bp, ep;
+      guide->getPoints(bp, ep);
+      Point bpIdx, epIdx;
+      design->getTopBlock()->getGCellIdx(bp, bpIdx);
+      design->getTopBlock()->getGCellIdx(ep, epIdx);
+      Rect bbox, ebox;
+      design->getTopBlock()->getGCellBox(bpIdx, bbox);
+      design->getTopBlock()->getGCellBox(epIdx, ebox);
+      frLayerNum bNum = guide->getBeginLayerNum();
+      frLayerNum eNum = guide->getEndLayerNum();
+      if (bNum != eNum) {
+        for (auto lNum = min(bNum, eNum); lNum <= max(bNum, eNum); lNum += 2) {
+          auto layer = tech->getLayer(lNum);
+          auto dbLayer = dbTech->findLayer(layer->getName().c_str());
+          odb::dbGuide::create(dbNet, dbLayer, bbox);
         }
+      } else {
+        auto layerName = tech->getLayer(bNum)->getName();
+        auto dbLayer = dbTech->findLayer(layerName.c_str());
+        odb::dbGuide::create(
+            dbNet,
+            dbLayer,
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
       }
-      outputGuide << ")\n";
     }
   }
 }

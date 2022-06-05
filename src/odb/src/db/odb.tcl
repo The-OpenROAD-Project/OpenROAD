@@ -508,6 +508,20 @@ proc report_group { group } {
   }
 }
 
+sta::define_cmd_args "write_guides" { filename }
+
+proc write_guides { args } {
+  sta::check_argc_eq1 "write_guides" $args
+  set filename $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  $block writeGuides $filename
+}
+
 # pre-logger compatibility for this file only
 namespace eval ord {
 

@@ -67,9 +67,7 @@ void detailed_route_set_default_via(const char* viaName)
   router->addUserSelectedVia(viaName);
 }
 
-void detailed_route_cmd(const char* guideFile,
-                        const char* outputGuideFile,
-                        const char* outputMazeFile,
+void detailed_route_cmd(const char* outputMazeFile,
                         const char* outputDrcFile,
                         const char* outputCmapFile,
                         const char* outputGuideCoverageFile,
@@ -86,12 +84,11 @@ void detailed_route_cmd(const char* guideFile,
                         bool cleanPatches,
                         bool noPa,
                         bool singleStepDR,
-                        int minAccessPoints)
+                        int minAccessPoints,
+                        bool saveGuideUpdates)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setParams({guideFile,
-                    outputGuideFile,
-                    outputMazeFile,
+  router->setParams({outputMazeFile,
                     outputDrcFile,
                     outputCmapFile,
                     outputGuideCoverageFile,
@@ -108,7 +105,8 @@ void detailed_route_cmd(const char* guideFile,
                     cleanPatches,
                     !noPa,
                     singleStepDR,
-                    minAccessPoints});
+                    minAccessPoints,
+                    saveGuideUpdates});
   router->main();
 }
 

@@ -60,6 +60,7 @@ met5              3280             0            0.00%             0 /  0 /  0
 Total           105769          2971            2.81%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 30427 um
+[INFO GRT-0014] Routed nets: 411
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069

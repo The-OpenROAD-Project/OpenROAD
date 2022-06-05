@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -66,7 +67,6 @@
 #include "dbGroup.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupInstItr.h"
-#include "dbRegionGroupItr.h"
 #include "dbGroupItr.h"
 #include "dbGroupModInstItr.h"
 #include "dbGroupPowerNetItr.h"
@@ -90,6 +90,7 @@
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbRegion.h"
+#include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbRow.h"
 #include "dbSBox.h"
@@ -318,7 +319,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
-  
+
   _group_itr = new dbGroupItr(_group_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
@@ -487,7 +488,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
-  
+
   _group_itr = new dbGroupItr(_group_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
@@ -3290,6 +3291,38 @@ void dbBlock::writeDb(char* filename, int allNode)
     block->_journal->pushParam(allNode);
     block->_journal->endAction();
   }
+}
+
+void dbBlock::writeGuides(const char* filename) const
+{
+  std::ofstream guide_file;
+  guide_file.open(filename);
+  if (!guide_file.is_open()) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 307, "Guides file could not be opened.");
+  }
+  dbBlock* block = (dbBlock*) this;
+  std::vector<dbNet*> nets;
+  nets.reserve(block->getNets().size());
+  for (auto net : block->getNets()) {
+    if (!net->getGuides().empty())
+      nets.push_back(net);
+  }
+  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+    return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+  });
+  for (auto net : nets) {
+    guide_file << net->getName() << "\n";
+    guide_file << "(\n";
+    for (auto guide : net->getGuides()) {
+      guide_file << guide->getBox().xMin() << " " << guide->getBox().yMin()
+                 << " " << guide->getBox().xMax() << " "
+                 << guide->getBox().yMax() << " "
+                 << guide->getLayer()->getName() << "\n";
+    }
+    guide_file << ")\n";
+  }
+  guide_file.close();
 }
 
 bool dbBlock::differences(dbBlock* block1,

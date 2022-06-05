@@ -48,6 +48,7 @@
 #include "dbDiff.hpp"
 #include "dbExtControl.h"
 #include "dbGroup.h"
+#include "dbGuide.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
@@ -61,7 +62,6 @@
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbGuide.h"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
@@ -138,7 +138,8 @@ _dbNet::_dbNet(_dbDatabase* db)
   _ccAdjustOrder = 0;
   _drivingIterm = -1;
 
-  guide_tbl_ = new dbTable<_dbGuide>(db, this, (GetObjTbl_t) &_dbNet::getObjectTable, dbGuideObj);
+  guide_tbl_ = new dbTable<_dbGuide>(
+      db, this, (GetObjTbl_t) &_dbNet::getObjectTable, dbGuideObj);
 }
 
 _dbNet::~_dbNet()
@@ -505,12 +506,11 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
 
 dbObjectTable* _dbNet::getObjectTable(dbObjectType type)
 {
-  switch (type)
-  {
-  case dbGuideObj:
-    return guide_tbl_;
-  default:
-    break;
+  switch (type) {
+    case dbGuideObj:
+      return guide_tbl_;
+    default:
+      break;
   }
   return getTable()->getObjectTable(type);
 }
@@ -2872,23 +2872,21 @@ uint dbNet::getTermCount()
   return itc + btc;
 }
 
-Rect
-dbNet::getTermBBox()
+Rect dbNet::getTermBBox()
 {
   Rect net_box;
   net_box.mergeInit();
 
-  for (dbITerm *iterm : getITerms()) {
+  for (dbITerm* iterm : getITerms()) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
       Rect iterm_rect(x, y, x, y);
       net_box.merge(iterm_rect);
-    }
-    else {
+    } else {
       // This clause is sort of worthless because getAvgXY prints
       // a warning when it fails.
-      dbInst *inst = iterm->getInst();
-      dbBox *inst_box = inst->getBBox();
+      dbInst* inst = iterm->getInst();
+      dbBox* inst_box = inst->getBBox();
       int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
       int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
       Rect inst_center(center_x, center_y, center_x, center_y);
@@ -2896,8 +2894,8 @@ dbNet::getTermBBox()
     }
   }
 
-  for (dbBTerm *bterm : getBTerms()) {
-    for (dbBPin *bpin : bterm->getBPins()) {
+  for (dbBTerm* bterm : getBTerms()) {
+    for (dbBPin* bpin : bterm->getBPins()) {
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
         Rect pin_bbox = bpin->getBBox();
@@ -3092,10 +3090,16 @@ uint dbNet::setLevelAtFanout(uint level,
   return cnt;
 }
 
-dbSet<dbGuide> dbNet::getGuides()
+dbSet<dbGuide> dbNet::getGuides() const
 {
   _dbNet* net = (_dbNet*) this;
   return dbSet<dbGuide>(net, net->guide_tbl_);
+}
+
+void dbNet::clearGuides()
+{
+  _dbNet* net = (_dbNet*) this;
+  net->guide_tbl_->clear();
 }
 
 #if 0

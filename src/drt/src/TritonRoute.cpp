@@ -201,23 +201,22 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   FlexDRGraphics::init();
 }
 
-void TritonRoute::initGuide()
+bool TritonRoute::initGuide()
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB")
     USENONPREFTRACKS = false;
-  io::Parser parser(getDesign(), logger_);
-  if (!GUIDE_FILE.empty()) {
-    parser.readGuide();
-    parser.postProcessGuide(db_);
-  }
+  io::Parser parser(db_, getDesign(), logger_);
+  bool guideOk = parser.readGuide();
+  parser.postProcessGuide();
   parser.initRPin();
+  return guideOk;
 }
 void TritonRoute::initDesign()
 {
   if (getDesign()->getTopBlock() != nullptr)
     return;
-  io::Parser parser(getDesign(), logger_);
-  parser.readDb(db_);
+  io::Parser parser(db_, getDesign(), logger_);
+  parser.readDb();
   auto tech = getDesign()->getTech();
   if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
@@ -312,8 +311,13 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size, offset, mazeEndIter, workerDRCCost,
-      workerMarkerCost, ripupMode, followGuide});
+  dr_->searchRepair({size,
+                     offset,
+                     mazeEndIter,
+                     workerDRCCost,
+                     workerMarkerCost,
+                     ripupMode,
+                     followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
@@ -343,15 +347,13 @@ int TritonRoute::main()
     pa.setDebug(debug_.get(), db_);
     pa.main();
   }
-  initGuide();
-  if (GUIDE_FILE == string("")) {
+  if (!initGuide()) {
     gr();
-    io::Parser parser(getDesign(), logger_);
-    GUIDE_FILE = OUTGUIDE_FILE;
+    io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.postProcessGuide(db_);
+    parser.postProcessGuide();
   }
   prep();
   ta();
@@ -396,8 +398,10 @@ void TritonRoute::readParams(const string& fileName)
         } else if (field == "def") {
           logger_->warn(utl::DRT, 227, "Deprecated def param in params file.");
         } else if (field == "guide") {
-          GUIDE_FILE = value;
-          ++readParamCnt;
+          logger_->warn(
+              utl::DRT,
+              309,
+              "Deprecated guide param in params file. use read_guide instead.");
         } else if (field == "outputTA") {
           logger_->warn(
               utl::DRT, 266, "Deprecated outputTA param in params file.");
@@ -405,7 +409,12 @@ void TritonRoute::readParams(const string& fileName)
           logger_->warn(
               utl::DRT, 205, "Deprecated output param in params file.");
         } else if (field == "outputguide") {
-          OUTGUIDE_FILE = value;
+          logger_->warn(utl::DRT,
+                        310,
+                        "Deprecated outputguide param in params file. use "
+                        "write_guide instead.");
+        } else if (field == "save_guide_updates") {
+          SAVE_GUIDE_UPDATES = true;
           ++readParamCnt;
         } else if (field == "outputMaze") {
           OUT_MAZE_FILE = value;
@@ -457,10 +466,6 @@ void TritonRoute::readParams(const string& fileName)
     }
     fin.close();
   }
-
-  if (readParamCnt < 2) {
-    logger_->error(DRT, 1, "Error reading param file: {}.", fileName);
-  }
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)
@@ -481,8 +486,6 @@ void TritonRoute::addUserSelectedVia(const std::string& viaName)
 
 void TritonRoute::setParams(const ParamStruct& params)
 {
-  GUIDE_FILE = params.guideFile;
-  OUTGUIDE_FILE = params.outputGuideFile;
   OUT_MAZE_FILE = params.outputMazeFile;
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
@@ -514,4 +517,5 @@ void TritonRoute::setParams(const ParamStruct& params)
     MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
     MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
+  SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
 }
