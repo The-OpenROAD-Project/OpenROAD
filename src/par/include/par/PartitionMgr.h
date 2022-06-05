@@ -274,7 +274,6 @@ class PartitionMgr
             Logger* logger);
   void runPartitioning();
   void runClustering();
-  void run3PClustering();
   void evaluatePartitioning();
   unsigned getCurrentBestId() const { return bestId_; }
   void setCurrentBestId(unsigned id) { bestId_ = id; }

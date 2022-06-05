@@ -865,7 +865,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void PartitionMgr::run3PClustering()
+void PartitionMgr::runClustering()
 {
   hypergraph(true);
   if (options_.getTool() == "mlpart") {
@@ -1163,7 +1163,6 @@ void PartitionMgr::runMlPartClustering()
   const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
-  logger_->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
@@ -1344,11 +1343,6 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
   results_.push_back(currentResults);
 
   return partitionId;
-}
-
-void PartitionMgr::runClustering()
-{
-  hypergraph();
 }
 
 void PartSolutions::addAssignment(
