@@ -63,34 +63,13 @@ Total            69855          2943            4.21%             0 /  0 /  0
 [INFO GRT-0014] Routed nets: 411
 [INFO GRT-0006] Repairing antennas, iteration 1.
 [INFO GRT-0043] No OR_DEFAULT vias defined.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] Antenna violations: 1
 [INFO GRT-0015] 1 diodes inserted.
+[INFO GRT-0009] rerouting 4 nets.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 17
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 35
-[INFO GRT-0009] rerouting 4 nets.
 [INFO GRT-0014] Routed nets: 411
 No differences found.
 No differences found.

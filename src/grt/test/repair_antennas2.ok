@@ -63,53 +63,14 @@ Total            55327          2052            3.71%             0 /  0 /  0
 [INFO GRT-0014] Routed nets: 437
 [INFO GRT-0006] Repairing antennas, iteration 1.
 [INFO GRT-0043] No OR_DEFAULT vias defined.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] Antenna violations: 2
 [INFO GRT-0011] Deleted 5890 filler cells.
 [INFO GRT-0015] 2 diodes inserted.
+[INFO GRT-0009] rerouting 6 nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 72
-[INFO GRT-0009] rerouting 6 nets.
 [INFO GRT-0014] Routed nets: 437
 [INFO DPL-0001] Placed 5891 filler instances.
 No differences found.

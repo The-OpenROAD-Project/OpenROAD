@@ -34,15 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <iostream>
 #include <limits>
 #include <map>
-#include <set>
 #include <string>
-#include <utility>
 #include <vector>
+#include <unordered_set>
 
 #include "AntennaRepair.h"
 #include "Net.h"
@@ -64,9 +60,9 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
   block_ = db_->getChip()->getBlock();
 }
 
-int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-                                          int max_routing_layer,
-                                          odb::dbMTerm* diode_mterm)
+bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
+                                           int max_routing_layer,
+                                           odb::dbMTerm* diode_mterm)
 {
   odb::dbTech* tech = db_->getTech();
 
@@ -82,16 +78,14 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     if (wire != nullptr) {
       odb::dbWireEncoder wire_encoder;
       wire_encoder.begin(wire);
-      odb::dbWireType wire_type = odb::dbWireType::ROUTED;
 
-      std::vector<GSegment> segments_to_wires;
+      std::unordered_set<GSegment, GSegmentHash> wire_segments;
       for (GSegment& seg : route) {
         if (std::abs(seg.init_layer - seg.final_layer) > 1) {
           logger_->error(GRT, 68, "Global route segment not valid.");
         }
 
-        if (std::find(segments_to_wires.begin(), segments_to_wires.end(), seg)
-            == segments_to_wires.end()) {
+        if (wire_segments.find(seg) == wire_segments.end()) {
           int x1 = seg.init_x;
           int y1 = seg.init_y;
           int x2 = seg.final_x;
@@ -103,17 +97,17 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
           if (l1 == l2) {  // Add wire
             if (x1 != x2 || y1 != y2) {
-              wire_encoder.newPath(layer, wire_type);
+              wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
               wire_encoder.addPoint(x2, y2);
-              segments_to_wires.push_back(seg);
+              wire_segments.insert(seg);
             }
           } else {  // Add via
-            int bottom_layer = (l1 < l2) ? l1 : l2;
-            wire_encoder.newPath(layer, wire_type);
+            int bottom_layer = std::min(l1, l2);
+            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addTechVia(default_vias[bottom_layer]);
-            segments_to_wires.push_back(seg);
+            wire_segments.insert(seg);
           }
         }
       }
@@ -126,12 +120,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
               db_net,
               diode_mterm->getMaster()->getConstName(),
               diode_mterm->getConstName());
-      if (!netViol.empty()) {
+      if (!netViol.empty())
         antenna_violations_[db_net] = netViol;
-        // This should be done with the db callbacks.
-        grouter_->addDirtyNet(db_net);
-      }
-
       odb::dbWire::destroy(wire);
     } else {
       logger_->error(
@@ -140,7 +130,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   }
 
   logger_->info(GRT, 12, "Antenna violations: {}", antenna_violations_.size());
-  return antenna_violations_.size();
+  return !antenna_violations_.empty();
 }
 
 void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
@@ -167,6 +157,7 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 
   for (auto const& violation : antenna_violations_) {
     odb::dbNet* net = violation.first;
+    grouter_->addDirtyNet(net);
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sink_iterm : violation.second[i].iterms) {
         odb::dbInst* sink_inst = sink_iterm->getInst();
