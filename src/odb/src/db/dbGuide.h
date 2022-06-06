@@ -81,4 +81,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);
 // User Code Begin General
 // User Code End General
 }  // namespace odb
-   // Generator Code End Header
+// Generator Code End Header

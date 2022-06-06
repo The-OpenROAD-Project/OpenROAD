@@ -162,11 +162,17 @@ dbNet* dbGuide::getNet() const
 
 dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
 {
-  _dbNet*  owner = (_dbNet*) net;
+  _dbNet* owner = (_dbNet*) net;
   _dbGuide* guide = owner->guide_tbl_->create();
   guide->layer_ = layer->getImpl()->getOID();
   guide->box_ = box;
-  return (dbGuide*) guide; 
+  return (dbGuide*) guide;
+}
+
+dbGuide* dbGuide::getGuide(dbNet* net, uint dbid)
+{
+  _dbNet* owner = (_dbNet*) net;
+  return (dbGuide*) owner->guide_tbl_->getPtr(dbid);
 }
 
 void dbGuide::destroy(dbGuide* guide)
@@ -178,4 +184,4 @@ void dbGuide::destroy(dbGuide* guide)
 
 // User Code End dbGuidePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

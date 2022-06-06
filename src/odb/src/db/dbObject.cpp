@@ -327,6 +327,8 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
       case dbAccessPointObj:
         *cptr++ = 'h';
+      case dbGuideObj:
+        *cptr++ = ';';
         id = impl->getOID();
         break;
       case dbTechLayerMinStepRuleObj:
@@ -643,6 +645,10 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
       case 'b':  // Group
         oid = getOid(name);
         obj = dbGroup::getGroup((dbBlock*) obj, oid);
+        break;
+      case ';':
+        oid = getOid(name);
+        obj = dbGuide::getGuide((dbNet*) obj, oid);
         break;
       case 'h':
       case 'J':
