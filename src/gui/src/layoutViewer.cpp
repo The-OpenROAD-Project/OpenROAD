@@ -2921,6 +2921,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2990,11 +2991,15 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
+  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearRouteGuides();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
+    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
   });
 }
 
@@ -3032,6 +3037,14 @@ void LayoutViewer::addFocusNet(odb::dbNet* net)
   }
 }
 
+void LayoutViewer::addRouteGuides(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = route_guides_.insert(net);
+  if (inserted) {
+    fullRepaint();
+  }
+}
+
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
@@ -3045,6 +3058,14 @@ void LayoutViewer::clearFocusNets()
   if (!focus_nets_.empty()) {
     focus_nets_.clear();
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearRouteGuides()
+{
+  if (!route_guides_.empty()) {
+    route_guides_.clear();
     fullRepaint();
   }
 }

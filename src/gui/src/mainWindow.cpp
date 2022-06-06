@@ -400,9 +400,11 @@ void MainWindow::init(sta::dbSta* sta)
   timing_widget_->init(sta);
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
-
-  // register descriptors
+  // register renderers
   auto* gui = Gui::get();
+  guide_renderer_ = std::make_unique<GuideRenderer>(viewer_->getRouteGuides());
+  gui->registerRenderer(guide_renderer_.get());
+  // register descriptors
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));

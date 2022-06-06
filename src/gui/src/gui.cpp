@@ -856,6 +856,11 @@ void Gui::addFocusNet(odb::dbNet* net)
   main_window->getLayoutViewer()->addFocusNet(net);
 }
 
+void Gui::addRouteGuides(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addRouteGuides(net);
+}
+
 void Gui::removeFocusNet(odb::dbNet* net)
 {
   main_window->getLayoutViewer()->removeFocusNet(net);
@@ -864,6 +869,11 @@ void Gui::removeFocusNet(odb::dbNet* net)
 void Gui::clearFocusNets()
 {
   main_window->getLayoutViewer()->clearFocusNets();
+}
+
+void Gui::clearRouteGuides()
+{
+  main_window->getLayoutViewer()->clearRouteGuides();
 }
 
 void Gui::setLogger(utl::Logger* logger)

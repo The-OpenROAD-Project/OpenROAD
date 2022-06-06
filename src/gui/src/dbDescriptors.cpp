@@ -1311,7 +1311,11 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
       return makeSelected(net, nullptr);
     }});
   }
-
+  if(!net->getGuides().empty())
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, net]() {
+      gui->addRouteGuides(net);
+      return makeSelected(net, nullptr);
+    }});
   return actions;
 }
 

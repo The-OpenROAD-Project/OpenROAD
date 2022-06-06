@@ -43,6 +43,7 @@
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
+#include "GuideRenderer.h"
 
 namespace odb {
 class dbDatabase;
@@ -310,6 +311,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
+  std::unique_ptr<GuideRenderer> guide_renderer_;
 };
 
 }  // namespace gui
