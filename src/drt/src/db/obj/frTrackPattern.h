@@ -83,18 +83,6 @@ class frTrackPattern : public frBlockObject
   frUInt4 trackSpacing_;
   frLayerNum layerNum_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & horizontal_;
-    (ar) & startCoord_;
-    (ar) & numTracks_;
-    (ar) & trackSpacing_;
-    (ar) & layerNum_;
-  }
-
-  friend class boost::serialization::access;
 };
 
 }  // namespace fr

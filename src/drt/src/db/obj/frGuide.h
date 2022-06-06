@@ -74,6 +74,7 @@ class frGuide : public frConnFig
   {
     return routeObj_;
   }
+  int getOrderInOwner() const { return order_in_owner_; }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {
@@ -113,6 +114,7 @@ class frGuide : public frConnFig
   void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
+  void setOrderInOwner(const int& val) { order_in_owner_ = val; }
 
  private:
   Point begin_;
@@ -121,20 +123,8 @@ class frGuide : public frConnFig
   frLayerNum endLayer_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
+  int order_in_owner_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frConnFig>(*this);
-    (ar) & begin_;
-    (ar) & end_;
-    (ar) & beginLayer_;
-    (ar) & endLayer_;
-    (ar) & routeObj_;
-    (ar) & net_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

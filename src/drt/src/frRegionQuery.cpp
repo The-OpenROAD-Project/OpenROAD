@@ -88,20 +88,6 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
   void addGRObj(grShape* in);
   void addGRObj(grVia* in);
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & design_;
-    (ar) & shapes_;
-    (ar) & guides_;
-    (ar) & origGuides_;
-    // (ar) & grPins_;
-    (ar) & rpins_;
-    (ar) & grObjs_;
-    (ar) & drObjs_;
-    (ar) & markers_;
-  }
-  friend class boost::serialization::access;
 };
 
 frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
@@ -1094,18 +1080,3 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
-
-template <class Archive>
-void frRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void frRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
-    const unsigned int file_version);
-
-template void frRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
-    const unsigned int file_version);

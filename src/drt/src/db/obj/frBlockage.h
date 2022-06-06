@@ -48,20 +48,14 @@ class frBlockage : public frBlockObject
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
+  void setOrderId(int in) { order_id_ = in; }
+  int getOrderId() const { return order_id_; }
 
- protected:
+ private:
+  int order_id_;
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & pin_;
-    (ar) & design_rule_width_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

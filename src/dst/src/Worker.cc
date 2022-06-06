@@ -29,6 +29,9 @@
 #include "Worker.h"
 
 #include <boost/bind/bind.hpp>
+#include <boost/thread/thread.hpp>
+
+#include "utl/Logger.h"
 
 namespace ip = asio::ip;
 
@@ -36,28 +39,35 @@ namespace dst {
 
 void Worker::start_accept()
 {
-  WorkerConnection::pointer connection
-      = WorkerConnection::create(*service, dist_, logger_);
+  auto connection
+      = boost::make_shared<WorkerConnection>(service_, dist_, logger_, this);
   acceptor_.async_accept(
       connection->socket(),
       boost::bind(
           &Worker::handle_accept, this, connection, asio::placeholders::error));
 }
 
-Worker::Worker(asio::io_service& io_service,
-               Distributed* dist,
+Worker::Worker(Distributed* dist,
                utl::Logger* logger,
                const char* ip,
                unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+    : acceptor_(service_, tcp::endpoint(ip::address::from_string(ip), port)),
       dist_(dist),
       logger_(logger)
 {
-  service = &io_service;
   start_accept();
 }
 
-void Worker::handle_accept(WorkerConnection::pointer connection,
+Worker::~Worker()
+{
+  service_.stop();
+}
+void Worker::run()
+{
+  service_.run();
+}
+
+void Worker::handle_accept(boost::shared_ptr<WorkerConnection> connection,
                            const boost::system::error_code& err)
 {
   if (!err) {

@@ -29,11 +29,12 @@
 sta::define_cmd_args "run_worker" {
     [-host host]
     [-port port]
+    [-i]
 }
 proc run_worker { args } {
   sta::parse_key_args "run_worker" args \
-    keys {-host -port} \
-    flags {}
+    keys {-host -port -threads} \
+    flags {-i}
   sta::check_argc_eq0 "run_worker" $args
   if { [info exists keys(-host)] } {
     set host $keys(-host)
@@ -45,7 +46,8 @@ proc run_worker { args } {
   } else {
     utl::error DST 3 "-port is required in run_worker cmd."
   }
-  dst::run_worker_cmd $host $port
+  set interactive [info exists flags(-i)]
+  dst::run_worker_cmd $host $port $interactive
 }
 
 sta::define_cmd_args "run_load_balancer" {
@@ -69,8 +71,23 @@ proc run_load_balancer { args } {
   }
   dst::run_load_balancer $host $port
 }
-
+sta::define_cmd_args "add_worker_address" {
+    [-host host]
+    [-port port]
+}
 proc add_worker_address { args } {
-  sta::check_argc_eq2 "add_worker_address" $args
-  dst::add_worker_address [lindex $args 0] [lindex $args 1]
+  sta::parse_key_args "add_worker_address" args \
+    keys {-host -port -threads} \
+    flags {}
+  if { [info exists keys(-host)] } {
+    set host $keys(-host)
+  } else {
+    utl::error DST 16 "-host is required in add_worker_address cmd."
+  }
+  if { [info exists keys(-port)] } {
+    set port $keys(-port)
+  } else {
+    utl::error DST 17 "-port is required in add_worker_address cmd."
+  }
+  dst::add_worker_address $host $port
 }

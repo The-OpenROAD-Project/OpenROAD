@@ -28,9 +28,10 @@
 
 #pragma once
 #include <boost/asio.hpp>
+#include <boost/asio/thread_pool.hpp>
+#include <mutex>
 #include <queue>
 #include <vector>
-#include <mutex>
 
 #include "BalancerConnection.h"
 
@@ -39,16 +40,19 @@ class Logger;
 }
 
 namespace dst {
+class Distributed;
 class LoadBalancer
 {
  public:
   // constructor for accepting connection from client
-  LoadBalancer(asio::io_service& io_service,
+  LoadBalancer(Distributed* dist,
+               asio::io_service& io_service,
                utl::Logger* logger,
                const char* ip,
                unsigned short port = 1234);
-  void addWorker(std::string ip, unsigned short port, unsigned short avail);
+  void addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
+  void getNextWorker(ip::address& ip, unsigned short& port);
 
  private:
   struct worker
@@ -65,18 +69,23 @@ class LoadBalancer
   {
     bool operator()(worker const& w1, worker const& w2)
     {
-      return w1.priority < w2.priority;
+      return w1.priority > w2.priority;
     }
   };
 
+  Distributed* dist_;
   tcp::acceptor acceptor_;
   asio::io_service* service;
   utl::Logger* logger_;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
+  std::unique_ptr<asio::thread_pool> pool_;
+  std::mutex pool_mutex_;
+  uint32_t jobs_;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,
                      const boost::system::error_code& err);
+  friend class dst::BalancerConnection;
 };
 }  // namespace dst

@@ -30,7 +30,6 @@
 
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
-#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -56,10 +55,6 @@ struct FlexGCWorkerRegionQuery::Impl
                         // tapered max rects
 
  private:
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 
 FlexGCWorkerRegionQuery::FlexGCWorkerRegionQuery(FlexGCWorker* in)
@@ -276,28 +271,3 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
       removeSpcRectangle(spcR.get());
   }
 }
-
-template <class Archive>
-void FlexGCWorkerRegionQuery::Impl::serialize(Archive& ar,
-                                              const unsigned int version)
-{
-  (ar) & gcWorker_;
-  (ar) & polygon_edges_;
-  (ar) & max_rectangles_;
-  (ar) & spc_rectangles_;
-}
-
-template <class Archive>
-void FlexGCWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void FlexGCWorkerRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
-    const unsigned int file_version);
-
-template void FlexGCWorkerRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
-    const unsigned int file_version);
