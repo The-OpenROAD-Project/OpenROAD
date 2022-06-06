@@ -56,14 +56,6 @@ class frMPin : public frPin
  protected:
   frMTerm* term_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frPin>(*this);
-    (ar) & term_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

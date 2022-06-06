@@ -68,6 +68,7 @@ class frInst : public frRef
   }
   void addInstBlockage(std::unique_ptr<frInstBlockage> in)
   {
+    in->setOrderId(instBlockages_.size());
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
@@ -149,25 +150,6 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
   int pinAccessIdx_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // instTerms_ are intentionally NOT serialized.  This cuts
-    // the serializer from recursing across the whole design.  Any
-    // instTerm must attach itself to a instance on deserialization.
-
-    (ar) & boost::serialization::base_object<frRef>(*this);
-    (ar) & name_;
-    (ar) & master_;
-    (ar) & instBlockages_;
-    (ar) & xform_;
-    (ar) & pinAccessIdx_;
-  }
-
-  frInst() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 
 }  // namespace fr

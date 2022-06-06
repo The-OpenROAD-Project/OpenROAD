@@ -91,6 +91,8 @@ target_sources(drt
     src/gc/FlexGC_eol.cpp
     src/gc/FlexGC_inf.cpp
     src/gc/FlexGC_cut.cpp
+    src/db/drObj/drAccessPattern.cpp
+    src/db/drObj/drPin.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frTime_helper.cpp
@@ -104,6 +106,7 @@ target_sources(drt
     src/db/obj/frRPin.cpp
     src/db/obj/frNode.cpp
     src/db/obj/frInstTerm.cpp
+    src/db/obj/frMarker.cpp
     src/db/tech/frLayer.cc
     src/frRegionQuery.cpp
     src/io/io_pin.cpp
@@ -117,6 +120,8 @@ target_sources(drt
     src/rp/FlexRP_init.cpp
     src/rp/FlexRP.cpp
     src/rp/FlexRP_prep.cpp
+    src/distributed/frArchive.cpp
+    src/distributed/drUpdate.cpp
     src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
     src/frBaseTypes.cpp
@@ -139,6 +144,7 @@ target_link_libraries(drt
     OpenSTA
     utl
     dst
+    dbSta
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}
@@ -168,6 +174,8 @@ enable_testing()
 add_executable(trTest
   ${FLEXROUTE_HOME}/test/gcTest.cpp
   ${FLEXROUTE_HOME}/test/fixture.cpp
+  ${FLEXROUTE_HOME}/test/stubs.cpp
+  ${OPENROAD_HOME}/src/gui/src/stub.cpp
 )
 
 target_include_directories(trTest

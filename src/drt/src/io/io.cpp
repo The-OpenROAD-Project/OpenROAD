@@ -133,12 +133,13 @@ void io::Parser::setInsts(odb::dbBlock* block)
     y = defdist(block, y);
     tmpInst->setOrigin(Point(x, y));
     tmpInst->setOrient(inst->getOrient());
+    int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
-      instTerm->setId(numTerms);
-      numTerms++;
+      instTerm->setId(numTerms++);
+      instTerm->setOrderId(numInstTerms++);
       int pinCnt = term->getPins().size();
       instTerm->setAPSize(pinCnt);
       tmpInst->addInstTerm(std::move(instTerm));
@@ -1108,15 +1109,15 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl
         = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
             rowName, rowVals, colName, colVals, tblVals);
-    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
-        = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
+    unique_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
+        = make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals);
     spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
     spacingTableConstraint->setSameMask(rule->isSameMask());
     if (rule->isExceeptEol()) {
       spacingTableConstraint->setEolWidth(rule->getEolWidth());
     }
-    tech->addConstraint(spacingTableConstraint);
-    tmpLayer->addConstraint(spacingTableConstraint);
+    tmpLayer->addConstraint(spacingTableConstraint.get());
+    tech->addUConstraint(std::move(spacingTableConstraint));
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid()) {
@@ -1151,7 +1152,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                    layer->getName());
       continue;
     }
-    auto con = make_shared<frLef58SpacingEndOfLineConstraint>();
+    auto con = make_unique<frLef58SpacingEndOfLineConstraint>();
     con->setEol(
         rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
     if (rule->isWrongDirSpacingValid()) {
@@ -1233,7 +1234,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       enc->setAllCuts(rule->isAllCutsValid());
     }
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
-    tech->addConstraint(con);
+    tech->addUConstraint(std::move(con));
   }
   if (layer->isRectOnly()) {
     auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(
@@ -1450,7 +1451,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                    "SAMEMASK unsupported for cut LEF58_SPACINGTABLE rule");
       continue;
     }
-    auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
+    auto con = make_unique<frLef58CutSpacingTableConstraint>(rule);
     frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
     std::map<frString, frUInt4> rowMap, colMap;
     rule->getSpacingTable(table, rowMap, colMap);
@@ -1481,7 +1482,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         tmpLayer->setLef58DiffNetCutSpcTblConstraint(con.get());
       }
     }
-    tech->addConstraint(con);
+    tech->addUConstraint(std::move(con));
   }
 }
 
@@ -1730,16 +1731,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       for (size_t j = 0; j < _tblVals[i].size(); j++)
         tblVals[i].push_back(_tblVals[i][j]);
 
-    std::shared_ptr<frSpacingTableConstraint> spacingTableConstraint;
+    std::unique_ptr<frSpacingTableConstraint> spacingTableConstraint;
     shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl;
     frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
 
     // old
     prlTbl = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
         rowName, rowVals, colName, colVals, tblVals);
-    spacingTableConstraint = make_shared<frSpacingTableConstraint>(prlTbl);
-    tech->addConstraint(spacingTableConstraint);
-    tmpLayer->addConstraint(spacingTableConstraint);
+    spacingTableConstraint = make_unique<frSpacingTableConstraint>(prlTbl);
+    tmpLayer->addConstraint(spacingTableConstraint.get());
+    tech->addUConstraint(std::move(spacingTableConstraint));
     // new
     unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(
         fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
@@ -1829,16 +1830,16 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   tmpLayer->setType(dbTechLayerType::CUT);
   tech->addLayer(std::move(uLayer));
 
-  auto shortConstraint = make_shared<frShortConstraint>();
-  tech->addConstraint(shortConstraint);
-  tmpLayer->addConstraint(shortConstraint);
+  auto shortConstraint = make_unique<frShortConstraint>();
+  tmpLayer->addConstraint(shortConstraint.get());
   tmpLayer->setShortConstraint(shortConstraint.get());
+  tech->addUConstraint(std::move(shortConstraint));
 
   // read spacing constraint
   odb::dbSet<odb::dbTechLayerSpacingRule> spRules;
   layer->getV54SpacingRules(spRules);
   for (odb::dbTechLayerSpacingRule* rule : spRules) {
-    std::shared_ptr<frCutSpacingConstraint> cutSpacingConstraint;
+    std::unique_ptr<frCutSpacingConstraint> cutSpacingConstraint;
     frCoord cutArea = rule->getCutArea();
     frCoord cutSpacing = rule->getSpacing();
     bool centerToCenter = rule->getCutCenterToCenter();
@@ -1874,7 +1875,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                    "layer {}, please check your rule definition.",
                    layer->getName());
     }
-    cutSpacingConstraint = make_shared<frCutSpacingConstraint>(cutSpacing,
+    cutSpacingConstraint = make_unique<frCutSpacingConstraint>(cutSpacing,
                                                                centerToCenter,
                                                                sameNet,
                                                                secondLayerName,
@@ -1884,10 +1885,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                                                                exceptSamePGNet,
                                                                parallelOverlap,
                                                                cutArea);
-
-    tech->addConstraint(cutSpacingConstraint);
-    tmpLayer->addConstraint(cutSpacingConstraint);
     tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
+    tech->addUConstraint(std::move(cutSpacingConstraint));
   }
 
   // lef58

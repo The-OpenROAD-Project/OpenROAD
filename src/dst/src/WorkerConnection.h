@@ -27,6 +27,8 @@
  */
 
 #pragma once
+#include <dst/JobMessage.h>
+
 #include <boost/asio.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
@@ -37,28 +39,26 @@ class Logger;
 }
 namespace dst {
 class Distributed;
+class Worker;
 class WorkerConnection : public boost::enable_shared_from_this<WorkerConnection>
 {
  public:
-  typedef boost::shared_ptr<WorkerConnection> pointer;
   WorkerConnection(asio::io_service& io_service,
                    Distributed* dist,
-                   utl::Logger* logger);
-  static pointer create(asio::io_service& io_service,
-                        Distributed* dist,
-                        utl::Logger* logger)
-  {
-    return boost::make_shared<WorkerConnection>(io_service, dist, logger);
-  }
+                   utl::Logger* logger,
+                   Worker* worker);
   tcp::socket& socket();
   void start();
   void handle_read(boost::system::error_code const& err,
                    size_t bytes_transferred);
+  Worker* getWorker() const { return worker_; }
 
  private:
-  tcp::socket sock;
+  tcp::socket sock_;
   Distributed* dist_;
   asio::streambuf in_packet_;
   utl::Logger* logger_;
+  JobMessage msg_;
+  Worker* worker_;
 };
 }  // namespace dst

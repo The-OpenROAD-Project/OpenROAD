@@ -130,10 +130,7 @@ class frLayer
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
   void setDir(dbTechLayerDir dirIn) { dir = dirIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
-  void addConstraint(const std::shared_ptr<frConstraint>& consIn)
-  {
-    constraints.push_back(consIn);
-  }
+  void addConstraint(frConstraint* consIn) { constraints.push_back(consIn); }
   void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
@@ -167,14 +164,6 @@ class frLayer
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
-  frCollection<std::shared_ptr<frConstraint>> getConstraints() const
-  {
-    frCollection<std::shared_ptr<frConstraint>> constraintsOut;
-    for (auto constraint : constraints) {
-      constraintsOut.push_back(constraint.lock());
-    }
-    return constraintsOut;
-  }
   dbTechLayerType getType() const { return type; }
 
   // cut class (new)
@@ -663,7 +652,10 @@ class frLayer
     drEolCon.eolWithin = within;
   }
 
-  const drEolSpacingConstraint& getDrEolSpacingConstraint() const { return drEolCon; }
+  const drEolSpacingConstraint& getDrEolSpacingConstraint() const
+  {
+    return drEolCon;
+  }
 
   void printAllConstraints(utl::Logger* logger);
 
@@ -681,7 +673,7 @@ class frLayer
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;
   std::map<std::string, int> name2CutClassIdxMap;
-  frCollection<std::weak_ptr<frConstraint>> constraints;
+  frCollection<frConstraint*> constraints;
 
   frCollection<frLef58SpacingEndOfLineConstraint*>
       lef58SpacingEndOfLineConstraints;
@@ -731,52 +723,6 @@ class frLayer
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
   drEolSpacingConstraint drEolCon;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & type;
-    (ar) & layerNum;
-    (ar) & name;
-    (ar) & pitch;
-    (ar) & width;
-    (ar) & minWidth;
-    (ar) & numMasks;
-    (ar) & dir;
-    (ar) & defaultViaDef;
-    (ar) & hasMinStepViol;
-    (ar) & viaDefs;
-    (ar) & cutClasses;
-    (ar) & name2CutClassIdxMap;
-    (ar) & constraints;
-    (ar) & lef58SpacingEndOfLineConstraints;
-    (ar) & minSpc;
-    (ar) & spacingSamenet;
-    (ar) & spacingInfluence;
-    (ar) & eols;
-    (ar) & cutConstraints;
-    (ar) & cutSpacingSamenetConstraints;
-    (ar) & interLayerCutSpacingConstraints;
-    (ar) & interLayerCutSpacingSamenetConstraints;
-    (ar) & interLayerCutSpacingConstraintsMap;
-    (ar) & interLayerCutSpacingSamenetConstraintsMap;
-    (ar) & lef58CutSpacingConstraints;
-    (ar) & lef58CutSpacingSamenetConstraints;
-    (ar) & recheckConstraint;
-    (ar) & shortConstraint;
-    (ar) & offGridConstraint;
-    (ar) & minEnclosedAreaConstraints;
-    (ar) & nonSufficientMetalConstraint;
-    (ar) & areaConstraint;
-    (ar) & minStepConstraint;
-    (ar) & lef58MinStepConstraints;
-    (ar) & minWidthConstraint;
-    (ar) & minimumcutConstraints;
-    (ar) & lef58RectOnlyConstraint;
-    (ar) & lef58RightWayOnGridOnlyConstraint;
-    (ar) & lef58CornerSpacingConstraints;
-    (ar) & drEolCon;
-  }
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

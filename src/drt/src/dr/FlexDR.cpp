@@ -42,8 +42,11 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "distributed/RoutingJobDescription.h"
+#include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -63,44 +66,45 @@ enum class SerializationType
   WRITE
 };
 
-static bool serialize_worker(SerializationType type,
-                             FlexDRWorker* worker,
-                             const std::string& name)
+void serializeWorker(FlexDRWorker* worker, std::string& workerStr)
 {
-  if (type == SerializationType::READ) {
-    std::ifstream file(name);
-    if (!file.good())
-      return false;
-    InputArchive ar(file);
-    register_types(ar);
-    ar >> *worker;
-    file.close();
-  } else {
-    std::ofstream file(name);
-    if (!file.good())
-      return false;
-    OutputArchive ar(file);
-    register_types(ar);
-    ar << *worker;
-    file.close();
-  }
-  return true;
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
+  frOArchive ar(stream);
+  registerTypes(ar);
+  ar << *worker;
+  workerStr = stream.str();
 }
 
-static bool writeGlobals(const std::string& name)
+void deserializeWorker(FlexDRWorker* worker,
+                               frDesign* design,
+                               const std::string& workerStr)
 {
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  OutputArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
-  file.close();
-  return true;
+  std::stringstream stream(
+      workerStr,
+      std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frIArchive ar(stream);
+  ar.setDesign(design);
+  registerTypes(ar);
+  ar >> *worker;
 }
 
-FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn),
+void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+{
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
+  frOArchive ar(stream);
+  registerTypes(ar);
+  ar << viaData;
+  serializedStr = stream.str();
+}
+
+FlexDR::FlexDR(triton_route::TritonRoute* router,
+               frDesign* designIn,
+               Logger* loggerIn,
+               odb::dbDatabase* dbIn)
+    : router_(router),
+      design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
       dist_on_(false),
@@ -123,23 +127,31 @@ void FlexDR::setDebug(frDebugSettings* settings)
             : nullptr;
 }
 
-// Used when reloaded a serialized worker.  init() will already have
-// been run. We don't support end() in this case as it is intended for
-// debugging route_queue().  The gc worker will have beeen reloaded
-// from the serialization.
 std::string FlexDRWorker::reloadedMain()
 {
+  init(design_);
+  debugPrint(logger_,
+             utl::DRT,
+             "autotuner",
+             1,
+             "Init number of markers {}",
+             getInitNumMarkers());
   route_queue();
   setGCWorker(nullptr);
   cleanup();
-  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.out",
-                                 dist_dir_,
-                                 getDRIter(),
-                                 getGCellBox().xMin(),
-                                 getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
-  return name;
-  // reply with file path
+  std::string workerStr;
+  serializeWorker(this, workerStr);
+  return workerStr;
+}
+
+void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
+                             const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << updates;
+  file.close();
 }
 
 int FlexDRWorker::main(frDesign* design)
@@ -155,8 +167,37 @@ int FlexDRWorker::main(frDesign* design)
                     routeBox_.xMax() * micronPerDBU,
                     routeBox_.yMax() * micronPerDBU);
   }
-
-  init(design);
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
+  }
+  if (debugSettings_->debugDumpDR
+      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
+      && debugSettings_->iter == getDRIter()) {
+    serializeUpdates(design_->getUpdates(),
+                     fmt::format("{}/updates.bin", debugSettings_->dumpDir));
+    design_->clearUpdates();
+    std::string viaDataStr;
+    serializeViaData(*via_data_, viaDataStr);
+    ofstream viaDataFile(
+        fmt::format("{}/viadata.bin", debugSettings_->dumpDir).c_str());
+    viaDataFile << viaDataStr;
+    std::string workerStr;
+    serializeWorker(this, workerStr);
+    ofstream workerFile(
+        fmt::format("{}/worker.bin", debugSettings_->dumpDir).c_str());
+    workerFile << workerStr;
+    workerFile.close();
+    std::ofstream file(
+        fmt::format("{}/globals.bin", debugSettings_->dumpDir).c_str());
+    frOArchive ar(file);
+    registerTypes(ar);
+    serializeGlobals(ar);
+    file.close();
+  }
+  if (!skipRouting_) {
+    init(design);
+  }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
     route_queue();
@@ -193,122 +234,8 @@ int FlexDRWorker::main(frDesign* design)
 
   return 0;
 }
-/**
- * Finds an equivalent object from the current design to obj. This is
- * because obj is a copy of the actual object that resides in design and
- * it is assumed that it has a different memory allocation.
- *
- * @param[in] obj pointer to the serialized object. Should be a copy of an
- * object in design.
- * @param[in] design pointer to frDesign.
- * @returns pointer to the equivalent frBlockObject in design. Returns nullptr
- * if no equivalent object was found or if the object is of an unexpected type.
- */
-inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
-{
-  switch (obj->typeId()) {
-    case frcNet: {
-      frNet* srNet = (static_cast<frNet*>(obj));
-      auto net = design->getTopBlock()->findNet(srNet->getName());
-      return net;
-    }
-    case frcInstTerm: {
-      frInstTerm* srTerm = (static_cast<frInstTerm*>(obj));
-      auto srInst = srTerm->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& term : inst->getInstTerms())
-        if (term->getId() == srTerm->getId())
-          return term.get();
-      return nullptr;
-    }
-    case frcBTerm: {
-      auto bTerm = static_cast<frBTerm*>(obj);
-      return design->getTopBlock()->getTerm(bTerm->getName());
-    }
-    case frcInstBlockage: {
-      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
-      auto srInst = srBlkg->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& blkg : inst->getInstBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-      return nullptr;
-    }
-    case frcBlockage: {
-      frBlockage* srBlkg = (static_cast<frBlockage*>(obj));
-      for (auto& blkg : design->getTopBlock()->getBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-    }
-    default:
-      return nullptr;
-  }
-}
-void FlexDRWorker::updateDesign(frDesign* design)
-{
-  design_ = design;
-  for (auto& drNet_ : nets_) {
-    auto frNet_ = design->getTopBlock()->findNet(drNet_->getFrNet()->getName());
-    if (frNet_ != nullptr) {
-      if (drNet_->getFrNet()->isModified())
-        frNet_->setModified(true);
-      drNet_->setFrNet(frNet_);
-    } else {
-      logger_->error(DRT,
-                     501,
-                     "No matching net in design for net {}",
-                     drNet_->getFrNet()->getName());
-    }
-  }
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
-  for (auto [net, value] : boundaryPin_) {
-    auto frNet_ = design->getTopBlock()->findNet(net->getName());
-    if (frNet_ != nullptr) {
-      bp[frNet_] = value;
-    } else {
-      logger_->error(
-          DRT, 502, "No matching net in design for net {}", net->getName());
-    }
-  }
-  setBoundaryPins(bp);
-  std::vector<frMarker>& markers = getBestMarkers();
-  for (auto& marker : markers) {
-    std::set<frBlockObject*> newSrcs;
-    for (auto src : marker.getSrcs()) {
-      if (src != nullptr) {
-        auto newSrc = getEquivalentObject(src, design);
-        if (newSrc == nullptr)
-          logger_->error(DRT, 503, "Fail in mapping serialized marker src");
-        newSrcs.insert(newSrc);
-      } else
-        newSrcs.insert(nullptr);
-    }
-    marker.setSrcs(newSrcs);
-    for (auto& [obj, value] : marker.getVictims()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(DRT, 504, "Fail in mapping serialized marker victim");
-        obj = newObj;
-      }
-    }
-    for (auto& [obj, value] : marker.getAggressors()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(
-              DRT, 505, "Fail in mapping serialized marker aggressor");
-        obj = newObj;
-      }
-    }
-  }
-}
 
-void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
+void FlexDRWorker::distributedMain(frDesign* design)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -318,32 +245,10 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-
-  init(design);
-  if (skipRouting_)
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
     return;
-  // Save the worker in its fully initialized state
-  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.in",
-                                 dist_dir_,
-                                 getDRIter(),
-                                 getGCellBox().xMin(),
-                                 getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
-  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
-  std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
-  msg.setJobDescription(std::move(desc));
-  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (ok) {
-    auto desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-    ok = serialize_worker(SerializationType::READ, this, desc->getWorkerPath());
-    if (!ok)
-      logger_->error(DRT, 511, "Deserialization failed");
-    std::remove(name.c_str());
-    std::remove(desc->getWorkerPath().c_str());
-    updateDesign(design);
-  } else {
-    logger_->error(utl::DRT, 500, "Sending worker {} failed", name);
   }
 }
 
@@ -1695,10 +1600,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      if (iter != 0)
-        std::remove(globals_path_.c_str());
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      writeGlobals(globals_path_);
+      router_->writeGlobals(globals_path_.c_str());
     }
   }
   frTime t;
@@ -1761,6 +1664,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
+      worker->setDebugSettings(router_->getDebugSettings());
       if (dist_on_)
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
@@ -1779,7 +1683,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
-          || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+          || (!dist_on_
+              && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
         workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
       }
       workers[batchIdx].back().push_back(std::move(worker));
@@ -1791,7 +1696,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
 
   omp_set_num_threads(MAX_THREADS);
-
+  int version = 0;
   increaseClipsize_ = false;
   numWorkUnits_ = 0;
   // parallel execution
@@ -1803,41 +1708,83 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        // multi thread
-        ThreadException exception;
+        if (dist_on_) {
+          router_->dist_pool_.join();
+          if (version++ == 0 && !design_->hasUpdates()) {
+            std::string serializedViaData;
+            serializeViaData(via_data_, serializedViaData);
+            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
+          } else
+            router_->sendDesignUpdates(globals_path_);
+        }
+        {
+          ProfileTask task("DIST: PROCESS_BATCH");
+          // multi thread
+          ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          try {
-            if (dist_on_)
-              workersInBatch[i]->distributedMain(getDesign(),
-                                                 globals_path_.c_str());
-            else
-              workersInBatch[i]->main(getDesign());
+          for (int i = 0; i < (int) workersInBatch.size(); i++) {
+            try {
+              if (dist_on_)
+                workersInBatch[i]->distributedMain(getDesign());
+              else
+                workersInBatch[i]->main(getDesign());
 #pragma omp critical
-            {
-              cnt++;
-              if (VERBOSE > 0) {
-                if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                    && prev_perc < 90) {
-                  if (prev_perc == 0 && t.isExceed(0)) {
-                    isExceed = true;
-                  }
-                  prev_perc += 10;
-                  if (isExceed) {
-                    logger_->report(
-                        "    Completing {}% with {} violations.",
-                        prev_perc,
-                        getDesign()->getTopBlock()->getNumMarkers());
-                    logger_->report("    {}.", t);
+              {
+                cnt++;
+                if (VERBOSE > 0) {
+                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                      && prev_perc < 90) {
+                    if (prev_perc == 0 && t.isExceed(0)) {
+                      isExceed = true;
+                    }
+                    prev_perc += 10;
+                    if (isExceed) {
+                      logger_->report(
+                          "    Completing {}% with {} violations.",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report("    {}.", t);
+                    }
                   }
                 }
               }
+            } catch (...) {
+              exception.capture();
             }
-          } catch (...) {
-            exception.capture();
+          }
+          exception.rethrow();
+          if (dist_on_) {
+            int j = 0;
+            std::vector<std::vector<std::pair<int, FlexDRWorker*>>>
+                distWorkerBatches(router_->getCloudSize());
+            for (int i = 0; i < workersInBatch.size(); i++) {
+              auto worker = workersInBatch.at(i).get();
+              if (!worker->isSkipRouting()) {
+                distWorkerBatches[j].push_back({i, worker});
+                j = (j + 1) % router_->getCloudSize();
+              }
+            }
+            {
+              ProfileTask task("DIST: SERIALIZE+SEND");
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < distWorkerBatches.size(); i++)
+                sendWorkers(distWorkerBatches.at(i), workersInBatch);
+            }
+            logger_->report("    Received Batches:{}.", t);
+            std::vector<std::pair<int, std::string>> workers;
+            router_->getWorkerResults(workers);
+            {
+              ProfileTask task("DIST: DESERIALIZING_BATCH");
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < workers.size(); i++) {
+                deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
+                                   design_,
+                                   workers.at(i).second);
+              }
+            }
+            logger_->report("    Deserialized Batches:{}.", t);
           }
         }
-        exception.rethrow();
       }
       {
         ProfileTask profile("DR:end_batch");
@@ -1870,7 +1817,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
   }
-  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  FlexDRConnectivityChecker checker(
+      getDesign(),
+      logger_,
+      db_,
+      graphics_.get(),
+      dist_on_ || router_->getDebugSettings()->debugDumpDR);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
@@ -1889,14 +1841,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
   end();
   if (logger_->debugCheck(DRT, "autotuner", 1)) {
-    reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }
 
 void FlexDR::end(bool done)
 {
   if (done && DRC_RPT_FILE != string("")) {
-    reportDRC(DRC_RPT_FILE);
+    router_->reportDRC(DRC_RPT_FILE);
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
@@ -2032,236 +1984,6 @@ void FlexDR::end(bool done)
     }
     msg << endl << endl;
     logger_->report("{}", msg.str());
-  }
-}
-
-void FlexDR::reportDRC(const string& file_name)
-{
-  double dbu = getTech()->getDBUPerUU();
-
-  if (file_name == string("")) {
-    if (VERBOSE > 0) {
-      logger_->warn(
-          DRT,
-          290,
-          "Waring: no DRC report specified, skipped writing DRC report");
-    }
-    return;
-  }
-
-  ofstream drcRpt(file_name.c_str());
-  if (drcRpt.is_open()) {
-    for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
-      auto con = marker->getConstraint();
-      drcRpt << "  violation type: ";
-      if (con) {
-        switch (con->typeId()) {
-          case frConstraintTypeEnum::frcShortConstraint: {
-            if (getTech()->getLayer(marker->getLayerNum())->getType()
-                == dbTechLayerType::ROUTING) {
-              drcRpt << "Short";
-            } else if (getTech()->getLayer(marker->getLayerNum())->getType()
-                       == dbTechLayerType::CUT) {
-              drcRpt << "CShort";
-            }
-            break;
-          }
-          case frConstraintTypeEnum::frcMinWidthConstraint:
-            drcRpt << "MinWid";
-            break;
-          case frConstraintTypeEnum::frcSpacingConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
-            drcRpt << "EOLSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcCutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcMinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
-            drcRpt << "NSMet";
-            break;
-          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcOffGridConstraint:
-            drcRpt << "OffGrid";
-            break;
-          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
-            drcRpt << "MinHole";
-            break;
-          case frConstraintTypeEnum::frcAreaConstraint:
-            drcRpt << "MinArea";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
-            drcRpt << "CornerSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
-            drcRpt << "RectOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
-            drcRpt << "RightWayOnGridOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58MinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
-            drcRpt << "MetSpcInf";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
-            drcRpt << "SpacingEndOfLineParallelEdge";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableConstraint:
-            drcRpt << "SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
-            drcRpt << "SpacingTableTw";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
-            drcRpt << "Lef58SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
-            drcRpt << "Lef58CutSpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
-            drcRpt << "Lef58CutSpacingTablePrl";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
-            drcRpt << "Lef58CutSpacingTableLayer";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
-            drcRpt << "Lef58CutSpacingParallelWithin";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
-            drcRpt << "Lef58CutSpacingAdjacentCuts";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
-            drcRpt << "Lef58CutSpacingLayer";
-            break;
-          case frConstraintTypeEnum::frcMinimumcutConstraint:
-            drcRpt << "Minimumcut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConcaveCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConcaveCorner";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConvexCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConvexCorner";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing1D";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing2D";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
-            drcRpt << "Lef58SpacingEndOfLine";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithin";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
-            break;
-          case frConstraintTypeEnum::frcLef58CutClassConstraint:
-            drcRpt << "Lef58CutClass";
-            break;
-          case frConstraintTypeEnum::frcRecheckConstraint:
-            drcRpt << "Recheck";
-            break;
-          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
-            drcRpt << "Lef58EolExtension";
-            break;
-          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
-            drcRpt << "Lef58EolKeepOut";
-            break;
-        }
-      } else {
-        drcRpt << "nullptr";
-      }
-      drcRpt << endl;
-      // get source(s) of violation
-      // format: type:name/identifier
-      drcRpt << "    srcs: ";
-      for (auto src : marker->getSrcs()) {
-        if (src) {
-          switch (src->typeId()) {
-            case frcNet:
-              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
-              break;
-            case frcInstTerm: {
-              frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << "iterm:" << instTerm->getInst()->getName() << "/"
-                     << instTerm->getTerm()->getName() << " ";
-              break;
-            }
-            case frcBTerm: {
-              frBTerm* bterm = (static_cast<frBTerm*>(src));
-              drcRpt << "bterm:" << bterm->getName() << " ";
-              break;
-            }
-            case frcInstBlockage: {
-              frInstBlockage* instBlockage
-                  = (static_cast<frInstBlockage*>(src));
-              drcRpt << "inst:" << instBlockage->getInst()->getName() << " ";
-              break;
-            }
-            case frcBlockage: {
-              drcRpt << "obstruction: ";
-              break;
-            }
-            default:
-              logger_->error(DRT,
-                             291,
-                             "Unexpected source type in marker: {}",
-                             src->typeId());
-          }
-        }
-      }
-      drcRpt << "\n";
-      // get violation bbox
-      Rect bbox;
-      marker->getBBox(bbox);
-      drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
-             << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
-             << bbox.yMax() / dbu << " ) on Layer ";
-      if (getTech()->getLayer(marker->getLayerNum())->getType()
-              == dbTechLayerType::CUT
-          && marker->getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
-        drcRpt << getTech()->getLayer(marker->getLayerNum() - 1)->getName()
-               << "\n";
-      } else {
-        drcRpt << getTech()->getLayer(marker->getLayerNum())->getName() << "\n";
-      }
-    }
-  } else {
-    cout << "Error: Fail to open DRC report file\n";
   }
 }
 
@@ -2520,12 +2242,137 @@ int FlexDR::main()
   return 0;
 }
 
-std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
+void FlexDR::sendWorkers(
+    const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
+    std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+{
+  if (remote_batch.empty())
+    return;
+  std::vector<std::pair<int, std::string>> workers;
+  {
+    ProfileTask task("DIST: SERIALIZE_BATCH");
+    for (auto& [idx, worker] : remote_batch) {
+      std::string workerStr;
+      serializeWorker(worker, workerStr);
+      workers.push_back({idx, workerStr});
+    }
+  }
+  std::string remote_ip = dist_ip_;
+  unsigned short remote_port = dist_port_;
+  if (router_->getCloudSize() > 1) {
+    dst::JobMessage msg(dst::JobMessage::BALANCER),
+        result(dst::JobMessage::NONE);
+    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    if (!ok) {
+      logger_->error(utl::DRT, 7461, "Balancer failed");
+    } else {
+      dst::BalancerJobDescription* desc
+          = static_cast<dst::BalancerJobDescription*>(
+              result.getJobDescription());
+      remote_ip = desc->getWorkerIP();
+      remote_port = desc->getWorkerPort();
+    }
+  }
+  {
+    dst::JobMessage msg(dst::JobMessage::ROUTING),
+        result(dst::JobMessage::NONE);
+    std::unique_ptr<dst::JobDescription> desc
+        = std::make_unique<RoutingJobDescription>();
+    RoutingJobDescription* rjd
+        = static_cast<RoutingJobDescription*>(desc.get());
+    rjd->setWorkers(workers);
+    rjd->setSharedDir(dist_dir_);
+    rjd->setSendEvery(20);
+    msg.setJobDescription(std::move(desc));
+    ProfileTask task("DIST: SENDJOB");
+    bool ok = dist_->sendJobMultiResult(
+        msg, remote_ip.c_str(), remote_port, result);
+    if (!ok) {
+      logger_->error(utl::DRT, 500, "Sending worker {} failed");
+    }
+    for (const auto& one_desc : result.getAllJobDescriptions()) {
+      RoutingJobDescription* result_desc
+          = static_cast<RoutingJobDescription*>(one_desc.get());
+      router_->addWorkerResults(result_desc->getWorkers());
+    }
+  }
+}
+
+template <class Archive>
+void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
+{
+  // // We always serialize before calling main on the work unit so various
+  // // fields are empty and don't need to be serialized.  I skip these to
+  // // save having to write lots of serializers that will never be called.
+  // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+  //     || !rq_.isEmpty() || gcWorker_) {
+  //   logger_->error(DRT, 999, "Can't serialize used worker");
+  // }
+
+  // The logger_, graphics_ and debugSettings_ are handled by the caller to
+  // use the current ones.
+  if (is_loading(ar)) {
+    frDesign* design = ar.getDesign();
+    design_ = design;
+  }
+  (ar) & routeBox_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & gcellBox_;
+  (ar) & drIter_;
+  (ar) & mazeEndIter_;
+  (ar) & followGuide_;
+  (ar) & needRecheck_;
+  (ar) & skipRouting_;
+  (ar) & ripupMode_;
+  (ar) & workerDRCCost_;
+  (ar) & workerMarkerCost_;
+  (ar) & pinCnt_;
+  (ar) & initNumMarkers_;
+  (ar) & apSVia_;
+  (ar) & planarHistoryMarkers_;
+  (ar) & viaHistoryMarkers_;
+  (ar) & historyMarkers_;
+  (ar) & nets_;
+  (ar) & gridGraph_;
+  (ar) & markers_;
+  (ar) & bestMarkers_;
+  (ar) & isCongested_;
+  if (is_loading(ar)) {
+    // boundaryPin_
+    int sz;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      std::set<std::pair<Point, frLayerNum>> val;
+      (ar) & val;
+      boundaryPin_[(frNet*) obj] = val;
+    }
+    // owner2nets_
+    for (auto& net : nets_) {
+      owner2nets_[net->getFrNet()].push_back(net.get());
+    }
+    dist_on_ = true;
+  } else {
+    // boundaryPin_
+    int sz = boundaryPin_.size();
+    (ar) & sz;
+    for (auto& [net, value] : boundaryPin_) {
+      frBlockObject* obj = (frBlockObject*) net;
+      serializeBlockObject(ar, obj);
+      (ar) & value;
+    }
+  }
+}
+
+std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
                                                  utl::Logger* logger,
+                                                 fr::frDesign* design,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
-  serialize_worker(SerializationType::READ, worker.get(), file_name);
+  deserializeWorker(worker.get(), design, workerStr);
 
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.
@@ -2534,3 +2381,12 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
 
   return worker;
 }
+
+// Explicit instantiations
+template void FlexDRWorker::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void FlexDRWorker::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

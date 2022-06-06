@@ -67,16 +67,6 @@ class frRPin : public frBlockObject
   frAccessPoint* accessPoint;  // pref AP for frBTerm and frInstTerm
   frNet* net;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & term;
-    (ar) & accessPoint;
-    (ar) & net;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

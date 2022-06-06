@@ -42,7 +42,7 @@ class gcNet : public gcBlockObject
 {
  public:
   // constructors
-  gcNet(int numLayers = 0)  // = 0 for serialization
+  gcNet(int numLayers)
       : gcBlockObject(),
         fixedPolygons_(numLayers),
         routePolygons_(numLayers),
@@ -235,22 +235,6 @@ class gcNet : public gcBlockObject
 
   void init();
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<gcBlockObject>(*this);
-    (ar) & fixedPolygons_;
-    (ar) & routePolygons_;
-    (ar) & fixedRectangles_;
-    (ar) & routeRectangles_;
-    (ar) & pins_;
-    (ar) & owner_;
-    (ar) & taperedRects;
-    (ar) & nonTaperedRects;
-    (ar) & specialSpacingRects;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 
