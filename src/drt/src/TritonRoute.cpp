@@ -218,54 +218,6 @@ void TritonRoute::initDesign()
     return;
   io::Parser parser(getDesign(), logger_);
   parser.readDb(db_);
-  auto tech = getDesign()->getTech();
-  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
-    if (layer) {
-      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    272,
-                    "bottomRoutingLayer {} not found.",
-                    BOTTOM_ROUTING_LAYER_NAME);
-    }
-  }
-
-  if (!TOP_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
-    if (layer) {
-      TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    273,
-                    "topRoutingLayer {} not found.",
-                    TOP_ROUTING_LAYER_NAME);
-    }
-  }
-
-  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
-    if (layer) {
-      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    606,
-                    "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYERNUM);
-    }
-  }
-
-  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
-    if (layer) {
-      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    607,
-                    "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYERNUM);
-    }
-  }
   parser.postProcess();
   if (db_ != nullptr && db_->getChip() != nullptr
       && db_->getChip()->getBlock() != nullptr)

@@ -34,6 +34,7 @@
 #include <memory>
 
 #include "frDesign.h"
+#include "frRTree.h"
 
 namespace odb {
 class dbDatabase;
@@ -106,6 +107,7 @@ class Parser
   void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
+  void setInst(odb::dbInst*, odb::dbBlock*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
   void setVias(odb::dbBlock*);

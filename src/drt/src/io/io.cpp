@@ -113,6 +113,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
 
 void io::Parser::setInsts(odb::dbBlock* block)
 {
+  RTree<odb::dbInst*> allFills;
   for (auto inst : block->getInsts()) {
     if (design->name2master_.find(inst->getMaster()->getName())
         == design->name2master_.end())
@@ -121,6 +122,40 @@ void io::Parser::setInsts(odb::dbBlock* block)
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
+    if (inst->getMaster()->getType() == dbMasterType::CORE_SPACER && 
+                                            BOTTOM_ROUTING_LAYER > 2) {
+        Rect r(inst->getBBox()->xMin(), inst->getBBox()->yMin(),
+               inst->getBBox()->xMax(), inst->getBBox()->yMax());
+        allFills.insert(std::make_pair(r, inst));
+        continue;
+    }
+    setInst(inst, block);
+  }
+  if (!allFills.empty()) {
+    logger->info(DRT, 2600, "Attempting to optimize fill count. Current fills: {}", allFills.size());
+    set<odb::dbInst*> chosenFills;
+    for (auto inst : block->getInsts()) {
+        if (inst->getMaster()->getType() == dbMasterType::CORE_SPACER)
+            continue;
+        Rect box(inst->getBBox()->xMin()-1, inst->getBBox()->yMin()-1,
+                 inst->getBBox()->xMax()+1, inst->getBBox()->yMax()+1);
+        vector<pair<Rect, odb::dbInst*>> result;
+        box_t box2;
+        bg::set<bg::min_corner, 0>(box2, box.xMin());
+        bg::set<bg::min_corner, 1>(box2, box.yMin());
+        bg::set<bg::max_corner, 0>(box2, box.xMax());
+        bg::set<bg::max_corner, 1>(box2, box.yMax());
+        allFills.query(bgi::intersects(box2),
+                                     back_inserter(result));
+        for (auto& [rect, fill] : result)
+            chosenFills.insert(fill);
+    }
+    logger->info(DRT, 2601, "Final fill count: {}", chosenFills.size());
+    for (auto& fill : chosenFills)
+        setInst(fill, block);
+  }
+}
+void io::Parser::setInst(odb::dbInst* inst, odb::dbBlock* block) {
     frMaster* master = design->name2master_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), master);
     auto tmpInst = uInst.get();
@@ -152,7 +187,6 @@ void io::Parser::setInsts(odb::dbBlock* block)
       tmpInst->addInstBlockage(std::move(instBlk));
     }
     tmpBlock->addInst(std::move(uInst));
-  }
 }
 
 void io::Parser::setObstructions(odb::dbBlock* block)
@@ -548,7 +582,7 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
-            DRT, 105, "Component {} not found.", term->getInst()->getName());
+            DRT, 105, "Component {} not found. Net {} Term {} ", term->getInst()->getName(), net->getName(), term->getMTerm()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
       auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
@@ -2263,6 +2297,55 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->report("");
   }
 
+  auto tech = design->getTech();
+  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
+    if (layer) {
+      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger->warn(utl::DRT,
+                    272,
+                    "bottomRoutingLayer {} not found.",
+                    BOTTOM_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!TOP_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
+    if (layer) {
+      TOP_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger->warn(utl::DRT,
+                    273,
+                    "topRoutingLayer {} not found.",
+                    TOP_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
+    if (layer) {
+      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
+    } else {
+      logger->warn(utl::DRT,
+                    606,
+                    "via in pin bottom layer {} not found.",
+                    VIAINPIN_BOTTOMLAYERNUM);
+    }
+  }
+
+  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
+    if (layer) {
+      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
+    } else {
+      logger->warn(utl::DRT,
+                    607,
+                    "via in pin top layer {} not found.",
+                    VIAINPIN_TOPLAYERNUM);
+    }
+  }
+  
   auto numLefVia = tech->vias.size();
 
   if (VERBOSE > 0) {

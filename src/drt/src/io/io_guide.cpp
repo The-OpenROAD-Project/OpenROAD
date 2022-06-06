@@ -213,7 +213,7 @@ void io::Parser::patchGuides(frNet* net,
     }
   } else
     logger->error(DRT, 1002, "Layer is not horizontal or vertical");
-
+  
   if (guidePt == bestPinLocCoords)
     return;
   int z = guidePt.z();
@@ -258,6 +258,7 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
                                            frNet* net,
                                            std::vector<frRect>& guides)
 {
+    bool debug = false;
   vector<frRect> pinShapes;
   switch (pin->typeId()) {
     case frcBTerm: {
@@ -266,6 +267,9 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
     }
     case frcInstTerm: {
       static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+      if (static_cast<frInstTerm*>(pin)->getName() == "iram_inst/din0[27]") {
+          debug = true;
+      }
       break;
     }
     default:
@@ -273,11 +277,15 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
                     1008,
                     "checkPinForGuideEnclosure invoked with non-term object.");
   }
+  if (debug)
+          cout << "REACHED!" << endl;
   for (auto& pinRect : pinShapes) {
     int i = 0;
     for (auto& guide : guides) {
       if (pinRect.getLayerNum() == guide.getLayerNum()
           && guide.getBBox().overlaps(pinRect.getBBox())) {
+          if (debug)
+              cout << "INSIDE GUIDE" << endl;
         return;
       }
       i++;
