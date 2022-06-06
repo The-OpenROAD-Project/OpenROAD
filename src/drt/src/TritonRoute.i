@@ -187,7 +187,6 @@ void
 run_worker_cmd(const char* dump_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setGuideFile(fmt::format("{}/guide.in", dump_dir).c_str());
   router->resetDb(fmt::format("{}/design.db", dump_dir).c_str());
   router->updateGlobals(fmt::format("{}/globals.bin", dump_dir).c_str());
   router->updateDesign(fmt::format("{}/updates.bin", dump_dir).c_str());

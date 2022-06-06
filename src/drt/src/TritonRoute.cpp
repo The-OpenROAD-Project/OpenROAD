@@ -259,11 +259,6 @@ void TritonRoute::updateGlobals(const char* file_name)
   file.close();
 }
 
-void TritonRoute::setGuideFile(const std::string& guide_path)
-{
-  GUIDE_FILE = guide_path;
-}
-
 void TritonRoute::resetDb(const char* file_name)
 {
   design_ = std::make_unique<frDesign>(logger_);
@@ -630,13 +625,8 @@ void TritonRoute::sendDesignDist()
 {
   if (distributed_) {
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
-    std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
     std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
     ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
-    std::ifstream src(GUIDE_FILE, std::ios::binary);
-    std::ofstream dst(guide_path.c_str(), std::ios::binary);
-    dst << src.rdbuf();
-    dst.close();
     writeGlobals(globals_path.c_str());
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -647,7 +637,6 @@ void TritonRoute::sendDesignDist()
         = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setDesignPath(design_path);
     rjd->setSharedDir(shared_volume_);
-    rjd->setGuidePath(guide_path);
     rjd->setGlobalsPath(globals_path);
     rjd->setDesignUpdate(false);
     msg.setJobDescription(std::move(desc));
@@ -753,11 +742,6 @@ int TritonRoute::main()
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
         fmt::format("{}/design.db", debug_->dumpDir).c_str());
-    std::ifstream src(GUIDE_FILE, std::ios::binary);
-    std::ofstream dst(fmt::format("{}/guide.in", debug_->dumpDir).c_str(),
-                      std::ios::binary);
-    dst << src.rdbuf();
-    dst.close();
   }
   if (!initGuide()) {
     gr();
