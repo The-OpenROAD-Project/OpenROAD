@@ -2091,13 +2091,13 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     drawTracks(layer, painter, bounds);
+    drawRouteGuides(gui_painter, layer);
     for (auto* renderer : renderers) {
       gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
   }
-
   // draw instance names
   drawInstanceNames(painter, insts);
 
@@ -2141,6 +2141,20 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
   }
 }
 
+void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
+{
+  if(route_guides_.empty())
+    return;
+  for(auto net : route_guides_) {
+    for(auto guide : net->getGuides()) {
+      if (guide->getLayer() != layer)
+        continue;
+      painter.setPen(layer);
+      painter.setBrush(layer);
+      painter.drawRect(guide->getBox());
+    }
+  }
+}
 void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
@@ -3049,6 +3063,13 @@ void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeRouteGuides(odb::dbNet* net)
+{
+  if (route_guides_.erase(net) > 0) {
     fullRepaint();
   }
 }

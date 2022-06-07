@@ -149,7 +149,8 @@ class DbNetDescriptor : public Descriptor
  public:
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  const std::set<odb::dbNet*>& focus_nets);
+                  const std::set<odb::dbNet*>& focus_nets,
+                  const std::set<odb::dbNet*>& guide_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -197,6 +198,7 @@ class DbNetDescriptor : public Descriptor
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
   const std::set<odb::dbNet*>& focus_nets_;
+  const std::set<odb::dbNet*>& guide_nets_;
 
   static const int max_iterms_ = 10000;
 };

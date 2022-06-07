@@ -861,6 +861,11 @@ void Gui::addRouteGuides(odb::dbNet* net)
   main_window->getLayoutViewer()->addRouteGuides(net);
 }
 
+void Gui::removeRouteGuides(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeRouteGuides(net);
+}
+
 void Gui::removeFocusNet(odb::dbNet* net)
 {
   main_window->getLayoutViewer()->removeFocusNet(net);

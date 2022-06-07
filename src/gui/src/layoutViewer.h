@@ -138,6 +138,7 @@ class LayoutViewer : public QWidget
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
   void addRouteGuides(odb::dbNet* net);
+  void removeRouteGuides(odb::dbNet* net);
   void clearFocusNets();
   void clearRouteGuides();
   const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
@@ -303,6 +304,7 @@ class LayoutViewer : public QWidget
                       const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
+  void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
