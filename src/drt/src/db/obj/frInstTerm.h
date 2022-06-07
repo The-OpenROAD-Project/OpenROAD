@@ -72,7 +72,7 @@ class frInstTerm : public frBlockObject
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes, bool updatedTransform = false);
-  Rect getBBox();
+  Rect getBBox(bool updatedTransform);
   void setOrderId(int in) { order_id_ = in; }
   int getOrderId() const { return order_id_; }
 

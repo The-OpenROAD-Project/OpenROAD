@@ -67,12 +67,14 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes,
   }
 }
 
-Rect frInstTerm::getBBox()
+Rect frInstTerm::getBBox(bool updatedTransform)
 {
   Rect bbox(term_->getBBox());
   dbTransform trans;
-  getInst()->getTransform(trans);
-  Point offset = trans.getOffset();
-  bbox.moveDelta(offset.getX(), offset.getY());
+  if (updatedTransform)
+    getInst()->getUpdatedXform(trans);
+  else 
+    getInst()->getTransform(trans);
+  trans.apply(bbox);
   return bbox;
 }
