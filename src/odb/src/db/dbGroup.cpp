@@ -50,6 +50,7 @@
 // User Code Begin Includes
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
+#include "dbRegion.h"
 // User Code End Includes
 namespace odb {
 
@@ -60,13 +61,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (flags_._type != rhs.flags_._type)
     return false;
 
-  if (flags_._box != rhs.flags_._box)
-    return false;
-
   if (_name != rhs._name)
-    return false;
-
-  if (_box != rhs._box)
     return false;
 
   if (_next_entry != rhs._next_entry)
@@ -87,6 +82,15 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   if (_groups != rhs._groups)
     return false;
 
+  if (region_next_ != rhs.region_next_)
+    return false;
+
+  if (region_prev_ != rhs.region_prev_)
+    return false;
+
+  if (region_ != rhs.region_)
+    return false;
+
   // User Code Begin ==
   if (_power_nets != rhs._power_nets)
     return false;
@@ -103,8 +107,6 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
     return false;
   if (flags_._type >= rhs.flags_._type)
     return false;
-  if (_box >= rhs._box)
-    return false;
   // User Code End <
   return true;
 }
@@ -115,21 +117,19 @@ void _dbGroup::differences(dbDiff& diff,
   DIFF_BEGIN
 
   DIFF_FIELD(flags_._type);
-  DIFF_FIELD(flags_._box);
   DIFF_FIELD(_name);
-  DIFF_FIELD(_box);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_parent_group);
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_groups);
+  DIFF_FIELD(region_next_);
+  DIFF_FIELD(region_prev_);
+  DIFF_FIELD(region_);
   // User Code Begin Differences
-
   DIFF_VECTOR(_power_nets);
-
   DIFF_VECTOR(_ground_nets);
-
   // User Code End Differences
   DIFF_END
 }
@@ -137,22 +137,20 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_._type);
-  DIFF_OUT_FIELD(flags_._box);
   DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_box);
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_parent_group);
   DIFF_OUT_FIELD(_insts);
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_groups);
+  DIFF_OUT_FIELD(region_next_);
+  DIFF_OUT_FIELD(region_prev_);
+  DIFF_OUT_FIELD(region_);
 
   // User Code Begin Out
-
   DIFF_OUT_VECTOR(_power_nets);
-
   DIFF_OUT_VECTOR(_ground_nets);
-
   // User Code End Out
   DIFF_END
 }
@@ -166,16 +164,17 @@ _dbGroup::_dbGroup(_dbDatabase* db)
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 {
   flags_._type = r.flags_._type;
-  flags_._box = r.flags_._box;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   _name = r._name;
-  _box = r._box;
   _next_entry = r._next_entry;
   _group_next = r._group_next;
   _parent_group = r._parent_group;
   _insts = r._insts;
   _modinsts = r._modinsts;
   _groups = r._groups;
+  region_next_ = r.region_next_;
+  region_prev_ = r.region_prev_;
+  region_ = r.region_;
   // User Code Begin CopyConstructor
   _power_nets = r._power_nets;
   _ground_nets = r._ground_nets;
@@ -187,7 +186,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> obj._name;
-  stream >> obj._box;
   stream >> obj._next_entry;
   stream >> obj._group_next;
   stream >> obj._parent_group;
@@ -196,6 +194,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   stream >> obj._groups;
   stream >> obj._power_nets;
   stream >> obj._ground_nets;
+  stream >> obj.region_next_;
+  stream >> obj.region_prev_;
+  stream >> obj.region_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -205,7 +206,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
   stream << obj._name;
-  stream << obj._box;
   stream << obj._next_entry;
   stream << obj._group_next;
   stream << obj._parent_group;
@@ -214,6 +214,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   stream << obj._groups;
   stream << obj._power_nets;
   stream << obj._ground_nets;
+  stream << obj.region_next_;
+  stream << obj.region_prev_;
+  stream << obj.region_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -242,19 +245,6 @@ const char* dbGroup::getName() const
   return obj->_name;
 }
 
-Rect dbGroup::getBox() const
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  return obj->_box;
-}
-
-void dbGroup::setParentGroup(dbGroup* parent_group)
-{
-  _dbGroup* obj = (_dbGroup*) this;
-
-  obj->_parent_group = parent_group->getImpl()->getOID();
-}
-
 dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
@@ -262,6 +252,15 @@ dbGroup* dbGroup::getParentGroup() const
     return NULL;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
+}
+
+dbRegion* dbGroup::getRegion() const
+{
+  _dbGroup* obj = (_dbGroup*) this;
+  if (obj->region_ == 0)
+    return NULL;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
 
 // User Code Begin dbGroupPublicMethods
@@ -277,19 +276,6 @@ dbGroupType dbGroup::getType() const
   _dbGroup* obj = (_dbGroup*) this;
 
   return (dbGroupType::Value) obj->flags_._type;
-}
-
-void dbGroup::setBox(Rect _box)
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  obj->flags_._box = 1;
-  obj->_box = _box;
-}
-
-bool dbGroup::hasBox()
-{
-  _dbGroup* obj = (_dbGroup*) this;
-  return obj->flags_._box;
 }
 
 void dbGroup::addModInst(dbModInst* modinst)
@@ -524,26 +510,6 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
   return (dbGroup*) _group;
 }
 
-dbGroup* dbGroup::create(dbBlock* block,
-                         const char* name,
-                         int x1,
-                         int y1,
-                         int x2,
-                         int y2)
-{
-  _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_group_hash.hasMember(name))
-    return nullptr;
-  _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = strdup(name);
-  ZALLOCATED(_group->_name);
-  _group->flags_._type = dbGroupType::VOLTAGE_DOMAIN;
-  _group->flags_._box = 1;
-  _block->_group_hash.insert(_group);
-  _group->_box.init(x1, y1, x2, y2);
-  return (dbGroup*) _group;
-}
-
 dbGroup* dbGroup::create(dbGroup* parent, const char* name)
 {
   _dbGroup* _parent = (_dbGroup*) parent;
@@ -559,6 +525,21 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
   return (dbGroup*) _group;
 }
 
+dbGroup* dbGroup::create(dbRegion* region, const char* name)
+{
+  _dbRegion* _region = (_dbRegion*) region;
+  _dbBlock* _block = (_dbBlock*) _region->getOwner();
+  if (_block->_group_hash.hasMember(name))
+    return nullptr;
+  _dbGroup* _group = _block->_group_tbl->create();
+  _group->_name = strdup(name);
+  ZALLOCATED(_group->_name);
+  _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
+  _block->_group_hash.insert(_group);
+  region->addGroup((dbGroup*) _group);
+  return (dbGroup*) _group;
+}
+
 void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
@@ -566,13 +547,15 @@ void dbGroup::destroy(dbGroup* group)
   for (auto inst : group->getInsts()) {
     group->removeInst(inst);
   }
+  if (_group->region_.isValid())
+    group->getRegion()->removeGroup(group);
   for (auto modinst : group->getModInsts()) {
     group->removeModInst(modinst);
   }
   for (auto child : group->getGroups()) {
     group->removeGroup(child);
   }
-  if (_group->_parent_group != 0)
+  if (_group->_parent_group.isValid())
     group->getParentGroup()->removeGroup(group);
   dbProperty::destroyProperties(_group);
   block->_group_hash.remove(_group);

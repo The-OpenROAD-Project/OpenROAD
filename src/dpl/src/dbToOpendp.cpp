@@ -196,26 +196,22 @@ swapWidthHeight(dbOrientType orient)
   return false;
 }
 
-// OpenDB represents groups as regions with the parent pointing to
-// the region.
-// DEF GROUP => dbRegion with instances, no boundary, parent->region
-// DEF REGION => dbRegion no instances, boundary, parent = null
 void
 Opendp::makeGroups()
 {
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
-  auto db_regions = block_->getRegions();
-  groups_.reserve(block_->getRegions().size());
-  for (auto db_region : db_regions) {
-    dbRegion *parent = db_region->getParent();
+  auto db_groups = block_->getGroups();
+  groups_.reserve(db_groups.size());
+  for (auto db_group : db_groups) {
+    dbRegion *parent = db_group->getRegion();
     if (parent) {
       groups_.emplace_back(Group());
       struct Group &group = groups_.back();
-      string group_name = db_region->getName();
+      string group_name = db_group->getName();
       group.name = group_name;
       group.boundary.mergeInit();
-      auto boundaries = db_region->getParent()->getBoundaries();
+      auto boundaries = parent->getBoundaries();
       for (dbBox *boundary : boundaries) {
         Rect box;
         boundary->getBox(box);
@@ -227,7 +223,7 @@ Opendp::makeGroups()
         group.boundary.merge(box);
       }
 
-      for (auto db_inst : db_region->getRegionInsts()) {
+      for (auto db_inst : db_group->getInsts()) {
         Cell *cell = db_inst_map_[db_inst];
         group.cells_.push_back(cell);
         cell->group_ = &group;

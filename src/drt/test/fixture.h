@@ -50,10 +50,10 @@ class Fixture
   void makeDesign();
 
   frMaster* makeMacro(const char* name,
-                     frCoord originX = 0,
-                     frCoord originY = 0,
-                     frCoord sizeX = 0,
-                     frCoord sizeY = 0);
+                      frCoord originX = 0,
+                      frCoord originY = 0,
+                      frCoord sizeX = 0,
+                      frCoord sizeY = 0);
 
   frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
@@ -102,29 +102,27 @@ class Fixture
                                      frCoord backward = 0,
                                      frCoord width = 200);
 
-  std::shared_ptr<frLef58SpacingEndOfLineConstraint>
-  makeLef58SpacingEolConstraint(frLayerNum layer_num,
-                                frCoord space = 200,
-                                frCoord width = 200,
-                                frCoord within = 50);
+  frLef58SpacingEndOfLineConstraint* makeLef58SpacingEolConstraint(
+      frLayerNum layer_num,
+      frCoord space = 200,
+      frCoord width = 200,
+      frCoord within = 50);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
-  makeLef58SpacingEolParEdgeConstraint(
-      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
-      frCoord par_space,
-      frCoord par_within,
-      bool two_edges = false);
+  makeLef58SpacingEolParEdgeConstraint(frLef58SpacingEndOfLineConstraint* con,
+                                       frCoord par_space,
+                                       frCoord par_within,
+                                       bool two_edges = false);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
-  makeLef58SpacingEolMinMaxLenConstraint(
-      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
-      frCoord min_max_length,
-      bool max = true,
-      bool two_sides = true);
+  makeLef58SpacingEolMinMaxLenConstraint(frLef58SpacingEndOfLineConstraint* con,
+                                         frCoord min_max_length,
+                                         bool max = true,
+                                         bool two_sides = true);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
   makeLef58SpacingEolCutEncloseConstraint(
-      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+      frLef58SpacingEndOfLineConstraint* con,
       frCoord encloseDist = 100,
       frCoord cutToMetalSpacing = 300,
       bool above = false,

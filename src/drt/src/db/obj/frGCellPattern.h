@@ -58,17 +58,6 @@ class frGCellPattern : public frBlockObject
   frUInt4 spacing_;
   frUInt4 count_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & horizontal_;
-    (ar) & startCoord_;
-    (ar) & spacing_;
-    (ar) & count_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -35,6 +35,7 @@
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
 #include "db/tech/frTechObject.h"
+#include "distributed/drUpdate.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
@@ -50,7 +51,9 @@ class frDesign
   frDesign(Logger* logger)
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
-        rq_(std::make_unique<frRegionQuery>(this, logger))
+        rq_(std::make_unique<frRegionQuery>(this, logger)),
+        updates_sz_(0),
+        version_(0)
   {
   }
   frDesign() : topBlock_(nullptr), tech_(nullptr), rq_(nullptr) {}
@@ -98,20 +101,38 @@ class frDesign
                                                 !isVerticalLayer(layerNum));
   }
 
+  void addUpdate(const drUpdate& update)
+  {
+    if (updates_.size() == 0)
+      updates_.resize(MAX_THREADS * 2);
+    auto num_batches = updates_.size();
+    updates_[updates_sz_++ % num_batches].push_back(update);
+  }
+  const std::vector<std::vector<drUpdate>>& getUpdates() const
+  {
+    return updates_;
+  }
+  bool hasUpdates() const { return updates_sz_ != 0; }
+  void clearUpdates()
+  {
+    updates_.clear();
+    updates_sz_ = 0;
+  }
+  void incrementVersion() { ++version_; }
+  int getVersion() const { return version_; }
+
+  ~frDesign() {}
+
  private:
   std::unique_ptr<frBlock> topBlock_;
   std::map<frString, frMaster*> name2master_;
   std::vector<std::unique_ptr<frMaster>> masters_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
+  std::vector<std::vector<drUpdate>> updates_;
+  int updates_sz_;
   std::vector<std::string> user_selected_vias_;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & tech_;
-    (ar) & rq_;
-  }
-  friend class boost::serialization::access;
+  int version_;
 };
 }  // namespace fr
 

@@ -80,11 +80,6 @@ class FlexGCWorkerRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 
 class FlexGCWorker::Impl
@@ -111,6 +106,7 @@ class FlexGCWorker::Impl
     auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
     auto net = uNet.get();
     net->setOwner(owner);
+    net->setId(nets_.size());
     nets_.push_back(std::move(uNet));
     owner2nets_[owner] = net;
     return net;
@@ -494,11 +490,7 @@ class FlexGCWorker::Impl
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
+  
 };
 }  // namespace fr
 

@@ -46,10 +46,6 @@ class FlexGridGraph
 {
  public:
   // constructors
-  FlexGridGraph()  // just for serialization
-  {
-  }
-
   FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
       : tech_(techIn),
         drWorker_(workerIn),
@@ -76,9 +72,9 @@ class FlexGridGraph
   frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
     auto baseIdx = 3 * getIdx(idx.x(), idx.y(), idx.z());
-    return (frDirEnum)(((unsigned short) (prevDirs_[baseIdx]) << 2)
-                       + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
-                       + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
+    return (frDirEnum) (((unsigned short) (prevDirs_[baseIdx]) << 2)
+                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
+                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
   }
   // unsafe access, no check
   bool isSrc(frMIdx x, frMIdx y, frMIdx z) const
@@ -1033,6 +1029,24 @@ class FlexGridGraph
   const frBox3D*
       dstTaperBox;  // taper box for the current dest pin in the search
 
+  FlexGridGraph()
+      : tech_(nullptr),
+        drWorker_(nullptr),
+        graphics_(nullptr),
+        xCoords_(),
+        yCoords_(),
+        zCoords_(),
+        zHeights_(),
+        ggDRCCost_(0),
+        ggMarkerCost_(0),
+        halfViaEncArea_(nullptr),
+        via2viaMinLen_(nullptr),
+        via2viaMinLenNew_(nullptr),
+        via2turnMinLen_(nullptr),
+        ndr_(nullptr),
+        dstTaperBox(nullptr)
+  {
+  }
   // internal getters
   frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const
   {
@@ -1207,8 +1221,9 @@ class FlexGridGraph
     if (!wavefront_.empty()) {
       throw std::logic_error("dont't serialize non-empty wavefront");
     }
-
-    (ar) & tech_;
+    if (is_loading(ar)) {
+      tech_ = ar.getDesign()->getTech();
+    }
     (ar) & drWorker_;
     (ar) & nodes_;
     (ar) & prevDirs_;
@@ -1227,10 +1242,9 @@ class FlexGridGraph
     (ar) & via2viaMinLen_;
     (ar) & via2viaMinLenNew_;
     (ar) & via2turnMinLen_;
-    (ar) & ndr_;
-    (ar) & dstTaperBox;
   }
   friend class boost::serialization::access;
+  friend class FlexDRWorker;
 };
 }  // namespace fr
 

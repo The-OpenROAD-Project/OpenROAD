@@ -10,6 +10,7 @@ add_library(defin
     definGCell.cpp 
     definRow.cpp 
     definRegion.cpp 
+    definGroup.cpp 
     definNonDefaultRule.cpp 
     definReader.cpp 
     definBase.cpp 

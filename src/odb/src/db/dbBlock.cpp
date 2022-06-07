@@ -66,6 +66,7 @@
 #include "dbGroup.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupInstItr.h"
+#include "dbRegionGroupItr.h"
 #include "dbGroupItr.h"
 #include "dbGroupModInstItr.h"
 #include "dbGroupPowerNetItr.h"
@@ -90,7 +91,6 @@
 #include "dbRSegItr.h"
 #include "dbRegion.h"
 #include "dbRegionInstItr.h"
-#include "dbRegionItr.h"
 #include "dbRow.h"
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
@@ -317,6 +317,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
+  _region_group_itr = new dbRegionGroupItr(_group_tbl);
+  
   _group_itr = new dbGroupItr(_group_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
@@ -328,8 +330,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _group_ground_net_itr = new dbGroupGroundNetItr(_net_tbl);
 
   _bpin_itr = new dbBPinItr(_bpin_tbl);
-
-  _region_itr = new dbRegionItr(_region_tbl);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
@@ -486,6 +486,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
+  _region_group_itr = new dbRegionGroupItr(_group_tbl);
+  
   _group_itr = new dbGroupItr(_group_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
@@ -497,8 +499,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _group_ground_net_itr = new dbGroupGroundNetItr(_net_tbl);
 
   _bpin_itr = new dbBPinItr(_bpin_tbl);
-
-  _region_itr = new dbRegionItr(_region_tbl);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
@@ -565,13 +565,13 @@ _dbBlock::~_dbBlock()
   delete _region_inst_itr;
   delete _module_inst_itr;
   delete _module_modinst_itr;
+  delete _region_group_itr;
   delete _group_itr;
   delete _group_inst_itr;
   delete _group_modinst_itr;
   delete _group_power_net_itr;
   delete _group_ground_net_itr;
   delete _bpin_itr;
-  delete _region_itr;
   delete _prop_itr;
 
   std::list<dbBlockCallBackObj*>::iterator _cbitr;

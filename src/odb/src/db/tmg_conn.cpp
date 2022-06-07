@@ -1585,7 +1585,7 @@ void tmg_conn::printConnections()
   // called after findConnections
   int j;
   notice(0,
-         "\nprintConnections net %d  %s\n",
+         "printConnections net %d  %s\n",
          _net->getId(),
          _net->getName().c_str());
 
@@ -1706,7 +1706,7 @@ void tmg_conn::analyzeNet(dbNet* net,
   if (!_connected) {
     if (!quiet)
       notice(0,
-             "\ndisconnected net %d  %s\n",
+             "disconnected net %d  %s\n",
              _net->getId(),
              _net->getName().c_str());
     if (verbose)
@@ -1732,7 +1732,7 @@ void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
                     // we should wire-order the disconnected nets
   if (!_connected) {
     notice(0,
-           "\ndisconnected net %d  %s\n",
+           "disconnected net %d  %s\n",
            _net->getId(),
            _net->getName().c_str());
     if (verbose)

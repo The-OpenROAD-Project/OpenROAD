@@ -186,7 +186,6 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
-
 void dbModule::addInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
@@ -226,7 +225,6 @@ void dbModule::addInst(dbInst* inst)
   module->_insts = _inst->getOID();
 }
 
-
 void _dbModule::removeInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
@@ -235,7 +233,6 @@ void _dbModule::removeInst(dbInst* inst)
     return;
   _dbBlock* block = (_dbBlock*) getOwner();
   uint id = _inst->getOID();
-
 
   if (module->_insts == id) {
     module->_insts = _inst->_module_next;
@@ -260,7 +257,6 @@ void _dbModule::removeInst(dbInst* inst)
   _inst->_module_next = 0;
   _inst->_module_prev = 0;
 }
-
 
 dbSet<dbModInst> dbModule::getChildren()
 {

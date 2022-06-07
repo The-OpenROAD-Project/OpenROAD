@@ -78,7 +78,7 @@ class RepairSetup : StaState
 {
 public:
   RepairSetup(Resizer *resizer);
-  void repairSetup(float slack_margin,
+  void repairSetup(float setup_slack_margin,
                    int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
