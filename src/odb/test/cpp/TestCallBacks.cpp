@@ -170,19 +170,16 @@ BOOST_AUTO_TEST_CASE(test_region)
   block = db->getChip()->getBlock();
   cb->addOwner(block);
   dbRegion* parent_region = dbRegion::create(block, "parent");
-  dbRegion::create(parent_region, "child");
-  BOOST_TEST(cb->events.size() == 2);
+  BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Create region parent");
-  BOOST_TEST(cb->events[1] == "Create region child");
   cb->clearEvents();
   dbBox::create(parent_region, 0, 0, 1, 1);
   BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Add box (0, 0) (1, 1) to region parent");
   cb->clearEvents();
   dbRegion::destroy(parent_region);
-  BOOST_TEST(cb->events.size() == 2);
-  BOOST_TEST(cb->events[0] == "Destroy region child");
-  BOOST_TEST(cb->events[1] == "Destroy region parent");
+  BOOST_TEST(cb->events.size() == 1);
+  BOOST_TEST(cb->events[0] == "Destroy region parent");
   tearDown();
 }
 BOOST_AUTO_TEST_CASE(test_row)

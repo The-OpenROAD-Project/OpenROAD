@@ -100,12 +100,12 @@ class dbInstITermItr;
 class dbRegionInstItr;
 class dbModuleInstItr;
 class dbModuleModInstItr;
+class dbRegionGroupItr;
 class dbGroupItr;
 class dbGroupInstItr;
 class dbGroupModInstItr;
 class dbGroupPowerNetItr;
 class dbGroupGroundNetItr;
-class dbRegionItr;
 class dbSWireItr;
 class dbNameServer;
 class dbBoxItr;
@@ -235,13 +235,13 @@ class _dbBlock : public _dbObject
   dbRegionInstItr* _region_inst_itr;
   dbModuleInstItr* _module_inst_itr;
   dbModuleModInstItr* _module_modinst_itr;
+  dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
   dbGroupInstItr* _group_inst_itr;
   dbGroupModInstItr* _group_modinst_itr;
   dbGroupPowerNetItr* _group_power_net_itr;
   dbGroupGroundNetItr* _group_ground_net_itr;
   dbBPinItr* _bpin_itr;
-  dbRegionItr* _region_itr;
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
 

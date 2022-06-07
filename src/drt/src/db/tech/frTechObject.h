@@ -100,6 +100,7 @@ class frTechObject
   }
   void addVia(std::unique_ptr<frViaDef> in)
   {
+    in->setId(vias.size());
     if (name2via.find(in->getName()) != name2via.end()) {
       std::cout << "Error: duplicated via definition for " << in->getName()
                 << "\n";
@@ -119,13 +120,16 @@ class frTechObject
     name2viaRuleGenerate[in->getName()] = in.get();
     viaRuleGenerates.push_back(std::move(in));
   }
-  void addConstraint(const std::shared_ptr<frConstraint>& constraintIn)
-  {
-    constraints.push_back(constraintIn);
-  }
   void addUConstraint(std::unique_ptr<frConstraint> in)
   {
+    in->setId(uConstraints.size());
     uConstraints.push_back(std::move(in));
+  }
+  frConstraint* getConstraint(int idx)
+  {
+    if (idx < uConstraints.size())
+      return uConstraints[idx].get();
+    return nullptr;
   }
 
   // forbidden length table related
@@ -276,7 +280,6 @@ class frTechObject
   std::map<frString, frViaRuleGenerate*> name2viaRuleGenerate;
   std::vector<std::unique_ptr<frViaRuleGenerate>> viaRuleGenerates;
 
-  frCollection<std::shared_ptr<frConstraint>> constraints;
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
@@ -377,31 +380,6 @@ class frTechObject
     return included;
   }
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & dbUnit;
-    (ar) & manufacturingGrid;
-    (ar) & layers;
-    (ar) & name2layer;
-    (ar) & name2via;
-    (ar) & vias;
-    (ar) & layer2Name2CutClass;
-    (ar) & layerCutClass;
-    (ar) & name2viaRuleGenerate;
-    (ar) & viaRuleGenerates;
-    (ar) & constraints;
-    (ar) & uConstraints;
-    (ar) & nonDefaultRules;
-    (ar) & via2ViaForbiddenLen;
-    (ar) & viaForbiddenTurnLen;
-    (ar) & viaForbiddenPlanarLen;
-    (ar) & line2LineForbiddenLen;
-    (ar) & viaForbiddenThrough;
-    (ar) & hasVia2viaMinStep_;
-  }
-
-  friend class boost::serialization::access;
   friend class FlexRP;
 };
 }  // namespace fr

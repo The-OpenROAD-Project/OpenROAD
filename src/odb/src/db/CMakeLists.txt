@@ -70,7 +70,6 @@ add_library(odb
     dbNullIterator.cpp 
     dbBPin.cpp 
     dbHierInstShapeItr.cpp 
-    dbRegionItr.cpp 
     dbHier.cpp 
     dbTechViaRule.cpp 
     dbTechViaLayerRule.cpp 
@@ -116,6 +115,7 @@ add_library(odb
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
     dbGroupItr.cpp
+    dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     # Generator Code End cpp
 )

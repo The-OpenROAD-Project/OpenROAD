@@ -53,6 +53,7 @@ class definSNet;
 class definTracks;
 class definVia;
 class definRegion;
+class definGroup;
 class definNonDefaultRule;
 class definPropDefs;
 class definPinProps;
@@ -72,6 +73,7 @@ class definReader : public definBase
   definTracks* _tracksR;
   definVia* _viaR;
   definRegion* _regionR;
+  definGroup* _groupR;
   definNonDefaultRule* _non_default_ruleR;
   definPropDefs* _prop_defsR;
   definPinProps* _pin_propsR;
