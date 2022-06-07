@@ -44,7 +44,8 @@ class frGuide : public frConnFig
         beginLayer_(0),
         endLayer_(0),
         routeObj_(),
-        net_(nullptr)
+        net_(nullptr),
+        order_in_owner_(0)
   {
   }
   frGuide(const frGuide& in)
@@ -54,7 +55,8 @@ class frGuide : public frConnFig
         beginLayer_(in.beginLayer_),
         endLayer_(in.endLayer_),
         routeObj_(),
-        net_(nullptr)
+        net_(nullptr),
+        order_in_owner_(0)
   {
   }
   // getters

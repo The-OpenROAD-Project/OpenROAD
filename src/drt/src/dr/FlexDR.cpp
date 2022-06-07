@@ -108,6 +108,7 @@ FlexDR::FlexDR(triton_route::TritonRoute* router,
       logger_(loggerIn),
       db_(dbIn),
       dist_on_(false),
+      dist_port_(0),
       increaseClipsize_(false),
       clipSizeInc_(0),
       iter_(0)
