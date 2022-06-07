@@ -198,23 +198,7 @@ class drAccessPattern : public drBlockObject
   frUInt4 pinCost_;  // is preferred ap
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<drBlockObject>(*this);
-    (ar) & beginPoint_;
-    (ar) & beginLayerNum_;
-    (ar) & beginArea_;
-    (ar) & mazeIdx_;
-    (ar) & pin_;
-    (ar) & validAccess_;
-    (ar) & vU_;
-    (ar) & vD_;
-    (ar) & vUIdx_;
-    (ar) & vDIdx_;
-    (ar) & onTrackX_;
-    (ar) & onTrackY_;
-    (ar) & pinCost_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };

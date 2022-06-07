@@ -186,7 +186,6 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
-
 void dbModule::addInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;

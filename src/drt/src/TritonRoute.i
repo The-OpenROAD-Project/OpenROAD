@@ -38,7 +38,7 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
-
+#include "utl/Logger.h"
 %}
 
 %include "../../Exception.i"
@@ -51,14 +51,16 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
-void detailed_route_distributed(const char* ip,
-                                unsigned short port,
-                                const char* sharedVolume)
+void detailed_route_distributed(const char* remote_ip,
+                                unsigned short remote_port,
+                                const char* sharedVolume,
+                                unsigned int cloud_sz)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDistributed(true);
-  router->setWorkerIpPort(ip, port);
+  router->setWorkerIpPort(remote_ip, remote_port);
   router->setSharedVolume(sharedVolume);
+  router->setCloudSize(cloud_sz);
 }
 
 void detailed_route_set_default_via(const char* viaName)
@@ -153,13 +155,14 @@ set_detailed_route_debug_cmd(const char* net_name,
                              int iter,
                              bool pa_markers,
                              bool pa_edge,
-                             bool pa_commit)
+                             bool pa_commit,
+                             const char* dumpDir)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
-  router->setDebugDumpDR(dump_dr);
+  router->setDebugDumpDR(dump_dr, dumpDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (x >= 0) {
@@ -169,6 +172,29 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaMarkers(pa_markers);
   router->setDebugPaEdge(pa_edge);
   router->setDebugPaCommit(pa_commit);
+}
+
+void
+set_worker_debug_params(int maze_end_iter,
+                        int drc_cost,
+                        int marker_cost,
+                        int ripup_mode,
+                        int follow_guide)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setDebugWorkerParams(maze_end_iter, drc_cost, marker_cost, ripup_mode, follow_guide);
+}
+
+void
+run_worker_cmd(const char* dump_dir, const char* drc_rpt)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setGuideFile(fmt::format("{}/guide.in", dump_dir).c_str());
+  router->resetDb(fmt::format("{}/design.db", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/globals.bin", dump_dir).c_str());
+  router->updateDesign(fmt::format("{}/updates.bin", dump_dir).c_str());
+  
+  router->debugSingleWorker(dump_dir, drc_rpt);
 }
 
 void detailed_route_step_drt(int size,
