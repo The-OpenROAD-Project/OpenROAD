@@ -581,9 +581,12 @@ void io::Parser::setNets(odb::dbBlock* block)
                       term->getMTerm()->getName(),
                       term->getSigType().getString());
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
-          == tmpBlock->name2inst_.end())
+          == tmpBlock->name2inst_.end()) {
+          if (term->getInst()->getMaster()->getType() == dbMasterType::CORE_SPACER)
+              continue;
         logger->error(
             DRT, 105, "Component {} not found. Net {} Term {} ", term->getInst()->getName(), net->getName(), term->getMTerm()->getName());
+      }
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
       auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
