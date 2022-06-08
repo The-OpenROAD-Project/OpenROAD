@@ -91,44 +91,18 @@ void Distributed::runWorker(const char* ip,
   }
 }
 
-void Distributed::runLoadBalancer(const char* ip, unsigned short port, const char* workersDNS)
+void Distributed::runLoadBalancer(const char* ip, unsigned short port, const char* workers_domain)
 {
   try {
     asio::io_service io_service;
     LoadBalancer balancer(this, io_service, logger_, ip, port);
-    if(!lookUpWorkers(workersDNS, port))
-      throw std::runtime_error("No workers found at the given DNS and port.");
+    boost::thread t(boost::bind(&LoadBalancer::lookUpWorkers, &balancer, workers_domain, port));
+    t.detach();
     for (auto worker : end_points_)
       balancer.addWorker(worker.ip, worker.port);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
-  }
-}
-
-bool Distributed::lookUpWorkers(const char* DNS, unsigned short port)
-{
-  asio::io_service ios;
-  asio::ip::udp::resolver::query resolver_query(DNS, std::to_string(port), asio::ip::udp::resolver::query::numeric_service);
-  asio::ip::udp::resolver resolver(ios);
-  auto it = resolver.resolve(resolver_query);
-
-  int workers_count = 0;
-  asio::ip::udp::resolver::iterator it_end;
-
-  for (; it != it_end; ++it) {
-      asio::ip::udp::endpoint ep = it->endpoint();
-      addWorkerAddress(ep.address().to_string().c_str(), port);
-      workers_count += 1;
-    }
-
-  if(workers_count == 0){
-    logger_->error(utl::DST, 201, "Discovered zero workers with the given DNS.");
-    return false;
-  }
-  else{
-    logger_->info(utl::DST, 202, "Discovered {} workers with the given DNS.", workers_count);
-    return true;
   }
 }
 

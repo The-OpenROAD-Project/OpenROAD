@@ -53,11 +53,11 @@ proc run_worker { args } {
 sta::define_cmd_args "run_load_balancer" {
     [-host host]
     [-port port]
-    [-workersDNS workersDNS]
+    [-workers_domain workers_domain]
 }
 proc run_load_balancer { args } {
   sta::parse_key_args "run_load_balancer" args \
-    keys {-host -port -workersDNS} \
+    keys {-host -port -workers_domain} \
     flags {}
   sta::check_argc_eq0 "run_load_balancer" $args
   if { [info exists keys(-host)] } {
@@ -70,12 +70,12 @@ proc run_load_balancer { args } {
   } else {
     utl::error DST 11 "-port is required in run_load_balancer cmd."
   }
-  if { [info exists keys(-workersDNS)] } {
-    set workersDNS $keys(-workersDNS)
+  if { [info exists keys(-workers_domain)] } {
+    set workers_domain $keys(-workers_domain)
   } else {
-    utl::error DST 55 "-workersDNS is required in run_load_balancer cmd."
+    utl::error DST 55 "-workers_domain is required in run_load_balancer cmd."
   }
-  dst::run_load_balancer $host $port $workersDNS
+  dst::run_load_balancer $host $port $workers_domain
 }
 sta::define_cmd_args "add_worker_address" {
     [-host host]

@@ -39,6 +39,9 @@ namespace utl {
 class Logger;
 }
 
+namespace asio = boost::asio;
+using asio::ip::udp;
+
 namespace dst {
 class Distributed;
 class LoadBalancer
@@ -53,7 +56,8 @@ class LoadBalancer
   void addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
-
+  void lookUpWorkers(const char* domain, unsigned short port);
+  
  private:
   struct worker
   {
@@ -63,6 +67,10 @@ class LoadBalancer
     worker(ip::address ipIn, unsigned short portIn, unsigned short priorityIn)
         : ip(ipIn), port(portIn), priority(priorityIn)
     {
+    }
+    bool operator==(const worker& rhs) const
+    {
+      return (ip == rhs.ip && port == rhs.port);
     }
   };
   struct CompareWorker
@@ -77,6 +85,7 @@ class LoadBalancer
   tcp::acceptor acceptor_;
   asio::io_service* service;
   utl::Logger* logger_;
+  std::vector<worker> workers_set;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
