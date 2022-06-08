@@ -2145,12 +2145,12 @@ void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
 {
   if(route_guides_.empty())
     return;
+  painter.setPen(layer);
+  painter.setBrush(layer);
   for(auto net : route_guides_) {
     for(auto guide : net->getGuides()) {
       if (guide->getLayer() != layer)
         continue;
-      painter.setPen(layer);
-      painter.setBrush(layer);
       painter.drawRect(guide->getBox());
     }
   }
