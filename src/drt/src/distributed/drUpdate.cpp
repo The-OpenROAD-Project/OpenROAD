@@ -100,7 +100,7 @@ template <class Archive>
 void drUpdate::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & type_;
-  (ar) & order_in_owner_;
+  (ar) & index_in_owner_;
   (ar) & begin_;
   (ar) & end_;
   (ar) & style_;

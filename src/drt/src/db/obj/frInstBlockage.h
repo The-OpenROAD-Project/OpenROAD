@@ -51,8 +51,8 @@ class frInstBlockage : public frBlockObject
   // setters
   // others
   frBlockObjectEnum typeId() const override { return frcInstBlockage; }
-  void setOrderId(int in) { index_in_owner_ = in; }
-  int getOrderId() const { return index_in_owner_; }
+  void setIndexeInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
   frInst* inst_;

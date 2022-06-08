@@ -48,11 +48,11 @@ class frBlockage : public frBlockObject
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
-  void setOrderId(int in) { order_id_ = in; }
-  int getOrderId() const { return order_id_; }
+  void setIndexInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
-  int order_id_;
+  int index_in_owner_;
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_;
 
