@@ -153,7 +153,7 @@ proc set_padring_options {args} {
   }
 
   if {[info exists keys(-pin_layer)]} {
-    ICeWall::set_pin_layer $keys(-pin_layer)
+    ICeWall::set_footprint_pin_layer $keys(-pin_layer)
   }
 
   if {[info exists keys(-connect_by_abutment)]} {
@@ -1253,14 +1253,24 @@ namespace eval ICeWall {
     return [dict get $library pad_pin_layer]
   }
 
-  proc get_footprint_pad_pin_layer {} {
+  proc get_footprint_pin_layer {} {
     variable footprint
 
     if {![dict exists $footprint pin_layer]} {
-      dict set footprint pin_layer [get_library_pad_pin_layer]
+      dict set footprint pin_layer [get_tech_top_routing_layer]
     }
 
     return [dict get $footprint pin_layer]
+  }
+
+  proc get_footprint_pad_pin_layer {} {
+    variable footprint
+
+    if {![dict exists $footprint pad_pin_layer]} {
+      dict set footprint pad_pin_layer [get_library_pad_pin_layer]
+    }
+
+    return [dict get $footprint pad_pin_layer]
   }
 
   proc set_padcell_property {padcell key value} {
@@ -2472,7 +2482,7 @@ namespace eval ICeWall {
 
       set pin [odb::dbBPin_create $term]
       lappend pins_created $pin
-      set layer [$tech findLayer [get_footprint_pad_pin_layer]]
+      set layer [$tech findLayer [get_footprint_pin_layer]]
 
       set pin_name [get_library_pad_pin_name [get_padcell_type $padcell]]
       if {[llength [set pin_shape [get_pin_shape $inst $pin_name]]] == 4} {
@@ -2537,9 +2547,9 @@ namespace eval ICeWall {
 
     set pin [odb::dbBPin_create $term]
     lappend pins_created $pin
-    set layer [$tech findLayer [get_footprint_pad_pin_layer]]
+    set layer [$tech findLayer [get_footprint_pin_layer]]
     if {$layer == "NULL"} {
-      utl::error PAD 78 "Layer [get_footprint_pad_pin_layer] not defined in technology."
+      utl::error PAD 78 "Layer [get_footprint_pin_layer] not defined in technology."
     }
 
     # The variable pin_shape is either a dictionary with keys x and y denoting the center of the pin, or else it is a list of four numbers which define 
@@ -2825,10 +2835,10 @@ namespace eval ICeWall {
   proc get_library_bump_pin_name {} {
     variable library
 
-    if {![dict exists $library bump pin_name]} {
+    if {![dict exists $library bump_pin_name]} {
       utl::error "PAD" 38 "No bump_pin_name attribute found in the library."
     }
-    return [dict get $library bump pin_name]
+    return [dict get $library bump_pin_name]
   }
 
   proc get_library_rdl_width {} {
@@ -5313,11 +5323,18 @@ namespace eval ICeWall {
     }
   }
 
-  proc set_pin_layer {layer_name} {
+  proc set_footprint_pin_layer {layer_name} {
     variable footprint
+    # debug "pin_layer: $layer_name"
 
-    set tech [ord::get_db_tech]
     dict set footprint pin_layer [check_layer_name $layer_name]
+  }
+
+  proc set_footprint_pad_pin_layer {layer_name} {
+    variable footprint
+    # debug "pin_layer: $layer_name"
+
+    dict set footprint pad_pin_layer [check_layer_name $layer_name]
   }
 
   proc set_pad_inst_name {format_string} {
@@ -6165,7 +6182,7 @@ namespace eval ICeWall {
   }
 
   namespace export add_libcell define_ring define_bumps
-  namespace export set_type set_die_area set_core_area set_offsets set_pin_layer set_pad_inst_name set_pad_pin_name set_rdl_cover_file_name
+  namespace export set_type set_die_area set_core_area set_offsets set_footprint_pin_layer set_pad_inst_name set_pad_pin_name set_rdl_cover_file_name
   namespace export add_pad add_ground_nets add_power_nets
   namespace export set_footprint set_library
 
