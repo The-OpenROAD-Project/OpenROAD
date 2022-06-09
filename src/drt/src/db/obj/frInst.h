@@ -68,7 +68,7 @@ class frInst : public frRef
   }
   void addInstBlockage(std::unique_ptr<frInstBlockage> in)
   {
-    in->setOrderId(instBlockages_.size());
+    in->setIndexeInOwner(instBlockages_.size());
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }

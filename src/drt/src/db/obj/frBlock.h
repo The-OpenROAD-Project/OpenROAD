@@ -304,7 +304,7 @@ class frBlock : public frBlockObject
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frBTerm> in)
   {
-    in->setOrderId(terms_.size());
+    in->setIndexInOwner(terms_.size());
     in->setBlock(this);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
@@ -350,13 +350,13 @@ class frBlock : public frBlockObject
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
     for (auto& blk : in) {
-      blk->setOrderId(blockages_.size());
+      blk->setIndexInOwner(blockages_.size());
       blockages_.push_back(std::move(blk));
     }
   }
   void addBlockage(std::unique_ptr<frBlockage> in)
   {
-    in->setOrderId(blockages_.size());
+    in->setIndexInOwner(blockages_.size());
     blockages_.push_back(std::move(in));
   }
   void setGCellPatterns(const std::vector<frGCellPattern>& gpIn)

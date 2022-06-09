@@ -38,7 +38,7 @@
 #include "utl/Logger.h"
 namespace odb {
 
-definGroup::definGroup()
+definGroup::definGroup() : cur_group_(nullptr)
 {
   init();
 }

@@ -47,11 +47,11 @@ class frInstTerm : public frBlockObject
  public:
   // constructors
   frInstTerm(frInst* inst, frMTerm* term)
-      : inst_(inst), term_(term), net_(nullptr), ap_()
+      : inst_(inst), term_(term), net_(nullptr), ap_(), index_in_owner_(0)
   {
   }
   frInstTerm(const frInstTerm& in)
-      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_()
+      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_(), index_in_owner_(0)
   {
   }
   // getters
@@ -73,15 +73,15 @@ class frInstTerm : public frBlockObject
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes, bool updatedTransform = false);
   Rect getBBox();
-  void setOrderId(int in) { order_id_ = in; }
-  int getOrderId() const { return order_id_; }
+  void setIndexInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
-  int order_id_;
   frInst* inst_;
   frMTerm* term_;
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
+  int index_in_owner_;
 
 };
 

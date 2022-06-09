@@ -139,7 +139,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms++);
-      instTerm->setOrderId(numInstTerms++);
+      instTerm->setIndexInOwner(numInstTerms++);
       int pinCnt = term->getPins().size();
       instTerm->setAPSize(pinCnt);
       tmpInst->addInstTerm(std::move(instTerm));
@@ -559,7 +559,7 @@ void io::Parser::setNets(odb::dbBlock* block)
                       "Component pin {}/{} not found.",
                       term->getInst()->getName(),
                       term->getMTerm()->getName());
-      int idx = frterm->getOrderId();
+      int idx = frterm->getIndexInOwner();
       auto& instTerms = inst->getInstTerms();
       auto instTerm = instTerms[idx].get();
       assert(instTerm->getTerm()->getName() == term->getMTerm()->getName());
