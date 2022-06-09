@@ -1457,6 +1457,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
     if (modEol)
       modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
+    modMinimumcutCostVia(box, bi.z(), type, true);
+    modMinimumcutCostVia(box, bi.z(), type, false);
 
     obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
 
@@ -1465,7 +1467,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
     if (modEol)
       modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
-
+    modMinimumcutCostVia(box, ei.z(), type, true);
+    modMinimumcutCostVia(box, ei.z(), type, false);
     dbTransform xform;
     Point pt;
     obj->getOrigin(pt);
