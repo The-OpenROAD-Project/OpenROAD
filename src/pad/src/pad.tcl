@@ -103,7 +103,8 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-offsets offsets] \
                                             [-pad_inst_pattern pad_inst_pattern] \
                                             [-pad_pin_pattern pad_pin_pattern] \
-                                            [-pin_layer pin_layer_name] \
+					    [-pad_pin_layer pin_layer_name] \
+                                            [-pin_layer layer_name] \
                                             [-connect_by_abutment signal_list] \
                                             [-allow_filler_overlap]}
 
@@ -113,7 +114,7 @@ proc set_padring_options {args} {
   }
 
   sta::parse_key_args "set_padring_options" args \
-    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pin_layer -connect_by_abutment} \
+    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pad_pin_layer -pin_layer -connect_by_abutment} \
     flags {-allow_filler_overlap}
 
   if {[llength $args] > 0} {
@@ -150,6 +151,10 @@ proc set_padring_options {args} {
 
   if {[info exists keys(-pad_pin_pattern)]} {
     ICeWall::set_pad_pin_name $keys(-pad_pin_pattern)
+  }
+
+  if {[info exists keys(-pad_pin_layer)]} {
+    ICeWall::set_footprint_pad_pin_layer $keys(-pad_pin_layer)
   }
 
   if {[info exists keys(-pin_layer)]} {
@@ -2435,8 +2440,9 @@ namespace eval ICeWall {
     # debug "[get_padcell_type $padcell]"
 
     set mterm [[$inst getMaster] findMTerm [get_padcell_pad_pin_name $padcell]]
+    # debug "pin_layer: [get_footprint_pad_pin_layer]"
+    # return the pin shape that is on  the correct layer
     foreach  mpin  [$mterm getMPins] {
-
       foreach geometry [$mpin getGeometry] {
         if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
           set pin_box [list [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax]]

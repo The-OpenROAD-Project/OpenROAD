@@ -131,6 +131,7 @@ set_padring_options \
   -offsets 35 \
   -pad_inst_pattern "%s" \
   -pad_pin_pattern "p_%s" \
+  -pad_pin_layer metal10 \
   -pin_layer metal9 \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
