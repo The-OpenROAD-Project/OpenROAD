@@ -26,13 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR_conn.h"
+
 #include <omp.h>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_conn.h"
 #include "frProfileTask.h"
 #include "io/io.h"
-
 #include "utl/exception.h"
 
 using namespace std;
@@ -258,9 +258,8 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
 void FlexDRConnectivityChecker::nodeMap_pin(
     const vector<frConnFig*>& netRouteObjs,
     vector<frBlockObject*>& netPins,
-    const map<frBlockObject*,
-              set<pair<Point, frLayerNum>>,
-              frBlockObjectComp>& pin2epMap,
+    const map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
+        pin2epMap,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
@@ -277,9 +276,8 @@ void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
     vector<frBlockObject*>& netPins,
-    const map<frBlockObject*,
-              set<pair<Point, frLayerNum>>,
-              frBlockObjectComp>& pin2epMap,
+    const map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
+        pin2epMap,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
@@ -425,7 +423,12 @@ void FlexDRConnectivityChecker::finish(
         Rect bbox;
         victimPathSeg->getBBox(bbox);
         addMarker(net, victimPathSeg->getLayerNum(), bbox);
-
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(victimPathSeg->getNet());
+          update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(static_cast<frShape*>(netRouteObjs[i]));
         net->removeShape(static_cast<frShape*>(netRouteObjs[i]));
       } else if (netRouteObjs[i]->typeId() == frcVia) {
@@ -436,6 +439,12 @@ void FlexDRConnectivityChecker::finish(
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(via->getNet());
+          update.setIndexInOwner(via->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(via);
         net->removeVia(via);
       } else {
@@ -549,14 +558,33 @@ void FlexDRConnectivityChecker::finish(
     auto ps2 = uPs2.get();
     addedPS.push_back(ps2);
     unique_ptr<frShape> uShape(std::move(uPs2));
+    if (save_updates_) {
+      drUpdate update(drUpdate::ADD_SHAPE_NET_ONLY);
+      update.setNet(ps2->getNet());
+      update.setPathSeg(*ps2);
+      design_->addUpdate(update);
+    }
     net->addShape(std::move(uShape));
     // manipulate ps1
+    if (save_updates_) {
+      drUpdate update(drUpdate::REMOVE_FROM_RQ);
+      update.setNet(ps1->getNet());
+      update.setIndexInOwner(ps1->getIndexInOwner());
+      design_->addUpdate(update);
+    }
     regionQuery->removeDRObj(ps1);
     frSegStyle ps1Style;
     ps1->getStyle(ps1Style);
     ps1Style.setEndStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps1->setStyle(ps1Style);
     ps1->setPoints(bp1, splitPt);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(ps1->getNet());
+      update.setIndexInOwner(ps1->getIndexInOwner());
+      update.setPathSeg(*ps1);
+      design_->addUpdate(update);
+    }
     regionQuery->addDRObj(ps1);
 
     // manipulate ps2
@@ -565,6 +593,13 @@ void FlexDRConnectivityChecker::finish(
     ps2Style.setBeginStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps2->setStyle(ps2Style);
     ps2->setPoints(splitPt, ep1);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(ps2->getNet());
+      update.setIndexInOwner(ps2->getIndexInOwner());
+      update.setPathSeg(*ps2);
+      design_->addUpdate(update);
+    }
     regionQuery->addDRObj(ps2);
   }
 
@@ -591,9 +626,21 @@ void FlexDRConnectivityChecker::finish(
       Rect bbox;
       ps->getBBox(bbox);
       addMarker(net, ps->getLayerNum(), bbox);
-
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_RQ);
+        update.setNet(ps->getNet());
+        update.setIndexInOwner(ps->getIndexInOwner());
+        design_->addUpdate(update);
+      }
       regionQuery->removeDRObj(ps);
       ps->setPoints(minPt, maxPt);
+      if (save_updates_) {
+        drUpdate update(drUpdate::UPDATE_SHAPE);
+        update.setNet(ps->getNet());
+        update.setIndexInOwner(ps->getIndexInOwner());
+        update.setPathSeg(*ps);
+        design_->addUpdate(update);
+      }
       regionQuery->addDRObj(ps);
     }
   }
@@ -637,7 +684,12 @@ void FlexDRConnectivityChecker::finish(
       Rect bbox;
       obj->getBBox(bbox);
       addMarker(net, obj->getLayerNum(), bbox);
-
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(obj->getNet());
+        update.setIndexInOwner(obj->getIndexInOwner());
+        design_->addUpdate(update);
+      }
       regionQuery->removeDRObj(obj);
       net->removePatchWire(obj);
     }
@@ -670,7 +722,7 @@ void FlexDRConnectivityChecker::organizePathSegsByLayerAndTrack(
 }
 
 void FlexDRConnectivityChecker::findSegmentOverlaps(
-    const NetRouteObjs& netRouteObjs,
+    NetRouteObjs& netRouteObjs,
     const PathSegsByLayerAndTrack& horzPathSegs,
     const PathSegsByLayerAndTrack& vertPathSegs,
     PathSegsByLayerAndTrackId& horzVictims,
@@ -686,7 +738,7 @@ void FlexDRConnectivityChecker::findSegmentOverlaps(
     for (auto& [trackCoord, indices] : track2Segs) {
       auto& victims = horzVictims[lNum][i];
       auto& newSegSpans = horzNewSegSpans[lNum][i];
-      merge_perform(
+      handleOverlaps_perform(
           netRouteObjs, indices, victims, newSegSpans, true /*isHorz*/);
       i++;
     }
@@ -700,14 +752,14 @@ void FlexDRConnectivityChecker::findSegmentOverlaps(
     for (auto& [trackCoord, indices] : track2Segs) {
       auto& victims = vertVictims[lNum][i];
       auto& newSegSpans = vertNewSegSpans[lNum][i];
-      merge_perform(
+      handleOverlaps_perform(
           netRouteObjs, indices, victims, newSegSpans, false /*isHorz*/);
       i++;
     }
   }
 }
 
-void FlexDRConnectivityChecker::mergeSegmentOverlaps(
+void FlexDRConnectivityChecker::handleSegmentOverlaps(
     frNet* net,
     NetRouteObjs& netRouteObjs,
     const PathSegsByLayerAndTrack& horzPathSegs,
@@ -746,11 +798,12 @@ void FlexDRConnectivityChecker::mergeSegmentOverlaps(
   }
 }
 
-void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
-                                              const vector<int>& indices,
-                                              vector<int>& victims,
-                                              vector<Span>& newSegSpans,
-                                              const bool isHorz)
+void FlexDRConnectivityChecker::handleOverlaps_perform(
+    NetRouteObjs& netRouteObjs,
+    const vector<int>& indices,
+    vector<int>& victims,
+    vector<Span>& newSegSpans,
+    const bool isHorz)
 {
   vector<pair<Span, int>> segSpans;
   for (auto& idx : indices) {
@@ -759,22 +812,179 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        cout << "Error1: bp.x() >= ep.x()" << bp << " " << " " << ep << "\n";
+        cout << "Error1: bp.x() >= ep.x()" << bp << " "
+             << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        cout << "Error2: bp.y() >= ep.y()" << bp << " " << " " << ep << "\n";
+        cout << "Error2: bp.y() >= ep.y()" << bp << " "
+             << " " << ep << "\n";
       }
     }
   }
   sort(segSpans.begin(), segSpans.end());
 
+  splitPathSegs(netRouteObjs, segSpans);
   // get victim segments and merged segments
-  merge_perform_helper(segSpans, victims, newSegSpans);
+  merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
+}
+
+bool debug = false;
+bool isRedundant(vector<int>& splitPoints, int v)
+{
+  return std::find(splitPoints.begin(), splitPoints.end(), v)
+         != splitPoints.end();
+}
+void FlexDRConnectivityChecker::splitPathSegs(NetRouteObjs& netRouteObjs,
+                                              vector<pair<Span, int>>& segSpans)
+{
+  frPathSeg* highestPs = nullptr;  // overlapping ps with the highest endPoint
+  int first = 0;
+  vector<int> splitPoints;
+  if (segSpans.empty())
+    return;
+  for (int i = 0; i < segSpans.size(); i++) {
+    auto& curr = segSpans[i];
+    frPathSeg* currPs = static_cast<frPathSeg*>(netRouteObjs[curr.second]);
+    if (!highestPs || curr.first.lo >= highestPs->high()) {
+      if (!splitPoints.empty())
+        splitPathSegs_commit(
+            splitPoints, highestPs, first, i, segSpans, netRouteObjs);
+      first = i;
+      highestPs = currPs;
+    } else {
+      // this section tries to gather all split points (truncatStyle points)
+      // involved in the overlapping of pathsegs
+      auto& prev = segSpans[i - 1];
+      frPathSeg* prevPs = static_cast<frPathSeg*>(netRouteObjs[prev.second]);
+      if (curr.first.lo != segSpans[first].first.lo
+          && currPs->isBeginTruncated()
+          && !isRedundant(splitPoints, curr.first.lo))
+        splitPoints.push_back(curr.first.lo);
+      if (currPs->isEndTruncated() && !isRedundant(splitPoints, curr.first.hi))
+        splitPoints.push_back(curr.first.hi);
+      if (i - 1 == first) {
+        if (prevPs->isEndTruncated()
+            && !isRedundant(splitPoints, prevPs->high())) {
+          splitPoints.push_back(prevPs->high());
+        }
+      }
+      if (highestPs->high() < curr.first.hi)
+        highestPs = currPs;
+    }
+  }
+  if (!splitPoints.empty()) {
+    int i = segSpans.size();
+    splitPathSegs_commit(
+        splitPoints, highestPs, first, i, segSpans, netRouteObjs);
+  }
+}
+void FlexDRConnectivityChecker::splitPathSegs_commit(
+    vector<int>& splitPoints,
+    frPathSeg* highestPs,
+    int first,
+    int& i,
+    vector<pair<Span, int>>& segSpans,
+    NetRouteObjs& netRouteObjs)
+{
+  sort(splitPoints.begin(), splitPoints.end());
+  if (splitPoints[splitPoints.size() - 1]
+      == highestPs->high())  // we dont need this split point, only those inside
+                             // the overlapping interval
+    splitPoints.erase(std::prev(splitPoints.end()));
+  if (!splitPoints.empty()) {
+    frEndStyle highestPsEndStyle = highestPs->getEndStyle();
+    int highestHi = highestPs->high();
+    vector<int> splitSpanIdxs;
+    for (int k = first; k < i;
+         k++) {  // detect split ps's. We want to get all path segs that have
+                 // some split point in the middle
+      auto& spn = segSpans[k].first;
+      for (auto p : splitPoints) {
+        if (spn.lo < p && spn.hi > p) {
+          splitSpanIdxs.push_back(k);
+          break;
+        }
+      }
+    }
+    int currIdxSplitSpanIdxs = 0;
+    int s;
+    // change existing split ps's and spans to match split points
+    for (s = 0;
+         s <= splitPoints.size() && currIdxSplitSpanIdxs < splitSpanIdxs.size();
+         s++, currIdxSplitSpanIdxs++) {
+      int segSpnIdx = splitSpanIdxs[currIdxSplitSpanIdxs];
+      frPathSeg* ps
+          = static_cast<frPathSeg*>(netRouteObjs[segSpans[segSpnIdx].second]);
+#pragma omp critical
+      {
+        getRegionQuery()->removeDRObj(ps);
+        // set low
+        if (s != 0) {
+          segSpans[segSpnIdx].first.lo = splitPoints[s - 1];
+          ps->setLow(splitPoints[s - 1]);
+          ps->setBeginStyle(frcTruncateEndStyle);
+        }
+        // set high
+        if (s == splitPoints.size()) {
+          ps->setHigh(highestHi);
+          ps->setEndStyle(highestPsEndStyle);
+          ps->setBeginStyle(frcTruncateEndStyle);
+          segSpans[segSpnIdx].first.hi = highestHi;
+          // if we have 2 or more splitting pathsegs than split points. This
+          // will create redundant pathsegs that will be merged later
+          if (currIdxSplitSpanIdxs < splitSpanIdxs.size() - 1)
+            s--;
+        } else {
+          segSpans[segSpnIdx].first.hi = splitPoints[s];
+          ps->setHigh(splitPoints[s]);
+          ps->setEndStyle(frcTruncateEndStyle);
+        }
+        getRegionQuery()->addDRObj(ps);
+      }
+    }
+    // add remaining splits. This will create new split pathsegs
+    for (; s <= splitPoints.size(); s++) {
+      int lo = splitPoints[s - 1];
+      int hi;
+      frEndStyle hiStyle;
+      if (s == splitPoints.size()) {
+        hiStyle = highestPsEndStyle;
+        hi = highestHi;
+      } else {
+        hi = splitPoints[s];
+        hiStyle = frcTruncateEndStyle;
+      }
+      auto newSpan = pair<Span, int>({lo, hi}, netRouteObjs.size());
+      segSpans.insert(segSpans.begin() + i, newSpan);  // add last segment piece
+      i++;
+      unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
+      Point begin, end;
+      if (highestPs->isVertical()) {
+        begin.set(highestPs->getBeginPoint().x(), lo);
+        end.set(highestPs->getBeginPoint().x(), hi);
+      } else {
+        begin.set(lo, highestPs->getBeginPoint().y());
+        end.set(hi, highestPs->getBeginPoint().y());
+      }
+      newPs->setPoints(begin, end);
+      newPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
+      newPs->setEndStyle(hiStyle);
+      newPs->setLayerNum(highestPs->getLayerNum());
+      frPathSeg* ptr = newPs.get();
+      netRouteObjs.push_back(ptr);
+      highestPs->getNet()->addShape(std::move(newPs));
+#pragma omp critical
+      getRegionQuery()->addDRObj(ptr);
+    }
+    sort(segSpans.begin() + first, segSpans.begin() + i);
+  }
+  splitPoints.clear();
 }
 
 void FlexDRConnectivityChecker::merge_perform_helper(
+    NetRouteObjs& netRouteObjs,
     const vector<pair<Span, int>>& segSpans,
     vector<int>& victims,
     vector<Span>& newSegSpans)
@@ -782,7 +992,9 @@ void FlexDRConnectivityChecker::merge_perform_helper(
   bool hasOverlap = false;
   frCoord currStart = INT_MAX, currEnd = INT_MIN;
   vector<int> localVictims;
+  frPathSeg* currEndPs = nullptr;
   for (auto& segSpan : segSpans) {
+    frPathSeg* ps = static_cast<frPathSeg*>(netRouteObjs[segSpan.second]);
     if (segSpan.first.lo >= currEnd) {
       if (hasOverlap) {
         // commit prev merged segs
@@ -796,12 +1008,24 @@ void FlexDRConnectivityChecker::merge_perform_helper(
       // update local variables
       currStart = segSpan.first.lo;
       currEnd = segSpan.first.hi;
+      currEndPs = ps;
       localVictims.push_back(segSpan.second);
     } else {
+      if (ps->isBeginTruncated()
+          && ((currEnd < ps->high() && currEndPs->isEndTruncated())
+              || (currEnd > ps->high() && ps->isEndTruncated()))) {
+        logger_->warn(
+            DRT, 6001, "Path segs were not split: {} and {}", *ps, *currEndPs);
+      }
       hasOverlap = true;
       // update local variables
-      currEnd = max(currEnd, segSpan.first.hi);
       localVictims.push_back(segSpan.second);
+      currEnd = max(currEnd, segSpan.first.hi);
+      if (currEnd == currEndPs->high()) {
+        if (currEnd == ps->high() && !currEndPs->isEndTruncated())
+          currEndPs = ps;
+      } else
+        currEndPs = ps;
     }
   }
   if (hasOverlap) {
@@ -825,6 +1049,12 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
   int cnt = 0;
   for (auto& newSegSpan : newSegSpans) {
     auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
+    if (save_updates_) {
+      drUpdate update(drUpdate::REMOVE_FROM_RQ);
+      update.setNet(victimPathSeg->getNet());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+      design_->addUpdate(update);
+    }
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
     Point bp, ep;
@@ -844,6 +1074,12 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
       if (curr->high() <= newSegSpan.hi) {
         end_style = curr->getEndStyle();
         end_ext = curr->getEndExt();
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(curr->getNet());
+          update.setIndexInOwner(curr->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(curr);  // deallocates curr
         net->removeShape(curr);
         netRouteObjs[victims[cnt]] = nullptr;
@@ -853,6 +1089,13 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(victimPathSeg->getNet());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+      update.setPathSeg(*victimPathSeg);
+      design_->addUpdate(update);
+    }
   }
 }
 
@@ -868,6 +1111,11 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
   marker->addSrc(net);
   marker->addVictim(net, make_tuple(lNum, bbox, false));
   marker->addAggressor(net, make_tuple(lNum, bbox, false));
+  if (save_updates_) {
+    drUpdate update(drUpdate::ADD_SHAPE);
+    update.setMarker(*marker.get());
+    design_->addUpdate(update);
+  }
   regionQuery->addMarker(marker.get());
   design_->getTopBlock()->addMarker(std::move(marker));
 }
@@ -924,7 +1172,7 @@ void FlexDRConnectivityChecker::check(int iter)
         batchSize, SpansByLayerAndTrackId(numLayers));
 
     ProfileTask init_parallel("init-parallel");
-// parallel
+    // parallel
     ThreadException exception;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
@@ -937,7 +1185,7 @@ void FlexDRConnectivityChecker::check(int iter)
         auto& vertVictims = aVertVictims[i];
         auto& horzNewSegSpans = aHorzNewSegSpans[i];
         auto& vertNewSegSpans = aVertNewSegSpans[i];
-  
+
         initRouteObjs(net, initNetRouteObjs);
         organizePathSegsByLayerAndTrack(
             net, initNetRouteObjs, horzPathSegs, vertPathSegs);
@@ -966,18 +1214,17 @@ void FlexDRConnectivityChecker::check(int iter)
       const auto& vertVictims = aVertVictims[i];
       const auto& horzNewSegSpans = aHorzNewSegSpans[i];
       const auto& vertNewSegSpans = aVertNewSegSpans[i];
-      mergeSegmentOverlaps(net,
-                           initNetRouteObjs,
-                           horzPathSegs,
-                           vertPathSegs,
-                           horzVictims,
-                           vertVictims,
-                           horzNewSegSpans,
-                           vertNewSegSpans);
+      handleSegmentOverlaps(net,
+                            initNetRouteObjs,
+                            horzPathSegs,
+                            vertPathSegs,
+                            horzVictims,
+                            vertVictims,
+                            horzNewSegSpans,
+                            vertNewSegSpans);
     }
     // net->term/instTerm->pt_layer
-    vector<
-        map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>
+    vector<map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>
         aPin2epMap(batchSize);
     vector<vector<frBlockObject*>> aNetPins(batchSize);
     vector<map<pair<Point, frLayerNum>, set<int>>> aNodeMap(batchSize);
@@ -1003,7 +1250,7 @@ void FlexDRConnectivityChecker::check(int iter)
         initRouteObjs(net, netRouteObjs);
         buildPin2epMap(net, netRouteObjs, pin2epMap);
         buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
-  
+
         const int nNetRouteObjs = (int) netRouteObjs.size();
         const int nNetObjs = (int) netRouteObjs.size() + (int) netPins.size();
         status[i] = astar(net,
@@ -1066,7 +1313,12 @@ void FlexDRConnectivityChecker::check(int iter)
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(frDesign* design,
                                                      Logger* logger,
                                                      odb::dbDatabase* db,
-                                                     FlexDRGraphics* graphics)
-    : design_(design), logger_(logger), db_(db), graphics_(graphics)
+                                                     FlexDRGraphics* graphics,
+                                                     bool save_updates)
+    : design_(design),
+      logger_(logger),
+      db_(db),
+      graphics_(graphics),
+      save_updates_(save_updates)
 {
 }

@@ -4,6 +4,7 @@ read_lef Nangate45/Nangate45.lef
 read_def gcd_nangate45_placed.def
 read_sdc gcd_nangate45.sdc
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
@@ -18,7 +19,7 @@ repair_design
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
 repair_timing -setup
-repair_timing -hold -slack_margin .2
+repair_timing -hold -hold_margin .2
 
 report_worst_slack -min
 report_worst_slack -max

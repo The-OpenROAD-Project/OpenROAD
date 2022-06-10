@@ -616,7 +616,6 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
 void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
                                                  std::vector<Section>& sections)
 {
-  int total_pins_assigned = 0;
   Netlist& net = netlist_io_pins_;
 
   for (std::vector<int>& io_group : net.getIOGroups()) {
@@ -625,7 +624,7 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
         != pin_list.end()) {
-      total_pins_assigned += assignGroupToSection(io_group, sections);
+      assignGroupToSection(io_group, sections);
     }
   }
 }

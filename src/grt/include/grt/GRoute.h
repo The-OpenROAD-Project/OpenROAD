@@ -34,12 +34,11 @@
 
 #pragma once
 
-#include "odb/db.h"
-#include "odb/geom.h"
+#include <vector>
+#include <map>
 
 namespace odb {
 class dbNet;
-class Rect;
 }  // namespace odb
 
 namespace grt {
@@ -55,35 +54,15 @@ struct GSegment
   int final_y;
   int final_layer;
   GSegment() = default;
-  GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
-  {
-    init_x = std::min(x0, x1);
-    init_y = std::min(y0, y1);
-    init_layer = l0;
-    final_x = std::max(x0, x1);
-    final_y = std::max(y0, y1);
-    final_layer = l1;
-  }
+  GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
   bool isVia() { return (init_x == final_x && init_y == final_y); }
   int length() { return std::abs(init_x - final_x) + std::abs(init_y - final_y); }
-  bool operator==(const GSegment& segment) const
-  {
-    return (init_layer == segment.init_layer
-            && final_layer == segment.final_layer && init_x == segment.init_x
-            && init_y == segment.init_y && final_x == segment.final_x
-            && final_y == segment.final_y);
-  }
+  bool operator==(const GSegment& segment) const;
 };
 
 struct GSegmentHash
 {
-  std::size_t operator() (const GSegment& seg) const
-  {
-    std::size_t h1 = std::hash<int>()(seg.init_x*seg.init_y*seg.init_layer);
-    std::size_t h2 = std::hash<int>()(seg.final_x*seg.final_y*seg.final_layer);
-
-    return h1 ^ h2;
-  }
+  std::size_t operator() (const GSegment& seg) const;
 };
 
 class Capacities
@@ -108,10 +87,7 @@ class Capacities
 
 struct cmpById
 {
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const
-  {
-    return net1->getId() < net2->getId();
-  }
+  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
 };
 
 // class Route is defined in fastroute core.

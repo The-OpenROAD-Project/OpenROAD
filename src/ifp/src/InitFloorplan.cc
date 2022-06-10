@@ -33,390 +33,303 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ifp/InitFloorplan.hh"
-
-#include <iostream>
-#include <fstream>
 #include <cmath>
-
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-
-#include "sta/StringUtil.hh"
-#include "sta/Vector.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Liberty.hh"
-#include "sta/FuncExpr.hh"
+#include <fstream>
+#include <iostream>
 
 #include "db_sta/dbNetwork.hh"
-
+#include "ifp/InitFloorplan.hh"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/util.h"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/PortDirection.hh"
+#include "sta/StringUtil.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
+#include "utl/validation.h"
 
 namespace ifp {
 
-using std::string;
 using std::abs;
 using std::ceil;
+using std::map;
 using std::round;
+using std::set;
+using std::string;
 
-using sta::Vector;
-using sta::stdstrPrint;
-using sta::StringVector;
-using sta::stringEqual;
 using sta::dbNetwork;
+using sta::stdstrPrint;
+using sta::stringEqual;
+using sta::StringVector;
+using sta::Vector;
 
-using utl::Logger;
 using utl::IFP;
+using utl::Logger;
 
-using odb::dbDatabase;
-using odb::dbChip;
 using odb::dbBlock;
-using odb::dbLib;
-using odb::dbMaster;
-using odb::dbInst;
-using odb::dbTech;
-using odb::dbBTerm;
-using odb::dbBPin;
-using odb::dbSet;
-using odb::dbSite;
-using odb::dbRow;
-using odb::dbRowDir;
-using odb::dbTechLayer;
-using odb::Rect;
-using odb::dbOrientType;
-using odb::dbTechLayerDir;
-using odb::dbTrackGrid;
-using odb::dbPlacementStatus;
-using odb::dbTransform;
 using odb::dbBox;
-using odb::dbTechLayerType;
+using odb::dbBPin;
+using odb::dbBTerm;
+using odb::dbChip;
+using odb::dbDatabase;
 using odb::dbGroup;
 using odb::dbGroupType;
+using odb::dbInst;
+using odb::dbLib;
+using odb::dbMaster;
+using odb::dbOrientType;
+using odb::dbPlacementStatus;
 using odb::dbRegion;
+using odb::dbRow;
+using odb::dbRowDir;
+using odb::dbSet;
+using odb::dbSite;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbTrackGrid;
+using odb::dbTransform;
+using odb::Rect;
 
-class InitFloorplan
+InitFloorplan::InitFloorplan(dbBlock* block,
+                             Logger* logger,
+                             sta::dbNetwork* network)
+    : block_(block), logger_(logger), network_(network)
 {
-public:
-  InitFloorplan() {}
-  void initFloorplan(double util,
-		     double aspect_ratio,
-		     int core_space_bottom,
-		     int core_space_top,
-		     int core_space_left,
-		     int core_space_right,
-		     const char *site_name,
-		     dbDatabase *db,
-		     Logger *logger);
-
-  void initFloorplan(int die_lx,
-		     int die_ly,
-		     int die_ux,
-		     int die_uy,
-		     int core_lx,
-		     int core_ly,
-		     int core_ux,
-		     int core_uy,
-		     const char *site_name,
-		     dbDatabase *db,
-		     Logger *logger );
-
-  void autoPlacePins(const char *pin_layer_name,
-		     dbDatabase *db,
-		     Logger *logger);
-
-protected:
-  void initFloorplan(int die_lx,
-		     int die_ly,
-		     int die_ux,
-		     int die_uy,
-		     int core_lx,
-		     int core_ly,
-		     int core_ux,
-		     int core_uy,
-		     const char *site_name);
-  double designArea();
-  void makeRows(dbSite *site,
-		int core_lx,
-		int core_ly,
-		int core_ux,
-		int core_uy);
-  dbSite *findSite(const char *site_name);
-  void makeTracks(const char *tracks_file,
-		  Rect &die_area);
-  void autoPlacePins(dbTechLayer *pin_layer,
-		     Rect &core);
-  int snapToMfgGrid(int coord) const;
-  int metersToDbu(double dist) const;
-  double dbuToMeters(int dist) const;
-  void updateVoltageDomain(dbSite *site,
-			   int core_lx,
-            		   int core_ly,
-            		   int core_ux,
-            		   int core_uy);
-
-  dbDatabase *db_;
-  dbBlock *block_;
-  Logger *logger_;
-};
-
-void
-initFloorplan(double util,
-	      double aspect_ratio,
-	      int core_space_bottom,
-	      int core_space_top,
-	      int core_space_left,
-	      int core_space_right,
-	      const char *site_name,
-	      dbDatabase *db,
-	      Logger *logger)
-{
-  InitFloorplan init_fp;
-  init_fp.initFloorplan(util, aspect_ratio,
-                        core_space_bottom, core_space_top,
-                        core_space_left, core_space_right,
-                        site_name, db, logger);
 }
 
-void
-initFloorplan(int die_lx,
-	      int die_ly,
-	      int die_ux,
-	      int die_uy,
-	      int core_lx,
-	      int core_ly,
-	      int core_ux,
-	      int core_uy,
-	      const char *site_name,
-	      dbDatabase *db,
-              Logger *logger)
+void InitFloorplan::initFloorplan(double utilization,
+                                  double aspect_ratio,
+                                  int core_space_bottom,
+                                  int core_space_top,
+                                  int core_space_left,
+                                  int core_space_right,
+                                  const std::string& site_name)
 {
-  InitFloorplan init_fp;
-  init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
-			core_lx, core_ly, core_ux, core_uy,
-			site_name, db, logger);
+  utl::Validator v(logger_, IFP);
+  v.check_percentage("utilization", utilization, 12);
+  v.check_non_negative("core_space_bottom", core_space_bottom, 32);
+  v.check_non_negative("core_space_top", core_space_top, 33);
+  v.check_non_negative("core_space_left", core_space_left, 34);
+  v.check_non_negative("core_space_right", core_space_right, 35);
+  v.check_non_negative("aspect_ratio", aspect_ratio, 36);
+
+  utilization /= 100;
+  const double design_area = designArea();
+  const double core_area = design_area / utilization;
+  const int core_width = std::sqrt(core_area / aspect_ratio);
+  const int core_height = round(core_width * aspect_ratio);
+
+  const int core_lx = core_space_left;
+  const int core_ly = core_space_bottom;
+  const int core_ux = core_lx + core_width;
+  const int core_uy = core_ly + core_height;
+  const int die_lx = 0;
+  const int die_ly = 0;
+  const int die_ux = core_ux + core_space_right;
+  const int die_uy = core_uy + core_space_top;
+  initFloorplan({die_lx, die_ly, die_ux, die_uy},
+                {core_lx, core_ly, core_ux, core_uy},
+                site_name);
 }
 
-void
-InitFloorplan::initFloorplan(double util,
-			     double aspect_ratio,
-			     int core_space_bottom,
-			     int core_space_top,
-			     int core_space_left,
-			     int core_space_right,
-			     const char *site_name,
-			     dbDatabase *db,
-			     Logger *logger)
-{
-  logger_ = logger;
-  db_ = db;
-  dbChip *chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      const double design_area = designArea();
-      const double core_area = design_area / util;
-      const int core_width = metersToDbu(std::sqrt(core_area / aspect_ratio));
-      const int core_height = round(core_width * aspect_ratio);
-
-      const int core_lx = core_space_left;
-      const int core_ly = core_space_bottom;
-      const int core_ux = core_lx + core_width;
-      const int core_uy = core_ly + core_height;
-      const int die_lx = 0;
-      const int die_ly = 0;
-      const int die_ux = core_ux + core_space_right ;
-      const int die_uy = core_uy + core_space_top;
-      initFloorplan(die_lx, die_ly, die_ux, die_uy,
-		    core_lx, core_ly, core_ux, core_uy,
-		    site_name);
-    }
-  }
-}
-
-double
-InitFloorplan::designArea()
+double InitFloorplan::designArea()
 {
   double design_area = 0.0;
-  for (dbInst *inst : block_->getInsts()) {
-    dbMaster *master = inst->getMaster();
-    const double area = dbuToMeters(master->getHeight()) * dbuToMeters(master->getWidth());
+  for (dbInst* inst : block_->getInsts()) {
+    dbMaster* master = inst->getMaster();
+    const double area
+        = master->getHeight() * static_cast<double>(master->getWidth());
     design_area += area;
   }
   return design_area;
 }
 
-void
-InitFloorplan::initFloorplan(int die_lx,
-			     int die_ly,
-			     int die_ux,
-			     int die_uy,
-			     int core_lx,
-			     int core_ly,
-			     int core_ux,
-			     int core_uy,
-			     const char *site_name,
-			     dbDatabase *db,
-			     Logger *logger)
-{
-  logger_ = logger;
-  db_ = db;
-  dbChip *chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      initFloorplan(die_lx, die_ly, die_ux, die_uy,
-		    core_lx, core_ly, core_ux, core_uy,
-		    site_name);
-
-    }
-  }
-}
-
-static int
-divCeil(int dividend, int divisor)
+static int divCeil(int dividend, int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-void
-InitFloorplan::initFloorplan(int die_lx,
-			     int die_ly,
-			     int die_ux,
-			     int die_uy,
-			     int core_lx,
-			     int core_ly,
-			     int core_ux,
-			     int core_uy,
-			     const char *site_name)
+void InitFloorplan::initFloorplan(const odb::Rect& die,
+                                  const odb::Rect& core,
+                                  const std::string& site_name)
 {
-  Rect die_area(snapToMfgGrid(die_lx),
-                snapToMfgGrid(die_ly),
-                snapToMfgGrid(die_ux),
-                snapToMfgGrid(die_uy));
+  Rect die_area(snapToMfgGrid(die.xMin()),
+                snapToMfgGrid(die.yMin()),
+                snapToMfgGrid(die.xMax()),
+                snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
 
-  if (site_name && site_name[0]
-      &&  core_lx >= 0.0 && core_lx >= 0.0 && core_ux >= 0.0 && core_uy >= 0.0) {
-    dbSite *site = findSite(site_name);
+  if (!site_name.empty() && core.xMin() >= 0 && core.yMin() >= 0) {
+    dbSite* site = findSite(site_name.c_str());
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
-      for (dbSet<dbRow>::iterator row_itr = rows.begin();
-           row_itr != rows.end() ;
-           row_itr = dbRow::destroy(row_itr)) ;
+      for (dbSet<dbRow>::iterator row_itr = rows.begin(); row_itr != rows.end();
+           row_itr = dbRow::destroy(row_itr))
+        ;
 
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
-      int clx = divCeil(core_lx, site_dx) * site_dx;
-      int cly = divCeil(core_ly, site_dy) * site_dy;
-      if (clx != core_lx || cly != core_ly) {
-        dbTech *tech = db_->getTech();
+      int clx = divCeil(core.xMin(), site_dx) * site_dx;
+      int cly = divCeil(core.yMin(), site_dy) * site_dy;
+      if (clx != core.xMin() || cly != core.yMin()) {
+        dbTech* tech = block_->getDataBase()->getTech();
         const double dbu = tech->getDbUnitsPerMicron();
-        logger_->warn(IFP, 28,
-                      "Core area lower left ({:.3f}, {:.3f}) snapped to ({:.3f}, {:.3f}).",
-                      core_lx / dbu, core_ly / dbu, clx / dbu, cly / dbu);
+        logger_->warn(IFP,
+                      28,
+                      "Core area lower left ({:.3f}, {:.3f}) snapped to "
+                      "({:.3f}, {:.3f}).",
+                      core.xMin() / dbu,
+                      core.yMin() / dbu,
+                      clx / dbu,
+                      cly / dbu);
       }
-      int cux = core_ux;
-      int cuy = core_uy;
+      int cux = core.xMax();
+      int cuy = core.yMax();
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
-    }
-    else
+    } else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
   }
+
+  std::vector<dbBox*> blockage_bboxes;
+  for (auto blockage : block_->getBlockages()) {
+    blockage_bboxes.push_back(blockage->getBBox());
+  }
+
+  odb::cutRows(block_,
+               /* min_row_width */ 0,
+               blockage_bboxes,
+               /* halo_x */ 0,
+               /* halo_y */ 0,
+               logger_);
 }
 
-
-// this function is used to create regions ( split overlapped rows and create new ones )
-void
-InitFloorplan::updateVoltageDomain(dbSite *site,
-				   int core_lx,
-				   int core_ly,
-				   int core_ux,
-				   int core_uy)
+// this function is used to create regions ( split overlapped rows and create
+// new ones )
+void InitFloorplan::updateVoltageDomain(dbSite* site,
+                                        int core_lx,
+                                        int core_ly,
+                                        int core_ux,
+                                        int core_uy)
 {
-  //The unit for power_domain_y_space is the site height. The real space is power_domain_y_space * site_dy
+  // The unit for power_domain_y_space is the site height. The real space is
+  // power_domain_y_space * site_dy
   static constexpr int power_domain_y_space = 6;
   uint site_dy = site->getHeight();
   uint site_dx = site->getWidth();
-  
-  // checks if a group is defined as a voltage domain, if so it creates a region 
-  for (dbGroup *group: block_->getGroups()) {
-    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
-      dbRegion *domain_region = dbRegion::create(block_, group->getName());
 
+  // checks if a group is defined as a voltage domain, if so it creates a region
+  for (dbGroup* group : block_->getGroups()) {
+    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
+      dbRegion* domain_region = group->getRegion();
+      int domain_xMin = std::numeric_limits<int>::max();
+      int domain_yMin = std::numeric_limits<int>::max();
+      int domain_xMax = std::numeric_limits<int>::min();
+      int domain_yMax = std::numeric_limits<int>::min();
+      for(auto boundary : domain_region->getBoundaries())
+      {
+        domain_xMin = std::min(domain_xMin, boundary->xMin());
+        domain_yMin = std::min(domain_yMin, boundary->yMin());
+        domain_xMax = std::max(domain_xMax, boundary->xMax());
+        domain_yMax = std::max(domain_yMax, boundary->yMax());
+      }
       string domain_name = group->getName();
-      Rect domain_rect = group->getBox();
-      int domain_xMin = domain_rect.xMin();
-      int domain_yMin = domain_rect.yMin();
-      int domain_xMax = domain_rect.xMax();
-      int domain_yMax = domain_rect.yMax();
-      dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
       dbSet<dbRow> rows = block_->getRows();
       int total_row_count = rows.size();
 
-      
       dbSet<dbRow>::iterator row_itr = rows.begin();
-      for (int row_processed = 0;
-           row_processed < total_row_count;
-           row_processed++) {          
-
-        dbRow *row = *row_itr;
+      for (int row_processed = 0; row_processed < total_row_count;
+           row_processed++) {
+        dbRow* row = *row_itr;
         Rect row_bbox;
         row->getBBox(row_bbox);
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
 
-        // check if the rows overlapped with the area of a defined voltage domains + margin
-        if (row_yMax + power_domain_y_space * site_dy <= domain_yMin || 
-            row_yMin >= domain_yMax + power_domain_y_space * site_dy) {
+        // check if the rows overlapped with the area of a defined voltage
+        // domains + margin
+        if (row_yMax + power_domain_y_space * site_dy <= domain_yMin
+            || row_yMin >= domain_yMax + power_domain_y_space * site_dy) {
           row_itr++;
         } else {
-          
           string row_name = row->getName();
           dbOrientType orient = row->getOrient();
           row_itr = dbRow::destroy(row_itr);
-          
+
           // lcr stands for left core row
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
-          // in case there is at least one valid site width on the left, create left core rows 
-          if (lcr_xMax > core_lx + site_dx)
-          {
+          // in case there is at least one valid site width on the left, create
+          // left core rows
+          if (lcr_xMax > core_lx + site_dx) {
             string lcr_name = row_name + "_1";
-	        // warning message since tap cells might not be inserted
+            // warning message since tap cells might not be inserted
             if (lcr_xMax < core_lx + 10 * site_dx) {
-              logger_->warn(IFP, 26, "left core row: {} has less than 10 sites", lcr_name);   
-            } 
+              logger_->warn(IFP,
+                            26,
+                            "left core row: {} has less than 10 sites",
+                            lcr_name);
+            }
             int lcr_sites = (lcr_xMax - core_lx) / site_dx;
-            dbRow::create(block_, lcr_name.c_str(), site, core_lx, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, lcr_sites, site_dx);
+            dbRow::create(block_,
+                          lcr_name.c_str(),
+                          site,
+                          core_lx,
+                          row_yMin,
+                          orient,
+                          dbRowDir::HORIZONTAL,
+                          lcr_sites,
+                          site_dx);
           }
-          
-          // rcr stands for right core row
-          // rcr_dx_site_number is the max number of site_dx that is less than power_domain_y_space * site_dy. This helps align the rcr_xMin on the multiple of site_dx. 
-          int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx; 
-          int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx; 
 
-          // in case there is at least one valid site width on the right, create right core rows 
-          if (rcr_xMin + site_dx < core_ux)
-          {  
+          // rcr stands for right core row
+          // rcr_dx_site_number is the max number of site_dx that is less than
+          // power_domain_y_space * site_dy. This helps align the rcr_xMin on
+          // the multiple of site_dx.
+          int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
+          int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
+
+          // in case there is at least one valid site width on the right, create
+          // right core rows
+          if (rcr_xMin + site_dx < core_ux) {
             string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_dx > core_ux) {
-              logger_->warn(IFP, 27, "right core row: {} has less than 10 sites", rcr_name); 
-            }   
+              logger_->warn(IFP,
+                            27,
+                            "right core row: {} has less than 10 sites",
+                            rcr_name);
+            }
             int rcr_sites = (core_ux - rcr_xMin) / site_dx;
-            dbRow::create(block_, rcr_name.c_str(), site, rcr_xMin, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, rcr_sites, site_dx);
+            dbRow::create(block_,
+                          rcr_name.c_str(),
+                          site,
+                          rcr_xMin,
+                          row_yMin,
+                          orient,
+                          dbRowDir::HORIZONTAL,
+                          rcr_sites,
+                          site_dx);
           }
 
           int domain_row_sites = (domain_xMax - domain_xMin) / site_dx;
           // create domain rows if current iterations are not in margin area
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
             string domain_row_name = row_name + "_" + domain_name;
-            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, domain_row_sites, site_dx);
+            dbRow::create(block_,
+                          domain_row_name.c_str(),
+                          site,
+                          domain_xMin,
+                          row_yMin,
+                          orient,
+                          dbRowDir::HORIZONTAL,
+                          domain_row_sites,
+                          site_dx);
           }
         }
       }
@@ -424,12 +337,11 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
   }
 }
 
-void
-InitFloorplan::makeRows(dbSite *site,
-			int core_lx,
-			int core_ly,
-			int core_ux,
-			int core_uy)
+void InitFloorplan::makeRows(dbSite* site,
+                             int core_lx,
+                             int core_ly,
+                             int core_ux,
+                             int core_uy)
 {
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
@@ -440,22 +352,27 @@ InitFloorplan::makeRows(dbSite *site,
 
   int y = core_ly;
   for (int row = 0; row < rows_y; row++) {
-    dbOrientType orient = (row % 2 == 0)
-      ? dbOrientType::R0        // N
-      : dbOrientType::MX;       // FS
+    dbOrientType orient = (row % 2 == 0) ? dbOrientType::R0   // N
+                                         : dbOrientType::MX;  // FS
     string row_name = stdstrPrint("ROW_%d", row);
-    dbRow::create(block_, row_name.c_str(), site, core_lx, y, orient,
-		  dbRowDir::HORIZONTAL, rows_x, site_dx);
+    dbRow::create(block_,
+                  row_name.c_str(),
+                  site,
+                  core_lx,
+                  y,
+                  orient,
+                  dbRowDir::HORIZONTAL,
+                  rows_x,
+                  site_dx);
     y += site_dy;
   }
   logger_->info(IFP, 1, "Added {} rows of {} sites.", rows_y, rows_x);
 }
 
-dbSite *
-InitFloorplan::findSite(const char *site_name)
+dbSite* InitFloorplan::findSite(const char* site_name)
 {
-  for (dbLib *lib : db_->getLibs()) {
-    dbSite *site = lib->findSite(site_name);
+  for (dbLib* lib : block_->getDataBase()->getLibs()) {
+    dbSite* site = lib->findSite(site_name);
     if (site)
       return site;
   }
@@ -464,99 +381,9 @@ InitFloorplan::findSite(const char *site_name)
 
 ////////////////////////////////////////////////////////////////
 
-void
-autoPlacePins(const char *pin_layer_name,
-	      dbDatabase *db,
-	      Logger *logger)
+int InitFloorplan::snapToMfgGrid(int coord) const
 {
-  InitFloorplan init_fp;
-  init_fp.autoPlacePins(pin_layer_name, db, logger);
-}
-
-void
-InitFloorplan::autoPlacePins(const char *pin_layer_name,
-			     dbDatabase *db,
-			     Logger *logger)
-{
-  logger_ = logger;
-  db_ = db;
-  dbChip *chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      dbTech *tech = db_->getTech();
-      dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
-      if (pin_layer) {
-        odb::Rect core;
-        block_->getCoreArea(core);
-	autoPlacePins(pin_layer, core);
-      }
-      else
-	logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
-    }
-  }
-}
-
-void
-InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
-			     Rect &core)
-{
-  dbSet<dbBTerm> bterms = block_->getBTerms();
-  int pin_count = bterms.size();
-
-  if (pin_count > 0) {
-    int dx = core.dx();
-    int dy = core.dy();
-    int perimeter = dx * 2 + dy * 2;
-    double location = 0.0;
-    int pin_dist = perimeter / pin_count;
-
-    for (dbBTerm *bterm : bterms) {
-      int x, y;
-      dbOrientType orient;
-      if (location < dx) {
-	// bottom
-	x = core.xMin() + location;
-	y = core.yMin();
-	orient = dbOrientType::R180; // S
-      }
-      else if (location < (dx + dy)) {
-	// right
-	x = core.xMax();
-	y = core.yMin() + (location - dx);
-	orient = dbOrientType::R270; // E
-      }
-      else if (location < (dx * 2 + dy)) {
-	// top
-	x = core.xMax() - (location - (dx + dy));
-	y = core.yMax();
-	orient = dbOrientType::R0; // N
-      }
-      else {
-	// left
-	x = core.xMin();
-	y = core.yMax() - (location - (dx * 2 + dy));
-	orient = dbOrientType::R90; // W
-      }
-
-      // Delete existing BPins.
-      dbSet<dbBPin> bpins = bterm->getBPins();
-      for (auto bpin_itr = bpins.begin(); bpin_itr != bpins.end(); )
-	bpin_itr = dbBPin::destroy(bpin_itr);
-
-      dbBPin *bpin = dbBPin::create(bterm);
-      bpin->setPlacementStatus(dbPlacementStatus::FIRM);
-      dbBox::create(bpin, pin_layer, x, y, x, y);
-
-      location += pin_dist;
-    }
-  }
-}
-
-int
-InitFloorplan::snapToMfgGrid(int coord) const
-{
-  dbTech *tech = db_->getTech();
+  dbTech* tech = block_->getDataBase()->getTech();
   if (tech->hasManufacturingGrid()) {
     int grid = tech->getManufacturingGrid();
     return round(coord / (double) grid) * grid;
@@ -565,36 +392,16 @@ InitFloorplan::snapToMfgGrid(int coord) const
   return coord;
 }
 
-double
-InitFloorplan::dbuToMeters(int dist) const
+void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
+                                   const std::string& prefix)
 {
-  dbTech *tech = db_->getTech();
-  int dbu = tech->getDbUnitsPerMicron();
-  return dist / (dbu * 1e+6);
-}
-
-int
-InitFloorplan::metersToDbu(double dist) const
-{
-  dbTech *tech = db_->getTech();
-  int dbu = tech->getDbUnitsPerMicron();
-  return round(dist * 1e+6 * dbu);
-}
-
-void
-insertTiecells(
-    odb::dbMTerm* tie_term,
-    const char* prefix,
-    dbDatabase* db,
-    sta::dbNetwork* network,
-    Logger* logger)
-{
-  dbChip *chip = db->getChip();
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("tie_term", tie_term, 43);
 
   auto* master = tie_term->getMaster();
 
-  auto* port = network->dbToSta(tie_term);
-  auto* lib_port = network->libertyPort(port);
+  auto* port = network_->dbToSta(tie_term);
+  auto* lib_port = network_->libertyPort(port);
   auto func_operation = lib_port->function()->op();
   const bool is_zero = func_operation == sta::FuncExpr::op_zero;
   const bool is_one = func_operation == sta::FuncExpr::op_one;
@@ -605,35 +412,100 @@ insertTiecells(
   } else if (is_one) {
     look_for = odb::dbSigType::POWER;
   } else {
-    logger->error(utl::IFP, 29, "Unable to determine tiecell ({}) function.", master->getName());
+    logger_->error(utl::IFP,
+                   29,
+                   "Unable to determine tiecell ({}) function.",
+                   master->getName());
   }
 
   int count = 0;
 
-  if (chip != nullptr) {
-    auto* block = chip->getBlock();
-    if (block != nullptr) {
-      for (auto* net : block->getNets()) {
-        if (net->isSpecial()) {
-          continue;
-        }
-        if (look_for != net->getSigType()) {
-          continue;
-        }
-
-        std::string inst_name = prefix;
-        inst_name += net->getName();
-
-        auto* inst = odb::dbInst::create(block, master, inst_name.c_str());
-        auto* iterm = inst->findITerm(tie_term->getConstName());
-        iterm->connect(net);
-        net->setSigType(odb::dbSigType::SIGNAL);
-        count++;
-      }
+  for (auto* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
     }
+    if (look_for != net->getSigType()) {
+      continue;
+    }
+
+    const std::string inst_name = prefix + net->getName();
+
+    auto* inst = odb::dbInst::create(block_, master, inst_name.c_str());
+    auto* iterm = inst->findITerm(tie_term->getConstName());
+    iterm->connect(net);
+    net->setSigType(odb::dbSigType::SIGNAL);
+    count++;
   }
 
-  logger->info(utl::IFP, 30, "Inserted {} tiecells using {}/{}.", count, master->getName(), tie_term->getName());
+  logger_->info(utl::IFP,
+                30,
+                "Inserted {} tiecells using {}/{}.",
+                count,
+                master->getName(),
+                tie_term->getName());
 }
 
-} // namespace
+void InitFloorplan::makeTracks()
+{
+  for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
+    if (layer->getType() == dbTechLayerType::ROUTING
+        && layer->getRoutingLevel() != 0) {
+      makeTracks(layer,
+                 layer->getOffsetX(),
+                 layer->getPitchX(),
+                 layer->getOffsetY(),
+                 layer->getPitchY());
+    }
+  }
+}
+
+void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
+                               int x_offset,
+                               int x_pitch,
+                               int y_offset,
+                               int y_pitch)
+{
+  utl::Validator v(logger_, IFP);
+  v.check_non_null("layer", layer, 38);
+  v.check_non_negative("x_offset", x_offset, 39);
+  v.check_positive("x_pitch", x_pitch, 40);
+  v.check_non_negative("y_offset", y_offset, 41);
+  v.check_positive("y_pitch", y_pitch, 42);
+
+  Rect die_area;
+  block_->getDieArea(die_area);
+  auto grid = block_->findTrackGrid(layer);
+  if (!grid) {
+    grid = dbTrackGrid::create(block_, layer);
+  }
+
+  if (y_offset == 0) {
+    y_offset = y_pitch;
+  }
+  if (x_offset > die_area.dx()) {
+    logger_->warn(
+        IFP,
+        21,
+        "Track pattern for {} will be skipped due to x_offset > die width.",
+        layer->getName());
+    return;
+  }
+  if (y_offset > die_area.dy()) {
+    logger_->warn(
+        IFP,
+        22,
+        "Track pattern for {} will be skipped due to y_offset > die height.",
+        layer->getName());
+    return;
+  }
+  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  grid->addGridPatternX(die_area.xMin() + x_offset, x_track_count, x_pitch);
+
+  if (x_offset == 0) {
+    x_offset = x_pitch;
+  }
+  auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
+  grid->addGridPatternY(die_area.yMin() + y_offset, y_track_count, y_pitch);
+}
+
+}  // namespace ifp

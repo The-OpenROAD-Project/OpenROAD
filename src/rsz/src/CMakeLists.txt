@@ -46,6 +46,9 @@ target_sources(rsz
     BufferedNet.cc
     MakeResizer.cc
     Resizer.cc
+    RepairDesign.cc
+    RepairHold.cc
+    RepairSetup.cc
     Rebuffer.cc
     SteinerTree.cc
     EstimateWireParasitics.cc
@@ -62,6 +65,7 @@ target_link_libraries(rsz
     odb
     OpenSTA
     dbSta
+    grt
     grt
     gui
     utl

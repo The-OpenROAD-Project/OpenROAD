@@ -309,7 +309,7 @@ class PartitionMgr
   void writeClusteringToDb(unsigned clusteringId);
   void dumpClusIdToFile(std::string name) const;
   void reportNetlistPartitions(unsigned partitionId);
-  void readPartitioningFile(std::string filename);
+  unsigned readPartitioningFile(const std::string& filename, const std::string& instance_map_file);
   void reportGraph();
 
   void writePartitionVerilog(const char* path,

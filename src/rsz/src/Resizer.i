@@ -321,14 +321,6 @@ set_dont_use_cmd(LibertyCellSeq *dont_use)
 }
 
 void
-resizer_preamble()
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->resizePreamble();
-}
-
-void
 buffer_inputs()
 {
   ensureLinked();
@@ -345,19 +337,11 @@ buffer_outputs()
 }
 
 void
-resize_to_target_slew()
+resize_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew();
-}
-
-void
-resize_driver_to_target_slew(const Pin *drvr_pin)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(drvr_pin, false);
+  resizer->resizeDrvrToTargetSlew(drvr_pin);
 }
 
 double
@@ -447,44 +431,48 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_setup(float slack_margin,
+repair_setup(double setup_margin,
              int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(slack_margin, max_passes);
+  resizer->repairSetup(setup_margin, max_passes);
 }
 
 void
-repair_setup_pin(Pin *end_pin)
+repair_setup_pin_cmd(Pin *end_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(end_pin);
 }
 
-// requires rsz::resizer_preamble
 void
-repair_hold_pin(Pin *end_pin,
-                bool allow_setup_violations,
-                float max_buffer_percent,
-                int max_passes)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, 0.0, allow_setup_violations,
-                      max_buffer_percent, max_passes);
-}
-
-void
-repair_hold(float slack_margin,
+repair_hold(double setup_margin,
+            double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
             int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(slack_margin, allow_setup_violations,
+  resizer->repairHold(setup_margin, hold_margin,
+                      allow_setup_violations,
+                      max_buffer_percent, max_passes);
+}
+
+void
+repair_hold_pin(Pin *end_pin,
+                double setup_margin,
+                double hold_margin,
+                bool allow_setup_violations,
+                float max_buffer_percent,
+                int max_passes)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(end_pin, setup_margin, hold_margin,
+                      allow_setup_violations,
                       max_buffer_percent, max_passes);
 }
 
@@ -504,7 +492,7 @@ rebuffer_net(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->rebuffer1(drvr_pin);
+  resizer->rebufferNet(drvr_pin);
 }
 
 void
@@ -550,15 +538,6 @@ resize_net_slack(Net *net)
 ////////////////////////////////////////////////////////////////
 
 float
-buffer_self_delay(LibertyCell *buffer_cell,
-                  const RiseFall *rf)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->bufferSelfDelay(buffer_cell, rf);
-}
-
-float
 buffer_wire_delay(LibertyCell *buffer_cell,
                   float wire_length) // meters
 {
@@ -586,17 +565,6 @@ find_buffer_max_wire_length(LibertyCell *buffer_cell,
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findMaxWireLength(buffer_cell, corner);
-}
-
-double
-find_max_slew_wire_length(LibertyPort *drvr_port,
-                          LibertyPort *load_port,
-                          float max_slew,
-                          const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew, corner);
 }
 
 double
@@ -643,6 +611,13 @@ find_fanin_fanouts(PinSet *pins)
 {
   Resizer *resizer = getResizer();
   return resizer->findFaninFanouts(pins);
+}
+
+void
+set_debug_pin(const Pin *pin)
+{
+  Resizer *resizer = getResizer();
+  resizer->setDebugPin(pin);
 }
 
 } // namespace

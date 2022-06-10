@@ -683,6 +683,7 @@ void io::Parser::postProcessGuide(odb::dbDatabase* db)
   //     exit(1);
   //   }
   for (auto& [net, rects] : tmpGuides) {
+    net->setOrigGuides(rects);
     genGuides(net, rects);
     cnt++;
     if (VERBOSE > 0) {

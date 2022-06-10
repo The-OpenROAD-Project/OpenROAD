@@ -38,6 +38,9 @@
 
 #include "dbLogger.h"
 #include "misc_global.h"
+
+namespace odb {
+
 int Ath__double2int(double v);
 
 void Ath__parser::init()
@@ -809,3 +812,5 @@ void Ath__parser::getTmpLine()
 {
   strcpy(_line, _tmpLine);
 }
+
+}  // namespace odb

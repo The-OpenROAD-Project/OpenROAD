@@ -49,6 +49,7 @@ using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
+using odb::dbITermObj;
 using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbMTerm;
@@ -64,10 +65,19 @@ using odb::dbViaParams;
 using odb::dbWire;
 using odb::dbWireGraph;
 using odb::dbWireType;
+using odb::dbIoType;
 
 using utl::ANT;
 
 using std::unordered_set;
+
+// Abbreviations Index:
+//   `PAR`: Partial Area Ratio
+//   `CAR`: Cumulative Area Ratio
+//   `Area`: Gate Area
+//   `S. Area`: Side Diffusion Area
+//   `C. Area`: Cumulative Gate Area
+//   `C. S. Area`: Cumulative Side (Diffusion) Area
 
 struct PARinfo
 {
@@ -249,7 +259,7 @@ dbWireGraph::Node* AntennaChecker::findSegmentRoot(dbWireGraph::Node* node,
 
 dbWireGraph::Node* AntennaChecker::findSegmentStart(dbWireGraph::Node* node)
 {
-  if ((node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0)
+  if ((node->object() && node->object()->getObjectType() == dbITermObj)
       || !node->in_edge())
     return node;
   else if (node->in_edge()->type() == dbWireGraph::Edge::Type::VIA
@@ -264,7 +274,7 @@ dbWireGraph::Node* AntennaChecker::findSegmentStart(dbWireGraph::Node* node)
 
 bool AntennaChecker::ifSegmentRoot(dbWireGraph::Node* node, int wire_level)
 {
-  if ((node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0)
+  if ((node->object() && node->object()->getObjectType() == dbITermObj)
       || !node->in_edge())
     return true;
   else if (node->in_edge()->type() == dbWireGraph::Edge::Type::VIA
@@ -678,7 +688,7 @@ void AntennaChecker::buildWireParTable(
 
 bool AntennaChecker::checkIterm(dbWireGraph::Node* node, double iterm_areas[2])
 {
-  if (node->object() && strcmp(node->object()->getObjName(), "dbITerm") == 0) {
+  if (node->object() && node->object()->getObjectType() == dbITermObj) {
     dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
                                        node->object()->getId());
     dbMTerm* mterm = iterm->getMTerm();
@@ -1508,20 +1518,16 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
     checkAntennaCell();
 
     dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
-    if (nets.size() == 0)
+    if (nets.empty())
       return {0, 0, 0};
 
-    dbSet<dbNet>::iterator net_itr;
     int num_total_net = 0;
     int num_violated_net = 0;
     int num_violated_pins = 0;
-    for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-      dbNet* net = *net_itr;
-
+    for (dbNet* net : nets) {
       if (net->isSpecial())
         continue;
       num_total_net++;
-      std::string nname = net->getConstName();
       dbWire* wire = net->getWire();
       dbWireGraph graph;
       if (wire) {
@@ -1557,11 +1563,11 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
             }
           }
           if (node->object()
-              && strcmp(node->object()->getObjName(), "dbITerm") == 0) {
+              && node->object()->getObjectType() == dbITermObj) {
             dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
                                                node->object()->getId());
             dbMTerm* mterm = iterm->getMTerm();
-            if (strcmp(mterm->getIoType().getString(), "INPUT") == 0)
+            if (mterm->getIoType() == dbIoType::INPUT)
               if (mterm->hasDefaultAntennaModel())
                 gate_iterms.push_back(node);
           }
@@ -1628,7 +1634,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           }
 
           if ((!report_violating_nets || violation) && print_net) {
-            fprintf(_out, "\nNet - %s\n", nname.c_str());
+            fprintf(_out, "\nNet - %s\n", net->getConstName());
             print_net = false;
           }
 
@@ -1714,10 +1720,8 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
             num_total_net);
     return {num_violated_pins, num_violated_net, num_total_net};
   } else {
-    logger_->error(ANT,
-                   7,
-                   "Cannot open report file (%s) for writing",
-                   report_filename.c_str());
+    logger_->error(
+        ANT, 7, "Cannot open report file ({}) for writing", report_filename);
     return {0, 0, 0};
   }
 }

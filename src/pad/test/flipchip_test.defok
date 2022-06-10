@@ -5461,7 +5461,981 @@ COMPONENTS 2816 ;
     - u_sig98 PADCELL_SIG_H + FIXED ( 7610000 4013000 ) W ;
     - u_sig99 PADCELL_SIG_H + FIXED ( 7610000 4221000 ) W ;
 END COMPONENTS
-PINS 252 ;
+PINS 254 ;
+    - VDD + NET VDD + DIRECTION INPUT + USE POWER
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6325000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5705000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5085000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4465000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3845000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3225000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2605000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1985000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1365000 6635000 ) N ;
+    - VSS + NET VSS + DIRECTION INPUT + USE GROUND
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 1365000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 1675000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 1985000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 2295000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 2605000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 2915000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 3225000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 3535000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 3845000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 4155000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 4465000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 4775000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 5085000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 5395000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 5705000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 6015000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 6325000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6635000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 6015000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 5395000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4775000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 4155000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3535000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2915000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2295000 6635000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 1675000 6635000 ) N ;
     - sig1 + NET sig1 + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
@@ -6600,7 +7574,7 @@ SPECIALNETS 258 ;
       ( u_sig19 SNS ) ( u_sig20 SNS ) ( u_sig18 SNS ) ( u_sig16 SNS ) ( u_sig17 SNS ) ( u_sig15 SNS ) ( u_sig13 SNS ) ( u_sig14 SNS )
       ( u_sig12 SNS ) ( u_sig10 SNS ) ( u_sig11 SNS ) ( u_sig9 SNS ) ( u_sig7 SNS ) ( u_sig8 SNS ) ( u_sig6 SNS ) ( u_sig4 SNS )
       ( u_sig5 SNS ) ( u_sig250 SNS ) ( u_sig2 SNS ) ( u_sig3 SNS ) ( u_sig1 SNS ) + USE SIGNAL ;
-    - VDD ( * VDD ) + USE POWER
+    - VDD ( PIN VDD ) ( * VDD ) + USE POWER
       + ROUTED metal10 15000 + SHAPE STRIPE ( 6462500 6642500 ) ( 6462500 6790000 )
       NEW metal10 15000 + SHAPE STRIPE ( 6187500 6642500 ) ( 6187500 6790000 )
       NEW metal10 15000 + SHAPE STRIPE ( 5842500 6642500 ) ( 5842500 6790000 )
@@ -7105,7 +8079,7 @@ SPECIALNETS 258 ;
       NEW metal10 15000 + SHAPE STRIPE ( 1847500 1210000 ) ( 1847500 1357500 )
       NEW metal10 15000 + SHAPE STRIPE ( 1502500 1210000 ) ( 1502500 1357500 )
       NEW metal10 15000 + SHAPE STRIPE ( 1227500 1210000 ) ( 1227500 1357500 ) ;
-    - VSS ( * VSS ) + USE GROUND
+    - VSS ( PIN VSS ) ( * VSS ) + USE GROUND
       + ROUTED metal10 15000 + SHAPE STRIPE ( 6772500 6642500 ) ( 6772500 6790000 )
       NEW metal10 15000 + SHAPE STRIPE ( 6497500 6642500 ) ( 6497500 6790000 )
       NEW metal10 15000 + SHAPE STRIPE ( 6152500 6642500 ) ( 6152500 6790000 )

@@ -130,78 +130,7 @@
       "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp"]
     },
     {
-      "name":"dbGroup",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_type",
-          "type":"uint",
-          "bits":2,
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_box",
-          "type":"uint",
-          "bits":1,
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_box",
-          "type":"Rect",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbGroup>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_group_next",
-          "type":"dbId<_dbGroup>",
-          "flags":["no-get","no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_parent_group",
-          "type":"dbId<_dbGroup>",
-          "flags":[],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_insts",
-          "type":"dbId<_dbInst>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_modinsts",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_groups",
-          "type":"dbId<_dbGroup>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_power_nets",
-          "type":"dbVector<dbId<_dbNet>>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_ground_nets",
-          "type":"dbVector<dbId<_dbNet>>",
-          "flags":["no-set","no-get"]
-        }
-      ],
-      "cpp_includes":["dbBlock.h","dbBox.h","dbNet.h","dbInst.h","dbModInst.h","dbHashTable.hpp","dbGroupItr.h","dbGroupInstItr.h","dbGroupModInstItr.h"]
+      "src":"dbGroup.json"
     },
     {
       "src":"dbGCellGrid.json"
@@ -240,6 +169,14 @@
     },
     {
       "name": "dbGroupItr",
+      "parentObject": "dbGroup",
+      "tableName": "group_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0
+    },
+    {
+      "name": "dbRegionGroupItr",
       "parentObject": "dbGroup",
       "tableName": "group_tbl",
       "reversible": "true",

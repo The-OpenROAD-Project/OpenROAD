@@ -49,25 +49,7 @@ namespace rcx {
 
 using utl::RCX;
 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbCapNode;
-using odb::dbCCSeg;
-using odb::dbNet;
-using odb::dbRSeg;
-using odb::dbSet;
-using odb::dbShape;
-using odb::dbSigType;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
-using odb::dbWire;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
-using odb::gs;
-using odb::Rect;
+using namespace odb;
 
 uint extMain::getBucketNum(int base, int max, uint step, int xy) {
   if (xy >= max)
@@ -682,7 +664,7 @@ uint extMain::initSearchForNets(int* X1, int* Y1, uint* pitchTable,
   }
   uint layerCnt = n + 1;
 
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new odb::Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
   return layerCnt;
 }
@@ -1813,7 +1795,6 @@ int extMain::fill_gs3(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
   gs_dir = -1;
 #endif
 
-  uint pcnt = 0;
   uint netCnt = powerNetTable->getCnt();
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, powerNetTable->get(ii));
@@ -1821,10 +1802,8 @@ int extMain::fill_gs3(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
     if (createDbNet != NULL)
       createDbNet->createSpecialNet(net, NULL);
 
-    pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
+    addNetSboxesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
   }
-  uint scnt = 0;
-
   uint lo_index = getBucketNum(sdbTable_ll[dir], sdbTable_ur[dir],
                                bucketSize[dir], lo_gs[dir]);
   uint hi_index = getBucketNum(sdbTable_ll[dir], sdbTable_ur[dir],
@@ -1848,7 +1827,7 @@ int extMain::fill_gs3(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
       net->setSpef(true);
       tmpNetIdTable->add(netId);
 
-      scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
+      addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
     }
   }
   resetNetSpefFlag(tmpNetIdTable);
@@ -1891,9 +1870,9 @@ int extMain::fill_gs2(int dir, int* ll, int* ur, int* lo_gs, int* hi_gs,
 #endif
 
   if (gsTable != NULL) {
-    uint cnt = addNetsGs(gsTable[dir][bucket], gs_dir);
+    addNetsGs(gsTable[dir][bucket], gs_dir);
     if (bucket > 0)
-      cnt += addNetsGs(gsTable[dir][bucket - 1], gs_dir);
+      addNetsGs(gsTable[dir][bucket - 1], gs_dir);
 
     if (_overCell) {
       addInstsGs(instGsTable[dir][bucket], NULL, 0);
@@ -2682,10 +2661,8 @@ uint extMain::fillWindowSearch(extWindow* W, int* lo_sdb, int* hi_sdb,
         W->_currentDir, ll, ur, sdbTable_ll, sdbTable_ur, bucketSize,
         W->_sigtype, sdbSignalTable, tmpNetIdTable, createDbNet);
   } else {
-    uint processWireCnt =
-        addPowerNets(W->_currentDir, ll, ur, W->_pwrtype, createDbNet);
-    processWireCnt +=
-        addSignalNets(W->_currentDir, ll, ur, W->_sigtype, createDbNet);
+    addPowerNets(W->_currentDir, ll, ur, W->_pwrtype, createDbNet);
+    addSignalNets(W->_currentDir, ll, ur, W->_sigtype, createDbNet);
     // uint processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
     // processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
   }

@@ -5,9 +5,10 @@ read_lef Nangate45/Nangate45.lef
 read_lef repair_slew4.lef
 read_def repair_slew4.def
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-#rn u1/Z
+
 report_check_types -max_slew -max_cap -max_fanout -violators
 repair_design
 report_check_types -max_slew -max_cap -max_fanout -violators

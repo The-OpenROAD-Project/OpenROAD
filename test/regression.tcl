@@ -331,7 +331,6 @@ proc run_test_valgrind { test cmd_file log_file } {
   set vg_stream [open $vg_cmd_file "w"]
   puts $vg_stream "cd [file dirname $cmd_file]"
   puts $vg_stream "source [file tail $cmd_file]"
-  puts $vg_stream "ord::delete_all_memory"
   close $vg_stream
   
   set cmd [concat exec valgrind $valgrind_options \

@@ -33,10 +33,13 @@
 /*-------------------------------------------------------------
 ////	AUTHOR: SANJEEV MAHAJAN
 ---------------------------------------------------------------*/
+#pragma once
+
 #include <stdlib.h>
 
 #include "assert.h"
-#pragma once
+
+namespace odb {
 
 template <class T>
 class Darr
@@ -143,3 +146,5 @@ void Darr<T>::dsort(int cmp(const void* a, const void* b))
 {
   qsort(_ar, _n, sizeof(T), cmp);
 }
+
+}  // namespace odb

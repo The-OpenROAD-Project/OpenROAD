@@ -1344,7 +1344,6 @@ defrData::pathIsDone(int  sh, int  reset, int  osNet, int  *needCbk)
         //defrPath->reverseOrder();
         (*callbacks->PathCbk)(defrPathCbkType, &PathObj, session->UserData);
         PathObj.Destroy();
-        free((char*) &PathObj);
     }
 
     PathObj.Init();

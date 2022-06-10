@@ -20,6 +20,7 @@ LAYER contact
   TYPE CUT ;
   SPACING 0.075 ;
   PROPERTY contactResistance 10.5 ;
+  PROPERTY LEF58_TYPE "TYPE HIGHR ;" ;
 END contact
 
 LAYER metal1
@@ -102,6 +103,7 @@ LAYER metal2
   WIDTH 0.07 ;
   SPACING 0.075 ;
   RESISTANCE RPERSQ 0.25 ;
+  PROPERTY LEF58_TYPE "TYPE TSVMETAL ;" ;
 END metal2
 
 LAYER via2

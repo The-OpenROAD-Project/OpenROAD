@@ -69,6 +69,9 @@ class frShape : public frPinFig
 
   virtual void setIter(frListIter<std::unique_ptr<frShape>>& in) = 0;
   virtual frListIter<std::unique_ptr<frShape>> getIter() const = 0;
+  void setIndexInOwner(int idx) { index_in_owner_ = idx; }
+  int getIndexInOwner() const { return index_in_owner_; }
+
   bool hasPin() const override
   {
     return (owner_) && ((owner_->typeId() == frcBPin) ||
@@ -77,17 +80,14 @@ class frShape : public frPinFig
 
  protected:
   // constructors
-  frShape() : frPinFig(), owner_(nullptr) {}
-  frShape(frBlockObject* owner) : frPinFig(), owner_(owner) {}
+  frShape() : frPinFig(), owner_(nullptr), index_in_owner_(0) {}
+  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), index_in_owner_(0) {}
 
   frBlockObject* owner_; // general back pointer 0
+  int index_in_owner_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frPinFig>(*this);
-    (ar) & owner_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };
@@ -518,6 +518,24 @@ class frPathSeg : public frShape
   bool isVertical() const { return begin_.x() == end_.x(); }
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
+  void setHigh(frCoord v) {
+      if (isVertical())
+          end_.setY(v);
+      else 
+          end_.setX(v);
+  }
+  void setLow(frCoord v) {
+      if (isVertical())
+          begin_.setY(v);
+      else 
+          begin_.setX(v);
+  }
+  bool isBeginTruncated() {
+    return style_.getBeginStyle() == frcTruncateEndStyle;
+  }
+  bool isEndTruncated() {
+    return style_.getEndStyle() == frcTruncateEndStyle;
+  }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {

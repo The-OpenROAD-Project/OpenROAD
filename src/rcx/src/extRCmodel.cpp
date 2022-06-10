@@ -47,6 +47,7 @@
 //#define SKIP_SOLVER
 namespace rcx {
 
+using namespace odb;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;
@@ -3294,7 +3295,6 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure) {
     low = main_ylo - measure->_minWidth / 2;
   else
     low = main_xlo - measure->_minWidth / 2;
-  uint contextRaphaelCnt = 0;
   if (measure->_underMet > 0) {
     double h = _process->getConductor(measure->_underMet)->_height;
     double t = _process->getConductor(measure->_underMet)->_thickness;
@@ -3307,8 +3307,7 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure) {
        measure->writeRaphael3D(fp, measure->_underMet, true, mainNetStart, h,
        t);
     */
-    contextRaphaelCnt =
-        measure->writeRaphael3D(fp, measure->_underMet, true, low, h, t);
+    measure->writeRaphael3D(fp, measure->_underMet, true, low, h, t);
   }
 
   if (measure->_overMet > 0) {
@@ -3323,8 +3322,7 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure) {
        += measure->writeRaphael3D(fp, measure->_overMet, true, mainNetStart, h,
        t);
     */
-    contextRaphaelCnt +=
-        measure->writeRaphael3D(fp, measure->_overMet, true, low, h, t);
+    measure->writeRaphael3D(fp, measure->_overMet, true, low, h, t);
   }
 
   measure->_ur[measure->_dir] += grid_gap_cnt * (w_layout + s_layout);
@@ -3637,7 +3635,6 @@ void extRCModel::writeRules(char* name, bool binary) {
   //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
-  uint cnt = 0;
   fprintf(fp, "Extraction Rules for OpenRCX\n\n");
   if (_diag || _diagModel > 0) {
     if (_diagModel == 1)
@@ -3658,9 +3655,9 @@ void extRCModel::writeRules(char* name, bool binary) {
     for (uint ii = 1; ii < _layerCnt; ii++) {
       if (writeRes) {
         if (_modelTable[m]->_resOver[ii] != NULL)
-          cnt += _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
+          _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
         else if ((m > 0) && (_modelTable[0]->_resOver[ii] != NULL))
-          cnt += _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
+          _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
         else if (m == 0) {
           logger_->info(RCX, 410,
                         "Cannot write <OVER> Res rules for <DensityModel> {} "
@@ -3669,9 +3666,9 @@ void extRCModel::writeRules(char* name, bool binary) {
         }
       }
       if (_modelTable[m]->_capOver[ii] != NULL)
-        cnt += _modelTable[m]->_capOver[ii]->writeRulesOver(fp, binary);
+        _modelTable[m]->_capOver[ii]->writeRulesOver(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capOver[ii] != NULL))
-        cnt += _modelTable[0]->_capOver[ii]->writeRulesOver(fp, binary);
+        _modelTable[0]->_capOver[ii]->writeRulesOver(fp, binary);
       else if (m == 0) {
         logger_->info(
             RCX, 218,
@@ -3680,9 +3677,9 @@ void extRCModel::writeRules(char* name, bool binary) {
       }
 
       if (_modelTable[m]->_capUnder[ii] != NULL)
-        cnt += _modelTable[m]->_capUnder[ii]->writeRulesUnder(fp, binary);
+        _modelTable[m]->_capUnder[ii]->writeRulesUnder(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capUnder[ii] != NULL))
-        cnt += _modelTable[0]->_capUnder[ii]->writeRulesUnder(fp, binary);
+        _modelTable[0]->_capUnder[ii]->writeRulesUnder(fp, binary);
       else if (m == 0) {
         logger_->info(
             RCX, 219,
@@ -3692,18 +3689,14 @@ void extRCModel::writeRules(char* name, bool binary) {
 
       if (_modelTable[m]->_capDiagUnder[ii] != NULL) {
         if (_diagModel == 1)
-          cnt += _modelTable[m]->_capDiagUnder[ii]->writeRulesDiagUnder(fp,
-                                                                        binary);
+          _modelTable[m]->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
         if (_diagModel == 2)
-          cnt += _modelTable[m]->_capDiagUnder[ii]->writeRulesDiagUnder2(
-              fp, binary);
+          _modelTable[m]->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
       } else if ((m > 0) && (_modelTable[0]->_capDiagUnder[ii] != NULL)) {
         if (_diagModel == 1)
-          cnt += _modelTable[0]->_capDiagUnder[ii]->writeRulesDiagUnder(fp,
-                                                                        binary);
+          _modelTable[0]->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
         if (_diagModel == 2)
-          cnt += _modelTable[0]->_capDiagUnder[ii]->writeRulesDiagUnder2(
-              fp, binary);
+          _modelTable[0]->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
       } else if (m == 0) {
         logger_->info(
             RCX, 220,
@@ -3712,11 +3705,9 @@ void extRCModel::writeRules(char* name, bool binary) {
       }
 
       if (_modelTable[m]->_capOverUnder[ii] != NULL)
-        cnt +=
-            _modelTable[m]->_capOverUnder[ii]->writeRulesOverUnder(fp, binary);
+        _modelTable[m]->_capOverUnder[ii]->writeRulesOverUnder(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capOverUnder[ii] != NULL))
-        cnt +=
-            _modelTable[0]->_capOverUnder[ii]->writeRulesOverUnder(fp, binary);
+        _modelTable[0]->_capOverUnder[ii]->writeRulesOverUnder(fp, binary);
       else if ((m == 0) && (ii > 1) && (ii < _layerCnt - 1)) {
         logger_->info(
             RCX, 221,
@@ -3877,7 +3868,6 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
                            uint* cornerTable, double dbFactor) {
   OUREVERSEORDER = false;
   diag = false;
-  uint cnt = 0;
   _ruleFileName = strdup(name);
   Ath__parser parser;
   // parser.setDbg(1);
@@ -3994,23 +3984,22 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (!res_skipModel) {
-          cnt += readRules(&parser, modelIndex, ii, "RESOVER", "WIDTH", over,
-                           false, bin, false, res_skipModel, dbFactor);
+          readRules(&parser, modelIndex, ii, "RESOVER", "WIDTH", over,
+                    false, bin, false, res_skipModel, dbFactor);
         }
-        cnt += readRules(&parser, modelIndex, ii, "OVER", "WIDTH", over, false,
-                         bin, false, skipModel, dbFactor);
+        readRules(&parser, modelIndex, ii, "OVER", "WIDTH", over, false,
+                  bin, false, skipModel, dbFactor);
         if (ii < _layerCnt - 1) {
-          cnt += readRules(&parser, modelIndex, ii, "UNDER", "WIDTH", false,
-                           under, bin, false, skipModel, dbFactor);
+          readRules(&parser, modelIndex, ii, "UNDER", "WIDTH", false,
+                    under, bin, false, skipModel, dbFactor);
           if (diag)
-            cnt += readRules(&parser, modelIndex, ii, "DIAGUNDER", "WIDTH",
-                             false, false, bin, diag, skipModel, dbFactor);
+            readRules(&parser, modelIndex, ii, "DIAGUNDER", "WIDTH",
+                      false, false, bin, diag, skipModel, dbFactor);
         }
 
         if ((ii > 1) && (ii < _layerCnt - 1))
-          cnt +=
-              readRules(&parser, modelIndex, ii, "OVERUNDER", "WIDTH",
-                        overUnder, overUnder, bin, false, skipModel, dbFactor);
+          readRules(&parser, modelIndex, ii, "OVERUNDER", "WIDTH",
+                    overUnder, overUnder, bin, false, skipModel, dbFactor);
       }
       // break;
       parser.parseNextLine();

@@ -2643,6 +2643,8 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       route_queue_update_from_marker(
           &marker, uniqueVictims, uniqueAggressors, checks, routes);
     }
+    mazeIterInit_sortRerouteQueue(0, checks);
+    mazeIterInit_sortRerouteQueue(0, routes);
   } else if (getRipupMode() == 1 || getRipupMode() == 2) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
@@ -3306,7 +3308,7 @@ void FlexDRWorker::initMazeCost_connFig()
   int cnt = 0;
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
-        addPathCost(connFig.get());
+      addPathCost(connFig.get());
       cnt++;
     }
     for (auto& connFig : net->getRouteConnFigs()) {
@@ -3420,30 +3422,6 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   }
 }
 
-void FlexDRWorker::initFixedObjs(const frDesign* design)
-{
-  auto& extBox = getExtBox();
-  box_t queryBox(point_t(extBox.xMin(), extBox.yMin()),
-                 point_t(extBox.xMax(), extBox.yMax()));
-  set<frBlockObject*> drcObjSet;
-  // fixed obj
-  int cnt = 0;
-  for (auto layerNum = getTech()->getBottomLayerNum();
-       layerNum <= getTech()->getTopLayerNum();
-       ++layerNum) {
-    auto regionQuery = design->getRegionQuery();
-    frRegionQuery::Objects<frBlockObject> queryResult;
-    regionQuery->query(queryBox, layerNum, queryResult);
-    for (auto& objPair : queryResult) {
-      cnt++;
-      if (drcObjSet.find(objPair.second) == drcObjSet.end()) {
-        drcObjSet.insert(objPair.second);
-        fixedObjs_.push_back(objPair.second);
-      }
-    }
-  }
-}
-
 void FlexDRWorker::initMarkers(const frDesign* design)
 {
   vector<frMarker*> result;
@@ -3470,29 +3448,14 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 
 void FlexDRWorker::init(const frDesign* design)
 {
-  // if initDR
-  //   get all instterm/term for each net
-  // else
-  //   1. get all insterm/term based on begin/end of pathseg, via
-  //   2. union and find
-  //
-  // using namespace std::chrono;
-  initMarkers(design);
-  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
-    skipRouting_ = true;
-  }
-  if (skipRouting_) {
-    return;
-  }
-  initFixedObjs(design);
   initNets(design);
   initGridGraph(design);
   initMazeIdx();
-  FlexGCWorker* gcWorker = new FlexGCWorker(design->getTech(), logger_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker = make_unique<FlexGCWorker>(design->getTech(), logger_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);
   gcWorker->setEnableSurgicalFix(true);
-  setGCWorker(gcWorker);
+  setGCWorker(std::move(gcWorker));
   initMazeCost(design);
 }

@@ -168,7 +168,8 @@ class PdnGen
                 const std::array<int, 4>& offset,
                 const std::array<int, 4>& pad_offset,
                 bool extend,
-                const std::vector<odb::dbTechLayer*>& pad_pin_layers);
+                const std::vector<odb::dbTechLayer*>& pad_pin_layers,
+                const std::vector<odb::dbNet*>& nets);
   void makeFollowpin(Grid* grid,
                      odb::dbTechLayer* layer,
                      int width,
@@ -182,7 +183,8 @@ class PdnGen
                  int number_of_straps,
                  bool snap,
                  StartsWith starts_with,
-                 ExtensionMode extend);
+                 ExtensionMode extend,
+                 const std::vector<odb::dbNet*>& nets);
   void makeConnect(Grid* grid,
                    odb::dbTechLayer* layer0,
                    odb::dbTechLayer* layer1,

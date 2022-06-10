@@ -70,8 +70,6 @@ using utl::DPO;
 // Defines.
 ////////////////////////////////////////////////////////////////////////////////
 
-const int MAX_MOVE_ATTEMPTS = 5;
-
 namespace dpo {
 
 bool DetailedRandom::isOperator(char ch) {
@@ -728,7 +726,6 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   int rly = 5;
   int rlx = 5;
   int rel_x, rel_y;
-  std::vector<Node*>::iterator it_j;
 
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {

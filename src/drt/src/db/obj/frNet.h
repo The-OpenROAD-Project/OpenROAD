@@ -105,7 +105,6 @@ class frNet : public frBlockObject
   {
     return rpins_;
   }
-  std::vector<std::unique_ptr<frGuide>>& getGuides() { return guides_; }
   const std::vector<std::unique_ptr<frGuide>>& getGuides() const
   {
     return guides_;
@@ -120,23 +119,29 @@ class frNet : public frBlockObject
   void addShape(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     shapes_.push_back(std::move(in));
     rptr->setIter(--shapes_.end());
+    all_pinfigs_.push_back(rptr);
   }
   void addVia(std::unique_ptr<frVia> in)
   {
     in->addToNet(this);
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     vias_.push_back(std::move(in));
     rptr->setIter(--vias_.end());
+    all_pinfigs_.push_back(rptr);
   }
   void addPatchWire(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     pwires_.push_back(std::move(in));
     rptr->setIter(--pwires_.end());
+    all_pinfigs_.push_back(rptr);
   }
   void addGRShape(std::unique_ptr<grShape>& in)
   {
@@ -176,6 +181,7 @@ class frNet : public frBlockObject
   {
     auto rptr = in.get();
     rptr->addToNet(this);
+    in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
   void clearGuides() { guides_.clear(); }
@@ -218,7 +224,13 @@ class frNet : public frBlockObject
   }
   bool isSpecial() const { return isSpecial_; }
   void setIsSpecial(bool s) { isSpecial_ = s; }
-  
+  frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
+  void setOrigGuides(const std::vector<frRect>& guides)
+  {
+    orig_guides_ = guides;
+  }
+  const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
+
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
@@ -239,6 +251,7 @@ class frNet : public frBlockObject
   frNode* firstNonRPinNode_;
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
+  std::vector<frRect> orig_guides_;
   dbSigType type_;
   bool modified_;
   bool isFakeNet_;  // indicate floating PG nets
@@ -248,67 +261,9 @@ class frNet : public frBlockObject
   bool isClock_;
   bool isSpecial_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  std::vector<frPinFig*> all_pinfigs_;
 
-  frNet() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
-
-template <class Archive>
-void frNet::serialize(Archive& ar, const unsigned int version)
-{
-  // instTerms_ and terms_ are intentionally NOT serialized.  This cuts
-  // the serializer from recursing across the whole design.  Any
-  // instTerm/term must attach itself to a net on deserialization.
-
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & shapes_;
-  (ar) & vias_;
-  (ar) & pwires_;
-  // TODO for gr support
-  // (ar) & grShapes_;
-  // (ar) & grVias_;
-  (ar) & nodes_;
-  (ar) & root_;
-  (ar) & rootGCellNode_;
-  (ar) & firstNonRPinNode_;
-  (ar) & rpins_;
-  (ar) & guides_;
-  (ar) & type_;
-  (ar) & modified_;
-  (ar) & isFakeNet_;
-  (ar) & ndr_;
-  (ar) & absPriorityLvl;
-  (ar) & isClock_;
-  (ar) & isSpecial_;
-
-  // The list members can container an iterator representing their position
-  // in the list for fast removal.  It is tricky to serialize the iterator
-  // so just reset them from the list after loading.
-  if (is_loading(ar)) {
-    for (auto it = shapes_.begin(); it != shapes_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-    for (auto it = vias_.begin(); it != vias_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-    for (auto it = pwires_.begin(); it != pwires_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-    for (auto it = grShapes_.begin(); it != grShapes_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-    for (auto it = grVias_.begin(); it != grVias_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-    for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-  }
-}
 }  // namespace fr
 
 #endif

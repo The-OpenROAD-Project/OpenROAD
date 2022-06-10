@@ -126,6 +126,18 @@ class frBlock : public frBlockObject
     else
       return nullptr;
   }
+  frNet* getNet(int id) const
+  {
+    if (id >= nets_.size())
+      return nullptr;
+    return nets_[id].get();
+  }
+  frNet* getSNet(int id) const
+  {
+    if (id >= snets_.size())
+      return nullptr;
+    return snets_[id].get();
+  }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
   frNet* findNet(std::string name) const
   {
@@ -283,6 +295,7 @@ class frBlock : public frBlockObject
   {
     return markers_;
   }
+  frMarker* getMarker(const int& id) { return all_markers_[id]; }
   int getNumMarkers() const { return markers_.size(); }
   frNet* getFakeVSSNet() { return fakeSNets_[0].get(); }
   frNet* getFakeVDDNet() { return fakeSNets_[1].get(); }
@@ -291,7 +304,7 @@ class frBlock : public frBlockObject
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frBTerm> in)
   {
-    in->setOrderId(terms_.size());
+    in->setIndexInOwner(terms_.size());
     in->setBlock(this);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
@@ -303,11 +316,13 @@ class frBlock : public frBlockObject
   }
   void addNet(std::unique_ptr<frNet> in)
   {
+    in->setId(nets_.size());
     name2net_[in->getName()] = in.get();
     nets_.push_back(std::move(in));
   }
   void addSNet(std::unique_ptr<frNet> in)
   {
+    in->setId(snets_.size());
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
@@ -335,11 +350,13 @@ class frBlock : public frBlockObject
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
     for (auto& blk : in) {
+      blk->setIndexInOwner(blockages_.size());
       blockages_.push_back(std::move(blk));
     }
   }
   void addBlockage(std::unique_ptr<frBlockage> in)
   {
+    in->setIndexInOwner(blockages_.size());
     blockages_.push_back(std::move(in));
   }
   void setGCellPatterns(const std::vector<frGCellPattern>& gpIn)
@@ -351,6 +368,8 @@ class frBlock : public frBlockObject
     auto rptr = in.get();
     markers_.push_back(std::move(in));
     rptr->setIter(--(markers_.end()));
+    rptr->setIndexInOwner(all_markers_.size());
+    all_markers_.push_back(rptr);
   }
   void removeMarker(frMarker* in) { markers_.erase(in->getIter()); }
   void addFakeSNet(std::unique_ptr<frNet> in)
@@ -359,6 +378,7 @@ class frBlock : public frBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return frcBlock; }
+  ~frBlock() {}
 
  private:
   frString name_;
@@ -383,51 +403,15 @@ class frBlock : public frBlockObject
   std::vector<frGCellPattern> gCellPatterns_;
 
   frList<std::unique_ptr<frMarker>> markers_;
+  std::vector<frMarker*> all_markers_;
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
   Rect dieBox_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frBlock() = default;  // for serialization
-
-  friend class boost::serialization::access;
   friend class io::Parser;
 };
 
-template <class Archive>
-void frBlock::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & dbUnit_;
-  (ar) & name2inst_;
-  (ar) & insts_;
-  (ar) & name2term_;
-  (ar) & terms_;
-  (ar) & name2net_;
-  (ar) & nets_;
-  (ar) & name2snet_;
-  (ar) & snets_;
-  (ar) & blockages_;
-  (ar) & boundaries_;
-  (ar) & trackPatterns_;
-  (ar) & gCellPatterns_;
-  (ar) & markers_;
-  (ar) & fakeSNets_;
-  (ar) & dieBox_;
-
-  // The list members can container an iterator representing their position
-  // in the list for fast removal.  It is tricky to serialize the iterator
-  // so just reset them from the list after loading.
-  if (is_loading(ar)) {
-    for (auto it = markers_.begin(); it != markers_.end(); ++it) {
-      (*it)->setIter(it);
-    }
-  }
-}
 }  // namespace fr
 
 #endif

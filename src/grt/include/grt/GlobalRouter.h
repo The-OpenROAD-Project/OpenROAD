@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "GRoute.h"
+#include "RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -121,24 +122,16 @@ enum class NetType
   All
 };
 
-class RoutePt
+struct PinGridLocation
 {
- public:
-  RoutePt() = default;
-  RoutePt(int x, int y, int layer);
-  int x() { return _x; };
-  int y() { return _y; };
-  int layer() { return _layer; };
+  PinGridLocation(odb::dbITerm* iterm,
+                  odb::dbBTerm* bterm,
+                  odb::Point pt);
 
-  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
-
- private:
-  int _x;
-  int _y;
-  int _layer;
+  odb::dbITerm* iterm_;
+  odb::dbBTerm* bterm_;
+  odb::Point pt_;
 };
-
-bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
 {
@@ -207,10 +200,7 @@ class GlobalRouter
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
   void setCapacitiesPerturbationPercentage(float percentage);
-  void setPerturbationAmount(int perturbation)
-  {
-    perturbation_amount_ = perturbation;
-  };
+  void setPerturbationAmount(int perturbation);
   void perturbCapacities();
 
   void initDebugFastRoute();
@@ -239,13 +229,12 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
+  std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
 
  private:
   // Net functions
-  int getNetCount() const;
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
-  int getMaxNetDegree();
 
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
@@ -255,6 +244,7 @@ class GlobalRouter
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNets(std::vector<Net*>& nets);
+  bool makeFastrouteNet(Net* net);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -268,8 +258,9 @@ class GlobalRouter
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
-  int computeTrackConsumption(const Net* net,
-                              std::vector<int>& edge_costs_per_layer);
+  void computeTrackConsumption(const Net* net,
+                               int &track_consumption,
+                               std::vector<int> *&edge_costs_per_layer);
 
   // aux functions
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
@@ -324,17 +315,7 @@ class GlobalRouter
 
   // incremental funcions
   void updateDirtyRoutes();
-  Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
-  void restoreCapacities(Capacities capacities,
-                         int previous_min_layer,
-                         int previous_max_layer);
-  int getEdgeResource(int x1,
-                      int y1,
-                      int x2,
-                      int y2,
-                      odb::dbTechLayer* tech_layer,
-                      odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
   void updateDbCongestion();

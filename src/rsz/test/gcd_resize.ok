@@ -10,15 +10,15 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 [INFO ODB-0134] Finished DEF file: gcd_nangate45_placed.def
-worst slack 1.36
+worst slack 1.33
 [INFO RSZ-0027] Inserted 35 input buffers.
 [INFO RSZ-0028] Inserted 18 output buffers.
-[INFO RSZ-0058] Using max wire length 853um.
-[INFO RSZ-0039] Resized 45 instances.
+[INFO RSZ-0058] Using max wire length 720um.
+[INFO RSZ-0039] Resized 51 instances.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 94 hold buffers.
+[INFO RSZ-0032] Inserted 99 hold buffers.
 worst slack 0.20
-worst slack 1.24
+worst slack 1.23
 max slew
 
 Pin                                    Limit    Slew   Slack
@@ -35,7 +35,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-_443_/ZN                               10.47    3.57    6.90 (MET)
+_443_/ZN                               10.47    3.86    6.62 (MET)
 
 Driver    length delay
 _759_/Z manhtn 83.9 steiner 83.9 0.00
@@ -49,4 +49,4 @@ _847_/Z manhtn 60.3 steiner 60.3 0.00
 _851_/Z manhtn 58.3 steiner 58.3 0.00
 _771_/Z manhtn 58.1 steiner 58.1 0.00
 _725_/Z manhtn 56.1 steiner 56.1 0.00
-Design area 828 u^2 13% utilization.
+Design area 837 u^2 13% utilization.

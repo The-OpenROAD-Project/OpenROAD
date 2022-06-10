@@ -2486,22 +2486,22 @@ namespace eval ICeWall {
     }
   }
 
-  proc connect_to_bondpad_or_bump {inst pin_shape padcell} {
+  proc connect_to_bondpad_or_bump {inst pin_shape signal_name} {
     variable block
     variable tech
     variable nets_created
     variable pins_created
 
-    set assigned_name [get_padcell_assigned_name $padcell]
-    if {[is_power_net $assigned_name]} {
+    # debug "signal_name: $signal_name"
+    if {[is_power_net $signal_name]} {
       set type "POWER"
-    } elseif {[is_ground_net $assigned_name]} {
+    } elseif {[is_ground_net $signal_name]} {
       set type "GROUND"
     } else {
       set type "SIGNAL"
     }
 
-    set term [$block findBTerm [get_padcell_signal_name $padcell]]
+    set term [$block findBTerm $signal_name]
     if {$term != "NULL"} {
       set net [$term getNet]
       foreach iterm [$net getITerms] {
@@ -2509,37 +2509,28 @@ namespace eval ICeWall {
       }
     } else {
       if {$type != "SIGNAL"} {
-        set net [$block findNet $assigned_name]
+        set net [$block findNet $signal_name]
         if {$net == "NULL"} {
           if {$type == "POWER" || $type == "GROUND"} {
-            utl::info "PAD" 51 "Creating padring net: $assigned_name."
-            set net [odb::dbNet_create $block $assigned_name]
+            utl::info "PAD" 51 "Creating padring net: $signal_name."
+            set net [odb::dbNet_create $block $signal_name]
             lappend nets_created $net
           }
           if {$net == "NULL"} {
             continue
           }
         }
-        if {[set term [$block findBTerm $assigned_name]] == "NULL"} {
-          set term [odb::dbBTerm_create $net $assigned_name]
+        if {[set term [$block findBTerm $signal_name]] == "NULL"} {
+          set term [odb::dbBTerm_create $net $signal_name]
           $term setSigType $type
         }
-      } elseif {[is_padcell_unassigned $padcell]} {
-        set idx 0
-        while {[$block findNet "_UNASSIGNED_$idx"] != "NULL"} {
-          incr idx
-        }
-        utl::info "PAD" 52 "Creating padring net: _UNASSIGNED_$idx."
-        set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
-        lappend nets_created $net
-        set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
-        utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]."
+        utl::warn "PAD" 12 "Cannot find a terminal $signal_name to associate with bondpad [$inst getName]."
         return
       }
     }
 
-    # debug "padcell: $padcell, net: $net"
+    # debug "padcell: $signal_name, net: $net"
     $net setSpecial
     $net setSigType $type
     # debug "net: [$net getName], signalType: $type"
@@ -2560,6 +2551,8 @@ namespace eval ICeWall {
     } else {
       odb::dbBox_create $pin $layer {*}$pin_shape
     }
+    # debug "pin on term: [$term getName] shaoe: $pin_shape"
+
     $pin setPlacementStatus "FIRM"
   }
 
@@ -2631,7 +2624,7 @@ namespace eval ICeWall {
           if {[llength $pin_shape] != 4} {
             set pin_shape $center
           }
-          connect_to_bondpad_or_bump $inst $pin_shape $padcell
+          connect_to_bondpad_or_bump $inst $pin_shape [get_padcell_assigned_name $padcell]
         } else {
           if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
             utl::warn "PAD" 48 "No padcell instance found for $padcell."
@@ -2944,6 +2937,11 @@ namespace eval ICeWall {
     upvar tile_width tile_width
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $tile_offset_y + $tile_width / 2]] \
     ]
@@ -2962,6 +2960,14 @@ namespace eval ICeWall {
     upvar offset offset
     upvar y_min y_min
     upvar y_max y_max
+
+    set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(1) - abs(0 - $offset(1))]] \
+      [list $offset(1) $y_min(1)] \
+      [list $offset(1) $y_max(1)] \
+      [list [expr $tile_width / 2] [expr $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
 
     set path [list \
       [list $x $y] \
@@ -2987,6 +2993,14 @@ namespace eval ICeWall {
     upvar y_max y_max
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(2) - abs(0 - $offset(2))]] \
+      [list $offset(2) $y_min(2)] \
+      [list $offset(2) $y_max(2)] \
+      [list [expr $tile_width / 2] [expr 2 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $y_min(2) - abs($x - $offset(2))]] \
       [list $offset(2) $y_min(2)] \
@@ -3010,6 +3024,14 @@ namespace eval ICeWall {
     upvar y_max y_max
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(3) - abs(0 - $offset(3))]] \
+      [list $offset(3) $y_min(3)] \
+      [list $offset(3) $y_max(3)] \
+      [list [expr $tile_width / 2] [expr 3 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $y_min(3) - abs($x - $offset(3))]] \
       [list $offset(3) $y_min(3)] \
@@ -3031,6 +3053,14 @@ namespace eval ICeWall {
     upvar offset offset
     upvar y_min y_min
     upvar y_max y_max
+
+    set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(4) - abs(0 - $offset(4))]] \
+      [list $offset(4) $y_min(4)] \
+      [list $offset(4) $y_max(4)] \
+      [list [expr $tile_width / 2] [expr 4 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
 
     set path [list \
       [list $x $y] \
@@ -3064,21 +3094,32 @@ namespace eval ICeWall {
   proc invert_transform {x y origin orientation} {
     set x [expr $x - [lindex $origin 0]]
     set y [expr $y - [lindex $origin 1]]
-
     switch -exact $orientation {
       R0    {set new_point [list $x $y]}
-      R90   {set new_point [list $y [expr -1 * $x]]}
-      R180  {set new_point [list [expr -1 * $x] [expr -1 * $y]]}
-      R270  {set new_point [list [expr -1 * $y] $x]}
-      MX    {set new_point [list $x [expr -1 * $y]]}
-      MY    {set new_point [list [expr -1 * $x] $y]}
-      MXR90 {set new_point [list $y $x]}
-      MYR90 {set new_point [list [expr -1 * $y] [expr -1 * $x]]}
+      R90   {set new_point [transform_point $x $y [list 0 0] "R270"]}
+      R180  {set new_point [transform_point $x $y [list 0 0] "R180"]}
+      R270  {set new_point [transform_point $x $y [list 0 0] "R90"]}
+      MX    {set new_point [transform_point $x $y [list 0 0] "MX"]}
+      MY    {set new_point [transform_point $x $y [list 0 0] "MY"]}
+      MXR90 {set new_point [transform_point $x $y [list 0 0] "MYR90"]}
+      MYR90 {set new_point [transform_point $x $y [list 0 0] "MXR90"}
       default {utl::error "PAD" 28 "Illegal orientation $orientation specified."}
     }
 
     return $new_point
   }
+
+  proc rotate_about {x y center rotation} {
+    set x [expr $x - [lindex $center 0]]
+    set y [expr $y - [lindex $center 1]]
+    set point [transform_point $x $y [list 0 0] $rotation]
+
+    return [list \
+      [expr [lindex $point 0] + [lindex $center 0]] \
+      [expr [lindex $point 1] + [lindex $center 1]] \
+    ]
+  }
+
 
   proc transform_path {path origin orientation} {
     set new_path {}
@@ -3197,6 +3238,9 @@ namespace eval ICeWall {
 
         set padcell_pin_center [get_box_center [get_padcell_pad_pin_shape $padcell]]
         set path [transform_path [$trace_func {*}[invert_transform {*}$padcell_pin_center $tile_origin $orientation]] $tile_origin $orientation]
+	# set trace_path [$trace_func 0 0]
+        # set path [transform_path $trace_path $padcell_pin_center $orientation]
+	# if {$side == "bottom"} {debug "padcell_pin_center: $padcell_pin_center, orient: $orientation, trace_path: $trace_path, path: $path"}
 
         set_padcell_rdl_trace $padcell $path
       }
@@ -3397,8 +3441,9 @@ namespace eval ICeWall {
         $inst setPlacementStatus "FIRM"
 
         set padcell [get_padcell_at_row_col $row $col]
+	# debug "bump_name: $bump_name, inst: [$inst getName], padcell: $padcell"
+        set pin_shape {}
         if {$padcell != ""} {
-          set pin_shape {}
           if {[has_library_pad_pin_name "bump"]} {
             set pin_name [get_library_pad_pin_name "bump"]
             set pin_shape [get_pin_shape $inst $pin_name]
@@ -3411,13 +3456,31 @@ namespace eval ICeWall {
               }
               set iterm [$inst getITerm $mterm]
               $iterm connect $net
-            }
+	    }
           }
-          if {[llength $pin_shape] != 4} {
-            set pin_shape [get_bump_center $row $col]
-          }
-          connect_to_bondpad_or_bump $inst $pin_shape $padcell
         }
+
+        if {[llength $pin_shape] != 4} {
+          set pin_shape [get_bump_center $row $col]
+        }
+
+        if {[is_padcell_unassigned $padcell]} {
+          set idx 0
+          while {[$block findNet "_UNASSIGNED_$idx"] != "NULL"} {
+            incr idx
+          }
+          utl::info "PAD" 52 "Creating padring net: _UNASSIGNED_$idx."
+          set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
+          lappend nets_created $net
+          set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
+	  set signal_name [$net getName]
+	} elseif {$padcell != ""} {
+	  set signal_name [get_padcell_assigned_name $padcell]
+	} else {
+	  set signal_name [get_bump_signal_name $row $col]
+	}
+
+        connect_to_bondpad_or_bump $inst $pin_shape $signal_name
       }
     }
     # debug "end"
@@ -3912,7 +3975,7 @@ namespace eval ICeWall {
         }
 
    
-      # debug "$side_name: fill_start = $fill_start"
+      # debug "$side_name: fill_start = $fill_start (corner_width_ll: [corner_width corner_ll])"
       # debug "$side_name: fill_end   = $fill_end"
       # debug "padcells: [get_footprint_padcells_by_side $side_name]"
 
@@ -3955,6 +4018,7 @@ namespace eval ICeWall {
         switch $side_name \
           "bottom" {
             # debug "cell_width: $cell_width cell_height: $cell_height"
+            # debug "fill_box $fill_start [$bbox yMin] [$bbox xMin] [$bbox yMax] $side_name (inst: [$inst getName])"
             fill_box $fill_start [$bbox yMin] [$bbox xMin] [$bbox yMax] $side_name
             set fill_start [$bbox xMax]
           } \
@@ -4650,6 +4714,13 @@ namespace eval ICeWall {
     }
   }
 
+  proc orient_is_rotated {orient} {
+    if {$orient == "R0" || $orient == "R180" || $orient == "MX" || $orient == "MY"} {
+      return 0
+    }
+    return 1
+  }
+
   proc fill_box {xmin ymin xmax ymax side} {
     variable cell_idx 
     variable edge_bottom_offset
@@ -4677,6 +4748,7 @@ namespace eval ICeWall {
       set cell [dict get $filler_cells $cell_ref master]
       set width [expr min([$cell getWidth],[$cell getHeight])]
       dict set filler_cells $cell_ref width $width
+      dict set filler_cells $cell_ref center [list [expr [$cell getWidth] / 2] [expr [$cell getHeight] / 2]]
       dict set spacers $width $cell_ref
     }
     set spacer_widths [lreverse [lsort -integer [dict keys $spacers]]]
@@ -4710,39 +4782,61 @@ namespace eval ICeWall {
           }
         }
       }
+      # if {$side == "right"} {debug "fill_start: $fill_start, fill_end: $fill_end"}
 
       set name "${type}_[dict get $cell_idx $type]"
       set orient [get_library_cell_orientation $spacer_type $side]
       set inst [odb::dbInst_create $block $spacer $name]
+      $inst setOrigin 0 0 
+      $inst setOrient $orient
+      set xMin [[$inst getBBox] xMin]
+      set yMin [[$inst getBBox] yMin]
+      set xMax [[$inst getBBox] xMax]
+      set yMax [[$inst getBBox] yMax]
       lappend insts_created $inst
+
+      set spacer_center [dict get $filler_cells $spacer_type center]
 
       switch $side \
         "bottom" {
           set x      $fill_start
           set y      $edge_bottom_offset
+
+          # offset wrt ll
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMin]]
+
           set fill_start [expr $x + $spacer_width]
         } \
         "right"  {
           set x      [expr $chip_width - $edge_right_offset]
           set y      $fill_start
+
+          # offset wrt lr
+	  set place_at [list [expr $x - $xMax] [expr $y - $yMin]]
+
           set fill_start [expr $y + $spacer_width]
         } \
         "top"    {
-          set x      [expr $fill_start + $spacer_width]
+          set x      $fill_start
           set y      [expr $chip_height - $edge_top_offset]
-          set fill_start $x
+
+	  # offset wrt ul
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMax]]
+
+          set fill_start [expr $x + $spacer_width]
         } \
         "left"   {
           set x      $edge_left_offset
-          set y      [expr $fill_start + $spacer_width]
-          set fill_start $y
+          set y      $fill_start
+
+	  # offset wrt ll
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMin]]
+
+          set fill_start [expr $y + $spacer_width]
         }
+
       # debug "inst [$inst getName], x: $x, y: $y"
-      set offset [get_library_cell_offset $spacer_type]
-      set fill_origin [list $x $y]
-      set location [transform_point {*}$offset [list 0 0] $orient]
-      set place_at [list [expr [lindex $fill_origin 0] - [lindex $location 0]] [expr [lindex $fill_origin 1] - [lindex $location 1]]]
-      # debug "offset: $offset, fill_origin: $fill_origin, location: $location, place_at: $place_at"
+      # debug "location: $location, place_at: $place_at"
       $inst setOrigin {*}$place_at
       $inst setOrient $orient
       $inst setPlacementStatus "FIRM"
@@ -5610,10 +5704,10 @@ namespace eval ICeWall {
         "left"   {set yMin [expr [dict get $center y] - $pitch / 2]; set yMax [expr [dict get $center y] + $pitch / 2]}
       }
       if {[dict get $padcell cell scaled_center x] < $xMin || [dict get $padcell cell scaled_center x] > $xMax} {
-        utl::error PAD 163 "Padcell $padcell x location ([ord::dbu_to_microns [dict get $padcell cell scaled_center x]]) cannot connect to the bump $row,$col on the $side_name edge. The x location must satisfy [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]."
+        utl::error PAD 163 "Padcell [dict get $padcell inst_name] x location ([ord::dbu_to_microns [dict get $padcell cell scaled_center x]]) cannot connect to the bump $row,$col on the $side_name edge. The x location must satisfy [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]."
       }
       if {[dict get $padcell cell scaled_center y] < $yMin || [dict get $padcell cell scaled_center y] > $yMax} {
-        utl::error PAD 164 "Padcell $padcell y location ([ord::dbu_to_microns [dict get $padcell cell scaled_center y]]) cannot connect to the bump $row,$col on the $side_name edge. The y location must satisfy [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]."
+        utl::error PAD 164 "Padcell [dict get $padcell inst_name] y location ([ord::dbu_to_microns [dict get $padcell cell scaled_center y]]) cannot connect to the bump $row,$col on the $side_name edge. The y location must satisfy [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]."
       }
 
       if {[dict exists $padcell use_signal_name]} {

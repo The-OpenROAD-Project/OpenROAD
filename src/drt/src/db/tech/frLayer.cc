@@ -33,9 +33,7 @@ using namespace fr;
 void frLayer::printAllConstraints(utl::Logger* logger)
 {
   for (auto& constraint : constraints) {
-    if (auto c = constraint.lock()) {
-      c->report(logger);
-    }
+    constraint->report(logger);
   }
   if (lef58CutSpacingTableSameNetMetalConstraint)
     lef58CutSpacingTableSameNetMetalConstraint->report(logger);

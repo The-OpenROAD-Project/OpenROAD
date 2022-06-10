@@ -9,13 +9,14 @@ set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk -0.1 out
 set_propagated_clock clk
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_worst_slack -min
 report_worst_slack -max
 
-repair_timing -hold -slack_margin .2
+repair_timing -hold -hold_margin .2
 
 report_worst_slack -min
 report_worst_slack -max

@@ -345,12 +345,13 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-starts_width (POWER|GROUND)]
                                        [-extend_to_boundary] \
                                        [-snap_to_grid] \
-                                       [-number_of_straps count]
+                                       [-number_of_straps count] \
+                                       [-nets list_of_nets]
 }
 
 proc add_pdn_stripe {args} {
   sta::parse_key_args "add_pdn_stripe" args \
-    keys {-grid -layer -width -pitch -spacing -offset -starts_with -number_of_straps} \
+    keys {-grid -layer -width -pitch -spacing -offset -starts_with -number_of_straps -nets} \
     flags {-followpins -extend_to_core_ring -extend_to_boundary -snap_to_grid}
 
   sta::check_argc_eq0 "add_pdn_stripe" $args
@@ -403,6 +404,17 @@ proc add_pdn_stripe {args} {
     set grid $keys(-grid)
   }
 
+  set nets {}
+  if {[info exists keys(-nets)]} {
+    foreach net_name $keys(-nets) {
+      set net [[ord::get_db_block] findNet $net_name]
+      if {$net == "NULL"} {
+        utl::error PAD 225 "Unable to find net $net_name."
+      }
+      lappend nets $net
+    }
+  }
+
   set layer [pdn::get_layer $keys(-layer)]
   set width [ord::microns_to_dbu $width]
   set pitch [ord::microns_to_dbu $pitch]
@@ -438,7 +450,8 @@ proc add_pdn_stripe {args} {
                     [info exists flags(-snap_to_grid)] \
                     $use_grid_power_order \
                     $start_with_power \
-                    $extend
+                    $extend \
+                    $nets
   }
 }
 
@@ -452,11 +465,12 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads] \
                                      [-connect_to_pad_layers layers] \
-                                     [-starts_with (POWER|GROUND)]}
+                                     [-starts_with (POWER|GROUND)] \
+                                     [-nets list_of_nets]}
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads} \
+    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets} \
     flags {-add_connect -extend_to_boundary -connect_to_pads}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
@@ -511,6 +525,17 @@ proc add_pdn_ring {args} {
   set grid ""
   if {[info exists keys(-grid)]} {
     set grid $keys(-grid)
+  }
+
+  set nets {}
+  if {[info exists keys(-nets)]} {
+    foreach net_name $keys(-nets) {
+      set net [[ord::get_db_block] findNet $net_name]
+      if {$net == "NULL"} {
+        utl::error PAD 226 "Unable to find net $net_name."
+      }
+      lappend nets $net
+    }
   }
 
   set use_grid_power_order 1
@@ -569,7 +594,8 @@ proc add_pdn_ring {args} {
                  {*}$core_offsets \
                  {*}$pad_offsets \
                  [info exists flags(-extend_to_boundary)] \
-                 $connect_to_pad_layers
+                 $connect_to_pad_layers \
+                 $nets
 
   if {[info exists flags(-add_connect)]} {
     add_pdn_connect -grid $grid -layers $keys(-layers)

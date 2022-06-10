@@ -39,6 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "utl/Logger.h"
 
 namespace ord {
@@ -48,7 +49,7 @@ class OpenRoad;
 namespace odb {
 class dbDatabase;
 class dbNet;
-}
+}  // namespace odb
 
 namespace gui {
 class Gui;
@@ -60,14 +61,16 @@ using utl::Logger;
 
 typedef int DTYPE;
 
-struct Branch {
+struct Branch
+{
   DTYPE x, y;  // starting point of the branch
   int n;       // index of neighbor
 };
 
-struct Tree {
-  int deg;         // degree
-  DTYPE length;    // total wirelength
+struct Tree
+{
+  int deg;                     // degree
+  DTYPE length;                // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger) const;
@@ -121,17 +124,12 @@ class SteinerTreeBuilder
 };
 
 // Used by regressions.
-void
-reportSteinerTree(const Tree &tree,
-                  int drvr_x,
-                  int drvr_y,
-                  Logger *logger);
-void
-reportSteinerTree(const stt::Tree &tree,
-                  Logger *logger);
+void reportSteinerTree(const Tree& tree,
+                       int drvr_x,
+                       int drvr_y,
+                       Logger* logger);
+void reportSteinerTree(const stt::Tree& tree, Logger* logger);
 
-void
-highlightSteinerTree(const Tree &tree,
-                     gui::Gui *gui);
+void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
 
 }  // namespace stt

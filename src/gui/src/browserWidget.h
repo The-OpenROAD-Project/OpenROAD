@@ -84,6 +84,9 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public
     virtual void postReadLiberty() override;
     virtual void postReadDb() override;
 
+    // from QT
+    virtual void paintEvent(QPaintEvent* event) override;
+
   signals:
     void select(const SelectionSet& selected);
     void removeSelect(const Selected& selected);
@@ -113,6 +116,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public
   private:
     void updateModel();
     void clearModel();
+    void markModelModified();
 
     void makeMenu();
 
@@ -128,6 +132,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public
 
     QTreeView* view_;
     QStandardItemModel* model_;
+    bool model_modified_;
 
     bool ignore_selection_;
 

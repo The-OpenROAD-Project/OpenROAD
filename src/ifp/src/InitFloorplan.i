@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "ifp/InitFloorplan.hh"
+#include "utl/Logger.h"
 
 // Defined by OpenRoad.i
 namespace ord {
@@ -49,6 +50,19 @@ getDb();
 
 sta::dbSta *
 getSta();
+}
+
+static ifp::InitFloorplan get_floorplan()
+{
+  auto app = ord::getOpenRoad();
+  auto chip = app->getDb()->getChip();
+  auto logger = app->getLogger();
+  if (!chip || !chip->getBlock()) {
+    logger->error(utl::IFP, 38, "No design is loaded.");
+  }
+  auto block = chip->getBlock();
+  auto network = app->getDbNetwork();
+  return ifp::InitFloorplan(block, logger, network);
 }
 
 %}
@@ -76,46 +90,46 @@ init_floorplan_core(int die_lx,
 		    int core_uy,
 		    const char *site_name)
 {
-  odb::dbDatabase *db = ord::getDb();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
-  ifp::initFloorplan(die_lx, die_ly, die_ux, die_uy,
-		     core_lx, core_ly, core_ux, core_uy,
-		     site_name, db, logger);
+  get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
+                                {core_lx, core_ly, core_ux, core_uy},
+                                site_name);
 }
 
 void
 init_floorplan_util(double util,
                     double aspect_ratio,
                     int core_space_bottom,
-                    int core_space_top,
+                     int core_space_top,
                     int core_space_left,
                     int core_space_right,
                     const char *site_name)
 {
-  odb::dbDatabase *db = ord::getDb();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
-  ifp::initFloorplan(util, aspect_ratio,
-                     core_space_bottom, core_space_top,
-                     core_space_left, core_space_right,
-                     site_name, db, logger);
+  get_floorplan().initFloorplan(util, aspect_ratio,
+                                core_space_bottom, core_space_top,
+                                core_space_left, core_space_right,
+                                site_name);
 }
-
-void
-auto_place_pins_cmd(const char *pin_layer)
-{
-  odb::dbDatabase *db = ord::getDb();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
-  ifp::autoPlacePins(pin_layer, db, logger);
-}
-
 
 void
 insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
 {
-  odb::dbDatabase *db = ord::getDb();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
-  sta::dbNetwork *network = ord::getOpenRoad()->getDbNetwork();
-  ifp::insertTiecells(tie_term, prefix, db, network, logger);
+  get_floorplan().insertTiecells(tie_term, prefix);
+}
+
+void
+make_layer_tracks()
+{
+  get_floorplan().makeTracks();
+}
+
+void
+make_layer_tracks(odb::dbTechLayer* layer,
+                  int x_offset,
+                  int x_pitch,
+                  int y_offset,
+                  int y_pitch)
+{
+  get_floorplan().makeTracks(layer, x_offset, x_pitch, y_offset, y_pitch);
 }
 
 } // namespace

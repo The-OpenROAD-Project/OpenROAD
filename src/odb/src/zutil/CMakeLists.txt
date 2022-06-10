@@ -5,6 +5,12 @@ add_library(zutil
     mem.cpp
     parse.cpp
     poly_decomp.cpp
+    util.cpp
+)
+
+target_link_libraries(zutil
+    PUBLIC
+        utl
 )
 
 target_include_directories(zutil

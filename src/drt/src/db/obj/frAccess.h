@@ -54,6 +54,7 @@ class frAccessPoint : public frBlockObject
         pathSegs_()
   {
   }
+  frAccessPoint() : frAccessPoint({0, 0}, 0) {}
   // getters
   void getPoint(Point& in) const { in = point_; }
   const Point& getPoint() const { return point_; }
@@ -116,6 +117,10 @@ class frAccessPoint : public frBlockObject
   {
     return viaDefs_[numCut - 1];
   }
+  const std::vector<std::vector<frViaDef*>>& getAllViaDefs() const
+  {
+    return viaDefs_;
+  }
   // e.g., getViaDef()     --> get best one-cut viadef
   // e.g., getViaDef(1)    --> get best one-cut viadef
   // e.g., getViaDef(2)    --> get best two-cut viadef
@@ -136,6 +141,7 @@ class frAccessPoint : public frBlockObject
   }
   // setters
   void setPoint(const Point& in) { point_ = in; }
+  void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
   {
     switch (dir) {
@@ -190,24 +196,6 @@ class frAccessPoint : public frBlockObject
   frAccessPointEnum typeH_;
   frPinAccess* aps_;
   std::vector<frPathSeg> pathSegs_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & point_;
-    (ar) & layerNum_;
-    (ar) & accesses_;
-    (ar) & viaDefs_;
-    (ar) & typeL_;
-    (ar) & typeH_;
-    (ar) & aps_;
-    (ar) & pathSegs_;
-  }
-
-  frAccessPoint() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 
 class frPinAccess : public frBlockObject
@@ -231,15 +219,6 @@ class frPinAccess : public frBlockObject
 
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & aps_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

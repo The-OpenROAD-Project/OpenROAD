@@ -41,6 +41,7 @@
 #include <QEvent>
 #include <QLocale>
 #include <QMouseEvent>
+#include <QString>
 
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
@@ -62,6 +63,7 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
       modulesettings_(modulesettings),
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
+      model_modified_(false),
       ignore_selection_(false),
       menu_(new QMenu(this))
 {
@@ -297,13 +299,30 @@ void BrowserWidget::hideEvent(QHideEvent* event)
   clearModel();
 }
 
+void BrowserWidget::paintEvent(QPaintEvent* event)
+{
+  updateModel();
+  QDockWidget::paintEvent(event);
+}
+
+void BrowserWidget::markModelModified()
+{
+  model_modified_ = true;
+  emit update();
+}
+
 void BrowserWidget::updateModel()
 {
-  clearModel();
+  if (!model_modified_ && model_->rowCount() != 0) {
+    return;
+  }
 
   if (block_ == nullptr) {
     return;
   }
+
+  setUpdatesEnabled(false);
+  clearModel();
 
   auto* root = model_->invisibleRootItem();
   addModuleItem(block_->getTopModule(), root, true);
@@ -319,6 +338,8 @@ void BrowserWidget::updateModel()
   addInstanceItems(insts, "Physical only", root);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
+  model_modified_ = false;
+  setUpdatesEnabled(true);
 }
 
 void BrowserWidget::clearModel()
@@ -462,7 +483,7 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     units = "m";
   }
 
-  auto text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
+  QString text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
 
   auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
@@ -497,22 +518,22 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)
 {
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::inDbInstDestroy(odb::dbInst*)
 {
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::inDbInstSwapMasterAfter(odb::dbInst*)
 {
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::itemContextMenu(const QPoint &point)
@@ -717,17 +738,17 @@ void BrowserWidget::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
   sta_->getDbNetwork()->addObserver(this);
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::postReadLiberty()
 {
-  updateModel();
+  markModelModified();
 }
 
 void BrowserWidget::postReadDb()
 {
-  updateModel();
+  markModelModified();
 }
 
 }  // namespace gui

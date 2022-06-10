@@ -247,7 +247,6 @@ public:
 
 protected:
   ~OpenRoad();
-  friend void deleteAllMemory();
 
 private:
   OpenRoad();
@@ -285,8 +284,5 @@ private:
 
 int
 tclAppInit(Tcl_Interp *interp);
-
-void
-deleteAllMemory();
 
 } // namespace ord

@@ -354,16 +354,13 @@ void DetailedMis::buildGrid() {
   // average width and height of the cells.
   double avgH = 0.;
   double avgW = 0.;
-  double avgA = 0.;
   for (size_t i = 0; i < m_candidates.size(); i++) {
     Node* ndi = m_candidates[i];
     avgH += ndi->getHeight();
     avgW += ndi->getWidth();
-    avgA += ndi->getHeight() * ndi->getWidth();
   }
   avgH /= (double)m_candidates.size();
   avgW /= (double)m_candidates.size();
-  avgA /= (double)m_candidates.size();
 
   m_stepX = avgW * std::sqrt(m_maxProblemSize);
   m_stepY = avgH * std::sqrt(m_maxProblemSize);
@@ -576,7 +573,7 @@ void DetailedMis::solveMatch() {
 
   std::map<lemon::ListDigraph::Arc, std::pair<int, int> > reverseMap;
 
-  int origCost = 0, icost;
+  int icost;
   for (int i = 0; i < nNodes; i++) {
     // Supply to node.
     lemon::ListDigraph::Arc arc_sv = g.addArc(supplyNode, nodeForCell[i]);
@@ -621,7 +618,6 @@ void DetailedMis::solveMatch() {
                              pos[j].first + 0.5*ndi->getWidth(), 
                              pos[j].second + 0.5*ndi->getHeight());
       }
-      origCost += (i != j) ? 0 : icost;
 
       // Node to spot.
       lemon::ListDigraph::Arc arc_vu =
@@ -661,19 +657,10 @@ void DetailedMis::solveMatch() {
 
   lemon::ListDigraph::ArcMap<int> flow(g);
   mincost.flowMap(flow);
-  int supplyFlow = 0;
-  int demandFlow = 0;
   int nMoved = 0;
 
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
-    if (g.target(it) == demandNode) {
-      demandFlow += mincost.flow(it);
-    }
-    if (g.source(it) == supplyNode) {
-      supplyFlow += mincost.flow(it);
-    }
-
     if (g.target(it) != demandNode && g.source(it) != supplyNode &&
         mincost.flow(it) != 0) {
       std::map<lemon::ListDigraph::Arc, std::pair<int, int> >::iterator it1 =
