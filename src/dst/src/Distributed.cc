@@ -138,8 +138,12 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
     return false;
   } else {
     auto bufs = receive_buffer.data();
-    std::string result(asio::buffers_begin(bufs),
-                       asio::buffers_begin(bufs) + receive_buffer.size());
+    auto offset = asio::buffers_begin(bufs) + receive_buffer.size();
+    std::string result = "";
+    if(offset <= asio::buffers_end(bufs))
+      result = std::string(asio::buffers_begin(bufs),
+                          offset);
+
     dataStr = result;
     if (dataStr == "")
       return false;
