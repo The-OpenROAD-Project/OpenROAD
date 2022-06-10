@@ -112,7 +112,12 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)// Load
   udp::resolver resolver(ios);
   while(true){
     std::vector<worker> new_workers;
-    auto it = resolver.resolve(resolver_query);
+    boost::system::error_code ec;
+    auto it = resolver.resolve(resolver_query, ec);
+    if(ec)
+      logger_->error(utl::DST, 203, "Workers domain resolution failed with error code = {}. Message = {}.", 
+        ec.value(),
+        ec.message());
     int new_workers_count = 0;
     udp::resolver::iterator it_end;
     for (; it != it_end; ++it) {
