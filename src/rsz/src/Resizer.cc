@@ -1430,61 +1430,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
               load_inst_odb->getModule()->addInst(tie_odb);
             }
 
-void
-Resizer::repairHold(VertexSeq &ends,
-                    LibertyCell *buffer_cell,
-                    float slack_margin,
-                    bool allow_setup_violations,
-                    int max_buffer_count,
-                    int max_passes)
-{
-  // Find endpoints with hold violations.
-  VertexSeq hold_failures;
-  Slack worst_slack;
-  findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
-  if (!hold_failures.empty()) {
-    logger_->info(RSZ, 46, "Found {} endpoints with hold violations.",
-                  hold_failures.size());
-    hold_buffer_count_ = 0;
-    bool progress = true;
-    int pass = 1;
-    while (worst_slack < 0.0
-           && progress
-           && !overMaxArea()
-           && hold_buffer_count_ <= max_buffer_count
-           && pass <= max_passes) {
-      debugPrint(logger_, RSZ, "repair_hold", 1,
-                 "pass {} worst slack {}",
-                 pass,
-                 delayAsString(worst_slack, sta_, 3));
-      int hold_buffer_count_before = hold_buffer_count_;
-      repairHoldPass(hold_failures, buffer_cell, slack_margin,
-                     allow_setup_violations, max_buffer_count);
-      debugPrint(logger_, RSZ, "repair_hold", 1, "inserted {}",
-                 hold_buffer_count_ - hold_buffer_count_before);
-      sta_->findRequireds();
-      findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
-      pass++;
-      progress = hold_buffer_count_ > hold_buffer_count_before;
-    }
-    if (slack_margin == 0.0 && fuzzyLess(worst_slack, 0.0))
-      logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
-    else if (fuzzyLess(worst_slack, slack_margin))
-      logger_->warn(RSZ, 64, "Unable to repair all hold checks within margin.");
-
-    if (hold_buffer_count_ > 0) {
-      logger_->info(RSZ, 32, "Inserted {} hold buffers.", hold_buffer_count_);
-      level_drvr_vertices_valid_ = false;
-    }
-    logger_->metric("design__instance__count__hold_buffer", hold_buffer_count_);
-    if (hold_buffer_count_ > max_buffer_count)
-      logger_->error(RSZ, 60, "Max buffer count reached.");
-    if (overMaxArea())
-      logger_->error(RSZ, 50, "Max utilization reached.");
-  }
-  else
-    logger_->info(RSZ, 33, "No hold violations found.");
-}
             // Make tie output net.
             Net *load_net = makeUniqueNet();
 
