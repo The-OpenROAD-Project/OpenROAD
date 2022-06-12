@@ -851,6 +851,12 @@ class FlexDRWorker
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia);
+
+  void modMinimumcutCost(const Rect& box,
+                         frMIdx z,
+                         ModCostType type,
+                         bool isUpperVia);
+  
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
                               ModCostType type);

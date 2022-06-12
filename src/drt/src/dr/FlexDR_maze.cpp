@@ -604,6 +604,213 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
     }
   }
 }
+void FlexDRWorker::modMinimumcutCost(const Rect& box,
+                                     frMIdx z,
+                                     ModCostType type,
+                                     bool isUpperVia)
+{
+  auto lNum = gridGraph_.getLayerNum(z);
+  frCoord width1 = box.minDXDY();
+  frCoord length1 = box.maxDXDY();
+  // default via dimension
+  frViaDef* viaDef = nullptr;
+  if (isUpperVia) {
+    viaDef = (lNum < getTech()->getTopLayerNum())
+                 ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+                 : nullptr;
+  } else {
+    viaDef = (lNum > getTech()->getBottomLayerNum())
+                 ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+                 : nullptr;
+  }
+  if (viaDef == nullptr) {
+    return;
+  }
+  frVia via(viaDef);
+  Rect viaBox, enclosureBox;
+  via.getCutBBox(viaBox);
+  if (isUpperVia) {
+    via.getLayer1BBox(enclosureBox);
+  } else {
+    via.getLayer2BBox(enclosureBox);
+  }
+  frCoord width2 = enclosureBox.minDXDY();
+  frCoord length2 = enclosureBox.maxDXDY();
+
+  FlexMazeIdx mIdx1, mIdx2;
+  Rect bx, tmpBx, sViaBox;
+  dbTransform xform;
+  Point pt;
+  frCoord dx, dy;
+  frVia sVia;
+  frMIdx zIdx = isUpperVia ? z : z - 1;
+  for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
+    // check via2cut to box
+    // check whether via can be placed on the pin
+    if ((!con->hasLength() || (con->hasLength() && length1 > con->getLength()))
+        && width1 > con->getWidth()) {
+      bool checkVia2 = false;
+      if (!con->hasConnection()) {
+        checkVia2 = true;
+      } else {
+        if (con->getConnection() == frMinimumcutConnectionEnum::FROMABOVE
+            && isUpperVia) {
+          checkVia2 = true;
+        } else if (con->getConnection() == frMinimumcutConnectionEnum::FROMBELOW
+                   && !isUpperVia) {
+          checkVia2 = true;
+        }
+      }
+      if (!checkVia2) {
+        continue;
+      }
+      // block via on pin
+      frCoord dist = 0;
+      if (con->hasLength()) {
+        dist = con->getDistance();
+        // conservative for macro pin
+        // TODO: revert the += to be more accurate and check qor change
+        dist += getTech()->getLayer(lNum)->getPitch();
+      }
+      // assumes width always > 2
+      bx.init(box.xMin() - dist - (viaBox.xMax() - 0) + 1,
+              box.yMin() - dist - (viaBox.yMax() - 0) + 1,
+              box.xMax() + dist + (0 - viaBox.xMin()) - 1,
+              box.yMax() + dist + (0 - viaBox.yMin()) - 1);
+      gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
+
+      for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
+        for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+          gridGraph_.getPoint(pt, i, j);
+          xform.setOffset(pt);
+          tmpBx = viaBox;
+          if (gridGraph_.isSVia(i, j, zIdx)) {
+            auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
+            sVia.setViaDef(sViaDef);
+            if (isUpperVia) {
+              sVia.getCutBBox(sViaBox);
+            } else {
+              sVia.getCutBBox(sViaBox);
+            }
+            tmpBx = sViaBox;
+          }
+          xform.apply(tmpBx);
+          box2boxDistSquareNew(box, tmpBx, dx, dy);
+          if (!con->hasLength()) {
+            if (dx <= 0 && dy <= 0) {
+              ;
+            } else {
+              continue;
+            }
+          } else {
+            if (dx > 0 && dy > 0 && dx + dy < dist) {
+              ;
+            } else {
+              continue;
+            }
+          }
+          switch (type) {
+            case subRouteShape:
+              gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addRouteShape:
+              gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case subFixedShape:
+              gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addFixedShape:
+              gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            default:;
+          }
+        }
+      }
+    }
+    
+    if ((!con->hasLength() || (con->hasLength() && length2 > con->getLength()))
+        && width2 > con->getWidth())
+    {
+      bool checkVia2 = false;
+      if (!con->hasConnection()) {
+        checkVia2 = true;
+      } else {
+        if (con->getConnection() == frMinimumcutConnectionEnum::FROMBELOW
+            && isUpperVia) {
+          checkVia2 = true;
+        } else if (con->getConnection() == frMinimumcutConnectionEnum::FROMABOVE
+                   && !isUpperVia) {
+          checkVia2 = true;
+        }
+      }
+      if (!checkVia2) {
+        continue;
+      }
+       // block via on pin
+      frCoord dist = 0;
+      if (con->hasLength()) {
+        dist = con->getDistance();
+        // conservative for macro pin
+        // TODO: revert the += to be more accurate and check qor change
+        dist += getTech()->getLayer(lNum)->getPitch();
+      }
+      // assumes width always > 2
+      bx.init(box.xMin() - dist - (enclosureBox.xMax() - 0) + 1,
+              box.yMin() - dist - (enclosureBox.yMax() - 0) + 1,
+              box.xMax() + dist + (0 - enclosureBox.xMin()) - 1,
+              box.yMax() + dist + (0 - enclosureBox.yMin()) - 1);
+      gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
+
+      for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
+        for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+          gridGraph_.getPoint(pt, i, j);
+          xform.setOffset(pt);
+          tmpBx = enclosureBox;
+          if (gridGraph_.isSVia(i, j, zIdx)) {
+            auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
+            sVia.setViaDef(sViaDef);
+            if (isUpperVia) {
+              sVia.getLayer1BBox(sViaBox);
+            } else {
+              sVia.getLayer2BBox(sViaBox);
+            }
+            tmpBx = sViaBox;
+          }
+          xform.apply(tmpBx);
+          box2boxDistSquareNew(box, tmpBx, dx, dy);
+          if (!con->hasLength()) {
+            if (dx <= 0 && dy <= 0) {
+              ;
+            } else {
+              continue;
+            }
+          } else {
+            if (dx > 0 && dy > 0 && dx + dy < dist) {
+              ;
+            } else {
+              continue;
+            }
+          }
+          switch (type) {
+            case subRouteShape:
+              gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addRouteShape:
+              gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case subFixedShape:
+              gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            case addFixedShape:
+              gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+              break;
+            default:;
+          }
+        }
+      }
+    }
+  }
+}
 
 void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
                                         frMIdx z,
@@ -1457,8 +1664,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
     if (modEol)
       modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
-    modMinimumcutCostVia(box, bi.z(), type, true);
-    modMinimumcutCostVia(box, bi.z(), type, false);
+    modMinimumcutCost(box, bi.z(), type, true);
+    modMinimumcutCost(box, bi.z(), type, false);
 
     obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
 
@@ -1467,8 +1674,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
     if (modEol)
       modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
-    modMinimumcutCostVia(box, ei.z(), type, true);
-    modMinimumcutCostVia(box, ei.z(), type, false);
+    modMinimumcutCost(box, ei.z(), type, true);
+    modMinimumcutCost(box, ei.z(), type, false);
     dbTransform xform;
     Point pt;
     obj->getOrigin(pt);
