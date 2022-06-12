@@ -39,7 +39,7 @@ class frBlockage : public frBlockObject
 {
  public:
   // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1) {}
+  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1), index_in_owner_(0) {}
   // getters
   frBPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
@@ -48,13 +48,13 @@ class frBlockage : public frBlockObject
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
-  void setOrderId(int in) { order_id_ = in; }
-  int getOrderId() const { return order_id_; }
+  void setIndexInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
-  int order_id_;
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_;
+  int index_in_owner_;
 
 };
 }  // namespace fr

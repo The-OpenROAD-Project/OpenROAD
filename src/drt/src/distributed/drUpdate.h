@@ -47,7 +47,7 @@ class drUpdate
   };
   drUpdate(UpdateType type = ADD_SHAPE)
       : net_(nullptr),
-        order_in_owner_(0),
+        index_in_owner_(0),
         type_(type),
         layer_(0),
         bottomConnected_(false),
@@ -58,7 +58,7 @@ class drUpdate
   {
   }
   void setNet(frNet* net) { net_ = net; }
-  void setOrderInOwner(int value) { order_in_owner_ = value; }
+  void setIndexInOwner(int value) { index_in_owner_ = value; }
   void setUpdateType(UpdateType value) { type_ = value; }
   void setPathSeg(const frPathSeg& seg);
   void setPatchWire(const frPatchWire& pwire);
@@ -68,14 +68,14 @@ class drUpdate
   frPatchWire getPatchWire() const;
   frVia getVia() const;
   UpdateType getType() const { return type_; }
-  int getOrderInOwner() const { return order_in_owner_; }
+  int getIndexInOwner() const { return index_in_owner_; }
   frNet* getNet() const { return net_; }
   frBlockObjectEnum getObjTypeId() const { return obj_type_; }
   frMarker getMarker() const { return marker_; }
 
  private:
   frNet* net_;
-  int order_in_owner_;
+  int index_in_owner_;
   UpdateType type_;
   Point begin_;
   Point end_;

@@ -66,7 +66,7 @@ template <class Archive>
 void frShape::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frPinFig>(*this);
-  (ar) & order_in_owner_;
+  (ar) & index_in_owner_;
   serializeBlockObject(ar, owner_);
 }
 

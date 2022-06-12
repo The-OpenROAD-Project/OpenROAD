@@ -103,7 +103,7 @@ class frMaster : public frBlockObject
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
   {
-    in->setOrderId(terms_.size());
+    in->setIndexInOwner(terms_.size());
     in->setMaster(this);
     terms_.push_back(std::move(in));
   }
