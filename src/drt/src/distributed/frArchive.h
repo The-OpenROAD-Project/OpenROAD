@@ -57,8 +57,6 @@ struct frOArchive : OutputArchive
   }
   frDesign* getDesign() const { return nullptr; }
 
- private:
-  bool deep_serialize;
 };
 struct frIArchive : InputArchive
 {
@@ -75,7 +73,6 @@ struct frIArchive : InputArchive
 
  private:
   frDesign* design;
-  bool deep_serialize;
 };
 }  // namespace fr
 

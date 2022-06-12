@@ -426,7 +426,7 @@ void FlexDRConnectivityChecker::finish(
         if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(victimPathSeg->getNet());
-          update.setOrderInOwner(victimPathSeg->getOrderInOwner());
+          update.setIndexInOwner(victimPathSeg->getIndexInOwner());
           design_->addUpdate(update);
         }
         regionQuery->removeDRObj(static_cast<frShape*>(netRouteObjs[i]));
@@ -442,7 +442,7 @@ void FlexDRConnectivityChecker::finish(
         if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(via->getNet());
-          update.setOrderInOwner(via->getOrderInOwner());
+          update.setIndexInOwner(via->getIndexInOwner());
           design_->addUpdate(update);
         }
         regionQuery->removeDRObj(via);
@@ -569,7 +569,7 @@ void FlexDRConnectivityChecker::finish(
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_RQ);
       update.setNet(ps1->getNet());
-      update.setOrderInOwner(ps1->getOrderInOwner());
+      update.setIndexInOwner(ps1->getIndexInOwner());
       design_->addUpdate(update);
     }
     regionQuery->removeDRObj(ps1);
@@ -581,7 +581,7 @@ void FlexDRConnectivityChecker::finish(
     if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(ps1->getNet());
-      update.setOrderInOwner(ps1->getOrderInOwner());
+      update.setIndexInOwner(ps1->getIndexInOwner());
       update.setPathSeg(*ps1);
       design_->addUpdate(update);
     }
@@ -596,7 +596,7 @@ void FlexDRConnectivityChecker::finish(
     if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(ps2->getNet());
-      update.setOrderInOwner(ps2->getOrderInOwner());
+      update.setIndexInOwner(ps2->getIndexInOwner());
       update.setPathSeg(*ps2);
       design_->addUpdate(update);
     }
@@ -629,7 +629,7 @@ void FlexDRConnectivityChecker::finish(
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_RQ);
         update.setNet(ps->getNet());
-        update.setOrderInOwner(ps->getOrderInOwner());
+        update.setIndexInOwner(ps->getIndexInOwner());
         design_->addUpdate(update);
       }
       regionQuery->removeDRObj(ps);
@@ -637,7 +637,7 @@ void FlexDRConnectivityChecker::finish(
       if (save_updates_) {
         drUpdate update(drUpdate::UPDATE_SHAPE);
         update.setNet(ps->getNet());
-        update.setOrderInOwner(ps->getOrderInOwner());
+        update.setIndexInOwner(ps->getIndexInOwner());
         update.setPathSeg(*ps);
         design_->addUpdate(update);
       }
@@ -687,7 +687,7 @@ void FlexDRConnectivityChecker::finish(
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(obj->getNet());
-        update.setOrderInOwner(obj->getOrderInOwner());
+        update.setIndexInOwner(obj->getIndexInOwner());
         design_->addUpdate(update);
       }
       regionQuery->removeDRObj(obj);
@@ -1052,7 +1052,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_RQ);
       update.setNet(victimPathSeg->getNet());
-      update.setOrderInOwner(victimPathSeg->getOrderInOwner());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
       design_->addUpdate(update);
     }
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
@@ -1077,7 +1077,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
         if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(curr->getNet());
-          update.setOrderInOwner(curr->getOrderInOwner());
+          update.setIndexInOwner(curr->getIndexInOwner());
           design_->addUpdate(update);
         }
         regionQuery->removeDRObj(curr);  // deallocates curr
@@ -1092,7 +1092,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(victimPathSeg->getNet());
-      update.setOrderInOwner(victimPathSeg->getOrderInOwner());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
       update.setPathSeg(*victimPathSeg);
       design_->addUpdate(update);
     }

@@ -141,7 +141,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(net);
-        update.setOrderInOwner(pathSeg->getOrderInOwner());
+        update.setIndexInOwner(pathSeg->getIndexInOwner());
         design_->addUpdate(update);
       }
       regionQuery->removeDRObj(pathSeg);  // delete rq
@@ -227,7 +227,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(net);
-        update.setOrderInOwner(pathSeg->getOrderInOwner());
+        update.setIndexInOwner(pathSeg->getIndexInOwner());
         design_->addUpdate(update);
       }
       regionQuery->removeDRObj(pathSeg);  // delete rq
@@ -254,7 +254,7 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
-      update.setOrderInOwner(via->getOrderInOwner());
+      update.setIndexInOwner(via->getIndexInOwner());
       design_->addUpdate(update);
     }
     regionQuery->removeDRObj(via);  // delete rq
@@ -279,7 +279,7 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
-      update.setOrderInOwner(pwire->getOrderInOwner());
+      update.setIndexInOwner(pwire->getIndexInOwner());
       design_->addUpdate(update);
     }
     regionQuery->removeDRObj(pwire);  // delete rq
@@ -474,8 +474,8 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
             update2(drUpdate::REMOVE_FROM_NET);
         update1.setNet(net);
         update2.setNet(net);
-        update1.setOrderInOwner(horzPathSegs[0]->getOrderInOwner());
-        update2.setOrderInOwner(horzPathSegs[1]->getOrderInOwner());
+        update1.setIndexInOwner(horzPathSegs[0]->getIndexInOwner());
+        update2.setIndexInOwner(horzPathSegs[1]->getIndexInOwner());
         design_->addUpdate(update1);
         design_->addUpdate(update2);
       }
@@ -517,8 +517,8 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
             update2(drUpdate::REMOVE_FROM_NET);
         update1.setNet(net);
         update2.setNet(net);
-        update1.setOrderInOwner(vertPathSegs[0]->getOrderInOwner());
-        update2.setOrderInOwner(vertPathSegs[1]->getOrderInOwner());
+        update1.setIndexInOwner(vertPathSegs[0]->getIndexInOwner());
+        update2.setIndexInOwner(vertPathSegs[1]->getIndexInOwner());
         design_->addUpdate(update1);
         design_->addUpdate(update2);
       }
@@ -573,7 +573,7 @@ void FlexDRWorker::endRemoveMarkers(frDesign* design)
   for (auto mptr : result) {
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_BLOCK);
-      update.setOrderInOwner(mptr->getIndexInOwner());
+      update.setIndexInOwner(mptr->getIndexInOwner());
       design_->addUpdate(update);
     }
     regionQuery->removeMarker(mptr);

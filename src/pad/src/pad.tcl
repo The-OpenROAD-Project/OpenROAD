@@ -2937,6 +2937,11 @@ namespace eval ICeWall {
     upvar tile_width tile_width
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $tile_offset_y + $tile_width / 2]] \
     ]
@@ -2955,6 +2960,14 @@ namespace eval ICeWall {
     upvar offset offset
     upvar y_min y_min
     upvar y_max y_max
+
+    set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(1) - abs(0 - $offset(1))]] \
+      [list $offset(1) $y_min(1)] \
+      [list $offset(1) $y_max(1)] \
+      [list [expr $tile_width / 2] [expr $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
 
     set path [list \
       [list $x $y] \
@@ -2980,6 +2993,14 @@ namespace eval ICeWall {
     upvar y_max y_max
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(2) - abs(0 - $offset(2))]] \
+      [list $offset(2) $y_min(2)] \
+      [list $offset(2) $y_max(2)] \
+      [list [expr $tile_width / 2] [expr 2 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $y_min(2) - abs($x - $offset(2))]] \
       [list $offset(2) $y_min(2)] \
@@ -3003,6 +3024,14 @@ namespace eval ICeWall {
     upvar y_max y_max
 
     set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(3) - abs(0 - $offset(3))]] \
+      [list $offset(3) $y_min(3)] \
+      [list $offset(3) $y_max(3)] \
+      [list [expr $tile_width / 2] [expr 3 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
+
+    set path [list \
       [list $x $y] \
       [list $x [expr $y_min(3) - abs($x - $offset(3))]] \
       [list $offset(3) $y_min(3)] \
@@ -3024,6 +3053,14 @@ namespace eval ICeWall {
     upvar offset offset
     upvar y_min y_min
     upvar y_max y_max
+
+    set path [list \
+      [list 0 0] \
+      [list 0 [expr $y_min(4) - abs(0 - $offset(4))]] \
+      [list $offset(4) $y_min(4)] \
+      [list $offset(4) $y_max(4)] \
+      [list [expr $tile_width / 2] [expr 4 * $tile_width + $tile_offset_y + $tile_width / 2]] \
+    ]
 
     set path [list \
       [list $x $y] \
@@ -3057,21 +3094,32 @@ namespace eval ICeWall {
   proc invert_transform {x y origin orientation} {
     set x [expr $x - [lindex $origin 0]]
     set y [expr $y - [lindex $origin 1]]
-
     switch -exact $orientation {
       R0    {set new_point [list $x $y]}
-      R90   {set new_point [list $y [expr -1 * $x]]}
-      R180  {set new_point [list [expr -1 * $x] [expr -1 * $y]]}
-      R270  {set new_point [list [expr -1 * $y] $x]}
-      MX    {set new_point [list $x [expr -1 * $y]]}
-      MY    {set new_point [list [expr -1 * $x] $y]}
-      MXR90 {set new_point [list $y $x]}
-      MYR90 {set new_point [list [expr -1 * $y] [expr -1 * $x]]}
+      R90   {set new_point [transform_point $x $y [list 0 0] "R270"]}
+      R180  {set new_point [transform_point $x $y [list 0 0] "R180"]}
+      R270  {set new_point [transform_point $x $y [list 0 0] "R90"]}
+      MX    {set new_point [transform_point $x $y [list 0 0] "MX"]}
+      MY    {set new_point [transform_point $x $y [list 0 0] "MY"]}
+      MXR90 {set new_point [transform_point $x $y [list 0 0] "MYR90"]}
+      MYR90 {set new_point [transform_point $x $y [list 0 0] "MXR90"}
       default {utl::error "PAD" 28 "Illegal orientation $orientation specified."}
     }
 
     return $new_point
   }
+
+  proc rotate_about {x y center rotation} {
+    set x [expr $x - [lindex $center 0]]
+    set y [expr $y - [lindex $center 1]]
+    set point [transform_point $x $y [list 0 0] $rotation]
+
+    return [list \
+      [expr [lindex $point 0] + [lindex $center 0]] \
+      [expr [lindex $point 1] + [lindex $center 1]] \
+    ]
+  }
+
 
   proc transform_path {path origin orientation} {
     set new_path {}
@@ -3190,6 +3238,9 @@ namespace eval ICeWall {
 
         set padcell_pin_center [get_box_center [get_padcell_pad_pin_shape $padcell]]
         set path [transform_path [$trace_func {*}[invert_transform {*}$padcell_pin_center $tile_origin $orientation]] $tile_origin $orientation]
+	# set trace_path [$trace_func 0 0]
+        # set path [transform_path $trace_path $padcell_pin_center $orientation]
+	# if {$side == "bottom"} {debug "padcell_pin_center: $padcell_pin_center, orient: $orientation, trace_path: $trace_path, path: $path"}
 
         set_padcell_rdl_trace $padcell $path
       }
@@ -3924,7 +3975,7 @@ namespace eval ICeWall {
         }
 
    
-      # debug "$side_name: fill_start = $fill_start"
+      # debug "$side_name: fill_start = $fill_start (corner_width_ll: [corner_width corner_ll])"
       # debug "$side_name: fill_end   = $fill_end"
       # debug "padcells: [get_footprint_padcells_by_side $side_name]"
 
@@ -3967,6 +4018,7 @@ namespace eval ICeWall {
         switch $side_name \
           "bottom" {
             # debug "cell_width: $cell_width cell_height: $cell_height"
+            # debug "fill_box $fill_start [$bbox yMin] [$bbox xMin] [$bbox yMax] $side_name (inst: [$inst getName])"
             fill_box $fill_start [$bbox yMin] [$bbox xMin] [$bbox yMax] $side_name
             set fill_start [$bbox xMax]
           } \
@@ -4662,6 +4714,13 @@ namespace eval ICeWall {
     }
   }
 
+  proc orient_is_rotated {orient} {
+    if {$orient == "R0" || $orient == "R180" || $orient == "MX" || $orient == "MY"} {
+      return 0
+    }
+    return 1
+  }
+
   proc fill_box {xmin ymin xmax ymax side} {
     variable cell_idx 
     variable edge_bottom_offset
@@ -4689,6 +4748,7 @@ namespace eval ICeWall {
       set cell [dict get $filler_cells $cell_ref master]
       set width [expr min([$cell getWidth],[$cell getHeight])]
       dict set filler_cells $cell_ref width $width
+      dict set filler_cells $cell_ref center [list [expr [$cell getWidth] / 2] [expr [$cell getHeight] / 2]]
       dict set spacers $width $cell_ref
     }
     set spacer_widths [lreverse [lsort -integer [dict keys $spacers]]]
@@ -4722,39 +4782,61 @@ namespace eval ICeWall {
           }
         }
       }
+      # if {$side == "right"} {debug "fill_start: $fill_start, fill_end: $fill_end"}
 
       set name "${type}_[dict get $cell_idx $type]"
       set orient [get_library_cell_orientation $spacer_type $side]
       set inst [odb::dbInst_create $block $spacer $name]
+      $inst setOrigin 0 0 
+      $inst setOrient $orient
+      set xMin [[$inst getBBox] xMin]
+      set yMin [[$inst getBBox] yMin]
+      set xMax [[$inst getBBox] xMax]
+      set yMax [[$inst getBBox] yMax]
       lappend insts_created $inst
+
+      set spacer_center [dict get $filler_cells $spacer_type center]
 
       switch $side \
         "bottom" {
           set x      $fill_start
           set y      $edge_bottom_offset
+
+          # offset wrt ll
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMin]]
+
           set fill_start [expr $x + $spacer_width]
         } \
         "right"  {
           set x      [expr $chip_width - $edge_right_offset]
           set y      $fill_start
+
+          # offset wrt lr
+	  set place_at [list [expr $x - $xMax] [expr $y - $yMin]]
+
           set fill_start [expr $y + $spacer_width]
         } \
         "top"    {
-          set x      [expr $fill_start + $spacer_width]
+          set x      $fill_start
           set y      [expr $chip_height - $edge_top_offset]
-          set fill_start $x
+
+	  # offset wrt ul
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMax]]
+
+          set fill_start [expr $x + $spacer_width]
         } \
         "left"   {
           set x      $edge_left_offset
-          set y      [expr $fill_start + $spacer_width]
-          set fill_start $y
+          set y      $fill_start
+
+	  # offset wrt ll
+	  set place_at [list [expr $x - $xMin] [expr $y - $yMin]]
+
+          set fill_start [expr $y + $spacer_width]
         }
+
       # debug "inst [$inst getName], x: $x, y: $y"
-      set offset [get_library_cell_offset $spacer_type]
-      set fill_origin [list $x $y]
-      set location [transform_point {*}$offset [list 0 0] $orient]
-      set place_at [list [expr [lindex $fill_origin 0] - [lindex $location 0]] [expr [lindex $fill_origin 1] - [lindex $location 1]]]
-      # debug "offset: $offset, fill_origin: $fill_origin, location: $location, place_at: $place_at"
+      # debug "location: $location, place_at: $place_at"
       $inst setOrigin {*}$place_at
       $inst setOrient $orient
       $inst setPlacementStatus "FIRM"
