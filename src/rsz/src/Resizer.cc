@@ -100,9 +100,7 @@ using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyLibraryIterator;
 using sta::LibertyCellIterator;
-using sta::LibertyCellTimingArcSetIterator;
 using sta::TimingArcSet;
-using sta::TimingArcSetArcIterator;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
 using sta::FuncExpr;
@@ -1061,9 +1059,7 @@ Resizer::isRegOutput(Vertex *vertex)
   LibertyPort *port = network_->libertyPort(vertex->pin());
   if (port) {
     LibertyCell *cell = port->libertyCell();
-    LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
-    while (arc_set_iter.hasNext()) {
-      TimingArcSet *arc_set = arc_set_iter.next();
+    for (TimingArcSet *arc_set : cell->timingArcSets(nullptr, port)) {
       if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
         return true;
     }
@@ -1212,18 +1208,14 @@ Resizer::targetLoadCap(LibertyCell *cell)
 float
 Resizer::findTargetLoad(LibertyCell *cell)
 {
-  LibertyCellTimingArcSetIterator arc_set_iter(cell);
   float target_load_sum = 0.0;
   int arc_count = 0;
-  while (arc_set_iter.hasNext()) {
-    TimingArcSet *arc_set = arc_set_iter.next();
+  for (TimingArcSet *arc_set : cell->timingArcSets()) {
     TimingRole *role = arc_set->role();
     if (!role->isTimingCheck()
         && role != TimingRole::tristateDisable()
         && role != TimingRole::tristateEnable()) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
+      for (TimingArc *arc : arc_set->arcs()) {
         int in_rf_index = arc->fromEdge()->asRiseFall()->index();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float arc_target_load = findTargetLoad(cell, arc, 
@@ -1364,26 +1356,21 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
-  TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
-  if (arc_sets) {
-    for (TimingArcSet *arc_set : *arc_sets) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
-        GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
-        RiseFall *out_rf = arc->toEdge()->asRiseFall();
-        float in_cap = input->capacitance(in_rf, max_);
-        float load_cap = in_cap * tgt_slew_load_cap_factor;
-        ArcDelay arc_delay;
-        Slew arc_slew;
-        model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
-                         arc_delay, arc_slew);
-        model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
-                         arc_delay, arc_slew);
-        slews[out_rf->index()] += arc_slew;
-        counts[out_rf->index()]++;
-      }
+  for (TimingArcSet *arc_set : buffer->timingArcSets(input, output)) {
+    for (TimingArc *arc : arc_set->arcs()) {
+      GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
+      RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+      RiseFall *out_rf = arc->toEdge()->asRiseFall();
+      float in_cap = input->capacitance(in_rf, max_);
+      float load_cap = in_cap * tgt_slew_load_cap_factor;
+      ArcDelay arc_delay;
+      Slew arc_slew;
+      model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
+                       arc_delay, arc_slew);
+      model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
+                       arc_delay, arc_slew);
+      slews[out_rf->index()] += arc_slew;
+      counts[out_rf->index()]++;
     }
   }
 }
@@ -1764,14 +1751,10 @@ Resizer::gateDelays(LibertyPort *drvr_port,
   }
   const Pvt *pvt = dcalc_ap->operatingConditions();
   LibertyCell *cell = drvr_port->libertyCell();
-  LibertyCellTimingArcSetIterator set_iter(cell);
-  while (set_iter.hasNext()) {
-    TimingArcSet *arc_set = set_iter.next();
+  for (TimingArcSet *arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port
         && !arc_set->role()->isTimingCheck()) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
+      for (TimingArc *arc : arc_set->arcs()) {
         RiseFall *in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float in_slew = tgt_slews_[in_rf->index()];
@@ -1955,13 +1938,9 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
     Parasitic *drvr_parasitic = arc_delay_calc->findParasitic(drvr_pin,
                                                               RiseFall::rise(),
                                                               dcalc_ap);
-    LibertyCellTimingArcSetIterator set_iter(drvr_cell);
-    while (set_iter.hasNext()) {
-      TimingArcSet *arc_set = set_iter.next();
+    for (TimingArcSet *arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
-        TimingArcSetArcIterator arc_iter(arc_set);
-        while (arc_iter.hasNext()) {
-          TimingArc *arc = arc_iter.next();
+        for (TimingArc *arc : arc_set->arcs()) {
           RiseFall *in_rf = arc->fromEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
