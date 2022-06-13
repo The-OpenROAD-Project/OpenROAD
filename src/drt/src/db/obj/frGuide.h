@@ -44,7 +44,8 @@ class frGuide : public frConnFig
         beginLayer_(0),
         endLayer_(0),
         routeObj_(),
-        net_(nullptr)
+        net_(nullptr),
+        index_in_owner_(0)
   {
   }
   frGuide(const frGuide& in)
@@ -54,7 +55,8 @@ class frGuide : public frConnFig
         beginLayer_(in.beginLayer_),
         endLayer_(in.endLayer_),
         routeObj_(),
-        net_(nullptr)
+        net_(nullptr),
+        index_in_owner_(0)
   {
   }
   // getters
@@ -74,7 +76,7 @@ class frGuide : public frConnFig
   {
     return routeObj_;
   }
-  int getOrderInOwner() const { return order_in_owner_; }
+  int getIndexInOwner() const { return index_in_owner_; }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {
@@ -114,7 +116,7 @@ class frGuide : public frConnFig
   void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
-  void setOrderInOwner(const int& val) { order_in_owner_ = val; }
+  void setIndexInOwner(const int& val) { index_in_owner_ = val; }
 
  private:
   Point begin_;
@@ -123,7 +125,7 @@ class frGuide : public frConnFig
   frLayerNum endLayer_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
-  int order_in_owner_;
+  int index_in_owner_;
 
 };
 }  // namespace fr

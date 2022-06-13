@@ -48,7 +48,8 @@ class frMarker : public frFig
         srcs_(),
         iter_(),
         vioHasDir_(false),
-        vioIsH_(false)
+        vioIsH_(false),
+        index_in_owner_(0)
   {
   }
   frMarker(const frMarker& in)
@@ -58,7 +59,8 @@ class frMarker : public frFig
         srcs_(in.srcs_),
         iter_(),
         vioHasDir_(in.vioHasDir_),
-        vioIsH_(in.vioIsH_)
+        vioIsH_(in.vioIsH_),
+        index_in_owner_(0)
   {
   }
   // setters

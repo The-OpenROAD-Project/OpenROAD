@@ -318,6 +318,7 @@ class FlexDRWorker
         markers_(),
         rq_(this),
         gcWorker_(nullptr),
+        dist_port_(0),
         dist_on_(false),
         isCongested_(false),
         save_updates_(false)

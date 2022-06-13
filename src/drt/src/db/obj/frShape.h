@@ -69,8 +69,8 @@ class frShape : public frPinFig
 
   virtual void setIter(frListIter<std::unique_ptr<frShape>>& in) = 0;
   virtual frListIter<std::unique_ptr<frShape>> getIter() const = 0;
-  void setOrderInOwner(int idx) { order_in_owner_ = idx; }
-  int getOrderInOwner() const { return order_in_owner_; }
+  void setIndexInOwner(int idx) { index_in_owner_ = idx; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
   bool hasPin() const override
   {
@@ -80,11 +80,11 @@ class frShape : public frPinFig
 
  protected:
   // constructors
-  frShape() : frPinFig(), owner_(nullptr), order_in_owner_(0) {}
-  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), order_in_owner_(0) {}
+  frShape() : frPinFig(), owner_(nullptr), index_in_owner_(0) {}
+  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), index_in_owner_(0) {}
 
   frBlockObject* owner_; // general back pointer 0
-  int order_in_owner_;
+  int index_in_owner_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

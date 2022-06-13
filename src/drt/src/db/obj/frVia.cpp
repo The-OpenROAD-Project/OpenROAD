@@ -35,7 +35,7 @@
 using namespace std;
 using namespace fr;
 
-frVia::frVia(const drVia& in) : owner_(nullptr), order_in_owner_(0)
+frVia::frVia(const drVia& in) : owner_(nullptr), index_in_owner_(0)
 {
   in.getOrigin(origin_);
   viaDef_ = in.getViaDef();
@@ -65,7 +65,7 @@ void frVia::serialize(Archive& ar, const unsigned int version)
     tmp = topConnected_;
     (ar) & tmp;
   }
-  (ar) & order_in_owner_;
+  (ar) & index_in_owner_;
   serializeViaDef(ar, viaDef_);
   serializeBlockObject(ar, owner_);
 }
