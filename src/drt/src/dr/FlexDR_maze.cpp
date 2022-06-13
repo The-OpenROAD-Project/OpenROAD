@@ -518,7 +518,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   Point pt;
   frCoord dx, dy;
   frVia sVia;
-  frMIdx zIdx = isUpperVia ? z : z - 1;
+  frMIdx zIdx = isUpperVia ? z + 1 : z - 1;
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
     // check via2cut to box
     // check whether via can be placed on the pin
