@@ -97,7 +97,7 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
     workers_.pop();
     ip = w.ip;
     port = w.port;
-    if (w.priority != std::numeric_limits<int>::max())
+    if (w.priority != std::numeric_limits<unsigned short>::max())
       w.priority++;
     workers_.push(w);
   }

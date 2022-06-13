@@ -557,25 +557,25 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         break;
       }
       case frcBTerm: {
-        int id = ((frBTerm*) obj)->getOrderId();
+        int id = ((frBTerm*) obj)->getIndexInOwner();
         (ar) & id;
         break;
       }
       case frcBlockage: {
-        int id = ((frBlockage*) obj)->getOrderId();
+        int id = ((frBlockage*) obj)->getIndexInOwner();
         (ar) & id;
         break;
       }
       case frcInstTerm: {
         int inst_id = ((frInstTerm*) obj)->getInst()->getId();
-        int id = ((frInstTerm*) obj)->getOrderId();
+        int id = ((frInstTerm*) obj)->getIndexInOwner();
         (ar) & inst_id;
         (ar) & id;
         break;
       }
       case frcInstBlockage: {
         int inst_id = ((frInstBlockage*) obj)->getInst()->getId();
-        int id = ((frInstBlockage*) obj)->getOrderId();
+        int id = ((frInstBlockage*) obj)->getIndexInOwner();
         (ar) & inst_id;
         (ar) & id;
         break;
