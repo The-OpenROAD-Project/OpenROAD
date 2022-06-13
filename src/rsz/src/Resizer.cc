@@ -171,6 +171,7 @@ Resizer::Resizer() :
   unique_inst_index_(1),
   resize_count_(0),
   inserted_buffer_count_(0),
+  buffer_moved_into_core_(false),
   max_wire_length_(0)
 {
 }
@@ -441,6 +442,7 @@ Resizer::bufferInputs()
   findBuffers();
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
+  buffer_moved_into_core_ = false;
 
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
@@ -518,6 +520,8 @@ Resizer::bufferOutputs()
   init();
   findBuffers();
   inserted_buffer_count_ = 0;
+  buffer_moved_into_core_ = false;
+
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
@@ -604,23 +608,6 @@ Resizer::bufferOutput(Pin *top_pin,
 ////////////////////////////////////////////////////////////////
 
 bool
-Resizer::hasInputPort(const Net *net)
-{
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)
-        && network_->direction(pin)->isAnyInput()) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
-}
-
-bool
 Resizer::hasPort(const Net *net)
 {
   bool has_top_level_port = false;
@@ -688,25 +675,6 @@ Resizer::hasFanout(Vertex *drvr)
   return edge_iter.hasNext();
 }
 
-void
-Resizer::makeEquivCells()
-{
-  LibertyLibrarySeq libs;
-  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    LibertyLibrary *lib = lib_iter->next();
-    // massive kludge until makeEquivCells is fixed to only incldue link cells
-    LibertyCellIterator cell_iter(lib);
-    if (cell_iter.hasNext()) {
-      LibertyCell *cell = cell_iter.next();
-      if (isLinkCell(cell))
-        libs.push_back(lib);
-    }
-  }
-  delete lib_iter;
-  sta_->makeEquivCells(&libs, nullptr);
-}
-
 static float
 targetLoadDist(float load_cap,
                float target_load)
@@ -732,6 +700,25 @@ Resizer::resizePreamble()
   makeEquivCells();
   findBuffers();
   findTargetLoads();
+}
+
+void
+Resizer::makeEquivCells()
+{
+  LibertyLibrarySeq libs;
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
+    // massive kludge until makeEquivCells is fixed to only incldue link cells
+    LibertyCellIterator cell_iter(lib);
+    if (cell_iter.hasNext()) {
+      LibertyCell *cell = cell_iter.next();
+      if (isLinkCell(cell))
+        libs.push_back(lib);
+    }
+  }
+  delete lib_iter;
+  sta_->makeEquivCells(&libs, nullptr);
 }
 
 int
@@ -1646,9 +1633,9 @@ Resizer::makeUniqueNetName()
 {
   string node_name;
   Instance *top_inst = network_->topInstance();
-  do 
+  do {
     stringPrint(node_name, "net%d", unique_net_index_++);
-  while (network_->findNet(top_inst, node_name.c_str()));
+  } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
 
@@ -1671,10 +1658,10 @@ Resizer::makeUniqueInstName(const char *base_name,
                             bool underscore)
 {
   string inst_name;
-  do 
+  do {
     stringPrint(inst_name, underscore ? "%s_%d" : "%s%d",
                 base_name, unique_inst_index_++);
-  while (network_->findInstance(inst_name.c_str()));
+  } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
 
@@ -2318,17 +2305,25 @@ Resizer::setLocation(dbInst *db_inst,
   if (core_exists_) {
     dbMaster *master = db_inst->getMaster();
     int width = master->getWidth();
-    if (x < core_.xMin())
+    if (x < core_.xMin()) {
       x = core_.xMin();
-    else if (x > core_.xMax() - width)
+      buffer_moved_into_core_ = true;
+    }
+    else if (x > core_.xMax() - width) {
       // Make sure the instance is entirely inside core.
       x = core_.xMax() - width;
+      buffer_moved_into_core_ = true;
+    }
 
     int height = master->getHeight();
-    if (y < core_.yMin())
+    if (y < core_.yMin()) {
       y = core_.yMin();
-    else if (y > core_.yMax() - height)
+      buffer_moved_into_core_ = true;
+    }
+    else if (y > core_.yMax() - height) {
       y = core_.yMax() - height;
+      buffer_moved_into_core_ = true;
+    }
   }
 
   db_inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -2392,6 +2387,13 @@ Resizer::checkLoadSlews(const Pin *drvr_pin,
     }
   }
   delete pin_iter;
+}
+
+void
+Resizer::warnBufferMovedIntoCore()
+{
+  if (buffer_moved_into_core_)
+    logger_->warn(RSZ, 77, "some buffers were moved inside the core.");
 }
 
 void
