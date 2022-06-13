@@ -12,12 +12,12 @@ on:
 
 jobs:
   build:
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - name: Setup xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '12.4.0'
+          xcode-version: latest-stable
       - name: Install lemon
         run: |
           wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz
@@ -46,9 +46,4 @@ jobs:
           cmake ..  -D TCL_LIB_PATHS=/usr/local/opt/tcl-tk/lib \
                     -D TCL_NO_DEFAULT_PATH=TRUE \
                     -D Qt5_DIR=${MY_QT_PATH}
-          make -j
-      # Enable tmate debugging of manually-triggered workflows
-      # if the input option was provided
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+          make -j 12

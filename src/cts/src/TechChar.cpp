@@ -519,14 +519,28 @@ void TechChar::initCharacterization()
       = db_->findMaster(options_->getSinkBuffer().c_str());
 
   for (odb::dbMTerm* masterTerminal : charBuf_->getMTerms()) {
-    if (masterTerminal->getIoType() == odb::dbIoType::INPUT
-        && masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
+    if (masterTerminal->getIoType() == odb::dbIoType::INPUT &&
+        (masterTerminal->getSigType() == odb::dbSigType::SIGNAL ||
+         masterTerminal->getSigType() == odb::dbSigType::CLOCK)) {
       charBufIn_ = masterTerminal->getName();
-    } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT
-               && masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
+    } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT &&
+               masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
       charBufOut_ = masterTerminal->getName();
     }
   }
+
+  if (charBufIn_.empty()) {
+    logger_->error(
+        CTS, 534,
+        "Could not find buffer input port for {}.", bufMasterName);
+  }
+
+  if (charBufOut_.empty()) {
+    logger_->error(
+        CTS, 541,
+        "Could not find buffer output port for {}.", bufMasterName);
+  }
+  
   // Creates the new characterization block. (Wiresegments are created here
   // instead of the main block)
   std::string characterizationBlockName = "CharacterizationBlock";
