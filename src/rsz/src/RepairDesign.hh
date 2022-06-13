@@ -177,6 +177,7 @@ private:
   float bufferSlew(LibertyCell *buffer_cell,
                    float load_cap,
                    const DcalcAnalysisPt *dcalc_ap);
+  bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
