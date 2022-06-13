@@ -46,4 +46,4 @@ jobs:
           cmake ..  -D TCL_LIB_PATHS=/usr/local/opt/tcl-tk/lib \
                     -D TCL_NO_DEFAULT_PATH=TRUE \
                     -D Qt5_DIR=${MY_QT_PATH}
-          make -j
+          make -j 12
