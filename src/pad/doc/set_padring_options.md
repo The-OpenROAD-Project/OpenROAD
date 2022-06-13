@@ -8,7 +8,8 @@
       [-offsets offsets] \
       [-pad_inst_pattern pad_inst_pattern] \
       [-pad_pin_pattern pad_pin_pattern] \
-      [-pin_layer pin_layer_name] \
+      [-pad_pin_layer pin_layer_name] \
+      [-pin_layer layer_name] \
       [-connect_by_abutment signal_list] \
       [-allow_filler_overlap]
 ```
@@ -23,6 +24,9 @@ The -offsets option is used to define the offset of the edge of the pads from th
 The -pad_inst_pattern option allows a format string to be used to define a default instance name for the padcell connected to a top-level pin of the design.
 
 The -pad_pin_pattern option is used to define a pattern that is to be used to derive the actual signal name in the design from the signal specified with the add_pad command.
+
+The -pad_pin_layer option specifies which layer is used for the pad connection on the padcells of the library.
+The -pin_layer option is used to specify which layer is to be used to create top level pins in the design.
 
 The -connect_by_abutment option is used to define the list of signals that are connected by abutment through the padring. The placement of breaker cells within the padring can result in these signals being split into a number of different nets.
 
@@ -40,7 +44,8 @@ The -allow_filler_overlap option allows the smallest filler cell to be inserted 
 | -offsets | Specifies the offset, in microns, from the edges of the die area to corresponding edges of the padcells. |
 | -pad_inst_pattern | Specify the name of padcell instances based upon the given format string. The format string is expected to include %s somewhere within the string, which will be replaced by the signal name associated with each pad instance. |
 | -pad_pin_pattern | Specify the name of the signal to connect to the padcell based upon the given format string. The format string is expected to include %s somewhere within the string, which will be replaced by the signal name associated with the pad instance. |
-| -pin_layer | Specify the layer which is to be used to create a top level pin over the pin of the padcell. The creation of a physical pin at this location identifies pin locations for LVS (layout-versus-schematic) verification. |
+| -pad_pin_layer | Specifies the layer used in the padcells for the pad connection. |
+| -pin_layer | Specify the layer which is to be used to create a top level pin. The creation of a physical pin at this location identifies pin locations for LVS (layout-versus-schematic) verification. |
 | -connect_by_abutment | Specify the list of signals that connect by abutment in the padring. The placement of breaker cells in the padring will split these signals into separate nets as required. |
 | -allow_filler_overlap | Allow the insertion of the smallest IO filler cell to overlap with padcells. Only use when this is supported by the IO library you are using. |
 
