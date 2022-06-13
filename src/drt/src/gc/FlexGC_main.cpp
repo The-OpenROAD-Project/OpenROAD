@@ -1403,7 +1403,6 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
       maxArea = gtl::area(rect);
     }
   }
-
   auto marker = make_unique<frMarker>();
   Rect markerBox(
       gtl::xl(maxRect), gtl::yl(maxRect), gtl::xh(maxRect), gtl::yh(maxRect));
@@ -1784,7 +1783,7 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
   }
 
   // min area
-  // checkMetalShape_minArea(pin);
+   checkMetalShape_minArea(pin);
 
   // min step
   checkMetalShape_minStep(pin);
