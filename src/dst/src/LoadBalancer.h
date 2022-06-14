@@ -29,6 +29,7 @@
 #pragma once
 #include <boost/asio.hpp>
 #include <boost/asio/thread_pool.hpp>
+#include <boost/thread/thread.hpp>
 #include <mutex>
 #include <queue>
 #include <vector>
@@ -38,9 +39,6 @@
 namespace utl {
 class Logger;
 }
-
-namespace asio = boost::asio;
-using asio::ip::udp;
 
 namespace dst {
 class Distributed;
@@ -52,12 +50,13 @@ class LoadBalancer
                asio::io_service& io_service,
                utl::Logger* logger,
                const char* ip,
+               const char* workers_domain,
                unsigned short port = 1234);
+  ~LoadBalancer();
   void addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
-  void lookUpWorkers(const char* domain, unsigned short port);
-  
+
  private:
   struct worker
   {
@@ -70,7 +69,7 @@ class LoadBalancer
     }
     bool operator==(const worker& rhs) const
     {
-      return (ip == rhs.ip && port == rhs.port);
+      return (ip == rhs.ip && port == rhs.port && priority == rhs.priority);
     }
   };
   struct CompareWorker
@@ -85,16 +84,18 @@ class LoadBalancer
   tcp::acceptor acceptor_;
   asio::io_service* service;
   utl::Logger* logger_;
-  std::vector<worker> workers_set;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
   std::mutex pool_mutex_;
   uint32_t jobs_;
+  std::atomic<bool> alive = true;
+  boost::thread workers_lookup_thread;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,
                      const boost::system::error_code& err);
+  void lookUpWorkers(const char* domain, unsigned short port);
   friend class dst::BalancerConnection;
 };
 }  // namespace dst

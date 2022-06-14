@@ -91,15 +91,16 @@ void Distributed::runWorker(const char* ip,
   }
 }
 
-void Distributed::runLoadBalancer(const char* ip, unsigned short port, const char* workers_domain)
+void Distributed::runLoadBalancer(const char* ip,
+                                  unsigned short port,
+                                  const char* workers_domain)
 {
   try {
     asio::io_service io_service;
-    LoadBalancer balancer(this, io_service, logger_, ip, port);
-    boost::thread t(boost::bind(&LoadBalancer::lookUpWorkers, &balancer, workers_domain, port));
-    t.detach();
-    for (auto worker : end_points_)
-      balancer.addWorker(worker.ip, worker.port);
+    LoadBalancer balancer(this, io_service, logger_, ip, workers_domain, port);
+    if (std::strcmp(workers_domain, "-1") != 0)
+      for (auto worker : end_points_)
+        balancer.addWorker(worker.ip, worker.port);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
@@ -140,9 +141,8 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
     auto bufs = receive_buffer.data();
     auto offset = asio::buffers_begin(bufs) + receive_buffer.size();
     std::string result = "";
-    if(offset <= asio::buffers_end(bufs))
-      result = std::string(asio::buffers_begin(bufs),
-                          offset);
+    if (offset <= asio::buffers_end(bufs))
+      result = std::string(asio::buffers_begin(bufs), offset);
 
     dataStr = result;
     if (dataStr == "")
