@@ -53,26 +53,21 @@ class DetailedMgr;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedParams
+struct DetailedParams
 {
- public:
-  DetailedParams() : m_targetUt(1.0) { m_script = ""; }
-  virtual ~DetailedParams() {}
-
- public:
-  std::string m_script;
-  double m_targetUt;
+  std::string script_;
+  double targetUt_ = 1.0;
 };
 
 class Detailed
 {
  public:
   Detailed(DetailedParams& params)
-      : m_params(params),
-        m_mgr(nullptr),
-        m_arch(nullptr),
-        m_network(nullptr),
-        m_rt(nullptr)
+      : params_(params),
+        mgr_(nullptr),
+        arch_(nullptr),
+        network_(nullptr),
+        rt_(nullptr)
   {
   }
   virtual ~Detailed() {}
@@ -81,16 +76,16 @@ class Detailed
   // bool improve( Architecture* arch, Network* network, RoutingParams* rt );
   bool improve(DetailedMgr& mgr);
 
- protected:
+ private:
   void doDetailedCommand(std::vector<std::string>& args);
 
-  DetailedParams& m_params;
+  DetailedParams& params_;
 
-  DetailedMgr* m_mgr;
+  DetailedMgr* mgr_;
 
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 };
 
 }  // namespace dpo

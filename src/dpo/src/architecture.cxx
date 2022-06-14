@@ -51,12 +51,12 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Architecture() : m_useSpacingTable(false), m_usePadding(false)
+Architecture::Architecture() : useSpacingTable_(false), usePadding_(false)
 {
-  m_xmin = std::numeric_limits<int>::max();
-  m_xmax = std::numeric_limits<int>::lowest();
-  m_ymin = std::numeric_limits<int>::max();
-  m_ymax = std::numeric_limits<int>::lowest();
+  xmin_ = std::numeric_limits<int>::max();
+  xmax_ = std::numeric_limits<int>::lowest();
+  ymin_ = std::numeric_limits<int>::max();
+  ymax_ = std::numeric_limits<int>::lowest();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,32 +65,32 @@ Architecture::~Architecture()
 {
   clear_edge_type();
 
-  for (size_t r = 0; r < m_rows.size(); r++) {
-    delete m_rows[r];
+  for (size_t r = 0; r < rows_.size(); r++) {
+    delete rows_[r];
   }
-  m_rows.clear();
+  rows_.clear();
 
-  for (size_t r = 0; r < m_regions.size(); r++) {
-    delete m_regions[r];
+  for (size_t r = 0; r < regions_.size(); r++) {
+    delete regions_[r];
   }
-  m_regions.clear();
+  regions_.clear();
 
   clearSpacingTable();
 }
 
 void Architecture::clearSpacingTable()
 {
-  for (size_t i = 0; i < m_cellSpacings.size(); i++) {
-    delete m_cellSpacings[i];
+  for (size_t i = 0; i < cellSpacings_.size(); i++) {
+    delete cellSpacings_[i];
   }
-  m_cellSpacings.clear();
+  cellSpacings_.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isSingleHeightCell(Node* ndi) const
 {
-  int spanned = (int) (ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
+  int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
   return spanned == 1;
 }
 
@@ -98,7 +98,7 @@ bool Architecture::isSingleHeightCell(Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isMultiHeightCell(Node* ndi) const
 {
-  int spanned = (int) (ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
+  int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
   return spanned != 1;
 }
 
@@ -106,7 +106,7 @@ bool Architecture::isMultiHeightCell(Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellHeightInRows(Node* ndi) const
 {
-  int spanned = (int) (ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
+  int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
   return spanned;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ struct compareIntervals
 Architecture::Row* Architecture::createAndAddRow()
 {
   Architecture::Row* ptr = new Row();
-  m_rows.push_back(ptr);
+  rows_.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,7 +135,7 @@ Architecture::Row* Architecture::createAndAddRow()
 Architecture::Region* Architecture::createAndAddRegion()
 {
   Architecture::Region* ptr = new Region();
-  m_regions.push_back(ptr);
+  regions_.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,23 +149,23 @@ int Architecture::postProcess(Network* network)
   // It would be better to update the architecture to simply understand
   // subrows...
 
-  m_xmin = std::numeric_limits<int>::max();
-  m_xmax = std::numeric_limits<int>::lowest();
-  m_ymin = std::numeric_limits<int>::max();
-  m_ymax = std::numeric_limits<int>::lowest();
+  xmin_ = std::numeric_limits<int>::max();
+  xmax_ = std::numeric_limits<int>::lowest();
+  ymin_ = std::numeric_limits<int>::max();
+  ymax_ = std::numeric_limits<int>::lowest();
 
   // Sort rows.
   std::stable_sort(
-      m_rows.begin(), m_rows.end(), Architecture::Row::compareRowBottom());
+      rows_.begin(), rows_.end(), Architecture::Row::compareRowBottom());
 
   // Determine a box surrounding all the rows.
-  for (int r = 0; r < m_rows.size(); r++) {
-    Architecture::Row* row = m_rows[r];
+  for (int r = 0; r < rows_.size(); r++) {
+    Architecture::Row* row = rows_[r];
 
-    m_xmin = std::min(m_xmin, row->getLeft());
-    m_xmax = std::max(m_xmax, row->getRight());
-    m_ymin = std::min(m_ymin, row->getBottom());
-    m_ymax = std::max(m_ymax, row->getTop());
+    xmin_ = std::min(xmin_, row->getLeft());
+    xmax_ = std::max(xmax_, row->getRight());
+    ymin_ = std::min(ymin_, row->getBottom());
+    ymax_ = std::max(ymax_, row->getTop());
   }
 
   // NEW.  Search for sub-rows.
@@ -173,12 +173,12 @@ int Architecture::postProcess(Network* network)
   std::vector<Architecture::Row*> rows;
   std::vector<std::pair<int, int>> intervals;
   int count = 0;
-  for (int r = 0; r < m_rows.size();) {
+  for (int r = 0; r < rows_.size();) {
     subrows.erase(subrows.begin(), subrows.end());
-    subrows.push_back(m_rows[r++]);
-    while (r < m_rows.size()
-           && std::abs(m_rows[r]->getBottom() - subrows[0]->getBottom()) == 0) {
-      subrows.push_back(m_rows[r++]);
+    subrows.push_back(rows_[r++]);
+    while (r < rows_.size()
+           && std::abs(rows_[r]->getBottom() - subrows[0]->getBottom()) == 0) {
+      subrows.push_back(rows_[r++]);
     }
 
     // Convert subrows to intervals.
@@ -233,8 +233,8 @@ int Architecture::postProcess(Network* network)
     // How do we set the id of the filler here?
     int height = subrows[0]->getHeight();
     int yb = subrows[0]->getBottom();
-    if (m_xmin < intervals.front().first) {
-      int lx = m_xmin;
+    if (xmin_ < intervals.front().first) {
+      int lx = xmin_;
       int rx = intervals.front().first;
       int width = rx - lx;
       Node* ndi = network->createAndAddFillerNode(lx, yb, width, height);
@@ -253,9 +253,9 @@ int Architecture::postProcess(Network* network)
         ++count;
       }
     }
-    if (m_xmax > intervals.back().second) {
+    if (xmax_ > intervals.back().second) {
       int lx = intervals.back().second;
-      int rx = m_xmax;
+      int rx = xmax_;
       int width = rx - lx;
       Node* ndi = network->createAndAddFillerNode(lx, yb, width, height);
       std::string name = "FILLER_" + std::to_string(count);
@@ -264,14 +264,14 @@ int Architecture::postProcess(Network* network)
     }
   }
   // Replace original rows with new rows.
-  m_rows.erase(m_rows.begin(), m_rows.end());
-  m_rows.insert(m_rows.end(), rows.begin(), rows.end());
+  rows_.erase(rows_.begin(), rows_.end());
+  rows_.insert(rows_.end(), rows.begin(), rows.end());
   // Sort rows (to be safe).
   std::stable_sort(
-      m_rows.begin(), m_rows.end(), Architecture::Row::compareRowBottom());
+      rows_.begin(), rows_.end(), Architecture::Row::compareRowBottom());
   // Assign row ids.
-  for (int r = 0; r < m_rows.size(); r++) {
-    m_rows[r]->setId(r);
+  for (int r = 0; r < rows_.size(); r++) {
+    rows_[r]->setId(r);
   }
   return count;
 }
@@ -283,17 +283,17 @@ int Architecture::find_closest_row(int y)
   // Given a position which is intended to be the bottom of a cell,
   // find its closest row.
   int r = 0;
-  if (y > m_rows[0]->getBottom()) {
+  if (y > rows_[0]->getBottom()) {
     std::vector<Architecture::Row*>::iterator row_l;
     row_l = std::lower_bound(
-        m_rows.begin(), m_rows.end(), y, Architecture::Row::compareRowBottom());
-    if (row_l == m_rows.end() || (*row_l)->getBottom() > y) {
+        rows_.begin(), rows_.end(), y, Architecture::Row::compareRowBottom());
+    if (row_l == rows_.end() || (*row_l)->getBottom() > y) {
       --row_l;
     }
-    r = (int) (row_l - m_rows.begin());
-    if (r < m_rows.size() - 1) {
-      if (std::abs(m_rows[r + 1]->getBottom() - y)
-          < std::abs(m_rows[r]->getBottom() - y)) {
+    r = (int) (row_l - rows_.begin());
+    if (r < rows_.size() - 1) {
+      if (std::abs(rows_[r + 1]->getBottom() - y)
+          < std::abs(rows_[r]->getBottom() - y)) {
         ++r;
       }
     }
@@ -316,7 +316,7 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
                        + 0.5);  // Number of spanned rows.
   int lo = row->getId();
   int hi = lo + spanned - 1;
-  if (hi >= m_rows.size())
+  if (hi >= rows_.size())
     return false;  // off the top of the chip.
   if (hi == lo) {
     // Single height cell.  Actually, is the check for a single height cell any
@@ -324,8 +324,8 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
     // the top and the bottom...  However, I think this is beyond the current
     // goal...
 
-    int rowBot = m_rows[lo]->getBottomPower();
-    int rowTop = m_rows[hi]->getTopPower();
+    int rowBot = rows_[lo]->getBottomPower();
+    int rowTop = rows_[hi]->getTopPower();
 
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
@@ -342,8 +342,8 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
     return true;
   } else {
     // Multi-height cell.
-    int rowBot = m_rows[lo]->getBottomPower();
-    int rowTop = m_rows[hi]->getTopPower();
+    int rowBot = rows_[lo]->getBottomPower();
+    int rowTop = rows_[hi]->getTopPower();
 
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
@@ -376,7 +376,7 @@ void Architecture::addCellSpacingUsingTable(int firstEdge,
                                             int secondEdge,
                                             int sep)
 {
-  m_cellSpacings.push_back(
+  cellSpacings_.push_back(
       new Architecture::Spacing(firstEdge, secondEdge, sep));
 }
 
@@ -384,7 +384,7 @@ void Architecture::addCellSpacingUsingTable(int firstEdge,
 ////////////////////////////////////////////////////////////////////////////////
 void Architecture::addCellPadding(Node* ndi, int leftPadding, int rightPadding)
 {
-  m_cellPaddings[ndi->getId()] = std::make_pair(leftPadding, rightPadding);
+  cellPaddings_[ndi->getId()] = std::make_pair(leftPadding, rightPadding);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -394,7 +394,7 @@ bool Architecture::getCellPadding(Node* ndi,
                                   int& rightPadding)
 {
   std::map<int, std::pair<int, int>>::iterator it;
-  if (m_cellPaddings.end() == (it = m_cellPaddings.find(ndi->getId()))) {
+  if (cellPaddings_.end() == (it = cellPaddings_.find(ndi->getId()))) {
     rightPadding = 0;
     leftPadding = 0;
     return false;
@@ -417,27 +417,27 @@ int Architecture::getCellSpacing(Node* leftNode, Node* rightNode)
   // I suppose that we should account for padding; e.g., we might
   // be at the end of a segment.
   int retval = 0;
-  if (m_useSpacingTable) {
+  if (useSpacingTable_) {
     // Don't need this if one of the cells is null.
     int i1 = (leftNode == 0) ? -1 : leftNode->getRightEdgeType();
     int i2 = (rightNode == 0) ? -1 : rightNode->getLeftEdgeType();
     retval = std::max(retval, getCellSpacingUsingTable(i1, i2));
   }
-  if (m_usePadding) {
+  if (usePadding_) {
     // Separation is padding to the right of the left cell plus
     // the padding to the left of the right cell.
     std::map<int, std::pair<int, int>>::iterator it;
 
     int separation = 0;
     if (leftNode != 0) {
-      if (m_cellPaddings.end()
-          != (it = m_cellPaddings.find(leftNode->getId()))) {
+      if (cellPaddings_.end()
+          != (it = cellPaddings_.find(leftNode->getId()))) {
         separation += it->second.second;
       }
     }
     if (rightNode != 0) {
-      if (m_cellPaddings.end()
-          != (it = m_cellPaddings.find(rightNode->getId()))) {
+      if (cellPaddings_.end()
+          != (it = cellPaddings_.find(rightNode->getId()))) {
         separation += it->second.first;
       }
     }
@@ -458,22 +458,22 @@ int Architecture::getCellSpacingUsingTable(int i1, int i2)
   int spacing = 0;
 
   if (i1 == -1 && i2 == -1) {
-    for (int i = 0; i < m_cellSpacings.size(); i++) {
-      Architecture::Spacing* ptr = m_cellSpacings[i];
+    for (int i = 0; i < cellSpacings_.size(); i++) {
+      Architecture::Spacing* ptr = cellSpacings_[i];
       spacing = std::max(spacing, ptr->getSeparation());
     }
     return spacing;
   } else if (i1 == -1) {
-    for (int i = 0; i < m_cellSpacings.size(); i++) {
-      Architecture::Spacing* ptr = m_cellSpacings[i];
+    for (int i = 0; i < cellSpacings_.size(); i++) {
+      Architecture::Spacing* ptr = cellSpacings_[i];
       if (ptr->getFirstEdge() == i2 || ptr->getSecondEdge() == i2) {
         spacing = std::max(spacing, ptr->getSeparation());
       }
     }
     return spacing;
   } else if (i2 == -1) {
-    for (int i = 0; i < m_cellSpacings.size(); i++) {
-      Architecture::Spacing* ptr = m_cellSpacings[i];
+    for (int i = 0; i < cellSpacings_.size(); i++) {
+      Architecture::Spacing* ptr = cellSpacings_[i];
       if (ptr->getFirstEdge() == i1 || ptr->getSecondEdge() == i1) {
         spacing = std::max(spacing, ptr->getSeparation());
       }
@@ -481,8 +481,8 @@ int Architecture::getCellSpacingUsingTable(int i1, int i2)
     return spacing;
   }
 
-  for (int i = 0; i < m_cellSpacings.size(); i++) {
-    Architecture::Spacing* ptr = m_cellSpacings[i];
+  for (int i = 0; i < cellSpacings_.size(); i++) {
+    Architecture::Spacing* ptr = cellSpacings_[i];
     if ((ptr->getFirstEdge() == i1 && ptr->getSecondEdge() == i2)
         || (ptr->getFirstEdge() == i2 && ptr->getSecondEdge() == i1)) {
       spacing = std::max(spacing, ptr->getSeparation());
@@ -495,11 +495,11 @@ int Architecture::getCellSpacingUsingTable(int i1, int i2)
 ////////////////////////////////////////////////////////////////////////////////
 void Architecture::clear_edge_type()
 {
-  for (int i = 0; i < m_edgeTypes.size(); i++) {
-    if (m_edgeTypes[i].first != 0)
-      delete[] m_edgeTypes[i].first;
+  for (int i = 0; i < edgeTypes_.size(); i++) {
+    if (edgeTypes_[i].first != 0)
+      delete[] edgeTypes_[i].first;
   }
-  m_edgeTypes.clear();
+  edgeTypes_.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -509,15 +509,15 @@ void Architecture::init_edge_type()
   clear_edge_type();
   char* newName = new char[strlen("DEFAULT") + 1];
   strcpy(newName, "DEFAULT");
-  m_edgeTypes.push_back(std::pair<char*, int>(newName, EDGETYPE_DEFAULT));
+  edgeTypes_.push_back(std::pair<char*, int>(newName, EDGETYPE_DEFAULT));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::add_edge_type(const char* name)
 {
-  for (int i = 0; i < m_edgeTypes.size(); i++) {
-    std::pair<char*, int>& temp = m_edgeTypes[i];
+  for (int i = 0; i < edgeTypes_.size(); i++) {
+    std::pair<char*, int>& temp = edgeTypes_[i];
     if (strcmp(temp.first, name) == 0) {
       // Edge type already exists.
       return temp.second;
@@ -525,25 +525,25 @@ int Architecture::add_edge_type(const char* name)
   }
   char* newName = new char[strlen(name) + 1];
   strcpy(newName, name);
-  int n = (int) m_edgeTypes.size();
-  m_edgeTypes.push_back(std::pair<char*, int>(newName, n));
+  int n = (int) edgeTypes_.size();
+  edgeTypes_.push_back(std::pair<char*, int>(newName, n));
   return n;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Row::Row()
-    : m_id(-1),
-      m_rowLoc(0),
-      m_rowHeight(0),
-      m_subRowOrigin(0),
-      m_siteSpacing(0),
-      m_siteWidth(0),
-      m_numSites(0),
-      m_siteOrient(0),
-      m_siteSymmetry(0),
-      m_powerTop(RowPower_UNK),
-      m_powerBot(RowPower_UNK)
+    : id_(-1),
+      rowLoc_(0),
+      rowHeight_(0),
+      subRowOrigin_(0),
+      siteSpacing_(0),
+      siteWidth_(0),
+      numSites_(0),
+      siteOrient_(0),
+      siteSymmetry_(0),
+      powerTop_(RowPower_UNK),
+      powerBot_(RowPower_UNK)
 {
 }
 
@@ -556,18 +556,18 @@ Architecture::Row::~Row()
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Spacing::Spacing(int i1, int i2, int sep)
-    : m_i1(i1), m_i2(i2), m_sep(sep)
+    : i1_(i1), i2_(i2), sep_(sep)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Region::Region()
-    : m_id(-1),
-      m_xmin(std::numeric_limits<int>::max()),
-      m_ymin(std::numeric_limits<int>::max()),
-      m_xmax(std::numeric_limits<int>::lowest()),
-      m_ymax(std::numeric_limits<int>::lowest())
+    : id_(-1),
+      xmin_(std::numeric_limits<int>::max()),
+      ymin_(std::numeric_limits<int>::max()),
+      xmax_(std::numeric_limits<int>::lowest()),
+      ymax_(std::numeric_limits<int>::lowest())
 {
 }
 
@@ -575,7 +575,7 @@ Architecture::Region::Region()
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Region::~Region()
 {
-  m_rects.clear();
+  rects_.clear();
 }
 
 }  // namespace dpo

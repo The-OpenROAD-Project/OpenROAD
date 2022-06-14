@@ -85,16 +85,16 @@ class DetailedOrient
   unsigned orientFind(Node* ndi, int row);
   bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
 
- protected:
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  DetailedMgr* m_mgrPtr;
+  DetailedMgr* mgrPtr_;
 
-  int m_skipNetsLargerThanThis;
-  int m_traversal;
-  std::vector<int> m_edgeMask;
+  int skipNetsLargerThanThis_;
+  int traversal_;
+  std::vector<int> edgeMask_;
 };
 
 }  // namespace dpo

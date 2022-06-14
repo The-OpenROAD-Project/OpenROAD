@@ -68,14 +68,14 @@ DetailedHPWL::DetailedHPWL(Architecture* arch,
                            Network* network,
                            RoutingParams* rt)
     : DetailedObjective("hpwl"),
-      m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_mgrPtr(nullptr),
-      m_orientPtr(nullptr),
-      m_skipNetsLargerThanThis(100),
-      m_traversal(0),
-      m_edgeMask(m_network->getNumEdges(), m_traversal)
+      arch_(arch),
+      network_(network),
+      rt_(rt),
+      mgrPtr_(nullptr),
+      orientPtr_(nullptr),
+      skipNetsLargerThanThis_(100),
+      traversal_(0),
+      edgeMask_(network_->getNumEdges(), traversal_)
 {
 }
 
@@ -89,17 +89,17 @@ DetailedHPWL::~DetailedHPWL()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedHPWL::init()
 {
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
+  traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 {
-  m_orientPtr = orientPtr;
-  m_mgrPtr = mgrPtr;
+  orientPtr_ = orientPtr;
+  mgrPtr_ = mgrPtr;
   init();
 }
 
@@ -110,11 +110,11 @@ double DetailedHPWL::curr()
   double x, y;
   double hpwl = 0.;
   Rectangle box;
-  for (int i = 0; i < m_network->getNumEdges(); i++) {
-    Edge* edi = m_network->getEdge(i);
+  for (int i = 0; i < network_->getNumEdges(); i++) {
+    Edge* edi = network_->getEdge(i);
 
     int npins = edi->getNumPins();
-    if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+    if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
       continue;
     }
 
@@ -159,12 +159,12 @@ double DetailedHPWL::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], curOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
 
-  ++m_traversal;
+  ++traversal_;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
     for (int pi = 0; pi < ndi->getPins().size(); pi++) {
@@ -173,13 +173,13 @@ double DetailedHPWL::delta(int n,
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       old_box.reset();
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
@@ -201,12 +201,12 @@ double DetailedHPWL::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(newLeft[i]);
     nodes[i]->setBottom(newBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], newOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], newOri[i]);
     }
   }
 
-  ++m_traversal;
+  ++traversal_;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
@@ -215,13 +215,13 @@ double DetailedHPWL::delta(int n,
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       new_box.reset();
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
@@ -244,8 +244,8 @@ double DetailedHPWL::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], curOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
 
@@ -264,20 +264,20 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
   double x, y;
   Rectangle old_box, new_box;
 
-  ++m_traversal;
+  ++traversal_;
   for (int pi = 0; pi < ndi->getNumPins(); pi++) {
     Pin* pini = ndi->getPins()[pi];
 
     Edge* edi = pini->getEdge();
 
     int npins = edi->getNumPins();
-    if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+    if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
       continue;
     }
-    if (m_edgeMask[edi->getId()] == m_traversal) {
+    if (edgeMask_[edi->getId()] == traversal_) {
       continue;
     }
-    m_edgeMask[edi->getId()] = m_traversal;
+    edgeMask_[edi->getId()] = traversal_;
 
     old_box.reset();
     new_box.reset();
@@ -309,7 +309,7 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 void DetailedHPWL::getCandidates(std::vector<Node*>& candidates)
 {
   candidates.erase(candidates.begin(), candidates.end());
-  candidates = m_mgrPtr->m_singleHeightCells;
+  candidates = mgrPtr_->singleHeightCells_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -326,7 +326,7 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
   nodes[0] = ndi;
   nodes[1] = ndj;
 
-  ++m_traversal;
+  ++traversal_;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
@@ -336,13 +336,13 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
 
       // int npins = edi->getNumPins();
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       old_box.reset();
       new_box.reset();
@@ -394,7 +394,7 @@ double DetailedHPWL::delta(Node* ndi,
   nodes[0] = ndi;
   nodes[1] = ndj;
 
-  ++m_traversal;
+  ++traversal_;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
@@ -403,13 +403,13 @@ double DetailedHPWL::delta(Node* ndi,
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       old_box.reset();
       new_box.reset();

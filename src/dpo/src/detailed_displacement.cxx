@@ -67,13 +67,13 @@ DetailedDisplacement::DetailedDisplacement(Architecture* arch,
                                            Network* network,
                                            RoutingParams* rt)
     : DetailedObjective("disp"),
-      m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_mgrPtr(nullptr),
-      m_orientPtr(nullptr),
-      m_singleRowHeight(m_arch->getRow(0)->getHeight()),
-      m_nSets(0)
+      arch_(arch),
+      network_(network),
+      rt_(rt),
+      mgrPtr_(nullptr),
+      orientPtr_(nullptr),
+      singleRowHeight_(arch_->getRow(0)->getHeight()),
+      nSets_(0)
 {
 }
 
@@ -87,29 +87,29 @@ DetailedDisplacement::~DetailedDisplacement()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedDisplacement::init()
 {
-  m_nSets = 0;
-  m_count.resize(m_mgrPtr->m_multiHeightCells.size());
-  std::fill(m_count.begin(), m_count.end(), 0);
-  m_count[1] = (int) m_mgrPtr->m_singleHeightCells.size();
-  if (m_count[1] != 0) {
-    ++m_nSets;
+  nSets_ = 0;
+  count_.resize(mgrPtr_->multiHeightCells_.size());
+  std::fill(count_.begin(), count_.end(), 0);
+  count_[1] = (int) mgrPtr_->singleHeightCells_.size();
+  if (count_[1] != 0) {
+    ++nSets_;
   }
-  for (size_t i = 2; i < m_mgrPtr->m_multiHeightCells.size(); i++) {
-    m_count[i] = (int) m_mgrPtr->m_multiHeightCells[i].size();
-    if (m_count[i] != 0) {
-      ++m_nSets;
+  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+    count_[i] = (int) mgrPtr_->multiHeightCells_[i].size();
+    if (count_[i] != 0) {
+      ++nSets_;
     }
   }
-  m_tot.resize(m_mgrPtr->m_multiHeightCells.size());
-  m_del.resize(m_mgrPtr->m_multiHeightCells.size());
+  tot_.resize(mgrPtr_->multiHeightCells_.size());
+  del_.resize(mgrPtr_->multiHeightCells_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedDisplacement::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 {
-  m_orientPtr = orientPtr;
-  m_mgrPtr = mgrPtr;
+  orientPtr_ = orientPtr;
+  mgrPtr_ = mgrPtr;
   init();
 }
 
@@ -119,32 +119,32 @@ double DetailedDisplacement::curr()
 {
   double dx, dy;
 
-  std::fill(m_tot.begin(), m_tot.end(), 0.0);
-  for (size_t i = 0; i < m_mgrPtr->m_singleHeightCells.size(); i++) {
-    Node* ndi = m_mgrPtr->m_singleHeightCells[i];
+  std::fill(tot_.begin(), tot_.end(), 0.0);
+  for (size_t i = 0; i < mgrPtr_->singleHeightCells_.size(); i++) {
+    Node* ndi = mgrPtr_->singleHeightCells_[i];
 
     dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
-    m_tot[1] += dx + dy;
+    tot_[1] += dx + dy;
   }
-  for (size_t s = 2; s < m_mgrPtr->m_multiHeightCells.size(); s++) {
-    for (size_t i = 0; i < m_mgrPtr->m_multiHeightCells[s].size(); i++) {
-      Node* ndi = m_mgrPtr->m_multiHeightCells[s][i];
+  for (size_t s = 2; s < mgrPtr_->multiHeightCells_.size(); s++) {
+    for (size_t i = 0; i < mgrPtr_->multiHeightCells_[s].size(); i++) {
+      Node* ndi = mgrPtr_->multiHeightCells_[s][i];
 
       dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
       dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
-      m_tot[s] += dx + dy;
+      tot_[s] += dx + dy;
     }
   }
 
   double disp = 0.;
-  for (size_t i = 0; i < m_tot.size(); i++) {
-    if (m_count[i] != 0) {
-      disp += m_tot[i] / (double) m_count[i];
+  for (size_t i = 0; i < tot_.size(); i++) {
+    if (count_[i] != 0) {
+      disp += tot_[i] / (double) count_[i];
     }
   }
-  disp /= m_singleRowHeight;
-  disp /= (double) m_nSets;
+  disp /= singleRowHeight_;
+  disp /= (double) nSets_;
 
   return disp;
 }
@@ -165,26 +165,26 @@ double DetailedDisplacement::delta(int n,
 
   double dx, dy;
 
-  std::fill(m_del.begin(), m_del.end(), 0.0);
+  std::fill(del_.begin(), del_.end(), 0.0);
 
   // Put cells into their "old positions and orientations".
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], curOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
 
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
 
-    int spanned = (int) (ndi->getHeight() / m_singleRowHeight + 0.5);
+    int spanned = (int) (ndi->getHeight() / singleRowHeight_ + 0.5);
 
     dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
-    m_del[spanned] += (dx + dy);
+    del_[spanned] += (dx + dy);
     // old_disp += dx + dy;
   }
 
@@ -192,8 +192,8 @@ double DetailedDisplacement::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(newLeft[i]);
     nodes[i]->setBottom(newBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], newOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], newOri[i]);
     }
   }
 
@@ -203,27 +203,27 @@ double DetailedDisplacement::delta(int n,
     dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
-    int spanned = m_arch->getCellHeightInRows(ndi);
-    m_del[spanned] -= (dx + dy);
+    int spanned = arch_->getCellHeightInRows(ndi);
+    del_[spanned] -= (dx + dy);
   }
 
   // Put cells into their "old positions and orientations" before returning.
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (m_orientPtr != 0) {
-      m_orientPtr->orientAdjust(nodes[i], curOri[i]);
+    if (orientPtr_ != 0) {
+      orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
 
   double delta = 0.;
-  for (size_t i = 0; i < m_del.size(); i++) {
-    if (m_count[i] != 0) {
-      delta += m_del[i] / (double) m_count[i];
+  for (size_t i = 0; i < del_.size(); i++) {
+    if (count_[i] != 0) {
+      delta += del_[i] / (double) count_[i];
     }
   }
-  delta /= m_singleRowHeight;
-  delta /= (double) m_nSets;
+  delta /= singleRowHeight_;
+  delta /= (double) nSets_;
 
   // +ve means improvement.
   return delta;
@@ -260,7 +260,7 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y)
 void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
 {
   candidates.erase(candidates.begin(), candidates.end());
-  candidates = m_mgrPtr->m_singleHeightCells;
+  candidates = mgrPtr_->singleHeightCells_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

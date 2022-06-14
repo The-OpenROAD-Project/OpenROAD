@@ -73,15 +73,15 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
                                        Network* network,
                                        RoutingParams* rt)
     : DetailedGenerator("global swap"),
-      m_mgr(0),
-      m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_skipNetsLargerThanThis(100),
-      m_traversal(0),
-      m_attempts(0),
-      m_moves(0),
-      m_swaps(0)
+      mgr_(0),
+      arch_(arch),
+      network_(network),
+      rt_(rt),
+      skipNetsLargerThanThis_(100),
+      traversal_(0),
+      attempts_(0),
+      moves_(0),
+      swaps_(0)
 {
 }
 
@@ -89,15 +89,15 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
 ////////////////////////////////////////////////////////////////////////////////
 DetailedGlobalSwap::DetailedGlobalSwap()
     : DetailedGenerator("global swap"),
-      m_mgr(nullptr),
-      m_arch(nullptr),
-      m_network(nullptr),
-      m_rt(nullptr),
-      m_skipNetsLargerThanThis(100),
-      m_traversal(0),
-      m_attempts(0),
-      m_moves(0),
-      m_swaps(0)
+      mgr_(nullptr),
+      arch_(nullptr),
+      network_(nullptr),
+      rt_(nullptr),
+      skipNetsLargerThanThis_(100),
+      traversal_(0),
+      attempts_(0),
+      moves_(0),
+      swaps_(0)
 {
 }
 
@@ -134,10 +134,10 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 {
   // Given the arguments, figure out which routine to run to do the reordering.
 
-  m_mgr = mgrPtr;
-  m_arch = m_mgr->getArchitecture();
-  m_network = m_mgr->getNetwork();
-  m_rt = m_mgr->getRoutingParams();
+  mgr_ = mgrPtr;
+  arch_ = mgr_->getArchitecture();
+  network_ = mgr_->getNetwork();
+  rt_ = mgr_->getRoutingParams();
 
   int passes = 1;
   double tol = 0.01;
@@ -153,7 +153,7 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
   double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
 
-  curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   init_hpwl = curr_hpwl;
   for (int p = 1; p <= passes; p++) {
     last_hpwl = curr_hpwl;
@@ -164,9 +164,9 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     // region for each candidate cell.
     globalSwap();
 
-    curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+    curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    m_mgr->getLogger()->info(
+    mgr_->getLogger()->info(
         DPO, 306, "Pass {:3d} of global swaps; hpwl is {:.6e}.", p, curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
@@ -174,7 +174,7 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     }
   }
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  m_mgr->getLogger()->info(DPO,
+  mgr_->getLogger()->info(DPO,
                            307,
                            "End of global swaps; objective is {:.6e}, "
                            "improvement is {:.2f} percent.",
@@ -189,19 +189,19 @@ void DetailedGlobalSwap::globalSwap()
   // Nothing for than random greedy improvement with only a hpwl objective
   // and done such that every candidate cell is considered once!!!
 
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), 0);
+  traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
 
-  m_mgr->resortSegments();
+  mgr_->resortSegments();
 
   // Get candidate cells.
-  std::vector<Node*> candidates = m_mgr->m_singleHeightCells;
-  Utility::random_shuffle(candidates.begin(), candidates.end(), m_mgr->m_rng);
+  std::vector<Node*> candidates = mgr_->singleHeightCells_;
+  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
 
   // Wirelength objective.
-  DetailedHPWL hpwlObj(m_arch, m_network, m_rt);
-  hpwlObj.init(m_mgr, NULL);  // Ignore orientation.
+  DetailedHPWL hpwlObj(arch_, network_, rt_);
+  hpwlObj.init(mgr_, NULL);  // Ignore orientation.
 
   double currHpwl = hpwlObj.curr();
   double nextHpwl = 0.;
@@ -213,22 +213,22 @@ void DetailedGlobalSwap::globalSwap()
       continue;
     }
 
-    double delta = hpwlObj.delta(m_mgr->m_nMoved,
-                                 m_mgr->m_movedNodes,
-                                 m_mgr->m_curLeft,
-                                 m_mgr->m_curBottom,
-                                 m_mgr->m_curOri,
-                                 m_mgr->m_newLeft,
-                                 m_mgr->m_newBottom,
-                                 m_mgr->m_newOri);
+    double delta = hpwlObj.delta(mgr_->nMoved_,
+                                 mgr_->movedNodes_,
+                                 mgr_->curLeft_,
+                                 mgr_->curBottom_,
+                                 mgr_->curOri_,
+                                 mgr_->newLeft_,
+                                 mgr_->newBottom_,
+                                 mgr_->newOri_);
 
     nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
     if (nextHpwl <= currHpwl) {
-      m_mgr->acceptMove();
+      mgr_->acceptMove();
       currHpwl = nextHpwl;
     } else {
-      m_mgr->rejectMove();
+      mgr_->rejectMove();
     }
   }
   return;
@@ -246,13 +246,13 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   Pin* pin;
   unsigned t = 0;
 
-  double xmin = m_arch->getMinX();
-  double xmax = m_arch->getMaxX();
-  double ymin = m_arch->getMinY();
-  double ymax = m_arch->getMaxY();
+  double xmin = arch_->getMinX();
+  double xmax = arch_->getMaxX();
+  double ymin = arch_->getMinY();
+  double ymax = arch_->getMaxY();
 
-  m_xpts.erase(m_xpts.begin(), m_xpts.end());
-  m_ypts.erase(m_ypts.begin(), m_ypts.end());
+  xpts_.erase(xpts_.begin(), xpts_.end());
+  ypts_.erase(ypts_.begin(), ypts_.end());
   for (int n = 0; n < nd->getNumPins(); n++) {
     pin = nd->getPins()[n];
 
@@ -263,7 +263,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
-    } else if (numPins > m_skipNetsLargerThanThis) {
+    } else if (numPins > skipNetsLargerThanThis_) {
       continue;
     } else {
       if (!calculateEdgeBB(ed, nd, nodeBbox)) {
@@ -284,11 +284,11 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
 
     // Record the location and pin offset used to generate this point.
 
-    m_xpts.push_back(nodeBbox.xmin());
-    m_xpts.push_back(nodeBbox.xmax());
+    xpts_.push_back(nodeBbox.xmin());
+    xpts_.push_back(nodeBbox.xmax());
 
-    m_ypts.push_back(nodeBbox.ymin());
-    m_ypts.push_back(nodeBbox.ymax());
+    ypts_.push_back(nodeBbox.ymin());
+    ypts_.push_back(nodeBbox.ymax());
 
     ++t;
     ++t;
@@ -303,14 +303,14 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   // Get the median values.
   mid = t >> 1;
 
-  std::sort(m_xpts.begin(), m_xpts.end());
-  std::sort(m_ypts.begin(), m_ypts.end());
+  std::sort(xpts_.begin(), xpts_.end());
+  std::sort(ypts_.begin(), ypts_.end());
 
-  nodeBbox.set_xmin(m_xpts[mid - 1]);
-  nodeBbox.set_xmax(m_xpts[mid]);
+  nodeBbox.set_xmin(xpts_[mid - 1]);
+  nodeBbox.set_xmax(xpts_[mid]);
 
-  nodeBbox.set_ymin(m_ypts[mid - 1]);
-  nodeBbox.set_ymax(m_ypts[mid]);
+  nodeBbox.set_ymin(ypts_[mid - 1]);
+  nodeBbox.set_ymax(ypts_[mid]);
 
   return true;
 }
@@ -357,20 +357,20 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
   double x, y;
   Rectangle old_box, new_box;
 
-  ++m_traversal;
+  ++traversal_;
   for (int pi = 0; pi < ndi->getPins().size(); pi++) {
     Pin* pini = ndi->getPins()[pi];
 
     Edge* edi = pini->getEdge();
 
     int npins = edi->getNumPins();
-    if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+    if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
       continue;
     }
-    if (m_edgeMask[edi->getId()] == m_traversal) {
+    if (edgeMask_[edi->getId()] == traversal_) {
       continue;
     }
-    m_edgeMask[edi->getId()] = m_traversal;
+    edgeMask_[edi->getId()] = traversal_;
 
     old_box.reset();
     new_box.reset();
@@ -412,7 +412,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
   nodes[0] = ndi;
   nodes[1] = ndj;
 
-  ++m_traversal;
+  ++traversal_;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
     for (int pi = 0; pi < ndi->getPins().size(); pi++) {
@@ -421,13 +421,13 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       old_box.reset();
       new_box.reset();
@@ -485,7 +485,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   // to move closer to it.  Or, we could just reject if we cannot
   // get into the optimal region.
   int dispX, dispY;
-  m_mgr->getMaxDisplacement(dispX, dispY);
+  mgr_->getMaxDisplacement(dispX, dispY);
   Rectangle_d lbox(ndi->getLeft() - dispX,
                    ndi->getBottom() - dispY,
                    ndi->getLeft() + dispX,
@@ -511,10 +511,10 @@ bool DetailedGlobalSwap::generate(Node* ndi)
     bbox.set_ymax(std::min(bbox.ymax(), lbox.ymax()));
   }
 
-  if (m_mgr->m_reverseCellToSegs[ndi->getId()].size() != 1) {
+  if (mgr_->reverseCellToSegs_[ndi->getId()].size() != 1) {
     return false;
   }
-  int si = m_mgr->m_reverseCellToSegs[ndi->getId()][0]->getSegId();
+  int si = mgr_->reverseCellToSegs_[ndi->getId()][0]->getSegId();
 
   // Position target so center of cell at center of box.
   int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
@@ -523,11 +523,11 @@ bool DetailedGlobalSwap::generate(Node* ndi)
                             - 0.5 * ndi->getHeight());
 
   // Row and segment for the destination.
-  int rj = m_arch->find_closest_row(yj);
-  yj = m_arch->getRow(rj)->getBottom();  // Row alignment.
+  int rj = arch_->find_closest_row(yj);
+  yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
-  for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
-    DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
+  for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
+    DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
     if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
       sj = segPtr->getSegId();
       break;
@@ -536,16 +536,16 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != m_mgr->m_segments[sj]->getRegId()) {
+  if (ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
     return false;
   }
 
-  if (m_mgr->tryMove(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
-    ++m_moves;
+  if (mgr_->tryMove(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
+    ++moves_;
     return true;
   }
-  if (m_mgr->trySwap(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
-    ++m_swaps;
+  if (mgr_->trySwap(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
+    ++swaps_;
     return true;
   }
   return false;
@@ -555,14 +555,14 @@ bool DetailedGlobalSwap::generate(Node* ndi)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedGlobalSwap::init(DetailedMgr* mgr)
 {
-  m_mgr = mgr;
-  m_arch = mgr->getArchitecture();
-  m_network = mgr->getNetwork();
-  m_rt = mgr->getRoutingParams();
+  mgr_ = mgr;
+  arch_ = mgr->getArchitecture();
+  network_ = mgr->getNetwork();
+  rt_ = mgr->getRoutingParams();
 
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), 0);
+  traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -570,14 +570,14 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
 bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
                                   std::vector<Node*>& candidates)
 {
-  ++m_attempts;
+  ++attempts_;
 
-  m_mgr = mgr;
-  m_arch = mgr->getArchitecture();
-  m_network = mgr->getNetwork();
-  m_rt = mgr->getRoutingParams();
+  mgr_ = mgr;
+  arch_ = mgr->getArchitecture();
+  network_ = mgr->getNetwork();
+  rt_ = mgr->getRoutingParams();
 
-  Node* ndi = candidates[(*(m_mgr->m_rng))() % (candidates.size())];
+  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
 
   return generate(ndi);
 }
@@ -586,15 +586,15 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedGlobalSwap::stats()
 {
-  m_mgr->getLogger()->info(
+  mgr_->getLogger()->info(
       DPO,
       334,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
       getName().c_str(),
-      m_attempts,
-      m_swaps,
-      m_moves);
+      attempts_,
+      swaps_,
+      moves_);
 }
 
 }  // namespace dpo

@@ -63,7 +63,7 @@ class DetailedVerticalSwap : public DetailedGenerator
   virtual void stats();
   virtual void init(DetailedMgr* mgr);
 
- protected:
+ private:
   void verticalSwap();  // tries to avoid overlap.
   bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
   bool getRange(Node*, Rectangle&);
@@ -73,23 +73,23 @@ class DetailedVerticalSwap : public DetailedGenerator
   bool generate(Node* ndi);
 
   // Standard stuff.
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // Other.
-  int m_skipNetsLargerThanThis;
-  std::vector<int> m_edgeMask;
-  int m_traversal;
+  int skipNetsLargerThanThis_;
+  std::vector<int> edgeMask_;
+  int traversal_;
 
-  std::vector<double> m_xpts;
-  std::vector<double> m_ypts;
+  std::vector<double> xpts_;
+  std::vector<double> ypts_;
 
   // For use as a move generator.
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
 }  // namespace dpo

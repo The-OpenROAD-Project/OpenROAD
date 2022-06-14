@@ -82,7 +82,7 @@ class Optdp
                         int max_displacement_x,
                         int max_displacement_y);
 
- protected:
+ private:
   void import();
   void updateDbInstLocations();
 
@@ -97,7 +97,6 @@ class Optdp
   void setUpPlacementRegions();
   unsigned dbToDpoOrient(dbOrientType orient);
 
- protected:
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   dpl::Opendp* opendp_;

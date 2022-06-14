@@ -87,7 +87,7 @@ class DetailedRandom
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
- protected:
+ private:
   double go();
 
   double eval(std::vector<double>& costs, std::vector<std::string>& expr);
@@ -99,32 +99,32 @@ class DetailedRandom
   void collectCandidates();
 
   // Standard stuff.
-  DetailedMgr* m_mgrPtr;
+  DetailedMgr* mgrPtr_;
 
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // Candidate cells.
-  std::vector<Node*> m_candidates;
+  std::vector<Node*> candidates_;
 
   // For generating move lists.
-  std::vector<DetailedGenerator*> m_generators;
+  std::vector<DetailedGenerator*> generators_;
 
   // For evaluating objectives.
-  std::vector<DetailedObjective*> m_objectives;
+  std::vector<DetailedObjective*> objectives_;
 
   // Parameters controlling the moves.
-  double m_movesPerCandidate;
+  double movesPerCandidate_;
 
   // For costing.
-  std::vector<double> m_initCost;
-  std::vector<double> m_currCost;
-  std::vector<double> m_nextCost;
-  std::vector<double> m_deltaCost;
+  std::vector<double> initCost_;
+  std::vector<double> currCost_;
+  std::vector<double> nextCost_;
+  std::vector<double> deltaCost_;
 
   // For obj evaluation.
-  std::vector<std::string> m_expr;
+  std::vector<std::string> expr_;
 };
 
 class RandomGenerator : public DetailedGenerator
@@ -138,15 +138,15 @@ class RandomGenerator : public DetailedGenerator
   virtual void stats();
   virtual void init(DetailedMgr*) {}
 
- protected:
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
 class DisplacementGenerator : public DetailedGenerator
@@ -160,15 +160,15 @@ class DisplacementGenerator : public DetailedGenerator
   virtual void stats();
   virtual void init(DetailedMgr*) {}
 
- protected:
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
 }  // namespace dpo

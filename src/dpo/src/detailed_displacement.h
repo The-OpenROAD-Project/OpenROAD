@@ -85,20 +85,20 @@ class DetailedDisplacement : public DetailedObjective
                double target_xj,
                double target_yj);
 
- protected:
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  DetailedMgr* m_mgrPtr;
-  DetailedOrient* m_orientPtr;
+  DetailedMgr* mgrPtr_;
+  DetailedOrient* orientPtr_;
 
   // Other.
-  double m_singleRowHeight;
-  std::vector<double> m_tot;
-  std::vector<double> m_del;
-  std::vector<int> m_count;
-  int m_nSets;
+  double singleRowHeight_;
+  std::vector<double> tot_;
+  std::vector<double> del_;
+  std::vector<int> count_;
+  int nSets_;
 };
 
 }  // namespace dpo

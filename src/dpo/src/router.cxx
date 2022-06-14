@@ -88,13 +88,13 @@ double RoutingParams::get_spacing(int layer,
 
 double RoutingParams::get_spacing(int layer, double width, double parallel)
 {
-  std::vector<double>& w = m_spacingTableWidth[layer];
-  std::vector<double>& p = m_spacingTableLength[layer];
+  std::vector<double>& w = spacingTableWidth_[layer];
+  std::vector<double>& p = spacingTableLength_[layer];
 
   if (w.size() == 0 || p.size() == 0) {
     // This means no spacing table is present.  So, return the minimum wire
     // spacing for the layer...
-    return m_wire_spacing[layer];
+    return wire_spacing_[layer];
   }
 
   int i = (int) w.size() - 1;
@@ -104,24 +104,24 @@ double RoutingParams::get_spacing(int layer, double width, double parallel)
   while (j > 0 && parallel <= p[j])
     j--;
 
-  return m_spacingTable[layer][i][j];
+  return spacingTable_[layer][i][j];
 }
 
 double RoutingParams::get_maximum_spacing(int layer)
 {
-  std::vector<double>& w = m_spacingTableWidth[layer];
-  std::vector<double>& p = m_spacingTableLength[layer];
+  std::vector<double>& w = spacingTableWidth_[layer];
+  std::vector<double>& p = spacingTableLength_[layer];
 
   if (w.size() == 0 || p.size() == 0) {
     // This means no spacing table is present.  So, return the minimum wire
     // spacing for the layer...
-    return m_wire_spacing[layer];
+    return wire_spacing_[layer];
   }
 
   int i = (int) w.size() - 1;
   int j = (int) p.size() - 1;
 
-  return m_spacingTable[layer][i][j];
+  return spacingTable_[layer][i][j];
 }
 
 }  // namespace dpo

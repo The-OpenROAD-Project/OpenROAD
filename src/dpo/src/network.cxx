@@ -44,24 +44,24 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Node::Node()
-    : m_id(0),
-      m_left(0),
-      m_bottom(0),
-      m_origLeft(0.0),
-      m_origBottom(0.0),
-      m_w(0.0),
-      m_h(0.0),
-      m_type(0),
-      m_fixed(NodeFixed_NOT_FIXED),
-      m_attributes(NodeAttributes_EMPTY),
-      m_etl(EDGETYPE_DEFAULT),
-      m_etr(EDGETYPE_DEFAULT),
-      m_powerTop(dpo::RowPower_UNK),
-      m_powerBot(dpo::RowPower_UNK),
-      m_regionId(0),
-      m_currentOrient(Orientation_N),
-      m_availOrient(Orientation_N),
-      m_isDefinedByShapes(false)
+    : id_(0),
+      left_(0),
+      bottom_(0),
+      origLeft_(0.0),
+      origBottom_(0.0),
+      w_(0.0),
+      h_(0.0),
+      type_(0),
+      fixed_(NodeFixed_NOT_FIXED),
+      attributes_(NodeAttributes_EMPTY),
+      etl_(EDGETYPE_DEFAULT),
+      etr_(EDGETYPE_DEFAULT),
+      powerTop_(dpo::RowPower_UNK),
+      powerBot_(dpo::RowPower_UNK),
+      regionId_(0),
+      currentOrient_(Orientation_N),
+      availOrient_(Orientation_N),
+      isDefinedByShapes_(false)
 {
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ bool Node::adjustCurrOrient(unsigned newOri)
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
   // changing the edge types as well as the height and width.
-  unsigned curOri = m_currentOrient;
+  unsigned curOri = currentOrient_;
   if (newOri == curOri) {
     return true;
   }
@@ -87,14 +87,14 @@ bool Node::adjustCurrOrient(unsigned newOri)
     if (newOri == Orientation_N || curOri == Orientation_FN
         || curOri == Orientation_FS || curOri == Orientation_S) {
       // Rotate the cell counter-clockwise by 90 degrees.
-      for (int pi = 0; pi < m_pins.size(); pi++) {
-        Pin* pin = m_pins[pi];
+      for (int pi = 0; pi < pins_.size(); pi++) {
+        Pin* pin = pins_[pi];
         double dx = pin->getOffsetX();
         double dy = pin->getOffsetY();
         pin->setOffsetX(-dy);
         pin->setOffsetY(dx);
       }
-      std::swap(m_h, m_w);
+      std::swap(h_, w_);
       if (curOri == Orientation_E) {
         curOri = Orientation_N;
       } else if (curOri == Orientation_FE) {
@@ -109,14 +109,14 @@ bool Node::adjustCurrOrient(unsigned newOri)
     if (newOri == Orientation_E || curOri == Orientation_FE
         || curOri == Orientation_FW || curOri == Orientation_W) {
       // Rotate the cell clockwise by 90 degrees.
-      for (int pi = 0; pi < m_pins.size(); pi++) {
-        Pin* pin = m_pins[pi];
+      for (int pi = 0; pi < pins_.size(); pi++) {
+        Pin* pin = pins_[pi];
         double dx = pin->getOffsetX();
         double dy = pin->getOffsetY();
         pin->setOffsetX(dy);
         pin->setOffsetY(-dx);
       }
-      std::swap(m_h, m_w);
+      std::swap(h_, w_);
       if (curOri == Orientation_N) {
         curOri = Orientation_E;
       } else if (curOri == Orientation_FS) {
@@ -160,21 +160,21 @@ bool Node::adjustCurrOrient(unsigned newOri)
     }
   }
 
-  for (int pi = 0; pi < m_pins.size(); pi++) {
-    Pin* pin = m_pins[pi];
+  for (int pi = 0; pi < pins_.size(); pi++) {
+    Pin* pin = pins_[pi];
     pin->setOffsetX(pin->getOffsetX() * mX);
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
   if (changeEdgeTypes) {
-    std::swap(m_etl, m_etr);
+    std::swap(etl_, etr_);
   }
-  m_currentOrient = newOri;
+  currentOrient_ = newOri;
   return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Edge::Edge() : m_id(0), m_ndr(0)
+Edge::Edge() : id_(0), ndr_(0)
 {
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,14 +186,14 @@ Edge::~Edge()
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Pin::Pin(void)
-    : m_pinWidth(0),
-      m_pinHeight(0),
-      m_dir(Pin::Dir_INOUT),
-      m_pinLayer(0),
-      m_node(nullptr),
-      m_edge(nullptr),
-      m_offsetX(0.0),
-      m_offsetY(0.0)
+    : pinWidth_(0),
+      pinHeight_(0),
+      dir_(Pin::Dir_INOUT),
+      pinLayer_(0),
+      node_(nullptr),
+      edge_(nullptr),
+      offsetX_(0.0),
+      offsetY_(0.0)
 {
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -213,24 +213,24 @@ Network::Network()
 Network::~Network()
 {
   // Delete edges.
-  for (int i = 0; i < m_edges.size(); i++) {
-    delete m_edges[i];
+  for (int i = 0; i < edges_.size(); i++) {
+    delete edges_[i];
   }
-  m_edges.clear();
-  m_edgeNames.clear();
+  edges_.clear();
+  edgeNames_.clear();
 
   // Delete cells.
-  for (int i = 0; i < m_nodes.size(); i++) {
-    delete m_nodes[i];
+  for (int i = 0; i < nodes_.size(); i++) {
+    delete nodes_[i];
   }
-  m_nodes.clear();
-  m_nodeNames.clear();
+  nodes_.clear();
+  nodeNames_.clear();
 
   // Delete pins.
-  for (int i = 0; i < m_pins.size(); i++) {
-    delete m_pins[i];
+  for (int i = 0; i < pins_.size(); i++) {
+    delete pins_[i];
   }
-  m_pins.clear();
+  pins_.clear();
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -238,10 +238,10 @@ Edge* Network::createAndAddEdge(void)
 {
   // Just allocate an edge, append it and give it the id
   // that corresponds to its index.
-  int id = (int) m_edges.size();
+  int id = (int) edges_.size();
   Edge* ptr = new Edge();
   ptr->setId(id);
-  m_edges.push_back(ptr);
+  edges_.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -250,10 +250,10 @@ Node* Network::createAndAddNode(void)
 {
   // Just allocate a node, append it and give it the id
   // that corresponds to its index.
-  int id = (int) m_nodes.size();
+  int id = (int) nodes_.size();
   Node* ptr = new Node();
   ptr->setId(id);
-  m_nodes.push_back(ptr);
+  nodes_.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -264,7 +264,7 @@ Node* Network::createAndAddFillerNode(int left,
                                       int height)
 {
   Node* ndi = new Node();
-  int id = (int) m_nodes.size();
+  int id = (int) nodes_.size();
   ndi->setFixed(NodeFixed_FIXED_XY);
   ndi->setType(NodeType_FILLER);
   ndi->setId(id);
@@ -272,7 +272,7 @@ Node* Network::createAndAddFillerNode(int left,
   ndi->setWidth(width);
   ndi->setBottom(bottom);
   ndi->setLeft(left);
-  m_nodes.push_back(ndi);
+  nodes_.push_back(ndi);
   return getNode(id);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -285,7 +285,7 @@ Node* Network::createAndAddShapeNode(int left,
   // Add shape cells to list of network cells.  We have
   // the parent node from which we can derive a name.
   Node* ndi = new Node();
-  int id = (int) m_nodes.size();
+  int id = (int) nodes_.size();
   ndi->setFixed(NodeFixed_FIXED_XY);
   ndi->setType(NodeType_SHAPE);
   ndi->setId(id);
@@ -293,7 +293,7 @@ Node* Network::createAndAddShapeNode(int left,
   ndi->setWidth(width);
   ndi->setBottom(bottom);
   ndi->setLeft(left);
-  m_nodes.push_back(ndi);
+  nodes_.push_back(ndi);
   return getNode(id);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -301,7 +301,7 @@ Node* Network::createAndAddShapeNode(int left,
 Pin* Network::createAndAddPin(void)
 {
   Pin* ptr = new Pin();
-  m_pins.push_back(ptr);
+  pins_.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -309,10 +309,10 @@ Pin* Network::createAndAddPin(void)
 Pin* Network::createAndAddPin(Node* nd, Edge* ed)
 {
   Pin* ptr = createAndAddPin();
-  ptr->m_node = nd;
-  ptr->m_edge = ed;
-  ptr->m_node->m_pins.push_back(ptr);
-  ptr->m_edge->m_pins.push_back(ptr);
+  ptr->node_ = nd;
+  ptr->edge_ = ed;
+  ptr->node_->pins_.push_back(ptr);
+  ptr->edge_->pins_.push_back(ptr);
   return ptr;
 }
 

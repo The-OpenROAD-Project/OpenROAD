@@ -142,18 +142,18 @@ void Optdp::improvePlacement(int seed,
     // Everything done through a script string.
 
     dpo::DetailedParams dtParams;
-    dtParams.m_script = "";
+    dtParams.script_ = "";
     // Maximum independent set matching.
-    dtParams.m_script += "mis -p 10 -t 0.005;";
+    dtParams.script_ += "mis -p 10 -t 0.005;";
     // Global swaps.
-    dtParams.m_script += "gs -p 10 -t 0.005;";
+    dtParams.script_ += "gs -p 10 -t 0.005;";
     // Vertical swaps.
-    dtParams.m_script += "vs -p 10 -t 0.005;";
+    dtParams.script_ += "vs -p 10 -t 0.005;";
     // Small reordering.
-    dtParams.m_script += "ro -p 10 -t 0.005;";
+    dtParams.script_ += "ro -p 10 -t 0.005;";
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
-    dtParams.m_script += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+    dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
 
     // Run the script.
     dpo::Detailed dt(dtParams);

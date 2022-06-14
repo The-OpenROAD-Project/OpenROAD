@@ -47,7 +47,6 @@
 
 #include "detailed_manager.h"
 #include "detailed_segment.h"
-#include "plotgnu.h"
 #include "utility.h"
 #include "utl/Logger.h"
 
@@ -60,13 +59,13 @@ namespace dpo {
 DetailedReorderer::DetailedReorderer(Architecture* arch,
                                      Network* network,
                                      RoutingParams* rt)
-    : m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_mgrPtr(nullptr),
-      m_skipNetsLargerThanThis(100),
-      m_traversal(0),
-      m_windowSize(3)
+    : arch_(arch),
+      network_(network),
+      rt_(rt),
+      mgrPtr_(nullptr),
+      skipNetsLargerThanThis_(100),
+      traversal_(0),
+      windowSize_(3)
 {
 }
 
@@ -102,37 +101,37 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 {
   // Given the arguments, figure out which routine to run to do the reordering.
 
-  m_mgrPtr = mgrPtr;
+  mgrPtr_ = mgrPtr;
 
-  m_windowSize = 3;
+  windowSize_ = 3;
 
   int passes = 1;
   double tol = 0.01;
   for (size_t i = 1; i < args.size(); i++) {
     if (args[i] == "-w" && i + 1 < args.size()) {
-      m_windowSize = std::atoi(args[++i].c_str());
+      windowSize_ = std::atoi(args[++i].c_str());
     } else if (args[i] == "-p" && i + 1 < args.size()) {
       passes = std::atoi(args[++i].c_str());
     } else if (args[i] == "-t" && i + 1 < args.size()) {
       tol = std::atof(args[++i].c_str());
     }
   }
-  m_windowSize = std::min(4, std::max(2, m_windowSize));
+  windowSize_ = std::min(4, std::max(2, windowSize_));
   tol = std::max(tol, 0.01);
 
   double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
 
-  m_mgrPtr->resortSegments();
-  curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  mgrPtr_->resortSegments();
+  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   init_hpwl = curr_hpwl;
   for (int p = 1; p <= passes; p++) {
     last_hpwl = curr_hpwl;
 
     reorder();
 
-    curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+    curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    m_mgrPtr->getLogger()->info(
+    mgrPtr_->getLogger()->info(
         DPO,
         304,
         "Pass {:3d} of reordering; objective is {:.6e}.",
@@ -144,10 +143,10 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       break;
     }
   }
-  m_mgrPtr->resortSegments();
+  mgrPtr_->resortSegments();
 
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  m_mgrPtr->getLogger()->info(
+  mgrPtr_->getLogger()->info(
       DPO,
       305,
       "End of reordering; objective is {:.6e}, improvement is {:.2f} percent.",
@@ -159,9 +158,9 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 ///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::reorder()
 {
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
+  traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
 
   int rightLimit = 0.;
   int leftLimit = 0.;
@@ -169,12 +168,12 @@ void DetailedReorderer::reorder()
   int leftPadding = 0.;
 
   // Loop over each segment; find single height cells and reorder.
-  for (int s = 0; s < m_mgrPtr->getNumSegments(); s++) {
-    DetailedSeg* segPtr = m_mgrPtr->getSegment(s);
+  for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
+    DetailedSeg* segPtr = mgrPtr_->getSegment(s);
     int segId = segPtr->getSegId();
     int rowId = segPtr->getRowId();
 
-    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segId];
+    std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segId];
     if (nodes.size() < 2) {
       continue;
     }
@@ -183,34 +182,34 @@ void DetailedReorderer::reorder()
     int j = 0;
     int n = (int) nodes.size();
     while (j < n) {
-      while (j < n && m_arch->isMultiHeightCell(nodes[j])) {
+      while (j < n && arch_->isMultiHeightCell(nodes[j])) {
         ++j;
       }
       int jstrt = j;
-      while (j < n && m_arch->isSingleHeightCell(nodes[j])) {
+      while (j < n && arch_->isSingleHeightCell(nodes[j])) {
         ++j;
       }
       int jstop = j - 1;
 
       // Single height cells in [jstrt,jstop].
-      for (int i = jstrt; i + m_windowSize <= jstop; ++i) {
+      for (int i = jstrt; i + windowSize_ <= jstop; ++i) {
         int istrt = i;
-        int istop = std::min(jstop, istrt + m_windowSize - 1);
+        int istop = std::min(jstop, istrt + windowSize_ - 1);
         if (istop == jstop) {
-          istrt = std::max(jstrt, istop - m_windowSize + 1);
+          istrt = std::max(jstrt, istop - windowSize_ + 1);
         }
 
         Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
         rightLimit = segPtr->getMaxX();
         if (nextPtr != 0) {
-          m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
+          arch_->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
               (int) std::floor(nextPtr->getLeft() - leftPadding), rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
         leftLimit = segPtr->getMinX();
         if (prevPtr != 0) {
-          m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
+          arch_->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
               (int) std::ceil(prevPtr->getRight() + rightPadding), leftLimit);
         }
@@ -250,7 +249,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
   std::vector<int> width(size, 0);
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
-    m_arch->getCellPadding(ndi, left[i], right[i]);
+    arch_->getCellPadding(ndi, left[i], right[i]);
     width[i] = (int) std::ceil(ndi->getWidth());
     totalPadding += (left[i] + right[i]);
     totalWidth += width[i];
@@ -264,7 +263,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
   // somewhat evenly by adding extra space to the padding.
   int spacePerCell
       = ((rightLimit - leftLimit) - (totalWidth + totalPadding)) / size;
-  int siteWidth = m_arch->getRow(0)->getSiteWidth();
+  int siteWidth = arch_->getRow(0)->getSiteWidth();
   int sitePerCellTotal = spacePerCell / siteWidth;
   int sitePerCellRight = (sitePerCellTotal >> 1);
   int sitePerCellLeft = sitePerCellTotal - sitePerCellRight;
@@ -317,7 +316,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       x += right[ix];
 
       double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
         dispOkay = false;
       }
     }
@@ -361,7 +360,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       Node* ndi = nodes[jstrt + i];
 
       int x = ndi->getLeft();
-      if (!m_mgrPtr->alignPos(ndi, x, left, rightLimit)) {
+      if (!mgrPtr_->alignPos(ndi, x, left, rightLimit)) {
         failed = true;
         break;
       }
@@ -372,7 +371,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       left = ndi->getRight();
 
       double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
         failed = true;
         break;
       }
@@ -408,7 +407,7 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt, int istop)
 {
   // Compute hpwl for the specified sequence of cells.
 
-  ++m_traversal;
+  ++traversal_;
 
   double cost = 0.;
   for (int i = istrt; i <= istop; i++) {
@@ -420,13 +419,13 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt, int istop)
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
-      if (m_edgeMask[edi->getId()] == m_traversal) {
+      if (edgeMask_[edi->getId()] == traversal_) {
         continue;
       }
-      m_edgeMask[edi->getId()] = m_traversal;
+      edgeMask_[edi->getId()] = traversal_;
 
       double xmin = std::numeric_limits<double>::max();
       double xmax = -std::numeric_limits<double>::max();

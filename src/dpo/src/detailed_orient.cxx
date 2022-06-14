@@ -61,13 +61,13 @@ namespace dpo {
 DetailedOrient::DetailedOrient(Architecture* arch,
                                Network* network,
                                RoutingParams* rt)
-    : m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_mgrPtr(nullptr),
-      m_skipNetsLargerThanThis(100),
-      m_traversal(0),
-      m_edgeMask(m_network->getNumEdges(), m_traversal)
+    : arch_(arch),
+      network_(network),
+      rt_(rt),
+      mgrPtr_(nullptr),
+      skipNetsLargerThanThis_(100),
+      traversal_(0),
+      edgeMask_(network_->getNumEdges(), traversal_)
 {
 }
 
@@ -104,11 +104,11 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Ensure each movable cell is oriented correctly.  Also consider
   // cell flipping to reduce wirelength.
 
-  m_mgrPtr = mgrPtr;
+  mgrPtr_ = mgrPtr;
 
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
+  traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
 
   bool doFlip = false;
   for (size_t i = 1; i < args.size(); i++) {
@@ -117,21 +117,21 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     }
   }
 
-  m_mgrPtr->getLogger()->info(DPO, 380, "Cell flipping.");
+  mgrPtr_->getLogger()->info(DPO, 380, "Cell flipping.");
   double hpwl_x, hpwl_y;
-  double init_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  double init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
   // Orient cells correctly for each row.
   int changed = 0;
   int errors = orientCells(changed);
   if (errors != 0) {
-    m_mgrPtr->getLogger()->warn(
+    mgrPtr_->getLogger()->warn(
         DPO,
         381,
         "Encountered {:d} issues when orienting cells for rows.",
         errors);
   }
-  m_mgrPtr->getLogger()->info(
+  mgrPtr_->getLogger()->info(
       DPO,
       382,
       "Changed {:d} cell orientations for row compatibility.",
@@ -140,12 +140,12 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Optionally perform cell flipping.
   if (doFlip) {
     int nflips = flipCells();
-    m_mgrPtr->getLogger()->info(DPO, 383, "Performed {:d} cell flips.", nflips);
+    mgrPtr_->getLogger()->info(DPO, 383, "Performed {:d} cell flips.", nflips);
   }
 
-  double curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  double curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  m_mgrPtr->getLogger()->info(
+  mgrPtr_->getLogger()->info(
       DPO,
       384,
       "End of flipping; objective is {:.6e}, improvement is {:.2f} percent.",
@@ -163,24 +163,24 @@ int DetailedOrient::orientCells(int& changed)
   // segment/row contains the cell).
   changed = 0;
   int errors = 0;
-  for (int i = 0; i < m_network->getNumNodes(); i++) {
-    Node* ndi = m_network->getNode(i);
+  for (int i = 0; i < network_->getNumNodes(); i++) {
+    Node* ndi = network_->getNode(i);
     if (!(ndi->isTerminal() || ndi->isTerminalNI() || ndi->isFixed())) {
       // Figure out the lowest row for the cell.  Not that single
       // height cells are only in one row.
-      int bottom = m_arch->getNumRows();
-      for (int s = 0; s < m_mgrPtr->m_reverseCellToSegs[ndi->getId()].size();
+      int bottom = arch_->getNumRows();
+      for (int s = 0; s < mgrPtr_->reverseCellToSegs_[ndi->getId()].size();
            s++) {
-        DetailedSeg* segPtr = m_mgrPtr->m_reverseCellToSegs[ndi->getId()][s];
+        DetailedSeg* segPtr = mgrPtr_->reverseCellToSegs_[ndi->getId()][s];
         bottom = std::min(bottom, segPtr->getRowId());
       }
-      if (bottom < m_arch->getNumRows()) {
+      if (bottom < arch_->getNumRows()) {
         unsigned origOrient = ndi->getCurrOrient();
-        if (m_arch->isSingleHeightCell(ndi)) {
+        if (arch_->isSingleHeightCell(ndi)) {
           if (!orientSingleHeightCellForRow(ndi, bottom)) {
             ++errors;
           }
-        } else if (m_arch->isMultiHeightCell(ndi)) {
+        } else if (arch_->isMultiHeightCell(ndi)) {
           if (!orientMultiHeightCellForRow(ndi, bottom)) {
             ++errors;
           }
@@ -211,7 +211,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   //
   // Is this correct?
   bool flip = false;
-  if (m_arch->power_compatible(ndi, m_arch->getRow(row), flip)) {
+  if (arch_->power_compatible(ndi, arch_->getRow(row), flip)) {
     if (flip) {
       // Flip the pins.
       for (int pi = 0; pi < ndi->getPins().size(); pi++) {
@@ -262,12 +262,12 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   // need to swap edge types or cell paddings since this
   // routine is only going to swap using X-symmetry.
 
-  if (!m_arch->isSingleHeightCell(ndi)) {
+  if (!arch_->isSingleHeightCell(ndi)) {
     // Must be a single height cell.
     return false;
   }
 
-  unsigned rowOri = m_arch->getRow(row)->getOrient();
+  unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {
@@ -329,20 +329,20 @@ int DetailedOrient::flipCells()
   double lx, rx;
 
   int nflips = 0;
-  for (int s = 0; s < m_mgrPtr->m_segments.size(); s++) {
-    DetailedSeg* segment = m_mgrPtr->m_segments[s];
+  for (int s = 0; s < mgrPtr_->segments_.size(); s++) {
+    DetailedSeg* segment = mgrPtr_->segments_[s];
 
     int row = segment->getRowId();
 
-    if ((m_arch->getRow(row)->getSymmetry() & Symmetry_Y) == 0) {
+    if ((arch_->getRow(row)->getSymmetry() & Symmetry_Y) == 0) {
       continue;
     }
 
-    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segment->getSegId()];
+    std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segment->getSegId()];
     for (int i = 0; i < nodes.size(); i++) {
       Node* ndi = nodes[i];
       // Only consider single height cells.
-      if (!m_arch->isSingleHeightCell(ndi)) {
+      if (!arch_->isSingleHeightCell(ndi)) {
         continue;
       }
 
@@ -350,20 +350,20 @@ int DetailedOrient::flipCells()
       // we only need to play with the pin offsets in X-direction.
       double oldHpwl = 0.;
       double newHpwl = 0.;
-      ++m_traversal;
+      ++traversal_;
       for (int pi = 0; pi < ndi->getPins().size(); pi++) {
         Pin* pini = ndi->getPins()[pi];
 
         Edge* edi = pini->getEdge();
 
         int npins = edi->getNumPins();
-        if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
+        if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
           continue;
         }
-        if (m_edgeMask[edi->getId()] == m_traversal) {
+        if (edgeMask_[edi->getId()] == traversal_) {
           continue;
         }
-        m_edgeMask[edi->getId()] = m_traversal;
+        edgeMask_[edi->getId()] = traversal_;
 
         double oldMinX = std::numeric_limits<double>::max();
         double oldMaxX = std::numeric_limits<double>::lowest();
@@ -401,18 +401,18 @@ int DetailedOrient::flipCells()
       Node* ndr = (i == nodes.size() - 1) ? nullptr : nodes[i + 1];
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
       if (ndl) {
-        m_arch->getCellPadding(ndl, leftPadding, rightPadding);
+        arch_->getCellPadding(ndl, leftPadding, rightPadding);
         lx += rightPadding;
       }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
       if (ndr) {
-        m_arch->getCellPadding(ndr, leftPadding, rightPadding);
+        arch_->getCellPadding(ndr, leftPadding, rightPadding);
         rx -= leftPadding;
       }
       // Based on padding, the cell plus its padding must
       // reside within [lx,rx] _after_ the flip.  So,
       // reverse the paddings.
-      m_arch->getCellPadding(ndi, leftPadding, rightPadding);
+      arch_->getCellPadding(ndi, leftPadding, rightPadding);
       if (ndi->getLeft() - rightPadding < lx
           || ndi->getRight() + leftPadding > rx) {
         continue;
@@ -421,12 +421,12 @@ int DetailedOrient::flipCells()
       // Check potential violation due to edge spacing.
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
       if (ndl) {
-        lx += m_arch->getCellSpacingUsingTable(ndl->getRightEdgeType(),
+        lx += arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
                                                ndi->getRightEdgeType());
       }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
       if (ndr) {
-        rx -= m_arch->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
+        rx -= arch_->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
                                                ndr->getLeftEdgeType());
       }
       // Based on edge spacing, the cell must reside within
@@ -449,8 +449,8 @@ int DetailedOrient::flipCells()
       // Update/swap edge types.
       ndi->swapEdgeTypes();
       // Update/swap paddings.
-      m_arch->getCellPadding(ndi, leftPadding, rightPadding);
-      m_arch->addCellPadding(ndi, rightPadding, leftPadding);
+      arch_->getCellPadding(ndi, leftPadding, rightPadding);
+      arch_->addCellPadding(ndi, rightPadding, leftPadding);
       // Update the orientation.
       switch (ndi->getCurrOrient()) {
         case Orientation_N:
@@ -553,7 +553,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
   // orientation, but this might be a little smarter if cells have been flipped
   // around the Y-axis previously to improve WL...
 
-  unsigned rowOri = m_arch->getRow(row)->getOrient();
+  unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {

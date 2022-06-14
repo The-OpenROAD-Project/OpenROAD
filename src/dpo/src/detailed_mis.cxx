@@ -74,21 +74,18 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMis::Bucket
+struct DetailedMis::Bucket
 {
- public:
-  virtual ~Bucket() {}
+  void clear() { nodes_.clear(); }
 
-  void clear() { m_nodes.clear(); }
-
-  std::deque<Node*> m_nodes;
-  double m_xmin = 0.0;
-  double m_xmax = 0.0;
-  double m_ymin = 0.0;
-  double m_ymax = 0.0;
-  int m_i = 0;
-  int m_j = 0;
-  int m_travId = 0;
+  std::deque<Node*> nodes_;
+  double xmin_ = 0.0;
+  double xmax_ = 0.0;
+  double ymin_ = 0.0;
+  double ymax_ = 0.0;
+  int i_ = 0;
+  int j_ = 0;
+  int travId_ = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,21 +93,21 @@ class DetailedMis::Bucket
 DetailedMis::DetailedMis(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : m_mgrPtr(0),
-      m_arch(arch),
-      m_network(network),
-      m_rt(rt),
-      m_dimW(0),
-      m_dimH(0),
-      m_stepX(0.0),
-      m_stepY(0.0),
-      m_skipEdgesLargerThanThis(100),
-      m_maxProblemSize(25),
-      m_traversal(0),
-      m_useSameSize(true),
-      m_useSameColor(true),
-      m_maxTimesUsed(2),
-      m_obj(DetailedMis::Hpwl)
+    : mgrPtr_(0),
+      arch_(arch),
+      network_(network),
+      rt_(rt),
+      dimW_(0),
+      dimH_(0),
+      stepX_(0.0),
+      stepY_(0.0),
+      skipEdgesLargerThanThis_(100),
+      maxProblemSize_(25),
+      traversal_(0),
+      useSameSize_(true),
+      useSameColor_(true),
+      maxTimesUsed_(2),
+      obj_(DetailedMis::Hpwl)
 {
 }
 
@@ -147,10 +144,10 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 {
   // Given the arguments, figure out which routine to run to do the reordering.
 
-  m_mgrPtr = mgrPtr;
+  mgrPtr_ = mgrPtr;
 
   // Defaults.
-  m_obj = DetailedMis::Hpwl;
+  obj_ = DetailedMis::Hpwl;
 
   int passes = 1;
   double tol = 0.01;
@@ -160,7 +157,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     } else if (args[i] == "-t" && i + 1 < args.size()) {
       tol = std::atof(args[++i].c_str());
     } else if (args[i] == "-d") {
-      m_obj = DetailedMis::Disp;
+      obj_ = DetailedMis::Disp;
     }
   }
   tol = std::max(tol, 0.01);
@@ -170,20 +167,20 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   double last_disp, curr_disp, init_disp, tot_disp, max_disp, avg_disp;
   double curr_obj, curr_imp;
   std::string obj
-      = (m_obj == DetailedMis::Hpwl) ? "wirelength" : "displacement";
-  m_mgrPtr->getLogger()->info(
+      = (obj_ == DetailedMis::Hpwl) ? "wirelength" : "displacement";
+  mgrPtr_->getLogger()->info(
       DPO, 300, "Set matching objective is {:s}.", obj.c_str());
 
   // If using displacement objective, then it isn't required to use colors.
-  if (m_obj == DetailedMis::Disp) {
-    m_useSameColor = false;
+  if (obj_ == DetailedMis::Disp) {
+    useSameColor_ = false;
   }
 
-  m_mgrPtr->resortSegments();
-  curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  mgrPtr_->resortSegments();
+  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   init_hpwl = curr_hpwl;
 
-  curr_disp = Utility::disp_l1(m_network, tot_disp, max_disp, avg_disp);
+  curr_disp = Utility::disp_l1(network_, tot_disp, max_disp, avg_disp);
   init_disp = curr_disp;
 
   // Do some things that only need to be done once regardless
@@ -193,34 +190,34 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   buildGrid();            // Grid for searching for neigbours.
 
   for (int p = 1; p <= passes; p++) {
-    curr_obj = (m_obj == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+    curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
 
-    m_mgrPtr->getLogger()->info(
+    mgrPtr_->getLogger()->info(
         DPO, 301, "Pass {:3d} of matching; objective is {:.6e}.", p, curr_obj);
 
     // Run the algo here...
     place();
 
     last_hpwl = curr_hpwl;
-    curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
-    if (m_obj == DetailedMis::Hpwl
+    curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+    if (obj_ == DetailedMis::Hpwl
         && std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
       break;
     }
     last_disp = curr_disp;
-    curr_disp = Utility::disp_l1(m_network, tot_disp, max_disp, avg_disp);
-    if (m_obj == DetailedMis::Disp
+    curr_disp = Utility::disp_l1(network_, tot_disp, max_disp, avg_disp);
+    if (obj_ == DetailedMis::Disp
         && std::fabs(curr_disp - last_disp) / last_disp <= tol) {
       break;
     }
   }
-  m_mgrPtr->resortSegments();
+  mgrPtr_->resortSegments();
 
   double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
   double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
-  curr_imp = (m_obj == DetailedMis::Hpwl) ? hpwl_imp : disp_imp;
-  curr_obj = (m_obj == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
-  m_mgrPtr->getLogger()->info(
+  curr_imp = (obj_ == DetailedMis::Hpwl) ? hpwl_imp : disp_imp;
+  curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+  mgrPtr_->getLogger()->info(
       DPO,
       302,
       "End of matching; objective is {:.6e}, improvement is {:.2f} percent.",
@@ -235,8 +232,8 @@ void DetailedMis::place()
   // Populate the grid.  Used for searching.
   populateGrid();
 
-  m_timesUsed.resize(m_network->getNumNodes());
-  std::fill(m_timesUsed.begin(), m_timesUsed.end(), 0);
+  timesUsed_.resize(network_->getNumNodes());
+  std::fill(timesUsed_.begin(), timesUsed_.end(), 0);
 
   // Select candidates and solve matching problem.  Note that we need to do
   // something to make this more efficient, otherwise we will solve way too
@@ -245,13 +242,13 @@ void DetailedMis::place()
   // if it has been involved is >= a certain number of problems, it has "had
   // some chance" to be moved, so skip it.
   Utility::random_shuffle(
-      m_candidates.begin(), m_candidates.end(), m_mgrPtr->m_rng);
-  for (size_t i = 0; i < m_candidates.size(); i++) {
+      candidates_.begin(), candidates_.end(), mgrPtr_->rng_);
+  for (size_t i = 0; i < candidates_.size(); i++) {
     // Pick a candidate as a seed.
-    Node* ndi = m_candidates[i];
+    Node* ndi = candidates_[i];
 
     // Skip seed if it has been used already.
-    if (m_timesUsed[ndi->getId()] >= m_maxTimesUsed) {
+    if (timesUsed_[ndi->getId()] >= maxTimesUsed_) {
       continue;
     }
 
@@ -264,9 +261,9 @@ void DetailedMis::place()
     solveMatch();
 
     // Increment times each node has been used.
-    for (size_t j = 0; j < m_neighbours.size(); j++) {
-      Node* ndj = m_neighbours[j];
-      ++m_timesUsed[ndj->getId()];
+    for (size_t j = 0; j < neighbours_.size(); j++) {
+      Node* ndj = neighbours_[j];
+      ++timesUsed_[ndj->getId()];
     }
 
     // Update grid?  Or, do we need to even bother?
@@ -278,14 +275,14 @@ void DetailedMis::place()
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::collectMovableCells()
 {
-  m_candidates.erase(m_candidates.begin(), m_candidates.end());
-  m_candidates.insert(m_candidates.end(),
-                      m_mgrPtr->m_singleHeightCells.begin(),
-                      m_mgrPtr->m_singleHeightCells.end());
-  for (size_t i = 2; i < m_mgrPtr->m_multiHeightCells.size(); i++) {
-    m_candidates.insert(m_candidates.end(),
-                        m_mgrPtr->m_multiHeightCells[i].begin(),
-                        m_mgrPtr->m_multiHeightCells[i].end());
+  candidates_.erase(candidates_.begin(), candidates_.end());
+  candidates_.insert(candidates_.end(),
+                      mgrPtr_->singleHeightCells_.begin(),
+                      mgrPtr_->singleHeightCells_.end());
+  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+    candidates_.insert(candidates_.end(),
+                        mgrPtr_->multiHeightCells_[i].begin(),
+                        mgrPtr_->multiHeightCells_[i].end());
   }
 }
 
@@ -293,36 +290,36 @@ void DetailedMis::collectMovableCells()
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::colorCells()
 {
-  m_colors.resize(m_network->getNumNodes());
-  std::fill(m_colors.begin(), m_colors.end(), -1);
+  colors_.resize(network_->getNumNodes());
+  std::fill(colors_.begin(), colors_.end(), -1);
 
-  m_movable.resize(m_network->getNumNodes());
-  std::fill(m_movable.begin(), m_movable.end(), false);
-  for (size_t i = 0; i < m_candidates.size(); i++) {
-    Node* ndi = m_candidates[i];
-    m_movable[ndi->getId()] = true;
+  movable_.resize(network_->getNumNodes());
+  std::fill(movable_.begin(), movable_.end(), false);
+  for (size_t i = 0; i < candidates_.size(); i++) {
+    Node* ndi = candidates_[i];
+    movable_[ndi->getId()] = true;
   }
 
-  Graph gr(m_network->getNumNodes());
-  for (int e = 0; e < m_network->getNumEdges(); e++) {
-    Edge* edi = m_network->getEdge(e);
+  Graph gr(network_->getNumNodes());
+  for (int e = 0; e < network_->getNumEdges(); e++) {
+    Edge* edi = network_->getEdge(e);
 
     int numPins = edi->getNumPins();
-    if (numPins <= 1 || numPins > m_skipEdgesLargerThanThis) {
+    if (numPins <= 1 || numPins > skipEdgesLargerThanThis_) {
       continue;
     }
 
     for (int pi = 0; pi < edi->getNumPins(); pi++) {
       Pin* pini = edi->getPins()[pi];
       Node* ndi = pini->getNode();
-      if (!m_movable[ndi->getId()]) {
+      if (!movable_[ndi->getId()]) {
         continue;
       }
 
       for (int pj = pi + 1; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
         Node* ndj = pinj->getNode();
-        if (!m_movable[ndj->getId()]) {
+        if (!movable_[ndj->getId()]) {
           continue;
         }
         if (ndj == ndi) {
@@ -339,15 +336,15 @@ void DetailedMis::colorCells()
   gr.greedyColoring();
 
   std::vector<int> hist;
-  for (int i = 0; i < m_network->getNumNodes(); i++) {
-    Node* ndi = m_network->getNode(i);
+  for (int i = 0; i < network_->getNumNodes(); i++) {
+    Node* ndi = network_->getNode(i);
 
     int color = gr.getColor(i);
     if (color < 0 || color >= gr.getNColors()) {
-      m_mgrPtr->internalError("Unable to color cells during matching");
+      mgrPtr_->internalError("Unable to color cells during matching");
     }
-    if (m_movable[ndi->getId()]) {
-      m_colors[ndi->getId()] = color;
+    if (movable_[ndi->getId()]) {
+      colors_[ndi->getId()] = color;
 
       if (color >= hist.size()) {
         hist.resize(color + 1, 0);
@@ -362,44 +359,44 @@ void DetailedMis::colorCells()
 void DetailedMis::buildGrid()
 {
   // Builds a coarse grid over the placement region for locating cells.
-  m_traversal = 0;
+  traversal_ = 0;
 
-  double xmin = m_arch->getMinX();
-  double xmax = m_arch->getMaxX();
-  double ymin = m_arch->getMinY();
-  double ymax = m_arch->getMaxY();
+  double xmin = arch_->getMinX();
+  double xmax = arch_->getMaxX();
+  double ymin = arch_->getMinY();
+  double ymax = arch_->getMaxY();
 
   // Design each grid bin to hold a few hundred cells.  Do this based on the
   // average width and height of the cells.
   double avgH = 0.;
   double avgW = 0.;
-  for (size_t i = 0; i < m_candidates.size(); i++) {
-    Node* ndi = m_candidates[i];
+  for (size_t i = 0; i < candidates_.size(); i++) {
+    Node* ndi = candidates_[i];
     avgH += ndi->getHeight();
     avgW += ndi->getWidth();
   }
-  avgH /= (double) m_candidates.size();
-  avgW /= (double) m_candidates.size();
+  avgH /= (double) candidates_.size();
+  avgW /= (double) candidates_.size();
 
-  m_stepX = avgW * std::sqrt(m_maxProblemSize);
-  m_stepY = avgH * std::sqrt(m_maxProblemSize);
+  stepX_ = avgW * std::sqrt(maxProblemSize_);
+  stepY_ = avgH * std::sqrt(maxProblemSize_);
 
-  m_dimW = (int) std::ceil((xmax - xmin) / m_stepX);
-  m_dimH = (int) std::ceil((ymax - ymin) / m_stepY);
+  dimW_ = (int) std::ceil((xmax - xmin) / stepX_);
+  dimH_ = (int) std::ceil((ymax - ymin) / stepY_);
 
   clearGrid();
-  m_grid.resize(m_dimW);
-  for (int i = 0; i < m_dimW; i++) {
-    m_grid[i].resize(m_dimH);
-    for (int j = 0; j < m_dimH; j++) {
-      m_grid[i][j] = new Bucket;
-      m_grid[i][j]->m_xmin = xmin + (i) *m_stepX;
-      m_grid[i][j]->m_xmax = xmin + (i + 1) * m_stepX;
-      m_grid[i][j]->m_ymin = ymin + (j) *m_stepY;
-      m_grid[i][j]->m_ymax = ymin + (j + 1) * m_stepY;
-      m_grid[i][j]->m_i = i;
-      m_grid[i][j]->m_j = j;
-      m_grid[i][j]->m_travId = m_traversal;
+  grid_.resize(dimW_);
+  for (int i = 0; i < dimW_; i++) {
+    grid_[i].resize(dimH_);
+    for (int j = 0; j < dimH_; j++) {
+      grid_[i][j] = new Bucket;
+      grid_[i][j]->xmin_ = xmin + (i) *stepX_;
+      grid_[i][j]->xmax_ = xmin + (i + 1) * stepX_;
+      grid_[i][j]->ymin_ = ymin + (j) *stepY_;
+      grid_[i][j]->ymax_ = ymin + (j + 1) * stepY_;
+      grid_[i][j]->i_ = i;
+      grid_[i][j]->j_ = j;
+      grid_[i][j]->travId_ = traversal_;
     }
   }
 }
@@ -410,28 +407,28 @@ void DetailedMis::populateGrid()
 {
   // Inserts movable cells into the grid.
 
-  for (size_t i = 0; i < m_grid.size(); i++) {
-    for (size_t j = 0; j < m_grid[i].size(); j++) {
-      m_grid[i][j]->clear();
+  for (size_t i = 0; i < grid_.size(); i++) {
+    for (size_t j = 0; j < grid_[i].size(); j++) {
+      grid_[i][j]->clear();
     }
   }
 
-  double xmin = m_arch->getMinX();
-  double ymin = m_arch->getMinY();
+  double xmin = arch_->getMinX();
+  double ymin = arch_->getMinY();
 
   // Insert cells into the constructed grid.
-  m_cellToBinMap.clear();
-  for (size_t n = 0; n < m_candidates.size(); ++n) {
-    Node* ndi = m_candidates[n];
+  cellToBinMap_.clear();
+  for (size_t n = 0; n < candidates_.size(); ++n) {
+    Node* ndi = candidates_[n];
 
     double y = ndi->getBottom() + 0.5 * ndi->getHeight();
     double x = ndi->getLeft() + 0.5 * ndi->getWidth();
 
-    int j = std::max(std::min((int) ((y - ymin) / m_stepY), m_dimH - 1), 0);
-    int i = std::max(std::min((int) ((x - xmin) / m_stepX), m_dimW - 1), 0);
+    int j = std::max(std::min((int) ((y - ymin) / stepY_), dimH_ - 1), 0);
+    int i = std::max(std::min((int) ((x - xmin) / stepX_), dimW_ - 1), 0);
 
-    m_grid[i][j]->m_nodes.push_back(ndi);
-    m_cellToBinMap[ndi] = m_grid[i][j];
+    grid_[i][j]->nodes_.push_back(ndi);
+    cellToBinMap_[ndi] = grid_[i][j];
   }
 }
 
@@ -441,30 +438,30 @@ void DetailedMis::clearGrid()
 // Clear out any old grid.  The dimensions of the grid are also stored in the
 // class...
 {
-  for (size_t i = 0; i < m_grid.size(); i++) {
-    for (size_t j = 0; j < m_grid[i].size(); j++) {
-      delete m_grid[i][j];
+  for (size_t i = 0; i < grid_.size(); i++) {
+    for (size_t j = 0; j < grid_[i].size(); j++) {
+      delete grid_[i][j];
     }
-    m_grid[i].clear();
+    grid_[i].clear();
   }
-  m_grid.clear();
+  grid_.clear();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 bool DetailedMis::gatherNeighbours(Node* ndi)
 {
-  double singleRowHeight = m_arch->getRow(0)->getHeight();
+  double singleRowHeight = arch_->getRow(0)->getHeight();
 
-  m_neighbours.clear();
-  m_neighbours.push_back(ndi);
+  neighbours_.clear();
+  neighbours_.push_back(ndi);
 
   std::map<Node*, Bucket*>::iterator it;
 
   // Scan the grid structure gathering up cells which are compatible with the
   // current cell.
 
-  if (m_cellToBinMap.end() == (it = m_cellToBinMap.find(ndi))) {
+  if (cellToBinMap_.end() == (it = cellToBinMap_.find(ndi))) {
     return false;
   }
 
@@ -472,20 +469,20 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
   std::deque<Bucket*> Q;
   Q.push_back(it->second);
-  ++m_traversal;
+  ++traversal_;
   while (Q.size() > 0) {
     Bucket* currPtr = Q.front();
     Q.pop_front();
 
-    if (currPtr->m_travId == m_traversal) {
+    if (currPtr->travId_ == traversal_) {
       continue;
     }
-    currPtr->m_travId = m_traversal;
+    currPtr->travId_ = traversal_;
 
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
-    for (size_t j = 0; j < currPtr->m_nodes.size(); j++) {
-      Node* ndj = currPtr->m_nodes[j];
+    for (size_t j = 0; j < currPtr->nodes_.size(); j++) {
+      Node* ndj = currPtr->nodes_[j];
 
       int spanned_j = (int) (ndj->getHeight() / singleRowHeight + 0.5);
 
@@ -501,14 +498,14 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       }
       if (compat) {
         // Must be the same color to avoid sharing nets.
-        if (m_useSameColor
-            && m_colors[ndi->getId()] != m_colors[ndj->getId()]) {
+        if (useSameColor_
+            && colors_[ndi->getId()] != colors_[ndj->getId()]) {
           compat = false;
         }
       }
       if (compat) {
         // Must be the same size.
-        if (m_useSameSize
+        if (useSameSize_
             && (ndi->getWidth() != ndj->getWidth()
                 || ndi->getHeight() != ndj->getHeight())) {
           compat = false;
@@ -531,23 +528,23 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
       // If compatible, include this current cell.
       if (compat) {
-        m_neighbours.push_back(ndj);
+        neighbours_.push_back(ndj);
       }
     }
 
-    if (m_neighbours.size() >= m_maxProblemSize) {
+    if (neighbours_.size() >= maxProblemSize_) {
       break;
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->m_i - 1 >= 0)
-      Q.push_back(m_grid[currPtr->m_i - 1][currPtr->m_j]);
-    if (currPtr->m_i + 1 <= m_dimW - 1)
-      Q.push_back(m_grid[currPtr->m_i + 1][currPtr->m_j]);
-    if (currPtr->m_j - 1 >= 0)
-      Q.push_back(m_grid[currPtr->m_i][currPtr->m_j - 1]);
-    if (currPtr->m_j + 1 <= m_dimH - 1)
-      Q.push_back(m_grid[currPtr->m_i][currPtr->m_j + 1]);
+    if (currPtr->i_ - 1 >= 0)
+      Q.push_back(grid_[currPtr->i_ - 1][currPtr->j_]);
+    if (currPtr->i_ + 1 <= dimW_ - 1)
+      Q.push_back(grid_[currPtr->i_ + 1][currPtr->j_]);
+    if (currPtr->j_ - 1 >= 0)
+      Q.push_back(grid_[currPtr->i_][currPtr->j_ - 1]);
+    if (currPtr->j_ + 1 <= dimH_ - 1)
+      Q.push_back(grid_[currPtr->i_][currPtr->j_ + 1]);
   }
   return true;
 }
@@ -556,10 +553,10 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::solveMatch()
 {
-  if (m_neighbours.size() <= 1) {
+  if (neighbours_.size() <= 1) {
     return;
   }
-  std::vector<Node*>& nodes = m_neighbours;
+  std::vector<Node*>& nodes = neighbours_;
 
   int nNodes = (int) nodes.size();
   int nSpots = (int) nodes.size();
@@ -572,7 +569,7 @@ void DetailedMis::solveMatch()
     Node* ndi = nodes[i];
 
     pos[i] = std::make_pair(ndi->getLeft(), ndi->getBottom());
-    seg[i] = m_mgrPtr->m_reverseCellToSegs[ndi->getId()];  // copy!
+    seg[i] = mgrPtr_->reverseCellToSegs_[ndi->getId()];  // copy!
   }
 
   lemon::ListDigraph g;
@@ -619,18 +616,18 @@ void DetailedMis::solveMatch()
       // this guarantees a solution!
       if (i != j) {
         double dx = std::fabs(pos[j].first - ndi->getOrigLeft());
-        if ((int) std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+        if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
           continue;
         }
         double dy = std::fabs(pos[j].second - ndi->getOrigBottom());
-        if ((int) std::ceil(dy) > m_mgrPtr->getMaxDisplacementY()) {
+        if ((int) std::ceil(dy) > mgrPtr_->getMaxDisplacementY()) {
           continue;
         }
       }
 
       // Okay to assign the cell to this location.
       icost = 0;
-      if (m_obj == DetailedMis::Hpwl) {
+      if (obj_ == DetailedMis::Hpwl) {
         icost = (int) getHpwl(ndi,
                               pos[j].first + 0.5 * ndi->getWidth(),
                               pos[j].second + 0.5 * ndi->getHeight());
@@ -686,7 +683,7 @@ void DetailedMis::solveMatch()
       std::map<lemon::ListDigraph::Arc, std::pair<int, int>>::iterator it1
           = reverseMap.find(it);
       if (reverseMap.end() == it1) {
-        m_mgrPtr->internalError("Unable to interpret flow during matching");
+        mgrPtr_->internalError("Unable to interpret flow during matching");
       }
 
       int i = it1->second.first;
@@ -698,26 +695,26 @@ void DetailedMis::solveMatch()
       Node* ndi = nodes[i];
       Node* ndj = nodes[j];
 
-      int spanned_i = m_arch->getCellHeightInRows(ndi);
-      int spanned_j = m_arch->getCellHeightInRows(ndj);
+      int spanned_i = arch_->getCellHeightInRows(ndi);
+      int spanned_j = arch_->getCellHeightInRows(ndj);
 
       if (ndi != ndj) {
         ++nMoved;
         if (spanned_i != spanned_j || ndi->getWidth() != ndj->getWidth()
             || ndi->getHeight() != ndj->getHeight()) {
-          m_mgrPtr->internalError("Unable to interpret flow during matching");
+          mgrPtr_->internalError("Unable to interpret flow during matching");
         }
 
         // Remove cell "i" from its old segments.
         std::vector<DetailedSeg*>& old_segs = seg[i];
         if (spanned_i != old_segs.size()) {
           // This means an error someplace else...
-          m_mgrPtr->internalError("Unable to interpret flow during matching");
+          mgrPtr_->internalError("Unable to interpret flow during matching");
         }
         for (size_t s = 0; s < old_segs.size(); s++) {
           DetailedSeg* segPtr = old_segs[s];
           int segId = segPtr->getSegId();
-          m_mgrPtr->removeCellFromSegment(ndi, segId);
+          mgrPtr_->removeCellFromSegment(ndi, segId);
         }
 
         // Update the postion of cell "i".
@@ -728,12 +725,12 @@ void DetailedMis::solveMatch()
         std::vector<DetailedSeg*>& new_segs = seg[j];
         if (spanned_i != new_segs.size()) {
           // Not setup for non-same size stuff right now.
-          m_mgrPtr->internalError("Unable to interpret flow during matching");
+          mgrPtr_->internalError("Unable to interpret flow during matching");
         }
         for (size_t s = 0; s < new_segs.size(); s++) {
           DetailedSeg* segPtr = new_segs[s];
           int segId = segPtr->getSegId();
-          m_mgrPtr->addCellToSegment(ndi, segId);
+          mgrPtr_->addCellToSegment(ndi, segId);
         }
       }
     }
@@ -770,7 +767,7 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi)
     Edge* edi = pini->getEdge();
 
     int npins = edi->getNumPins();
-    if (npins <= 1 || npins > m_skipEdgesLargerThanThis) {
+    if (npins <= 1 || npins > skipEdgesLargerThanThis_) {
       continue;
     }
 

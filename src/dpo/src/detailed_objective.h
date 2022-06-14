@@ -56,10 +56,10 @@ namespace dpo {
 class DetailedObjective
 {
  public:
-  DetailedObjective(const char* name = "objective") : m_name(name) {}
-  virtual ~DetailedObjective() {}
+  DetailedObjective(const char* name = "objective") : name_(name) {}
+  virtual ~DetailedObjective() = default;
 
-  virtual const std::string& getName() const { return m_name; }
+  virtual const std::string& getName() const { return name_; }
 
   virtual double curr() = 0;
 
@@ -79,7 +79,7 @@ class DetailedObjective
   virtual void reject() {}
 
  private:
-  const std::string m_name;
+  const std::string name_;
 };
 
 }  // namespace dpo
