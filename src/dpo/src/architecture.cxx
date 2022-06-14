@@ -34,9 +34,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "architecture.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -494,10 +491,6 @@ int Architecture::getCellSpacingUsingTable(int i1, int i2)
 ////////////////////////////////////////////////////////////////////////////////
 void Architecture::clear_edge_type()
 {
-  for (int i = 0; i < edgeTypes_.size(); i++) {
-    if (edgeTypes_[i].first != 0)
-      delete[] edgeTypes_[i].first;
-  }
   edgeTypes_.clear();
 }
 
@@ -506,9 +499,7 @@ void Architecture::clear_edge_type()
 void Architecture::init_edge_type()
 {
   clear_edge_type();
-  char* newName = new char[strlen("DEFAULT") + 1];
-  strcpy(newName, "DEFAULT");
-  edgeTypes_.push_back(std::pair<char*, int>(newName, EDGETYPE_DEFAULT));
+  edgeTypes_.push_back(std::make_pair("DEFAULT", EDGETYPE_DEFAULT));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -516,16 +507,14 @@ void Architecture::init_edge_type()
 int Architecture::add_edge_type(const char* name)
 {
   for (int i = 0; i < edgeTypes_.size(); i++) {
-    std::pair<char*, int>& temp = edgeTypes_[i];
-    if (strcmp(temp.first, name) == 0) {
+    auto& temp = edgeTypes_[i];
+    if (temp.first == name) {
       // Edge type already exists.
       return temp.second;
     }
   }
-  char* newName = new char[strlen(name) + 1];
-  strcpy(newName, name);
   int n = (int) edgeTypes_.size();
-  edgeTypes_.push_back(std::pair<char*, int>(newName, n));
+  edgeTypes_.push_back(std::make_pair(name, n));
   return n;
 }
 

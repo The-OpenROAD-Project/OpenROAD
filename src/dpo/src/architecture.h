@@ -34,8 +34,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
-
 #include <iostream>
 #include <limits>
 #include <map>
@@ -116,7 +114,7 @@ class Architecture
   {
     return cellSpacings_;
   }
-  std::vector<std::pair<char*, int>>& getEdgeTypes() { return edgeTypes_; }
+  std::vector<std::pair<std::string, int>>& getEdgeTypes() { return edgeTypes_; }
 
   // Using padding...
   void setUsePadding(bool val = true) { usePadding_ = val; }
@@ -141,7 +139,7 @@ class Architecture
 
   // Spacing tables...
   bool useSpacingTable_;
-  std::vector<std::pair<char*, int>> edgeTypes_;
+  std::vector<std::pair<std::string, int>> edgeTypes_;
   std::vector<Spacing*> cellSpacings_;
 
   // Padding...

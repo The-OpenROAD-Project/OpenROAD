@@ -38,9 +38,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_manager.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>

@@ -37,11 +37,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_global.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>

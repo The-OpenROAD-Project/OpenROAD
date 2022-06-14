@@ -39,8 +39,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "router.h"
 
-#include <stdio.h>
-
 #include <iostream>
 #include <map>
 #include <vector>

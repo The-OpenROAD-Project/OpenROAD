@@ -41,8 +41,6 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "legalize_shift.h"
 
-#include <stdio.h>
-
 #include <boost/format.hpp>
 #include <deque>
 #include <iostream>

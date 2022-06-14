@@ -37,9 +37,6 @@
 // move generators, different objectives and a cost function in order
 // to improve a placement.
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
