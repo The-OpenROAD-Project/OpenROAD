@@ -43,6 +43,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "rectangle.h"
@@ -70,7 +71,8 @@ class DetailedSeg;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMgr {
+class DetailedMgr
+{
  public:
   DetailedMgr(Architecture* arch, Network* network, RoutingParams* rt);
   virtual ~DetailedMgr();
@@ -87,30 +89,38 @@ class DetailedMgr {
   void setSeed(int s);
 
   void setMaxDisplacement(int x, int y);
-  void getMaxDisplacement(int& x, int& y) const {
+  void getMaxDisplacement(int& x, int& y) const
+  {
     x = m_maxDispX;
     y = m_maxDispY;
   }
   int getMaxDisplacementX() const { return m_maxDispX; }
   int getMaxDisplacementY() const { return m_maxDispY; }
-  double measureMaximumDisplacement(double& maxX, double& maxY, 
-      int& violatedX, int& violatedY);
+  double measureMaximumDisplacement(double& maxX,
+                                    double& maxY,
+                                    int& violatedX,
+                                    int& violatedY);
 
-  void internalError( std::string msg );
+  void internalError(std::string msg);
 
   void setupObstaclesForDrc();
 
   void findBlockages(bool includeRouteBlockages = true);
   void findRegionIntervals(
       int regId,
-      std::vector<std::vector<std::pair<double, double> > >& intervals);
+      std::vector<std::vector<std::pair<double, double>>>& intervals);
 
   void findSegments();
   DetailedSeg* findClosestSegment(Node* nd);
   void findClosestSpanOfSegmentsDfs(
-      Node* ndi, DetailedSeg* segPtr, double xmin, double xmax, int bot,
-      int top, std::vector<DetailedSeg*>& stack,
-      std::vector<std::vector<DetailedSeg*> >& candidates);
+      Node* ndi,
+      DetailedSeg* segPtr,
+      double xmin,
+      double xmax,
+      int bot,
+      int top,
+      std::vector<DetailedSeg*>& stack,
+      std::vector<std::vector<DetailedSeg*>>& candidates);
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
 
   void assignCellsToSegments(std::vector<Node*>& nodesToConsider);
@@ -138,24 +148,30 @@ class DetailedMgr {
 
   int getNumSegments() const { return static_cast<int>(m_segments.size()); }
   DetailedSeg* getSegment(int s) const { return m_segments[s]; }
-  int getNumSingleHeightRows() const {
-    return m_numSingleHeightRows;
-  }
+  int getNumSingleHeightRows() const { return m_numSingleHeightRows; }
   int getSingleRowHeight() const { return m_singleRowHeight; }
 
-  void getSpaceAroundCell(int seg, int ix, double& space, double& larger,
+  void getSpaceAroundCell(int seg,
+                          int ix,
+                          double& space,
+                          double& larger,
                           int limit = 3);
-  void getSpaceAroundCell(int seg, int ix, double& space_left,
-                          double& space_right, double& large_left,
-                          double& large_right, int limit = 3);
+  void getSpaceAroundCell(int seg,
+                          int ix,
+                          double& space_left,
+                          double& space_right,
+                          double& large_left,
+                          double& large_right,
+                          int limit = 3);
 
   void removeSegmentOverlapSingle(int regId = -1);
-  void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes, 
-                                       int l, int r, int rowId);
+  void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes,
+                                       int l,
+                                       int r,
+                                       int rowId);
 
   double getTargetUt() const { return m_targetUt; }
   void setTargetUt(double ut) { m_targetUt = ut; }
-
 
   // Routines for generating moves and swaps.
   bool tryMove(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
@@ -169,9 +185,11 @@ class DetailedMgr {
   bool alignPos(Node* ndi, int& xi, int xl, int xr);
 
  public:
-  struct compareBlockages {
+  struct compareBlockages
+  {
     bool operator()(std::pair<double, double> i1,
-                    std::pair<double, double> i2) const {
+                    std::pair<double, double> i2) const
+    {
       if (i1.first == i2.first) {
         return i1.second < i2.second;
       }
@@ -179,17 +197,28 @@ class DetailedMgr {
     }
   };
 
-  struct compareNodesX {
+  struct compareNodesX
+  {
     // Needs cell centers.
-    bool operator()(Node* p, Node* q) const {
-      return p->getLeft()+0.5*p->getWidth() < q->getLeft()+0.5*q->getWidth();
+    bool operator()(Node* p, Node* q) const
+    {
+      return p->getLeft() + 0.5 * p->getWidth()
+             < q->getLeft() + 0.5 * q->getWidth();
     }
-    bool operator()(Node*& s, double i) const { return s->getLeft()+0.5*s->getWidth() < i; }
-    bool operator()(double i, Node*& s) const { return i < s->getLeft()+0.5*s->getWidth(); }
+    bool operator()(Node*& s, double i) const
+    {
+      return s->getLeft() + 0.5 * s->getWidth() < i;
+    }
+    bool operator()(double i, Node*& s) const
+    {
+      return i < s->getLeft() + 0.5 * s->getWidth();
+    }
   };
 
-  struct compareNodesL {
-    bool operator()(Node* p, Node* q) const {
+  struct compareNodesL
+  {
+    bool operator()(Node* p, Node* q) const
+    {
       return p->getLeft() < q->getLeft();
     }
   };
@@ -203,23 +232,33 @@ class DetailedMgr {
   bool trySwap1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
 
   // Helper routines for making moves and swaps.
-  bool shift(std::vector<Node*>& cells, 
+  bool shift(std::vector<Node*>& cells,
              std::vector<int>& targetLeft,
-             std::vector<int>& posLeft, 
-             int leftLimit, int rightLimit, 
-             int segId, int rowId);
-  bool shiftRightHelper(Node *ndi, int xj, int sj, Node* ndr);
-  bool shiftLeftHelper(Node *ndi, int xj, int sj, Node* ndr);
+             std::vector<int>& posLeft,
+             int leftLimit,
+             int rightLimit,
+             int segId,
+             int rowId);
+  bool shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr);
+  bool shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndr);
   void getSpaceToLeftAndRight(int seg, int ix, double& left, double& right);
 
   // For composing list of cells for moves or swaps.
   void clearMoveList();
-  bool addToMoveList(Node *ndi, 
-                     int curLeft, int curBottom, int curSeg, 
-                     int newLeft, int newBottom, int newSeg);
-  bool addToMoveList(Node *ndi, 
-                     int curLeft, int curBottom, std::vector<int>& curSegs, 
-                     int newLeft, int newBottom, std::vector<int>& newSegs);
+  bool addToMoveList(Node* ndi,
+                     int curLeft,
+                     int curBottom,
+                     int curSeg,
+                     int newLeft,
+                     int newBottom,
+                     int newSeg);
+  bool addToMoveList(Node* ndi,
+                     int curLeft,
+                     int curBottom,
+                     std::vector<int>& curSegs,
+                     int newLeft,
+                     int newBottom,
+                     std::vector<int>& newSegs);
 
  protected:
   // Standard stuff.
@@ -238,29 +277,29 @@ class DetailedMgr {
   double m_targetUt;
 
   // Target displacement limits.
-  int m_maxDispX; 
+  int m_maxDispX;
   int m_maxDispY;
 
-  std::vector<Node*> m_fixedCells;   // Fixed; filler, macros, temporary, etc.
+  std::vector<Node*> m_fixedCells;  // Fixed; filler, macros, temporary, etc.
 
  public:
   // Blockages and segments.
-  std::vector<std::vector<std::pair<double, double> > > m_blockages;
-  std::vector<std::vector<Node*> > m_cellsInSeg;
-  std::vector<std::vector<DetailedSeg*> > m_segsInRow;
+  std::vector<std::vector<std::pair<double, double>>> m_blockages;
+  std::vector<std::vector<Node*>> m_cellsInSeg;
+  std::vector<std::vector<DetailedSeg*>> m_segsInRow;
   std::vector<DetailedSeg*> m_segments;
-  std::vector<std::vector<DetailedSeg*> > m_reverseCellToSegs;
+  std::vector<std::vector<DetailedSeg*>> m_reverseCellToSegs;
 
   // For short and pin access stuff...
-  std::vector<std::vector<std::vector<Rectangle> > > m_obstacles;
+  std::vector<std::vector<std::vector<Rectangle>>> m_obstacles;
 
   // Random number generator.
   Placer_RNG* m_rng;
 
   // Info about cells.
   std::vector<Node*> m_singleHeightCells;  // Single height cells.
-  std::vector<std::vector<Node*> >
-      m_multiHeightCells;            // Multi height cells by height.
+  std::vector<std::vector<Node*>>
+      m_multiHeightCells;  // Multi height cells by height.
   std::vector<Node*>
       m_wideCells;  // Wide movable cells.  Can be single of multi.
 
@@ -277,8 +316,8 @@ class DetailedMgr {
   std::vector<int> m_newBottom;
   std::vector<unsigned> m_curOri;
   std::vector<unsigned> m_newOri;
-  std::vector<std::vector<int> > m_curSeg;
-  std::vector<std::vector<int> > m_newSeg;
+  std::vector<std::vector<int>> m_curSeg;
+  std::vector<std::vector<int>> m_newSeg;
   std::vector<Node*> m_movedNodes;
   int m_nMoved;
   int m_moveLimit;

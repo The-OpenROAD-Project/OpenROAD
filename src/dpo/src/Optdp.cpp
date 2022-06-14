@@ -33,6 +33,7 @@
 #include "dpo/Optdp.h"
 
 #include <odb/db.h>
+
 #include <boost/format.hpp>
 #include <cfloat>
 #include <cmath>
@@ -57,37 +58,48 @@ namespace dpo {
 using utl::DPO;
 
 using odb::dbBlock;
-using odb::dbInst;
 using odb::dbBox;
 using odb::dbBTerm;
+using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
+using odb::dbOrientType;
 using odb::dbRegion;
+using odb::dbRow;
 using odb::dbSBox;
 using odb::dbSet;
 using odb::dbSigType;
+using odb::dbSite;
 using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWireType;
-using odb::dbOrientType;
-using odb::dbRow;
-using odb::dbSite;
 using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
-Optdp::Optdp() : db_(nullptr), logger_(nullptr), opendp_(nullptr),
-                 arch_(nullptr), network_(nullptr), routeinfo_(nullptr),
-                 hpwlBefore_(0), hpwlAfter_(0) {}
+Optdp::Optdp()
+    : db_(nullptr),
+      logger_(nullptr),
+      opendp_(nullptr),
+      arch_(nullptr),
+      network_(nullptr),
+      routeinfo_(nullptr),
+      hpwlBefore_(0),
+      hpwlAfter_(0)
+{
+}
 
 ////////////////////////////////////////////////////////////////
-Optdp::~Optdp() {}
+Optdp::~Optdp()
+{
+}
 
 ////////////////////////////////////////////////////////////////
-void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) {
+void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
+{
   db_ = db;
   logger_ = logger;
   opendp_ = opendp;
@@ -95,8 +107,9 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) 
 
 ////////////////////////////////////////////////////////////////
 void Optdp::improvePlacement(int seed,
-                             int max_displacement_x, 
-                             int max_displacement_y) {
+                             int max_displacement_x,
+                             int max_displacement_y)
+{
   logger_->report("Detailed placement improvement.");
 
   opendp_->initBlock();
@@ -140,8 +153,7 @@ void Optdp::improvePlacement(int seed,
     dtParams.m_script += "ro -p 10 -t 0.005;";
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
-    dtParams.m_script +=
-       "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+    dtParams.m_script += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
 
     // Run the script.
     dpo::Detailed dt(dtParams);
@@ -157,8 +169,7 @@ void Optdp::improvePlacement(int seed,
     delete network_;
     delete arch_;
     delete routeinfo_;
-  }
-  else {
+  } else {
     logger_->report("Skipping detailed improvement since hpwl is zero.");
     hpwlAfter_ = hpwlBefore_;
   }
@@ -168,34 +179,40 @@ void Optdp::improvePlacement(int seed,
   // Statistics.
   logger_->report("Detailed Improvement Results");
   logger_->report("------------------------------------------");
-  logger_->report("Original HPWL         {:10.1f} u", (hpwlBefore_/dbu_micron));
-  logger_->report("Final HPWL            {:10.1f} u", (hpwlAfter_/dbu_micron));
-  double hpwl_delta = (hpwlBefore_ == 0.0)
-    ? 0.0
-    : ((double)(hpwlAfter_ - hpwlBefore_) / (double)hpwlBefore_) * 100.;
+  logger_->report("Original HPWL         {:10.1f} u",
+                  (hpwlBefore_ / dbu_micron));
+  logger_->report("Final HPWL            {:10.1f} u",
+                  (hpwlAfter_ / dbu_micron));
+  double hpwl_delta
+      = (hpwlBefore_ == 0.0)
+            ? 0.0
+            : ((double) (hpwlAfter_ - hpwlBefore_) / (double) hpwlBefore_)
+                  * 100.;
   logger_->report("Delta HPWL            {:10.1f} %", hpwl_delta);
   logger_->report("");
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::import() {
+void Optdp::import()
+{
   logger_->report("Importing netlist into detailed improver.");
 
   network_ = new Network;
   arch_ = new Architecture;
   routeinfo_ = new RoutingParams;
 
-  //createLayerMap(); // Does nothing right now.
-  //createNdrMap(); // Does nothing right now.
-  setupMasterPowers();  // Call prior to network and architecture creation.
-  createNetwork(); // Create network; _MUST_ do before architecture.
-  createArchitecture(); // Create architecture.
-  //createRouteInformation(); // Does nothing right now.
-  initPadding(); // Need to do after network creation.
-  //setUpNdrRules(); // Does nothing right now.
-  setUpPlacementRegions(); // Regions.
+  // createLayerMap(); // Does nothing right now.
+  // createNdrMap(); // Does nothing right now.
+  setupMasterPowers();   // Call prior to network and architecture creation.
+  createNetwork();       // Create network; _MUST_ do before architecture.
+  createArchitecture();  // Create architecture.
+  // createRouteInformation(); // Does nothing right now.
+  initPadding();  // Need to do after network creation.
+  // setUpNdrRules(); // Does nothing right now.
+  setUpPlacementRegions();  // Regions.
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::updateDbInstLocations() {
+void Optdp::updateDbInstLocations()
+{
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbInst> insts = block->getInsts();
@@ -203,7 +220,7 @@ void Optdp::updateDbInstLocations() {
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
-    
+
     it_n = instMap_.find(inst);
     if (instMap_.end() != it_n) {
       Node* nd = it_n->second;
@@ -213,21 +230,21 @@ void Optdp::updateDbInstLocations() {
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
-      case Orientation_N :
-        orient = dbOrientType::R0;
-        break;
-      case Orientation_FN:
-        orient = dbOrientType::MY;
-        break;
-      case Orientation_FS:
-        orient = dbOrientType::MX;
-        break;
-      case Orientation_S :
-        orient = dbOrientType::R180;
-        break;
-      default:
-        // ?
-        break;
+        case Orientation_N:
+          orient = dbOrientType::R0;
+          break;
+        case Orientation_FN:
+          orient = dbOrientType::MY;
+          break;
+        case Orientation_FS:
+          orient = dbOrientType::MX;
+          break;
+        case Orientation_S:
+          orient = dbOrientType::R180;
+          break;
+        default:
+          // ?
+          break;
       }
       if (inst->getOrient() != orient) {
         inst->setOrient(orient);
@@ -241,14 +258,14 @@ void Optdp::updateDbInstLocations() {
   }
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::initPadding() {
+void Optdp::initPadding()
+{
   // Grab information from OpenDP.
 
   // Need to turn off spacing tables and turn on padding.
   arch_->setUseSpacingTable(false);
   arch_->setUsePadding(true);
   arch_->init_edge_type();
-
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
@@ -266,33 +283,38 @@ void Optdp::initPadding() {
       Node* ndi = it_n->second;
       int leftPadding = opendp_->padLeft(inst);
       int rightPadding = opendp_->padRight(inst);
-      arch_->addCellPadding(ndi, leftPadding * siteWidth,
-                            rightPadding * siteWidth);
+      arch_->addCellPadding(
+          ndi, leftPadding * siteWidth, rightPadding * siteWidth);
     }
   }
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::createLayerMap() {
+void Optdp::createLayerMap()
+{
   // Relates to pin blockages, etc. Not used rignt now.
   ;
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::createNdrMap() {
+void Optdp::createNdrMap()
+{
   // Relates to pin blockages, etc. Not used rignt now.
   ;
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::createRouteInformation() {
+void Optdp::createRouteInformation()
+{
   // Relates to pin blockages, etc. Not used rignt now.
   ;
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::setUpNdrRules() {
+void Optdp::setUpNdrRules()
+{
   // Relates to pin blockages, etc. Not used rignt now.
   ;
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::setupMasterPowers() {
+void Optdp::setupMasterPowers()
+{
   // Need to try and figure out which voltages are on the
   // top and bottom of the masters/insts in order to set
   // stuff up for proper row alignment of multi-height
@@ -307,7 +329,6 @@ void Optdp::setupMasterPowers() {
   block->getMasters(masters);
 
   for (dbMaster* master : masters) {
-
     double maxPwr = std::numeric_limits<double>::lowest();
     double minPwr = std::numeric_limits<double>::max();
     double maxGnd = std::numeric_limits<double>::lowest();
@@ -356,11 +377,12 @@ void Optdp::setupMasterPowers() {
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::createNetwork() {
+void Optdp::createNetwork()
+{
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   std::unordered_map<odb::dbNet*, Edge*>::iterator it_e;
   std::unordered_map<odb::dbBTerm*, Node*>::iterator it_p;
-  std::unordered_map<dbMaster*, std::pair<int, int> >::iterator it_m;
+  std::unordered_map<dbMaster*, std::pair<int, int>>::iterator it_m;
 
   dbBlock* block = db_->getChip()->getBlock();
 
@@ -373,10 +395,9 @@ void Optdp::createNetwork() {
   for (dbInst* inst : block->getInsts()) {
     insts.push_back(inst);
   }
-  std::stable_sort(insts.begin(), insts.end(),
-                   [](dbInst* a, dbInst* b) {
-                     return a->getName() < b->getName();
-                   });
+  std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
+    return a->getName() < b->getName();
+  });
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbBTerm> bterms = block->getBTerms();
 
@@ -411,13 +432,18 @@ void Optdp::createNetwork() {
     nPins += net->getBTerms().size();
   }
 
-  logger_->info(DPO, 100, "Creating network with {:d} cells, {:d} terminals, "
+  logger_->info(DPO,
+                100,
+                "Creating network with {:d} cells, {:d} terminals, "
                 "{:d} edges and {:d} pins.",
-                nNodes, nTerminals, nEdges, nPins);
+                nNodes,
+                nTerminals,
+                nEdges,
+                nPins);
 
   // Create and allocate the nodes.  I require nodes for
   // placeable instances as well as terminals.
-  for (int i = 0; i < nNodes+nTerminals; i++) {
+  for (int i = 0; i < nNodes + nTerminals; i++) {
     network_->createAndAddNode();
   }
   for (int i = 0; i < nEdges; i++) {
@@ -434,7 +460,7 @@ void Optdp::createNetwork() {
       continue;
     }
     origOrient[inst] = inst->getOrient();
-    inst->setLocationOrient(dbOrientType::R0); // Preserve lower-left.
+    inst->setLocationOrient(dbOrientType::R0);  // Preserve lower-left.
   }
 
   // Populate nodes.
@@ -459,8 +485,8 @@ void Optdp::createNetwork() {
     // Determine allowed orientations.  Current orientation
     // is N, since we reset everything to this orientation.
     unsigned orientations = Orientation_N;
-    if (inst->getMaster()->getSymmetryX() &&
-        inst->getMaster()->getSymmetryY()) {
+    if (inst->getMaster()->getSymmetryX()
+        && inst->getMaster()->getSymmetryY()) {
       orientations |= Orientation_FN;
       orientations |= Orientation_FS;
       orientations |= Orientation_S;
@@ -508,7 +534,8 @@ void Optdp::createNetwork() {
 
     // Fill in data.
     ndi->setId(n);
-    ndi->setType(NodeType_TERMINAL); // Should be terminal, not terminal_NI, I think.
+    ndi->setType(
+        NodeType_TERMINAL);  // Should be terminal, not terminal_NI, I think.
     ndi->setFixed(NodeFixed_FIXED_XY);
     ndi->setAttributes(NodeAttributes_EMPTY);
     ndi->setAvailOrient(Orientation_N);
@@ -539,8 +566,11 @@ void Optdp::createNetwork() {
     ++n;  // Next node.
   }
   if (n != nNodes + nTerminals) {
-    logger_->error(DPO, 101, "Unexpected total node count.  Expected {:d}, but got {:d}",
-        (nNodes+nTerminals), n);
+    logger_->error(DPO,
+                   101,
+                   "Unexpected total node count.  Expected {:d}, but got {:d}",
+                   (nNodes + nTerminals),
+                   n);
   }
 
   // Populate edges and pins.
@@ -568,13 +598,16 @@ void Optdp::createNetwork() {
       if (instMap_.end() != it_n) {
         n = it_n->second->getId();  // The node id.
 
-        if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
-          logger_->error(DPO, 102, "Improper node indexing while connecting pins.");
+        if (network_->getNode(n)->getId() != n
+            || network_->getEdge(e)->getId() != e) {
+          logger_->error(
+              DPO, 102, "Improper node indexing while connecting pins.");
         }
 
-        Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
+        Pin* ptr = network_->createAndAddPin(network_->getNode(n),
+                                             network_->getEdge(e));
 
-        // Pin offset. 
+        // Pin offset.
         dbMTerm* mTerm = iTerm->getMTerm();
         dbMaster* master = mTerm->getMaster();
         // Due to old bookshelf, my offsets are from the
@@ -584,18 +617,21 @@ void Optdp::createNetwork() {
         double hh = (mTerm->getBBox().yMax() - mTerm->getBBox().yMax());
         double xx = (mTerm->getBBox().xMax() + mTerm->getBBox().xMin()) * 0.5;
         double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMax()) * 0.5;
-        double dx = xx - ((double)master->getWidth() / 2.);
-        double dy = yy - ((double)master->getHeight() / 2.);
+        double dx = xx - ((double) master->getWidth() / 2.);
+        double dy = yy - ((double) master->getHeight() / 2.);
 
         ptr->setOffsetX(dx);
         ptr->setOffsetY(dy);
         ptr->setPinHeight(hh);
         ptr->setPinWidth(ww);
-        ptr->setPinLayer(0); // Set to zero since not currently used.
+        ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
       } else {
-        logger_->error(DPO, 103, "Could not find node for instance while connecting pins.");
+        logger_->error(
+            DPO,
+            103,
+            "Could not find node for instance while connecting pins.");
       }
     }
     for (dbBTerm* bTerm : net->getBTerms()) {
@@ -603,34 +639,46 @@ void Optdp::createNetwork() {
       if (termMap_.end() != it_p) {
         n = it_p->second->getId();  // The node id.
 
-        if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
-          logger_->error(DPO, 104, "Improper terminal indexing while connecting pins.");
+        if (network_->getNode(n)->getId() != n
+            || network_->getEdge(e)->getId() != e) {
+          logger_->error(
+              DPO, 104, "Improper terminal indexing while connecting pins.");
         }
 
-        Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
+        Pin* ptr = network_->createAndAddPin(network_->getNode(n),
+                                             network_->getEdge(e));
 
         // These don't need an offset.
         ptr->setOffsetX(0.0);
         ptr->setOffsetY(0.0);
         ptr->setPinHeight(0.0);
         ptr->setPinWidth(0.0);
-        ptr->setPinLayer(0); // Set to zero since not currently used.
+        ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
       } else {
-        logger_->error(DPO, 105, "Could not find node for terminal while connecting pins.");
+        logger_->error(
+            DPO,
+            105,
+            "Could not find node for terminal while connecting pins.");
       }
     }
 
     ++e;  // next edge.
   }
   if (e != nEdges) {
-    logger_->error(DPO, 106, "Unexpected total edge count.  Expected {:d}, but got {:d}",
-        nEdges, e);
+    logger_->error(DPO,
+                   106,
+                   "Unexpected total edge count.  Expected {:d}, but got {:d}",
+                   nEdges,
+                   e);
   }
   if (p != nPins) {
-    logger_->error(DPO, 107, "Unexpected total pin count.  Expected {:d}, but got {:d}",
-        nPins, p);
+    logger_->error(DPO,
+                   107,
+                   "Unexpected total pin count.  Expected {:d}, but got {:d}",
+                   nPins,
+                   p);
   }
 
   // Return the orientation of fixed objects to their proper
@@ -648,7 +696,7 @@ void Optdp::createNetwork() {
         // Reorient the cell in my network too.
         it_n = instMap_.find(inst);
         if (instMap_.end() != it_n) {
-          n = it_n->second->getId();  
+          n = it_n->second->getId();
           if (network_->getNode(n)->getId() == n) {
             network_->getNode(n)->adjustCurrOrient(dbToDpoOrient(orient));
           }
@@ -657,11 +705,16 @@ void Optdp::createNetwork() {
     }
   }
 
-  logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
-                network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
+  logger_->info(DPO,
+                109,
+                "Network stats: inst {}, edges {}, pins {}",
+                network_->getNumNodes(),
+                network_->getNumEdges(),
+                network_->getNumPins());
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::createArchitecture() {
+void Optdp::createArchitecture()
+{
   dbBlock* block = db_->getChip()->getBlock();
 
   dbSet<dbRow> rows = block->getRows();
@@ -670,8 +723,6 @@ void Optdp::createArchitecture() {
   block->getCoreArea(coreRect);
   odb::Rect dieRect;
   block->getDieArea(dieRect);
-
-
 
   for (dbRow* row : rows) {
     if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {
@@ -728,8 +779,7 @@ void Optdp::createArchitecture() {
       ymin = std::min(ymin, row->getBottom());
       ymax = std::max(ymax, row->getTop());
     }
-    if (xmin != dieRect.xMin() ||
-        xmax != dieRect.xMax()) {
+    if (xmin != dieRect.xMin() || xmax != dieRect.xMax()) {
       xmin = dieRect.xMin();
       xmax = dieRect.xMax();
     }
@@ -746,13 +796,13 @@ void Optdp::createArchitecture() {
     int siteWidth = arch_->getRow(r)->getSiteWidth();
 
     if (originX < arch_->getMinX()) {
-      originX = (int)std::ceil(arch_->getMinX());
+      originX = (int) std::ceil(arch_->getMinX());
       if (arch_->getRow(r)->getLeft() != originX) {
         arch_->getRow(r)->setSubRowOrigin(originX);
       }
     }
-    if (originX+numSites*siteSpacing+siteWidth > arch_->getMaxX()) {
-      numSites = (arch_->getMaxX()-siteWidth-originX)/siteSpacing;
+    if (originX + numSites * siteSpacing + siteWidth > arch_->getMaxX()) {
+      numSites = (arch_->getMaxX() - siteWidth - originX) / siteSpacing;
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }
@@ -768,12 +818,12 @@ void Optdp::createArchitecture() {
     if (!net->isSpecial()) {
       continue;
     }
-    if (!(net->getSigType() == dbSigType::POWER ||
-          net->getSigType() == dbSigType::GROUND)) {
+    if (!(net->getSigType() == dbSigType::POWER
+          || net->getSigType() == dbSigType::GROUND)) {
       continue;
     }
-    int pwr =
-        (net->getSigType() == dbSigType::POWER) ? RowPower_VDD : RowPower_VSS;
+    int pwr
+        = (net->getSigType() == dbSigType::POWER) ? RowPower_VDD : RowPower_VSS;
     for (dbSWire* swire : net->getSWires()) {
       if (swire->getWireType() != dbWireType::ROUTED) {
         continue;
@@ -816,7 +866,8 @@ void Optdp::createArchitecture() {
   arch_->postProcess(network_);
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::setUpPlacementRegions() {
+void Optdp::setUpPlacementRegions()
+{
   int xmin = arch_->getMinX();
   int xmax = arch_->getMaxX();
   int ymin = arch_->getMinY();
@@ -848,7 +899,7 @@ void Optdp::setUpPlacementRegions() {
   auto db_groups = block->getGroups();
   for (auto db_group : db_groups) {
     dbRegion* parent = db_group->getRegion();
-    if(parent) {
+    if (parent) {
       rptr = arch_->createAndAddRegion();
       rptr->setId(count);
       ++count;
@@ -889,18 +940,36 @@ void Optdp::setUpPlacementRegions() {
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 ////////////////////////////////////////////////////////////////
-unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient) {
+unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient)
+{
   unsigned orient = dpo::Orientation_N;
   switch (dbOrient) {
-  case dbOrientType::R0    : orient = dpo::Orientation_N  ; break;
-  case dbOrientType::MY    : orient = dpo::Orientation_FN ; break;
-  case dbOrientType::MX    : orient = dpo::Orientation_FS ; break;
-  case dbOrientType::R180  : orient = dpo::Orientation_S  ; break;
-  case dbOrientType::R90   : orient = dpo::Orientation_E  ; break;
-  case dbOrientType::MXR90 : orient = dpo::Orientation_FE ; break;
-  case dbOrientType::R270  : orient = dpo::Orientation_W  ; break;
-  case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
-  default: break;
+    case dbOrientType::R0:
+      orient = dpo::Orientation_N;
+      break;
+    case dbOrientType::MY:
+      orient = dpo::Orientation_FN;
+      break;
+    case dbOrientType::MX:
+      orient = dpo::Orientation_FS;
+      break;
+    case dbOrientType::R180:
+      orient = dpo::Orientation_S;
+      break;
+    case dbOrientType::R90:
+      orient = dpo::Orientation_E;
+      break;
+    case dbOrientType::MXR90:
+      orient = dpo::Orientation_FE;
+      break;
+    case dbOrientType::R270:
+      orient = dpo::Orientation_W;
+      break;
+    case dbOrientType::MYR90:
+      orient = dpo::Orientation_FW;
+      break;
+    default:
+      break;
   }
   return orient;
 }

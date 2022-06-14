@@ -42,10 +42,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <algorithm>
 #include <iostream>
 #include <map>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "rectangle.h"
@@ -61,7 +63,8 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class PlotGnu {
+class PlotGnu
+{
  public:
   PlotGnu();
   virtual ~PlotGnu() {}
@@ -83,7 +86,7 @@ class PlotGnu {
   bool m_skipStandardCells;
   bool m_drawDisp;
 
-  std::vector<std::pair<double, double> > m_otherPl;
+  std::vector<std::pair<double, double>> m_otherPl;
 };
 
 }  // namespace dpo

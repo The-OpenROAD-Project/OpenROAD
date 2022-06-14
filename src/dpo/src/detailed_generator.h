@@ -37,6 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
@@ -52,10 +53,10 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedGenerator {
+class DetailedGenerator
+{
  public:
-  DetailedGenerator(const char* name = "unknown generator")
-    : m_name(name) {}
+  DetailedGenerator(const char* name = "unknown generator") : m_name(name) {}
   virtual ~DetailedGenerator() {}
 
   virtual const std::string& getName() const { return m_name; }

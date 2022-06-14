@@ -34,6 +34,7 @@
 
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_generator.h"
 #include "network.h"
@@ -46,7 +47,8 @@ class DetailedSeg;
 class DetailedMgr;
 
 // CLASSES ===================================================================
-class DetailedGlobalSwap : public DetailedGenerator {
+class DetailedGlobalSwap : public DetailedGenerator
+{
  public:
   DetailedGlobalSwap(Architecture* arch, Network* network, RoutingParams* rt);
   DetailedGlobalSwap();
@@ -62,7 +64,6 @@ class DetailedGlobalSwap : public DetailedGenerator {
   virtual void init(DetailedMgr* mgr);
 
  protected:
-
   void globalSwap();  // tries to avoid overlap.
   bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
   bool getRange(Node*, Rectangle&);

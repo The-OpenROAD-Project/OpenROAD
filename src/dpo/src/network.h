@@ -40,9 +40,11 @@
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
+
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+
 #include "architecture.h"
 #include "orientation.h"
 #include "rectangle.h"
@@ -79,7 +81,8 @@ const int EDGETYPE_DEFAULT = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class Node {
+class Node
+{
  public:
   Node();
   virtual ~Node();
@@ -148,7 +151,7 @@ class Node {
   void setTopPower(int top) { m_powerTop = top; }
   int getTopPower() const { return m_powerTop; }
 
-  int getNumPins() const { return (int)m_pins.size(); }
+  int getNumPins() const { return (int) m_pins.size(); }
   const std::vector<Pin*>& getPins() { return m_pins; }
 
   void setIsDefinedByShapes(bool val = false) { m_isDefinedByShapes = val; }
@@ -193,7 +196,8 @@ class Node {
   friend class Network;
 };
 
-class Edge {
+class Edge
+{
  public:
   Edge();
   virtual ~Edge();
@@ -204,7 +208,7 @@ class Edge {
   void setNdr(int ndr) { m_ndr = ndr; }
   int getNdr() const { return m_ndr; }
 
-  int getNumPins() const { return (int)m_pins.size(); }
+  int getNumPins() const { return (int) m_pins.size(); }
   const std::vector<Pin*>& getPins() { return m_pins; }
 
  protected:
@@ -218,9 +222,16 @@ class Edge {
   friend class Network;
 };
 
-class Pin {
+class Pin
+{
  public:
-  enum Direction { Dir_IN, Dir_OUT, Dir_INOUT, Dir_UNKNOWN };
+  enum Direction
+  {
+    Dir_IN,
+    Dir_OUT,
+    Dir_INOUT,
+    Dir_UNKNOWN
+  };
 
  public:
   Pin();
@@ -265,29 +276,36 @@ class Pin {
   friend class Network;
 };
 
-class Network {
+class Network
+{
  public:
-  struct comparePinsByNodeId {
-    bool operator()(const Pin* a, const Pin* b) {
+  struct comparePinsByNodeId
+  {
+    bool operator()(const Pin* a, const Pin* b)
+    {
       return a->getNode()->getId() < b->getNode()->getId();
     }
   };
 
-  class comparePinsByEdgeId {
+  class comparePinsByEdgeId
+  {
    public:
     comparePinsByEdgeId() : m_nw(0) {}
     comparePinsByEdgeId(Network* nw) : m_nw(nw) {}
-    bool operator()(const Pin* a, const Pin* b) {
+    bool operator()(const Pin* a, const Pin* b)
+    {
       return a->getEdge()->getId() < b->getEdge()->getId();
     }
     Network* m_nw;
   };
 
-  class comparePinsByOffset {
+  class comparePinsByOffset
+  {
    public:
     comparePinsByOffset() : m_nw(0) {}
     comparePinsByOffset(Network* nw) : m_nw(nw) {}
-    bool operator()(const Pin* a, const Pin* b) {
+    bool operator()(const Pin* a, const Pin* b)
+    {
       if (a->getOffsetX() == b->getOffsetX()) {
         return a->getOffsetY() < b->getOffsetY();
       }
@@ -301,19 +319,19 @@ class Network {
   Network();
   virtual ~Network();
 
-  int getNumNodes() const { return (int)m_nodes.size(); }
+  int getNumNodes() const { return (int) m_nodes.size(); }
   Node* getNode(int i) { return m_nodes[i]; }
   void setNodeName(int i, std::string& name) { m_nodeNames[i] = name; }
   void setNodeName(int i, const char* name) { m_nodeNames[i] = name; }
   std::string& getNodeName(int i) { return m_nodeNames[i]; }
 
-  int getNumEdges() const { return (int)m_edges.size(); }
+  int getNumEdges() const { return (int) m_edges.size(); }
   Edge* getEdge(int i) { return m_edges[i]; }
   void setEdgeName(int i, std::string& name) { m_edgeNames[i] = name; }
   void setEdgeName(int i, const char* name) { m_edgeNames[i] = name; }
   std::string& getEdgeName(int i) { return m_edgeNames[i]; }
 
-  int getNumPins() const { return (int)m_pins.size(); }
+  int getNumPins() const { return (int) m_pins.size(); }
 
   // For creating and adding pins.
   Pin* createAndAddPin(Node* nd, Edge* ed);
@@ -321,11 +339,14 @@ class Network {
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
   Node* createAndAddShapeNode(
-      int left, int bottom, int width,
+      int left,
+      int bottom,
+      int width,
       int height);  // Extras for non-rectangular shapes.
-  Node* createAndAddFillerNode(
-      int left, int bottom, int width,
-      int height);  // Extras to block space.
+  Node* createAndAddFillerNode(int left,
+                               int bottom,
+                               int width,
+                               int height);  // Extras to block space.
 
   // For creating and adding edges.
   Edge* createAndAddEdge();

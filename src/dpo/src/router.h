@@ -35,9 +35,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
+
 #include <iostream>
 #include <map>
 #include <vector>
+
 #include "rectangle.h"
 
 namespace dpo {
@@ -53,9 +55,11 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class RoutingParams {
+class RoutingParams
+{
  public:
-  class EdgeAdjust {
+  class EdgeAdjust
+  {
    public:
     int m_irow;
     int m_icol;
@@ -72,26 +76,52 @@ class RoutingParams {
           m_jrow(-1),
           m_jcol(-1),
           m_jlayer(-1),
-          m_rcap(0.0) {}
-    EdgeAdjust(int irow, int icol, int ilayer, int jrow, int jcol, int jlayer,
-               double rcap) {
+          m_rcap(0.0)
+    {
+    }
+    EdgeAdjust(int irow,
+               int icol,
+               int ilayer,
+               int jrow,
+               int jcol,
+               int jlayer,
+               double rcap)
+    {
       init(irow, icol, ilayer, jrow, jcol, jlayer, rcap);
     }
-    EdgeAdjust(const EdgeAdjust& other) {
-      init(other.m_irow, other.m_icol, other.m_ilayer, other.m_jrow,
-           other.m_jcol, other.m_jlayer, other.m_rcap);
+    EdgeAdjust(const EdgeAdjust& other)
+    {
+      init(other.m_irow,
+           other.m_icol,
+           other.m_ilayer,
+           other.m_jrow,
+           other.m_jcol,
+           other.m_jlayer,
+           other.m_rcap);
     }
-    EdgeAdjust& operator=(const EdgeAdjust& other) {
+    EdgeAdjust& operator=(const EdgeAdjust& other)
+    {
       if (this != &other) {
-        init(other.m_irow, other.m_icol, other.m_ilayer, other.m_jrow,
-             other.m_jcol, other.m_jlayer, other.m_rcap);
+        init(other.m_irow,
+             other.m_icol,
+             other.m_ilayer,
+             other.m_jrow,
+             other.m_jcol,
+             other.m_jlayer,
+             other.m_rcap);
       }
       return *this;
     }
     virtual ~EdgeAdjust() {}
 
-    void init(int irow, int icol, int ilayer, int jrow, int jcol, int jlayer,
-              double rcap) {
+    void init(int irow,
+              int icol,
+              int ilayer,
+              int jrow,
+              int jcol,
+              int jlayer,
+              double rcap)
+    {
       m_irow = irow;
       m_icol = icol;
       m_ilayer = ilayer;
@@ -123,7 +153,8 @@ class RoutingParams {
         m_XpitchGcd(0.0),
         m_YpitchGcd(0.0),
         m_hasObs(0),
-        m_numRules(0) {
+        m_numRules(0)
+  {
     m_v_capacity.erase(m_v_capacity.begin(), m_v_capacity.end());
     m_h_capacity.erase(m_h_capacity.begin(), m_h_capacity.end());
     m_wire_width.erase(m_wire_width.begin(), m_wire_width.end());
@@ -137,8 +168,14 @@ class RoutingParams {
   void postProcess();
 
   // Get spacing between two objects.
-  double get_spacing(int layer, double xmin1, double xmax1, double ymin1,
-                     double ymax1, double xmin2, double xmax2, double ymin2,
+  double get_spacing(int layer,
+                     double xmin1,
+                     double xmax1,
+                     double ymin1,
+                     double ymax1,
+                     double xmin2,
+                     double xmax2,
+                     double ymin2,
                      double ymax2);
   double get_spacing(int layer, double width, double parallel);
   double get_maximum_spacing(int layer);
@@ -177,7 +214,7 @@ class RoutingParams {
   std::map<Node*, std::vector<unsigned>*> m_blockage;
 
   // Other blockages which are simply specified by rectangles on a layer...
-  std::vector<std::vector<Rectangle> > m_layerBlockages;
+  std::vector<std::vector<Rectangle>> m_layerBlockages;
 
   // Added to get information from LEF/DEF...
   double m_Xlowerbound;
@@ -187,17 +224,17 @@ class RoutingParams {
   double m_XpitchGcd;
   double m_YpitchGcd;
   int m_hasObs;
-  std::vector<std::vector<std::vector<unsigned> > > m_obs;
+  std::vector<std::vector<std::vector<unsigned>>> m_obs;
 
   // Stuff for routing rules...  These vectors should all be the same length...
   int m_numRules;
-  std::vector<std::vector<double> > m_ruleWidths;
-  std::vector<std::vector<double> > m_ruleSpacings;
+  std::vector<std::vector<double>> m_ruleWidths;
+  std::vector<std::vector<double>> m_ruleSpacings;
 
   // Stuff for spacing tables...  Only one spacing table per layer...
-  std::vector<std::vector<double> > m_spacingTableWidth;
-  std::vector<std::vector<double> > m_spacingTableLength;
-  std::vector<std::vector<std::vector<double> > > m_spacingTable;
+  std::vector<std::vector<double>> m_spacingTableWidth;
+  std::vector<std::vector<double>> m_spacingTableLength;
+  std::vector<std::vector<std::vector<double>>> m_spacingTable;
 };
 
 }  // namespace dpo

@@ -37,14 +37,17 @@
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_displacement.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cmath>
 #include <iostream>
 #include <stack>
 #include <utility>
+
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 
@@ -60,7 +63,8 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedDisplacement::DetailedDisplacement(Architecture* arch, Network* network,
+DetailedDisplacement::DetailedDisplacement(Architecture* arch,
+                                           Network* network,
                                            RoutingParams* rt)
     : DetailedObjective("disp"),
       m_arch(arch),
@@ -75,20 +79,23 @@ DetailedDisplacement::DetailedDisplacement(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedDisplacement::~DetailedDisplacement() {}
+DetailedDisplacement::~DetailedDisplacement()
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedDisplacement::init() {
+void DetailedDisplacement::init()
+{
   m_nSets = 0;
   m_count.resize(m_mgrPtr->m_multiHeightCells.size());
   std::fill(m_count.begin(), m_count.end(), 0);
-  m_count[1] = (int)m_mgrPtr->m_singleHeightCells.size();
+  m_count[1] = (int) m_mgrPtr->m_singleHeightCells.size();
   if (m_count[1] != 0) {
     ++m_nSets;
   }
   for (size_t i = 2; i < m_mgrPtr->m_multiHeightCells.size(); i++) {
-    m_count[i] = (int)m_mgrPtr->m_multiHeightCells[i].size();
+    m_count[i] = (int) m_mgrPtr->m_multiHeightCells[i].size();
     if (m_count[i] != 0) {
       ++m_nSets;
     }
@@ -99,8 +106,8 @@ void DetailedDisplacement::init() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedDisplacement::init(DetailedMgr* mgrPtr,
-                                DetailedOrient* orientPtr) {
+void DetailedDisplacement::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
+{
   m_orientPtr = orientPtr;
   m_mgrPtr = mgrPtr;
   init();
@@ -108,7 +115,8 @@ void DetailedDisplacement::init(DetailedMgr* mgrPtr,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::curr() {
+double DetailedDisplacement::curr()
+{
   double dx, dy;
 
   std::fill(m_tot.begin(), m_tot.end(), 0.0);
@@ -132,24 +140,26 @@ double DetailedDisplacement::curr() {
   double disp = 0.;
   for (size_t i = 0; i < m_tot.size(); i++) {
     if (m_count[i] != 0) {
-      disp += m_tot[i] / (double)m_count[i];
+      disp += m_tot[i] / (double) m_count[i];
     }
   }
   disp /= m_singleRowHeight;
-  disp /= (double)m_nSets;
+  disp /= (double) m_nSets;
 
   return disp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
+double DetailedDisplacement::delta(int n,
+                                   std::vector<Node*>& nodes,
                                    std::vector<int>& curLeft,
                                    std::vector<int>& curBottom,
                                    std::vector<unsigned>& curOri,
                                    std::vector<int>& newLeft,
                                    std::vector<int>& newBottom,
-                                   std::vector<unsigned>& newOri) {
+                                   std::vector<unsigned>& newOri)
+{
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
 
@@ -169,7 +179,7 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
 
-    int spanned = (int)(ndi->getHeight() / m_singleRowHeight + 0.5);
+    int spanned = (int) (ndi->getHeight() / m_singleRowHeight + 0.5);
 
     dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
@@ -209,11 +219,11 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
   double delta = 0.;
   for (size_t i = 0; i < m_del.size(); i++) {
     if (m_count[i] != 0) {
-      delta += m_del[i] / (double)m_count[i];
+      delta += m_del[i] / (double) m_count[i];
     }
   }
   delta /= m_singleRowHeight;
-  delta /= (double)m_nSets;
+  delta /= (double) m_nSets;
 
   // +ve means improvement.
   return delta;
@@ -221,7 +231,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y) {
+double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y)
+{
   // Compute change in displacement for moving node to new position.
 
   double old_disp = 0.;
@@ -229,8 +240,8 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y) {
   double dx, dy;
 
   // Targets are centers, but computation is with left and bottom...
-  new_x -= 0.5*ndi->getWidth();
-  new_y -= 0.5*ndi->getHeight();
+  new_x -= 0.5 * ndi->getWidth();
+  new_y -= 0.5 * ndi->getHeight();
 
   dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
   dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
@@ -246,14 +257,16 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates) {
+void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
+{
   candidates.erase(candidates.begin(), candidates.end());
   candidates = m_mgrPtr->m_singleHeightCells;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi, Node* ndj) {
+double DetailedDisplacement::delta(Node* ndi, Node* ndj)
+{
   // Compute change in wire length for swapping the two nodes.
 
   double old_disp = 0.;
@@ -280,9 +293,13 @@ double DetailedDisplacement::delta(Node* ndi, Node* ndj) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi, double target_xi,
-                                   double target_yi, Node* ndj,
-                                   double target_xj, double target_yj) {
+double DetailedDisplacement::delta(Node* ndi,
+                                   double target_xi,
+                                   double target_yi,
+                                   Node* ndj,
+                                   double target_xj,
+                                   double target_yj)
+{
   // Compute change in wire length for swapping the two nodes at specified
   // targets.
 
@@ -291,11 +308,11 @@ double DetailedDisplacement::delta(Node* ndi, double target_xi,
   double dx, dy;
 
   // Targets are centers, but computation is with left and bottom...
-  target_xi -= 0.5*ndi->getWidth();
-  target_yi -= 0.5*ndi->getHeight();
+  target_xi -= 0.5 * ndi->getWidth();
+  target_yi -= 0.5 * ndi->getHeight();
 
-  target_xj -= 0.5*ndj->getWidth();
-  target_yj -= 0.5*ndj->getHeight();
+  target_xj -= 0.5 * ndj->getWidth();
+  target_yj -= 0.5 * ndj->getHeight();
 
   dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
   dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());

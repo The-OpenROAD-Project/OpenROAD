@@ -34,6 +34,7 @@
 
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
@@ -44,7 +45,8 @@ class DetailedSeg;
 class DetailedMgr;
 
 // CLASSES ===================================================================
-class DetailedReorderer {
+class DetailedReorderer
+{
  public:
   DetailedReorderer(Architecture* arch, Network* network, RoutingParams* rt);
   virtual ~DetailedReorderer();
@@ -54,8 +56,13 @@ class DetailedReorderer {
 
  protected:
   void reorder();
-  void reorder(std::vector<Node*>& nodes, int istrt, int istop,
-               int leftLimit, int rightLimit, int segId, int rowId);
+  void reorder(std::vector<Node*>& nodes,
+               int istrt,
+               int istop,
+               int leftLimit,
+               int rightLimit,
+               int segId,
+               int rowId);
   double cost(std::vector<Node*>& nodes, int istrt, int istop);
 
   // Standard stuff.

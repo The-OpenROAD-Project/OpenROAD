@@ -39,16 +39,19 @@
 //////////////////////////////////////////////////////////////////////////////
 // Includes.
 //////////////////////////////////////////////////////////////////////////////
+#include "legalize_shift.h"
+
 #include <stdio.h>
+
 #include <boost/format.hpp>
 #include <deque>
 #include <iostream>
 #include <set>
 #include <vector>
-#include "utl/Logger.h"
+
 #include "detailed_manager.h"
 #include "detailed_segment.h"
-#include "legalize_shift.h"
+#include "utl/Logger.h"
 
 using utl::DPO;
 
@@ -69,13 +72,18 @@ class ShiftLegalizer::Clump
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 ShiftLegalizer::ShiftLegalizer(ShiftLegalizerParams& params)
-    : m_params(params), m_mgr(0), m_arch(0), m_network(0), m_rt(0) {}
+    : m_params(params), m_mgr(0), m_arch(0), m_network(0), m_rt(0)
+{
+}
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-ShiftLegalizer::~ShiftLegalizer() {}
+ShiftLegalizer::~ShiftLegalizer()
+{
+}
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
+bool ShiftLegalizer::legalize(DetailedMgr& mgr)
+{
   // The intention of this legalizer is to simply snap cells into
   // their closest segments and then do a "clumping" to remove
   // any overlap.  The "real intention" is to simply take an
@@ -95,14 +103,14 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   mgr.collectFixedCells();
   mgr.collectSingleHeightCells();
   mgr.collectMultiHeightCells();
-  mgr.collectWideCells();  // XXX: This requires segments!
-  mgr.findBlockages(false); // Exclude routing blockages.
+  mgr.collectWideCells();    // XXX: This requires segments!
+  mgr.findBlockages(false);  // Exclude routing blockages.
   mgr.findSegments();
 
-  std::vector<std::pair<double, double> > origPos;
-  origPos.resize(m_network->getNumNodes() );
-  for (int i = 0; i < m_network->getNumNodes() ; i++) {
-    Node* ndi = m_network->getNode(i) ;
+  std::vector<std::pair<double, double>> origPos;
+  origPos.resize(m_network->getNumNodes());
+  for (int i = 0; i < m_network->getNumNodes(); i++) {
+    Node* ndi = m_network->getNode(i);
     origPos[ndi->getId()] = std::make_pair(ndi->getLeft(), ndi->getBottom());
   }
 
@@ -120,14 +128,16 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   if (mgr.m_singleHeightCells.size() != 0) {
     mgr.assignCellsToSegments(mgr.m_singleHeightCells);
 
-    cells.insert(cells.end(), mgr.m_singleHeightCells.begin(),
+    cells.insert(cells.end(),
+                 mgr.m_singleHeightCells.begin(),
                  mgr.m_singleHeightCells.end());
   }
   for (size_t i = 2; i < mgr.m_multiHeightCells.size(); i++) {
     if (mgr.m_multiHeightCells[i].size() != 0) {
       mgr.assignCellsToSegments(mgr.m_multiHeightCells[i]);
 
-      cells.insert(cells.end(), mgr.m_multiHeightCells[i].begin(),
+      cells.insert(cells.end(),
+                   mgr.m_multiHeightCells[i].begin(),
                    mgr.m_multiHeightCells[i].end());
     }
   }
@@ -144,7 +154,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   }
 
   // Topological order - required for a shift.
-  size_t size = m_network->getNumNodes() ;
+  size_t size = m_network->getNumNodes();
   m_incoming.resize(size);
   m_outgoing.resize(size);
   for (size_t i = 0; i < mgr.m_segments.size(); i++) {
@@ -163,7 +173,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   order.reserve(size);
   for (size_t i = 0; i < cells.size(); i++) {
     Node* ndi = cells[i];
-    count[ndi->getId()] = (int)m_incoming[ndi->getId()].size();
+    count[ndi->getId()] = (int) m_incoming[ndi->getId()].size();
     if (count[ndi->getId()] == 0) {
       visit[ndi->getId()] = true;
       order.push_back(ndi);
@@ -201,7 +211,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   }
 
   if (isDisp) {
-    m_mgr->getLogger()->warn(DPO, 200, "Unexpected displacement during legalization.");
+    m_mgr->getLogger()->warn(
+        DPO, 200, "Unexpected displacement during legalization.");
 
     retval = false;
   }
@@ -216,7 +227,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
 
   // Good place to issue some sort of warning.
   if (err1 != 0 || err2 != 0 || err3 != 0 || err4 != 0 || err5 != 0) {
-    m_mgr->getLogger()->warn(DPO, 201, "Placement check failure during legalization.");
+    m_mgr->getLogger()->warn(
+        DPO, 201, "Placement check failure during legalization.");
 
     retval = false;
   }
@@ -225,7 +237,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-double ShiftLegalizer::shift(std::vector<Node*>& cells) {
+double ShiftLegalizer::shift(std::vector<Node*>& cells)
+{
   // Do some setup and then shift cells to reduce movement from
   // original positions.  If no overlap, this should do nothing.
   //
@@ -313,9 +326,9 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   // Remove all the dummies from the segments.
   for (int i = 0; i < nsegs; i++) {
     // Should _at least_ be the left and right dummies.
-    if (m_mgr->m_cellsInSeg[i].size() < 2 ||
-        m_mgr->m_cellsInSeg[i].front() != m_dummiesLeft[i] ||
-        m_mgr->m_cellsInSeg[i].back() != m_dummiesRight[i]) {
+    if (m_mgr->m_cellsInSeg[i].size() < 2
+        || m_mgr->m_cellsInSeg[i].front() != m_dummiesLeft[i]
+        || m_mgr->m_cellsInSeg[i].back() != m_dummiesRight[i]) {
       isError = true;
     }
 
@@ -342,10 +355,11 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-double ShiftLegalizer::clump(std::vector<Node*>& order) {
+double ShiftLegalizer::clump(std::vector<Node*>& order)
+{
   // Clumps provided cells.
   std::fill(m_offset.begin(), m_offset.end(), 0);
-  std::fill(m_ptr.begin(), m_ptr.end(), (Clump*)0);
+  std::fill(m_ptr.begin(), m_ptr.end(), (Clump*) 0);
 
   size_t n = m_dummiesLeft.size() + order.size() + m_dummiesRight.size();
 
@@ -367,10 +381,10 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     r->m_id = clumpId;
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
-    //r->m_width = ndi->getWidth();
+    // r->m_width = ndi->getWidth();
     r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;  // Massive weight for segment start.
-    //r->m_posn = r->m_wposn / r->m_weight;
+    // r->m_posn = r->m_wposn / r->m_weight;
     r->m_posn = ndi->getLeft();
 
     ++clumpId;
@@ -386,13 +400,13 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
 
     double wt = 1.0;
 
-    r->m_id = (int)i;
+    r->m_id = (int) i;
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
-    //r->m_width = ndi->getWidth();
+    // r->m_width = ndi->getWidth();
     r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;
-    //r->m_posn = r->m_wposn / r->m_weight;
+    // r->m_posn = r->m_wposn / r->m_weight;
     r->m_posn = ndi->getLeft();
 
     // Always ensure the left edge is within the segments
@@ -423,10 +437,10 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     r->m_id = clumpId;
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
-    //r->m_width = ndi->getWidth();
+    // r->m_width = ndi->getWidth();
     r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;  // Massive weight for segment end.
-    //r->m_posn = r->m_wposn / r->m_weight;
+    // r->m_posn = r->m_wposn / r->m_weight;
     r->m_posn = ndi->getLeft();
 
     ++clumpId;
@@ -470,7 +484,8 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
 
   return retval;
 }
-void ShiftLegalizer::merge(Clump* r) {
+void ShiftLegalizer::merge(Clump* r)
+{
   // Find most violated constraint and merge clumps if required.
 
   int dist = 0;
@@ -493,20 +508,21 @@ void ShiftLegalizer::merge(Clump* r) {
     l->m_wposn += r->m_wposn - dist * r->m_weight;
     l->m_weight += r->m_weight;
     // Rounding down should always be fine since we merge to the left.
-    l->m_posn = (int)std::floor(l->m_wposn / l->m_weight);
+    l->m_posn = (int) std::floor(l->m_wposn / l->m_weight);
 
     // Since clump l changed position, we need to make it the new right clump
     // and see if there are more merges to the left.
     r = l;
   }
 }
-bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist) {
+bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
+{
   // We need to figure out if the right clump needs to be merged
   // into the left clump.  This will be needed if there would
   // be overlap among any cell in the right clump and any cell
   // in the left clump.  Look for the worst case.
 
-  int nnodes = m_network->getNumNodes() ;
+  int nnodes = m_network->getNumNodes();
   int nsegs = m_mgr->getNumSegments();
 
   l = nullptr;

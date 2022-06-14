@@ -37,6 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
@@ -52,12 +53,10 @@ class DetailedMgr;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedParams {
+class DetailedParams
+{
  public:
-  DetailedParams()
-      : m_targetUt(1.0) {
-    m_script = "";
-  }
+  DetailedParams() : m_targetUt(1.0) { m_script = ""; }
   virtual ~DetailedParams() {}
 
  public:
@@ -65,15 +64,17 @@ class DetailedParams {
   double m_targetUt;
 };
 
-class Detailed {
+class Detailed
+{
  public:
   Detailed(DetailedParams& params)
-    : m_params(params),
-      m_mgr(nullptr),
-      m_arch(nullptr),
-      m_network(nullptr),
-      m_rt(nullptr)
-  {}
+      : m_params(params),
+        m_mgr(nullptr),
+        m_arch(nullptr),
+        m_network(nullptr),
+        m_rt(nullptr)
+  {
+  }
   virtual ~Detailed() {}
 
   // Interface for script.

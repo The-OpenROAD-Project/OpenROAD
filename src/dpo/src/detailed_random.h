@@ -37,6 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_generator.h"
 #include "detailed_manager.h"
@@ -54,21 +55,25 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedRandom {
+class DetailedRandom
+{
  public:
-  enum DrcMode {
+  enum DrcMode
+  {
     DrcMode_NoPenalty = 0,
     DrcMode_NormalPenalty,
     DrcMode_Eliminate,
     DrcMode_Unknown
   };
-  enum MoveMode {
+  enum MoveMode
+  {
     MoveMode_Median = 0,
     MoveMode_CellDensity1,
     MoveMode_RandomWindow,
     MoveMode_Unknown
   };
-  enum MoveSource {
+  enum MoveSource
+  {
     MoveSource_All = 0,
     MoveSource_Wirelength,
     MoveSource_DrcViolators,
@@ -122,7 +127,8 @@ class DetailedRandom {
   std::vector<std::string> m_expr;
 };
 
-class RandomGenerator : public DetailedGenerator {
+class RandomGenerator : public DetailedGenerator
+{
  public:
   RandomGenerator();
   virtual ~RandomGenerator();
@@ -143,7 +149,8 @@ class RandomGenerator : public DetailedGenerator {
   int m_swaps;
 };
 
-class DisplacementGenerator : public DetailedGenerator {
+class DisplacementGenerator : public DetailedGenerator
+{
  public:
   DisplacementGenerator();
   virtual ~DisplacementGenerator();

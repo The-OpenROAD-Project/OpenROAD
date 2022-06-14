@@ -34,15 +34,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <iostream>
 #include <vector>
 
 namespace dpo {
 
-class Graph {
+class Graph
+{
  public:
-  Graph(int v) : m_v(v) {
+  Graph(int v) : m_v(v)
+  {
     m_adj.resize(m_v);
 
     m_color.resize(m_v);
@@ -50,11 +53,13 @@ class Graph {
     m_ncolors = 0;
   }
   virtual ~Graph() {}
-  void addEdge(int u, int v) {
+  void addEdge(int u, int v)
+  {
     m_adj[u].push_back(v);
     m_adj[v].push_back(u);
   }
-  void removeDuplicates() {
+  void removeDuplicates()
+  {
     for (int i = 0; i < m_v; i++) {
       std::sort(m_adj[i].begin(), m_adj[i].end());
       m_adj[i].erase(std::unique(m_adj[i].begin(), m_adj[i].end()),
@@ -62,7 +67,8 @@ class Graph {
     }
   }
 
-  void greedyColoring() {
+  void greedyColoring()
+  {
     m_color.resize(m_v);
     std::fill(m_color.begin(), m_color.end(), -1);
     m_color[0] = 0;  // first node gets first color.

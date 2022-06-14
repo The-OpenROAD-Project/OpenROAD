@@ -37,14 +37,17 @@
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_hpwl.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cmath>
 #include <iostream>
 #include <stack>
 #include <utility>
+
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "rectangle.h"
@@ -61,7 +64,8 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedHPWL::DetailedHPWL(Architecture* arch, Network* network,
+DetailedHPWL::DetailedHPWL(Architecture* arch,
+                           Network* network,
                            RoutingParams* rt)
     : DetailedObjective("hpwl"),
       m_arch(arch),
@@ -77,11 +81,14 @@ DetailedHPWL::DetailedHPWL(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedHPWL::~DetailedHPWL() {}
+DetailedHPWL::~DetailedHPWL()
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedHPWL::init() {
+void DetailedHPWL::init()
+{
   m_traversal = 0;
   m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
@@ -89,7 +96,8 @@ void DetailedHPWL::init() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr) {
+void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
+{
   m_orientPtr = orientPtr;
   m_mgrPtr = mgrPtr;
   init();
@@ -97,7 +105,8 @@ void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::curr() {
+double DetailedHPWL::curr()
+{
   double x, y;
   double hpwl = 0.;
   Rectangle box;
@@ -115,24 +124,28 @@ double DetailedHPWL::curr() {
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
+      x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
-      box.addPt(x,y);
+      box.addPt(x, y);
     }
 
-    hpwl += (box.getWidth()+box.getHeight());
+    hpwl += (box.getWidth() + box.getHeight());
   }
   return hpwl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
-                           std::vector<int>& curLeft, std::vector<int>& curBottom,
+double DetailedHPWL::delta(int n,
+                           std::vector<Node*>& nodes,
+                           std::vector<int>& curLeft,
+                           std::vector<int>& curBottom,
                            std::vector<unsigned>& curOri,
-                           std::vector<int>& newLeft, std::vector<int>& newBottom,
-                           std::vector<unsigned>& newOri) {
+                           std::vector<int>& newLeft,
+                           std::vector<int>& newBottom,
+                           std::vector<unsigned>& newOri)
+{
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
   // might need to adjust pin information...
@@ -174,13 +187,13 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
 
-        old_box.addPt(x,y);
+        old_box.addPt(x, y);
       }
 
-      old_wl += (old_box.getWidth()+old_box.getHeight());
+      old_wl += (old_box.getWidth() + old_box.getHeight());
     }
   }
 
@@ -216,13 +229,13 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
 
-        new_box.addPt(x,y);
+        new_box.addPt(x, y);
       }
 
-      new_wl += (new_box.getWidth()+new_box.getHeight());
+      new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
 
@@ -242,7 +255,8 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
+double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
+{
   // Compute change in wire length for moving node to new position.
 
   double old_wl = 0.;
@@ -272,34 +286,36 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
+      x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
-      old_box.addPt(x,y);
+      old_box.addPt(x, y);
 
       if (ndj == ndi) {
         x = new_x + pinj->getOffsetX();
         y = new_y + pinj->getOffsetY();
       }
 
-      new_box.addPt(x,y);
+      new_box.addPt(x, y);
     }
-    old_wl += (old_box.getWidth()+old_box.getHeight());
-    new_wl += (new_box.getWidth()+new_box.getHeight());
+    old_wl += (old_box.getWidth() + old_box.getHeight());
+    new_wl += (new_box.getWidth() + new_box.getHeight());
   }
   return old_wl - new_wl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedHPWL::getCandidates(std::vector<Node*>& candidates) {
+void DetailedHPWL::getCandidates(std::vector<Node*>& candidates)
+{
   candidates.erase(candidates.begin(), candidates.end());
   candidates = m_mgrPtr->m_singleHeightCells;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(Node* ndi, Node* ndj) {
+double DetailedHPWL::delta(Node* ndi, Node* ndj)
+{
   // Compute change in wire length for swapping the two nodes.
 
   double old_wl = 0.;
@@ -318,7 +334,7 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
 
       Edge* edi = pini->getEdge();
 
-      //int npins = edi->getNumPins();
+      // int npins = edi->getNumPins();
       int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
@@ -335,10 +351,10 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
-        old_box.addPt(x,y);
+        old_box.addPt(x, y);
 
         if (ndj == nodes[0]) {
           ndj = nodes[1];
@@ -346,14 +362,14 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
-        new_box.addPt(x,y);
+        new_box.addPt(x, y);
       }
 
-      old_wl += (old_box.getWidth()+old_box.getHeight());
-      new_wl += (new_box.getWidth()+new_box.getHeight());
+      old_wl += (old_box.getWidth() + old_box.getHeight());
+      new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
   return old_wl - new_wl;
@@ -361,8 +377,13 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
-                           Node* ndj, double target_xj, double target_yj) {
+double DetailedHPWL::delta(Node* ndi,
+                           double target_xi,
+                           double target_yi,
+                           Node* ndj,
+                           double target_xj,
+                           double target_yj)
+{
   // Compute change in wire length for swapping the two nodes.
 
   double old_wl = 0.;
@@ -397,10 +418,10 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
 
-        old_box.addPt(x,y);
+        old_box.addPt(x, y);
 
         if (curr == nodes[0]) {
           x = target_xi + pinj->getOffsetX();
@@ -410,11 +431,11 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
           y = target_yj + pinj->getOffsetY();
         }
 
-        new_box.addPt(x,y);
+        new_box.addPt(x, y);
       }
 
-      old_wl += (old_box.getWidth()+old_box.getHeight());
-      new_wl += (new_box.getWidth()+new_box.getHeight());
+      old_wl += (old_box.getWidth() + old_box.getHeight());
+      new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
   return old_wl - new_wl;

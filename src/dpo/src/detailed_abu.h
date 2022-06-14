@@ -37,6 +37,7 @@
 #include <deque>
 #include <set>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_objective.h"
 #include "network.h"
@@ -48,7 +49,8 @@ class DetailedOrient;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedABU : public DetailedObjective {
+class DetailedABU : public DetailedObjective
+{
   // This class maintains the ABU metric which can be used as part of a cost
   // function for detailed improvement.
  public:
@@ -57,10 +59,13 @@ class DetailedABU : public DetailedObjective {
 
   // Those that must be overridden.
   double curr();
-  double delta(int n, std::vector<Node*>& nodes, 
-               std::vector<int>& curLeft, std::vector<int>& curBottom, 
+  double delta(int n,
+               std::vector<Node*>& nodes,
+               std::vector<int>& curLeft,
+               std::vector<int>& curBottom,
                std::vector<unsigned>& curOri,
-               std::vector<int>& newLeft, std::vector<int>& newBottom,
+               std::vector<int>& newLeft,
+               std::vector<int>& newBottom,
                std::vector<unsigned>& newOri);
   void accept();
   void reject();
@@ -90,7 +95,8 @@ class DetailedABU : public DetailedObjective {
   int getBucketId(int binId, double occ);
 
  protected:
-  struct density_bin {
+  struct density_bin
+  {
     int id;
     double lx, hx;      // low/high x coordinate
     double ly, hy;      // low/high y coordinate
@@ -125,7 +131,7 @@ class DetailedABU : public DetailedObjective {
   std::vector<int> m_abuChangedBins;
   std::vector<int> m_abuChangedBinsMask;
 
-  std::vector<std::set<int> > m_utilBuckets;
+  std::vector<std::set<int>> m_utilBuckets;
   std::vector<double> m_utilTotals;
 };
 

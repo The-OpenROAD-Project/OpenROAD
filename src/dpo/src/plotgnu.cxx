@@ -30,16 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 #include "plotgnu.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <iostream>
 #include <map>
 #include <vector>
+
 #include "rectangle.h"
 #include "utility.h"
 
@@ -58,12 +60,15 @@ PlotGnu::PlotGnu()
       m_drawArchitecture(false),
       m_drawNodes(true),
       m_skipStandardCells(false),
-      m_drawDisp(false) {}
+      m_drawDisp(false)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // PlotGnu::Draw:
 ////////////////////////////////////////////////////////////////////////////////
-void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
+void PlotGnu::Draw(Network* network, Architecture* arch, char* msg)
+{
   m_network = network;
   m_arch = arch;
   m_rt = 0;
@@ -75,18 +80,18 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
   else
     sprintf(&buf[0], "%s", msg);
 
-  if (m_drawNodes) drawNodes(buf);
+  if (m_drawNodes)
+    drawNodes(buf);
   ++m_counter;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // PlotGnu::drawNodes:
 ////////////////////////////////////////////////////////////////////////////////
-void PlotGnu::drawNodes(char* buf) {
-
+void PlotGnu::drawNodes(char* buf)
+{
   double rowHeight = m_arch->getRow(0)->getHeight();
   double siteWidth = m_arch->getRow(0)->getSiteWidth();
-
 
   FILE* fpMain = 0;
   FILE* fpArch = 0;
@@ -141,8 +146,8 @@ void PlotGnu::drawNodes(char* buf) {
     cout << "Error opening file '" << shredsName << "'." << endl;
     return;
   }
-  std::string outlinesName =
-      "placement." + std::string(counter) + "outlines.dat";
+  std::string outlinesName
+      = "placement." + std::string(counter) + "outlines.dat";
   if ((fpOutlines = fopen(outlinesName.c_str(), "w")) == 0) {
     cout << "Error opening file '" << outlinesName << "'." << endl;
     return;
@@ -153,8 +158,8 @@ void PlotGnu::drawNodes(char* buf) {
     return;
   }
 
-  if (fpMain == 0 || fpArch == 0 || fpCell == 0 || fpIO == 0 || fpFixed == 0 ||
-      fpShapes == 0 || fpShreds == 0 || fpOutlines == 0 || fpPeanut == 0) {
+  if (fpMain == 0 || fpArch == 0 || fpCell == 0 || fpIO == 0 || fpFixed == 0
+      || fpShapes == 0 || fpShreds == 0 || fpOutlines == 0 || fpPeanut == 0) {
     cout << "Error attempting to write gnuplot files." << endl;
     return;
   }
@@ -176,14 +181,23 @@ void PlotGnu::drawNodes(char* buf) {
     int yb = m_arch->getMinY();
     int yt = m_arch->getMaxY();
     fprintf(fpArch,
-          "\n"
-          "%d %d\n"
-          "%d %d\n"
-          "%d %d\n"
-          "%d %d\n"
-          "%d %d\n"
-          "\n",
-          lx, yb, lx, yt, rx, yt, rx, yb, lx, yb);
+            "\n"
+            "%d %d\n"
+            "%d %d\n"
+            "%d %d\n"
+            "%d %d\n"
+            "%d %d\n"
+            "\n",
+            lx,
+            yb,
+            lx,
+            yt,
+            rx,
+            yt,
+            rx,
+            yb,
+            lx,
+            yb);
   }
 
   // Draw regions with the exception of the default region.
@@ -198,8 +212,16 @@ void PlotGnu::drawNodes(char* buf) {
               "%d %d\n"
               "%d %d\n"
               "\n",
-              rect.xmin(), rect.ymin(), rect.xmin(), rect.ymax(), rect.xmax(),
-              rect.ymax(), rect.xmax(), rect.ymin(), rect.xmin(), rect.ymin());
+              rect.xmin(),
+              rect.ymin(),
+              rect.xmin(),
+              rect.ymax(),
+              rect.xmax(),
+              rect.ymax(),
+              rect.xmax(),
+              rect.ymin(),
+              rect.xmin(),
+              rect.ymin());
     }
   }
 
@@ -217,21 +239,17 @@ void PlotGnu::drawNodes(char* buf) {
     FILE* fpCurr = fpCell;
     bool draw = true;
     if (ndi->isFiller()) {
-      draw = false; // Don't draw filler.
-    }
-    else if (ndi->isTerminal() || ndi->isTerminalNI()) {
+      draw = false;  // Don't draw filler.
+    } else if (ndi->isTerminal() || ndi->isTerminalNI()) {
       didPrintIO = true;
       fpCurr = fpIO;
-    }
-    else if (ndi->isFixed()) {
+    } else if (ndi->isFixed()) {
       didPrintFixed = true;
       fpCurr = fpFixed;
-    }
-    else if (ndi->isShape()) {
+    } else if (ndi->isShape()) {
       didPrintShapes = true;
       fpCurr = fpShapes;
-    }
-    else {
+    } else {
       // Should be a cell.
       ;
     }
@@ -241,26 +259,33 @@ void PlotGnu::drawNodes(char* buf) {
       double rx = ndi->getRight();
       double yb = ndi->getBottom();
       double yt = ndi->getTop();
-      if (rx-lx>=siteWidth) {
-        lx += 0.0250*siteWidth;
-        rx -= 0.0250*siteWidth;
+      if (rx - lx >= siteWidth) {
+        lx += 0.0250 * siteWidth;
+        rx -= 0.0250 * siteWidth;
       }
-      if (yt-yb>=rowHeight) {
-        yb += 0.0250*rowHeight;
-        yt -= 0.0250*rowHeight;
+      if (yt - yb >= rowHeight) {
+        yb += 0.0250 * rowHeight;
+        yt -= 0.0250 * rowHeight;
       }
 
       fprintf(fpCurr,
-        "\n"
-        "%lf %lf\n"
-        "%lf %lf\n"
-        "%lf %lf\n"
-        "%lf %lf\n"
-        "%lf %lf\n"
-        "\n",
-        lx, yb, lx, yt,
-        rx, yt, rx, yb,
-        lx, yb);
+              "\n"
+              "%lf %lf\n"
+              "%lf %lf\n"
+              "%lf %lf\n"
+              "%lf %lf\n"
+              "%lf %lf\n"
+              "\n",
+              lx,
+              yb,
+              lx,
+              yt,
+              rx,
+              yt,
+              rx,
+              yb,
+              lx,
+              yb);
     }
   }
 
@@ -284,7 +309,10 @@ void PlotGnu::drawNodes(char* buf) {
               "%lf %lf\n"
               "%lf %lf\n"
               "\n",
-              x1, y1, x2, y2);
+              x1,
+              y1,
+              x2,
+              y2);
     }
   }
 
@@ -305,12 +333,16 @@ void PlotGnu::drawNodes(char* buf) {
           "#to save an EPS file for inclusion into a latex document\n"
           "#set terminal postscript eps color solid 20\n"
           "#set output \"%s\"\n\n",
-          m_counter, hpwl,
-          buf, m_filename);
+          m_counter,
+          hpwl,
+          buf,
+          m_filename);
 
   // Constrain the x and y ranges.
-  fprintf(fpMain, "set xrange[%lf:%lf]\n", range.xmin()-1.0, range.xmax()+1.0);
-  fprintf(fpMain, "set yrange[%lf:%lf]\n", range.ymin()-1.0, range.ymax()+1.0);
+  fprintf(
+      fpMain, "set xrange[%lf:%lf]\n", range.xmin() - 1.0, range.xmax() + 1.0);
+  fprintf(
+      fpMain, "set yrange[%lf:%lf]\n", range.ymin() - 1.0, range.ymax() + 1.0);
 
   // Setup some line types.
   fprintf(fpMain, "set style line 1 lt 1 lw 3 lc rgb \"purple\"\n");
@@ -324,31 +356,37 @@ void PlotGnu::drawNodes(char* buf) {
   // Output the plot command.
   fprintf(fpMain, "plot [:][:] \"%s\" with lines ls 2", archName.c_str());
   if (didPrintCell) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Cell\" with lines ls 4",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Cell\" with lines ls 4",
             cellName.c_str());
   }
   if (didPrintIO) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"IO\" with lines ls 3",
-            ioName.c_str());
+    fprintf(
+        fpMain, ",\\\n    \"%s\" title \"IO\" with lines ls 3", ioName.c_str());
   }
   if (didPrintFixed) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Fixed\" with lines ls 2",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Fixed\" with lines ls 2",
             fixedName.c_str());
   }
   if (didPrintShapes) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Shapes\" with lines ls 5",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Shapes\" with lines ls 5",
             shapesName.c_str());
   }
   if (didPrintShreds) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Shreds\" with lines ls 6",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Shreds\" with lines ls 6",
             shredsName.c_str());
   }
   if (didPrintOutlines) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Outlines\" with lines ls 1",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Outlines\" with lines ls 1",
             outlinesName.c_str());
   }
   if (didPrintPeanut) {
-    fprintf(fpMain, ",\\\n    \"%s\" title \"Peanuts\" with lines ls 7",
+    fprintf(fpMain,
+            ",\\\n    \"%s\" title \"Peanuts\" with lines ls 7",
             peanutName.c_str());
   }
   fprintf(fpMain, "\n");

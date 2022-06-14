@@ -55,7 +55,8 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedSeg {
+class DetailedSeg
+{
  public:
   DetailedSeg()
       : m_segId(-1),
@@ -63,8 +64,10 @@ class DetailedSeg {
         m_regId(0),
         m_xmin(std::numeric_limits<int>::max()),
         m_xmax(std::numeric_limits<int>::lowest()),
-        m_util(0.0) {}
-        //m_gapu(0.0)
+        m_util(0.0)
+  {
+  }
+  // m_gapu(0.0)
   virtual ~DetailedSeg() {}
 
   void setSegId(int segId) { m_segId = segId; }
@@ -82,7 +85,7 @@ class DetailedSeg {
   void setMaxX(int xmax) { m_xmax = xmax; }
   int getMaxX() const { return m_xmax; }
 
-  int getWidth() const { return m_xmax-m_xmin; }
+  int getWidth() const { return m_xmax - m_xmin; }
 
   void setUtil(int util) { m_util = util; }
   int getUtil() const { return m_util; }
@@ -93,7 +96,7 @@ class DetailedSeg {
   // Some identifiers...
   int m_segId;
   int m_rowId;
-  int m_regId; 
+  int m_regId;
   // Span of segment...
   int m_xmin;
   int m_xmax;

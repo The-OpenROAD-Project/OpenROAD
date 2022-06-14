@@ -40,20 +40,24 @@
 
 namespace dpo {
 
-template<typename T>
-class Rectangle_b {
+template <typename T>
+class Rectangle_b
+{
  public:
-  Rectangle_b() {
-    reset();
-  }
+  Rectangle_b() { reset(); }
   Rectangle_b(T xmin, T ymin, T xmax, T ymax)
-      : m_xmin(xmin), m_ymin(ymin), m_xmax(xmax), m_ymax(ymax) {}
+      : m_xmin(xmin), m_ymin(ymin), m_xmax(xmax), m_ymax(ymax)
+  {
+  }
   Rectangle_b(const Rectangle_b& rect)
       : m_xmin(rect.m_xmin),
         m_ymin(rect.m_ymin),
         m_xmax(rect.m_xmax),
-        m_ymax(rect.m_ymax) {}
-  Rectangle_b& operator=(const Rectangle_b& other) {
+        m_ymax(rect.m_ymax)
+  {
+  }
+  Rectangle_b& operator=(const Rectangle_b& other)
+  {
     if (this != &other) {
       m_xmin = other.m_xmin;
       m_xmax = other.m_xmax;
@@ -64,40 +68,50 @@ class Rectangle_b {
   }
   virtual ~Rectangle_b() {}
 
-  void reset() {
+  void reset()
+  {
     m_xmin = std::numeric_limits<T>::max();
     m_ymin = std::numeric_limits<T>::max();
     m_xmax = std::numeric_limits<T>::lowest();
     m_ymax = std::numeric_limits<T>::lowest();
   }
 
-  void enlarge(const Rectangle_b& r) {
+  void enlarge(const Rectangle_b& r)
+  {
     m_xmin = (m_xmin > r.m_xmin ? r.m_xmin : m_xmin);
     m_ymin = (m_ymin > r.m_ymin ? r.m_ymin : m_ymin);
     m_xmax = (m_xmax < r.m_xmax ? r.m_xmax : m_xmax);
     m_ymax = (m_ymax < r.m_ymax ? r.m_ymax : m_ymax);
   }
-  bool intersects(const Rectangle_b& r) const {
-    return !(m_xmin > r.m_xmax || m_xmax < r.m_xmin || m_ymin > r.m_ymax ||
-             m_ymax < r.m_ymin);
+  bool intersects(const Rectangle_b& r) const
+  {
+    return !(m_xmin > r.m_xmax || m_xmax < r.m_xmin || m_ymin > r.m_ymax
+             || m_ymax < r.m_ymin);
   }
-  bool is_overlap(T xmin, T ymin, T xmax, T ymax) {
-    if (xmin >= m_xmax) return false;
-    if (xmax <= m_xmin) return false;
-    if (ymin >= m_ymax) return false;
-    if (ymax <= m_ymin) return false;
+  bool is_overlap(T xmin, T ymin, T xmax, T ymax)
+  {
+    if (xmin >= m_xmax)
+      return false;
+    if (xmax <= m_xmin)
+      return false;
+    if (ymin >= m_ymax)
+      return false;
+    if (ymax <= m_ymin)
+      return false;
     return true;
   }
 
-  bool contains(const Rectangle_b& r) {
-    if (r.m_xmin >= m_xmin && r.m_xmax <= m_xmax && r.m_ymin >= m_ymin &&
-        r.m_ymax <= m_ymax) {
+  bool contains(const Rectangle_b& r)
+  {
+    if (r.m_xmin >= m_xmin && r.m_xmax <= m_xmax && r.m_ymin >= m_ymin
+        && r.m_ymax <= m_ymax) {
       return true;
     }
     return false;
   }
 
-  void addPt(T x, T y) {
+  void addPt(T x, T y)
+  {
     m_xmin = std::min(m_xmin, x);
     m_xmax = std::max(m_xmax, x);
     m_ymin = std::min(m_ymin, y);
@@ -128,7 +142,7 @@ class Rectangle_b {
   T m_ymax;
 };
 
-using Rectangle = Rectangle_b<double>; // Legacy.
+using Rectangle = Rectangle_b<double>;  // Legacy.
 
 using Rectangle_d = Rectangle_b<double>;
 using Rectangle_i = Rectangle_b<int>;

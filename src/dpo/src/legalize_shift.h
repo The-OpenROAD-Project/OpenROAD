@@ -45,6 +45,7 @@
 #include <map>
 #include <set>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
@@ -61,12 +62,14 @@ class DetailedMgr;
 // Classes.
 //////////////////////////////////////////////////////////////////////////////
 
-class ShiftLegalizerParams {
+class ShiftLegalizerParams
+{
  public:
   ShiftLegalizerParams() {}
 };
 
-class ShiftLegalizer {
+class ShiftLegalizer
+{
  public:
   ShiftLegalizer(ShiftLegalizerParams& params);
   virtual ~ShiftLegalizer();
@@ -92,8 +95,8 @@ class ShiftLegalizer {
   std::vector<Clump> m_clumps;
   std::vector<int> m_offset;
   std::vector<Clump*> m_ptr;
-  std::vector<std::vector<int> > m_outgoing;
-  std::vector<std::vector<int> > m_incoming;
+  std::vector<std::vector<int>> m_outgoing;
+  std::vector<std::vector<int>> m_incoming;
   std::vector<Node*> m_dummiesRight;
   std::vector<Node*> m_dummiesLeft;
 };

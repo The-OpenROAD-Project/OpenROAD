@@ -30,16 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 #include "utility.h"
+
 #include <stdio.h>
+
 #include <cmath>
 #include <deque>
 #include <iostream>
 #include <stack>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "rectangle.h"
@@ -48,7 +50,8 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
+double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
+{
   // Returns L1 displacement of the current placement from that stored.
   tot = 0.;
   max = 0.;
@@ -62,14 +65,15 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
     tot += dx + dx;
     max = std::max(max, dx + dy);
   }
-  avg = tot / (double)nw->getNumNodes(); 
+  avg = tot / (double) nw->getNumNodes();
 
   return tot;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw) {
+double Utility::hpwl(Network* nw)
+{
   // Compute the wire length for the given placement.
   double totWL = 0.0;
   for (unsigned e = 0; e < nw->getNumEdges(); e++) {
@@ -79,7 +83,8 @@ double Utility::hpwl(Network* nw) {
   return totWL;
 }
 
-double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
+double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly)
+{
   hpwlx = 0.0;
   hpwly = 0.0;
   // Compute the wire length for the given placement.
@@ -98,19 +103,20 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
       Pin* pin = ed->getPins()[p];
 
       Node* ndi = pin->getNode();
-      double py = ndi->getBottom()+0.5*ndi->getHeight() + pin->getOffsetY();
-      double px = ndi->getLeft()+0.5*ndi->getWidth() + pin->getOffsetX();
+      double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+      double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
       box.addPt(px, py);
     }
     hpwlx += box.getWidth();
     hpwly += box.getHeight();
   }
-  return hpwlx+hpwly;
+  return hpwlx + hpwly;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw, Edge* ed) {
+double Utility::hpwl(Network* nw, Edge* ed)
+{
   double hpwlx = 0.0;
   double hpwly = 0.0;
   return hpwl(nw, ed, hpwlx, hpwly);
@@ -118,7 +124,8 @@ double Utility::hpwl(Network* nw, Edge* ed) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
+double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly)
+{
   hpwlx = 0.0;
   hpwly = 0.0;
 
@@ -132,22 +139,32 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
     Pin* pin = ed->getPins()[p];
 
     Node* ndi = pin->getNode();
-    double py = ndi->getBottom()+0.5*ndi->getHeight() + pin->getOffsetY();
-    double px = ndi->getLeft()+0.5*ndi->getWidth() + pin->getOffsetX();
+    double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+    double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
     box.addPt(px, py);
   }
   hpwlx = box.getWidth();
   hpwly = box.getHeight();
-  return hpwlx+hpwly;
+  return hpwlx + hpwly;
 }
 
-double Utility::compute_overlap(double xmin1, double xmax1, double ymin1,
-                                double ymax1, double xmin2, double xmax2,
-                                double ymin2, double ymax2) {
-  if (xmin1 >= xmax2) return 0.0;
-  if (xmax1 <= xmin2) return 0.0;
-  if (ymin1 >= ymax2) return 0.0;
-  if (ymax1 <= ymin2) return 0.0;
+double Utility::compute_overlap(double xmin1,
+                                double xmax1,
+                                double ymin1,
+                                double ymax1,
+                                double xmin2,
+                                double xmax2,
+                                double ymin2,
+                                double ymax2)
+{
+  if (xmin1 >= xmax2)
+    return 0.0;
+  if (xmax1 <= xmin2)
+    return 0.0;
+  if (ymin1 >= ymax2)
+    return 0.0;
+  if (ymax1 <= ymin2)
+    return 0.0;
   double ww = std::min(xmax1, xmax2) - std::max(xmin1, xmin2);
   double hh = std::min(ymax1, ymax2) - std::max(ymin1, ymin2);
   return ww * hh;

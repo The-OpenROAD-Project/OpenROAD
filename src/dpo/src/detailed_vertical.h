@@ -34,6 +34,7 @@
 
 #include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_generator.h"
 #include "network.h"
@@ -46,7 +47,8 @@ class DetailedSeg;
 class DetailedMgr;
 
 // CLASSES ===================================================================
-class DetailedVerticalSwap : public DetailedGenerator {
+class DetailedVerticalSwap : public DetailedGenerator
+{
  public:
   DetailedVerticalSwap(Architecture* arch, Network* network, RoutingParams* rt);
   DetailedVerticalSwap();

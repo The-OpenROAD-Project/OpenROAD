@@ -45,6 +45,7 @@
 #include <map>
 #include <set>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
@@ -62,9 +63,11 @@ class DetailedMgr;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMisParams {
+class DetailedMisParams
+{
  public:
-  enum Strategy {
+  enum Strategy
+  {
     KDTree = 0,
     Binning = 1,
     Colour = 2,
@@ -99,9 +102,14 @@ class DetailedMisParams {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMis {
+class DetailedMis
+{
   // Flow-based solver for replacing nodes using matching.
-  enum Objective { Hpwl, Disp };
+  enum Objective
+  {
+    Hpwl,
+    Disp
+  };
 
  public:
   DetailedMis(Architecture* arch, Network* network, RoutingParams* rt);
@@ -168,7 +176,7 @@ class DetailedMis {
   std::vector<Node*> m_neighbours;
 
   // Grid used for binning and locating cells.
-  std::vector<std::vector<Bucket*> > m_grid;
+  std::vector<std::vector<Bucket*>> m_grid;
   int m_dimW;
   int m_dimH;
   double m_stepX;
