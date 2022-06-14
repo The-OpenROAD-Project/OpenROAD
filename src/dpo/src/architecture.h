@@ -230,13 +230,13 @@ class Architecture::Row
   int rowHeight_;        // Height of the row.
   int subRowOrigin_;     // Starting X location (xmin) of the row.
   int siteSpacing_;      // Spacing between sites in the row. XXX: Likely
-                          // assumed to be the same as the width...
+                         // assumed to be the same as the width...
   int siteWidth_;        // Width of sites in the row.
   int numSites_;         // Number of sites...  Ending X location (xmax) is =
-                          // subRowOrigin_ + numSites_ * siteSpacing_;
+                         // subRowOrigin_ + numSites_ * siteSpacing_;
   unsigned siteOrient_;  // Orientation of sites in the row.
   unsigned siteSymmetry_;  // Symmetry of sites in the row.  Symmetry allows
-                            // for certain orientations...
+                           // for certain orientations...
   // Voltages at the top and bottom of the row.
   int powerTop_;
   int powerBot_;

@@ -286,8 +286,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
   // Jam all the left dummies nodes into segments.
   for (int i = 0; i < nsegs; i++) {
-    mgr_->cellsInSeg_[i].insert(mgr_->cellsInSeg_[i].begin(),
-                                  dummiesLeft_[i]);
+    mgr_->cellsInSeg_[i].insert(mgr_->cellsInSeg_[i].begin(), dummiesLeft_[i]);
   }
 
   // Jam all the right dummies nodes into segments.
@@ -411,8 +410,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     // Always ensure the left edge is within the segments
     // in which the cell is assigned.
-    for (size_t j = 0; j < mgr_->reverseCellToSegs_[ndi->getId()].size();
-         j++) {
+    for (size_t j = 0; j < mgr_->reverseCellToSegs_[ndi->getId()].size(); j++) {
       DetailedSeg* segPtr = mgr_->reverseCellToSegs_[ndi->getId()][j];
       int xmin = segPtr->getMinX();
       int xmax = segPtr->getMaxX();
@@ -457,8 +455,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     Node* ndi = order[i];
 
     int rowId = mgr_->reverseCellToSegs_[ndi->getId()][0]->getRowId();
-    for (size_t r = 1; r < mgr_->reverseCellToSegs_[ndi->getId()].size();
-         r++) {
+    for (size_t r = 1; r < mgr_->reverseCellToSegs_[ndi->getId()].size(); r++) {
       rowId = std::min(rowId,
                        mgr_->reverseCellToSegs_[ndi->getId()][r]->getRowId());
     }

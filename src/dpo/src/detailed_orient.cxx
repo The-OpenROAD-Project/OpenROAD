@@ -422,12 +422,12 @@ int DetailedOrient::flipCells()
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
       if (ndl) {
         lx += arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
-                                               ndi->getRightEdgeType());
+                                              ndi->getRightEdgeType());
       }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
       if (ndr) {
         rx -= arch_->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
-                                               ndr->getLeftEdgeType());
+                                              ndr->getLeftEdgeType());
       }
       // Based on edge spacing, the cell must reside within
       // [lx,rx].

@@ -175,11 +175,11 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   }
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
   mgr_->getLogger()->info(DPO,
-                           307,
-                           "End of global swaps; objective is {:.6e}, "
-                           "improvement is {:.2f} percent.",
-                           curr_hpwl,
-                           curr_imp);
+                          307,
+                          "End of global swaps; objective is {:.6e}, "
+                          "improvement is {:.2f} percent.",
+                          curr_hpwl,
+                          curr_imp);
 }
 
 //////////////////////////////////////////////////////////////////////////////

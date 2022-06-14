@@ -430,8 +430,7 @@ int Architecture::getCellSpacing(Node* leftNode, Node* rightNode)
 
     int separation = 0;
     if (leftNode != 0) {
-      if (cellPaddings_.end()
-          != (it = cellPaddings_.find(leftNode->getId()))) {
+      if (cellPaddings_.end() != (it = cellPaddings_.find(leftNode->getId()))) {
         separation += it->second.second;
       }
     }

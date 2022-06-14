@@ -155,13 +155,13 @@ void DetailedMgr::setMaxDisplacement(int x, int y)
   maxDispY_ = std::min(maxDispY_, limit);
 
   logger_->info(DPO,
-                 402,
-                 "Setting maximum displacement {:d} {:d} to "
-                 "{:d} {:d} units.",
-                 x,
-                 y,
-                 maxDispX_,
-                 maxDispY_);
+                402,
+                "Setting maximum displacement {:d} {:d} to "
+                "{:d} {:d} units.",
+                x,
+                y,
+                maxDispX_,
+                maxDispY_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -306,12 +306,12 @@ void DetailedMgr::findSegments()
   // the chip.
 
   logger_->info(DPO,
-                 322,
-                 "Image ({:d}, {:d}) - ({:d}, {:d})",
-                 arch_->getMinX(),
-                 arch_->getMinY(),
-                 arch_->getMaxX(),
-                 arch_->getMaxY());
+                322,
+                "Image ({:d}, {:d}) - ({:d}, {:d})",
+                arch_->getMinX(),
+                arch_->getMinY(),
+                arch_->getMaxX(),
+                arch_->getMaxY());
 
   for (int i = 0; i < segments_.size(); i++) {
     delete segments_[i];
@@ -971,12 +971,12 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider)
     }
   }
   logger_->info(DPO,
-                 310,
-                 "Assigned {:d} cells into segments.  Movement in X-direction "
-                 "is {:f}, movement in Y-direction is {:f}.",
-                 nAssigned,
-                 movementX,
-                 movementY);
+                310,
+                "Assigned {:d} cells into segments.  Movement in X-direction "
+                "is {:f}, movement in Y-direction is {:f}.",
+                nAssigned,
+                movementX,
+                movementY);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1168,7 +1168,7 @@ void DetailedMgr::collectSingleHeightCells()
   // Do I need to do any of this really?????????????????????????????????
 
   singleHeightCells_.erase(singleHeightCells_.begin(),
-                            singleHeightCells_.end());
+                           singleHeightCells_.end());
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
 
@@ -1185,9 +1185,9 @@ void DetailedMgr::collectSingleHeightCells()
     singleHeightCells_.push_back(nd);
   }
   logger_->info(DPO,
-                 318,
-                 "Collected {:d} single height cells.",
-                 singleHeightCells_.size());
+                318,
+                "Collected {:d} single height cells.",
+                singleHeightCells_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1202,8 +1202,7 @@ void DetailedMgr::collectMultiHeightCells()
   // may or may not be a correct assumption.
   // Do I need to do any of this really?????????????????????????????????
 
-  multiHeightCells_.erase(multiHeightCells_.begin(),
-                           multiHeightCells_.end());
+  multiHeightCells_.erase(multiHeightCells_.begin(), multiHeightCells_.end());
   // Just in case...  Make the matrix for holding multi-height cells at
   // least large enough to hold single height cells (although we don't
   // even bothering storing such cells in this matrix).
@@ -1236,10 +1235,10 @@ void DetailedMgr::collectMultiHeightCells()
       continue;
     }
     logger_->info(DPO,
-                   319,
-                   "Collected {:d} multi-height cells spanning {:d} rows.",
-                   multiHeightCells_[i].size(),
-                   i);
+                  319,
+                  "Collected {:d} multi-height cells spanning {:d} rows.",
+                  multiHeightCells_[i].size(),
+                  i);
   }
 }
 
@@ -1283,9 +1282,9 @@ void DetailedMgr::collectFixedCells()
   }
 
   logger_->info(DPO,
-                 320,
-                 "Collected {:d} fixed cells (excluded terminal_NI).",
-                 fixedCells_.size());
+                320,
+                "Collected {:d} fixed cells (excluded terminal_NI).",
+                fixedCells_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1376,8 +1375,7 @@ int DetailedMgr::checkOverlapInSegments()
     }
   }
 
-  logger_->info(
-      DPO, 311, "Found {:d} overlaps between adjacent cells.", err_n);
+  logger_->info(DPO, 311, "Found {:d} overlaps between adjacent cells.", err_n);
   return err_n;
 }
 
@@ -1418,7 +1416,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
       double gap = llx_r - rlx_l;
 
       double spacing = arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
-                                                        ndr->getLeftEdgeType());
+                                                       ndr->getLeftEdgeType());
 
       arch_->getCellPadding(ndl, dummyPadding, rightPadding);
       arch_->getCellPadding(ndr, leftPadding, dummyPadding);
@@ -2088,12 +2086,12 @@ void DetailedMgr::removeAllCellsFromSegments()
     DetailedSeg* segPtr = segments_[i];
     int segId = segPtr->getSegId();
     cellsInSeg_[segId].erase(cellsInSeg_[segId].begin(),
-                              cellsInSeg_[segId].end());
+                             cellsInSeg_[segId].end());
     segPtr->setUtil(0.0);
   }
   for (size_t i = 0; i < reverseCellToSegs_.size(); i++) {
     reverseCellToSegs_[i].erase(reverseCellToSegs_[i].begin(),
-                                 reverseCellToSegs_[i].end());
+                                reverseCellToSegs_[i].end());
   }
 }
 

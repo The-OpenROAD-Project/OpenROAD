@@ -167,10 +167,10 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr,
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
     mgr_->getLogger()->info(DPO,
-                             308,
-                             "Pass {:3d} of vertical swaps; hpwl is {:.6e}.",
-                             p,
-                             curr_hpwl);
+                            308,
+                            "Pass {:3d} of vertical swaps; hpwl is {:.6e}.",
+                            p,
+                            curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
       // std::cout << "Terminating due to low improvement." << std::endl;
@@ -179,11 +179,11 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr,
   }
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
   mgr_->getLogger()->info(DPO,
-                           309,
-                           "End of vertical swaps; objective is {:.6e}, "
-                           "improvement is {:.2f} percent.",
-                           curr_hpwl,
-                           curr_imp);
+                          309,
+                          "End of vertical swaps; objective is {:.6e}, "
+                          "improvement is {:.2f} percent.",
+                          curr_hpwl,
+                          curr_imp);
 }
 
 //////////////////////////////////////////////////////////////////////////////

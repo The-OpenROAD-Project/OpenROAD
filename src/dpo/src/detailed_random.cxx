@@ -211,9 +211,9 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     generators_[i]->init(mgrPtr_);
 
     mgrPtr_->getLogger()->info(DPO,
-                                324,
-                                "Random improver is using {:s} generator.",
-                                generators_[i]->getName().c_str());
+                               324,
+                               "Random improver is using {:s} generator.",
+                               generators_[i]->getName().c_str());
   }
 
   // Objectives.
@@ -266,9 +266,9 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 
   for (size_t i = 0; i < objectives_.size(); i++) {
     mgrPtr_->getLogger()->info(DPO,
-                                325,
-                                "Random improver is using {:s} objective.",
-                                objectives_[i]->getName().c_str());
+                               325,
+                               "Random improver is using {:s} objective.",
+                               objectives_[i]->getName().c_str());
   }
 
   // Should I just be figuring out the objectives needed from the cost string?
@@ -449,9 +449,9 @@ double DetailedRandom::go()
   // Test.
   if (eval(currCost_, expr_) < 0.0) {
     mgrPtr_->getLogger()->info(DPO,
-                                330,
-                                "Test objective function failed, possibly due "
-                                "to a badly formed cost function.");
+                               330,
+                               "Test objective function failed, possibly due "
+                               "to a badly formed cost function.");
     return 0.0;
   }
 
@@ -482,13 +482,13 @@ double DetailedRandom::go()
     for (size_t i = 0; i < objectives_.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
       double change = objectives_[i]->delta(mgrPtr_->nMoved_,
-                                             mgrPtr_->movedNodes_,
-                                             mgrPtr_->curLeft_,
-                                             mgrPtr_->curBottom_,
-                                             mgrPtr_->curOri_,
-                                             mgrPtr_->newLeft_,
-                                             mgrPtr_->newBottom_,
-                                             mgrPtr_->newOri_);
+                                            mgrPtr_->movedNodes_,
+                                            mgrPtr_->curLeft_,
+                                            mgrPtr_->curBottom_,
+                                            mgrPtr_->curOri_,
+                                            mgrPtr_->newLeft_,
+                                            mgrPtr_->newBottom_,
+                                            mgrPtr_->newOri_);
 
       deltaCost_[i] = change;
       nextCost_[i] = currCost_[i] - deltaCost_[i];  // -delta is +ve is less.
@@ -523,12 +523,11 @@ double DetailedRandom::go()
     }
   }
   for (size_t i = 0; i < gen_count.size(); i++) {
-    mgrPtr_->getLogger()->info(
-        DPO,
-        332,
-        "End of pass, Generator {:s} called {:d} times.",
-        generators_[i]->getName().c_str(),
-        gen_count[i]);
+    mgrPtr_->getLogger()->info(DPO,
+                               332,
+                               "End of pass, Generator {:s} called {:d} times.",
+                               generators_[i]->getName().c_str(),
+                               gen_count[i]);
   }
   for (size_t i = 0; i < generators_.size(); i++) {
     generators_[i]->stats();
@@ -569,12 +568,12 @@ void DetailedRandom::collectCandidates()
 {
   candidates_.erase(candidates_.begin(), candidates_.end());
   candidates_.insert(candidates_.end(),
-                      mgrPtr_->singleHeightCells_.begin(),
-                      mgrPtr_->singleHeightCells_.end());
+                     mgrPtr_->singleHeightCells_.begin(),
+                     mgrPtr_->singleHeightCells_.end());
   for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
     candidates_.insert(candidates_.end(),
-                        mgrPtr_->multiHeightCells_[i].begin(),
-                        mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->multiHeightCells_[i].begin(),
+                       mgrPtr_->multiHeightCells_[i].end());
   }
 }
 
@@ -612,8 +611,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   double ywid = mgr_->getSingleRowHeight();
   int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();
-  int xdim
-      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
+  int xdim = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
 
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
   ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
@@ -687,22 +685,22 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     }
 
     if (mgr_->tryMove(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       si,
-                       (int) std::round(xj),
-                       (int) std::round(yj),
-                       sj)) {
+                      ndi->getLeft(),
+                      ndi->getBottom(),
+                      si,
+                      (int) std::round(xj),
+                      (int) std::round(yj),
+                      sj)) {
       ++moves_;
       return true;
     }
     if (mgr_->trySwap(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       si,
-                       (int) std::round(xj),
-                       (int) std::round(yj),
-                       sj)) {
+                      ndi->getLeft(),
+                      ndi->getBottom(),
+                      si,
+                      (int) std::round(xj),
+                      (int) std::round(yj),
+                      sj)) {
       ++swaps_;
       return true;
     }
@@ -760,8 +758,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   double ywid = mgr_->getSingleRowHeight();
   int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();
-  int xdim
-      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
+  int xdim = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
 
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
   ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
@@ -874,22 +871,22 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
 
     if (mgr_->tryMove(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       si,
-                       (int) std::round(xj),
-                       (int) std::round(yj),
-                       sj)) {
+                      ndi->getLeft(),
+                      ndi->getBottom(),
+                      si,
+                      (int) std::round(xj),
+                      (int) std::round(yj),
+                      sj)) {
       ++moves_;
       return true;
     }
     if (mgr_->trySwap(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       si,
-                       (int) std::round(xj),
-                       (int) std::round(yj),
-                       sj)) {
+                      ndi->getLeft(),
+                      ndi->getBottom(),
+                      si,
+                      (int) std::round(xj),
+                      (int) std::round(yj),
+                      sj)) {
       ++swaps_;
       return true;
     }

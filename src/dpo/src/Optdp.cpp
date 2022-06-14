@@ -534,7 +534,7 @@ void Optdp::createNetwork()
     // Fill in data.
     ndi->setId(n);
     ndi->setType(
-                 Node::TERMINAL);  // Should be terminal, not terminal_NI, I think.
+        Node::TERMINAL);  // Should be terminal, not terminal_NI, I think.
     ndi->setFixed(Node::FIXED_XY);
     ndi->setAvailOrient(Orientation_N);
     ndi->setCurrOrient(Orientation_N);

@@ -166,8 +166,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
   double last_disp, curr_disp, init_disp, tot_disp, max_disp, avg_disp;
   double curr_obj, curr_imp;
-  std::string obj
-      = (obj_ == DetailedMis::Hpwl) ? "wirelength" : "displacement";
+  std::string obj = (obj_ == DetailedMis::Hpwl) ? "wirelength" : "displacement";
   mgrPtr_->getLogger()->info(
       DPO, 300, "Set matching objective is {:s}.", obj.c_str());
 
@@ -277,12 +276,12 @@ void DetailedMis::collectMovableCells()
 {
   candidates_.erase(candidates_.begin(), candidates_.end());
   candidates_.insert(candidates_.end(),
-                      mgrPtr_->singleHeightCells_.begin(),
-                      mgrPtr_->singleHeightCells_.end());
+                     mgrPtr_->singleHeightCells_.begin(),
+                     mgrPtr_->singleHeightCells_.end());
   for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
     candidates_.insert(candidates_.end(),
-                        mgrPtr_->multiHeightCells_[i].begin(),
-                        mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->multiHeightCells_[i].begin(),
+                       mgrPtr_->multiHeightCells_[i].end());
   }
 }
 
@@ -498,8 +497,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       }
       if (compat) {
         // Must be the same color to avoid sharing nets.
-        if (useSameColor_
-            && colors_[ndi->getId()] != colors_[ndj->getId()]) {
+        if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()]) {
           compat = false;
         }
       }

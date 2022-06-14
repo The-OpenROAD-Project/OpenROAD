@@ -62,8 +62,7 @@ class Graph
   {
     for (int i = 0; i < v_; i++) {
       std::sort(adj_[i].begin(), adj_[i].end());
-      adj_[i].erase(std::unique(adj_[i].begin(), adj_[i].end()),
-                     adj_[i].end());
+      adj_[i].erase(std::unique(adj_[i].begin(), adj_[i].end()), adj_[i].end());
     }
   }
 
@@ -86,7 +85,7 @@ class Graph
         if (color_[u] != -1) {
           // Node "u" has a color.  So, it is not available to "v".
           avail[color_[u]] = v;  // Marking "avail[color]" with a "v" means it
-                                  // is not available for node v.
+                                 // is not available for node v.
         }
       }
 

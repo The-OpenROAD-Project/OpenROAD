@@ -323,9 +323,7 @@ void DetailedABU::computeBuckets()
   }
   for (size_t i = 0; i < utilBuckets_.size(); i++) {
     utilTotals_[i] = 0.;
-    for (auto it = utilBuckets_[i].begin();
-         it != utilBuckets_[i].end();
-         it++) {
+    for (auto it = utilBuckets_[i].begin(); it != utilBuckets_[i].end(); it++) {
       double space = abuBins_[*it].area - abuBins_[*it].f_util;
       double util = abuBins_[*it].m_util;
 
@@ -457,17 +455,17 @@ double DetailedABU::calculateABU(bool print)
 
   if (print) {
     mgrPtr_->getLogger()->info(DPO,
-                                317,
-                                "ABU: Target {:.2f}, "
-                                "ABU_2,5,10,20: "
-                                "{:.2f}, {:.2f}, {:.2f}, {:.2f}, "
-                                "Penalty {:.2f}",
-                                abuTargUt_,
-                                abu2,
-                                abu5,
-                                abu10,
-                                abu20,
-                                penalty);
+                               317,
+                               "ABU: Target {:.2f}, "
+                               "ABU_2,5,10,20: "
+                               "{:.2f}, {:.2f}, {:.2f}, {:.2f}, "
+                               "Penalty {:.2f}",
+                               abuTargUt_,
+                               abu2,
+                               abu5,
+                               abu10,
+                               abu20,
+                               penalty);
   }
 
   return penalty;
@@ -601,13 +599,11 @@ double DetailedABU::delta()
       double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
       if (free_space > FREE_SPACE_THRESHOLD * abuBins_[binId].area) {
         util_0 = abuBins_[binId].c_util / free_space;
-        pen_0 = (abuTargUt_ - std::max(util_0, abuTargUt_))
-                / (abuTargUt_ - 1.);
+        pen_0 = (abuTargUt_ - std::max(util_0, abuTargUt_)) / (abuTargUt_ - 1.);
         sum_0 += pen_0;
 
         util_1 = abuBins_[binId].m_util / free_space;
-        pen_1 = (abuTargUt_ - std::max(util_1, abuTargUt_))
-                / (abuTargUt_ - 1.);
+        pen_1 = (abuTargUt_ - std::max(util_1, abuTargUt_)) / (abuTargUt_ - 1.);
         sum_1 += pen_1;
 
         // delta += pen_0;

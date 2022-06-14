@@ -59,7 +59,8 @@ const int EDGETYPE_DEFAULT = 0;
 class Node
 {
  public:
-  enum Type {
+  enum Type
+  {
     UNKNOWN,
     CELL,
     TERMINAL,
@@ -67,14 +68,15 @@ class Node
     MACROCELL,
     FILLER,
     SHAPE
-  };    
+  };
 
-  enum Fixity {
+  enum Fixity
+  {
     NOT_FIXED,
     FIXED_X,
     FIXED_Y,
     FIXED_XY,
-  };  
+  };
 
   Node();
   virtual ~Node();
