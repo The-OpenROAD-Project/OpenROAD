@@ -433,9 +433,7 @@ proc cluster_netlist { args } {
 
   par::generate_seeds 1
 
-    set currentId [par::run_3party_clustering]
-
-    return $currentId
+  return [par::run_clustering]
 }
 
 #--------------------------------------------------------------------
@@ -504,26 +502,6 @@ proc read_partitioning { args } {
     set instance_file $keys(-instance_map_file)
   }
   return [par::read_file $keys(-read_file) $instance_file]
-}
-
-sta::define_cmd_args "run_clustering" { [-scheme name] \
-}
-
-proc run_clustering { args } {
-  sta::parse_key_args "run_clustering" args \
-    keys {-scheme \
-    } flags {}
-
-# Tool
-  set schemes "hem scheme2 scheme3"
-    if { ![info exists keys(-scheme)] } {
-      utl::error PAR 53 "Missing mandatory argument -scheme"
-    } elseif { !($keys(-scheme) in $schemes) } {
-      utl::error PAR 54 "Invalid scheme. Use one of the following: $schemes."
-    } else {
-      par::set_clustering_scheme $keys(-scheme)
-    }
-  par::run_clustering
 }
 
 sta::define_cmd_args "report_partition_graph" { [-graph_model name

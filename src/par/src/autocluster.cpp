@@ -1382,6 +1382,7 @@ void AutoClusterMgr::mergeMacroUtil(const string& parent_name,
 
 // Timing-driven related functions
 // Sequential Graph based timing driven
+// Copied from mpl/MacroPlacer.cpp (bad form).
 void AutoClusterMgr::findAdjacencies()
 {
   sta_->ensureLevelized();
@@ -1516,9 +1517,7 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
       continue;
 
     if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
-      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while (seq_iter.hasNext()) {
-        sta::Sequential* seq = seq_iter.next();
+      for (sta::Sequential* seq : lib_cell->sequentials()) {
         sta::FuncExpr* data_expr = seq->data();
         sta::FuncExprPortIterator data_port_iter(data_expr);
         while (data_port_iter.hasNext()) {

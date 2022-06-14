@@ -119,7 +119,7 @@ class frNet : public frBlockObject
   void addShape(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
-    in->setOrderInOwner(all_pinfigs_.size());
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     shapes_.push_back(std::move(in));
     rptr->setIter(--shapes_.end());
@@ -128,7 +128,7 @@ class frNet : public frBlockObject
   void addVia(std::unique_ptr<frVia> in)
   {
     in->addToNet(this);
-    in->setOrderInOwner(all_pinfigs_.size());
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     vias_.push_back(std::move(in));
     rptr->setIter(--vias_.end());
@@ -137,7 +137,7 @@ class frNet : public frBlockObject
   void addPatchWire(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
-    in->setOrderInOwner(all_pinfigs_.size());
+    in->setIndexInOwner(all_pinfigs_.size());
     auto rptr = in.get();
     pwires_.push_back(std::move(in));
     rptr->setIter(--pwires_.end());
@@ -181,7 +181,7 @@ class frNet : public frBlockObject
   {
     auto rptr = in.get();
     rptr->addToNet(this);
-    in->setOrderInOwner(guides_.size());
+    in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
   void clearGuides() { guides_.clear(); }

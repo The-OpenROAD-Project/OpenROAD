@@ -330,7 +330,7 @@ void TritonRoute::applyUpdates(
       const auto& update = updates[i][j];
       switch (update.getType()) {
         case drUpdate::REMOVE_FROM_BLOCK: {
-          auto id = update.getOrderInOwner();
+          auto id = update.getIndexInOwner();
           auto marker = design_->getTopBlock()->getMarker(id);
           regionQuery->removeMarker(marker);
           topBlock->removeMarker(marker);
@@ -339,7 +339,7 @@ void TritonRoute::applyUpdates(
         case drUpdate::REMOVE_FROM_NET:
         case drUpdate::REMOVE_FROM_RQ: {
           auto net = update.getNet();
-          auto id = update.getOrderInOwner();
+          auto id = update.getIndexInOwner();
           auto pinfig = net->getPinFig(id);
           switch (pinfig->typeId()) {
             case frcPathSeg: {
@@ -423,7 +423,7 @@ void TritonRoute::applyUpdates(
           uSeg->addToNet(net);
           vector<unique_ptr<frConnFig>> tmp;
           tmp.push_back(std::move(uSeg));
-          auto idx = update.getOrderInOwner();
+          auto idx = update.getIndexInOwner();
           if (idx < 0 || idx >= net->getGuides().size())
             logger_->error(DRT,
                            9199,
@@ -436,7 +436,7 @@ void TritonRoute::applyUpdates(
         }
         case drUpdate::UPDATE_SHAPE: {
           auto net = update.getNet();
-          auto id = update.getOrderInOwner();
+          auto id = update.getIndexInOwner();
           auto pinfig = net->getPinFig(id);
           switch (pinfig->typeId()) {
             case frcPathSeg: {

@@ -865,7 +865,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void PartitionMgr::run3PClustering()
+void PartitionMgr::runClustering()
 {
   hypergraph(true);
   if (options_.getTool() == "mlpart") {
@@ -1163,7 +1163,6 @@ void PartitionMgr::runMlPartClustering()
   const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
-  logger_->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
@@ -1346,15 +1345,6 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
   return partitionId;
 }
 
-void PartitionMgr::runClustering()
-{
-  hypergraph();
-  if (options_.getClusteringScheme() == "hem") {
-  } else if (options_.getClusteringScheme() == "scheme2") {
-  } else {
-  }
-}
-
 void PartSolutions::addAssignment(
     const std::vector<unsigned long>& currentAssignment,
     const unsigned long runtime,
@@ -1388,18 +1378,9 @@ void PartSolutions::resetEvaluation()
 void PartitionMgr::reportGraph()
 {
   hypergraph();
-  int numNodes;
-  int numEdges;
-  if (options_.getGraphModel() == HYPERGRAPH) {
-    numNodes = hypergraph_->getNumVertex();
-    numEdges = hypergraph_->getNumEdges();
-  } else {
-    toGraph();
-    numNodes = graph_->getNumVertex();
-    numEdges = graph_->getNumEdges();
-  }
-  logger_->info(PAR, 67, "Number of Nodes: {}", numNodes);
-  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", numEdges);
+  toGraph();
+  logger_->info(PAR, 67, "Number of Nodes: {}", graph_->getNumVertex());
+  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
 }
 
 void PartitionMgr::partitionDesign(unsigned int max_num_macro,

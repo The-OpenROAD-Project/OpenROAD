@@ -223,8 +223,6 @@ void HypergraphDecomposition::toGraph(const Hypergraph& hypergraph,
           createCliqueGraph(net);
         }
         break;
-      case HYPERGRAPH:
-        break;
     }
   }
   createCompressedMatrix(graph);

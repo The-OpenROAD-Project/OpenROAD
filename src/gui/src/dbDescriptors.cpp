@@ -50,6 +50,39 @@
 
 namespace gui {
 
+static void populateODBProperties(Descriptor::Properties& props,
+                                  odb::dbObject* object,
+                                  const std::string& prefix = "")
+{
+  Descriptor::PropertyList prop_list;
+  for (const auto prop : odb::dbProperty::getProperties(object)) {
+    std::any value;
+    switch (prop->getType()) {
+      case odb::dbProperty::STRING_PROP:
+        value = static_cast<odb::dbStringProperty*>(prop)->getValue();
+        break;
+      case odb::dbProperty::BOOL_PROP:
+        value = static_cast<odb::dbBoolProperty*>(prop)->getValue();
+        break;
+      case odb::dbProperty::INT_PROP:
+        value = static_cast<odb::dbIntProperty*>(prop)->getValue();
+        break;
+      case odb::dbProperty::DOUBLE_PROP:
+        value = static_cast<odb::dbDoubleProperty*>(prop)->getValue();
+        break;
+    }
+    prop_list.emplace_back(prop->getName(), value);
+  }
+
+  if (!prop_list.empty()) {
+    std::string prop_name = "Properties";
+    if (!prefix.empty()) {
+      prop_name = prefix + " " + prop_name;
+    }
+    props.push_back({prop_name, prop_list});
+  }
+}
+
 static std::string convertUnits(double value, bool area = false)
 {
   std::stringstream ss;
@@ -277,6 +310,8 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   if (region != nullptr) {
     props.push_back({"Region", gui->makeSelected(region)});
   }
+
+  populateODBProperties(props, inst);
   return props;
 }
 
@@ -641,6 +676,8 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
     instances.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", instances});
+
+  populateODBProperties(props, master);
 
   return props;
 }
@@ -1241,6 +1278,9 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
     bterms.insert(gui->makeSelected(bterm));
   }
   props.push_back({"BTerms", bterms});
+
+  populateODBProperties(props, net);
+
   return props;
 }
 
@@ -1424,13 +1464,16 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
       aps.insert(gui->makeSelected(iap));
     }
   }
+  Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
+                   {"IO type", iterm->getIoType().getString()},
+                   {"Net", net_value},
+                   {"Special", iterm->isSpecial()},
+                   {"MTerm", iterm->getMTerm()->getConstName()},
+                   {"Access Points", aps}};
 
-  return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
-                     {"IO type", iterm->getIoType().getString()},
-                     {"Net", net_value},
-                     {"Special", iterm->isSpecial()},
-                     {"MTerm", iterm->getMTerm()->getConstName()},
-                     {"Access Points", aps}});
+  populateODBProperties(props, iterm);
+
+  return props;
 }
 
 Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
@@ -1518,9 +1561,13 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
 {
   auto gui = Gui::get();
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
-  return Properties({{"Net", gui->makeSelected(bterm->getNet())},
-                     {"Signal type", bterm->getSigType().getString()},
-                     {"IO type", bterm->getIoType().getString()}});
+  Properties props{{"Net", gui->makeSelected(bterm->getNet())},
+                   {"Signal type", bterm->getSigType().getString()},
+                   {"IO type", bterm->getIoType().getString()}};
+
+  populateODBProperties(props, bterm);
+
+  return props;
 }
 
 Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
@@ -1621,13 +1668,17 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
   }
   odb::Rect rect;
   blockage->getBBox()->getBox(rect);
-  return Properties({{"Instance", inst_value},
-                     {"X", Property::convert_dbu(rect.xMin(), true)},
-                     {"Y", Property::convert_dbu(rect.yMin(), true)},
-                     {"Width", Property::convert_dbu(rect.dx(), true)},
-                     {"Height", Property::convert_dbu(rect.dy(), true)},
-                     {"Soft", blockage->isSoft()},
-                     {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}});
+  Properties props{{"Instance", inst_value},
+                   {"X", Property::convert_dbu(rect.xMin(), true)},
+                   {"Y", Property::convert_dbu(rect.yMin(), true)},
+                   {"Width", Property::convert_dbu(rect.dx(), true)},
+                   {"Height", Property::convert_dbu(rect.dy(), true)},
+                   {"Soft", blockage->isSoft()},
+                   {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
+
+  populateODBProperties(props, blockage);
+
+  return props;
 }
 
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
@@ -1753,6 +1804,9 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   if (obs->hasMinSpacing()) {
     props.push_back({"Min spacing", Property::convert_dbu(obs->getMinSpacing(), true)});
   }
+
+  populateODBProperties(props, obs);
+
   return props;
 }
 
@@ -1999,6 +2053,8 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
     props.push_back({"LEF58 minimum cuts", lef58_minimum_cuts});
   }
 
+  populateODBProperties(props, layer);
+
   return props;
 }
 
@@ -2100,6 +2156,7 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any obje
                     {"Directions", directions},
                     {"Layer", gui->makeSelected(ap->getLayer())}
                     });
+  populateODBProperties(props, ap);
   return props;
 }
 
@@ -2228,6 +2285,8 @@ Descriptor::Properties DbGroupDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Ground Nets", gnd});
 
+  populateODBProperties(props, group);
+
   return props;
 }
 
@@ -2333,6 +2392,8 @@ Descriptor::Properties DbRegionDescriptor::getProperties(std::any object) const
     insts.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", insts});
+
+  populateODBProperties(props, region);
 
   return props;
 }
@@ -2470,6 +2531,9 @@ Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
     insts.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", insts});
+
+  populateODBProperties(props, module);
+  populateODBProperties(props, mod_inst, "Instance");
 
   return props;
 }
