@@ -39,42 +39,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
-
-#include <iostream>
 #include <unordered_map>
 #include <vector>
 
-#include "architecture.h"
 #include "orientation.h"
-#include "rectangle.h"
-#include "symmetry.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-class Node;
-class Edge;
 class Pin;
-class Network;
-class Architecture;
-
-const unsigned NodeType_UNKNOWN = 0x00000000;
-const unsigned NodeType_CELL = 0x00000001;
-const unsigned NodeType_TERMINAL = 0x00000002;
-const unsigned NodeType_TERMINAL_NI = 0x00000004;
-const unsigned NodeType_MACROCELL = 0x00000008;
-const unsigned NodeType_FILLER = 0x00000010;
-const unsigned NodeType_SHAPE = 0x00000020;
-
-const unsigned NodeAttributes_EMPTY = 0x00000000;
-
-const unsigned NodeFixed_NOT_FIXED = 0x00000000;
-const unsigned NodeFixed_FIXED_X = 0x00000001;
-const unsigned NodeFixed_FIXED_Y = 0x00000002;
-const unsigned NodeFixed_FIXED_XY = 0x00000003;  // FIXED_X and FIXED_Y.
 
 const int EDGETYPE_DEFAULT = 0;
 
@@ -84,6 +59,23 @@ const int EDGETYPE_DEFAULT = 0;
 class Node
 {
  public:
+  enum Type {
+    UNKNOWN,
+    CELL,
+    TERMINAL,
+    TERMINAL_NI,
+    MACROCELL,
+    FILLER,
+    SHAPE
+  };    
+
+  enum Fixity {
+    NOT_FIXED,
+    FIXED_X,
+    FIXED_Y,
+    FIXED_XY,
+  };  
+
   Node();
   virtual ~Node();
 
@@ -111,11 +103,11 @@ class Node
   void setOrigBottom(double bottom) { origBottom_ = bottom; }
   double getOrigBottom() const { return origBottom_; }
 
-  void setFixed(unsigned fixed) { fixed_ = fixed; }
-  unsigned getFixed() const { return fixed_; }
+  void setFixed(Fixity fixed) { fixed_ = fixed; }
+  Fixity getFixed() const { return fixed_; }
 
-  void setType(unsigned type) { type_ = type; }
-  unsigned getType() const { return type_; }
+  void setType(Type type) { type_ = type; }
+  Type getType() const { return type_; }
 
   void setRegionId(int id) { regionId_ = id; }
   int getRegionId() const { return regionId_; }
@@ -126,16 +118,11 @@ class Node
   unsigned getAvailOrient() const { return availOrient_; }
   bool adjustCurrOrient(unsigned newOrient);
 
-  void setAttributes(unsigned attributes) { attributes_ = attributes; }
-  unsigned getAttributes() const { return attributes_; }
-  void addAttribute(unsigned attribute) { attributes_ |= attribute; }
-  void remAttribute(unsigned attribute) { attributes_ &= ~attribute; }
-
-  bool isTerminal() const { return (type_ == NodeType_TERMINAL); }
-  bool isTerminalNI() const { return (type_ == NodeType_TERMINAL_NI); }
-  bool isFiller() const { return (type_ == NodeType_FILLER); }
-  bool isShape() const { return (type_ == NodeType_SHAPE); }
-  bool isFixed() const { return (fixed_ != NodeFixed_NOT_FIXED); }
+  bool isTerminal() const { return (type_ == TERMINAL); }
+  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
+  bool isFiller() const { return (type_ == FILLER); }
+  bool isShape() const { return (type_ == SHAPE); }
+  bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
   void setLeftEdgeType(int etl) { etl_ = etl; }
   int getLeftEdgeType() const { return etl_; }
@@ -170,11 +157,9 @@ class Node
   int w_;
   int h_;
   // Type.
-  unsigned type_;
+  Type type_;
   // Fixed or not fixed.
-  unsigned fixed_;
-  // Place for attributes.
-  unsigned attributes_;
+  Fixity fixed_;
   // For edge types and spacing tables.
   int etl_;
   int etr_;

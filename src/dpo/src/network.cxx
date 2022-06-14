@@ -32,12 +32,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+#include "architecture.h"
 #include "network.h"
-
-#include <string.h>
-
-#include <deque>
-#include <string>
 
 namespace dpo {
 
@@ -51,9 +47,8 @@ Node::Node()
       origBottom_(0.0),
       w_(0.0),
       h_(0.0),
-      type_(0),
-      fixed_(NodeFixed_NOT_FIXED),
-      attributes_(NodeAttributes_EMPTY),
+      type_(UNKNOWN),
+      fixed_(Node::NOT_FIXED),
       etl_(EDGETYPE_DEFAULT),
       etr_(EDGETYPE_DEFAULT),
       powerTop_(dpo::RowPower_UNK),
@@ -265,8 +260,8 @@ Node* Network::createAndAddFillerNode(int left,
 {
   Node* ndi = new Node();
   int id = (int) nodes_.size();
-  ndi->setFixed(NodeFixed_FIXED_XY);
-  ndi->setType(NodeType_FILLER);
+  ndi->setFixed(Node::FIXED_XY);
+  ndi->setType(Node::FILLER);
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);
@@ -286,8 +281,8 @@ Node* Network::createAndAddShapeNode(int left,
   // the parent node from which we can derive a name.
   Node* ndi = new Node();
   int id = (int) nodes_.size();
-  ndi->setFixed(NodeFixed_FIXED_XY);
-  ndi->setType(NodeType_SHAPE);
+  ndi->setFixed(Node::FIXED_XY);
+  ndi->setType(Node::SHAPE);
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);

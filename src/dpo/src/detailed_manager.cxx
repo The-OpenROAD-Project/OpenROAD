@@ -1325,7 +1325,7 @@ void DetailedMgr::cleanup()
   // Various cleanups.
   for (int i = 0; i < wideCells_.size(); i++) {
     Node* ndi = wideCells_[i];
-    ndi->setFixed(NodeFixed_NOT_FIXED);
+    ndi->setFixed(Node::NOT_FIXED);
   }
 }
 

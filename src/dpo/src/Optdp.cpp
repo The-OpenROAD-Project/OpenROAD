@@ -477,10 +477,9 @@ void Optdp::createNetwork()
     network_->setNodeName(n, inst->getName().c_str());
 
     // Fill in data.
-    ndi->setType(NodeType_CELL);
+    ndi->setType(Node::CELL);
     ndi->setId(n);
-    ndi->setFixed(inst->isFixed() ? NodeFixed_FIXED_XY : NodeFixed_NOT_FIXED);
-    ndi->setAttributes(NodeAttributes_EMPTY);
+    ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
 
     // Determine allowed orientations.  Current orientation
     // is N, since we reset everything to this orientation.
@@ -535,9 +534,8 @@ void Optdp::createNetwork()
     // Fill in data.
     ndi->setId(n);
     ndi->setType(
-        NodeType_TERMINAL);  // Should be terminal, not terminal_NI, I think.
-    ndi->setFixed(NodeFixed_FIXED_XY);
-    ndi->setAttributes(NodeAttributes_EMPTY);
+                 Node::TERMINAL);  // Should be terminal, not terminal_NI, I think.
+    ndi->setFixed(Node::FIXED_XY);
     ndi->setAvailOrient(Orientation_N);
     ndi->setCurrOrient(Orientation_N);
 

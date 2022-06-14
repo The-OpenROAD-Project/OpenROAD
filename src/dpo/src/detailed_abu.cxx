@@ -224,7 +224,7 @@ void DetailedABU::init()
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
           double common_area = (hx - lx) * (hy - ly);
-          if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+          if (nd->getFixed() != Node::NOT_FIXED) {
             abuBins_[binId].f_util += common_area;
           }
         }
