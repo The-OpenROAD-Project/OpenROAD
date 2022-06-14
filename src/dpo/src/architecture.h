@@ -67,12 +67,15 @@ class Architecture
   Architecture();
   virtual ~Architecture();
 
-  std::vector<Architecture::Row*>& getRows() { return rows_; }
+  const std::vector<Architecture::Row*>& getRows() const { return rows_; }
   int getNumRows() const { return (int) rows_.size(); }
   Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  std::vector<Architecture::Region*>& getRegions() { return regions_; }
+  const std::vector<Architecture::Region*>& getRegions() const
+  {
+    return regions_;
+  }
   int getNumRegions() const { return (int) regions_.size(); }
   Architecture::Region* getRegion(int r) const { return regions_[r]; }
   Architecture::Region* createAndAddRegion();
@@ -102,27 +105,30 @@ class Architecture
   void setMinY(int ymin) { ymin_ = ymin; }
   void setMaxY(int ymax) { ymax_ = ymax; }
 
-  bool power_compatible(Node* ndi, Row* row, bool& flip);
+  bool powerCompatible(Node* ndi, Row* row, bool& flip) const;
 
   // Using tables...
   void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
   bool getUseSpacingTable() const { return useSpacingTable_; }
   void clearSpacingTable();
-  int getCellSpacingUsingTable(int firstEdge, int secondEdge);
+  int getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
   void addCellSpacingUsingTable(int firstEdge, int secondEdge, int sep);
-  std::vector<Architecture::Spacing*>& getCellSpacings()
+  const std::vector<Architecture::Spacing*>& getCellSpacings() const
   {
     return cellSpacings_;
   }
-  std::vector<std::pair<std::string, int>>& getEdgeTypes() { return edgeTypes_; }
+  const std::vector<std::pair<std::string, int>>& getEdgeTypes() const
+  {
+    return edgeTypes_;
+  }
 
   // Using padding...
   void setUsePadding(bool val = true) { usePadding_ = val; }
   bool getUsePadding() const { return usePadding_; }
   void addCellPadding(Node* ndi, int leftPadding, int rightPadding);
-  bool getCellPadding(Node* ndi, int& leftPadding, int& rightPadding);
+  bool getCellPadding(Node* ndi, int& leftPadding, int& rightPadding) const;
 
-  int getCellSpacing(Node* leftNode, Node* rightNode);
+  int getCellSpacing(Node* leftNode, Node* rightNode) const;
 
  private:
   // Boundary around rows.
@@ -162,15 +168,16 @@ class Architecture::Spacing
   int sep_;
 };
 
-const unsigned RowPower_UNK = 0x00000001;
-const unsigned RowPower_VDD = 0x00000002;
-const unsigned RowPower_VSS = 0x00000004;
-
 class Architecture::Row
 {
  public:
+  enum PowerType {
+    Power_UNK,
+    Power_VDD,
+    Power_VSS
+  };
+
   Row();
-  virtual ~Row();
 
   void setId(int id) { id_ = id; }
   int getId() const { return id_; }
@@ -244,7 +251,7 @@ class Architecture::Region
 {
  public:
   Region();
-  virtual ~Region();
+  ~Region();
 
   int getId() const { return id_; }
   void setId(int id) { id_ = id; }

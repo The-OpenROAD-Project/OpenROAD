@@ -196,7 +196,7 @@ class Edge
   int getNdr() const { return ndr_; }
 
   int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
  private:
   // Id.
@@ -310,13 +310,13 @@ class Network
   Node* getNode(int i) { return nodes_[i]; }
   void setNodeName(int i, std::string& name) { nodeNames_[i] = name; }
   void setNodeName(int i, const char* name) { nodeNames_[i] = name; }
-  std::string& getNodeName(int i) { return nodeNames_[i]; }
+  const std::string& getNodeName(int i) const { return nodeNames_.at(i); }
 
   int getNumEdges() const { return (int) edges_.size(); }
-  Edge* getEdge(int i) { return edges_[i]; }
+  Edge* getEdge(int i) const { return edges_[i]; }
   void setEdgeName(int i, std::string& name) { edgeNames_[i] = name; }
   void setEdgeName(int i, const char* name) { edgeNames_[i] = name; }
-  std::string& getEdgeName(int i) { return edgeNames_[i]; }
+  const std::string& getEdgeName(int i) const { return edgeNames_.at(i); }
 
   int getNumPins() const { return (int) pins_.size(); }
 

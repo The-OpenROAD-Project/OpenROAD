@@ -781,7 +781,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
     // XXX: NEW! Check power compatibility of this cell with the row.  A
     // call to this routine will check both the bottom and the top rows
     // for power compatibility.
-    if (!arch_->power_compatible(nd, arch_->getRow(r), flip)) {
+    if (!arch_->powerCompatible(nd, arch_->getRow(r), flip)) {
       continue;
     }
 
@@ -2829,7 +2829,7 @@ bool DetailedMgr::tryMove3(Node* ndi,
   int rt = rb + spanned - 1;  // Cell would occupy rows [rb,rt].
 
   bool flip = false;
-  if (!arch_->power_compatible(ndi, arch_->getRow(rb), flip)) {
+  if (!arch_->powerCompatible(ndi, arch_->getRow(rb), flip)) {
     return false;
   }
 

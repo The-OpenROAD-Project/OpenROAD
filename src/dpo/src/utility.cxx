@@ -55,7 +55,7 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
   max = 0.;
   avg = 0.;
   for (int i = 0; i < nw->getNumNodes(); i++) {
-    Node* ndi = nw->getNode(i);
+    const Node* ndi = nw->getNode(i);
 
     double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
@@ -70,18 +70,18 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw)
+double Utility::hpwl(const Network* nw)
 {
   // Compute the wire length for the given placement.
   double totWL = 0.0;
   for (unsigned e = 0; e < nw->getNumEdges(); e++) {
-    Edge* ed = nw->getEdge(e);
-    totWL += hpwl(nw, ed);
+    const Edge* ed = nw->getEdge(e);
+    totWL += hpwl(ed);
   }
   return totWL;
 }
 
-double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly)
+double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
 {
   hpwlx = 0.0;
   hpwly = 0.0;
@@ -89,7 +89,7 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly)
   unsigned numEdges = nw->getNumEdges();
   Rectangle box;
   for (unsigned e = 0; e < numEdges; e++) {
-    Edge* ed = nw->getEdge(e);
+    const Edge* ed = nw->getEdge(e);
 
     int numPins = ed->getNumPins();
     if (numPins <= 1) {
@@ -98,9 +98,9 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly)
 
     box.reset();
     for (unsigned p = 0; p < ed->getPins().size(); p++) {
-      Pin* pin = ed->getPins()[p];
+      const Pin* pin = ed->getPins()[p];
 
-      Node* ndi = pin->getNode();
+      const Node* ndi = pin->getNode();
       double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
       double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
       box.addPt(px, py);
@@ -113,16 +113,16 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw, Edge* ed)
+double Utility::hpwl(const Edge* ed)
 {
   double hpwlx = 0.0;
   double hpwly = 0.0;
-  return hpwl(nw, ed, hpwlx, hpwly);
+  return hpwl(ed, hpwlx, hpwly);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly)
+double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
 {
   hpwlx = 0.0;
   hpwly = 0.0;
@@ -134,9 +134,9 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly)
 
   Rectangle box;
   for (int p = 0; p < ed->getPins().size(); p++) {
-    Pin* pin = ed->getPins()[p];
+    const Pin* pin = ed->getPins()[p];
 
-    Node* ndi = pin->getNode();
+    const Node* ndi = pin->getNode();
     double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
     double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
     box.addPt(px, py);
@@ -144,28 +144,6 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly)
   hpwlx = box.getWidth();
   hpwly = box.getHeight();
   return hpwlx + hpwly;
-}
-
-double Utility::compute_overlap(double xmin1,
-                                double xmax1,
-                                double ymin1,
-                                double ymax1,
-                                double xmin2,
-                                double xmax2,
-                                double ymin2,
-                                double ymax2)
-{
-  if (xmin1 >= xmax2)
-    return 0.0;
-  if (xmax1 <= xmin2)
-    return 0.0;
-  if (ymin1 >= ymax2)
-    return 0.0;
-  if (ymax1 <= ymin2)
-    return 0.0;
-  double ww = std::min(xmax1, xmax2) - std::max(xmin1, xmin2);
-  double hh = std::min(ymax1, ymax2) - std::max(ymin1, ymin2);
-  return ww * hh;
 }
 
 }  // namespace dpo

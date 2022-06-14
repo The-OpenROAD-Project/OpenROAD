@@ -208,7 +208,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   //
   // Is this correct?
   bool flip = false;
-  if (arch_->power_compatible(ndi, arch_->getRow(row), flip)) {
+  if (arch_->powerCompatible(ndi, arch_->getRow(row), flip)) {
     if (flip) {
       // Flip the pins.
       for (int pi = 0; pi < ndi->getPins().size(); pi++) {

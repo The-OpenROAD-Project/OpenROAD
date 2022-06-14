@@ -32,8 +32,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include "architecture.h"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -41,6 +39,7 @@
 #include <stack>
 #include <vector>
 
+#include "architecture.h"
 #include "network.h"
 #include "router.h"
 
@@ -301,7 +300,7 @@ int Architecture::find_closest_row(int y)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
+bool Architecture::powerCompatible(Node* ndi, Row* row, bool& flip) const
 {
   // This routine assumes the node will be placed (start) in the provided row.
   // Based on this this routine determines if the node and the row are power
@@ -326,9 +325,10 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
 
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
-    if ((ndBot == rowBot || ndBot == RowPower_UNK || rowBot == RowPower_UNK)
-        && (ndTop == rowTop || ndTop == RowPower_UNK
-            || rowTop == RowPower_UNK)) {
+    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
+         || rowBot == Architecture::Row::Power_UNK)
+        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
+            || rowTop == Architecture::Row::Power_UNK)) {
       // Power matches as it is.
       flip = false;
     } else {
@@ -345,9 +345,10 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
 
-    if ((ndBot == rowBot || ndBot == RowPower_UNK || rowBot == RowPower_UNK)
-        && (ndTop == rowTop || ndTop == RowPower_UNK
-            || rowTop == RowPower_UNK)) {
+    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
+         || rowBot == Architecture::Row::Power_UNK)
+        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
+            || rowTop == Architecture::Row::Power_UNK)) {
       // The power at the top and bottom of the node match either because they
       // are the same or because something is not specified.  No need to flip
       // the node.
@@ -357,9 +358,10 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip)
     // Swap the node power rails and do the same check.  If we now get a match,
     // things are fine as long as the cell is flipped.
     std::swap(ndBot, ndTop);
-    if ((ndBot == rowBot || ndBot == RowPower_UNK || rowBot == RowPower_UNK)
-        && (ndTop == rowTop || ndTop == RowPower_UNK
-            || rowTop == RowPower_UNK)) {
+    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
+         || rowBot == Architecture::Row::Power_UNK)
+        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
+            || rowTop == Architecture::Row::Power_UNK)) {
       flip = true;
       return true;
     }
@@ -388,9 +390,9 @@ void Architecture::addCellPadding(Node* ndi, int leftPadding, int rightPadding)
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::getCellPadding(Node* ndi,
                                   int& leftPadding,
-                                  int& rightPadding)
+                                  int& rightPadding) const
 {
-  std::map<int, std::pair<int, int>>::iterator it;
+  std::map<int, std::pair<int, int>>::const_iterator it;
   if (cellPaddings_.end() == (it = cellPaddings_.find(ndi->getId()))) {
     rightPadding = 0;
     leftPadding = 0;
@@ -403,7 +405,7 @@ bool Architecture::getCellPadding(Node* ndi,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::getCellSpacing(Node* leftNode, Node* rightNode)
+int Architecture::getCellSpacing(Node* leftNode, Node* rightNode) const
 {
   // Return the required separation between the two cells.  We use
   // either spacing tables or padding information, or both.  If
@@ -423,7 +425,7 @@ int Architecture::getCellSpacing(Node* leftNode, Node* rightNode)
   if (usePadding_) {
     // Separation is padding to the right of the left cell plus
     // the padding to the left of the right cell.
-    std::map<int, std::pair<int, int>>::iterator it;
+    std::map<int, std::pair<int, int>>::const_iterator it;
 
     int separation = 0;
     if (leftNode != 0) {
@@ -444,7 +446,7 @@ int Architecture::getCellSpacing(Node* leftNode, Node* rightNode)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::getCellSpacingUsingTable(int i1, int i2)
+int Architecture::getCellSpacingUsingTable(int i1, int i2) const
 {
   // In the event that one of the left or right indices is
   // void (-1), return the worst possible spacing.  This
@@ -530,14 +532,8 @@ Architecture::Row::Row()
       numSites_(0),
       siteOrient_(0),
       siteSymmetry_(0),
-      powerTop_(RowPower_UNK),
-      powerBot_(RowPower_UNK)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Architecture::Row::~Row()
+      powerTop_(Architecture::Row::Power_UNK),
+      powerBot_(Architecture::Row::Power_UNK)
 {
 }
 

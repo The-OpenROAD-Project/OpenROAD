@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dpo/Optdp.h"
-
 #include <odb/db.h>
 
 #include <boost/format.hpp>
@@ -42,6 +40,7 @@
 #include <map>
 
 #include "dpl/Opendp.h"
+#include "dpo/Optdp.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 #include "utl/Logger.h"
 
@@ -365,11 +364,13 @@ void Optdp::setupMasterPowers()
         }
       }
     }
-    int topPwr = RowPower_UNK;
-    int botPwr = RowPower_UNK;
+    int topPwr = Architecture::Row::Power_UNK;
+    int botPwr = Architecture::Row::Power_UNK;
     if (isVdd && isGnd) {
-      topPwr = (maxPwr > maxGnd) ? RowPower_VDD : RowPower_VSS;
-      botPwr = (minPwr < minGnd) ? RowPower_VDD : RowPower_VSS;
+      topPwr = (maxPwr > maxGnd) ? Architecture::Row::Power_VDD
+                                 : Architecture::Row::Power_VSS;
+      botPwr = (minPwr < minGnd) ? Architecture::Row::Power_VDD
+                                 : Architecture::Row::Power_VSS;
     }
 
     masterPwrs_[master] = std::make_pair(topPwr, botPwr);
@@ -512,8 +513,8 @@ void Optdp::createNetwork()
     // Set the top and bottom power.
     it_m = masterPwrs_.find(inst->getMaster());
     if (masterPwrs_.end() == it_m) {
-      ndi->setBottomPower(RowPower_UNK);
-      ndi->setTopPower(RowPower_UNK);
+      ndi->setBottomPower(Architecture::Row::Power_UNK);
+      ndi->setTopPower(Architecture::Row::Power_UNK);
     } else {
       ndi->setBottomPower(it_m->second.second);
       ndi->setTopPower(it_m->second.first);
@@ -555,8 +556,8 @@ void Optdp::createNetwork()
     ndi->setLeftEdgeType(EDGETYPE_DEFAULT);
 
     // Not relevant for terminal.
-    ndi->setBottomPower(RowPower_UNK);
-    ndi->setTopPower(RowPower_UNK);
+    ndi->setBottomPower(Architecture::Row::Power_UNK);
+    ndi->setTopPower(Architecture::Row::Power_UNK);
 
     // Not relevant for terminal.
     ndi->setRegionId(0);  // Set in another routine.
@@ -742,8 +743,8 @@ void Optdp::createArchitecture()
     archRow->setHeight(site->getHeight());
 
     // Set defaults.  Top and bottom power is set below.
-    archRow->setBottomPower(RowPower_UNK);
-    archRow->setTopPower(RowPower_UNK);
+    archRow->setBottomPower(Architecture::Row::Power_UNK);
+    archRow->setTopPower(Architecture::Row::Power_UNK);
 
     // Symmetry.  From the site.
     unsigned symmetry = 0x00000000;
@@ -820,8 +821,9 @@ void Optdp::createArchitecture()
           || net->getSigType() == dbSigType::GROUND)) {
       continue;
     }
-    int pwr
-        = (net->getSigType() == dbSigType::POWER) ? RowPower_VDD : RowPower_VSS;
+    int pwr = (net->getSigType() == dbSigType::POWER)
+                  ? Architecture::Row::Power_VDD
+                  : Architecture::Row::Power_VSS;
     for (dbSWire* swire : net->getSWires()) {
       if (swire->getWireType() != dbWireType::ROUTED) {
         continue;
@@ -835,11 +837,11 @@ void Optdp::createArchitecture()
           continue;
         }
         dbTechLayer* layer = sbox->getTechLayer();
-        if (pwr == RowPower_VDD) {
+        if (pwr == Architecture::Row::Power_VDD) {
           if (pwrLayers_.end() == pwrLayers_.find(layer)) {
             continue;
           }
-        } else if (pwr == RowPower_VSS) {
+        } else if (pwr == Architecture::Row::Power_VSS) {
           if (gndLayers_.end() == gndLayers_.find(layer)) {
             continue;
           }
