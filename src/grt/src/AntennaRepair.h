@@ -83,6 +83,7 @@ class AntennaRepair
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  int illegalDiodePlacementCount() const { return illegal_diode_placement_count_; }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)
@@ -121,6 +122,7 @@ class AntennaRepair
   odb::dbBlock* block_;
   std::vector<odb::dbInst*> diode_insts_;
   AntennaViolations antenna_violations_;
+  int illegal_diode_placement_count_;
 };
 
 }  // namespace grt

@@ -267,8 +267,11 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
       IncrementalGRoute incr_groute(this, block_);
       antenna_repair.repairAntennas(diode_mterm);
       if (verbose_)
-        logger_->info(
-            GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
+        logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair.getDiodesCount());
+      int illegal_diode_placement_count = antenna_repair.illegalDiodePlacementCount();
+      if (illegal_diode_placement_count > 0)
+        logger_->info(GRT, 54, "Using detailed placer to place {} diodes.",
+                      illegal_diode_placement_count);
 
       antenna_repair.legalizePlacedCells();
       incr_groute.updateRoutes();

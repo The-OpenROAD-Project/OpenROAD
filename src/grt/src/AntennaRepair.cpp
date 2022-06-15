@@ -139,6 +139,7 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
   int cnt = diode_insts_.size();
   r_tree fixed_insts;
 
+  illegal_diode_placement_count_ = 0;
   auto rows = block_->getRows();
   for (odb::dbRow* db_row : rows) {
     odb::dbSite* site = db_row->getSite();
@@ -188,16 +189,10 @@ void AntennaRepair::legalizePlacedCells()
 
 void AntennaRepair::deleteFillerCells()
 {
-  int filler_cnt = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
-      filler_cnt++;
       odb::dbInst::destroy(inst);
     }
-  }
-
-  if (filler_cnt > 0) {
-    logger_->info(GRT, 11, "Deleted {} filler cells.", filler_cnt);
   }
 }
 
@@ -275,13 +270,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
-  if (!legally_placed) {
-    logger_->warn(
-        GRT,
-        54,
-        "Placement of diode {} will be legalized by detailed placement.",
-        antenna_inst_name);
-  }
+  if (!legally_placed)
+    illegal_diode_placement_count_++;
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
