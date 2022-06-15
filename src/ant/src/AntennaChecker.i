@@ -94,6 +94,6 @@ find_max_wire_length()
   getAntennaChecker()->findMaxWireLength();
 }
 
-}
+} // namespace
 
 %} // inline
