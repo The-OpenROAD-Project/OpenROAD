@@ -63,7 +63,7 @@ struct ShiftLegalizer::Clump
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 ShiftLegalizer::ShiftLegalizer(ShiftLegalizerParams& params)
-    : params_(params), mgr_(0), arch_(0), network_(0), rt_(0)
+    : params_(params), mgr_(nullptr), arch_(nullptr), network_(nullptr), rt_(nullptr)
 {
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -351,7 +351,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 {
   // Clumps provided cells.
   std::fill(offset_.begin(), offset_.end(), 0);
-  std::fill(ptr_.begin(), ptr_.end(), (Clump*) 0);
+  std::fill(ptr_.begin(), ptr_.end(), (Clump*) nullptr);
 
   const size_t n = dummiesLeft_.size() + order.size() + dummiesRight_.size();
 
@@ -473,7 +473,7 @@ void ShiftLegalizer::merge(Clump* r)
   // Find most violated constraint and merge clumps if required.
 
   int dist = 0;
-  Clump* l = 0;
+  Clump* l = nullptr;
   while (violated(r, l, dist) == true) {
     // Merge clump r into clump l which, in turn, could result in more merges.
 
@@ -523,7 +523,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
 
       // Could be that the node is _not_ a network node; it
       // might be a left or right dummy node.
-      Node* ndl = 0;
+      Node* ndl = nullptr;
       if (id < nnodes) {
         ndl = network_->getNode(id);
       } else if (id < nnodes + nsegs) {
@@ -553,7 +553,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
     }
   }
 
-  return l != 0;
+  return l != nullptr;
 }
 
 }  // namespace dpo

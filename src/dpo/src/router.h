@@ -101,7 +101,6 @@ class RoutingParams
       }
       return *this;
     }
-    virtual ~EdgeAdjust() {}
 
     void init(int irow,
               int icol,

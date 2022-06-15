@@ -36,8 +36,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include "detailed_manager.h"
-
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -48,6 +46,7 @@
 #include <utility>
 
 #include "architecture.h"
+#include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
 #include "router.h"
@@ -67,7 +66,7 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt), logger_(0), rng_(0)
+    : arch_(arch), network_(network), rt_(rt), logger_(nullptr), rng_(nullptr)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -126,7 +125,7 @@ DetailedMgr::~DetailedMgr()
   }
   segments_.clear();
 
-  if (rng_ != 0) {
+  if (rng_ != nullptr) {
     delete rng_;
   }
 }
@@ -204,8 +203,8 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages)
     // cell and "no other cell" on either the left or the
     // right.  This might solve the problem since it will
     // make the blockage wider.
-    xmin -= arch_->getCellSpacing(0, nd);
-    xmax += arch_->getCellSpacing(nd, 0);
+    xmin -= arch_->getCellSpacing(nullptr, nd);
+    xmax += arch_->getCellSpacing(nd, nullptr);
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       int yb = arch_->getRow(r)->getBottom();
@@ -217,7 +216,7 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages)
     }
   }
 
-  if (includeRouteBlockages && rt_ != 0) {
+  if (includeRouteBlockages && rt_ != nullptr) {
     // Turn M1 and M2 routing blockages into placement blockages.  The idea
     // here is to be quite conservative and prevent the possibility of pin
     // access problems.  We *ONLY* consider routing obstacles to be placement
@@ -332,7 +331,7 @@ void DetailedMgr::findSegments()
       int x2 = std::min(arch_->getMaxX(), rx);
 
       if (x2 > x1) {
-        DetailedSeg* segment = new DetailedSeg();
+        auto segment = new DetailedSeg();
         segment->setSegId(numSegments);
         segment->setRowId(r);
         segment->setMinX(x1);
@@ -351,7 +350,7 @@ void DetailedMgr::findSegments()
                           (int) std::floor(blockages_[r][0].first));
 
         if (x2 > x1) {
-          DetailedSeg* segment = new DetailedSeg();
+          auto segment = new DetailedSeg();
           segment->setSegId(numSegments);
           segment->setRowId(r);
           segment->setMinX(x1);
@@ -371,7 +370,7 @@ void DetailedMgr::findSegments()
                             (int) std::floor(blockages_[r][i].first));
 
           if (x2 > x1) {
-            DetailedSeg* segment = new DetailedSeg();
+            auto segment = new DetailedSeg();
             segment->setSegId(numSegments);
             segment->setRowId(r);
             segment->setMinX(x1);
@@ -392,7 +391,7 @@ void DetailedMgr::findSegments()
         int x2 = std::min(arch_->getMaxX(), rx);
 
         if (x2 > x1) {
-          DetailedSeg* segment = new DetailedSeg();
+          auto segment = new DetailedSeg();
           segment->setSegId(numSegments);
           segment->setRowId(r);
           segment->setMinX(x1);
@@ -466,7 +465,7 @@ void DetailedMgr::findSegments()
 
             segPtr->setMaxX((int) std::floor(il));
 
-            DetailedSeg* newPtr = new DetailedSeg();
+            auto newPtr = new DetailedSeg();
             newPtr->setSegId(numSegments);
             newPtr->setRowId(r);
             newPtr->setRegId(reg);
@@ -484,7 +483,7 @@ void DetailedMgr::findSegments()
 
             segPtr->setMinX((int) std::ceil(ir));
 
-            DetailedSeg* newPtr = new DetailedSeg();
+            auto newPtr = new DetailedSeg();
             newPtr->setSegId(numSegments);
             newPtr->setRowId(r);
             newPtr->setRegId(reg);
@@ -503,7 +502,7 @@ void DetailedMgr::findSegments()
 
             segPtr->setMaxX((int) std::floor(il));
 
-            DetailedSeg* newPtr = new DetailedSeg();
+            auto newPtr = new DetailedSeg();
             newPtr->setSegId(numSegments);
             newPtr->setRowId(r);
             newPtr->setRegId(reg);
@@ -577,9 +576,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(Node* nd)
   double vert;
   double dist1 = std::numeric_limits<double>::max();
   double dist2 = std::numeric_limits<double>::max();
-  DetailedSeg* best1 = 0;  // closest segment...
+  DetailedSeg* best1 = nullptr;  // closest segment...
   // closest segment which is wide enough to accomodate the cell...
-  DetailedSeg* best2 = 0;
+  DetailedSeg* best2 = nullptr;
 
   // Segments in the current row...
   for (int k = 0; k < segsInRow_[row].size(); k++) {
@@ -604,13 +603,13 @@ DetailedSeg* DetailedMgr::findClosestSegment(Node* nd)
                                                                         : false;
 
     // Keep track of the closest segment.
-    if (best1 == 0 || (best1 != 0 && closer1)) {
+    if (best1 == nullptr || (best1 != nullptr && closer1)) {
       best1 = curr;
       dist1 = hori + vert;
     }
     // Keep track of the closest segment which is wide enough to accomodate the
     // cell.
-    if (fits && (best2 == 0 || (best2 != 0 && closer2))) {
+    if (fits && (best2 == nullptr || (best2 != nullptr && closer2))) {
       best2 = curr;
       dist2 = hori + vert;
     }
@@ -647,13 +646,13 @@ DetailedSeg* DetailedMgr::findClosestSegment(Node* nd)
                           : false;
 
           // Keep track of the closest segment.
-          if (best1 == 0 || (best1 != 0 && closer1)) {
+          if (best1 == nullptr || (best1 != nullptr && closer1)) {
             best1 = curr;
             dist1 = hori + vert;
           }
           // Keep track of the closest segment which is wide enough to
           // accomodate the cell.
-          if (fits && (best2 == 0 || (best2 != 0 && closer2))) {
+          if (fits && (best2 == nullptr || (best2 != nullptr && closer2))) {
             best2 = curr;
             dist2 = hori + vert;
           }
@@ -690,13 +689,13 @@ DetailedSeg* DetailedMgr::findClosestSegment(Node* nd)
                           : false;
 
           // Keep track of the closest segment.
-          if (best1 == 0 || (best1 != 0 && closer1)) {
+          if (best1 == nullptr || (best1 != nullptr && closer1)) {
             best1 = curr;
             dist1 = hori + vert;
           }
           // Keep track of the closest segment which is wide enough to
           // accomodate the cell.
-          if (fits && (best2 == 0 || (best2 != 0 && closer2))) {
+          if (fits && (best2 == nullptr || (best2 != nullptr && closer2))) {
             best2 = curr;
             dist2 = hori + vert;
           }
@@ -858,7 +857,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         double dx = std::fabs(xc - xx);
 
         if (best1.size() == 0 || (dx + dy < disp1)) {
-          if (1) {
+          if (true) {
             best1 = candidates[i];
             disp1 = dx + dy;
           }
@@ -908,7 +907,7 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider)
     if (nRowsSpanned == 1) {
       // Single height.
       DetailedSeg* segPtr = findClosestSegment(nd);
-      if (segPtr == 0) {
+      if (segPtr == nullptr) {
         internalError("Unable to assign single height cell to segment");
       }
 
@@ -988,18 +987,16 @@ void DetailedMgr::removeCellFromSegment(Node* nd, int seg)
 
   int width = (int) std::ceil(nd->getWidth());
 
-  std::vector<Node*>::iterator it
-      = std::find(cellsInSeg_[seg].begin(), cellsInSeg_[seg].end(), nd);
+  auto it = std::find(cellsInSeg_[seg].begin(), cellsInSeg_[seg].end(), nd);
   if (cellsInSeg_[seg].end() == it) {
     // Should not happen.
     internalError("Cell not found in expected segment");
   }
 
   // Remove this segment from the reverse map.
-  std::vector<DetailedSeg*>::iterator its
-      = std::find(reverseCellToSegs_[nd->getId()].begin(),
-                  reverseCellToSegs_[nd->getId()].end(),
-                  segments_[seg]);
+  auto its = std::find(reverseCellToSegs_[nd->getId()].begin(),
+                       reverseCellToSegs_[nd->getId()].end(),
+                       segments_[seg]);
   if (reverseCellToSegs_[nd->getId()].end() == its) {
     // Should not happen.
     internalError("Cannot find segment for cell");
@@ -1023,7 +1020,7 @@ void DetailedMgr::addCellToSegment(Node* nd, int seg)
 
   double x = nd->getLeft() + 0.5 * nd->getWidth();
   int width = (int) std::ceil(nd->getWidth());
-  std::vector<Node*>::iterator it = std::lower_bound(
+  auto it = std::lower_bound(
       cellsInSeg_[seg].begin(), cellsInSeg_[seg].end(), x, compareNodesX());
   if (it == cellsInSeg_[seg].end()) {
     // Cell is at the end of the segment.
@@ -1034,10 +1031,9 @@ void DetailedMgr::addCellToSegment(Node* nd, int seg)
     segments_[seg]->addUtil(width);   // Adds the utilization...
   }
 
-  std::vector<DetailedSeg*>::iterator its
-      = std::find(reverseCellToSegs_[nd->getId()].begin(),
-                  reverseCellToSegs_[nd->getId()].end(),
-                  segments_[seg]);
+  auto its = std::find(reverseCellToSegs_[nd->getId()].begin(),
+                       reverseCellToSegs_[nd->getId()].end(),
+                       segments_[seg]);
   if (reverseCellToSegs_[nd->getId()].end() != its) {
     internalError("Segment already present in cell to segment map");
   }
@@ -1581,7 +1577,7 @@ double DetailedMgr::getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells)
   // type rule, or due to adjacent pins on the cells.  Checking pins on cells is
   // more time consuming.
 
-  if (ndl == 0 || ndr == 0) {
+  if (ndl == nullptr || ndr == nullptr) {
     return 0.0;
   }
   double spacing1 = arch_->getCellSpacing(ndl, ndl);
@@ -1590,13 +1586,13 @@ double DetailedMgr::getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells)
   }
   double spacing2 = 0.0;
   {
-    Pin* pinl = 0;
-    Pin* pinr = 0;
+    Pin* pinl = nullptr;
+    Pin* pinr = nullptr;
 
     // Right-most pin on the left cell.
     for (int i = 0; i < ndl->getPins().size(); i++) {
       Pin* pin = ndl->getPins()[i];
-      if (pinl == 0 || pin->getOffsetX() > pinl->getOffsetX()) {
+      if (pinl == nullptr || pin->getOffsetX() > pinl->getOffsetX()) {
         pinl = pin;
       }
     }
@@ -1604,12 +1600,13 @@ double DetailedMgr::getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells)
     // Left-most pin on the right cell.
     for (int i = 0; i < ndr->getPins().size(); i++) {
       Pin* pin = ndr->getPins()[i];
-      if (pinr == 0 || pin->getOffsetX() < pinr->getOffsetX()) {
+      if (pinr == nullptr || pin->getOffsetX() < pinr->getOffsetX()) {
         pinr = pin;
       }
     }
     // If pins on the same layer, do something.
-    if (pinl != 0 && pinr != 0 && pinl->getPinLayer() == pinr->getPinLayer()) {
+    if (pinl != nullptr && pinr != nullptr
+        && pinl->getPinLayer() == pinr->getPinLayer()) {
       // Determine the spacing requirements between these two pins.   Then,
       // translate this into a spacing requirement between the two cells.  XXX:
       // Since it is implicit that the cells are in the same row, we can
@@ -1659,8 +1656,8 @@ void DetailedMgr::getSpaceAroundCell(int seg,
   // cell to multiple segments.
 
   Node* ndi = cellsInSeg_[seg][ix];
-  Node* ndj = 0;
-  Node* ndk = 0;
+  Node* ndj = nullptr;
+  Node* ndk = nullptr;
 
   int n = (int) cellsInSeg_[seg].size();
   double xmin = segments_[seg]->getMinX();
@@ -1721,8 +1718,8 @@ void DetailedMgr::getSpaceAroundCell(int seg,
   // cell to multiple segments.
 
   Node* ndi = cellsInSeg_[seg][ix];
-  Node* ndj = 0;
-  Node* ndk = 0;
+  Node* ndj = nullptr;
+  Node* ndk = nullptr;
 
   int n = (int) cellsInSeg_[seg].size();
   double xmin = segments_[seg]->getMinX();
@@ -2330,8 +2327,7 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   // We will attempt to push cells starting at "ndr" to the right to
   // maintain no overlap, satisfy spacing, etc.
 
-  std::vector<Node*>::iterator it
-      = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
+  auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
   if (cellsInSeg_[sj].end() == it) {
     // Error.
     return false;
@@ -2383,7 +2379,7 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
     }
 
     // Fail if we shift off end of segment.
-    if (xj + ndr->getWidth() + arch_->getCellSpacing(ndr, 0)
+    if (xj + ndr->getWidth() + arch_->getCellSpacing(ndr, nullptr)
         > segments_[sj]->getMaxX()) {
       return false;
     }
@@ -2414,8 +2410,7 @@ bool DetailedMgr::shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndl)
   // maintain no overlap, satisfy spacing, etc.
 
   // Need the index of "ndl".
-  std::vector<Node*>::iterator it
-      = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndl);
+  auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndl);
   if (cellsInSeg_[sj].end() == it) {
     return false;
   }
@@ -2459,7 +2454,7 @@ bool DetailedMgr::shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndl)
     }
 
     // Fail if we shift off the end of a segment.
-    if (xj - arch_->getCellSpacing(0, ndl) < segments_[sj]->getMinX()) {
+    if (xj - arch_->getCellSpacing(nullptr, ndl) < segments_[sj]->getMinX()) {
       return false;
     }
     if (ix == n) {
@@ -2556,14 +2551,13 @@ bool DetailedMgr::tryMove1(Node* ndi,
   }
 
   // Find the cells to the left and to the right of the target location.
-  Node* ndr = 0;
-  Node* ndl = 0;
+  Node* ndr = nullptr;
+  Node* ndl = nullptr;
   if (cellsInSeg_[sj].size() != 0) {
-    std::vector<Node*>::iterator it
-        = std::lower_bound(cellsInSeg_[sj].begin(),
-                           cellsInSeg_[sj].end(),
-                           xj,
-                           DetailedMgr::compareNodesX());
+    auto it = std::lower_bound(cellsInSeg_[sj].begin(),
+                               cellsInSeg_[sj].end(),
+                               xj,
+                               DetailedMgr::compareNodesX());
 
     if (it == cellsInSeg_[sj].end()) {
       // Nothing to the right of the target position.  But, there must be
@@ -2579,19 +2573,19 @@ bool DetailedMgr::tryMove1(Node* ndi,
   }
 
   // What we do depends on if there are cells to the left or right.
-  if (ndl == 0 && ndr == 0) {
+  if (ndl == nullptr && ndr == nullptr) {
     // No left or right cell implies an empty segment.
     DetailedSeg* segPtr = segments_[sj];
 
     // Reject if not enough space.
-    int required = ndi->getWidth() + arch_->getCellSpacing(0, ndi)
-                   + arch_->getCellSpacing(ndi, 0);
+    int required = ndi->getWidth() + arch_->getCellSpacing(nullptr, ndi)
+                   + arch_->getCellSpacing(ndi, nullptr);
     if (required + segPtr->getUtil() > segPtr->getWidth()) {
       return false;
     }
 
-    int lx = segPtr->getMinX() + arch_->getCellSpacing(0, ndi);
-    int rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, 0);
+    int lx = segPtr->getMinX() + arch_->getCellSpacing(nullptr, ndi);
+    int rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
@@ -2600,19 +2594,19 @@ bool DetailedMgr::tryMove1(Node* ndi,
       return false;
     }
     return true;
-  } else if (ndl != 0 && ndr == 0) {
+  } else if (ndl != nullptr && ndr == nullptr) {
     // End of segment, cells to the left.
     DetailedSeg* segPtr = segments_[sj];
 
     // Reject if not enough space.
     int required = ndi->getWidth() + arch_->getCellSpacing(ndl, ndi)
-                   + arch_->getCellSpacing(ndi, 0);
+                   + arch_->getCellSpacing(ndi, nullptr);
     if (required + segPtr->getUtil() > segPtr->getWidth()) {
       return false;
     }
 
     int lx = ndl->getRight() + arch_->getCellSpacing(ndl, ndi);
-    int rx = segments_[sj]->getMaxX() - arch_->getCellSpacing(ndi, 0);
+    int rx = segments_[sj]->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
@@ -2626,18 +2620,18 @@ bool DetailedMgr::tryMove1(Node* ndi,
       return false;
     }
     return true;
-  } else if (ndl == 0 && ndr != 0) {
+  } else if (ndl == nullptr && ndr != nullptr) {
     // End of segment, cells to the left.
     DetailedSeg* segPtr = segments_[sj];
 
     // Reject if not enough space.
-    int required = ndi->getWidth() + arch_->getCellSpacing(0, ndi)
+    int required = ndi->getWidth() + arch_->getCellSpacing(nullptr, ndi)
                    + arch_->getCellSpacing(ndi, ndr);
     if (required + segPtr->getUtil() > segPtr->getWidth()) {
       return false;
     }
 
-    int lx = segPtr->getMinX() + arch_->getCellSpacing(0, ndi);
+    int lx = segPtr->getMinX() + arch_->getCellSpacing(nullptr, ndi);
     ;
     int rx = ndr->getLeft() - arch_->getCellSpacing(ndi, ndr);
     if (!alignPos(ndi, xj, lx, rx)) {
@@ -2653,7 +2647,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
       return false;
     }
     return true;
-  } else if (ndl != 0 && ndr != 0) {
+  } else if (ndl != nullptr && ndr != nullptr) {
     // In between two cells.
     DetailedSeg* segPtr = segments_[sj];
 
@@ -2726,11 +2720,10 @@ bool DetailedMgr::tryMove2(Node* ndi,
   Node* ndj = nullptr;
   int ix_j = -1;
   if (cellsInSeg_[sj].size() != 0) {
-    std::vector<Node*>::iterator it_j
-        = std::lower_bound(cellsInSeg_[sj].begin(),
-                           cellsInSeg_[sj].end(),
-                           xj,
-                           DetailedMgr::compareNodesX());
+    auto it_j = std::lower_bound(cellsInSeg_[sj].begin(),
+                                 cellsInSeg_[sj].end(),
+                                 xj,
+                                 DetailedMgr::compareNodesX());
 
     if (it_j == cellsInSeg_[sj].end()) {
       ndj = cellsInSeg_[sj].back();
@@ -2758,7 +2751,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   if (prev) {
     lx = prev->getRight() + arch_->getCellSpacing(prev, ndi);
   } else {
-    lx = segPtr->getMinX() + arch_->getCellSpacing(0, ndi);
+    lx = segPtr->getMinX() + arch_->getCellSpacing(nullptr, ndi);
   }
   rx = ndj->getLeft() - arch_->getCellSpacing(ndi, ndj);
   if (ndi->getWidth() <= rx - lx) {
@@ -2776,7 +2769,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   if (next) {
     rx = next->getLeft() - arch_->getCellSpacing(ndi, next);
   } else {
-    rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, 0);
+    rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
   }
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
@@ -2872,11 +2865,10 @@ bool DetailedMgr::tryMove3(Node* ndi,
     Node* rite = nullptr;
 
     if (cellsInSeg_[segId].size() != 0) {
-      std::vector<Node*>::iterator it_j
-          = std::lower_bound(cellsInSeg_[segId].begin(),
-                             cellsInSeg_[segId].end(),
-                             xj,
-                             DetailedMgr::compareNodesX());
+      auto it_j = std::lower_bound(cellsInSeg_[segId].begin(),
+                                   cellsInSeg_[segId].end(),
+                                   xj,
+                                   DetailedMgr::compareNodesX());
       if (it_j == cellsInSeg_[segId].end()) {
         // Nothing to the right; the last cell in the row will be on the left.
         left = cellsInSeg_[segId].back();
@@ -2979,20 +2971,19 @@ bool DetailedMgr::trySwap1(Node* ndi,
 
   clearMoveList();
 
-  Node* ndj = 0;
+  Node* ndj = nullptr;
   if (cellsInSeg_[sj].size() != 0) {
-    std::vector<Node*>::iterator it_j
-        = std::lower_bound(cellsInSeg_[sj].begin(),
-                           cellsInSeg_[sj].end(),
-                           xj,
-                           DetailedMgr::compareNodesX());
+    auto it_j = std::lower_bound(cellsInSeg_[sj].begin(),
+                                 cellsInSeg_[sj].end(),
+                                 xj,
+                                 DetailedMgr::compareNodesX());
     if (it_j == cellsInSeg_[sj].end()) {
       ndj = cellsInSeg_[sj].back();
     } else {
       ndj = *it_j;
     }
   }
-  if (ndj == ndi || ndj == 0) {
+  if (ndj == ndi || ndj == nullptr) {
     return false;
   }
   if (arch_->getCellHeightInRows(ndi) != 1
@@ -3002,12 +2993,10 @@ bool DetailedMgr::trySwap1(Node* ndi,
 
   // Determine the indices of the cells in their respective
   // segments.  Determine if cells are adjacent.
-  std::vector<Node*>::iterator it_i
-      = std::find(cellsInSeg_[si].begin(), cellsInSeg_[si].end(), ndi);
+  auto it_i = std::find(cellsInSeg_[si].begin(), cellsInSeg_[si].end(), ndi);
   int ix_i = (int) (it_i - cellsInSeg_[si].begin());
 
-  std::vector<Node*>::iterator it_j
-      = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndj);
+  auto it_j = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndj);
   int ix_j = (int) (it_j - cellsInSeg_[sj].begin());
 
   bool adjacent

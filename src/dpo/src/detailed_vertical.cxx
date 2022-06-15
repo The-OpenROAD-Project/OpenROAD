@@ -56,7 +56,7 @@ DetailedVerticalSwap::DetailedVerticalSwap(Architecture* arch,
                                            Network* network,
                                            RoutingParams* rt)
     : DetailedGenerator("vertical swap"),
-      mgr_(0),
+      mgr_(nullptr),
       arch_(arch),
       network_(network),
       rt_(rt),
@@ -170,7 +170,7 @@ void DetailedVerticalSwap::verticalSwap()
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(arch_, network_, rt_);
-  hpwlObj.init(mgr_, NULL);  // Ignore orientation.
+  hpwlObj.init(mgr_, nullptr);  // Ignore orientation.
 
   double currHpwl = hpwlObj.curr();
   // Consider each candidate cell once.

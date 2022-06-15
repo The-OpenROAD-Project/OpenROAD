@@ -125,17 +125,17 @@ int Architecture::getCellHeightInRows(const Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Row* Architecture::createAndAddRow()
 {
-  Architecture::Row* ptr = new Row();
-  rows_.push_back(ptr);
-  return ptr;
+  auto row = new Row();
+  rows_.push_back(row);
+  return row;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Region* Architecture::createAndAddRegion()
 {
-  Architecture::Region* ptr = new Region();
-  regions_.push_back(ptr);
-  return ptr;
+  auto region = new Region();
+  regions_.push_back(region);
+  return region;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ int Architecture::postProcess(Network* network)
     for (size_t i = 0; i < subrows.size(); i++) {
       const int lx = subrows[i]->getLeft();
       const int rx = subrows[i]->getRight();
-      intervals.push_back(std::make_pair(lx, rx));
+      intervals.emplace_back(std::make_pair(lx, rx));
     }
     std::sort(intervals.begin(), intervals.end());
 
@@ -422,8 +422,8 @@ int Architecture::getCellSpacing(const Node* leftNode,
   int retval = 0;
   if (useSpacingTable_) {
     // Don't need this if one of the cells is null.
-    const int i1 = (leftNode == 0) ? -1 : leftNode->getRightEdgeType();
-    const int i2 = (rightNode == 0) ? -1 : rightNode->getLeftEdgeType();
+    const int i1 = (leftNode == nullptr) ? -1 : leftNode->getRightEdgeType();
+    const int i2 = (rightNode == nullptr) ? -1 : rightNode->getLeftEdgeType();
     retval = std::max(retval, getCellSpacingUsingTable(i1, i2));
   }
   if (usePadding_) {
@@ -431,13 +431,13 @@ int Architecture::getCellSpacing(const Node* leftNode,
     // the padding to the left of the right cell.
 
     int separation = 0;
-    if (leftNode != 0) {
+    if (leftNode != nullptr) {
       auto it = cellPaddings_.find(leftNode->getId());
       if (it != cellPaddings_.end()) {
         separation += it->second.second;
       }
     }
-    if (rightNode != 0) {
+    if (rightNode != nullptr) {
       auto it = cellPaddings_.find(rightNode->getId());
       if (it != cellPaddings_.end()) {
         separation += it->second.first;
@@ -505,7 +505,7 @@ void Architecture::clear_edge_type()
 void Architecture::init_edge_type()
 {
   clear_edge_type();
-  edgeTypes_.push_back({"DEFAULT", EDGETYPE_DEFAULT});
+  edgeTypes_.emplace_back(std::make_pair("DEFAULT", EDGETYPE_DEFAULT));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -520,7 +520,7 @@ int Architecture::add_edge_type(const char* name)
     }
   }
   const int n = (int) edgeTypes_.size();
-  edgeTypes_.push_back(std::make_pair(name, n));
+  edgeTypes_.emplace_back(std::make_pair(name, n));
   return n;
 }
 

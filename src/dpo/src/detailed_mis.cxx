@@ -90,7 +90,7 @@ struct DetailedMis::Bucket
 DetailedMis::DetailedMis(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : mgrPtr_(0),
+    : mgrPtr_(nullptr),
       arch_(arch),
       network_(network),
       rt_(rt),
@@ -660,8 +660,7 @@ void DetailedMis::solveMatch()
        ++it) {
     if (g.target(it) != demandNode && g.source(it) != supplyNode
         && mincost.flow(it) != 0) {
-      std::map<lemon::ListDigraph::Arc, std::pair<int, int>>::iterator it1
-          = reverseMap.find(it);
+      auto it1 = reverseMap.find(it);
       if (reverseMap.end() == it1) {
         mgrPtr_->internalError("Unable to interpret flow during matching");
       }

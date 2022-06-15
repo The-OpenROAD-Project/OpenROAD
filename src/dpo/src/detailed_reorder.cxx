@@ -177,17 +177,17 @@ void DetailedReorderer::reorder()
           istrt = std::max(jstrt, istop - windowSize_ + 1);
         }
 
-        const Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
+        const Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : nullptr;
         int rightLimit = segPtr->getMaxX();
-        if (nextPtr != 0) {
+        if (nextPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
               (int) std::floor(nextPtr->getLeft() - leftPadding), rightLimit);
         }
-        const Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
+        const Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : nullptr;
         int leftLimit = segPtr->getMinX();
-        if (prevPtr != 0) {
+        if (prevPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(

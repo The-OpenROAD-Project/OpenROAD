@@ -69,7 +69,6 @@ class DetailedOrient
 {
  public:
   DetailedOrient(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedOrient();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);

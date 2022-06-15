@@ -226,17 +226,17 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       // else if( objs[i] == "drc" )   std::cout << "drc objective requested."
       // << std::endl;
       if (objs[i] == "abu") {
-        DetailedABU* objABU = new DetailedABU(arch_, network_, rt_);
-        objABU->init(mgrPtr_, NULL);
+        auto objABU = new DetailedABU(arch_, network_, rt_);
+        objABU->init(mgrPtr_, nullptr);
         objectives_.push_back(objABU);
       } else if (objs[i] == "disp") {
-        DetailedDisplacement* objDisp
+        auto objDisp
             = new DetailedDisplacement(arch_, network_, rt_);
-        objDisp->init(mgrPtr_, NULL);
+        objDisp->init(mgrPtr_, nullptr);
         objectives_.push_back(objDisp);
       } else if (objs[i] == "hpwl") {
-        DetailedHPWL* objHpwl = new DetailedHPWL(arch_, network_, rt_);
-        objHpwl->init(mgrPtr_, NULL);
+        auto objHpwl = new DetailedHPWL(arch_, network_, rt_);
+        objHpwl->init(mgrPtr_, nullptr);
         objectives_.push_back(objHpwl);
       } else {
         ;
@@ -245,8 +245,8 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
   if (objectives_.size() == 0) {
     // Default objective.
-    DetailedHPWL* objHpwl = new DetailedHPWL(arch_, network_, rt_);
-    objHpwl->init(mgrPtr_, NULL);
+    auto objHpwl = new DetailedHPWL(arch_, network_, rt_);
+    objHpwl->init(mgrPtr_, nullptr);
     objectives_.push_back(objHpwl);
   }
 
@@ -281,7 +281,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
          ++it) {
       if (*it == '(' || *it == ')') {
       } else if (isOperator(*it) || isObjective(*it)) {
-        expr_.push_back(std::string(1, *it));
+        expr_.emplace_back(std::string(1, *it));
       } else {
         std::string val;
         while (!isOperator(*it) && !isObjective(*it) && it != costStr.end()
@@ -295,10 +295,10 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     }
   } else {
     expr_.clear();
-    expr_.push_back(std::string(1, 'a'));
+    expr_.emplace_back(std::string(1, 'a'));
     for (size_t i = 1; i < objectives_.size(); i++) {
-      expr_.push_back(std::string(1, (char) ('a' + i)));
-      expr_.push_back(std::string(1, '+'));
+      expr_.emplace_back(std::string(1, (char) ('a' + i)));
+      expr_.emplace_back(std::string(1, '+'));
     }
   }
 
@@ -425,8 +425,8 @@ double DetailedRandom::go()
     nextCost_[i] = initCost_[i];
 
     if (objectives_[i]->getName() == "abu") {
-      DetailedABU* ptr = dynamic_cast<DetailedABU*>(objectives_[i]);
-      if (ptr != 0) {
+      auto ptr = dynamic_cast<DetailedABU*>(objectives_[i]);
+      if (ptr != nullptr) {
         ptr->measureABU(true);
       }
     }
@@ -535,8 +535,8 @@ double DetailedRandom::go()
         ((error) ? 'Y' : 'N'));
 
     if (objectives_[i]->getName() == "abu") {
-      DetailedABU* ptr = dynamic_cast<DetailedABU*>(objectives_[i]);
-      if (ptr != 0) {
+      auto ptr = dynamic_cast<DetailedABU*>(objectives_[i]);
+      if (ptr != nullptr) {
         ptr->measureABU(true);
       }
     }
@@ -758,7 +758,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     // and original position; (iii) the original position itself.  Should
     // this also be a randomized choice??????????????????????????????????
     double xj, yj;
-    if (1) {
+    if (true) {
       // Centered at the original position within a box.
       const double orig_yc = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
       const double orig_xc = ndi->getOrigLeft() + 0.5 * ndi->getWidth();
@@ -779,12 +779,12 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       xj = arch_->getMinX() + grid_xj * xwid;
       yj = arch_->getMinY() + grid_yj * ywid;
     }
-    if (0) {
+    if (false) {
       // The original position.
       xj = ndi->getOrigLeft() + 0.5 * ndi->getWidth();
       yj = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
     }
-    if (0) {
+    if (false) {
       // Somewhere between current position and original position.
       double orig_yc = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
       double orig_xc = ndi->getOrigLeft() + 0.5 * ndi->getWidth();

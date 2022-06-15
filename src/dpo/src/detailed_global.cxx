@@ -167,7 +167,7 @@ void DetailedGlobalSwap::globalSwap()
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(arch_, network_, rt_);
-  hpwlObj.init(mgr_, NULL);  // Ignore orientation.
+  hpwlObj.init(mgr_, nullptr);  // Ignore orientation.
 
   double currHpwl = hpwlObj.curr();
   double nextHpwl = 0.;

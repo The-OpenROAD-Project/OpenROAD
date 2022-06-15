@@ -158,7 +158,7 @@ double DetailedDisplacement::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != 0) {
+    if (orientPtr_ != nullptr) {
       orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
@@ -178,7 +178,7 @@ double DetailedDisplacement::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(newLeft[i]);
     nodes[i]->setBottom(newBottom[i]);
-    if (orientPtr_ != 0) {
+    if (orientPtr_ != nullptr) {
       orientPtr_->orientAdjust(nodes[i], newOri[i]);
     }
   }
@@ -197,7 +197,7 @@ double DetailedDisplacement::delta(int n,
   for (int i = 0; i < n; i++) {
     nodes[i]->setLeft(curLeft[i]);
     nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != 0) {
+    if (orientPtr_ != nullptr) {
       orientPtr_->orientAdjust(nodes[i], curOri[i]);
     }
   }
