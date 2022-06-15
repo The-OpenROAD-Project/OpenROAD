@@ -1632,12 +1632,12 @@ static void print_rcterm(tmg_rcterm* x)
   dbITerm* iterm = x->_iterm;
   if (iterm)
     notice(0,
-           " iterm %s/%s",
+           " iterm %s/%s\n",
            iterm->getInst()->getName().c_str(),
            iterm->getMTerm()->getName().c_str());
   dbBTerm* bterm = x->_bterm;
   if (bterm)
-    notice(0, " bterm %s", x->_bterm->getName().c_str());
+    notice(0, " bterm %s\n", x->_bterm->getName().c_str());
 }
 
 int tmg_conn::getStartNode()
@@ -1853,7 +1853,6 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     if (verbose) {
       notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - &_ptV[0]) : 0);
       print_rcterm(x);
-      notice(0, "\n");
     }
     if (x->_pt == NULL) {
       _connected = false;
@@ -1901,10 +1900,9 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     return;
   }
   if (verbose) {
-    notice(0, "starting at %d ", jstart);
+    notice(0, "starting at %d\n", jstart);
     if (x)
       print_rcterm(x);
-    notice(0, "\n");
   }
   int last_term_index = 0;
   while (1) {
@@ -1924,16 +1922,12 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         }
       }
       if (verbose) {
-        notice(0, "%d-%d", jfr, jto);
-        if (is_short)
-          notice(0, " short");
-        if (is_loop)
-          notice(0, " loop");
-        if (x && x->_iterm)
-          notice(0, " iterm I%d", x->_iterm->getInst()->getId());
-        if (x && x->_bterm)
-          notice(0, " bterm");
-        notice(0, "\n");
+        notice(0, "%d-%d %s%s%s%s\n",
+               jfr, jto,
+               is_short ? " short" : "",
+               is_loop ? " loop" : "",
+               x && x->_iterm ? " iterm" : "",
+               x && x->_bterm ? " bterm" : "");
       }
       if (!no_convert) {
         addToWire(jfr, jto, k, is_short, is_loop);
@@ -1966,7 +1960,6 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
       if (verbose) {
         notice(0, "net %d feedthru at ", _net->getId());
         print_rcterm(x);
-        notice(0, "\n");
         notice(0, "last_id = %d\n", _last_id);
       }
     }
