@@ -38,7 +38,7 @@ proc check_antennas { args } {
     flags {-report_violating_nets}
 
   if { [info exists keys(-report_file)] } {
-    set report_file [file nativename $keys(-report_file)]
+    set report_file [file normalize $keys(-report_file)]
   } else {
     utl::error ANT 6 "missing -report_file argument."
   }
