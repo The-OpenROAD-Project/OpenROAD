@@ -54,15 +54,6 @@
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_abu.h"
-
-#include <algorithm>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
-#include <cmath>
-#include <iostream>
-#include <stack>
-#include <utility>
-
 #include "detailed_orient.h"
 #include "utl/Logger.h"
 

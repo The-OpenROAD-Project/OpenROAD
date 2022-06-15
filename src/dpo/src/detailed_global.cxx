@@ -37,30 +37,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_global.h"
 
-#include <algorithm>
-#include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
-#include <cmath>
-#include <iostream>
-#include <stack>
-#include <utility>
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
-#include "detailed_orient.h"
-#include "detailed_segment.h"
 #include "rectangle.h"
-#include "utility.h"
 #include "utl/Logger.h"
-#ifdef USE_OPENMP
-#include <parallel/algorithm>
-
-#include "omp.h"
-#endif
-
-using utl::DPO;
 
 namespace dpo {
+
+using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +54,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
                                        Network* network,
                                        RoutingParams* rt)
     : DetailedGenerator("global swap"),
-      mgr_(0),
+      mgr_(nullptr),
       arch_(arch),
       network_(network),
       rt_(rt),
@@ -83,22 +69,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedGlobalSwap::DetailedGlobalSwap()
-    : DetailedGenerator("global swap"),
-      mgr_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      rt_(nullptr),
-      skipNetsLargerThanThis_(100),
-      traversal_(0),
-      attempts_(0),
-      moves_(0),
-      swaps_(0)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::~DetailedGlobalSwap()
+    : DetailedGlobalSwap(nullptr, nullptr, nullptr)
 {
 }
 

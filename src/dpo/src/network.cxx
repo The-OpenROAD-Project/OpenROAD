@@ -35,6 +35,7 @@
 #include "network.h"
 
 #include "architecture.h"
+#include "orientation.h"
 
 namespace dpo {
 
@@ -58,11 +59,6 @@ Node::Node()
       currentOrient_(Orientation_N),
       availOrient_(Orientation_N),
       isDefinedByShapes_(false)
-{
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Node::~Node()
 {
 }
 
@@ -131,26 +127,26 @@ bool Node::adjustCurrOrient(unsigned newOri)
   bool changeEdgeTypes = false;
   if (curOri == Orientation_E || curOri == Orientation_FE
       || curOri == Orientation_FW || curOri == Orientation_W) {
-    bool test1 = (curOri == Orientation_E || curOri == Orientation_FW);
-    bool test2 = (newOri == Orientation_E || newOri == Orientation_FW);
+    const bool test1 = (curOri == Orientation_E || curOri == Orientation_FW);
+    const bool test2 = (newOri == Orientation_E || newOri == Orientation_FW);
     if (test1 != test2) {
       mX = -1;
     }
-    bool test3 = (curOri == Orientation_E || curOri == Orientation_FE);
-    bool test4 = (newOri == Orientation_E || newOri == Orientation_FE);
+    const bool test3 = (curOri == Orientation_E || curOri == Orientation_FE);
+    const bool test4 = (newOri == Orientation_E || newOri == Orientation_FE);
     if (test3 != test4) {
       changeEdgeTypes = true;
       mY = -1;
     }
   } else {
-    bool test1 = (curOri == Orientation_N || curOri == Orientation_FS);
-    bool test2 = (newOri == Orientation_N || newOri == Orientation_FS);
+    const bool test1 = (curOri == Orientation_N || curOri == Orientation_FS);
+    const bool test2 = (newOri == Orientation_N || newOri == Orientation_FS);
     if (test1 != test2) {
       changeEdgeTypes = true;
       mX = -1;
     }
-    bool test3 = (curOri == Orientation_N || curOri == Orientation_FN);
-    bool test4 = (newOri == Orientation_N || newOri == Orientation_FN);
+    const bool test3 = (curOri == Orientation_N || curOri == Orientation_FN);
+    const bool test4 = (newOri == Orientation_N || newOri == Orientation_FN);
     if (test3 != test4) {
       mY = -1;
     }
@@ -170,17 +166,6 @@ bool Node::adjustCurrOrient(unsigned newOri)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Edge::Edge() : id_(0), ndr_(0)
-{
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Edge::~Edge()
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 Pin::Pin(void)
     : pinWidth_(0),
       pinHeight_(0),
@@ -190,17 +175,6 @@ Pin::Pin(void)
       edge_(nullptr),
       offsetX_(0.0),
       offsetY_(0.0)
-{
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Pin::~Pin(void)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Network::Network()
 {
 }
 
@@ -234,7 +208,7 @@ Edge* Network::createAndAddEdge(void)
 {
   // Just allocate an edge, append it and give it the id
   // that corresponds to its index.
-  int id = (int) edges_.size();
+  const int id = (int) edges_.size();
   Edge* ptr = new Edge();
   ptr->setId(id);
   edges_.push_back(ptr);
@@ -246,7 +220,7 @@ Node* Network::createAndAddNode(void)
 {
   // Just allocate a node, append it and give it the id
   // that corresponds to its index.
-  int id = (int) nodes_.size();
+  const int id = (int) nodes_.size();
   Node* ptr = new Node();
   ptr->setId(id);
   nodes_.push_back(ptr);
@@ -260,7 +234,7 @@ Node* Network::createAndAddFillerNode(int left,
                                       int height)
 {
   Node* ndi = new Node();
-  int id = (int) nodes_.size();
+  const int id = (int) nodes_.size();
   ndi->setFixed(Node::FIXED_XY);
   ndi->setType(Node::FILLER);
   ndi->setId(id);
@@ -281,7 +255,7 @@ Node* Network::createAndAddShapeNode(int left,
   // Add shape cells to list of network cells.  We have
   // the parent node from which we can derive a name.
   Node* ndi = new Node();
-  int id = (int) nodes_.size();
+  const int id = (int) nodes_.size();
   ndi->setFixed(Node::FIXED_XY);
   ndi->setType(Node::SHAPE);
   ndi->setId(id);

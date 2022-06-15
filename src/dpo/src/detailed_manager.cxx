@@ -47,8 +47,10 @@
 #include <stack>
 #include <utility>
 
+#include "architecture.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
+#include "router.h"
 #include "utility.h"
 #include "utl/Logger.h"
 
@@ -167,7 +169,6 @@ void DetailedMgr::internalError(std::string msg)
 {
   logger_->error(
       DPO, 400, "Detailed improvement internal error: {:s}.", msg.c_str());
-  exit(-1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

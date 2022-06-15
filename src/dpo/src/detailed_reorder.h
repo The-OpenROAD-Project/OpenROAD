@@ -32,27 +32,26 @@
 
 #pragma once
 
-#include <deque>
+#include <string>
 #include <vector>
-
-#include "architecture.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
+class Architecture;
 class DetailedSeg;
 class DetailedMgr;
+class Network;
+class Node;
+class RoutingParams;
 
 // CLASSES ===================================================================
 class DetailedReorderer
 {
  public:
   DetailedReorderer(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedReorderer();
 
-  void run(DetailedMgr* mgrPtr, std::string command);
-  void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
+  void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
 
  private:
   void reorder();
@@ -63,7 +62,7 @@ class DetailedReorderer
                int rightLimit,
                int segId,
                int rowId);
-  double cost(std::vector<Node*>& nodes, int istrt, int istop);
+  double cost(const std::vector<Node*>& nodes, int istrt, int istop);
 
   // Standard stuff.
   Architecture* arch_;

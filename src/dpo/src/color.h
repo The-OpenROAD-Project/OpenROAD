@@ -32,8 +32,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
 #include <vector>
 
 namespace dpo {
@@ -49,12 +47,13 @@ class Graph
     std::fill(color_.begin(), color_.end(), -1);
     ncolors_ = 0;
   }
-  virtual ~Graph() {}
+
   void addEdge(int u, int v)
   {
     adj_[u].push_back(v);
     adj_[v].push_back(u);
   }
+
   void removeDuplicates()
   {
     for (int i = 0; i < v_; i++) {

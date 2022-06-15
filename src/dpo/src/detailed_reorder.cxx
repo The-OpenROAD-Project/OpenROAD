@@ -32,17 +32,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-#include "detailed_reorder.h"
-
-#include <algorithm>
-#include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
-#include <cmath>
-#include <iostream>
-#include <stack>
-#include <utility>
 
+#include "architecture.h"
 #include "detailed_manager.h"
+#include "detailed_reorder.h"
 #include "detailed_segment.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -68,20 +62,12 @@ DetailedReorderer::DetailedReorderer(Architecture* arch,
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-DetailedReorderer::~DetailedReorderer()
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-void DetailedReorderer::run(DetailedMgr* mgrPtr, std::string command)
+void DetailedReorderer::run(DetailedMgr* mgrPtr, const std::string& command)
 {
   // A temporary interface to allow for a string which we will decode to create
   // the arguments.
-  std::string scriptString = command;
   boost::char_separator<char> separators(" \r\t\n;");
-  boost::tokenizer<boost::char_separator<char>> tokens(scriptString,
-                                                       separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
   for (boost::tokenizer<boost::char_separator<char>>::iterator it
        = tokens.begin();
@@ -94,7 +80,8 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::string command)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
+void DetailedReorderer::run(DetailedMgr* mgrPtr,
+                            const std::vector<std::string>& args)
 {
   // Given the arguments, figure out which routine to run to do the reordering.
 
@@ -116,13 +103,13 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   windowSize_ = std::min(4, std::max(2, windowSize_));
   tol = std::max(tol, 0.01);
 
-  double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
-
   mgrPtr_->resortSegments();
-  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
-  init_hpwl = curr_hpwl;
+
+  double hpwl_x, hpwl_y;
+  double curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  const double init_hpwl = curr_hpwl;
   for (int p = 1; p <= passes; p++) {
-    last_hpwl = curr_hpwl;
+    const double last_hpwl = curr_hpwl;
 
     reorder();
 
@@ -141,7 +128,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
   mgrPtr_->resortSegments();
 
-  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  const double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(
       DPO,
       305,
@@ -158,16 +145,11 @@ void DetailedReorderer::reorder()
   edgeMask_.resize(network_->getNumEdges());
   std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
 
-  int rightLimit = 0.;
-  int leftLimit = 0.;
-  int rightPadding = 0.;
-  int leftPadding = 0.;
-
   // Loop over each segment; find single height cells and reorder.
   for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
     DetailedSeg* segPtr = mgrPtr_->getSegment(s);
-    int segId = segPtr->getSegId();
-    int rowId = segPtr->getRowId();
+    const int segId = segPtr->getSegId();
+    const int rowId = segPtr->getRowId();
 
     std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segId];
     if (nodes.size() < 2) {
@@ -176,35 +158,37 @@ void DetailedReorderer::reorder()
     std::sort(nodes.begin(), nodes.end(), DetailedMgr::compareNodesX());
 
     int j = 0;
-    int n = (int) nodes.size();
+    const int n = (int) nodes.size();
     while (j < n) {
       while (j < n && arch_->isMultiHeightCell(nodes[j])) {
         ++j;
       }
-      int jstrt = j;
+      const int jstrt = j;
       while (j < n && arch_->isSingleHeightCell(nodes[j])) {
         ++j;
       }
-      int jstop = j - 1;
+      const int jstop = j - 1;
 
       // Single height cells in [jstrt,jstop].
       for (int i = jstrt; i + windowSize_ <= jstop; ++i) {
         int istrt = i;
-        int istop = std::min(jstop, istrt + windowSize_ - 1);
+        const int istop = std::min(jstop, istrt + windowSize_ - 1);
         if (istop == jstop) {
           istrt = std::max(jstrt, istop - windowSize_ + 1);
         }
 
-        Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
-        rightLimit = segPtr->getMaxX();
+        const Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
+        int rightLimit = segPtr->getMaxX();
         if (nextPtr != 0) {
+          int leftPadding, rightPadding;
           arch_->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
               (int) std::floor(nextPtr->getLeft() - leftPadding), rightLimit);
         }
-        Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
-        leftLimit = segPtr->getMinX();
+        const Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
+        int leftLimit = segPtr->getMinX();
         if (prevPtr != 0) {
+          int leftPadding, rightPadding;
           arch_->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
               (int) std::ceil(prevPtr->getRight() + rightPadding), leftLimit);
@@ -226,12 +210,12 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
                                 int segId,
                                 int rowId)
 {
-  int size = jstop - jstrt + 1;
+  const int size = jstop - jstrt + 1;
 
   // XXX: Node positions still doubles!
-  std::unordered_map<Node*, int> origLeft;
+  std::unordered_map<const Node*, int> origLeft;
   for (int i = 0; i < size; i++) {
-    Node* ndi = nodes[jstrt + i];
+    const Node* ndi = nodes[jstrt + i];
     origLeft[ndi] = ndi->getLeft();
   }
 
@@ -257,12 +241,12 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
 
   // We might have more space than required.  Space cells out
   // somewhat evenly by adding extra space to the padding.
-  int spacePerCell
+  const int spacePerCell
       = ((rightLimit - leftLimit) - (totalWidth + totalPadding)) / size;
-  int siteWidth = arch_->getRow(0)->getSiteWidth();
-  int sitePerCellTotal = spacePerCell / siteWidth;
-  int sitePerCellRight = (sitePerCellTotal >> 1);
-  int sitePerCellLeft = sitePerCellTotal - sitePerCellRight;
+  const int siteWidth = arch_->getRow(0)->getSiteWidth();
+  const int sitePerCellTotal = spacePerCell / siteWidth;
+  const int sitePerCellRight = (sitePerCellTotal >> 1);
+  const int sitePerCellLeft = sitePerCellTotal - sitePerCellRight;
   for (int i = 0; i < size; i++) {
     if (totalWidth + totalPadding + sitePerCellRight * siteWidth
         < rightLimit - leftLimit) {
@@ -289,7 +273,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
   // like all the others.
 
   double bestCost = cost(nodes, jstrt, jstop);
-  double origCost = bestCost;
+  const double origCost = bestCost;
 
   std::vector<int> bestPosn(size, 0);  // Current positions.
   std::vector<int> currPosn(size, 0);  // Current positions.
@@ -303,7 +287,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
     bool dispOkay = true;
     int x = leftLimit;
     for (int i = 0; i < size; i++) {
-      int ix = order[i];
+      const int ix = order[i];
       Node* ndi = nodes[jstrt + ix];
       x += left[ix];
       currPosn[ix] = x;
@@ -311,13 +295,13 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       x += width[ix];
       x += right[ix];
 
-      double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
       if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
         dispOkay = false;
       }
     }
     if (dispOkay) {
-      double currCost = cost(nodes, jstrt, jstop);
+      const double currCost = cost(nodes, jstrt, jstop);
       if (currCost < bestCost) {
         bestPosn = currPosn;
         bestCost = currCost;
@@ -366,7 +350,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       ndi->setLeft(x);
       left = ndi->getRight();
 
-      double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
       if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
         failed = true;
         break;
@@ -377,7 +361,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
       // interval.  However, we might have shifted something.
       if (shifted) {
         // Recost.  The shifting might have changed the cost.
-        double lastCost = cost(nodes, jstrt, jstop);
+        const double lastCost = cost(nodes, jstrt, jstop);
         if (lastCost >= origCost) {
           failed = true;
         }
@@ -399,7 +383,9 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt, int istop)
+double DetailedReorderer::cost(const std::vector<Node*>& nodes,
+                               int istrt,
+                               int istop)
 {
   // Compute hpwl for the specified sequence of cells.
 
@@ -407,14 +393,14 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt, int istop)
 
   double cost = 0.;
   for (int i = istrt; i <= istop; i++) {
-    Node* ndi = nodes[i];
+    const Node* ndi = nodes[i];
 
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
-      Pin* pini = ndi->getPins()[pi];
+      const Pin* pini = ndi->getPins()[pi];
 
-      Edge* edi = pini->getEdge();
+      const Edge* edi = pini->getEdge();
 
-      int npins = edi->getNumPins();
+      const int npins = edi->getNumPins();
       if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
         continue;
       }
@@ -426,11 +412,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt, int istop)
       double xmin = std::numeric_limits<double>::max();
       double xmax = -std::numeric_limits<double>::max();
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
-        Pin* pinj = edi->getPins()[pj];
+        const Pin* pinj = edi->getPins()[pj];
 
-        Node* ndj = pinj->getNode();
+        const Node* ndj = pinj->getNode();
 
-        double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+        const double x
+            = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);

@@ -42,8 +42,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "orientation.h"
-
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,45 +77,40 @@ class Node
   };
 
   Node();
-  virtual ~Node();
-
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-
-  void setHeight(int h) { h_ = h; }
-  int getHeight() const { return h_; }
-
-  void setWidth(int w) { w_ = w; }
-  int getWidth() const { return w_; }
 
   int getArea() const { return w_ * h_; }
-
-  void setLeft(int left) { left_ = left; }
-  int getLeft() const { return left_; }
-  int getRight() const { return left_ + w_; }
-
-  void setBottom(int bottom) { bottom_ = bottom; }
-  int getBottom() const { return bottom_; }
-  int getTop() const { return bottom_ + h_; }
-
-  void setOrigLeft(double left) { origLeft_ = left; }
-  double getOrigLeft() const { return origLeft_; }
-  void setOrigBottom(double bottom) { origBottom_ = bottom; }
-  double getOrigBottom() const { return origBottom_; }
-
-  void setFixed(Fixity fixed) { fixed_ = fixed; }
-  Fixity getFixed() const { return fixed_; }
-
-  void setType(Type type) { type_ = type; }
-  Type getType() const { return type_; }
-
-  void setRegionId(int id) { regionId_ = id; }
-  int getRegionId() const { return regionId_; }
-
-  void setCurrOrient(unsigned orient) { currentOrient_ = orient; }
-  unsigned getCurrOrient() const { return currentOrient_; }
-  void setAvailOrient(unsigned avail) { availOrient_ = avail; }
   unsigned getAvailOrient() const { return availOrient_; }
+  int getBottom() const { return bottom_; }
+  int getBottomPower() const { return powerBot_; }
+  int getTopPower() const { return powerTop_; }
+  unsigned getCurrOrient() const { return currentOrient_; }
+  Fixity getFixed() const { return fixed_; }
+  int getHeight() const { return h_; }
+  int getId() const { return id_; }
+  int getLeft() const { return left_; }
+  double getOrigBottom() const { return origBottom_; }
+  double getOrigLeft() const { return origLeft_; }
+  int getRegionId() const { return regionId_; }
+  int getRight() const { return left_ + w_; }
+  int getTop() const { return bottom_ + h_; }
+  Type getType() const { return type_; }
+  int getWidth() const { return w_; }
+
+  void setAvailOrient(unsigned avail) { availOrient_ = avail; }
+  void setBottom(int bottom) { bottom_ = bottom; }
+  void setBottomPower(int bot) { powerBot_ = bot; }
+  void setTopPower(int top) { powerTop_ = top; }
+  void setCurrOrient(unsigned orient) { currentOrient_ = orient; }
+  void setFixed(Fixity fixed) { fixed_ = fixed; }
+  void setHeight(int h) { h_ = h; }
+  void setId(int id) { id_ = id; }
+  void setLeft(int left) { left_ = left; }
+  void setOrigBottom(double bottom) { origBottom_ = bottom; }
+  void setOrigLeft(double left) { origLeft_ = left; }
+  void setRegionId(int id) { regionId_ = id; }
+  void setType(Type type) { type_ = type; }
+  void setWidth(int w) { w_ = w; }
+
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
@@ -126,24 +119,16 @@ class Node
   bool isShape() const { return (type_ == SHAPE); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
-  void setLeftEdgeType(int etl) { etl_ = etl; }
   int getLeftEdgeType() const { return etl_; }
-
-  void setRightEdgeType(int etr) { etr_ = etr; }
   int getRightEdgeType() const { return etr_; }
 
+  void setLeftEdgeType(int etl) { etl_ = etl; }
+  void setRightEdgeType(int etr) { etr_ = etr; }
   void swapEdgeTypes() { std::swap<int>(etl_, etr_); }
 
-  void setBottomPower(int bot) { powerBot_ = bot; }
-  int getBottomPower() const { return powerBot_; }
-
-  void setTopPower(int top) { powerTop_ = top; }
-  int getTopPower() const { return powerTop_; }
-
   int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() { return pins_; }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  void setIsDefinedByShapes(bool val = false) { isDefinedByShapes_ = val; }
   bool isDefinedByShapes() const { return isDefinedByShapes_; }
 
  private:
@@ -186,9 +171,6 @@ class Node
 class Edge
 {
  public:
-  Edge();
-  virtual ~Edge();
-
   int getId() const { return id_; }
   void setId(int id) { id_ = id; }
 
@@ -200,9 +182,9 @@ class Edge
 
  private:
   // Id.
-  int id_;
+  int id_ = 0;
   // Refer to routing rule stored elsewhere.
-  int ndr_;
+  int ndr_ = 0;
   // Pins.
   std::vector<Pin*> pins_;
 
@@ -220,9 +202,7 @@ class Pin
     Dir_UNKNOWN
   };
 
- public:
   Pin();
-  virtual ~Pin();
 
   void setDirection(int dir) { dir_ = dir; }
   int getDirection() const { return dir_; }
@@ -302,13 +282,11 @@ class Network
   };
 
  public:
- public:
-  Network();
-  virtual ~Network();
+  ~Network();
 
   int getNumNodes() const { return (int) nodes_.size(); }
   Node* getNode(int i) { return nodes_[i]; }
-  void setNodeName(int i, std::string& name) { nodeNames_[i] = name; }
+  void setNodeName(int i, const std::string& name) { nodeNames_[i] = name; }
   void setNodeName(int i, const char* name) { nodeNames_[i] = name; }
   const std::string& getNodeName(int i) const { return nodeNames_.at(i); }
 

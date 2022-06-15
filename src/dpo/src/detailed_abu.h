@@ -34,14 +34,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <set>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_objective.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
@@ -94,7 +90,7 @@ class DetailedABU : public DetailedObjective
   int getBucketId(int binId, double occ);
 
  private:
-  struct density_bin
+  struct DensityBin
   {
     int id;
     double lx, hx;      // low/high x coordinate
@@ -114,7 +110,7 @@ class DetailedABU : public DetailedObjective
   RoutingParams* rt_;
 
   // Utilization monitoring for ABU (if paying attention to ABU).
-  std::vector<density_bin> abuBins_;
+  std::vector<DensityBin> abuBins_;
   double abuGridUnit_;
   int abuGridNumX_;
   int abuGridNumY_;

@@ -32,19 +32,17 @@
 
 #pragma once
 
-#include <deque>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_generator.h"
-#include "network.h"
 #include "rectangle.h"
-#include "router.h"
 
 namespace dpo {
-
-class DetailedSeg;
+class Architecture;
 class DetailedMgr;
+class Edge;
+class Network;
+class RoutingParams;
 
 // CLASSES ===================================================================
 class DetailedGlobalSwap : public DetailedGenerator
@@ -52,16 +50,15 @@ class DetailedGlobalSwap : public DetailedGenerator
  public:
   DetailedGlobalSwap(Architecture* arch, Network* network, RoutingParams* rt);
   DetailedGlobalSwap();
-  virtual ~DetailedGlobalSwap();
 
   // Interfaces for scripting.
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
   // Interface for move generation.
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr* mgr);
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr* mgr) override;
 
  private:
   void globalSwap();  // tries to avoid overlap.

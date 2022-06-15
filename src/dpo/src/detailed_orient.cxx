@@ -37,15 +37,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_orient.h"
 
-#include <algorithm>
 #include <boost/tokenizer.hpp>
-#include <cmath>
-#include <iostream>
-#include <stack>
-#include <utility>
 
+#include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "orientation.h"
+#include "symmetry.h"
 #include "utility.h"
 #include "utl/Logger.h"
 

@@ -34,7 +34,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <iostream>
 #include <map>
 #include <vector>
 
@@ -153,7 +152,6 @@ class RoutingParams
 
     edge_adjusts_.erase(edge_adjusts_.begin(), edge_adjusts_.end());
   }
-  virtual ~RoutingParams() { ; }
 
   void postProcess();
 

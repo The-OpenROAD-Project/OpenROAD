@@ -32,19 +32,19 @@
 
 #pragma once
 
-#include <deque>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_generator.h"
-#include "network.h"
 #include "rectangle.h"
-#include "router.h"
 
 namespace dpo {
 
+class Architecture;
 class DetailedSeg;
 class DetailedMgr;
+class Edge;
+class Network;
+class RoutingParams;
 
 // CLASSES ===================================================================
 class DetailedVerticalSwap : public DetailedGenerator
@@ -52,20 +52,19 @@ class DetailedVerticalSwap : public DetailedGenerator
  public:
   DetailedVerticalSwap(Architecture* arch, Network* network, RoutingParams* rt);
   DetailedVerticalSwap();
-  virtual ~DetailedVerticalSwap();
 
   // Intefaces for scripting.
-  void run(DetailedMgr* mgrPtr, std::string command);
-  void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
+  void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
 
   // Interface for move generation.
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr* mgr);
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr* mgr) override;
 
  private:
   void verticalSwap();  // tries to avoid overlap.
-  bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
+  bool calculateEdgeBB(const Edge* ed, const Node* nd, Rectangle& bbox);
   bool getRange(Node*, Rectangle&);
   double delta(Node* ndi, double new_x, double new_y);
   double delta(Node* ndi, Node* ndj);

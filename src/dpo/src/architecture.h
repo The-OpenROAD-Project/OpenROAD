@@ -34,21 +34,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <iostream>
-#include <limits>
 #include <map>
 #include <vector>
 
-#include "orientation.h"
 #include "rectangle.h"
-#include "symmetry.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class RoutingParams;
-class Architecture;
 class Network;
 class Node;
 
@@ -63,9 +57,8 @@ class Architecture
   class Spacing;
   class Region;
 
- public:
   Architecture();
-  virtual ~Architecture();
+  ~Architecture();
 
   const std::vector<Architecture::Row*>& getRows() const { return rows_; }
   int getNumRows() const { return (int) rows_.size(); }
@@ -80,13 +73,13 @@ class Architecture
   Architecture::Region* getRegion(int r) const { return regions_[r]; }
   Architecture::Region* createAndAddRegion();
 
-  bool isSingleHeightCell(Node* ndi) const;
-  bool isMultiHeightCell(Node* ndi) const;
+  bool isSingleHeightCell(const Node* ndi) const;
+  bool isMultiHeightCell(const Node* ndi) const;
 
-  int getCellHeightInRows(Node* ndi) const;
+  int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(int y);
+  int find_closest_row(const int y);
 
   void clear_edge_type();
   void init_edge_type();
@@ -105,7 +98,7 @@ class Architecture
   void setMinY(int ymin) { ymin_ = ymin; }
   void setMaxY(int ymax) { ymax_ = ymax; }
 
-  bool powerCompatible(Node* ndi, Row* row, bool& flip) const;
+  bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
 
   // Using tables...
   void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
@@ -113,10 +106,9 @@ class Architecture
   void clearSpacingTable();
   int getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
   void addCellSpacingUsingTable(int firstEdge, int secondEdge, int sep);
-  const std::vector<Architecture::Spacing*>& getCellSpacings() const
-  {
-    return cellSpacings_;
-  }
+
+  const std::vector<Spacing*>& getCellSpacings() const { return cellSpacings_; }
+
   const std::vector<std::pair<std::string, int>>& getEdgeTypes() const
   {
     return edgeTypes_;
@@ -126,9 +118,9 @@ class Architecture
   void setUsePadding(bool val = true) { usePadding_ = val; }
   bool getUsePadding() const { return usePadding_; }
   void addCellPadding(Node* ndi, int leftPadding, int rightPadding);
-  bool getCellPadding(Node* ndi, int& leftPadding, int& rightPadding) const;
+  bool getCellPadding(const Node* ndi, int& leftPadding, int& rightPadding) const;
 
-  int getCellSpacing(Node* leftNode, Node* rightNode) const;
+  int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
  private:
   // Boundary around rows.
@@ -171,7 +163,8 @@ class Architecture::Spacing
 class Architecture::Row
 {
  public:
-  enum PowerType {
+  enum PowerType
+  {
     Power_UNK,
     Power_VDD,
     Power_VSS
@@ -212,23 +205,6 @@ class Architecture::Row
 
   double getCenterY() const { return rowLoc_ + 0.5 * rowHeight_; }
 
- public:
-  struct compareRowBottom
-  {
-    bool operator()(Architecture::Row* p, Architecture::Row* q) const
-    {
-      return p->getBottom() < q->getBottom();
-    }
-    bool operator()(Architecture::Row*& s, double i) const
-    {
-      return s->getBottom() < i;
-    }
-    bool operator()(double i, Architecture::Row*& s) const
-    {
-      return i < s->getBottom();
-    }
-  };
-
  private:
   int id_;               // Every row  needs an id...  Filled in after sorting.
   int rowLoc_;           // Y-location of the row.
@@ -250,9 +226,6 @@ class Architecture::Row
 class Architecture::Region
 {
  public:
-  Region();
-  ~Region();
-
   int getId() const { return id_; }
   void setId(int id) { id_ = id; }
 
@@ -271,13 +244,13 @@ class Architecture::Region
 
  private:
   // Id for the region.
-  int id_;
+  int id_ = -1;
 
   // Box around all sub-rectangles.
-  int xmin_;
-  int ymin_;
-  int xmax_;
-  int ymax_;
+  int xmin_ = std::numeric_limits<int>::max();
+  int ymin_ = std::numeric_limits<int>::max();
+  int xmax_ = std::numeric_limits<int>::lowest();
+  int ymax_ = std::numeric_limits<int>::lowest();
 
   // Sub-rectangles forming the rectilinear region.
   std::vector<Rectangle_i> rects_;

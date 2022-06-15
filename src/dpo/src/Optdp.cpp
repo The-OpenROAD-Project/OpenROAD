@@ -50,7 +50,9 @@
 #include "detailed_manager.h"
 #include "legalize_shift.h"
 #include "network.h"
+#include "orientation.h"
 #include "router.h"
+#include "symmetry.h"
 
 namespace dpo {
 

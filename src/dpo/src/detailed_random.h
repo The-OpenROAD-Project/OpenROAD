@@ -35,22 +35,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_generator.h"
-#include "detailed_manager.h"
-#include "detailed_objective.h"
-#include "detailed_segment.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
+class DetailedObjective;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -82,7 +76,6 @@ class DetailedRandom
 
  public:
   DetailedRandom(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedRandom();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
@@ -131,12 +124,11 @@ class RandomGenerator : public DetailedGenerator
 {
  public:
   RandomGenerator();
-  virtual ~RandomGenerator();
 
  public:
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr*) {}
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr*) override {}
 
  private:
   DetailedMgr* mgr_;
@@ -153,12 +145,11 @@ class DisplacementGenerator : public DetailedGenerator
 {
  public:
   DisplacementGenerator();
-  virtual ~DisplacementGenerator();
 
  public:
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr*) {}
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr*) override {}
 
  private:
   DetailedMgr* mgr_;

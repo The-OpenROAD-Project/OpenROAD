@@ -39,25 +39,18 @@
 //////////////////////////////////////////////////////////////////////////////
 // Includes.
 //////////////////////////////////////////////////////////////////////////////
-#include "legalize_shift.h"
-
-#include <boost/format.hpp>
-#include <deque>
-#include <iostream>
-#include <set>
-#include <vector>
-
+#include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "legalize_shift.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
 namespace dpo {
 
-class ShiftLegalizer::Clump
+struct ShiftLegalizer::Clump
 {
- public:
   int id_ = 0;
   double weight_ = 0.0;
   double wposn_ = 0.0;
@@ -108,7 +101,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   std::vector<std::pair<double, double>> origPos;
   origPos.resize(network_->getNumNodes());
   for (int i = 0; i < network_->getNumNodes(); i++) {
-    Node* ndi = network_->getNode(i);
+    const Node* ndi = network_->getNode(i);
     origPos[ndi->getId()] = std::make_pair(ndi->getLeft(), ndi->getBottom());
   }
 
@@ -142,24 +135,25 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   // Check for displacement after the snap.  Shouldn't be any.
   for (size_t i = 0; i < cells.size(); i++) {
-    Node* ndi = cells[i];
+    const Node* ndi = cells[i];
 
-    double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
-    double dy = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
+    const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
+    const double dy
+        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 1.0e-3 || dy > 1.0e-3) {
       isDisp = true;
     }
   }
 
   // Topological order - required for a shift.
-  size_t size = network_->getNumNodes();
+  const size_t size = network_->getNumNodes();
   incoming_.resize(size);
   outgoing_.resize(size);
   for (size_t i = 0; i < mgr.segments_.size(); i++) {
-    int segId = mgr.segments_[i]->getSegId();
+    const int segId = mgr.segments_[i]->getSegId();
     for (size_t j = 1; j < mgr.cellsInSeg_[segId].size(); j++) {
-      Node* prev = mgr.cellsInSeg_[segId][j - 1];
-      Node* curr = mgr.cellsInSeg_[segId][j];
+      const Node* prev = mgr.cellsInSeg_[segId][j - 1];
+      const Node* curr = mgr.cellsInSeg_[segId][j];
 
       incoming_[curr->getId()].push_back(prev->getId());
       outgoing_[prev->getId()].push_back(curr->getId());
@@ -167,10 +161,10 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   }
   std::vector<bool> visit(size, false);
   std::vector<int> count(size, 0);
-  std::vector<Node*> order;
+  std::vector<const Node*> order;
   order.reserve(size);
   for (size_t i = 0; i < cells.size(); i++) {
-    Node* ndi = cells[i];
+    const Node* ndi = cells[i];
     count[ndi->getId()] = (int) incoming_[ndi->getId()].size();
     if (count[ndi->getId()] == 0) {
       visit[ndi->getId()] = true;
@@ -178,9 +172,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
     }
   }
   for (size_t i = 0; i < order.size(); i++) {
-    Node* ndi = order[i];
+    const Node* ndi = order[i];
     for (size_t j = 0; j < outgoing_[ndi->getId()].size(); j++) {
-      Node* ndj = network_->getNode(outgoing_[ndi->getId()][j]);
+      const Node* ndj = network_->getNode(outgoing_[ndi->getId()][j]);
 
       --count[ndj->getId()];
       if (count[ndj->getId()] == 0) {
@@ -199,10 +193,11 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   // Check for displacement after the shift.  Shouldn't be any.
   for (size_t i = 0; i < cells.size(); i++) {
-    Node* ndi = cells[i];
+    const Node* ndi = cells[i];
 
-    double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
-    double dy = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
+    const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
+    const double dy
+        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 1.0e-3 || dy > 1.0e-3) {
       isDisp = true;
     }
@@ -217,11 +212,11 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   // Check.  If any of out internal checks fail, print
   // some sort of warning.
-  int err1 = mgr.checkRegionAssignment();
-  int err2 = mgr.checkRowAlignment();
-  int err3 = mgr.checkSiteAlignment();
-  int err4 = mgr.checkOverlapInSegments();
-  int err5 = mgr.checkEdgeSpacingInSegments();
+  const int err1 = mgr.checkRegionAssignment();
+  const int err2 = mgr.checkRowAlignment();
+  const int err3 = mgr.checkSiteAlignment();
+  const int err4 = mgr.checkOverlapInSegments();
+  const int err5 = mgr.checkEdgeSpacingInSegments();
 
   // Good place to issue some sort of warning.
   if (err1 != 0 || err2 != 0 || err3 != 0 || err4 != 0 || err5 != 0) {
@@ -243,16 +238,16 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
   // Note: I don't even try to correct for site alignment.  I'll
   // print a warning, but will otherwise continue.
 
-  int nnodes = network_->getNumNodes();
-  int nsegs = mgr_->getNumSegments();
+  const int nnodes = network_->getNumNodes();
+  const int nsegs = mgr_->getNumSegments();
 
   // We need to add dummy cells to the left and the
   // right of every segment.
   dummiesLeft_.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
-    DetailedSeg* segPtr = mgr_->segments_[i];
+    const DetailedSeg* segPtr = mgr_->segments_[i];
 
-    int rowId = segPtr->getRowId();
+    const int rowId = segPtr->getRowId();
 
     Node* ndi = new Node();
 
@@ -267,9 +262,9 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
   dummiesRight_.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
-    DetailedSeg* segPtr = mgr_->segments_[i];
+    const DetailedSeg* segPtr = mgr_->segments_[i];
 
-    int rowId = segPtr->getRowId();
+    const int rowId = segPtr->getRowId();
 
     Node* ndi = new Node();
 
@@ -303,10 +298,10 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
     outgoing_[i].clear();
   }
   for (size_t i = 0; i < mgr_->segments_.size(); i++) {
-    int segId = mgr_->segments_[i]->getSegId();
+    const int segId = mgr_->segments_[i]->getSegId();
     for (size_t j = 1; j < mgr_->cellsInSeg_[segId].size(); j++) {
-      Node* prev = mgr_->cellsInSeg_[segId][j - 1];
-      Node* curr = mgr_->cellsInSeg_[segId][j];
+      const Node* prev = mgr_->cellsInSeg_[segId][j - 1];
+      const Node* curr = mgr_->cellsInSeg_[segId][j];
 
       incoming_[curr->getId()].push_back(prev->getId());
       outgoing_[prev->getId()].push_back(curr->getId());
@@ -317,7 +312,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
   // that the vector passed to the clumping is only the
   // movable cells; the clumping knows about the dummy cells
   // on the left and the right.
-  double retval = clump(cells);
+  const double retval = clump(cells);
 
   bool isError = false;
   // Remove all the dummies from the segments.
@@ -358,7 +353,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
   std::fill(offset_.begin(), offset_.end(), 0);
   std::fill(ptr_.begin(), ptr_.end(), (Clump*) 0);
 
-  size_t n = dummiesLeft_.size() + order.size() + dummiesRight_.size();
+  const size_t n = dummiesLeft_.size() + order.size() + dummiesRight_.size();
 
   clumps_.resize(n);
 
@@ -373,15 +368,13 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     offset_[ndi->getId()] = 0;
     ptr_[ndi->getId()] = r;
 
-    double wt = 1.0e8;
+    const double wt = 1.0e8;
 
     r->id_ = clumpId;
     r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
     r->nodes_.push_back(ndi);
-    // r->width_ = ndi->getWidth();
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;  // Massive weight for segment start.
-    // r->posn_ = r->wposn_ / r->weight_;
     r->posn_ = ndi->getLeft();
 
     ++clumpId;
@@ -395,15 +388,13 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     offset_[ndi->getId()] = 0;
     ptr_[ndi->getId()] = r;
 
-    double wt = 1.0;
+    const double wt = 1.0;
 
     r->id_ = (int) i;
     r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
     r->nodes_.push_back(ndi);
-    // r->width_ = ndi->getWidth();
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;
-    // r->posn_ = r->wposn_ / r->weight_;
     r->posn_ = ndi->getLeft();
 
     // Always ensure the left edge is within the segments
@@ -428,15 +419,13 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     offset_[ndi->getId()] = 0;
     ptr_[ndi->getId()] = r;
 
-    double wt = 1.0e8;
+    const double wt = 1.0e8;
 
     r->id_ = clumpId;
     r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
     r->nodes_.push_back(ndi);
-    // r->width_ = ndi->getWidth();
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;  // Massive weight for segment end.
-    // r->posn_ = r->wposn_ / r->weight_;
     r->posn_ = ndi->getLeft();
 
     ++clumpId;
@@ -458,22 +447,22 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
                        mgr_->reverseCellToSegs_[ndi->getId()][r]->getRowId());
     }
 
-    Clump* r = ptr_[ndi->getId()];
+    const Clump* r = ptr_[ndi->getId()];
 
     // Left edge.
-    int oldX = ndi->getLeft();
-    int newX = r->posn_ + offset_[ndi->getId()];
+    const int oldX = ndi->getLeft();
+    const int newX = r->posn_ + offset_[ndi->getId()];
 
     ndi->setLeft(newX);
 
     // Bottom edge.
-    int oldY = ndi->getBottom();
-    int newY = arch_->getRow(rowId)->getBottom();
+    const int oldY = ndi->getBottom();
+    const int newY = arch_->getRow(rowId)->getBottom();
 
     ndi->setBottom(newY);
 
-    int dX = oldX - newX;
-    int dY = oldY - newY;
+    const int dX = oldX - newX;
+    const int dY = oldY - newY;
     retval += (dX * dX + dY * dY);  // Quadratic or something else?
   }
 
@@ -490,7 +479,7 @@ void ShiftLegalizer::merge(Clump* r)
 
     // Move blocks from r to l and update offsets, etc.
     for (size_t i = 0; i < r->nodes_.size(); i++) {
-      Node* ndi = r->nodes_[i];
+      const Node* ndi = r->nodes_[i];
       offset_[ndi->getId()] += dist;
       ptr_[ndi->getId()] = l;
     }
@@ -510,6 +499,7 @@ void ShiftLegalizer::merge(Clump* r)
     r = l;
   }
 }
+
 bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
 {
   // We need to figure out if the right clump needs to be merged
@@ -517,19 +507,19 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
   // be overlap among any cell in the right clump and any cell
   // in the left clump.  Look for the worst case.
 
-  int nnodes = network_->getNumNodes();
-  int nsegs = mgr_->getNumSegments();
+  const int nnodes = network_->getNumNodes();
+  const int nsegs = mgr_->getNumSegments();
 
   l = nullptr;
   int worst_diff = std::numeric_limits<int>::max();
   dist = std::numeric_limits<int>::max();
 
   for (size_t i = 0; i < r->nodes_.size(); i++) {
-    Node* ndr = r->nodes_[i];
+    const Node* ndr = r->nodes_[i];
 
     // Look at each cell that must be left of current cell.
     for (size_t j = 0; j < incoming_[ndr->getId()].size(); j++) {
-      int id = incoming_[ndr->getId()][j];
+      const int id = incoming_[ndr->getId()][j];
 
       // Could be that the node is _not_ a network node; it
       // might be a left or right dummy node.
@@ -548,10 +538,10 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
         continue;
       }
       // Get left edge of both cells.
-      int pdst = r->posn_ + offset_[ndr->getId()];
-      int psrc = t->posn_ + offset_[ndl->getId()];
-      int gap = ndl->getWidth();
-      int diff = pdst - (psrc + gap);
+      const int pdst = r->posn_ + offset_[ndr->getId()];
+      const int psrc = t->posn_ + offset_[ndl->getId()];
+      const int gap = ndl->getWidth();
+      const int diff = pdst - (psrc + gap);
       if (diff < 0 && diff < worst_diff) {
         // Leaving clump r at its current position would result
         // in overlap with clump t.  So, we would need to merge
@@ -563,7 +553,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
     }
   }
 
-  return (l != 0) ? true : false;
+  return l != 0;
 }
 
 }  // namespace dpo

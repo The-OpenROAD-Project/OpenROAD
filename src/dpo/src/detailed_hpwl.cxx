@@ -37,17 +37,7 @@
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_hpwl.h"
-
-#include <algorithm>
-#include <boost/tokenizer.hpp>
-#include <cmath>
-#include <iostream>
-#include <stack>
-#include <utility>
-
-#include "detailed_manager.h"
 #include "detailed_orient.h"
-#include "rectangle.h"
 
 namespace dpo {
 
@@ -78,12 +68,6 @@ DetailedHPWL::DetailedHPWL(Architecture* arch,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedHPWL::~DetailedHPWL()
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 void DetailedHPWL::init()
 {
   traversal_ = 0;
@@ -104,25 +88,26 @@ void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedHPWL::curr()
 {
-  double x, y;
   double hpwl = 0.;
   Rectangle box;
   for (int i = 0; i < network_->getNumEdges(); i++) {
-    Edge* edi = network_->getEdge(i);
+    const Edge* edi = network_->getEdge(i);
 
-    int npins = edi->getNumPins();
+    const int npins = edi->getNumPins();
     if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
       continue;
     }
 
     box.reset();
     for (int pj = 0; pj < edi->getPins().size(); pj++) {
-      Pin* pinj = edi->getPins()[pj];
+      const Pin* pinj = edi->getPins()[pj];
 
-      Node* ndj = pinj->getNode();
+      const Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+      const double x
+          = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+      const double y
+          = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
       box.addPt(x, y);
     }

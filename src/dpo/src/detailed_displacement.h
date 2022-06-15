@@ -38,13 +38,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_objective.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
@@ -60,10 +56,9 @@ class DetailedDisplacement : public DetailedObjective
   // For WL objective.
  public:
   DetailedDisplacement(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedDisplacement();
 
   void init();
-  double curr();
+  double curr() override;
   double delta(int n,
                std::vector<Node*>& nodes,
                std::vector<int>& curLeft,
@@ -71,7 +66,7 @@ class DetailedDisplacement : public DetailedObjective
                std::vector<unsigned>& curOri,
                std::vector<int>& newLeft,
                std::vector<int>& newBottom,
-               std::vector<unsigned>& newOri);
+               std::vector<unsigned>& newOri) override;
   void getCandidates(std::vector<Node*>& candidates);
 
   // Other.

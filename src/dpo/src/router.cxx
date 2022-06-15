@@ -39,14 +39,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "router.h"
 
-#include <iostream>
-#include <map>
-#include <vector>
-
-#include "architecture.h"
-#include "network.h"
-#include "utility.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,24 +62,24 @@ double RoutingParams::get_spacing(int layer,
                                   double ymin2,
                                   double ymax2)
 {
-  double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
+  const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
                        std::min(ymax2 - ymin2, xmax2 - xmin2));
 
   // Parallel run-length in the Y-dir.  Will be zero if the objects are above or
   // below each other.
-  double py = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
+  const double py = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
 
   // Parallel run-length in the X-dir.  Will be zero if the objects are left or
   // right of each other.
-  double px = std::max(0.0, std::min(xmax1, xmax2) - std::max(xmin1, xmin2));
+  const double px = std::max(0.0, std::min(xmax1, xmax2) - std::max(xmin1, xmin2));
 
   return get_spacing(layer, ww, std::max(px, py));
 }
 
 double RoutingParams::get_spacing(int layer, double width, double parallel)
 {
-  std::vector<double>& w = spacingTableWidth_[layer];
-  std::vector<double>& p = spacingTableLength_[layer];
+  const std::vector<double>& w = spacingTableWidth_[layer];
+  const std::vector<double>& p = spacingTableLength_[layer];
 
   if (w.size() == 0 || p.size() == 0) {
     // This means no spacing table is present.  So, return the minimum wire
@@ -107,8 +99,8 @@ double RoutingParams::get_spacing(int layer, double width, double parallel)
 
 double RoutingParams::get_maximum_spacing(int layer)
 {
-  std::vector<double>& w = spacingTableWidth_[layer];
-  std::vector<double>& p = spacingTableLength_[layer];
+  const std::vector<double>& w = spacingTableWidth_[layer];
+  const std::vector<double>& p = spacingTableLength_[layer];
 
   if (w.size() == 0 || p.size() == 0) {
     // This means no spacing table is present.  So, return the minimum wire
@@ -116,8 +108,8 @@ double RoutingParams::get_maximum_spacing(int layer)
     return wire_spacing_[layer];
   }
 
-  int i = (int) w.size() - 1;
-  int j = (int) p.size() - 1;
+  const int i = (int) w.size() - 1;
+  const int j = (int) p.size() - 1;
 
   return spacingTable_[layer][i][j];
 }

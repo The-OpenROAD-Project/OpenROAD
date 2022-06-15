@@ -38,27 +38,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <bitset>
-#include <cmath>
-#include <deque>
-#include <list>
 #include <map>
-#include <set>
 #include <vector>
-
-#include "architecture.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
+class Architecture;
 class DetailedMisParams;
 class DetailedMis;
 class DetailedSeg;
 class DetailedMgr;
+class Network;
+class Node;
+class RoutingParams;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -115,7 +110,7 @@ class DetailedMis
   DetailedMis(Architecture* arch, Network* network, RoutingParams* rt);
   virtual ~DetailedMis();
 
-  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
  private:
@@ -129,8 +124,8 @@ class DetailedMis
   void populateGrid();
   bool gatherNeighbours(Node* ndi);
   void solveMatch();
-  double getHpwl(Node* ndi, double xi, double yi);
-  double getDisp(Node* ndi, double xi, double yi);
+  double getHpwl(const Node* ndi, double xi, double yi);
+  double getDisp(const Node* ndi, double xi, double yi);
 
  public:
   /* DetailedMisParams _params; */

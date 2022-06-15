@@ -32,17 +32,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include "utility.h"
-
-#include <cmath>
-#include <deque>
-#include <iostream>
-#include <stack>
-#include <vector>
-
-#include "architecture.h"
 #include "network.h"
 #include "rectangle.h"
+#include "utility.h"
 
 namespace dpo {
 
@@ -57,8 +49,8 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
   for (int i = 0; i < nw->getNumNodes(); i++) {
     const Node* ndi = nw->getNode(i);
 
-    double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-    double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
+    const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     tot += dx + dx;
     max = std::max(max, dx + dy);
@@ -91,7 +83,7 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
   for (unsigned e = 0; e < numEdges; e++) {
     const Edge* ed = nw->getEdge(e);
 
-    int numPins = ed->getNumPins();
+    const int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     }
@@ -101,8 +93,10 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
       const Pin* pin = ed->getPins()[p];
 
       const Node* ndi = pin->getNode();
-      double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
-      double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
+      const double py
+          = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+      const double px
+          = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
       box.addPt(px, py);
     }
     hpwlx += box.getWidth();
@@ -127,7 +121,7 @@ double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
   hpwlx = 0.0;
   hpwly = 0.0;
 
-  int numPins = ed->getNumPins();
+  const int numPins = ed->getNumPins();
   if (numPins <= 1) {
     return 0.0;
   }
@@ -137,8 +131,10 @@ double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
     const Pin* pin = ed->getPins()[p];
 
     const Node* ndi = pin->getNode();
-    double py = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
-    double px = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
+    const double py
+        = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+    const double px
+        = ndi->getLeft() + 0.5 * ndi->getWidth() + pin->getOffsetX();
     box.addPt(px, py);
   }
   hpwlx = box.getWidth();

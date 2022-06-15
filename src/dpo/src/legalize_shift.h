@@ -41,22 +41,19 @@
 //////////////////////////////////////////////////////////////////////////////
 // Includes.
 //////////////////////////////////////////////////////////////////////////////
-#include <cmath>
-#include <map>
-#include <set>
 #include <vector>
-
-#include "architecture.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 //////////////////////////////////////////////////////////////////////////////
+class Architecture;
 class DetailedSeg;
 class DetailedMgr;
+class Node;
+class Network;
+class RoutingParams;
 
 //////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -72,12 +69,12 @@ class ShiftLegalizer
 {
  public:
   ShiftLegalizer(ShiftLegalizerParams& params);
-  virtual ~ShiftLegalizer();
+  ~ShiftLegalizer();
 
   bool legalize(DetailedMgr& mgr);
 
  private:
-  class Clump;
+  struct Clump;
 
   double shift(std::vector<Node*>& cells);
   double clump(std::vector<Node*>& order);
