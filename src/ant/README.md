@@ -8,12 +8,7 @@ violations during the diode insertion flow in global route.
 
 This is an example of the detailed and simple reports of the antenna checker:
 
-```{image} ./doc/images/ant_report_print.png
-:alt: Antenna checker report
-:class: bg-primary
-:width: 500px
-:align: center
-```
+| <img src="./doc/images/ant_report_print.png" width=500px> |
 
 Abbreviations Index:
 
