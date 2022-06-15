@@ -115,11 +115,7 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
       odb::orderWires(db_net, false, false);
 
-      std::vector<ant::ViolationInfo> netViol
-          = arc_->getNetAntennaViolations(
-              db_net,
-              diode_mterm->getMaster()->getConstName(),
-              diode_mterm->getConstName());
+      std::vector<ant::ViolationInfo> netViol = arc_->getNetAntennaViolations(db_net, diode_mterm);
       if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
         debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",
@@ -159,15 +155,20 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixed_insts);
 
-  for (auto const& violation : antenna_violations_) {
-    odb::dbNet* net = violation.first;
-    grouter_->addDirtyNet(net);
-    for (int i = 0; i < violation.second.size(); i++) {
-      for (odb::dbITerm* sink_iterm : violation.second[i].iterms) {
+  for (auto const& net_violations : antenna_violations_) {
+    odb::dbNet* db_net = net_violations.first;
+    auto violations = net_violations.second;
+    grouter_->addDirtyNet(db_net);
+    for (int i = 0; i < violations.size(); i++) {
+      ant::ViolationInfo &violation = violations[i];
+      for (odb::dbITerm* sink_iterm : violation.iterms) {
         odb::dbInst* sink_inst = sink_iterm->getInst();
-        for (int j = 0; j < violation.second[i].antenna_cell_nums; j++) {
+        debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
+                   db_net->getConstName(),
+                   violation.required_diode_count);
+        for (int j = 0; j < violation.required_diode_count; j++) {
           std::string antenna_inst_name = "ANTENNA_" + std::to_string(cnt);
-          insertDiode(net,
+          insertDiode(db_net,
                       diode_mterm,
                       sink_inst,
                       sink_iterm,

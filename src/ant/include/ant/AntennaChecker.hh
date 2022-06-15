@@ -43,6 +43,7 @@ namespace ant {
 
 using odb::dbInst;
 using odb::dbITerm;
+using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbSWire;
 using odb::dbTechLayer;
@@ -59,7 +60,7 @@ struct ViolationInfo
 {
   int routing_level;
   std::vector<odb::dbITerm*> iterms;
-  int antenna_cell_nums;
+  int required_diode_count;
 };
 
 class AntennaChecker
@@ -78,10 +79,8 @@ class AntennaChecker
 
   void findMaxWireLength();
 
-  std::vector<ViolationInfo> getNetAntennaViolations(
-      dbNet* net,
-      std::string antenna_cell_name = "",
-      std::string cell_pin = "");
+  std::vector<ViolationInfo> getNetAntennaViolations(dbNet* net,
+                                                     odb::dbMTerm* diode_mterm);
 
  private:
   template <class valueType>
@@ -149,13 +148,15 @@ class AntennaChecker
 
   std::vector<int> getAntennaRatio(std::string path, bool simple_report);
 
-  void checkAntennaCell();
+  void checkDiodeCell();
 
   bool checkViolation(PARinfo par_info, dbTechLayer* layer);
 
   void findWirerootIterms(dbWireGraph::Node* node,
                           int wire_level,
                           std::vector<dbITerm*>& gates);
+  double maxDiffArea(dbMTerm *mterm);
+
   std::vector<std::pair<double, std::vector<dbITerm*>>> parMaxWireLength(
       dbNet* net,
       int layer);
@@ -165,8 +166,10 @@ class AntennaChecker
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-  FILE* _out;
+  FILE* stream_;
   std::map<odb::dbTechLayer*, ANTENNAmodel> layer_info;
+
+  static constexpr int repair_max_diode_count = 10;
 };
 
 }  // namespace ant

@@ -709,16 +709,7 @@ bool AntennaChecker::checkIterm(dbWireGraph::Node* node, double iterm_areas[2])
       iterm_areas[0] = iterm_areas[0] + max_gate_area;
     }
 
-    std::vector<std::pair<double, dbTechLayer*>> diff_area;
-    mterm->getDiffArea(diff_area);
-
-    std::vector<std::pair<double, dbTechLayer*>>::iterator diff_area_iter;
-    double max_diff_area = 0;
-    for (diff_area_iter = diff_area.begin(); diff_area_iter != diff_area.end();
-         diff_area_iter++) {
-      max_diff_area = std::max(max_diff_area, (*diff_area_iter).first);
-    }
-    iterm_areas[1] = iterm_areas[1] + max_diff_area;
+    iterm_areas[1] = iterm_areas[1] + maxDiffArea(mterm);
     return true;
   } else
     return false;
@@ -814,13 +805,6 @@ void AntennaChecker::calculateParInfo(PARinfo& it)
         = (side_metal_factor * it.side_wire_area * diff_metal_reduce_factor)
           / (it.iterm_areas[0]);
   }
-
-  // int x, y;
-  // wireroot->xy(x, y);
-  // fprintf(_out, "Wireroot - (%d, %d) - %s - wire area - %f - side wire area -
-  // %f - iterm areas - %f, %f - par - %f - psr - %f\n", x, y,
-  // tech_layer->getConstName(), it.wire_area, it.side_wire_area,
-  // it.iterm_areas[0], it.iterm_areas[1], it.PAR_value, it.PSR_value);
 }
 
 void AntennaChecker::buildWireCarTable(
@@ -978,12 +962,6 @@ void AntennaChecker::buildViaParTable(
       PARinfo new_par
           = {*root_itr, iv, 0.0, 0.0, {0.0, 0.0}, par, 0.0, diff_par, 0.0};
       VIA_PARtable.push_back(new_par);
-
-      // int x, y;
-      // wireroot->xy(x, y);
-      // fprintf(_out, "VIA - (%d, %d) - via area - %f - iterm areas - (%f, %f)
-      // - par -%f - diff par - %f\n", x, y, via_area, iterm_areas[0],
-      // iterm_areas[1], par, diff_par);
     }
   }
 }
@@ -1154,60 +1132,60 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
     else {
       if (report_violating_nets) {
         if (par_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   par,
                   PAR_ratio);
         } else if (diff_par_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   diff_par,
                   diffPAR_PWL_ratio);
         } else if (psr_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (S.Area)\n",
                   psr,
                   PSR_ratio);
         } else {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (S.Area)\n",
                   diff_psr,
                   diffPSR_PWL_ratio);
         }
       } else {
         if (PAR_ratio != 0) {
-          fprintf(_out, "  PAR: %7.2f", par);
+          fprintf(stream_, "  PAR: %7.2f", par);
           if (par_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
         } else {
-          fprintf(_out, "  PAR: %7.2f", diff_par);
+          fprintf(stream_, "  PAR: %7.2f", diff_par);
           if (diffPAR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (Area)\n");
           else {
             if (diff_par_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(_out, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
           }
         }
 
         if (PSR_ratio != 0) {
-          fprintf(_out, "  PAR: %7.2f", psr);
+          fprintf(stream_, "  PAR: %7.2f", psr);
           if (psr_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (S.Area)\n", PSR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (S.Area)\n", PSR_ratio);
         } else {
-          fprintf(_out, "  PAR: %7.2f", diff_psr);
+          fprintf(stream_, "  PAR: %7.2f", diff_psr);
           if (diffPSR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (S.Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (S.Area)\n");
           else {
             if (diff_psr_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(_out, "  Ratio: %7.2f       (S.Area)\n", diffPSR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (S.Area)\n", diffPSR_PWL_ratio);
           }
         }
       }
@@ -1287,61 +1265,60 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
     } else {
       if (report_violating_nets) {
         if (car_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   car,
                   CAR_ratio);
         } else if (diff_car_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   diff_car,
                   diffCAR_PWL_ratio);
         } else if (csr_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (C.S.Area)\n",
                   csr,
                   CSR_ratio);
         } else {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (C.S.Area)\n",
                   diff_csr,
                   diffCSR_PWL_ratio);
         }
       } else {
         if (CAR_ratio != 0) {
-          fprintf(_out, "  CAR: %7.2f", car);
+          fprintf(stream_, "  CAR: %7.2f", car);
           if (car_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
         } else {
-          fprintf(_out, "  CAR: %7.2f", car);
+          fprintf(stream_, "  CAR: %7.2f", car);
           if (diffCAR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (C.Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (C.Area)\n");
           else {
             if (diff_car_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(_out, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
           }
         }
 
         if (CSR_ratio != 0) {
-          fprintf(_out, "  CAR: %7.2f", csr);
+          fprintf(stream_, "  CAR: %7.2f", csr);
           if (csr_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (C.S.Area)\n", CSR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (C.S.Area)\n", CSR_ratio);
         } else {
-          fprintf(_out, "  CAR: %7.2f", diff_csr);
+          fprintf(stream_, "  CAR: %7.2f", diff_csr);
           if (diffCSR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (C.S.Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (C.S.Area)\n");
           else {
             if (diff_csr_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(
-                _out, "  Ratio: %7.2f       (C.S.Area)\n", diffCSR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (C.S.Area)\n", diffCSR_PWL_ratio);
           }
         }
       }
@@ -1395,32 +1372,32 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
     } else {
       if (report_violating_nets) {
         if (par_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   par,
                   PAR_ratio);
         } else {
-          fprintf(_out,
+          fprintf(stream_,
                   "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
                   par,
                   diffPAR_PWL_ratio);
         }
       } else {
         if (PAR_ratio != 0) {
-          fprintf(_out, "  PAR: %7.2f", par);
+          fprintf(stream_, "  PAR: %7.2f", par);
           if (par_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
         } else {
-          fprintf(_out, "  PAR: %7.2f", par);
+          fprintf(stream_, "  PAR: %7.2f", par);
           if (diffPAR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (Area)\n");
           else {
             if (diff_par_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(_out, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
           }
         }
       }
@@ -1474,32 +1451,32 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
     } else {
       if (report_violating_nets) {
         if (car_violation) {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (C.Area)\n",
                   car,
                   CAR_ratio);
         } else {
-          fprintf(_out,
+          fprintf(stream_,
                   "  CAR: %7.2f*  Ratio: %7.2f       (C.Area)\n",
                   car,
                   diffCAR_PWL_ratio);
         }
       } else {
         if (CAR_ratio != 0) {
-          fprintf(_out, "  CAR: %7.2f", car);
+          fprintf(stream_, "  CAR: %7.2f", car);
           if (car_violation) {
-            fprintf(_out, "*");
+            fprintf(stream_, "*");
           }
-          fprintf(_out, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
+          fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
         } else {
-          fprintf(_out, "  CAR: %7.2f", car);
+          fprintf(stream_, "  CAR: %7.2f", car);
           if (diffCAR_PWL_ratio == 0)
-            fprintf(_out, "  Ratio:    0.00       (C.Area)\n");
+            fprintf(stream_, "  Ratio:    0.00       (C.Area)\n");
           else {
             if (diff_car_violation) {
-              fprintf(_out, "*");
+              fprintf(stream_, "*");
             }
-            fprintf(_out, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
+            fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
           }
         }
       }
@@ -1513,9 +1490,9 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
 {
   std::string bname = db_->getChip()->getBlock()->getName();
 
-  _out = fopen(report_filename.c_str(), "w");
-  if (_out) {
-    checkAntennaCell();
+  stream_ = fopen(report_filename.c_str(), "w");
+  if (stream_) {
+    checkDiodeCell();
 
     dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
     if (nets.empty())
@@ -1574,7 +1551,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
         }
 
         if (gate_iterms.size() == 0)
-          fprintf(_out, "  No sinks on this net\n");
+          fprintf(stream_, "  No sinks on this net\n");
 
         std::vector<PARinfo> PARtable;
         buildWireParTable(PARtable, wireroots_info);
@@ -1634,13 +1611,13 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           }
 
           if ((!report_violating_nets || violation) && print_net) {
-            fprintf(_out, "\nNet - %s\n", net->getConstName());
+            fprintf(stream_, "\nNet - %s\n", net->getConstName());
             print_net = false;
           }
 
           if (!report_violating_nets
               || (violated_gates.find(gate) != violated_gates.end())) {
-            fprintf(_out,
+            fprintf(stream_,
                     "  %s  (%s)  %s\n",
                     iterm->getInst()->getConstName(),
                     mterm->getMaster()->getConstName(),
@@ -1655,7 +1632,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
                   ar, wire_PAR_violation.second, report_violating_nets, false);
               if (wire_PAR_violation.first || wire_CAR_violation.first
                   || !report_violating_nets) {
-                fprintf(_out,
+                fprintf(stream_,
                         "[1]  %s:\n",
                         ar.WirerootNode->layer()->getConstName());
               }
@@ -1670,7 +1647,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
               }
               if (wire_PAR_violation.first || wire_CAR_violation.first
                   || !report_violating_nets) {
-                fprintf(_out, "\n");
+                fprintf(stream_, "\n");
               }
             }
           }
@@ -1687,7 +1664,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
                   = checkViaCar(via_ar, report_violating_nets, false);
               if (VIA_PAR_violation || VIA_CAR_violation
                   || !report_violating_nets) {
-                fprintf(_out, "[1]  %s:\n", getViaName(via).c_str());
+                fprintf(stream_, "[1]  %s:\n", getViaName(via).c_str());
               }
               VIA_PAR_violation
                   = checkViaPar(via_ar, report_violating_nets, true);
@@ -1700,7 +1677,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
               }
               if (VIA_PAR_violation || VIA_CAR_violation
                   || !report_violating_nets) {
-                fprintf(_out, "\n");
+                fprintf(stream_, "\n");
               }
             }
           }
@@ -1712,7 +1689,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
         }
       }
     }
-    fprintf(_out,
+    fprintf(stream_,
             "Number of pins violated: %d\nNumber of nets violated: %d\nTotal "
             "number of unspecial nets: %d\n",
             num_violated_pins,
@@ -1726,7 +1703,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
   }
 }
 
-void AntennaChecker::checkAntennaCell()
+void AntennaChecker::checkDiodeCell()
 {
   std::vector<dbMaster*> masters;
   db_->getChip()->getBlock()->getMasters(masters);
@@ -1734,23 +1711,16 @@ void AntennaChecker::checkAntennaCell()
   for (auto master : masters) {
     dbMasterType type = master->getType();
     if (type == dbMasterType::CORE_ANTENNACELL) {
-      dbSet<dbMTerm> mterms = master->getMTerms();
-
-      dbSet<dbMTerm>::iterator mterm_itr;
       double max_diff_area = 0;
-      for (mterm_itr = mterms.begin(); mterm_itr != mterms.end(); ++mterm_itr) {
-        std::vector<std::pair<double, dbTechLayer*>> diff_areas;
-        (*mterm_itr)->getDiffArea(diff_areas);
-        for (auto diff_area : diff_areas)
-          max_diff_area = std::max(max_diff_area, diff_area.first);
-      }
+      for (dbMTerm* mterm : master->getMTerms())
+        max_diff_area = std::max(max_diff_area, maxDiffArea(mterm));
 
       if (max_diff_area != 0)
-        fprintf(_out,
+        fprintf(stream_,
                 "Success - antenna cell with diffusion area %f is found\n",
                 max_diff_area);
       else
-        fprintf(_out,
+        fprintf(stream_,
                 "Warning - antenna cell is found but the diffusion area is not "
                 "specified\n");
 
@@ -1758,9 +1728,9 @@ void AntennaChecker::checkAntennaCell()
     }
   }
 
-  fprintf(_out,
+  fprintf(stream_,
           "Warning - class CORE ANTENNACELL is not found. This message can be "
-          "ignored if not repairing antennas\n");
+          "ignored if not repairing antennas.\n");
 }
 
 int AntennaChecker::checkAntennas(std::string report_file,
@@ -1978,23 +1948,12 @@ bool AntennaChecker::checkViolation(PARinfo par_info, dbTechLayer* layer)
   return wire_PAR_violation;
 }
 
-std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(
-    dbNet* net,
-    std::string antenna_cell_name,
-    std::string cell_pin)
+std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations (dbNet* net,
+                                                                    dbMTerm* diode_mterm)
 {
-  double max_diff_area = 0;
-  if (!antenna_cell_name.empty()) {
-    odb::dbMaster* antenna_cell = db_->findMaster(antenna_cell_name.c_str());
-    dbMTerm* mterm = antenna_cell->findMTerm(cell_pin.c_str());
-    std::vector<std::pair<double, dbTechLayer*>> diff_area;
-    mterm->getDiffArea(diff_area);
-
-    std::vector<std::pair<double, dbTechLayer*>>::iterator diff_area_iter;
-    for (diff_area_iter = diff_area.begin(); diff_area_iter != diff_area.end();
-         diff_area_iter++)
-      max_diff_area = std::max(max_diff_area, (*diff_area_iter).first);
-  }
+  double max_diff_area = 0.0;
+  if (diode_mterm) 
+    max_diff_area = maxDiffArea(diode_mterm);
 
   std::vector<ViolationInfo> antenna_violations;
   if (net->isSpecial())
@@ -2017,35 +1976,38 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(
 
       if (wire_PAR_violation) {
         std::vector<dbITerm*> gates;
-        findWirerootIterms(
-            (*par_itr).WirerootNode, layer->getRoutingLevel(), gates);
-        int required_cell_nums = 0;
-        if (!antenna_cell_name.empty()) {
-          while (wire_PAR_violation && required_cell_nums < 10) {
+        findWirerootIterms((*par_itr).WirerootNode,
+                           layer->getRoutingLevel(), gates);
+        int required_diode_count = 0;
+        if (diode_mterm) {
+          while (wire_PAR_violation && required_diode_count < repair_max_diode_count) {
             (*par_itr).iterm_areas[1]
-                += max_diff_area * ((*par_itr).iterms.size());
-            required_cell_nums++;
+              += max_diff_area * ((*par_itr).iterms.size());
+            required_diode_count++;
             calculateParInfo(*par_itr);
             wire_PAR_violation = checkViolation(*par_itr, layer);
           }
-
-          // std::cout << "Insts: ";
-          // for (dbITerm* iterm: gates)
-          //{
-          //    dbInst* inst = iterm->getInst();
-          //    dbMTerm* mterm = iterm->getMTerm();
-          //    std::cout << inst->getName() << "-" << mterm->getName()<< " ";
-          //}
-          // std::cout << "\n  Requires " << required_cell_nums << " diodes to
-          // remove antenna violation"<<std::endl;
         }
         ViolationInfo antenna_violation
-            = {layer->getRoutingLevel(), gates, required_cell_nums};
+            = {layer->getRoutingLevel(), gates, required_diode_count};
         antenna_violations.push_back(antenna_violation);
       }
     }
   }
   return antenna_violations;
+}
+
+double
+AntennaChecker::maxDiffArea(dbMTerm *mterm)
+{
+  double max_diff_area = 0.0;
+  std::vector<std::pair<double, dbTechLayer*>> diff_areas;
+  mterm->getDiffArea(diff_areas);
+  for (auto area_layer : diff_areas) {
+    double diff_area = area_layer.first;
+    max_diff_area = std::max(max_diff_area, diff_area);
+  }
+  return max_diff_area;
 }
 
 std::vector<std::pair<double, std::vector<dbITerm*>>>

@@ -80,7 +80,7 @@ check_net_violation(char* net_name)
 { 
   odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
   if (net) {
-    auto vios = getAntennaChecker()->getNetAntennaViolations(net);
+    auto vios = getAntennaChecker()->getNetAntennaViolations(net, nullptr);
     return !vios.empty();
   }
   else
