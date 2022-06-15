@@ -94,6 +94,7 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
       m_logger->error(utl::PSM, 47, "Node location lookup error for x.");
     }
   } else {
+    int dist = 0;
     NodeMap::iterator x_itr = layer_map.lower_bound(t_x);
     vector<pair<int, Node*>> node_dist_vector;
     if (layer_map.size() == 1 || x_itr == layer_map.end() ||
@@ -104,25 +105,25 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
         x_itr = prev(x_itr);
       } else {  // do nothing as x_itr has the correct value
       }
-      // cout <<"Added current source" <<endl;
-      return NearestYNode(x_itr, t_y);
-      // cout <<"Added current source" <<endl;
-
-    } else {
-      NodeMap::iterator x_prev;
-      x_prev = prev(x_itr);
-      Node* node1 = NearestYNode(x_itr, t_y);
-      Node* node2 = NearestYNode(x_prev, t_y);
-      NodeLoc node1_loc = node1->GetLoc();
-      NodeLoc node2_loc = node2->GetLoc();
-      int dist1 = abs(node1_loc.first - t_x) + abs(node1_loc.second - t_y);
-      int dist2 = abs(node2_loc.first - t_x) + abs(node2_loc.second - t_y);
-      if (dist1 < dist2) {
-        return node1;
-      } else {
-        return node2;
+    }
+    Node* node = NearestYNode(x_itr, t_y);
+    NodeLoc node_loc = node->GetLoc();
+    dist = abs(node_loc.first - t_x) + abs(node_loc.second - t_y);
+    //Searching a bounding box of all nodes nearby to see if a closer one exists.
+    vector<Node*> contender_nodes = GMat::GetNodes(t_l,
+                                            t_x - dist,//xmin
+                                            t_x + dist,//xmax
+                                            t_y - dist,//ymin
+                                            t_y + dist);//ymax
+    for(auto new_node : contender_nodes){
+      node_loc = new_node->GetLoc();
+      int new_dist = abs(node_loc.first - t_x) + abs(node_loc.second - t_y);
+      if(new_dist<dist){
+        dist = new_dist;
+        node = new_node;
       }
     }
+    return node;
   }
 }
 
