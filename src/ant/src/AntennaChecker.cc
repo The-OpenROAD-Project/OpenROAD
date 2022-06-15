@@ -1760,10 +1760,11 @@ void AntennaChecker::checkAntennaCell()
 
   fprintf(_out,
           "Warning - class CORE ANTENNACELL is not found. This message can be "
-          "ignored if not in the antenna-avoid flow\n");
+          "ignored if not repairing antennas\n");
 }
 
-int AntennaChecker::checkAntennas(std::string path, bool report_violating_nets)
+int AntennaChecker::checkAntennas(std::string report_file,
+                                  bool report_violating_nets)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::orderWires(block,
@@ -1773,7 +1774,7 @@ int AntennaChecker::checkAntennas(std::string path, bool report_violating_nets)
                   true /* quiet */);
 
   std::string bname = block->getName();
-  std::vector<int> nets_info = getAntennaRatio(path, report_violating_nets);
+  std::vector<int> nets_info = getAntennaRatio(report_file, report_violating_nets);
   if (nets_info[2] != 0) {
     logger_->info(ANT, 1, "Found {} pin violations.", nets_info[0]);
     logger_->info(ANT,
