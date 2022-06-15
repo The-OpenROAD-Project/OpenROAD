@@ -146,12 +146,9 @@ void AntennaChecker::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-template <class valueType>
-double AntennaChecker::defDist(valueType value)
+double AntennaChecker::dbuToMicrons(int value)
 {
-  double _dist_factor
-      = 1.0 / (double) db_->getChip()->getBlock()->getDbUnitsPerMicron();
-  return ((double) value) * _dist_factor;
+  return static_cast<double>(value) / db_->getChip()->getBlock()->getDbUnitsPerMicron();
 }
 
 void AntennaChecker::loadAntennaRules()
@@ -354,7 +351,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   double wire_area = 0;
   double side_wire_area = 0;
 
-  double wire_width = defDist(node->layer()->getWidth());
+  double wire_width = dbuToMicrons(node->layer()->getWidth());
 
   uint wire_thickness_uint = 0;
   node->layer()->getThickness(wire_thickness_uint);
@@ -387,7 +384,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         || edge->type() == dbWireGraph::Edge::Type::TECH_VIA) {
       if (edge_io_type.compare("IN") == 0) {
         wire_area += 0.5 * wire_width * wire_width;
-        side_wire_area += defDist(wire_thickness_uint) * wire_width;
+        side_wire_area += dbuToMicrons(wire_thickness_uint) * wire_width;
 
         if (edge->source()->layer()->getRoutingLevel() <= wire_level) {
           std::pair<double, double> areas
@@ -400,7 +397,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
       if (edge_io_type.compare("OUT") == 0) {
         if (out_edges_count == 1) {
           wire_area += 0.5 * wire_width * wire_width;
-          side_wire_area += defDist(wire_thickness_uint) * wire_width;
+          side_wire_area += dbuToMicrons(wire_thickness_uint) * wire_width;
         }
 
         if (edge->target()->layer()->getRoutingLevel() <= wire_level) {
@@ -418,12 +415,12 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->source()->xy(end_x, end_y);
-          wire_area += defDist(abs(end_x - start_x) + abs(end_y - start_y))
+          wire_area += dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
                        * wire_width;
           side_wire_area
-              += (defDist(abs(end_x - start_x) + abs(end_y - start_y))
+              += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
                   + wire_width)
-                 * defDist(wire_thickness_uint) * 2;
+                 * dbuToMicrons(wire_thickness_uint) * 2;
         }
 
         std::pair<double, double> areas
@@ -436,12 +433,12 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->target()->xy(end_x, end_y);
-          wire_area += defDist(abs(end_x - start_x) + abs(end_y - start_y))
+          wire_area += dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
                        * wire_width;
           side_wire_area
-              += (defDist(abs(end_x - start_x) + abs(end_y - start_y))
+              += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
                   + wire_width)
-                 * defDist(wire_thickness_uint) * 2;
+                 * dbuToMicrons(wire_thickness_uint) * 2;
         }
 
         std::pair<double, double> areas
@@ -460,28 +457,21 @@ double AntennaChecker::getViaArea(dbWireGraph::Edge* edge)
   if (edge->type() == dbWireGraph::Edge::Type::TECH_VIA) {
     dbWireGraph::TechVia* tech_via_edge = (dbWireGraph::TechVia*) edge;
     dbTechVia* tech_via = tech_via_edge->via();
-    dbSet<dbBox> tech_via_boxes = tech_via->getBoxes();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = tech_via_boxes.begin(); box_itr != tech_via_boxes.end();
-         ++box_itr) {
-      dbBox* box = *box_itr;
+    for (dbBox* box : tech_via->getBoxes()) {
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT) {
         uint dx = box->getDX();
         uint dy = box->getDY();
-        via_area = defDist(dx) * defDist(dy);
+        via_area = dbuToMicrons(dx) * dbuToMicrons(dy);
       }
     }
   } else if (edge->type() == dbWireGraph::Edge::Type::VIA) {
     dbWireGraph::Via* via_edge = (dbWireGraph::Via*) edge;
     dbVia* via = via_edge->via();
-    dbSet<dbBox> via_boxes = via->getBoxes();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = via_boxes.begin(); box_itr != via_boxes.end(); ++box_itr) {
-      dbBox* box = *box_itr;
+    for (dbBox* box : via->getBoxes()) {
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT) {
         uint dx = box->getDX();
         uint dy = box->getDY();
-        via_area = defDist(dx) * defDist(dy);
+        via_area = dbuToMicrons(dx) * dbuToMicrons(dy);
       }
     }
   }
@@ -493,21 +483,14 @@ dbTechLayer* AntennaChecker::getViaLayer(dbWireGraph::Edge* edge)
   if (edge->type() == dbWireGraph::Edge::Type::TECH_VIA) {
     dbWireGraph::TechVia* tech_via_edge = (dbWireGraph::TechVia*) edge;
     dbTechVia* tech_via = tech_via_edge->via();
-    dbSet<dbBox> tech_via_boxes = tech_via->getBoxes();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = tech_via_boxes.begin(); box_itr != tech_via_boxes.end();
-         ++box_itr) {
-      dbBox* box = *box_itr;
+    for (dbBox* box : tech_via->getBoxes()) {
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT)
         return box->getTechLayer();
     }
   } else if (edge->type() == dbWireGraph::Edge::Type::VIA) {
     dbWireGraph::Via* via_edge = (dbWireGraph::Via*) edge;
     dbVia* via = via_edge->via();
-    dbSet<dbBox> via_boxes = via->getBoxes();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = via_boxes.begin(); box_itr != via_boxes.end(); ++box_itr) {
-      dbBox* box = *box_itr;
+    for (dbBox* box : via->getBoxes()) {
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT)
         return box->getTechLayer();
     }
@@ -720,38 +703,26 @@ double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
                                     double def)
 {
   if (pwl_info.indices.size() != 0) {
-    std::vector<double>::const_iterator indice_itr;
-    std::vector<double>::const_iterator ratio_itr;
     if (pwl_info.indices.size() == 1) {
-      indice_itr = pwl_info.indices.begin();
-      ratio_itr = pwl_info.ratios.begin();
-      return *ratio_itr;
+      return pwl_info.ratios[0];
     } else {
-      double pwl_info_indice = 0.0;
-      double pwl_info_ratio = 0.0;
+      double pwl_info_indice1 = pwl_info.indices[0];
+      double pwl_info_ratio1 = pwl_info.ratios[0];
       double slope_factor = 1.0;
-      for (indice_itr = pwl_info.indices.begin(),
-          ratio_itr = pwl_info.ratios.begin();
-           indice_itr != pwl_info.indices.end()
-           && ratio_itr != pwl_info.ratios.end();
-           indice_itr++, ratio_itr++) {
-        if (indice_itr == pwl_info.indices.begin()
-            && ratio_itr == pwl_info.ratios.begin()) {
-          pwl_info_indice = (*indice_itr);
-          pwl_info_ratio = (*ratio_itr);
-        }
+      for (int i = 0; i < pwl_info.indices.size(); i++) {
+        double pwl_info_indice2 = pwl_info.indices[i];
+        double pwl_info_ratio2 = pwl_info.ratios[i];
+        slope_factor = (pwl_info_ratio2 - pwl_info_ratio1)
+          / (pwl_info_ratio2 - pwl_info_indice1);
 
-        slope_factor = ((*ratio_itr) - pwl_info_ratio)
-                       / ((*indice_itr) - pwl_info_indice);
-
-        if (ref_val >= pwl_info_indice && ref_val < (*indice_itr)) {
-          return slope_factor * (ref_val - pwl_info_indice) + pwl_info_ratio;
+        if (ref_val >= pwl_info_indice1 && ref_val < pwl_info_indice2) {
+          return slope_factor * (ref_val - pwl_info_indice1) + pwl_info_ratio1;
         } else {
-          pwl_info_indice = (*indice_itr);
-          pwl_info_ratio = (*ratio_itr);
+          pwl_info_indice1 = pwl_info_indice2;
+          pwl_info_ratio1 = pwl_info_ratio2;
         }
       }
-      return slope_factor * (ref_val - pwl_info_indice) + pwl_info_ratio;
+      return slope_factor * (ref_val - pwl_info_indice1) + pwl_info_ratio1;
     }
   } else
     return def;
@@ -1801,7 +1772,7 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
         nv.clear();
         findWireBelowIterms(
             wireroot, iterm_areas, tech_layer->getRoutingLevel(), iv, nv);
-        double wire_width = defDist(tech_layer->getWidth());
+        double wire_width = dbuToMicrons(tech_layer->getWidth());
 
         ANTENNAmodel am = layer_info[tech_layer];
         double metal_factor = am.metal_factor;
@@ -2043,7 +2014,7 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
       if (iterm_areas[0] == 0)
         continue;
 
-      double wire_width = defDist(tech_layer->getWidth());
+      double wire_width = dbuToMicrons(tech_layer->getWidth());
 
       ANTENNAmodel am = layer_info[tech_layer];
       double metal_factor = am.metal_factor;
@@ -2143,7 +2114,7 @@ void AntennaChecker::findMaxWireLength()
         edge->target()->xy(x2, y2);
         if (edge->type() == dbWireGraph::Edge::Type::SEGMENT
             || edge->type() == dbWireGraph::Edge::Type::SHORT)
-          wire_length += defDist((abs(x2 - x1) + abs(y2 - y1)));
+          wire_length += dbuToMicrons((abs(x2 - x1) + abs(y2 - y1)));
       }
 
       if (wire_length > max_wire_length) {

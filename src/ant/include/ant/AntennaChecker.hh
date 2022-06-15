@@ -83,8 +83,7 @@ class AntennaChecker
                                                      odb::dbMTerm* diode_mterm);
 
  private:
-  template <class valueType>
-  double defDist(valueType value);
+  double dbuToMicrons(int value);
 
   dbWireGraph::Node* findSegmentRoot(dbWireGraph::Node* node_info,
                                      int wire_level);
