@@ -54,13 +54,12 @@ void orderWires(dbBlock* block,
                 bool force,
                 int cutLength,
                 int maxLength,
-                bool quiet)
+                bool verbose)
 {
   bool no_patch = true;
   if (_conn == NULL)
     _conn = new tmg_conn();
   _conn->resetSplitCnt();
-  bool verbose = false;
   bool no_convert = false;
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
@@ -73,7 +72,7 @@ void orderWires(dbBlock* block,
     if (!force && net->isWireOrdered())
       continue;
     _conn->analyzeNet(
-        net, force, verbose, quiet, no_convert, cutLength, maxLength, no_patch);
+        net, force, verbose, no_convert, cutLength, maxLength, no_patch);
   }
   if (_conn->_swireNetCnt)
     notice(0, "Set dont_touch on %d swire nets.\n", _conn->_swireNetCnt);
@@ -86,7 +85,6 @@ void orderWires(dbBlock* block,
                 const char* net_name_or_id,
                 bool force,
                 bool verbose,
-                bool quiet,
                 int cutLength,
                 int maxLength)
 {
@@ -95,7 +93,7 @@ void orderWires(dbBlock* block,
     _conn = new tmg_conn();
   _conn->set_gv(verbose);
   if (!net_name_or_id || !net_name_or_id[0]) {
-    orderWires(block, force, cutLength, maxLength, quiet);
+    orderWires(block, force, cutLength, maxLength, verbose);
     return;
   }
   bool no_convert = false;
@@ -111,8 +109,8 @@ void orderWires(dbBlock* block,
     return;
   }
   _conn->resetSplitCnt();
-  _conn->analyzeNet(
-      net, force, verbose, false, no_convert, cutLength, maxLength, no_patch);
+  _conn->analyzeNet(net, force, verbose, no_convert,
+                    cutLength, maxLength, no_patch);
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
