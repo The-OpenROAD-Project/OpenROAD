@@ -1919,33 +1919,36 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
-      int minimum_distance = std::numeric_limits<int>::max();
-      // Note that loops created by local connections are irrelevant
-      // because dbWires have no width and only convey connectivity.
-      for (const odb::Rect& pin_box : pin_boxes) {
-        odb::Point pos = getRectMiddle(pin_box);
-        int distance = abs(pos.x() - pin_position.x())
-          + abs(pos.y() - pin_position.y());
-        if (distance < minimum_distance) {
-          minimum_distance = distance;
-          real_pin_position = pos;
-        }
-      }
-      hor_segment = GSegment(real_pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer);
-      ver_segment = GSegment(pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             pin_position.y(),
-                             top_layer);
 
-      route.push_back(hor_segment);
-      route.push_back(ver_segment);
+      // create the local connection only when the global segment
+      // doesn't overlap the pin, avoiding loops in the routing
+      if (!pinOverlapsGSegment(pin_position, top_layer, pin_boxes, route)) {
+        int minimum_distance = std::numeric_limits<int>::max();
+        for (const odb::Rect& pin_box : pin_boxes) {
+          odb::Point pos = getRectMiddle(pin_box);
+          int distance = abs(pos.x() - pin_position.x())
+            + abs(pos.y() - pin_position.y());
+          if (distance < minimum_distance) {
+            minimum_distance = distance;
+            real_pin_position = pos;
+          }
+        }
+        hor_segment = GSegment(real_pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer);
+        ver_segment = GSegment(pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               pin_position.y(),
+                               top_layer);
+
+        route.push_back(hor_segment);
+        route.push_back(ver_segment);
+      }
     }
   }
 }
@@ -1955,17 +1958,12 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
                                        const std::vector<odb::Rect>& pin_boxes,
                                        const GRoute& route)
 {
-  bool segment_overlaps_pin = false;
 
   // check if pin position on grid overlaps with the pin shape
   for (const odb::Rect& box : pin_boxes) {
-    if ((segment_overlaps_pin = box.overlaps(pin_position))) {
-      break;
+    if (box.overlaps(pin_position)) {
+      return true;
     }
-  }
-
-  if (segment_overlaps_pin) {
-    return segment_overlaps_pin;
   }
 
   // check if pin position on grid overlaps with at least one GSegment
@@ -1979,14 +1977,14 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
         int y1 = std::max(seg.init_y, seg.final_y);
         odb::Rect seg_rect(x0, y0, x1, y1);
 
-        if ((segment_overlaps_pin = box.intersects(seg_rect))) {
-          break;
+        if (box.intersects(seg_rect)) {
+          return true;
         }
       }
     }
   }
 
-  return segment_overlaps_pin;
+  return false;
 }
 
 void GlobalRouter::mergeResults(NetRouteMap& routes)

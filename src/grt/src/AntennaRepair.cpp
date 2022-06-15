@@ -120,8 +120,11 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
               db_net,
               diode_mterm->getMaster()->getConstName(),
               diode_mterm->getConstName());
-      if (!netViol.empty())
+      if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
+        debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",
+                   db_net->getConstName());
+      }
       odb::dbWire::destroy(wire);
     } else {
       logger_->error(
