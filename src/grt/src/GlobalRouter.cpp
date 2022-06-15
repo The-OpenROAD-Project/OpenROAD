@@ -253,8 +253,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
-    // Antenna checker requires local connections so copy the routes
-    // so the originals are not side-effected.
+    // Antenna checker requires local connections to create dbWires.
+    // Copy the routes so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
     violations = antenna_repair.checkAntennaViolations(routes,
@@ -1916,36 +1916,33 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
-
-      // create the local connection only when the global segment
-      // doesn't overlap the pin, avoiding loops in the routing
-      if (!pinOverlapsGSegment(pin_position, top_layer, pin_boxes, route)) {
-        int minimum_distance = std::numeric_limits<int>::max();
-        for (const odb::Rect& pin_box : pin_boxes) {
-          odb::Point pos = getRectMiddle(pin_box);
-          int distance = abs(pos.x() - pin_position.x())
-                         + abs(pos.y() - pin_position.y());
-          if (distance < minimum_distance) {
-            minimum_distance = distance;
-            real_pin_position = pos;
-          }
+      int minimum_distance = std::numeric_limits<int>::max();
+      // Note that loops created by local connections are irrelevant
+      // because dbWires have no width and only convey connectivity.
+      for (const odb::Rect& pin_box : pin_boxes) {
+        odb::Point pos = getRectMiddle(pin_box);
+        int distance = abs(pos.x() - pin_position.x())
+          + abs(pos.y() - pin_position.y());
+        if (distance < minimum_distance) {
+          minimum_distance = distance;
+          real_pin_position = pos;
         }
-        hor_segment = GSegment(real_pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer,
-                               pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer);
-        ver_segment = GSegment(pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer,
-                               pin_position.x(),
-                               pin_position.y(),
-                               top_layer);
-
-        route.push_back(hor_segment);
-        route.push_back(ver_segment);
       }
+      hor_segment = GSegment(real_pin_position.x(),
+                             real_pin_position.y(),
+                             top_layer,
+                             pin_position.x(),
+                             real_pin_position.y(),
+                             top_layer);
+      ver_segment = GSegment(pin_position.x(),
+                             real_pin_position.y(),
+                             top_layer,
+                             pin_position.x(),
+                             pin_position.y(),
+                             top_layer);
+
+      route.push_back(hor_segment);
+      route.push_back(ver_segment);
     }
   }
 }
