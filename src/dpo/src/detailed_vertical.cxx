@@ -35,13 +35,14 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+#include "detailed_vertical.h"
+
 #include <boost/tokenizer.hpp>
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
-#include "detailed_vertical.h"
 #include "rectangle.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -295,8 +296,10 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
     if (other == nd) {
       continue;
     }
-    const double curX = other->getLeft() + 0.5 * other->getWidth() + pin->getOffsetX();
-    const double curY = other->getBottom() + 0.5 * other->getHeight() + pin->getOffsetY();
+    const double curX
+        = other->getLeft() + 0.5 * other->getWidth() + pin->getOffsetX();
+    const double curY
+        = other->getBottom() + 0.5 * other->getHeight() + pin->getOffsetY();
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -398,7 +401,8 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
         const Node* ndj = pinj->getNode();
 
         double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-        double y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        double y
+            = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 
@@ -455,7 +459,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
 
   // Center of optimal rectangle.
   const int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
-                            - 0.5 * ndi->getWidth());
+                                  - 0.5 * ndi->getWidth());
   int yj = (int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
                             - 0.5 * ndi->getHeight());
 

@@ -32,11 +32,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+#include "detailed_reorder.h"
+
 #include <boost/tokenizer.hpp>
 
 #include "architecture.h"
 #include "detailed_manager.h"
-#include "detailed_reorder.h"
 #include "detailed_segment.h"
 #include "utility.h"
 #include "utl/Logger.h"

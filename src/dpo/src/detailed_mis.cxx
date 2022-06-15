@@ -44,6 +44,8 @@
 // There are likely many improvements which can be made to this code
 // regarding the selection of nodes, etc.
 
+#include "detailed_mis.h"
+
 #include <lemon/cost_scaling.h>
 #include <lemon/cycle_canceling.h>
 #include <lemon/list_graph.h>
@@ -58,7 +60,6 @@
 #include "architecture.h"
 #include "color.h"
 #include "detailed_manager.h"
-#include "detailed_mis.h"
 #include "detailed_segment.h"
 #include "network.h"
 #include "rectangle.h"

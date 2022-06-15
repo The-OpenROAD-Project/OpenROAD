@@ -230,8 +230,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
         objABU->init(mgrPtr_, nullptr);
         objectives_.push_back(objABU);
       } else if (objs[i] == "disp") {
-        auto objDisp
-            = new DetailedDisplacement(arch_, network_, rt_);
+        auto objDisp = new DetailedDisplacement(arch_, network_, rt_);
         objDisp->init(mgrPtr_, nullptr);
         objectives_.push_back(objDisp);
       } else if (objs[i] == "hpwl") {

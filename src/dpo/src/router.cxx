@@ -63,15 +63,17 @@ double RoutingParams::get_spacing(int layer,
                                   double ymax2)
 {
   const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
-                       std::min(ymax2 - ymin2, xmax2 - xmin2));
+                             std::min(ymax2 - ymin2, xmax2 - xmin2));
 
   // Parallel run-length in the Y-dir.  Will be zero if the objects are above or
   // below each other.
-  const double py = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
+  const double py
+      = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
 
   // Parallel run-length in the X-dir.  Will be zero if the objects are left or
   // right of each other.
-  const double px = std::max(0.0, std::min(xmax1, xmax2) - std::max(xmin1, xmin2));
+  const double px
+      = std::max(0.0, std::min(xmax1, xmax2) - std::max(xmin1, xmin2));
 
   return get_spacing(layer, ww, std::max(px, py));
 }

@@ -118,7 +118,9 @@ class Architecture
   void setUsePadding(bool val = true) { usePadding_ = val; }
   bool getUsePadding() const { return usePadding_; }
   void addCellPadding(Node* ndi, int leftPadding, int rightPadding);
-  bool getCellPadding(const Node* ndi, int& leftPadding, int& rightPadding) const;
+  bool getCellPadding(const Node* ndi,
+                      int& leftPadding,
+                      int& rightPadding) const;
 
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
