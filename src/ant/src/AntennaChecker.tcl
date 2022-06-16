@@ -45,6 +45,5 @@ proc check_antennas { args } {
 
   set report_violating_nets [info exists flags(-report_violating_nets)]
 
-  ant::load_antenna_rules
   return [ant::check_antennas $report_file $report_violating_nets]
 }

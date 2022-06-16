@@ -71,8 +71,6 @@ class AntennaChecker
 
   void init(odb::dbDatabase* db, utl::Logger* logger);
 
-  void loadAntennaRules();
-
   int checkAntennas(std::string report_filename, bool simple_report);
 
   void checkMaxLength(const char* net_name, int layer);
@@ -81,8 +79,10 @@ class AntennaChecker
 
   std::vector<ViolationInfo> getNetAntennaViolations(dbNet* net,
                                                      odb::dbMTerm* diode_mterm);
+  void loadAntennaRules();
 
  private:
+  bool haveRoutedNets();
   double dbuToMicrons(int value);
 
   dbWireGraph::Node* findSegmentRoot(dbWireGraph::Node* node_info,

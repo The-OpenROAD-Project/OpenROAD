@@ -1704,9 +1704,13 @@ void AntennaChecker::checkDiodeCell()
 int AntennaChecker::checkAntennas(std::string report_file,
                                   bool report_violating_nets)
 {
+  if (!haveRoutedNets())
+    logger_->error(ANT, 8, "No detailed routes found. Run detailed_route.");
+
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::orderWires(block, false);
 
+  loadAntennaRules();
   int pin_violation_count;
   int net_violation_count;
   int net_count;
@@ -1723,6 +1727,17 @@ int AntennaChecker::checkAntennas(std::string report_file,
   return net_violation_count;
 }
 
+bool AntennaChecker::haveRoutedNets()
+{
+  for (dbNet* net : db_->getChip()->getBlock()->getNets()) {
+    if (!net->isSpecial()
+        && net->getWireType() == dbWireType::ROUTED
+        && net->getWire())
+      return true;
+  }
+  return false;
+}
+          
 void AntennaChecker::findWirerootIterms(dbWireGraph::Node* node,
                                         int wire_level,
                                         std::vector<dbITerm*>& gates)

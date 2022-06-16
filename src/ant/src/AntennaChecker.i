@@ -67,12 +67,6 @@ check_max_length(const char *net_name,
   checker->checkMaxLength(net_name, layer);
 }
 
-void
-load_antenna_rules()
-{
-  getAntennaChecker()->loadAntennaRules();
-}
-
 // check if an input net is violated, return 1 if the net is violated
 //   - -net_name: set the net name for checking
 bool
