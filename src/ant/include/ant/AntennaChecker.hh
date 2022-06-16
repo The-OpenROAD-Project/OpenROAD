@@ -149,7 +149,7 @@ class AntennaChecker
 
   void checkDiodeCell();
 
-  bool checkViolation(PARinfo par_info, dbTechLayer* layer);
+  bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
 
   void findWirerootIterms(dbWireGraph::Node* node,
                           int wire_level,

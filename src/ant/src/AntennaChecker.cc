@@ -154,12 +154,8 @@ double AntennaChecker::dbuToMicrons(int value)
 void AntennaChecker::loadAntennaRules()
 {
   odb::dbTech* tech = db_->getTech();
-  odb::dbSet<odb::dbTechLayer> tech_layers = tech->getLayers();
-
   odb::dbSet<odb::dbTechLayer>::iterator itr;
-  for (itr = tech_layers.begin(); itr != tech_layers.end(); ++itr) {
-    odb::dbTechLayer* tech_layer = (odb::dbTechLayer*) *itr;
-
+  for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
     double metal_factor = 1.0;
     double diff_metal_factor = 1.0;
 
@@ -1875,7 +1871,7 @@ std::vector<dbWireGraph::Node*> AntennaChecker::getWireroots(dbWireGraph graph)
   return wireroots_info;
 }
 
-bool AntennaChecker::checkViolation(PARinfo par_info, dbTechLayer* layer)
+bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
 {
   double par = par_info.PAR_value;
   double psr = par_info.PSR_value;
