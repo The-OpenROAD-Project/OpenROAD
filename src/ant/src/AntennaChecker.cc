@@ -1455,24 +1455,29 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
   return if_violated;
 }
 
-std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
-                                                 bool report_violating_nets)
+void AntennaChecker::getAntennaRatio(std::string report_filename,
+                                     bool report_violating_nets,
+                                     // Return values.
+                                     int &pin_violation_count,
+                                     int &net_violation_count,
+                                     int &net_count)
 {
+  net_count = 0;
+  net_violation_count = 0;
+  pin_violation_count = 0;
+
   stream_ = fopen(report_filename.c_str(), "w");
   if (stream_) {
     checkDiodeCell();
 
     dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
     if (nets.empty())
-      return {0, 0, 0};
+      return;
 
-    int num_total_net = 0;
-    int num_violated_net = 0;
-    int num_violated_pins = 0;
     for (dbNet* net : nets) {
       if (net->isSpecial())
         continue;
-      num_total_net++;
+      net_count++;
       dbWire* wire = net->getWire();
       dbWireGraph graph;
       if (wire) {
@@ -1488,7 +1493,7 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           dbWireGraph::Node* node = *node_itr;
 
           auto wireroot_info
-              = findSegmentRoot(node, node->layer()->getRoutingLevel());
+            = findSegmentRoot(node, node->layer()->getRoutingLevel());
           dbWireGraph::Node* wireroot = wireroot_info;
 
           if (wireroot) {
@@ -1554,11 +1559,11 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           for (auto ar : CARtable) {
             if (ar.GateNode == gate) {
               auto wire_PAR_violation
-                  = checkWirePar(ar, report_violating_nets, false);
+                = checkWirePar(ar, report_violating_nets, false);
               auto wire_CAR_violation = checkWireCar(
-                  ar, wire_PAR_violation.second, report_violating_nets, false);
+                                                     ar, wire_PAR_violation.second, report_violating_nets, false);
               bool wire_violation
-                  = wire_PAR_violation.first || wire_CAR_violation.first;
+                = wire_PAR_violation.first || wire_CAR_violation.first;
               violation |= wire_violation;
               if (wire_violation)
                 violated_gates.insert(gate);
@@ -1567,9 +1572,9 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           for (auto via_ar : VIA_CARtable) {
             if (via_ar.GateNode == gate) {
               bool VIA_PAR_violation
-                  = checkViaPar(via_ar, report_violating_nets, false);
+                = checkViaPar(via_ar, report_violating_nets, false);
               bool VIA_CAR_violation
-                  = checkViaCar(via_ar, report_violating_nets, false);
+                = checkViaCar(via_ar, report_violating_nets, false);
               bool via_violation = VIA_PAR_violation || VIA_CAR_violation;
               violation |= via_violation;
               if (via_violation
@@ -1595,9 +1600,9 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           for (auto ar : CARtable) {
             if (ar.GateNode == gate) {
               auto wire_PAR_violation
-                  = checkWirePar(ar, report_violating_nets, false);
+                = checkWirePar(ar, report_violating_nets, false);
               auto wire_CAR_violation = checkWireCar(
-                  ar, wire_PAR_violation.second, report_violating_nets, false);
+                                                     ar, wire_PAR_violation.second, report_violating_nets, false);
               if (wire_PAR_violation.first || wire_CAR_violation.first
                   || !report_violating_nets) {
                 fprintf(stream_,
@@ -1605,9 +1610,9 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
                         ar.WirerootNode->layer()->getConstName());
               }
               wire_PAR_violation
-                  = checkWirePar(ar, report_violating_nets, true);
+                = checkWirePar(ar, report_violating_nets, true);
               wire_CAR_violation = checkWireCar(
-                  ar, wire_PAR_violation.second, report_violating_nets, true);
+                                                ar, wire_PAR_violation.second, report_violating_nets, true);
               if (wire_PAR_violation.first || wire_CAR_violation.first) {
                 if_violated_wire = 1;
                 if (violated_iterms.find(gate) == violated_iterms.end())
@@ -1623,21 +1628,21 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
           for (auto via_ar : VIA_CARtable) {
             if (via_ar.GateNode == gate) {
               dbWireGraph::Edge* via
-                  = findVia(via_ar.WirerootNode,
-                            via_ar.WirerootNode->layer()->getRoutingLevel());
+                = findVia(via_ar.WirerootNode,
+                          via_ar.WirerootNode->layer()->getRoutingLevel());
 
               bool VIA_PAR_violation
-                  = checkViaPar(via_ar, report_violating_nets, false);
+                = checkViaPar(via_ar, report_violating_nets, false);
               bool VIA_CAR_violation
-                  = checkViaCar(via_ar, report_violating_nets, false);
+                = checkViaCar(via_ar, report_violating_nets, false);
               if (VIA_PAR_violation || VIA_CAR_violation
                   || !report_violating_nets) {
                 fprintf(stream_, "[1]  %s:\n", getViaName(via).c_str());
               }
               VIA_PAR_violation
-                  = checkViaPar(via_ar, report_violating_nets, true);
+                = checkViaPar(via_ar, report_violating_nets, true);
               VIA_CAR_violation
-                  = checkViaCar(via_ar, report_violating_nets, true);
+                = checkViaCar(via_ar, report_violating_nets, true);
               if (VIA_PAR_violation || VIA_CAR_violation) {
                 if_violated_VIA = 1;
                 if (violated_iterms.find(gate) == violated_iterms.end())
@@ -1652,20 +1657,18 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
         }
 
         if (if_violated_wire || if_violated_VIA) {
-          num_violated_net++;
-          num_violated_pins += violated_iterms.size();
+          net_violation_count++;
+          pin_violation_count += violated_iterms.size();
         }
       }
     }
-    fprintf(stream_, "Number of pins violated: %d\n", num_violated_pins);
-    fprintf(stream_, "Number of nets violated: %d\n", num_violated_net);
-    fprintf(stream_, "Total number of signal nets: %d\n", num_total_net);
+    fprintf(stream_, "Number of pins violated: %d\n", pin_violation_count);
+    fprintf(stream_, "Number of nets violated: %d\n", net_violation_count);
+    fprintf(stream_, "Total number of signal nets: %d\n", net_count);
     fclose(stream_);
-    return {num_violated_pins, num_violated_net, num_total_net};
   } else {
     logger_->error(
-        ANT, 7, "Cannot open report file ({}) for writing", report_filename);
-    return {0, 0, 0};
+                   ANT, 7, "Cannot open report file ({}) for writing", report_filename);
   }
 }
 
@@ -1708,16 +1711,20 @@ int AntennaChecker::checkAntennas(std::string report_file,
                   false /* verbose */,
                   true /* quiet */);
 
-  std::vector<int> nets_info = getAntennaRatio(report_file, report_violating_nets);
-  if (nets_info[2] != 0) {
-    logger_->info(ANT, 1, "Found {} pin violations.", nets_info[0]);
-    logger_->info(ANT,
-                  2,
-                  "Found {} net violations in {} nets.",
-                  nets_info[1],
-                  nets_info[2]);
+  int pin_violation_count;
+  int net_violation_count;
+  int net_count;
+  getAntennaRatio(report_file, report_violating_nets,
+                  pin_violation_count,
+                  net_violation_count,
+                  net_count);
+  if (net_count != 0) {
+    logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
+    logger_->info(ANT, 2, "Found {} net violations in {} nets.",
+                  net_violation_count,
+                  net_count);
   }
-  return nets_info[1];
+  return net_violation_count;
 }
 
 void AntennaChecker::findWirerootIterms(dbWireGraph::Node* node,

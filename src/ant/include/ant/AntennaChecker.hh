@@ -148,7 +148,12 @@ class AntennaChecker
   bool checkViaPar(ARinfo AntennaRatio, bool simple_report, bool print);
   bool checkViaCar(ARinfo AntennaRatio, bool simple_report, bool print);
 
-  std::vector<int> getAntennaRatio(std::string path, bool simple_report);
+  void getAntennaRatio(std::string report_filename,
+                       bool report_violating_nets,
+                       // Return values.
+                       int &pin_violation_count,
+                       int &net_violation_count,
+                       int &net_count);
 
   void checkDiodeCell();
 
