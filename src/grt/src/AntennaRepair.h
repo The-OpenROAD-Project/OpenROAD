@@ -93,6 +93,9 @@ class AntennaRepair
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
   void deleteFillerCells();
+  void makeNetWires(NetRouteMap& routing,
+                    int max_routing_layer);
+  void destroyNetWires();
 
  private:
   typedef int coord_type;
@@ -113,6 +116,9 @@ class AntennaRepair
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
+  odb::dbWire* makeNetWire(odb::dbNet* db_net,
+                           GRoute& route,
+                           std::map<int, odb::dbTechVia*> &default_vias);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;

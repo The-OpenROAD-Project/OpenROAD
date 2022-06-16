@@ -39,6 +39,10 @@
 #include "odb/dbWireGraph.h"
 #include "utl/Logger.h"
 
+namespace grt {
+class GlobalRouter;
+}
+
 namespace ant {
 
 using odb::dbInst;
@@ -69,7 +73,9 @@ class AntennaChecker
   AntennaChecker();
   ~AntennaChecker();
 
-  void init(odb::dbDatabase* db, utl::Logger* logger);
+  void init(odb::dbDatabase* db,
+            grt::GlobalRouter* global_router,
+            utl::Logger* logger);
 
   int checkAntennas(std::string report_filename, bool simple_report);
 
@@ -173,6 +179,7 @@ class AntennaChecker
 
   odb::dbDatabase* db_;
   int dbu_per_micron_;
+  grt::GlobalRouter* global_router_;
   utl::Logger* logger_;
   FILE* stream_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;

@@ -231,6 +231,10 @@ class GlobalRouter
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
 
+  // check_antennas
+  void makeNetWires();
+  void destroyNetWires();
+
  private:
   // Net functions
   Net* addNet(odb::dbNet* db_net);
@@ -401,6 +405,7 @@ class GlobalRouter
 
   std::set<odb::dbNet*> dirty_nets_;
 
+  AntennaRepair *antenna_repair_;
   std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   friend class IncrementalGRoute;

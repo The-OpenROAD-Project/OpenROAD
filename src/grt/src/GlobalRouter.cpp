@@ -101,6 +101,7 @@ GlobalRouter::GlobalRouter()
       sta_(nullptr),
       db_(nullptr),
       block_(nullptr),
+      antenna_repair_(nullptr),
       heatmap_(nullptr)
 {
 }
@@ -148,6 +149,7 @@ GlobalRouter::~GlobalRouter()
   delete grid_;
   for (auto net_itr : db_net_map_)
     delete net_itr.second;
+  delete antenna_repair_;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
@@ -239,11 +241,8 @@ void GlobalRouter::updateDbCongestion()
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
 {
-  AntennaRepair antenna_repair = AntennaRepair(this,
-                                               antenna_checker_,
-                                               opendp_,
-                                               db_,
-                                               logger_);
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
 
   odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
 
@@ -257,28 +256,48 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     // Copy the routes so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
-    violations = antenna_repair.checkAntennaViolations(routes,
-                                                       max_routing_layer_,
-                                                       diode_mterm);
+    violations = antenna_repair_->checkAntennaViolations(routes,
+                                                         max_routing_layer_,
+                                                         diode_mterm);
 
     if (violations) {
-      antenna_repair.deleteFillerCells();
+      antenna_repair_->deleteFillerCells();
 
       IncrementalGRoute incr_groute(this, block_);
-      antenna_repair.repairAntennas(diode_mterm);
+      antenna_repair_->repairAntennas(diode_mterm);
       if (verbose_)
-        logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair.getDiodesCount());
-      int illegal_diode_placement_count = antenna_repair.illegalDiodePlacementCount();
+        logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair_->getDiodesCount());
+      int illegal_diode_placement_count = antenna_repair_->illegalDiodePlacementCount();
       if (illegal_diode_placement_count > 0)
         logger_->info(GRT, 54, "Using detailed placer to place {} diodes.",
                       illegal_diode_placement_count);
 
-      antenna_repair.legalizePlacedCells();
+      antenna_repair_->legalizePlacedCells();
       incr_groute.updateRoutes();
     }
-    antenna_repair.clearViolations();
+    antenna_repair_->clearViolations();
     itr++;
   }
+}
+
+void
+GlobalRouter::makeNetWires()
+{
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  // Antenna checker requires local connections to create dbWires.
+  // Copy the routes so the originals are not side-effected.
+  NetRouteMap routes = routes_;
+  addLocalConnections(routes);
+  antenna_repair_->makeNetWires(routes, max_routing_layer_);
+}
+
+void
+GlobalRouter::destroyNetWires()
+{
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  antenna_repair_->destroyNetWires();
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,

@@ -42,6 +42,7 @@
 #include "odb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
+#include "grt/GlobalRouter.h"
 
 namespace ant {
 
@@ -141,9 +142,12 @@ AntennaChecker::~AntennaChecker()
 {
 }
 
-void AntennaChecker::init(odb::dbDatabase* db, Logger* logger)
+void AntennaChecker::init(odb::dbDatabase* db,
+                          grt::GlobalRouter* global_router,
+                          Logger* logger)
 {
   db_ = db;
+  global_router_ = global_router;
   logger_ = logger;
 }
 
@@ -1704,8 +1708,15 @@ void AntennaChecker::checkDiodeCell()
 int AntennaChecker::checkAntennas(std::string report_file,
                                   bool report_violating_nets)
 {
-  if (!haveRoutedNets())
-    logger_->error(ANT, 8, "No detailed routes found. Run detailed_route.");
+  bool grt_routes = global_router_->haveRoutes();
+  bool drt_routes = haveRoutedNets();
+  if (!grt_routes && !drt_routes)
+    logger_->error(ANT, 8, "No detailed or global routing found. Run global_route or detailed_route first.");
+
+  bool use_grt_routes = (grt_routes && !drt_routes);
+
+  if (use_grt_routes)
+    global_router_->makeNetWires();
 
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::orderWires(block, false);
@@ -1724,6 +1735,10 @@ int AntennaChecker::checkAntennas(std::string report_file,
                   net_violation_count,
                   net_count);
   }
+
+  if (use_grt_routes)
+    global_router_->destroyNetWires();
+
   return net_violation_count;
 }
 

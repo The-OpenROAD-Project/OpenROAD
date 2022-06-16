@@ -64,72 +64,99 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
                                            int max_routing_layer,
                                            odb::dbMTerm* diode_mterm)
 {
-  odb::dbTech* tech = db_->getTech();
-
+  makeNetWires(routing, max_routing_layer);
   arc_->loadAntennaRules();
-
-  std::map<int, odb::dbTechVia*> default_vias
-      = grouter_->getDefaultVias(max_routing_layer);
-
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    odb::dbWire* wire = odb::dbWire::create(db_net);
-    if (wire != nullptr) {
-      odb::dbWireEncoder wire_encoder;
-      wire_encoder.begin(wire);
-
-      std::unordered_set<GSegment, GSegmentHash> wire_segments;
-      for (GSegment& seg : route) {
-        if (std::abs(seg.init_layer - seg.final_layer) > 1) {
-          logger_->error(GRT, 68, "Global route segment not valid.");
-        }
-
-        if (wire_segments.find(seg) == wire_segments.end()) {
-          int x1 = seg.init_x;
-          int y1 = seg.init_y;
-          int x2 = seg.final_x;
-          int y2 = seg.final_y;
-          int l1 = seg.init_layer;
-          int l2 = seg.final_layer;
-
-          odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
-
-          if (l1 == l2) {  // Add wire
-            if (x1 != x2 || y1 != y2) {
-              wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-              wire_encoder.addPoint(x1, y1);
-              wire_encoder.addPoint(x2, y2);
-              wire_segments.insert(seg);
-            }
-          } else {  // Add via
-            int bottom_layer = std::min(l1, l2);
-            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addTechVia(default_vias[bottom_layer]);
-            wire_segments.insert(seg);
-          }
-        }
-      }
-      wire_encoder.end();
-
-      odb::orderWires(db_net, false);
-
+    if (db_net->getWire()) {
       std::vector<ant::ViolationInfo> netViol = arc_->getNetAntennaViolations(db_net, diode_mterm);
       if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
         debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",
                    db_net->getConstName());
       }
-      odb::dbWire::destroy(wire);
-    } else {
-      logger_->error(
-          GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
     }
   }
+  destroyNetWires();
 
   logger_->info(GRT, 12, "Antenna violations: {}", antenna_violations_.size());
   return !antenna_violations_.empty();
+}
+
+void AntennaRepair::makeNetWires(NetRouteMap& routing,
+                                 int max_routing_layer)
+{
+  std::map<int, odb::dbTechVia*> default_vias
+    = grouter_->getDefaultVias(max_routing_layer);
+
+  for (auto net_route : routing) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute& route = net_route.second;
+    makeNetWire(db_net, route, default_vias);
+  }
+}
+
+odb::dbWire* AntennaRepair::makeNetWire(odb::dbNet* db_net,
+                                        GRoute& route,
+                                        std::map<int, odb::dbTechVia*> &default_vias)
+{
+  odb::dbWire* wire = odb::dbWire::create(db_net);
+  if (wire) {
+    odb::dbTech* tech = db_->getTech();
+    odb::dbWireEncoder wire_encoder;
+    wire_encoder.begin(wire);
+
+    std::unordered_set<GSegment, GSegmentHash> wire_segments;
+    for (GSegment& seg : route) {
+      if (std::abs(seg.init_layer - seg.final_layer) > 1) {
+        logger_->error(GRT, 68, "Global route segment not valid.");
+      }
+
+      if (wire_segments.find(seg) == wire_segments.end()) {
+        int x1 = seg.init_x;
+        int y1 = seg.init_y;
+        int x2 = seg.final_x;
+        int y2 = seg.final_y;
+        int l1 = seg.init_layer;
+        int l2 = seg.final_layer;
+
+        odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
+
+        if (l1 == l2) {  // Add wire
+          if (x1 != x2 || y1 != y2) {
+            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addPoint(x2, y2);
+            wire_segments.insert(seg);
+          }
+        } else {  // Add via
+          int bottom_layer = std::min(l1, l2);
+          wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
+          wire_encoder.addPoint(x1, y1);
+          wire_encoder.addTechVia(default_vias[bottom_layer]);
+          wire_segments.insert(seg);
+        }
+      }
+    }
+    wire_encoder.end();
+
+    odb::orderWires(db_net, false);
+    return wire;
+  }
+  else {
+    logger_->error(GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
+    // suppress gcc warning
+    return nullptr;
+  }
+}
+
+void AntennaRepair::destroyNetWires()
+{
+  for (odb::dbNet* db_net : block_->getNets()) {
+    odb::dbWire* wire = db_net->getWire();
+    if (wire)
+      odb::dbWire::destroy(wire);
+  }
 }
 
 void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
