@@ -1,10 +1,10 @@
-Warning - class CORE ANTENNACELL is not found. This message can be ignored if not in the antenna-avoid flow
+Warning: no LEF master with for CORE ANTENNACELL found. This message can be ignored if not repairing antennas.
 
 Net - net50
   output50  (sky130_fd_sc_ms__buf_1)  A
 [1]  met2:
-  PAR:  419.64*  Ratio:  400.00       (S.Area)
+  PAR:  478.07*  Ratio:  400.00       (S.Area)
 
 Number of pins violated: 1
 Number of nets violated: 1
-Total number of unspecial nets: 2
+Total number of signal nets: 2

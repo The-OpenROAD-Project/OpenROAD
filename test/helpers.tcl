@@ -34,6 +34,9 @@ proc diff_files { file1 file2 } {
     }
     incr line
   }
+  if { [gets $stream1 line1] != [gets $stream2 line2] } {
+    set diff_line $line
+  }
   close $stream1
   close $stream2
 

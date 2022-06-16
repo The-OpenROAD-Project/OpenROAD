@@ -1660,12 +1660,10 @@ std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
         }
       }
     }
-    fprintf(stream_,
-            "Number of pins violated: %d\nNumber of nets violated: %d\nTotal "
-            "number of unspecial nets: %d\n",
-            num_violated_pins,
-            num_violated_net,
-            num_total_net);
+    fprintf(stream_, "Number of pins violated: %d\n", num_violated_pins);
+    fprintf(stream_, "Number of nets violated: %d\n", num_violated_net);
+    fprintf(stream_, "Total number of signal nets: %d\n", num_total_net);
+    fclose(stream_);
     return {num_violated_pins, num_violated_net, num_total_net};
   } else {
     logger_->error(
@@ -1682,25 +1680,24 @@ void AntennaChecker::checkDiodeCell()
   for (auto master : masters) {
     dbMasterType type = master->getType();
     if (type == dbMasterType::CORE_ANTENNACELL) {
-      double max_diff_area = 0;
+      double max_diff_area = 0.0;
       for (dbMTerm* mterm : master->getMTerms())
         max_diff_area = std::max(max_diff_area, maxDiffArea(mterm));
 
-      if (max_diff_area != 0)
+      if (max_diff_area != 0.0)
         fprintf(stream_,
-                "Success - antenna cell with diffusion area %f is found\n",
+                "Found antenna cell with diffusion area %f\n",
                 max_diff_area);
       else
         fprintf(stream_,
-                "Warning - antenna cell is found but the diffusion area is not "
-                "specified\n");
+                "Warning: found antenna cell but no diffusion area is specified\n");
 
       return;
     }
   }
 
   fprintf(stream_,
-          "Warning - class CORE ANTENNACELL is not found. This message can be "
+          "Warning: no LEF master with for CORE ANTENNACELL found. This message can be "
           "ignored if not repairing antennas.\n");
 }
 
@@ -1938,25 +1935,21 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations (dbNet* net,
 
     std::vector<PARinfo> PARtable;
     buildWireParTable(PARtable, wireroots_info);
-
-    std::vector<PARinfo>::iterator par_itr;
-
-    for (par_itr = PARtable.begin(); par_itr != PARtable.end(); ++par_itr) {
-      dbTechLayer* layer = (*par_itr).WirerootNode->layer();
-      bool wire_PAR_violation = checkViolation(*par_itr, layer);
+    for (PARinfo &par_info : PARtable) {
+      dbTechLayer* layer = par_info.WirerootNode->layer();
+      bool wire_PAR_violation = checkViolation(par_info, layer);
 
       if (wire_PAR_violation) {
         std::vector<dbITerm*> gates;
-        findWirerootIterms((*par_itr).WirerootNode,
+        findWirerootIterms(par_info.WirerootNode,
                            layer->getRoutingLevel(), gates);
         int required_diode_count = 0;
         if (diode_mterm) {
           while (wire_PAR_violation && required_diode_count < repair_max_diode_count) {
-            (*par_itr).iterm_areas[1]
-              += max_diff_area * ((*par_itr).iterms.size());
+            par_info.iterm_areas[1] += max_diff_area * par_info.iterms.size();
             required_diode_count++;
-            calculateParInfo(*par_itr);
-            wire_PAR_violation = checkViolation(*par_itr, layer);
+            calculateParInfo(par_info);
+            wire_PAR_violation = checkViolation(par_info, layer);
           }
         }
         ViolationInfo antenna_violation
