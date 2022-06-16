@@ -91,7 +91,8 @@ class AntennaChecker
   bool ifSegmentRoot(dbWireGraph::Node* node, int wire_level);
 
   void findWireBelowIterms(dbWireGraph::Node* node,
-                           double iterm_areas[2],
+                           double &iterm_gate_area,
+                           double &iterm_diff_area,
                            int wire_level,
                            std::set<dbITerm*>& iv,
                            std::set<dbWireGraph::Node*>& nv);
@@ -115,7 +116,9 @@ class AntennaChecker
 
   void printGraphInfo(dbWireGraph graph);
   void calculateParInfo(PARinfo& PARtable);
-  bool checkIterm(dbWireGraph::Node* node, double iterm_areas[2]);
+  bool checkIterm(dbWireGraph::Node* node,
+                  double &iterm_gate_area,
+                  double &iterm_diff_area);
   double getPwlFactor(odb::dbTechLayerAntennaRule::pwl_pair pwl_info,
                       double ref_val,
                       double def);

@@ -87,7 +87,8 @@ struct PARinfo
   std::set<odb::dbITerm*> iterms;
   double wire_area;
   double side_wire_area;
-  double iterm_areas[2];
+  double iterm_gate_area;
+  double iterm_diff_area;
   double PAR_value;
   double PSR_value;
   double diff_PAR_value;
@@ -285,12 +286,13 @@ bool AntennaChecker::ifSegmentRoot(dbWireGraph::Node* node, int wire_level)
 }
 
 void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
-                                         double iterm_areas[2],
+                                         double &iterm_gate_area,
+                                         double &iterm_diff_area,
                                          int wire_level,
                                          std::set<dbITerm*>& iv,
                                          std::set<dbWireGraph::Node*>& nv)
 {
-  if (checkIterm(node, iterm_areas))
+  if (checkIterm(node, iterm_gate_area, iterm_diff_area))
     iv.insert(
         dbITerm::getITerm(db_->getChip()->getBlock(), node->object()->getId()));
 
@@ -302,15 +304,13 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
          || node->in_edge()->type() == dbWireGraph::Edge::Type::TECH_VIA)
         && nv.find(node->in_edge()->source()) == nv.end()) {
       findWireBelowIterms(findSegmentStart(node->in_edge()->source()),
-                          iterm_areas,
-                          wire_level,
-                          iv,
-                          nv);
+                          iterm_gate_area, iterm_diff_area,
+                          wire_level, iv, nv);
     } else if ((node->in_edge()->type() == dbWireGraph::Edge::Type::SEGMENT
                 || node->in_edge()->type() == dbWireGraph::Edge::Type::SHORT)
                && nv.find(node->in_edge()->source()) == nv.end()) {
-      findWireBelowIterms(
-          node->in_edge()->source(), iterm_areas, wire_level, iv, nv);
+      findWireBelowIterms(node->in_edge()->source(), iterm_gate_area, iterm_diff_area,
+                          wire_level, iv, nv);
     }
   }
 
@@ -321,7 +321,7 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
       if ((*edge_itr)->target()->layer()->getRoutingLevel() <= wire_level
           && nv.find((*edge_itr)->target()) == nv.end()) {
         findWireBelowIterms(findSegmentStart((*edge_itr)->target()),
-                            iterm_areas,
+                            iterm_gate_area, iterm_diff_area,
                             wire_level,
                             iv,
                             nv);
@@ -332,7 +332,7 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
               || (*edge_itr)->type() == dbWireGraph::Edge::Type::SHORT)
              && nv.find((*edge_itr)->target()) == nv.end()) {
       findWireBelowIterms(
-          (*edge_itr)->target(), iterm_areas, wire_level, iv, nv);
+          (*edge_itr)->target(), iterm_gate_area, iterm_diff_area, wire_level, iv, nv);
     }
   }
 }
@@ -641,18 +641,20 @@ void AntennaChecker::buildWireParTable(
 
     double wire_area = areas.first;
     double side_wire_area = areas.second;
-    double iterm_areas[2] = {0.0, 0.0};
+    double iterm_gate_area = 0.0;
+    double iterm_diff_area = 0.0;
     std::set<dbITerm*> iv = {};
     nv.clear();
 
-    findWireBelowIterms(
-        wireroot, iterm_areas, wireroot->layer()->getRoutingLevel(), iv, nv);
+    findWireBelowIterms(wireroot, iterm_gate_area, iterm_diff_area, wireroot->
+                        layer()->getRoutingLevel(), iv, nv);
 
     PARinfo new_par = {*root_itr,
                        iv,
                        wire_area,
                        side_wire_area,
-                       {iterm_areas[0], iterm_areas[1]},
+                       iterm_gate_area,
+                       iterm_diff_area,
                        0.0,
                        0.0,
                        0.0,
@@ -664,14 +666,14 @@ void AntennaChecker::buildWireParTable(
     calculateParInfo(par_info);
 }
 
-bool AntennaChecker::checkIterm(dbWireGraph::Node* node, double iterm_areas[2])
+bool AntennaChecker::checkIterm(dbWireGraph::Node* node,
+                                double &iterm_gate_area,
+                                double &iterm_diff_area)
 {
   if (node->object() && node->object()->getObjectType() == dbITermObj) {
     dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
                                        node->object()->getId());
     dbMTerm* mterm = iterm->getMTerm();
-    std::string inst_name = iterm->getInst()->getConstName();
-
     if (mterm->hasDefaultAntennaModel()) {
       dbTechAntennaPinModel* pinmodel = mterm->getDefaultAntennaModel();
       std::vector<std::pair<double, dbTechLayer*>> gate_area;
@@ -684,10 +686,10 @@ bool AntennaChecker::checkIterm(dbWireGraph::Node* node, double iterm_areas[2])
            gate_area_iter++) {
         max_gate_area = std::max(max_gate_area, (*gate_area_iter).first);
       }
-      iterm_areas[0] = iterm_areas[0] + max_gate_area;
+      iterm_gate_area += + max_gate_area;
     }
 
-    iterm_areas[1] = iterm_areas[1] + maxDiffArea(mterm);
+    iterm_diff_area += + maxDiffArea(mterm);
     return true;
   } else
     return false;
@@ -744,32 +746,32 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
   if (tech_layer->hasDefaultAntennaRule()) {
     dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
     diff_metal_reduce_factor = getPwlFactor(
-        antenna_rule->getAreaDiffReduce(), par_info.iterm_areas[1], 1.0);
+        antenna_rule->getAreaDiffReduce(), par_info.iterm_diff_area, 1.0);
   }
 
-  if (par_info.iterm_areas[0] == 0)
+  if (par_info.iterm_gate_area == 0)
     return;
 
-  if (par_info.iterm_areas[1] != 0) {
-    par_info.PAR_value = (diff_metal_factor * par_info.wire_area) / par_info.iterm_areas[0];
+  if (par_info.iterm_diff_area != 0) {
+    par_info.PAR_value = (diff_metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
     par_info.PSR_value
-        = (diff_side_metal_factor * par_info.side_wire_area) / par_info.iterm_areas[0];
+        = (diff_side_metal_factor * par_info.side_wire_area) / par_info.iterm_gate_area;
     par_info.diff_PAR_value
         = (diff_metal_factor * par_info.wire_area * diff_metal_reduce_factor
-           - minus_diff_factor * par_info.iterm_areas[1])
-          / (par_info.iterm_areas[0] + plus_diff_factor * par_info.iterm_areas[1]);
+           - minus_diff_factor * par_info.iterm_diff_area)
+          / (par_info.iterm_gate_area + plus_diff_factor * par_info.iterm_diff_area);
     par_info.diff_PSR_value
         = (diff_side_metal_factor * par_info.side_wire_area * diff_metal_reduce_factor
-           - minus_diff_factor * par_info.iterm_areas[1])
-          / (par_info.iterm_areas[0] + plus_diff_factor * par_info.iterm_areas[1]);
+           - minus_diff_factor * par_info.iterm_diff_area)
+          / (par_info.iterm_gate_area + plus_diff_factor * par_info.iterm_diff_area);
   } else {
-    par_info.PAR_value = (metal_factor * par_info.wire_area) / par_info.iterm_areas[0];
-    par_info.PSR_value = (side_metal_factor * par_info.side_wire_area) / par_info.iterm_areas[0];
+    par_info.PAR_value = (metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
+    par_info.PSR_value = (side_metal_factor * par_info.side_wire_area) / par_info.iterm_gate_area;
     par_info.diff_PAR_value = (metal_factor * par_info.wire_area * diff_metal_reduce_factor)
-                        / par_info.iterm_areas[0];
+                        / par_info.iterm_gate_area;
     par_info.diff_PSR_value
         = (side_metal_factor * par_info.side_wire_area * diff_metal_reduce_factor)
-          / (par_info.iterm_areas[0]);
+          / (par_info.iterm_gate_area);
   }
 }
 
@@ -791,7 +793,7 @@ void AntennaChecker::buildWireCarTable(
       double psr = ar_itr->PSR_value;
       double diff_par = ar_itr->diff_PAR_value;
       double diff_psr = ar_itr->diff_PSR_value;
-      double diff_area = ar_itr->iterm_areas[1];
+      double diff_area = ar_itr->iterm_diff_area;
       double car = 0.0;
       double csr = 0.0;
       double diff_car = 0.0;
@@ -879,11 +881,12 @@ void AntennaChecker::buildViaParTable(
     dbWireGraph::Node* wireroot = *root_itr;
     double via_area
         = calculateViaArea(wireroot, wireroot->layer()->getRoutingLevel());
-    double iterm_areas[2] = {0.0, 0.0};
+    double iterm_gate_area = 0.0;
+    double iterm_diff_area = 0.0;
     std::set<dbITerm*> iv;
     std::set<dbWireGraph::Node*> nv;
-    findWireBelowIterms(
-        wireroot, iterm_areas, wireroot->layer()->getRoutingLevel(), iv, nv);
+    findWireBelowIterms(wireroot, iterm_gate_area, iterm_diff_area,
+                        wireroot->layer()->getRoutingLevel(), iv, nv);
     double par = 0.0;
     double diff_par = 0.0;
 
@@ -894,7 +897,7 @@ void AntennaChecker::buildViaParTable(
     double plus_diff_factor = 0.0;
     double diff_metal_reduce_factor = 1.0;
 
-    if (via_area != 0 && iterm_areas[0] != 0) {
+    if (via_area != 0 && iterm_gate_area != 0) {
       dbTechLayer* layer = getViaLayer(
           findVia(wireroot, wireroot->layer()->getRoutingLevel()));
 
@@ -905,7 +908,7 @@ void AntennaChecker::buildViaParTable(
       if (layer->hasDefaultAntennaRule()) {
         dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
         diff_metal_reduce_factor = getPwlFactor(
-            antenna_rule->getAreaDiffReduce(), iterm_areas[1], 1.0);
+            antenna_rule->getAreaDiffReduce(), iterm_diff_area, 1.0);
       }
 
       cut_factor = am.cut_factor;
@@ -914,19 +917,19 @@ void AntennaChecker::buildViaParTable(
       minus_diff_factor = am.minus_diff_factor;
       plus_diff_factor = am.plus_diff_factor;
 
-      if (iterm_areas[1] != 0) {
-        par = (diff_cut_factor * via_area) / iterm_areas[0];
+      if (iterm_diff_area != 0) {
+        par = (diff_cut_factor * via_area) / iterm_gate_area;
         diff_par = (diff_cut_factor * via_area * diff_metal_reduce_factor
-                    - minus_diff_factor * iterm_areas[1])
-                   / (iterm_areas[0] + plus_diff_factor * iterm_areas[1]);
+                    - minus_diff_factor * iterm_diff_area)
+                   / (iterm_gate_area + plus_diff_factor * iterm_diff_area);
       } else {
-        par = (cut_factor * via_area) / iterm_areas[0];
+        par = (cut_factor * via_area) / iterm_gate_area;
         diff_par = (cut_factor * via_area * diff_metal_reduce_factor
-                    - minus_diff_factor * iterm_areas[1])
-                   / (iterm_areas[0] + plus_diff_factor * iterm_areas[1]);
+                    - minus_diff_factor * iterm_diff_area)
+                   / (iterm_gate_area + plus_diff_factor * iterm_diff_area);
       }
       PARinfo new_par
-          = {*root_itr, iv, 0.0, 0.0, {0.0, 0.0}, par, 0.0, diff_par, 0.0};
+          = {*root_itr, iv, 0.0, 0.0, 0.0, 0.0, par, 0.0, diff_par, 0.0};
       VIA_PARtable.push_back(new_par);
     }
   }
@@ -951,7 +954,7 @@ void AntennaChecker::buildViaCarTable(
       dbWireGraph::Node* wireroot = ar_itr->WirerootNode;
       double par = ar_itr->PAR_value;
       double diff_par = ar_itr->diff_PAR_value;
-      double diff_area = ar_itr->iterm_areas[1];
+      double diff_area = ar_itr->iterm_diff_area;
       double car = 0.0;
       double diff_car = 0.0;
       std::vector<dbWireGraph::Node*> current_path;
@@ -1720,11 +1723,13 @@ void AntennaChecker::findWirerootIterms(dbWireGraph::Node* node,
                                         int wire_level,
                                         std::vector<dbITerm*>& gates)
 {
-  double iterm_areas[2] = {0.0, 0.0};
+  double iterm_gate_area = 0.0;
+  double iterm_diff_area = 0.0;
   std::set<dbITerm*> iv;
   std::set<dbWireGraph::Node*> nv;
 
-  findWireBelowIterms(node, iterm_areas, wire_level, iv, nv);
+  findWireBelowIterms(node, iterm_gate_area, iterm_diff_area,
+                      wire_level, iv, nv);
   gates.assign(iv.begin(), iv.end());
 }
 
@@ -1756,11 +1761,13 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
         std::pair<double, double> areas = calculateWireArea(
             wireroot, tech_layer->getRoutingLevel(), nv, level_nodes);
         double wire_area = areas.first;
-        double iterm_areas[2] = {0.0, 0.0};
+        double iterm_gate_area = 0.0;
+        double iterm_diff_area = 0.0;
         std::set<dbITerm*> iv;
         nv.clear();
         findWireBelowIterms(
-            wireroot, iterm_areas, tech_layer->getRoutingLevel(), iv, nv);
+            wireroot, iterm_gate_area, iterm_diff_area,
+            tech_layer->getRoutingLevel(), iv, nv);
         double wire_width = dbuToMicrons(tech_layer->getWidth());
 
         AntennaModel &am = layer_info_[tech_layer];
@@ -1771,41 +1778,41 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
         double plus_diff_factor = am.plus_diff_factor;
         double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
 
-        if (iterm_areas[0] != 0 && tech_layer->hasDefaultAntennaRule()) {
+        if (iterm_gate_area != 0 && tech_layer->hasDefaultAntennaRule()) {
           dbTechLayerAntennaRule* antenna_rule
               = tech_layer->getDefaultAntennaRule();
           dbTechLayerAntennaRule::pwl_pair diff_metal_reduce_factor_pwl
               = antenna_rule->getAreaDiffReduce();
           diff_metal_reduce_factor
-              = getPwlFactor(diff_metal_reduce_factor_pwl, iterm_areas[1], 1.0);
+              = getPwlFactor(diff_metal_reduce_factor_pwl, iterm_diff_area, 1.0);
 
           double PAR_ratio = antenna_rule->getPAR();
           if (PAR_ratio != 0) {
-            if (iterm_areas[1] != 0)
+            if (iterm_diff_area != 0)
               max_length
-                  = (PAR_ratio * iterm_areas[0] - diff_metal_factor * wire_area)
+                  = (PAR_ratio * iterm_gate_area - diff_metal_factor * wire_area)
                     / wire_width;
             else
               max_length
-                  = (PAR_ratio * iterm_areas[0] - metal_factor * wire_area)
+                  = (PAR_ratio * iterm_gate_area - metal_factor * wire_area)
                     / wire_width;
           } else {
             dbTechLayerAntennaRule::pwl_pair diffPAR
                 = antenna_rule->getDiffPAR();
-            double diffPAR_ratio = getPwlFactor(diffPAR, iterm_areas[1], 0.0);
-            if (iterm_areas[1] != 0)
+            double diffPAR_ratio = getPwlFactor(diffPAR, iterm_diff_area, 0.0);
+            if (iterm_diff_area != 0)
               max_length
                   = (diffPAR_ratio
-                         * (iterm_areas[0] + plus_diff_factor * iterm_areas[1])
+                         * (iterm_gate_area + plus_diff_factor * iterm_diff_area)
                      - (diff_metal_factor * wire_area * diff_metal_reduce_factor
-                        - minus_diff_factor * iterm_areas[1]))
+                        - minus_diff_factor * iterm_diff_area))
                     / wire_width;
             else
               max_length
                   = (diffPAR_ratio
-                         * (iterm_areas[0] + plus_diff_factor * iterm_areas[1])
+                         * (iterm_gate_area + plus_diff_factor * iterm_diff_area)
                      - (metal_factor * wire_area * diff_metal_reduce_factor
-                        - minus_diff_factor * iterm_areas[1]))
+                        - minus_diff_factor * iterm_diff_area))
                     / wire_width;
           }
           if (max_length != 0) {
@@ -1876,7 +1883,7 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   double psr = par_info.PSR_value;
   double diff_par = par_info.diff_PAR_value;
   double diff_psr = par_info.diff_PSR_value;
-  double diff_area = par_info.iterm_areas[1];
+  double diff_area = par_info.iterm_diff_area;
 
   if (layer->hasDefaultAntennaRule()) {
     dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
@@ -1906,8 +1913,8 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   return false;
 }
 
-std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations (dbNet* net,
-                                                                    dbMTerm* diode_mterm)
+std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
+                                                                   dbMTerm* diode_mterm)
 {
   double max_diff_area = 0.0;
   if (diode_mterm) 
@@ -1936,7 +1943,7 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations (dbNet* net,
         int required_diode_count = 0;
         if (diode_mterm) {
           while (wire_PAR_violation && required_diode_count < repair_max_diode_count) {
-            par_info.iterm_areas[1] += max_diff_area * par_info.iterms.size();
+            par_info.iterm_diff_area += max_diff_area * par_info.iterms.size();
             required_diode_count++;
             calculateParInfo(par_info);
             wire_PAR_violation = checkViolation(par_info, layer);
@@ -1988,13 +1995,15 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
       auto areas = calculateWireArea(
           wireroot, tech_layer->getRoutingLevel(), nv, level_nodes);
       double wire_area = areas.first;
-      double iterm_areas[2] = {0.0, 0.0};
+      double iterm_gate_area = 0.0;
+      double iterm_diff_area = 0.0;
 
       std::set<dbITerm*> iv;
       nv.clear();
       findWireBelowIterms(
-          wireroot, iterm_areas, tech_layer->getRoutingLevel(), iv, nv);
-      if (iterm_areas[0] == 0)
+          wireroot, iterm_gate_area, iterm_diff_area,
+          tech_layer->getRoutingLevel(), iv, nv);
+      if (iterm_gate_area == 0)
         continue;
 
       double wire_width = dbuToMicrons(tech_layer->getWidth());
@@ -2011,52 +2020,52 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
         dbTechLayerAntennaRule* antenna_rule
             = tech_layer->getDefaultAntennaRule();
         diff_metal_reduce_factor = getPwlFactor(
-            antenna_rule->getAreaDiffReduce(), iterm_areas[1], 1.0);
+            antenna_rule->getAreaDiffReduce(), iterm_diff_area, 1.0);
 
         double par = 0;
         double diff_par = 0;
 
-        if (iterm_areas[1] != 0) {
-          par = (diff_metal_factor * wire_area) / iterm_areas[0];
+        if (iterm_diff_area != 0) {
+          par = (diff_metal_factor * wire_area) / iterm_gate_area;
           diff_par = (diff_metal_factor * wire_area * diff_metal_reduce_factor
-                      - minus_diff_factor * iterm_areas[1])
-                     / (iterm_areas[0] + plus_diff_factor * iterm_areas[1]);
+                      - minus_diff_factor * iterm_diff_area)
+                     / (iterm_gate_area + plus_diff_factor * iterm_diff_area);
         } else {
-          par = (metal_factor * wire_area) / iterm_areas[0];
+          par = (metal_factor * wire_area) / iterm_gate_area;
           diff_par = (metal_factor * wire_area * diff_metal_reduce_factor)
-                     / iterm_areas[0];
+                     / iterm_gate_area;
         }
 
         double cut_length = 0;
         double PAR_ratio = antenna_rule->getPAR();
         if (PAR_ratio != 0) {
           if (par > PAR_ratio) {
-            if (iterm_areas[1] != 0)
-              cut_length = ((par - PAR_ratio) * iterm_areas[0]
+            if (iterm_diff_area != 0)
+              cut_length = ((par - PAR_ratio) * iterm_gate_area
                             - diff_metal_factor * wire_area)
                            / wire_width;
             else
-              cut_length = ((par - PAR_ratio) * iterm_areas[0]
+              cut_length = ((par - PAR_ratio) * iterm_gate_area
                             - metal_factor * wire_area)
                            / wire_width;
           }
 
         } else {
           dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
-          double diffPAR_ratio = getPwlFactor(diffPAR, iterm_areas[1], 0.0);
-          if (iterm_areas[1] != 0)
+          double diffPAR_ratio = getPwlFactor(diffPAR, iterm_diff_area, 0.0);
+          if (iterm_diff_area != 0)
             cut_length
                 = ((diff_par - diffPAR_ratio)
-                       * (iterm_areas[0] + plus_diff_factor * iterm_areas[1])
+                       * (iterm_gate_area + plus_diff_factor * iterm_diff_area)
                    - (diff_metal_factor * wire_area * diff_metal_reduce_factor
-                      - minus_diff_factor * iterm_areas[1]))
+                      - minus_diff_factor * iterm_diff_area))
                   / wire_width;
           else
             cut_length
                 = ((diff_par - diffPAR_ratio)
-                       * (iterm_areas[0] + plus_diff_factor * iterm_areas[1])
+                       * (iterm_gate_area + plus_diff_factor * iterm_diff_area)
                    - (metal_factor * wire_area * diff_metal_reduce_factor
-                      - minus_diff_factor * iterm_areas[1]))
+                      - minus_diff_factor * iterm_diff_area))
                   / wire_width;
         }
 
