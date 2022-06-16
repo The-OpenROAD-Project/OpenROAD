@@ -1459,8 +1459,6 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
 std::vector<int> AntennaChecker::getAntennaRatio(std::string report_filename,
                                                  bool report_violating_nets)
 {
-  std::string bname = db_->getChip()->getBlock()->getName();
-
   stream_ = fopen(report_filename.c_str(), "w");
   if (stream_) {
     checkDiodeCell();
@@ -1711,7 +1709,6 @@ int AntennaChecker::checkAntennas(std::string report_file,
                   false /* verbose */,
                   true /* quiet */);
 
-  std::string bname = block->getName();
   std::vector<int> nets_info = getAntennaRatio(report_file, report_violating_nets);
   if (nets_info[2] != 0) {
     logger_->info(ANT, 1, "Found {} pin violations.", nets_info[0]);
@@ -1833,7 +1830,6 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
 
 void AntennaChecker::checkMaxLength(const char* net_name, int layer)
 {
-  std::string bname = db_->getChip()->getBlock()->getName();
   dbNet* net = db_->getChip()->getBlock()->findNet(net_name);
   if (!net->isSpecial()) {
     std::vector<std::pair<double, std::vector<dbITerm*>>> par_max_length_wires
