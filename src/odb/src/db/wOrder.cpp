@@ -52,9 +52,9 @@ static tmg_conn* _conn = NULL;
 
 void orderWires(dbBlock* block,
                 bool force,
+                bool verbose,
                 int cutLength,
-                int maxLength,
-                bool verbose)
+                int maxLength)
 {
   bool no_patch = true;
   if (_conn == NULL)

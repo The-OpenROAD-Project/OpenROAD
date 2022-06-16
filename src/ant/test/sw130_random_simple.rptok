@@ -3,7 +3,7 @@ Warning: no LEF master with for CORE ANTENNACELL found. This message can be igno
 Net - net50
   output50  (sky130_fd_sc_ms__buf_1)  A
 [1]  met2:
-  PAR:  478.07*  Ratio:  400.00       (S.Area)
+  PAR:  419.64*  Ratio:  400.00       (S.Area)
 
 Number of pins violated: 1
 Number of nets violated: 1

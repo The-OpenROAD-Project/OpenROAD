@@ -1705,11 +1705,7 @@ int AntennaChecker::checkAntennas(std::string report_file,
                                   bool report_violating_nets)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::orderWires(block,
-                  nullptr /* net_name_or_id*/,
-                  false /* force */,
-                  false /* verbose */,
-                  true /* quiet */);
+  odb::orderWires(block, false);
 
   int pin_violation_count;
   int net_violation_count;
