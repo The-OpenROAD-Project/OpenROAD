@@ -113,7 +113,7 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
       }
       wire_encoder.end();
 
-      odb::orderWires(db_net, false, false);
+      odb::orderWires(db_net, false);
 
       std::vector<ant::ViolationInfo> netViol = arc_->getNetAntennaViolations(db_net, diode_mterm);
       if (!netViol.empty()) {
