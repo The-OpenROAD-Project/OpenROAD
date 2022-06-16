@@ -110,7 +110,7 @@ struct ARinfo
   double diff_area;
 };
 
-struct ANTENNAmodel
+struct AntennaModel
 {
   odb::dbTechLayer* layer;
 
@@ -154,7 +154,6 @@ double AntennaChecker::dbuToMicrons(int value)
 void AntennaChecker::loadAntennaRules()
 {
   odb::dbTech* tech = db_->getTech();
-  odb::dbSet<odb::dbTechLayer>::iterator itr;
   for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
     double metal_factor = 1.0;
     double diff_metal_factor = 1.0;
@@ -209,7 +208,7 @@ void AntennaChecker::loadAntennaRules()
       minus_diff_factor = antenna_rule->getAreaMinusDiffFactor();
     }
 
-    ANTENNAmodel layer_antenna = {tech_layer,
+    AntennaModel layer_antenna = {tech_layer,
                                   metal_factor,
                                   diff_metal_factor,
                                   cut_factor,
@@ -219,7 +218,7 @@ void AntennaChecker::loadAntennaRules()
                                   minus_diff_factor,
                                   plus_diff_factor,
                                   diff_metal_reduce_factor};
-    layer_info[tech_layer] = layer_antenna;
+    layer_info_[tech_layer] = layer_antenna;
   }
 }
 
@@ -726,11 +725,11 @@ double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
   return def;
 }
 
-void AntennaChecker::calculateParInfo(PARinfo& it)
+void AntennaChecker::calculateParInfo(PARinfo& par_info)
 {
-  dbWireGraph::Node* wireroot = it.WirerootNode;
+  dbWireGraph::Node* wireroot = par_info.WirerootNode;
   odb::dbTechLayer* tech_layer = wireroot->layer();
-  ANTENNAmodel am = layer_info[tech_layer];
+  AntennaModel &am = layer_info_[tech_layer];
 
   double metal_factor = am.metal_factor;
   double diff_metal_factor = am.diff_metal_factor;
@@ -745,32 +744,32 @@ void AntennaChecker::calculateParInfo(PARinfo& it)
   if (tech_layer->hasDefaultAntennaRule()) {
     dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
     diff_metal_reduce_factor = getPwlFactor(
-        antenna_rule->getAreaDiffReduce(), it.iterm_areas[1], 1.0);
+        antenna_rule->getAreaDiffReduce(), par_info.iterm_areas[1], 1.0);
   }
 
-  if (it.iterm_areas[0] == 0)
+  if (par_info.iterm_areas[0] == 0)
     return;
 
-  if (it.iterm_areas[1] != 0) {
-    it.PAR_value = (diff_metal_factor * it.wire_area) / it.iterm_areas[0];
-    it.PSR_value
-        = (diff_side_metal_factor * it.side_wire_area) / it.iterm_areas[0];
-    it.diff_PAR_value
-        = (diff_metal_factor * it.wire_area * diff_metal_reduce_factor
-           - minus_diff_factor * it.iterm_areas[1])
-          / (it.iterm_areas[0] + plus_diff_factor * it.iterm_areas[1]);
-    it.diff_PSR_value
-        = (diff_side_metal_factor * it.side_wire_area * diff_metal_reduce_factor
-           - minus_diff_factor * it.iterm_areas[1])
-          / (it.iterm_areas[0] + plus_diff_factor * it.iterm_areas[1]);
+  if (par_info.iterm_areas[1] != 0) {
+    par_info.PAR_value = (diff_metal_factor * par_info.wire_area) / par_info.iterm_areas[0];
+    par_info.PSR_value
+        = (diff_side_metal_factor * par_info.side_wire_area) / par_info.iterm_areas[0];
+    par_info.diff_PAR_value
+        = (diff_metal_factor * par_info.wire_area * diff_metal_reduce_factor
+           - minus_diff_factor * par_info.iterm_areas[1])
+          / (par_info.iterm_areas[0] + plus_diff_factor * par_info.iterm_areas[1]);
+    par_info.diff_PSR_value
+        = (diff_side_metal_factor * par_info.side_wire_area * diff_metal_reduce_factor
+           - minus_diff_factor * par_info.iterm_areas[1])
+          / (par_info.iterm_areas[0] + plus_diff_factor * par_info.iterm_areas[1]);
   } else {
-    it.PAR_value = (metal_factor * it.wire_area) / it.iterm_areas[0];
-    it.PSR_value = (side_metal_factor * it.side_wire_area) / it.iterm_areas[0];
-    it.diff_PAR_value = (metal_factor * it.wire_area * diff_metal_reduce_factor)
-                        / it.iterm_areas[0];
-    it.diff_PSR_value
-        = (side_metal_factor * it.side_wire_area * diff_metal_reduce_factor)
-          / (it.iterm_areas[0]);
+    par_info.PAR_value = (metal_factor * par_info.wire_area) / par_info.iterm_areas[0];
+    par_info.PSR_value = (side_metal_factor * par_info.side_wire_area) / par_info.iterm_areas[0];
+    par_info.diff_PAR_value = (metal_factor * par_info.wire_area * diff_metal_reduce_factor)
+                        / par_info.iterm_areas[0];
+    par_info.diff_PSR_value
+        = (side_metal_factor * par_info.side_wire_area * diff_metal_reduce_factor)
+          / (par_info.iterm_areas[0]);
   }
 }
 
@@ -899,7 +898,7 @@ void AntennaChecker::buildViaParTable(
       dbTechLayer* layer = getViaLayer(
           findVia(wireroot, wireroot->layer()->getRoutingLevel()));
 
-      ANTENNAmodel am = layer_info[layer];
+      AntennaModel &am = layer_info_[layer];
       minus_diff_factor = am.minus_diff_factor;
       plus_diff_factor = am.plus_diff_factor;
       diff_metal_reduce_factor = am.diff_metal_reduce_factor;
@@ -1764,7 +1763,7 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
             wireroot, iterm_areas, tech_layer->getRoutingLevel(), iv, nv);
         double wire_width = dbuToMicrons(tech_layer->getWidth());
 
-        ANTENNAmodel am = layer_info[tech_layer];
+        AntennaModel &am = layer_info_[tech_layer];
         double metal_factor = am.metal_factor;
         double diff_metal_factor = am.diff_metal_factor;
 
@@ -2001,7 +2000,7 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
 
       double wire_width = dbuToMicrons(tech_layer->getWidth());
 
-      ANTENNAmodel am = layer_info[tech_layer];
+      AntennaModel &am = layer_info_[tech_layer];
       double metal_factor = am.metal_factor;
       double diff_metal_factor = am.diff_metal_factor;
 

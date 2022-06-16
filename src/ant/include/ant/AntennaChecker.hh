@@ -54,7 +54,7 @@ using utl::Logger;
 
 struct PARinfo;
 struct ARinfo;
-struct ANTENNAmodel;
+struct AntennaModel;
 
 struct ViolationInfo
 {
@@ -166,7 +166,7 @@ class AntennaChecker
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   FILE* stream_;
-  std::map<odb::dbTechLayer*, ANTENNAmodel> layer_info;
+  std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
 
   static constexpr int repair_max_diode_count = 10;
 };
