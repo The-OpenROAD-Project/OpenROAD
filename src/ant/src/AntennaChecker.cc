@@ -1878,33 +1878,32 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   double diff_psr = par_info.diff_PSR_value;
   double diff_area = par_info.iterm_areas[1];
 
-  bool wire_PAR_violation = 0;
   if (layer->hasDefaultAntennaRule()) {
     dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     double PAR_ratio = antenna_rule->getPAR();
     if (PAR_ratio != 0) {
       if (par > PAR_ratio)
-        wire_PAR_violation = 1;
+        return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
       double diffPAR_ratio = getPwlFactor(diffPAR, diff_area, 0.0);
       if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
-        wire_PAR_violation = 1;
+        return true;
     }
 
     double PSR_ratio = antenna_rule->getPSR();
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio)
-        wire_PAR_violation = 1;
+        return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
       double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
       if (diffPSR_ratio != 0 && diff_psr > diffPSR_ratio)
-        wire_PAR_violation = 1;
+        return true;
     }
   }
 
-  return wire_PAR_violation;
+  return false;
 }
 
 std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations (dbNet* net,
