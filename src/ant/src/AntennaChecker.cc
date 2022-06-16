@@ -147,9 +147,9 @@ void AntennaChecker::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-double AntennaChecker::dbuToMicrons(int value)
+double AntennaChecker::dbuToMicrons(int dbu)
 {
-  return static_cast<double>(value) / db_->getChip()->getBlock()->getDbUnitsPerMicron();
+  return static_cast<double>(dbu) / dbu_per_micron_;
 }
 
 void AntennaChecker::loadAntennaRules()
@@ -221,6 +221,7 @@ void AntennaChecker::loadAntennaRules()
                                   diff_metal_reduce_factor};
     layer_info_[tech_layer] = layer_antenna;
   }
+  dbu_per_micron_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
 }
 
 dbWireGraph::Node* AntennaChecker::findSegmentRoot(dbWireGraph::Node* node,

@@ -167,6 +167,7 @@ class AntennaChecker
       int routing_level);
 
   odb::dbDatabase* db_;
+  int dbu_per_micron_;
   utl::Logger* logger_;
   FILE* stream_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
