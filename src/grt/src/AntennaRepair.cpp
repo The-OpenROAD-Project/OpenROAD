@@ -55,7 +55,8 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
                              utl::Logger* logger)
-    : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger)
+  : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger),
+    unique_diode_index_(1)
 {
   block_ = db_->getChip()->getBlock();
 }
@@ -162,10 +163,11 @@ void AntennaRepair::destroyNetWires()
 void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 {
   int site_width = -1;
-  int cnt = diode_insts_.size();
   r_tree fixed_insts;
 
   illegal_diode_placement_count_ = 0;
+  diode_insts_.clear();
+
   auto rows = block_->getRows();
   for (odb::dbRow* db_row : rows) {
     odb::dbSite* site = db_row->getSite();
@@ -186,23 +188,19 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
     odb::dbNet* db_net = net_violations.first;
     auto violations = net_violations.second;
     grouter_->addDirtyNet(db_net);
-    for (int i = 0; i < violations.size(); i++) {
-      ant::ViolationInfo &violation = violations[i];
+    for (ant::ViolationInfo &violation : violations) {
+      debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
+                 db_net->getConstName(),
+                 violation.required_diode_count * violation.iterms.size());
       for (odb::dbITerm* sink_iterm : violation.iterms) {
         odb::dbInst* sink_inst = sink_iterm->getInst();
-        debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
-                   db_net->getConstName(),
-                   violation.required_diode_count);
         for (int j = 0; j < violation.required_diode_count; j++) {
-          std::string antenna_inst_name = "ANTENNA_" + std::to_string(cnt);
           insertDiode(db_net,
                       diode_mterm,
                       sink_inst,
                       sink_iterm,
-                      antenna_inst_name,
                       site_width,
                       fixed_insts);
-          cnt++;
         }
       }
     }
@@ -231,7 +229,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                                 odb::dbMTerm* diode_mterm,
                                 odb::dbInst* sink_inst,
                                 odb::dbITerm* sink_iterm,
-                                std::string antenna_inst_name,
                                 int site_width,
                                 r_tree& fixed_insts)
 {
@@ -242,7 +239,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   int right_offset = 0;
   int offset;
 
-  odb::dbMaster* antenna_master = diode_mterm->getMaster();
+  odb::dbMaster* diode_master = diode_mterm->getMaster();
 
   int inst_loc_x, inst_loc_y, inst_width;
   odb::Rect sink_bbox = getInstRect(sink_inst, sink_iterm);
@@ -251,12 +248,14 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   inst_width = sink_bbox.xMax() - sink_bbox.xMin();
   odb::dbOrientType inst_orient = sink_inst->getOrient();
 
-  odb::dbInst* antenna_inst
-      = odb::dbInst::create(block_, antenna_master, antenna_inst_name.c_str());
-  odb::dbITerm* antenna_iterm
-      = antenna_inst->findITerm(diode_mterm->getConstName());
-  odb::dbBox* antenna_bbox = antenna_inst->getBBox();
-  int antenna_width = antenna_bbox->xMax() - antenna_bbox->xMin();
+  std::string diode_inst_name = "ANTENNA_"
+    + std::to_string(unique_diode_index_++);
+  odb::dbInst* diode_inst
+      = odb::dbInst::create(block_, diode_master, diode_inst_name.c_str());
+  odb::dbITerm* diode_iterm
+      = diode_inst->findITerm(diode_mterm->getConstName());
+  odb::dbBox* diode_bbox = diode_inst->getBBox();
+  int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
 
   odb::Rect core_area;
   block_->getCoreArea(core_area);
@@ -267,7 +266,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   int legalize_itr = 0;
   while (!legally_placed && legalize_itr < max_legalize_itr) {
     if (place_at_left) {
-      offset = -(antenna_width + left_offset * site_width);
+      offset = -(diode_width + left_offset * site_width);
       left_offset++;
       place_at_left = false;
     } else {
@@ -276,12 +275,12 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       place_at_left = true;
     }
 
-    const int left_pad = opendp_->padLeft(antenna_inst);
-    const int right_pad = opendp_->padRight(antenna_inst);
-    antenna_inst->setOrient(inst_orient);
-    antenna_inst->setLocation(inst_loc_x + offset, inst_loc_y);
+    const int left_pad = opendp_->padLeft(diode_inst);
+    const int right_pad = opendp_->padRight(diode_inst);
+    diode_inst->setOrient(inst_orient);
+    diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
 
-    odb::dbBox* instBox = antenna_inst->getBBox();
+    odb::dbBox* instBox = diode_inst->getBBox();
     box box(point(instBox->xMin() - ((left_pad + right_pad) * site_width) + 1,
                   instBox->yMin() + 1),
             point(instBox->xMax() + ((left_pad + right_pad) * site_width) - 1,
@@ -297,7 +296,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   }
 
   odb::Rect inst_rect;
-  antenna_inst->getBBox()->getBox(inst_rect);
+  diode_inst->getBBox()->getBox(inst_rect);
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
@@ -308,13 +307,13 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   // or near macro pins (can be placed out of row), or illegal placed diodes
   if (core_area.contains(inst_rect) && !sink_inst->getMaster()->isBlock()
       && legally_placed) {
-    antenna_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+    diode_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   } else {
-    antenna_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    diode_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
-  antenna_iterm->connect(net);
-  diode_insts_.push_back(antenna_inst);
+  diode_iterm->connect(net);
+  diode_insts_.push_back(diode_inst);
 
   // Add diode to the R-tree of fixed instances
   int fixed_inst_id = fixed_insts.size();

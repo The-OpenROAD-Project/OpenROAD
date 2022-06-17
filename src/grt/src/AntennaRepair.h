@@ -109,7 +109,6 @@ class AntennaRepair
                    odb::dbMTerm* diode_mterm,
                    odb::dbInst* sink_inst,
                    odb::dbITerm* sink_iterm,
-                   std::string antenna_inst_name,
                    int site_width,
                    r_tree& fixed_insts);
   void getFixedInstances(r_tree& fixed_insts);
@@ -128,6 +127,7 @@ class AntennaRepair
   odb::dbBlock* block_;
   std::vector<odb::dbInst*> diode_insts_;
   AntennaViolations antenna_violations_;
+  int unique_diode_index_;
   int illegal_diode_placement_count_;
 };
 
