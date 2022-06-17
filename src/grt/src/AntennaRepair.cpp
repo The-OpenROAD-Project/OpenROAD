@@ -66,7 +66,7 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
                                            odb::dbMTerm* diode_mterm)
 {
   makeNetWires(routing, max_routing_layer);
-  arc_->loadAntennaRules();
+  arc_->initAntennaRules();
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
     if (db_net->getWire()) {

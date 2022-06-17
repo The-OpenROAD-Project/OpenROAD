@@ -155,7 +155,7 @@ double AntennaChecker::dbuToMicrons(int dbu)
   return static_cast<double>(dbu) / dbu_per_micron_;
 }
 
-void AntennaChecker::loadAntennaRules()
+void AntennaChecker::initAntennaRules()
 {
   odb::dbTech* tech = db_->getTech();
   for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
@@ -1376,11 +1376,11 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
   return violated;
 }
 
-void AntennaChecker::getAntennaRatio(std::string report_filename,
-                                     bool report_violating_nets,
-                                     // Return values.
-                                     int &pin_violation_count,
-                                     int &net_violation_count)
+void AntennaChecker::checkAntennas(std::string report_filename,
+                                   bool report_violating_nets,
+                                   // Return values.
+                                   int &pin_violation_count,
+                                   int &net_violation_count)
 {
   net_violation_count = 0;
   pin_violation_count = 0;
@@ -1396,145 +1396,13 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
     for (dbNet* net : nets) {
       if (net->isSpecial())
         continue;
-      dbWire* wire = net->getWire();
-      if (wire) {
-        std::vector<dbWireGraph::Node*> wire_roots;
-        std::vector<dbWireGraph::Node*> gate_iterms;
-        findWireRoots(wire, wire_roots, gate_iterms);
-
-        std::vector<PARinfo> PARtable;
-        buildWireParTable(PARtable, wire_roots);
-
-        std::vector<PARinfo> VIA_PARtable;
-        buildViaParTable(VIA_PARtable, wire_roots);
-
-        std::vector<ARinfo> CARtable;
-        buildWireCarTable(CARtable, PARtable, VIA_PARtable, gate_iterms);
-
-        std::vector<ARinfo> VIA_CARtable;
-        buildViaCarTable(VIA_CARtable, PARtable, VIA_PARtable, gate_iterms);
-
-        bool violated_wire = false;
-        bool violated_VIA = false;
-
-        std::set<dbWireGraph::Node*> violated_iterms;
-
-        std::vector<dbWireGraph::Node*>::iterator gate_itr;
-        bool print_net = true;
-        for (gate_itr = gate_iterms.begin(); gate_itr != gate_iterms.end();
-             ++gate_itr) {
-          dbWireGraph::Node* gate = *gate_itr;
-
-          dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
-                                             gate->object()->getId());
-          dbMTerm* mterm = iterm->getMTerm();
-
-          bool violation = false;
-          unordered_set<dbWireGraph::Node*> violated_gates;
-
-          for (auto ar : CARtable) {
-            if (ar.GateNode == gate) {
-              auto wire_PAR_violation
-                = checkWirePar(ar, report_violating_nets, false);
-              auto wire_CAR_violation = checkWireCar(ar, wire_PAR_violation.second,
-                                                     report_violating_nets, false);
-              bool wire_violation
-                = wire_PAR_violation.first || wire_CAR_violation.first;
-              violation |= wire_violation;
-              if (wire_violation)
-                violated_gates.insert(gate);
-            }
-          }
-          for (auto via_ar : VIA_CARtable) {
-            if (via_ar.GateNode == gate) {
-              bool VIA_PAR_violation
-                = checkViaPar(via_ar, report_violating_nets, false);
-              bool VIA_CAR_violation
-                = checkViaCar(via_ar, report_violating_nets, false);
-              bool via_violation = VIA_PAR_violation || VIA_CAR_violation;
-              violation |= via_violation;
-              if (via_violation
-                  && (violated_gates.find(gate) == violated_gates.end()))
-                violated_gates.insert(gate);
-            }
-          }
-
-          if ((!report_violating_nets || violation) && print_net) {
-            fprintf(stream_, "\nNet %s\n", net->getConstName());
-            print_net = false;
-          }
-
-          if (!report_violating_nets
-              || (violated_gates.find(gate) != violated_gates.end())) {
-            fprintf(stream_,
-                    "  %s/%s (%s)\n",
-                    iterm->getInst()->getConstName(),
-                    mterm->getConstName(),
-                    mterm->getMaster()->getConstName());
-          }
-
-          for (auto ar : CARtable) {
-            if (ar.GateNode == gate) {
-              auto wire_PAR_violation
-                = checkWirePar(ar, report_violating_nets, false);
-              auto wire_CAR_violation = checkWireCar(
-                                                     ar, wire_PAR_violation.second, report_violating_nets, false);
-              if (wire_PAR_violation.first || wire_CAR_violation.first
-                  || !report_violating_nets) {
-                fprintf(stream_, "    %s\n",
-                        ar.wire_root->layer()->getConstName());
-              }
-              wire_PAR_violation
-                = checkWirePar(ar, report_violating_nets, true);
-              wire_CAR_violation = checkWireCar(
-                                                ar, wire_PAR_violation.second, report_violating_nets, true);
-              if (wire_PAR_violation.first || wire_CAR_violation.first) {
-                violated_wire = true;
-                if (violated_iterms.find(gate) == violated_iterms.end())
-                  violated_iterms.insert(gate);
-              }
-              if (wire_PAR_violation.first || wire_CAR_violation.first
-                  || !report_violating_nets) {
-                fprintf(stream_, "\n");
-              }
-            }
-          }
-
-          for (auto via_ar : VIA_CARtable) {
-            if (via_ar.GateNode == gate) {
-              dbWireGraph::Edge* via
-                = findVia(via_ar.wire_root,
-                          via_ar.wire_root->layer()->getRoutingLevel());
-
-              bool VIA_PAR_violation
-                = checkViaPar(via_ar, report_violating_nets, false);
-              bool VIA_CAR_violation
-                = checkViaCar(via_ar, report_violating_nets, false);
-              if (VIA_PAR_violation || VIA_CAR_violation
-                  || !report_violating_nets) {
-                fprintf(stream_, "  %s:\n", getViaName(via).c_str());
-              }
-              VIA_PAR_violation
-                = checkViaPar(via_ar, report_violating_nets, true);
-              VIA_CAR_violation
-                = checkViaCar(via_ar, report_violating_nets, true);
-              if (VIA_PAR_violation || VIA_CAR_violation) {
-                violated_VIA = true;
-                if (violated_iterms.find(gate) == violated_iterms.end())
-                  violated_iterms.insert(gate);
-              }
-              if (VIA_PAR_violation || VIA_CAR_violation
-                  || !report_violating_nets) {
-                fprintf(stream_, "\n");
-              }
-            }
-          }
-        }
-
-        if (violated_wire || violated_VIA) {
-          net_violation_count++;
-          pin_violation_count += violated_iterms.size();
-        }
+      bool violated_wire = false;
+      int violated_pin_count = 0;
+      checkNet(net, report_violating_nets,
+               violated_wire, violated_pin_count);
+      if (violated_wire || violated_pin_count > 0) {
+        net_violation_count++;
+        pin_violation_count += violated_pin_count;
       }
     }
     fprintf(stream_, "Number of pins violated: %d\n", pin_violation_count);
@@ -1625,6 +1493,147 @@ void AntennaChecker::checkDiodeCell()
           "ignored if not repairing antennas.\n");
 }
 
+void AntennaChecker::checkNet(dbNet* net,
+                              bool report_violating_nets,
+                              // Return values.
+                              bool &violated_wire,
+                              int &violated_pin_count)
+{
+  violated_wire = false;
+  violated_pin_count = 0;
+
+  dbWire* wire = net->getWire();
+  if (wire) {
+    std::vector<dbWireGraph::Node*> wire_roots;
+    std::vector<dbWireGraph::Node*> gate_iterms;
+    findWireRoots(wire, wire_roots, gate_iterms);
+
+    std::vector<PARinfo> PARtable;
+    buildWireParTable(PARtable, wire_roots);
+
+    std::vector<PARinfo> VIA_PARtable;
+    buildViaParTable(VIA_PARtable, wire_roots);
+
+    std::vector<ARinfo> CARtable;
+    buildWireCarTable(CARtable, PARtable, VIA_PARtable, gate_iterms);
+
+    std::vector<ARinfo> VIA_CARtable;
+    buildViaCarTable(VIA_CARtable, PARtable, VIA_PARtable, gate_iterms);
+
+    std::set<dbWireGraph::Node*> violated_iterms;
+
+    std::vector<dbWireGraph::Node*>::iterator gate_itr;
+    bool print_net = true;
+    for (gate_itr = gate_iterms.begin(); gate_itr != gate_iterms.end();
+         ++gate_itr) {
+      dbWireGraph::Node* gate = *gate_itr;
+
+      dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
+                                         gate->object()->getId());
+      dbMTerm* mterm = iterm->getMTerm();
+
+      bool violation = false;
+      unordered_set<dbWireGraph::Node*> violated_gates;
+
+      for (auto ar : CARtable) {
+        if (ar.GateNode == gate) {
+          auto wire_PAR_violation
+            = checkWirePar(ar, report_violating_nets, false);
+          auto wire_CAR_violation = checkWireCar(ar, wire_PAR_violation.second,
+                                                 report_violating_nets, false);
+          bool wire_violation
+            = wire_PAR_violation.first || wire_CAR_violation.first;
+          violation |= wire_violation;
+          if (wire_violation)
+            violated_gates.insert(gate);
+        }
+      }
+      for (auto via_ar : VIA_CARtable) {
+        if (via_ar.GateNode == gate) {
+          bool VIA_PAR_violation
+            = checkViaPar(via_ar, report_violating_nets, false);
+          bool VIA_CAR_violation
+            = checkViaCar(via_ar, report_violating_nets, false);
+          bool via_violation = VIA_PAR_violation || VIA_CAR_violation;
+          violation |= via_violation;
+          if (via_violation
+              && (violated_gates.find(gate) == violated_gates.end()))
+            violated_gates.insert(gate);
+        }
+      }
+
+      if ((!report_violating_nets || violation) && print_net) {
+        fprintf(stream_, "\nNet %s\n", net->getConstName());
+        print_net = false;
+      }
+
+      if (!report_violating_nets
+          || (violated_gates.find(gate) != violated_gates.end())) {
+        fprintf(stream_,
+                "  %s/%s (%s)\n",
+                iterm->getInst()->getConstName(),
+                mterm->getConstName(),
+                mterm->getMaster()->getConstName());
+      }
+
+      for (auto ar : CARtable) {
+        if (ar.GateNode == gate) {
+          auto wire_PAR_violation
+            = checkWirePar(ar, report_violating_nets, false);
+          auto wire_CAR_violation = checkWireCar(
+                                                 ar, wire_PAR_violation.second, report_violating_nets, false);
+          if (wire_PAR_violation.first || wire_CAR_violation.first
+              || !report_violating_nets) {
+            fprintf(stream_, "    %s\n",
+                    ar.wire_root->layer()->getConstName());
+          }
+          wire_PAR_violation
+            = checkWirePar(ar, report_violating_nets, true);
+          wire_CAR_violation = checkWireCar(
+                                            ar, wire_PAR_violation.second, report_violating_nets, true);
+          if (wire_PAR_violation.first || wire_CAR_violation.first) {
+            violated_wire = true;
+            violated_iterms.insert(gate);
+          }
+          if (wire_PAR_violation.first || wire_CAR_violation.first
+              || !report_violating_nets) {
+            fprintf(stream_, "\n");
+          }
+        }
+      }
+
+      for (auto via_ar : VIA_CARtable) {
+        if (via_ar.GateNode == gate) {
+          dbWireGraph::Edge* via
+            = findVia(via_ar.wire_root,
+                      via_ar.wire_root->layer()->getRoutingLevel());
+
+          bool VIA_PAR_violation
+            = checkViaPar(via_ar, report_violating_nets, false);
+          bool VIA_CAR_violation
+            = checkViaCar(via_ar, report_violating_nets, false);
+          if (VIA_PAR_violation || VIA_CAR_violation
+              || !report_violating_nets) {
+            fprintf(stream_, "  %s:\n", getViaName(via).c_str());
+          }
+          VIA_PAR_violation
+            = checkViaPar(via_ar, report_violating_nets, true);
+          VIA_CAR_violation
+            = checkViaCar(via_ar, report_violating_nets, true);
+          if (VIA_PAR_violation || VIA_CAR_violation) {
+            violated_iterms.insert(gate);
+          }
+          if (VIA_PAR_violation || VIA_CAR_violation
+              || !report_violating_nets) {
+            fprintf(stream_, "\n");
+          }
+        }
+      }
+    }
+    violated_pin_count = violated_iterms.size();
+  }
+}
+
 int AntennaChecker::checkAntennas(std::string report_file,
                                   bool report_violating_nets)
 {
@@ -1641,12 +1650,12 @@ int AntennaChecker::checkAntennas(std::string report_file,
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::orderWires(block, false);
 
-  loadAntennaRules();
+  initAntennaRules();
   int pin_violation_count;
   int net_violation_count;
-  getAntennaRatio(report_file, report_violating_nets,
-                  pin_violation_count,
-                  net_violation_count);
+  checkAntennas(report_file, report_violating_nets,
+                pin_violation_count,
+                net_violation_count);
   logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
   logger_->info(ANT, 2, "Found {} net violations.",
                 net_violation_count);

@@ -85,7 +85,7 @@ class AntennaChecker
 
   std::vector<ViolationInfo> getNetAntennaViolations(dbNet* net,
                                                      odb::dbMTerm* diode_mterm);
-  void loadAntennaRules();
+  void initAntennaRules();
 
  private:
   bool haveRoutedNets();
@@ -158,12 +158,16 @@ class AntennaChecker
   bool checkViaPar(ARinfo AntennaRatio, bool simple_report, bool print);
   bool checkViaCar(ARinfo AntennaRatio, bool simple_report, bool print);
 
-  void getAntennaRatio(std::string report_filename,
-                       bool report_violating_nets,
-                       // Return values.
-                       int &pin_violation_count,
-                       int &net_violation_count);
-
+  void checkAntennas(std::string report_filename,
+                     bool report_violating_nets,
+                     // Return values.
+                     int &pin_violation_count,
+                     int &net_violation_count);
+  void checkNet(dbNet* net,
+                bool report_violating_nets,
+                // Return values.
+                bool &violated_wire,
+                int &violated_pin_count);
   void checkDiodeCell();
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);
