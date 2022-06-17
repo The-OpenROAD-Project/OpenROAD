@@ -14,4 +14,14 @@
 [INFO ODB-0134] Finished DEF file: gcd_sky130.def
 [INFO ANT-0001] Found 1 pin violations.
 [INFO ANT-0002] Found 1 net violations in 411 nets.
-No differences found.
+Warning: no LEF master with for CORE ANTENNACELL found. This message can be ignored if not repairing antennas.
+
+Net clk
+  clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
+    met2
+    PAR:  450.51* Ratio:  400.00 (S.Area)
+
+  No sinks on this net
+Number of pins violated: 1
+Number of nets violated: 1
+Total number of signal nets: 411

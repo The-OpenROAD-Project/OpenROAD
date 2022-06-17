@@ -4,7 +4,7 @@ read_def sw130_random.def
 
 set rpt_file [make_result_file "sw130_random.rpt"]
 check_antennas -report_file $rpt_file
-diff_file $rpt_file "sw130_random.rptok"
+report_file $rpt_file
 
 # calculate the available length that can be added to net51, on layer 1
 # while keeping the PAR ratios satified

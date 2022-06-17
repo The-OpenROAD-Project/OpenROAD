@@ -1047,7 +1047,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
   double diff_area = AntennaRatio.diff_area;
 
   bool checked = false;
-  bool if_violated = false;
+  bool violated = false;
 
   bool par_violation = false;
   bool diff_par_violation = false;
@@ -1065,14 +1065,14 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
     if (PAR_ratio != 0) {
       if (par > PAR_ratio) {
         par_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffPAR_PWL_ratio != 0) {
         checked = true;
         if (diff_par > diffPAR_PWL_ratio) {
           diff_par_violation = true;
-          if_violated = true;
+          violated = true;
         }
       }
     }
@@ -1083,90 +1083,76 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio) {
         psr_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffPSR_PWL_ratio != 0) {
         checked = true;
         if (diff_psr > diffPSR_PWL_ratio) {
           diff_psr_violation = true;
-          if_violated = true;
-          ;
+          violated = true;
         }
       }
     }
 
     if (!print) {
-      return {if_violated, checked};
+      return {violated, checked};
     }
 
     // generate final report, depnding on if report_violating_nets is needed
-    if (!if_violated && report_violating_nets)
-      return {if_violated, checked};
+    if (!violated && report_violating_nets)
+      return {violated, checked};
     else {
       if (report_violating_nets) {
         if (par_violation) {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (Area)\n",
                   par,
                   PAR_ratio);
         } else if (diff_par_violation) {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (Area)\n",
                   diff_par,
                   diffPAR_PWL_ratio);
         } else if (psr_violation) {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (S.Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (S.Area)\n",
                   psr,
                   PSR_ratio);
         } else {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (S.Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (S.Area)\n",
                   diff_psr,
                   diffPSR_PWL_ratio);
         }
       } else {
         if (PAR_ratio != 0) {
-          fprintf(stream_, "  PAR: %7.2f", par);
-          if (par_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (Area)\n",
+                  par,
+                  par_violation ? "*" : " ",
+                  PAR_ratio);
         } else {
-          fprintf(stream_, "  PAR: %7.2f", diff_par);
-          if (diffPAR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (Area)\n");
-          else {
-            if (diff_par_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
-          }
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (Area)\n",
+                  diff_par,
+                  diff_par_violation ? "*" : " ",
+                  diffPAR_PWL_ratio);
         }
 
         if (PSR_ratio != 0) {
-          fprintf(stream_, "  PAR: %7.2f", psr);
-          if (psr_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (S.Area)\n", PSR_ratio);
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (S.Area)\n",
+                  psr,
+                  psr_violation ? "*" : " ",
+                  PSR_ratio);
         } else {
-          fprintf(stream_, "  PAR: %7.2f", diff_psr);
-          if (diffPSR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (S.Area)\n");
-          else {
-            if (diff_psr_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (S.Area)\n", diffPSR_PWL_ratio);
-          }
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (S.Area)\n",
+                  diff_psr,
+                  diff_psr_violation ? "*" : " ",
+                  diffPSR_PWL_ratio);
         }
       }
     }
   }
-
-  return {if_violated, checked};
+  return {violated, checked};
 }
 
 std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
@@ -1182,7 +1168,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
   double diff_area = AntennaRatio.diff_area;
 
   bool checked = 0;
-  bool if_violated = 0;
+  bool violated = 0;
 
   bool car_violation = false;
   bool diff_car_violation = false;
@@ -1199,14 +1185,14 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
     if (CAR_ratio != 0) {
       if (car > CAR_ratio) {
         car_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffCAR_PWL_ratio != 0) {
         checked = true;
         if (car > diffCAR_PWL_ratio) {
           diff_car_violation = true;
-          if_violated = true;
+          violated = true;
         }
       }
     }
@@ -1218,87 +1204,75 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
     if (CSR_ratio != 0) {
       if (csr > CSR_ratio) {
         csr_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffCSR_PWL_ratio != 0) {
         checked = true;
         if (diff_csr > diffCSR_PWL_ratio) {
           diff_csr_violation = true;
-          if_violated = true;
+          violated = true;
         }
       }
     }
 
     if (!print) {
-      return {if_violated, checked};
+      return {violated, checked};
     }
 
-    if (!if_violated && report_violating_nets) {
-      return {if_violated, checked};
+    if (!violated && report_violating_nets) {
+      return {violated, checked};
     } else {
       if (report_violating_nets) {
         if (car_violation) {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (Area)\n",
                   car,
                   CAR_ratio);
         } else if (diff_car_violation) {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (Area)\n",
                   diff_car,
                   diffCAR_PWL_ratio);
         } else if (csr_violation) {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (C.S.Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (C.S.Area)\n",
                   csr,
                   CSR_ratio);
         } else {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (C.S.Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (C.S.Area)\n",
                   diff_csr,
                   diffCSR_PWL_ratio);
         }
       } else {
         if (CAR_ratio != 0) {
-          fprintf(stream_, "  CAR: %7.2f", car);
-          if (car_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.Area)\n",
+                  car,
+                  car_violation ? "*" : " ",
+                  CAR_ratio);
         } else {
-          fprintf(stream_, "  CAR: %7.2f", car);
-          if (diffCAR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (C.Area)\n");
-          else {
-            if (diff_car_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
-          }
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.Area)\n",
+                  car,
+                  diff_car_violation ? "*" : " ",
+                  diffCAR_PWL_ratio);
         }
 
         if (CSR_ratio != 0) {
-          fprintf(stream_, "  CAR: %7.2f", csr);
-          if (csr_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (C.S.Area)\n", CSR_ratio);
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.S.Area)\n",
+                  csr,
+                  csr_violation ? "*" : " ",
+                  CSR_ratio);
         } else {
-          fprintf(stream_, "  CAR: %7.2f", diff_csr);
-          if (diffCSR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (C.S.Area)\n");
-          else {
-            if (diff_csr_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (C.S.Area)\n", diffCSR_PWL_ratio);
-          }
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.S.Area)\n",
+                  diff_csr,
+                  diff_csr_violation ? "*" : " ",
+                  diffCSR_PWL_ratio);
         }
       }
     }
   }
-  return {if_violated, checked};
+  return {violated, checked};
 }
 
 bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
@@ -1306,14 +1280,13 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
                                  bool print)
 {
   dbTechLayer* layer = getViaLayer(
-      findVia(AntennaRatio.WirerootNode,
-              AntennaRatio.WirerootNode->layer()->getRoutingLevel()));
+                                   findVia(AntennaRatio.WirerootNode,
+                                           AntennaRatio.WirerootNode->layer()->getRoutingLevel()));
   double par = AntennaRatio.PAR_value;
   double diff_par = AntennaRatio.diff_PAR_value;
   double diff_area = AntennaRatio.diff_area;
 
-  bool if_violated = 0;
-
+  bool violated = false;
   bool par_violation = false;
   bool diff_par_violation = false;
 
@@ -1326,58 +1299,52 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
     if (PAR_ratio != 0) {
       if (par > PAR_ratio) {
         par_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffPAR_PWL_ratio != 0) {
         if (diff_par > diffPAR_PWL_ratio) {
           diff_par_violation = true;
-          if_violated = true;
+          violated = true;
         }
       }
     }
 
     if (!print) {
-      return if_violated;
+      return violated;
     }
 
-    if (!if_violated && report_violating_nets) {
+    if (!violated && report_violating_nets) {
       return false;
     } else {
       if (report_violating_nets) {
         if (par_violation) {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (Area)\n",
                   par,
                   PAR_ratio);
         } else {
           fprintf(stream_,
-                  "  PAR: %7.2f*  Ratio: %7.2f       (Area)\n",
+                  "    PAR: %7.2f* Ratio: %7.2f (Area)\n",
                   par,
                   diffPAR_PWL_ratio);
         }
       } else {
         if (PAR_ratio != 0) {
-          fprintf(stream_, "  PAR: %7.2f", par);
-          if (par_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (Area)\n", PAR_ratio);
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (Area)\n",
+                  par,
+                  par_violation ? "*" : " ",
+                  PAR_ratio);
         } else {
-          fprintf(stream_, "  PAR: %7.2f", par);
-          if (diffPAR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (Area)\n");
-          else {
-            if (diff_par_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (Area)\n", diffPAR_PWL_ratio);
-          }
+          fprintf(stream_, "    PAR: %7.2f%s Ratio: %7.2f (Area)\n",
+                  par,
+                  diff_par_violation ? "*" : " ",
+                  diffPAR_PWL_ratio);
         }
       }
     }
   }
-  return if_violated;
+  return violated;
 }
 
 bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
@@ -1390,7 +1357,7 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
   double car = AntennaRatio.CAR_value;
   double diff_area = AntennaRatio.diff_area;
 
-  bool if_violated = 0;
+  bool violated = 0;
 
   bool car_violation = false;
   bool diff_car_violation = false;
@@ -1405,58 +1372,52 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
     if (CAR_ratio != 0) {
       if (car > CAR_ratio) {
         car_violation = true;
-        if_violated = true;
+        violated = true;
       }
     } else {
       if (diffCAR_PWL_ratio != 0) {
         if (car > diffCAR_PWL_ratio) {
           diff_car_violation = true;
-          if_violated = true;
+          violated = true;
         }
       }
     }
 
     if (!print) {
-      return if_violated;
+      return violated;
     }
 
-    if (!if_violated && report_violating_nets) {
+    if (!violated && report_violating_nets) {
       return false;
     } else {
       if (report_violating_nets) {
         if (car_violation) {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (C.Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (C.Area)\n",
                   car,
                   CAR_ratio);
         } else {
           fprintf(stream_,
-                  "  CAR: %7.2f*  Ratio: %7.2f       (C.Area)\n",
+                  "    CAR: %7.2f* Ratio: %7.2f (C.Area)\n",
                   car,
                   diffCAR_PWL_ratio);
         }
       } else {
         if (CAR_ratio != 0) {
-          fprintf(stream_, "  CAR: %7.2f", car);
-          if (car_violation) {
-            fprintf(stream_, "*");
-          }
-          fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", CAR_ratio);
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.Area)\n",
+                  car,
+                  car_violation ? "*" : " ",
+                  CAR_ratio);
         } else {
-          fprintf(stream_, "  CAR: %7.2f", car);
-          if (diffCAR_PWL_ratio == 0)
-            fprintf(stream_, "  Ratio:    0.00       (C.Area)\n");
-          else {
-            if (diff_car_violation) {
-              fprintf(stream_, "*");
-            }
-            fprintf(stream_, "  Ratio: %7.2f       (C.Area)\n", diffCAR_PWL_ratio);
-          }
+          fprintf(stream_, "    CAR: %7.2f%s Ratio: %7.2f (C.Area)\n",
+                  car,
+                  diff_car_violation ? "*" : " ",
+                  diffCAR_PWL_ratio);
         }
       }
     }
   }
-  return if_violated;
+  return violated;
 }
 
 void AntennaChecker::getAntennaRatio(std::string report_filename,
@@ -1542,8 +1503,8 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
         std::vector<ARinfo> VIA_CARtable;
         buildViaCarTable(VIA_CARtable, PARtable, VIA_PARtable, gate_iterms);
 
-        bool if_violated_wire = 0;
-        bool if_violated_VIA = 0;
+        bool violated_wire = 0;
+        bool violated_VIA = 0;
 
         std::set<dbWireGraph::Node*> violated_iterms;
 
@@ -1588,17 +1549,17 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
           }
 
           if ((!report_violating_nets || violation) && print_net) {
-            fprintf(stream_, "\nNet - %s\n", net->getConstName());
+            fprintf(stream_, "\nNet %s\n", net->getConstName());
             print_net = false;
           }
 
           if (!report_violating_nets
               || (violated_gates.find(gate) != violated_gates.end())) {
             fprintf(stream_,
-                    "  %s  (%s)  %s\n",
+                    "  %s/%s (%s)\n",
                     iterm->getInst()->getConstName(),
-                    mterm->getMaster()->getConstName(),
-                    mterm->getConstName());
+                    mterm->getConstName(),
+                    mterm->getMaster()->getConstName());
           }
 
           for (auto ar : CARtable) {
@@ -1609,8 +1570,7 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
                                                      ar, wire_PAR_violation.second, report_violating_nets, false);
               if (wire_PAR_violation.first || wire_CAR_violation.first
                   || !report_violating_nets) {
-                fprintf(stream_,
-                        "[1]  %s:\n",
+                fprintf(stream_, "    %s\n",
                         ar.WirerootNode->layer()->getConstName());
               }
               wire_PAR_violation
@@ -1618,7 +1578,7 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
               wire_CAR_violation = checkWireCar(
                                                 ar, wire_PAR_violation.second, report_violating_nets, true);
               if (wire_PAR_violation.first || wire_CAR_violation.first) {
-                if_violated_wire = 1;
+                violated_wire = 1;
                 if (violated_iterms.find(gate) == violated_iterms.end())
                   violated_iterms.insert(gate);
               }
@@ -1641,14 +1601,14 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
                 = checkViaCar(via_ar, report_violating_nets, false);
               if (VIA_PAR_violation || VIA_CAR_violation
                   || !report_violating_nets) {
-                fprintf(stream_, "[1]  %s:\n", getViaName(via).c_str());
+                fprintf(stream_, "  %s:\n", getViaName(via).c_str());
               }
               VIA_PAR_violation
                 = checkViaPar(via_ar, report_violating_nets, true);
               VIA_CAR_violation
                 = checkViaCar(via_ar, report_violating_nets, true);
               if (VIA_PAR_violation || VIA_CAR_violation) {
-                if_violated_VIA = 1;
+                violated_VIA = 1;
                 if (violated_iterms.find(gate) == violated_iterms.end())
                   violated_iterms.insert(gate);
               }
@@ -1660,7 +1620,7 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
           }
         }
 
-        if (if_violated_wire || if_violated_VIA) {
+        if (violated_wire || violated_VIA) {
           net_violation_count++;
           pin_violation_count += violated_iterms.size();
         }

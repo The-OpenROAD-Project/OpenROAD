@@ -10,4 +10,13 @@
 [INFO ODB-0134] Finished DEF file: sw130_random.def
 [INFO ANT-0001] Found 1 pin violations.
 [INFO ANT-0002] Found 1 net violations in 2 nets.
-No differences found.
+Warning: no LEF master with for CORE ANTENNACELL found. This message can be ignored if not repairing antennas.
+
+Net net50
+  output50/A (sky130_fd_sc_ms__buf_1)
+    met2
+    PAR:  419.64* Ratio:  400.00 (S.Area)
+
+Number of pins violated: 1
+Number of nets violated: 1
+Total number of signal nets: 2

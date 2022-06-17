@@ -10,5 +10,5 @@ set_routing_layers -signal met1-met5
 global_route
 
 set rpt_file [make_result_file "check_grt1.rpt"]
-check_antennas -report_file $rpt_file
-diff_file $rpt_file "check_grt1.rptok"
+check_antennas -report_violating_nets -report_file $rpt_file
+report_file $rpt_file
