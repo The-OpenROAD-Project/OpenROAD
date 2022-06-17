@@ -9,7 +9,7 @@
 [INFO ODB-0133]     Created 2 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: sw130_random.def
 [INFO ANT-0001] Found 1 pin violations.
-[INFO ANT-0002] Found 1 net violations in 2 nets.
+[INFO ANT-0002] Found 1 net violations.
 Warning: no LEF master with for CORE ANTENNACELL found. This message can be ignored if not repairing antennas.
 
 Net net50
@@ -19,4 +19,3 @@ Net net50
 
 Number of pins violated: 1
 Number of nets violated: 1
-Total number of signal nets: 2

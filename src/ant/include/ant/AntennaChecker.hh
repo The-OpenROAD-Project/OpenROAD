@@ -158,8 +158,7 @@ class AntennaChecker
                        bool report_violating_nets,
                        // Return values.
                        int &pin_violation_count,
-                       int &net_violation_count,
-                       int &net_count);
+                       int &net_violation_count);
 
   void checkDiodeCell();
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);

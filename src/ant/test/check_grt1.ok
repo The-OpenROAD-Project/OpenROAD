@@ -13,7 +13,7 @@
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ODB-0134] Finished DEF file: gcd_sky130.def
 [INFO ANT-0001] Found 1 pin violations.
-[INFO ANT-0002] Found 1 net violations in 411 nets.
+[INFO ANT-0002] Found 1 net violations.
 Found antenna cell with diffusion area 0.641700
 
 Net clk
@@ -23,4 +23,3 @@ Net clk
 
 Number of pins violated: 1
 Number of nets violated: 1
-Total number of signal nets: 411
