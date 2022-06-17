@@ -47,6 +47,7 @@
 namespace ant {
 
 using odb::dbBox;
+using odb::dbLib;
 using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
@@ -1625,25 +1626,24 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
 
 void AntennaChecker::checkDiodeCell()
 {
-  std::vector<dbMaster*> masters;
-  db_->getChip()->getBlock()->getMasters(masters);
+  for (dbLib *lib : db_->getLibs()) {
+    for (auto master : lib->getMasters()) {
+      dbMasterType type = master->getType();
+      if (type == dbMasterType::CORE_ANTENNACELL) {
+        double max_diff_area = 0.0;
+        for (dbMTerm* mterm : master->getMTerms())
+          max_diff_area = std::max(max_diff_area, maxDiffArea(mterm));
 
-  for (auto master : masters) {
-    dbMasterType type = master->getType();
-    if (type == dbMasterType::CORE_ANTENNACELL) {
-      double max_diff_area = 0.0;
-      for (dbMTerm* mterm : master->getMTerms())
-        max_diff_area = std::max(max_diff_area, maxDiffArea(mterm));
+        if (max_diff_area != 0.0)
+          fprintf(stream_,
+                  "Found antenna cell with diffusion area %f\n",
+                  max_diff_area);
+        else
+          fprintf(stream_,
+                  "Warning: found antenna cell but no diffusion area is specified\n");
 
-      if (max_diff_area != 0.0)
-        fprintf(stream_,
-                "Found antenna cell with diffusion area %f\n",
-                max_diff_area);
-      else
-        fprintf(stream_,
-                "Warning: found antenna cell but no diffusion area is specified\n");
-
-      return;
+        return;
+      }
     }
   }
 
