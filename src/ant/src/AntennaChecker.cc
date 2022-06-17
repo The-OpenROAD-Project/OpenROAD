@@ -577,21 +577,16 @@ void AntennaChecker::findCarPath(dbWireGraph::Node* node,
   current_path.push_back(node);
 
   if (node == goal) {
-    std::vector<dbWireGraph::Node*>::iterator current_itr;
-    std::vector<dbWireGraph::Node*>::iterator found_itr;
-
-    for (current_itr = current_path.begin(); current_itr != current_path.end();
-         ++current_itr) {
-      bool existed_node = 0;
-      for (found_itr = path_found.begin(); found_itr != path_found.end();
-           ++found_itr) {
-        if ((*current_itr) == (*found_itr)) {
-          existed_node = 1;
+    for (dbWireGraph::Node* node : current_path) {
+      bool node_exists = false;
+      for (dbWireGraph::Node* found_node : path_found) {
+        if (node == found_node) {
+          node_exists = true;
           break;
         }
       }
-      if (existed_node == 0)
-        path_found.push_back((*current_itr));
+      if (!node_exists)
+        path_found.push_back(node);
     }
   } else {
     if (node->in_edge()
@@ -781,15 +776,13 @@ void AntennaChecker::buildWireCarTable(
     std::vector<dbWireGraph::Node*> gate_iterms)
 {
   for (dbWireGraph::Node* gate : gate_iterms) {
-    std::vector<PARinfo>::iterator ar_itr;
-
-    for (ar_itr = PARtable.begin(); ar_itr != PARtable.end(); ++ar_itr) {
-      dbWireGraph::Node* wireroot = ar_itr->wire_root;
-      double par = ar_itr->PAR_value;
-      double psr = ar_itr->PSR_value;
-      double diff_par = ar_itr->diff_PAR_value;
-      double diff_psr = ar_itr->diff_PSR_value;
-      double diff_area = ar_itr->iterm_diff_area;
+    for (PARinfo &ar : PARtable) {
+      dbWireGraph::Node* wireroot = ar.wire_root;
+      double par = ar.PAR_value;
+      double psr = ar.PSR_value;
+      double diff_par = ar.diff_PAR_value;
+      double diff_psr = ar.diff_PSR_value;
+      double diff_area = ar.iterm_diff_area;
       double car = 0.0;
       double csr = 0.0;
       double diff_car = 0.0;
@@ -804,10 +797,7 @@ void AntennaChecker::buildWireCarTable(
                   current_path,
                   path_found);
       if (!path_found.empty()) {
-        std::vector<dbWireGraph::Node*>::iterator path_itr;
-        for (path_itr = path_found.begin(); path_itr != path_found.end();
-             ++path_itr) {
-          dbWireGraph::Node* node = *path_itr;
+        for (dbWireGraph::Node* node : path_found) {
           if (ifSegmentRoot(node, node->layer()->getRoutingLevel()))
             car_wireroots.push_back(node);
         }
@@ -817,14 +807,12 @@ void AntennaChecker::buildWireCarTable(
              car_root_itr != car_wireroots.end();
              ++car_root_itr) {
           dbWireGraph::Node* car_root = *car_root_itr;
-          std::vector<PARinfo>::iterator par_itr;
-          for (par_itr = PARtable.begin(); par_itr != PARtable.end();
-               ++par_itr) {
-            if (par_itr->wire_root == car_root) {
-              car = car + par_itr->PAR_value;
-              csr = csr + par_itr->PSR_value;
-              diff_car = diff_car + par_itr->diff_PAR_value;
-              diff_csr = diff_csr + par_itr->diff_PSR_value;
+          for (PARinfo &par_info : PARtable) {
+            if (par_info.wire_root == car_root) {
+              car = car + par_info.PAR_value;
+              csr = csr + par_info.PSR_value;
+              diff_car += par_info.diff_PAR_value;
+              diff_csr += par_info.diff_PSR_value;
               break;
             }
           }
@@ -835,13 +823,10 @@ void AntennaChecker::buildWireCarTable(
             if (antenna_rule->hasAntennaCumRoutingPlusCut()) {
               if (car_root->layer()->getRoutingLevel()
                   < wireroot->layer()->getRoutingLevel()) {
-                std::vector<PARinfo>::iterator via_par_itr;
-                for (via_par_itr = VIA_PARtable.begin();
-                     via_par_itr != VIA_PARtable.end();
-                     ++via_par_itr) {
-                  if (via_par_itr->wire_root == car_root) {
-                    car = car + via_par_itr->PAR_value;
-                    diff_car = diff_car + via_par_itr->diff_PAR_value;
+                for (PARinfo &via_par_info : VIA_PARtable) {
+                  if (via_par_info.wire_root == car_root) {
+                    car = car + via_par_info.PAR_value;
+                    diff_car = diff_car + via_par_info.diff_PAR_value;
                     break;
                   }
                 }
@@ -872,9 +857,7 @@ void AntennaChecker::buildViaParTable(
     std::vector<PARinfo>& VIA_PARtable,
     std::vector<dbWireGraph::Node*> wireroots_info)
 {
-  for (auto root_itr = wireroots_info.begin(); root_itr != wireroots_info.end();
-       ++root_itr) {
-    dbWireGraph::Node* wireroot = *root_itr;
+  for (dbWireGraph::Node* wireroot : wireroots_info) {
     double via_area
         = calculateViaArea(wireroot, wireroot->layer()->getRoutingLevel());
     double iterm_gate_area = 0.0;
@@ -924,8 +907,7 @@ void AntennaChecker::buildViaParTable(
                     - minus_diff_factor * iterm_diff_area)
                    / (iterm_gate_area + plus_diff_factor * iterm_diff_area);
       }
-      PARinfo new_par
-          = {*root_itr, iv, 0.0, 0.0, 0.0, 0.0, par, 0.0, diff_par, 0.0};
+      PARinfo new_par = {wireroot, iv, 0.0, 0.0, 0.0, 0.0, par, 0.0, diff_par, 0.0};
       VIA_PARtable.push_back(new_par);
     }
   }
@@ -937,20 +919,15 @@ void AntennaChecker::buildViaCarTable(
     std::vector<PARinfo> VIA_PARtable,
     std::vector<dbWireGraph::Node*> gate_iterms)
 {
-  std::vector<dbWireGraph::Node*>::iterator gate_itr;
-  for (gate_itr = gate_iterms.begin(); gate_itr != gate_iterms.end();
-       ++gate_itr) {
-    dbWireGraph::Node* gate = *gate_itr;
+  for (dbWireGraph::Node* gate : gate_iterms) {
     int x, y;
     gate->xy(x, y);
 
-    std::vector<PARinfo>::iterator ar_itr;
-    for (ar_itr = VIA_PARtable.begin(); ar_itr != VIA_PARtable.end();
-         ++ar_itr) {
-      dbWireGraph::Node* wireroot = ar_itr->wire_root;
-      double par = ar_itr->PAR_value;
-      double diff_par = ar_itr->diff_PAR_value;
-      double diff_area = ar_itr->iterm_diff_area;
+    for (PARinfo &ar : VIA_PARtable) {
+      dbWireGraph::Node* wireroot = ar.wire_root;
+      double par = ar.PAR_value;
+      double diff_par = ar.diff_PAR_value;
+      double diff_area = ar.iterm_diff_area;
       double car = 0.0;
       double diff_car = 0.0;
       std::vector<dbWireGraph::Node*> current_path;
@@ -963,30 +940,19 @@ void AntennaChecker::buildViaCarTable(
                   current_path,
                   path_found);
       if (!path_found.empty()) {
-        std::vector<dbWireGraph::Node*>::iterator path_itr;
-        for (path_itr = path_found.begin(); path_itr != path_found.end();
-             ++path_itr) {
-          dbWireGraph::Node* node = *path_itr;
+        for (dbWireGraph::Node* node : path_found) {
           int x, y;
           node->xy(x, y);
           if (ifSegmentRoot(node, node->layer()->getRoutingLevel()))
             car_wireroots.push_back(node);
         }
-        std::vector<dbWireGraph::Node*>::iterator car_root_itr;
-        for (car_root_itr = car_wireroots.begin();
-             car_root_itr != car_wireroots.end();
-             ++car_root_itr) {
-          dbWireGraph::Node* car_root = *car_root_itr;
+        for (dbWireGraph::Node* car_root : car_wireroots) {
           int x, y;
           car_root->xy(x, y);
-          std::vector<PARinfo>::iterator par_itr;
-          std::vector<PARinfo>::iterator via_par_itr;
-          for (via_par_itr = VIA_PARtable.begin();
-               via_par_itr != VIA_PARtable.end();
-               ++via_par_itr) {
-            if (via_par_itr->wire_root == car_root) {
-              car = car + via_par_itr->PAR_value;
-              diff_car = diff_car + via_par_itr->diff_PAR_value;
+          for (PARinfo &via_par : VIA_PARtable) {
+            if (via_par.wire_root == car_root) {
+              car = car + via_par.PAR_value;
+              diff_car = diff_car + via_par.diff_PAR_value;
               break;
             }
           }
@@ -996,11 +962,10 @@ void AntennaChecker::buildViaCarTable(
             dbTechLayerAntennaRule* antenna_rule
                 = via_layer->getDefaultAntennaRule();
             if (antenna_rule->hasAntennaCumRoutingPlusCut()) {
-              for (par_itr = PARtable.begin(); par_itr != PARtable.end();
-                   ++par_itr) {
-                if (par_itr->wire_root == car_root) {
-                  car = car + par_itr->PAR_value;
-                  diff_car = diff_car + par_itr->diff_PAR_value;
+              for (PARinfo &par : PARtable) {
+                if (par.wire_root == car_root) {
+                  car = car + par.PAR_value;
+                  diff_car = diff_car + par.diff_PAR_value;
                   break;
                 }
               }
@@ -1923,12 +1888,17 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
                            layer->getRoutingLevel(), gates);
         int required_diode_count = 0;
         if (diode_mterm && antennaRatioDiffDependent(layer)) {
-          while (wire_PAR_violation
-                 && required_diode_count < repair_max_diode_count) {
+          while (wire_PAR_violation) {
             par_info.iterm_diff_area += diode_diff_area * gates.size();
             required_diode_count += gates.size();
             calculateParInfo(par_info);
             wire_PAR_violation = checkViolation(par_info, layer);
+            if (required_diode_count > repair_max_diode_count) {
+              logger_->warn(ANT, 8, "Net {} requires more than {} diodes to repair violations.",
+                            net->getConstName(),
+                            repair_max_diode_count);
+              break;
+            }
           }
         }
         ViolationInfo antenna_violation
@@ -1976,12 +1946,8 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
   dbWireGraph graph;
   graph.decode(wire);
 
-  auto wireroots_info = getWireroots(graph);
-
   std::set<dbWireGraph::Node*> level_nodes;
-  for (auto root_itr = wireroots_info.begin(); root_itr != wireroots_info.end();
-       ++root_itr) {
-    dbWireGraph::Node* wireroot = *root_itr;
+  for (dbWireGraph::Node* wireroot : getWireroots(graph)) {
     odb::dbTechLayer* tech_layer = wireroot->layer();
     if (level_nodes.find(wireroot) == level_nodes.end()
         && tech_layer->getRoutingLevel() == routing_level) {
