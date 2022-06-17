@@ -130,19 +130,23 @@ class AntennaChecker
                       double def);
 
   void buildWireParTable(std::vector<PARinfo>& PARtable,
-                         std::vector<dbWireGraph::Node*> wireroots_info);
+                         std::vector<dbWireGraph::Node*> wire_roots);
   void buildWireCarTable(std::vector<ARinfo>& CARtable,
                          std::vector<PARinfo> PARtable,
                          std::vector<PARinfo> VIA_PARtable,
                          std::vector<dbWireGraph::Node*> gate_iterms);
   void buildViaParTable(std::vector<PARinfo>& VIA_PARtable,
-                        std::vector<dbWireGraph::Node*> wireroots_info);
+                        std::vector<dbWireGraph::Node*> wire_roots);
   void buildViaCarTable(std::vector<ARinfo>& VIA_CARtable,
                         std::vector<PARinfo> PARtable,
                         std::vector<PARinfo> VIA_PARtable,
                         std::vector<dbWireGraph::Node*> gate_iterms);
 
-  std::vector<dbWireGraph::Node*> getWireroots(dbWireGraph graph);
+  std::vector<dbWireGraph::Node*> findWireRoots(dbWire* wire);
+  void findWireRoots(dbWire* wire,
+                     // Return values.
+                     std::vector<dbWireGraph::Node*> &wire_roots,
+                     std::vector<dbWireGraph::Node*> &gate_iterms);
 
   std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio,
                                      bool simple_report,
@@ -164,7 +168,7 @@ class AntennaChecker
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);
 
-  void findWirerootIterms(dbWireGraph::Node* node,
+  void findWireRootIterms(dbWireGraph::Node* node,
                           int wire_level,
                           std::vector<dbITerm*>& gates);
   double maxDiffArea(dbMTerm *mterm);
