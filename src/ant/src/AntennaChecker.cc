@@ -1478,8 +1478,8 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
             if (ar.GateNode == gate) {
               auto wire_PAR_violation
                 = checkWirePar(ar, report_violating_nets, false);
-              auto wire_CAR_violation = checkWireCar(
-                                                     ar, wire_PAR_violation.second, report_violating_nets, false);
+              auto wire_CAR_violation = checkWireCar(ar, wire_PAR_violation.second,
+                                                     report_violating_nets, false);
               bool wire_violation
                 = wire_PAR_violation.first || wire_CAR_violation.first;
               violation |= wire_violation;
@@ -1783,12 +1783,10 @@ void AntennaChecker::checkMaxLength(const char* net_name, int layer)
     std::vector<std::pair<double, std::vector<dbITerm*>>> par_max_length_wires
         = parMaxWireLength(net, layer);
     for (auto par_wire : par_max_length_wires) {
-      logger_->warn(ANT,
-                    3,
-                    "Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}",
-                    net_name,
-                    layer,
-                    par_wire.first);
+      logger_->report("Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}",
+                      net_name,
+                      layer,
+                      par_wire.first);
     }
   }
 }

@@ -126,6 +126,6 @@ Net net51
 Number of pins violated: 1
 Number of nets violated: 1
 Total number of signal nets: 2
-[WARNING ANT-0003] Net net51: Routing Level: 1, Max Length for PAR: -0.09
-[WARNING ANT-0003] Net net51: Routing Level: 1, Max Length for PAR: -0.09
+Net net51: Routing Level: 1, Max Length for PAR: -0.09
+Net net51: Routing Level: 1, Max Length for PAR: -0.09
 Net net50 violations: 1
