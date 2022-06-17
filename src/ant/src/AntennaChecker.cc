@@ -1489,7 +1489,8 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
         }
 
         if (gate_iterms.size() == 0)
-          fprintf(stream_, "  No sinks on this net\n");
+          fprintf(stream_, "No sinks on net %s\n",
+                  net->getConstName());
 
         std::vector<PARinfo> PARtable;
         buildWireParTable(PARtable, wireroots_info);
