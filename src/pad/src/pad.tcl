@@ -38,11 +38,12 @@ sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-rdl_layer name] \
                                            [-rdl_width value] \
                                            [-rdl_spacing value] \
+					   [-rdl_route_style (45|90|under)] \
                                            [-rdl_cover_file_name rdl_file_name]}
 
 proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
-    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_cover_file_name -offset -array_size}
+    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_route_style -rdl_cover_file_name -offset -array_size}
 
   if {[llength $args] > 0} {
     utl::error PAD 218 "Unrecognized arguments ([lindex $args 0]) specified for set_bump_options."
@@ -2947,144 +2948,263 @@ namespace eval ICeWall {
     return 0
   }
 
+  proc route_under_bumps {} {
+    if {[get_rdl_route_style] == "under"} {
+      return 1
+    }
+    return 0
+  }
+
+  proc allow_45_routing {} {
+    if {[get_rdl_route_style] == 45} {
+      return 1
+    }
+    return 0
+  }
+
+  proc get_rdl_route_style {} {
+    variable library
+
+    if {![dict exists $library rdl route_style]} {
+      dict set library rdl route_style 45
+    }
+
+    return [dict get $library rdl route_style]
+  }
+
+  # User trace
+  proc write_traces {} {
+    variable actual_tile_offset_y
+
+    set bump_pitch [get_footprint_bump_pitch]
+    set bump_width [get_footprint_bump_width]
+    set tile_width $bump_pitch
+
+    set rdl_width [get_footprint_rdl_width]
+    set rdl_spacing [get_footprint_rdl_spacing]
+
+    set tile_offset_y $actual_tile_offset_y
+
+    puts "set_bump_traces \\"
+    foreach trace {0 1 2 3 4} {
+      set trace [get_path_trace_$trace 0]
+      set user_valued_trace [lmap v $trace {odb::dbu2microns $v}]
+      puts "  -trace$trace \{X Y X $user_valued_trace\} \\"
+    }
+  }
+
+  proc define_trace {row rdl_trace} {
+    variable footprint
+
+    dict set footprint rdl_trace $row $rdl_trace
+  }
+
+  proc user_defined_trace {row} {
+    variable footprint
+
+    return [dict exists $footprint rdl_trace $row]
+  }
+
+  proc get_user_defined_trace {row} {
+    variable footprint
+
+    return [dict get $footprint rdl_trace $row]
+  }
+
   # Trace 0 goes directly up to bump 0
-  proc path_trace_0 {x y} {
-    upvar tile_offset_y tile_offset_y
-    upvar tile_width tile_width
+  proc get_path_trace_0 {x} {
+    variable actual_tile_offset_y
+    set tile_offset_y $actual_tile_offset_y
+
+    set bump_pitch [get_footprint_bump_pitch]
+    set tile_width $bump_pitch
 
     set path [list \
-      [list 0 0] \
-      [list 0 [expr $tile_offset_y + $tile_width / 2]] \
-    ]
-
-    set path [list \
-      [list $x $y] \
-      [list $x [expr $tile_offset_y + $tile_width / 2]] \
+      [expr $tile_offset_y + $tile_width / 2] \
     ]
 
     return $path
   }
 
-  # Trace 1 goes up the LHS of bump 0 to bump 1
-  proc path_trace_1 {x y} {
-    upvar tile_offset_y tile_offset_y
-    upvar tile_width tile_width
-    upvar rdl_width rdl_width
-    upvar rdl_spacing rdl_spacing
-    upvar bump_width bump_width
-    upvar bump_edge_width bump_edge_width
-    upvar offset offset
-    upvar y_min y_min
-    upvar y_max y_max
+  proc get_path_trace_1 {x} {
+    variable actual_tile_offset_y
 
-    set path [list \
-      [list 0 0] \
-      [list 0 [expr $y_min(1) - abs(0 - $offset(1))]] \
-      [list $offset(1) $y_min(1)] \
-      [list $offset(1) $y_max(1)] \
-      [list [expr $tile_width / 2] [expr $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set bump_pitch [get_footprint_bump_pitch]
+    set bump_width [get_footprint_bump_width]
+    set tile_width $bump_pitch
 
-    set path [list \
-      [list $x $y] \
-      [list $x [expr $y_min(1) - abs($x - $offset(1))]] \
-      [list $offset(1) $y_min(1)] \
-      [list $offset(1) $y_max(1)] \
-      [list [expr $tile_width / 2] [expr $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set rdl_width [get_footprint_rdl_width]
+    set rdl_spacing [get_footprint_rdl_spacing]
+
+    set tile_offset_y $actual_tile_offset_y
+
+    set offset [expr ($rdl_width + $rdl_spacing) * 3 / 2]
+    set bump_center [list [expr $tile_width / 2] [expr $tile_offset_y + (3 * $tile_width / 2)]]
+    if {[route_under_bumps]} {
+      set y_max [expr $tile_offset_y + $tile_width * 3 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    } elseif {[allow_45_routing]} {
+      set y_max [expr $tile_offset_y + $tile_width * 3 / 2 - abs($tile_width / 2 - $offset)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+        [expr $y_min - abs($x - $offset)] \
+        $offset $y_min \
+        $offset $y_max \
+	{*}$bump_center \
+      ]
+    } else {
+      set y_max [expr $tile_offset_y + $tile_width * 3 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_min \
+        $offset $y_min \
+        $offset $y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    }
 
     return $path
   }
 
   # Trace 2 goes up the RHS of bump 0 to bump 2
-  proc path_trace_2 {x y} {
-    upvar tile_offset_y tile_offset_y
-    upvar tile_width tile_width
-    upvar rdl_width rdl_width
-    upvar rdl_spacing rdl_spacing
-    upvar bump_width bump_width
-    upvar bump_edge_width bump_edge_width
-    upvar offset offset
-    upvar y_min y_min
-    upvar y_max y_max
+  proc get_path_trace_2 {x} {
+    variable actual_tile_offset_y
 
-    set path [list \
-      [list 0 0] \
-      [list 0 [expr $y_min(2) - abs(0 - $offset(2))]] \
-      [list $offset(2) $y_min(2)] \
-      [list $offset(2) $y_max(2)] \
-      [list [expr $tile_width / 2] [expr 2 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set bump_pitch [get_footprint_bump_pitch]
+    set bump_width [get_footprint_bump_width]
+    set tile_width $bump_pitch
 
-    set path [list \
-      [list $x $y] \
-      [list $x [expr $y_min(2) - abs($x - $offset(2))]] \
-      [list $offset(2) $y_min(2)] \
-      [list $offset(2) $y_max(2)] \
-      [list [expr $tile_width / 2] [expr 2 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set rdl_width [get_footprint_rdl_width]
+    set rdl_spacing [get_footprint_rdl_spacing]
+
+    set tile_offset_y $actual_tile_offset_y
+
+    set offset [expr $tile_width - ($rdl_width + $rdl_spacing) * 3 / 2]
+    set bump_center [list [expr $tile_width / 2] [expr $tile_offset_y + (5 * $tile_width / 2)]]
+    if {[route_under_bumps]} {
+      set y_max [expr $tile_offset_y + $tile_width * 5 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    } elseif {[allow_45_routing]} {
+      set y_max [expr $tile_offset_y + $tile_width * 5 / 2 - abs($tile_width / 2 - $offset)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+        [expr $y_min - abs($x - $offset)] \
+        $offset $y_min \
+        $offset $y_max \
+	{*}$bump_center \
+      ]
+    } else {
+      set y_max [expr $tile_offset_y + $tile_width * 5 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_min \
+        $offset $y_min \
+        $offset $y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    }
 
     return $path
   }
 
   # Trace 3 goes up the LHS of bump 0 to bump 3
-  proc path_trace_3 {x y} {
-    upvar tile_offset_y tile_offset_y
-    upvar tile_width tile_width
-    upvar rdl_width rdl_width
-    upvar rdl_spacing rdl_spacing
-    upvar bump_width bump_width
-    upvar bump_edge_width bump_edge_width
-    upvar offset offset
-    upvar y_min y_min
-    upvar y_max y_max
+  proc get_path_trace_3 {x} {
+    variable actual_tile_offset_y
 
-    set path [list \
-      [list 0 0] \
-      [list 0 [expr $y_min(3) - abs(0 - $offset(3))]] \
-      [list $offset(3) $y_min(3)] \
-      [list $offset(3) $y_max(3)] \
-      [list [expr $tile_width / 2] [expr 3 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set bump_pitch [get_footprint_bump_pitch]
+    set bump_width [get_footprint_bump_width]
+    set tile_width $bump_pitch
 
-    set path [list \
-      [list $x $y] \
-      [list $x [expr $y_min(3) - abs($x - $offset(3))]] \
-      [list $offset(3) $y_min(3)] \
-      [list $offset(3) $y_max(3)] \
-      [list [expr $tile_width / 2] [expr 3 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set rdl_width [get_footprint_rdl_width]
+    set rdl_spacing [get_footprint_rdl_spacing]
+
+    set tile_offset_y $actual_tile_offset_y
+
+    set offset [expr ($rdl_width + $rdl_spacing) / 2]
+    set bump_center [list [expr $tile_width / 2] [expr $tile_offset_y + (7 * $tile_width / 2)]]
+    if {[route_under_bumps]} {
+      set y_max [expr $tile_offset_y + $tile_width * 7 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    } elseif {[allow_45_routing]} {
+      set y_max [expr $tile_offset_y + $tile_width * 7 / 2 - abs($tile_width / 2 - $offset)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
+      set path [list \
+        [expr $y_min - abs($x - $offset)] \
+        $offset $y_min \
+        $offset $y_max \
+	{*}$bump_center \
+      ]
+    } else {
+      set y_max [expr $tile_offset_y + $tile_width * 7 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
+      set path [list \
+	$y_min \
+        $offset $y_min \
+        $offset $y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    }
 
     return $path
   }
 
   # Trace 4 goes up the RHS of bump 0 to bump 4
-  proc path_trace_4 {x y} {
-    upvar tile_offset_y tile_offset_y
-    upvar tile_width tile_width
-    upvar rdl_width rdl_width
-    upvar rdl_spacing rdl_spacing
-    upvar bump_width bump_width
-    upvar bump_edge_width bump_edge_width
-    upvar offset offset
-    upvar y_min y_min
-    upvar y_max y_max
+  proc get_path_trace_4 {x} {
+    variable actual_tile_offset_y
 
-    set path [list \
-      [list 0 0] \
-      [list 0 [expr $y_min(4) - abs(0 - $offset(4))]] \
-      [list $offset(4) $y_min(4)] \
-      [list $offset(4) $y_max(4)] \
-      [list [expr $tile_width / 2] [expr 4 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set bump_pitch [get_footprint_bump_pitch]
+    set bump_width [get_footprint_bump_width]
+    set tile_width $bump_pitch
 
-    set path [list \
-      [list $x $y] \
-      [list $x [expr $y_min(4) - abs($x - $offset(4))]] \
-      [list $offset(4) $y_min(4)] \
-      [list $offset(4) $y_max(4)] \
-      [list [expr $tile_width / 2] [expr 4 * $tile_width + $tile_offset_y + $tile_width / 2]] \
-    ]
+    set rdl_width [get_footprint_rdl_width]
+    set rdl_spacing [get_footprint_rdl_spacing]
+
+    set tile_offset_y $actual_tile_offset_y
+
+    set offset [expr $tile_width - ($rdl_width + $rdl_spacing) / 2]
+    set bump_center [list [expr $tile_width / 2] [expr $tile_offset_y + (9 * $tile_width / 2)]]
+    if {[route_under_bumps]} {
+      set y_max [expr $tile_offset_y + $tile_width * 9 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set path [list \
+	$y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    } elseif {[allow_45_routing]} {
+      set y_max [expr $tile_offset_y + $tile_width * 9 / 2 - abs($tile_width / 2 - $offset)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
+      set path [list \
+        [expr $y_min - abs($x - $offset)] \
+        $offset $y_min \
+        $offset $y_max \
+	{*}$bump_center \
+      ]
+    } else {
+      set y_max [expr $tile_offset_y + $tile_width * 9 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
+      set path [list \
+	$y_min \
+        $offset $y_min \
+        $offset $y_max \
+	[expr $tile_width / 2] $y_max \
+	{*}$bump_center \
+      ]
+    }
 
     return $path
   }
@@ -3140,8 +3260,8 @@ namespace eval ICeWall {
   proc transform_path {path origin orientation} {
     set new_path {}
 
-    foreach point $path {
-      lappend new_path [transform_point {*}$point $origin $orientation]
+    foreach {x y} $path {
+      lappend new_path [transform_point $x $y $origin $orientation]
     }
 
     return $new_path
@@ -3233,30 +3353,37 @@ namespace eval ICeWall {
           "bottom" {
             set orientation "R0"
             set tile_origin [list [expr $actual_tile_offset_x + ($col - 1) * $tile_width] [lindex $die_area 1]]
-            set trace_func "path_trace_[expr $num_bumps_y - $row]"
+            set tile_row    [expr $num_bumps_y - $row]
           }
           "right" {
             set orientation "R90"
             set tile_origin [list [lindex $die_area 2] [expr $actual_tile_offset_y + ($num_bumps_y - $row) * $tile_width]]
-            set trace_func "path_trace_[expr $num_bumps_x - $col]"
+            set tile_row    [expr $num_bumps_x - $col]
           }
           "top" {
             set orientation "R180"
             set tile_origin [list [expr $actual_tile_offset_x + $col * $tile_width] [lindex $die_area 3]]
-            set trace_func "path_trace_[expr $row - 1]"
+            set tile_row    [expr $row - 1]
           }
           "left" {
             set orientation "R270"
             set tile_origin [list [lindex $die_area 0] [expr $actual_tile_offset_y + ($num_bumps_y - $row + 1) * $tile_width]]
-            set trace_func "path_trace_[expr $col - 1]"
+            set tile_row    [expr $col - 1]
           }
         }
 
         set padcell_pin_center [get_box_center [get_padcell_pad_pin_shape $padcell]]
-        set path [transform_path [$trace_func {*}[invert_transform {*}$padcell_pin_center $tile_origin $orientation]] $tile_origin $orientation]
-	# set trace_path [$trace_func 0 0]
-        # set path [transform_path $trace_path $padcell_pin_center $orientation]
-	# if {$side == "bottom"} {debug "padcell_pin_center: $padcell_pin_center, orient: $orientation, trace_path: $trace_path, path: $path"}
+	set pin_center_wrt_tile [invert_transform {*}$padcell_pin_center $tile_origin $orientation]
+        lassign $pin_center_wrt_tile x y
+
+    	if {[user_defined_trace $tile_row]} {
+          set rdl_trace [get_user_defined_trace $tile_row]
+        } else {
+          set rdl_trace [get_path_trace_$tile_row $x]
+	}
+ 	set path_wrt_tile [concat [list $x $y $x] $rdl_trace]
+        set path [transform_path $path_wrt_tile $tile_origin $orientation]
+	# debug "path: $path, num_points: [llength $path]"
 
         set_padcell_rdl_trace $padcell $path
       }
@@ -3324,12 +3451,22 @@ namespace eval ICeWall {
         set prev [lindex $points 0]
         foreach point [lrange $points 1 end] {
 	  if {[lindex $prev 0] == [lindex $point 0]} {
-	    set p1 [list [expr [lindex $prev  0] - $rdl_width / 2]  [lindex $prev  1]]
-	    set p2 [list [expr [lindex $point 0] + $rdl_width / 2]  [lindex $point 1]]
+            if {[allow_45_routing]} {		  
+	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [lindex $prev  1]]
+	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [lindex $point 1]]
+            } else {
+	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
+	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
+            }
 	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
 	  } elseif {[lindex $prev 1] == [lindex $point 1]} {
-	    set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
-	    set p2 [list [lindex $point 0] [expr [lindex $point 1] + $rdl_width /  2]]
+            if {[allow_45_routing]} {		  
+	      set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
+	      set p2 [list [lindex $point 0] [expr [lindex $point 1] + $rdl_width /  2]]
+            } else {
+	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
+	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
+            }
 	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
 	  } else {
 	    set direction 3
@@ -5375,6 +5512,13 @@ namespace eval ICeWall {
     return $layer_name
   }
 
+  proc check_route_style {style} {
+    if {$style == 45 || $style == 90 || $style == "under"} {
+      return $style
+    }
+    utl::error PAD 258 "Routing style must be 45, 90 or under. Illegal value \"$value\" specified"
+  }
+
   proc set_bump_options {args} {
     variable library
 
@@ -5394,6 +5538,7 @@ namespace eval ICeWall {
         -rdl_layer           {dict set library rdl layer_name [check_layer_name $value]}
         -rdl_width           {dict set library rdl width $value}
         -rdl_spacing         {dict set library rdl spacing $value}
+	-rdl_route_style     {dict set library rdl route_style [check_route_style $value]}
         -rdl_cover_file_name {
 	  set_rdl_cover_file_name $value
 	  utl::info PAD 246 "The use of a cover DEF is deprecated, as all RDL routes are writen to the database"
