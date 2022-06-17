@@ -2079,15 +2079,12 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
 
 void AntennaChecker::findMaxWireLength()
 {
-  dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
-  std::string max_wire_name = "";
+  dbNet* max_wire_net = nullptr;
   double max_wire_length = 0.0;
 
-  dbSet<dbNet>::iterator net_itr;
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
+  for (dbNet* net : db_->getChip()->getBlock()->getNets()) {
     dbWire* wire = net->getWire();
-    if (!net->isSpecial() && wire != nullptr) {
+    if (wire && !net->isSpecial()) {
       dbWireGraph graph;
       graph.decode(wire);
 
@@ -2106,13 +2103,14 @@ void AntennaChecker::findMaxWireLength()
 
       if (wire_length > max_wire_length) {
         max_wire_length = wire_length;
-        max_wire_name = std::string(net->getConstName());
+        max_wire_net = net;
       }
     }
   }
-
-  std::cout << "wire name: " << max_wire_name << "\n"
-            << "wire length: " << max_wire_length << std::endl;
+  if (max_wire_net)
+    logger_->report("net {} length {}",
+                    max_wire_net->getConstName(),
+                    max_wire_length);
 }
 
 }  // namespace ant
