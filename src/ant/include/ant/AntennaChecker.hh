@@ -162,8 +162,8 @@ class AntennaChecker
                        int &net_count);
 
   void checkDiodeCell();
-
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
+  bool antennaRatioDiffDependent(dbTechLayer* layer);
 
   void findWirerootIterms(dbWireGraph::Node* node,
                           int wire_level,
@@ -184,7 +184,7 @@ class AntennaChecker
   FILE* stream_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
 
-  static constexpr int repair_max_diode_count = 10;
+  static constexpr int repair_max_diode_count = 1;
 };
 
 }  // namespace ant

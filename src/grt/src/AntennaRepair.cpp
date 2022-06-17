@@ -184,27 +184,38 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixed_insts);
 
+  bool repair_failures = false;
   for (auto const& net_violations : antenna_violations_) {
     odb::dbNet* db_net = net_violations.first;
     auto violations = net_violations.second;
-    grouter_->addDirtyNet(db_net);
+
+    bool inserted_diodes = false;
     for (ant::ViolationInfo &violation : violations) {
       debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
                  db_net->getConstName(),
                  violation.required_diode_count * violation.iterms.size());
-      for (odb::dbITerm* sink_iterm : violation.iterms) {
-        odb::dbInst* sink_inst = sink_iterm->getInst();
-        for (int j = 0; j < violation.required_diode_count; j++) {
-          insertDiode(db_net,
-                      diode_mterm,
-                      sink_inst,
-                      sink_iterm,
-                      site_width,
-                      fixed_insts);
+      if (violation.required_diode_count > 0) {
+        for (odb::dbITerm* sink_iterm : violation.iterms) {
+          odb::dbInst* sink_inst = sink_iterm->getInst();
+          for (int j = 0; j < violation.required_diode_count; j++) {
+            insertDiode(db_net,
+                        diode_mterm,
+                        sink_inst,
+                        sink_iterm,
+                        site_width,
+                        fixed_insts);
+            inserted_diodes = true;
+          }
         }
       }
+      else
+        repair_failures = true;
     }
+    if (inserted_diodes)
+      grouter_->addDirtyNet(db_net);
   }
+  if (repair_failures)
+    logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
 }
 
 void AntennaRepair::legalizePlacedCells()

@@ -1929,7 +1929,7 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
         findWirerootIterms(par_info.WirerootNode,
                            layer->getRoutingLevel(), gates);
         int required_diode_count = 0;
-        if (diode_mterm) {
+        if (diode_mterm && antennaRatioDiffDependent(layer)) {
           while (wire_PAR_violation
                  && required_diode_count < repair_max_diode_count) {
             par_info.iterm_diff_area += diode_diff_area * gates.size();
@@ -1945,6 +1945,18 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
     }
   }
   return antenna_violations;
+}
+
+bool AntennaChecker::antennaRatioDiffDependent(dbTechLayer* layer)
+{
+  if (layer->hasDefaultAntennaRule()) {
+    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
+    dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
+    return diffPAR.indices.size() > 1
+      || diffPSR.indices.size() > 1;
+  }
+  return false;
 }
 
 double

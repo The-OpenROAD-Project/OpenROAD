@@ -21,7 +21,6 @@ Net clk
     met2
     PAR:  450.51* Ratio:  400.00 (S.Area)
 
-  No sinks on this net
 Number of pins violated: 1
 Number of nets violated: 1
 Total number of signal nets: 411
