@@ -1400,12 +1400,11 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
       if (wire) {
         dbWireGraph graph;
         graph.decode(wire);
-        dbWireGraph::node_iterator node_itr;
-        dbWireGraph::edge_iterator edge_itr;
 
         std::vector<dbWireGraph::Node*> wireroots_info;
         std::vector<dbWireGraph::Node*> gate_iterms;
 
+        dbWireGraph::node_iterator node_itr;
         for (node_itr = graph.begin_nodes(); node_itr != graph.end_nodes();
              ++node_itr) {
           dbWireGraph::Node* node = *node_itr;
@@ -1679,15 +1678,11 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
     dbWireGraph graph;
     graph.decode(wire);
 
-    dbWireGraph::node_iterator node_itr;
-    dbWireGraph::edge_iterator edge_itr;
-
     std::vector<dbWireGraph::Node*> wireroots;
     auto wireroots_info = getWireroots(graph);
 
     std::set<dbWireGraph::Node*> level_nodes;
-    for (auto root_itr : wireroots_info) {
-      dbWireGraph::Node* wireroot = root_itr;
+    for (dbWireGraph::Node* wireroot : wireroots_info) {
       odb::dbTechLayer* tech_layer = wireroot->layer();
       if (level_nodes.find(wireroot) == level_nodes.end()
           && tech_layer->getRoutingLevel() == layer) {
