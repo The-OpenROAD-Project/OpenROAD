@@ -2483,6 +2483,10 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
   }
 }
 
+bool sort_by_name(const Net *a, const Net *b) {
+  return a->getName() < b->getName();
+}
+
 std::vector<Net*> GlobalRouter::initNetlist()
 {
   initClockNets();
@@ -2505,6 +2509,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
       nets.push_back(net);
     }
   }
+  std::sort(nets.begin(), nets.end(), sort_by_name);
   return nets;
 }
 
