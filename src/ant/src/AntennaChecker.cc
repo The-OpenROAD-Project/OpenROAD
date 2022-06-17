@@ -632,15 +632,12 @@ void AntennaChecker::buildWireParTable(
     std::vector<PARinfo>& PARtable,
     std::vector<dbWireGraph::Node*> wireroots_info)
 {
-  std::set<dbWireGraph::Node*> level_nodes = {};
-  for (auto root_itr = wireroots_info.begin(); root_itr != wireroots_info.end();
-       ++root_itr) {
-    dbWireGraph::Node* wireroot = *root_itr;
-
+  std::set<dbWireGraph::Node*> level_nodes;
+  for (dbWireGraph::Node* wireroot : wireroots_info) {
     if (level_nodes.find(wireroot) != level_nodes.end())
       continue;
 
-    std::set<dbWireGraph::Node*> nv = {};
+    std::set<dbWireGraph::Node*> nv;
     std::pair<double, double> areas = calculateWireArea(
         wireroot, wireroot->layer()->getRoutingLevel(), nv, level_nodes);
 
@@ -648,13 +645,13 @@ void AntennaChecker::buildWireParTable(
     double side_wire_area = areas.second;
     double iterm_gate_area = 0.0;
     double iterm_diff_area = 0.0;
-    std::set<dbITerm*> iv = {};
+    std::set<dbITerm*> iv;
     nv.clear();
 
-    findWireBelowIterms(wireroot, iterm_gate_area, iterm_diff_area, wireroot->
-                        layer()->getRoutingLevel(), iv, nv);
+    findWireBelowIterms(wireroot, iterm_gate_area, iterm_diff_area,
+                        wireroot->layer()->getRoutingLevel(), iv, nv);
 
-    PARinfo new_par = {*root_itr,
+    PARinfo new_par = {wireroot,
                        iv,
                        wire_area,
                        side_wire_area,
@@ -1488,10 +1485,6 @@ void AntennaChecker::getAntennaRatio(std::string report_filename,
           }
         }
 
-        if (gate_iterms.size() == 0)
-          fprintf(stream_, "No sinks on net %s\n",
-                  net->getConstName());
-
         std::vector<PARinfo> PARtable;
         buildWireParTable(PARtable, wireroots_info);
 
@@ -1911,9 +1904,9 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
 std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
                                                                    dbMTerm* diode_mterm)
 {
-  double max_diff_area = 0.0;
+  double diode_diff_area = 0.0;
   if (diode_mterm) 
-    max_diff_area = maxDiffArea(diode_mterm);
+    diode_diff_area = maxDiffArea(diode_mterm);
 
   std::vector<ViolationInfo> antenna_violations;
   if (net->isSpecial())
@@ -1937,9 +1930,10 @@ std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
                            layer->getRoutingLevel(), gates);
         int required_diode_count = 0;
         if (diode_mterm) {
-          while (wire_PAR_violation && required_diode_count < repair_max_diode_count) {
-            par_info.iterm_diff_area += max_diff_area * par_info.iterms.size();
-            required_diode_count++;
+          while (wire_PAR_violation
+                 && required_diode_count < repair_max_diode_count) {
+            par_info.iterm_diff_area += diode_diff_area * gates.size();
+            required_diode_count += gates.size();
             calculateParInfo(par_info);
             wire_PAR_violation = checkViolation(par_info, layer);
           }
