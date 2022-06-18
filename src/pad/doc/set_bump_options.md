@@ -13,6 +13,8 @@
         [-rdl_layer name] \
         [-rdl_width value] \
         [-rdl_spacing value] \
+        [-padcell_to_rdl <list_of_vias>] \
+        [-rdl_to_bump <list_of_vias>] \
         [-rdl_cover_file_name rdl_file_name]
 ```
 
@@ -31,6 +33,8 @@ The -num_pads_per_tile option specifies the number of padcells that can be place
 
 Details about the redistribution layer, name, width and spacing are specified with the -rdl_layer, -rdl_width and -rdl_spacing commands (units: microns) respectively.
 
+If the padcell pad pin is not in the rdl layer, use the -padcell_to_rdl option to specify a list of vias to be placed at the center of the padcell pad pin to connect to the rdl layer. Similarly, the -rdl_to_bump option can be used to specify a list of vias to connect the rdl routing to the bump cell if necessary.
+
 The -rdl_cover_file_name is used to specify the name of the file to contain the RDL routing.
 
 ## Options
@@ -47,6 +51,8 @@ The -rdl_cover_file_name is used to specify the name of the file to contain the 
 | -rdl_layer | Name of the redistribution layer. |
 | -rdl_width | The width of the RDL layer to use when connecting bumps to padcells. |
 | -rdl_spacing | The required spacing between RDL wires. |
+| -padcell_to_rdl | Specify a list of vias to connect the padcell pad pin to the rdl layer if required |
+| -rdl_to_bump | Specify a list of vias to connect the rdl to the bump cell if required |
 | -rdl_cover_file_name | Specifies the name of the file to which the routing of the redistribution layer is to be written. If not specified, the default value is cover.def.  In an earlier release, the OpenROAD database did not support 45-degree geometries used by RDL routing, and this cover.def allowed for the RDL to be added at the end of the flow, without being added to the database. Now that the database will allow 45-degree geometries, this command will be deprecated once ICeWall has been modified to write RDL layout directly into the database. |
 
 ## Examples
