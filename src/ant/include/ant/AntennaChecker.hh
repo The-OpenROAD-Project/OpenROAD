@@ -192,10 +192,9 @@ class AntennaChecker
   int dbu_per_micron_;
   grt::GlobalRouter* global_router_;
   utl::Logger* logger_;
-  FILE* stream_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
 
-  static constexpr int repair_max_diode_count = 1;
+  static constexpr int repair_max_diode_count = 10;
 };
 
 }  // namespace ant
