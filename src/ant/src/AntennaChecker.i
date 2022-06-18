@@ -54,9 +54,9 @@ odb::dbDatabase *getDb();
 namespace ant {
 
 int
-check_antennas(char* report_filename, bool report_violating_nets)
+check_antennas(const char *net_name, bool verbose)
 {
-  return getAntennaChecker()->checkAntennas(report_filename, report_violating_nets);
+  return getAntennaChecker()->checkAntennas(net_name, verbose);
 }
 
 void
@@ -67,8 +67,7 @@ check_max_length(const char *net_name,
   checker->checkMaxLength(net_name, layer);
 }
 
-// check if an input net is violated, return 1 if the net is violated
-//   - -net_name: set the net name for checking
+// check a net for antenna violations
 bool
 check_net_violation(char* net_name)
 { 

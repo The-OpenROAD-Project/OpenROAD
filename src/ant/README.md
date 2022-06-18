@@ -24,14 +24,14 @@ Antenna violations can be repaired after global routing with the `repair_design`
 
 ### `check_antennas`
 
-Check antenna violations on all nets and generate a report.
+Check nets for antenna violations.
 
 ```
-check_antennas [-report_filename <FILE>] [-report_violating_nets]
+check_antennas [-net net] [-verbose]
 ```
 
--   `-report_filename`: specifies the filename path where the antenna violation report is to be saved.
--   `-report_violating_nets`: provides a summary of the violated nets.
+- `-verbose` report all antenna calculations for violating nets
+- 'net' check antennas on one net
 
 ## Limitations
 

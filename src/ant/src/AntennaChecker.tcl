@@ -29,21 +29,31 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "check_antennas" { [-report_violating_nets]\
-                                        [-report_file report_file] }
+sta::define_cmd_args "check_antennas" { [-verbose]\
+                                          [-report_file report_file]\
+                                          [-net net]}
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
-    keys {-report_file} \
-    flags {-report_violating_nets}
+    keys {-report_file -net} \
+    flags {-verbose -report_violating_nets}
 
   if { [info exists keys(-report_file)] } {
     set report_file [file normalize $keys(-report_file)]
-  } else {
-    utl::error ANT 6 "missing -report_file argument."
   }
 
-  set report_violating_nets [info exists flags(-report_violating_nets)]
+  set verbose [info exists flags(-verbose)]
 
-  return [ant::check_antennas $report_file $report_violating_nets]
+  set net_name ""
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+  }
+
+  if { [info exists keys(-report_filename)] } {
+    utl::warn ANT 10 "-report_filename."
+  }
+  if { [info exists flags(-report_violating_nets)] } {
+    utl::warn ANT 11 "-report_violating_nets is deprecated."
+  }
+  return [ant::check_antennas $net_name $verbose]
 }

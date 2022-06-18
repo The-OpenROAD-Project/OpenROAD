@@ -31,9 +31,8 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <map>
+#include <unordered_set>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -77,7 +76,8 @@ class AntennaChecker
             grt::GlobalRouter* global_router,
             utl::Logger* logger);
 
-  int checkAntennas(std::string report_filename, bool simple_report);
+  int checkAntennas(const char *net_name,
+                    bool verbose);
 
   void checkMaxLength(const char* net_name, int layer);
 
@@ -149,25 +149,33 @@ class AntennaChecker
                      std::vector<dbWireGraph::Node*> &gate_iterms);
 
   std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio,
-                                     bool simple_report,
+                                     bool verbose,
                                      bool print);
   std::pair<bool, bool> checkWireCar(ARinfo AntennaRatio,
                                      bool par_checked,
-                                     bool simple_report,
+                                     bool verbose,
                                      bool print);
-  bool checkViaPar(ARinfo AntennaRatio, bool simple_report, bool print);
-  bool checkViaCar(ARinfo AntennaRatio, bool simple_report, bool print);
+  bool checkViaPar(ARinfo AntennaRatio, bool verbose, bool print);
+  bool checkViaCar(ARinfo AntennaRatio, bool verbose, bool print);
 
-  void checkAntennas(std::string report_filename,
-                     bool report_violating_nets,
+  void checkAntennas(dbNet *net,
+                     bool verbose,
                      // Return values.
-                     int &pin_violation_count,
-                     int &net_violation_count);
+                     int &net_violation_count,
+                     int &pin_violation_count);
   void checkNet(dbNet* net,
-                bool report_violating_nets,
+                bool verbose,
                 // Return values.
-                bool &violated_wire,
-                int &violated_pin_count);
+                int &net_violation_count,
+                int &pin_violation_count);
+  void checkGate(dbWireGraph::Node* gate,
+                 std::vector<ARinfo> &CARtable,
+                 std::vector<ARinfo> &VIA_CARtable,
+                 bool print,
+                 bool verbose,
+                 // Return values.
+                 bool &violation,
+                 std::unordered_set<dbWireGraph::Node*> &violated_gates);
   void checkDiodeCell();
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);

@@ -1,10 +1,9 @@
-source "helpers.tcl"
+# check_antennas detail routed, -verbose
 read_lef merged_spacing.lef
 read_def sw130_random.def
 
-set rpt_file [make_result_file "sw130_random.rpt"]
-check_antennas -report_file $rpt_file
-report_file $rpt_file
+check_antennas
+check_antennas -verbose
 
 # calculate the available length that can be added to net51, on layer 1
 # while keeping the PAR ratios satified
