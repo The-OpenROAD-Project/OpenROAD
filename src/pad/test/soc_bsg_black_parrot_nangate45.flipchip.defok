@@ -3407,7 +3407,7 @@ COMPONENTS 1496 ;
     - u_vzz_8 PADCELL_VSSIO_V + FIXED ( 4890000 70000 ) N ;
     - u_vzz_9 PADCELL_VSSIO_H + FIXED ( 5650000 1250000 ) W ;
 END COMPONENTS
-PINS 237 ;
+PINS 141 ;
     - DVDD_0 + NET DVDD_0 + DIRECTION INPUT + USE POWER
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
@@ -3637,16 +3637,100 @@ PINS 237 ;
         + FIXED ( 1080000 1720000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 5240000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 2680000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 2680000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 2680000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 2680000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 760000 2680000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 5560000 3320000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 760000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3960000 3960000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3320000 3960000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2680000 3960000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2040000 3960000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3960000 4280000 ) N
@@ -3689,16 +3773,79 @@ PINS 237 ;
         + FIXED ( 760000 1400000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 2040000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 5560000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 2360000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 2680000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 2680000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 2680000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 440000 2680000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 3000000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 4920000 3320000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 3320000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 440000 3640000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3640000 3960000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 3000000 3960000 ) N
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + FIXED ( 2360000 3960000 ) N
       + PORT
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 4920000 4600000 ) N

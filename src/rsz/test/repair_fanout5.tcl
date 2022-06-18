@@ -5,6 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_def repair_fanout4.def
 set_max_fanout 10 [current_design]
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal1
 estimate_parasitics -placement
 

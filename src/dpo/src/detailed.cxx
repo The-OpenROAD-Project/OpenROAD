@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -39,9 +37,9 @@
 #include <iostream>
 #include <stack>
 #include <utility>
-#include "utl/Logger.h"
-#include "plotgnu.h"
+
 #include "utility.h"
+#include "utl/Logger.h"
 
 // Detailed management of segments.
 #include "detailed_manager.h"
@@ -50,10 +48,10 @@
 #include "detailed.h"
 #include "detailed_global.h"
 #include "detailed_mis.h"
+#include "detailed_orient.h"
 #include "detailed_random.h"
 #include "detailed_reorder.h"
 #include "detailed_vertical.h"
-#include "detailed_orient.h"
 
 using utl::DPO;
 
@@ -70,22 +68,21 @@ bool Detailed::improve(DetailedMgr& mgr)
 // bool Detailed::improve( Architecture* arch, Network* network, RoutingParams*
 // rt )
 {
-  m_mgr = &mgr;
+  mgr_ = &mgr;
 
-  m_arch = mgr.getArchitecture();
-  m_network = mgr.getNetwork();
-  m_rt = mgr.getRoutingParams();  // Can be NULL.
-
-
+  arch_ = mgr.getArchitecture();
+  network_ = mgr.getNetwork();
+  rt_ = mgr.getRoutingParams();  // Can be NULL.
 
   // Parse the script string and run each command.
   boost::char_separator<char> separators(" \r\t\n", ";");
-  boost::tokenizer<boost::char_separator<char> > tokens(m_params.m_script,
-                                                        separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(params_.script_,
+                                                       separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char> >::iterator it =
-           tokens.begin();
-       it != tokens.end(); it++) {
+  for (boost::tokenizer<boost::char_separator<char>>::iterator it
+       = tokens.begin();
+       it != tokens.end();
+       it++) {
     std::string temp = *it;
     if (temp.back() == ';') {
       while (!temp.empty() && temp.back() == ';') {
@@ -110,23 +107,24 @@ bool Detailed::improve(DetailedMgr& mgr)
   // oriented for their respective row assignments.
   // We do not need to do flipping though.
   {
-    DetailedOrient orienter(m_arch, m_network, m_rt);
-    orienter.run(m_mgr, "orient -f");
+    DetailedOrient orienter(arch_, network_, rt_);
+    orienter.run(mgr_, "orient -f");
   }
 
   // Different checks which are useful for debugging.
-  mgr.checkRegionAssignment();  
-  mgr.checkRowAlignment();   
-  mgr.checkSiteAlignment();  
-  mgr.checkOverlapInSegments(); 
-  mgr.checkEdgeSpacingInSegments(); 
+  mgr.checkRegionAssignment();
+  mgr.checkRowAlignment();
+  mgr.checkSiteAlignment();
+  mgr.checkOverlapInSegments();
+  mgr.checkEdgeSpacingInSegments();
 
   return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void Detailed::doDetailedCommand(std::vector<std::string>& args) {
+void Detailed::doDetailedCommand(std::vector<std::string>& args)
+{
   if (args.size() == 0) {
     return;
   }
@@ -149,43 +147,43 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     command = "random improvement";
   } else {
-    //command = "unknown command";
+    // command = "unknown command";
     return;
   }
-  m_mgr->getLogger()->info(DPO, 303, "Running algorithm for {:s}.", command);
+  mgr_->getLogger()->info(DPO, 303, "Running algorithm for {:s}.", command);
 
   // Comment out some algos I haven't confirmed as working.
   if (strcmp(args[0].c_str(), "mis") == 0) {
-    DetailedMis mis(m_arch, m_network, m_rt);
-    mis.run(m_mgr, args);
+    DetailedMis mis(arch_, network_, rt_);
+    mis.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
-    DetailedGlobalSwap gs(m_arch, m_network, m_rt);
-    gs.run(m_mgr, args);
+    DetailedGlobalSwap gs(arch_, network_, rt_);
+    gs.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
-    DetailedVerticalSwap vs(m_arch, m_network, m_rt);
-    vs.run(m_mgr, args);
-  //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
-  //  DetailedInterleave interleave(m_arch, m_network, m_rt);
-  //  interleave.run(m_mgr, args);
+    DetailedVerticalSwap vs(arch_, network_, rt_);
+    vs.run(mgr_, args);
+    //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
+    //  DetailedInterleave interleave(arch_, network_, rt_);
+    //  interleave.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
-    DetailedReorderer ro(m_arch, m_network, m_rt);
-    ro.run(m_mgr, args);
+    DetailedReorderer ro(arch_, network_, rt_);
+    ro.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "orient") == 0) {
-    DetailedOrient orienter(m_arch, m_network, m_rt);
-    orienter.run(m_mgr, args);
+    DetailedOrient orienter(arch_, network_, rt_);
+    orienter.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "default") == 0) {
-    DetailedRandom random(m_arch, m_network, m_rt);
-    random.run(m_mgr, args);
+    DetailedRandom random(arch_, network_, rt_);
+    random.run(mgr_, args);
   } else {
     return;
   }
 
   // Different checks which are useful for debugging.
-  //m_mgr->checkRegionAssignment();  
-  //m_mgr->checkRowAlignment();   
-  //m_mgr->checkSiteAlignment();  
-  //m_mgr->checkOverlapInSegments(); 
-  //m_mgr->checkEdgeSpacingInSegments(); 
+  // mgr_->checkRegionAssignment();
+  // mgr_->checkRowAlignment();
+  // mgr_->checkSiteAlignment();
+  // mgr_->checkOverlapInSegments();
+  // mgr_->checkEdgeSpacingInSegments();
 }
 
 }  // namespace dpo

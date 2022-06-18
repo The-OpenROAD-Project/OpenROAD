@@ -54,6 +54,7 @@ namespace par {
 using utl::PAR;
 
 using sta::Cell;
+using sta::CellPortBitIterator;
 using sta::ConcreteNetwork;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -313,7 +314,9 @@ Instance* PartitionMgr::buildPartitionedInstance(
 
   // create nets for ports in cell
   for (auto& [db_net, port] : *port_map) {
-    network->makeNet(network->name(port), inst);
+    Net* net = network->makeNet(network->name(port), inst);
+    Pin* pin = network->makePin(inst, port, nullptr);
+    network->makeTerm(pin, net);
   }
 
   // create and connect instances
@@ -374,6 +377,16 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   std::string instname = name;
   instname += "_inst";
   Instance* inst = network->makeInstance(cell, instname.c_str(), nullptr);
+
+  CellPortBitIterator* port_iter = network->portBitIterator(cell);
+  while (port_iter->hasNext()) {
+    Port* port = port_iter->next();
+    const char* port_name = network->name(port);
+    Net* net = network->makeNet(port_name, inst);
+    Pin* pin = network->makePin(inst, port, nullptr);
+    network->makeTerm(pin, net);
+  }
+  delete port_iter;
 
   return inst;
 }
@@ -444,7 +457,7 @@ void PartitionMgr::writePartitionVerilog(const char* path,
 
   reinterpret_cast<ConcreteNetwork*>(network)->setTopInstance(top_inst);
 
-  writeVerilog(path, false, false, {}, network);
+  writeVerilog(path, true, false, {}, network);
 
   delete network;
 }

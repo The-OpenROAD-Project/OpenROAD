@@ -93,7 +93,7 @@ void io::Parser::patchGuides(frNet* net,
     case frcInstTerm: {
       frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
       iTerm->getShapes(pinShapes, true);
-      pinBBox = iTerm->getBBox();
+      pinBBox = iTerm->getBBox(true);
       name = iTerm->getName();
       break;
     }

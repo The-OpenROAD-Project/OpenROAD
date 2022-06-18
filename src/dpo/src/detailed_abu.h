@@ -34,13 +34,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <set>
 #include <vector>
-#include "architecture.h"
+
 #include "detailed_objective.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
@@ -48,22 +45,25 @@ class DetailedOrient;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedABU : public DetailedObjective {
+class DetailedABU : public DetailedObjective
+{
   // This class maintains the ABU metric which can be used as part of a cost
   // function for detailed improvement.
  public:
   DetailedABU(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedABU();
 
   // Those that must be overridden.
-  double curr();
-  double delta(int n, std::vector<Node*>& nodes, 
-               std::vector<int>& curLeft, std::vector<int>& curBottom, 
+  double curr() override;
+  double delta(int n,
+               std::vector<Node*>& nodes,
+               std::vector<int>& curLeft,
+               std::vector<int>& curBottom,
                std::vector<unsigned>& curOri,
-               std::vector<int>& newLeft, std::vector<int>& newBottom,
-               std::vector<unsigned>& newOri);
-  void accept();
-  void reject();
+               std::vector<int>& newLeft,
+               std::vector<int>& newBottom,
+               std::vector<unsigned>& newOri) override;
+  void accept() override;
+  void reject() override;
 
   // Other.
   void init(DetailedMgr* mgr, DetailedOrient* orient);
@@ -89,8 +89,9 @@ class DetailedABU : public DetailedObjective {
   void clearBuckets();
   int getBucketId(int binId, double occ);
 
- protected:
-  struct density_bin {
+ private:
+  struct DensityBin
+  {
     int id;
     double lx, hx;      // low/high x coordinate
     double ly, hy;      // low/high y coordinate
@@ -101,32 +102,32 @@ class DetailedABU : public DetailedObjective {
     double free_space;  // bin's freespace area
   };
 
-  DetailedMgr* m_mgrPtr;
-  DetailedOrient* m_orientPtr;
+  DetailedMgr* mgrPtr_;
+  DetailedOrient* orientPtr_;
 
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // Utilization monitoring for ABU (if paying attention to ABU).
-  std::vector<density_bin> m_abuBins;
-  double m_abuGridUnit;
-  int m_abuGridNumX;
-  int m_abuGridNumY;
-  int m_abuNumBins;
+  std::vector<DensityBin> abuBins_;
+  double abuGridUnit_;
+  int abuGridNumX_;
+  int abuGridNumY_;
+  int abuNumBins_;
 
-  double m_abuTargUt;
-  double m_abuTargUt02;
-  double m_abuTargUt05;
-  double m_abuTargUt10;
-  double m_abuTargUt20;
+  double abuTargUt_;
+  double abuTargUt02_;
+  double abuTargUt05_;
+  double abuTargUt10_;
+  double abuTargUt20_;
 
-  int m_abuChangedBinsCounter;
-  std::vector<int> m_abuChangedBins;
-  std::vector<int> m_abuChangedBinsMask;
+  int abuChangedBinsCounter_;
+  std::vector<int> abuChangedBins_;
+  std::vector<int> abuChangedBinsMask_;
 
-  std::vector<std::set<int> > m_utilBuckets;
-  std::vector<double> m_utilTotals;
+  std::vector<std::set<int>> utilBuckets_;
+  std::vector<double> utilTotals_;
 };
 
 }  // namespace dpo

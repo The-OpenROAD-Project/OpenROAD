@@ -500,9 +500,8 @@ void PartitionMgr::runMlPart()
     currentResults.addAssignment(clusters, runtime, seed);
     logger_->info(PAR,
                   59,
-                  "[MLPart] Partitioned graph for seed {} in {} ms.",
-                  seed,
-                  runtime);
+                  "[MLPart] Partitioned graph for seed {}.",
+                  seed);
 
     std::fill(clusters.begin(), clusters.end(), 0);
   }
@@ -806,8 +805,6 @@ void PartitionMgr::reportPartitionResult(const unsigned partitionId)
       PAR, 11, "Cluster Area SD = {}.", currentResults.getBestSetArea());
   logger_->info(
       PAR, 12, "Total Hop Weight = {}.", currentResults.getBestHopWeigth());
-  logger_->info(
-      PAR, 13, "Total Runtime = {}.", currentResults.getBestRuntime());
 }
 
 // Write Partitioning To DB
@@ -868,7 +865,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void PartitionMgr::run3PClustering()
+void PartitionMgr::runClustering()
 {
   hypergraph(true);
   if (options_.getTool() == "mlpart") {
@@ -1166,7 +1163,6 @@ void PartitionMgr::runMlPartClustering()
   const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
-  logger_->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
@@ -1269,7 +1265,7 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
 
 // Read partitioning input file
 
-void PartitionMgr::readPartitioningFile(std::string filename)
+unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const std::string& instance_map_file)
 {
   hypergraph();
   PartSolutions currentResults;
@@ -1279,29 +1275,74 @@ void PartitionMgr::readPartitioningFile(std::string filename)
   const std::string evaluationFunction = options_.getEvaluationFunction();
   options_.setTargetPartitions(options_.getFinalPartitions());
 
+  const auto& inst_map = hypergraph_->getMap();
+
+  // determine order the instances will be in the input file
+  std::vector<std::string> instance_order;
+  if (!instance_map_file.empty()) {
+    std::ifstream map_file(instance_map_file);
+    if (map_file.is_open()) {
+      std::string line;
+      while (getline(map_file, line)) {
+        if (line.empty()) {
+          continue;
+        }
+        instance_order.push_back(line);
+      }
+      map_file.close();
+    } else {
+      logger_->error(PAR, 73, "Unable to open file {}.", instance_map_file);
+    }
+  } else {
+    instance_order.resize(inst_map.size());
+    for (const auto& [inst, idx] : inst_map) {
+      instance_order[idx] = inst;
+    }
+  }
+
   std::ifstream file(filename);
-  std::string line;
-  std::vector<unsigned long> partitions;
+  std::vector<unsigned long> inst_partitions;
   if (file.is_open()) {
+    std::string line;
     while (getline(file, line)) {
-      partitions.push_back(std::stoi(line));
+      if (line.empty()) {
+        continue;
+      }
+      try {
+        inst_partitions.push_back(std::stoi(line));
+      } catch (const std::invalid_argument&) {
+        logger_->error(PAR, 71, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
+      } catch (const std::out_of_range&) {
+        logger_->error(PAR, 72, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
+      }
     }
     file.close();
   } else {
     logger_->error(PAR, 22, "Unable to open file {}.", filename);
   }
+
+  if (inst_partitions.size() != instance_order.size()) {
+    logger_->error(PAR, 74, "Instances in partitioning ({}) does not match instances in netlist ({}).",
+        inst_partitions.size(),
+        instance_order.size());
+  }
+
+  std::vector<unsigned long> partitions(inst_partitions.size());
+  for (size_t i = 0; i < inst_partitions.size(); i++) {
+    const auto& inst_name = instance_order[i];
+    const auto& inst_part = inst_partitions[i];
+
+    auto inst_find = inst_map.find(inst_name);
+    if (inst_find == inst_map.end()) {
+      logger_->error(PAR, 75, "Instance {} not in the netlist.", inst_name);
+    }
+    partitions[inst_find->second] = inst_part;
+  }
+
   currentResults.addAssignment(partitions, 0, 1);
   results_.push_back(currentResults);
-  computePartitionResult(partitionId, evaluationFunction);
-}
 
-void PartitionMgr::runClustering()
-{
-  hypergraph();
-  if (options_.getClusteringScheme() == "hem") {
-  } else if (options_.getClusteringScheme() == "scheme2") {
-  } else {
-  }
+  return partitionId;
 }
 
 void PartSolutions::addAssignment(
@@ -1337,18 +1378,9 @@ void PartSolutions::resetEvaluation()
 void PartitionMgr::reportGraph()
 {
   hypergraph();
-  int numNodes;
-  int numEdges;
-  if (options_.getGraphModel() == HYPERGRAPH) {
-    numNodes = hypergraph_->getNumVertex();
-    numEdges = hypergraph_->getNumEdges();
-  } else {
-    toGraph();
-    numNodes = graph_->getNumVertex();
-    numEdges = graph_->getNumEdges();
-  }
-  logger_->info(PAR, 67, "Number of Nodes: {}", numNodes);
-  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", numEdges);
+  toGraph();
+  logger_->info(PAR, 67, "Number of Nodes: {}", graph_->getNumVertex());
+  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
 }
 
 void PartitionMgr::partitionDesign(unsigned int max_num_macro,

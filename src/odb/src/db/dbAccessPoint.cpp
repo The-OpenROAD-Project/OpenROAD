@@ -51,6 +51,8 @@
 #include "dbMaster.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "dbTechVia.h"
+#include "dbVia.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -166,6 +168,8 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.bpin_;
   stream >> obj.accesses_;
   stream >> obj.iterms_;
+  stream >> obj.vias_;
+  stream >> obj.path_segs_;
   // User Code Begin >>
   int8_t low, high;
   stream >> low;
@@ -185,6 +189,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.bpin_;
   stream << obj.accesses_;
   stream << obj.iterms_;
+  stream << obj.vias_;
+  stream << obj.path_segs_;
   // User Code Begin <<
   int8_t low = static_cast<int8_t>(obj.low_type_);
   int8_t high = static_cast<int8_t>(obj.high_type_);
@@ -239,6 +245,23 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
 }
 
 // User Code Begin dbAccessPointPublicMethods
+
+void dbAccessPoint::addSegment(const Rect& segment,
+                               const bool& begin_style_trunc,
+                               const bool& end_style_trunc)
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  std::tuple path_seg
+      = std::make_tuple(segment, begin_style_trunc, end_style_trunc);
+  obj->path_segs_.push_back(std::move(path_seg));
+}
+
+const std::vector<std::tuple<Rect, bool, bool>>& dbAccessPoint::getSegments()
+    const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  return obj->path_segs_;
+}
 
 void dbAccessPoint::setAccesses(const std::vector<dbDirection>& accesses)
 {
@@ -347,6 +370,45 @@ dbBPin* dbAccessPoint::getBPin() const
     return nullptr;
   _dbBlock* block = (_dbBlock*) obj->getOwner();
   return (dbBPin*) block->_bpin_tbl->getPtr(obj->bpin_);
+}
+std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  dbDatabase* db = (dbDatabase*) obj->getDatabase();
+  _dbTech* tech = (_dbTech*) db->getTech();
+  _dbBlock* block = (_dbBlock*) obj->getOwner();
+  std::vector<std::vector<dbObject*>> result;
+  for (const auto& cutVias : obj->vias_) {
+    result.push_back(std::vector<dbObject*>());
+    for (const auto& [type, id] : cutVias) {
+      if (type == dbObjectType::dbViaObj) {
+        result.back().push_back(
+            (dbObject*) block->_via_tbl->getPtr(dbId<_dbVia>(id)));
+      } else {
+        result.back().push_back(
+            (dbTechVia*) tech->_via_tbl->getPtr(dbId<_dbTechVia>(id)));
+      }
+    }
+  }
+  return result;
+}
+
+void dbAccessPoint::addTechVia(int num_cuts, dbTechVia* via)
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  if (num_cuts > obj->vias_.size())
+    obj->vias_.resize(num_cuts);
+  obj->vias_[num_cuts - 1].push_back(
+      {via->getObjectType(), via->getImpl()->getOID()});
+}
+
+void dbAccessPoint::addBlockVia(int num_cuts, dbVia* via)
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  if (num_cuts > obj->vias_.size())
+    obj->vias_.resize(num_cuts);
+  obj->vias_[num_cuts - 1].push_back(
+      {via->getObjectType(), via->getImpl()->getOID()});
 }
 
 dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint idx)

@@ -39,6 +39,7 @@ sta::define_cmd_args "detailed_route" {
     [-output_maze filename]
     [-output_drc filename]
     [-output_cmap filename]
+    [-output_guide_coverage filename]
     [-db_process_node name]
     [-disable_via_gen]
     [-droute_end_iter iter]
@@ -51,23 +52,27 @@ sta::define_cmd_args "detailed_route" {
     [-verbose level]
     [-param filename]
     [-distributed]
-    [-remote_host host]
-    [-remote_port port]
+    [-remote_host rhost]
+    [-remote_port rport]
     [-shared_volume vol]
+    [-cloud_size sz]
     [-clean_patches]
+    [-no_pin_access]
+    [-min_access_points count]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
+    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
-    flags {-disable_via_gen -distributed -clean_patches -single_step_dr}
+      -top_routing_layer -verbose -remote_host -remote_port -shared_volume -cloud_size -min_access_points} \
+    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
   set clean_patches [expr [info exists flags(-clean_patches)]]
+  set no_pin_access [expr [info exists flags(-no_pin_access)]]
   # single_step_dr is not a user option but is intended for algorithm
   # development.  It is not listed in the help string intentionally.
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
@@ -102,6 +107,11 @@ proc detailed_route { args } {
       set output_cmap $keys(-output_cmap)
     } else {
       set output_cmap ""
+    }
+    if { [info exists keys(-output_guide_coverage)] } {
+      set output_guide_coverage $keys(-output_guide_coverage)
+    } else {
+      set output_guide_coverage ""
     }
     if { [info exists keys(-db_process_node)] } {
       set db_process_node $keys(-db_process_node)
@@ -157,12 +167,12 @@ proc detailed_route { args } {
     }
     if { [info exists flags(-distributed)] } {
       if { [info exists keys(-remote_host)] } {
-        set host $keys(-remote_host)
+        set rhost $keys(-remote_host)
       } else {
         utl::error DRT 506 "-remote_host is required for distributed routing."
       }
       if { [info exists keys(-remote_port)] } {
-        set port $keys(-remote_port)
+        set rport $keys(-remote_port)
       } else {
         utl::error DRT 507 "-remote_port is required for distributed routing."
       }
@@ -171,13 +181,24 @@ proc detailed_route { args } {
       } else {
         utl::error DRT 508 "-shared_volume is required for distributed routing."
       }
-      drt::detailed_route_distributed $host $port $vol
+      if { [info exists keys(-cloud_size)] } {
+        set cloudsz $keys(-cloud_size)
+      } else {
+        utl::error DRT 516 "-cloud_size is required for distributed routing."
+      }
+      drt::detailed_route_distributed $rhost $rport $vol $cloudsz
+    }
+    if { [info exists keys(-min_access_points)] } {
+      sta::check_cardinal "-min_access_points" $keys(-min_access_points)
+      set min_access_points $keys(-min_access_points)
+    } else {
+      set min_access_points -1
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
-      $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
+      $output_cmap $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $single_step_dr
+      $clean_patches $no_pin_access $single_step_dr $min_access_points
   }
 }
 
@@ -196,13 +217,14 @@ sta::define_cmd_args "detailed_route_debug" {
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
+    [-dump_dir dir]
     [-pa_edge]
     [-pa_commit]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net -worker -iter -pin} \
+      keys {-net -worker -iter -pin -dump_dir} \
       flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
@@ -226,7 +248,15 @@ proc detailed_route_debug { args } {
   } else {
     set pin_name ""
   }
-
+  if { $dump_dr } {
+    if { [info exists keys(-dump_dir)] } {
+      set dump_dir $keys(-dump_dir)
+    } else {
+      utl::error DRT 2008 "-dump_dir is required for debugging with -dump_dr."
+    }
+  } else {
+    set dump_dir ""
+  }
   set worker_x -1
   set worker_y -1
   if [info exists keys(-worker)] {
@@ -246,17 +276,19 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit
+      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit $dump_dir
 }
 sta::define_cmd_args "pin_access" {
     [-db_process_node name]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
+    [-min_access_points count]
     [-verbose level]
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
-      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose} \
+      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
+            -min_access_points } \
       flags {}
   sta::check_argc_eq0 "detailed_route_debug" $args
   if [info exists keys(-db_process_node)] {
@@ -280,11 +312,81 @@ proc pin_access { args } {
   } else {
     set verbose 1
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
+  if { [info exists keys(-min_access_points)] } {
+    sta::check_cardinal "-min_access_points" $keys(-min_access_points)
+    set min_access_points $keys(-min_access_points)
+  } else {
+    set min_access_points -1
+  }
+  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }
+
+sta::define_cmd_args "detailed_route_run_worker" {
+    [-dump_dir dir]
+    [-drc_rpt drc]
+}
+
 proc detailed_route_run_worker { args } {
-  sta::check_argc_eq1 "detailed_route_run_worker" $args
-  drt::run_worker_cmd $args
+  sta::parse_key_args "detailed_route_run_worker" args \
+      keys {-dump_dir -drc_rpt} \
+      flags {}
+  sta::check_argc_eq0 "detailed_route_run_worker" $args
+  if { [info exists keys(-dump_dir)] } {
+    set dump_dir $keys(-dump_dir)
+  } else {
+    utl::error DRT 517 "-dump_dir is required for detailed_route_run_worker command"
+  }
+
+  if { [info exists keys(-drc_rpt)] } {
+    set drc_rpt $keys(-drc_rpt)
+  } else {
+    utl::error DRT 518 "-drc_rpt is required for detailed_route_run_worker command"
+  }
+  drt::run_worker_cmd  $dump_dir $drc_rpt
+}
+
+sta::define_cmd_args "detailed_route_worker_debug" {
+    [-maze_end_iter iter]
+    [-drc_cost d_cost]
+    [-marker_cost m_cost]
+    [-ripup_mode mode]
+    [-follow_guide f_guide]
+}
+
+proc detailed_route_worker_debug { args } {
+  sta::parse_key_args "detailed_route_worker_debug" args \
+      keys {-maze_end_iter -drc_cost -marker_cost -ripup_mode -follow_guide} \
+      flags {}
+  if [info exists keys(-maze_end_iter)] {
+    set maze_end_iter $keys(-maze_end_iter)
+  } else {
+    set maze_end_iter -1
+  }
+
+  if [info exists keys(-drc_cost)] {
+    set drc_cost $keys(-drc_cost)
+  } else {
+    set drc_cost -1
+  }
+
+  if [info exists keys(-marker_cost)] {
+    set marker_cost $keys(-marker_cost)
+  } else {
+    set marker_cost -1
+  }
+
+  if [info exists keys(-ripup_mode)] {
+    set ripup_mode $keys(-ripup_mode)
+  } else {
+    set ripup_mode -1
+  }
+
+  if [info exists keys(-follow_guide)] {
+    set follow_guide $keys(-follow_guide)
+  } else {
+    set follow_guide -1
+  }
+  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $ripup_mode $follow_guide
 }
 
 proc detailed_route_set_default_via { args } {

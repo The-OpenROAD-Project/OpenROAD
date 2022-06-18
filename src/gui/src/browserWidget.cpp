@@ -313,7 +313,7 @@ void BrowserWidget::markModelModified()
 
 void BrowserWidget::updateModel()
 {
-  if (!model_modified_) {
+  if (!model_modified_ && model_->rowCount() != 0) {
     return;
   }
 

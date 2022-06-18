@@ -52,8 +52,8 @@ class frTerm : public frBlockObject
   dbIoType getDirection() const { return direction_; }
   // others
   virtual frBlockObjectEnum typeId() const = 0;
-  void setOrderId(int order_id) { _order_id = order_id; }
-  int getOrderId() { return _order_id; }
+  void setIndexInOwner(int value) { index_in_owner_ = value; }
+  int getIndexInOwner() { return index_in_owner_; }
   virtual frAccessPoint* getAccessPoint(frCoord x,
                                         frCoord y,
                                         frLayerNum lNum,
@@ -74,6 +74,7 @@ class frTerm : public frBlockObject
         net_(nullptr),
         type_(dbSigType::SIGNAL),
         direction_(dbIoType::INPUT),
+        index_in_owner_(0),
         bbox_()
   {
   }
@@ -82,27 +83,11 @@ class frTerm : public frBlockObject
   frNet* net_;  // set later, term in instTerm does not have net
   dbSigType type_;
   dbIoType direction_;
-  int _order_id;
+  int index_in_owner_;
   Rect bbox_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frTerm() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 
-template <class Archive>
-void frTerm::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & type_;
-  (ar) & direction_;
-  (ar) & _order_id;
-  (ar) & bbox_;
-}
 }  // namespace fr
 
 #endif

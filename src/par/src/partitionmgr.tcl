@@ -433,9 +433,7 @@ proc cluster_netlist { args } {
 
   par::generate_seeds 1
 
-    set currentId [par::run_3party_clustering]
-
-    return $currentId
+  return [par::run_clustering]
 }
 
 #--------------------------------------------------------------------
@@ -488,48 +486,22 @@ proc report_netlist_partitions { args } {
   par::report_netlist_partitions $partitioning_id
 }
 
-sta::define_cmd_args "read_partitioning" { [-read_file name] \
-  [-final_partitions] \
-}
+sta::define_cmd_args "read_partitioning" { -read_file name [-instance_map_file file_path] }
 
 proc read_partitioning { args } {
   sta::parse_key_args "read_partitioning" args \
     keys { -read_file \
-      -final_partitions \
+      -instance_map_file
     } flags { }
 
-  par::set_final_partitions $keys(-final_partitions)
-    if { ![info exists keys(-read_file)] } {
-      utl::error PAR 51 "Missing mandatory argument -read_file"
-    } else {
-      par::read_file $keys(-read_file)
-    }
-
-
-  if { ![info exists keys(-final_partitions)] } {
-    utl::error PAR 52 "Missing mandatory argument \"-final_partitions \[2, 32768\]\"."
-  } else {
+  if { ![info exists keys(-read_file)] } {
+    utl::error PAR 51 "Missing mandatory argument -read_file"
   }
-}
-
-sta::define_cmd_args "run_clustering" { [-scheme name] \
-}
-
-proc run_clustering { args } {
-  sta::parse_key_args "run_clustering" args \
-    keys {-scheme \
-    } flags {}
-
-# Tool
-  set schemes "hem scheme2 scheme3"
-    if { ![info exists keys(-scheme)] } {
-      utl::error PAR 53 "Missing mandatory argument -scheme"
-    } elseif { !($keys(-scheme) in $schemes) } {
-      utl::error PAR 54 "Invalid scheme. Use one of the following: $schemes."
-    } else {
-      par::set_clustering_scheme $keys(-scheme)
-    }
-  par::run_clustering
+  set instance_file ""
+  if { [info exists keys(-instance_map_file)] } {
+    set instance_file $keys(-instance_map_file)
+  }
+  return [par::read_file $keys(-read_file) $instance_file]
 }
 
 sta::define_cmd_args "report_partition_graph" { [-graph_model name

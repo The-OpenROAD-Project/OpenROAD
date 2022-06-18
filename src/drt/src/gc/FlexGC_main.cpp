@@ -1403,7 +1403,6 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
       maxArea = gtl::area(rect);
     }
   }
-
   auto marker = make_unique<frMarker>();
   Rect markerBox(
       gtl::xl(maxRect), gtl::yl(maxRect), gtl::xh(maxRect), gtl::yh(maxRect));
@@ -1784,7 +1783,7 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
   }
 
   // min area
-  // checkMetalShape_minArea(pin);
+   checkMetalShape_minArea(pin);
 
   // min step
   checkMetalShape_minStep(pin);
@@ -2201,7 +2200,12 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
 
     auto cutClassIdx = layer->getCutClassIdx(ptr->width(), ptr->length());
     if (cutClassIdx == conCutClassIdx) {
+        if (con->isNoPrl()) {
+            if ((objBox.xMin() >= gtl::xh(*rect) || objBox.xMax() <= gtl::xl(*rect)) 
+                && (objBox.yMin() >= gtl::yh(*rect) || objBox.yMax() <= gtl::yl(*rect)))
       cnt++;
+        } else
+            cnt++;
     }
   }
   if (cnt >= reqNumCut) {
@@ -2352,13 +2356,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
         DRT,
         48,
         " Unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isNoPrl()) {
-    logger_->warn(
-        DRT,
-        49,
-        " Unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut.");
     return;
   }
   if (con->hasEnclosure()) {

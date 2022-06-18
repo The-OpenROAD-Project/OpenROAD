@@ -37,6 +37,7 @@
 #include "SteinerTree.hh"
 
 #include "utl/Logger.h"
+#include "db_sta/dbNetwork.hh"
 
 #include "sta/Report.hh"
 #include "sta/Units.hh"
@@ -80,8 +81,8 @@ Resizer::setLayerRC(dbTechLayer *layer,
     }
   }
 
-  layer_res_[layer->getNumber()][corner->index()] = res;
-  layer_cap_[layer->getNumber()][corner->index()] = cap;
+  layer_res_[layer->getRoutingLevel()][corner->index()] = res;
+  layer_cap_[layer->getRoutingLevel()][corner->index()] = cap;
 }
 
 void
@@ -89,15 +90,25 @@ Resizer::layerRC(dbTechLayer *layer,
                  const Corner *corner,
                  // Return values.
                  double &res,
-                 double &cap)
+                 double &cap) const
+{
+  layerRC(layer->getRoutingLevel(), corner, res, cap);
+}
+
+void
+Resizer::layerRC(int routing_level,
+                 const Corner *corner,
+                 // Return values.
+                 double &res,
+                 double &cap) const
 {
   if (layer_res_.empty()) {
     res = 0.0;
     cap = 0.0;
   }
   else {
-    res = layer_res_[layer->getNumber()][corner->index()];
-    cap = layer_cap_[layer->getNumber()][corner->index()];
+    res = layer_res_[routing_level][corner->index()];
+    cap = layer_cap_[routing_level][corner->index()];
   }
 }
 
@@ -115,7 +126,7 @@ Resizer::setWireSignalRC(const Corner *corner,
 }
 
 double
-Resizer::wireSignalResistance(const Corner *corner)
+Resizer::wireSignalResistance(const Corner *corner) const
 {
   if (wire_signal_res_.empty())
     return 0.0;
@@ -124,12 +135,28 @@ Resizer::wireSignalResistance(const Corner *corner)
 }
 
 double
-Resizer::wireSignalCapacitance(const Corner *corner)
+Resizer::wireSignalCapacitance(const Corner *corner) const
 {
   if (wire_signal_cap_.empty())
     return 0.0;
   else
     return wire_signal_cap_[corner->index()];
+}
+
+void
+Resizer::wireSignalRC(const Corner *corner,
+                      // Return values.
+                      double &res,
+                      double &cap) const
+{
+  if (wire_signal_res_.empty())
+    res = 0.0;
+  else
+    res = wire_signal_res_[corner->index()];
+  if (wire_signal_cap_.empty())
+    cap = 0.0;
+  else
+    cap = wire_signal_cap_[corner->index()];
 }
 
 void
@@ -144,7 +171,7 @@ Resizer::setWireClkRC(const Corner *corner,
 }
 
 double
-Resizer::wireClkResistance(const Corner *corner)
+Resizer::wireClkResistance(const Corner *corner) const
 {
   if (wire_clk_res_.empty())
     return 0.0;
@@ -153,67 +180,12 @@ Resizer::wireClkResistance(const Corner *corner)
 }
 
 double
-Resizer::wireClkCapacitance(const Corner *corner)
+Resizer::wireClkCapacitance(const Corner *corner) const
 {
   if (wire_clk_cap_.empty())
     return 0.0;
   else
     return wire_clk_cap_[corner->index()];
-}
-
-////////////////////////////////////////////////////////////////
-
-double
-Resizer::wireSignalCapacitance(const Pin *drvr_pin,
-                               const Net *net,
-                               const Corner *corner)
-{
-  switch (parasitics_src_) {
-  case ParasiticsSrc::placement:
-    return wireSignalCapacitance(corner);
-  case ParasiticsSrc::global_routing: {
-    // Use the global route capacitance / wire_length(net) as unit capacitance.
-    sta::Parasitics *parasitics = sta_->parasitics();
-    Parasitic *parasitic = parasitics->findPiElmore(drvr_pin,
-                                                    RiseFall::rise(),
-                                                    corner->findParasiticAnalysisPt(MinMax::max()));
-    
-    double net_cap = parasitics->capacitance(parasitic) - pinCap(drvr_pin, corner);
-    double wire_length = grouteLength(net);
-    double cap = (wire_length > 0.0)
-      ? net_cap / wire_length
-      : wireSignalCapacitance(corner);
-    return cap;
-  }
-  case ParasiticsSrc::none:
-    break;
-  }
-  return 0.0;
-}
-
-float
-Resizer::pinCap(const Pin *drvr_pin,
-                const Corner *corner)
-{
-  sta::Sdc *sdc = sta_->sdc();
-  DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(MinMax::max());
-  const OperatingConditions *op_cond = dcalc_ap->operatingConditions();
-  float pin_cap, wire_cap, fanout;
-  bool has_set_load;
-  sdc->connectedCap(drvr_pin, RiseFall::rise(), op_cond, corner, MinMax::max(),
-                    pin_cap, wire_cap, fanout, has_set_load);
-  return pin_cap;
-}
-
-double
-Resizer::grouteLength(const Net *net)
-{
-  grt::NetRouteMap& route_map = global_router_->getRoutes();
-  grt::GRoute &route = route_map[db_network_->staToDb(net)];
-  double length = 0.0;
-  for (grt::GSegment &seg : route)
-    length += seg.length();
-  return dbuToMeters(length);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -343,6 +315,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
 void
 Resizer::estimateWireParasitics()
 {
+  initBlock();
   if (!wire_signal_cap_.empty()) {
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
@@ -426,8 +399,7 @@ void
 Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                                       const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(drvr_pin, false, max_steiner_pin_count_,
-                                      stt_builder_, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));

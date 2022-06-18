@@ -695,13 +695,7 @@ void defout_impl::writeBTerms(dbBlock* block)
     if (net && _select_net_map && !(*_select_net_map)[net])
       continue;
 
-    dbSet<dbBPin> bpins = bterm->getBPins();
-    uint pcnt = bpins.size();
-
-    if (pcnt == 0)
-      n += 1;
-    else
-      n += pcnt;
+    ++n;
   }
 
   fprintf(_out, "PINS %u ;\n", n);
@@ -791,37 +785,24 @@ void defout_impl::writeRegions(dbBlock* block)
 
 void defout_impl::writeGroups(dbBlock* block)
 {
-  dbSet<dbRegion> regions = block->getRegions();
-
+  auto groups = block->getGroups();
   uint cnt = 0;
-  dbSet<dbRegion>::iterator itr;
-
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
-    dbSet<dbBox> boxes = region->getBoundaries();
-
-    if (boxes.empty())
-      ++cnt;
+  for(auto group : groups)
+  {
+    if(!group->getInsts().empty())
+      cnt++;
   }
-
   if (cnt == 0)
     return;
-
   fprintf(_out, "GROUPS %u ;\n", cnt);
 
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
-    dbSet<dbBox> boxes = region->getBoundaries();
-
-    if (!boxes.empty())
+  for (auto group : groups) {
+    if(group->getInsts().empty())
       continue;
-
-    std::string name = region->getName();
+    std::string name = group->getName();
     fprintf(_out, "    - %s", name.c_str());
 
-    dbSet<dbInst> insts = region->getRegionInsts();
+    dbSet<dbInst> insts = group->getInsts();
     dbSet<dbInst>::iterator iitr;
     cnt = 0;
 
@@ -836,7 +817,7 @@ void defout_impl::writeGroups(dbBlock* block)
       fprintf(_out, " %s", name.c_str());
     }
 
-    dbRegion* parent = region->getParent();
+    dbRegion* parent = group->getRegion();
 
     // The semantic is: if the parent region has boundaries then it is a DEF
     // region.
@@ -849,9 +830,9 @@ void defout_impl::writeGroups(dbBlock* block)
       }
     }
 
-    if (hasProperties(region, GROUP)) {
+    if (hasProperties(group, GROUP)) {
       fprintf(_out, " + PROPERTY ");
-      writeProperties(region);
+      writeProperties(group);
     }
 
     fprintf(_out, " ;\n");
@@ -1083,11 +1064,27 @@ void defout_impl::writeBlockages(dbBlock* block)
 
   bool first = true;
 
-  dbSet<dbObstruction>::iterator obs_itr;
+  std::vector<dbObstruction*> sorted_obs(obstructions.begin(),
+                                         obstructions.end());
+  std::sort(sorted_obs.begin(),
+            sorted_obs.end(),
+            [](dbObstruction* a, dbObstruction* b) {
+              dbBox* bbox_a = a->getBBox();
+              dbTechLayer* layer_a = bbox_a->getTechLayer();
 
-  for (obs_itr = obstructions.begin(); obs_itr != obstructions.end();
-       ++obs_itr) {
-    dbObstruction* obs = *obs_itr;
+              dbBox* bbox_b = b->getBBox();
+              dbTechLayer* layer_b = bbox_a->getTechLayer();
+              if (layer_a != layer_b) {
+                return layer_a->getNumber() < layer_b->getNumber();
+              }
+
+              Rect rect_a;
+              bbox_a->getBox(rect_a);
+              Rect rect_b;
+              bbox_b->getBox(rect_b);
+              return rect_a < rect_b;
+            });
+  for (dbObstruction* obs : sorted_obs) {
     dbInst* inst = obs->getInstance();
     if (inst && _select_inst_map && !(*_select_inst_map)[inst])
       continue;
@@ -1143,10 +1140,20 @@ void defout_impl::writeBlockages(dbBlock* block)
     fprintf(_out, " RECT ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
   }
 
-  dbSet<dbBlockage>::iterator blk_itr;
+  std::vector<dbBlockage*> sorted_blockages(blockages.begin(), blockages.end());
+  std::sort(sorted_blockages.begin(),
+            sorted_blockages.end(),
+            [](dbBlockage* a, dbBlockage* b) {
+              dbBox* bbox_a = a->getBBox();
+              dbBox* bbox_b = b->getBBox();
+              Rect rect_a;
+              bbox_a->getBox(rect_a);
+              Rect rect_b;
+              bbox_b->getBox(rect_b);
+              return rect_a < rect_b;
+            });
 
-  for (blk_itr = blockages.begin(); blk_itr != blockages.end(); ++blk_itr) {
-    dbBlockage* blk = *blk_itr;
+  for (dbBlockage* blk : sorted_blockages) {
     dbInst* inst = blk->getInstance();
     if (inst && _select_inst_map && !(*_select_inst_map)[inst])
       continue;

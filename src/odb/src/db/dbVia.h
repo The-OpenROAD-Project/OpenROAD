@@ -55,7 +55,8 @@ struct _dbViaFlags
   uint _is_tech_via : 1;
   uint _has_params : 1;
   dbOrientType::Value _orient : 4;
-  uint _spare_bits : 25;
+  bool default_ : 1;
+  uint _spare_bits : 24;
 };
 
 class _dbVia : public _dbObject

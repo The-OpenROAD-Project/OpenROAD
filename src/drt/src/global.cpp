@@ -46,6 +46,7 @@ string OUTGUIDE_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
+string GUIDE_REPORT_FILE;
 
 // to be removed
 int OR_SEED = -1;
@@ -68,6 +69,7 @@ bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
 bool CLEAN_PATCHES = false;
+bool DO_PA = true;
 bool SINGLE_STEP_DR = false;
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;

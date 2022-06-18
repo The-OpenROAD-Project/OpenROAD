@@ -30,14 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
-#include <iomanip>
-#include <set>
-#include <sstream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -67,7 +60,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // check embedded trees only when maze router is called
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
+    for (int netID = 0; netID < netCount(); netID++) {
       checkAndFixEmbeddedTree(netID);
     }
   }
@@ -463,7 +456,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 
 void FastRouteCore::convertToMazeroute()
 {
-  for (int netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     convertToMazerouteNet(netID);
   }
 
@@ -1014,7 +1007,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 
@@ -1192,7 +1185,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
           netName(nets_[net_id]),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins);
+          nets_[net_id]->numPins());
     return false;
   }
 
@@ -1342,7 +1335,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
-  for (int nidRPC = 0; nidRPC < num_valid_nets_; nidRPC++) {
+  for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
     const int deg = sttrees_[netID].deg;
@@ -2109,13 +2102,11 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
-  int total_cap = 0;
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].usage;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-      total_cap += h_edges_[i][j].cap;
       if (overflow > 0) {
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2128,7 +2119,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
     for (int j = 0; j < x_grid_; j++) {
       total_usage += v_edges_[i][j].usage;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-      total_cap += v_edges_[i][j].cap;
       if (overflow > 0) {
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2179,13 +2169,11 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   int numedges = 0;
 
   int total_usage = 0;
-  int total_cap = 0;
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].est_usage;
       const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
-      total_cap += h_edges_[i][j].cap;
       hCap += h_edges_[i][j].cap;
       if (overflow > 0) {
         H_overflow += overflow;
@@ -2199,7 +2187,6 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     for (int j = 0; j < x_grid_; j++) {
       total_usage += v_edges_[i][j].est_usage;
       const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
-      total_cap += v_edges_[i][j].cap;
       vCap += v_edges_[i][j].cap;
       if (overflow > 0) {
         V_overflow += overflow;
@@ -2246,14 +2233,12 @@ int FastRouteCore::getOverflow3D()
   int max_V_overflow = 0;
 
   int total_usage = 0;
-  int cap = 0;
 
   for (int k = 0; k < num_layers_; k++) {
     for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_ - 1; j++) {
         total_usage += h_edges_3D_[k][i][j].usage;
         overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
-        cap += h_edges_3D_[k][i][j].cap;
 
         if (overflow > 0) {
           H_overflow += overflow;
@@ -2265,8 +2250,6 @@ int FastRouteCore::getOverflow3D()
       for (int j = 0; j < x_grid_; j++) {
         total_usage += v_edges_3D_[k][i][j].usage;
         overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-        cap += v_edges_3D_[k][i][j].cap;
-
         if (overflow > 0) {
           V_overflow += overflow;
           max_V_overflow = std::max(max_V_overflow, overflow);

@@ -30,12 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
-#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -96,7 +91,7 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   TreeEdge* treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
-  const int sizeV = 2 * nets_[ind]->numPins;
+  const int sizeV = 2 * nets_[ind]->numPins();
   int nbrcnt[sizeV];
   for (int i = 0; i < numnodes; i++)
     nbrcnt[i] = 0;
@@ -657,7 +652,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
   const int flute_accuracy = 2;
 
-  for (int i = 0; i < num_valid_nets_; i++) {
+  for (int i = 0; i < netCount(); i++) {
     FrNet* net = nets_[i];
     float coeffV = 1.36;
 

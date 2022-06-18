@@ -110,6 +110,7 @@ class Parser
   void setBTerms(odb::dbBlock*);
   void setVias(odb::dbBlock*);
   void setNets(odb::dbBlock*);
+  void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
                      frCoord&,
                      frCoord&,
@@ -174,7 +175,9 @@ class Parser
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
   template <typename T>
-  void genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm, frInst* inst,
+  void genGuides_addCoverGuide_helper(frBlockObject* term,
+                                      T* trueTerm,
+                                      frInst* inst,
                                       dbTransform& shiftXform,
                                       vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);

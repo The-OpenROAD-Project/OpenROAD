@@ -56,14 +56,13 @@ class BalancerConnection
     return boost::make_shared<BalancerConnection>(io_service, owner, logger);
   }
   tcp::socket& socket();
-  void start(ip::address workerAddress, unsigned short port);
+  void start();
   void handle_read(boost::system::error_code const& err,
-                   size_t bytes_transferred,
-                   ip::address workerAddress,
-                   unsigned short port);
+                   size_t bytes_transferred);
+  LoadBalancer* getOwner() const { return owner_; }
 
  private:
-  tcp::socket sock;
+  tcp::socket sock_;
   asio::streambuf in_packet_;
   utl::Logger* logger_;
   LoadBalancer* owner_;

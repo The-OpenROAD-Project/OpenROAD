@@ -28,7 +28,6 @@
 
 #include "dr/FlexDR.h"
 #include "frRTree.h"
-#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -49,14 +48,6 @@ struct FlexDRWorkerRegionQuery::Impl
       std::vector<std::vector<rq_box_value_t<drConnFig*>>>& allShapes);
 
  private:
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & drWorker;
-    (ar) & shapes_;
-  }
-
-  friend class boost::serialization::access;
 };
 
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
@@ -277,18 +268,3 @@ bool FlexDRWorkerRegionQuery::isEmpty() const
 {
   return impl_->shapes_.empty();
 }
-
-template <class Archive>
-void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
-    const unsigned int file_version);
-
-template void FlexDRWorkerRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
-    const unsigned int file_version);
