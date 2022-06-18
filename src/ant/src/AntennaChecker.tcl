@@ -38,6 +38,7 @@ proc check_antennas { args } {
     keys {-report_file -net} \
     flags {-verbose -report_violating_nets}
 
+  sta::check_argc_eq0 "check_antennas" $args
   if { [info exists keys(-report_file)] } {
     set report_file [file normalize $keys(-report_file)]
   }
@@ -50,7 +51,7 @@ proc check_antennas { args } {
   }
 
   if { [info exists keys(-report_filename)] } {
-    utl::warn ANT 10 "-report_filename."
+    utl::warn ANT 10 "-report_filename is deprecated."
   }
   if { [info exists flags(-report_violating_nets)] } {
     utl::warn ANT 11 "-report_violating_nets is deprecated."

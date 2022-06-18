@@ -1397,8 +1397,13 @@ void AntennaChecker::checkNet(dbNet* net,
                 false, verbose, violation, violated_gates);
     }
 
-    // Repeat with reporting.
     if (violation) {
+      net_violation_count++;
+      pin_violation_count += violated_gates.size();
+    }
+
+    // Repeat with reporting.
+    if (violation || verbose) {
       logger_->report("Net {}", net->getConstName());
 
       for (gate_itr = gate_iterms.begin();
@@ -1415,9 +1420,6 @@ void AntennaChecker::checkNet(dbNet* net,
                   true, verbose, violation, violated_gates);
       }
       logger_->report("");
-
-      net_violation_count++;
-      pin_violation_count += violated_gates.size();
     }
   }
 }
