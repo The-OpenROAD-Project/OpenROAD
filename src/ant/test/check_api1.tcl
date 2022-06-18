@@ -3,6 +3,7 @@ read_lef merged_spacing.lef
 read_def sw130_random.def
 
 check_antennas
+puts "violation count = [ant::antenna_violation_count]"
 
 # calculate the available length that can be added to net51, on layer 1
 # while keeping the PAR ratios satified

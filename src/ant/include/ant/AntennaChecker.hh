@@ -78,6 +78,7 @@ class AntennaChecker
 
   int checkAntennas(const char *net_name,
                     bool verbose);
+  int antennaViolationCount() const;
 
   void checkMaxLength(const char* net_name, int layer);
 
@@ -193,6 +194,7 @@ class AntennaChecker
   grt::GlobalRouter* global_router_;
   utl::Logger* logger_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
+  int net_violation_count_;
 
   static constexpr int repair_max_diode_count = 10;
 };

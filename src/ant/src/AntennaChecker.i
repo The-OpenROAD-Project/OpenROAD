@@ -59,6 +59,12 @@ check_antennas(const char *net_name, bool verbose)
   return getAntennaChecker()->checkAntennas(net_name, verbose);
 }
 
+int
+antenna_violation_count()
+{
+  return getAntennaChecker()->antennaViolationCount();
+}
+
 void
 check_max_length(const char *net_name,
                  int layer)

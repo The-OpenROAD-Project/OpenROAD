@@ -135,7 +135,8 @@ extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);
 }
 
-AntennaChecker::AntennaChecker()
+AntennaChecker::AntennaChecker() :
+  net_violation_count_(0)
 {
 }
 
@@ -1521,7 +1522,13 @@ int AntennaChecker::checkAntennas(const char *net_name,
   if (use_grt_routes)
     global_router_->destroyNetWires();
 
+  net_violation_count_ = net_violation_count;
   return net_violation_count;
+}
+
+int AntennaChecker::antennaViolationCount() const
+{
+  return net_violation_count_;
 }
 
 bool AntennaChecker::haveRoutedNets()
