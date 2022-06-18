@@ -1,9 +1,8 @@
-# check_antennas detail routed, -verbose
+# check_antennas tcl api commands
 read_lef merged_spacing.lef
 read_def sw130_random.def
 
 check_antennas
-check_antennas -verbose
 
 # calculate the available length that can be added to net51, on layer 1
 # while keeping the PAR ratios satified

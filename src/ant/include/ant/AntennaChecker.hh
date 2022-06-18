@@ -158,11 +158,6 @@ class AntennaChecker
   bool checkViaPar(ARinfo AntennaRatio, bool verbose, bool print);
   bool checkViaCar(ARinfo AntennaRatio, bool verbose, bool print);
 
-  void checkAntennas(dbNet *net,
-                     bool verbose,
-                     // Return values.
-                     int &net_violation_count,
-                     int &pin_violation_count);
   void checkNet(dbNet* net,
                 bool verbose,
                 // Return values.

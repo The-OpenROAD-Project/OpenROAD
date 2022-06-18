@@ -8,7 +8,6 @@
 [INFO ODB-0131]     Created 6 components and 48 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: sw130_random.def
-[INFO ANT-0013] Found antenna cell with diffusion area 0.6417
 Net net50
   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
   output50/A (sky130_fd_sc_ms__buf_1)
@@ -18,7 +17,6 @@ Net net50
 
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.
-[INFO ANT-0013] Found antenna cell with diffusion area 0.6417
 Net net50
   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
     met3
@@ -97,6 +95,14 @@ Net net50
 
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.
-Net net51: Routing Level: 1, Max Length for PAR: -0.09
-Net net51: Routing Level: 1, Max Length for PAR: -0.09
-Net net50 violations: 1
+Net net50
+  _264_/B2 (sky130_fd_sc_ms__a222oi_1)
+  output50/A (sky130_fd_sc_ms__buf_1)
+    met2
+    PAR:  419.64* Ratio:  400.00 (S.Area)
+
+
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 1 pin violations.
+[ERROR ANT-0012] -net xxx not Found.
+ANT-0012

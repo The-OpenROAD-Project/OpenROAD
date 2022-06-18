@@ -1288,39 +1288,6 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
   return violated;
 }
 
-void AntennaChecker::checkAntennas(dbNet *net,
-                                   bool verbose,
-                                   // Return values.
-                                   int &net_violation_count,
-                                   int &pin_violation_count)
-{
-  net_violation_count = 0;
-  pin_violation_count = 0;
-
-  stream_ = stdout;
-  checkDiodeCell();
-
-  dbSet<dbNet> nets = block_->getNets();
-  if (nets.empty())
-    return;
-
-  if (net
-      && !net->isSpecial()) {
-    checkNet(net, verbose,
-             net_violation_count,
-             pin_violation_count);
-  }
-  else {
-    for (dbNet* net : nets) {
-      if (!net->isSpecial()) {
-        checkNet(net, verbose,
-                 net_violation_count,
-                 pin_violation_count);
-      }
-    }
-  }
-}
-
 std::vector<dbWireGraph::Node*>
 AntennaChecker::findWireRoots(dbWire* wire)
 {
@@ -1516,26 +1483,40 @@ int AntennaChecker::checkAntennas(const char *net_name,
 
   bool grt_routes = global_router_->haveRoutes();
   bool drt_routes = haveRoutedNets();
+  bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes)
     logger_->error(ANT, 8, "No detailed or global routing found. Run global_route or detailed_route first.");
 
-  bool use_grt_routes = (grt_routes && !drt_routes);
-
   if (use_grt_routes)
     global_router_->makeNetWires();
+  else
+    // detailed routes
+    odb::orderWires(block_, false);
 
-  odb::orderWires(block_, false);
-  dbNet *net = nullptr;
+  int net_violation_count = 0;
+  int pin_violation_count = 0;
+
+  stream_ = stdout;
   if (strlen(net_name) > 0) {
-    net = block_->findNet(net_name);
-    if (net == nullptr)
+    dbNet *net = block_->findNet(net_name);
+    if (net
+        && !net->isSpecial())
+      checkNet(net, verbose,
+               net_violation_count,
+               pin_violation_count);
+    else
       logger_->error(ANT, 12, "-net {} not Found.", net_name);
   }
-  int net_violation_count;
-  int pin_violation_count;
-  checkAntennas(net, verbose,
-                net_violation_count,
-                pin_violation_count);
+  else {
+    for (dbNet* net : block_->getNets()) {
+      if (!net->isSpecial()) {
+        checkNet(net, verbose,
+                 net_violation_count,
+                 pin_violation_count);
+      }
+    }
+  }
+
   logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
   logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
 
