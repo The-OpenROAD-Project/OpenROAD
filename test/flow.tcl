@@ -185,7 +185,7 @@ check_placement -verbose
 
 # checkpoint
 set grt_db [make_result_file ${design}_${platform}_grt.db]
-write_def $grt_db
+write_db $grt_db
 
 ################################################################
 # Global routing
@@ -218,6 +218,9 @@ detailed_route -guide $route_guide \
 
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
+
+set routed_db [make_result_file ${design}_${platform}_route.db]
+write_db $routed_db
 
 set routed_def [make_result_file ${design}_${platform}_route.def]
 write_def $routed_def
