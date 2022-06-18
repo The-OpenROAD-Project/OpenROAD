@@ -226,7 +226,9 @@ void AntennaChecker::initAntennaRules()
                                   diff_metal_reduce_factor};
     layer_info_[tech_layer] = layer_antenna;
   }
-  dbu_per_micron_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
+
+  block_ = db_->getChip()->getBlock();
+  dbu_per_micron_ = block_->getDbUnitsPerMicron();
 }
 
 dbWireGraph::Node* AntennaChecker::findSegmentRoot(dbWireGraph::Node* node,
@@ -300,7 +302,7 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
 {
   if (checkIterm(node, iterm_gate_area, iterm_diff_area))
     iv.insert(
-        dbITerm::getITerm(db_->getChip()->getBlock(), node->object()->getId()));
+        dbITerm::getITerm(block_, node->object()->getId()));
 
   nv.insert(node);
 
@@ -669,8 +671,7 @@ bool AntennaChecker::checkIterm(dbWireGraph::Node* node,
                                 double &iterm_diff_area)
 {
   if (node->object() && node->object()->getObjectType() == dbITermObj) {
-    dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
-                                       node->object()->getId());
+    dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
     dbMTerm* mterm = iterm->getMTerm();
     if (mterm->hasDefaultAntennaModel()) {
       dbTechAntennaPinModel* pinmodel = mterm->getDefaultAntennaModel();
@@ -1299,7 +1300,7 @@ void AntennaChecker::checkAntennas(dbNet *net,
   stream_ = stdout;
   checkDiodeCell();
 
-  dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
+  dbSet<dbNet> nets = block_->getNets();
   if (nets.empty())
     return;
 
@@ -1361,8 +1362,7 @@ void AntennaChecker::findWireRoots(dbWire* wire,
     }
     if (node->object()
         && node->object()->getObjectType() == dbITermObj) {
-      dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
-                                         node->object()->getId());
+      dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
       dbMTerm* mterm = iterm->getMTerm();
       if (mterm->getIoType() == dbIoType::INPUT)
         if (mterm->hasDefaultAntennaModel())
@@ -1437,8 +1437,7 @@ void AntennaChecker::checkNet(dbNet* net,
            gate_itr != gate_iterms.end();
            ++gate_itr) {
         dbWireGraph::Node* gate = *gate_itr;
-        dbITerm* iterm = dbITerm::getITerm(db_->getChip()->getBlock(),
-                                           gate->object()->getId());
+        dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
         dbMTerm* mterm = iterm->getMTerm();
         fprintf(stream_,
                 "  %s/%s (%s)\n",
@@ -1513,6 +1512,8 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
 int AntennaChecker::checkAntennas(const char *net_name,
                                   bool verbose)
 {
+  initAntennaRules();
+
   bool grt_routes = global_router_->haveRoutes();
   bool drt_routes = haveRoutedNets();
   if (!grt_routes && !drt_routes)
@@ -1523,14 +1524,10 @@ int AntennaChecker::checkAntennas(const char *net_name,
   if (use_grt_routes)
     global_router_->makeNetWires();
 
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::orderWires(block, false);
-
-  initAntennaRules();
-
+  odb::orderWires(block_, false);
   dbNet *net = nullptr;
   if (strlen(net_name) > 0) {
-    net = db_->getChip()->getBlock()->findNet(net_name);
+    net = block_->findNet(net_name);
     if (net == nullptr)
       logger_->error(ANT, 12, "-net {} not Found.", net_name);
   }
@@ -1550,7 +1547,7 @@ int AntennaChecker::checkAntennas(const char *net_name,
 
 bool AntennaChecker::haveRoutedNets()
 {
-  for (dbNet* net : db_->getChip()->getBlock()->getNets()) {
+  for (dbNet* net : block_->getNets()) {
     if (!net->isSpecial()
         && net->getWireType() == dbWireType::ROUTED
         && net->getWire())
@@ -1668,7 +1665,7 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
 
 void AntennaChecker::checkMaxLength(const char* net_name, int layer)
 {
-  dbNet* net = db_->getChip()->getBlock()->findNet(net_name);
+  dbNet* net = block_->findNet(net_name);
   if (!net->isSpecial()) {
     std::vector<std::pair<double, std::vector<dbITerm*>>> par_max_length_wires
         = parMaxWireLength(net, layer);
@@ -1900,7 +1897,7 @@ void AntennaChecker::findMaxWireLength()
   dbNet* max_wire_net = nullptr;
   double max_wire_length = 0.0;
 
-  for (dbNet* net : db_->getChip()->getBlock()->getNets()) {
+  for (dbNet* net : block_->getNets()) {
     dbWire* wire = net->getWire();
     if (wire && !net->isSpecial()) {
       dbWireGraph graph;

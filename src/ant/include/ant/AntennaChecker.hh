@@ -193,6 +193,7 @@ class AntennaChecker
       int routing_level);
 
   odb::dbDatabase* db_;
+  odb::dbBlock* block_;
   int dbu_per_micron_;
   grt::GlobalRouter* global_router_;
   utl::Logger* logger_;
