@@ -301,9 +301,15 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
                                          std::set<dbITerm*>& iv,
                                          std::set<dbWireGraph::Node*>& nv)
 {
-  if (checkIterm(node, iterm_gate_area, iterm_diff_area))
-    iv.insert(
-        dbITerm::getITerm(block_, node->object()->getId()));
+  if (node->object() && node->object()->getObjectType() == dbITermObj) {
+    dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
+    if (iterm) {
+      dbMTerm* mterm = iterm->getMTerm();
+      iterm_gate_area += maxGateArea(mterm);
+      iterm_diff_area += maxDiffArea(mterm);
+      iv.insert(iterm);
+    }
+  }
 
   nv.insert(node);
 
@@ -667,37 +673,25 @@ void AntennaChecker::buildWireParTable(
     calculateParInfo(par_info);
 }
 
-bool AntennaChecker::checkIterm(dbWireGraph::Node* node,
-                                double &iterm_gate_area,
-                                double &iterm_diff_area)
+double AntennaChecker::maxGateArea(dbMTerm *mterm)
 {
-  if (node->object() && node->object()->getObjectType() == dbITermObj) {
-    dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
-    dbMTerm* mterm = iterm->getMTerm();
-    if (mterm->hasDefaultAntennaModel()) {
-      dbTechAntennaPinModel* pinmodel = mterm->getDefaultAntennaModel();
-      std::vector<std::pair<double, dbTechLayer*>> gate_area;
-      pinmodel->getGateArea(gate_area);
+  double max_gate_area = 0;
+  if (mterm->hasDefaultAntennaModel()) {
+    dbTechAntennaPinModel* pin_model = mterm->getDefaultAntennaModel();
+    std::vector<std::pair<double, dbTechLayer*>> gate_areas;
+    pin_model->getGateArea(gate_areas);
 
-      std::vector<std::pair<double, dbTechLayer*>>::iterator gate_area_iter;
-      double max_gate_area = 0;
-      for (gate_area_iter = gate_area.begin();
-           gate_area_iter != gate_area.end();
-           gate_area_iter++) {
-        max_gate_area = std::max(max_gate_area, (*gate_area_iter).first);
-      }
-      iterm_gate_area += + max_gate_area;
+    for (auto gate_area_layer : gate_areas) {
+      double gate_area = gate_area_layer.first;
+      max_gate_area = std::max(max_gate_area, gate_area);
     }
-
-    iterm_diff_area += + maxDiffArea(mterm);
-    return true;
-  } else
-    return false;
+  }
+  return max_gate_area;
 }
 
 double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
-                                    double ref_val,
-                                    double def)
+                                    double ref_value,
+                                    double default_value)
 {
   if (pwl_info.indices.size() != 0) {
     if (pwl_info.indices.size() == 1) {
@@ -712,17 +706,17 @@ double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
         slope_factor = (pwl_info_ratio2 - pwl_info_ratio1)
           / (pwl_info_ratio2 - pwl_info_indice1);
 
-        if (ref_val >= pwl_info_indice1 && ref_val < pwl_info_indice2) {
-          return slope_factor * (ref_val - pwl_info_indice1) + pwl_info_ratio1;
+        if (ref_value >= pwl_info_indice1 && ref_value < pwl_info_indice2) {
+          return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
         } else {
           pwl_info_indice1 = pwl_info_indice2;
           pwl_info_ratio1 = pwl_info_ratio2;
         }
       }
-      return slope_factor * (ref_val - pwl_info_indice1) + pwl_info_ratio1;
+      return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
     }
   }
-  return def;
+  return default_value;
 }
 
 void AntennaChecker::calculateParInfo(PARinfo& par_info)
@@ -1015,7 +1009,6 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
   bool diff_psr_violation = false;
 
   if (layer->hasDefaultAntennaRule()) {
-    // pre-check if there are violations, in case a simple report is required
     dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
 
     double PAR_ratio = antenna_rule->getPAR();

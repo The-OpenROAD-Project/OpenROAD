@@ -123,9 +123,6 @@ class AntennaChecker
 
   void printGraphInfo(dbWireGraph graph);
   void calculateParInfo(PARinfo& PARtable);
-  bool checkIterm(dbWireGraph::Node* node,
-                  double &iterm_gate_area,
-                  double &iterm_diff_area);
   double getPwlFactor(odb::dbTechLayerAntennaRule::pwl_pair pwl_info,
                       double ref_val,
                       double def);
@@ -179,7 +176,8 @@ class AntennaChecker
   void findWireRootIterms(dbWireGraph::Node* node,
                           int wire_level,
                           std::vector<dbITerm*>& gates);
-  double maxDiffArea(dbMTerm *mterm);
+  double maxDiffArea(dbMTerm* mterm);
+  double maxGateArea(dbMTerm* mterm);
 
   std::vector<std::pair<double, std::vector<dbITerm*>>> parMaxWireLength(
       dbNet* net,
