@@ -133,6 +133,9 @@ violations.
 
 Example: `repair_antennas sky130_fd_sc_hs__diode_2/DIODE`
 
+If any repairs are made the filler instances are remove and must be
+placed with the `filler_placement` command.
+
 If the LEF technology layer ANTENNADIFFSIDEAREARATIO properties are constant
 instead of PWL, inserting diodes does not improve the antenna ratios and no
 diodes are inserted. The following error message will be reported:
