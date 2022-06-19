@@ -3138,7 +3138,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
         }
       }
       if (width == 0) {
-        // no vias, look through all pins to find max size.
+        // no vias, look through all pins and obs to find max size.
         // This can happen for contacts in stdcell pins which are still
         // important for diff layer cut spacing checks.
         std::vector<dbMaster*> masters;
@@ -3151,6 +3151,12 @@ void LayoutViewer::generateCutLayerMaximumSizes()
                   width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
                 }
               }
+            }
+          }
+
+          for (dbBox* box : master->getObstructions()) {
+            if (box->getTechLayer() == layer) {
+              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
             }
           }
         }
