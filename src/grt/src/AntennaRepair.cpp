@@ -422,7 +422,7 @@ odb::dbMTerm* AntennaRepair::findDiodeMTerm()
     for (auto master : lib->getMasters()) {
       if (master->getType() == odb::dbMasterType::CORE_ANTENNACELL) {
         for (odb::dbMTerm* mterm : master->getMTerms()) {
-          if (maxDiffArea(mterm) > 0.0)
+          if (diffArea(mterm) > 0.0)
             return mterm;
         }
       }
@@ -432,7 +432,7 @@ odb::dbMTerm* AntennaRepair::findDiodeMTerm()
 }
 
 // copied from AntennaChecker
-double AntennaRepair::maxDiffArea(odb::dbMTerm *mterm)
+double AntennaRepair::diffArea(odb::dbMTerm *mterm)
 {
   double max_diff_area = 0.0;
   std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;

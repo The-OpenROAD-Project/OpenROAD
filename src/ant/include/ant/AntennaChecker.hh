@@ -174,8 +174,8 @@ class AntennaChecker
   void findWireRootIterms(dbWireGraph::Node* node,
                           int wire_level,
                           vector<dbITerm*>& gates);
-  double maxDiffArea(dbMTerm* mterm);
-  double maxGateArea(dbMTerm* mterm);
+  double diffArea(dbMTerm* mterm);
+  double gateArea(dbMTerm* mterm);
 
   vector<std::pair<double, vector<dbITerm*>>> parMaxWireLength(
       dbNet* net,

@@ -96,6 +96,8 @@ class AntennaRepair
   void makeNetWires(NetRouteMap& routing,
                     int max_routing_layer);
   void destroyNetWires();
+  odb::dbMTerm* findDiodeMTerm();
+  double diffArea(odb::dbMTerm *mterm);
 
  private:
   typedef int coord_type;
@@ -118,8 +120,6 @@ class AntennaRepair
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*> &default_vias);
-  odb::dbMTerm* findDiodeMTerm();
-  double maxDiffArea(odb::dbMTerm *mterm);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;

@@ -245,6 +245,10 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
 
   odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
+  if (antenna_repair_->diffArea(diode_mterm) == 0.0)
+    logger_->error(GRT, 244, "Diode {}/{} diffusion area is zero.",
+                   diode_mterm->getMaster()->getConstName(),
+                   diode_mterm->getConstName());
 
   bool violations = true;
   int itr = 0;

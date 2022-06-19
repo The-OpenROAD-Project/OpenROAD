@@ -305,8 +305,8 @@ void AntennaChecker::findWireBelowIterms(dbWireGraph::Node* node,
     dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
     if (iterm) {
       dbMTerm* mterm = iterm->getMTerm();
-      iterm_gate_area += maxGateArea(mterm);
-      iterm_diff_area += maxDiffArea(mterm);
+      iterm_gate_area += gateArea(mterm);
+      iterm_diff_area += diffArea(mterm);
       iv.insert(iterm);
     }
   }
@@ -675,7 +675,7 @@ AntennaChecker::buildWireParTable(const vector<dbWireGraph::Node*> &wire_roots)
   return PARtable;
 }
 
-double AntennaChecker::maxGateArea(dbMTerm *mterm)
+double AntennaChecker::gateArea(dbMTerm *mterm)
 {
   double max_gate_area = 0;
   if (mterm->hasDefaultAntennaModel()) {
@@ -1329,7 +1329,7 @@ void AntennaChecker::findWireRoots(dbWire* wire,
       dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
       dbMTerm* mterm = iterm->getMTerm();
       if (mterm->getIoType() == dbIoType::INPUT
-          && maxGateArea(mterm) > 0.0)
+          && gateArea(mterm) > 0.0)
         gate_iterms.push_back(node);
     }
   }
@@ -1660,11 +1660,11 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
 }
 
 vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
-                                                                dbMTerm* diode_mterm)
+                                                           dbMTerm* diode_mterm)
 {
   double diode_diff_area = 0.0;
   if (diode_mterm) 
-    diode_diff_area = maxDiffArea(diode_mterm);
+    diode_diff_area = diffArea(diode_mterm);
 
   vector<ViolationInfo> antenna_violations;
   if (net->isSpecial())
@@ -1686,7 +1686,6 @@ vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
         int required_diode_count = 0;
         if (diode_mterm && antennaRatioDiffDependent(layer)) {
           while (wire_PAR_violation) {
-            //checkViolation(par_info, layer);
             par_info.iterm_diff_area += diode_diff_area * gates.size();
             required_diode_count += gates.size();
             calculateParInfo(par_info);
@@ -1721,7 +1720,7 @@ bool AntennaChecker::antennaRatioDiffDependent(dbTechLayer* layer)
 }
 
 double
-AntennaChecker::maxDiffArea(dbMTerm *mterm)
+AntennaChecker::diffArea(dbMTerm *mterm)
 {
   double max_diff_area = 0.0;
   vector<std::pair<double, dbTechLayer*>> diff_areas;
