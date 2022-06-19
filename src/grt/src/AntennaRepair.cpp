@@ -416,4 +416,32 @@ bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
   return false;
 }
 
+odb::dbMTerm* AntennaRepair::findDiodeMTerm()
+{
+  for (odb::dbLib *lib : db_->getLibs()) {
+    for (auto master : lib->getMasters()) {
+      if (master->getType() == odb::dbMasterType::CORE_ANTENNACELL) {
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          if (maxDiffArea(mterm) > 0.0)
+            return mterm;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+// copied from AntennaChecker
+double AntennaRepair::maxDiffArea(odb::dbMTerm *mterm)
+{
+  double max_diff_area = 0.0;
+  std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;
+  mterm->getDiffArea(diff_areas);
+  for (auto area_layer : diff_areas) {
+    double diff_area = area_layer.first;
+    max_diff_area = std::max(max_diff_area, diff_area);
+  }
+  return max_diff_area;
+}
+
 }  // namespace grt

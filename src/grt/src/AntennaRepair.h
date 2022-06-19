@@ -118,6 +118,8 @@ class AntennaRepair
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*> &default_vias);
+  odb::dbMTerm* findDiodeMTerm();
+  double maxDiffArea(odb::dbMTerm *mterm);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;

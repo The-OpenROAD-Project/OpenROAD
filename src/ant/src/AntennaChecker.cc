@@ -1325,34 +1325,11 @@ void AntennaChecker::findWireRoots(dbWire* wire,
         && node->object()->getObjectType() == dbITermObj) {
       dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
       dbMTerm* mterm = iterm->getMTerm();
-      if (mterm->getIoType() == dbIoType::INPUT)
-        if (mterm->hasDefaultAntennaModel())
-          gate_iterms.push_back(node);
+      if (mterm->getIoType() == dbIoType::INPUT
+          && maxGateArea(mterm) > 0.0)
+        gate_iterms.push_back(node);
     }
   }
-}
-
-void AntennaChecker::checkDiodeCell()
-{
-  for (dbLib *lib : db_->getLibs()) {
-    for (auto master : lib->getMasters()) {
-      dbMasterType type = master->getType();
-      if (type == dbMasterType::CORE_ANTENNACELL) {
-        double max_diff_area = 0.0;
-        for (dbMTerm* mterm : master->getMTerms())
-          max_diff_area = std::max(max_diff_area, maxDiffArea(mterm));
-
-        if (max_diff_area != 0.0)
-          logger_->info(ANT, 13, "Found antenna cell with diffusion area {}",
-                  max_diff_area);
-        else
-          logger_->warn(ANT, 14, "Warning: found antenna cell but no diffusion area is specified");
-        return;
-      }
-    }
-  }
-  logger_->warn(ANT, 15, "No LEF master with class CORE ANTENNACELL found."
-                " This message can be ignored if not repairing antennas.");
 }
 
 void AntennaChecker::checkNet(dbNet* net,

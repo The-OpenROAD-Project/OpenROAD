@@ -170,7 +170,6 @@ class AntennaChecker
                  // Return values.
                  bool &violation,
                  std::unordered_set<dbWireGraph::Node*> &violated_gates);
-  void checkDiodeCell();
   bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);
 
