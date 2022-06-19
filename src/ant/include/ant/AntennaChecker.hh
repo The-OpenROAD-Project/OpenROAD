@@ -127,18 +127,14 @@ class AntennaChecker
                       double ref_val,
                       double def);
 
-  void buildWireParTable(std::vector<PARinfo>& PARtable,
-                         std::vector<dbWireGraph::Node*> wire_roots);
-  void buildWireCarTable(std::vector<ARinfo>& CARtable,
-                         std::vector<PARinfo> PARtable,
-                         std::vector<PARinfo> VIA_PARtable,
-                         std::vector<dbWireGraph::Node*> gate_iterms);
-  void buildViaParTable(std::vector<PARinfo>& VIA_PARtable,
-                        std::vector<dbWireGraph::Node*> wire_roots);
-  void buildViaCarTable(std::vector<ARinfo>& VIA_CARtable,
-                        std::vector<PARinfo> PARtable,
-                        std::vector<PARinfo> VIA_PARtable,
-                        std::vector<dbWireGraph::Node*> gate_iterms);
+  std::vector<PARinfo> buildWireParTable(const std::vector<dbWireGraph::Node*> &wire_roots);
+  std::vector<ARinfo> buildWireCarTable(const std::vector<PARinfo> &PARtable,
+                                        const std::vector<PARinfo> &VIA_PARtable,
+                                        const std::vector<dbWireGraph::Node*> &gate_iterms);
+  std::vector<PARinfo> buildViaParTable(const std::vector<dbWireGraph::Node*> &wire_roots);
+  std::vector<ARinfo> buildViaCarTable(const std::vector<PARinfo> &PARtable,
+                                       const std::vector<PARinfo> &VIA_PARtable,
+                                       const std::vector<dbWireGraph::Node*> &gate_iterms);
 
   std::vector<dbWireGraph::Node*> findWireRoots(dbWire* wire);
   void findWireRoots(dbWire* wire,
