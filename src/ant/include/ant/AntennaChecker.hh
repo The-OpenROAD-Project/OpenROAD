@@ -121,7 +121,6 @@ class AntennaChecker
                    std::vector<dbWireGraph::Node*>& current_path,
                    std::vector<dbWireGraph::Node*>& path_found);
 
-  void printGraphInfo(dbWireGraph graph);
   void calculateParInfo(PARinfo& PARtable);
   double getPwlFactor(odb::dbTechLayerAntennaRule::pwl_pair pwl_info,
                       double ref_val,
@@ -148,15 +147,16 @@ class AntennaChecker
 
   std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio,
                                      bool verbose,
-                                     bool print);
+                                     bool report);
   std::pair<bool, bool> checkWireCar(ARinfo AntennaRatio,
                                      bool par_checked,
                                      bool verbose,
-                                     bool print);
-  bool checkViaPar(ARinfo AntennaRatio, bool verbose, bool print);
-  bool checkViaCar(ARinfo AntennaRatio, bool verbose, bool print);
+                                     bool report);
+  bool checkViaPar(ARinfo AntennaRatio, bool verbose, bool report);
+  bool checkViaCar(ARinfo AntennaRatio, bool verbose, bool report);
 
   void checkNet(dbNet* net,
+                bool report_if_no_violation,
                 bool verbose,
                 // Return values.
                 int &net_violation_count,
@@ -164,7 +164,7 @@ class AntennaChecker
   void checkGate(dbWireGraph::Node* gate,
                  std::vector<ARinfo> &CARtable,
                  std::vector<ARinfo> &VIA_CARtable,
-                 bool print,
+                 bool report,
                  bool verbose,
                  // Return values.
                  bool &violation,

@@ -990,7 +990,7 @@ void AntennaChecker::buildViaCarTable(
 }
 
 std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
-                                                   bool print,
+                                                   bool report,
                                                    bool verbose)
 {
   dbTechLayer* layer = AntennaRatio.wire_root->layer();
@@ -1048,7 +1048,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
       }
     }
 
-    if (print) {
+    if (report) {
       if (PAR_ratio != 0) {
         if (par_violation || verbose)
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
@@ -1083,7 +1083,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio,
 
 std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
                                                    bool par_checked,
-                                                   bool print,
+                                                   bool report,
                                                    bool verbose)
 {
   dbTechLayer* layer = AntennaRatio.wire_root->layer();
@@ -1141,7 +1141,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
       }
     }
 
-    if (print) {
+    if (report) {
       if (CAR_ratio != 0) {
         if (car_violation || verbose)
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
@@ -1175,7 +1175,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
 }
 
 bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
-                                 bool print,
+                                 bool report,
                                  bool verbose)
 {
   dbTechLayer* layer = getViaLayer(
@@ -1209,7 +1209,7 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
       }
     }
 
-    if (print) {
+    if (report) {
       if (PAR_ratio != 0) {
         if (par_violation || verbose)
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
@@ -1229,7 +1229,7 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
 }
 
 bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
-                                 bool print,
+                                 bool report,
                                  bool verbose)
 {
   dbTechLayer* layer = getViaLayer(findVia(AntennaRatio.wire_root,
@@ -1263,7 +1263,7 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
       }
     }
 
-    if (print) {
+    if (report) {
       if (CAR_ratio != 0) {
         if (car_violation || verbose)
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
@@ -1356,6 +1356,7 @@ void AntennaChecker::checkDiodeCell()
 }
 
 void AntennaChecker::checkNet(dbNet* net,
+                              bool report_if_no_violation,
                               bool verbose,
                               // Return values.
                               int &net_violation_count,
@@ -1396,7 +1397,7 @@ void AntennaChecker::checkNet(dbNet* net,
     }
 
     // Repeat with reporting.
-    if (violation || verbose) {
+    if (violation || report_if_no_violation) {
       logger_->report("Net {}", net->getConstName());
 
       for (gate_itr = gate_iterms.begin();
@@ -1420,7 +1421,7 @@ void AntennaChecker::checkNet(dbNet* net,
 void AntennaChecker::checkGate(dbWireGraph::Node* gate,
                                std::vector<ARinfo> &CARtable,
                                std::vector<ARinfo> &VIA_CARtable,
-                               bool print,
+                               bool report,
                                bool verbose,
                                // Return values.
                                bool &violation,
@@ -1436,7 +1437,7 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
       if (wire_violation)
         violated_gates.insert(gate);
 
-      if (print) {
+      if (report) {
         if (wire_violation || verbose)
           logger_->report("    {}",
                   ar.wire_root->layer()->getConstName());
@@ -1456,7 +1457,7 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
       if (via_violation)
         violated_gates.insert(gate);
 
-      if (print) {
+      if (report) {
         if (via_violation || verbose) {
           dbWireGraph::Edge* via = findVia(via_ar.wire_root,
                                            via_ar.wire_root->layer()->getRoutingLevel());
@@ -1495,7 +1496,7 @@ int AntennaChecker::checkAntennas(const char *net_name,
     dbNet *net = block_->findNet(net_name);
     if (net
         && !net->isSpecial())
-      checkNet(net, verbose,
+      checkNet(net, true, verbose,
                net_violation_count,
                pin_violation_count);
     else
@@ -1504,7 +1505,7 @@ int AntennaChecker::checkAntennas(const char *net_name,
   else {
     for (dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
-        checkNet(net, verbose,
+        checkNet(net, false, verbose,
                  net_violation_count,
                  pin_violation_count);
       }
