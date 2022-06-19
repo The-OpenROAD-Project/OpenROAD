@@ -70,7 +70,8 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
     if (db_net->getWire()) {
-      std::vector<ant::ViolationInfo> netViol = arc_->getNetAntennaViolations(db_net, diode_mterm);
+      std::vector<ant::ViolationInfo> netViol =
+        arc_->getAntennaViolations(db_net, diode_mterm);
       if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
         debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",

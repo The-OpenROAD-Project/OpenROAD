@@ -1696,8 +1696,8 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   return false;
 }
 
-std::vector<ViolationInfo> AntennaChecker::getNetAntennaViolations(dbNet* net,
-                                                                   dbMTerm* diode_mterm)
+std::vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
+                                                                dbMTerm* diode_mterm)
 {
   double diode_diff_area = 0.0;
   if (diode_mterm) 
