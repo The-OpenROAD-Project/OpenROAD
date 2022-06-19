@@ -54,6 +54,7 @@ using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbITermObj;
+using odb::dbIoType;
 using odb::dbMaster;
 using odb::dbMasterType;
 using odb::dbMTerm;
@@ -370,10 +371,10 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   int end_x, end_y;
   node->xy(start_x, start_y);
 
-  std::vector<std::pair<dbWireGraph::Edge*, std::string>> edge_vec;
+  std::vector<std::pair<dbWireGraph::Edge*, dbIoType>> edge_vec;
   if (node->in_edge() != nullptr
       && nv.find(node->in_edge()->source()) == nv.end())
-    edge_vec.push_back({node->in_edge(), "IN"});
+    edge_vec.push_back({node->in_edge(), dbIoType::INPUT});
 
   dbWireGraph::Node::edge_iterator edge_it;
   int out_edges_count = 0;
@@ -381,7 +382,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   for (edge_it = node->begin(); edge_it != node->end(); edge_it++) {
     if (nv.find((*edge_it)->source()) == nv.end()) {
       out_edges_count++;
-      edge_vec.push_back({*edge_it, "OUT"});
+      edge_vec.push_back({*edge_it, dbIoType::OUTPUT});
     }
   }
 
@@ -389,10 +390,10 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
 
   for (auto edge_info : edge_vec) {
     dbWireGraph::Edge* edge = edge_info.first;
-    std::string edge_io_type = edge_info.second;
+    dbIoType edge_io_type = edge_info.second;
     if (edge->type() == dbWireGraph::Edge::Type::VIA
         || edge->type() == dbWireGraph::Edge::Type::TECH_VIA) {
-      if (edge_io_type.compare("IN") == 0) {
+      if (edge_io_type == dbIoType::INPUT) {
         wire_area += 0.5 * wire_width * wire_width;
         side_wire_area += dbuToMicrons(wire_thickness_dbu) * wire_width;
 
@@ -404,7 +405,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         }
       }
 
-      if (edge_io_type.compare("OUT") == 0) {
+      if (edge_io_type == dbIoType::OUTPUT) {
         if (out_edges_count == 1) {
           wire_area += 0.5 * wire_width * wire_width;
           side_wire_area += dbuToMicrons(wire_thickness_dbu) * wire_width;
@@ -421,7 +422,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
 
     if (edge->type() == dbWireGraph::Edge::Type::SEGMENT
         || edge->type() == dbWireGraph::Edge::Type::SHORT) {
-      if (edge_io_type.compare("IN") == 0) {
+      if (edge_io_type == dbIoType::INPUT) {
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->source()->xy(end_x, end_y);
@@ -439,7 +440,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         side_wire_area += areas.second;
       }
 
-      if (edge_io_type.compare("OUT") == 0) {
+      if (edge_io_type == dbIoType::OUTPUT) {
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->target()->xy(end_x, end_y);
