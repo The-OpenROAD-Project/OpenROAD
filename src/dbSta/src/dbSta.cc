@@ -340,10 +340,13 @@ dbSta::findClkNets()
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
   for (Clock *clk : sdc_->clks()) {
-    for (const Pin *pin : *pins(clk)) {
-      Net *net = network_->net(pin);      
-      if (net)
-	clk_nets.insert(db_network_->staToDb(net));
+    const PinSet *clk_pins = pins(clk);
+    if (clk_pins) {
+      for (const Pin *pin : *clk_pins) {
+        Net *net = network_->net(pin);
+        if (net)
+          clk_nets.insert(db_network_->staToDb(net));
+      }
     }
   }
   return clk_nets;
@@ -354,10 +357,13 @@ dbSta::findClkNets(const Clock *clk)
 {
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
-  for (const Pin *pin : *pins(clk)) {
-    Net *net = network_->net(pin);      
-    if (net)
-      clk_nets.insert(db_network_->staToDb(net));
+  const PinSet *clk_pins = pins(clk);
+  if (clk_pins) {
+    for (const Pin *pin : *clk_pins) {
+      Net *net = network_->net(pin);
+      if (net)
+        clk_nets.insert(db_network_->staToDb(net));
+    }
   }
   return clk_nets;
 }
