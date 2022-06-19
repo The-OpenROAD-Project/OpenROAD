@@ -219,6 +219,9 @@ detailed_route -guide $route_guide \
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
 
+check_antennas
+utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
+
 set routed_db [make_result_file ${design}_${platform}_route.db]
 write_db $routed_db
 
