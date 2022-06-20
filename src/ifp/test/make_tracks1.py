@@ -2,9 +2,7 @@ from openroad import Tech, Design
 import helpers
 
 tech = Tech()
-tech.readLEF("Nangate45/Nangate45_tech.lef")
-tech.readLEF("Nangate45/Nangate45_stdcell.lef")
-
+tech.readLEF("Nangate45/Nangate45.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 
 design = Design(tech)
