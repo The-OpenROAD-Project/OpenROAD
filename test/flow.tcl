@@ -203,7 +203,7 @@ write_verilog -remove_cells $filler_cells $verilog_file
 
 check_antennas
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
-#repair_antennas $antenna_repair_diode
+#repair_antennas
 
 ################################################################
 # Detailed routing

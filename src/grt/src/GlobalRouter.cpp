@@ -239,12 +239,17 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
+void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
+                                  int iterations)
 {
   if (antenna_repair_ == nullptr)
     antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
 
-  odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
+  if (diode_mterm == nullptr) {
+    diode_mterm = antenna_repair_->findDiodeMTerm();
+    if (diode_mterm == nullptr)
+      logger_->error(GRT, 6, "No diode LEF class CORE ANTENNACELL found.");
+  }
   if (antenna_repair_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT, 244, "Diode {}/{} diffusion area is zero.",
                    diode_mterm->getMaster()->getConstName(),

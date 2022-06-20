@@ -12,7 +12,7 @@ set_routing_layers -signal met1-met5
 global_route
 
 check_antennas
-repair_antennas sky130_fd_sc_hs__diode_2/DIODE
+repair_antennas
 check_antennas
 
 filler_placement sky130_fd_sc_hs__fill_*

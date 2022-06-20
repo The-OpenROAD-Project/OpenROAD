@@ -184,13 +184,17 @@ class GlobalRouter
   int getTileSize() const;
 
   // repair antenna public functions
-  void repairAntennas(sta::LibertyPort* diode_port, int iterations);
+  void repairAntennas(odb::dbMTerm* diode_mterm,
+                      int iterations);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   void removeDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  // check_antennas
+  void makeNetWires();
+  void destroyNetWires();
 
   double dbuToMicrons(int64_t dbu);
 
@@ -230,10 +234,6 @@ class GlobalRouter
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
-
-  // check_antennas
-  void makeNetWires();
-  void destroyNetWires();
 
  private:
   // Net functions
