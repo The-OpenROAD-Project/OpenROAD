@@ -110,7 +110,18 @@ void io::Parser::setTracks(odb::dbBlock* block)
     }
   }
 }
-
+bool isSkipInst(odb::dbInst* inst) {
+    if (BOTTOM_ROUTING_LAYER <= 2)
+        return false;
+    if (inst->getMaster()->getType() == dbMasterType::CORE_SPACER)
+        return true;
+    for (auto it : inst->getITerms()) {
+        if (it->getSigType() != dbSigType::POWER && 
+            it->getSigType() != dbSigType::GROUND)
+            return false;
+    }
+    return true;
+}
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   RTree<odb::dbInst*> allFills;
@@ -122,8 +133,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
-    if (inst->getMaster()->getType() == dbMasterType::CORE_SPACER && 
-                                            BOTTOM_ROUTING_LAYER > 2) {
+    if (isSkipInst(inst)) {
         Rect r(inst->getBBox()->xMin(), inst->getBBox()->yMin(),
                inst->getBBox()->xMax(), inst->getBBox()->yMax());
         allFills.insert(std::make_pair(r, inst));
@@ -582,7 +592,7 @@ void io::Parser::setNets(odb::dbBlock* block)
                       term->getSigType().getString());
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end()) {
-          if (term->getInst()->getMaster()->getType() == dbMasterType::CORE_SPACER)
+          if (isSkipInst(term->getInst()))
               continue;
         logger->error(
             DRT, 105, "Component {} not found. Net {} Term {} ", term->getInst()->getName(), net->getName(), term->getMTerm()->getName());
