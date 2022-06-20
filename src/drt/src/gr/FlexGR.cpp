@@ -2536,6 +2536,9 @@ void FlexGR::updateDb()
             {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
       }
     }
+    auto dbGuides = dbNet->getGuides();
+    if(dbGuides.orderReversed() && dbGuides.reversible())
+      dbGuides.reverse();
   }
 }
 

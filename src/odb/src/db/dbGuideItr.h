@@ -33,53 +33,38 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
+#include "dbIterator.h"
 #include "odb.h"
-
 // User Code Begin Includes
 // User Code End Includes
 
 namespace odb {
 
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbNet;
-class _dbTechLayer;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
-
-class _dbGuide : public _dbObject
+class _dbGuide;
+template <class T>
+class dbTable;
+// User Code Begin classes
+// User Code End classes
+class dbGuideItr : public dbIterator
 {
- public:
-  // User Code Begin Enums
-  // User Code End Enums
-
-  dbId<_dbNet> net_;
-  Rect box_;
-  dbId<_dbTechLayer> layer_;
-  dbId<_dbGuide> guide_next_;
-
+  dbTable<_dbGuide>* _guide_tbl;
   // User Code Begin Fields
   // User Code End Fields
-  _dbGuide(_dbDatabase*, const _dbGuide& r);
-  _dbGuide(_dbDatabase*);
-  ~_dbGuide();
-  bool operator==(const _dbGuide& rhs) const;
-  bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGuide& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbGuide& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+ public:
+  dbGuideItr(dbTable<_dbGuide>* guide_tbl) { _guide_tbl = guide_tbl; }
+
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
+  dbObject* getObject(uint id, ...);
   // User Code Begin Methods
   // User Code End Methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);
-// User Code Begin General
-// User Code End General
+
 }  // namespace odb
-// Generator Code End Header
+   // Generator Code End Header

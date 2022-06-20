@@ -648,7 +648,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         break;
       case ';':
         oid = getOid(name);
-        obj = dbGuide::getGuide((dbNet*) obj, oid);
+        obj = dbGuide::getGuide((dbBlock*) obj, oid);
         break;
       case 'h':
       case 'J':

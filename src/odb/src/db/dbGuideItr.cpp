@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,56 +30,94 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
-#pragma once
+// Generator Code Begin Cpp
+#include "dbGuideItr.h"
 
-#include "dbCore.h"
-#include "odb.h"
-
+#include "dbGuide.h"
+#include "dbTable.h"
 // User Code Begin Includes
+#include "dbNet.h"
 // User Code End Includes
 
 namespace odb {
 
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbNet;
-class _dbTechLayer;
-// User Code Begin Classes
-// User Code End Classes
+////////////////////////////////////////////////////////////////////
+//
+// dbGuideItr - Methods
+//
+////////////////////////////////////////////////////////////////////
 
-// User Code Begin Structs
-// User Code End Structs
-
-class _dbGuide : public _dbObject
+bool dbGuideItr::reversible()
 {
- public:
-  // User Code Begin Enums
-  // User Code End Enums
+  return true;
+}
 
-  dbId<_dbNet> net_;
-  Rect box_;
-  dbId<_dbTechLayer> layer_;
-  dbId<_dbGuide> guide_next_;
+bool dbGuideItr::orderReversed()
+{
+  return true;
+}
 
-  // User Code Begin Fields
-  // User Code End Fields
-  _dbGuide(_dbDatabase*, const _dbGuide& r);
-  _dbGuide(_dbDatabase*);
-  ~_dbGuide();
-  bool operator==(const _dbGuide& rhs) const;
-  bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGuide& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbGuide& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
-};
-dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);
-// User Code Begin General
-// User Code End General
+void dbGuideItr::reverse(dbObject* parent)
+{
+  // User Code Begin reverse
+  _dbNet* _parent = (_dbNet*) parent;
+  uint id = _parent->guides_;
+  uint list = 0;
+
+  while (id != 0) {
+    _dbGuide* _child = _guide_tbl->getPtr(id);
+    uint n = _child->guide_next_;
+    _child->guide_next_ = list;
+    list = id;
+    id = n;
+  }
+  _parent->guides_ = list;
+  // User Code End reverse
+}
+
+uint dbGuideItr::sequential()
+{
+  return 0;
+}
+
+uint dbGuideItr::size(dbObject* parent)
+{
+  uint id;
+  uint cnt = 0;
+
+  for (id = dbGuideItr::begin(parent); id != dbGuideItr::end(parent);
+       id = dbGuideItr::next(id))
+    ++cnt;
+
+  return cnt;
+}
+
+uint dbGuideItr::begin(dbObject* parent)
+{
+  // User Code Begin begin
+  _dbNet* _parent = (_dbNet*) parent;
+  return _parent->guides_;
+  // User Code End begin
+}
+
+uint dbGuideItr::end(dbObject* /* unused: parent */)
+{
+  return 0;
+}
+
+uint dbGuideItr::next(uint id, ...)
+{
+  // User Code Begin next
+  _dbGuide* _guide = _guide_tbl->getPtr(id);
+  return _guide->guide_next_;
+  // User Code End next
+}
+
+dbObject* dbGuideItr::getObject(uint id, ...)
+{
+  return _guide_tbl->getPtr(id);
+}
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
-// Generator Code End Header
+   // Generator Code End Cpp

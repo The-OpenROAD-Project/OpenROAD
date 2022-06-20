@@ -41,6 +41,7 @@
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 // User Code Begin Includes
+#include "dbBlock.h"
 // User Code End Includes
 namespace odb {
 
@@ -55,6 +56,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
     return false;
 
   if (layer_ != rhs.layer_)
+    return false;
+
+  if (guide_next_ != rhs.guide_next_)
     return false;
 
   // User Code Begin ==
@@ -76,6 +80,7 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(net_);
   DIFF_FIELD(box_);
   DIFF_FIELD(layer_);
+  DIFF_FIELD(guide_next_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -86,6 +91,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(net_);
   DIFF_OUT_FIELD(box_);
   DIFF_OUT_FIELD(layer_);
+  DIFF_OUT_FIELD(guide_next_);
 
   // User Code Begin Out
   // User Code End Out
@@ -101,6 +107,7 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   net_ = r.net_;
   box_ = r.box_;
   layer_ = r.layer_;
+  guide_next_ = r.guide_next_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -110,6 +117,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
+  stream >> obj.guide_next_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -119,6 +127,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
+  stream << obj.guide_next_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -157,29 +166,53 @@ dbTechLayer* dbGuide::getLayer() const
 dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
-  return (dbNet*) obj->getOwner();
+  _dbBlock* block = (_dbBlock*) obj->getOwner();
+  return (dbNet*) block->_net_tbl->getPtr(obj->net_);
 }
 
 dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
 {
   _dbNet* owner = (_dbNet*) net;
-  _dbGuide* guide = owner->guide_tbl_->create();
+  _dbBlock* block = (_dbBlock*) owner->getOwner();
+  _dbGuide* guide = block->_guide_tbl->create();
   guide->layer_ = layer->getImpl()->getOID();
   guide->box_ = box;
+  guide->net_ = owner->getId();
+  guide->guide_next_ = owner->guides_;
+  owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
 
-dbGuide* dbGuide::getGuide(dbNet* net, uint dbid)
+dbGuide* dbGuide::getGuide(dbBlock* block, uint dbid)
 {
-  _dbNet* owner = (_dbNet*) net;
-  return (dbGuide*) owner->guide_tbl_->getPtr(dbid);
+  _dbBlock* owner = (_dbBlock*) block;
+  return (dbGuide*) owner->_guide_tbl->getPtr(dbid);
 }
 
 void dbGuide::destroy(dbGuide* guide)
 {
-  _dbNet* owner = (_dbNet*) guide->getImpl()->getOwner();
+  _dbBlock* block = (_dbBlock*) guide->getImpl()->getOwner();
+  _dbNet* net = (_dbNet*) guide->getNet();
+  _dbGuide* _guide = (_dbGuide*) guide;
+
+  uint id = _guide->getOID();
+  _dbGuide* prev = nullptr;
+  uint cur = net->guides_;
+  while (cur) {
+    _dbGuide* c = block->_guide_tbl->getPtr(cur);
+    if (cur == id) {
+      if (prev == nullptr)
+        net->guides_ = _guide->guide_next_;
+      else
+        prev->guide_next_ = _guide->guide_next_;
+      break;
+    }
+    prev = c;
+    cur = c->guide_next_;
+  }
+
   dbProperty::destroyProperties(guide);
-  owner->guide_tbl_->destroy((_dbGuide*) guide);
+  block->_guide_tbl->destroy((_dbGuide*) guide);
 }
 
 // User Code End dbGuidePublicMethods

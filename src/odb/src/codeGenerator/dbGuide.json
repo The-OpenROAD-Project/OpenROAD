@@ -22,6 +22,12 @@
         "flags": [
           "private"
         ]
+      },
+      {
+        "name":"guide_next_",
+        "type":"dbId<_dbGuide>",
+        "flags":["no-get","no-set"],
+        "parent":"dbBlock"
       }
     ],
     "cpp_includes": [

@@ -65,6 +65,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "dbGuideItr.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -89,6 +90,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _cap_nodes(n._cap_nodes),
       _r_segs(n._r_segs),
       _non_default_rule(n._non_default_rule),
+      guides_(n.guides_),
       _groups(n._groups),
       _weight(n._weight),
       _xtalk(n._xtalk),
@@ -96,7 +98,6 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _ccAdjustOrder(n._ccAdjustOrder)
 
 {
-  guide_tbl_ = new dbTable<_dbGuide>(db, this, *n.guide_tbl_);
   if (n._name) {
     _name = strdup(n._name);
     ZALLOCATED(_name);
@@ -137,16 +138,12 @@ _dbNet::_dbNet(_dbDatabase* db)
   _ccAdjustFactor = -1;
   _ccAdjustOrder = 0;
   _drivingIterm = -1;
-
-  guide_tbl_ = new dbTable<_dbGuide>(
-      db, this, (GetObjTbl_t) &_dbNet::getObjectTable, dbGuideObj);
 }
 
 _dbNet::~_dbNet()
 {
   if (_name)
     free((void*) _name);
-  delete guide_tbl_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
@@ -170,7 +167,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
   stream << net._ccAdjustFactor;
   stream << net._ccAdjustOrder;
   stream << net._groups;
-  stream << *net.guide_tbl_;
+  stream << net.guides_;
   return stream;
 }
 
@@ -195,7 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._ccAdjustFactor;
   stream >> net._ccAdjustOrder;
   stream >> net._groups;
-  stream >> *net.guide_tbl_;
+  stream >> net.guides_;
 
   return stream;
 }
@@ -329,7 +326,7 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   if (_groups != rhs._groups)
     return false;
 
-  if (*guide_tbl_ != *rhs.guide_tbl_)
+  if (guides_ != rhs.guides_)
     return false;
 
   return true;
@@ -422,7 +419,7 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_ccAdjustFactor);
   DIFF_FIELD(_ccAdjustOrder);
   DIFF_VECTOR(_groups);
-  DIFF_TABLE(guide_tbl_);
+  DIFF_FIELD(guides_);
   DIFF_END
 }
 
@@ -500,19 +497,8 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_ccAdjustFactor);
   DIFF_OUT_FIELD(_ccAdjustOrder);
   DIFF_OUT_VECTOR(_groups);
-  DIFF_OUT_TABLE(guide_tbl_);
+  DIFF_OUT_FIELD(guides_);
   DIFF_END
-}
-
-dbObjectTable* _dbNet::getObjectTable(dbObjectType type)
-{
-  switch (type) {
-    case dbGuideObj:
-      return guide_tbl_;
-    default:
-      break;
-  }
-  return getTable()->getObjectTable(type);
 }
 
 void set_symmetric_diff(dbDiff& diff,
@@ -3093,13 +3079,16 @@ uint dbNet::setLevelAtFanout(uint level,
 dbSet<dbGuide> dbNet::getGuides() const
 {
   _dbNet* net = (_dbNet*) this;
-  return dbSet<dbGuide>(net, net->guide_tbl_);
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+  return dbSet<dbGuide>(net, block->_guide_itr);
 }
 
 void dbNet::clearGuides()
 {
-  _dbNet* net = (_dbNet*) this;
-  net->guide_tbl_->clear();
+  for(auto guide : getGuides())
+  {
+    dbGuide::destroy(guide);
+  }
 }
 
 #if 0

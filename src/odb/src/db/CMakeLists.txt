@@ -118,6 +118,7 @@ add_library(odb
     dbGroupItr.cpp
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
+    dbGuideItr.cpp
     # Generator Code End cpp
 )
 

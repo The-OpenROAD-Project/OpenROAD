@@ -19,6 +19,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   auto net = dbNet::create(block, "n1");
   dbGuide::create(net, layer, {0,0,100,100});
   dbGuide::create(net, layer, {0, 100, 100, 200});
+  net->getGuides().reverse();
   BOOST_TEST(net->getGuides().size() == 2);
   dbGuide* guide = (dbGuide*) *net->getGuides().begin();
   BOOST_TEST(guide->getNet() == net);

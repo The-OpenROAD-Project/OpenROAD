@@ -121,8 +121,8 @@ class _dbNet : public _dbObject
   dbId<_dbCapNode> _cap_nodes;
   dbId<_dbRSeg> _r_segs;
   dbId<_dbTechNonDefaultRule> _non_default_rule;
+  dbId<_dbGuide> guides_;
   dbVector<dbId<_dbGroup>> _groups;
-  dbTable<_dbGuide>* guide_tbl_;
   int _weight;
   int _xtalk;
   float _ccAdjustFactor;

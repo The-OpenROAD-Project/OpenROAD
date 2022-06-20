@@ -229,6 +229,8 @@ void GlobalRouter::globalRoute()
   if (verbose_)
     reportCongestion();
   computeWirelength();
+  if (verbose_)
+    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   saveGuides();
 }
 
@@ -1387,8 +1389,6 @@ void GlobalRouter::saveGuides()
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  if (verbose_)
-    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   int final_layer;
 
   for (odb::dbNet* db_net : block_->getNets()) {
@@ -1455,6 +1455,9 @@ void GlobalRouter::saveGuides()
         odb::dbGuide::create(db_net, ph_layer_final, guide);
       }
     }
+    auto dbGuides = db_net->getGuides();
+    if(dbGuides.orderReversed() && dbGuides.reversible())
+      dbGuides.reverse();
   }
 }
 

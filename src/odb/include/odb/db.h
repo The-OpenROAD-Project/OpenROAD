@@ -8795,7 +8795,7 @@ class dbGuide : public dbObject
 
   static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
 
-  static dbGuide* getGuide(dbNet* net, uint dbid);
+  static dbGuide* getGuide(dbBlock* block, uint dbid);
 
   static void destroy(dbGuide* guide);
 

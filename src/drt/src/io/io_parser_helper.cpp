@@ -718,7 +718,7 @@ void io::Parser::postProcessGuide()
 
   if (!SAVE_GUIDE_UPDATES) {
     if (VERBOSE > 0) {
-      logger->warn(DRT, 245, "skipped writing guide updates to database.");
+      logger->info(DRT, 245, "skipped writing guide updates to database.");
     }
   } else {
     saveGuidesUpdates();
@@ -1077,5 +1077,8 @@ void io::Parser::saveGuidesUpdates()
             {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
       }
     }
+    auto dbGuides = dbNet->getGuides();
+    if(dbGuides.orderReversed() && dbGuides.reversible())
+      dbGuides.reverse();
   }
 }
