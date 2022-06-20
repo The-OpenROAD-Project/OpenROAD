@@ -35,13 +35,12 @@
 #include <functional>
 #include <map>
 #include <set>
-#include <vector>
-#include <utility> // pair
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>  // pair
+#include <vector>
 
 #include "odb/db.h"
-
 
 namespace utl {
 class Logger;
@@ -60,22 +59,21 @@ class Node;
 class Edge;
 class Pin;
 
-using odb::dbOrientType;
-using odb::dbDatabase;
-using utl::Logger;
 using dpl::Opendp;
-
+using odb::dbDatabase;
+using odb::dbOrientType;
+using utl::Logger;
 
 class Optdp
 {
-public:
+ public:
   Optdp();
   ~Optdp();
 
-  Optdp(const Optdp &) = delete;
-  Optdp &operator=(const Optdp &) = delete;
-  Optdp(const Optdp &&) = delete;
-  Optdp &operator=(const Optdp &&) = delete;
+  Optdp(const Optdp&) = delete;
+  Optdp& operator=(const Optdp&) = delete;
+  Optdp(const Optdp&&) = delete;
+  Optdp& operator=(const Optdp&&) = delete;
 
   void clear();
   void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
@@ -84,7 +82,7 @@ public:
                         int max_displacement_x,
                         int max_displacement_y);
 
-protected:
+ private:
   void import();
   void updateDbInstLocations();
 
@@ -99,15 +97,14 @@ protected:
   void setUpPlacementRegions();
   unsigned dbToDpoOrient(dbOrientType orient);
 
-protected:
-  odb::dbDatabase *db_;
-  utl::Logger *logger_;
+  odb::dbDatabase* db_;
+  utl::Logger* logger_;
   dpl::Opendp* opendp_;
 
   // My stuff.
-  Architecture *arch_; // Information about rows, etc.
-  Network *network_; // The netlist, cells, etc.
-  RoutingParams *routeinfo_; // Route info we might consider (future).
+  Architecture* arch_;        // Information about rows, etc.
+  Network* network_;          // The netlist, cells, etc.
+  RoutingParams* routeinfo_;  // Route info we might consider (future).
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
@@ -117,10 +114,11 @@ protected:
   // For monitoring power alignment.
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;
   std::unordered_set<odb::dbTechLayer*> gndLayers_;
-  std::unordered_map<odb::dbMaster*,std::pair<int,int> > masterPwrs_; // top,bot
+  std::unordered_map<odb::dbMaster*, std::pair<int, int>>
+      masterPwrs_;  // top,bot
 
   int64_t hpwlBefore_;
   int64_t hpwlAfter_;
 };
 
-}  // namespace
+}  // namespace dpo

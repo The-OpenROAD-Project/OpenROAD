@@ -38,33 +38,32 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <bitset>
-#include <cmath>
-#include <deque>
-#include <list>
 #include <map>
-#include <set>
 #include <vector>
-#include "architecture.h"
-#include "network.h"
-#include "router.h"
+#include <string>
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
+class Architecture;
 class DetailedMisParams;
 class DetailedMis;
 class DetailedSeg;
 class DetailedMgr;
+class Network;
+class Node;
+class RoutingParams;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMisParams {
+class DetailedMisParams
+{
  public:
-  enum Strategy {
+  enum Strategy
+  {
     KDTree = 0,
     Binning = 1,
     Colour = 2,
@@ -99,48 +98,24 @@ class DetailedMisParams {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedMis {
+class DetailedMis
+{
   // Flow-based solver for replacing nodes using matching.
-  enum Objective { Hpwl, Disp };
+  enum Objective
+  {
+    Hpwl,
+    Disp
+  };
 
  public:
   DetailedMis(Architecture* arch, Network* network, RoutingParams* rt);
   virtual ~DetailedMis();
 
-  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
-  /*
-  public:
-          void				Place( void );
-          void 				Place( std::vector<Node *> &,
-  std::vector<SwapLocation *> &, unsigned );
-          void				SetNetlist( Netlist * );
-  */
- protected:
-  class Bucket;
-
-  /*
-          class BBox;
-          struct NodeBin;
-          struct SortNodesByArea;
-
-          void 				binTheNodes( std::vector<Node *> & );
-          void 				binTheNodes( unsigned, unsigned );
-          void				calculateCOG( void );
-          void				colourNodes( void );
-          void				gatherNodesWithColour( void );
-          void 				gatherNodesWithOutwardScan( void );
-          void 				gatherNodesWithWindow( void );
-          double 				getCostOfPlacement( void );
-          double 				getDetailedMisCost( Node *,
-     SwapLocation * );
-          double 				init( std::vector<Node *> & );
-          bool        			isSameSize( Node *, SwapLocation * );
-          bool       			isSameSize( Node *, Node * );
-          void				place( std::vector<Node *> &,
-     std::vector<SwapLocation *> &, unsigned, std::deque<SwapLocation *> & );
-   */
+ private:
+  struct Bucket;
 
   void place();
   void collectMovableCells();
@@ -150,41 +125,41 @@ class DetailedMis {
   void populateGrid();
   bool gatherNeighbours(Node* ndi);
   void solveMatch();
-  double getHpwl(Node* ndi, double xi, double yi);
-  double getDisp(Node* ndi, double xi, double yi);
+  double getHpwl(const Node* ndi, double xi, double yi);
+  double getDisp(const Node* ndi, double xi, double yi);
 
  public:
   /* DetailedMisParams _params; */
 
-  DetailedMgr* m_mgrPtr;
+  DetailedMgr* mgrPtr_;
 
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  std::vector<Node*> m_candidates;
-  std::vector<bool> m_movable;
-  std::vector<int> m_colors;
-  std::vector<Node*> m_neighbours;
+  std::vector<Node*> candidates_;
+  std::vector<bool> movable_;
+  std::vector<int> colors_;
+  std::vector<Node*> neighbours_;
 
   // Grid used for binning and locating cells.
-  std::vector<std::vector<Bucket*> > m_grid;
-  int m_dimW;
-  int m_dimH;
-  double m_stepX;
-  double m_stepY;
-  std::map<Node*, Bucket*> m_cellToBinMap;
+  std::vector<std::vector<Bucket*>> grid_;
+  int dimW_;
+  int dimH_;
+  double stepX_;
+  double stepY_;
+  std::map<Node*, Bucket*> cellToBinMap_;
 
-  std::vector<int> m_timesUsed;
+  std::vector<int> timesUsed_;
 
   // Other.
-  int m_skipEdgesLargerThanThis;
-  int m_maxProblemSize;
-  int m_traversal;
-  bool m_useSameSize;
-  bool m_useSameColor;
-  int m_maxTimesUsed;
-  Objective m_obj;
+  int skipEdgesLargerThanThis_;
+  int maxProblemSize_;
+  int traversal_;
+  bool useSameSize_;
+  bool useSameColor_;
+  int maxTimesUsed_;
+  Objective obj_;
 };
 
 }  // namespace dpo

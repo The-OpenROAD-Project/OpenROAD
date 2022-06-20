@@ -32,38 +32,39 @@
 
 #pragma once
 
-#include <deque>
 #include <vector>
-#include "architecture.h"
+
 #include "detailed_generator.h"
-#include "network.h"
 #include "rectangle.h"
-#include "router.h"
 
 namespace dpo {
 
+class Architecture;
 class DetailedSeg;
 class DetailedMgr;
+class Edge;
+class Network;
+class RoutingParams;
 
 // CLASSES ===================================================================
-class DetailedVerticalSwap : public DetailedGenerator {
+class DetailedVerticalSwap : public DetailedGenerator
+{
  public:
   DetailedVerticalSwap(Architecture* arch, Network* network, RoutingParams* rt);
   DetailedVerticalSwap();
-  virtual ~DetailedVerticalSwap();
 
   // Intefaces for scripting.
-  void run(DetailedMgr* mgrPtr, std::string command);
-  void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
+  void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
 
   // Interface for move generation.
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr* mgr);
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr* mgr) override;
 
- protected:
+ private:
   void verticalSwap();  // tries to avoid overlap.
-  bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
+  bool calculateEdgeBB(const Edge* ed, const Node* nd, Rectangle& bbox);
   bool getRange(Node*, Rectangle&);
   double delta(Node* ndi, double new_x, double new_y);
   double delta(Node* ndi, Node* ndj);
@@ -71,23 +72,23 @@ class DetailedVerticalSwap : public DetailedGenerator {
   bool generate(Node* ndi);
 
   // Standard stuff.
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // Other.
-  int m_skipNetsLargerThanThis;
-  std::vector<int> m_edgeMask;
-  int m_traversal;
+  int skipNetsLargerThanThis_;
+  std::vector<int> edgeMask_;
+  int traversal_;
 
-  std::vector<double> m_xpts;
-  std::vector<double> m_ypts;
+  std::vector<double> xpts_;
+  std::vector<double> ypts_;
 
   // For use as a move generator.
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
 }  // namespace dpo

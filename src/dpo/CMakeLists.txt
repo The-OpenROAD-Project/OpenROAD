@@ -49,7 +49,6 @@ target_sources(dpo
     src/network.cxx
     src/router.cxx
     src/utility.cxx
-    src/plotgnu.cxx
     src/legalize_shift.cxx
     src/detailed.cxx
     src/detailed_manager.cxx
