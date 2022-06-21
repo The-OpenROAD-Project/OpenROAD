@@ -209,13 +209,13 @@ utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 # Detailed routing
 
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
-detailed_route -guide $route_guide \
-               -output_guide [make_result_file "${design}_${platform}_output_guide.mod"] \
-               -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
+detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \
+               -save_guide_updates \
                -verbose 0
 
+write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
 

@@ -186,12 +186,6 @@ repair_antennas(odb::dbMTerm* diode_mterm, int iterations)
 }
 
 void
-write_guides(char* fileName)
-{
-  getGlobalRouter()->writeGuides(fileName);
-}
-
-void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   getGlobalRouter()->highlightRoute(net, show_pin_locations);

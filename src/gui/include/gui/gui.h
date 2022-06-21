@@ -590,6 +590,10 @@ class Gui
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
   void clearFocusNets();
+  // Used to add, remove and clear route guides
+  void addRouteGuides(odb::dbNet* net);
+  void removeRouteGuides(odb::dbNet* net);
+  void clearRouteGuides();
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);

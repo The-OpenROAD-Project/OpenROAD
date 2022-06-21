@@ -59,9 +59,9 @@ met5              1680             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            69855          2943            4.21%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30261 um
-[INFO GRT-0006] Repairing antennas, iteration 1.
-[INFO GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0012] Antenna violations: 8
-[WARNING GRT-0243] Unable to repair antennas on net with diodes.
-[INFO GRT-0015] Inserted 0 diodes.
+[INFO GRT-0018] Total wirelength: 30427 um
+[INFO GRT-0014] Routed nets: 411
+[WARNING STA-0328] port 'DIOD' not found.
+[ERROR GRT-0069] Diode not found.
+GRT-0069
+

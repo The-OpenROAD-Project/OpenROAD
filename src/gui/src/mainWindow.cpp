@@ -400,13 +400,12 @@ void MainWindow::init(sta::dbSta* sta)
   timing_widget_->init(sta);
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
-
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets()));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -416,6 +415,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaGenerateRule*>(new DbGenerateViaDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   controls_->setDBInstDescriptor(inst_descriptor);

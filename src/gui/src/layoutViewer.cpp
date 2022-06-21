@@ -2091,13 +2091,13 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     drawTracks(layer, painter, bounds);
+    drawRouteGuides(gui_painter, layer);
     for (auto* renderer : renderers) {
       gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
   }
-
   // draw instance names
   drawInstanceNames(painter, insts);
 
@@ -2141,6 +2141,20 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
   }
 }
 
+void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
+{
+  if(route_guides_.empty())
+    return;
+  painter.setPen(layer);
+  painter.setBrush(layer);
+  for(auto net : route_guides_) {
+    for(auto guide : net->getGuides()) {
+      if (guide->getLayer() != layer)
+        continue;
+      painter.drawRect(guide->getBox());
+    }
+  }
+}
 void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
@@ -2921,6 +2935,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2990,11 +3005,15 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
+  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearRouteGuides();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
+    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
   });
 }
 
@@ -3032,10 +3051,25 @@ void LayoutViewer::addFocusNet(odb::dbNet* net)
   }
 }
 
+void LayoutViewer::addRouteGuides(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = route_guides_.insert(net);
+  if (inserted) {
+    fullRepaint();
+  }
+}
+
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeRouteGuides(odb::dbNet* net)
+{
+  if (route_guides_.erase(net) > 0) {
     fullRepaint();
   }
 }
@@ -3045,6 +3079,14 @@ void LayoutViewer::clearFocusNets()
   if (!focus_nets_.empty()) {
     focus_nets_.clear();
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearRouteGuides()
+{
+  if (!route_guides_.empty()) {
+    route_guides_.clear();
     fullRepaint();
   }
 }
