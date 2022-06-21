@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 #include <QInputDialog>
 #include <QStringList>
@@ -2644,18 +2645,34 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
 
   Properties props;
 
+  std::map<odb::dbTechLayer*, odb::Rect> shapes;
   odb::dbTechLayer* cut_layer = nullptr;
   for (auto* box : via->getBoxes()) {
-    if (box->getTechLayer()->getType() == odb::dbTechLayerType::CUT) {
-      cut_layer = box->getTechLayer();
-      break;
+    auto* box_layer = box->getTechLayer();
+    if (box_layer->getType() == odb::dbTechLayerType::CUT) {
+      cut_layer = box_layer;
     }
+    odb::Rect shape;
+    box->getBox(shape);
+    shapes[box_layer] = shape;
   }
-  props.push_back({"Bottom layer", gui->makeSelected(via->getBottomLayer())});
+
+  PropertyList layers;
+  auto make_layer = [gui, &shapes, &layers](odb::dbTechLayer* layer) {
+    const auto& shape = shapes[layer];
+    std::string shape_text = fmt::format("({}, {}), ({}, {})",
+                                         Property::convert_dbu(shape.xMin(), false),
+                                         Property::convert_dbu(shape.yMin(), false),
+                                         Property::convert_dbu(shape.xMax(), false),
+                                         Property::convert_dbu(shape.yMax(), false));
+    layers.push_back({gui->makeSelected(layer), shape_text});
+  };
+  make_layer(via->getBottomLayer());
   if (cut_layer != nullptr) {
-    props.push_back({"Cut layer", gui->makeSelected(cut_layer)});
+    make_layer(cut_layer);
   }
-  props.push_back({"Top layer", gui->makeSelected(via->getTopLayer())});
+  make_layer(via->getTopLayer());
+  props.push_back({"Layers", layers});
 
   props.push_back({"Is default", via->isDefault()});
   props.push_back({"Is top of stack", via->isTopOfStack()});
@@ -2733,10 +2750,27 @@ Descriptor::Properties DbGenerateViaDescriptor::getProperties(std::any object) c
 
   Properties props;
 
-  SelectionSet layers;
+  PropertyList layers;
   for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
     auto* rule = via->getViaLayerRule(l);
-    layers.insert(gui->makeSelected(rule->getLayer()));
+    auto* layer = rule->getLayer();
+    std::string shape_text;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      odb::Rect shape;
+      rule->getRect(shape);
+      shape_text = fmt::format("({}, {}), ({}, {})",
+                               Property::convert_dbu(shape.xMin(), false),
+                               Property::convert_dbu(shape.yMin(), false),
+                               Property::convert_dbu(shape.xMax(), false),
+                               Property::convert_dbu(shape.yMax(), false));
+    } else {
+      int enc0, enc1;
+      rule->getEnclosure(enc0, enc1);
+      shape_text = fmt::format("Enclosure: {} x {}",
+                               Property::convert_dbu(enc0, true),
+                               Property::convert_dbu(enc1, true));
+    }
+    layers.push_back({gui->makeSelected(layer), shape_text});
   }
   props.push_back({"Layers", layers});
 
