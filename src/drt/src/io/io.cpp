@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "io/io.h"
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +33,9 @@
 
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
+#include "frRTree.h"
 #include "global.h"
+#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -1925,8 +1925,15 @@ void io::Parser::setLayers(odb::dbTech* tech)
 
 void io::Parser::setMacros(odb::dbDatabase* db)
 {
+  const frLayerNum numLayers = tech->getLayers().size();
+  std::vector<RTree<frMPin*>> pin_shapes;
+  pin_shapes.resize(numLayers);
+
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
+      for (auto& tree : pin_shapes) {
+        tree.clear();
+      }
       auto tmpMaster = make_unique<frMaster>(master->getName());
       frCoord originX;
       frCoord originY;
@@ -1986,6 +1993,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             pinFig->setLayerNum(layerNum);
             unique_ptr<frPinFig> uptr(std::move(pinFig));
             pinIn->addPinFig(std::move(uptr));
+            pin_shapes[layerNum].insert(
+                make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
           }
           term->addPin(std::move(pinIn));
         }
@@ -1993,29 +2002,64 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
-        string layer = obs->getTechLayer()->getName();
-        if (tech->name2layer.find(layer) == tech->name2layer.end()) {
-          auto type = obs->getTechLayer()->getType();
-          if (type == odb::dbTechLayerType::ROUTING
-              || type == odb::dbTechLayerType::CUT)
+        auto layer = obs->getTechLayer();
+        string layer_name = layer->getName();
+        auto layer_type = layer->getType();
+        if (tech->name2layer.find(layer_name) == tech->name2layer.end()) {
+          if (layer_type == odb::dbTechLayerType::ROUTING
+              || layer_type == odb::dbTechLayerType::CUT)
             logger->warn(DRT,
                          123,
                          "Layer {} is skipped for {}/OBS.",
-                         layer,
+                         layer_name,
                          tmpMaster->getName());
           continue;
-        } else
-          layerNum = tech->name2layer.at(layer)->getLayerNum();
+        } else {
+          layerNum = tech->name2layer.at(layer_name)->getLayerNum();
+        }
+        frCoord xl = obs->xMin();
+        frCoord yl = obs->yMin();
+        frCoord xh = obs->xMax();
+        frCoord yh = obs->yMax();
+
+        // In some LEF they put contact cut shapes in the pin and in others
+        // they put them in OBS for some unknown reason.  The later confuses gc
+        // into thinking the cuts are diff-net.  To resolve this we move
+        // any cut OBS enclosed by a pin shape into the pin.
+        if (layer_type == odb::dbTechLayerType::CUT) {
+          std::vector<rq_box_value_t<frMPin*>> containing_pins;
+          if (layerNum + 1 < pin_shapes.size()) {
+            pin_shapes[layerNum + 1].query(
+                bgi::intersects(Rect{xl, yl, xh, yh}),
+                back_inserter(containing_pins));
+          }
+          if (!containing_pins.empty()) {
+            frMPin* pin = nullptr;
+            for (auto& [box, rqPin] : containing_pins) {
+              if (!pin) {
+                pin = rqPin;
+              } else if (pin != rqPin) {
+                pin = nullptr;
+                break;  // skip if more than one pin
+              }
+            }
+            if (pin) {
+              unique_ptr<frRect> pinFig = make_unique<frRect>();
+              pinFig->setBBox(Rect(xl, yl, xh, yh));
+              pinFig->addToPin(pin);
+              pinFig->setLayerNum(layerNum);
+              unique_ptr<frPinFig> uptr(std::move(pinFig));
+              pin->addPinFig(std::move(uptr));
+              continue;
+            }
+          }
+        }
         auto blkIn = make_unique<frBlockage>();
         blkIn->setId(numBlockages);
         blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
         auto pinIn = make_unique<frBPin>();
         pinIn->setId(0);
-        frCoord xl = obs->xMin();
-        frCoord yl = obs->yMin();
-        frCoord xh = obs->xMax();
-        frCoord yh = obs->yMax();
         // pinFig
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
