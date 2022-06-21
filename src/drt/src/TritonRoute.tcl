@@ -34,8 +34,6 @@
 #############################################################################
 
 sta::define_cmd_args "detailed_route" {
-    [-guide filename]
-    [-output_guide filename]
     [-output_maze filename]
     [-output_drc filename]
     [-output_cmap filename]
@@ -59,6 +57,7 @@ sta::define_cmd_args "detailed_route" {
     [-clean_patches]
     [-no_pin_access]
     [-min_access_points count]
+    [-save_guide_updates]
 }
 
 proc detailed_route { args } {
@@ -67,7 +66,7 @@ proc detailed_route { args } {
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume -cloud_size -min_access_points} \
-    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr}
+    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -76,6 +75,7 @@ proc detailed_route { args } {
   # single_step_dr is not a user option but is intended for algorithm
   # development.  It is not listed in the help string intentionally.
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
+  set save_guide_updates  [expr [info exists flags(-save_guide_updates)]]
   if { [info exists keys(-param)] } {
     if { [array size keys] > 1 } {
       utl::error DRT 251 "-param cannot be used with other arguments"
@@ -83,16 +83,6 @@ proc detailed_route { args } {
       drt::detailed_route_cmd $keys(-param)
     }
   } else {
-    if { [info exists keys(-guide)] } {
-      set guide $keys(-guide)
-    } else {
-      set guide ""
-    }
-    if { [info exists keys(-output_guide)] } {
-      set output_guide $keys(-output_guide)
-    } else {
-      set output_guide ""
-    }
     if { [info exists keys(-output_maze)] } {
       set output_maze $keys(-output_maze)
     } else {
@@ -194,11 +184,11 @@ proc detailed_route { args } {
     } else {
       set min_access_points -1
     }
-    drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
-      $output_cmap $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
+    drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
+      $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $no_pin_access $single_step_dr $min_access_points
+      $clean_patches $no_pin_access $single_step_dr $min_access_points $save_guide_updates
   }
 }
 

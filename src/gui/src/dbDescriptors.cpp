@@ -762,10 +762,12 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 
 DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
                                  sta::dbSta* sta,
-                                 const std::set<odb::dbNet*>& focus_nets) :
+                                 const std::set<odb::dbNet*>& focus_nets,
+                                 const std::set<odb::dbNet*>& guide_nets) :
     db_(db),
     sta_(sta),
-    focus_nets_(focus_nets)
+    focus_nets_(focus_nets),
+    guide_nets_(guide_nets)
 {
 }
 
@@ -1352,7 +1354,14 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
       return makeSelected(net, nullptr);
     }});
   }
-
+  if(!net->getGuides().empty())
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, net]() {
+      if(guide_nets_.count(net) == 0)
+        gui->addRouteGuides(net);
+      else
+        gui->removeRouteGuides(net);
+      return makeSelected(net, nullptr);
+    }});
   return actions;
 }
 

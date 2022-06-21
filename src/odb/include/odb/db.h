@@ -140,6 +140,7 @@ class dbTechLayerEolExtensionRule;
 class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
+class dbGuide;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -989,6 +990,11 @@ class dbBlock : public dbObject
   //
   // void dbBlock::writeDb(char *filename, int allNode=0);
   void writeDb(char* filename, int allNode = 0);
+
+  //
+  // Utility to write guides file
+  //
+  void writeGuides(const char* filename) const;
 
   ///
   /// Find a specific via of this block.
@@ -2639,6 +2645,10 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
+
+  dbSet<dbGuide> getGuides() const;
+
+  void clearGuides();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8771,6 +8781,29 @@ class dbTechLayerMinCutRule : public dbObject
   static void destroy(dbTechLayerMinCutRule* rule);
 
   // User Code End dbTechLayerMinCutRule
+};
+
+class dbGuide : public dbObject
+{
+ public:
+  // User Code Begin dbGuideEnums
+  // User Code End dbGuideEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbGuide
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbGuide* getGuide(dbBlock* block, uint dbid);
+
+  static void destroy(dbGuide* guide);
+
+  // User Code End dbGuide
 };
 
 class dbModule : public dbObject

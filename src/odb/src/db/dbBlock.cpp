@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -66,10 +67,11 @@
 #include "dbGroup.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupInstItr.h"
-#include "dbRegionGroupItr.h"
 #include "dbGroupItr.h"
 #include "dbGroupModInstItr.h"
 #include "dbGroupPowerNetItr.h"
+#include "dbGuide.h"
+#include "dbGuideItr.h"
 #include "dbHashTable.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -90,6 +92,7 @@
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbRegion.h"
+#include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbRow.h"
 #include "dbSBox.h"
@@ -191,6 +194,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbAccessPointObj);
+
+  _guide_tbl = new dbTable<_dbGuide>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGuideObj);
 
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBoxObj, 1024, 10);
@@ -318,8 +324,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
-  
+
   _group_itr = new dbGroupItr(_group_tbl);
+
+  _guide_itr = new dbGuideItr(_guide_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
 
@@ -400,6 +408,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
+
+  _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
 
   _box_tbl = new dbTable<_dbBox>(db, this, *block._box_tbl);
 
@@ -487,8 +497,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
-  
+
   _group_itr = new dbGroupItr(_group_tbl);
+
+  _guide_itr = new dbGuideItr(_guide_tbl);
 
   _group_inst_itr = new dbGroupInstItr(_inst_tbl);
 
@@ -528,6 +540,7 @@ _dbBlock::~_dbBlock()
   delete _modinst_tbl;
   delete _group_tbl;
   delete ap_tbl_;
+  delete _guide_tbl;
   delete _box_tbl;
   delete _via_tbl;
   delete _gcell_grid_tbl;
@@ -567,6 +580,7 @@ _dbBlock::~_dbBlock()
   delete _module_modinst_itr;
   delete _region_group_itr;
   delete _group_itr;
+  delete _guide_itr;
   delete _group_inst_itr;
   delete _group_modinst_itr;
   delete _group_power_net_itr;
@@ -686,6 +700,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
 
     case dbAccessPointObj:
       return ap_tbl_;
+
+    case dbGuideObj:
+      return _guide_tbl;
 
     case dbNetObj:
       return _net_tbl;
@@ -822,6 +839,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._modinst_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
+  stream << *block._guide_tbl;
   stream << *block._box_tbl;
   stream << *block._via_tbl;
   stream << *block._gcell_grid_tbl;
@@ -907,6 +925,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._modinst_tbl;
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
+  stream >> *block._guide_tbl;
   stream >> *block._box_tbl;
   stream >> *block._via_tbl;
   stream >> *block._gcell_grid_tbl;
@@ -1107,6 +1126,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (*ap_tbl_ != *rhs.ap_tbl_)
     return false;
 
+  if (*_guide_tbl != *rhs._guide_tbl)
+    return false;
+
   if (*_box_tbl != *rhs._box_tbl)
     return false;
 
@@ -1233,6 +1255,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_modinst_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
+  DIFF_TABLE(_guide_tbl);
   DIFF_TABLE_NO_DEEP(_box_tbl);
   DIFF_TABLE(_via_tbl);
   DIFF_TABLE_NO_DEEP(_gcell_grid_tbl);
@@ -1316,6 +1339,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_modinst_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
+  DIFF_OUT_TABLE(_guide_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
   DIFF_OUT_TABLE(_via_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_gcell_grid_tbl);
@@ -3290,6 +3314,38 @@ void dbBlock::writeDb(char* filename, int allNode)
     block->_journal->pushParam(allNode);
     block->_journal->endAction();
   }
+}
+
+void dbBlock::writeGuides(const char* filename) const
+{
+  std::ofstream guide_file;
+  guide_file.open(filename);
+  if (!guide_file) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 307, "Guides file could not be opened.");
+  }
+  dbBlock* block = (dbBlock*) this;
+  std::vector<dbNet*> nets;
+  nets.reserve(block->getNets().size());
+  for (auto net : block->getNets()) {
+    if (!net->getGuides().empty())
+      nets.push_back(net);
+  }
+  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+    return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+  });
+  for (auto net : nets) {
+    guide_file << net->getName() << "\n";
+    guide_file << "(\n";
+    for (auto guide : net->getGuides()) {
+      guide_file << guide->getBox().xMin() << " " << guide->getBox().yMin()
+                 << " " << guide->getBox().xMax() << " "
+                 << guide->getBox().yMax() << " "
+                 << guide->getLayer()->getName() << "\n";
+    }
+    guide_file << ")\n";
+  }
+  guide_file.close();
 }
 
 bool dbBlock::differences(dbBlock* block1,

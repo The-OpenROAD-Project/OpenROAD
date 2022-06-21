@@ -310,6 +310,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
 };
 
 }  // namespace gui

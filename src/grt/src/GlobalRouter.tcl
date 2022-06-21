@@ -256,7 +256,7 @@ proc global_route { args } {
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
-    grt::write_guides $out_file
+    write_guides $out_file
   }
 }
 
@@ -295,13 +295,6 @@ sta::define_cmd_args "read_guides" { file_name }
 proc read_guides { args } {
   set file_name $args
   grt::read_guides $file_name
-}
-
-sta::define_cmd_args "write_guides" { file_name }
-
-proc write_guides { args } {
-  set file_name $args
-  grt::write_guides $file_name
 }
 
 sta::define_cmd_args "draw_route_guides" { net_names \

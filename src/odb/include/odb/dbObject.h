@@ -104,6 +104,7 @@ enum dbObjectType
   dbTechLayerArraySpacingRuleObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerMinCutRuleObj,
+  dbGuideObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,
