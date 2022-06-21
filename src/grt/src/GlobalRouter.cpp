@@ -251,7 +251,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   if (diode_mterm == nullptr) {
     diode_mterm = antenna_repair_->findDiodeMTerm();
     if (diode_mterm == nullptr)
-      logger_->error(GRT, 6, "No diode LEF class CORE ANTENNACELL found.");
+      logger_->error(GRT, 246, "No diode LEF class CORE ANTENNACELL found.");
   }
   if (antenna_repair_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT, 244, "Diode {}/{} diffusion area is zero.",
