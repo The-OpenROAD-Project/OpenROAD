@@ -616,8 +616,9 @@ DbVia* Connect::generateDbVia(
              utl::PDN,
              "Via",
              3,
-             "Vias possible: {}",
-             vias.size());
+             "Vias possible: {} from {} generators",
+             vias.size(),
+             generators.size());
 
   if (vias.empty()) {
     return nullptr;
@@ -640,6 +641,13 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                                    const std::set<odb::Rect>& upper_rects,
                                    const ViaGenerator::Constraint& upper_constraint) const
 {
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             1,
+             "Making via between {} and {}",
+             lower->getName(),
+             upper->getName());
   // look for generate vias
   std::vector<std::unique_ptr<ViaGenerator>> generate_vias;
   for (const auto& lower_rect : lower_rects) {
@@ -662,6 +670,13 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
       }
     }
   }
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Generate via rules available: {} from {}",
+             generate_vias.size(),
+             generate_via_rules_.size());
 
   DbVia* generate_via = generateDbVia(generate_vias, block);
 
@@ -691,6 +706,13 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
       }
     }
   }
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Tech vias available: {} from {}",
+             tech_vias.size(),
+             tech_vias_.size());
 
   return generateDbVia(tech_vias, block);
 }
