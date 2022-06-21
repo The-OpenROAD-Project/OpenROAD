@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 #include <QInputDialog>
 #include <QStringList>
@@ -2053,6 +2054,34 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
     props.push_back({"LEF58 minimum cuts", lef58_minimum_cuts});
   }
 
+  if (layer->getType() == odb::dbTechLayerType::CUT) {
+    auto* tech = layer->getTech();
+    auto* gui = Gui::get();
+
+    SelectionSet generate_vias;
+    for (auto* via : tech->getViaGenerateRules()) {
+      for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
+        auto* rule = via->getViaLayerRule(l);
+        if (rule->getLayer() == layer) {
+          generate_vias.insert(gui->makeSelected(via));
+          break;
+        }
+      }
+    }
+    props.push_back({"Generate vias", generate_vias});
+
+    SelectionSet tech_vias;
+    for (auto* via : tech->getVias()) {
+      for (auto* box : via->getBoxes()) {
+        if (box->getTechLayer() == layer) {
+          tech_vias.insert(gui->makeSelected(via));
+          break;
+        }
+      }
+    }
+    props.push_back({"Tech vias", tech_vias});
+  }
+
   populateODBProperties(props, layer);
 
   return props;
@@ -2577,6 +2606,206 @@ void DbModuleDescriptor::getModules(odb::dbModule* module, SelectionSet& objects
   for (auto* mod_inst : module->getChildren()) {
     getModules(mod_inst->getMaster(), objects);
   }
+}
+
+//////////////////////////////////////////////////
+
+DbTechViaDescriptor::DbTechViaDescriptor(odb::dbDatabase* db) :
+  db_(db)
+{
+}
+
+std::string DbTechViaDescriptor::getName(std::any object) const
+{
+  auto* via = std::any_cast<odb::dbTechVia*>(object);
+  return via->getName();
+}
+
+std::string DbTechViaDescriptor::getTypeName() const
+{
+  return "Tech Via";
+}
+
+bool DbTechViaDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechViaDescriptor::highlight(std::any object,
+                                    Painter& painter,
+                                    void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
+{
+  auto* via = std::any_cast<odb::dbTechVia*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  std::map<odb::dbTechLayer*, odb::Rect> shapes;
+  odb::dbTechLayer* cut_layer = nullptr;
+  for (auto* box : via->getBoxes()) {
+    auto* box_layer = box->getTechLayer();
+    if (box_layer->getType() == odb::dbTechLayerType::CUT) {
+      cut_layer = box_layer;
+    }
+    odb::Rect shape;
+    box->getBox(shape);
+    shapes[box_layer] = shape;
+  }
+
+  PropertyList layers;
+  auto make_layer = [gui, &shapes, &layers](odb::dbTechLayer* layer) {
+    const auto& shape = shapes[layer];
+    std::string shape_text = fmt::format("({}, {}), ({}, {})",
+                                         Property::convert_dbu(shape.xMin(), false),
+                                         Property::convert_dbu(shape.yMin(), false),
+                                         Property::convert_dbu(shape.xMax(), false),
+                                         Property::convert_dbu(shape.yMax(), false));
+    layers.push_back({gui->makeSelected(layer), shape_text});
+  };
+  make_layer(via->getBottomLayer());
+  if (cut_layer != nullptr) {
+    make_layer(cut_layer);
+  }
+  make_layer(via->getTopLayer());
+  props.push_back({"Layers", layers});
+
+  props.push_back({"Is default", via->isDefault()});
+  props.push_back({"Is top of stack", via->isTopOfStack()});
+
+  if (via->getResistance() != 0.0) {
+    props.push_back({"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
+  }
+
+  populateODBProperties(props, via);
+
+  return props;
+}
+
+Selected DbTechViaDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto via = std::any_cast<odb::dbTechVia*>(&object)) {
+    return Selected(*via, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbTechViaDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_via = std::any_cast<odb::dbTechVia*>(l);
+  auto r_via = std::any_cast<odb::dbTechVia*>(r);
+  return l_via->getId() < r_via->getId();
+}
+
+bool DbTechViaDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* tech = db_->getTech();
+
+  for (auto* via : tech->getVias()) {
+    objects.insert(makeSelected(via, nullptr));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbGenerateViaDescriptor::DbGenerateViaDescriptor(odb::dbDatabase* db) :
+  db_(db)
+{
+}
+
+std::string DbGenerateViaDescriptor::getName(std::any object) const
+{
+  auto* via = std::any_cast<odb::dbTechViaGenerateRule*>(object);
+  return via->getName();
+}
+
+std::string DbGenerateViaDescriptor::getTypeName() const
+{
+  return "Generate Via Rule";
+}
+
+bool DbGenerateViaDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbGenerateViaDescriptor::highlight(std::any object,
+                                        Painter& painter,
+                                        void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbGenerateViaDescriptor::getProperties(std::any object) const
+{
+  auto* via = std::any_cast<odb::dbTechViaGenerateRule*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  PropertyList layers;
+  for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
+    auto* rule = via->getViaLayerRule(l);
+    auto* layer = rule->getLayer();
+    std::string shape_text;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      odb::Rect shape;
+      rule->getRect(shape);
+      shape_text = fmt::format("({}, {}), ({}, {})",
+                               Property::convert_dbu(shape.xMin(), false),
+                               Property::convert_dbu(shape.yMin(), false),
+                               Property::convert_dbu(shape.xMax(), false),
+                               Property::convert_dbu(shape.yMax(), false));
+    } else {
+      int enc0, enc1;
+      rule->getEnclosure(enc0, enc1);
+      shape_text = fmt::format("Enclosure: {} x {}",
+                               Property::convert_dbu(enc0, true),
+                               Property::convert_dbu(enc1, true));
+    }
+    layers.push_back({gui->makeSelected(layer), shape_text});
+  }
+  props.push_back({"Layers", layers});
+
+  props.push_back({"Is default", via->isDefault()});
+
+  populateODBProperties(props, via);
+
+  return props;
+}
+
+Selected DbGenerateViaDescriptor::makeSelected(std::any object,
+                                               void* additional_data) const
+{
+  if (auto via = std::any_cast<odb::dbTechViaGenerateRule*>(&object)) {
+    return Selected(*via, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbGenerateViaDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_via = std::any_cast<odb::dbTechViaGenerateRule*>(l);
+  auto r_via = std::any_cast<odb::dbTechViaGenerateRule*>(r);
+  return l_via->getId() < r_via->getId();
+}
+
+bool DbGenerateViaDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* tech = db_->getTech();
+
+  for (auto* via : tech->getViaGenerateRules()) {
+    objects.insert(makeSelected(via, nullptr));
+  }
+
+  return true;
 }
 
 }  // namespace gui
