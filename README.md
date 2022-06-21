@@ -2,6 +2,119 @@
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
 
+# Introduction
+
+[OpenROAD](https://theopenroadproject.org/) is the leading
+open-source, foundational application for semiconductor digital design.
+It eliminates the barriers of cost, risk and uncertainty in hardware
+design to foster open access, expertise, rapid innovation and faster
+design turnaround. The OpenROAD application enables flexible flow
+control through an API, based on Tcl and Python.
+
+OpenROAD is a key tool for popular open source digital flows like
+OpenROAD-flow-scripts,
+[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
+[Efabless](https://efabless.com/), Silicon Compiler Systems; as
+well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+mixed-signal design flows.
+
+OpenROAD users range from hardware designers, industry collaborators,
+enthusiasts, academia and researchers.
+
+Two main flow controllers are supported by the
+[OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
+project repository:
+
+[OpenRoad-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
+Supported by the OpenROAD project
+
+[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
+Supported by [Efabless](https://efabless.com/)
+
+The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hr
+turnaround from RTL-GDSII for design exploration and physical design
+implementation.
+
+![rtl2gds.webp](./docs/images/rtl2gds.webp)
+
+The OpenROAD GUI is a powerful visualization, analysis and debugging
+tool with a customizable tcl interface.
+
+Figures show GUI views for various flow stages including post-routed
+timing, placement congestion, CTS.
+
+![ibexGui.webp](./docs/images/ibexGui.webp)
+
+## Placement Congestion View:
+
+![pl_congestion.webp](./docs/images/pl_congestion.webp)
+
+## CTS:
+
+![clk_routing.png](./docs/images/clk_routing.png)
+
+# PDK Support
+
+The OpenROAD application is PDK independent. However, it has been tested
+and validated with specific PDKs in the context of various flow
+controllers.
+
+OpenLane supports Skywater130.
+
+Openroad-flow-scripts supports several public and private PDKs
+including:
+
+## Open Source PDKs
+
+Skywater130 - 130nm
+
+Nangate45 - 45nm
+
+ASAP7 - Predictive FinFET 7nm
+
+## Proprietary PDKs
+
+These PDKS are supported in OpenRoad-flow-scripts only. They are used to
+test and calibrate OpenROAD against commercial platforms and ensure good
+QoR.The PDKs and platform-specific files for these kits cannot be
+provided due to NDA restrictions. However, if you are able to access
+these platforms independently, you can create the necessary
+platform-specific files yourself.
+
+GF55 - 55nm
+
+GF12 - 12nm
+
+GF180 - 180nm
+
+Intel22 - 22nm
+
+Intel16 - 16nm
+
+TSMC65 - 65nm
+
+# Tapeouts
+
+OpenROAD was used for full physical implementation in over 240 tapeouts
+in Sky130 through the Google sponsored, Efabless [MPW
+shuttle](https://efabless.com/open_shuttle_program) and
+[ChipIgnite](https://efabless.com/) programs.
+
+![shuttle.webp](./docs/images/shuttle.webp)
+
+## OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
+
+![gf12lp.png](./docs/images/gf12lp.png)
+
+## Continuous Tapeout Integration into CI
+
+The OpenROAD project actively adds successfully taped out MPW shuttle
+designs to the [CI regression
+testing](https://github.com/The-OpenROAD-Project/OpenLane-MPW-CI).
+Examples of designs include Open processor cores, RISC-V based SoCs,
+cryptocurrency miners, robotic app processors, amateur satellite radio
+transceivers, OpenPower based Microwatt etc.
+
 The documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
 ## Install dependencies
