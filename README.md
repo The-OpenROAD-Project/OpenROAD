@@ -66,11 +66,11 @@ including:
 
 ## Open Source PDKs
 
-Skywater130 - 130nm
+`Skywater130` - 130nm
 
-Nangate45 - 45nm
+`Nangate45` - 45nm
 
-ASAP7 - Predictive FinFET 7nm
+`ASAP7` - Predictive FinFET 7nm
 
 ## Proprietary PDKs
 
@@ -81,17 +81,17 @@ provided due to NDA restrictions. However, if you are able to access
 these platforms independently, you can create the necessary
 platform-specific files yourself.
 
-GF55 - 55nm
+`GF55` - 55nm
 
-GF12 - 12nm
+`GF12` - 12nm
 
-GF180 - 180nm
+`GF180` - 180nm
 
-Intel22 - 22nm
+`Intel22` - 22nm
 
-Intel16 - 16nm
+`Intel16` - 16nm
 
-TSMC65 - 65nm
+`TSMC65` - 65nm
 
 # Tapeouts
 
