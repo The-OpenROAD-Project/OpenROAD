@@ -2808,6 +2808,42 @@ namespace eval ICeWall {
     return [dict get $library scaled bump_pitch]
   }
 
+  proc add_to_extent {extent rect} {
+    if {[llength $extent] == 0} {
+      return $rect
+    } else {
+      return [list \
+        [expr min([lindex $extent 0],[lindex $rect 0])] \
+        [expr min([lindex $extent 1],[lindex $rect 1])] \
+        [expr min([lindex $extent 2],[lindex $rect 2])] \
+        [expr min([lindex $extent 3],[lindex $rect 3])] \
+      ]
+    }
+  }
+
+  proc get_extent_of_layer_in_cell {master layer} {
+    set extent {}
+    # foreach pin
+    foreach mterm [$master getMTerms] {
+      foreach mpin [$mterm getMPins] {
+        foreach geom [$mpin getGeometry] {
+          if {[[$geom getTechLayer] getName] == $layer} {
+	    set extent [add_to_extent $extent [list [$geom xMin] [$geom yMin] [$geom xMax] [$geom yMax]]]
+	  }
+	}
+      }
+    }
+    # foreach blockage
+    foreach obs [$master getObstructions] {
+      set box [$obs getBBox]
+      if {[[$box getTechLayer] getName] == $layer_name} {
+	set extent [add_to_extent $extent [list [$box xMin] [$box yMin] [$box xMax] [$box yMax]]]
+      }
+    }
+
+    return $extent
+  }
+
   proc get_library_bump_width {} {
     variable library
     variable db
@@ -2823,11 +2859,16 @@ namespace eval ICeWall {
             set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
           }
           # debug "$cell_name, [$db findMaster $cell_name]"
-          if {[set master [$db findMaster $cell_name]] != "NULL"} {
-            dict set library scaled bump_width [$master getWidth]
-            dict set library scaled bump_height [$master getHeight]
-          } elseif  {[dict exists $library cells $cell_name width]} {
+          if  {[dict exists $library cells $cell_name width]} {
             dict set library scaled bump_width [ord::microns_to_dbu [dict get $library cells $cell_name width]]
+          } elseif {[set master [$db findMaster $cell_name]] != "NULL"} {
+	    set extent [get_extent_of_layer_in_cell $master [get_footprint_rdl_layer_name]]
+
+            if {[llength $extent] > 0} {	    
+              dict set library scaled bump_width [expr [lindex $extent 2] - [lindex $extent 0]]
+              dict set library scaled bump_height [expr [lindex $extent 3] - [lindex $extent 1]]
+	    } else {
+	    }
           } else {
             utl::error "PAD" 36 "No width defined for selected bump cell $cell_name."
           }
