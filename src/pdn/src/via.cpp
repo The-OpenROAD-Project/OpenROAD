@@ -208,45 +208,8 @@ void DbVia::combineLayerShapes(const ViaLayerShape& other,
 
 odb::Rect DbVia::adjustToMinArea(odb::dbTechLayer* layer, const odb::Rect& rect) const
 {
-  odb::Rect new_rect = rect;
-
-  if (!layer->hasArea()) {
-    return new_rect;
-  }
-
-  const double min_area = layer->getArea();
-  if (min_area == 0.0) {
-    return new_rect;
-  }
-
-  // make sure minimum area is honored
-  const int dbu_per_micron = layer->getTech()->getLefUnits();
-  const double area
-      = min_area * dbu_per_micron * dbu_per_micron;
-
   const TechLayer techlayer(layer);
-
-  const int width = new_rect.dx();
-  const int height = new_rect.dy();
-  if (width * height < area) {
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      const int required_width = std::ceil(area / height);
-      const int added_width = (required_width - width) / 2;
-      const int new_x0 = techlayer.snapToManufacturingGrid(rect.xMin() - added_width, false);
-      const int new_x1 = techlayer.snapToManufacturingGrid(rect.xMax() + added_width, true);
-      new_rect.set_xlo(new_x0);
-      new_rect.set_xhi(new_x1);
-    } else {
-      const int required_height = std::ceil(area / width);
-      const int added_height = (required_height - height) / 2;
-      const int new_y0 = techlayer.snapToManufacturingGrid(rect.yMin() - added_height, false);
-      const int new_y1 = techlayer.snapToManufacturingGrid(rect.yMax() + added_height, true);
-      new_rect.set_ylo(new_y0);
-      new_rect.set_yhi(new_y1);
-    }
-  }
-
-  return new_rect;
+  return techlayer.adjustToMinArea(rect);
 }
 
 void DbVia::addToViaReport(DbVia* via, ViaReport& report) const
