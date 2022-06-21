@@ -245,8 +245,8 @@ void GlobalRouter::updateDbCongestion()
 void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations)
 {
-  AntennaRepair antenna_repair
-      = AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
 
   if (diode_mterm == nullptr) {
     diode_mterm = antenna_repair_->findDiodeMTerm();
