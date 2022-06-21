@@ -857,16 +857,17 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
     }
   }
   auto db_path_segs = db_ap->getSegments();
-  for(const auto& [db_rect, begin_style_trunc, end_style_trunc] : db_path_segs) {
+  for (const auto& [db_rect, begin_style_trunc, end_style_trunc] :
+       db_path_segs) {
     frPathSeg path_seg;
     path_seg.setPoints_safe(db_rect.ll(), db_rect.ur());
-    if(begin_style_trunc == true){
+    if (begin_style_trunc == true) {
       path_seg.setBeginStyle(frcTruncateEndStyle);
     }
-    if(end_style_trunc == true){
+    if (end_style_trunc == true) {
       path_seg.setEndStyle(frcTruncateEndStyle);
     }
-    
+
     ap->addPathSeg(path_seg);
   }
 }
@@ -1066,6 +1067,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         rptr->setSameMask(rule->isSameMask());
         if (rule->isCornerOnly()) {
           rptr->setWithin(rule->getWithin());
+        } else if (rule->isCornerToCorner()) {
+          rptr->setCornerToCorner(true);
         }
         if (rule->isExceptEol()) {
           rptr->setEolWidth(rule->getEolWidth());
@@ -2926,7 +2929,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     ++numCuts;
   }
   auto path_segs = ap->getPathSegs();
-  for(const auto& path_seg : path_segs) {
+  for (const auto& path_seg : path_segs) {
     Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
     bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
     bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);

@@ -1909,7 +1909,8 @@ class frLef58CornerSpacingConstraint : public frConstraint
         exceptSameNet(false),
         exceptSameMetal(false),
         tbl(tblIn),
-        sameXY(false)
+        sameXY(false),
+        cornerToCorner(false)
   {
   }
 
@@ -1956,6 +1957,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
   }
   bool hasSameXY() const { return sameXY; }
   bool getSameXY() const { return sameXY; }
+  bool isCornerToCorner() const { return cornerToCorner; }
 
   // setters
   void setCornerType(frCornerTypeEnum in) { cornerType = in; }
@@ -1976,12 +1978,13 @@ class frLef58CornerSpacingConstraint : public frConstraint
     tbl = in;
   }
   void setSameXY(bool in) { sameXY = in; }
+  void setCornerToCorner(bool in) { cornerToCorner = in; }
   void report(utl::Logger* logger) const override
   {
     logger->report(
         "CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length "
         "{} edgeLength {} includeLShape {} minLength {} exceptNotch {} "
-        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} ",
+        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} cornerToCorner {}",
         cornerType,
         sameMask,
         within,
@@ -1994,7 +1997,8 @@ class frLef58CornerSpacingConstraint : public frConstraint
         notchLength,
         exceptSameNet,
         exceptSameMetal,
-        sameXY);
+        sameXY,
+        cornerToCorner);
 
     std::string vals = "";
     std::string rows = "";
@@ -2025,6 +2029,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
       tbl;      // horz / vert spacing
   bool sameXY;  // indicate whether horz spacing == vert spacing // for write
                 // LEF some day
+  bool cornerToCorner;
 };
 
 class frLef58CornerSpacingSpacingConstraint : public frConstraint

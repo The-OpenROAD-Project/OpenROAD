@@ -7711,6 +7711,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isExceptSameMetal() const;
 
+  void setCornerToCorner(bool corner_to_corner);
+
+  bool isCornerToCorner() const;
+
   // User Code Begin dbTechLayerCornerSpacingRule
   void setType(CornerType _type);
 
