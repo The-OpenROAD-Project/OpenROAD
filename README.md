@@ -51,7 +51,7 @@ timing, placement congestion, CTS.
 
 ## CTS:
 
-![clk_routing.png](./docs/images/clk_routing.png)
+![clk_routing.webp](./docs/images/clk_routing.webp)
 
 # PDK Support
 
