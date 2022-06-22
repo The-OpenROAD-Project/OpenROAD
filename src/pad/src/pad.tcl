@@ -1467,13 +1467,16 @@ namespace eval ICeWall {
     variable actual_tile_offset_y
     variable num_bumps_y
 
+    set master [get_library_bump_cell]
     set center [get_bump_center $row $col]
-    set bump_width [get_library_bump_width]
-    # debug "bump_width : [expr $bump_width / 2000.0]"
+
+    set bump_width [$master getWidth]
+    set bump_height [$master getHeight]
+    # debug "bump_width : [ord::dbu_to_microns $bump_width], bump_height: [ord::dbu_to_microns $bump_height]"
 
     return [list \
       x [expr [dict get $center x] - $bump_width / 2] \
-      y [expr [dict get $center y] - $bump_width / 2] \
+      y [expr [dict get $center y] - $bump_height / 2] \
     ]
   }
 
@@ -2764,6 +2767,7 @@ namespace eval ICeWall {
         dict set footprint scaled bump_width [get_library_bump_width]
       }
     }
+    # debug "bump width: [ord::dbu_to_microns [dict get $footprint scaled bump_width]]"
     return [dict get $footprint scaled bump_width]
   }
 
@@ -2815,27 +2819,26 @@ namespace eval ICeWall {
       return [list \
         [expr min([lindex $extent 0],[lindex $rect 0])] \
         [expr min([lindex $extent 1],[lindex $rect 1])] \
-        [expr min([lindex $extent 2],[lindex $rect 2])] \
-        [expr min([lindex $extent 3],[lindex $rect 3])] \
+        [expr max([lindex $extent 2],[lindex $rect 2])] \
+        [expr max([lindex $extent 3],[lindex $rect 3])] \
       ]
     }
   }
 
-  proc get_extent_of_layer_in_cell {master layer} {
+  proc get_extent_of_layer_in_cell {master layer_name} {
     set extent {}
     # foreach pin
     foreach mterm [$master getMTerms] {
       foreach mpin [$mterm getMPins] {
         foreach geom [$mpin getGeometry] {
-          if {[[$geom getTechLayer] getName] == $layer} {
+          if {[[$geom getTechLayer] getName] == $layer_name} {
 	    set extent [add_to_extent $extent [list [$geom xMin] [$geom yMin] [$geom xMax] [$geom yMax]]]
 	  }
 	}
       }
     }
     # foreach blockage
-    foreach obs [$master getObstructions] {
-      set box [$obs getBBox]
+    foreach box [$master getObstructions] {
       if {[[$box getTechLayer] getName] == $layer_name} {
 	set extent [add_to_extent $extent [list [$box xMin] [$box yMin] [$box xMax] [$box yMax]]]
       }
@@ -2843,6 +2846,24 @@ namespace eval ICeWall {
 
     return $extent
   }
+
+  proc get_library_bump_cell_name {} {
+    variable library
+
+    if {[dict exists $library bump cell_name]} {
+      if {[llength [dict get $library bump cell_name]] == 1} {
+        set cell_name [dict get $library bump cell_name]
+      } else {
+        set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
+      }
+      return $cell_name
+    }
+    utl::error "PAD" 37 "No bump cell defined in library data."
+  }
+
+  proc get_library_bump_cell {} {
+    return [[ord::get_db] findMaster [get_library_bump_cell_name]]
+  }    
 
   proc get_library_bump_width {} {
     variable library
@@ -2852,28 +2873,20 @@ namespace eval ICeWall {
       if {[dict exists $library bump width]} {
         dict set library scaled bump_width [ord::microns_to_dbu [dict get $library bump width]]
       } else {
-        if {[dict exists $library bump cell_name]} {
-          if {[llength [dict get $library bump cell_name]] == 1} {
-            set cell_name [dict get $library bump cell_name]
-          } else {
-            set cell_name [lookup_by_bump_pitch [dict get $library bump cell_name]]
-          }
-          # debug "$cell_name, [$db findMaster $cell_name]"
-          if  {[dict exists $library cells $cell_name width]} {
-            dict set library scaled bump_width [ord::microns_to_dbu [dict get $library cells $cell_name width]]
-          } elseif {[set master [$db findMaster $cell_name]] != "NULL"} {
-	    set extent [get_extent_of_layer_in_cell $master [get_footprint_rdl_layer_name]]
+        set cell_name [get_library_bump_cell_name]	    
+        # debug "$cell_name, [[ord::get_db] findMaster $cell_name]"
+        if  {[dict exists $library cells $cell_name width]} {
+          dict set library scaled bump_width [ord::microns_to_dbu [dict get $library cells $cell_name width]]
+        } elseif {[set master [[ord::get_db] findMaster $cell_name]] != "NULL"} {
+	  set extent [get_extent_of_layer_in_cell $master [get_footprint_rdl_layer_name]]
 
-            if {[llength $extent] > 0} {	    
-              dict set library scaled bump_width [expr [lindex $extent 2] - [lindex $extent 0]]
-              dict set library scaled bump_height [expr [lindex $extent 3] - [lindex $extent 1]]
-	    } else {
-	    }
-          } else {
-            utl::error "PAD" 36 "No width defined for selected bump cell $cell_name."
-          }
+          if {[llength $extent] > 0} {	    
+            dict set library scaled bump_width [expr [lindex $extent 2] - [lindex $extent 0]]
+            dict set library scaled bump_height [expr [lindex $extent 3] - [lindex $extent 1]]
+	  } else {
+	  }
         } else {
-          utl::error "PAD" 37 "No bump_width defined in library data."
+          utl::error "PAD" 36 "No width defined for selected bump cell $cell_name."
         }
       }
     }
@@ -3422,6 +3435,9 @@ namespace eval ICeWall {
         } else {
           set rdl_trace [get_path_trace_$tile_row $x]
 	}
+	if {[lindex $rdl_trace 0] < $y} {
+	  utl::warn PAD 262 "RDL path trace for $padcell (bump: $row, $col) is further from the core than the padcell pad pin"
+	}
  	set path_wrt_tile [concat [list $x $y $x] $rdl_trace]
         set path [transform_path $path_wrt_tile $tile_origin $orientation]
 	# debug "path: $path, num_points: [llength $path]"
@@ -3492,7 +3508,7 @@ namespace eval ICeWall {
         set prev [lindex $points 0]
         foreach point [lrange $points 1 end] {
 	  if {[lindex $prev 0] == [lindex $point 0]} {
-            if {[allow_45_routing]} {		  
+            if {[allow_45_routing]} {
 	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [lindex $prev  1]]
 	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [lindex $point 1]]
             } else {
@@ -3501,7 +3517,7 @@ namespace eval ICeWall {
             }
 	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
 	  } elseif {[lindex $prev 1] == [lindex $point 1]} {
-            if {[allow_45_routing]} {		  
+            if {[allow_45_routing]} {
 	      set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
 	      set p2 [list [lindex $point 0] [expr [lindex $point 1] + $rdl_width /  2]]
             } else {
