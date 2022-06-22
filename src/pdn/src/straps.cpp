@@ -112,6 +112,12 @@ void Straps::checkLayerSpecifications() const
     }
   }
 
+  checkLayerOffsetSpecification(true);
+}
+
+bool Straps::checkLayerOffsetSpecification(bool error) const
+{
+  const int strap_width = getStrapGroupWidth();
   const odb::Rect grid_area = getGrid()->getDomainArea();
   int grid_width = 0;
   if (isHorizontal()) {
@@ -120,13 +126,22 @@ void Straps::checkLayerSpecifications() const
     grid_width = grid_area.dx();
   }
   if (grid_width < offset_ + strap_width) {
-    getLogger()->error(
-        utl::PDN,
-        185,
-        "Insufficient width to add straps on layer {} in grid \"{}\".",
-        layer_->getName(),
-        getGrid()->getLongName());
+    if (error) {
+      const TechLayer layer(layer_);
+      getLogger()->error(
+          utl::PDN,
+          185,
+          "Insufficient width ({} um) to add straps on layer {} in grid \"{}\" with total strap width {} um and offset {} um.",
+          layer.dbuToMicron(grid_width),
+          layer_->getName(),
+          getGrid()->getLongName(),
+          layer.dbuToMicron(strap_width),
+          layer.dbuToMicron(offset_));
+    } else {
+      return false;
+    }
   }
+  return true;
 }
 
 void Straps::setOffset(int offset)
@@ -1070,7 +1085,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   // apply offset found
   setOffset(offset);
 
-  return true;
+  return checkLayerOffsetSpecification(false);
 }
 
 std::vector<odb::dbNet*> RepairChannelStraps::getNets() const

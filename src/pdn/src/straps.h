@@ -92,6 +92,9 @@ class Straps : public GridComponent
   // straps.
   int getStrapGroupWidth() const;
 
+ protected:
+  bool checkLayerOffsetSpecification(bool error = false) const;
+
  private:
   odb::dbTechLayer* layer_;
   int width_;
