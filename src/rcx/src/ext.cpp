@@ -393,8 +393,7 @@ bool Ext::extract(ExtractOptions opts) {
   logger_->info(RCX, 8, "extracting parasitics of {} ...",
                 block->getConstName());
 
-  odb::orderWires(block, nullptr /* net_name_or_id*/, false /* force */,
-                  false /* verbose */, true /* quiet */);
+  odb::orderWires(block, false /* force */);
   if (opts.lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
