@@ -197,7 +197,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
-void GlobalRouter::globalRoute()
+void GlobalRouter::globalRoute(bool save_guides)
 {
   clear();
   block_ = db_->getChip()->getBlock();
@@ -231,7 +231,8 @@ void GlobalRouter::globalRoute()
   computeWirelength();
   if (verbose_)
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-  saveGuides();
+  if(save_guides)
+    saveGuides();
 }
 
 void GlobalRouter::updateDbCongestion()
