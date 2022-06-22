@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    if: github.repository_owner != 'The-OpenROAD-Project' || github.repository_owner != 'The-OpenROAD-Project-private' || github.repository_owner != 'The-OpenROAD-Project-staging'
+    if: github.repository_owner != 'The-OpenROAD-Project' && github.repository_owner != 'The-OpenROAD-Project-private' && github.repository_owner != 'The-OpenROAD-Project-staging'
     runs-on: macos-latest
     steps:
       - name: Setup xcode
