@@ -231,38 +231,4 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
   return new_rect;
 }
 
-bool TechLayer::checkWidth(int width, bool wrong_direction) const
-{
-  if (width < getMinWidth()) {
-    return false;
-  }
-
-  if (width > getMaxWidth()) {
-    return false;
-  }
-
-  auto width_table = layer_->getTechLayerWidthTableRules();
-  if (!width_table.empty()) {
-    for (auto* rule : width_table) {
-      bool use = false;
-      if (wrong_direction && rule->isWrongDirection()) {
-        use = true;
-      } else if (!wrong_direction && !rule->isWrongDirection()) {
-        use = true;
-      }
-
-      if (use) {
-        auto table = rule->getWidthTable();
-        if (std::find(table.begin(), table.end(), width) != table.end()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  return true;
-}
-
 }  // namespace pdn

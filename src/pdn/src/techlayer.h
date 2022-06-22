@@ -56,7 +56,6 @@ class TechLayer
 
   int getMinWidth() const { return layer_->getMinWidth(); }
   int getMaxWidth() const { return layer_->getMaxWidth(); }
-  bool checkWidth(int width, bool wrong_direction) const;
   odb::Rect adjustToMinArea(const odb::Rect& rect) const;
   // get the spacing by also checking for spacing constraints not normally
   // checked for
