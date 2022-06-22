@@ -1167,12 +1167,7 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
       drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
              << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
              << bbox.yMax() / dbu << " ) on Layer ";
-      if (layerType == dbTechLayerType::CUT
-          && marker->getLayerNum() - 1 >= tech->getBottomLayerNum()) {
-        drcRpt << tech->getLayer(marker->getLayerNum() - 1)->getName() << "\n";
-      } else {
-        drcRpt << layer->getName() << "\n";
-      }
+      drcRpt << layer->getName() << "\n";
     }
   } else {
     cout << "Error: Fail to open DRC report file\n";
