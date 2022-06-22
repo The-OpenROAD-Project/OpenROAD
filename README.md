@@ -97,7 +97,7 @@ shuttle](https://efabless.com/open_shuttle_program) and
 
 ## OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
 
-![gf12lp.webp](./docs/images/gf12lp.webp)
+![OpenTitan_SoC.webp](./docs/images/OpenTitan_SoC.webp)
 
 ## Continuous Tapeout Integration into CI
 
