@@ -1877,13 +1877,13 @@ void ViaGenerator::determineCutSpacing()
         rule_pitch_x = rule->getMaxSpacing(cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MIN);
         rule_pitch_y = rule_pitch_x;
       } else {
-        if (cut.dx() < cut.dy()) {
-          rule_pitch_x = rule->getSpacing(cut_class, false, cut_class, false);
-          rule_pitch_y = rule->getSpacing(cut_class, true, cut_class, true);
-        } else {
-          rule_pitch_x = rule->getSpacing(cut_class, true, cut_class, true);
-          rule_pitch_y = rule->getSpacing(cut_class, false, cut_class, false);
-        }
+        const bool x_is_side = cut.dx() > cut.dy();
+        const bool y_is_side = !x_is_side;
+
+        // for x pitch, need to use y_is_side since the dx is the SIDE
+        rule_pitch_x = rule->getSpacing(cut_class, y_is_side, cut_class, y_is_side);
+        // for y pitch, need to use x_is_side since the dy is the SIDE
+        rule_pitch_y = rule->getSpacing(cut_class, x_is_side, cut_class, x_is_side);
       }
       int rule_spacing_x = rule_pitch_x;
       int rule_spacing_y = rule_pitch_y;
