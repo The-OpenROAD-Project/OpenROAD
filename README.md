@@ -25,11 +25,11 @@ Two main flow controllers are supported by the
 [OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
 project repository:
 
-[OpenRoad-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
-Supported by the OpenROAD project
+-   [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
+     Supported by the OpenROAD project
 
-[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
-Supported by [Efabless](https://efabless.com/)
+-   [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
+     Supported by [Efabless](https://efabless.com/)
 
 The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hr
 turnaround from RTL-GDSII for design exploration and physical design
@@ -37,11 +37,11 @@ implementation.
 
 ![rtl2gds.webp](./docs/images/rtl2gds.webp)
 
-The OpenROAD GUI is a powerful visualization, analysis and debugging
-tool with a customizable tcl interface.
+## GUI
 
-Figures show GUI views for various flow stages including post-routed
-timing, placement congestion, CTS.
+The OpenROAD GUI is a powerful visualization, analysis and debugging
+tool with a customizable Tcl interface.Figures show GUI views for various
+flow stages including post-routed timing, placement congestion, CTS.
 
 ![ibexGui.webp](./docs/images/ibexGui.webp)
 
@@ -61,37 +61,30 @@ controllers.
 
 OpenLane supports Skywater130.
 
-Openroad-flow-scripts supports several public and private PDKs
+OpenROAD-flow-scripts supports several public and private PDKs
 including:
 
 ## Open Source PDKs
 
-`Skywater130` - 130nm
-
-`Nangate45` - 45nm
-
-`ASAP7` - Predictive FinFET 7nm
+-   `Skywater130` - 130nm
+-   `Nangate45` - 45nm
+-   `ASAP7` - Predictive FinFET 7nm
 
 ## Proprietary PDKs
 
-These PDKS are supported in OpenRoad-flow-scripts only. They are used to
+These PDKS are supported in OpenROAD-flow-scripts only. They are used to
 test and calibrate OpenROAD against commercial platforms and ensure good
-QoR.The PDKs and platform-specific files for these kits cannot be
+QoR. The PDKs and platform-specific files for these kits cannot be
 provided due to NDA restrictions. However, if you are able to access
 these platforms independently, you can create the necessary
 platform-specific files yourself.
 
-`GF55` - 55nm
-
-`GF12` - 12nm
-
-`GF180` - 180nm
-
-`Intel22` - 22nm
-
-`Intel16` - 16nm
-
-`TSMC65` - 65nm
+-   `GF55` - 55nm
+-   `GF12` - 12nm
+-   `GF180` - 180nm
+-   `Intel22` - 22nm
+-   `Intel16` - 16nm
+-   `TSMC65` - 65nm
 
 # Tapeouts
 
