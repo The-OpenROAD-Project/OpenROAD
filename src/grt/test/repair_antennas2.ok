@@ -33,4 +33,6 @@ Net net48
 [INFO ANT-0001] Found 0 pin violations.
 [INFO DPL-0001] Placed 5891 filler instances.
 No differences found.
-No differences found.
+Differences found at line 105.
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 14400 109890 ) FS ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 169920 206460 ) N ;
