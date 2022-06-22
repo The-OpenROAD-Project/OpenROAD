@@ -11,9 +11,7 @@ set_routing_layers -signal met1-met5
 global_route
 
 check_antennas
-
 repair_antennas
-
 check_antennas
 check_placement
 
