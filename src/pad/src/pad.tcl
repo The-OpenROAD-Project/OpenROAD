@@ -39,11 +39,13 @@ sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-rdl_width value] \
                                            [-rdl_spacing value] \
 					   [-rdl_route_style (45|90|under)] \
+					   [-padcell_to_rdl list_of_vias] \
+					   [-rdl_to_bump list_of_vias] \
                                            [-rdl_cover_file_name rdl_file_name]}
 
 proc set_bump_options {args} {
   sta::parse_key_args "set_bump_options" args \
-    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_route_style -rdl_cover_file_name -offset -array_size}
+    keys {-pitch -bump_pin_name -spacing_to_edge -cell_name -num_pads_per_tile -rdl_layer -rdl_width -rdl_spacing -rdl_route_style -padcell_to_rdl -rdl_to_bump -rdl_cover_file_name -offset -array_size}
 
   if {[llength $args] > 0} {
     utl::error PAD 218 "Unrecognized arguments ([lindex $args 0]) specified for set_bump_options."
@@ -216,12 +218,14 @@ sta::define_cmd_args "add_pad" {[-name name] \
                                   [-edge edge] \
                                   [-location location] \
                                   [-bump rowcol] \
+				  [-padcell_to_rdl list_of_vias] \
+				  [-rdl_to_bump list_of_vias] \
                                   [-bondpad bondpad] \
                                   [-inst_name inst_name]}
 
 proc add_pad {args} {
   sta::parse_key_args "add_pad" args \
-    keys {-name -type -cell -signal -edge -location -bump -bondpad -inst_name}
+    keys {-name -type -cell -signal -edge -location -bump -padcell_to_rdl -rdl_to_bump -bondpad -inst_name}
 
   if {[ord::get_db_block] == "NULL"} {
     utl::error PAD 224 "Design must be loaded before calling add_pad."
@@ -3447,6 +3451,76 @@ namespace eval ICeWall {
     }
   }
 
+  proc has_library_padcell_to_rdl_via {} {
+    variable library
+
+    return [dict exists $library padcell_to_rdl_via]
+  }
+
+  proc get_library_padcell_to_rdl_via {} {
+    variable library
+
+    if {![has_library_padcell_to_rdl_via]} {
+      utl::error PAD 260 "No via has been defined to connect from padcells to rdl"
+    }
+    return [dict get $library padcell_to_rdl_via]
+  }
+
+  proc has_padcell_to_rdl_via {padcell} {
+    variable footprint
+
+    if {[dict exists $footprint padcell $padcell padcell_to_rdl_via]} {
+      return 1
+    } else {
+      return [has_library_padcell_to_rdl_via]
+    }
+  }
+
+  proc get_padcell_to_rdl_via {padcell} {
+    variable footprint
+
+    if {![dict exists $footprint padcell $padcell padcell_to_rdl_via]} {
+      dict set footprint padcell $padcell padcell_to_rdl_via [get_library_padcell_to_rdl_via]
+    }
+
+    return [dict get $footprint padcell $padcell padcell_to_rdl_via]
+  }
+
+  proc has_library_rdl_to_bump_via {} {
+    variable library
+
+    return [dict exists $library rdl_to_bump_via]
+  }
+
+  proc get_library_rdl_to_bump_via {} {
+    variable library
+
+    if {![has_library_rdl_to_bump_via]} {
+      utl::error PAD 261 "No via has been defined to connect from rdl to bump"
+    }
+    return [dict get $library rdl_to_bump_via]
+  }
+
+  proc has_padcell_rdl_to_bump_via {padcell} {
+    variable footprint
+
+    if {[dict exists $footprint padcell $padcell rdl_to_bump_via]} {
+      return 1
+    } else {
+      return [has_library_rdl_to_bump_via]
+    }
+  }
+
+  proc get_padcell_rdl_to_bump_via {padcell} {
+    variable footprint
+
+    if {![dict exists $footprint padcell $padcell rdl_to_bump_via]} {
+      dict set footprint padcell $padcell rdl_to_bump_via [get_library_rdl_to_bump_via]
+    }
+
+    return [dict get $footprint padcell $padcell rdl_to_bump_via]
+  }
+
   proc write_rdl_trace_def {} {
     variable num_bumps_x
     variable num_bumps_y
@@ -3498,6 +3572,7 @@ namespace eval ICeWall {
       close $ch
     }
 
+    set tech [ord::get_db_tech]
     set rdl_layer [[ord::get_db_tech] findLayer $rdl_layer_name]
     dict for {net_name padcells} $traces {
       # debug "net_name: $net_name"
@@ -3505,6 +3580,11 @@ namespace eval ICeWall {
       set swire [odb::dbSWire_create $net ROUTED]
       foreach padcell $padcells {
         set points [get_padcell_rdl_trace $padcell]
+	if {[has_padcell_to_rdl_via $padcell]} {
+	  foreach via_name [get_padcell_to_rdl_via $padcell] {
+  	    odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points 0] STRIPE
+	  }
+	}
         set prev [lindex $points 0]
         foreach point [lrange $points 1 end] {
 	  if {[lindex $prev 0] == [lindex $point 0]} {
@@ -3530,6 +3610,11 @@ namespace eval ICeWall {
 	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$prev {*}$point STRIPE $direction $rdl_width]
 	  }
 	  set prev $point
+	}
+      	if {[has_padcell_rdl_to_bump_via $padcell]} {
+	  foreach via_name [get_padcell_rdl_to_bump_via $padcell] {
+  	    odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points end] STRIPE
+          }
 	}
       }
     }
@@ -5569,6 +5654,16 @@ namespace eval ICeWall {
     return $layer_name
   }
 
+  proc check_via_list {value} {
+    set tech [ord::get_db_tech]
+    foreach via $value {
+      if {[$tech findVia $via] == "NULL"} {
+        utl::error PAD 259 "Via $via does not exist."
+      }
+    }
+    return $value
+  }    
+
   proc check_route_style {style} {
     if {$style == 45 || $style == 90 || $style == "under"} {
       return $style
@@ -5596,6 +5691,9 @@ namespace eval ICeWall {
         -rdl_width           {dict set library rdl width $value}
         -rdl_spacing         {dict set library rdl spacing $value}
 	-rdl_route_style     {dict set library rdl route_style [check_route_style $value]}
+	-padcell_to_rdl      {dict set library padcell_to_rdl_via [check_via_list $value]}
+	-rdl_to_bump         {dict set library rdl_to_bump_via [check_via_list $value]}
+	-bump_orientation    {dict set library bump orientation [check_orient $value]}
         -rdl_cover_file_name {
 	  set_rdl_cover_file_name $value
 	  utl::info PAD 246 "The use of a cover DEF is deprecated, as all RDL routes are writen to the database"
@@ -5711,15 +5809,17 @@ namespace eval ICeWall {
       set value [lindex $process_args 1]
 
       switch $arg {
-        -name      {dict set padcell name $value}
-        -signal    {dict set padcell signal_name $value}
-        -edge      {dict set padcell side [check_edge_name $value]}
-        -type      {dict set padcell type [check_cell_type $value]}
-        -cell      {dict set padcell cell_name [check_cell_name $value]}
-        -location  {dict set padcell cell [check_location $value]}
-        -bump      {dict set padcell bump [check_bump $value]}
-        -bondpad   {dict set padcell bondpad [check_bondpad $value]}
-        -inst_name {dict set padcell inst_name $value}
+        -name           {dict set padcell name $value}
+        -signal         {dict set padcell signal_name $value}
+        -edge           {dict set padcell side [check_edge_name $value]}
+        -type           {dict set padcell type [check_cell_type $value]}
+        -cell           {dict set padcell cell_name [check_cell_name $value]}
+        -location       {dict set padcell cell [check_location $value]}
+        -bump           {dict set padcell bump [check_bump $value]}
+        -bondpad        {dict set padcell bondpad [check_bondpad $value]}
+        -inst_name      {dict set padcell inst_name $value}
+	-padcell_to_rdl {dict set padcell padcell_to_rdl_via [check_via_list $value]}
+	-rdl_to_bump    {dict set padcell rdl_to_bump_via [check_via_list $value]}
         default {utl::error PAD 200 "Unrecognized argument $arg, should be one of -name, -signal, -edge, -type, -cell, -location, -bump, -bondpad, -inst_name."}
       }
 

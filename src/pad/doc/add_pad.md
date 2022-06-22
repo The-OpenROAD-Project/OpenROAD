@@ -10,7 +10,9 @@
                     [-location {(center|origin) {x <value> y <value>} [orient (R0|R90|R180|R270|MX|MY|MXR90|MYR90)]}] \
                     [-bump {row <number> col <number>}] \
                     [-bondpad {(center|origin) {x <value> y <value>}}] \
-                    [-inst_name <instance_name>]
+                    [-inst_name <instance_name>] \
+                    [-padcell_to_rdl <list_of_vias>] \
+                    [-rdl_to_bump <list_of_vias>] 
 ```
 ## Description
 
@@ -26,6 +28,8 @@ Use the -inst_name option to associate the padcell with a particular instance in
 
 The -edge option is used to determine the orientation of the padcell, where the actual orientation of a padcell on a given edge is specified in the library definitions file. The coordinates specified for the location of the padcell are cross-checked against the orientation determined from the -edge option. Similarly, if orient is defined by the -location option, this too will be cross-checked against the value of the edge option. If the -edge option is not defined then the -location setting is used to determine the side on which the padcell appears, hence determining the orientation of the cell. Once again, the orient setting merely serves to act as a cross-check.
 
+If the padcell pad pin is not in the rdl layer, use the -padcell_to_rdl option to specify a list of vias to be placed at the center of the padcell pad pin to connect to the rdl layer. Similarly, the -rdl_to_bump option can be used to specify a list of vias to connect the rdl routing to the bump cell if necessary.
+
 ## Options
 
 
@@ -40,6 +44,8 @@ The -edge option is used to determine the orientation of the padcell, where the 
 | -bump | For flipchip designs, declare that the padcell is associated with the bump at the specified row/col location on the die. |
 | -bondpad | For wirebond designs where the padcells have separate bondpad instances, use this option to specify the location of the associated bondpad. |
 | -inst_name | Specify the name of the padcell instance in the design. This takes precedence over the -pad_inst_pattern method described in the set_padring_options command. |
+| -padcell_to_rdl | Specify a list of vias to connect the padcell pad pin to the rdl layer if required |
+| -rdl_to_bump | Specify a list of vias to connect the rdl to the bump cell if required |
 
 ## Examples
 ```
@@ -50,4 +56,3 @@ add_pad -edge bottom -inst_name u_vss_0 -signal VSS          -type vss   -locati
 add_pad -edge top    -inst_name u_brk0                       -type fbk   -location {center {x 1587.500 y 2895.000}}
 
 ```
-

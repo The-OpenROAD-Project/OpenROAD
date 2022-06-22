@@ -122,7 +122,9 @@ set_bump_options \
   -num_pads_per_tile 5 \
   -rdl_layer metal10 \
   -rdl_width 10 \
-  -rdl_spacing 10
+  -rdl_spacing 10 \
+  -padcell_to_rdl {via9_0} \
+  -rdl_to_bump {via9_0 via8_0} \
 
 set_padring_options \
   -type flipchip \
@@ -152,7 +154,7 @@ if {![catch {add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig  
   puts "Expected error not triggered"
   exit
 }
-add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2}
+add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2} -padcell_to_rdl {via7_0 via8_0 via9_0} -rdl_to_bump {via6_0}
 add_pad -edge bottom -inst_name u_vzz_0 -signal DVSS_0  -type vssio -location {origin {x  365 y   35}} -bump {row 17 col 2}
 add_pad -edge bottom -inst_name u_v18_0 -signal DVDD_0  -type vddio -location {origin {x  495 y   35}} -bump {row 16 col 3}
 add_pad -edge bottom -signal p_ddr_dqs_p_1_io           -type sig   -location {origin {x  525 y   35}} -bump {row 17 col 3}
