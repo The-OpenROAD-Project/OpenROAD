@@ -774,7 +774,7 @@ int LayoutViewer::edgeToPointDistance(const odb::Point& pt, const Edge& edge) co
   bline.push_back(BPoint(edge.first.x(), edge.first.y()));
   bline.push_back(BPoint(edge.second.x(), edge.second.y()));
 
-  const auto distance = boost::geometry::distance(bpt, bline);\
+  const auto distance = boost::geometry::distance(bpt, bline);
 
   return distance;
 }
@@ -881,8 +881,10 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
-  } else {
+  } else if (vertical) {
     search_line = odb::Rect(pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
+  } else {
+    search_line = odb::Rect(pt.x() - search_radius, pt.y() - search_radius, pt.x() + search_radius, pt.y() + search_radius);
   }
 
   auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), instanceSizeLimit());
@@ -920,18 +922,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
         for (auto& box : inst_boxes->obs) {
           odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
           inst_xfm.apply(trans_box);
-          if (trans_box.intersects(search_line)) {
-            check_rect(trans_box);
-          }
+          check_rect(trans_box);
         }
       }
       for (auto& box : inst_boxes->mterms) {
         odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
         inst_xfm.apply(trans_box);
-
-        if (trans_box.intersects(search_line)) {
-          check_rect(trans_box);
-        }
+        check_rect(trans_box);
       }
     }
 
