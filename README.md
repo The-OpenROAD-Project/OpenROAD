@@ -2,7 +2,31 @@
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
 
-The documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+OpenROAD is an integrated chip physical design tool that takes a
+design from synthesized Verilog to routed layout.
+
+An outline of steps used to build a chip using OpenROAD are shown below.
+
+* Initialize floorplan - define the chip size and cell rows
+* Place pins (for designs without pads )
+* Place macro cells (RAMs, embedded macros)
+* Insert substrate tap cells
+* Insert power distribution network
+* Macro Placement of macro cells
+* Global placement of standard cells
+* Repair max slew, max capacitance, and max fanout violations and long wires
+* Clock tree synthesis
+* Optimize setup/hold timing
+* Insert fill cells
+* Global routing (route guides for detailed routing)
+* Antenna repair
+* Detailed routing
+* Parasitic extraction
+* Static timing analysis
+
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
+
+Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
 ## Install dependencies
 

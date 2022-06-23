@@ -643,7 +643,8 @@ Resizer::driveResistance(const Pin *drvr_pin)
             float res;
             bool exists;
             drive->driveResistance(rf, min_max, res, exists);
-            max_res = max(max_res, res);
+            if (exists)
+              max_res = max(max_res, res);
           }
         }
       }
@@ -2348,7 +2349,7 @@ Resizer::maxInputSlew(const LibertyPort *input,
   bool exists;
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
   // umich brain damage control
-  if (limit == 0.0)
+  if (!exists || limit == 0.0)
     limit = INF;
   return limit;
 }
