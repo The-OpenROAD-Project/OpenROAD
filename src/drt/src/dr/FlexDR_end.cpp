@@ -35,16 +35,12 @@ void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
-        if (net->getFrNet()->getName() == "_012936_")
-            cout << "WAS MOD!1" << endl;
       modNets.insert(net->getFrNet());
     }
   }
   // change modified flag to true if another subnet get routed
   for (auto& net : nets_) {
     if (!net->isModified() && modNets.find(net->getFrNet()) != modNets.end()) {
-        if (net->getFrNet()->getName() == "_012936_")
-            cout << "WAS MOD!2" << endl;
       net->setModified(true);
     }
   }
@@ -312,8 +308,6 @@ void FlexDRWorker::endAddNets_via(frDesign* design, drVia* via)
 
 void FlexDRWorker::endAddNets_patchWire(frDesign* design, drPatchWire* pwire)
 {
-    if (pwire->getNet()->getFrNet()->getName() == "_012936_" && pwire->getOrigin() == Point(1147303, 965790))
-        cout << "FOUND!!!!!!!!!!!!!!!!!!!!!!!!!!!! endAddNets_patchWire" << endl;
   auto net = pwire->getNet()->getFrNet();
   unique_ptr<frShape> uShape = make_unique<frPatchWire>(*pwire);
   auto rptr = uShape.get();
