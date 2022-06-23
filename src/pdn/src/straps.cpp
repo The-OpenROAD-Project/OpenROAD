@@ -1438,6 +1438,29 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
              1,
              "Channels to repair {}.",
              channels.size());
+
+  // check for recurring channels
+  for (const auto& channel : channels) {
+    for (const auto& strap : grid->getStraps()) {
+      if (strap->type() == GridComponent::RepairChannel) {
+        RepairChannelStraps* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
+        if (repair_strap->getLayer() == channel.target->getLayer() && channel.area == repair_strap->getArea()) {
+          if (!repair_strap->isAtEndOfRepairOptions()) {
+            repair_strap->addNets(channel.nets);
+            repair_strap->removeShapes(local_shapes);
+            repair_strap->removeObstructions(obstructions);
+            repair_strap->continueRepairs(obstructions);
+
+            if (repair_strap->testBuild(local_shapes, obstructions)) {
+              strap->getShapes(local_shapes);  // need new shapes
+              strap->getObstructions(obstructions);
+              areas_repaired.insert(channel.area);
+            }
+          }
+        }
+      }
+    }
+  }
   for (const auto& channel : channels) {
     bool dont_repair = false;
     for (const auto& other : areas_repaired) {

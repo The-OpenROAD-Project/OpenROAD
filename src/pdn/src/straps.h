@@ -193,6 +193,9 @@ class RepairChannelStraps : public Straps
   bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
   bool isEmpty() const { return getShapeCount() == 0; }
 
+  void addNets(const std::set<odb::dbNet*> nets) { nets_.insert(nets.begin(), nets.end()); }
+  const odb::Rect& getArea() const { return area_; }
+
   // static functions to help build repair channels
   // repair unconnected straps by adding repair channel straps
   static void repairGridChannels(Grid* grid,
