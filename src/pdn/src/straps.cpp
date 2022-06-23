@@ -1609,4 +1609,21 @@ int RepairChannelStraps::getNextWidth() const
   return new_width;
 }
 
+bool RepairChannelStraps::isEmpty() const
+{
+  const auto& shapes = getShapes();
+
+  if (shapes.empty()) {
+    return true;
+  }
+
+  for (const auto& [layer, layer_shapes] : shapes) {
+    if (!layer_shapes.empty()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace pdn

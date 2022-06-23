@@ -191,7 +191,7 @@ class RepairChannelStraps : public Straps
   bool isAtEndOfRepairOptions() const;
   void continueRepairs(const ShapeTreeMap& other_shapes);
   bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
-  bool isEmpty() const { return getShapeCount() == 0; }
+  bool isEmpty() const;
 
   void addNets(const std::set<odb::dbNet*> nets) { nets_.insert(nets.begin(), nets.end()); }
   const odb::Rect& getArea() const { return area_; }
