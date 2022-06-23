@@ -188,6 +188,11 @@ class RepairChannelStraps : public Straps
 
   bool isRepairValid() const { return !invalid_; }
 
+  bool isAtEndOfRepairOptions() const;
+  void continueRepairs(const ShapeTreeMap& other_shapes);
+  bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
+  bool isEmpty() const { return getShapeCount() == 0; }
+
   // static functions to help build repair channels
   // repair unconnected straps by adding repair channel straps
   static void repairGridChannels(Grid* grid,
@@ -231,6 +236,7 @@ class RepairChannelStraps : public Straps
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
 
   int getNextWidth() const;
+  int getMaxLength() const;
 };
 
 }  // namespace pdn

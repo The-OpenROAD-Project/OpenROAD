@@ -843,6 +843,50 @@ std::string RepairChannelStraps::getNetString() const
   return nets;
 }
 
+int RepairChannelStraps::getMaxLength() const
+{
+  const odb::Rect core = getGrid()->getDomainArea();
+  if (isHorizontal()) {
+    return core.dx();
+  } else {
+    return core.dy();
+  }
+}
+
+bool RepairChannelStraps::isAtEndOfRepairOptions() const
+{
+  const TechLayer layer(getLayer());
+  if (getWidth() != layer.getMinWidth()) {
+    return false;
+  }
+
+  if (getSpacing() > layer.getSpacing(getWidth(), getMaxLength())) {
+    return false;
+  }
+
+  return true;
+}
+
+void RepairChannelStraps::continueRepairs(const ShapeTreeMap& other_shapes)
+{
+  clearShapes();
+  const int next_width = getNextWidth();
+  debugPrint(
+      getLogger(),
+      utl::PDN,
+      "Channel",
+      1,
+      "Continue repair at {} on {} with straps on {} for {}: changing width from {} um to {} um",
+      Shape::getRectText(area_, getBlock()->getDbUnitsPerMicron()),
+      connect_to_->getName(),
+      getLayer()->getName(),
+      getNetString(),
+      getWidth() / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+      next_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
+  setWidth(next_width);
+  determineParameters(other_shapes);
+}
+
 void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
 {
   debugPrint(
@@ -855,14 +899,11 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
       connect_to_->getName(),
       getLayer()->getName(),
       getNetString());
-  int max_length = 0;
+  const int max_length = getMaxLength();
   int area_width = 0;
-  const odb::Rect core = getGrid()->getDomainArea();
   if (isHorizontal()) {
-    max_length = core.dx();
     area_width = area_.dy();
   } else {
-    max_length = core.dy();
     area_width = area_.dx();
   }
 
@@ -1373,6 +1414,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid)
   return channels;
 }
 
+bool RepairChannelStraps::testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions)
+{
+  makeShapes(local_shapes);
+  cutShapes(obstructions);
+  return !isEmpty();
+}
+
 void RepairChannelStraps::repairGridChannels(Grid* grid,
                                              const ShapeTreeMap& global_shapes,
                                              ShapeTreeMap& obstructions,
@@ -1432,18 +1480,25 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
     }
 
     // build strap
-    strap->makeShapes(local_shapes);
-    strap->cutShapes(obstructions);
-    if (strap->getShapeCount() == 0) {
-      // nothing was added, so try without snapped to grid
-      strap->setSnapToGrid(false);
-
-      strap->makeShapes(local_shapes);
-      strap->cutShapes(obstructions);
-      if (strap->getShapeCount() == 0) {
-        continue;
+    bool built_straps = strap->testBuild(local_shapes, obstructions);
+    if (!built_straps) {
+      if (!strap->isAtEndOfRepairOptions()) {
+        // try to build the straps with next set of options (width / spacing)
+        strap->continueRepairs(obstructions);
+        built_straps = strap->testBuild(local_shapes, obstructions);
       }
     }
+    if (!built_straps) {
+      // try to build the straps without snapping to grid
+      strap->setSnapToGrid(false);
+      built_straps = strap->testBuild(local_shapes, obstructions);
+    }
+
+    if (!built_straps) {
+      // nothing was built so move on
+      continue;
+    }
+
     strap->getShapes(local_shapes);  // need new shapes
     strap->getObstructions(obstructions);
 
