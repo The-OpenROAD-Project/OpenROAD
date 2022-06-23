@@ -1347,13 +1347,32 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
   marker->addAggressor(net->getOwner(), make_tuple(layerNum, markerBox, false));
   addMarker(std::move(marker));
 }
-
+bool isConvex(gcSegment* s) {
+    return s->getLowCorner()->getType() == frCornerTypeEnum::CONVEX &&
+        s->getHighCorner()->getType() == frCornerTypeEnum::CONVEX;
+}
+gcSegment* bestSuitable(gcSegment* a, gcSegment* b) {
+    if (isConvex(a) && !isConvex(b))
+        return a;
+    if (isConvex(b) && !isConvex(a))
+        return b;
+    if (gtl::length(*a) > gtl::length(*b))
+        return a;
+    return b;
+}
 void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
 {
   if (ignoreMinArea_) {
     return;
   }
-
+//  if (pin && pin->getNet() &&  pin->getNet()->getFrNet() && pin->getNet()->getFrNet()->getName() == "net111") {
+//      cout << "printing net111 poly" << endl;
+//    for (auto& edges : pin->getPolygonEdges()) {
+//        for (auto& e : edges) {
+//          cout << "corners (" << e->low().x() << " " << e->low().y() << ") (" << e->high().x() << " " << e->high().y() << ")" << endl;
+//        }
+//    }
+//  }
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
@@ -1370,51 +1389,95 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   if (actArea >= reqArea) {
     return;
   }
-
-  bool hasNonFixedEdge = false;
+  gtl::rectangle_data<frCoord> bbox;
+  gtl::extents(bbox, *pin->getPolygon());
+  Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
+  if (!drWorker_->getRouteBox().contains(bbox2))
+      return;
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-      if (edge->isFixed() == false) {
-        hasNonFixedEdge = true;
-        break;
+      if (edge->isFixed())
+          return;
+    }
+  }
+  bool debug = true;
+  frCoord gapArea = reqArea - actArea;
+  if (debug)
+  cout << "gapArea " << gapArea << endl;
+  if (debug)
+    cout << "poly bbox " << bbox2 << endl;
+  frCoord wireWidth = drWorker_->getDesign()->getTech()->getLayer(layerNum)->getWidth();
+  if (debug) cout << "wireWidth " << wireWidth << endl;
+  frCoord length = std::ceil((float)gapArea / wireWidth); 
+  if (debug) cout << "length " << length << endl;
+  //fix min area:
+  if (debug) cout << "patching shape of net " << net->getFrNet()->getName() << " worker " << drWorker_->getRouteBox() << endl;
+  if (debug) cout << "lNum " << layerNum << endl;
+  bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layerNum);
+  gcSegment* chosenEdg = nullptr;
+  // traverse polygon edges, searching for the best edge to amend a patch
+  for (auto& edges : pin->getPolygonEdges()) {
+    for (auto& e : edges) {
+        if (debug) cout << "corners (" << e->low().x() << " " << e->low().y() << ") (" << e->high().x() << " " << e->high().y() << ")" << endl;
+      if (e->isVertical() != prefDirIsVert && (!chosenEdg || 
+            bestSuitable(e.get(), chosenEdg) == e.get()))
+        chosenEdg = e.get();
+    }
+  }
+  Rect patchBx;
+  Point offset; //the lower left corner of the patch box
+  if (prefDirIsVert) {
+        frCoord center = (chosenEdg->low().x() + chosenEdg->high().x())/2;
+        patchBx.set_xhi(wireWidth);
+        patchBx.set_yhi(length);
+        offset.x() = center - wireWidth/2;
+        if (chosenEdg->getOuterDir() == frDirEnum::N) {
+            offset.y() = chosenEdg->low().y();
+            patchBx.set_ylo(-wireWidth);
+        } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
+            offset.y() = chosenEdg->low().y() - length;
+            patchBx.set_yhi(length + wireWidth);
+        } else logger_->error(DRT, 4500, "Edge outer dir should be either North or South");
+  } else {
+        frCoord center = (chosenEdg->low().y() + chosenEdg->high().y())/2;
+        patchBx.set_xhi(length);
+        patchBx.set_yhi(wireWidth);
+        offset.y() = center - wireWidth/2;
+        if (chosenEdg->getOuterDir() == frDirEnum::E) {
+            offset.x() = chosenEdg->low().x();
+            patchBx.set_xlo(-wireWidth);
+        } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
+            offset.x() = chosenEdg->low().x() - length;
+            patchBx.set_xhi(length + wireWidth);
+        } else {
+            if (debug) cout << "edge corners (" << chosenEdg->low().x() << " " << chosenEdg->low().y() << ") (" << chosenEdg->high().x() << " " << chosenEdg->high().y() << ")" << endl;
+            if (debug) cout << "dir " << (int)chosenEdg->getOuterDir() << endl;
+            logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
+            throw new exception();
+        }
+  }
+  auto patch = make_unique<drPatchWire>();
+  patch->setLayerNum(layerNum);
+  patch->setOrigin(offset);
+  patch->setOffsetBox(patchBx);
+  vector<drConnFig*> results; //need a drNet on the patch
+  Rect shiftedPatch = patchBx;
+  shiftedPatch.moveTo(offset.x(), offset.y());
+  if (debug) cout << "ofset " << offset << " patchBx " << patchBx << endl;
+  if (debug) cout << "shifted patch " << shiftedPatch << endl;
+  auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
+  workerRegionQuery.query(shiftedPatch, layerNum, results);
+  drNet* dNet = nullptr;
+  for (auto& connFig : results) {
+      if (connFig->getNet() && connFig->getNet()->getFrNet() == net->getFrNet()) {
+          dNet = connFig->getNet();
+          break;
       }
-    }
-    if (hasNonFixedEdge) {
-      break;
-    }
   }
-
-  if (!hasNonFixedEdge) {
-    return;
-  }
-
-  // add marker
-  gtl::polygon_90_set_data<frCoord> tmpPolys;
-  using namespace boost::polygon::operators;
-  tmpPolys += *poly;
-  vector<gtl::rectangle_data<frCoord>> rects;
-  gtl::get_max_rectangles(rects, tmpPolys);
-
-  int maxArea = 0;
-  gtl::rectangle_data<frCoord> maxRect;
-  for (auto& rect : rects) {
-    if (gtl::area(rect) > maxArea) {
-      maxRect = rect;
-      maxArea = gtl::area(rect);
-    }
-  }
-
-  auto marker = make_unique<frMarker>();
-  Rect markerBox(
-      gtl::xl(maxRect), gtl::yl(maxRect), gtl::xh(maxRect), gtl::yh(maxRect));
-  marker->setBBox(markerBox);
-  marker->setLayerNum(layerNum);
-  marker->setConstraint(con);
-  marker->addSrc(net->getOwner());
-  marker->addVictim(net->getOwner(), make_tuple(layerNum, markerBox, false));
-  marker->addAggressor(net->getOwner(), make_tuple(layerNum, markerBox, false));
-
-  addMarker(std::move(marker));
+  if (!dNet) 
+      logger_->error(DRT, 4502, "drNet not found");
+  patch->addToNet(dNet);
+  pwires_.push_back(std::move(patch));
 }
 
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
@@ -1784,7 +1847,7 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
   }
 
   // min area
-  // checkMetalShape_minArea(pin);
+   checkMetalShape_minArea(pin);
 
   // min step
   checkMetalShape_minStep(pin);

@@ -1597,6 +1597,7 @@ void FlexDRWorker::route_queue()
       cout << "Error: pwire with no net\n";
       exit(1);
     }
+    net->setModified(true);
     auto tmpPWire = make_unique<drPatchWire>();
     tmpPWire->setLayerNum(pwire->getLayerNum());
     Point origin;
@@ -1606,7 +1607,11 @@ void FlexDRWorker::route_queue()
     pwire->getOffsetBox(box);
     tmpPWire->setOffsetBox(box);
     tmpPWire->addToNet(net);
-
+    if (net->getFrNet()->getName() == "_012936_")
+            cout << "found net!" << endl;
+    if (origin == Point(1147303, 965790)) {
+        cout << "FOUND HERE! net " << net->getFrNet()->getName() << endl;
+    }
     unique_ptr<drConnFig> tmp(std::move(tmpPWire));
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.add(tmp.get());
@@ -1733,6 +1738,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
+      if (net->getFrNet()->getName() == "_012936_" && getRouteBox().intersects(Point(1147303, 965790)))
+          cout << "found _012936_ route box " << getRouteBox() << endl;
       // init
       net->setModified(true);
       if (net->getFrNet()) {

@@ -133,6 +133,9 @@ class drNet : public drBlockObject
       } else if (uConnFig->typeId() == drcPatchWire) {
         std::unique_ptr<drConnFig> uPtr = std::make_unique<drPatchWire>(
             *static_cast<drPatchWire*>(uConnFig.get()));
+        drPatchWire* patch = static_cast<drPatchWire*>(uConnFig.get());
+        if (patch->getNet()->getFrNet()->getName() == "_012936_" && patch->getOrigin() == Point(1147303, 965790))
+        cout << "FOUND!!!!!!!!!!!!!!!!!!!!!!!!!!!! setBestRouteConnFigs" << endl;
         bestRouteConnFigs_.push_back(std::move(uPtr));
       }
     }

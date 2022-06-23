@@ -2868,6 +2868,8 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
             Rect offsetBox;
             pwire->getOrigin(origin);
             pwire->getOffsetBox(offsetBox);
+            if (net->getName() == "_012936_" && origin == Point(1147303, 965790))
+                cout << "FOUND HEEEEEEEEEEEEEEEEERE!!" << endl;
             _wire_encoder.addPoint(origin.x(), origin.y());
             _wire_encoder.addRect(offsetBox.xMin(),
                                   offsetBox.yMin(),
