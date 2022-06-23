@@ -3396,8 +3396,8 @@ namespace eval ICeWall {
     set die_area [get_scaled_die_area]
 
     # Bottom side
-    for {set row 1} {$row <= $num_bumps_x} {incr row} {
-      for {set col 1} {$col <= $num_bumps_y} {incr col} {
+    for {set row 1} {$row <= $num_bumps_y} {incr row} {
+      for {set col 1} {$col <= $num_bumps_x} {incr col} {
         if {$row > $corner_size && ($num_bumps_y - $row >= $corner_size) && $col > $corner_size && ($num_bumps_x - $col >= $corner_size)} {
           continue
         }
