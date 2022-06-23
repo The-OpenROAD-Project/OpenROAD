@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_CASE(test_default)
       = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
   BOOST_TEST(corner_rule->getType()
              == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
-  BOOST_TEST(corner_rule->isExceptEol() == true);
+  BOOST_TEST(corner_rule->isExceptEol());
+  BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
   vector<pair<int, int>> spacing;
   vector<int> corner_width;

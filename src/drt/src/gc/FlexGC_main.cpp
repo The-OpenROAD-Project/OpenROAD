@@ -961,6 +961,8 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
         return;
     } else
       return;
+    // The corner of the rect has to be convex
+    // TODO: detect concave corners
     if (rect->getNet()
         && !rect->getNet()->hasPolyCornerAt(candX, candY, rect->getLayerNum()))
       return;
@@ -999,10 +1001,18 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
     gtl::rectangle_data<frCoord> markerRect(cornerX, cornerY, cornerX, cornerY);
     gtl::generalized_intersect(markerRect, *rect);
     frCoord maxXY = gtl::delta(markerRect, gtl::guess_orientation(markerRect));
-
     if (con->hasSameXY()) {
       frCoord reqSpcVal = con->find(objPtr->width());
-      if (maxXY >= reqSpcVal) {
+      if (con->isCornerToCorner()) {
+        // measure euclidean distance
+        gtl::point_data<frCoord> point(cornerX, cornerY);
+        frSquaredDistance distSquare
+            = gtl::square_euclidean_distance(*rect, point);
+        frSquaredDistance reqSpcValSquare
+            = reqSpcVal * (frSquaredDistance) reqSpcVal;
+        if (distSquare >= reqSpcValSquare)
+          continue;
+      } else if (maxXY >= reqSpcVal) {
         continue;
       }
       // no vaiolation if fixed
@@ -1370,22 +1380,16 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   if (actArea >= reqArea) {
     return;
   }
-
-  bool hasNonFixedEdge = false;
+  gtl::rectangle_data<frCoord> bbox;
+  gtl::extents(bbox, *pin->getPolygon());
+  Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
+  if (!drWorker_->getRouteBox().contains(bbox2))
+      return;
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-      if (edge->isFixed() == false) {
-        hasNonFixedEdge = true;
-        break;
-      }
+      if (edge->isFixed())
+          return;
     }
-    if (hasNonFixedEdge) {
-      break;
-    }
-  }
-
-  if (!hasNonFixedEdge) {
-    return;
   }
 
   // add marker

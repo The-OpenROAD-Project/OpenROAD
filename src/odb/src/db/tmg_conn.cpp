@@ -1632,12 +1632,12 @@ static void print_rcterm(tmg_rcterm* x)
   dbITerm* iterm = x->_iterm;
   if (iterm)
     notice(0,
-           " iterm %s/%s",
+           " iterm %s/%s\n",
            iterm->getInst()->getName().c_str(),
            iterm->getMTerm()->getName().c_str());
   dbBTerm* bterm = x->_bterm;
   if (bterm)
-    notice(0, " bterm %s", x->_bterm->getName().c_str());
+    notice(0, " bterm %s\n", x->_bterm->getName().c_str());
 }
 
 int tmg_conn::getStartNode()
@@ -1665,7 +1665,6 @@ int tmg_conn::getStartNode()
 void tmg_conn::analyzeNet(dbNet* net,
                           bool force,
                           bool verbose,
-                          bool quiet,
                           bool no_convert,
                           int cutLength,
                           int maxLength,
@@ -1699,18 +1698,18 @@ void tmg_conn::analyzeNet(dbNet* net,
         net->destroySWires();
     }
     relocateShorts();
-    treeReorder(verbose, quiet, noConvert);
+    treeReorder(verbose, noConvert);
   }
   net->setDisconnected(!_connected);
   net->setWireOrdered(true);  // 090606
   if (!_connected) {
-    if (!quiet)
+    if (verbose) {
       notice(0,
              "disconnected net %d  %s\n",
              _net->getId(),
              _net->getName().c_str());
-    if (verbose)
       printDisconnect();  // this is not complete
+    }
   }
 }
 
@@ -1725,18 +1724,17 @@ void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
   findConnections(verbose);
   if (!no_convert)
     adjustShapes();
-  treeReorder(verbose, false, no_convert);
+  treeReorder(verbose, no_convert);
   _net->setDisconnected(!_connected);
   _net->setWireOrdered(
       _connected);  // this will change,
                     // we should wire-order the disconnected nets
-  if (!_connected) {
+  if (!_connected && verbose) {
     notice(0,
            "disconnected net %d  %s\n",
            _net->getId(),
            _net->getName().c_str());
-    if (verbose)
-      printDisconnect();  // this is not complete
+    printDisconnect();  // this is not complete
   }
 }
 
@@ -1829,7 +1827,7 @@ bool tmg_conn::checkConnected()
   return con;  // all terms connected, may be floating pieces of wire
 }
 
-void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
+void tmg_conn::treeReorder(bool verbose, bool no_convert)
 {
   _connected = true;
   _need_short_wire_id = 0;
@@ -1853,12 +1851,11 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     if (verbose) {
       notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - &_ptV[0]) : 0);
       print_rcterm(x);
-      notice(0, "\n");
     }
     if (x->_pt == NULL) {
       _connected = false;
       if (x->_iterm) {
-        if (!quiet)
+        if (verbose)
           notice(0,
                  "unconnected iterm I%d(%s)/%s in net %d\n",
                  x->_iterm->getInst()->getId(),
@@ -1866,7 +1863,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
                  x->_iterm->getMTerm()->getConstName(),
                  _net->getId());
       } else {
-        if (!quiet)
+        if (verbose)
           notice(0,
                  "unconnected bterm %s in net %d\n",
                  x->_bterm->getConstName(),
@@ -1901,10 +1898,9 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     return;
   }
   if (verbose) {
-    notice(0, "starting at %d ", jstart);
+    notice(0, "starting at %d\n", jstart);
     if (x)
       print_rcterm(x);
-    notice(0, "\n");
   }
   int last_term_index = 0;
   while (1) {
@@ -1924,16 +1920,12 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         }
       }
       if (verbose) {
-        notice(0, "%d-%d", jfr, jto);
-        if (is_short)
-          notice(0, " short");
-        if (is_loop)
-          notice(0, " loop");
-        if (x && x->_iterm)
-          notice(0, " iterm I%d", x->_iterm->getInst()->getId());
-        if (x && x->_bterm)
-          notice(0, " bterm");
-        notice(0, "\n");
+        notice(0, "%d-%d %s%s%s%s\n",
+               jfr, jto,
+               is_short ? " short" : "",
+               is_loop ? " loop" : "",
+               x && x->_iterm ? " iterm" : "",
+               x && x->_bterm ? " bterm" : "");
       }
       if (!no_convert) {
         addToWire(jfr, jto, k, is_short, is_loop);
@@ -1966,7 +1958,6 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
       if (verbose) {
         notice(0, "net %d feedthru at ", _net->getId());
         print_rcterm(x);
-        notice(0, "\n");
         notice(0, "last_id = %d\n", _last_id);
       }
     }

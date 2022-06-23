@@ -12,67 +12,24 @@
 [INFO ODB-0132]     Created 2 special nets and 14334 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
-[INFO GRT-0020] Min routing layer: met1
-[INFO GRT-0021] Max routing layer: met5
-[INFO GRT-0022] Global adjustment: 0%
-[INFO GRT-0023] Grid origin: (0, 0)
-[INFO GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
-[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
-[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
-[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
-[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
-[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
-[INFO GRT-0019] Found 0 clock nets.
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 25
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 72
+Net _224_
+  _511_/B1 (sky130_fd_sc_hs__o21a_1)
+    met1
+    PAR:  432.23* Ratio:  400.00 (S.Area)
 
-[INFO GRT-0053] Routing resources analysis:
-          Routing      Original      Derated      Resource
-Layer     Direction    Resources     Resources    Reduction (%)
----------------------------------------------------------------
-li1        Vertical            0             0          0.00%
-met1       Horizontal      27436         19170          30.13%
-met2       Vertical        21660         21497          0.75%
-met3       Horizontal      12996         12987          0.07%
-met4       Vertical         8664          8444          2.54%
-met5       Horizontal       2888          2812          2.63%
----------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1603
-[INFO GRT-0198] Via related Steiner nodes: 70
-[INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 1827
-[INFO GRT-0112] Final usage 3D: 7533
+Net net48
+  _560_/B (sky130_fd_sc_hs__nand2_1)
+  output48/A (sky130_fd_sc_hs__clkbuf_1)
+    met1
+    PAR:  437.21* Ratio:  400.00 (S.Area)
 
-[INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
----------------------------------------------------------------------------------------
-li1                  0             0            0.00%             0 /  0 /  0
-met1             19170          1199            6.25%             0 /  0 /  0
-met2             21497           853            3.97%             0 /  0 /  0
-met3             12987             0            0.00%             0 /  0 /  0
-met4              8444             0            0.00%             0 /  0 /  0
-met5              2812             0            0.00%             0 /  0 /  0
----------------------------------------------------------------------------------------
-Total            64910          2052            3.16%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 22413 um
-[INFO GRT-0006] Repairing antennas, iteration 1.
-[INFO GRT-0043] No OR_DEFAULT vias defined.
+[INFO ANT-0002] Found 2 net violations.
+[INFO ANT-0001] Found 2 pin violations.
 [INFO GRT-0012] Antenna violations: 2
-[INFO GRT-0011] Deleted 5890 filler cells.
-[INFO GRT-0015] 2 diodes inserted.
-[INFO GRT-0009] rerouting 6 nets.
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 72
-[INFO GRT-0006] Repairing antennas, iteration 2.
-[INFO GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0012] Antenna violations: 0
-[INFO GRT-0014] Routed nets: 437
+[INFO GRT-0015] Inserted 2 diodes.
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
 No differences found.
 No differences found.

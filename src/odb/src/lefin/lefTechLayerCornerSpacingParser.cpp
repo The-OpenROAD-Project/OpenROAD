@@ -105,8 +105,11 @@ bool parse(Iterator first,
              odb::dbTechLayerCornerSpacingRule::CONVEXCORNER)]
          >> -(lit("SAMEMASK")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setSameMask, rule, true)])
-         >> -(lit("CORNERONLY")
-              >> double_[boost::bind(&setWithin, _1, rule, lefin)])
+         >> -( 
+               (lit("CORNERONLY") >> double_[boost::bind(&setWithin, _1, rule, lefin)])
+               |
+               lit("CORNERTOCORNER")[boost::bind(&odb::dbTechLayerCornerSpacingRule::setCornerToCorner, rule, true)]
+             )
          >> -(lit("EXCEPTEOL")
               >> double_[boost::bind(&setEolWidth, _1, rule, lefin)]
               >> -(lit("EXCEPTJOGLENGTH")

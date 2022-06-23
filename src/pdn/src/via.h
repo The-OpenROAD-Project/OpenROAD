@@ -160,7 +160,8 @@ class DbBaseVia : public DbVia
   DbBaseVia();
 
   virtual std::string getName() const = 0;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const = 0;
 
@@ -198,7 +199,8 @@ class DbTechVia : public DbBaseVia
   virtual bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
@@ -246,7 +248,8 @@ class DbGenerateVia : public DbBaseVia
                                  int y) override;
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
