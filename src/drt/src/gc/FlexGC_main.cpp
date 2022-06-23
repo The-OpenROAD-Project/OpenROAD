@@ -1380,22 +1380,16 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   if (actArea >= reqArea) {
     return;
   }
-
-  bool hasNonFixedEdge = false;
+  gtl::rectangle_data<frCoord> bbox;
+  gtl::extents(bbox, *pin->getPolygon());
+  Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
+  if (!drWorker_->getRouteBox().contains(bbox2))
+      return;
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-      if (edge->isFixed() == false) {
-        hasNonFixedEdge = true;
-        break;
-      }
+      if (edge->isFixed())
+          return;
     }
-    if (hasNonFixedEdge) {
-      break;
-    }
-  }
-
-  if (!hasNonFixedEdge) {
-    return;
   }
 
   // add marker

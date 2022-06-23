@@ -4,14 +4,10 @@ on:
   pull_request:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-    inputs:
-      debug_enabled:
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
-        required: false
-        default: false
 
 jobs:
   build:
+    if: github.repository_owner != 'The-OpenROAD-Project' && github.repository_owner != 'The-OpenROAD-Project-private' && github.repository_owner != 'The-OpenROAD-Project-staging'
     runs-on: macos-latest
     steps:
       - name: Setup xcode
@@ -47,3 +43,21 @@ jobs:
                     -D TCL_NO_DEFAULT_PATH=TRUE \
                     -D Qt5_DIR=${MY_QT_PATH}
           make -j 12
+
+  build-self-hosted:
+    if: github.repository_owner == 'The-OpenROAD-Project' || github.repository_owner == 'The-OpenROAD-Project-private' || github.repository_owner == 'The-OpenROAD-Project-staging'
+    runs-on: self-hosted-mac
+    steps:
+      - name: Clean runner workspace path
+        run: |
+          echo "Cleaning up previous run: ${{ github.workspace }}"
+          rm -rf "${{ github.workspace }}"
+          mkdir -p "${{ github.workspace }}"
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Build OpenROAD
+        run: |
+          cmake -B build
+          time -p cmake --build build -j $(sysctl -n hw.ncpu 2>/dev/null)

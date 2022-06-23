@@ -177,20 +177,24 @@ class GlobalRouter
   void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute();
+  void globalRoute(bool save_guides = false);
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
 
   // repair antenna public functions
-  void repairAntennas(sta::LibertyPort* diode_port, int iterations);
+  void repairAntennas(odb::dbMTerm* diode_mterm,
+                      int iterations);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   void removeDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  // check_antennas
+  void makeNetWires();
+  void destroyNetWires();
 
   double dbuToMicrons(int64_t dbu);
 
@@ -401,6 +405,7 @@ class GlobalRouter
 
   std::set<odb::dbNet*> dirty_nets_;
 
+  AntennaRepair *antenna_repair_;
   std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   friend class IncrementalGRoute;
