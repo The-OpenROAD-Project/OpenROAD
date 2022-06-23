@@ -889,12 +889,18 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
 
   auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), instanceSizeLimit());
 
+  const bool inst_pins_visible = options_->areInstancePinsVisible();
+  const bool inst_osb_visible = options_->areInstanceBlockagesVisible();
+  const bool inst_internals_visible = inst_pins_visible || inst_osb_visible;
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
   for (auto& [box, poly, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
-      insts.push_back(inst);
+      if (inst_internals_visible) {
+        // only add inst if it can be used for pin or obs search
+        insts.push_back(inst);
+      }
       check_rect(convert_box_to_rect(box));
     }
   }
@@ -918,17 +924,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
       dbTransform inst_xfm;
       inst->getTransform(inst_xfm);
 
-      if (options_->areObstructionsVisible()) {
+      if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
           odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
           inst_xfm.apply(trans_box);
           check_rect(trans_box);
         }
       }
-      for (auto& box : inst_boxes->mterms) {
-        odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
-        inst_xfm.apply(trans_box);
-        check_rect(trans_box);
+      if (inst_pins_visible) {
+        for (auto& box : inst_boxes->mterms) {
+          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
+          inst_xfm.apply(trans_box);
+          check_rect(trans_box);
+        }
       }
     }
 
