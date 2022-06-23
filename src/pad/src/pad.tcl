@@ -3443,6 +3443,9 @@ namespace eval ICeWall {
 	  utl::warn PAD 262 "RDL path trace for $padcell (bump: $row, $col) is further from the core than the padcell pad pin"
 	}
  	set path_wrt_tile [concat [list $x $y $x] $rdl_trace]
+	if {[llength $path_wrt_tile] % 2 != 0} {
+	  utl::warn PAD 263 "RDL path has an odd number of cor-ordinates"
+	}
         set path [transform_path $path_wrt_tile $tile_origin $orientation]
 	# debug "path: $path, num_points: [llength $path]"
 
@@ -3582,7 +3585,11 @@ namespace eval ICeWall {
         set points [get_padcell_rdl_trace $padcell]
 	if {[has_padcell_to_rdl_via $padcell]} {
 	  foreach via_name [get_padcell_to_rdl_via $padcell] {
-  	    odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points 0] STRIPE
+  	    if {[llength [lindex $points 0]] != 2} {
+	      utl::warn PAD 264 "Malformed point ([lindex $points 0]) for padcell $padcell (points: $points)"
+	    } else {
+  	      odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points 0] STRIPE
+	    }
 	  }
 	}
         set prev [lindex $points 0]
@@ -3595,7 +3602,13 @@ namespace eval ICeWall {
 	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
 	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
             }
-	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	    if {[llength $p1] != 2} {
+	      utl::warn PAD 265 "Malformed point ($p1) for padcell $padcell (points: $points)"
+	    } elseif {[llength $p2] != 2} {
+	      utl::warn PAD 266 "Malformed point ($p2) for padcell $padcell (points: $points)"
+	    } else {
+	      set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	    }
 	  } elseif {[lindex $prev 1] == [lindex $point 1]} {
             if {[allow_45_routing]} {
 	      set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
@@ -3604,16 +3617,32 @@ namespace eval ICeWall {
 	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
 	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
             }
-	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	    if {[llength $p1] != 2} {
+	      utl::warn PAD 267 "Malformed point ($p1) for padcell $padcell (points: $points)"
+	    } elseif {[llength $p2] != 2} {
+	      utl::warn PAD 268 "Malformed point ($p2) for padcell $padcell (points: $points)"
+	    } else {
+	      set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
+	    }
 	  } else {
 	    set direction 3
-	    set sbox [odb::dbSBox_create $swire $rdl_layer {*}$prev {*}$point STRIPE $direction $rdl_width]
+	    if {[llength $prev] != 2} {
+	      utl::warn PAD 269 "Malformed point ($prev) for padcell $padcell (points: $points)"
+	    } elseif {[llength $point] != 2} {
+	      utl::warn PAD 270 "Malformed point ($point) for padcell $padcell (points: $points)"
+	    } else {
+	      set sbox [odb::dbSBox_create $swire $rdl_layer {*}$prev {*}$point STRIPE $direction $rdl_width]
+	    }
 	  }
 	  set prev $point
 	}
       	if {[has_padcell_rdl_to_bump_via $padcell]} {
 	  foreach via_name [get_padcell_rdl_to_bump_via $padcell] {
-  	    odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points end] STRIPE
+  	    if {[llength $p2] != 2} {
+	      utl::warn PAD 271 "Malformed point ([lindex $points end]) for padcell $padcell (points: $points)"
+	    } else {
+	      odb::dbSBox_create $swire [$tech findVia $via_name] {*}[lindex $points end] STRIPE
+	    }
           }
 	}
       }
