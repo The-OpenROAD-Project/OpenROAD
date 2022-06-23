@@ -643,7 +643,8 @@ Resizer::driveResistance(const Pin *drvr_pin)
             float res;
             bool exists;
             drive->driveResistance(rf, min_max, res, exists);
-            max_res = max(max_res, res);
+            if (exists)
+              max_res = max(max_res, res);
           }
         }
       }
