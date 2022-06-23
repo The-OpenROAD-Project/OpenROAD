@@ -102,6 +102,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
     max_load_slew_ = INF;
   }
 
+  required_path_.init();
   required_delay_ = 0.0;
 }
 
@@ -127,6 +128,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
   fanout_ = ref->fanout() + ref2->fanout();
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
 
+  required_path_.init();
   required_delay_ = 0.0;
 }
   
@@ -155,6 +157,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
   fanout_ = ref->fanout();
   max_load_slew_ = ref->maxLoadSlew();
 
+  required_path_.init();
   required_delay_ = 0.0;
 }
 
@@ -183,6 +186,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
 
+  required_path_.init();
   required_delay_ = 0.0;
 }
 
@@ -334,6 +338,8 @@ BufferedNet::wireRC(const Corner *corner,
                     double &res,
                     double &cap)
 {
+  if (type_ != BufferedNetType::wire)
+    resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   if (layer_ == BufferedNet::null_layer)
     resizer->wireSignalRC(corner, res, cap);
   else
