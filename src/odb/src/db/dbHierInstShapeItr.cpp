@@ -460,8 +460,7 @@ void dbHierInstShapeItr::transform(dbShape& shape)
 
 void dbHierInstShapeItr::getShape(dbBox* box, dbShape& shape)
 {
-  Rect r;
-  box->getBox(r);
+  Rect r = box->getBox();
   dbTransform& t = _transforms.back();
   t.apply(r);
 

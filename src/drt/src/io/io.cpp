@@ -54,8 +54,7 @@ void io::Parser::setDieArea(odb::dbBlock* block)
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<Point> points;
-  odb::Rect box;
-  block->getDieArea(box);
+  odb::Rect box = block->getDieArea();
   points.push_back(
       Point(defdist(block, box.xMin()), defdist(block, box.yMin())));
   points.push_back(

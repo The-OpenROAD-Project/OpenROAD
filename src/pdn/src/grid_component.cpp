@@ -158,8 +158,7 @@ ShapePtr GridComponent::addShape(Shape* shape)
   shapes.insert({shape_ptr->getRectBox(), shape_ptr});
 
   // add bpins that touch edges
-  odb::Rect die_area;
-  getBlock()->getDieArea(die_area);
+  odb::Rect die_area = getBlock()->getDieArea();
   const odb::Rect& final_shape_rect = shape_ptr->getRect();
   const int min_width = shape_ptr->getLayer()->getMinWidth();
   if (final_shape_rect.xMin() == die_area.xMin()) {

@@ -866,8 +866,7 @@ void PdnGen::ripUp(odb::dbNet* net)
           continue;
         }
 
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
         Box search_box(Point(rect.xMin(), rect.yMin()),
                        Point(rect.xMax(), rect.yMax()));
