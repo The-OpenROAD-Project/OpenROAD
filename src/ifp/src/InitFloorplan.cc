@@ -248,8 +248,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
-        Rect row_bbox;
-        row->getBBox(row_bbox);
+        Rect row_bbox = row->getBBox();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
 
@@ -472,8 +471,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   v.check_non_negative("y_offset", y_offset, 41);
   v.check_positive("y_pitch", y_pitch, 42);
 
-  Rect die_area;
-  block_->getDieArea(die_area);
+  Rect die_area = block_->getDieArea();
   auto grid = block_->findTrackGrid(layer);
   if (!grid) {
     grid = dbTrackGrid::create(block_, layer);

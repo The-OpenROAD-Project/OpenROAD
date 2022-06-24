@@ -673,8 +673,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + pnt._x;
       int ymin = b.yMin() + pnt._y;
       int xmax = b.xMax() + pnt._x;
@@ -700,8 +699,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + pnt._x;
       int ymin = b.yMin() + pnt._y;
       int xmax = b.xMax() + pnt._x;
@@ -1441,8 +1439,7 @@ inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
   pnt._x = 0;
   pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, idx, false, pnt);
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + pnt._x;
   int ymin = b.yMin() + pnt._y;
   int xmax = b.xMax() + pnt._x;
@@ -1468,8 +1465,7 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
   pnt._x = 0;
   pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, idx, false, pnt);
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + pnt._x;
   int ymin = b.yMin() + pnt._y;
   int xmax = b.xMax() + pnt._x;

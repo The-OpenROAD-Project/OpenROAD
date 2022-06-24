@@ -2,6 +2,32 @@
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
 
+OpenROAD is an integrated chip physical design tool that takes a
+design from synthesized Verilog to routed layout.
+
+An outline of steps used to build a chip using OpenROAD are shown below.
+
+* Initialize floorplan - define the chip size and cell rows
+* Place pins (for designs without pads )
+* Place macro cells (RAMs, embedded macros)
+* Insert substrate tap cells
+* Insert power distribution network
+* Macro Placement of macro cells
+* Global placement of standard cells
+* Repair max slew, max capacitance, and max fanout violations and long wires
+* Clock tree synthesis
+* Optimize setup/hold timing
+* Insert fill cells
+* Global routing (route guides for detailed routing)
+* Antenna repair
+* Detailed routing
+* Parasitic extraction
+* Static timing analysis
+
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
+
+Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+
 # Introduction
 
 [OpenROAD](https://theopenroadproject.org/) is the leading
@@ -9,9 +35,9 @@ open-source, foundational application for semiconductor digital design.
 It eliminates the barriers of cost, risk and uncertainty in hardware
 design to foster open access, expertise, rapid innovation and faster
 design turnaround. The OpenROAD application enables flexible flow
-control through an API, based on Tcl and Python.
+control through an API with bindigns in Tcl and Python.
 
-OpenROAD is a key tool for popular open source digital flows like
+OpenROAD is a foundational building block in open source digital flows like
 OpenROAD-flow-scripts,
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
 [Efabless](https://efabless.com/), Silicon Compiler Systems; as
@@ -107,8 +133,6 @@ testing](https://github.com/The-OpenROAD-Project/OpenLane-MPW-CI).
 Examples of designs include Open processor cores, RISC-V based SoCs,
 cryptocurrency miners, robotic app processors, amateur satellite radio
 transceivers, OpenPower based Microwatt etc.
-
-The documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
 ## Install dependencies
 

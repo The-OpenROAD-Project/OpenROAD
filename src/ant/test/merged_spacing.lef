@@ -60635,7 +60635,7 @@ MACRO sky130_fd_sc_ms__xor3_4
   END
 END sky130_fd_sc_ms__xor3_4
 MACRO sky130_fd_sc_ms__diode_2
-  CLASS BLOCK ;
+  CLASS CORE ANTENNACELL ;
   FOREIGN sky130_fd_sc_ms__diode_2 ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.960000 BY  3.330000 ;

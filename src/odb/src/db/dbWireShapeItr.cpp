@@ -274,8 +274,7 @@ nextOpCode:
       if (box == NULL)
         goto nextOpCode;
 
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
       int ymin = b.yMin() + _prev_y;
       int xmax = b.xMax() + _prev_x;
@@ -304,8 +303,7 @@ nextOpCode:
       if (box == NULL)
         goto nextOpCode;
 
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
       int ymin = b.yMin() + _prev_y;
       int xmax = b.xMax() + _prev_x;

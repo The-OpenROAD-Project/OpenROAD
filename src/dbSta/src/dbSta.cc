@@ -340,10 +340,13 @@ dbSta::findClkNets()
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
   for (Clock *clk : sdc_->clks()) {
-    for (const Pin *pin : *pins(clk)) {
-      Net *net = network_->net(pin);      
-      if (net)
-	clk_nets.insert(db_network_->staToDb(net));
+    const PinSet *clk_pins = pins(clk);
+    if (clk_pins) {
+      for (const Pin *pin : *clk_pins) {
+        Net *net = network_->net(pin);
+        if (net)
+          clk_nets.insert(db_network_->staToDb(net));
+      }
     }
   }
   return clk_nets;
@@ -354,10 +357,13 @@ dbSta::findClkNets(const Clock *clk)
 {
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
-  for (const Pin *pin : *pins(clk)) {
-    Net *net = network_->net(pin);      
-    if (net)
-      clk_nets.insert(db_network_->staToDb(net));
+  const PinSet *clk_pins = pins(clk);
+  if (clk_pins) {
+    for (const Pin *pin : *clk_pins) {
+      Net *net = network_->net(pin);
+      if (net)
+        clk_nets.insert(db_network_->staToDb(net));
+    }
   }
   return clk_nets;
 }
@@ -777,8 +783,7 @@ PathRenderer::highlightInst(const Pin *pin,
   if (!network->isTopInstance(inst)) {
     dbInst *db_inst = network->staToDb(inst);
     odb::dbBox *bbox = db_inst->getBBox();
-    odb::Rect rect;
-    bbox->getBox(rect);
+    odb::Rect rect = bbox->getBox();
     gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
     painter.setBrush(inst_color);
     painter.drawRect(rect);

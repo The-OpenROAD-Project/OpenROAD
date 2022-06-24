@@ -101,6 +101,7 @@ GlobalRouter::GlobalRouter()
       sta_(nullptr),
       db_(nullptr),
       block_(nullptr),
+      antenna_repair_(nullptr),
       heatmap_(nullptr)
 {
 }
@@ -148,6 +149,7 @@ GlobalRouter::~GlobalRouter()
   delete grid_;
   for (auto net_itr : db_net_map_)
     delete net_itr.second;
+  delete antenna_repair_;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
@@ -197,7 +199,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
-void GlobalRouter::globalRoute()
+void GlobalRouter::globalRoute(bool save_guides)
 {
   clear();
   block_ = db_->getChip()->getBlock();
@@ -231,7 +233,8 @@ void GlobalRouter::globalRoute()
   computeWirelength();
   if (verbose_)
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-  saveGuides();
+  if(save_guides)
+    saveGuides();
 }
 
 void GlobalRouter::updateDbCongestion()
@@ -240,12 +243,21 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
+void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
+                                  int iterations)
 {
-  AntennaRepair antenna_repair
-      = AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
 
-  odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
+  if (diode_mterm == nullptr) {
+    diode_mterm = antenna_repair_->findDiodeMTerm();
+    if (diode_mterm == nullptr)
+      logger_->error(GRT, 246, "No diode LEF class CORE ANTENNACELL found.");
+  }
+  if (antenna_repair_->diffArea(diode_mterm) == 0.0)
+    logger_->error(GRT, 244, "Diode {}/{} diffusion area is zero.",
+                   diode_mterm->getMaster()->getConstName(),
+                   diode_mterm->getConstName());
 
   bool violations = true;
   int itr = 0;
@@ -253,30 +265,51 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
-    // Antenna checker requires local connections so copy the routes
-    // so the originals are not side-effected.
+    // Antenna checker requires local connections to create dbWires.
+    // Copy the routes so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
-    violations = antenna_repair.checkAntennaViolations(routes,
-                                                       max_routing_layer_,
-                                                       diode_mterm);
+    violations = antenna_repair_->checkAntennaViolations(routes,
+                                                         max_routing_layer_,
+                                                         diode_mterm);
 
     if (violations) {
-      antenna_repair.deleteFillerCells();
+      antenna_repair_->deleteFillerCells();
 
       IncrementalGRoute incr_groute(this, block_);
-      antenna_repair.repairAntennas(diode_mterm);
-      if (verbose_)
-        logger_->info(
-            GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
-
-      antenna_repair.legalizePlacedCells();
+      antenna_repair_->repairAntennas(diode_mterm);
+      logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair_->getDiodesCount());
+      int illegal_diode_placement_count = antenna_repair_->illegalDiodePlacementCount();
+      if (illegal_diode_placement_count > 0)
+        logger_->info(GRT, 54, "Using detailed placer to place {} diodes.",
+                      illegal_diode_placement_count);
+      antenna_repair_->legalizePlacedCells();
       incr_groute.updateRoutes();
     }
-    antenna_repair.clearViolations();
+    antenna_repair_->clearViolations();
     itr++;
   }
   saveGuides();
+}
+
+void
+GlobalRouter::makeNetWires()
+{
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  // Antenna checker requires local connections to create dbWires.
+  // Copy the routes so the originals are not side-effected.
+  NetRouteMap routes = routes_;
+  addLocalConnections(routes);
+  antenna_repair_->makeNetWires(routes, max_routing_layer_);
+}
+
+void
+GlobalRouter::destroyNetWires()
+{
+  if (antenna_repair_ == nullptr)
+    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  antenna_repair_->destroyNetWires();
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
@@ -1899,7 +1932,7 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
         for (const odb::Rect& pin_box : pin_boxes) {
           odb::Point pos = getRectMiddle(pin_box);
           int distance = abs(pos.x() - pin_position.x())
-                         + abs(pos.y() - pin_position.y());
+            + abs(pos.y() - pin_position.y());
           if (distance < minimum_distance) {
             minimum_distance = distance;
             real_pin_position = pos;
@@ -1930,17 +1963,12 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
                                        const std::vector<odb::Rect>& pin_boxes,
                                        const GRoute& route)
 {
-  bool segment_overlaps_pin = false;
 
   // check if pin position on grid overlaps with the pin shape
   for (const odb::Rect& box : pin_boxes) {
-    if ((segment_overlaps_pin = box.overlaps(pin_position))) {
-      break;
+    if (box.overlaps(pin_position)) {
+      return true;
     }
-  }
-
-  if (segment_overlaps_pin) {
-    return segment_overlaps_pin;
   }
 
   // check if pin position on grid overlaps with at least one GSegment
@@ -1954,14 +1982,14 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
         int y1 = std::max(seg.init_y, seg.final_y);
         odb::Rect seg_rect(x0, y0, x1, y1);
 
-        if ((segment_overlaps_pin = box.intersects(seg_rect))) {
-          break;
+        if (box.intersects(seg_rect)) {
+          return true;
         }
       }
     }
   }
 
-  return segment_overlaps_pin;
+  return false;
 }
 
 void GlobalRouter::mergeResults(NetRouteMap& routes)
@@ -2142,8 +2170,7 @@ void GlobalRouter::initGrid(int max_layer)
 {
   int track_spacing = trackSpacing();
 
-  odb::Rect rect;
-  block_->getDieArea(rect);
+  odb::Rect rect = block_->getDieArea();
 
   int upper_rightX = rect.xMax();
   int upper_rightY = rect.yMax();
@@ -2602,8 +2629,7 @@ void GlobalRouter::makeItermPins(Net* net,
       int last_layer = -1;
 
       for (odb::dbBox* box : mterm->getGeometry()) {
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         transform.apply(rect);
 
         odb::dbTechLayer* tech_layer = box->getTechLayer();
@@ -3025,8 +3051,7 @@ int GlobalRouter::findInstancesObstructions(
       for (odb::dbBox* box : master->getObstructions()) {
         int layer = box->getTechLayer()->getRoutingLevel();
         if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           if (macro_obs_per_layer.find(layer) == macro_obs_per_layer.end()) {
@@ -3056,8 +3081,7 @@ int GlobalRouter::findInstancesObstructions(
       for (odb::dbBox* box : master->getObstructions()) {
         int layer = box->getTechLayer()->getRoutingLevel();
         if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
@@ -3084,8 +3108,7 @@ int GlobalRouter::findInstancesObstructions(
         int pin_layer;
 
         for (odb::dbBox* box : mterm->getGeometry()) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           odb::dbTechLayer* tech_layer = box->getTechLayer();
@@ -3144,8 +3167,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
           if (s->isVia()) {
             continue;
           } else {
-            odb::Rect wire_rect;
-            s->getBox(wire_rect);
+            odb::Rect wire_rect = s->getBox();
             int l = s->getTechLayer()->getRoutingLevel();
 
             if (min_routing_layer_ <= l && l <= max_routing_layer_) {

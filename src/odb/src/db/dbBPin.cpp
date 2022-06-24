@@ -189,8 +189,7 @@ Rect dbBPin::getBBox()
   Rect bbox;
   bbox.mergeInit();
   for (dbBox* box : getBoxes()) {
-    Rect rect;
-    box->getBox(rect);
+    Rect rect = box->getBox();
     bbox.merge(rect);
   }
   return bbox;

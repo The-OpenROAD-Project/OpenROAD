@@ -92,6 +92,9 @@ class Straps : public GridComponent
   // straps.
   int getStrapGroupWidth() const;
 
+ protected:
+  bool checkLayerOffsetSpecification(bool error = false) const;
+
  private:
   odb::dbTechLayer* layer_;
   int width_;
@@ -185,6 +188,14 @@ class RepairChannelStraps : public Straps
 
   bool isRepairValid() const { return !invalid_; }
 
+  bool isAtEndOfRepairOptions() const;
+  void continueRepairs(const ShapeTreeMap& other_shapes);
+  bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
+  bool isEmpty() const;
+
+  void addNets(const std::set<odb::dbNet*> nets) { nets_.insert(nets.begin(), nets.end()); }
+  const odb::Rect& getArea() const { return area_; }
+
   // static functions to help build repair channels
   // repair unconnected straps by adding repair channel straps
   static void repairGridChannels(Grid* grid,
@@ -228,6 +239,7 @@ class RepairChannelStraps : public Straps
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
 
   int getNextWidth() const;
+  int getMaxLength() const;
 };
 
 }  // namespace pdn

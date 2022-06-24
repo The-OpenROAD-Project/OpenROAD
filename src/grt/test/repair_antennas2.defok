@@ -102,8 +102,8 @@ VIAS 3 ;
     - via3_960x490 + VIARULE M3M4_PR + CUTSIZE 200 200  + LAYERS met3 via3 met4  + CUTSPACING 200 200  + ENCLOSURE 180 60 180 145  + ROWCOL 1 2  ;
 END VIAS
 COMPONENTS 7170 ;
-    - ANTENNA_0 sky130_fd_sc_hs__diode_2 + PLACED ( 169920 206460 ) N ;
     - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 14400 109890 ) FS ;
+    - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 169920 206460 ) N ;
     - FILLER_0_104 sky130_fd_sc_hs__fill_8 + SOURCE DIST + PLACED ( 59520 9990 ) FS ;
     - FILLER_0_112 sky130_fd_sc_hs__fill_4 + SOURCE DIST + PLACED ( 63360 9990 ) FS ;
     - FILLER_0_117 sky130_fd_sc_hs__fill_8 + SOURCE DIST + PLACED ( 65760 9990 ) FS ;
@@ -8995,7 +8995,7 @@ NETS 437 ;
     - _221_ ( _507_ B1 ) ( _506_ Y ) + USE SIGNAL ;
     - _222_ ( _509_ A ) ( _507_ X ) + USE SIGNAL ;
     - _223_ ( _509_ B ) ( _508_ Y ) + USE SIGNAL ;
-    - _224_ ( ANTENNA_0 DIODE ) ( _511_ B1 ) ( _510_ Y ) + USE SIGNAL ;
+    - _224_ ( ANTENNA_2 DIODE ) ( _511_ B1 ) ( _510_ Y ) + USE SIGNAL ;
     - _225_ ( _513_ A ) ( _511_ X ) + USE SIGNAL ;
     - _226_ ( _513_ B ) ( _512_ Y ) + USE SIGNAL ;
     - _227_ ( _515_ B1 ) ( _514_ Y ) + USE SIGNAL ;

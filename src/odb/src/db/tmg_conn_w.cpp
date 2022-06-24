@@ -193,13 +193,12 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
     dbSet<dbBox>::iterator box_itr;
     for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
       dbBox* box = *box_itr;
-      Rect rect;
       if (box->isVia()) {
         dbTechVia* tv = box->getTechVia();
         if (tv->getTopLayer() == wlyr
             || (!wlyr_top && tv->getBottomLayer() == wlyr)
             || tv->getBottomLayer() == wlyr_top) {
-          box->getBox(rect);
+          Rect rect = box->getBox();
           transform.apply(rect);
           if (rect.intersects(wrect)) {
             return true;
@@ -207,7 +206,7 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
         }
       } else {
         if (box->getTechLayer() == wlyr || box->getTechLayer() == wlyr_top) {
-          box->getBox(rect);
+          Rect rect = box->getBox();
           transform.apply(rect);
           if (rect.intersects(wrect)) {
             return true;

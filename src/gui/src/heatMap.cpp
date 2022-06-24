@@ -347,8 +347,7 @@ void HeatMapDataSource::setupMap()
   const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
   const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
 
-  odb::Rect bounds;
-  getBlock()->getBBox()->getBox(bounds);
+  odb::Rect bounds = getBlock()->getBBox()->getBox();
 
   const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
   const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));

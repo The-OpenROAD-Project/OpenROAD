@@ -186,7 +186,6 @@ class tmg_conn
   void analyzeNet(dbNet* net,
                   bool force,
                   bool verbose,
-                  bool quiet,
                   bool no_convert,
                   int cutLength = 0,
                   int maxLength = 0,
@@ -223,7 +222,7 @@ class tmg_conn
   void findConnections(bool verbose);
   void removeShortLoops(int* loop_remaining);
   void removeWireLoops(int* loop_remaining);
-  void treeReorder(bool verbose, bool quiet, bool no_convert);
+  void treeReorder(bool verbose, bool no_convert);
   bool checkConnected();
   void checkVisited();
   void printDisconnect();

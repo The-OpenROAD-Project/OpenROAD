@@ -77,8 +77,7 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb) {
   //	rectTable[k].reset( INT_MAX, INT_MAX, INT_MIN, INT_MIN );
   // getBboxPerLayer(rectTable);
 
-  odb::Rect maxRect;
-  _block->getDieArea(maxRect);
+  odb::Rect maxRect = _block->getDieArea();
 
   if (bb != NULL) {
     maxRect = *bb;
@@ -247,8 +246,7 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur) {
 
         if (ll == NULL) {
           if (dir >= 0) {
-            odb::Rect r;
-            s->getBox(r);
+            odb::Rect r = s->getBox();
             if (matchDir(dir, r))
               continue;
           }
@@ -263,8 +261,7 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur) {
             cnt++;
           continue;
         }
-        odb::Rect r;
-        s->getBox(r);
+        odb::Rect r = s->getBox();
 
         int bb[2] = {r.xMin(), r.yMin()};
 
@@ -332,8 +329,7 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable) {
 
         uint level = s->getTechLayer()->getRoutingLevel();
 
-        odb::Rect r;
-        s->getBox(r);
+        odb::Rect r = s->getBox();
 
         rectTable[level].merge(r);
       }

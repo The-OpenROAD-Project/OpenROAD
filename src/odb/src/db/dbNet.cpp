@@ -3085,9 +3085,12 @@ dbSet<dbGuide> dbNet::getGuides() const
 
 void dbNet::clearGuides()
 {
-  for(auto guide : getGuides())
+  auto guides = getGuides();
+  dbSet<dbGuide>::iterator itr = guides.begin();
+  while(itr != guides.end())
   {
-    dbGuide::destroy(guide);
+    auto curGuide = *itr++;
+    dbGuide::destroy(curGuide);
   }
 }
 

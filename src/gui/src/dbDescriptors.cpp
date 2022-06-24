@@ -243,7 +243,7 @@ std::string DbInstDescriptor::getTypeName() const
 bool DbInstDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
-  inst->getBBox()->getBox(bbox);
+  bbox = inst->getBBox()->getBox();
   return true;
 }
 
@@ -257,8 +257,7 @@ void DbInstDescriptor::highlight(std::any object,
   }
 
   odb::dbBox* bbox = inst->getBBox();
-  odb::Rect rect;
-  bbox->getBox(rect);
+  odb::Rect rect = bbox->getBox();
   painter.drawRect(rect);
 }
 
@@ -641,8 +640,7 @@ void DbMasterDescriptor::highlight(std::any object,
     }
 
     odb::dbBox* bbox = inst->getBBox();
-    odb::Rect rect;
-    bbox->getBox(rect);
+    odb::Rect rect = bbox->getBox();
     painter.drawRect(rect);
   }
 }
@@ -822,8 +820,7 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   auto get_graph_iterm_targets = [](odb::dbMTerm* mterm, const odb::dbTransform& transform, std::vector<GraphTarget>& targets) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* box : mpin->getGeometry()) {
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         transform.apply(rect);
         targets.push_back({rect, box->getTechLayer()});
       }
@@ -834,8 +831,7 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   auto get_graph_bterm_targets = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
     for (auto* bpin : bterm->getBPins()) {
       for (auto* box : bpin->getBoxes()) {
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         targets.push_back({rect, box->getTechLayer()});
       }
     }
@@ -1181,8 +1177,7 @@ void DbNetDescriptor::highlight(std::any object,
       int x, y;
       if (!inst_term->getAvgXY(&x, &y)) {
         odb::dbBox* bbox = inst_term->getInst()->getBBox();
-        odb::Rect rect;
-        bbox->getBox(rect);
+        odb::Rect rect = bbox->getBox();
         rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
                                  (rect.yMax() + rect.yMin()) / 2.0);
       } else {
@@ -1237,8 +1232,7 @@ void DbNetDescriptor::highlight(std::any object,
       if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
         painter.drawOctagon(sbox->getOct());
       } else {
-        odb::Rect rect;
-        sbox->getBox(rect);
+        odb::Rect rect = sbox->getBox();
         painter.drawRect(rect);
       }
     }
@@ -1448,8 +1442,7 @@ void DbITermDescriptor::highlight(std::any object,
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
     for (auto box : mpin->getGeometry()) {
-      odb::Rect rect;
-      box->getBox(rect);
+      odb::Rect rect = box->getBox();
       inst_xfm.apply(rect);
       painter.drawRect(rect);
     }
@@ -1560,8 +1553,7 @@ void DbBTermDescriptor::highlight(std::any object,
   auto* bterm = std::any_cast<odb::dbBTerm*>(object);
   for (auto bpin : bterm->getBPins()) {
     for (auto box : bpin->getBoxes()) {
-      odb::Rect rect;
-      box->getBox(rect);
+      odb::Rect rect = box->getBox();
       painter.drawRect(rect);
     }
   }
@@ -1652,7 +1644,7 @@ bool DbBlockageDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* blockage = std::any_cast<odb::dbBlockage*>(object);
   odb::dbBox* box = blockage->getBBox();
-  box->getBox(bbox);
+  bbox = box->getBox();
   return true;
 }
 
@@ -1676,8 +1668,7 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
   } else {
     inst_value = "<none>";
   }
-  odb::Rect rect;
-  blockage->getBBox()->getBox(rect);
+  odb::Rect rect = blockage->getBBox()->getBox();
   Properties props{{"Instance", inst_value},
                    {"X", Property::convert_dbu(rect.xMin(), true)},
                    {"Y", Property::convert_dbu(rect.yMin(), true)},
@@ -1773,7 +1764,7 @@ bool DbObstructionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   odb::dbBox* box = obs->getBBox();
-  box->getBox(bbox);
+  bbox = box->getBox();
   return true;
 }
 
@@ -1797,8 +1788,7 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   } else {
     inst_value = "<none>";
   }
-  odb::Rect rect;
-  obs->getBBox()->getBox(rect);
+  odb::Rect rect = obs->getBBox()->getBox();
   Properties props({{"Instance", inst_value},
                     {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
                     {"X", Property::convert_dbu(rect.xMin(), true)},
@@ -2263,7 +2253,7 @@ bool DbGroupDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   auto* region = group->getRegion();
   if(region != nullptr && region->getBoundaries().size() == 1)
   {
-    region->getBoundaries().begin()->getBox(bbox);
+    bbox = region->getBoundaries().begin()->getBox();
     return true;
   }
   return false;
@@ -2388,8 +2378,7 @@ bool DbRegionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   }
   bbox.mergeInit();
   for (auto* box : boxes) {
-    odb::Rect box_rect;
-    box->getBox(box_rect);
+    odb::Rect box_rect = box->getBox();
     bbox.merge(box_rect);
   }
   return true;
@@ -2506,8 +2495,7 @@ bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
   for (auto* inst : module->getInsts()) {
     auto* box = inst->getBBox();
-    odb::Rect box_rect;
-    box->getBox(box_rect);
+    odb::Rect box_rect = box->getBox();
     bbox.merge(box_rect);
   }
 
@@ -2661,8 +2649,7 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
     if (box_layer->getType() == odb::dbTechLayerType::CUT) {
       cut_layer = box_layer;
     }
-    odb::Rect shape;
-    box->getBox(shape);
+    odb::Rect shape = box->getBox();
     shapes[box_layer] = shape;
   }
 

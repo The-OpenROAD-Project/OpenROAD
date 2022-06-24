@@ -83,6 +83,7 @@ class AntennaRepair
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  int illegalDiodePlacementCount() const { return illegal_diode_placement_count_; }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)
@@ -92,6 +93,11 @@ class AntennaRepair
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
   void deleteFillerCells();
+  void makeNetWires(NetRouteMap& routing,
+                    int max_routing_layer);
+  void destroyNetWires();
+  odb::dbMTerm* findDiodeMTerm();
+  double diffArea(odb::dbMTerm *mterm);
 
  private:
   typedef int coord_type;
@@ -105,13 +111,15 @@ class AntennaRepair
                    odb::dbMTerm* diode_mterm,
                    odb::dbInst* sink_inst,
                    odb::dbITerm* sink_iterm,
-                   std::string antenna_inst_name,
                    int site_width,
                    r_tree& fixed_insts);
   void getFixedInstances(r_tree& fixed_insts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
+  odb::dbWire* makeNetWire(odb::dbNet* db_net,
+                           GRoute& route,
+                           std::map<int, odb::dbTechVia*> &default_vias);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;
@@ -121,6 +129,8 @@ class AntennaRepair
   odb::dbBlock* block_;
   std::vector<odb::dbInst*> diode_insts_;
   AntennaViolations antenna_violations_;
+  int unique_diode_index_;
+  int illegal_diode_placement_count_;
 };
 
 }  // namespace grt
