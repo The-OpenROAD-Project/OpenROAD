@@ -76,8 +76,7 @@ void dbInstShapeItr::begin(dbInst* inst,
 
 void dbInstShapeItr::getViaBox(dbBox* box, dbShape& shape)
 {
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + _via_x;
   int ymin = b.yMin() + _via_y;
   int xmax = b.xMax() + _via_x;
@@ -89,8 +88,7 @@ void dbInstShapeItr::getViaBox(dbBox* box, dbShape& shape)
 
 void dbInstShapeItr::getShape(dbBox* box, dbShape& shape)
 {
-  Rect r;
-  box->getBox(r);
+  Rect r = box->getBox();
   _transform.apply(r);
 
   dbTechVia* via = box->getTechVia();

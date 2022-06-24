@@ -174,8 +174,7 @@ void extMain::getNetSboxes(dbNet* net, Rect** maxRectSdb, Rect& maxRectGs,
       if (s->isVia())
         continue;
 
-      Rect r;
-      s->getBox(r);
+      Rect r = s->getBox();
 
       uint dd = 0;  // vertical
       if (r.dx() > r.dy())
@@ -281,8 +280,7 @@ Ath__array1D<uint>*** extMain::mkInstBins(uint binSize, int* bb_ll, int* bb_ur,
     dbInst* inst = *inst_itr;
     dbBox* bb = inst->getBBox();
 
-    Rect r;
-    bb->getBox(r);
+    Rect r = bb->getBox();
 
     for (uint dir = 0; dir < 2; dir++)
       addNetOnTable(inst->getId(), dir, &r, nm_step, bb_ll, bb_ur, instTable);
@@ -333,8 +331,7 @@ extWireBin*** extMain::mkSignalBins(uint binSize, int* bb_ll, int* bb_ur,
           if (s->isVia())
             continue;
 
-          Rect r;
-          s->getBox(r);
+          Rect r = s->getBox();
           addExtWires(r, sdbWireTable, netId, -s->getId(), s->getTechLayer(),
                       nm_step, bb_ll, bb_ur, wpool, cntxFlag);
         }
@@ -449,8 +446,7 @@ uint extMain::mkSignalTables2(uint* nm_step, int* bb_ll, int* bb_ur,
       dbInst* inst = *inst_itr;
       dbBox* bb = inst->getBBox();
 
-      Rect s;
-      bb->getBox(s);
+      Rect s = bb->getBox();
 
       for (uint dir = 0; dir < 2; dir++)
         addNetOnTable(inst->getId(), dir, &s, nm_step, bb_ll, bb_ur, instTable);
@@ -524,8 +520,7 @@ uint extMain::mkSignalTables(uint* nm_step, int* bb_ll, int* bb_ur,
     dbInst* inst = *inst_itr;
     dbBox* bb = inst->getBBox();
 
-    Rect s;
-    bb->getBox(s);
+    Rect s = bb->getBox();
 
     for (uint dir = 0; dir < 2; dir++)
       addNetOnTable(inst->getId(), dir, &s, nm_step, bb_ll, bb_ur, instTable);
@@ -789,8 +784,7 @@ uint extMain::addNetSBoxes(dbNet* net, uint dir, int* bb_ll, int* bb_ur,
       if (s->isVia())
         continue;
 
-      Rect r;
-      s->getBox(r);
+      Rect r = s->getBox();
       if (isIncludedInsearch(r, dir, bb_ll, bb_ur)) {
         uint level = s->getTechLayer()->getRoutingLevel();
 
@@ -836,8 +830,7 @@ uint extMain::addNetSBoxes2(dbNet* net, uint dir, int* bb_ll, int* bb_ur,
       if (s->isVia())
         continue;
 
-      Rect r;
-      s->getBox(r);
+      Rect r = s->getBox();
       if (isIncludedInsearch(r, dir, bb_ll, bb_ur)) {
         uint level = s->getTechLayer()->getRoutingLevel();
 
@@ -1184,7 +1177,7 @@ uint extWireBin::createDbNetsGS(dbBlock* block, dbCreateNetUtil* createDbNet) {
     Rect r;
     if (w->_shapeId < 0) {
       dbSBox* s = dbSBox::getSBox(block, -w->_shapeId);
-      s->getBox(r);
+      r = s->getBox();
     } else {
       dbShape s;
       // wire->getShape(w->_shapeId, s);
@@ -1243,8 +1236,7 @@ uint extWireBin::createDbNets(dbBlock* block, dbCreateNetUtil* createDbNet) {
     if (w->_shapeId < 0) {
       dbSBox* s = dbSBox::getSBox(block, -w->_shapeId);
 
-      Rect r;
-      s->getBox(r);
+      Rect r = s->getBox();
 
       createDbNet->createSpecialWire(NULL, r, w->_layer, -w->_shapeId);
     } else {
@@ -1529,8 +1521,7 @@ uint extMain::addNetSboxesGs(dbNet* net, bool gsRotated, bool swap_coords,
       if (s->isVia())
         continue;
 
-      Rect r;
-      s->getBox(r);
+      Rect r = s->getBox();
       cnt += addShapeOnGS(NULL, s->getId(), r, true, s->getTechLayer(),
                           gsRotated, swap_coords, dir, true, createDbNet);
       /*
@@ -3641,8 +3632,7 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts) {
       dbInst* inst = *inst_itr;
       dbBox* bb = inst->getBBox();
 
-      Rect s;
-      bb->getBox(s);
+      Rect s = bb->getBox();
 
       for (uint dir = 0; dir < 2; dir++)
         addNetOnTable(inst->getId(), dir, &s, _tiles->_tileSize, _tiles->_ll,
@@ -3788,8 +3778,7 @@ uint extMain::mkTilePowerNets(uint dir, int* lo_sdb, int* hi_sdb,
         if (s->isVia())
           continue;
 
-        Rect r;
-        s->getBox(r);
+        Rect r = s->getBox();
 
         if (!tileRect.intersects(r))
           continue;

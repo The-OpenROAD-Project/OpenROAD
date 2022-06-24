@@ -1078,10 +1078,8 @@ void defout_impl::writeBlockages(dbBlock* block)
                 return layer_a->getNumber() < layer_b->getNumber();
               }
 
-              Rect rect_a;
-              bbox_a->getBox(rect_a);
-              Rect rect_b;
-              bbox_b->getBox(rect_b);
+              Rect rect_a = bbox_a->getBox();
+              Rect rect_b = bbox_b->getBox();
               return rect_a < rect_b;
             });
   for (dbObstruction* obs : sorted_obs) {
@@ -1146,10 +1144,8 @@ void defout_impl::writeBlockages(dbBlock* block)
             [](dbBlockage* a, dbBlockage* b) {
               dbBox* bbox_a = a->getBBox();
               dbBox* bbox_b = b->getBBox();
-              Rect rect_a;
-              bbox_a->getBox(rect_a);
-              Rect rect_b;
-              bbox_b->getBox(rect_b);
+              Rect rect_a = bbox_a->getBox();
+              Rect rect_b = bbox_b->getBox();
               return rect_a < rect_b;
             });
 

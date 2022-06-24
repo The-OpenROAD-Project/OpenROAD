@@ -850,8 +850,7 @@ void Optdp::createArchitecture()
           }
         }
 
-        Rect rect;
-        sbox->getBox(rect);
+        Rect rect = sbox->getBox();
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
           int yb = arch_->getRow(r)->getBottom();
           int yt = arch_->getRow(r)->getTop();
@@ -908,8 +907,7 @@ void Optdp::setUpPlacementRegions()
       ++count;
       auto boundaries = parent->getBoundaries();
       for (dbBox* boundary : boundaries) {
-        Rect box;
-        boundary->getBox(box);
+        Rect box = boundary->getBox();
 
         xmin = std::max(arch_->getMinX(), box.xMin());
         xmax = std::min(arch_->getMaxX(), box.xMax());

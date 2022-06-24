@@ -166,8 +166,7 @@ const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
 
   auto boundaries = region->getBoundaries();
   if (!boundaries.empty()) {
-    odb::Rect box_rect;
-    boundaries.begin()->getBox(box_rect);
+    odb::Rect box_rect = boundaries.begin()->getBox();
     return box_rect;
   }
   return {};

@@ -101,8 +101,7 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
       continue;
     }
 
-    odb::Rect box;
-    inst->getBBox()->getBox(box);
+    odb::Rect box = inst->getBBox()->getBox();
 
     const bool is_ns_with_core
         = box.xMin() >= core.xMin() && box.xMax() <= core.xMax();

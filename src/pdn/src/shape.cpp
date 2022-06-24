@@ -353,8 +353,7 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
       if (box->getTechLayer() != layer_) {
         continue;
       }
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       if (box_rect == rect) {
         // pin already exists
         return;
@@ -383,8 +382,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
         continue;
       }
 
-      odb::Rect rect;
-      box->getBox(rect);
+      odb::Rect rect = box->getBox();
 
       ShapePtr shape
           = std::make_shared<Shape>(layer, net, rect, box->getWireShapeType());

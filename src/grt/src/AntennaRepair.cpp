@@ -307,8 +307,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     legalize_itr++;
   }
 
-  odb::Rect inst_rect;
-  diode_inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = diode_inst->getBBox()->getBox();
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
@@ -387,8 +386,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
     if (mterm != nullptr) {
       for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
         for (odb::dbBox* mterm_box : mterm_pin->getGeometry()) {
-          odb::Rect rect;
-          mterm_box->getBox(rect);
+          odb::Rect rect = mterm_box->getBox();
           transform.apply(rect);
 
           inst_rect = rect;
@@ -396,7 +394,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
       }
     }
   } else {
-    inst->getBBox()->getBox(inst_rect);
+    inst_rect = inst->getBBox()->getBox();
   }
 
   return inst_rect;

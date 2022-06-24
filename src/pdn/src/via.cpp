@@ -263,8 +263,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       continue;
     }
 
-    odb::Rect rect;
-    box->getBox(rect);
+    odb::Rect rect = box->getBox();
 
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       via_rect_.merge(rect);
@@ -2129,8 +2128,7 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
       continue;
     }
 
-    odb::Rect cut;
-    box->getBox(cut);
+    odb::Rect cut = box->getBox();
 
     if (cuts_ == 0) {
       cut_ = layer;

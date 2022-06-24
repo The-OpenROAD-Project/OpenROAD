@@ -557,8 +557,7 @@ void DRCWidget::loadTRReport(const QString& filename)
           for (const auto obs : block_->getObstructions()) {
             auto obs_bbox = obs->getBBox();
             if (obs_bbox->getTechLayer() == layer) {
-              odb::Rect obs_rect;
-              obs_bbox->getBox(obs_rect);
+              odb::Rect obs_rect = obs_bbox->getBox();
               if (obs_rect.intersects(rect)) {
                 srcs_list.push_back(obs);
                 found = true;

@@ -513,8 +513,7 @@ void PadDirectConnectionStraps::initialize(
 {
   auto* inst = iterm_->getInst();
 
-  odb::Rect inst_rect;
-  inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
   odb::Rect core_rect;
@@ -580,32 +579,28 @@ void PadDirectConnectionStraps::initialize(
   if (is_north) {
     pad_edge_ = odb::dbDirection::NORTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMin() != box_rect.yMin();
     };
   } else if (is_south) {
     pad_edge_ = odb::dbDirection::SOUTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMax() != box_rect.yMax();
     };
   } else if (is_west) {
     pad_edge_ = odb::dbDirection::WEST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMax() != box_rect.xMax();
     };
   } else {
     pad_edge_ = odb::dbDirection::EAST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMin() != box_rect.xMin();
     };
@@ -659,8 +654,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 
   auto* inst = iterm_->getInst();
 
-  odb::Rect inst_rect;
-  inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
   odb::Rect die_rect;
@@ -678,8 +672,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 
   auto* net = iterm_->getNet();
   for (auto* pin : pins_) {
-    odb::Rect pin_rect;
-    pin->getBox(pin_rect);
+    odb::Rect pin_rect = pin->getBox();
     transform.apply(pin_rect);
 
     auto* layer = pin->getTechLayer();

@@ -247,8 +247,7 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur) {
 
         if (ll == NULL) {
           if (dir >= 0) {
-            odb::Rect r;
-            s->getBox(r);
+            odb::Rect r = s->getBox();
             if (matchDir(dir, r))
               continue;
           }
@@ -263,8 +262,7 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur) {
             cnt++;
           continue;
         }
-        odb::Rect r;
-        s->getBox(r);
+        odb::Rect r = s->getBox();
 
         int bb[2] = {r.xMin(), r.yMin()};
 
@@ -332,8 +330,7 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable) {
 
         uint level = s->getTechLayer()->getRoutingLevel();
 
-        odb::Rect r;
-        s->getBox(r);
+        odb::Rect r = s->getBox();
 
         rectTable[level].merge(r);
       }

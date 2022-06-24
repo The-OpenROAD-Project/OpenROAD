@@ -381,8 +381,7 @@ void Search::addSNet(odb::dbNet* net)
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
           points = box->getOct().getPoints();
         } else {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           points = rect.getPoints();
         }
         Polygon poly;

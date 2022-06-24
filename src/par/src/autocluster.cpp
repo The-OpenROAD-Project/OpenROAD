@@ -1199,8 +1199,7 @@ pair<float, float> AutoClusterMgr::printPinPos(dbInst* macro_inst)
     if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
-          Rect rect;
-          box->getBox(rect);
+          Rect rect = box->getBox();
           bbox.merge(rect);
         }
       }

@@ -213,8 +213,7 @@ Opendp::makeGroups()
       group.boundary.mergeInit();
       auto boundaries = parent->getBoundaries();
       for (dbBox *boundary : boundaries) {
-        Rect box;
-        boundary->getBox(box);
+        Rect box = boundary->getBox();
         box = box.intersect(core_);
         // offset region to core origin
         box.moveDelta(-core_.xMin(), -core_.yMin());

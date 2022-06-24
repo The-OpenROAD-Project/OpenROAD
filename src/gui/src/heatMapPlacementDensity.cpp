@@ -74,8 +74,7 @@ bool PlacementDensityDataSource::populateMap()
     if (!include_io_ && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
       continue;
     }
-    odb::Rect inst_box;
-    inst->getBBox()->getBox(inst_box);
+    odb::Rect inst_box = inst->getBBox()->getBox();
 
     addToMap(inst_box, 100.0);
   }

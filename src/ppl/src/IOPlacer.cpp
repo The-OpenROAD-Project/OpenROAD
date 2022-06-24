@@ -288,8 +288,7 @@ void IOPlacer::getBlockedRegionsFromMacros()
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
     if (master->isBlock() && inst->isPlaced()) {
-      odb::Rect inst_area;
-      inst->getBBox()->getBox(inst_area);
+      odb::Rect inst_area = inst->getBBox()->getBox();
       odb::Rect intersect = die_area.intersect(inst_area);
 
       std::vector<Interval> intervals
@@ -308,8 +307,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* obstructBox = obstruction->getBBox();
-    odb::Rect obstructArea;
-    obstructBox->getBox(obstructArea);
+    odb::Rect obstructArea = obstructBox->getBox();
     odb::Rect intersect = die_area.intersect(obstructArea);
 
     std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
@@ -1541,8 +1539,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
     if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-      odb::Rect obstruction_rect;
-      box->getBox(obstruction_rect);
+      odb::Rect obstruction_rect = box->getBox();
       obstructions.push_back(obstruction_rect);
     }
   }
@@ -1554,8 +1551,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
             if (wire->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-              odb::Rect obstruction_rect;
-              wire->getBox(obstruction_rect);
+              odb::Rect obstruction_rect = wire->getBox();
               obstructions.push_back(obstruction_rect);
             }
           }
@@ -1570,8 +1566,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
           if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-            odb::Rect obstruction_rect;
-            box->getBox(obstruction_rect);
+            odb::Rect obstruction_rect = box->getBox();
             obstructions.push_back(obstruction_rect);
           }
         }

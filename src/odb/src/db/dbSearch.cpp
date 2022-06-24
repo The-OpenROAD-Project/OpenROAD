@@ -248,8 +248,7 @@ uint dbBlockSearch::makeInstSearchDb()
     minWidth = MIN(minWidth, bb->getDX());
     minHeight = MIN(minHeight, bb->getDY());
 
-    Rect r;
-    bb->getBox(r);
+    Rect r = bb->getBox();
     maxRect.merge(r);
     instCnt++;
   }

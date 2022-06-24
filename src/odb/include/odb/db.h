@@ -513,7 +513,7 @@ class dbBox : public dbObject
   ///
   /// Get the box bounding points.
   ///
-  void getBox(Rect& rect);
+  Rect getBox();
 
   ///
   /// Get the translated boxes of this via

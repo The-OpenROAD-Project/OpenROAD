@@ -843,8 +843,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
     }
 
     auto* box = ob->getBBox();
-    odb::Rect obs_rect;
-    box->getBox(obs_rect);
+    odb::Rect obs_rect = box->getBox();
     if (ob->hasMinSpacing()) {
       obs_rect.bloat(ob->getMinSpacing(), obs_rect);
     }
@@ -996,11 +995,9 @@ InstanceGrid::InstanceGrid(VoltageDomain* domain,
 {
   auto* halo = inst->getHalo();
   if (halo != nullptr) {
-    odb::Rect halo_box;
-    halo->getBox(halo_box);
+    odb::Rect halo_box = halo->getBox();
 
-    odb::Rect inst_box;
-    inst->getBBox()->getBox(inst_box);
+    odb::Rect inst_box = inst->getBBox()->getBox();
 
     // copy halo from db
     addHalo({halo_box.xMin() - inst_box.xMin(),
@@ -1028,8 +1025,7 @@ void InstanceGrid::setGridToBoundary(bool value)
 const odb::Rect InstanceGrid::getDomainArea() const
 {
   auto* bbox = inst_->getBBox();
-  odb::Rect inst_box;
-  bbox->getBox(inst_box);
+  odb::Rect inst_box = bbox->getBox();
 
   return inst_box;
 }
@@ -1089,8 +1085,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst)
   auto* master = inst->getMaster();
 
   for (auto* ob : master->getObstructions()) {
-    odb::Rect obs_rect;
-    ob->getBox(obs_rect);
+    odb::Rect obs_rect = ob->getBox();
 
     // add min spacing
     auto* layer = ob->getTechLayer();
@@ -1105,8 +1100,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst)
   for (auto* mterm : master->getMTerms()) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* box : mpin->getGeometry()) {
-        odb::Rect obs_rect;
-        box->getBox(obs_rect);
+        odb::Rect obs_rect = box->getBox();
 
         // add min spacing
         auto* layer = box->getTechLayer();
@@ -1152,8 +1146,7 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
     if (net != nullptr) {
       for (auto* mpin : iterm->getMTerm()->getMPins()) {
         for (auto* box : mpin->getGeometry()) {
-          odb::Rect box_rect;
-          box->getBox(box_rect);
+          odb::Rect box_rect = box->getBox();
           transform.apply(box_rect);
           auto shape = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
           shape->setShapeType(Shape::FIXED);
