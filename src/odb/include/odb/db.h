@@ -513,7 +513,7 @@ class dbBox : public dbObject
   ///
   /// Get the box bounding points.
   ///
-  void getBox(Rect& rect);
+  Rect getBox();
 
   ///
   /// Get the translated boxes of this via
@@ -1201,13 +1201,13 @@ class dbBlock : public dbObject
   ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
-  void getDieArea(Rect& rect);
+  Rect getDieArea();
 
   ///
   /// Get the core area. This computes the bbox of the rows
   /// and is O(#rows) in runtime.
   ///
-  void getCoreArea(Rect& rect);
+  Rect getCoreArea();
 
   void setPtFile(FILE* ptf);
   FILE* getPtFile();
@@ -4856,7 +4856,7 @@ class dbRow : public dbObject
   ///
   /// Get the bounding box of this row
   ///
-  void getBBox(Rect& bbox);
+  Rect getBBox();
 
   ///
   /// Create a new row.

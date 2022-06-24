@@ -263,8 +263,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       continue;
     }
 
-    odb::Rect rect;
-    box->getBox(rect);
+    odb::Rect rect = box->getBox();
 
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       via_rect_.merge(rect);
@@ -1318,7 +1317,7 @@ bool ViaGenerator::appliesToLayers(odb::dbTechLayer* lower,
 
 void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
 {
-  auto populate_enc = [this, rules_only](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
+  auto populate_enc = [this](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
     for (auto* rule : getCutMinimumEnclosureRules(width, above)) {
       encs.emplace_back(rule, layer, getCut());
     }
@@ -2129,8 +2128,7 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
       continue;
     }
 
-    odb::Rect cut;
-    box->getBox(cut);
+    odb::Rect cut = box->getBox();
 
     if (cuts_ == 0) {
       cut_ = layer;

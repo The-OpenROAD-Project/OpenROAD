@@ -252,21 +252,6 @@ class LayoutViewer : public QWidget
     std::vector<QRect> mterms;
   };
 
-  struct GCellData
-  {
-    int hor_capacity_;
-    int hor_usage_;
-    int ver_capacity_;
-    int ver_usage_;
-
-    GCellData(int h_cap = 0, int h_usage = 0, int v_cap = 0, int v_usage = 0)
-        : hor_capacity_(h_cap),
-          hor_usage_(h_usage),
-          ver_capacity_(v_cap),
-          ver_usage_(v_usage)
-    {
-    }
-  };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
   using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
 
@@ -336,13 +321,10 @@ class LayoutViewer : public QWidget
   void addMenuAndActions();
 
   using Edge = std::pair<odb::Point, odb::Point>;
-  struct Edges {
-    Edge horizontal;
-    Edge vertical;
-  };
   // search for nearest edge to point
-  std::pair<Edge, bool> findEdge(const odb::Point& pt, bool horizontal);
-  std::pair<Edges, bool> searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt);
+  std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt, bool horizontal, bool vertical);
+  int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
+  bool compareEdges(const Edge& lhs, const Edge& rhs) const;
 
   odb::Point findNextSnapPoint(const odb::Point& end_pt, bool snap = true);
   odb::Point findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap = true);

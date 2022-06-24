@@ -29,4 +29,20 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(net->getGuides().size() == 1);
 }
 
+BOOST_AUTO_TEST_CASE(test_clear_guides)
+{
+  dbDatabase* db;
+  db = createSimpleDB();
+  auto tech = db->getTech();
+  auto block = db->getChip()->getBlock();
+  auto layer = tech->findLayer("L1");
+  auto net = dbNet::create(block, "n1");
+  dbGuide::create(net, layer, {0, 100, 100, 200});
+  dbGuide::create(net, layer, {0, 100, 100, 200});
+  dbGuide::create(net, layer, {0, 100, 100, 200});
+  BOOST_TEST(net->getGuides().size() == 3);
+  net->clearGuides();
+  BOOST_TEST(net->getGuides().size() == 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

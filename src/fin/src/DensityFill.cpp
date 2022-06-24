@@ -281,8 +281,7 @@ static Polygon90Set orNonFills(dbBlock* block, dbTechLayer* layer)
       for (auto sbox : swire->getWires()) {
         if (sbox->isVia()) {
           dbVia* via = sbox->getBlockVia();
-          Rect rect;
-          sbox->getBox(rect);
+          Rect rect = sbox->getBox();
           shape.setVia(via, rect);
           dbShape::getViaBoxes(shape, via_shapes);
           for (auto& via_shape : via_shapes) {
