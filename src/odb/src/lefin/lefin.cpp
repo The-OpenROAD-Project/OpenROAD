@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "lefin.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -43,9 +45,9 @@
 #include "dbTransform.h"
 #include "geom.h"
 #include "lefLayerPropParser.h"
+#include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
-#include "lefin.h"
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
@@ -1115,7 +1117,19 @@ void lefin::macro(lefiMacro* macro)
     return;
 
   for (int i = 0; i < macro->numProperties(); i++) {
-    dbStringProperty::create(_master, macro->propName(i), macro->propValue(i));
+    bool valid = true;
+    if (!strcmp(macro->propName(i), "LEF58_CLASS")) {
+      valid = lefMacroClassTypeParser::parse(macro->propValue(i), _master);
+    } else {
+      dbStringProperty::create(_master, macro->propName(i),
+                               macro->propValue(i));
+    }
+
+    if (!valid) {
+      _logger->warn(utl::ODB, 2000,
+                    "Cannot parse LEF property '{}' with value '{}'",
+                    macro->propName(i), macro->propValue(i));
+    }
   }
 
   if (macro->hasClass()) {
