@@ -1372,7 +1372,7 @@ gcSegment* bestSuitable(gcSegment* a, gcSegment* b) {
 }
 void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
 {
-  if (ignoreMinArea_) {
+  if (ignoreMinArea_ || !targetNet_) {
     return;
   }
   auto poly = pin->getPolygon();
@@ -1394,9 +1394,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   gtl::rectangle_data<frCoord> bbox;
   gtl::extents(bbox, *pin->getPolygon());
   Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
-  frCoord wireWidth = drWorker_->getDesign()->getTech()->getLayer(layerNum)->getWidth();
-  bbox2.bloat(wireWidth, bbox2);
-  if (!drWorker_->getRouteBox().contains(bbox2))
+  if (!drWorker_->getDrcBox().contains(bbox2))
       return;
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
@@ -1444,21 +1442,8 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   patch->setLayerNum(layerNum);
   patch->setOrigin(offset);
   patch->setOffsetBox(patchBx);
-  vector<drConnFig*> results; //need a drNet on the patch
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
-  auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
-  workerRegionQuery.query(shiftedPatch, layerNum, results);
-  drNet* dNet = nullptr;
-  for (auto& connFig : results) {
-      if (connFig->getNet() && connFig->getNet()->getFrNet() == net->getFrNet()) {
-          dNet = connFig->getNet();
-          break;
-      }
-  }
-  if (!dNet) 
-      logger_->error(DRT, 4502, "drNet not found");
-  patch->addToNet(dNet);
   pwires_.push_back(std::move(patch));
 }
 

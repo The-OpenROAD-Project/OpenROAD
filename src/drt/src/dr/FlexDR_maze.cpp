@@ -1813,8 +1813,11 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->main();
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
+	drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
+	  if (!net)
+		net = currNet;
           auto tmpPWire = make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin;
@@ -1824,6 +1827,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           pwire->getOffsetBox(box);
           tmpPWire->setOffsetBox(box);
           tmpPWire->addToNet(net);
+	  pwire->addToNet(net);
 
           unique_ptr<drConnFig> tmp(std::move(tmpPWire));
           auto& workerRegionQuery = getWorkerRegionQuery();
