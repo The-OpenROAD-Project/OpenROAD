@@ -64,6 +64,7 @@ using utl::RSZ;
 using sta::Port;
 using sta::NetPinIterator;
 using sta::InstancePinIterator;
+using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::Clock;
 using sta::INF;
@@ -249,6 +250,7 @@ RepairDesign::repairNet(Net *net,
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
+  resizer_->buffer_moved_into_core_ = false;
 
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -610,7 +612,8 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}{}",
                  "", level,
              bnet->to_string(resizer_));
-  repairNet(bnet->ref(), level+1, wire_length, load_pins);
+  int wire_length_ref;
+  repairNet(bnet->ref(), level+1, wire_length_ref, load_pins);
   float max_load_slew = bnet->maxLoadSlew();
 
   Point to_loc = bnet->ref()->location();
@@ -618,7 +621,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   int to_y = to_loc.getY();
   Point from_loc = bnet->location();
   int length = Point::manhattanDistance(from_loc, to_loc);
-  wire_length += length;
+  wire_length = wire_length_ref + length;
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
   int from_x = from_loc.getX();
@@ -901,6 +904,7 @@ RepairDesign::repairNetLoad(BufferedNetPtr bnet,
   debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}load {}",
              "", level,
              sdc_network_->pathName(load_pin));
+  wire_length = 0;
   load_pins.push_back(load_pin);
 }
 
@@ -970,7 +974,7 @@ RepairDesign::makeRepeater(const char *where,
 
   // If the net is driven by an input port,
   // use the net as the repeater input net so the port stays connected to it.
-  if (resizer_->hasInputPort(net)
+  if (hasInputPort(net)
       || !have_output_port_load) {
     in_net = net;
     out_net = resizer_->makeUniqueNet();
@@ -1040,6 +1044,23 @@ RepairDesign::makeRepeater(const char *where,
   repeater_cap = resizer_->portCapacitance(buffer_input_port, corner_);
   repeater_fanout = resizer_->portFanoutLoad(buffer_input_port);
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
+}
+
+bool
+RepairDesign::hasInputPort(const Net *net)
+{
+  bool has_top_level_port = false;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isTopLevelPort(pin)
+        && network_->direction(pin)->isAnyInput()) {
+      has_top_level_port = true;
+      break;
+    }
+  }
+  delete pin_iter;
+  return has_top_level_port;
 }
 
 LibertyCell *

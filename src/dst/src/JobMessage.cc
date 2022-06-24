@@ -34,6 +34,8 @@
 #include <boost/serialization/unique_ptr.hpp>
 #include <sstream>
 
+#include "dst/BalancerJobDescription.h"
+
 using namespace dst;
 
 template <class Archive>
@@ -45,7 +47,8 @@ inline bool is_loading(const Archive& ar)
 template <class Archive>
 void JobMessage::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & type_;
+  (ar) & msg_type_;
+  (ar) & job_type_;
   (ar) & desc_;
   if (!is_loading(ar)) {
     std::string eop = EOP;

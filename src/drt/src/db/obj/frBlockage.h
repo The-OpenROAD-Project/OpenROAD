@@ -39,7 +39,7 @@ class frBlockage : public frBlockObject
 {
  public:
   // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1) {}
+  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1), index_in_owner_(0) {}
   // getters
   frBPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
@@ -48,20 +48,14 @@ class frBlockage : public frBlockObject
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
+  void setIndexInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
- protected:
+ private:
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_;
+  int index_in_owner_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & pin_;
-    (ar) & design_rule_width_;
-  }
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -32,13 +32,9 @@
 
 %{
 
-#include "ord/OpenRoad.hh"
 #include "dpo/Optdp.h"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
-
-namespace dpo {
-  
-}
 
 %}
 
@@ -48,12 +44,11 @@ namespace dpo {
 
 namespace dpo {
 
-void
-improve_placement_cmd(int seed,
-                      int max_displacement_x,
-                      int max_displacement_y)
+void improve_placement_cmd(int seed,
+                           int max_displacement_x,
+                           int max_displacement_y)
 {
-  dpo::Optdp *optdp = ord::OpenRoad::openRoad()->getOptdp();
+  dpo::Optdp* optdp = ord::OpenRoad::openRoad()->getOptdp();
   optdp->improvePlacement(seed, max_displacement_x, max_displacement_y);
 }
 

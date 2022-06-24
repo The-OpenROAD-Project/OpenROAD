@@ -30,6 +30,8 @@
 
 #include "db/drObj/drShape.h"
 #include "db/taObj/taShape.h"
+#include "distributed/frArchive.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -59,3 +61,20 @@ frPatchWire::frPatchWire(const drPatchWire& in)
   layer_ = in.getLayerNum();
   owner_ = nullptr;
 }
+
+template <class Archive>
+void frShape::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frPinFig>(*this);
+  (ar) & index_in_owner_;
+  serializeBlockObject(ar, owner_);
+}
+
+
+template void frShape::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void frShape::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

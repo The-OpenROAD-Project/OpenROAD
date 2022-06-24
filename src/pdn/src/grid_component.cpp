@@ -252,10 +252,28 @@ void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
+void GridComponent::removeObstructions(ShapeTreeMap& obstructions) const
+{
+  for (const auto& [layer, shapes] : shapes_) {
+    auto& obs = obstructions[layer];
+    for (const auto& [box, shape] : shapes) {
+      obs.remove({shape->getObstructionBox(), shape});
+    }
+  }
+}
+
 void GridComponent::getShapes(ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     shapes[layer].insert(layer_shapes.begin(), layer_shapes.end());
+  }
+}
+
+void GridComponent::removeShapes(ShapeTreeMap& shapes) const
+{
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    auto& other_shapes = shapes[layer];
+    other_shapes.remove(layer_shapes.begin(), layer_shapes.end());
   }
 }
 

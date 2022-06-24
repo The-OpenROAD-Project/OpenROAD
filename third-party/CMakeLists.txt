@@ -45,3 +45,7 @@ if (NOT USE_SYSTEM_ABC)
   add_subdirectory(abc)
 
 endif()
+
+# make sure not to include readline headers to avoid extra dependencies
+# readline is not needed since we call abc from c++
+set(ABC_USE_NO_READLINE 1)

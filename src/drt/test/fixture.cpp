@@ -95,10 +95,10 @@ void Fixture::setupTech(frTechObject* tech)
 }
 
 frMaster* Fixture::makeMacro(const char* name,
-                            frCoord originX,
-                            frCoord originY,
-                            frCoord sizeX,
-                            frCoord sizeY)
+                             frCoord originX,
+                             frCoord originY,
+                             frCoord sizeX,
+                             frCoord sizeY)
 {
   auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
@@ -225,24 +225,26 @@ void Fixture::makeDesign()
   USEMINSPACING_OBS = false;
 }
 
-void Fixture::makeCornerConstraint(frLayerNum layer_num,
-                                   frCoord eolWidth,
-                                   frCornerTypeEnum type)
+frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
+    frLayerNum layer_num,
+    frCoord eolWidth,
+    frCornerTypeEnum type)
 {
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
-
-  con->setCornerType(type);
-  con->setSameXY(true);
+  auto rptr = con.get();
+  rptr->setCornerType(type);
+  rptr->setSameXY(true);
   if (eolWidth >= 0) {
-    con->setEolWidth(eolWidth);
+    rptr->setEolWidth(eolWidth);
   }
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58CornerSpacingConstraint(con.get());
+  layer->addLef58CornerSpacingConstraint(rptr);
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeSpacingConstraint(frLayerNum layer_num)
@@ -416,27 +418,28 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
-std::shared_ptr<frLef58SpacingEndOfLineConstraint>
-Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
-                                       frCoord space,
-                                       frCoord width,
-                                       frCoord within)
+frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
+    frLayerNum layer_num,
+    frCoord space,
+    frCoord width,
+    frCoord within)
 {
-  auto con = std::make_shared<frLef58SpacingEndOfLineConstraint>();
+  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
+  auto con = uCon.get();
   con->setEol(space, width);
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
   withinCon->setEolWithin(within);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58SpacingEndOfLineConstraint(con.get());
-  tech->addConstraint(con);
+  layer->addLef58SpacingEndOfLineConstraint(con);
+  tech->addUConstraint(std::move(uCon));
   return con;
 }
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord par_space,
     fr::frCoord par_within,
     bool two_edges)
@@ -451,7 +454,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord min_max_length,
     bool max,
     bool two_sides)
@@ -465,7 +468,7 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
 Fixture::makeLef58SpacingEolCutEncloseConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     frCoord encloseDist,
     frCoord cutToMetalSpacing,
     bool above,
@@ -497,7 +500,7 @@ void Fixture::makeCutClass(frLayerNum layer_num,
 void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
                                  odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
-  auto con = make_shared<frLef58CutSpacingTableConstraint>(dbRule);
+  auto con = make_unique<frLef58CutSpacingTableConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   if (dbRule->isLayerValid()) {
     if (dbRule->isSameMetal()) {
@@ -516,7 +519,7 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
       layer->setLef58DiffNetCutSpcTblConstraint(con.get());
     }
   }
-  design->getTech()->addConstraint(con);
+  design->getTech()->addUConstraint(std::move(con));
 }
 
 frNet* Fixture::makeNet(const char* name)

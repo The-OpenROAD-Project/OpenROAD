@@ -93,14 +93,7 @@ class drPin : public drBlockObject
   drNet* net_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<drBlockObject>(*this);
-    (ar) & term_;
-    (ar) & accessPatterns_;
-    (ar) & net_;
-  }
-
+  void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;
 };
 }  // namespace fr

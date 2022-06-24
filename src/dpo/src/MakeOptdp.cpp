@@ -42,40 +42,35 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *dpo_tcl_inits[];
+extern const char* dpo_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int
-Dpo_Init(Tcl_Interp *interp);
+extern int Dpo_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-dpo::Optdp *
-makeOptdp()
+dpo::Optdp* makeOptdp()
 {
   return new dpo::Optdp;
 }
 
-void
-deleteOptdp(dpo::Optdp *optdp)
+void deleteOptdp(dpo::Optdp* optdp)
 {
   delete optdp;
 }
 
-void
-initOptdp(OpenRoad *openroad)
+void initOptdp(OpenRoad* openroad)
 {
-  Tcl_Interp *tcl_interp = openroad->tclInterp();
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Dpo_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpo_tcl_inits);
-  //openroad->getOptdp()->init(openroad);
-  openroad->getOptdp()->init(openroad->getDb(),
-                             openroad->getLogger(),
-                             openroad->getOpendp());
+  // openroad->getOptdp()->init(openroad);
+  openroad->getOptdp()->init(
+      openroad->getDb(), openroad->getLogger(), openroad->getOpendp());
 }
 
 }  // namespace ord

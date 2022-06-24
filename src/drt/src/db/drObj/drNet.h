@@ -106,7 +106,7 @@ class drNet : public drBlockObject
   void addPin(std::unique_ptr<drPin> pinIn)
   {
     pinIn->setNet(this);
-    // pinIn->setId(pins.size());
+    pinIn->setId(pins_.size());
     pins_.push_back(std::move(pinIn));
   }
   void addRoute(std::unique_ptr<drConnFig> in, bool isExt = false)
@@ -264,29 +264,7 @@ class drNet : public drBlockObject
 
   drNet() {} // for serialization
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<drBlockObject>(*this);
-    (ar) & pins_;
-    (ar) & extConnFigs_;
-    (ar) & routeConnFigs_;
-    (ar) & bestRouteConnFigs_;
-    (ar) & fNetTerms_;
-    (ar) & fNet_;
-    (ar) & modified_;
-    (ar) & numMarkers_;
-    (ar) & numPinsIn_;
-    (ar) & markerDist_;
-    (ar) & allowRipup_;
-    (ar) & pinBox_;
-    (ar) & ripup_;
-    (ar) & numReroutes_;
-    (ar) & nRipupAvoids_;
-    (ar) & maxRipupAvoids_;
-    (ar) & inQueue_;
-    (ar) & routed_;
-    (ar) & origGuides_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };

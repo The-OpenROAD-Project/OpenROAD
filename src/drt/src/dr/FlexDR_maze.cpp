@@ -1516,6 +1516,26 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
   return true;
 }
 
+bool FlexDRWorker::mazeIterInit_sortRerouteQueue(
+    int mazeIter,
+    vector<RouteQueueEntry>& rerouteNets)
+{
+  auto rerouteNetsComp
+      = [](RouteQueueEntry const& a, RouteQueueEntry const& b) {
+          auto block1 = a.block;
+          auto block2 = b.block;
+          if (block1->typeId() == block2->typeId())
+            return block1->getId() < block2->getId();
+          else
+            return block1->typeId() < block2->typeId();
+        };
+  // sort
+  if (mazeIter == 0) {
+    sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
+  }
+  return true;
+}
+
 void FlexDRWorker::mazeNetInit(drNet* net)
 {
   gridGraph_.resetStatus();

@@ -195,7 +195,8 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
-          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end())
+          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
+              && !openSta_->sdc()->isLeafPinClock(network_->dbToSta(outputPin)))
             initOneClockTree(outputNet, sdcClockName, clockBuilder);
         }
       }

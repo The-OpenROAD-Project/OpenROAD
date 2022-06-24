@@ -28,6 +28,7 @@
 
 #pragma once
 #include <boost/asio.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 #include "WorkerConnection.h"
 
@@ -41,19 +42,21 @@ class Worker
 {
  public:
   // constructor for accepting connection from client
-  Worker(asio::io_service& io_service,
-         Distributed* dist,
+  Worker(Distributed* dist,
          utl::Logger* logger,
          const char* ip,
          unsigned short port);
+  void run();
+  ~Worker();
 
  private:
+  asio::io_service service_;
   tcp::acceptor acceptor_;
-  asio::io_service* service;
   Distributed* dist_;
   utl::Logger* logger_;
   void start_accept();
-  void handle_accept(WorkerConnection::pointer connection,
+  void handle_accept(boost::shared_ptr<WorkerConnection> connection,
                      const boost::system::error_code& err);
+  friend class WorkerConnection;
 };
 }  // namespace dst

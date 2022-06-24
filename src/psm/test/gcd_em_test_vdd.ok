@@ -32,10 +32,10 @@
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V
 Average IR drop  : 1.72e-04 V
-Worstcase IR drop: 2.94e-04 V
+Worstcase IR drop: 3.03e-04 V
 ######################################
 ########## EM analysis ###############
-Maximum current: 4.54e-05 A
+Maximum current: 4.53e-05 A
 Average current: 1.06e-06 A
 Number of resistors: 1126
 ######################################

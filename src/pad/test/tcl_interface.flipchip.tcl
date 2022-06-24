@@ -83,8 +83,8 @@ define_pad_cell \
 define_pad_cell \
   -name PAD_FILL5 \
   -type fill \
-  -cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H} \
-  -orient {bottom R0 right MY top R180 left MX} \
+  -cell_name {bottom PAD_FILL5_VR right PAD_FILL5_HR top PAD_FILL5_VR left PAD_FILL5_HR} \
+  -orient {bottom R180 right MX top R0 left MY} \
   -physical_only
 
 define_pad_cell \
@@ -129,9 +129,10 @@ set_padring_options \
   -power  {VDD DVDD_0 DVDD_1} \
   -ground {VSS DVSS_0 DVSS_1} \
   -offsets 35 \
-  -pin_layer metal10 \
   -pad_inst_pattern "%s" \
   -pad_pin_pattern "p_%s" \
+  -pad_pin_layer metal10 \
+  -pin_layer metal9 \
   -connect_by_abutment {SNS RETN DVDD DVSS}
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
@@ -143,7 +144,7 @@ puts "No more errors expected"
 
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
 #
-add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {origin {x  140 y   35}}
+add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {origin {x  175 y   35}}
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 23 col 1}}
 catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 0}}
 add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 1}

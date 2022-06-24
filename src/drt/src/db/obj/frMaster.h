@@ -103,7 +103,7 @@ class frMaster : public frBlockObject
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
   {
-    in->setOrderId(terms_.size());
+    in->setIndexInOwner(terms_.size());
     in->setMaster(this);
     terms_.push_back(std::move(in));
   }
@@ -150,26 +150,8 @@ class frMaster : public frBlockObject
   frString name_;
   dbMasterType masterType_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frMaster() = default;  // for serialization
-
-  friend class boost::serialization::access;
   friend class io::Parser;
 };
-
-template <class Archive>
-void frMaster::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & masterType_;
-  (ar) & terms_;
-  (ar) & blockages_;
-  (ar) & boundaries_;
-  (ar) & dieBox_;
-}
 }  // namespace fr
 
 #endif

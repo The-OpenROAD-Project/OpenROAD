@@ -100,9 +100,7 @@ using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyLibraryIterator;
 using sta::LibertyCellIterator;
-using sta::LibertyCellTimingArcSetIterator;
 using sta::TimingArcSet;
-using sta::TimingArcSetArcIterator;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
 using sta::FuncExpr;
@@ -173,6 +171,7 @@ Resizer::Resizer() :
   unique_inst_index_(1),
   resize_count_(0),
   inserted_buffer_count_(0),
+  buffer_moved_into_core_(false),
   max_wire_length_(0)
 {
 }
@@ -443,6 +442,7 @@ Resizer::bufferInputs()
   findBuffers();
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
+  buffer_moved_into_core_ = false;
 
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
@@ -520,6 +520,8 @@ Resizer::bufferOutputs()
   init();
   findBuffers();
   inserted_buffer_count_ = 0;
+  buffer_moved_into_core_ = false;
+
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
@@ -606,23 +608,6 @@ Resizer::bufferOutput(Pin *top_pin,
 ////////////////////////////////////////////////////////////////
 
 bool
-Resizer::hasInputPort(const Net *net)
-{
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)
-        && network_->direction(pin)->isAnyInput()) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
-}
-
-bool
 Resizer::hasPort(const Net *net)
 {
   bool has_top_level_port = false;
@@ -658,7 +643,8 @@ Resizer::driveResistance(const Pin *drvr_pin)
             float res;
             bool exists;
             drive->driveResistance(rf, min_max, res, exists);
-            max_res = max(max_res, res);
+            if (exists)
+              max_res = max(max_res, res);
           }
         }
       }
@@ -690,25 +676,6 @@ Resizer::hasFanout(Vertex *drvr)
   return edge_iter.hasNext();
 }
 
-void
-Resizer::makeEquivCells()
-{
-  LibertyLibrarySeq libs;
-  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    LibertyLibrary *lib = lib_iter->next();
-    // massive kludge until makeEquivCells is fixed to only incldue link cells
-    LibertyCellIterator cell_iter(lib);
-    if (cell_iter.hasNext()) {
-      LibertyCell *cell = cell_iter.next();
-      if (isLinkCell(cell))
-        libs.push_back(lib);
-    }
-  }
-  delete lib_iter;
-  sta_->makeEquivCells(&libs, nullptr);
-}
-
 static float
 targetLoadDist(float load_cap,
                float target_load)
@@ -734,6 +701,25 @@ Resizer::resizePreamble()
   makeEquivCells();
   findBuffers();
   findTargetLoads();
+}
+
+void
+Resizer::makeEquivCells()
+{
+  LibertyLibrarySeq libs;
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
+    // massive kludge until makeEquivCells is fixed to only incldue link cells
+    LibertyCellIterator cell_iter(lib);
+    if (cell_iter.hasNext()) {
+      LibertyCell *cell = cell_iter.next();
+      if (isLinkCell(cell))
+        libs.push_back(lib);
+    }
+  }
+  delete lib_iter;
+  sta_->makeEquivCells(&libs, nullptr);
 }
 
 int
@@ -1061,9 +1047,7 @@ Resizer::isRegOutput(Vertex *vertex)
   LibertyPort *port = network_->libertyPort(vertex->pin());
   if (port) {
     LibertyCell *cell = port->libertyCell();
-    LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
-    while (arc_set_iter.hasNext()) {
-      TimingArcSet *arc_set = arc_set_iter.next();
+    for (TimingArcSet *arc_set : cell->timingArcSets(nullptr, port)) {
       if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
         return true;
     }
@@ -1212,18 +1196,14 @@ Resizer::targetLoadCap(LibertyCell *cell)
 float
 Resizer::findTargetLoad(LibertyCell *cell)
 {
-  LibertyCellTimingArcSetIterator arc_set_iter(cell);
   float target_load_sum = 0.0;
   int arc_count = 0;
-  while (arc_set_iter.hasNext()) {
-    TimingArcSet *arc_set = arc_set_iter.next();
+  for (TimingArcSet *arc_set : cell->timingArcSets()) {
     TimingRole *role = arc_set->role();
     if (!role->isTimingCheck()
         && role != TimingRole::tristateDisable()
         && role != TimingRole::tristateEnable()) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
+      for (TimingArc *arc : arc_set->arcs()) {
         int in_rf_index = arc->fromEdge()->asRiseFall()->index();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float arc_target_load = findTargetLoad(cell, arc, 
@@ -1364,26 +1344,21 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
-  TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
-  if (arc_sets) {
-    for (TimingArcSet *arc_set : *arc_sets) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
-        GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
-        RiseFall *out_rf = arc->toEdge()->asRiseFall();
-        float in_cap = input->capacitance(in_rf, max_);
-        float load_cap = in_cap * tgt_slew_load_cap_factor;
-        ArcDelay arc_delay;
-        Slew arc_slew;
-        model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
-                         arc_delay, arc_slew);
-        model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
-                         arc_delay, arc_slew);
-        slews[out_rf->index()] += arc_slew;
-        counts[out_rf->index()]++;
-      }
+  for (TimingArcSet *arc_set : buffer->timingArcSets(input, output)) {
+    for (TimingArc *arc : arc_set->arcs()) {
+      GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
+      RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+      RiseFall *out_rf = arc->toEdge()->asRiseFall();
+      float in_cap = input->capacitance(in_rf, max_);
+      float load_cap = in_cap * tgt_slew_load_cap_factor;
+      ArcDelay arc_delay;
+      Slew arc_slew;
+      model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
+                       arc_delay, arc_slew);
+      model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
+                       arc_delay, arc_slew);
+      slews[out_rf->index()] += arc_slew;
+      counts[out_rf->index()]++;
     }
   }
 }
@@ -1659,9 +1634,9 @@ Resizer::makeUniqueNetName()
 {
   string node_name;
   Instance *top_inst = network_->topInstance();
-  do 
+  do {
     stringPrint(node_name, "net%d", unique_net_index_++);
-  while (network_->findNet(top_inst, node_name.c_str()));
+  } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
 
@@ -1684,10 +1659,10 @@ Resizer::makeUniqueInstName(const char *base_name,
                             bool underscore)
 {
   string inst_name;
-  do 
+  do {
     stringPrint(inst_name, underscore ? "%s_%d" : "%s%d",
                 base_name, unique_inst_index_++);
-  while (network_->findInstance(inst_name.c_str()));
+  } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
 
@@ -1764,14 +1739,10 @@ Resizer::gateDelays(LibertyPort *drvr_port,
   }
   const Pvt *pvt = dcalc_ap->operatingConditions();
   LibertyCell *cell = drvr_port->libertyCell();
-  LibertyCellTimingArcSetIterator set_iter(cell);
-  while (set_iter.hasNext()) {
-    TimingArcSet *arc_set = set_iter.next();
+  for (TimingArcSet *arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port
         && !arc_set->role()->isTimingCheck()) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        TimingArc *arc = arc_iter.next();
+      for (TimingArc *arc : arc_set->arcs()) {
         RiseFall *in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float in_slew = tgt_slews_[in_rf->index()];
@@ -1955,13 +1926,9 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
     Parasitic *drvr_parasitic = arc_delay_calc->findParasitic(drvr_pin,
                                                               RiseFall::rise(),
                                                               dcalc_ap);
-    LibertyCellTimingArcSetIterator set_iter(drvr_cell);
-    while (set_iter.hasNext()) {
-      TimingArcSet *arc_set = set_iter.next();
+    for (TimingArcSet *arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
-        TimingArcSetArcIterator arc_iter(arc_set);
-        while (arc_iter.hasNext()) {
-          TimingArc *arc = arc_iter.next();
+        for (TimingArc *arc : arc_set->arcs()) {
           RiseFall *in_rf = arc->fromEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
@@ -2339,17 +2306,25 @@ Resizer::setLocation(dbInst *db_inst,
   if (core_exists_) {
     dbMaster *master = db_inst->getMaster();
     int width = master->getWidth();
-    if (x < core_.xMin())
+    if (x < core_.xMin()) {
       x = core_.xMin();
-    else if (x > core_.xMax() - width)
+      buffer_moved_into_core_ = true;
+    }
+    else if (x > core_.xMax() - width) {
       // Make sure the instance is entirely inside core.
       x = core_.xMax() - width;
+      buffer_moved_into_core_ = true;
+    }
 
     int height = master->getHeight();
-    if (y < core_.yMin())
+    if (y < core_.yMin()) {
       y = core_.yMin();
-    else if (y > core_.yMax() - height)
+      buffer_moved_into_core_ = true;
+    }
+    else if (y > core_.yMax() - height) {
       y = core_.yMax() - height;
+      buffer_moved_into_core_ = true;
+    }
   }
 
   db_inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -2374,7 +2349,7 @@ Resizer::maxInputSlew(const LibertyPort *input,
   bool exists;
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
   // umich brain damage control
-  if (limit == 0.0)
+  if (!exists || limit == 0.0)
     limit = INF;
   return limit;
 }
@@ -2413,6 +2388,13 @@ Resizer::checkLoadSlews(const Pin *drvr_pin,
     }
   }
   delete pin_iter;
+}
+
+void
+Resizer::warnBufferMovedIntoCore()
+{
+  if (buffer_moved_into_core_)
+    logger_->warn(RSZ, 77, "some buffers were moved inside the core.");
 }
 
 void
