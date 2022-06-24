@@ -98,7 +98,7 @@ void Distributed::runLoadBalancer(const char* ip,
   try {
     asio::io_service io_service;
     LoadBalancer balancer(this, io_service, logger_, ip, workers_domain, port);
-    if (std::strcmp(workers_domain, "-1") != 0)
+    if (std::strcmp(workers_domain, "") != 0)
       for (auto worker : end_points_)
         balancer.addWorker(worker.ip, worker.port);
     io_service.run();

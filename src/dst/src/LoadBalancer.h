@@ -41,6 +41,7 @@ class Logger;
 }
 
 namespace dst {
+const int workers_discovery_period = 15; // time in seconds between retrying to find new workers on the network
 class Distributed;
 class LoadBalancer
 {

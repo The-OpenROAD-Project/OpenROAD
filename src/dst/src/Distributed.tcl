@@ -73,7 +73,7 @@ proc run_load_balancer { args } {
   if { [info exists keys(-workers_domain)] } {
     set workers_domain $keys(-workers_domain)
   } else {
-    set workers_domain "-1"
+    set workers_domain ""
   }
   dst::run_load_balancer $host $port $workers_domain
 }
