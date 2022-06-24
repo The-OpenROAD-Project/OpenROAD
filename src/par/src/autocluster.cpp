@@ -311,8 +311,7 @@ void AutoClusterMgr::createBundledIO()
 {
   // Get the floorplan information
 
-  Rect die_box;
-  block_->getDieArea(die_box);
+  Rect die_box = block_->getDieArea();
 
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
@@ -1793,8 +1792,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // Timing-driven flow
   findAdjacencies();
 
-  Rect die_box;
-  block_->getCoreArea(die_box);
+  Rect die_box = block_->getCoreArea();
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();

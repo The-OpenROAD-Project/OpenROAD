@@ -269,8 +269,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::dbBox* diode_bbox = diode_inst->getBBox();
   int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
 
-  odb::Rect core_area;
-  block_->getCoreArea(core_area);
+  odb::Rect core_area = block_->getCoreArea();
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
@@ -403,8 +402,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
 {
   for (odb::dbRow* row : block_->getRows()) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
 
     if (row_rect.contains(diode_rect)) {
       return true;

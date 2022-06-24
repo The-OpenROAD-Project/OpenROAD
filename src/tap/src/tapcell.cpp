@@ -205,8 +205,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
       if (!(checkSymmetry(endcap_master, subrow->getOrient()))) {
         continue;
       }
-      odb::Rect row_bb;
-      subrow->getBBox(row_bb);
+      odb::Rect row_bb = subrow->getBBox();
       auto row_ori = subrow->getOrient();
 
       const int llx = row_bb.xMin();
@@ -291,8 +290,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
 bool Tapcell::isXInRow(const int x, const vector<odb::dbRow*>& subrow)
 {
   for (odb::dbRow* row : subrow) {
-    odb::Rect row_bb;
-    row->getBBox(row_bb);
+    odb::Rect row_bb = row->getBBox();
     if (x >= row_bb.xMin() && x <= row_bb.xMax()) {
       return true;
     }
@@ -369,8 +367,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
 
   for (int row_idx = 0; row_idx < rows.size(); row_idx++) {
     vector<odb::dbRow*> subrows = rows[row_idx];
-    odb::Rect rowbb;
-    subrows[0]->getBBox(rowbb);
+    odb::Rect rowbb = subrows[0]->getBBox();
     const int row_y = rowbb.yMin();
     vector<vector<int>> row_fill_check;
     if (row_fills.find(row_y) != row_fills.end()) {
@@ -408,8 +405,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
         pitch = dist2;
       }
 
-      odb::Rect row_bb;
-      row->getBBox(row_bb);
+      odb::Rect row_bb = row->getBBox();
       const int llx = row_bb.xMin();
       const int urx = row_bb.xMax();
 
@@ -525,8 +521,7 @@ int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
 
   for (int cur_row = 0; cur_row < new_rows.size(); cur_row++) {
     for (odb::dbRow* subrow : new_rows[cur_row]) {
-      odb::Rect rowbb;
-      subrow->getBBox(rowbb);
+      odb::Rect rowbb = subrow->getBBox();
       const int row_y = rowbb.yMin();
       vector<vector<int>> row_fill_check;
       if (row_fills.find(row_y) != row_fills.end()) {
@@ -535,8 +530,7 @@ int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
         row_fill_check.clear();
       }
 
-      odb::Rect row_bb;
-      subrow->getBBox(row_bb);
+      odb::Rect row_bb = subrow->getBBox();
       const int endcapwidth = endcap_master->getWidth();
       const int llx = row_bb.xMin();
       const int x_start = llx + endcapwidth;
@@ -753,8 +747,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
       if (top_row < total_rows - 1) {
         odb::dbRow* top_row_inst = rows[top_row].front();
         odb::dbOrientType top_row_ori = top_row_inst->getOrient();
-        odb::Rect row_bb;
-        top_row_inst->getBBox(row_bb);
+        odb::Rect row_bb = top_row_inst->getBBox();
         const int top_row_y = row_bb.yMin();
 
         vector<vector<int>> row_fill_check;
@@ -771,8 +764,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
-          odb::Rect rowbb_;
-          rows[top_row].back()->getBBox(rowbb_);
+          odb::Rect rowbb_ = rows[top_row].back()->getBBox();
           row_end = rowbb_.xMax();
           row_end = row_end - corner_cell_width;
         }
@@ -827,8 +819,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
       if (bot_row >= 1) {
         odb::dbRow* bot_row_inst = rows[bot_row].front();
         odb::dbOrientType bot_row_ori = bot_row_inst->getOrient();
-        odb::Rect rowbb1;
-        bot_row_inst->getBBox(rowbb1);
+        odb::Rect rowbb1 = bot_row_inst->getBBox();
         const int bot_row_y = rowbb1.yMin();
 
         vector<vector<int>> row_fill_check;
@@ -845,8 +836,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
-          odb::Rect rowbb3;
-          rows[bot_row].back()->getBBox(rowbb3);
+          odb::Rect rowbb3 = rows[bot_row].back()->getBBox();
           row_end = rowbb3.xMax();
           row_end = row_end - corner_cell_width;
         }
@@ -914,8 +904,7 @@ const std::pair<int, int> Tapcell::getMinMaxX(
     int new_min_x;
     int new_max_x;
     for (odb::dbRow* row : subrow) {
-      odb::Rect row_bb;
-      row->getBBox(row_bb);
+      odb::Rect row_bb = row->getBBox();
       new_min_x = row_bb.xMin();
       new_max_x = row_bb.xMax();
       if (min_x == std::numeric_limits<int>::min()) {
@@ -995,8 +984,7 @@ std::map<std::pair<int, int>, vector<int>> Tapcell::getMacroOutlines(
     int xMin_pos = -1;
 
     for (int cur_subrow = 0; cur_subrow < subrow_count; cur_subrow++) {
-      odb::Rect currow_bb;
-      subrows[cur_subrow]->getBBox(currow_bb);
+      odb::Rect currow_bb = subrows[cur_subrow]->getBBox();
 
       xMin_pos = currow_bb.xMin();
       if (cur_subrow == 0 && xMin_pos == min_max_x.first) {
@@ -1094,8 +1082,7 @@ vector<vector<odb::dbRow*>> Tapcell::organizeRows()
   std::map<int, vector<odb::dbRow*>> rows_dict;
   // Gather rows according to yMin values
   for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
-    odb::Rect rowBB;
-    row->getBBox(rowBB);
+    odb::Rect rowBB = row->getBBox();
     rows_dict[rowBB.yMin()].push_back(row);
   }
 
@@ -1104,8 +1091,7 @@ vector<vector<odb::dbRow*>> Tapcell::organizeRows()
   for (const auto& [k, ignored] : rows_dict) {
     std::map<int, odb::dbRow*> in_row_dict;
     for (odb::dbRow* in_row : rows_dict[k]) {
-      odb::Rect row_BB;
-      in_row->getBBox(row_BB);
+      odb::Rect row_BB = in_row->getBBox();
       in_row_dict.insert({row_BB.xMin(), in_row});
     }
     // Organize sub rows left to right

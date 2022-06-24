@@ -142,7 +142,7 @@ void
 Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
 }
 
 void

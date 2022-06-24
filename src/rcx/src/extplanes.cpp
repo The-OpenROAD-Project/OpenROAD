@@ -77,8 +77,7 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb) {
   //	rectTable[k].reset( INT_MAX, INT_MAX, INT_MIN, INT_MIN );
   // getBboxPerLayer(rectTable);
 
-  odb::Rect maxRect;
-  _block->getDieArea(maxRect);
+  odb::Rect maxRect = _block->getDieArea();
 
   if (bb != NULL) {
     maxRect = *bb;

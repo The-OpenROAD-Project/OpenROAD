@@ -268,8 +268,7 @@ bool dbFlatten::flatten(dbBlock* parent,
     name += _hier_d;
     name += "ADS_BLOCK_REGION";
     dbRegion* block_region = dbRegion::create(parent, name.c_str());
-    Rect bndry;
-    child->getDieArea(bndry);
+    Rect bndry = child->getDieArea();
     _transform.apply(bndry);
     dbBox::create(
         block_region, bndry.xMin(), bndry.yMin(), bndry.xMax(), bndry.yMax());

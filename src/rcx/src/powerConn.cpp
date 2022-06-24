@@ -942,8 +942,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst, odb::dbNet* net,
 
 uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer, int* xyLo,
                                        int* xyHi, uint* pitch) {
-  odb::Rect maxRect;
-  _block->getDieArea(maxRect);
+  odb::Rect maxRect = _block->getDieArea();
 
   uint width = layer->getWidth();
   uint p = layer->getPitch();
@@ -4314,7 +4313,7 @@ void extMain::setupDirNaming() {
                   _block->getId(), _block->getConstName(), ii->getId(),
                   ii->getConstName());
 
-    _block->getDieArea(_extMaxRect);
+    _extMaxRect = _block->getDieArea();
     // odb::dbBox *bb= ii->getBBox();
     // bb->getBox(_extMaxRect);
 
@@ -4335,7 +4334,7 @@ void extMain::setupDirNaming() {
       logger_->info(RCX, 342, "Extract Block {} name= {}", _block->getId(),
                     _block->getConstName());
     }
-    _block->getDieArea(_extMaxRect);
+    _extMaxRect = _block->getDieArea();
   }
   logger_->info(RCX, 343, "nodeBlockPrefix={} nodeInstPrefix={}",
                 _node_blk_prefix, _node_inst_prefix);

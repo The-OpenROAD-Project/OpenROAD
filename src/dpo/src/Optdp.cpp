@@ -721,10 +721,8 @@ void Optdp::createArchitecture()
 
   dbSet<dbRow> rows = block->getRows();
 
-  odb::Rect coreRect;
-  block->getCoreArea(coreRect);
-  odb::Rect dieRect;
-  block->getDieArea(dieRect);
+  odb::Rect coreRect = block->getCoreArea();
+  odb::Rect dieRect = block->getDieArea();
 
   for (dbRow* row : rows) {
     if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {

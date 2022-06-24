@@ -597,7 +597,7 @@ uint extMain::initSearchForNets(int* X1, int* Y1, uint* pitchTable,
   if ((extRect.dx() > 0) && (extRect.dy() > 0)) {
     maxRect = extRect;
   } else {
-    _block->getDieArea(maxRect);
+    maxRect = _block->getDieArea();
     if (!((maxRect.dx() > 0) && (maxRect.dy() > 0)))
       logger_->error(RCX, 81,
                      "Die Area for the block has 0 size, or is undefined!");

@@ -581,8 +581,7 @@ void FollowPinShape::updateTermConnections()
   const odb::Rect& rect = getRect();
   std::set<odb::dbRow*> remove_rows;
   for (auto* row : rows_) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
     if (!rect.intersects(row_rect)) {
       remove_rows.insert(row);
     }
@@ -609,8 +608,7 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 
   // merge with rows to ensure proper overlap
   for (auto* row : rows_) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
     if (is_horizontal) {
       min_shape.set_xlo(std::min(min_shape.xMin(), row_rect.xMin()));
       min_shape.set_xhi(std::max(min_shape.xMax(), row_rect.xMax()));

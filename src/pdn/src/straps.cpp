@@ -338,8 +338,7 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   auto rows = getDomain()->getRows();
   if (!rows.empty()) {
     auto* row = *rows.begin();
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     setPitch(2 * bbox.dy());
 
     if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
@@ -391,8 +390,7 @@ void FollowPins::makeShapes(const ShapeTreeMap& other_shapes)
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
 
     int x0 = bbox.xMin();
@@ -516,8 +514,7 @@ void PadDirectConnectionStraps::initialize(
   odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
-  odb::Rect core_rect;
-  block->getCoreArea(core_rect);
+  odb::Rect core_rect = block->getCoreArea();
 
   const bool is_north = inst_rect.yMin() > core_rect.yMax();
   const bool is_south = inst_rect.yMax() < core_rect.yMin();
@@ -657,8 +654,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
   odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
-  odb::Rect die_rect;
-  block->getDieArea(die_rect);
+  odb::Rect die_rect = block->getDieArea();
 
   odb::dbTransform transform;
   inst->getTransform(transform);

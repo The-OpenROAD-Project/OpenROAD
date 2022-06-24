@@ -190,8 +190,7 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
 {
   RowTree row_search;
   for (auto* row : grid_->getDomain()->getRows()) {
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
 
     row_search.insert({Shape::rectToBox(bbox), row});
   }
@@ -209,8 +208,7 @@ std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(odb::dbInst* inst, cons
        itr != row_search.qend();
        itr++) {
     auto* row = itr->second;
-    odb::Rect row_box;
-    row->getBBox(row_box);
+    odb::Rect row_box = row->getBBox();
 
     const auto overlap = row_box.intersect(box);
     if (overlap.minDXDY() != 0) {
@@ -231,8 +229,7 @@ void GridSwitchedPower::build()
     return;
   }
 
-  odb::Rect core_area;
-  grid_->getBlock()->getCoreArea(core_area);
+  odb::Rect core_area = grid_->getBlock()->getCoreArea();
 
   auto* target = getLowestStrap();
   if (target == nullptr) {
@@ -259,8 +256,7 @@ void GridSwitchedPower::build()
 
     debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 2, "Adding power switches in row: {}", row->getName());
 
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     std::vector<odb::Rect> straps;
     for (auto itr = targets.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
          itr != targets.qend();

@@ -275,7 +275,7 @@ void
 Resizer::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0
                    && core_.xMax() == 0
                    && core_.yMin() == 0

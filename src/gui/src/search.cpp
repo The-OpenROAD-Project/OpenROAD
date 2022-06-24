@@ -450,8 +450,7 @@ void Search::addObstruction(odb::dbObstruction* obs)
 
 void Search::addRow(odb::dbRow* row)
 {
-  odb::Rect bbox;
-  row->getBBox(bbox);
+  odb::Rect bbox = row->getBBox();
   Box box = convertRect(bbox);
   Polygon poly;
   bg::convert(box, poly);

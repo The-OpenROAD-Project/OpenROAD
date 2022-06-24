@@ -142,8 +142,7 @@ const odb::Rect VoltageDomain::getDomainArea() const
   if (hasRegion()) {
     return getRegionBoundary(region_);
   } else {
-    odb::Rect core;
-    block_->getCoreArea(core);
+    odb::Rect core = block_->getCoreArea();
     return core;
   }
 }
@@ -179,8 +178,7 @@ const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
   const odb::Rect region = getRegionBoundary(region_);
 
   for (auto* row : block_->getRows()) {
-    odb::Rect row_bbox;
-    row->getBBox(row_bbox);
+    odb::Rect row_bbox = row->getBBox();
 
     if (row_bbox.overlaps(region)) {
       rows.push_back(row);

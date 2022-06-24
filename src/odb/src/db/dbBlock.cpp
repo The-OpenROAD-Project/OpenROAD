@@ -1895,27 +1895,26 @@ void dbBlock::setDieArea(const Rect& new_area)
   }
 }
 
-void dbBlock::getDieArea(Rect& r)
+Rect dbBlock::getDieArea()
 {
   _dbBlock* block = (_dbBlock*) this;
-  r = block->_die_area;
+  return block->_die_area;
 }
 
-void dbBlock::getCoreArea(Rect& rect)
+Rect dbBlock::getCoreArea()
 {
   auto rows = getRows();
   if (rows.size() > 0) {
+    Rect rect;
     rect.mergeInit();
 
     for (dbRow* row : rows) {
-      Rect rowRect;
-      row->getBBox(rowRect);
-      rect.merge(rowRect);
+      rect.merge(row->getBBox());
     }
-  } else {
-    // Default to die area if there aren't any rows.
-    getDieArea(rect);
-  }
+    return rect;
+  } 
+  // Default to die area if there aren't any rows.
+  return getDieArea();
 }
 
 FILE* dbBlock::getPtFile()

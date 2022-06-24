@@ -597,8 +597,7 @@ Rect LayoutViewer::getBounds() const
 {
   Rect bbox = block_->getBBox()->getBox();
 
-  Rect die;
-  block_->getDieArea(die);
+  Rect die = block_->getDieArea();
 
   bbox.merge(die);
 
@@ -861,8 +860,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
   };
 
   // get die bounding box
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   check_rect(bbox);
 
   if (options_->areRegionsVisible()) {
@@ -2003,8 +2001,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }

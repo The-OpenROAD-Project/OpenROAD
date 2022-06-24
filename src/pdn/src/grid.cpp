@@ -356,8 +356,7 @@ const odb::Rect Grid::getGridArea() const
     return odb::Rect();
   }
 
-  odb::Rect rect;
-  getBlock()->getDieArea(rect);
+  odb::Rect rect = getBlock()->getDieArea();
   return rect;
 }
 

@@ -69,7 +69,7 @@ void
 Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
 
   importClear();
   examineRows();
