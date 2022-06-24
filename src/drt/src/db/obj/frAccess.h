@@ -56,7 +56,6 @@ class frAccessPoint : public frBlockObject
   }
   frAccessPoint() : frAccessPoint({0, 0}, 0) {}
   // getters
-  void getPoint(Point& in) const { in = point_; }
   const Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
   bool hasAccess() const

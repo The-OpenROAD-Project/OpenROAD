@@ -170,12 +170,10 @@ int FlexTA::initTA_helper(int iter,
     if (isH) {
       for (int i = offset; i < (int) ygp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
-        Rect beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
-        getDesign()->getTopBlock()->getGCellBox(
+        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
+        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
             Point((int) xgp.getCount() - 1,
-                    min(i + size - 1, (int) ygp.getCount() - 1)),
-            endBox);
+                    min(i + size - 1, (int) ygp.getCount() - 1)));
         Rect routeBox(
             beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
         Rect extBox;
@@ -194,12 +192,10 @@ int FlexTA::initTA_helper(int iter,
     } else {
       for (int i = offset; i < (int) xgp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
-        Rect beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
-        getDesign()->getTopBlock()->getGCellBox(
+        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
+        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
             Point(min(i + size - 1, (int) xgp.getCount() - 1),
-                    (int) ygp.getCount() - 1),
-            endBox);
+                    (int) ygp.getCount() - 1));
         Rect routeBox(
             beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
         Rect extBox;
@@ -222,12 +218,10 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) ygp.getCount(); i += size) {
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
-        Rect beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
-        getDesign()->getTopBlock()->getGCellBox(
+        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
+        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
             Point((int) xgp.getCount() - 1,
-                    min(i + size - 1, (int) ygp.getCount() - 1)),
-            endBox);
+                    min(i + size - 1, (int) ygp.getCount() - 1)));
         Rect routeBox(
             beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
         Rect extBox;
@@ -245,12 +239,10 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) xgp.getCount(); i += size) {
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
-        Rect beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
-        getDesign()->getTopBlock()->getGCellBox(
+        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
+        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
             Point(min(i + size - 1, (int) xgp.getCount() - 1),
-                    (int) ygp.getCount() - 1),
-            endBox);
+                    (int) ygp.getCount() - 1));
         Rect routeBox(
             beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
         Rect extBox;

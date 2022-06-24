@@ -629,11 +629,10 @@ bool dbWire::getBBox(Rect& bbox)
   bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   dbWireShapeItr itr;
   dbShape s;
-  Rect r;
-  uint cnt = 0;
+  uint cnt = 0; 
 
   for (itr.begin(this); itr.next(s);) {
-    s.getBox(r);
+    Rect r = s.getBox();
     bbox.merge(r);
     ++cnt;
   }

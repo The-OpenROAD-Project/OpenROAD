@@ -37,7 +37,7 @@ using namespace fr;
 
 frVia::frVia(const drVia& in) : owner_(nullptr), index_in_owner_(0)
 {
-  in.getOrigin(origin_);
+  origin_ = in.getOrigin();
   viaDef_ = in.getViaDef();
   setTapered(in.isTapered());
   setBottomConnected(in.isBottomConnected());

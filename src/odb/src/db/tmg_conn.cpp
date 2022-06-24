@@ -676,7 +676,6 @@ void tmg_conn::detachTilePins()
   tmg_rcterm* tx;
   dbBTerm* bterm;
   dbShape pin;
-  Rect rectb;
   dbTechVia* tv;
   _slicedTilePinCnt = 0;
   bool sliceDone;
@@ -687,7 +686,7 @@ void tmg_conn::detachTilePins()
     bterm = tx->_bterm;
     if (!bterm->getFirstPin(pin) || pin.isVia())
       continue;
-    pin.getBox(rectb);
+    Rect rectb = pin.getBox();
     rtlb = pin.getTechLayer()->getRoutingLevel();
     sliceDone = false;
     for (k = 0; !sliceDone && k < _termN; k++) {
@@ -761,15 +760,13 @@ void tmg_conn::detachTilePins()
 void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
 {
   int ii;
-  // if (bterm->isSetTilePin()) {
   for (ii = 0; ii < _slicedTilePinCnt; ii++) {
     if (_slicedTileBTerm[ii] == bterm) {
       rect.reset(_stbtx1[ii], _stbty1[ii], _stbtx2[ii], _stbty2[ii]);
       return;
     }
   }
-  //}
-  pin.getBox(rect);
+  rect = pin.getBox();
   return;
 }
 

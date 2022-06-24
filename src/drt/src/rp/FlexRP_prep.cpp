@@ -321,8 +321,7 @@ void FlexRP::prep_cutSpcTbl()
       if (viaDef == nullptr)
         continue;
       frVia via(viaDef);
-      Rect tmpBx;
-      via.getCutBBox(tmpBx);
+      Rect tmpBx = via.getCutBBox();
       frString cutClass1 = "";
       auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
       if (cutClassIdx1 >= 0)
@@ -351,7 +350,7 @@ void FlexRP::prep_cutSpcTbl()
             dbRule->getSecondLayer()->getName());
         viaDef = secondLayer->getDefaultViaDef();
         if (viaDef != nullptr) {
-          via.getCutBBox(tmpBx);
+          tmpBx = via.getCutBBox();
           frString cutClass2 = "";
           auto cutClassIdx2
               = secondLayer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
@@ -611,9 +610,9 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(
   frVia via1(viaDef);
   Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   int width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
@@ -820,11 +819,11 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
   frVia via1(viaDef1);
   frVia via2(viaDef2);
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(enclosureBox1);
-    via2.getLayer2BBox(enclosureBox2);
+    enclosureBox1 = via1.getLayer1BBox();
+    enclosureBox2 = via2.getLayer2BBox();
   } else {
-    via1.getLayer2BBox(enclosureBox1);
-    via2.getLayer1BBox(enclosureBox2);
+    enclosureBox1 = via1.getLayer2BBox();
+    enclosureBox2 = via2.getLayer1BBox();
   }
   Rect* shifting, *other;
   //get the rect with lesser width (the shifting one)
@@ -980,17 +979,17 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
   frVia via1(viaDef1);
   frVia via2(viaDef2);
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(enclosureBox1);
+    enclosureBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(enclosureBox1);
+    enclosureBox1 = via1.getLayer2BBox();
   }
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(enclosureBox2);
+    enclosureBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(enclosureBox2);
+    enclosureBox2 = via2.getLayer2BBox();
   }
-  via1.getCutBBox(cutBox1);
-  via2.getCutBBox(cutBox2);
+  cutBox1 = via1.getCutBBox();
+  cutBox2 = via2.getCutBBox();
   pair<frCoord, frCoord> range;
   frCoord reqSpcVal = 0;
   // check via1 cut layer to lNum
@@ -1082,21 +1081,21 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   bool isCurrDirY = !isCurrDirX;
   frVia via1(viaDef1);
-  Rect viaBox1, viaBox2, cutBox1, cutBox2;
+  Rect viaBox1, viaBox2;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
 
   frVia via2(viaDef2);
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
-  via1.getCutBBox(cutBox1);
-  via2.getCutBBox(cutBox2);
+  Rect cutBox1 = via1.getCutBBox();
+  Rect cutBox2 = via2.getCutBBox();
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
@@ -1218,14 +1217,14 @@ void FlexRP::prep_via2viaForbiddenLen_minStepGF12(
   frVia via1(viaDef1);
   frVia via2(viaDef2);
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(enclosureBox1);
+    enclosureBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(enclosureBox1);
+    enclosureBox1 = via1.getLayer2BBox();
   }
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(enclosureBox2);
+    enclosureBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(enclosureBox2);
+    enclosureBox2 = via2.getLayer2BBox();
   }
 
   frCoord enclosureBox1Span = enclosureBox1.yMax() - enclosureBox1.yMin();
@@ -1254,29 +1253,29 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     isVia1Above = true;
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  via1.getCutBBox(cutBox1);
+  Rect cutBox1 = via1.getCutBBox();
   int width1 = viaBox1.minDXDY();
   int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
     isVia2Above = true;
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  via2.getCutBBox(cutBox2);
+  Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
   int length2 = viaBox2.maxDXDY();
 
@@ -1364,22 +1363,22 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(
   bool isCurrDirY = !isCurrDirX;
 
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
-  via1.getCutBBox(cutBox1);
+  Rect cutBox1 = via1.getCutBBox();
 
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
-  via2.getCutBBox(cutBox2);
+  Rect cutBox2 = via2.getCutBBox();
 
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
@@ -1521,9 +1520,9 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(
   frVia via1(viaDef1);
   Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   auto width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
@@ -1535,9 +1534,9 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(
   frVia via2(viaDef2);
   Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
   auto width2 = viaBox2.minDXDY();
   bool isVia2Fat = isCurrDirX
@@ -1584,10 +1583,10 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(
   // check in layer2 if two vias are in same layer
   if (viaDef1 == viaDef2) {
     if (viaDef1->getLayer1Num() == lNum) {
-      via1.getLayer2BBox(viaBox1);
+      viaBox1 = via1.getLayer2BBox();
       lNum = lNum + 2;
     } else {
-      via1.getLayer1BBox(viaBox1);
+      viaBox1 = via1.getLayer1BBox();
       lNum = lNum - 2;
     }
     minNonOverlapDist = isCurrDirX ? (viaBox1.xMax() - viaBox1.xMin())

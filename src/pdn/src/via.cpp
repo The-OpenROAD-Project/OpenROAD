@@ -179,8 +179,7 @@ DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
   for (auto& shape : shapes) {
     auto* layer = shape.getTechLayer();
     if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-      odb::Rect box_shape;
-      shape.getBox(box_shape);
+      odb::Rect box_shape = shape.getBox();
       layer_rects[layer->getRoutingLevel()].insert(box_shape);
     }
   }

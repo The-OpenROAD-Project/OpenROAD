@@ -3040,11 +3040,10 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       continue;
     }
 
-    Rect markerBBox;
     Point origin;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
-    marker->getBBox(markerBBox);
+    Rect markerBBox = marker->getBBox();
     if((int)markerBBox.maxDXDY() < (frCoord) layer->getWidth())
       continue;
     workerRegionQuery.query(markerBBox, lNum, results);
@@ -3057,8 +3056,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      Point tmpOrigin;
-      obj->getOrigin(tmpOrigin);
+      Point tmpOrigin = obj->getOrigin();
       frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
       if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {
         vias[tmpOrigin].push_back(obj);

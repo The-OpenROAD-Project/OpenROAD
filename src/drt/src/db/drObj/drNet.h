@@ -95,7 +95,7 @@ class drNet : public drBlockObject
   int getNumPinsIn() const { return numPinsIn_; }
   bool hasMarkerDist() const { return (markerDist_ == -1); }
   frCoord getMarkerDist() const { return markerDist_; }
-  void getPinBox(Rect& in) { in = pinBox_; }
+  Rect getPinBox() { return pinBox_; }
   bool isRipup() const { return allowRipup_ ? ripup_ : false; }
   int getNumReroutes() const { return numReroutes_; }
   bool isInQueue() const { return inQueue_; }
