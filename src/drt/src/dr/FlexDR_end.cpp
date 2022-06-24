@@ -544,8 +544,6 @@ void FlexDRWorker::endAddNets(
 {
   for (auto& net : nets_) {
     if (!net->isModified()) {
-        if (net->getFrNet()->getName() == "_012936_")
-            cout << "WAS NOT MOD!" << endl;
       continue;
     }
     for (auto& connFig : net->getBestRouteConnFigs()) {
