@@ -51,8 +51,7 @@ void extSpef::initSearchForNets() {
   dbSet<dbTechLayer>::iterator itr;
   dbTrackGrid* tg = NULL;
 
-  Rect maxRect;
-  _block->getDieArea(maxRect);
+  Rect maxRect = _block->getDieArea();
 
   std::vector<int> trackXY(32000);
   uint n = 0;

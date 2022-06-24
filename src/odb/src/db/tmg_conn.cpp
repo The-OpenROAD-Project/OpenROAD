@@ -351,7 +351,6 @@ void tmg_conn::loadSWire(dbNet* net)
   dbSet<dbSBox>::iterator itb;
   dbSBox* sbox;
   dbShape shape;
-  Rect rect;
   int x1, y1, x2, y2;
   dbTechLayer* layer1 = NULL;
   dbTechLayer* layer2 = NULL;
@@ -363,7 +362,7 @@ void tmg_conn::loadSWire(dbNet* net)
     sboxes = sw->getWires();
     for (itb = sboxes.begin(); itb != sboxes.end(); ++itb) {
       sbox = *itb;
-      sbox->getBox(rect);
+      Rect rect = sbox->getBox();
       if (sbox->isVia()) {
         x1 = (rect.xMin() + rect.xMax()) / 2;
         x2 = x1;
@@ -677,7 +676,7 @@ void tmg_conn::detachTilePins()
   tmg_rcterm* tx;
   dbBTerm* bterm;
   dbShape pin;
-  Rect rectb, recti;
+  Rect rectb;
   dbTechVia* tv;
   _slicedTilePinCnt = 0;
   bool sliceDone;
@@ -711,7 +710,7 @@ void tmg_conn::detachTilePins()
         for (box_itr = boxes.begin(); !sliceDone && box_itr != boxes.end();
              box_itr++) {
           dbBox* box = *box_itr;
-          box->getBox(recti);
+          Rect recti = box->getBox();
           transform.apply(recti);
           if (box->isVia()) {
             tv = box->getTechVia();
@@ -944,7 +943,6 @@ void tmg_conn::findConnections(bool verbose)
   detachTilePins();
 
   // connect pins
-  Rect rect;
   for (int j = 0; j < _termN; j++) {
     _csV = &_csVV[j];
     _csN = 0;
@@ -971,7 +969,7 @@ void tmg_conn::findConnections(bool verbose)
               rt_t = tv->getTopLayer()->getRoutingLevel();
               if (rt_t <= 1)
                 continue;  // skipping V01
-              box->getBox(rect);
+              Rect rect = box->getBox();
               transform.apply(rect);
               // notice(0, "iterm %s (%d %d) (%d
               // %d)\n",box->getTechVia()->getName().c_str(),
@@ -1019,7 +1017,7 @@ void tmg_conn::findConnections(bool verbose)
                 }
             } else if (ipass == 0 && !box->isVia()) {
               rt = box->getTechLayer()->getRoutingLevel();
-              box->getBox(rect);
+              Rect rect = box->getBox();
               transform.apply(rect);
               // notice(0, "iterm %s (%d %d) (%d
               // %d)\n",box->getTechLayer()->getName().c_str(),

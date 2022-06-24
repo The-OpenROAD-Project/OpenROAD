@@ -269,8 +269,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::dbBox* diode_bbox = diode_inst->getBBox();
   int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
 
-  odb::Rect core_area;
-  block_->getCoreArea(core_area);
+  odb::Rect core_area = block_->getCoreArea();
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
@@ -307,8 +306,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     legalize_itr++;
   }
 
-  odb::Rect inst_rect;
-  diode_inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = diode_inst->getBBox()->getBox();
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
@@ -387,8 +385,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
     if (mterm != nullptr) {
       for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
         for (odb::dbBox* mterm_box : mterm_pin->getGeometry()) {
-          odb::Rect rect;
-          mterm_box->getBox(rect);
+          odb::Rect rect = mterm_box->getBox();
           transform.apply(rect);
 
           inst_rect = rect;
@@ -396,7 +393,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
       }
     }
   } else {
-    inst->getBBox()->getBox(inst_rect);
+    inst_rect = inst->getBBox()->getBox();
   }
 
   return inst_rect;
@@ -405,8 +402,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
 {
   for (odb::dbRow* row : block_->getRows()) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
 
     if (row_rect.contains(diode_rect)) {
       return true;

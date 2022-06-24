@@ -311,8 +311,7 @@ void AutoClusterMgr::createBundledIO()
 {
   // Get the floorplan information
 
-  Rect die_box;
-  block_->getDieArea(die_box);
+  Rect die_box = block_->getDieArea();
 
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
@@ -1199,8 +1198,7 @@ pair<float, float> AutoClusterMgr::printPinPos(dbInst* macro_inst)
     if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
-          Rect rect;
-          box->getBox(rect);
+          Rect rect = box->getBox();
           bbox.merge(rect);
         }
       }
@@ -1794,8 +1792,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // Timing-driven flow
   findAdjacencies();
 
-  Rect die_box;
-  block_->getCoreArea(die_box);
+  Rect die_box = block_->getCoreArea();
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();

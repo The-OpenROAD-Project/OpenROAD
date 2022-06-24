@@ -230,13 +230,12 @@ int dbRow::getSpacing()
   return row->_spacing;
 }
 
-void dbRow::getBBox(Rect& bbox)
+Rect dbRow::getBBox()
 {
   _dbRow* row = (_dbRow*) this;
 
   if (row->_site_cnt == 0) {
-    bbox = Rect(0, 0, 0, 0);
-    return;
+    return  Rect(0, 0, 0, 0);
   }
 
   dbSite* site = getSite();
@@ -253,11 +252,11 @@ void dbRow::getBBox(Rect& bbox)
   if (row->_flags._dir == dbRowDir::HORIZONTAL) {
     int xMax = x + (row->_site_cnt - 1) * row->_spacing + dx;
     int yMax = y + dy;
-    bbox.init(x, y, xMax, yMax);
+    return Rect(x, y, xMax, yMax);
   } else {
     int xMax = x + dx;
     int yMax = y + (row->_site_cnt - 1) * row->_spacing + dy;
-    bbox.init(x, y, xMax, yMax);
+    return Rect(x, y, xMax, yMax);
   }
 }
 
