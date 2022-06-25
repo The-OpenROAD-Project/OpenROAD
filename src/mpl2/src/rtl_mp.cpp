@@ -92,6 +92,7 @@ bool rtl_macro_placer(const char* config_file,
                       const float macro_blockage_wt,
                       const float location_wt,
                       const float notch_wt,
+                      const float dead_space,
                       const float macro_halo,
                       const char* report_file,
                       const char* macro_blockage_file,
@@ -107,7 +108,6 @@ bool rtl_macro_placer(const char* config_file,
   //
   // These parameters are related to shape engine
   float min_aspect_ratio = 0.29;
-  float dead_space = 0.05;
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
@@ -165,7 +165,6 @@ bool rtl_macro_placer(const char* config_file,
     unordered_map<string, string> params = ParseConfigFile(config_file);
 
     get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
-    get_param(params, "dead_space", dead_space, logger);
     get_param(params, "learning_rate", learning_rate, logger);
     get_param(params, "shrink_factor", shrink_factor, logger);
     get_param(params, "shrink_freq", shrink_freq, logger);
@@ -476,6 +475,7 @@ bool MacroPlacer2::place(const char* config_file,
                          const float macro_blockage_wt,
                          const float location_wt,
                          const float notch_wt,
+                         const float dead_space,
                          const float macro_halo,
                          const char* report_file,
                          const char* macro_blockage_file,
@@ -492,6 +492,7 @@ bool MacroPlacer2::place(const char* config_file,
                           macro_blockage_wt,
                           location_wt,
                           notch_wt,
+                          dead_space,
                           macro_halo,
                           report_file,
                           macro_blockage_file,

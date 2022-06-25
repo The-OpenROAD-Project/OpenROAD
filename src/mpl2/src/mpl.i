@@ -58,6 +58,7 @@ bool rtl_macro_placer_cmd(const char* config_file,
                           const float macro_blockage_wt,
                           const float location_wt,
                           const float notch_wt,
+                          const float dead_space,
                           const float macro_halo,
                           const char* report_file,
                           const char* macro_blockage_file,
@@ -65,7 +66,7 @@ bool rtl_macro_placer_cmd(const char* config_file,
   auto macro_placer = getMacroPlacer2();
   return macro_placer->place(config_file, report_directory, 
                             area_wt, wirelength_wt, outline_wt,
-                            boundary_wt, macro_blockage_wt, location_wt, notch_wt, macro_halo,
+                            boundary_wt, macro_blockage_wt, location_wt, notch_wt, dead_space, macro_halo,
                             report_file, macro_blockage_file, prefer_location_file);
 }
 

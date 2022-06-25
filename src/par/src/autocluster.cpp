@@ -316,14 +316,14 @@ void AutoClusterMgr::createBundledIO()
 {
   // Get the floorplan information
 
-  Rect die_box = block_->getCoreArea();
-  int core_lx = die_box.xMin();
-  int core_ly = die_box.yMin();
-  int core_ux = die_box.xMax();
-  int core_uy = die_box.yMax();
+  Rect core_box = block_->getCoreArea();
+  int core_lx = core_box.xMin();
+  int core_ly = core_box.yMin();
+  int core_ux = core_box.xMax();
+  int core_uy = core_box.yMax();
 
 
-  block_->getDieArea(die_box);
+  Rect die_box = block_->getDieArea();
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();
