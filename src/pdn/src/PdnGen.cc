@@ -266,6 +266,7 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
+  updateRenderer();
 }
 
 void PdnGen::resetShapes()
@@ -273,6 +274,7 @@ void PdnGen::resetShapes()
   for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
+  updateRenderer();
 }
 
 void PdnGen::buildGrids(bool trim)
@@ -325,9 +327,7 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
-  if (debug_renderer_ != nullptr) {
-    debug_renderer_->update();
-  }
+  updateRenderer();
 }
 
 void PdnGen::cleanupVias()
@@ -768,7 +768,7 @@ void PdnGen::setDebugRenderer(bool on)
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this);
-      debug_renderer_->update();
+      rendererRedraw();
     }
   } else {
     debug_renderer_ = nullptr;
@@ -784,6 +784,13 @@ void PdnGen::rendererRedraw()
       // do nothing, dont want grid error to prevent debug renderer
       debug_renderer_->update();
     }
+  }
+}
+
+void PdnGen::updateRenderer() const
+{
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->update();
   }
 }
 
