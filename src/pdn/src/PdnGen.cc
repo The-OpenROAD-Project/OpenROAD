@@ -854,7 +854,9 @@ void PdnGen::ripUp(odb::dbNet* net)
   ShapeTreeMap net_shapes;
   Shape::populateMapFromDb(net, net_shapes);
   // remove bterms that connect to swires
+  std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {
+    std::set<odb::dbBPin*> pins;
     for (auto* pin : bterm->getBPins()) {
       bool remove = false;
       for (auto* box : pin->getBoxes()) {
@@ -876,12 +878,18 @@ void PdnGen::ripUp(odb::dbNet* net)
         }
       }
       if (remove) {
-        odb::dbBPin::destroy(pin);
+        pins.insert(pin);
       }
     }
-    if (bterm->getBPins().empty()) {
-      odb::dbBTerm::destroy(bterm);
+    for (auto* pin : pins) {
+        odb::dbBPin::destroy(pin);
     }
+    if (bterm->getBPins().empty()) {
+      terms.insert(bterm);
+    }
+  }
+  for (auto* term : terms) {
+    odb::dbBTerm::destroy(term);
   }
   auto swires = net->getSWires();
   for (auto iter = swires.begin(); iter != swires.end(); ) {
