@@ -314,6 +314,21 @@ class frBlock : public frBlockObject
     name2inst_[in->getName()] = in.get();
     insts_.push_back(std::move(in));
   }
+  void removeInst(frInst* inst)
+  {
+    for (const auto& iterm : inst->getInstTerms()) {
+      auto net = iterm->getNet();
+      if (net != nullptr)
+        net->removeInstTerm(iterm.get());
+    }
+    name2inst_.erase(inst->getName());
+    for (auto itr = insts_.begin(); itr != insts_.end(); itr++) {
+      if (itr->get() == inst) {
+        insts_.erase(itr);
+        return;
+      }
+    }
+  }
   void addNet(std::unique_ptr<frNet> in)
   {
     in->setId(nets_.size());
