@@ -1357,16 +1357,26 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
   marker->addAggressor(net->getOwner(), make_tuple(layerNum, markerBox, false));
   addMarker(std::move(marker));
 }
-
+bool isConvex(gcSegment* s) {
+    return s->getLowCorner()->getType() == frCornerTypeEnum::CONVEX &&
+        s->getHighCorner()->getType() == frCornerTypeEnum::CONVEX;
+}
+gcSegment* bestSuitable(gcSegment* a, gcSegment* b) {
+    if (isConvex(a) && !isConvex(b))
+        return a;
+    if (isConvex(b) && !isConvex(a))
+        return b;
+    if (gtl::length(*a) > gtl::length(*b))
+        return a;
+    return b;
+}
 void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
 {
-  if (ignoreMinArea_) {
+  if (ignoreMinArea_ || !targetNet_) {
     return;
   }
-
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  auto net = poly->getNet();
 
   auto con = getTech()->getLayer(layerNum)->getAreaConstraint();
 
@@ -1383,7 +1393,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   gtl::rectangle_data<frCoord> bbox;
   gtl::extents(bbox, *pin->getPolygon());
   Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
-  if (!drWorker_->getRouteBox().contains(bbox2))
+  if (!drWorker_->getDrcBox().contains(bbox2))
       return;
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
@@ -1391,33 +1401,49 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
           return;
     }
   }
-
-  // add marker
-  gtl::polygon_90_set_data<frCoord> tmpPolys;
-  using namespace boost::polygon::operators;
-  tmpPolys += *poly;
-  vector<gtl::rectangle_data<frCoord>> rects;
-  gtl::get_max_rectangles(rects, tmpPolys);
-
-  int maxArea = 0;
-  gtl::rectangle_data<frCoord> maxRect;
-  for (auto& rect : rects) {
-    if (gtl::area(rect) > maxArea) {
-      maxRect = rect;
-      maxArea = gtl::area(rect);
+    //fix min area by adding patches
+  frCoord gapArea = reqArea - actArea;
+  bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layerNum);
+  gcSegment* chosenEdg = nullptr;
+  // traverse polygon edges, searching for the best edge to amend a patch
+  for (auto& edges : pin->getPolygonEdges()) {
+    for (auto& e : edges) {
+      if (e->isVertical() != prefDirIsVert && (!chosenEdg || 
+            bestSuitable(e.get(), chosenEdg) == e.get()))
+        chosenEdg = e.get();
     }
   }
-  auto marker = make_unique<frMarker>();
-  Rect markerBox(
-      gtl::xl(maxRect), gtl::yl(maxRect), gtl::xh(maxRect), gtl::yh(maxRect));
-  marker->setBBox(markerBox);
-  marker->setLayerNum(layerNum);
-  marker->setConstraint(con);
-  marker->addSrc(net->getOwner());
-  marker->addVictim(net->getOwner(), make_tuple(layerNum, markerBox, false));
-  marker->addAggressor(net->getOwner(), make_tuple(layerNum, markerBox, false));
-
-  addMarker(std::move(marker));
+  frCoord length = ceil((float)gapArea / chosenEdg->length() / getTech()->getManufacturingGrid())
+                        * getTech()->getManufacturingGrid();
+  Rect patchBx;
+  Point offset; //the lower left corner of the patch box
+  if (prefDirIsVert) {
+        patchBx.set_xhi(chosenEdg->length());
+        patchBx.set_yhi(length);
+        offset.x() = min(chosenEdg->low().x(), chosenEdg->high().x());
+        if (chosenEdg->getOuterDir() == frDirEnum::N) {
+            offset.y() = chosenEdg->low().y();
+        } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
+            offset.y() = chosenEdg->low().y() - length;
+        } else logger_->error(DRT, 4500, "Edge outer dir should be either North or South");
+  } else {
+        patchBx.set_xhi(length);
+        patchBx.set_yhi(chosenEdg->length());
+        offset.y() = min(chosenEdg->low().y(), chosenEdg->high().y());
+        if (chosenEdg->getOuterDir() == frDirEnum::E) {
+            offset.x() = chosenEdg->low().x();
+        } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
+            offset.x() = chosenEdg->low().x() - length;
+        } else 
+            logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
+  }
+  auto patch = make_unique<drPatchWire>();
+  patch->setLayerNum(layerNum);
+  patch->setOrigin(offset);
+  patch->setOffsetBox(patchBx);
+  Rect shiftedPatch = patchBx;
+  shiftedPatch.moveTo(offset.x(), offset.y());
+  pwires_.push_back(std::move(patch));
 }
 
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
