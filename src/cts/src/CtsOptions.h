@@ -76,6 +76,8 @@ class CtsOptions
   unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
+  void setGuiDebug() {gui_debug_=true;}
+  bool getGuiDebug() {return gui_debug_;}
   void setSimpleCts(bool enable) { simpleCts_ = enable; }
   bool getSimpleCts() const { return simpleCts_; }
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
@@ -210,6 +212,8 @@ class CtsOptions
   std::string treeBuffer_ = "";
   std::string metricFile_ = "";
   int dbUnits_ = -1;
+  int gui_debug_pause_iterations_ = 10;
+  int gui_debug_update_iterations_ = 10;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
   bool simpleCts_ = false;
@@ -217,6 +221,7 @@ class CtsOptions
   bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
+  bool gui_debug_ = false;
   double vertexBufDistance_ = 240;
   double bufDistance_ = 100;
   double clusteringCapacity_ = 0.6;

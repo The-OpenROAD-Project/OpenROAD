@@ -33,20 +33,23 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "HTreeBuilder.h"
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "HTreeBuilder.h"
 #include "utl/Logger.h"
+
 
 namespace cts {
 
 using utl::CTS;
+using utl::Logger;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -120,7 +123,7 @@ void HTreeBuilder::preSinkClustering(
           = clock_.addClockBuffer(baseName + std::to_string(clusterCount),
                                   options_->getSinkBuffer(),
                                   centerX,
-                                  centerY);
+                                  centerY); //pass this to sinkclustering somehow this is the buffer for each cluster in the best solution
 
       if (!secondLevel)
         addFirstLevelSinkDriver(&rootBuffer);
@@ -152,6 +155,7 @@ void HTreeBuilder::preSinkClustering(
                 19,
                 " Total number of sinks after clustering: {}.",
                 topLevelSinksClustered_.size());
+
 }
 
 void HTreeBuilder::initSinkRegion()
@@ -294,7 +298,40 @@ void HTreeBuilder::run()
     plotSolution();
   }
 
+  if (options_->getGuiDebug()
+      || logger_->debugCheck(utl::CTS, "HTree", 2) ) {
+    treeVisualizer();
+  }
+  // logger_->report(" Viewing instances in clock sinks used in plot");
+  // clock_.forEachSink([&](ClockInst& inst) { 
+  //     logger_->report(" Clock instance {} is buffer: {}", inst.getName(), inst.isClockBuffer());
+  // });
+  // logger_->report(" Viewing instances in all subnets before createClockSubNets");
+
+  // int count=0;
+  // clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
+  //   subnet.forEachSink([&](ClockInst* inst) { 
+  //     logger_->report(" Clock instance {} in subnet {} is buffer: {}", inst->getName(), subnet.getName(), inst->isClockBuffer());
+  //   });
+  //   count++;
+  // });
   createClockSubNets();
+
+  logger_->report(" Viewing instances in all subnets");
+
+  int count=0;
+  clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
+    subnet.forEachSink([&](ClockInst* inst) { 
+      logger_->report(" Clock instance {} in subnet {} is buffer: {}", inst->getName(), subnet.getName(), inst->isClockBuffer());
+    });
+    count++;
+  });
+
+  logger_->report(" Viewing drivers of all subnets");
+  clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
+      logger_->report(" The driver for the subnet {} is {}", subnet.getName(), subnet.getDriver()->getName());
+
+  });
 }
 
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(unsigned level) const
@@ -895,6 +932,15 @@ void HTreeBuilder::createSingleBufferClockNet()
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+}
+
+void HTreeBuilder::treeVisualizer()
+{
+  // std::unique_ptr<Graphics> graphics_;
+  //graphics_ = std::make_unique<Graphics>(logger_, clock_, topologyForEachLevel_.front(), sinkRegion_.computeCenter());
+  graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
+  if (Graphics::guiActive())
+    graphics_->clockPlot(true);
 }
 
 void HTreeBuilder::plotSolution()

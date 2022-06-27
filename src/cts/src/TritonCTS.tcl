@@ -84,7 +84,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
-                                             [-plot] \
+                                             [-plot]
                                             }
 
 proc clock_tree_synthesis { args } {
@@ -92,7 +92,7 @@ proc clock_tree_synthesis { args } {
     keys {-root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
-    flags {-post_cts_disable -sink_clustering_enable -balance_levels -plot}
+    flags {-post_cts_disable -sink_clustering_enable -balance_levels}
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
@@ -221,4 +221,25 @@ proc report_cts { args } {
   }
 
   cts::report_cts_metrics
+}
+
+namespace eval cts {
+proc clock_tree_synthesis_debug { args } {
+  sta::parse_key_args "clock_tree_synthesis_debug" args \
+      keys {-pause -update} 
+
+  set pause 10
+  if { [info exists keys(-pause)] } {
+    set pause $keys(-pause)
+    sta::check_positive_integer "-pause" $pause
+  }
+
+  set update 10
+  if { [info exists keys(-update)] } {
+    set update $keys(-update)
+    sta::check_positive_integer "-update" $update
+  }
+
+  cts::set_debug_cmd
+}
 }

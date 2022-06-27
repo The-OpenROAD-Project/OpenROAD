@@ -150,6 +150,11 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   findBestMatching(groupSize);
   if (logger_->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
+
+  if (options_->getGuiDebug()
+      || logger_->debugCheck(CTS, "Stree", 1) ) {
+    clusteringVisualizer(groupSize);
+  }
 }
 
 void SinkClustering::findBestMatching(unsigned groupSize)
@@ -363,6 +368,29 @@ bool SinkClustering::isLimitExceeded(unsigned size,
     return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
   } else {
     return (size >= sizeLimit || cost > maxInternalDiameter_);
+  }
+}
+
+void SinkClustering::clusteringVisualizer(unsigned groupSize)
+{
+  debugPrint(logger_,
+            CTS,
+            "Stree",
+            6,
+            "In clustering visualizer");
+  graphics_ = std::make_unique<Graphics>(logger_, this, groupSize);
+    debugPrint(logger_,
+            CTS,
+            "Stree",
+            7,
+            "Created graphics object");
+  if (Graphics::guiActive()){
+      debugPrint(logger_,
+            CTS,
+            "Stree",
+            8,
+            "Gui is active");
+    graphics_->clockPlot(true);
   }
 }
 

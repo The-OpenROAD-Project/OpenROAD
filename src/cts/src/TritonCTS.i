@@ -126,6 +126,12 @@ set_metric_output(const char* file)
 }
 
 void
+set_debug_cmd()
+{
+  getTritonCts()->getParms()->setGuiDebug();
+}
+
+void
 report_cts_metrics()
 {
   getTritonCts()->reportCtsMetrics();

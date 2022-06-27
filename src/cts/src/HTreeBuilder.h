@@ -40,16 +40,14 @@
 
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
-#include "Util.h"
+#include "Graphics.h"
 
 namespace utl {
 class Logger;
 }  // namespace utl
 
 namespace cts {
-
-using utl::Logger;
-
+  
 class SegmentBuilder
 {
  public:
@@ -96,11 +94,11 @@ class SegmentBuilder
   bool forceBuffer_;
   unsigned numBufferLevels_ = 0;
 };
-
+class Graphics;
 //-----------------------------------------------------------------------------
-
 class HTreeBuilder : public TreeBuilder
 {
+  public:
   class LevelTopology
   {
    public:
@@ -185,16 +183,25 @@ class HTreeBuilder : public TreeBuilder
     std::vector<std::vector<Point<double>>> branchSinkLocs_;
   };
 
- public:
   HTreeBuilder(CtsOptions* options,
                Clock& net,
                TreeBuilder* parent,
-               Logger* logger)
+               utl::Logger* logger)
       : TreeBuilder(options, net, parent), logger_(logger){};
 
   void run();
 
   void plotSolution();
+  void treeVisualizer();
+  std::vector<LevelTopology> getTopologyVector(){
+    return topologyForEachLevel_;
+  }
+  Box<double> getSinkRegion(){
+    return sinkRegion_;
+  }
+  int getWireSegmentUnit(){
+    return wireSegmentUnit_;
+  }
   unsigned computeMinDelaySegment(unsigned length,
                                   unsigned inputSlew,
                                   unsigned inputCap,
@@ -283,11 +290,12 @@ class HTreeBuilder : public TreeBuilder
   }
 
  protected:
-  Logger* logger_;
+  utl::Logger* logger_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;
   std::vector<std::pair<float, float>> topLevelSinksClustered_;
+  std::unique_ptr<Graphics> graphics_;
 
   int wireSegmentUnit_ = 0;
   unsigned minInputCap_ = 0;
