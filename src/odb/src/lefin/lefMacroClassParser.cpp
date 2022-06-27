@@ -34,7 +34,7 @@
 
 namespace lefMacroClassType {
 
-typedef std::function<qi::rule<std::string::iterator, space_type>(
+typedef std::function<qi::rule<std::string_view::iterator, space_type>(
     const char*,
     odb::dbMasterType::Value)> ApplyOdbType;
 
@@ -42,9 +42,9 @@ typedef std::function<qi::rule<std::string::iterator, space_type>(
  * Convient function to encapsulate endcap types.
  *
  * @param make_lit
- * @return qi::rule<std::string::iterator, space_type>
+ * @return qi::rule<std::string_view::iterator, space_type>
  */
-qi::rule<std::string::iterator, space_type> endcap(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> endcap(ApplyOdbType& make_lit)
 {
   return lit("ENDCAP")
          >> (make_lit("BOTTOMEDGE", odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE)
@@ -77,25 +77,25 @@ qi::rule<std::string::iterator, space_type> endcap(ApplyOdbType& make_lit)
          );
 }
 
-qi::rule<std::string::iterator, space_type> cover(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> cover(ApplyOdbType& make_lit)
 {
   return (make_lit("COVER", odb::dbMasterType::COVER)
           >> -(make_lit("BUMP", odb::dbMasterType::COVER_BUMP)));
 }
 
-qi::rule<std::string::iterator, space_type> ring(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> ring(ApplyOdbType& make_lit)
 {
   return (make_lit("RING", odb::dbMasterType::RING));
 }
 
-qi::rule<std::string::iterator, space_type> block(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> block(ApplyOdbType& make_lit)
 {
   return (make_lit("BLOCK", odb::dbMasterType::BLOCK)
           >> -(make_lit("BLACKBOX", odb::dbMasterType::BLOCK_BLACKBOX))
           >> -(make_lit("SOFT", odb::dbMasterType::BLOCK_SOFT)));
 }
 
-qi::rule<std::string::iterator, space_type> core(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> core(ApplyOdbType& make_lit)
 {
   return (make_lit("CORE", odb::dbMasterType::CORE)
           >> -(make_lit("FEEDTHRU", odb::dbMasterType::CORE_FEEDTHRU))
@@ -106,7 +106,7 @@ qi::rule<std::string::iterator, space_type> core(ApplyOdbType& make_lit)
           >> -(make_lit("WELLTAP", odb::dbMasterType::CORE_WELLTAP)));
 }
 
-qi::rule<std::string::iterator, space_type> pad(ApplyOdbType& make_lit)
+qi::rule<std::string_view::iterator, space_type> pad(ApplyOdbType& make_lit)
 {
   return (make_lit("PAD", odb::dbMasterType::PAD)
           >> -(make_lit("INPUT", odb::dbMasterType::PAD_INPUT))
@@ -127,7 +127,7 @@ bool parse(Iterator first, Iterator last, odb::dbMaster* master)
           return lit(name)[boost::bind(&odb::dbMaster::setType, master, type)];
         };
 
-  qi::rule<std::string::iterator, space_type> TypeRule
+  qi::rule<std::string_view::iterator, space_type> TypeRule
       = (lit("CLASS") >> (
           endcap(make_lit)
           | cover(make_lit)
@@ -145,7 +145,7 @@ bool parse(Iterator first, Iterator last, odb::dbMaster* master)
 
 namespace odb {
 
-bool lefMacroClassTypeParser::parse(std::string s, dbMaster* master)
+bool lefMacroClassTypeParser::parse(std::string_view s, dbMaster* master)
 {
   return lefMacroClassType::parse(s.begin(), s.end(), master);
 }
