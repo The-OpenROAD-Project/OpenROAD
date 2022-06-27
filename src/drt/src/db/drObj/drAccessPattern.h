@@ -55,13 +55,12 @@ class drAccessPattern : public drBlockObject
   {
   }
   // getters
-  void getPoint(Point& bpIn) const { bpIn = beginPoint_; }
-  const Point& getPoint() const { return beginPoint_; }
+  Point getPoint() const { return beginPoint_; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum_; }
   frCoord getBeginArea() const { return beginArea_; }
   drPin* getPin() const { return pin_; }
   bool hasMazeIdx() const { return (!mazeIdx_.empty()); }
-  void getMazeIdx(FlexMazeIdx& in) const { in.set(mazeIdx_); }
+  FlexMazeIdx getMazeIdx() const { return mazeIdx_; }
   bool hasValidAccess(const frDirEnum& dir)
   {
     switch (dir) {

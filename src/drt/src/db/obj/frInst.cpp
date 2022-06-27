@@ -32,43 +32,43 @@
 #include "frMaster.h"
 using namespace fr;
 
-void frInst::getBBox(Rect& boxIn) const
+Rect frInst::getBBox() const
 {
-  getMaster()->getBBox(boxIn);
-  dbTransform xform;
-  getTransform(xform);
-  Point s(boxIn.xMax(), boxIn.yMax());
+  Rect box = getMaster()->getBBox();
+  dbTransform xform = getTransform();
+  Point s(box.xMax(), box.yMax());
   updateXform(xform, s);
-  xform.apply(boxIn);
+  xform.apply(box);
+  return box;
 }
 
-void frInst::getBoundaryBBox(Rect& boxIn) const
+Rect frInst::getBoundaryBBox() const
 {
-  getMaster()->getDieBox(boxIn);
-  dbTransform xform;
-  getTransform(xform);
-  Point s(boxIn.xMax(), boxIn.yMax());
+  Rect box = getMaster()->getDieBox();
+  dbTransform xform = getTransform();
+  Point s(box.xMax(), box.yMax());
   updateXform(xform, s);
-  xform.apply(boxIn);
+  xform.apply(box);
+  return box;
 }
 
-void frInst::getUpdatedXform(dbTransform& in, bool noOrient) const
+dbTransform frInst::getUpdatedXform(bool noOrient) const
 {
-  getTransform(in);
-  Rect mbox;
-  getMaster()->getDieBox(mbox);
+  dbTransform xfm = getTransform();
+  Rect mbox = getMaster()->getDieBox();
   Point origin(mbox.xMin(), mbox.yMin());
-  dbTransform(in.getOrient(), Point(0, 0)).apply(origin);
-  Point offset(in.getOffset());
+  dbTransform(xfm.getOrient(), Point(0, 0)).apply(origin);
+  Point offset(xfm.getOffset());
   offset.x() += origin.getX();
   offset.y() += origin.getY();
-  in.setOffset(offset);
+  xfm.setOffset(offset);
   if (!noOrient) {
     Point s(mbox.xMax(), mbox.yMax());
-    updateXform(in, s);
+    updateXform(xfm, s);
   } else {
-    in.setOrient(dbOrientType(dbOrientType::R0));
+    xfm.setOrient(dbOrientType(dbOrientType::R0));
   }
+  return xfm;
 }
 
 // Adjust the transform so that when applied to an inst, the origin is in the

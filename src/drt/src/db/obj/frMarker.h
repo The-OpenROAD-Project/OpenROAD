@@ -93,8 +93,7 @@ class frMarker : public frFig
    * intersects in .cpp
    */
 
-  void getBBox(Rect& bboxIn) const override { bboxIn = bbox_; }
-  const Rect& getBBox() const { return bbox_; }
+  Rect getBBox() const override { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
 
   const std::set<frBlockObject*>& getSrcs() const { return srcs_; }

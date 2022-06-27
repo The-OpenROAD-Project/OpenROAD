@@ -376,10 +376,8 @@ class FlexDRWorker
   void setMarkers(std::vector<frMarker>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& marker : in) {
-      marker.getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker.getBBox())) {
         markers_.push_back(marker);
       }
     }
@@ -387,11 +385,9 @@ class FlexDRWorker
   void setMarkers(const std::vector<std::unique_ptr<frMarker>>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& uMarker : in) {
       auto& marker = *uMarker;
-      marker.getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker.getBBox())) {
         markers_.push_back(marker);
       }
     }
@@ -399,10 +395,8 @@ class FlexDRWorker
   void setMarkers(std::vector<frMarker*>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& marker : in) {
-      marker->getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker->getBBox())) {
         markers_.push_back(*marker);
       }
     }

@@ -62,8 +62,7 @@ struct GCFixture : public Fixture
                   frConstraintTypeEnum type,
                   const Rect& expected_bbox)
   {
-    Rect bbox;
-    marker->getBBox(bbox);
+    Rect bbox = marker->getBBox();
 
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());

@@ -165,8 +165,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
 static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
 {
   // check that some iterm shape intersects/touches shape
-  Rect wrect;
-  shape.getBox(wrect);
+  Rect wrect = shape.getBox();
   dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyr_top = NULL;
   if (shape.isVia()) {
@@ -221,8 +220,7 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
 static bool checkBTermConnect(dbBTerm* bterm, dbShape& shape)
 {
   // check that some iterm shape intersects/touches shape
-  Rect wrect;
-  shape.getBox(wrect);
+  Rect wrect = shape.getBox();
   dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyrT = NULL;
   if (shape.isVia()) {
@@ -238,8 +236,7 @@ static bool checkBTermConnect(dbBTerm* bterm, dbShape& shape)
     // TODO
   } else {
     if (pin.getTechLayer() == wlyr || pin.getTechLayer() == wlyrT) {
-      Rect rect;
-      pin.getBox(rect);
+      Rect rect = pin.getBox();
       if (rect.intersects(wrect)) {
         return true;
       }

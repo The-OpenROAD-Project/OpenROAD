@@ -1973,8 +1973,7 @@ void dbBlockSearch::getNetBbox(dbNet* net, Rect& maxRect)
   dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
     maxRect.merge(r);
   }
 }
