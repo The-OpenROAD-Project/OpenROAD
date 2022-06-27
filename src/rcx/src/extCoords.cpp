@@ -122,8 +122,7 @@ uint extSpef::addNetShapesOnSearch(uint netId) {
       level2 = 0;
     }
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     _search->addBox(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level1, netId,
                     shapeId, wtype);

@@ -143,10 +143,8 @@ void FlexPA::initUniqueInstance_main(
       ndrInsts.push_back(inst.get());
       continue;
     }
-    Point origin;
-    inst->getOrigin(origin);
-    Rect boundaryBBox;
-    inst->getBoundaryBBox(boundaryBBox);
+    Point origin = inst->getOrigin();
+    Rect boundaryBBox = inst->getBoundaryBBox();
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
         = master2PinLayerRange.find(inst->getMaster())->second;
@@ -286,8 +284,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   gtl::polygon_90_set_data<frCoord> viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    Rect bbox;
-    fig->getBBox(bbox);
+    Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
@@ -312,8 +309,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    Rect bbox;
-    fig->getBBox(bbox);
+    Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;

@@ -1356,20 +1356,20 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       }
     }
 
-    if (!channel.area.intersects(grid_core)) {
-      // channel is not in the core
-      continue;
-    }
-
-    // ensure areas are inside the core
-    channel.area = channel.area.intersect(grid_core);
-    channel.obs_area = channel.obs_area.intersect(grid_core);
-
     // all followpins must be repaired
     const bool channel_has_followpin = followpin_count >= 1;
     // single straps can be skipped
     const bool channel_has_more_than_one_strap = strap_count > 1;
     if (channel_has_followpin || channel_has_more_than_one_strap) {
+      if (!channel.area.intersects(grid_core)) {
+        // channel is not in the core
+        continue;
+      }
+
+      // ensure areas are inside the core
+      channel.area = channel.area.intersect(grid_core);
+      channel.obs_area = channel.obs_area.intersect(grid_core);
+
       channels.push_back(channel);
     }
   }

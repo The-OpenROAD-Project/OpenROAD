@@ -3199,8 +3199,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
           if (pshape.shape.isVia()) {
             continue;
           } else {
-            odb::Rect wire_rect;
-            pshape.shape.getBox(wire_rect);
+            odb::Rect wire_rect = pshape.shape.getBox();
             int l = pshape.shape.getTechLayer()->getRoutingLevel();
 
             if (min_routing_layer_ <= l && l <= max_routing_layer_) {

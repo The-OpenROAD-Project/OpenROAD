@@ -79,11 +79,10 @@ class grVia : public grRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& in) override { ; }
-  void getOrigin(Point& in) const override { in = origin; }
+  Point getOrigin() const override { return origin; }
   void setOrigin(const Point& in) override { origin = in; }
 
-  // TODO this looks like a bug, shouldn't it also setOrient?
-  void getTransform(dbTransform& in) const override { in.setOffset(origin); }
+  dbTransform getTransform() const override { return dbTransform(origin); }
   void setTransform(const dbTransform& in) override { ; }
 
   /* from gfrPinFig
@@ -153,9 +152,9 @@ class grVia : public grRef
    * overlaps
    */
 
-  void getBBox(Rect& in) const override
+  Rect getBBox() const override
   {
-    in.init(origin.x(), origin.y(), origin.x(), origin.y());
+    return Rect(origin, origin);
   }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter = in; }

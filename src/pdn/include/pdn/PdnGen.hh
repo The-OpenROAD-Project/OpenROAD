@@ -238,6 +238,8 @@ class PdnGen
   VoltageDomain* getCoreDomain() const;
   void ensureCoreDomain();
 
+  void updateRenderer() const;
+
   odb::dbDatabase* db_;
   utl::Logger* logger_;
 

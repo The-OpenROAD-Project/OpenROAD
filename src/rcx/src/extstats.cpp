@@ -195,8 +195,7 @@ uint extMain::getExtStats(odb::dbNet* net, uint corner, int& wlen,
     uint met = s.getTechLayer()->getRoutingLevel();
     int width = s.getTechLayer()->getWidth();
 
-    odb::Rect r;
-    s.getBox(r);
+    odb::Rect r = s.getBox();
     int dx = r.xMax() - r.xMin();
     int dy = r.yMax() - r.yMin();
 

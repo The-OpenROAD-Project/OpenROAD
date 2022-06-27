@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 
 #include "db.h"
 
 namespace odb {
 class lefMacroClassTypeParser {
  public:
-  static bool parse(std::string, dbMaster*);
+  static bool parse(std::string_view, dbMaster*);
 };
 }  // namespace odb

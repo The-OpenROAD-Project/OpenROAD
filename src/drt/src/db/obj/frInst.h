@@ -86,16 +86,9 @@ class frInst : public frRef
 
   dbOrientType getOrient() const override { return xform_.getOrient(); }
   void setOrient(const dbOrientType& tmpOrient) override { xform_.setOrient(tmpOrient); }
-  void getOrigin(Point& tmpOrigin) const override
-  {
-    tmpOrigin = xform_.getOffset();
-  }
-  Point getOrigin() const { return xform_.getOffset(); }
+  Point getOrigin() const override { return xform_.getOffset(); }
   void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
-  void getTransform(dbTransform& xformIn) const override
-  {
-    xformIn = xform_;
-  }
+  dbTransform getTransform() const override { return xform_; }
   void setTransform(const dbTransform& xformIn) override
   {
     xform_ = xformIn;
@@ -132,14 +125,14 @@ class frInst : public frRef
    * intersects
    */
 
-  void getBBox(Rect& boxIn) const override;
+  Rect getBBox() const override;
 
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
+  dbTransform getUpdatedXform(bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);
-  void getBoundaryBBox(Rect& in) const;
+  Rect getBoundaryBBox() const;
   
   frInstTerm* getInstTerm(const std::string& name);
 

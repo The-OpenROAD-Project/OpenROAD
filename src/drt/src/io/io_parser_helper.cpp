@@ -92,14 +92,10 @@ void io::Parser::initDefaultVias()
     if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
       auto techDefautlViaDef = tech->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
-      Rect layer1Box;
-      Rect layer2Box;
-      frLayerNum layer1Num;
-      frLayerNum layer2Num;
-      via.getLayer1BBox(layer1Box);
-      via.getLayer2BBox(layer2Box);
-      layer1Num = techDefautlViaDef->getLayer1Num();
-      layer2Num = techDefautlViaDef->getLayer2Num();
+      Rect layer1Box = via.getLayer1BBox();
+      Rect layer2Box = via.getLayer2BBox();
+      frLayerNum layer1Num = techDefautlViaDef->getLayer1Num();
+      frLayerNum layer2Num = techDefautlViaDef->getLayer2Num();
       bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
                             == (layer1Box.yMax() - layer1Box.yMin());
       bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
@@ -157,8 +153,7 @@ void io::Parser::initDefaultVias()
         // cut layer shape
         unique_ptr<frShape> uCutFig = make_unique<frRect>();
         auto cutFig = static_cast<frRect*>(uCutFig.get());
-        Rect cutBox;
-        via.getCutBBox(cutBox);
+        Rect cutBox = via.getCutBBox();
         cutFig->setBBox(cutBox);
         cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
 
@@ -344,8 +339,7 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
   PolygonSet viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    Rect bbox;
-    fig->getBBox(bbox);
+    Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS1 += bboxRect;
   }
@@ -364,8 +358,7 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    Rect bbox;
-    fig->getBBox(bbox);
+    Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS2 += bboxRect;
   }
@@ -820,8 +813,7 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
-      Rect guideBBox;
-      rect.getBBox(guideBBox);
+      Rect guideBBox = rect.getBBox();
       frCoord guideWidth
           = (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
                 ? (guideBBox.yMax() - guideBBox.yMin())
@@ -880,8 +872,7 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       // frLayerNum layerNum = rect.getLayerNum();
-      Rect guideBBox;
-      rect.getBBox(guideBBox);
+      Rect guideBBox = rect.getBBox();
       frCoord guideXOffset = guideBBox.xMin() % GCELLGRIDX;
       frCoord guideYOffset = guideBBox.yMin() % GCELLGRIDY;
       if (guideXOffset < 0) {
@@ -952,8 +943,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
     ygp.setHorizontal(true);
 
   } else {
-    Rect dieBox;
-    design->getTopBlock()->getDieBox(dieBox);
+    Rect dieBox = design->getTopBlock()->getDieBox();
     buildGCellPatterns_helper(
         GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
     xgp.setHorizontal(false);
@@ -1009,8 +999,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
        layerNum += 2) {
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
-        Rect gcellBox;
-        design->getTopBlock()->getGCellBox(Point(i, j), gcellBox);
+        Rect gcellBox = design->getTopBlock()->getGCellBox(Point(i, j));
         bool isH = (tech->getLayers().at(layerNum)->getDir()
                     == dbTechLayerDir::HORIZONTAL);
         frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
@@ -1052,14 +1041,11 @@ void io::Parser::saveGuidesUpdates()
     auto dbNet = block->findNet(net->getName().c_str());
     dbNet->clearGuides();
     for (auto& guide : net->getGuides()) {
-      Point bp, ep;
-      guide->getPoints(bp, ep);
-      Point bpIdx, epIdx;
-      design->getTopBlock()->getGCellIdx(bp, bpIdx);
-      design->getTopBlock()->getGCellIdx(ep, epIdx);
-      Rect bbox, ebox;
-      design->getTopBlock()->getGCellBox(bpIdx, bbox);
-      design->getTopBlock()->getGCellBox(epIdx, ebox);
+      auto [bp, ep] = guide->getPoints();
+      Point bpIdx = design->getTopBlock()->getGCellIdx(bp);
+      Point epIdx = design->getTopBlock()->getGCellIdx(ep);
+      Rect bbox = design->getTopBlock()->getGCellBox(bpIdx);
+      Rect ebox = design->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
       frLayerNum eNum = guide->getEndLayerNum();
       if (bNum != eNum) {
