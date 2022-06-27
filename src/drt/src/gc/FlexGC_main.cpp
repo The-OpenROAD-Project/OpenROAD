@@ -1377,7 +1377,6 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   }
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  auto net = poly->getNet();
 
   auto con = getTech()->getLayer(layerNum)->getAreaConstraint();
 
