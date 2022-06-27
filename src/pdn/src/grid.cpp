@@ -781,7 +781,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
              "Obs",
              1,
              "Collecting grid obstructions from: {}",
-             name_);
+             getLongName());
   const odb::Rect core = getDomainArea();
 
   std::set<odb::dbTechLayer*> layers;
@@ -1117,20 +1117,26 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst)
 
 void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 {
-  Grid::getGridLevelObstructions(obstructions);
+  ShapeTreeMap local_obs;
+  Grid::getGridLevelObstructions(local_obs);
 
   const odb::Rect inst_box = getGridArea();
 
   // copy layer obs
-  for (const auto& [layer, shapes] : obstructions) {
+  for (const auto& [layer, shapes] : local_obs) {
     auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
-    obstructions[layer].insert({obs->getObstructionBox(), obs});
+    local_obs[layer].insert({obs->getObstructionBox(), obs});
   }
 
   // add obstruction covering ensure instance
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_)) {
     auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
-    obstructions[layer].insert({obs->getObstructionBox(), obs});
+    local_obs[layer].insert({obs->getObstructionBox(), obs});
+  }
+
+  // merge local and global obs
+  for (const auto& [layer, obs] : local_obs) {
+    obstructions[layer].insert(obs.begin(), obs.end());
   }
 }
 
