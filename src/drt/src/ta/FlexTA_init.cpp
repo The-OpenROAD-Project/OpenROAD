@@ -702,8 +702,7 @@ void FlexTAWorker::initFixedObjs()
           netPtr = static_cast<frVia*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
-        if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-            && getTech()->getLayer(layerNum)->getType()
+        if (getTech()->getLayer(layerNum)->getType()
                    == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
