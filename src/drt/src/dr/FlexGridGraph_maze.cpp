@@ -847,9 +847,8 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
   getDim(xDim, yDim, zDim);
   FlexMazeIdx dstMazeIdx1(xDim - 1, yDim - 1, zDim - 1);
   FlexMazeIdx dstMazeIdx2(0, 0, 0);
-  FlexMazeIdx mi;
   for (auto& ap : nextPin->getAccessPatterns()) {
-    ap->getMazeIdx(mi);
+    FlexMazeIdx mi = ap->getMazeIdx();
     dstMazeIdx1.set(min(dstMazeIdx1.x(), mi.x()),
                     min(dstMazeIdx1.y(), mi.y()),
                     min(dstMazeIdx1.z(), mi.z()));

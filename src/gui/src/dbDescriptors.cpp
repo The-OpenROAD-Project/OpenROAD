@@ -1157,13 +1157,11 @@ void DbNetDescriptor::highlight(std::any object,
       drawPathSegment(net, sink_object, painter);
     }
 
-    odb::Rect rect;
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
     while (it.next(shape)) {
-      shape.getBox(rect);
-      painter.drawRect(rect);
+      painter.drawRect(shape.getBox());
     }
   } else if (!is_supply) {
     std::set<odb::Point> driver_locs;

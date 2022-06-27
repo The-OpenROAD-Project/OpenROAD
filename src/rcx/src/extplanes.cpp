@@ -307,8 +307,7 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable) {
 
           uint level = dshape.getTechLayer()->getRoutingLevel();
 
-          odb::Rect r;
-          dshape.getBox(r);
+          odb::Rect r = dshape.getBox();
 
           rectTable[level].merge(r);
         }
@@ -366,8 +365,7 @@ uint extMain::addSignalGs(int dir, int* ll, int* ur) {
 
         if (ll == NULL) {
           if (dir >= 0) {
-            odb::Rect r;
-            dshape.getBox(r);
+            odb::Rect r = dshape.getBox();
             if (matchDir(dir, r))
               continue;
           }
@@ -383,8 +381,7 @@ uint extMain::addSignalGs(int dir, int* ll, int* ur) {
             cnt++;
           continue;
         }
-        odb::Rect r;
-        dshape.getBox(r);
+        odb::Rect r = dshape.getBox();
 
         int bb[2] = {r.xMin(), r.yMin()};
 

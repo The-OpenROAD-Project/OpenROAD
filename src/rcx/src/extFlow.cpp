@@ -102,8 +102,7 @@ uint extMain::getNetBbox(dbNet* net, Rect& maxRect) {
     if (s.isVia())
       continue;
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     maxRect.merge(r);
     cnt++;
@@ -124,8 +123,7 @@ uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2]) {
     if (s.isVia())
       continue;
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     //		maxRect.merge(r);
     cnt++;
@@ -144,8 +142,7 @@ void extMain::getNetShapes(dbNet* net, Rect** maxRectSdb, Rect& maxRectGs,
     if (s.isVia())
       continue;
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     uint dd = 0;  // vertical
     if (r.dx() > r.dy())
@@ -349,8 +346,7 @@ extWireBin*** extMain::mkSignalBins(uint binSize, int* bb_ll, int* bb_ur,
       if (s.isVia())
         continue;
 
-      Rect r;
-      s.getBox(r);
+      Rect r = s.getBox();
       addExtWires(r, sdbWireTable, netId, shapes.getShapeId(), s.getTechLayer(),
                   nm_step, bb_ll, bb_ur, wpool, cntxFlag);
 
@@ -974,8 +970,7 @@ uint extMain::addNetShapesOnSearch(dbNet* net, uint dir, int* bb_ll, int* bb_ur,
       continue;
     }
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
     if (isIncludedInsearch(r, dir, bb_ll, bb_ur)) {
       uint level = s.getTechLayer()->getRoutingLevel();
 
@@ -1183,7 +1178,7 @@ uint extWireBin::createDbNetsGS(dbBlock* block, dbCreateNetUtil* createDbNet) {
       // wire->getShape(w->_shapeId, s);
       wire->getSegment(w->_shapeId, w->_layer, s);
 
-      s.getBox(r);
+      r = s.getBox();
     }
     createDbNet->createSpecialWire(NULL, r, w->_layer, 0);
     cnt++;
@@ -1243,8 +1238,7 @@ uint extWireBin::createDbNets(dbBlock* block, dbCreateNetUtil* createDbNet) {
       dbShape s;
       // wire->getShape(w->_shapeId, s);
       wire->getSegment(w->_shapeId, w->_layer, s);
-      Rect r;
-      s.getBox(r);
+      Rect r = s.getBox();
 
       createDbNet->createNetSingleWire(r, w->_layer->getRoutingLevel(),
                                        w->_netId, w->_shapeId);
@@ -1469,8 +1463,7 @@ uint extMain::addNetShapesGs(dbNet* net, bool gsRotated, bool swap_coords,
 
     int shapeId = shapes.getShapeId();
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     if (USE_DB_UNITS)
       this->GetDBcoords2(r);
@@ -2724,8 +2717,7 @@ uint extMain::mkNetPropertiesForRsegs(dbBlock* blk, uint dir) {
       if (n == 0)
         continue;
 
-      Rect r;
-      s.getBox(r);
+      Rect r = s.getBox();
 
       if (!matchDir(dir, r)) {
         wire->setProperty(n, 0);
@@ -2779,8 +2771,7 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet) {
       if (shapeId == 0)
         continue;
 
-      Rect r;
-      s.getBox(r);
+      Rect r = s.getBox();
 
       int rsegId1 = 0;
       wire->getProperty(shapeId, rsegId1);
@@ -4064,8 +4055,7 @@ void extMain::writeMapping(dbBlock* block) {
       if (s.isVia())
         continue;
 
-      Rect r;
-      s.getBox(r);
+      Rect r = s.getBox();
 
       fprintf(fp, "\t\t%d  %d %d  %d %d  %d %d\n", shapes.getShapeId(), r.dx(),
               r.dy(), r.xMin(), r.yMin(), r.xMax(), r.yMax());

@@ -60,11 +60,7 @@ class frGuide : public frConnFig
   {
   }
   // getters
-  void getPoints(Point& beginIn, Point& endIn) const
-  {
-    beginIn = begin_;
-    endIn = end_;
-  }
+  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
 
   const Point& getBeginPoint() const { return begin_; }
   const Point& getEndPoint() const { return end_; }
@@ -113,7 +109,7 @@ class frGuide : public frConnFig
    * intersects, incomplete
    */
   // needs to be updated
-  void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
+  Rect getBBox() const override { return Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   void setIndexInOwner(const int& val) { index_in_owner_ = val; }

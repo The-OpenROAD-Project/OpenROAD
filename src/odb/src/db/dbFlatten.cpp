@@ -402,8 +402,7 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
 
   for (shapes.begin(wire); shapes.next(s);) {
     uint sid = shapes.getShapeId();
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
     fprintf(fp,
             "J%d -- %d %d %d %d\n",
             sid,
@@ -449,8 +448,7 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
     if (s.isVia())
       continue;
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     fprintf(fp, "--  %d %d %d %d --", r.xMin(), r.yMin(), r.xMax(), r.yMax());
 
