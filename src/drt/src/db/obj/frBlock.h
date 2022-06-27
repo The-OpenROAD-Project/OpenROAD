@@ -322,12 +322,11 @@ class frBlock : public frBlockObject
         net->removeInstTerm(iterm.get());
     }
     name2inst_.erase(inst->getName());
-    for (auto itr = insts_.begin(); itr != insts_.end(); itr++) {
-      if (itr->get() == inst) {
-        insts_.erase(itr);
-        return;
-      }
+    auto pos = inst->getId();
+    for (int i = pos; i < insts_.size(); i++) {
+      insts_[i]->setId(i - 1);
     }
+    insts_.erase(insts_.begin() + pos);
   }
   void addNet(std::unique_ptr<frNet> in)
   {
