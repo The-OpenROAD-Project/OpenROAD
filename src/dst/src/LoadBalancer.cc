@@ -75,7 +75,7 @@ LoadBalancer::LoadBalancer(Distributed* dist,
   // pool_ = std::make_unique<asio::thread_pool>();
   service = &io_service;
   start_accept();
-  if (std::strcmp(workers_domain, "") != 0)
+  if (std::strcmp(workers_domain, "") == 0)
     workers_lookup_thread = boost::thread(
         boost::bind(&LoadBalancer::lookUpWorkers, this, workers_domain, port));
 }
@@ -121,7 +121,7 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
 
 void LoadBalancer::lookUpWorkers(
     const char* domain,
-    unsigned short port)  // LoadBalancer & balancer)
+    unsigned short port)
 {
   asio::io_service ios;
   std::vector<worker> workers_set;
