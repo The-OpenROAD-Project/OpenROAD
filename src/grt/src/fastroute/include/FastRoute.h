@@ -45,6 +45,8 @@
 #include "grt/GRoute.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "odb/geom.h"
+#include "boost/icl/interval.hpp"
+#include "boost/icl/interval_set.hpp"
 
 namespace utl {
 class Logger;
@@ -62,6 +64,8 @@ namespace gui {
 class Gui;
 }
 
+using boost::icl::interval;
+using boost::icl::interval_set;
 using boost::multi_array;
 
 namespace grt {
@@ -144,6 +148,17 @@ class FastRouteCore
                                   int layer,
                                   int first_tile_reduce,
                                   int last_tile_reduce);
+  void addVerticalAdjustments(const odb::Point& first_tile,
+                                const odb::Point& last_tile,
+                                int layer,
+                                interval<int>::type first_tile_reduce_interval,
+                                interval<int>::type last_tile_reduce_interval);
+  void addHorizontalAdjustments(const odb::Point& first_tile,
+                                const odb::Point& last_tile,
+                                int layer,
+                                interval<int>::type first_tile_reduce_interval,
+                                interval<int>::type last_tile_reduce_interval);
+  void initBlockedIntervals(std::vector<int> &track_space);
   void initAuxVar();
   void initNetAuxVars();
   NetRouteMap run();
@@ -545,6 +560,9 @@ class FastRouteCore
 
   FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
+
+  std::unordered_map<std::tuple<int,int,int>, interval_set<int>, boost::hash<std::tuple<int,int,int>>> vertical_blocked_intervals_;
+  std::unordered_map<std::tuple<int,int,int>, interval_set<int>, boost::hash<std::tuple<int,int,int>>> horizontal_blocked_intervals_;
 };
 
 }  // namespace grt

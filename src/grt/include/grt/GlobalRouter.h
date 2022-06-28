@@ -48,6 +48,9 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
+#include "boost/icl/interval.hpp"
+
+using boost::icl::interval;
 
 namespace gui {
 class Gui;
