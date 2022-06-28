@@ -101,8 +101,8 @@ class PDNSim
   std::map<std::string, float> _net_voltage_map;
   IRDropByLayer                _ir_drop;
   float                        _node_density;
-  float                        _min_resolution;
   int                          _node_density_factor;
+  float                        _min_resolution;
   std::unique_ptr<DebugGui>    _debug_gui;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
