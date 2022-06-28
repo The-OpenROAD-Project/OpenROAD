@@ -57,6 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 using odb::dbBlock;
+using odb::dbRow;
 using odb::dbBox;
 using odb::dbChip;
 using odb::dbDatabase;
@@ -334,12 +335,6 @@ void IRSolver::ReadC4Data() {
           utl::PSM, 18,
           "Y direction bump pitch is not specified, defaulting to {}um.",
           m_bump_pitch_default);
-    }
-    if (m_node_density_um > 0) {
-      m_node_density = m_node_density_um * unit_micron;
-      m_logger->info(utl::PSM, 73,
-                   "Setting lower metal node density to {}um.",
-                   m_node_density_um);
     }
     if (!m_net_voltage_map.empty() &&
         m_net_voltage_map.count(m_power_net) > 0) {
@@ -953,13 +948,29 @@ bool IRSolver::CreateGmat(bool connection_only) {
   dbSet<dbTechLayer>::iterator litr;
   int unit_micron = tech->getDbUnitsPerMicron();
   int num_routing_layers = tech->getRoutingLayerCount();
-
-  m_Gmat = new GMat(num_routing_layers, m_logger);
   dbChip* chip = m_db->getChip();
   dbBlock* block = chip->getBlock();
+  
+  if (m_node_density_um > 0) { // User-specified node density
+    m_node_density = m_node_density_um * unit_micron;
+    m_logger->info(utl::PSM, 73,
+               "Setting lower metal node density to {}um as specfied by user.",
+               m_node_density_um);
+  } else { // Node density as a factor of row height either set by user or by default
+    dbSet<dbRow> rows = block->getRows();
+    int siteHeight = (*rows.begin())->getSite()->getHeight();
+    if (m_node_density_factor_user > 0) {
+      m_node_density_factor = m_node_density_factor_user;
+    }
+    m_logger->info(utl::PSM, 76,
+                 "Setting metal node density to "
+                 "be standard cell height times {}.",
+                 m_node_density_factor);
+    m_node_density = siteHeight * m_node_density_factor;
+  }
 
+  m_Gmat = new GMat(num_routing_layers, m_logger);
   auto macro_boundaries = GetMacroBoundaries();
-
   dbNet* power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
     m_logger->error(utl::PSM, 27,

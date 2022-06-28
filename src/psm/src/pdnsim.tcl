@@ -6,12 +6,13 @@ sta::define_cmd_args "analyze_power_grid" {
   [-net net_name]
   [-dx bump_pitch_x]
   [-dy bump_pitch_y]
-  [-node_density m1_node_density]
+  [-node_density val_node_density]
+  [-node_density_factor val_node_density_factor]
   }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile -em_outfile -net -dx -dy -node_density} flags {-enable_em}
+    keys {-vsrc -outfile -em_outfile -net -dx -dy -node_density -node_density_factor} flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
     if { [file readable $vsrc_file] } {
@@ -35,8 +36,12 @@ proc analyze_power_grid { args } {
     psm::set_bump_pitch_y $bump_pitch_y
   }
   if { [info exists keys(-node_density)] } {
-    set m1_node_density $keys(-node_density)
-    psm::set_node_density $m1_node_density
+    set val_node_density $keys(-node_density)
+    psm::set_node_density $val_node_density
+  }
+  if { [info exists keys(-node_density_factor)] } {
+    set val_node_density $keys(-node_density_factor)
+    psm::set_node_density_factor $val_node_density
   }
   if { [info exists keys(-outfile)] } {
     set out_file $keys(-outfile)

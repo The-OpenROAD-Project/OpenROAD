@@ -60,7 +60,9 @@ PDNSim::PDNSim()
       _bump_pitch_y(0),
       _spice_out_file(""),
       _power_net(""),
-      _node_density(-1)
+      _node_density(-1),
+      _node_density_factor(0),
+      _min_resolution(-1)
 {
 }
 
@@ -76,6 +78,8 @@ PDNSim::~PDNSim() {
   _bump_pitch_x = 0;
   _bump_pitch_y = 0;
   _node_density = -1.0;
+  _node_density_factor = 0;
+  _min_resolution = -1.0;
 }
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
@@ -98,6 +102,8 @@ void PDNSim::set_bump_pitch_x(float bump_pitch) { _bump_pitch_x = bump_pitch; }
 void PDNSim::set_bump_pitch_y(float bump_pitch) { _bump_pitch_y = bump_pitch; }
 
 void PDNSim::set_node_density(float node_density) { _node_density = node_density; }
+
+void PDNSim::set_node_density_factor(int node_density_factor) { _node_density_factor = node_density_factor; }
 
 void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage) {
   _net_voltage_map.insert(std::pair<std::string, float>(net, voltage));
@@ -135,7 +141,7 @@ void PDNSim::write_pg_spice() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _node_density, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _node_density_factor, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -156,7 +162,7 @@ int PDNSim::analyze_power_grid() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _node_density, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _node_density_factor, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -196,7 +202,7 @@ int PDNSim::analyze_power_grid() {
     ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
   }
   _ir_drop = ir_drop;
-  _node_density = irsolve_h->GetMinimumResolution();
+  _min_resolution = irsolve_h->GetMinimumResolution();
 
   heatmap_->update();
   if (_debug_gui) {
@@ -211,7 +217,7 @@ int PDNSim::check_connectivity() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _node_density, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _node_density_factor,  _net_voltage_map);
   if (!irsolve_h->BuildConnection()) {
     delete irsolve_h;
     return 0;
@@ -237,12 +243,12 @@ void PDNSim::getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop)
 }
 
 int PDNSim::getMinimumResolution() {
-  if (_node_density <= 0) {
+  if (_min_resolution <= 0) {
     _logger->error(
         utl::PSM, 68,
         "Minimum resolution not set. Please run analyze_power_grid first.");
   }
-  return _node_density;
+  return _min_resolution;
 }
 
 }  // namespace psm
