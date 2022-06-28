@@ -75,7 +75,7 @@ LoadBalancer::LoadBalancer(Distributed* dist,
   // pool_ = std::make_unique<asio::thread_pool>();
   service = &io_service;
   start_accept();
-  if (std::strcmp(workers_domain, "") == 0)
+  if (std::strcmp(workers_domain, "") != 0)
     workers_lookup_thread = boost::thread(
         boost::bind(&LoadBalancer::lookUpWorkers, this, workers_domain, port));
 }
@@ -171,7 +171,7 @@ void LoadBalancer::lookUpWorkers(
     }
 
     for (auto worker : new_workers)
-      this->addWorker(worker.ip.to_string(), worker.port);
+      addWorker(worker.ip.to_string(), worker.port);
 
     boost::this_thread::sleep(boost::posix_time::milliseconds(workers_discovery_period * 1000));
   }
