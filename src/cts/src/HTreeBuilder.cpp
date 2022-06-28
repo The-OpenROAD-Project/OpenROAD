@@ -123,7 +123,7 @@ void HTreeBuilder::preSinkClustering(
           = clock_.addClockBuffer(baseName + std::to_string(clusterCount),
                                   options_->getSinkBuffer(),
                                   centerX,
-                                  centerY); //pass this to sinkclustering somehow this is the buffer for each cluster in the best solution
+                                  centerY);
 
       if (!secondLevel)
         addFirstLevelSinkDriver(&rootBuffer);
@@ -317,21 +317,21 @@ void HTreeBuilder::run()
   // });
   createClockSubNets();
 
-  logger_->report(" Viewing instances in all subnets");
+  // logger_->report(" Viewing instances in all subnets");
 
-  int count=0;
-  clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
-    subnet.forEachSink([&](ClockInst* inst) { 
-      logger_->report(" Clock instance {} in subnet {} is buffer: {}", inst->getName(), subnet.getName(), inst->isClockBuffer());
-    });
-    count++;
-  });
+  // int count=0;
+  // clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
+  //   subnet.forEachSink([&](ClockInst* inst) { 
+  //     logger_->report(" Clock instance {} in subnet {} is buffer: {}", inst->getName(), subnet.getName(), inst->isClockBuffer());
+  //   });
+  //   count++;
+  // });
 
-  logger_->report(" Viewing drivers of all subnets");
-  clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
-      logger_->report(" The driver for the subnet {} is {}", subnet.getName(), subnet.getDriver()->getName());
+  // logger_->report(" Viewing drivers of all subnets");
+  // clock_.forEachSubNet([&](const Clock::SubNet& subnet) {
+  //     logger_->report(" The driver for the subnet {} is {}", subnet.getName(), subnet.getDriver()->getName());
 
-  });
+  // });
 }
 
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(unsigned level) const
@@ -936,8 +936,6 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::treeVisualizer()
 {
-  // std::unique_ptr<Graphics> graphics_;
-  //graphics_ = std::make_unique<Graphics>(logger_, clock_, topologyForEachLevel_.front(), sinkRegion_.computeCenter());
   graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
   if (Graphics::guiActive())
     graphics_->clockPlot(true);

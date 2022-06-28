@@ -80,7 +80,6 @@ void Graphics::drawCluster(gui::Painter& painter)
 
 void Graphics::drawHTree(gui::Painter& painter)
 {
-
   gui::Painter::Color color = gui::Painter::red;
   color.a = 180;
   painter.setBrush(color);

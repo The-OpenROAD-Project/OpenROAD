@@ -373,25 +373,9 @@ bool SinkClustering::isLimitExceeded(unsigned size,
 
 void SinkClustering::clusteringVisualizer(unsigned groupSize)
 {
-  debugPrint(logger_,
-            CTS,
-            "Stree",
-            6,
-            "In clustering visualizer");
   graphics_ = std::make_unique<Graphics>(logger_, this, groupSize);
-    debugPrint(logger_,
-            CTS,
-            "Stree",
-            7,
-            "Created graphics object");
-  if (Graphics::guiActive()){
-      debugPrint(logger_,
-            CTS,
-            "Stree",
-            8,
-            "Gui is active");
+  if (Graphics::guiActive())
     graphics_->clockPlot(true);
-  }
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)

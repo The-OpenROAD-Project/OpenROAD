@@ -34,27 +34,18 @@ class Graphics : public gui::Renderer
 
   // From Renderer API
   virtual void drawObjects(gui::Painter& painter) override;
-  // virtual gui::SelectionSet select(odb::dbTechLayer* layer,
-  //                                  const odb::Rect& region) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
  private:
   Clock* clock_;
-  // TreeBuilder::LevelTopology& topLevelTopology_;
-  // Point<double> topLevelBufferLoc_;
   HTreeBuilder* HTreeBuilder_;
   unsigned groupSize_;
   SinkClustering* SinkClustering_;
-//   GCell* selected_ = nullptr;
   utl::Logger* logger_;
   int x1_, x2_, y1_, y2_;
-
-//   void drawNesterov(gui::Painter& painter);
-//   void drawInitial(gui::Painter& painter);
-//   void drawBounds(gui::Painter& painter);
-
+  
   void drawHTree(gui::Painter& painter);
   void drawCluster(gui::Painter& painter);
   void setLineCoordinates(int x1, int y1, int x2, int y2);
