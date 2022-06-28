@@ -59,13 +59,13 @@ void Graphics::drawCluster(gui::Painter& painter)
   for (const std::vector<unsigned>& clusters : SinkClustering_->sinkClusteringSolution()) {
     const unsigned color = clusterCounter % colors.size();
     // const unsigned marker = (clusterCounter / colors.size()) % markers.size();
-    logger_->info(CTS, 77, "I passed first loop");
+    //logger_->report("I passed first loop");
     std::vector<Point<double>> clusterNodes;
     int tile_size_= 6900;
     for (unsigned idx : clusters) {
       const Point<double>& point = SinkClustering_->getPoints()[idx];
       clusterNodes.emplace_back(SinkClustering_->getPoints()[idx]); 
-      logger_->info(CTS, 88, "I passed second loop");
+      //logger_->report("I passed second loop");
 
       // colors[color].a = 180;
       painter.setBrush(colors[color]);
@@ -73,10 +73,10 @@ void Graphics::drawCluster(gui::Painter& painter)
       painter.setPenWidth(150);
       int xreal= tile_size_ * (point.getX() + 0.5);
       int yreal= tile_size_ * (point.getY() + 0.5);
-      logger_->info(CTS, 89, "set the painter brushes and ready to draw");
+      //logger_->report("set the painter brushes and ready to draw");
 
       painter.drawCircle(xreal, yreal, 50);
-      logger_->info(CTS, 92, "I just drew a circle");
+      //logger_->report("I just drew a circle");
 
       // file << "plt.scatter(" << point.getX() << ", " << point.getY() << ", c=\""
       //      << colors[color] << "\", marker='" << markers[marker] << "')\n";
@@ -188,8 +188,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   //   drawHTree(painter);
 
   if(SinkClustering_){
-      logger_->report(
-      "calling draw cluster", totalWL, clusterCounter);
+      logger_->report("calling draw cluster");
     drawCluster(painter);  
   }
 }
