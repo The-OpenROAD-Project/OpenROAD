@@ -2006,6 +2006,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 
+  drawManufacturingGrid(painter, bounds);
+
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
 
@@ -2121,6 +2123,42 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
+}
+
+void LayoutViewer::drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds)
+{
+  if (!options_->isManufacturingGridVisible()) {
+    return;
+  }
+
+  odb::dbTech* tech = block_->getDb()->getTech();
+  if (!tech->hasManufacturingGrid()) {
+    return;
+  }
+
+  const int grid = tech->getManufacturingGrid(); // DBU
+
+  const int pixels_per_grid_point = grid * pixels_per_dbu_;
+  const int pixels_per_grid_point_limit = 5; // want 5 pixels between each grid point
+
+  if (pixels_per_grid_point < pixels_per_grid_point_limit) {
+    return;
+  }
+
+  const int first_x = ((bounds.xMin() / grid) + 1) * grid;
+  const int last_x = (bounds.xMax() / grid) * grid;
+  const int first_y = ((bounds.yMin() / grid) + 1) * grid;
+  const int last_y = (bounds.yMax() / grid) * grid;
+
+  QPolygon points;
+  for (int x = first_x; x <= last_x; x += grid) {
+    for (int y = first_y; y <= last_y; y += grid) {
+      points.append(QPoint(x, y));
+    }
+  }
+
+  painter->setPen(Qt::white);
+  painter->drawPoints(points);
 }
 
 void LayoutViewer::drawRegionOutlines(QPainter* painter)
