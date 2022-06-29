@@ -38,26 +38,26 @@ using namespace fr;
 
 frPathSeg::frPathSeg(const drPathSeg& in)
 {
-  in.getPoints(begin_, end_);
+  std::tie(begin_, end_) = in.getPoints();
   layer_ = in.getLayerNum();
-  in.getStyle(style_);
+  style_ = in.getStyle();
   owner_ = nullptr;
   setTapered(in.isTapered());
 }
 
 frPathSeg::frPathSeg(const taPathSeg& in)
 {
-  in.getPoints(begin_, end_);
+  std::tie(begin_, end_) = in.getPoints();
   layer_ = in.getLayerNum();
-  in.getStyle(style_);
+  style_ = in.getStyle();
   owner_ = nullptr;
   setTapered(false);
 }
 
 frPatchWire::frPatchWire(const drPatchWire& in)
 {
-  in.getOrigin(origin_);
-  in.getOffsetBox(offsetBox_);
+  origin_ = in.getOrigin();
+  offsetBox_ = in.getOffsetBox();
   layer_ = in.getLayerNum();
   owner_ = nullptr;
 }

@@ -41,8 +41,8 @@ void getGuide(int x,
               vector<frRect>& guides,
               frDesign* design)
 {
-  Point g(x, y), gCell;
-  design->getTopBlock()->getGCellCenter(g, gCell);
+  ;
+  Point gCell = design->getTopBlock()->getGCellCenter({x, y});
   for (int i = 0; i < (int) guides.size(); i++) {
     if (guides[i].getBBox().intersects(gCell))
       outGuides.push_back(i);
@@ -93,7 +93,7 @@ void io::Parser::patchGuides(frNet* net,
     case frcInstTerm: {
       frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
       iTerm->getShapes(pinShapes, true);
-      pinBBox = iTerm->getBBox();
+      pinBBox = iTerm->getBBox(true);
       name = iTerm->getName();
       break;
     }
@@ -112,9 +112,8 @@ void io::Parser::patchGuides(frNet* net,
       pinBBox.yMax()
           - 1);  // pins tangent to gcell arent considered as part of them
   // set pinBBox to gCell coords
-  Point llGcell, urGcell;
-  design->getTopBlock()->getGCellIdx(pinBBox.ll(), llGcell);
-  design->getTopBlock()->getGCellIdx(pinBBox.ur(), urGcell);
+  Point llGcell = design->getTopBlock()->getGCellIdx(pinBBox.ll());
+  Point urGcell = design->getTopBlock()->getGCellIdx(pinBBox.ur());
 
   // finds the gCell with higher pinShape overlapping area (approximate)
   frArea bestArea = 0, area = 0;
@@ -122,10 +121,9 @@ void io::Parser::patchGuides(frNet* net,
   vector<int> candidateGuides;  // indexes of guides in rects
   for (int x = llGcell.x(); x <= urGcell.x(); x++) {
     for (int y = llGcell.y(); y <= urGcell.y(); y++) {
-      Rect gCellBox;
       Rect intersection;
       Point gCell(x, y);
-      design->getTopBlock()->getGCellBox(gCell, gCellBox);
+      Rect gCellBox = design->getTopBlock()->getGCellBox(gCell);
       for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
         if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
           continue;
@@ -155,8 +153,8 @@ void io::Parser::patchGuides(frNet* net,
   // get the guide that is closer to the gCell
   int closerGuideIdx = -1;
   int dist = 0, closerDist = std::numeric_limits<int>().max();
-  Point3D bestPinLocCoords;
-  design->getTopBlock()->getGCellCenter(bestPinLocIdx, bestPinLocCoords);
+  Point center = design->getTopBlock()->getGCellCenter(bestPinLocIdx);
+  Point3D bestPinLocCoords(center.x(), center.y(), 0);
   for (auto& guideIdx : candidateGuides) {
     dist = distL1(guides[guideIdx].getBBox(), bestPinLocCoords);
     dist += abs(guides[guideIdx].getLayerNum() - bestPinLocIdx.z());
@@ -297,15 +295,13 @@ void io::Parser::genGuides_merge(
                     "Guide in layer {} which is above max routing layer {}",
                     rect.getLayerNum(),
                     TOP_ROUTING_LAYER);
-    Rect box;
-    rect.getBBox(box);
-    Point idx;
+    Rect box = rect.getBBox();
     Point pt(box.ll());
-    design->getTopBlock()->getGCellIdx(pt, idx);
+    Point idx = design->getTopBlock()->getGCellIdx(pt);
     frCoord x1 = idx.x();
     frCoord y1 = idx.y();
     pt.set(box.xMax() - 1, box.yMax() - 1);
-    design->getTopBlock()->getGCellIdx(pt, idx);
+    idx = design->getTopBlock()->getGCellIdx(pt);
     frCoord x2 = idx.x();
     frCoord y2 = idx.y();
     auto layerNum = rect.getLayerNum();
@@ -548,15 +544,13 @@ void io::Parser::genGuides_gCell2TermMap(
         auto shape = static_cast<frRect*>(fig);
         auto lNum = shape->getLayerNum();
         auto layer = design->getTech()->getLayer(lNum);
-        Rect box;
-        shape->getBBox(box);
-        Point idx;
+        Rect box = shape->getBBox();
         Point pt(box.xMin() + 1, box.yMin() + 1);
-        design->getTopBlock()->getGCellIdx(pt, idx);
+        Point idx = design->getTopBlock()->getGCellIdx(pt);
         frCoord x1 = idx.x();
         frCoord y1 = idx.y();
         pt.set(box.ur().x() - 1, box.ur().y() - 1);
-        design->getTopBlock()->getGCellIdx(pt, idx);
+        idx = design->getTopBlock()->getGCellIdx(pt);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();
         // ispd18_test4 and ispd18_test5 have zero overlap guide
@@ -564,10 +558,8 @@ void io::Parser::genGuides_gCell2TermMap(
         // initDR requirements
         bool condition2 = false;  // upper right corner has zero-length
                                   // overlapped with gcell
-        Rect gcellBox;
-        Point tmpIdx;
-        design->getTopBlock()->getGCellIdx(box.ll(), tmpIdx);
-        design->getTopBlock()->getGCellBox(tmpIdx, gcellBox);
+        Point tmpIdx = design->getTopBlock()->getGCellIdx(box.ll());
+        Rect gcellBox = design->getTopBlock()->getGCellBox(tmpIdx);
         if (box.ll() == gcellBox.ll()) {
           condition2 = true;
         }
@@ -629,8 +621,7 @@ void io::Parser::genGuides_gCell2PinMap(
         gCell2PinMap)
 {
   for (auto& instTerm : net->getInstTerms()) {
-    dbTransform xform;
-    instTerm->getInst()->getUpdatedXform(xform);
+    dbTransform xform = instTerm->getInst()->getUpdatedXform();
     auto origTerm = instTerm->getTerm();
     auto uTerm = make_unique<frMTerm>(*origTerm, xform);
     auto term = uTerm.get();
@@ -665,13 +656,10 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   }
 
   // ap
-  dbTransform shiftXform;
-  dbTransform xform;
-  instTerm->getInst()->getUpdatedXform(xform);
   frMTerm* trueTerm = instTerm->getTerm();
   string name;
   frInst* inst = instTerm->getInst();
-  inst->getTransform(shiftXform);
+  dbTransform shiftXform = inst->getTransform();
   shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
   int pinIdx = 0;
@@ -697,13 +685,11 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
     }
 
     if (prefAp) {
-      Point bp;
-      prefAp->getPoint(bp);
+      Point bp = prefAp->getPoint();
       auto bNum = prefAp->getLayerNum();
       shiftXform.apply(bp);
 
-      Point idx;
-      design->getTopBlock()->getGCellIdx(bp, idx);
+      Point idx = design->getTopBlock()->getGCellIdx(bp);
       gCell2PinMap[make_pair(idx, bNum)].insert(
           static_cast<frBlockObject*>(instTerm));
       succesPinCnt++;
@@ -739,12 +725,10 @@ bool io::Parser::genGuides_gCell2APTermMap(
     }
     frAccessPoint* prefAp = access_points[0].get();
 
-    Point bp;
-    prefAp->getPoint(bp);
+    Point bp = prefAp->getPoint();
     const auto bNum = prefAp->getLayerNum();
 
-    Point idx;
-    design->getTopBlock()->getGCellIdx(bp, idx);
+    Point idx = design->getTopBlock()->getGCellIdx(bp);
     gCell2PinMap[{idx, bNum}].insert(term);
     succesPinCnt++;
   }
@@ -783,9 +767,9 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
     switch (term->typeId()) {
       case frcInstTerm: {
         inst = static_cast<frInstTerm*>(term)->getInst();
-        inst->getTransform(shiftXform);
+        shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        inst->getUpdatedXform(instXform);
+        instXform = inst->getUpdatedXform();
         auto trueTerm = static_cast<frInstTerm*>(term)->getTerm();
 
         genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
@@ -827,22 +811,16 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm
     }
 
     if (prefAp) {
-      Point bp;
-      prefAp->getPoint(bp);
+      Point bp = prefAp->getPoint();
       auto bNum = prefAp->getLayerNum();
       shiftXform.apply(bp);
 
-      Point idx;
-      Rect llBox, urBox;
-      design->getTopBlock()->getGCellIdx(bp, idx);
-      design->getTopBlock()->getGCellBox(Point(idx.x() - 1, idx.y() - 1),
-                                         llBox);
-      design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1),
-                                         urBox);
+      Point idx = design->getTopBlock()->getGCellIdx(bp);
+      Rect llBox = design->getTopBlock()->getGCellBox(Point(idx.x() - 1, idx.y() - 1));
+      Rect urBox = design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1));
       Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
-      frLayerNum beginLayerNum, endLayerNum;
-      beginLayerNum = bNum;
-      endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
+      frLayerNum beginLayerNum = bNum;
+      frLayerNum endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
 
       for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
         for (int xIdx = -1; xIdx <= 1; xIdx++) {
@@ -988,9 +966,8 @@ void io::Parser::genGuides_final(
     if (i < gCnt && adjPrevIdx[i] >= gCnt) {
       auto pinIdx = adjPrevIdx[i] - gCnt;
       auto guideIdx = i;
-      Rect box;
       auto& rect = rects[guideIdx];
-      rect.getBBox(box);
+      Rect box = rect.getBBox();
       auto lNum = rect.getLayerNum();
       auto obj = pin2ptr[pinIdx];
       // cout <<" pin1 id " <<adjPrevIdx[i] <<" prev " <<i <<endl;
@@ -1007,9 +984,8 @@ void io::Parser::genGuides_final(
     } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
       auto pinIdx = i - gCnt;
       auto guideIdx = adjPrevIdx[i];
-      Rect box;
       auto& rect = rects[guideIdx];
-      rect.getBBox(box);
+      Rect box = rect.getBBox();
       auto lNum = rect.getLayerNum();
       auto obj = pin2ptr[pinIdx];
       // cout <<" pin2 id " <<i <<" prev " <<adjPrevIdx[i] <<endl;
@@ -1036,8 +1012,7 @@ void io::Parser::genGuides_final(
   for (int i = 0; i < nCnt - gCnt; i++) {
     auto obj = pin2ptr[i];
     for (auto& [pt, lNum] : pinIdx2GCellUpdated[i]) {
-      Point absPt;
-      design->getTopBlock()->getGCellCenter(pt, absPt);
+      Point absPt = design->getTopBlock()->getGCellCenter(pt);
       tmpGRPins.push_back(make_pair(obj, absPt));
       updatedNodeMap[make_pair(pt, lNum)].insert(i + gCnt);
     }
@@ -1047,8 +1022,7 @@ void io::Parser::genGuides_final(
       continue;
     }
     auto& rect = rects[i];
-    Rect box;
-    rect.getBBox(box);
+    Rect box = rect.getBBox();
     updatedNodeMap[make_pair(Point(box.xMin(), box.yMin()), rect.getLayerNum())]
         .insert(i);
     updatedNodeMap[make_pair(Point(box.xMax(), box.yMax()), rect.getLayerNum())]
@@ -1067,8 +1041,7 @@ void io::Parser::genGuides_final(
             && updatedNodeMap.find(make_pair(pt, lNum - 2))
                    == updatedNodeMap.end()) {
           auto& rect = rects[idx];
-          Rect box;
-          rect.getBBox(box);
+          Rect box = rect.getBBox();
           if (box.ll() == pt) {
             rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
           } else {
@@ -1093,12 +1066,10 @@ void io::Parser::genGuides_final(
       continue;
     }
     auto& rect = rects[i];
-    Rect box;
-    rect.getBBox(box);
+    Rect box = rect.getBBox();
     auto guide = make_unique<frGuide>();
-    Point begin, end;
-    design->getTopBlock()->getGCellCenter(box.ll(), begin);
-    design->getTopBlock()->getGCellCenter(box.ur(), end);
+    Point begin = design->getTopBlock()->getGCellCenter(box.ll());
+    Point end = design->getTopBlock()->getGCellCenter(box.ur());
     guide->setPoints(begin, end);
     guide->setBeginLayerNum(rect.getLayerNum());
     guide->setEndLayerNum(rect.getLayerNum());
@@ -1119,8 +1090,7 @@ void io::Parser::genGuides_buildNodeMap(
 {
   for (int i = 0; i < (int) rects.size(); i++) {
     auto& rect = rects[i];
-    Rect box;
-    rect.getBBox(box);
+    Rect box = rect.getBBox();
     nodeMap[make_pair(box.ll(), rect.getLayerNum())].insert(i);
     nodeMap[make_pair(box.ur(), rect.getLayerNum())].insert(i);
   }

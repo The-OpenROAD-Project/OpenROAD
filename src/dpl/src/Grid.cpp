@@ -146,8 +146,7 @@ Opendp::visitCellPixels(Cell &cell,
     if (obs->getTechLayer()->getType() == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
-      Rect rect;
-      obs->getBox(rect);
+      Rect rect = obs->getBox();
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);

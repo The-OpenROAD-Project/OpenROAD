@@ -2600,7 +2600,7 @@ Ath__gridTable::Ath__gridTable(dbBox* bb,
                                uint minWidth)
 {
   init1(1024, rowSize, colSize, bb->getDX(), bb->getDY());
-  bb->getBox(_rectBB);
+  _rectBB = bb->getBox();
   _schema = 1;
   _overlapTouchCheck = 1;
   _noPowerSource = 0;

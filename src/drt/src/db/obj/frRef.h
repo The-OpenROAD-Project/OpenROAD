@@ -38,8 +38,8 @@ class frRef : public frPinFig
  public:
   // getters
   virtual dbOrientType getOrient() const = 0;
-  virtual void getOrigin(Point& tmpOrigin) const = 0;
-  virtual void getTransform(dbTransform& xform) const = 0;
+  virtual Point getOrigin() const = 0;
+  virtual dbTransform getTransform() const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;

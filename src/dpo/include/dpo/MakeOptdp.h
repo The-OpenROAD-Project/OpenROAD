@@ -40,11 +40,8 @@ namespace ord {
 
 class OpenRoad;
 
-dpo::Optdp *
-makeOptdp();
-void
-initOptdp(OpenRoad *openroad);
-void
-deleteOptdp(dpo::Optdp *opt);
+dpo::Optdp* makeOptdp();
+void initOptdp(OpenRoad* openroad);
+void deleteOptdp(dpo::Optdp* opt);
 
 }  // namespace ord

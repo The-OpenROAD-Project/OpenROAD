@@ -444,9 +444,7 @@ OpenRoad::unitsInitialized()
 odb::Rect
 OpenRoad::getCore()
 {
-  odb::Rect core;
-  db_->getChip()->getBlock()->getCoreArea(core);
-  return core;
+  return db_->getChip()->getBlock()->getCoreArea();
 }
 
 void OpenRoad::addObserver(Observer *observer)

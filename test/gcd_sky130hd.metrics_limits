@@ -1,4 +1,4 @@
-{
+        {
   "IFP::instance_count" : "300.0"
  ,"DPL::design_area" : "4672.8"
  ,"DPL::utilization" : "6.0"
@@ -10,7 +10,7 @@
  ,"RSZ::worst_slack_max" : "-0.9493629222580738"
  ,"RSZ::tns_max" : "-24.82523824554115"
  ,"RSZ::hold_buffer_count" : "0"
- ,"GRT::ANT::errors" : "0"
+ ,"GRT::ANT::errors" : "15"
  ,"DRT::drv" : "0"
  ,"DRT::worst_slack_min" : "0.05079073261287992"
  ,"DRT::worst_slack_max" : "-0.9621622397817569"

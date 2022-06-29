@@ -62,8 +62,7 @@ struct GCFixture : public Fixture
                   frConstraintTypeEnum type,
                   const Rect& expected_bbox)
   {
-    Rect bbox;
-    marker->getBBox(bbox);
+    Rect bbox = marker->getBBox();
 
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());
@@ -315,6 +314,22 @@ BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
 
   // Test the results
   BOOST_TEST(worker.getMarkers().size() == 0);
+}
+
+BOOST_DATA_TEST_CASE(corner_to_corner, bdata::make({true, false}), legal)
+{
+  // Setup
+  auto con = makeCornerConstraint(2);
+  con->setCornerToCorner(legal);
+
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 0}, {200, 0});
+  makePathseg(n1, 2, {350, 250}, {1000, 250});
+
+  runGC();
+
+  // Test the results
+  BOOST_TEST(worker.getMarkers().size() == (legal ? 0 : 1));
 }
 
 // Check violation for corner spacing on a concave corner
@@ -931,9 +946,7 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   }
 }
 
-BOOST_DATA_TEST_CASE(cut_spc_tbl,
-                    (bdata::make({true, false})),
-                    viol)
+BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
 {
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);

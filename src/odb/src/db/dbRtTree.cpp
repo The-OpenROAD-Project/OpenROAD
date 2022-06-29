@@ -150,8 +150,7 @@ void dbRtVia::getBBox(Rect& bbox)
     return;
   }
 
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + x;
   int ymin = b.yMin() + y;
   int xmax = b.xMax() + x;
@@ -170,8 +169,7 @@ void dbRtTechVia::getBBox(Rect& bbox)
     return;
   }
 
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + x;
   int ymin = b.yMin() + y;
   int xmax = b.xMax() + x;

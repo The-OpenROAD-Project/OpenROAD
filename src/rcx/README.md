@@ -101,6 +101,8 @@ bench_wires
                                   in the pattern
   [-s_list space_multiplier_list] list of wire spacing multipliers
   [-all]                          generate all patterns
+  [-over_dist dist]               The maximum layer span above the target layer
+  [-under_dist dist]              The maximum layer span below the target layer
 ```
 
 The `bench_wires` command produces a layout which contains various patterns

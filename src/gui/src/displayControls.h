@@ -165,6 +165,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   DisplayControls(QWidget* parent = nullptr);
   ~DisplayControls();
 
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
@@ -224,6 +226,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+  bool isManufacturingGridVisible() const override;
 
   bool isModuleView() const override;
 
@@ -353,6 +356,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow detailed;
     ModelRow selected;
     ModelRow module;
+    ModelRow manufacturing_grid;
   };
 
   struct InstanceShapeModels
@@ -425,6 +429,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   odb::dbTechLayer* layers_menu_layer_;
 
   bool ignore_callback_;
+  bool ignore_selection_;
 
   // Categories in the model
   ModelRow layers_group_;

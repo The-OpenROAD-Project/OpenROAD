@@ -3390,971 +3390,971 @@ END COMPONENTS
 PINS 149 ;
     - DVDD_0 + NET DVDD_0 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 430000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 430000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 2990000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 2990000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 5230000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 5230000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 5550000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 5550000 ) N ;
     - DVDD_1 + NET DVDD_1 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 4910000 ) N ;
     - DVSS_0 + NET DVSS_0 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 430000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 430000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 1070000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 2990000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 2990000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 5550000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 5550000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 5550000 ) N ;
     - DVSS_1 + NET DVSS_1 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 5230000 ) N ;
     - VDD + NET VDD + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 430000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 1070000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 1070000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 1710000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 4270000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 5230000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 5550000 ) N ;
     - VDD1 + NET VDD1 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 3310000 ) N ;
     - VDD2 + NET VDD2 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2660000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2020000 3950000 ) N ;
     - VDD3 + NET VDD3 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 3950000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 3950000 ) N ;
     - VDD4 + NET VDD4 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3940000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3300000 2670000 ) N ;
     - VSS + NET VSS + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 750000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 1070000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 1070000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 1390000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 4590000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 4910000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 5230000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 5550000 ) N
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 5550000 ) N ;
     - VSS1 + NET VSS1 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 2670000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 3310000 ) N ;
     - VSS2 + NET VSS2 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 2340000 3950000 ) N ;
     - VSS3 + NET VSS3 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 3310000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 3630000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 3950000 ) N ;
     - VSS4 + NET VSS4 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 2030000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 2350000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3620000 2670000 ) N ;
     - p_bsg_tag_clk_i + NET p_bsg_tag_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 2990000 ) N ;
     - p_bsg_tag_clk_o + NET p_bsg_tag_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 3630000 ) N ;
     - p_bsg_tag_data_i + NET p_bsg_tag_data_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 2990000 ) N ;
     - p_bsg_tag_data_o + NET p_bsg_tag_data_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 3630000 ) N ;
     - p_bsg_tag_en_i + NET p_bsg_tag_en_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 3310000 ) N ;
     - p_ci2_0_o + NET p_ci2_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 5550000 ) N ;
     - p_ci2_1_o + NET p_ci2_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 5230000 ) N ;
     - p_ci2_2_o + NET p_ci2_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 4910000 ) N ;
     - p_ci2_3_o + NET p_ci2_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 5550000 ) N ;
     - p_ci2_4_o + NET p_ci2_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 5230000 ) N ;
     - p_ci2_5_o + NET p_ci2_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 5230000 ) N ;
     - p_ci2_6_o + NET p_ci2_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 5550000 ) N ;
     - p_ci2_7_o + NET p_ci2_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 5230000 ) N ;
     - p_ci2_8_o + NET p_ci2_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 4910000 ) N ;
     - p_ci2_clk_o + NET p_ci2_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 4590000 ) N ;
     - p_ci2_tkn_i + NET p_ci2_tkn_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 5230000 ) N ;
     - p_ci2_v_o + NET p_ci2_v_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 4590000 ) N ;
     - p_ci_0_i + NET p_ci_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 4910000 ) N ;
     - p_ci_1_i + NET p_ci_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 4590000 ) N ;
     - p_ci_2_i + NET p_ci_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 4270000 ) N ;
     - p_ci_3_i + NET p_ci_3_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 4270000 ) N ;
     - p_ci_4_i + NET p_ci_4_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 3950000 ) N ;
     - p_ci_5_i + NET p_ci_5_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 3630000 ) N ;
     - p_ci_6_i + NET p_ci_6_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 3630000 ) N ;
     - p_ci_7_i + NET p_ci_7_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 3310000 ) N ;
     - p_ci_8_i + NET p_ci_8_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 3310000 ) N ;
     - p_ci_clk_i + NET p_ci_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 3950000 ) N ;
     - p_ci_tkn_o + NET p_ci_tkn_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 3950000 ) N ;
     - p_ci_v_i + NET p_ci_v_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 3630000 ) N ;
     - p_clk_A_i + NET p_clk_A_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 4590000 ) N ;
     - p_clk_B_i + NET p_clk_B_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 4270000 ) N ;
     - p_clk_C_i + NET p_clk_C_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 5550000 ) N ;
     - p_clk_async_reset_i + NET p_clk_async_reset_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 4910000 ) N ;
     - p_clk_o + NET p_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 4590000 ) N ;
     - p_co2_0_o + NET p_co2_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 3950000 ) N ;
     - p_co2_1_o + NET p_co2_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 3950000 ) N ;
     - p_co2_2_o + NET p_co2_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 3950000 ) N ;
     - p_co2_3_o + NET p_co2_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 4270000 ) N ;
     - p_co2_4_o + NET p_co2_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 4270000 ) N ;
     - p_co2_5_o + NET p_co2_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 4910000 ) N ;
     - p_co2_6_o + NET p_co2_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 5230000 ) N ;
     - p_co2_7_o + NET p_co2_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 5230000 ) N ;
     - p_co2_8_o + NET p_co2_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 5550000 ) N ;
     - p_co2_clk_o + NET p_co2_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 4270000 ) N ;
     - p_co2_tkn_i + NET p_co2_tkn_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 4590000 ) N ;
     - p_co2_v_o + NET p_co2_v_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 4590000 ) N ;
     - p_co_0_i + NET p_co_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 5230000 ) N ;
     - p_co_1_i + NET p_co_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 4910000 ) N ;
     - p_co_2_i + NET p_co_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 5550000 ) N ;
     - p_co_3_i + NET p_co_3_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 5550000 ) N ;
     - p_co_4_i + NET p_co_4_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 4270000 ) N ;
     - p_co_5_i + NET p_co_5_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 4910000 ) N ;
     - p_co_6_i + NET p_co_6_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 5550000 ) N ;
     - p_co_7_i + NET p_co_7_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 5230000 ) N ;
     - p_co_8_i + NET p_co_8_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 4590000 ) N ;
     - p_co_clk_i + NET p_co_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 4910000 ) N ;
     - p_co_tkn_o + NET p_co_tkn_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 5550000 ) N ;
     - p_co_v_i + NET p_co_v_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 5230000 ) N ;
     - p_core_async_reset_i + NET p_core_async_reset_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 4910000 ) N ;
     - p_ddr_addr_0_o + NET p_ddr_addr_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 430000 ) N ;
     - p_ddr_addr_10_o + NET p_ddr_addr_10_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 1710000 ) N ;
     - p_ddr_addr_11_o + NET p_ddr_addr_11_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 1070000 ) N ;
     - p_ddr_addr_12_o + NET p_ddr_addr_12_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2020000 1390000 ) N ;
     - p_ddr_addr_13_o + NET p_ddr_addr_13_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 1710000 ) N ;
     - p_ddr_addr_14_o + NET p_ddr_addr_14_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 1070000 ) N ;
     - p_ddr_addr_15_o + NET p_ddr_addr_15_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 430000 ) N ;
     - p_ddr_addr_1_o + NET p_ddr_addr_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 1710000 ) N ;
     - p_ddr_addr_2_o + NET p_ddr_addr_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 1070000 ) N ;
     - p_ddr_addr_3_o + NET p_ddr_addr_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2980000 430000 ) N ;
     - p_ddr_addr_4_o + NET p_ddr_addr_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 1710000 ) N ;
     - p_ddr_addr_5_o + NET p_ddr_addr_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 1070000 ) N ;
     - p_ddr_addr_6_o + NET p_ddr_addr_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 430000 ) N ;
     - p_ddr_addr_7_o + NET p_ddr_addr_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2660000 750000 ) N ;
     - p_ddr_addr_8_o + NET p_ddr_addr_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 1070000 ) N ;
     - p_ddr_addr_9_o + NET p_ddr_addr_9_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 2340000 430000 ) N ;
     - p_ddr_ba_0_o + NET p_ddr_ba_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 1070000 ) N ;
     - p_ddr_ba_1_o + NET p_ddr_ba_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 430000 ) N ;
     - p_ddr_ba_2_o + NET p_ddr_ba_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 750000 ) N ;
     - p_ddr_cas_n_o + NET p_ddr_cas_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 1070000 ) N ;
     - p_ddr_ck_n_o + NET p_ddr_ck_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 1710000 ) N ;
     - p_ddr_ck_p_o + NET p_ddr_ck_p_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 750000 ) N ;
     - p_ddr_cke_o + NET p_ddr_cke_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 1070000 ) N ;
     - p_ddr_cs_n_o + NET p_ddr_cs_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 430000 ) N ;
     - p_ddr_dm_0_o + NET p_ddr_dm_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 2670000 ) N ;
     - p_ddr_dm_1_o + NET p_ddr_dm_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 430000 ) N ;
     - p_ddr_dm_2_o + NET p_ddr_dm_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 750000 ) N ;
     - p_ddr_dm_3_o + NET p_ddr_dm_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 2990000 ) N ;
     - p_ddr_dq_0_io + NET p_ddr_dq_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 2670000 ) N ;
     - p_ddr_dq_10_io + NET p_ddr_dq_10_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 1710000 ) N ;
     - p_ddr_dq_11_io + NET p_ddr_dq_11_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 2030000 ) N ;
     - p_ddr_dq_12_io + NET p_ddr_dq_12_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 2030000 ) N ;
     - p_ddr_dq_13_io + NET p_ddr_dq_13_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 2030000 ) N ;
     - p_ddr_dq_14_io + NET p_ddr_dq_14_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 2350000 ) N ;
     - p_ddr_dq_15_io + NET p_ddr_dq_15_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 2350000 ) N ;
     - p_ddr_dq_16_io + NET p_ddr_dq_16_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 1710000 ) N ;
     - p_ddr_dq_17_io + NET p_ddr_dq_17_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 1710000 ) N ;
     - p_ddr_dq_18_io + NET p_ddr_dq_18_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 1390000 ) N ;
     - p_ddr_dq_19_io + NET p_ddr_dq_19_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 1390000 ) N ;
     - p_ddr_dq_1_io + NET p_ddr_dq_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 2990000 ) N ;
     - p_ddr_dq_20_io + NET p_ddr_dq_20_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 1070000 ) N ;
     - p_ddr_dq_21_io + NET p_ddr_dq_21_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 750000 ) N ;
     - p_ddr_dq_22_io + NET p_ddr_dq_22_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 750000 ) N ;
     - p_ddr_dq_23_io + NET p_ddr_dq_23_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 430000 ) N ;
     - p_ddr_dq_24_io + NET p_ddr_dq_24_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 2670000 ) N ;
     - p_ddr_dq_25_io + NET p_ddr_dq_25_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 2350000 ) N ;
     - p_ddr_dq_26_io + NET p_ddr_dq_26_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 2350000 ) N ;
     - p_ddr_dq_27_io + NET p_ddr_dq_27_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 2350000 ) N ;
     - p_ddr_dq_28_io + NET p_ddr_dq_28_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5540000 2030000 ) N ;
     - p_ddr_dq_29_io + NET p_ddr_dq_29_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 5220000 2030000 ) N ;
     - p_ddr_dq_2_io + NET p_ddr_dq_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 2990000 ) N ;
     - p_ddr_dq_30_io + NET p_ddr_dq_30_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 2030000 ) N ;
     - p_ddr_dq_31_io + NET p_ddr_dq_31_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 1710000 ) N ;
     - p_ddr_dq_3_io + NET p_ddr_dq_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 2990000 ) N ;
     - p_ddr_dq_4_io + NET p_ddr_dq_4_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 3310000 ) N ;
     - p_ddr_dq_5_io + NET p_ddr_dq_5_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 3310000 ) N ;
     - p_ddr_dq_6_io + NET p_ddr_dq_6_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1380000 3310000 ) N ;
     - p_ddr_dq_7_io + NET p_ddr_dq_7_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 3630000 ) N ;
     - p_ddr_dq_8_io + NET p_ddr_dq_8_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 1710000 ) N ;
     - p_ddr_dq_9_io + NET p_ddr_dq_9_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 1710000 ) N ;
     - p_ddr_dqs_n_0_io + NET p_ddr_dqs_n_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1700000 2670000 ) N ;
     - p_ddr_dqs_n_1_io + NET p_ddr_dqs_n_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 740000 750000 ) N ;
     - p_ddr_dqs_n_2_io + NET p_ddr_dqs_n_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 430000 ) N ;
     - p_ddr_dqs_n_3_io + NET p_ddr_dqs_n_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4900000 2670000 ) N ;
     - p_ddr_dqs_p_0_io + NET p_ddr_dqs_p_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 420000 2350000 ) N ;
     - p_ddr_dqs_p_1_io + NET p_ddr_dqs_p_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 1060000 430000 ) N ;
     - p_ddr_dqs_p_2_io + NET p_ddr_dqs_p_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4580000 1070000 ) N ;
     - p_ddr_dqs_p_3_io + NET p_ddr_dqs_p_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 4260000 2670000 ) N ;
     - p_ddr_odt_o + NET p_ddr_odt_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 1390000 ) N ;
     - p_ddr_ras_n_o + NET p_ddr_ras_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3940000 750000 ) N ;
     - p_ddr_reset_n_o + NET p_ddr_reset_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 750000 ) N ;
     - p_ddr_we_n_o + NET p_ddr_we_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 430000 ) N ;
     - p_misc_o + NET p_misc_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 5230000 ) N ;
     - p_sel_0_i + NET p_sel_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3300000 4590000 ) N ;
     - p_sel_1_i + NET p_sel_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 4270000 ) N ;
     - p_sel_2_i + NET p_sel_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
+        + LAYER metal9 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 3620000 5230000 ) N ;
 END PINS
 SPECIALNETS 185 ;

@@ -86,5 +86,6 @@ record_tests {
   repair_wire8
   repair_wire9
   repair_wire10
+  repair_wire11
   gcd_resize
 }

@@ -141,7 +141,9 @@ bench_wires(bool db_only,
             int len,
             int under_met,
             const char* w_list,
-            const char* s_list)
+            const char* s_list,
+            int over_dist,
+            int under_dist)
 {
   Ext* ext = getOpenRCX();
   Ext::BenchWiresOptions opts;
@@ -156,6 +158,8 @@ bench_wires(bool db_only,
   opts.under_met = under_met;
   opts.met_cnt = met_cnt;
   opts.db_only = db_only;
+  opts.over_dist = over_dist;
+  opts.under_dist = under_dist;
 
   ext->bench_wires(opts);
 }

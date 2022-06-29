@@ -55,7 +55,8 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
                              utl::Logger* logger)
-    : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger)
+  : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger),
+    unique_diode_index_(1)
 {
   block_ = db_->getChip()->getBlock();
 }
@@ -64,80 +65,109 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
                                            int max_routing_layer,
                                            odb::dbMTerm* diode_mterm)
 {
-  odb::dbTech* tech = db_->getTech();
-
-  arc_->loadAntennaRules();
-
-  std::map<int, odb::dbTechVia*> default_vias
-      = grouter_->getDefaultVias(max_routing_layer);
-
+  makeNetWires(routing, max_routing_layer);
+  arc_->initAntennaRules();
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    odb::dbWire* wire = odb::dbWire::create(db_net);
-    if (wire != nullptr) {
-      odb::dbWireEncoder wire_encoder;
-      wire_encoder.begin(wire);
-
-      std::unordered_set<GSegment, GSegmentHash> wire_segments;
-      for (GSegment& seg : route) {
-        if (std::abs(seg.init_layer - seg.final_layer) > 1) {
-          logger_->error(GRT, 68, "Global route segment not valid.");
-        }
-
-        if (wire_segments.find(seg) == wire_segments.end()) {
-          int x1 = seg.init_x;
-          int y1 = seg.init_y;
-          int x2 = seg.final_x;
-          int y2 = seg.final_y;
-          int l1 = seg.init_layer;
-          int l2 = seg.final_layer;
-
-          odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
-
-          if (l1 == l2) {  // Add wire
-            if (x1 != x2 || y1 != y2) {
-              wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-              wire_encoder.addPoint(x1, y1);
-              wire_encoder.addPoint(x2, y2);
-              wire_segments.insert(seg);
-            }
-          } else {  // Add via
-            int bottom_layer = std::min(l1, l2);
-            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addTechVia(default_vias[bottom_layer]);
-            wire_segments.insert(seg);
-          }
-        }
-      }
-      wire_encoder.end();
-
-      odb::orderWires(db_net, false, false);
-
-      std::vector<ant::ViolationInfo> netViol
-          = arc_->getNetAntennaViolations(
-              db_net,
-              diode_mterm->getMaster()->getConstName(),
-              diode_mterm->getConstName());
-      if (!netViol.empty())
+    if (db_net->getWire()) {
+      std::vector<ant::ViolationInfo> netViol =
+        arc_->getAntennaViolations(db_net, diode_mterm);
+      if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
-      odb::dbWire::destroy(wire);
-    } else {
-      logger_->error(
-          GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
+        debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",
+                   db_net->getConstName());
+      }
     }
   }
+  destroyNetWires();
 
   logger_->info(GRT, 12, "Antenna violations: {}", antenna_violations_.size());
   return !antenna_violations_.empty();
 }
 
+void AntennaRepair::makeNetWires(NetRouteMap& routing,
+                                 int max_routing_layer)
+{
+  std::map<int, odb::dbTechVia*> default_vias
+    = grouter_->getDefaultVias(max_routing_layer);
+
+  for (auto net_route : routing) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute& route = net_route.second;
+    makeNetWire(db_net, route, default_vias);
+  }
+}
+
+odb::dbWire* AntennaRepair::makeNetWire(odb::dbNet* db_net,
+                                        GRoute& route,
+                                        std::map<int, odb::dbTechVia*> &default_vias)
+{
+  odb::dbWire* wire = odb::dbWire::create(db_net);
+  if (wire) {
+    odb::dbTech* tech = db_->getTech();
+    odb::dbWireEncoder wire_encoder;
+    wire_encoder.begin(wire);
+
+    std::unordered_set<GSegment, GSegmentHash> wire_segments;
+    for (GSegment& seg : route) {
+      if (std::abs(seg.init_layer - seg.final_layer) > 1) {
+        logger_->error(GRT, 68, "Global route segment not valid.");
+      }
+
+      if (wire_segments.find(seg) == wire_segments.end()) {
+        int x1 = seg.init_x;
+        int y1 = seg.init_y;
+        int x2 = seg.final_x;
+        int y2 = seg.final_y;
+        int l1 = seg.init_layer;
+        int l2 = seg.final_layer;
+
+        odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
+
+        if (l1 == l2) {  // Add wire
+          if (x1 != x2 || y1 != y2) {
+            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addPoint(x2, y2);
+            wire_segments.insert(seg);
+          }
+        } else {  // Add via
+          int bottom_layer = std::min(l1, l2);
+          wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
+          wire_encoder.addPoint(x1, y1);
+          wire_encoder.addTechVia(default_vias[bottom_layer]);
+          wire_segments.insert(seg);
+        }
+      }
+    }
+    wire_encoder.end();
+
+    odb::orderWires(db_net, false);
+    return wire;
+  }
+  else {
+    logger_->error(GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
+    // suppress gcc warning
+    return nullptr;
+  }
+}
+
+void AntennaRepair::destroyNetWires()
+{
+  for (odb::dbNet* db_net : block_->getNets()) {
+    odb::dbWire* wire = db_net->getWire();
+    if (wire)
+      odb::dbWire::destroy(wire);
+  }
+}
+
 void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 {
   int site_width = -1;
-  int cnt = diode_insts_.size();
   r_tree fixed_insts;
+
+  illegal_diode_placement_count_ = 0;
+  diode_insts_.clear();
 
   auto rows = block_->getRows();
   for (odb::dbRow* db_row : rows) {
@@ -155,26 +185,38 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixed_insts);
 
-  for (auto const& violation : antenna_violations_) {
-    odb::dbNet* net = violation.first;
-    grouter_->addDirtyNet(net);
-    for (int i = 0; i < violation.second.size(); i++) {
-      for (odb::dbITerm* sink_iterm : violation.second[i].iterms) {
-        odb::dbInst* sink_inst = sink_iterm->getInst();
-        for (int j = 0; j < violation.second[i].antenna_cell_nums; j++) {
-          std::string antenna_inst_name = "ANTENNA_" + std::to_string(cnt);
-          insertDiode(net,
-                      diode_mterm,
-                      sink_inst,
-                      sink_iterm,
-                      antenna_inst_name,
-                      site_width,
-                      fixed_insts);
-          cnt++;
+  bool repair_failures = false;
+  for (auto const& net_violations : antenna_violations_) {
+    odb::dbNet* db_net = net_violations.first;
+    auto violations = net_violations.second;
+
+    bool inserted_diodes = false;
+    for (ant::ViolationInfo &violation : violations) {
+      debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
+                 db_net->getConstName(),
+                 violation.required_diode_count * violation.iterms.size());
+      if (violation.required_diode_count > 0) {
+        for (odb::dbITerm* sink_iterm : violation.iterms) {
+          odb::dbInst* sink_inst = sink_iterm->getInst();
+          for (int j = 0; j < violation.required_diode_count; j++) {
+            insertDiode(db_net,
+                        diode_mterm,
+                        sink_inst,
+                        sink_iterm,
+                        site_width,
+                        fixed_insts);
+            inserted_diodes = true;
+          }
         }
       }
+      else
+        repair_failures = true;
     }
+    if (inserted_diodes)
+      grouter_->addDirtyNet(db_net);
   }
+  if (repair_failures)
+    logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
 }
 
 void AntennaRepair::legalizePlacedCells()
@@ -188,16 +230,10 @@ void AntennaRepair::legalizePlacedCells()
 
 void AntennaRepair::deleteFillerCells()
 {
-  int filler_cnt = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
-      filler_cnt++;
       odb::dbInst::destroy(inst);
     }
-  }
-
-  if (filler_cnt > 0) {
-    logger_->info(GRT, 11, "Deleted {} filler cells.", filler_cnt);
   }
 }
 
@@ -205,7 +241,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
                                 odb::dbMTerm* diode_mterm,
                                 odb::dbInst* sink_inst,
                                 odb::dbITerm* sink_iterm,
-                                std::string antenna_inst_name,
                                 int site_width,
                                 r_tree& fixed_insts)
 {
@@ -216,7 +251,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   int right_offset = 0;
   int offset;
 
-  odb::dbMaster* antenna_master = diode_mterm->getMaster();
+  odb::dbMaster* diode_master = diode_mterm->getMaster();
 
   int inst_loc_x, inst_loc_y, inst_width;
   odb::Rect sink_bbox = getInstRect(sink_inst, sink_iterm);
@@ -225,15 +260,16 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   inst_width = sink_bbox.xMax() - sink_bbox.xMin();
   odb::dbOrientType inst_orient = sink_inst->getOrient();
 
-  odb::dbInst* antenna_inst
-      = odb::dbInst::create(block_, antenna_master, antenna_inst_name.c_str());
-  odb::dbITerm* antenna_iterm
-      = antenna_inst->findITerm(diode_mterm->getConstName());
-  odb::dbBox* antenna_bbox = antenna_inst->getBBox();
-  int antenna_width = antenna_bbox->xMax() - antenna_bbox->xMin();
+  std::string diode_inst_name = "ANTENNA_"
+    + std::to_string(unique_diode_index_++);
+  odb::dbInst* diode_inst
+      = odb::dbInst::create(block_, diode_master, diode_inst_name.c_str());
+  odb::dbITerm* diode_iterm
+      = diode_inst->findITerm(diode_mterm->getConstName());
+  odb::dbBox* diode_bbox = diode_inst->getBBox();
+  int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
 
-  odb::Rect core_area;
-  block_->getCoreArea(core_area);
+  odb::Rect core_area = block_->getCoreArea();
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
@@ -241,7 +277,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   int legalize_itr = 0;
   while (!legally_placed && legalize_itr < max_legalize_itr) {
     if (place_at_left) {
-      offset = -(antenna_width + left_offset * site_width);
+      offset = -(diode_width + left_offset * site_width);
       left_offset++;
       place_at_left = false;
     } else {
@@ -250,12 +286,12 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       place_at_left = true;
     }
 
-    const int left_pad = opendp_->padLeft(antenna_inst);
-    const int right_pad = opendp_->padRight(antenna_inst);
-    antenna_inst->setOrient(inst_orient);
-    antenna_inst->setLocation(inst_loc_x + offset, inst_loc_y);
+    const int left_pad = opendp_->padLeft(diode_inst);
+    const int right_pad = opendp_->padRight(diode_inst);
+    diode_inst->setOrient(inst_orient);
+    diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
 
-    odb::dbBox* instBox = antenna_inst->getBBox();
+    odb::dbBox* instBox = diode_inst->getBBox();
     box box(point(instBox->xMin() - ((left_pad + right_pad) * site_width) + 1,
                   instBox->yMin() + 1),
             point(instBox->xMax() + ((left_pad + right_pad) * site_width) - 1,
@@ -270,30 +306,24 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     legalize_itr++;
   }
 
-  odb::Rect inst_rect;
-  antenna_inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = diode_inst->getBBox()->getBox();
 
   legally_placed = legally_placed && diodeInRow(inst_rect);
 
-  if (!legally_placed) {
-    logger_->warn(
-        GRT,
-        54,
-        "Placement of diode {} will be legalized by detailed placement.",
-        antenna_inst_name);
-  }
+  if (!legally_placed)
+    illegal_diode_placement_count_++;
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
   if (core_area.contains(inst_rect) && !sink_inst->getMaster()->isBlock()
       && legally_placed) {
-    antenna_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+    diode_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   } else {
-    antenna_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    diode_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
-  antenna_iterm->connect(net);
-  diode_insts_.push_back(antenna_inst);
+  diode_iterm->connect(net);
+  diode_insts_.push_back(diode_inst);
 
   // Add diode to the R-tree of fixed instances
   int fixed_inst_id = fixed_insts.size();
@@ -355,8 +385,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
     if (mterm != nullptr) {
       for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
         for (odb::dbBox* mterm_box : mterm_pin->getGeometry()) {
-          odb::Rect rect;
-          mterm_box->getBox(rect);
+          odb::Rect rect = mterm_box->getBox();
           transform.apply(rect);
 
           inst_rect = rect;
@@ -364,7 +393,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
       }
     }
   } else {
-    inst->getBBox()->getBox(inst_rect);
+    inst_rect = inst->getBBox()->getBox();
   }
 
   return inst_rect;
@@ -373,8 +402,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
 {
   for (odb::dbRow* row : block_->getRows()) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
 
     if (row_rect.contains(diode_rect)) {
       return true;
@@ -382,6 +410,34 @@ bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
   }
 
   return false;
+}
+
+odb::dbMTerm* AntennaRepair::findDiodeMTerm()
+{
+  for (odb::dbLib *lib : db_->getLibs()) {
+    for (auto master : lib->getMasters()) {
+      if (master->getType() == odb::dbMasterType::CORE_ANTENNACELL) {
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          if (diffArea(mterm) > 0.0)
+            return mterm;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+// copied from AntennaChecker
+double AntennaRepair::diffArea(odb::dbMTerm *mterm)
+{
+  double max_diff_area = 0.0;
+  std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;
+  mterm->getDiffArea(diff_areas);
+  for (auto area_layer : diff_areas) {
+    double diff_area = area_layer.first;
+    max_diff_area = std::max(max_diff_area, diff_area);
+  }
+  return max_diff_area;
 }
 
 }  // namespace grt

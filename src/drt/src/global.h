@@ -36,8 +36,6 @@
 #include "frBaseTypes.h"
 #include "db/obj/frMarker.h"
 
-extern std::string GUIDE_FILE;
-extern std::string OUTGUIDE_FILE;
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
@@ -65,6 +63,7 @@ extern bool ENABLE_VIA_GEN;
 extern bool CLEAN_PATCHES;
 extern bool DO_PA;
 extern bool SINGLE_STEP_DR;
+extern bool SAVE_GUIDE_UPDATES;
 // extern int TEST;
 extern std::string VIAINPIN_BOTTOMLAYER_NAME;
 extern std::string VIAINPIN_TOPLAYER_NAME;

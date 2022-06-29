@@ -73,9 +73,10 @@ class Fixture
 
   frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
 
-  void makeCornerConstraint(frLayerNum layer_num,
-                            frCoord eolWidth = -1,
-                            frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
+  frLef58CornerSpacingConstraint* makeCornerConstraint(
+      frLayerNum layer_num,
+      frCoord eolWidth = -1,
+      frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
 
   void makeSpacingConstraint(frLayerNum layer_num);
 

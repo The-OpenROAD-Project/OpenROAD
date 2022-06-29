@@ -225,24 +225,26 @@ void Fixture::makeDesign()
   USEMINSPACING_OBS = false;
 }
 
-void Fixture::makeCornerConstraint(frLayerNum layer_num,
-                                   frCoord eolWidth,
-                                   frCornerTypeEnum type)
+frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
+    frLayerNum layer_num,
+    frCoord eolWidth,
+    frCornerTypeEnum type)
 {
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
-
-  con->setCornerType(type);
-  con->setSameXY(true);
+  auto rptr = con.get();
+  rptr->setCornerType(type);
+  rptr->setSameXY(true);
   if (eolWidth >= 0) {
-    con->setEolWidth(eolWidth);
+    rptr->setEolWidth(eolWidth);
   }
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58CornerSpacingConstraint(con.get());
+  layer->addLef58CornerSpacingConstraint(rptr);
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeSpacingConstraint(frLayerNum layer_num)

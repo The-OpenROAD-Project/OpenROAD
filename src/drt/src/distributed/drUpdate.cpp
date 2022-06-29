@@ -39,14 +39,14 @@ void drUpdate::setPathSeg(const frPathSeg& seg)
   begin_ = seg.getBeginPoint();
   end_ = seg.getEndPoint();
   layer_ = seg.getLayerNum();
-  seg.getStyle(style_);
+  style_ = seg.getStyle();
   tapered_ = seg.isTapered();
 }
 
 void drUpdate::setPatchWire(const frPatchWire& pwire)
 {
   obj_type_ = frcPatchWire;
-  pwire.getOffsetBox(offsetBox_);
+  offsetBox_ = pwire.getOffsetBox();
   begin_ = pwire.getOrigin();
   layer_ = pwire.getLayerNum();
 }

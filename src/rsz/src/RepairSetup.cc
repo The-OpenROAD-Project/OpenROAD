@@ -111,6 +111,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   init();
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+  resizer_->buffer_moved_into_core_ = false;
 
   Slack worst_slack;
   Vertex *worst_vertex;

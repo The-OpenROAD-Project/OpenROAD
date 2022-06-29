@@ -181,14 +181,11 @@ class frRect : public frShape
    * move, in .cpp
    * intersects in .cpp
    */
-  void getBBox(Rect& boxIn) const override { boxIn = box_; }
-  const Rect& getBBox() const { return box_; }
+  Rect getBBox() const override { return box_; }
   void move(const dbTransform& xform) override { xform.apply(box_); }
   bool intersects(const Rect& box) const override
   {
-    Rect rectBox;
-    getBBox(rectBox);
-    return rectBox.intersects(box);
+    return getBBox().intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -302,21 +299,19 @@ class frPatchWire : public frShape
    * move, in .cpp
    * intersects in .cpp
    */
-  void getBBox(Rect& boxIn) const override
+  Rect getBBox() const override
   {
     dbTransform xform(origin_);
-    boxIn = offsetBox_;
-    xform.apply(boxIn);
+    Rect box = offsetBox_;
+    xform.apply(box);
+    return box;
   }
-  void getOffsetBox(Rect& boxIn) const { boxIn = offsetBox_; }
-  void getOrigin(Point& in) const { in = origin_; }
+  Rect getOffsetBox() const { return offsetBox_; }
   Point getOrigin() const { return origin_; }
   void move(const dbTransform& xform) override {}
   bool intersects(const Rect& box) const override
   {
-    Rect rectBox;
-    getBBox(rectBox);
-    return rectBox.intersects(box);
+    return getBBox().intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -415,7 +410,7 @@ class frPolygon : public frShape
    * move, in .cpp
    * intersects, in .cpp
    */
-  void getBBox(Rect& boxIn) const override
+  Rect getBBox() const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -433,7 +428,7 @@ class frPolygon : public frShape
       urx = (urx > point.x()) ? urx : point.x();
       ury = (ury > point.y()) ? ury : point.y();
     }
-    boxIn.init(llx, lly, urx, ury);
+    return Rect(llx, lly, urx, ury);
   }
   void move(const dbTransform& xform) override
   {
@@ -494,23 +489,10 @@ class frPathSeg : public frShape
   frPathSeg(const drPathSeg& in);
   frPathSeg(const taPathSeg& in);
   // getters
-  void getPoints(Point& beginIn, Point& endIn) const
-  {
-    beginIn = begin_;
-    endIn = end_;
-  }
-  std::pair<Point, Point> getPoints() const
-  {
-    return {begin_, end_};
-  }
+  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
   const Point& getBeginPoint() const { return begin_; }
   const Point& getEndPoint() const { return end_; }
-  void getStyle(frSegStyle& styleIn) const
-  {
-    styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
-    styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
-    styleIn.setWidth(style_.getWidth());
-  }
+  const frSegStyle& getStyle() const { return style_; }
   frEndStyle getBeginStyle() const { return style_.getBeginStyle(); }
   frEndStyle getEndStyle() const { return style_.getEndStyle(); }
   frUInt4 getEndExt() const { return style_.getEndExt(); }
@@ -617,7 +599,7 @@ class frPathSeg : public frShape
    * intersects, in .cpp
    */
   // needs to be updated
-  void getBBox(Rect& boxIn) const override
+  Rect getBBox() const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -627,15 +609,15 @@ class frPathSeg : public frShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      boxIn.init(begin_.x() - beginExt,
-                 begin_.y() - width / 2,
-                 end_.x() + endExt,
-                 end_.y() + width / 2);
+      return Rect(begin_.x() - beginExt,
+                  begin_.y() - width / 2,
+                  end_.x() + endExt,
+                  end_.y() + width / 2);
     } else {
-      boxIn.init(begin_.x() - width / 2,
-                 begin_.y() - beginExt,
-                 end_.x() + width / 2,
-                 end_.y() + endExt);
+      return Rect(begin_.x() - width / 2,
+                  begin_.y() - beginExt,
+                  end_.x() + width / 2,
+                  end_.y() + endExt);
     }
   }
   void move(const dbTransform& xform) override
