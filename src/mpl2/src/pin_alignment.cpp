@@ -496,7 +496,6 @@ void SimulatedAnnealingCore::FastSA()
   float pre_cost = NormCost(area_, wirelength_, outline_penalty_);
   float cost = pre_cost;
   float delta_cost = 0.0;
-  float best_cost = cost;
   float T = init_T_;
 
   while (step <= max_num_step_) {
