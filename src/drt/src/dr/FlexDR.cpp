@@ -1830,7 +1830,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "autotuner", 1)) {
+  if (logger_->debugCheck(DRT, "autotuner", 1) ||
+      logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }
