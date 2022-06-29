@@ -1369,12 +1369,6 @@ void AntennaChecker::checkNet(dbNet* net,
       logger_->report("Net {}", net->getConstName());
 
       for (dbWireGraph::Node* gate : gate_nodes) {
-        dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
-        dbMTerm* mterm = iterm->getMTerm();
-        logger_->report("  {}/{} ({})",
-                        iterm->getInst()->getConstName(),
-                        mterm->getConstName(),
-                        mterm->getMaster()->getConstName());
         checkGate(gate, CARtable, VIA_CARtable,
                   true, verbose, violation, violated_gates);
       }
@@ -1392,6 +1386,7 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
                                bool &violation,
                                unordered_set<dbWireGraph::Node*> &violated_gates)
 {
+  bool first_pin_violation = true;
   for (auto ar : CARtable) {
     if (ar.GateNode == gate) {
       auto wire_PAR_violation = checkWirePar(ar, false, verbose);
@@ -1403,9 +1398,19 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
         violated_gates.insert(gate);
 
       if (report) {
-        if (wire_violation || verbose)
+        if (wire_violation || verbose) {
+          if (first_pin_violation) {
+            dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
+            dbMTerm* mterm = iterm->getMTerm();
+            logger_->report("  {}/{} ({})",
+                            iterm->getInst()->getConstName(),
+                            mterm->getConstName(),
+                            mterm->getMaster()->getConstName());
+          }
           logger_->report("    {}",
-                  ar.wire_root->layer()->getConstName());
+                          ar.wire_root->layer()->getConstName());
+          first_pin_violation = false;
+        }
         checkWirePar(ar, true, verbose);
         checkWireCar(ar, wire_PAR_violation.second, true, verbose);
         if (wire_violation || verbose)
