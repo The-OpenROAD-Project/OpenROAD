@@ -55,7 +55,9 @@ class Distributed
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
   void runWorker(const char* ip, unsigned short port, bool interactive);
-  void runLoadBalancer(const char* ip, unsigned short port);
+  void runLoadBalancer(const char* ip,
+                       unsigned short port,
+                       const char* workers_domain);
   void addWorkerAddress(const char* address, unsigned short port);
   bool sendJob(JobMessage& msg,
                const char* ip,

@@ -1607,6 +1607,7 @@ void FlexDRWorker::route_queue()
       cout << "Error: pwire with no net\n";
       exit(1);
     }
+    net->setModified(true);
     auto tmpPWire = make_unique<drPatchWire>();
     tmpPWire->setLayerNum(pwire->getLayerNum());
     Point origin = pwire->getOrigin();
@@ -1614,7 +1615,6 @@ void FlexDRWorker::route_queue()
     Rect box = pwire->getOffsetBox();
     tmpPWire->setOffsetBox(box);
     tmpPWire->addToNet(net);
-
     unique_ptr<drConnFig> tmp(std::move(tmpPWire));
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.add(tmp.get());
@@ -1801,8 +1801,11 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->main();
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
+	drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
+	  if (!net)
+		net = currNet;
           auto tmpPWire = make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
@@ -1810,6 +1813,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           Rect box = pwire->getOffsetBox();
           tmpPWire->setOffsetBox(box);
           tmpPWire->addToNet(net);
+	  pwire->addToNet(net);
 
           unique_ptr<drConnFig> tmp(std::move(tmpPWire));
           auto& workerRegionQuery = getWorkerRegionQuery();
