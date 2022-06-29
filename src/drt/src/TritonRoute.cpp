@@ -484,8 +484,10 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
-  if (getDesign()->getTopBlock() != nullptr)
+  if (getDesign()->getTopBlock() != nullptr) {
+    getDesign()->getTopBlock()->removeDeletedInsts();
     return;
+  }
   io::Parser parser(db_, getDesign(), logger_);
   parser.readDb();
   auto tech = getDesign()->getTech();
