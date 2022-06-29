@@ -332,7 +332,6 @@ void AutoClusterMgr::createBundledIO()
 
   // Map all the BTerms to IORegions
   for (auto term : block_->getBTerms()) {
-    //std::cout << "term_name : " << term->getName() << std::endl;
     int lx = INT_MAX;
     int ly = INT_MAX;
     int ux = 0;
@@ -347,7 +346,6 @@ void AutoClusterMgr::createBundledIO()
     }
 
     if (term->getSigType().isSupply()) {
-      //std::cout << "Power Pin" << std::endl;
       continue;
     }
 
@@ -440,7 +438,7 @@ void AutoClusterMgr::createCluster(int& cluster_id)
         dbMaster* master = inst->getMaster();
         const LibertyCell* liberty_cell = network_->libertyCell(inst);
         // check if the instance is a pad or empty block (such as marker) or buffer
-        if (master->isPad() || master->isCover() || (master->isBlock() && liberty_cell == nullptr) || liberty_cell->isBuffer())
+        if (master->isPad() || master->isCover() || liberty_cell == nullptr || liberty_cell->isBuffer())
           continue;
     
         if (master->isBlock())
@@ -596,10 +594,8 @@ void AutoClusterMgr::calculateConnection()
         id = inst_map_[inst];
        
       if (id == -1)
-       logger_->error(
-           PAR, 488, "PAD issues ???.");
+       logger_->error( PAR, 488, "Could not find expected PAD instance");
 
-      //const int id = inst_map_[iterm->getInst()];
       if (iterm->getIoType() == dbIoType::OUTPUT) {
         driver_id = id;
       } else {
