@@ -487,8 +487,7 @@ void SimulatedAnnealingCore::Initialize()
     delta_cost += abs(norm_cost_list[i] - norm_cost_list[i - 1]);
 
   delta_cost = delta_cost / (norm_cost_list.size() - 1);
-  //init_T_ = (-1) * delta_cost / log(init_prob_);
-  init_T_ =  100;
+  init_T_ = (-1) * delta_cost / log(init_prob_);
 }
 
 void SimulatedAnnealingCore::FastSA()
