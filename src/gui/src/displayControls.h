@@ -226,6 +226,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+  bool isManufacturingGridVisible() const override;
 
   bool isModuleView() const override;
 
@@ -355,6 +356,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow detailed;
     ModelRow selected;
     ModelRow module;
+    ModelRow manufacturing_grid;
   };
 
   struct InstanceShapeModels
