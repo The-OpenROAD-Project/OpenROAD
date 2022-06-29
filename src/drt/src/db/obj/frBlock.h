@@ -332,6 +332,9 @@ class frBlock : public frBlockObject
                                   return inst->isToBeDeleted();
                                 }),
                  insts_.end());
+    int id = 0;
+    for(const auto& inst : insts_)
+      inst->setId(id++);
   }
   void addNet(std::unique_ptr<frNet> in)
   {
