@@ -381,9 +381,6 @@ void SimulatedAnnealingCore::CalculateOutlinePenalty()
 {
   outline_penalty_ = 0.0;
   
-  float ar = height_ / width_ - outline_height_ / outline_width_;
-  //outline_penalty_ = ar * ar;
-
   if (width_ > outline_width_ && height_ > outline_height_)
     outline_penalty_ = width_ * height_ - outline_width_ * outline_height_;
   else if (width_ > outline_width_ && height_ <= outline_height_)
@@ -701,7 +698,6 @@ bool PinAlignment(const vector<Cluster*>& clusters,
 {
   logger->info(MPL, 3001, "Starting pin alignment.");
 
-  // test
   num_run = 1;
 
   unordered_map<string, pair<float, float>> terminal_position;

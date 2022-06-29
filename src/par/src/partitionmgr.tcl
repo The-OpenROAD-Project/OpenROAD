@@ -625,12 +625,9 @@ proc partition_design { args } {
         set keepin true 
         set keepin_bbox $keys(-keepin)
         if { [llength $keepin_bbox] != 4 } {
-            puts "Illegal specificationof keepin reset to false
             set keepin false
         } else {
             lassign $keepin_bbox keepin_lx keepin_ly keepin_ux keepin_uy 
-            puts "Keepin  $keepin_lx $keepin_ly $keepin_ux $keepin_uy"
-
         }
     }
 

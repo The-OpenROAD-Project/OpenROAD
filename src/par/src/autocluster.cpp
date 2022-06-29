@@ -176,8 +176,8 @@ Metric AutoClusterMgr::computeMetrics(dbModule* module)
     dbMaster* master = inst->getMaster();
     const LibertyCell* liberty_cell = network_->libertyCell(inst);
     // add for designs with pads
-    // check if the instance is a pad or empty block (such as marker)
-    if (master->isPad() || master->isCover() || (master->isBlock() && liberty_cell == nullptr))
+    // check if the instance is a pad or a cover block 
+    if (master->isPad() || master->isCover() || liberty_cell == nullptr)
        continue;
 
     area += liberty_cell->area();
@@ -328,16 +328,6 @@ void AutoClusterMgr::createBundledIO()
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();
   floorplan_uy_ = die_box.yMax();
-
-  //std::cout  << "floorplan_lx : " << floorplan_lx_ << std::endl;
-  //std::cout  << "floorplan_ly : " << floorplan_ly_ << std::endl;
-  //std::cout  << "floorplan_ux : " << floorplan_ux_ << std::endl;
-  //std::cout  << "floorplan_uy : " << floorplan_uy_ << std::endl;
-
-  //std::cout << "core_lx : " << core_lx << std::endl;
-  //std::cout << "core_ly : " << core_ly << std::endl;
-  //std::cout << "core_ux : " << core_ux << std::endl;
-  //std::cout << "core_uy : " << core_uy << std::endl;
 
 
   // Map all the BTerms to IORegions
@@ -1511,7 +1501,7 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
   while (leaf_iter->hasNext()) {
     sta::Instance* inst = leaf_iter->next();
     sta::LibertyCell* lib_cell = network->libertyCell(inst);
-    if(lib_cell == nullptr)
+    if (lib_cell == nullptr)
       continue;
 
     if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
@@ -1684,9 +1674,6 @@ void AutoClusterMgr::PrintPadPos(odb::dbModule* module, std::ostream &out) {
 
 void AutoClusterMgr::PrintIOPadNet(std::ostream &out) {
   for (dbNet* net : block_->getNets()) {
-    //if (net->getSigType().isSupply()) {
-    //  continue;
-    //}
 
     bool flag = false;
     for (dbBTerm* bterm : net->getBTerms()) {
@@ -1983,6 +1970,9 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     floorplan_ux_ = keepin_ux;
     floorplan_uy_ = keepin_uy;
   }
+  else
+      logger_->info( PAR, 413, "Ignore keepin as it is outside floorplan bbox");
+
 
 
   //
