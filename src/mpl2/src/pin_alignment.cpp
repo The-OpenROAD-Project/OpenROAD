@@ -239,10 +239,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   if (flag)
@@ -253,10 +253,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -337,10 +337,10 @@ void SimulatedAnnealingCore::Perturb()
   pre_wirelength_ = wirelength_;
   pre_outline_penalty_ = outline_penalty_;
 
-  float op = (distribution_) (generator_);
+  float op = (distribution_)(generator_);
   if (op <= flip_prob_) {
     action_id_ = 1;
-    float prob = (distribution_) (generator_);
+    float prob = (distribution_)(generator_);
     if (prob <= 0.5)
       flip_flag_ = true;
     else
@@ -380,7 +380,7 @@ void SimulatedAnnealingCore::Restore()
 void SimulatedAnnealingCore::CalculateOutlinePenalty()
 {
   outline_penalty_ = 0.0;
-  
+
   if (width_ > outline_width_ && height_ > outline_height_)
     outline_penalty_ = width_ * height_ - outline_width_ * outline_height_;
   else if (width_ > outline_width_ && height_ <= outline_height_)
@@ -472,7 +472,6 @@ void SimulatedAnnealingCore::Initialize()
   norm_area_ = norm_area_ / perturb_per_step_;
   norm_wirelength_ = norm_wirelength_ / perturb_per_step_;
   norm_outline_penalty_ = norm_outline_penalty_ / perturb_per_step_;
-
 
   vector<float> norm_cost_list;
   float norm_cost = 0.0;
@@ -594,7 +593,6 @@ bool PinAlignmentSingleCluster(
   const float uy = ly + cluster->GetHeight();
   const float outline_width = ux - lx;
   const float outline_height = uy - ly;
-
 
   // deal with macros
   vector<Macro> macros = cluster->GetMacros();

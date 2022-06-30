@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "mpl2/rtl_mp.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -42,7 +44,6 @@
 #include <vector>
 
 #include "block_placement.h"
-#include "mpl2/rtl_mp.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "pin_alignment.h"
@@ -240,7 +241,7 @@ bool rtl_macro_placer(const char* config_file,
                                                         seed);
 
   if (clusters.empty()) {
-    return true; // nothing to place
+    return true;  // nothing to place
   }
 
   vector<Block> blocks = block_placement::Floorplan(clusters,
