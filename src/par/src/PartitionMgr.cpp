@@ -1394,7 +1394,11 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int timing_weight,
                                    bool std_cell_timing_flag,
                                    const char* report_directory,
-                                   const char* file_name)
+                                   const char* file_name,
+                                   float keepin_lx,
+                                   float keepin_ly,
+                                   float keepin_ux,
+                                   float keepin_uy)
 {
   auto clusterer
       = std::make_unique<AutoClusterMgr>(db_network_, db_, _sta, logger_);
@@ -1409,7 +1413,11 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              timing_weight,
                              std_cell_timing_flag,
                              report_directory,
-                             file_name);
+                             file_name,
+                             keepin_lx,
+                             keepin_ly,
+                             keepin_ux,
+                             keepin_uy);
 }
 
 }  // namespace par

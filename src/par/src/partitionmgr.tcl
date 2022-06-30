@@ -549,12 +549,13 @@ sta::define_cmd_args "partition_design" { [-max_num_macro max_num_macro] \
                                           [-timing_weight timing_weight] \
                                           [-std_cell_timing_flag std_cell_timing_flag] \
                                           [-report_directory report_file] \
+                                          [-keepin {llx lly urx ury}] \
                                           -report_file report_file \
                                         }
 proc partition_design { args } {
     sta::parse_key_args "partition_design" args keys {-max_num_macro -min_num_macro
                      -max_num_inst  -min_num_inst -net_threshold -virtual_weight -ignore_net_threshold
-                     -num_hop -timing_weight -report_directory -report_file -std_cell_timing_flag} flags {  }
+                     -num_hop -timing_weight -report_directory -report_file -std_cell_timing_flag -keepin} flags {  }
     if { ![info exists keys(-report_file)] } {
         utl::error PAR 70 "Missing mandatory argument -report_file."
     }
@@ -570,6 +571,11 @@ proc partition_design { args } {
     set num_hop 4
     set timing_weight 0
     set std_cell_timing_flag false
+    set keepin_lx  -1
+    set keepin_ly  -1
+    set keepin_ux  -1
+    set keepin_uy  -1
+    set keepin false
 
     if { [info exists keys(-max_num_macro)] } {
         set max_num_macro $keys(-max_num_macro)
@@ -615,8 +621,21 @@ proc partition_design { args } {
         set std_cell_timing_flag $keys(-std_cell_timing_flag)
     }
 
+    if { [info exists keys(-keepin)] } {
+        set keepin true 
+        set keepin_bbox $keys(-keepin)
+        if { [llength $keepin_bbox] != 4 } {
+            set keepin false
+        } else {
+            lassign $keepin_bbox keepin_lx keepin_ly keepin_ux keepin_uy 
+        }
+    }
+
+
 
     file mkdir $report_directory
 
-    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight $ignore_net_threshold $num_hop $timing_weight $std_cell_timing_flag $report_directory $report_file
+    par::partition_design_cmd $max_num_macro $min_num_macro $max_num_inst $min_num_inst $net_threshold $virtual_weight \
+                              $ignore_net_threshold $num_hop $timing_weight $std_cell_timing_flag $report_directory $report_file \
+                              $keepin_lx $keepin_ly $keepin_ux $keepin_uy
 }
