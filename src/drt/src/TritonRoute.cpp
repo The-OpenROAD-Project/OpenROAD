@@ -259,11 +259,6 @@ void TritonRoute::updateGlobals(const char* file_name)
   file.close();
 }
 
-void TritonRoute::setGuideFile(const std::string& guide_path)
-{
-  GUIDE_FILE = guide_path;
-}
-
 void TritonRoute::resetDb(const char* file_name)
 {
   design_ = std::make_unique<frDesign>(logger_);
@@ -444,8 +439,7 @@ void TritonRoute::applyUpdates(
               frPathSeg updatedSeg = update.getPathSeg();
               seg->setPoints(updatedSeg.getBeginPoint(),
                              updatedSeg.getEndPoint());
-              frSegStyle style;
-              updatedSeg.getStyle(style);
+              frSegStyle style = updatedSeg.getStyle();
               seg->setStyle(style);
               regionQuery->addDRObj(seg);
               break;
@@ -477,23 +471,24 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   FlexDRGraphics::init();
 }
 
-void TritonRoute::initGuide()
+bool TritonRoute::initGuide()
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB")
     USENONPREFTRACKS = false;
-  io::Parser parser(getDesign(), logger_);
-  if (!GUIDE_FILE.empty()) {
-    parser.readGuide();
-    parser.postProcessGuide(db_);
-  }
+  io::Parser parser(db_, getDesign(), logger_);
+  bool guideOk = parser.readGuide();
+  parser.postProcessGuide();
   parser.initRPin();
+  return guideOk;
 }
 void TritonRoute::initDesign()
 {
-  if (getDesign()->getTopBlock() != nullptr)
+  if (getDesign()->getTopBlock() != nullptr) {
+    getDesign()->getTopBlock()->removeDeletedInsts();
     return;
-  io::Parser parser(getDesign(), logger_);
-  parser.readDb(db_);
+  }
+  io::Parser parser(db_, getDesign(), logger_);
+  parser.readDb();
   auto tech = getDesign()->getTech();
   if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
@@ -631,13 +626,8 @@ void TritonRoute::sendDesignDist()
 {
   if (distributed_) {
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
-    std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
     std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
     ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
-    std::ifstream src(GUIDE_FILE, std::ios::binary);
-    std::ofstream dst(guide_path.c_str(), std::ios::binary);
-    dst << src.rdbuf();
-    dst.close();
     writeGlobals(globals_path.c_str());
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -648,7 +638,6 @@ void TritonRoute::sendDesignDist()
         = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setDesignPath(design_path);
     rjd->setSharedDir(shared_volume_);
-    rjd->setGuidePath(guide_path);
     rjd->setGlobalsPath(globals_path);
     rjd->setDesignUpdate(false);
     msg.setJobDescription(std::move(desc));
@@ -754,21 +743,14 @@ int TritonRoute::main()
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
         fmt::format("{}/design.db", debug_->dumpDir).c_str());
-    std::ifstream src(GUIDE_FILE, std::ios::binary);
-    std::ofstream dst(fmt::format("{}/guide.in", debug_->dumpDir).c_str(),
-                      std::ios::binary);
-    dst << src.rdbuf();
-    dst.close();
   }
-  initGuide();
-  if (GUIDE_FILE == string("")) {
+  if (!initGuide()) {
     gr();
-    io::Parser parser(getDesign(), logger_);
-    GUIDE_FILE = OUTGUIDE_FILE;
+    io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.postProcessGuide(db_);
+    parser.postProcessGuide();
   }
   prep();
   ta();
@@ -817,8 +799,10 @@ void TritonRoute::readParams(const string& fileName)
         } else if (field == "def") {
           logger_->warn(utl::DRT, 227, "Deprecated def param in params file.");
         } else if (field == "guide") {
-          GUIDE_FILE = value;
-          ++readParamCnt;
+          logger_->warn(
+              utl::DRT,
+              309,
+              "Deprecated guide param in params file. use read_guide instead.");
         } else if (field == "outputTA") {
           logger_->warn(
               utl::DRT, 266, "Deprecated outputTA param in params file.");
@@ -826,7 +810,12 @@ void TritonRoute::readParams(const string& fileName)
           logger_->warn(
               utl::DRT, 205, "Deprecated output param in params file.");
         } else if (field == "outputguide") {
-          OUTGUIDE_FILE = value;
+          logger_->warn(utl::DRT,
+                        310,
+                        "Deprecated outputguide param in params file. use "
+                        "write_guide instead.");
+        } else if (field == "save_guide_updates") {
+          SAVE_GUIDE_UPDATES = true;
           ++readParamCnt;
         } else if (field == "outputMaze") {
           OUT_MAZE_FILE = value;
@@ -878,10 +867,6 @@ void TritonRoute::readParams(const string& fileName)
     }
     fin.close();
   }
-
-  if (readParamCnt < 2) {
-    logger_->error(DRT, 1, "Error reading param file: {}.", fileName);
-  }
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)
@@ -902,8 +887,6 @@ void TritonRoute::addUserSelectedVia(const std::string& viaName)
 
 void TritonRoute::setParams(const ParamStruct& params)
 {
-  GUIDE_FILE = params.guideFile;
-  OUTGUIDE_FILE = params.outputGuideFile;
   OUT_MAZE_FILE = params.outputMazeFile;
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
@@ -935,6 +918,7 @@ void TritonRoute::setParams(const ParamStruct& params)
     MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
     MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
+  SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
 }
 
 void TritonRoute::addWorkerResults(
@@ -981,8 +965,7 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
   if (drcRpt.is_open()) {
     for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
       // get violation bbox
-      Rect bbox;
-      marker->getBBox(bbox);
+      Rect bbox = marker->getBBox();
       if (worker != nullptr && !worker->getDrcBox().intersects(bbox))
         continue;
       auto tech = getDesign()->getTech();
@@ -1184,12 +1167,7 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
       drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
              << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
              << bbox.yMax() / dbu << " ) on Layer ";
-      if (layerType == dbTechLayerType::CUT
-          && marker->getLayerNum() - 1 >= tech->getBottomLayerNum()) {
-        drcRpt << tech->getLayer(marker->getLayerNum() - 1)->getName() << "\n";
-      } else {
-        drcRpt << layer->getName() << "\n";
-      }
+      drcRpt << layer->getName() << "\n";
     }
   } else {
     cout << "Error: Fail to open DRC report file\n";

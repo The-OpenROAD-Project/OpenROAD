@@ -319,7 +319,11 @@ class PartitionMgr
                        unsigned int timing_weight,
                        bool std_cell_timing_flag_,
                        const char* report_directory,
-                       const char* file_name);
+                       const char* file_name,
+                       float keepin_lx,
+                       float keepin_ly,
+                       float keepin_ux,
+                       float keepin_uy);
 
  private:
   sta::Instance* buildPartitionedInstance(

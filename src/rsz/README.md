@@ -22,7 +22,7 @@ nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
 Use `-layer` or `-resistance` and `-capacitance`.  If `-layer` is used,
 the LEF technology resistance and area/edge capacitance values for the
-layer are used for a minimum-width wire on the layer.  The resistance and
+layer are used for a default width wire on the layer.  The resistance and
 capacitance values are per length of wire, not per square or per square micron.
 The units for `-resistance` and `-capacitance` are from the first Liberty
 file read, resistance_unit/distance_unit (typically kohms/micron) and
@@ -44,7 +44,7 @@ set_layer_rc [-layer layer]
 ```
 
 For layers the resistance and capacitance units are the same as `set_wire_rc`
-(per length of minimum-width wire). `layer` must be the name of a routing
+(per length of default width wire). `layer` must be the name of a routing
 layer.
 
 Via resistance can also be set with the `set_layer_rc` command, using the

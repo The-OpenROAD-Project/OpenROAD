@@ -249,6 +249,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       layers_menu_(new QMenu(this)),
       layers_menu_layer_(nullptr),
       ignore_callback_(false),
+      ignore_selection_(false),
       db_(nullptr),
       logger_(nullptr),
       sta_(nullptr),
@@ -258,6 +259,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   setObjectName("layers");  // for settings
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  view_->viewport()->installEventFilter(this);
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -431,6 +434,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
+  makeLeafItem(misc_.manufacturing_grid, "Manufacturing Grid", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -845,6 +849,10 @@ void DisplayControls::itemChanged(QStandardItem* item)
 
 void DisplayControls::displayItemSelected(const QItemSelection& selection)
 {
+  if (ignore_selection_) {
+    return;
+  }
+
   for (const auto& index : selection.indexes()) {
     const QModelIndex name_index = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
@@ -1491,6 +1499,11 @@ bool DisplayControls::areRegionsVisible() const
   return isRowVisible(&misc_.regions);
 }
 
+bool DisplayControls::isManufacturingGridVisible() const
+{
+  return isRowVisible(&misc_.manufacturing_grid);
+}
+
 bool DisplayControls::isModuleView() const
 {
   return isRowVisible(&misc_.module);
@@ -1611,6 +1624,10 @@ void DisplayControls::techInit()
   if (!tech) {
     return;
   }
+
+  // disable if grid is not present
+  misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
+  misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
@@ -1823,6 +1840,27 @@ void DisplayControls::checkLiberty(bool assume_loaded)
       selectable->setEnabled(enable);
     }
   }
+}
+
+bool DisplayControls::eventFilter(QObject* obj, QEvent* event)
+{
+  if (obj == view_->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+      if (mouse_event->button() == Qt::RightButton) {
+        ignore_selection_ = true;
+      } else {
+        ignore_selection_ = false;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      ignore_selection_ = false;
+    } else if (event->type() == QEvent::ContextMenu) {
+      // reset because the context menu has popped up.
+      ignore_selection_ = false;
+    }
+  }
+
+  return QDockWidget::eventFilter(obj, event);
 }
 
 }  // namespace gui

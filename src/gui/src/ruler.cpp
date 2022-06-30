@@ -156,7 +156,13 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
 
 bool RulerDescriptor::editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x)
 {
-  int new_val = std::any_cast<double>(value) * dbu_per_uu;
+  double cast_value = 0;
+  try {
+    cast_value = std::any_cast<double>(value);
+  } catch (const std::bad_any_cast&) {
+    return false;
+  }
+  const int new_val = cast_value * dbu_per_uu;
   if (is_x) {
     pt.setX(new_val);
   } else {

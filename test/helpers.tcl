@@ -26,19 +26,22 @@ proc diff_files { file1 file2 } {
   set stream2 [open $file2 r]
   
   set line 1
-  set diff_line 0;
-  while { [gets $stream1 line1] >= 0 && [gets $stream2 line2] >= 0 } {
+  set found_diff 0
+  set line1_length [gets $stream1 line1]
+  set line2_length [gets $stream2 line2]
+  while { $line1_length >= 0 && $line2_length >= 0 } {
     if { $line1 != $line2 } {
-      set diff_line $line
+      set found_diff 1
       break
     }
     incr line
+    set line1_length [gets $stream1 line1]
+    set line2_length [gets $stream2 line2]
   }
   close $stream1
   close $stream2
-
-  if { $diff_line } {
-    puts "Differences found at line $diff_line."
+  if { $found_diff || $line1_length != $line2_length} {
+    puts "Differences found at line $line."
     puts "$line1"
     puts "$line2"
     return 1

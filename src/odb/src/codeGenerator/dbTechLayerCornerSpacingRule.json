@@ -94,6 +94,11 @@
       "type": "bool",
       "name": "except_same_metal_",
       "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "corner_to_corner_",
+      "bits": 1
     }
   ],
   "constructors": [],

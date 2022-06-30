@@ -48,6 +48,7 @@
 #include "dbDiff.hpp"
 #include "dbExtControl.h"
 #include "dbGroup.h"
+#include "dbGuide.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
@@ -64,6 +65,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "dbGuideItr.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -76,7 +78,7 @@ static void set_symmetric_diff(dbDiff& diff,
                                std::vector<_dbITerm*>& lhs,
                                std::vector<_dbITerm*>& rhs);
 
-_dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
+_dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : _flags(n._flags),
       _name(NULL),
       _next_entry(n._next_entry),
@@ -88,6 +90,7 @@ _dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
       _cap_nodes(n._cap_nodes),
       _r_segs(n._r_segs),
       _non_default_rule(n._non_default_rule),
+      guides_(n.guides_),
       _groups(n._groups),
       _weight(n._weight),
       _xtalk(n._xtalk),
@@ -102,7 +105,7 @@ _dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
   _drivingIterm = -1;
 }
 
-_dbNet::_dbNet(_dbDatabase*)
+_dbNet::_dbNet(_dbDatabase* db)
 {
   _flags._sig_type = dbSigType::SIGNAL;
   _flags._wire_type = dbWireType::ROUTED;
@@ -164,6 +167,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
   stream << net._ccAdjustFactor;
   stream << net._ccAdjustOrder;
   stream << net._groups;
+  stream << net.guides_;
   return stream;
 }
 
@@ -188,6 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._ccAdjustFactor;
   stream >> net._ccAdjustOrder;
   stream >> net._groups;
+  stream >> net.guides_;
 
   return stream;
 }
@@ -321,6 +326,9 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   if (_groups != rhs._groups)
     return false;
 
+  if (guides_ != rhs.guides_)
+    return false;
+
   return true;
 }
 
@@ -411,6 +419,7 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_ccAdjustFactor);
   DIFF_FIELD(_ccAdjustOrder);
   DIFF_VECTOR(_groups);
+  DIFF_FIELD(guides_);
   DIFF_END
 }
 
@@ -488,6 +497,7 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_ccAdjustFactor);
   DIFF_OUT_FIELD(_ccAdjustOrder);
   DIFF_OUT_VECTOR(_groups);
+  DIFF_OUT_FIELD(guides_);
   DIFF_END
 }
 
@@ -2848,23 +2858,21 @@ uint dbNet::getTermCount()
   return itc + btc;
 }
 
-Rect
-dbNet::getTermBBox()
+Rect dbNet::getTermBBox()
 {
   Rect net_box;
   net_box.mergeInit();
 
-  for (dbITerm *iterm : getITerms()) {
+  for (dbITerm* iterm : getITerms()) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
       Rect iterm_rect(x, y, x, y);
       net_box.merge(iterm_rect);
-    }
-    else {
+    } else {
       // This clause is sort of worthless because getAvgXY prints
       // a warning when it fails.
-      dbInst *inst = iterm->getInst();
-      dbBox *inst_box = inst->getBBox();
+      dbInst* inst = iterm->getInst();
+      dbBox* inst_box = inst->getBBox();
       int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
       int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
       Rect inst_center(center_x, center_y, center_x, center_y);
@@ -2872,8 +2880,8 @@ dbNet::getTermBBox()
     }
   }
 
-  for (dbBTerm *bterm : getBTerms()) {
-    for (dbBPin *bpin : bterm->getBPins()) {
+  for (dbBTerm* bterm : getBTerms()) {
+    for (dbBPin* bpin : bterm->getBPins()) {
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
         Rect pin_bbox = bpin->getBBox();
@@ -3066,6 +3074,24 @@ uint dbNet::setLevelAtFanout(uint level,
     cnt++;
   }
   return cnt;
+}
+
+dbSet<dbGuide> dbNet::getGuides() const
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+  return dbSet<dbGuide>(net, block->_guide_itr);
+}
+
+void dbNet::clearGuides()
+{
+  auto guides = getGuides();
+  dbSet<dbGuide>::iterator itr = guides.begin();
+  while(itr != guides.end())
+  {
+    auto curGuide = *itr++;
+    dbGuide::destroy(curGuide);
+  }
 }
 
 #if 0

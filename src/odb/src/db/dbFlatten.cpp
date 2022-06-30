@@ -268,8 +268,7 @@ bool dbFlatten::flatten(dbBlock* parent,
     name += _hier_d;
     name += "ADS_BLOCK_REGION";
     dbRegion* block_region = dbRegion::create(parent, name.c_str());
-    Rect bndry;
-    child->getDieArea(bndry);
+    Rect bndry = child->getDieArea();
     _transform.apply(bndry);
     dbBox::create(
         block_region, bndry.xMin(), bndry.yMin(), bndry.xMax(), bndry.yMax());
@@ -403,8 +402,7 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
 
   for (shapes.begin(wire); shapes.next(s);) {
     uint sid = shapes.getShapeId();
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
     fprintf(fp,
             "J%d -- %d %d %d %d\n",
             sid,
@@ -450,8 +448,7 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
     if (s.isVia())
       continue;
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     fprintf(fp, "--  %d %d %d %d --", r.xMin(), r.yMin(), r.xMax(), r.yMax());
 
@@ -881,8 +878,7 @@ void dbFlatten::copySWire(dbNet* dst, dbNet* src, dbSWire* src_swire)
     dbSBox* w = *itr;
 
     if (!w->isVia()) {
-      Rect r;
-      w->getBox(r);
+      Rect r = w->getBox();
       _transform.apply(r);
       dbSBox::create(dst_swire,
                      w->getTechLayer(),
@@ -941,8 +937,7 @@ void dbFlatten::copyObstruction(dbBlock* dst_block, dbObstruction* src_)
   _dbObstruction* src = (_dbObstruction*) src_;
 
   dbBox* box = src_->getBBox();
-  Rect r;
-  box->getBox(r);
+  Rect r = box->getBox();
   _transform.apply(r);
 
   _dbObstruction* dst
@@ -961,8 +956,7 @@ void dbFlatten::copyObstruction(dbBlock* dst_block, dbObstruction* src_)
 void dbFlatten::copyBlockage(dbBlock* dst_block, dbBlockage* src)
 {
   dbBox* box = src->getBBox();
-  Rect r;
-  box->getBox(r);
+  Rect r = box->getBox();
   _transform.apply(r);
 
   // dbBlockage * dst = dbBlockage::create( dst_block,
@@ -1004,8 +998,7 @@ void dbFlatten::copyRegion(dbBlock* parent_block,
 
   for (; bitr != boxes.end(); ++bitr) {
     dbBox* box = *bitr;
-    Rect r;
-    box->getBox(r);
+    Rect r = box->getBox();
     _transform.apply(r);
     dbBox::create(dst, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }

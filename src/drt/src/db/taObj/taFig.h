@@ -39,7 +39,7 @@ class taFig : public taBlockObject
 {
  public:
   // getters
-  virtual void getBBox(Rect& box) const = 0;
+  virtual Rect getBBox() const = 0;
   // setters
   // others
   virtual void move(const dbTransform& xform) = 0;

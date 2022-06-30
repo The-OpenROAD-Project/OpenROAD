@@ -124,7 +124,6 @@ class grNode : public grBlockObject
   // getters
   bool hasNet() { return (net != nullptr); }
   grNet* getNet() { return net; }
-  void getLoc(Point& in) { in = loc; }
   Point getLoc() { return loc; }
   frLayerNum getLayerNum() { return layerNum; }
   grBlockObject* getConnFig() { return connFig; }

@@ -122,9 +122,6 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
-    if (desc->getGuidePath() != "") {
-      GUIDE_FILE = desc->getGuidePath();
-    }
     if ((desc->isDesignUpdate() && !desc->getUpdates().empty())
         || desc->getDesignPath() != "") {
       frTime t;

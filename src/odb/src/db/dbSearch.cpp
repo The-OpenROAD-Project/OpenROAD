@@ -102,8 +102,7 @@ void dbBlockSearch::initMenuIds()
 }
 uint dbBlockSearch::getBbox(int* x1, int* y1, int* x2, int* y2)
 {
-  Rect rect;
-  _block->getDieArea(rect);
+  Rect rect = _block->getDieArea();
   *x1 = rect.xMin();
   *y1 = rect.yMin();
   *x2 = rect.xMax();
@@ -140,9 +139,8 @@ void dbBlockSearch::makeTrackSdb(ZContext& context)
   if (adsNewComponent(context, ZCID(Sdb), _trackSdb) != Z_OK) {
     assert(0);
   }
-  Rect r;
   _trackSdb->initSearchForNets(_tech, _block);
-  _block->getDieArea(r);
+  Rect r = _block->getDieArea();
   _trackSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
   makeTrackSearchDb();
 }
@@ -152,9 +150,8 @@ void dbBlockSearch::makeNetSdb(ZContext& context)
   if (adsNewComponent(context, ZCID(Sdb), _netSdb) != Z_OK) {
     assert(0);
   }
-  Rect r;
   _netSdb->initSearchForNets(_tech, _block);
-  _block->getDieArea(r);
+  Rect r = _block->getDieArea();
   _netSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
   _netSdb->addPowerNets(_block, _power_wire_id, true);
   _netSdb->addSignalNets(_block, _signal_wire_id, true);
@@ -184,9 +181,8 @@ void dbBlockSearch::makeSignalNetSdb(ZContext& context)
   if (adsNewComponent(context, ZCID(Sdb), _signalNetSdb) != Z_OK) {
     assert(0);
   }
-  Rect r;
   _signalNetSdb->initSearchForNets(_tech, _block);
-  _block->getDieArea(r);
+  Rect r = _block->getDieArea();
   _signalNetSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
   _signalNetSdb->addSignalNets(_block, _signal_wire_id, _signal_via_id);
 }
@@ -227,8 +223,7 @@ uint dbBlockSearch::makeInstSearchDb()
   dbSet<dbInst> insts = _block->getInsts();
 
   // dbBox *maxBox= _block->getBBox();
-  Rect maxRect;
-  _block->getDieArea(maxRect);
+  Rect maxRect = _block->getDieArea();
 
   maxRect.reset(maxInt, maxInt, -maxInt, -maxInt);
   // maxBox->getBox(maxRect);
@@ -248,8 +243,7 @@ uint dbBlockSearch::makeInstSearchDb()
     minWidth = MIN(minWidth, bb->getDX());
     minHeight = MIN(minHeight, bb->getDY());
 
-    Rect r;
-    bb->getBox(r);
+    Rect r = bb->getBox();
     maxRect.merge(r);
     instCnt++;
   }
@@ -288,8 +282,7 @@ continue;
 #ifndef NEW_TRACKS
 uint dbBlockSearch::makeTrackSearchDb()
 {
-  Rect maxRect;
-  _block->getDieArea(maxRect);
+  Rect maxRect = _block->getDieArea();
 
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
@@ -1980,8 +1973,7 @@ void dbBlockSearch::getNetBbox(dbNet* net, Rect& maxRect)
   dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
     maxRect.merge(r);
   }
 }

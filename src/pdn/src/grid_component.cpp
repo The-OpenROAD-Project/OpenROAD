@@ -158,8 +158,7 @@ ShapePtr GridComponent::addShape(Shape* shape)
   shapes.insert({shape_ptr->getRectBox(), shape_ptr});
 
   // add bpins that touch edges
-  odb::Rect die_area;
-  getBlock()->getDieArea(die_area);
+  odb::Rect die_area = getBlock()->getDieArea();
   const odb::Rect& final_shape_rect = shape_ptr->getRect();
   const int min_width = shape_ptr->getLayer()->getMinWidth();
   if (final_shape_rect.xMin() == die_area.xMin()) {
@@ -252,10 +251,28 @@ void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
+void GridComponent::removeObstructions(ShapeTreeMap& obstructions) const
+{
+  for (const auto& [layer, shapes] : shapes_) {
+    auto& obs = obstructions[layer];
+    for (const auto& [box, shape] : shapes) {
+      obs.remove({shape->getObstructionBox(), shape});
+    }
+  }
+}
+
 void GridComponent::getShapes(ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     shapes[layer].insert(layer_shapes.begin(), layer_shapes.end());
+  }
+}
+
+void GridComponent::removeShapes(ShapeTreeMap& shapes) const
+{
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    auto& other_shapes = shapes[layer];
+    other_shapes.remove(layer_shapes.begin(), layer_shapes.end());
   }
 }
 

@@ -428,7 +428,7 @@ void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int w
   odb::Rect strap(start, start, stop, stop);
   if (start == stop) {
     auto* block = swire->getBlock();
-    block->getCoreArea(strap);
+    strap = block->getCoreArea();
   }
   if (strcmp(direction, "HORIZONTAL") == 0) {
     strap.set_ylo(offset);

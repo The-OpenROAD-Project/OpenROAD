@@ -629,8 +629,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
     auto* mterm = iterm->getMTerm();
     for (auto* pin : mterm->getMPins()) {
       for (auto* box : pin->getGeometry()) {
-        odb::Rect box_rect;
-        box->getBox(box_rect);
+        odb::Rect box_rect = box->getBox();
         transform.apply(box_rect);
         if (pin_rect.dx() < box_rect.dx()) {
           pin_rect = box_rect;
@@ -645,8 +644,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
     odb::Rect pin_rect;
     for (auto* pin : bterm->getBPins()) {
       for (auto* box : pin->getBoxes()) {
-        odb::Rect box_rect;
-        box->getBox(box_rect);
+        odb::Rect box_rect = box->getBox();
         if (pin_rect.dx() < box_rect.dx()) {
           pin_rect = box_rect;
         }

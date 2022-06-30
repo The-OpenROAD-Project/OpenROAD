@@ -124,8 +124,7 @@ bool PowerDensityDataSource::populateMap()
       }
     }
 
-    odb::Rect inst_box;
-    inst->getBBox()->getBox(inst_box);
+    odb::Rect inst_box = inst->getBBox()->getBox();
 
     addToMap(inst_box, pwr);
   }
