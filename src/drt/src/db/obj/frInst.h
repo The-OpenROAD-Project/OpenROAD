@@ -46,7 +46,7 @@ class frInst : public frRef
  public:
   // constructors
   frInst(const frString& name, frMaster* master)
-      : name_(name), master_(master), pinAccessIdx_(0)
+      : name_(name), master_(master), pinAccessIdx_(0), toBeDeleted_(false)
   {
   }
   // getters
@@ -61,6 +61,7 @@ class frInst : public frRef
     return instBlockages_;
   }
   int getPinAccessIdx() const { return pinAccessIdx_; }
+  bool isToBeDeleted() const { return toBeDeleted_; }
   // setters
   void addInstTerm(std::unique_ptr<frInstTerm> in)
   {
@@ -72,6 +73,7 @@ class frInst : public frRef
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
+  void setToBeDeleted(bool in) { toBeDeleted_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcInst; }
 
@@ -143,6 +145,7 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
   int pinAccessIdx_;
+  bool toBeDeleted_;
 };
 
 }  // namespace fr
