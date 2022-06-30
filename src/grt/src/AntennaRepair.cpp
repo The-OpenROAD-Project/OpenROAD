@@ -336,8 +336,9 @@ void AntennaRepair::getFixedInstances(r_tree& fixed_insts)
 {
   int fixed_inst_id = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM
-        || odb::dbPlacementStatus::LOCKED) {
+    odb::dbPlacementStatus status = inst->getPlacementStatus();
+    if (status == odb::dbPlacementStatus::FIRM
+        || status == odb::dbPlacementStatus::LOCKED) {
       odb::dbBox* instBox = inst->getBBox();
       box b(point(instBox->xMin(), instBox->yMin()),
             point(instBox->xMax(), instBox->yMax()));

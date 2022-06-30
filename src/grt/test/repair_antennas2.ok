@@ -19,7 +19,6 @@ Net _224_
 
 
 Net net48
-  _560_/B (sky130_fd_sc_hs__nand2_1)
   output48/A (sky130_fd_sc_hs__clkbuf_1)
     met1
     PAR:  437.21* Ratio:  400.00 (S.Area)
