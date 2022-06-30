@@ -3046,7 +3046,7 @@ namespace eval ICeWall {
     puts "set_bump_traces \\"
     foreach trace {0 1 2 3 4} {
       set trace [get_path_trace_$trace 0]
-      set user_valued_trace [lmap v $trace {odb::dbu2microns $v}]
+      set user_valued_trace [lmap v $trace {odb::dbu_to_microns $v}]
       puts "  -trace$trace \{X Y X $user_valued_trace\} \\"
     }
   }
@@ -3115,13 +3115,12 @@ namespace eval ICeWall {
 	{*}$bump_center \
       ]
     } else {
-      set y_max [expr $tile_offset_y + $tile_width * 3 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_max [lindex $bump_center 1]
       set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
       set path [list \
 	$y_min \
         $offset $y_min \
         $offset $y_max \
-	[expr $tile_width / 2] $y_max \
 	{*}$bump_center \
       ]
     }
@@ -3161,13 +3160,12 @@ namespace eval ICeWall {
 	{*}$bump_center \
       ]
     } else {
-      set y_max [expr $tile_offset_y + $tile_width * 5 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_max [lindex $bump_center 1]
       set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
       set path [list \
 	$y_min \
         $offset $y_min \
         $offset $y_max \
-	[expr $tile_width / 2] $y_max \
 	{*}$bump_center \
       ]
     }
@@ -3207,13 +3205,12 @@ namespace eval ICeWall {
 	{*}$bump_center \
       ]
     } else {
-      set y_max [expr $tile_offset_y + $tile_width * 7 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_max [lindex $bump_center 1]
       set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
       set path [list \
 	$y_min \
         $offset $y_min \
         $offset $y_max \
-	[expr $tile_width / 2] $y_max \
 	{*}$bump_center \
       ]
     }
@@ -3253,13 +3250,12 @@ namespace eval ICeWall {
 	{*}$bump_center \
       ]
     } else {
-      set y_max [expr $tile_offset_y + $tile_width * 9 / 2 - ($bump_width / 2 + $rdl_spacing + $rdl_width / 2)]
+      set y_max [lindex $bump_center 1]
       set y_min [expr $tile_offset_y + $tile_width / 2     - ($bump_width / 2 + 2 * $rdl_spacing + 3 * $rdl_width / 2)]
       set path [list \
 	$y_min \
         $offset $y_min \
         $offset $y_max \
-	[expr $tile_width / 2] $y_max \
 	{*}$bump_center \
       ]
     }
@@ -3415,12 +3411,14 @@ namespace eval ICeWall {
           }
           "right" {
             set orientation "R90"
-            set tile_origin [list [lindex $die_area 2] [expr $actual_tile_offset_y + ($num_bumps_y - $row) * $tile_width]]
+	    set tile_edge   [expr 2 * $actual_tile_offset_x + $num_bumps_x * $tile_width]
+            set tile_origin [list $tile_edge [expr $actual_tile_offset_y + ($num_bumps_y - $row) * $tile_width]]
             set tile_row    [expr $num_bumps_x - $col]
           }
           "top" {
             set orientation "R180"
-            set tile_origin [list [expr $actual_tile_offset_x + $col * $tile_width] [lindex $die_area 3]]
+	    set tile_edge   [expr 2 * $actual_tile_offset_y + $num_bumps_y * $tile_width]
+            set tile_origin [list [expr $actual_tile_offset_x + $col * $tile_width] $tile_edge]
             set tile_row    [expr $row - 1]
           }
           "left" {
@@ -3593,15 +3591,36 @@ namespace eval ICeWall {
 	  }
 	}
         set prev [lindex $points 0]
+	set first 1
+	set last 0
         foreach point [lrange $points 1 end] {
+	  if {$point == [lindex $points end]} {
+	    set last 1
+	  }
 	  if {[lindex $prev 0] == [lindex $point 0]} {
+	    set minX [expr [lindex $prev  0] - $rdl_width / 2]
+	    set maxX [expr [lindex $point 0] + $rdl_width / 2]
             if {[allow_45_routing]} {
-	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [lindex $prev  1]]
-	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [lindex $point 1]]
+	      # Dont extend wires when using 45 degree routing
+	      set minY [expr min([lindex $prev 1],[lindex $point 1])]
+	      set maxY [expr max([lindex $prev 1],[lindex $point 1])]
             } else {
-	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
-	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
+	      if {$first} {
+		set first 0
+	        set minY [expr min([lindex $prev 1] + $rdl_width / 2,[lindex $point 1]) - $rdl_width / 2]
+	        set maxY [expr max([lindex $prev 1] - $rdl_width / 2,[lindex $point 1]) + $rdl_width / 2]
+	      } elseif {$last} {
+	        set minY [expr min([lindex $prev 1],[lindex $point 1] + $rdl_width / 2) - $rdl_width / 2]
+	        set maxY [expr max([lindex $prev 1],[lindex $point 1] - $rdl_width / 2) + $rdl_width / 2]
+	      } else {
+	      # Extend wires to ensure they full overlap at turning points
+	        set minY [expr min([lindex $prev 1],[lindex $point 1]) - $rdl_width / 2]
+	        set maxY [expr max([lindex $prev 1],[lindex $point 1]) + $rdl_width / 2]
+              }
             }
+	    set p1 [list $minX $minY]
+	    set p2 [list $maxX $maxY]
+
 	    if {[llength $p1] != 2} {
 	      utl::warn PAD 265 "Malformed point ($p1) for padcell $padcell (points: $points)"
 	    } elseif {[llength $p2] != 2} {
@@ -3610,13 +3629,29 @@ namespace eval ICeWall {
 	      set sbox [odb::dbSBox_create $swire $rdl_layer {*}$p1 {*}$p2 STRIPE]
 	    }
 	  } elseif {[lindex $prev 1] == [lindex $point 1]} {
+	    set minY [expr [lindex $prev  1] - $rdl_width / 2]
+	    set maxY [expr [lindex $point 1] + $rdl_width / 2]
             if {[allow_45_routing]} {
-	      set p1 [list [lindex $prev  0] [expr [lindex $prev  1] - $rdl_width /  2]]
-	      set p2 [list [lindex $point 0] [expr [lindex $point 1] + $rdl_width /  2]]
+	      # Dont extend wires when using 45 degree routing
+	      set minX [expr min([lindex $prev 0],[lindex $point 0])]
+	      set maxX [expr max([lindex $prev 0],[lindex $point 0])]
             } else {
-	      set p1 [list [expr [lindex $prev  0] - $rdl_width / 2] [expr [lindex $prev  1] - $rdl_width /  2]]
-	      set p2 [list [expr [lindex $point 0] + $rdl_width / 2] [expr [lindex $point 1] + $rdl_width /  2]]
+	      if {$first} {
+		set first 0
+	        set minX [expr min([lindex $prev 0] + $rdl_width / 2,[lindex $point 0]) - $rdl_width / 2]
+	        set maxX [expr max([lindex $prev 0] - $rdl_width / 2,[lindex $point 0]) + $rdl_width / 2]
+	      } elseif {$last} {
+	        set minX [expr min([lindex $prev 0],[lindex $point 0] + $rdl_width / 2) - $rdl_width / 2]
+	        set maxX [expr max([lindex $prev 0],[lindex $point 0] - $rdl_width / 2) + $rdl_width / 2]
+	      } else {
+	      # Extend wires to ensure they full overlap at turning points
+	        set minX [expr min([lindex $prev 0],[lindex $point 0]) - $rdl_width / 2]
+	        set maxX [expr max([lindex $prev 0],[lindex $point 0]) + $rdl_width / 2]
+              }
             }
+	    set p1 [list $minX $minY]
+	    set p2 [list $maxX $maxY]
+
 	    if {[llength $p1] != 2} {
 	      utl::warn PAD 267 "Malformed point ($p1) for padcell $padcell (points: $points)"
 	    } elseif {[llength $p2] != 2} {
