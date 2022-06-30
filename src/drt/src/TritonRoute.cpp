@@ -520,7 +520,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     606,
                     "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYERNUM);
+                    VIAINPIN_BOTTOMLAYER_NAME);
     }
   }
 
@@ -532,7 +532,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     607,
                     "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYERNUM);
+                    VIAINPIN_TOPLAYER_NAME);
     }
   }
   parser.postProcess();
