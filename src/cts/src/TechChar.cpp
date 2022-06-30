@@ -540,7 +540,6 @@ void TechChar::initCharacterization()
         CTS, 541,
         "Could not find buffer output port for {}.", bufMasterName);
   }
-  
   // Creates the new characterization block. (Wiresegments are created here
   // instead of the main block)
   std::string characterizationBlockName = "CharacterizationBlock";

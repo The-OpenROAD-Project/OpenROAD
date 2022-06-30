@@ -53,7 +53,7 @@ class FlexGR
  public:
   // constructors
   FlexGR(frDesign* designIn, Logger* logger, stt::SteinerTreeBuilder* stt_builder)
-      : design_(designIn), cmap_(nullptr), cmap2D_(nullptr), logger_(logger), stt_builder_(stt_builder)
+      : db_(nullptr), design_(designIn), cmap_(nullptr), cmap2D_(nullptr), logger_(logger), stt_builder_(stt_builder)
   {
   }
 
@@ -74,6 +74,7 @@ class FlexGR
   void main(odb::dbDatabase* db = nullptr);
 
  private:
+  odb::dbDatabase* db_;
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
@@ -230,7 +231,7 @@ class FlexGR
       std::vector<frNode*>& steinerNodes);
   // utility
   void writeToGuide();
-  void writeGuideFile();
+  void updateDb();
   void getBatchInfo(int& batchStepX, int& batchStepY);
 };
 

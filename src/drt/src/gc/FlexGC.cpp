@@ -76,8 +76,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
 
 void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
-  Rect bbox;
-  in->getBBox(bbox);
+  Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
   std::vector<frBlockObject*> srcs(2, nullptr);

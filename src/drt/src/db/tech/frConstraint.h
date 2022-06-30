@@ -82,7 +82,6 @@ class frConstraint
  protected:
   int id_;
   frConstraint() : id_(-1) {}
-
 };
 
 class frLef58CutClassConstraint : public frConstraint
@@ -118,7 +117,6 @@ class frLef58CutClassConstraint : public frConstraint
 
  protected:
   std::map<frString, std::shared_ptr<frLef58CutClass>> cutClasses;
-
 };
 
 // recheck constraint for negative rules
@@ -130,7 +128,6 @@ class frRecheckConstraint : public frConstraint
     return frConstraintTypeEnum::frcRecheckConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("Recheck"); }
-
 };
 
 // short
@@ -143,7 +140,6 @@ class frShortConstraint : public frConstraint
     return frConstraintTypeEnum::frcShortConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("Short"); }
-
 };
 
 // NSMetal
@@ -155,7 +151,6 @@ class frNonSufficientMetalConstraint : public frConstraint
     return frConstraintTypeEnum::frcNonSufficientMetalConstraint;
   }
   void report(utl::Logger* logger) const override { logger->report("NSMetal"); }
-
 };
 
 // offGrid
@@ -170,7 +165,6 @@ class frOffGridConstraint : public frConstraint
   {
     logger->report("Off grid");
   }
-
 };
 
 // minHole
@@ -198,7 +192,6 @@ class frMinEnclosedAreaConstraint : public frConstraint
 
  protected:
   frCoord area, width;
-
 };
 
 // LEF58_MINSTEP (currently only implement GF14 related API)
@@ -290,7 +283,6 @@ class frLef58MinStepConstraint : public frConstraint
   bool exceptSameCorners;
   frCoord eolWidth;
   bool concaveCorners;
-
 };
 
 // minStep
@@ -358,7 +350,6 @@ class frMinStepConstraint : public frConstraint
   bool outsideCorner;
   bool step;
   int maxEdges;
-
 };
 
 // minimumcut
@@ -422,7 +413,6 @@ class frMinimumcutConstraint : public frConstraint
   frMinimumcutConnectionEnum connection;
   frCoord length;
   frCoord distance;
-
 };
 
 // minArea
@@ -448,7 +438,6 @@ class frAreaConstraint : public frConstraint
 
  protected:
   frCoord minArea;
-
 };
 
 // minWidth
@@ -473,7 +462,6 @@ class frMinWidthConstraint : public frConstraint
 
  protected:
   frCoord minWidth;
-
 };
 
 class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
@@ -526,7 +514,6 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
   frCoord encloseDist;
   frCoord cutToMetalSpace;
   bool allCuts;
-
 };
 
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
@@ -612,7 +599,6 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
   frCoord wrongDirExtension;
   bool hOtherEndWidth;
   frCoord otherEndWidth;
-
 };
 
 class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
@@ -704,7 +690,6 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
   bool sameMetal;
   bool nonEolCornerOnly;
   bool parallelSameMask;
-
 };
 
 class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
@@ -747,7 +732,6 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
   bool maxLength;
   frCoord length;
   bool twoSides;
-
 };
 
 class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
@@ -903,7 +887,6 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
       maxMinLengthConstraint;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
       encloseCutConstraint;
-
 };
 
 class frLef58SpacingEndOfLineConstraint : public frConstraint
@@ -976,7 +959,6 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool wrongDirSpacing;
   frCoord wrongDirSpace;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
-
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint
@@ -1067,7 +1049,6 @@ class frSpacingConstraint : public frConstraint
 
  protected:
   frCoord minSpacing;
-
 };
 
 class frSpacingSamenetConstraint : public frSpacingConstraint
@@ -1094,7 +1075,6 @@ class frSpacingSamenetConstraint : public frSpacingConstraint
 
  protected:
   bool pgonly;
-
 };
 
 class frSpacingTableInfluenceConstraint : public frConstraint
@@ -1134,7 +1114,6 @@ class frSpacingTableInfluenceConstraint : public frConstraint
 
  private:
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
-
 };
 
 // EOL spacing
@@ -1184,7 +1163,6 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
   frCoord eolWidth, eolWithin;
   frCoord parSpace, parWithin;
   bool isTwoEdges;
-
 };
 
 class frLef58EolExtensionConstraint : public frSpacingConstraint
@@ -1254,7 +1232,10 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report("CUTSPACINGTABLE");
+    logger->report(
+        "CUTSPACINGTABLE lyr:{} lyr2:{}",
+        db_rule_->getTechLayer()->getName(),
+        db_rule_->isLayerValid() ? db_rule_->getSecondLayer()->getName() : "-");
   }
   std::pair<frCoord, frCoord> getDefaultSpacing() const
   {
@@ -1272,7 +1253,6 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
   std::pair<frCoord, frCoord> default_spacing_;
   bool default_center2center_, default_centerAndEdge_;
-
 };
 
 // new SPACINGTABLE Constraints
@@ -1312,7 +1292,6 @@ class frSpacingTablePrlConstraint : public frConstraint
 
  protected:
   fr2DLookupTbl<frCoord, frCoord, frCoord> tbl;
-
 };
 
 struct frSpacingTableTwRowType
@@ -1320,7 +1299,6 @@ struct frSpacingTableTwRowType
   frSpacingTableTwRowType(frCoord in1, frCoord in2) : width(in1), prl(in2) {}
   frCoord width;
   frCoord prl;
-
 };
 
 // new SPACINGTABLE Constraints
@@ -1377,7 +1355,6 @@ class frSpacingTableTwConstraint : public frConstraint
     }
     return sz - 1;
   }
-
 };
 
 // original SPACINGTABLE Constraints
@@ -1417,7 +1394,6 @@ class frSpacingTableConstraint : public frConstraint
  protected:
   std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>
       parallelRunLengthConstraint;
-
 };
 
 class frLef58SpacingTableConstraint : public frSpacingTableConstraint
@@ -1491,7 +1467,6 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   bool sameMask;
   bool exceptEol;
   frUInt4 eolWidth;
-
 };
 
 // ADJACENTCUTS
@@ -1586,7 +1561,6 @@ class frCutSpacingConstraint : public frConstraint
   frCoord cutArea = -1;
   // LEF58 related
   int twoCuts = -1;
-
 };
 
 // LEF58_SPACING for cut layer (new)
@@ -1913,7 +1887,6 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool exceptTwoEdges;
   int numCut;
   frCoord cutArea;
-
 };
 
 // LEF58_CORNERSPACING (new)
@@ -1936,7 +1909,8 @@ class frLef58CornerSpacingConstraint : public frConstraint
         exceptSameNet(false),
         exceptSameMetal(false),
         tbl(tblIn),
-        sameXY(false)
+        sameXY(false),
+        cornerToCorner(false)
   {
   }
 
@@ -1983,6 +1957,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
   }
   bool hasSameXY() const { return sameXY; }
   bool getSameXY() const { return sameXY; }
+  bool isCornerToCorner() const { return cornerToCorner; }
 
   // setters
   void setCornerType(frCornerTypeEnum in) { cornerType = in; }
@@ -2003,12 +1978,13 @@ class frLef58CornerSpacingConstraint : public frConstraint
     tbl = in;
   }
   void setSameXY(bool in) { sameXY = in; }
+  void setCornerToCorner(bool in) { cornerToCorner = in; }
   void report(utl::Logger* logger) const override
   {
     logger->report(
         "CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length "
         "{} edgeLength {} includeLShape {} minLength {} exceptNotch {} "
-        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} ",
+        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} cornerToCorner {}",
         cornerType,
         sameMask,
         within,
@@ -2021,7 +1997,8 @@ class frLef58CornerSpacingConstraint : public frConstraint
         notchLength,
         exceptSameNet,
         exceptSameMetal,
-        sameXY);
+        sameXY,
+        cornerToCorner);
 
     std::string vals = "";
     std::string rows = "";
@@ -2052,7 +2029,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
       tbl;      // horz / vert spacing
   bool sameXY;  // indicate whether horz spacing == vert spacing // for write
                 // LEF some day
-
+  bool cornerToCorner;
 };
 
 class frLef58CornerSpacingSpacingConstraint : public frConstraint
@@ -2076,7 +2053,6 @@ class frLef58CornerSpacingSpacingConstraint : public frConstraint
 
  protected:
   frCoord width;
-
 };
 
 class frLef58CornerSpacingSpacing1DConstraint
@@ -2105,7 +2081,6 @@ class frLef58CornerSpacingSpacing1DConstraint
 
  protected:
   frCoord spacing = -1;
-
 };
 
 class frLef58CornerSpacingSpacing2DConstraint
@@ -2147,7 +2122,6 @@ class frLef58CornerSpacingSpacing2DConstraint
 
  protected:
   frCoord horizontalSpacing = -1, verticalSpacing = -1;
-
 };
 
 class frLef58RectOnlyConstraint : public frConstraint
@@ -2177,7 +2151,6 @@ class frLef58RectOnlyConstraint : public frConstraint
 
  protected:
   bool exceptNonCorePins;
-
 };
 
 class frLef58RightWayOnGridOnlyConstraint : public frConstraint
@@ -2204,7 +2177,6 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
 
  protected:
   bool checkMask;
-
 };
 
 using namespace std;

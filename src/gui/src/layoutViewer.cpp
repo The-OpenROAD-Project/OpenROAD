@@ -56,6 +56,8 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <limits>
+#include <boost/geometry.hpp>
 
 #include "db.h"
 #include "dbTransform.h"
@@ -593,11 +595,9 @@ void LayoutViewer::cancelRulerBuild()
 
 Rect LayoutViewer::getBounds() const
 {
-  Rect bbox;
-  block_->getBBox()->getBox(bbox);
+  Rect bbox = block_->getBBox()->getBox();
 
-  Rect die;
-  block_->getDieArea(die);
+  Rect die = block_->getDieArea();
 
   bbox.merge(die);
 
@@ -761,64 +761,33 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
 }
 
-std::pair<LayoutViewer::Edges, bool> LayoutViewer::searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt)
+int LayoutViewer::edgeToPointDistance(const odb::Point& pt, const Edge& edge) const
 {
-  // find closest edges for each object returned
-  std::vector<Edges> candidates;
-  for (auto& box : boxes) {
-    auto pt0 = box.min_corner();
-    auto pt1 = box.max_corner();
+  using BPoint = boost::geometry::model::d2::point_xy<int>;
+  using BLine = boost::geometry::model::linestring<BPoint>;
 
-    Edge vertical;
-    // vertical edges
-    if (std::abs(pt.x() - pt0.get<0>()) < std::abs(pt.x() - pt1.get<0>())) {
-      // closer to pt0
-      vertical.first = odb::Point(pt0.get<0>(), pt0.get<1>());
-      vertical.second = odb::Point(pt0.get<0>(), pt1.get<1>());
-    } else {
-      // closer to pt1
-      vertical.first = odb::Point(pt1.get<0>(), pt0.get<1>());
-      vertical.second = odb::Point(pt1.get<0>(), pt1.get<1>());
-    }
+  const BPoint bpt(pt.x(), pt.y());
 
-    Edge horizontal;
-    // horizontal edges
-    if (std::abs(pt.y() - pt0.get<1>()) < std::abs(pt.y() - pt1.get<1>())) {
-      // closer to pt0
-      horizontal.first = odb::Point(pt0.get<0>(), pt0.get<1>());
-      horizontal.second = odb::Point(pt1.get<0>(), pt0.get<1>());
-    } else {
-      // closer to pt1
-      horizontal.first = odb::Point(pt0.get<0>(), pt1.get<1>());
-      horizontal.second = odb::Point(pt1.get<0>(), pt1.get<1>());
-    }
+  BLine bline;
+  bline.push_back(BPoint(edge.first.x(), edge.first.y()));
+  bline.push_back(BPoint(edge.second.x(), edge.second.y()));
 
-    candidates.push_back({horizontal, vertical});
-  }
+  const auto distance = boost::geometry::distance(bpt, bline);
 
-  if (candidates.empty()) {
-    return {Edges(), false};
-  }
-
-  // find closest edge overall, start with last one
-  Edges closest_edges = candidates.back();
-  candidates.pop_back();
-  for (auto& edge_set : candidates) {
-    // vertical edges
-    if (std::abs(pt.x() - edge_set.vertical.first.x()) < std::abs(pt.x() - closest_edges.vertical.first.x())) {
-      closest_edges.vertical = edge_set.vertical;
-    }
-
-    // horizontal edges
-    if (std::abs(pt.y() - edge_set.horizontal.first.y()) < std::abs(pt.y() - closest_edges.horizontal.first.y())) {
-      closest_edges.horizontal = edge_set.horizontal;
-    }
-  }
-
-  return {closest_edges, true};
+  return distance;
 }
 
-std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt, bool horizontal)
+bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
+{
+  const uint64 lhs_length_sqrd = std::pow(lhs.first.x() - lhs.second.x(), 2) +
+                                 std::pow(lhs.first.y() - lhs.second.y(), 2);
+  const uint64 rhs_length_sqrd = std::pow(rhs.first.x() - rhs.second.x(), 2) +
+                                 std::pow(rhs.first.y() - rhs.second.y(), 2);
+
+  return lhs_length_sqrd < rhs_length_sqrd;
+}
+
+std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::Point& pt, bool horizontal, bool vertical)
 {
   if (!hasDesign()) {
     return {Edge(), false};
@@ -826,22 +795,80 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   const int search_radius = block_->getDbUnitsPerMicron();
 
-  std::vector<Search::Box> boxes;
+  Edge closest_edge;
+  int edge_distance = std::numeric_limits<int>::max();
+
+  auto check_rect = [this,
+                     &pt,
+                     &closest_edge,
+                     &edge_distance,
+                     &horizontal,
+                     &vertical](const odb::Rect& rect) {
+    const odb::Point ll(rect.xMin(), rect.yMin());
+    const odb::Point lr(rect.xMax(), rect.yMin());
+    const odb::Point ul(rect.xMin(), rect.yMax());
+    const odb::Point ur(rect.xMax(), rect.yMax());
+    if (horizontal) {
+      const Edge top_edge{ul, ur};
+      const int top = edgeToPointDistance(pt, top_edge);
+      if (top < edge_distance) {
+        edge_distance = top;
+        closest_edge = top_edge;
+      } else if (top == edge_distance && compareEdges(top_edge, closest_edge)) {
+        edge_distance = top;
+        closest_edge = top_edge;
+      }
+      const Edge bottom_edge{ll, lr};
+      const int bottom = edgeToPointDistance(pt, bottom_edge);
+      if (bottom < edge_distance) {
+        edge_distance = bottom;
+        closest_edge = bottom_edge;
+      } else if (bottom == edge_distance && compareEdges(bottom_edge, closest_edge)) {
+        edge_distance = bottom;
+        closest_edge = bottom_edge;
+      }
+    }
+    if (vertical) {
+      const Edge left_edge{ll, ul};
+      const int left = edgeToPointDistance(pt, left_edge);
+      if (left < edge_distance) {
+        edge_distance = left;
+        closest_edge = left_edge;
+      } else if (left == edge_distance && compareEdges(left_edge, closest_edge)) {
+        edge_distance = left;
+        closest_edge = left_edge;
+      }
+      const Edge right_edge{lr, ur};
+      const int right = edgeToPointDistance(pt, right_edge);
+      if (right < edge_distance) {
+        edge_distance = right;
+        closest_edge = right_edge;
+      } else if (right == edge_distance && compareEdges(right_edge, closest_edge)) {
+        edge_distance = right;
+        closest_edge = right_edge;
+      }
+    }
+  };
+
+  auto convert_box_to_rect = [](const Search::Box& box) -> odb::Rect {
+    const auto min_corner = box.min_corner();
+    const auto max_corner = box.max_corner();
+    const odb::Point ll(min_corner.x(), min_corner.y());
+    const odb::Point ur(max_corner.x(), max_corner.y());
+
+    return odb::Rect(ll, ur);
+  };
 
   // get die bounding box
-  Rect bbox;
-  block_->getDieArea(bbox);
-  boxes.push_back({{bbox.xMin(), bbox.yMin()},
-                   {bbox.xMax(), bbox.yMax()}});
+  Rect bbox = block_->getDieArea();
+  check_rect(bbox);
 
   if (options_->areRegionsVisible()) {
     for (auto* region : block_->getRegions()) {
       for (auto* box : region->getBoundaries()) {
-        odb::Rect region_box;
-        box->getBox(region_box);
+        odb::Rect region_box = box->getBox();
         if (region_box.area() > 0) {
-          boxes.push_back({{region_box.xMin(), region_box.yMin()},
-                           {region_box.xMax(), region_box.yMax()}});
+          check_rect(region_box);
         }
       }
     }
@@ -850,19 +877,27 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
-  } else {
+  } else if (vertical) {
     search_line = odb::Rect(pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
+  } else {
+    search_line = odb::Rect(pt.x() - search_radius, pt.y() - search_radius, pt.x() + search_radius, pt.y() + search_radius);
   }
 
   auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), instanceSizeLimit());
 
+  const bool inst_pins_visible = options_->areInstancePinsVisible();
+  const bool inst_osb_visible = options_->areInstanceBlockagesVisible();
+  const bool inst_internals_visible = inst_pins_visible || inst_osb_visible;
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
   for (auto& [box, poly, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
-      insts.push_back(inst);
-      boxes.push_back(box);
+      if (inst_internals_visible) {
+        // only add inst if it can be used for pin or obs search
+        insts.push_back(inst);
+      }
+      check_rect(convert_box_to_rect(box));
     }
   }
 
@@ -885,21 +920,18 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
       dbTransform inst_xfm;
       inst->getTransform(inst_xfm);
 
-      if (options_->areObstructionsVisible()) {
+      if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
           odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
           inst_xfm.apply(trans_box);
-          if (trans_box.intersects(search_line)) {
-            boxes.push_back({Search::Point(trans_box.xMin(), trans_box.yMin()), Search::Point(trans_box.xMax(), trans_box.yMax())});
-          }
+          check_rect(trans_box);
         }
       }
-      for (auto& box : inst_boxes->mterms) {
-        odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
-        inst_xfm.apply(trans_box);
-
-        if (trans_box.intersects(search_line)) {
-          boxes.push_back({Search::Point(trans_box.xMin(), trans_box.yMin()), Search::Point(trans_box.xMax(), trans_box.yMax())});
+      if (inst_pins_visible) {
+        for (auto& box : inst_boxes->mterms) {
+          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
+          inst_xfm.apply(trans_box);
+          check_rect(trans_box);
         }
       }
     }
@@ -907,21 +939,21 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
     auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, net] : shapes) {
       if (isNetVisible(net)) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
 
     if (options_->areFillsVisible()) {
       auto fills = search_.searchFills(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
       for (auto& [box, poly, fill] : fills) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
 
     if (options_->areObstructionsVisible()) {
       auto obs = search_.searchObstructions(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
       for (auto& [box, poly, ob] : obs) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
   }
@@ -929,49 +961,41 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   if (options_->areBlockagesVisible()) {
     auto blcks = search_.searchBlockages(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, blck] : blcks) {
-      boxes.push_back(box);
+      check_rect(convert_box_to_rect(box));
     }
   }
 
   if (options_->areRowsVisible()) {
     for (const auto& row_site : getRowRects(search_line)) {
-      boxes.push_back({{row_site.xMin(), row_site.yMin()},
-                       {row_site.xMax(), row_site.yMax()}});
+      check_rect(row_site);
     }
   }
 
-  const auto& [shape_edges, ok] = searchNearestEdge(boxes, pt);
+  const bool ok = edge_distance != std::numeric_limits<int>::max();
   if (!ok) {
     return {Edge(), false};
-  }
-
-  Edge selected_edge;
-  if (horizontal) {
-    selected_edge = shape_edges.horizontal;
-  } else {
-    selected_edge = shape_edges.vertical;
   }
 
   // check if edge should point instead
   const int point_snap_distance = std::max(10.0 / pixels_per_dbu_, // pixels
                                            10.0); //DBU
 
-  std::array<odb::Point, 3> snap_points = {
-      snap_edge_.first, // first corner
+  const std::array<odb::Point, 3> snap_points = {
+      closest_edge.first, // first corner
       odb::Point(
-          (snap_edge_.first.x() + snap_edge_.second.x()) / 2,
-          (snap_edge_.first.y() + snap_edge_.second.y()) / 2),// midpoint
-      snap_edge_.second // last corner
+          (closest_edge.first.x() + closest_edge.second.x()) / 2,
+          (closest_edge.first.y() + closest_edge.second.y()) / 2),// midpoint
+          closest_edge.second // last corner
   };
   for (const auto& s_pt : snap_points) {
     if (std::abs(s_pt.x() - pt.x()) < point_snap_distance && std::abs(s_pt.y() - pt.y()) < point_snap_distance) {
       // close to point, so snap to that
-      snap_edge_.first = s_pt;
-      snap_edge_.second = s_pt;
+      closest_edge.first = s_pt;
+      closest_edge.second = s_pt;
     }
   }
 
-  return {selected_edge, true};
+  return {closest_edge, true};
 }
 
 void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
@@ -1134,8 +1158,9 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
   } else {
     odb::Point snapped = end_pt;
     if (snap_edge_showing_) {
-      if (snap_edge_.first == snap_edge_.second) { // point snap
-        return snap_edge_.first;
+      if (snap_edge_.first.x() == snap_edge_.second.x() &&
+          snap_edge_.first.y() == snap_edge_.second.y()) { // point snap
+        return {snap_edge_.first.x(), snap_edge_.first.y()};
       }
 
       bool is_vertical_edge = snap_edge_.first.x() == snap_edge_.second.x();
@@ -1235,27 +1260,9 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
         }
       }
 
-      if (do_ver) {
-        const auto& [edge_ver, ok_ver] = findEdge(pt_dbu, false);
-
-        if (ok_ver && do_ver) {
-          snap_edge_ = edge_ver;
-          snap_edge_showing_ = true;
-        }
-      }
-      if (do_hor) {
-        const auto& [edge_hor, ok_hor] = findEdge(pt_dbu, true);
-        if (ok_hor) {
-          if (!snap_edge_showing_) {
-            snap_edge_ = edge_hor;
-            snap_edge_showing_ = true;
-          } else if ( // check if horizontal is closer
-              std::abs(snap_edge_.first.x() - pt_dbu.x()) >
-              std::abs(edge_hor.first.y() - pt_dbu.y())) {
-            snap_edge_ = edge_hor;
-          }
-        }
-      }
+      const auto& [edge, ok] = searchNearestEdge(pt_dbu, do_hor, do_ver);
+      snap_edge_ = edge;
+      snap_edge_showing_ = ok;
     } else {
       snap_edge_showing_ = false;
     }
@@ -1472,8 +1479,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
   }
 
   int min_resolution = shapeSizeLimit();
-  Rect block_bounds;
-  block_->getBBox()->getBox(block_bounds);
+  Rect block_bounds = block_->getBBox()->getBox();
   const Rect draw_bounds = block_bounds.intersect(bounds);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
@@ -1883,8 +1889,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       continue;
     }
 
-    Rect instance_box;
-    inst->getBBox()->getBox(instance_box);
+    Rect instance_box = inst->getBBox()->getBox();
 
     QString name = inst->getName().c_str();
     QRectF instance_bbox_in_px = dbuToScreen(instance_box);
@@ -1948,8 +1953,7 @@ void LayoutViewer::drawBlockages(QPainter* painter,
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, blockage] : blockage_range) {
-    Rect bbox;
-    blockage->getBBox()->getBox(bbox);
+    Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -1971,8 +1975,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
       layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, obs] : obstructions_range) {
-    Rect bbox;
-    obs->getBBox()->getBox(bbox);
+    Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -1998,11 +2001,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
+
+  drawManufacturingGrid(painter, bounds);
 
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
@@ -2091,13 +2095,13 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     drawTracks(layer, painter, bounds);
+    drawRouteGuides(gui_painter, layer);
     for (auto* renderer : renderers) {
       gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
   }
-
   // draw instance names
   drawInstanceNames(painter, insts);
 
@@ -2121,6 +2125,42 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 }
 
+void LayoutViewer::drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds)
+{
+  if (!options_->isManufacturingGridVisible()) {
+    return;
+  }
+
+  odb::dbTech* tech = block_->getDb()->getTech();
+  if (!tech->hasManufacturingGrid()) {
+    return;
+  }
+
+  const int grid = tech->getManufacturingGrid(); // DBU
+
+  const int pixels_per_grid_point = grid * pixels_per_dbu_;
+  const int pixels_per_grid_point_limit = 5; // want 5 pixels between each grid point
+
+  if (pixels_per_grid_point < pixels_per_grid_point_limit) {
+    return;
+  }
+
+  const int first_x = ((bounds.xMin() / grid) + 1) * grid;
+  const int last_x = (bounds.xMax() / grid) * grid;
+  const int first_y = ((bounds.yMin() / grid) + 1) * grid;
+  const int last_y = (bounds.yMax() / grid) * grid;
+
+  QPolygon points;
+  for (int x = first_x; x <= last_x; x += grid) {
+    for (int y = first_y; y <= last_y; y += grid) {
+      points.append(QPoint(x, y));
+    }
+  }
+
+  painter->setPen(Qt::white);
+  painter->drawPoints(points);
+}
+
 void LayoutViewer::drawRegionOutlines(QPainter* painter)
 {
   if (!options_->areRegionsVisible()) {
@@ -2132,8 +2172,7 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
 
   for (auto* region : block_->getRegions()) {
     for (auto* box : region->getBoundaries()) {
-      odb::Rect region_box;
-      box->getBox(region_box);
+      odb::Rect region_box = box->getBox();
       if (region_box.area() > 0) {
         painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
       }
@@ -2141,6 +2180,20 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
   }
 }
 
+void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
+{
+  if(route_guides_.empty())
+    return;
+  painter.setPen(layer);
+  painter.setBrush(layer);
+  for(auto net : route_guides_) {
+    for(auto guide : net->getGuides()) {
+      if (guide->getLayer() != layer)
+        continue;
+      painter.drawRect(guide->getBox());
+    }
+  }
+}
 void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
@@ -2210,8 +2263,7 @@ void LayoutViewer::drawModuleView(QPainter* painter,
       continue;
     }
 
-    odb::Rect inst_outline;
-    inst->getBBox()->getBox(inst_outline);
+    odb::Rect inst_outline = inst->getBBox()->getBox();
 
     auto color = setting.color;
     painter->setPen(QPen(color, 0));
@@ -2543,15 +2595,15 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (snap_edge_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
-    if (snap_edge_.first != snap_edge_.second) {
+    if (snap_edge_.first == snap_edge_.second) {
+      painter.drawEllipse(QPointF(snap_edge_.first.x(), snap_edge_.first.y()),
+                          5.0 / pixels_per_dbu_,
+                          5.0 / pixels_per_dbu_);
+    } else {
       painter.drawLine(
           QLine(
               QPoint(snap_edge_.first.x(), snap_edge_.first.y()),
               QPoint(snap_edge_.second.x(), snap_edge_.second.y())));
-    } else {
-      painter.drawEllipse(QPointF(snap_edge_.first.x(), snap_edge_.first.y()),
-                          5.0 / pixels_per_dbu_,
-                          5.0 / pixels_per_dbu_);
     }
   }
 
@@ -2921,6 +2973,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2990,11 +3043,15 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
+  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearRouteGuides();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
+    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
   });
 }
 
@@ -3032,10 +3089,25 @@ void LayoutViewer::addFocusNet(odb::dbNet* net)
   }
 }
 
+void LayoutViewer::addRouteGuides(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = route_guides_.insert(net);
+  if (inserted) {
+    fullRepaint();
+  }
+}
+
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeRouteGuides(odb::dbNet* net)
+{
+  if (route_guides_.erase(net) > 0) {
     fullRepaint();
   }
 }
@@ -3045,6 +3117,14 @@ void LayoutViewer::clearFocusNets()
   if (!focus_nets_.empty()) {
     focus_nets_.clear();
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearRouteGuides()
+{
+  if (!route_guides_.empty()) {
+    route_guides_.clear();
     fullRepaint();
   }
 }
@@ -3138,7 +3218,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
         }
       }
       if (width == 0) {
-        // no vias, look through all pins to find max size.
+        // no vias, look through all pins and obs to find max size.
         // This can happen for contacts in stdcell pins which are still
         // important for diff layer cut spacing checks.
         std::vector<dbMaster*> masters;
@@ -3151,6 +3231,12 @@ void LayoutViewer::generateCutLayerMaximumSizes()
                   width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
                 }
               }
+            }
+          }
+
+          for (dbBox* box : master->getObstructions()) {
+            if (box->getTechLayer() == layer) {
+              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
             }
           }
         }

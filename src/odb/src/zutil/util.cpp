@@ -77,8 +77,7 @@ static void cutRow(dbBlock* block,
                    int halo_y)
 {
   string row_name = row->getName();
-  Rect row_bb;
-  row->getBBox(row_bb);
+  Rect row_bb = row->getBBox();
 
   dbSite* row_site = row->getSite();
   const int site_width = row_site->getWidth();
@@ -133,8 +132,7 @@ static void cutRow(dbBlock* block,
 
 static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
 {
-  Rect rowBB;
-  row->getBBox(rowBB);
+  Rect rowBB = row->getBBox();
 
   // Check if Y has overlap first since rows are long and skinny
   const int blockage_lly = blockage->yMin() - halo_y;

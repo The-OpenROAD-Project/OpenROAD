@@ -51,8 +51,7 @@ void extSpef::initSearchForNets() {
   dbSet<dbTechLayer>::iterator itr;
   dbTrackGrid* tg = NULL;
 
-  Rect maxRect;
-  _block->getDieArea(maxRect);
+  Rect maxRect = _block->getDieArea();
 
   std::vector<int> trackXY(32000);
   uint n = 0;
@@ -123,8 +122,7 @@ uint extSpef::addNetShapesOnSearch(uint netId) {
       level2 = 0;
     }
 
-    Rect r;
-    s.getBox(r);
+    Rect r = s.getBox();
 
     _search->addBox(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level1, netId,
                     shapeId, wtype);

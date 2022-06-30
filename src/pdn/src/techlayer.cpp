@@ -190,4 +190,45 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
   return rules;
 }
 
+odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
+{
+  if (!layer_->hasArea()) {
+    return rect;
+  }
+
+  const double min_area = layer_->getArea();
+  if (min_area == 0.0) {
+    return rect;
+  }
+
+  // make sure minimum area is honored
+  const int dbu_per_micron = getLefUnits();
+  const double area
+      = min_area * dbu_per_micron * dbu_per_micron;
+
+  odb::Rect new_rect = rect;
+
+  const int width = new_rect.dx();
+  const int height = new_rect.dy();
+  if (width * height < area) {
+    if (layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      const int required_width = std::ceil(area / height);
+      const int added_width = (required_width - width) / 2;
+      const int new_x0 = snapToManufacturingGrid(rect.xMin() - added_width, false);
+      const int new_x1 = snapToManufacturingGrid(rect.xMax() + added_width, true);
+      new_rect.set_xlo(new_x0);
+      new_rect.set_xhi(new_x1);
+    } else {
+      const int required_height = std::ceil(area / width);
+      const int added_height = (required_height - height) / 2;
+      const int new_y0 = snapToManufacturingGrid(rect.yMin() - added_height, false);
+      const int new_y1 = snapToManufacturingGrid(rect.yMax() + added_height, true);
+      new_rect.set_ylo(new_y0);
+      new_rect.set_yhi(new_y1);
+    }
+  }
+
+  return new_rect;
+}
+
 }  // namespace pdn

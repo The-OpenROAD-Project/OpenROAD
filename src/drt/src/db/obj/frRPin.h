@@ -56,7 +56,7 @@ class frRPin : public frBlockObject
   frNet* getNet() const { return net; }
 
   // utility
-  void getBBox(Rect& in);
+  Rect getBBox();
   frLayerNum getLayerNum();
 
   // others

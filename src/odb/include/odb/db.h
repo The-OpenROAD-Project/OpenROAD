@@ -140,6 +140,7 @@ class dbTechLayerEolExtensionRule;
 class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
+class dbGuide;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -512,7 +513,7 @@ class dbBox : public dbObject
   ///
   /// Get the box bounding points.
   ///
-  void getBox(Rect& rect);
+  Rect getBox();
 
   ///
   /// Get the translated boxes of this via
@@ -990,6 +991,11 @@ class dbBlock : public dbObject
   // void dbBlock::writeDb(char *filename, int allNode=0);
   void writeDb(char* filename, int allNode = 0);
 
+  //
+  // Utility to write guides file
+  //
+  void writeGuides(const char* filename) const;
+
   ///
   /// Find a specific via of this block.
   /// Returns NULL if the object was not found.
@@ -1195,13 +1201,13 @@ class dbBlock : public dbObject
   ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
-  void getDieArea(Rect& rect);
+  Rect getDieArea();
 
   ///
   /// Get the core area. This computes the bbox of the rows
   /// and is O(#rows) in runtime.
   ///
-  void getCoreArea(Rect& rect);
+  Rect getCoreArea();
 
   void setPtFile(FILE* ptf);
   FILE* getPtFile();
@@ -2639,6 +2645,10 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
+
+  dbSet<dbGuide> getGuides() const;
+
+  void clearGuides();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -4846,7 +4856,7 @@ class dbRow : public dbObject
   ///
   /// Get the bounding box of this row
   ///
-  void getBBox(Rect& bbox);
+  Rect getBBox();
 
   ///
   /// Create a new row.
@@ -7711,6 +7721,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isExceptSameMetal() const;
 
+  void setCornerToCorner(bool corner_to_corner);
+
+  bool isCornerToCorner() const;
+
   // User Code Begin dbTechLayerCornerSpacingRule
   void setType(CornerType _type);
 
@@ -8767,6 +8781,29 @@ class dbTechLayerMinCutRule : public dbObject
   static void destroy(dbTechLayerMinCutRule* rule);
 
   // User Code End dbTechLayerMinCutRule
+};
+
+class dbGuide : public dbObject
+{
+ public:
+  // User Code Begin dbGuideEnums
+  // User Code End dbGuideEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbGuide
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbGuide* getGuide(dbBlock* block, uint dbid);
+
+  static void destroy(dbGuide* guide);
+
+  // User Code End dbGuide
 };
 
 class dbModule : public dbObject

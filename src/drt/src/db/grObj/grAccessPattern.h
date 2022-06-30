@@ -51,7 +51,6 @@ class grAccessPattern : public grBlockObject
   {
   }
   // getters
-  void getPoint(Point& bpIn) const { bpIn = beginPoint; }
   Point getPoint() const { return beginPoint; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum; }
   grPin* getPin() const { return pin; }

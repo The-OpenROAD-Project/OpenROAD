@@ -291,8 +291,7 @@ nextOpCode:
     case dbWireDecoder::VIA: {
       dbVia* via = _decoder.getVia();
       dbBox* box = via->getBBox();
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
       int ymin = b.yMin() + _prev_y;
       int xmax = b.xMax() + _prev_x;
@@ -319,8 +318,7 @@ nextOpCode:
     case dbWireDecoder::TECH_VIA: {
       dbTechVia* via = _decoder.getTechVia();
       dbBox* box = via->getBBox();
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
       int ymin = b.yMin() + _prev_y;
       int xmax = b.xMax() + _prev_x;

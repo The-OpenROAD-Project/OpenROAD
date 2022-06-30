@@ -45,10 +45,9 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   int degree = pinGCellNodes.size();
   std::vector<int> xs(degree);
   std::vector<int> ys(degree);
-  Point loc;
   for (int i = 0; i < (int) pinGCellNodes.size(); i++) {
     auto gcellNode = pinGCellNodes[i];
-    gcellNode->getLoc(loc);
+    Point loc = gcellNode->getLoc();
     xs[i] = loc.x();
     ys[i] = loc.y();
   }
@@ -60,10 +59,8 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
       adjacencyList;
 
-  Point pinGCellLoc;
   for (auto pinNode : pinGCellNodes) {
-    pinNode->getLoc(pinGCellLoc);
-    pinGCell2Nodes[pinGCellLoc] = pinNode;
+    pinGCell2Nodes[pinNode->getLoc()] = pinNode;
   }
 
   // iterate over branches, create new nodes and build connectivity
@@ -172,9 +169,8 @@ void FlexGR::genMSTTopology_PD(vector<frNode*>& nodes, double alpha)
     for (int j = i; j < (int) nodes.size(); j++) {
       auto node1 = nodes[i];
       auto node2 = nodes[j];
-      Point loc1, loc2;
-      node1->getLoc(loc1);
-      node2->getLoc(loc2);
+      Point loc1 = node1->getLoc();
+      Point loc2 = node2->getLoc();
       int dist = abs(loc2.x() - loc1.x()) + abs(loc2.y() - loc1.y());
       dists[i][j] = dist;
       dists[j][i] = dist;
@@ -411,9 +407,8 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
     pair<frCoord, frCoord>& vertIntv,
     Point& turnLoc)
 {
-  Point parentLoc, childLoc;
-  parent->getLoc(parentLoc);
-  child->getLoc(childLoc);
+  Point parentLoc = parent->getLoc();
+  Point childLoc = child->getLoc();
 
   if (isCurrU) {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
@@ -506,10 +501,8 @@ void FlexGR::genSTTopology_build_tree(vector<frNode*>& pinNodes,
 
   genSTTopology_build_tree_mergeSeg(pinNodes, isU, horzIntvs, vertIntvs);
 
-  Point pinGCellLoc;
   for (auto pinNode : pinNodes) {
-    pinNode->getLoc(pinGCellLoc);
-    pinGCell2Nodes[pinGCellLoc] = pinNode;
+    pinGCell2Nodes[pinNode->getLoc()] = pinNode;
   }
 
   // split seg and build tree

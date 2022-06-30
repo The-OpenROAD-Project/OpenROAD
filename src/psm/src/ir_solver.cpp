@@ -315,12 +315,10 @@ void IRSolver::ReadC4Data() {
                    "pad location to checkerboard pattern on core area.");
     dbChip* chip = m_db->getChip();
     dbBlock* block = chip->getBlock();
-    odb::Rect coreRect;
-    block->getCoreArea(coreRect);
+    odb::Rect coreRect = block->getCoreArea();
     int coreW = coreRect.xMax() - coreRect.xMin();
     int coreL = coreRect.yMax() - coreRect.yMin();
-    odb::Rect dieRect;
-    block->getDieArea(dieRect);
+    odb::Rect dieRect = block->getDieArea();
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {

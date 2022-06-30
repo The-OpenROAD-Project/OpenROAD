@@ -311,8 +311,7 @@ void AutoClusterMgr::createBundledIO()
 {
   // Get the floorplan information
 
-  Rect die_box;
-  block_->getDieArea(die_box);
+  Rect die_box = block_->getDieArea();
 
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
@@ -1199,8 +1198,7 @@ pair<float, float> AutoClusterMgr::printPinPos(dbInst* macro_inst)
     if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
-          Rect rect;
-          box->getBox(rect);
+          Rect rect = box->getBox();
           bbox.merge(rect);
         }
       }
@@ -1307,6 +1305,7 @@ void AutoClusterMgr::mergeMacroUtil(const string& parent_name,
 
 // Timing-driven related functions
 // Sequential Graph based timing driven
+// Copied from mpl/MacroPlacer.cpp (bad form).
 void AutoClusterMgr::findAdjacencies()
 {
   sta_->ensureLevelized();
@@ -1438,9 +1437,7 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
     sta::Instance* inst = leaf_iter->next();
     sta::LibertyCell* lib_cell = network->libertyCell(inst);
     if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
-      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while (seq_iter.hasNext()) {
-        sta::Sequential* seq = seq_iter.next();
+      for (sta::Sequential* seq : lib_cell->sequentials()) {
         sta::FuncExpr* data_expr = seq->data();
         sta::FuncExprPortIterator data_port_iter(data_expr);
         while (data_port_iter.hasNext()) {
@@ -1795,8 +1792,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // Timing-driven flow
   findAdjacencies();
 
-  Rect die_box;
-  block_->getCoreArea(die_box);
+  Rect die_box = block_->getCoreArea();
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();

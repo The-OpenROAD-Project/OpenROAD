@@ -178,9 +178,9 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   frVia via(viaDef);
   Rect viaBox(0, 0, 0, 0);
   if (isUpperVia) {
-    via.getLayer1BBox(viaBox);
+    viaBox = via.getLayer1BBox();
   } else {
-    via.getLayer2BBox(viaBox);
+    viaBox = via.getLayer2BBox();
   }
   frCoord width2 = viaBox.minDXDY();
   frCoord length2 = viaBox.maxDXDY();
@@ -366,8 +366,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   // default via dimension
   frViaDef* viaDef = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
-  Rect viaBox(0, 0, 0, 0);
-  via.getCutBBox(viaBox);
+  Rect viaBox = via.getCutBBox();
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frLayerNum followTrackLNum;
@@ -570,16 +569,15 @@ void FlexTAWorker::modCost(taPinFig* fig,
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     auto layerNum = obj->getLayerNum();
-    Rect box;
-    obj->getBBox(box);
+    Rect box = obj->getBBox();
     modMinSpacingCostPlanar(
         box, layerNum, obj, isAddCost, pinS);  // must be current TA layer
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, true, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, true, pinS);
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
-    Rect box;
-    obj->getLayer1BBox(box);  // assumes enclosure for via is always rectangle
+    // assumes enclosure for via is always rectangle
+    Rect box = obj->getLayer1BBox(); 
     auto layerNum = obj->getViaDef()->getLayer1Num();
     // current TA layer
     if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
@@ -588,7 +586,8 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
+    // assumes enclosure for via is always rectangle
+    box = obj->getLayer2BBox(); 
     layerNum = obj->getViaDef()->getLayer2Num();
     // current TA layer
     if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
@@ -598,12 +597,11 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
     dbTransform xform;
-    Point pt;
-    obj->getOrigin(pt);
+    Point pt = obj->getOrigin();
     xform.setOffset(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
-      rect->getBBox(box);
+      box = rect->getBBox();
       xform.apply(box);
       layerNum = obj->getViaDef()->getCutLayerNum();
       modCutSpacingCost(box, layerNum, obj, isAddCost, pinS);
@@ -619,11 +617,9 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
                                             int& idx2)
 {
   lNum = iroute->getGuide()->getBeginLayerNum();
-  Point gbp, gep, gIdx;
-  Rect gBox;
-  iroute->getGuide()->getPoints(gbp, gep);
-  getDesign()->getTopBlock()->getGCellIdx(gbp, gIdx);
-  getDesign()->getTopBlock()->getGCellBox(gIdx, gBox);
+  auto [gbp, gep] = iroute->getGuide()->getPoints();
+  Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
+  Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
   frCoord coordHigh = isH ? gBox.yMax() : gBox.xMax();
@@ -661,12 +657,9 @@ frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
 {
   auto guide = iroute->getGuide();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  Point begin, end;
-  guide->getPoints(begin, end);
-  Rect endBox;
-  Point idx;
-  getDesign()->getTopBlock()->getGCellIdx(end, idx);
-  getDesign()->getTopBlock()->getGCellBox(idx, endBox);
+  auto [begin, end] = guide->getPoints();
+  Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
+  Rect endBox = getDesign()->getTopBlock()->getGCellBox(idx);
   int wlen = 0;
   auto wlen_helper = iroute->getWlenHelper();
   if (wlen_helper <= 0) {
@@ -807,12 +800,11 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
 frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 cost = 0;
-  Point bp, ep;
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
-      obj->getPoints(bp, ep);
+      auto [bp, ep] = obj->getPoints();
       if (isH) {
         bp.set(bp.x(), trackLoc);
         ep.set(ep.x(), trackLoc);
@@ -826,7 +818,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       cost += wireCost;
     } else if (uPinFig->typeId() == tacVia) {
       auto obj = static_cast<taVia*>(uPinFig.get());
-      obj->getOrigin(bp);
+      auto bp = obj->getOrigin();
       if (isH) {
         bp.set(bp.x(), trackLoc);
       } else {
@@ -852,8 +844,7 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
-      Point bp, ep;
-      obj->getPoints(bp, ep);
+      auto [bp, ep] = obj->getPoints();
       auto lNum = obj->getLayerNum();
       pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
       auto& workerRegionQuery = getWorkerRegionQuery();
@@ -1061,8 +1052,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   }
   if (bestTrackIdx == -1) {
     auto guide = iroute->getGuide();
-    Rect box;
-    guide->getBBox(box);
+    Rect box = guide->getBBox();
     cout << "Error: assignIroute_bestTrack select no track for "
          << guide->getNet()->getName() << " @(" << box.xMin() / dbu << ", "
          << box.yMin() / dbu << ") (" << box.xMax() / dbu << ", "
@@ -1083,13 +1073,12 @@ void FlexTAWorker::assignIroute_updateIroute(
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  Point bp, ep;
 
   // update coord
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
-      obj->getPoints(bp, ep);
+      auto [bp, ep] = obj->getPoints();
       if (isH) {
         bp.set(bp.x(), bestTrackLoc);
         ep.set(ep.x(), bestTrackLoc);
@@ -1100,7 +1089,7 @@ void FlexTAWorker::assignIroute_updateIroute(
       obj->setPoints(bp, ep);
     } else if (uPinFig->typeId() == tacVia) {
       auto obj = static_cast<taVia*>(uPinFig.get());
-      obj->getOrigin(bp);
+      auto bp = obj->getOrigin();
       if (isH) {
         bp.set(bp.x(), bestTrackLoc);
       } else {
@@ -1138,7 +1127,6 @@ void FlexTAWorker::assignIroute_updateOthers(
     set<taPin*, frBlockObjectComp>& pinS)
 {
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  Point bp, ep;
   if (isInitTA()) {
     return;
   }
@@ -1151,7 +1139,7 @@ void FlexTAWorker::assignIroute_updateOthers(
     frCoord trackLoc = std::numeric_limits<frCoord>::max();
     for (auto& uPinFig : iroute->getFigs()) {
       if (uPinFig->typeId() == tacPathSeg) {
-        static_cast<taPathSeg*>(uPinFig.get())->getPoints(bp, ep);
+        auto [bp, ep] = static_cast<taPathSeg*>(uPinFig.get())->getPoints();
         if (isH) {
           trackLoc = bp.y();
         } else {

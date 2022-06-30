@@ -55,50 +55,41 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedSeg {
+class DetailedSeg
+{
  public:
-  DetailedSeg()
-      : m_segId(-1),
-        m_rowId(-1),
-        m_regId(0),
-        m_xmin(std::numeric_limits<int>::max()),
-        m_xmax(std::numeric_limits<int>::lowest()),
-        m_util(0.0) {}
-        //m_gapu(0.0)
-  virtual ~DetailedSeg() {}
+  void setSegId(int segId) { segId_ = segId; }
+  int getSegId() const { return segId_; }
 
-  void setSegId(int segId) { m_segId = segId; }
-  int getSegId() const { return m_segId; }
+  void setRowId(int rowId) { rowId_ = rowId; }
+  int getRowId() const { return rowId_; }
 
-  void setRowId(int rowId) { m_rowId = rowId; }
-  int getRowId() const { return m_rowId; }
+  void setRegId(int regId) { regId_ = regId; }
+  int getRegId() const { return regId_; }
 
-  void setRegId(int regId) { m_regId = regId; }
-  int getRegId() const { return m_regId; }
+  void setMinX(int xmin) { xmin_ = xmin; }
+  int getMinX() const { return xmin_; }
 
-  void setMinX(int xmin) { m_xmin = xmin; }
-  int getMinX() const { return m_xmin; }
+  void setMaxX(int xmax) { xmax_ = xmax; }
+  int getMaxX() const { return xmax_; }
 
-  void setMaxX(int xmax) { m_xmax = xmax; }
-  int getMaxX() const { return m_xmax; }
+  int getWidth() const { return xmax_ - xmin_; }
 
-  int getWidth() const { return m_xmax-m_xmin; }
+  void setUtil(int util) { util_ = util; }
+  int getUtil() const { return util_; }
+  void addUtil(int amt) { util_ += amt; }
+  void remUtil(int amt) { util_ -= amt; }
 
-  void setUtil(int util) { m_util = util; }
-  int getUtil() const { return m_util; }
-  void addUtil(int amt) { m_util += amt; }
-  void remUtil(int amt) { m_util -= amt; }
-
- protected:
+ private:
   // Some identifiers...
-  int m_segId;
-  int m_rowId;
-  int m_regId; 
+  int segId_ = -1;
+  int rowId_ = -1;
+  int regId_ = 0;
   // Span of segment...
-  int m_xmin;
-  int m_xmax;
+  int xmin_ = std::numeric_limits<int>::max();
+  int xmax_ = std::numeric_limits<int>::lowest();
   // Total width of cells in segment...
-  int m_util;
+  int util_ = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

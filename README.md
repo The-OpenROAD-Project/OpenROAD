@@ -2,7 +2,137 @@
 
 [![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
 
-The documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+OpenROAD is an integrated chip physical design tool that takes a
+design from synthesized Verilog to routed layout.
+
+An outline of steps used to build a chip using OpenROAD are shown below.
+
+* Initialize floorplan - define the chip size and cell rows
+* Place pins (for designs without pads )
+* Place macro cells (RAMs, embedded macros)
+* Insert substrate tap cells
+* Insert power distribution network
+* Macro Placement of macro cells
+* Global placement of standard cells
+* Repair max slew, max capacitance, and max fanout violations and long wires
+* Clock tree synthesis
+* Optimize setup/hold timing
+* Insert fill cells
+* Global routing (route guides for detailed routing)
+* Antenna repair
+* Detailed routing
+* Parasitic extraction
+* Static timing analysis
+
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
+
+Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+
+# Introduction
+
+[OpenROAD](https://theopenroadproject.org/) is the leading
+open-source, foundational application for semiconductor digital design.
+It eliminates the barriers of cost, risk and uncertainty in hardware
+design to foster open access, expertise, rapid innovation and faster
+design turnaround. The OpenROAD application enables flexible flow
+control through an API with bindigns in Tcl and Python.
+
+OpenROAD is a foundational building block in open source digital flows like
+OpenROAD-flow-scripts,
+[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
+[Efabless](https://efabless.com/), Silicon Compiler Systems; as
+well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+mixed-signal design flows.
+
+OpenROAD users range from hardware designers, industry collaborators,
+enthusiasts, academia and researchers.
+
+Two main flow controllers are supported by the
+[OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
+project repository:
+
+-   [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
+     Supported by the OpenROAD project
+
+-   [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
+     Supported by [Efabless](https://efabless.com/)
+
+The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hr
+turnaround from RTL-GDSII for design exploration and physical design
+implementation.
+
+![rtl2gds.webp](./docs/images/rtl2gds.webp)
+
+## GUI
+
+The OpenROAD GUI is a powerful visualization, analysis and debugging
+tool with a customizable Tcl interface.Figures show GUI views for various
+flow stages including post-routed timing, placement congestion, CTS.
+
+![ibexGui.webp](./docs/images/ibexGui.webp)
+
+## Placement Congestion View:
+
+![pl_congestion.webp](./docs/images/pl_congestion.webp)
+
+## CTS:
+
+![clk_routing.webp](./docs/images/clk_routing.webp)
+
+# PDK Support
+
+The OpenROAD application is PDK independent. However, it has been tested
+and validated with specific PDKs in the context of various flow
+controllers.
+
+OpenLane supports Skywater130.
+
+OpenROAD-flow-scripts supports several public and private PDKs
+including:
+
+## Open Source PDKs
+
+-   `Skywater130` - 130nm
+-   `Nangate45` - 45nm
+-   `ASAP7` - Predictive FinFET 7nm
+
+## Proprietary PDKs
+
+These PDKS are supported in OpenROAD-flow-scripts only. They are used to
+test and calibrate OpenROAD against commercial platforms and ensure good
+QoR. The PDKs and platform-specific files for these kits cannot be
+provided due to NDA restrictions. However, if you are able to access
+these platforms independently, you can create the necessary
+platform-specific files yourself.
+
+-   `GF55` - 55nm
+-   `GF12` - 12nm
+-   `GF180` - 180nm
+-   `Intel22` - 22nm
+-   `Intel16` - 16nm
+-   `TSMC65` - 65nm
+
+# Tapeouts
+
+OpenROAD was used for full physical implementation in over 240 tapeouts
+in Sky130 through the Google sponsored, Efabless [MPW
+shuttle](https://efabless.com/open_shuttle_program) and
+[ChipIgnite](https://efabless.com/) programs.
+
+![shuttle.webp](./docs/images/shuttle.webp)
+
+## OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
+
+![OpenTitan_SoC.webp](./docs/images/OpenTitan_SoC.webp)
+
+## Continuous Tapeout Integration into CI
+
+The OpenROAD project actively adds successfully taped out MPW shuttle
+designs to the [CI regression
+testing](https://github.com/The-OpenROAD-Project/OpenLane-MPW-CI).
+Examples of designs include Open processor cores, RISC-V based SoCs,
+cryptocurrency miners, robotic app processors, amateur satellite radio
+transceivers, OpenPower based Microwatt etc.
 
 ## Install dependencies
 

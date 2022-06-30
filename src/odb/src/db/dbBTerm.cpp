@@ -502,8 +502,7 @@ bool dbBTerm::getFirstPin(dbShape& shape)
       if (box->isVia())  // This is not possible...
         continue;
 
-      Rect r;
-      box->getBox(r);
+      Rect r = box->getBox();
       shape.setSegment(box->getTechLayer(), r);
       return true;
     }
@@ -544,8 +543,7 @@ bool dbBTerm::getFirstPinLocation(int& x, int& y)
       if (box->isVia())  // This is not possible...
         continue;
 
-      Rect r;
-      box->getBox(r);
+      Rect r = box->getBox();
       x = r.xMin() + (int) (r.dx() >> 1U);
       y = r.yMin() + (int) (r.dy() >> 1U);
       return true;

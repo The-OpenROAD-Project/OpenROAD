@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, Andrew Kennings
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,60 +30,56 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-// File: plotgnu.h
-////////////////////////////////////////////////////////////////////////////////
-
+// Generator Code Begin Header
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
-#include <iostream>
-#include <map>
-#include <vector>
-#include "architecture.h"
-#include "network.h"
-#include "rectangle.h"
-#include "router.h"
-using namespace std;
+#include "dbCore.h"
+#include "odb.h"
 
-namespace dpo {
+// User Code Begin Includes
+// User Code End Includes
 
-////////////////////////////////////////////////////////////////////////////////
-// Defines.
-////////////////////////////////////////////////////////////////////////////////
+namespace odb {
 
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
-////////////////////////////////////////////////////////////////////////////////
-class PlotGnu {
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
+class _dbNet;
+class _dbTechLayer;
+// User Code Begin Classes
+// User Code End Classes
+
+// User Code Begin Structs
+// User Code End Structs
+
+class _dbGuide : public _dbObject
+{
  public:
-  PlotGnu();
-  virtual ~PlotGnu() {}
+  // User Code Begin Enums
+  // User Code End Enums
 
-  void Draw(Network* network, Architecture* arch, char* msg = 0);
+  dbId<_dbNet> net_;
+  Rect box_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbGuide> guide_next_;
 
- protected:
-  void drawNodes(char* buf);
-
-  constexpr static int BUFFER_SIZE = 2047;
-  Network* m_network;
-  Architecture* m_arch;
-  RoutingParams* m_rt;
-  unsigned m_counter;
-  bool m_drawArchitecture;
-  bool m_drawNodes;
-  bool m_drawEdges;
-  char m_filename[BUFFER_SIZE + 1];
-  bool m_skipStandardCells;
-  bool m_drawDisp;
-
-  std::vector<std::pair<double, double> > m_otherPl;
+  // User Code Begin Fields
+  // User Code End Fields
+  _dbGuide(_dbDatabase*, const _dbGuide& r);
+  _dbGuide(_dbDatabase*);
+  ~_dbGuide();
+  bool operator==(const _dbGuide& rhs) const;
+  bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGuide& rhs) const;
+  void differences(dbDiff& diff, const char* field, const _dbGuide& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
 };
-
-}  // namespace dpo
+dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);
+// User Code Begin General
+// User Code End General
+}  // namespace odb
+// Generator Code End Header

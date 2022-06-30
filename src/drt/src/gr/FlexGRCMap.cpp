@@ -129,8 +129,7 @@ void FlexGRCMap::init()
   for (auto& [layerIdx, dir] : zMap_) {
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
-        Rect startGCellBox;
-        design_->getTopBlock()->getGCellBox(Point(0, yIdx), startGCellBox);
+        Rect startGCellBox = design_->getTopBlock()->getGCellBox(Point(0, yIdx));
         frCoord low = startGCellBox.yMin();
         frCoord high = startGCellBox.yMax();
         // non-transition via layer
@@ -157,8 +156,7 @@ void FlexGRCMap::init()
       }
     } else if (dir == dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-        Rect startGCellBox;
-        design_->getTopBlock()->getGCellBox(Point(xIdx, 0), startGCellBox);
+        Rect startGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, 0));
         frCoord low = startGCellBox.xMin();
         frCoord high = startGCellBox.xMax();
         if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
@@ -191,7 +189,6 @@ void FlexGRCMap::init()
 
   // update demand for fixed objects (only for pref routing direction)
   cmapLayerIdx = 0;
-  Rect currGCellBox;
   set<frCoord> trackLocs;
   vector<rq_box_value_t<frBlockObject*>> queryResult;
   auto regionQuery = design_->getRegionQuery();
@@ -202,8 +199,7 @@ void FlexGRCMap::init()
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         trackLocs.clear();
-        Rect startGCellBox;
-        design_->getTopBlock()->getGCellBox(Point(0, yIdx), startGCellBox);
+        Rect startGCellBox = design_->getTopBlock()->getGCellBox(Point(0, yIdx));
         frCoord low = startGCellBox.yMin();
         frCoord high = startGCellBox.yMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
@@ -216,8 +212,7 @@ void FlexGRCMap::init()
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, 1);
           // add blocked track demand
-          design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx),
-                                              currGCellBox);
+          Rect currGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks
@@ -229,8 +224,7 @@ void FlexGRCMap::init()
     } else if (dir == dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         trackLocs.clear();
-        Rect startGCellBox;
-        design_->getTopBlock()->getGCellBox(Point(xIdx, 0), startGCellBox);
+        Rect startGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, 0));
         frCoord low = startGCellBox.xMin();
         frCoord high = startGCellBox.xMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
@@ -243,8 +237,7 @@ void FlexGRCMap::init()
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, 1);
           // add blocked track demand
-          design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx),
-                                              currGCellBox);
+          Rect currGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks
@@ -265,8 +258,7 @@ void FlexGRCMap::init()
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-          design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx),
-                                              currGCellBox);
+          Rect currGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
 
@@ -282,8 +274,7 @@ void FlexGRCMap::init()
     } else if (dir == dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
-          design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx),
-                                              currGCellBox);
+          Rect currGCellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
 
@@ -556,8 +547,6 @@ void FlexGRCMap::printLayers()
 
 void FlexGRCMap::print(bool isAll)
 {
-  unsigned layerIdx = 0;
-  Rect gcellBox;
   ofstream congMap;
   cout << "printing congestion map...\n";
 
@@ -571,6 +560,7 @@ void FlexGRCMap::print(bool isAll)
     cout << "#     Area              demand/supply tracks\n";
   }
 
+  unsigned layerIdx = 0;
   for (auto& [layerNum, dir] : zMap_) {
     if (congMap.is_open()) {
       congMap << "----------------------"
@@ -583,7 +573,7 @@ void FlexGRCMap::print(bool isAll)
     }
     for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-        design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx), gcellBox);
+        Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
         unsigned demandV = getDemand(xIdx, yIdx, layerIdx, frDirEnum::N);
         unsigned demandH = getDemand(xIdx, yIdx, layerIdx, frDirEnum::E);
         unsigned supplyV = getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
@@ -614,7 +604,6 @@ void FlexGRCMap::print(bool isAll)
 
 void FlexGRCMap::print2D(bool isAll)
 {
-  Rect gcellBox;
   cout << "printing 2D congestion map...\n";
   ofstream congMap;
   if (!CMAP_FILE.empty()) {
@@ -641,7 +630,7 @@ void FlexGRCMap::print2D(bool isAll)
         supplyV += getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
       }
 
-      design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx), gcellBox);
+      Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx));
       if (isAll || (demandV > supplyV) || (demandH > supplyH)) {
         if (congMap.is_open()) {
           congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()

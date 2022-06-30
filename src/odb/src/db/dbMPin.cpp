@@ -154,8 +154,7 @@ Rect dbMPin::getBBox()
   Rect bbox;
   bbox.mergeInit();
   for (dbBox* box : getGeometry()) {
-    Rect rect;
-    box->getBox(rect);
+    Rect rect = box->getBox();
     bbox.merge(rect);
   }
   return bbox;

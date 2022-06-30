@@ -222,7 +222,7 @@ RepairSetup::rebufferBottomUp(BufferedNetPtr bnet,
                                            q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
                                                        bnet->location(),
-                                                       p, q);
+                                                       p, q, resizer_);
         junc->setCapacitance(p->cap() + q->cap());
         junc->setRequiredPath(min_req->requiredPath());
         junc->setRequiredDelay(min_req->requiredDelay());
