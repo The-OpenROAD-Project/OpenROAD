@@ -8,8 +8,8 @@
 [INFO ODB-0127] Reading DEF file: repair_antennas2.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 7167 components and 29882 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 14334 connections.
+[INFO ODB-0131]     Created 1277 components and 6322 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2554 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
 Net _224_

@@ -92,7 +92,6 @@ class AntennaRepair
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void deleteFillerCells();
   void makeNetWires(NetRouteMap& routing,
                     int max_routing_layer);
   void destroyNetWires();

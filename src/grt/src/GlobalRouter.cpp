@@ -274,8 +274,6 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                          diode_mterm);
 
     if (violations) {
-      antenna_repair_->deleteFillerCells();
-
       IncrementalGRoute incr_groute(this, block_);
       antenna_repair_->repairAntennas(diode_mterm);
       logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair_->getDiodesCount());

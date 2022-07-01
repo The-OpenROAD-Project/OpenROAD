@@ -226,15 +226,6 @@ void AntennaRepair::legalizePlacedCells()
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
-void AntennaRepair::deleteFillerCells()
-{
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
-      odb::dbInst::destroy(inst);
-    }
-  }
-}
-
 void AntennaRepair::insertDiode(odb::dbNet* net,
                                 odb::dbMTerm* diode_mterm,
                                 odb::dbInst* sink_inst,
