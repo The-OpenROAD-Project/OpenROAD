@@ -18,6 +18,7 @@ set_placement_padding -global|-instances insts|-masters masters
 detailed_placement [-max_displacement disp|{disp_x disp_y}]
 check_placement [-verbose]
 filler_placement [-prefix prefix] filler_masters
+remove_fillers
 optimize_mirroring
 ```
 
