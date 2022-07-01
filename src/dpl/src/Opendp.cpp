@@ -120,8 +120,7 @@ Opendp::Opendp() :
   pad_right_(0),
   max_displacement_x_(0),
   max_displacement_y_(0),
-  grid_(nullptr),
-  have_fillers_(false)
+  grid_(nullptr)
 {
   dummy_cell_.is_placed_ = true;
 }
@@ -195,9 +194,6 @@ Opendp::detailedPlacement(int max_displacement_x,
                           int max_displacement_y)
 {
   importDb();
-
-  if (have_fillers_)
-    logger_->error(DPL, 37, "Use remove_fillers before detailed placement.");
 
   if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults

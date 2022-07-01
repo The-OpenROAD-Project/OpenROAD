@@ -20,7 +20,6 @@ record_tests {
   fillers5
   fillers6
   fillers7
-  fillers8
   fragmented_row01
   fragmented_row02
   fragmented_row03
