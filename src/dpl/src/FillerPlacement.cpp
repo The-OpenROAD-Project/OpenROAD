@@ -185,6 +185,7 @@ Opendp::gapFillers(int gap,
 
 void Opendp::removeFillers()
 {
+  block_ = db_->getChip()->getBlock();
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
       odb::dbInst::destroy(inst);

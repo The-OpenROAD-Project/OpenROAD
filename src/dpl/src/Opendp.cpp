@@ -116,6 +116,7 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
+  block_(nullptr),
   pad_left_(0),
   pad_right_(0),
   max_displacement_x_(0),
