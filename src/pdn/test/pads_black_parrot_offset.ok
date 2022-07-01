@@ -14,6 +14,4 @@
 [INFO ODB-0133]     Created 350 nets and 390 connections.
 [INFO ODB-0134] Finished DEF file: nangate_bsg_black_parrot/floorplan.def
 [INFO PDN-0001] Inserting grid: Core
-Differences found at line 4390.
-      NEW metal7 1580 + SHAPE STRIPE ( 5631000 1866100 ) ( 5650200 1866100 )
-      NEW metal9 1580 + SHAPE STRIPE ( 5631000 1866100 ) ( 5650200 1866100 )
+No differences found.
