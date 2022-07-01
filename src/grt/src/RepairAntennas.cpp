@@ -40,7 +40,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "AntennaRepair.h"
+#include "RepairAntennas.h"
 #include "Net.h"
 #include "Pin.h"
 #include "grt/GlobalRouter.h"
@@ -50,7 +50,7 @@ namespace grt {
 
 using utl::GRT;
 
-AntennaRepair::AntennaRepair(GlobalRouter* grouter,
+RepairAntennas::RepairAntennas(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
@@ -61,9 +61,9 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
   block_ = db_->getChip()->getBlock();
 }
 
-bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-                                           int max_routing_layer,
-                                           odb::dbMTerm* diode_mterm)
+bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
+                                            int max_routing_layer,
+                                            odb::dbMTerm* diode_mterm)
 {
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
@@ -81,11 +81,11 @@ bool AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   }
   destroyNetWires();
 
-  logger_->info(GRT, 12, "Antenna violations: {}", antenna_violations_.size());
+  logger_->info(GRT, 12, "Found {} antenna violations.", antenna_violations_.size());
   return !antenna_violations_.empty();
 }
 
-void AntennaRepair::makeNetWires(NetRouteMap& routing,
+void RepairAntennas::makeNetWires(NetRouteMap& routing,
                                  int max_routing_layer)
 {
   std::map<int, odb::dbTechVia*> default_vias
@@ -98,9 +98,9 @@ void AntennaRepair::makeNetWires(NetRouteMap& routing,
   }
 }
 
-odb::dbWire* AntennaRepair::makeNetWire(odb::dbNet* db_net,
-                                        GRoute& route,
-                                        std::map<int, odb::dbTechVia*> &default_vias)
+odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
+                                         GRoute& route,
+                                         std::map<int, odb::dbTechVia*> &default_vias)
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
@@ -152,7 +152,7 @@ odb::dbWire* AntennaRepair::makeNetWire(odb::dbNet* db_net,
   }
 }
 
-void AntennaRepair::destroyNetWires()
+void RepairAntennas::destroyNetWires()
 {
   for (odb::dbNet* db_net : block_->getNets()) {
     odb::dbWire* wire = db_net->getWire();
@@ -161,7 +161,7 @@ void AntennaRepair::destroyNetWires()
   }
 }
 
-void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
+void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
 {
   int site_width = -1;
   r_tree fixed_insts;
@@ -219,19 +219,19 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
 }
 
-void AntennaRepair::legalizePlacedCells()
+void RepairAntennas::legalizePlacedCells()
 {
   opendp_->detailedPlacement(0, 0);
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
-void AntennaRepair::insertDiode(odb::dbNet* net,
-                                odb::dbMTerm* diode_mterm,
-                                odb::dbInst* sink_inst,
-                                odb::dbITerm* sink_iterm,
-                                int site_width,
-                                r_tree& fixed_insts)
+void RepairAntennas::insertDiode(odb::dbNet* net,
+                                 odb::dbMTerm* diode_mterm,
+                                 odb::dbInst* sink_inst,
+                                 odb::dbITerm* sink_iterm,
+                                 int site_width,
+                                 r_tree& fixed_insts)
 {
   const int max_legalize_itr = 50;
   bool legally_placed = false;
@@ -323,7 +323,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   fixed_inst_id++;
 }
 
-void AntennaRepair::getFixedInstances(r_tree& fixed_insts)
+void RepairAntennas::getFixedInstances(r_tree& fixed_insts)
 {
   int fixed_inst_id = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -340,7 +340,7 @@ void AntennaRepair::getFixedInstances(r_tree& fixed_insts)
   }
 }
 
-void AntennaRepair::setInstsPlacementStatus(
+void RepairAntennas::setInstsPlacementStatus(
     odb::dbPlacementStatus placement_status)
 {
   for (auto const& violation : antenna_violations_) {
@@ -358,7 +358,8 @@ void AntennaRepair::setInstsPlacementStatus(
   }
 }
 
-odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
+odb::Rect RepairAntennas::getInstRect(odb::dbInst* inst,
+                                      odb::dbITerm* iterm)
 {
   int min = std::numeric_limits<int>::min();
   int max = std::numeric_limits<int>::max();
@@ -390,7 +391,7 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
   return inst_rect;
 }
 
-bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
+bool RepairAntennas::diodeInRow(odb::Rect diode_rect)
 {
   for (odb::dbRow* row : block_->getRows()) {
     odb::Rect row_rect = row->getBBox();
@@ -403,7 +404,7 @@ bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
   return false;
 }
 
-odb::dbMTerm* AntennaRepair::findDiodeMTerm()
+odb::dbMTerm* RepairAntennas::findDiodeMTerm()
 {
   for (odb::dbLib *lib : db_->getLibs()) {
     for (auto master : lib->getMasters()) {
@@ -419,7 +420,7 @@ odb::dbMTerm* AntennaRepair::findDiodeMTerm()
 }
 
 // copied from AntennaChecker
-double AntennaRepair::diffArea(odb::dbMTerm *mterm)
+double RepairAntennas::diffArea(odb::dbMTerm *mterm)
 {
   double max_diff_area = 0.0;
   std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;

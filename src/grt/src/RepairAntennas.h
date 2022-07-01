@@ -70,14 +70,14 @@ typedef std::map<odb::dbNet*, std::vector<ant::ViolationInfo>>
 
 class GlobalRouter;
 
-class AntennaRepair
+class RepairAntennas
 {
  public:
-  AntennaRepair(GlobalRouter* grouter,
-                ant::AntennaChecker* arc,
-                dpl::Opendp* opendp,
-                odb::dbDatabase* db,
-                utl::Logger* logger);
+  RepairAntennas(GlobalRouter* grouter,
+                 ant::AntennaChecker* arc,
+                 dpl::Opendp* opendp,
+                 odb::dbDatabase* db,
+                 utl::Logger* logger);
 
   bool checkAntennaViolations(NetRouteMap& routing,
                               int max_routing_layer,
