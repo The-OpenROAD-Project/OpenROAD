@@ -70,10 +70,10 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
     if (db_net->getWire()) {
-      std::vector<ant::ViolationInfo> netViol =
+      std::vector<ant::Violation> net_violations =
         arc_->getAntennaViolations(db_net, diode_mterm);
-      if (!netViol.empty()) {
-        antenna_violations_[db_net] = netViol;
+      if (!net_violations.empty()) {
+        antenna_violations_[db_net] = net_violations;
         debugPrint(logger_, GRT, "repair_antennas", 1, "antenna violations {}",
                    db_net->getConstName());
       }
@@ -191,18 +191,18 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     auto violations = net_violations.second;
 
     bool inserted_diodes = false;
-    for (ant::ViolationInfo &violation : violations) {
+    for (ant::Violation &violation : violations) {
       debugPrint(logger_, GRT, "repair_antennas", 2, "antenna {} insert {} diodes",
                  db_net->getConstName(),
-                 violation.required_diode_count * violation.iterms.size());
-      if (violation.required_diode_count > 0) {
-        for (odb::dbITerm* sink_iterm : violation.iterms) {
-          odb::dbInst* sink_inst = sink_iterm->getInst();
-          for (int j = 0; j < violation.required_diode_count; j++) {
+                 violation.diode_count_per_gate * violation.gates.size());
+      if (violation.diode_count_per_gate > 0) {
+        for (odb::dbITerm* gate : violation.gates) {
+          odb::dbInst* sink_inst = gate->getInst();
+          for (int j = 0; j < violation.diode_count_per_gate; j++) {
             insertDiode(db_net,
                         diode_mterm,
                         sink_inst,
-                        sink_iterm,
+                        gate,
                         site_width,
                         fixed_insts);
             inserted_diodes = true;
@@ -229,7 +229,7 @@ void RepairAntennas::legalizePlacedCells()
 void RepairAntennas::insertDiode(odb::dbNet* net,
                                  odb::dbMTerm* diode_mterm,
                                  odb::dbInst* sink_inst,
-                                 odb::dbITerm* sink_iterm,
+                                 odb::dbITerm* gate,
                                  int site_width,
                                  r_tree& fixed_insts)
 {
@@ -243,7 +243,7 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
   odb::dbMaster* diode_master = diode_mterm->getMaster();
 
   int inst_loc_x, inst_loc_y, inst_width;
-  odb::Rect sink_bbox = getInstRect(sink_inst, sink_iterm);
+  odb::Rect sink_bbox = getInstRect(sink_inst, gate);
   inst_loc_x = sink_bbox.xMin();
   inst_loc_y = sink_bbox.yMin();
   inst_width = sink_bbox.xMax() - sink_bbox.xMin();
@@ -345,9 +345,9 @@ void RepairAntennas::setInstsPlacementStatus(
 {
   for (auto const& violation : antenna_violations_) {
     for (int i = 0; i < violation.second.size(); i++) {
-      for (odb::dbITerm* sink_iterm : violation.second[i].iterms) {
-        if (!sink_iterm->getMTerm()->getMaster()->isBlock()) {
-          sink_iterm->getInst()->setPlacementStatus(placement_status);
+      for (odb::dbITerm* gate : violation.second[i].gates) {
+        if (!gate->getMTerm()->getMaster()->isBlock()) {
+          gate->getInst()->setPlacementStatus(placement_status);
         }
       }
     }

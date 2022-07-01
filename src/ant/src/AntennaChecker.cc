@@ -1664,14 +1664,14 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   return false;
 }
 
-vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
-                                                           dbMTerm* diode_mterm)
+vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
+                                                       dbMTerm* diode_mterm)
 {
   double diode_diff_area = 0.0;
   if (diode_mterm) 
     diode_diff_area = diffArea(diode_mterm);
 
-  vector<ViolationInfo> antenna_violations;
+  vector<Violation> antenna_violations;
   if (net->isSpecial())
     return antenna_violations;
   dbWire* wire = net->getWire();
@@ -1688,23 +1688,23 @@ vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
         vector<dbITerm*> gates;
         findWireRootIterms(par_info.wire_root,
                            layer->getRoutingLevel(), gates);
-        int required_diode_count = 0;
+        int diode_count_per_gate = 0;
         if (diode_mterm && antennaRatioDiffDependent(layer)) {
           while (wire_PAR_violation) {
             par_info.iterm_diff_area += diode_diff_area * gates.size();
-            required_diode_count += gates.size();
+            diode_count_per_gate++;
             calculateParInfo(par_info);
             wire_PAR_violation = checkViolation(par_info, layer);
-            if (required_diode_count > repair_max_diode_count) {
-              logger_->warn(ANT, 9, "Net {} requires more than {} diodes to repair violations.",
+            if (diode_count_per_gate > max_diode_count_per_gate) {
+              logger_->warn(ANT, 9, "Net {} requires more than {} diodes per gate to repair violations.",
                             net->getConstName(),
-                            repair_max_diode_count);
+                            max_diode_count_per_gate);
               break;
             }
           }
         }
-        ViolationInfo antenna_violation
-            = {layer->getRoutingLevel(), gates, required_diode_count};
+        Violation antenna_violation
+          = {layer->getRoutingLevel(), gates, diode_count_per_gate};
         antenna_violations.push_back(antenna_violation);
       }
     }
