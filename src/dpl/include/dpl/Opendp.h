@@ -210,6 +210,7 @@ public:
   void checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
+  void removeFillers();
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void findDisplacementStats();
@@ -431,6 +432,7 @@ private:
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
   int filler_count_;
+  bool have_fillers_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_;
