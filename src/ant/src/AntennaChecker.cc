@@ -699,23 +699,23 @@ double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
     if (pwl_info.indices.size() == 1) {
       return pwl_info.ratios[0];
     } else {
-      double pwl_info_indice1 = pwl_info.indices[0];
+      double pwl_info_index1 = pwl_info.indices[0];
       double pwl_info_ratio1 = pwl_info.ratios[0];
-      double slope_factor = 1.0;
+      double slope = 1.0;
       for (int i = 0; i < pwl_info.indices.size(); i++) {
-        double pwl_info_indice2 = pwl_info.indices[i];
+        double pwl_info_index2 = pwl_info.indices[i];
         double pwl_info_ratio2 = pwl_info.ratios[i];
-        slope_factor = (pwl_info_ratio2 - pwl_info_ratio1)
-          / (pwl_info_ratio2 - pwl_info_indice1);
+        slope = (pwl_info_ratio2 - pwl_info_ratio1)
+          / (pwl_info_index2 - pwl_info_index1);
 
-        if (ref_value >= pwl_info_indice1 && ref_value < pwl_info_indice2) {
-          return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
+        if (ref_value >= pwl_info_index1 && ref_value < pwl_info_index2) {
+          return pwl_info_ratio1 + (ref_value - pwl_info_index1) * slope;
         } else {
-          pwl_info_indice1 = pwl_info_indice2;
+          pwl_info_index1 = pwl_info_index2;
           pwl_info_ratio1 = pwl_info_ratio2;
         }
       }
-      return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
+      return pwl_info_ratio1 + (ref_value - pwl_info_index1) * slope;
     }
   }
   return default_value;
