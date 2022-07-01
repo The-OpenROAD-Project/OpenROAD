@@ -70,6 +70,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       ignoreDB_(false),
       ignoreMinArea_(false),
       ignoreLongSideEOL_(false),
+      ignoreCornerSpacing_(false),
       surgicalFixEnabled_(false)
 {
 }
@@ -193,6 +194,11 @@ void FlexGCWorker::setIgnoreDB()
 void FlexGCWorker::setIgnoreMinArea()
 {
   impl_->ignoreMinArea_ = true;
+}
+
+void FlexGCWorker::setIgnoreCornerSpacing()
+{
+  impl_->ignoreCornerSpacing_ = true;
 }
 
 void FlexGCWorker::setIgnoreLongSideEOL()

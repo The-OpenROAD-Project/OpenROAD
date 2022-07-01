@@ -58,6 +58,7 @@ class MacroPlacer2
              const float macro_blockage_wt,
              const float location_wt,
              const float notch_wt,
+             const float dead_space,
              const float macro_halo,
              const char* report_file,
              const char* macro_blockage_file,
