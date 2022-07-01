@@ -124,7 +124,7 @@ class lefin
     else
       return (int) (value + 0.5);
   }
-
+  bool isSpacer(dbMaster* _master);
   bool readLef(const char* lef_file);
   bool addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry);
   void createLibrary();

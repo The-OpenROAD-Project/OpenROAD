@@ -50,6 +50,7 @@
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
+#include "dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -1213,13 +1214,44 @@ void lefin::macro(lefiMacro* macro)
     _master->setSymmetryR90();
 }
 
+bool lefin::isSpacer(dbMaster* _master) {
+  if (!_master) {
+    return false;
+  }
+
+  // SPACER—Sometimes called a filler cell, this cell is used to fill in space
+  // between regular core cells. The SPACER sub-class needs to be cells with
+  // no logic-pins. Thus even with the sub-class defined, a cell will not be
+  // considered SPACER (also called FILLER) unless it has no logic/signal
+  // pins.
+
+  for (dbMTerm* mterm : _master->getMTerms()) {
+    // A filler can only have Power and Ground pins.
+    if (mterm->getSigType() == dbSigType::POWER) {
+      continue;
+    }
+    if (mterm->getSigType() == dbSigType::GROUND) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 void lefin::macroEnd(const char* /* unused: macroName */)
 {
-  if (_master) {
-    _master->setFrozen();
-    _master = NULL;
-    _master_cnt++;
+  if (!_master) {
+    return;
   }
+
+  // Auto-detect filler types based on LEF5.8 Manual page 116.
+  if (_master->getType() == dbMasterType::CORE && isSpacer(_master)) {
+    _master->setType(dbMasterType::CORE_SPACER);
+  }
+
+  _master->setFrozen();
+  _master = NULL;
+  _master_cnt++;
 }
 
 void lefin::manufacturing(double num)
