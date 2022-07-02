@@ -4226,11 +4226,9 @@ PINS 237 ;
         + LAYER metal10 ( -800 -800 ) ( 800 800 )
         + FIXED ( 3640000 5240000 ) N ;
 END PINS
-SPECIALNETS 2 ;
+SPECIALNETS 143 ;
     - DVDD ( * DVDD ) + USE POWER ;
     - DVSS ( * DVSS ) + USE GROUND ;
-END SPECIALNETS
-SPECIALNETS 141 ;
     - DVDD_0 ( PIN DVDD_0 ) ( u_v18_33 DVDD ) ( u_vzz_33 DVDD ) ( u_vss_15 DVDD ) ( u_vdd_15 DVDD ) ( u_v18_32 DVDD ) ( u_vzz_32 DVDD )
       ( u_v18_31 DVDD ) ( u_vzz_31 DVDD ) ( u_vss_14 DVDD ) ( u_vdd_14 DVDD ) ( u_v18_30 DVDD ) ( u_vzz_30 DVDD ) ( u_v18_29 DVDD ) ( u_vzz_29 DVDD )
       ( u_vss_13 DVDD ) ( u_vdd_13 DVDD ) ( u_v18_28 DVDD ) ( u_vzz_28 DVDD ) ( u_v18_27 DVDD ) ( u_vzz_27 DVDD ) ( u_v18_26 DVDD ) ( u_vzz_26 DVDD )
