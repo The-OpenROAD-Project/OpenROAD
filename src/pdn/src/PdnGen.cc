@@ -284,8 +284,19 @@ void PdnGen::buildGrids(bool trim)
 
   resetShapes();
 
+  const std::vector<Grid*> grids = getGrids();
+
+  // connect instances already assigned to grids
+  std::set<odb::dbInst*> insts_in_grids;
+  for (auto* grid : grids) {
+    if (grid->type() == Grid::Instance) {
+      InstanceGrid* inst_grid = dynamic_cast<InstanceGrid*>(grid);
+      insts_in_grids.insert(inst_grid->getInstance());
+    }
+  }
+
   ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs);
+  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
 
   ShapeTreeMap all_shapes;
 
@@ -304,7 +315,6 @@ void PdnGen::buildGrids(bool trim)
     }
   }
 
-  const std::vector<Grid*> grids = getGrids();
   for (auto* grid : grids) {
     ShapeTreeMap obs_local = block_obs;
     for (auto* grid_other : grids) {
@@ -935,6 +945,9 @@ void PdnGen::filterVias(const std::string& filter)
 void PdnGen::checkDesign(odb::dbBlock* block) const
 {
   for (auto* inst : block->getInsts()) {
+    if (!inst->getPlacementStatus().isFixed()) {
+      continue;
+    }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
         logger_->warn(utl::PDN,

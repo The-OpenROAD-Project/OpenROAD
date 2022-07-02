@@ -840,7 +840,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
+void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts)
 {
   // routing obs
   for (auto* ob : block->getObstructions()) {
@@ -869,11 +869,11 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
 
   // placed block obs
   for (auto* inst : block->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isFixed()) {
       continue;
     }
 
-    if (!inst->isPlaced()) {
+    if (skip_insts.find(inst) != skip_insts.end()) {
       continue;
     }
 

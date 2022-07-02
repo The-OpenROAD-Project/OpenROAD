@@ -173,7 +173,7 @@ class Grid
                  bool do_pins) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs);
+  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts);
   static void makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes);
 
   virtual bool isReplaceable() const { return false; }

@@ -1050,9 +1050,6 @@ void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_sha
 
   auto* shape
       = new Shape(getLayer(), iterm_->getNet(), shape_rect, odb::dbWireShapeType::STRIPE);
-  // use intersection of pin_rect to ensure max width limitation is
-  // preserved
-  shape->addITermConnection(pin_shape.intersect(shape_rect));
   addShape(shape);
 }
 
