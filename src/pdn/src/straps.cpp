@@ -1050,6 +1050,10 @@ void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_sha
 
   auto* shape
       = new Shape(getLayer(), iterm_->getNet(), shape_rect, odb::dbWireShapeType::STRIPE);
+
+  if (getDirection() != getLayer()->getDirection()) {
+    shape->setAllowsNonPreferredDirectionChange();
+  }
   addShape(shape);
 }
 
