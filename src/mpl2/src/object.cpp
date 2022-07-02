@@ -1,0 +1,606 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2020, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <queue>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+#include "object.h"
+#include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "sta/Bfs.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/Sta.hh"
+#include "utl/Logger.h"
+
+namespace mpl {
+
+///////////////////////////////////////////////////////////////////////
+// Basic utility functions
+
+// conversion between dbu and micro
+float Dbu2Micro(int metric, float dbu) {
+  return metric / dbu;
+}
+
+int Micro2Dbu(float metric, float dbu) {
+  return metric * dbu;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// Metric Class
+Metric::Metric(unsigned int num_std_cell, 
+               unsigned int num_macro,
+               float std_cell_area,
+               float macro_area) {
+  this->num_std_cell_ = num_std_cell;
+  this->num_macro_ = num_macro;
+  this->std_cell_area_ = std_cell_area;
+  this->macro_area_ = macro_area;
+}
+
+
+void Metric::AddMetric(const Metric& metric) {
+  this->num_std_cell_ += metric.num_std_cell_;
+  this->num_macro_ += metric.num_macro_;
+  this->std_cell_area_ += metric.std_cell_area_;
+  this->macro_area_ += metric.macro_area_;
+  this->inflat_std_cell_area_ += metric.inflat_std_cell_area_;
+  this->inflat_macro_area_ += metric.inflat_macro_area_;
+}
+
+
+void Metric::InflatStdCellArea(float std_cell_util) {
+  if ((std_cell_util > 0.0) && (std_cell_util < 1.0))
+    this->inflat_std_cell_area_ /= std_cell_util;
+}
+
+const std::pair<unsigned int, unsigned int> 
+  Metric::GetCountStats() const {
+  return std::pair<unsigned int, unsigned int>(this->num_std_cell_, 
+                                               this->num_macro_);  
+}
+
+const std::pair<float, float> Metric::GetAreaStats() const {
+  return std::pair<float, float>(this->std_cell_area_, this->macro_area_);
+}
+
+const std::pair<float, float> Metric::GetInflatAreaStats() const {
+  return std::pair<float, float>(this->inflat_std_cell_area_, 
+                                 this->inflat_macro_area_);
+}
+
+unsigned int Metric::GetNumMacro() const {
+  return num_macro_;
+}
+
+unsigned int Metric::GetNumStdCell() const {
+  return num_std_cell_;
+}
+
+float Metric::GetStdCellArea() const {
+  return std_cell_area_;  
+}
+
+float Metric::GetMacroArea() const {
+  return macro_area_;
+}
+
+float Metric::GetInflatStdCellArea() const {
+  return inflat_std_cell_area_;
+}
+
+float Metric::GetInflatMacroArea() const {
+  return inflat_macro_area_;
+}
+
+float Metric::GetInflatArea() const {
+  return inflat_std_cell_area_ + inflat_macro_area_;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// Cluster Class
+Cluster::Cluster(int cluster_id) {
+  this->id_ = cluster_id;  
+}
+
+Cluster::Cluster(int cluster_id, std::string cluster_name) {
+  this->id_ = cluster_id;
+  this->name_ = cluster_name;
+}
+
+void Cluster::AddDbModule(odb::dbModule* dbModule) {
+  dbModule_.push_back(dbModule);
+}
+
+void Cluster::AddLeafStdCell(odb::dbInst* leaf_std_cell) {
+  leaf_std_cells_.push_back(leaf_std_cell);  
+}
+
+void Cluster::AddLeafMacro(odb::dbInst* leaf_macro) {
+  leaf_macros_.push_back(leaf_macro);
+}
+
+void Cluster:SpecifyHardMacros(std::vector<odb::dbInst*>& hard_macros) {
+  hard_macros_  = hard_macros;  
+}
+
+const std::vector<odb::dbModule*> Cluster::GetDbModules() const {
+  return dbModules_;
+}
+
+const std::vector<odb::dbInst*> Cluster::GetLeafStdCells() const {
+  return leaf_std_cells_;
+}
+
+const std::vector<odb::dbInst*> Cluster::GetLeafMacros() const {
+  return leaf_macros_;
+}
+
+std::vector<odb::dbInst*> Cluster::GetHardMacros() const {
+  return hard_macros_;
+}
+
+// Bundled IO (Pads) cluster support
+// The position is the center of IO pads in the cluster
+void Cluster::SetIOClusterFlag(const std::pair<float, float> pos) {
+  io_cluster_flag_ = true;
+  soft_macro_ = new SoftMacro(pos, name_);
+}
+
+void Cluster::GetIOClusterFlag() const {
+  return io_cluster_flag_;
+}
+
+// Metric Support
+const Metric* GetMetric() const {
+  return metric_;
+}
+
+// Physical location support
+float Cluster::GetWidth() const {
+  if (soft_macro_ == nullptr)
+    return 0.0;
+  else
+    return soft_macro_->GetWidth();
+}
+
+float Cluster::GetHeight() const {
+  if (soft_macro_ == nullptr)
+    return 0.0;
+  else
+    return soft_macro_->GetHeight();
+}
+
+float Cluster::GetX() const {
+  if (soft_macro_ == nullptr)
+    return 0.0;
+  else
+    return soft_macro_->GetX();
+}
+
+float Cluster::GetY() const {
+  if (soft_macro_ == nullptr)
+    return 0.0;
+  else
+    return soft_macro_->GetY();
+}
+
+const std::pair<float, float> Cluster::GetLocation() const {
+  if (soft_macro_ == nullptr)
+    return 0.0;
+  else
+    return soft_macro_->GetLocation();
+}
+
+
+// Hierarchy Support
+void Cluster::SetParent(Cluster* parent) {
+  parent_ = parent;
+}
+
+void Cluster::AddChild(Cluster* child) {
+  children_.insert(child);
+}
+    
+void Cluster::RemoveChild(Cluster* child) {
+  children_.erase(std::find(children_.begin(), children_.end(), child));
+}
+
+void Cluster::AddChildren(std::vector<Cluster*>& children) {
+  for (auto& cluster : children)
+    this->AddChild(cluster);
+}
+    
+void Cluster::RemoveChildren() {
+  children_.clear();
+}
+    
+Cluster* Cluster::GetParent() const {
+  return parent_;
+}
+    
+std::set<Cluster*> Cluster::GetChildren() const {
+  return children_;  
+}
+ 
+bool Cluster::IsLeaf() const {
+  return (children_.size() == 0);   
+}
+
+// We only merge clusters with the same parent cluster
+void Cluster::MergeCluster(const Cluster& cluster) {
+  if (parent_ != cluster.parent_)
+    return;
+ 
+  // modify name
+  name_ += "||" + cluster.name_;
+  // add instances
+  for (auto& module : cluster.dbModules_)
+    dbModules_.push_back(module);
+  for (auto& inst : cluster.leaf_std_cells_)
+    leaf_std_cells_.push_back(inst);
+  for (auto& inst : cluster.leaf_macros_)
+    leaf_macros_.push_back(inst);
+  // Add Metric
+  metric_->AddMetric(*(cluster.metric_));
+  // Remove this cluster from the children list of the parent
+  parent_->RemoveChild(&cluster);
+}
+
+// Connection signature support
+void Cluster::InitConnection() {
+  connection_map_.clear();   
+}
+
+void Cluster::AddConnection(int cluster_id, float weight) {
+  if (connection_map_.find(cluster_id) == connection_map_.end())
+    connection_map_[cluster_id] = weight;
+  else
+    connection_map_[cluster_id] += weight;
+}
+    
+const std::map<int, float> Cluster::GetConnection() const {
+  return connection_map_;
+}
+
+
+// The connection signature is based on connection topology
+// if the number of connnections between two clusters is larger than the net_threshold
+// we think the two clusters are connected, otherwise they are disconnected.     
+bool Cluster::IsSameConnSignature(const Cluster& cluster, 
+                                  float net_threshold) {
+  std::vector<int> neighbors;  // neighbors of current cluster
+  std::vector<int> cluster_neighbors; // neighbors of the input cluster
+  for (auto& [cluster_id , weight] : connection_map_)
+    if ((cluster_id != id_) &&
+        (cluster_id != cluster.id_) &&
+        (weight >= net_threshold)) 
+      neighbors.push_back(cluster_id);
+
+  for (auto& [cluster_id , weight] : cluster.connection_map_)
+    if ((cluster_id != id_) &&
+        (cluster_id != cluster.id_) &&
+        (weight >= net_threshold)) 
+      cluster_neighbors.push_back(cluster_id);
+ 
+  if (neighbors.size() != cluster_neighbors.size()) {
+    return false;
+  } else {
+    std::sort(neighbors.begin(), neighbors.end());
+    std::sort(cluster_neighbors.begin(), cluster_neighbors.end());
+    for (int i = 0; i < neighbors.size(); i++)
+      if (neighbors[i] != cluster_neighbors[i])
+        return false;
+  }
+ 
+  return true;  
+}
+
+// Pin Access Support
+void Cluster::SetPinAccess(int cluster_id, PinAccess pin_access) {
+  pin_access_map_[cluster_id] = pin_access;  
+}
+     
+PinAccess Cluster::GetPinAccess(int cluster_id) const {
+  return pin_access_map_[cluster_id];  
+}
+
+// Print Basic Information
+// Normally we call this after macro placement is done
+void Cluster::PrintBasicInformation(utl::Logger* logger) const {
+  std::string line = "\n";
+  line += std::string(80, '*') + "\n";
+  line += "[INFO] cluster_name :  " + name_ + "  ";
+  line += "cluster_id : " + std::to_string(id_) + "  ";
+  line += "width : " + std::to_string(this->GetWidth()) + "  ";
+  line += "height : " + std::to_string(this->GetHeight()) + "  ";
+  line += "location :  ( " + std::to_string((this->GetLocation()).first) +  " , ";
+  line += std::to_string((this->GetLocation()).second) +  " )\n";
+  for (const auto& hard_macro : hard_macros_) {
+    line += "\t macro_name : " + hard_macro->GetName();
+    line += "\t width : " + hard_macro->GetWidth();
+    line += "\t height : " + hard_macro->GetHeight();
+    line += "\t lx : " + hard_macro->GetX();
+    line += "\t ly : " + hard_macro->GetY();
+    line += "\n"
+  }
+
+  logger->info(MPL, 2022, line);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// Metric HardMacro
+HardMacro::HardMacro(float width, float height, const std::string name) {
+  width_ = width;
+  height_ = height;
+  name_ = name;
+  pin_x_ = width / 2.0;
+  pin_y_ = height / 2.0;
+}
+
+
+HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width) {
+  inst_ = inst;
+  dbu_ = dbu;
+  halo_width_ = halo_width;
+
+  // set name
+  name_ = inst->getName();
+  
+  odb::dbMaster* master = inst->getMaster();
+  // set the width and height
+  width_ = Dbu2Micro(master->getWidth(), dbu) + 2 * halo_width;
+  height_ = Dbu2Micro(master->getHeight(), dbu) + 2 * halo_width;
+
+  // Set the position of virtual pins
+  // Here we only consider signal pins
+  odb::Rect bbox;
+  bbox.mergeInit();
+  for (odb::dbMTerm* mterm : master->getMTerms()) 
+    if (mterm->getSigType() == odb::dbSigType::SIGNAL) 
+      for (odb::dbMPin* mpin : mterm->getMPins()) 
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          odb::Rect rect;
+          box->getBox(rect);
+          bbox.merge(rect);
+        }
+       
+  pin_x_ = Dbu2Micro((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
+  pin_y_ = Dbu2Micro((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_width_;
+}
+
+
+// overload the comparison operators
+// based on area, width, height order
+// When we compare, we also consider the effect of halo_width
+bool HardMacro::operator<(const HardMacro& macro) const {
+  if (width_ * height_  != macro.width_ * macro.height_)
+    return width_ * height_ < macro.width_ * macro.height_;
+  else if (width_ != macro.width_)
+    return width_ < macro.width_;
+  else
+    return height_ < macro.height_;
+}
+
+bool HardMacro::operator==(const HardMacro& macro) const {
+  return (width_ == macro.width_) && (height_ == macro.height_);
+}
+
+
+// Get Physical Information
+// Note that the default X and Y include halo_width
+void HardMacro::SetPos(const std::pair<float, float> pos) {
+  x_ = pos.first;
+  y_ = pos.second;
+}
+
+void HardMacro::SetX(float x) {
+  x_ = x;  
+}
+     
+void HardMacro::SetY(float y) {
+  y_ = y; 
+}
+ 
+const std::pair<float, float> HardMacro::GetPos() const {
+  return std::pair<float, float>(x_, y_);
+}
+    
+float HardMacro::GetX() const {
+  return x_;  
+}
+
+float HardMacro::GetY() const {
+  return y_;  
+}
+
+
+// The position of pins relative to the lower left of the instance
+float HardMacro::GetPinX() const {
+  return pin_x_;  
+}
+
+float HardMacro::GetPinY() const {
+  return pin_y_;
+}
+
+// The position of pins relative to the origin of the canvas;
+float HardMacro::GetAbsPinX() const {
+  return x_ + pin_x_;
+}
+
+float HardMacro::GetAbsPinY() const {
+  return y_ + pin_y_;
+}
+
+// Note that the real X and Y does NOT include halo_width
+void HardMacro::SetRealPos(const std::pair<float, float> pos) {
+  x_ = pos.first - halo_width_;
+  y_ = pos.second - halo_width_;
+}
+     
+void HardMacro::SetRealX(float x) {
+  x_ = x - halo_width_;  
+}
+     
+void HardMacro::SetRealY(float y) {
+  y_ = y - halo_width_;  
+}
+ 
+const std::pair<float, float> HardMacro::GetRealPos() const {
+  return std::pair<float, float>(x_ + halo_width_, y_ + halo_width_);  
+}
+     
+float HardMacro::GetRealX() const {
+  return x_ + halo_width_;  
+}
+
+float HardMacro::GetRealY() const {
+  return y_ + halo_width_; 
+}
+
+
+// Orientation support
+std::string HardMacro::GetOrientation() const {  
+  return orientation_.getString();
+}
+     
+// We do not allow rotation of macros
+// This may violate the direction of metal layers
+// axis = true, flip horizontally
+// axis = false, flip vertically
+void HardMacro::Flip(bool axis) {
+  if (axis == true) {
+    orientation_ = orientation_.flipX();
+    pin_y_ = height_ - pin_y_; 
+  } else {
+    orientation_ = orientation_.flipY();
+    pin_x_ = width_ - pin_x_;
+  }
+}
+ 
+
+// Align Flag support
+void HardMacro::SetAlignFlag(bool flag) {
+  align_flag_ = flag;
+}
+     
+
+bool HardMacro::GetAlignFlag() const {
+  return align_flag_;  
+}
+
+
+// Interfaces with OpenDB
+odb::dbInst* HardMacro::GetInst() const {
+  return inst_;  
+}
+
+const std::string HardMacro::GetName() const {
+  return name_;  
+}
+
+const std::string HardMacro::GetMasterName() const {
+  return inst_->getMaster()->getName();
+}
+
+// update the location and orientation of the macro inst in OpenDB
+void HardMacro::UpdateDb(float pitch_x, float pitch_y) {
+  if ((inst_ == nullptr) || (dbu_ <= 0.0)) 
+    return;
+
+  int lx = Micro2Dbu(std::round((x_ + halo_width_) / pitch_x) * pitch_x);
+  int ly = Micro2Dbu(std::round((y_ + halo_width_) / pitch_y) * pitch_y);
+  inst->setLocation(lx, ly);
+  inst->setOrient(orientation_);
+}
+    
+
+///////////////////////////////////////////////////////////////////////
+// SoftMacro Class
+
+// Create a SoftMacro with specified size
+// In this case, we think the cluster is a macro cluster with only one macro
+SoftMacro::SoftMacro(float width, float height, const std::string name) {
+  name_ = name;
+  width_ = width;
+  height_  = height;
+  area_ = width * height;
+  num_macro_  = 1;
+  macro_cluster_flag_ = true;
+  float ar = 1.0;
+  if (width_ > 0.0)
+    ar = height_ / width_;
+
+  aspect_ratios_.push_back(std::pair<float, float>(ar, ar));
+}
+
+// Create a SoftMacro representing the IO cluster
+SoftMacro::SoftMacro(const std::pair<float, float> pos, const std::string name) { 
+  name_ = name;
+  x_ = pos.first;
+  y_ = pos.second;
+  io_cluster_flag_ = true;
+}
+
+
+// create a SoftMacro from a cluster
+SoftMacro(Cluster* cluster, float outline_width, float outline_height) {
+  name_ = cluster->GetName();
+  cluster_ = cluster;
+  if (io_cluster_flag_ == false) {
+    Metric* & metric = cluster->GetMetric();
+    num_macro_ = metric->GetNumMacro();
+    area_ = metric->GetInflatArea();
+    if (metric->GetNumStdCell() == 0)
+      macro_cluster_flag_ = true; 
+
+    // Calculate possible aspect ratios of cluster
+    ShapeSoftMacro(cluster, outline_width, outline_height);
+  }
+}
+
+
+}  // namespace mpl
