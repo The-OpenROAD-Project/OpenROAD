@@ -68,6 +68,7 @@ record_tests {
   pads_black_parrot_no_connect
   pads_black_parrot_limit_connect
   pads_black_parrot_flipchip
+  pads_black_parrot_flipchip_connect_overpads
   pads_black_parrot_max_width
 
   asap7_vias
