@@ -95,6 +95,8 @@ class GridComponent
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
 
+  virtual void getConnectableShapes(ShapeTreeMap& shapes) const {}
+
   // returns all the obstructions in this grid shape
   void getObstructions(ShapeTreeMap& obstructions) const;
   void removeObstructions(ShapeTreeMap& obstructions) const;

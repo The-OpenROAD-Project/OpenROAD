@@ -17,6 +17,8 @@
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 1349.2350) - (188.5700, 1350.0000) on VSS
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 1829.2350) - (188.5700, 1830.0000) on VSS
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (174.9000, 2464.2350) - (195.5700, 2465.0000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2780.0000, 542.2000) - (2810.5405, 543.6000) on VSS
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2780.0000, 1182.2000) - (2810.5405, 1183.6000) on VSS
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.3400, 1660.0000) - (2825.1000, 1660.7650) on VDD
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.3400, 2295.0000) - (2825.1000, 2295.7650) on VDD
 [WARNING PDN-0110] No via inserted between metal9 and metal10 at (2811.3400, 535.0000) - (2825.1000, 535.7650) on VSS

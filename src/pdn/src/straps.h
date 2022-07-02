@@ -163,6 +163,9 @@ class PadDirectConnectionStraps : public Straps
   void initialize(const std::vector<odb::dbTechLayer*>& layers);
 
   bool isConnectHorizontal() const;
+
+  std::vector<odb::dbBox*> getPinsFacingCore(const std::vector<odb::dbTechLayer*>& layers) const;
+  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> getPinsByLayer() const;
 };
 
 class RepairChannelStraps : public Straps

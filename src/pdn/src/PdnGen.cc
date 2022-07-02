@@ -296,7 +296,7 @@ void PdnGen::buildGrids(bool trim)
       nets.insert(net);
     }
   }
-  Grid::makeInitialShapes(nets, all_shapes);
+  Grid::makeInitialShapes(block, all_shapes);
   for (const auto& [layer, layer_shapes] : all_shapes) {
     auto& layer_obs = block_obs[layer];
     for (const auto& [box, shape] : layer_shapes) {

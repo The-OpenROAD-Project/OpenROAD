@@ -451,7 +451,7 @@ void Grid::report() const
 }
 
 void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
-                            const ShapeTreeMap& shapes) const
+                            const ShapeTreeMap& search_shapes) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -459,6 +459,13 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
              1,
              "Getting via intersections in \"{}\" - start",
              name_);
+
+  ShapeTreeMap shapes = search_shapes;
+  // Populate with additional shapes from grid components
+  for (auto* comp : getGridComponents()) {
+    comp->getConnectableShapes(shapes);
+  }
+
   // loop over connect statements
   for (const auto& connect : connect_) {
     odb::dbTechLayer* lower_layer = connect->getLowerLayer();
@@ -876,10 +883,9 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
   }
 }
 
-void Grid::makeInitialShapes(const std::set<odb::dbNet*>& nets,
-                             ShapeTreeMap& shapes)
+void Grid::makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes)
 {
-  for (auto* net : nets) {
+  for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, shapes);
   }
 }
@@ -1267,9 +1273,7 @@ ExistingGrid::ExistingGrid(PdnGen* pdngen,
 
 void ExistingGrid::populate()
 {
-  const auto nets = getNets();
-  std::set<odb::dbNet*> nets_set(nets.begin(), nets.end());
-  Grid::makeInitialShapes(nets_set, shapes_);
+  Grid::makeInitialShapes(domain_->getBlock(), shapes_);
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {

@@ -510,18 +510,21 @@ void PadDirectConnectionStraps::initialize(
     const std::vector<odb::dbTechLayer*>& layers)
 {
   auto* inst = iterm_->getInst();
-
-  odb::Rect inst_rect = inst->getBBox()->getBox();
-
+  const odb::Rect inst_rect = inst->getBBox()->getBox();
   auto* block = inst->getBlock();
-  odb::Rect core_rect = block->getCoreArea();
+  const odb::Rect core_rect = block->getCoreArea();
 
-  const bool is_north = inst_rect.yMin() > core_rect.yMax();
-  const bool is_south = inst_rect.yMax() < core_rect.yMin();
-  const bool is_west = inst_rect.xMax() < core_rect.xMin();
-  const bool is_east = inst_rect.xMin() > core_rect.xMax();
-
-  const bool is_horizontal = is_west || is_east;
+  if (inst_rect.yMin() > core_rect.yMax()) {
+    pad_edge_ = odb::dbDirection::NORTH;
+  } else if (inst_rect.yMax() < core_rect.yMin()) {
+    pad_edge_ = odb::dbDirection::SOUTH;
+  } else if (inst_rect.xMax() < core_rect.xMin()) {
+    pad_edge_ = odb::dbDirection::WEST;
+  } else if (inst_rect.xMin() > core_rect.xMax()) {
+    pad_edge_ = odb::dbDirection::EAST;
+  } else {
+    pad_edge_ = odb::dbDirection::NONE;
+  }
 
   debugPrint(getLogger(),
              utl::PDN,
@@ -529,10 +532,17 @@ void PadDirectConnectionStraps::initialize(
              1,
              "{} connecting on edge: north {}, south {}, east {}, west {}",
              getName(),
-             is_north,
-             is_south,
-             is_east,
-             is_east);
+             pad_edge_ == odb::dbDirection::NORTH,
+             pad_edge_ == odb::dbDirection::SOUTH,
+             pad_edge_ == odb::dbDirection::EAST,
+             pad_edge_ == odb::dbDirection::WEST);
+
+  pins_ = getPinsFacingCore(layers);
+}
+
+std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> PadDirectConnectionStraps::getPinsByLayer() const
+{
+  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> pins;
 
   auto* mterm = iterm_->getMTerm();
   for (auto* pin : mterm->getMPins()) {
@@ -547,25 +557,44 @@ void PadDirectConnectionStraps::initialize(
         continue;
       }
 
-      // check if layer should be used
-      if (!layers.empty()
-          && std::find(layers.begin(), layers.end(), layer) == layers.end()) {
+      pins[layer].push_back(box);
+    }
+  }
+
+  return pins;
+}
+
+std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore(const std::vector<odb::dbTechLayer*>& layers) const
+{
+  auto* inst = iterm_->getInst();
+  const odb::Rect inst_rect = inst->getBBox()->getBox();
+
+  const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
+  const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
+  const bool is_west = pad_edge_ == odb::dbDirection::WEST;
+  const bool is_east = pad_edge_ == odb::dbDirection::EAST;
+
+  const bool is_horizontal = is_west || is_east;
+
+  std::vector<odb::dbBox*> pins;
+
+  for (const auto& [layer, layer_pins] : getPinsByLayer()) {
+    // check if layer should be used
+    if (!layers.empty()
+        && std::find(layers.begin(), layers.end(), layer) == layers.end()) {
+      continue;
+    }
+    // only add pins that would yield correct routing directions
+    if (is_horizontal) {
+      if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
         continue;
       }
-
-      // only add pins that would yield correct routing directions
-      if (is_horizontal) {
-        if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
-          continue;
-        }
-      } else {
-        if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
-          continue;
-        }
+    } else {
+      if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
+        continue;
       }
-
-      pins_.push_back(box);
     }
+    pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
   }
 
   odb::dbTransform transform;
@@ -574,28 +603,24 @@ void PadDirectConnectionStraps::initialize(
   // remove all pins that do not face the core
   std::function<bool(odb::dbBox*)> remove_func;
   if (is_north) {
-    pad_edge_ = odb::dbDirection::NORTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMin() != box_rect.yMin();
     };
   } else if (is_south) {
-    pad_edge_ = odb::dbDirection::SOUTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMax() != box_rect.yMax();
     };
   } else if (is_west) {
-    pad_edge_ = odb::dbDirection::WEST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMax() != box_rect.xMax();
     };
   } else {
-    pad_edge_ = odb::dbDirection::EAST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
@@ -603,8 +628,10 @@ void PadDirectConnectionStraps::initialize(
     };
   }
 
-  pins_.erase(std::remove_if(pins_.begin(), pins_.end(), remove_func),
-              pins_.end());
+  pins.erase(std::remove_if(pins.begin(), pins.end(), remove_func),
+             pins.end());
+
+  return pins;
 }
 
 void PadDirectConnectionStraps::report() const
