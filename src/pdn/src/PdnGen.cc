@@ -289,10 +289,8 @@ void PdnGen::buildGrids(bool trim)
   // connect instances already assigned to grids
   std::set<odb::dbInst*> insts_in_grids;
   for (auto* grid : grids) {
-    if (grid->type() == Grid::Instance) {
-      InstanceGrid* inst_grid = dynamic_cast<InstanceGrid*>(grid);
-      insts_in_grids.insert(inst_grid->getInstance());
-    }
+    auto insts_in_grid = grid->getInstances();
+    insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
   ShapeTreeMap block_obs;

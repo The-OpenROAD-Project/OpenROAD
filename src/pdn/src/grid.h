@@ -184,6 +184,8 @@ class Grid
 
   void ripup();
 
+  virtual std::set<odb::dbInst*> getInstances() const;
+
  protected:
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
@@ -246,6 +248,7 @@ class InstanceGrid : public Grid
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }
+  virtual std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
 
   virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 

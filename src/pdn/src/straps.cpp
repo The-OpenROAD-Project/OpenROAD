@@ -1103,7 +1103,6 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
   for (auto* shape : remove_shapes) {
     removeShape(shape);
   }
-
 }
 
 ////////

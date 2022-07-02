@@ -872,6 +872,9 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const
     if (!inst->isFixed()) {
       continue;
     }
+    if (inst->isCore()) {
+      continue;
+    }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
       continue;
@@ -909,6 +912,20 @@ void Grid::setSwitchedPower(GridSwitchedPower* cell)
 {
   switched_power_cell_ = std::unique_ptr<GridSwitchedPower>(cell);
   cell->setGrid(this);
+}
+
+std::set<odb::dbInst*> Grid::getInstances() const
+{
+  std::set<odb::dbInst*> insts;
+
+  for (auto* comp : getGridComponents()) {
+    if (comp->type() == GridComponent::PadConnect) {
+      auto* pad_connect = dynamic_cast<PadDirectConnectionStraps*>(comp);
+      insts.insert(pad_connect->getITerm()->getInst());
+    }
+  }
+
+  return insts;
 }
 
 ///////////////
