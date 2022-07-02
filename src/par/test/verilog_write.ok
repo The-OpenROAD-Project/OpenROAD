@@ -9,6 +9,4 @@ Running MLPart.
 Writing partition id's to DB.
 Writing done.
 Writing partition to verilog.
-Differences found at line 18.
- wire partition__087_;
- wire partition__112_;
+No differences found.
