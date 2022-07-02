@@ -203,12 +203,14 @@ sta::define_cmd_args "bench_wires" {
     [-under_met layer]
     [-w_list width]
     [-s_list space]
+    [-over_dist dist]
+    [-under_dist dist]
 }
 
 proc bench_wires { args } {
   sta::parse_key_args "bench_wires" args keys \
       { -met_cnt -cnt -len -under_met
-        -w_list -s_list } \
+        -w_list -s_list -over_dist -under_dist } \
       flags { -diag -over -all -db_only }
 
   if { ![ord::db_has_tech] } {
@@ -249,8 +251,18 @@ proc bench_wires { args } {
   if { [info exists keys(-s_list)] } {
     set s_list $keys(-s_list)
   }
-  
-  rcx::bench_wires $db_only $over $diag $all $met_cnt $cnt $len $under_met $w_list $s_list 
+
+  set over_dist 100
+  if { [info exists keys(-over_dist)] } {
+    set over_dist $keys(-over_dist)
+  }
+
+  set under_dist 100
+  if { [info exists keys(-under_dist)] } {
+    set under_dist $keys(-under_dist)
+  }
+
+  rcx::bench_wires $db_only $over $diag $all $met_cnt $cnt $len $under_met $w_list $s_list $over_dist $under_dist
 }
 
 sta::define_cmd_args "bench_verilog" { filename }

@@ -179,8 +179,7 @@ DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
   for (auto& shape : shapes) {
     auto* layer = shape.getTechLayer();
     if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-      odb::Rect box_shape;
-      shape.getBox(box_shape);
+      odb::Rect box_shape = shape.getBox();
       layer_rects[layer->getRoutingLevel()].insert(box_shape);
     }
   }
@@ -263,8 +262,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       continue;
     }
 
-    odb::Rect rect;
-    box->getBox(rect);
+    odb::Rect rect = box->getBox();
 
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       via_rect_.merge(rect);
@@ -2129,8 +2127,7 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
       continue;
     }
 
-    odb::Rect cut;
-    box->getBox(cut);
+    odb::Rect cut = box->getBox();
 
     if (cuts_ == 0) {
       cut_ = layer;

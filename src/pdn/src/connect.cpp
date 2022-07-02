@@ -319,8 +319,7 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width)
     for (auto* box : rule->getBoxes()) {
       use |= box->getTechLayer() == layer;
 
-      odb::Rect rect;
-      box->getBox(rect);
+      odb::Rect rect = box->getBox();
       max_size = std::max(max_size, static_cast<int>(rect.maxDXDY()));
     }
 

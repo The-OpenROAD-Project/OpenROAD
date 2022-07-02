@@ -84,8 +84,7 @@ void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
         odb::dbInst* inst = iterm->getInst();
         if (!hypergraph.isInMap(inst->getName())) {
           odb::dbBox* bbox = inst->getBBox();
-          odb::Rect rect;
-          bbox->getBox(rect);
+          odb::Rect rect = bbox->getBox();
           addMapping(hypergraph, inst->getName(), rect);
         }
       }

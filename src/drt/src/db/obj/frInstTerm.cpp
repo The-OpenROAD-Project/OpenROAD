@@ -39,9 +39,8 @@ frString frInstTerm::getName() const
 
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
-  dbTransform shiftXform;
   auto inst = getInst();
-  inst->getTransform(shiftXform);
+  dbTransform shiftXform = inst->getTransform();
   Point offset(shiftXform.getOffset());
   x = x - offset.getX();
   y = y - offset.getY();
@@ -60,9 +59,9 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes,
   for (auto& shape : outShapes) {
     dbTransform trans;
     if (updatedTransform)
-      getInst()->getUpdatedXform(trans);
+      trans = getInst()->getUpdatedXform();
     else
-      getInst()->getTransform(trans);
+      trans = getInst()->getTransform();
     shape.move(trans);
   }
 }
@@ -72,9 +71,9 @@ Rect frInstTerm::getBBox(bool updatedTransform)
   Rect bbox(term_->getBBox());
   dbTransform trans;
   if (updatedTransform)
-    getInst()->getUpdatedXform(trans);
+    trans = getInst()->getUpdatedXform();
   else 
-    getInst()->getTransform(trans);
+    trans = getInst()->getTransform();
   trans.apply(bbox);
   return bbox;
 }

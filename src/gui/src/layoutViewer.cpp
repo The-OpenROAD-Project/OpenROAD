@@ -595,11 +595,9 @@ void LayoutViewer::cancelRulerBuild()
 
 Rect LayoutViewer::getBounds() const
 {
-  Rect bbox;
-  block_->getBBox()->getBox(bbox);
+  Rect bbox = block_->getBBox()->getBox();
 
-  Rect die;
-  block_->getDieArea(die);
+  Rect die = block_->getDieArea();
 
   bbox.merge(die);
 
@@ -862,15 +860,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(const odb::P
   };
 
   // get die bounding box
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   check_rect(bbox);
 
   if (options_->areRegionsVisible()) {
     for (auto* region : block_->getRegions()) {
       for (auto* box : region->getBoundaries()) {
-        odb::Rect region_box;
-        box->getBox(region_box);
+        odb::Rect region_box = box->getBox();
         if (region_box.area() > 0) {
           check_rect(region_box);
         }
@@ -1483,8 +1479,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
   }
 
   int min_resolution = shapeSizeLimit();
-  Rect block_bounds;
-  block_->getBBox()->getBox(block_bounds);
+  Rect block_bounds = block_->getBBox()->getBox();
   const Rect draw_bounds = block_bounds.intersect(bounds);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
@@ -1894,8 +1889,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       continue;
     }
 
-    Rect instance_box;
-    inst->getBBox()->getBox(instance_box);
+    Rect instance_box = inst->getBBox()->getBox();
 
     QString name = inst->getName().c_str();
     QRectF instance_bbox_in_px = dbuToScreen(instance_box);
@@ -1959,8 +1953,7 @@ void LayoutViewer::drawBlockages(QPainter* painter,
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, blockage] : blockage_range) {
-    Rect bbox;
-    blockage->getBBox()->getBox(bbox);
+    Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -1982,8 +1975,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
       layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, obs] : obstructions_range) {
-    Rect bbox;
-    obs->getBBox()->getBox(bbox);
+    Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -2009,11 +2001,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
+
+  drawManufacturingGrid(painter, bounds);
 
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
@@ -2132,6 +2125,42 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 }
 
+void LayoutViewer::drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds)
+{
+  if (!options_->isManufacturingGridVisible()) {
+    return;
+  }
+
+  odb::dbTech* tech = block_->getDb()->getTech();
+  if (!tech->hasManufacturingGrid()) {
+    return;
+  }
+
+  const int grid = tech->getManufacturingGrid(); // DBU
+
+  const int pixels_per_grid_point = grid * pixels_per_dbu_;
+  const int pixels_per_grid_point_limit = 5; // want 5 pixels between each grid point
+
+  if (pixels_per_grid_point < pixels_per_grid_point_limit) {
+    return;
+  }
+
+  const int first_x = ((bounds.xMin() / grid) + 1) * grid;
+  const int last_x = (bounds.xMax() / grid) * grid;
+  const int first_y = ((bounds.yMin() / grid) + 1) * grid;
+  const int last_y = (bounds.yMax() / grid) * grid;
+
+  QPolygon points;
+  for (int x = first_x; x <= last_x; x += grid) {
+    for (int y = first_y; y <= last_y; y += grid) {
+      points.append(QPoint(x, y));
+    }
+  }
+
+  painter->setPen(Qt::white);
+  painter->drawPoints(points);
+}
+
 void LayoutViewer::drawRegionOutlines(QPainter* painter)
 {
   if (!options_->areRegionsVisible()) {
@@ -2143,8 +2172,7 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
 
   for (auto* region : block_->getRegions()) {
     for (auto* box : region->getBoundaries()) {
-      odb::Rect region_box;
-      box->getBox(region_box);
+      odb::Rect region_box = box->getBox();
       if (region_box.area() > 0) {
         painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
       }
@@ -2235,8 +2263,7 @@ void LayoutViewer::drawModuleView(QPainter* painter,
       continue;
     }
 
-    odb::Rect inst_outline;
-    inst->getBBox()->getBox(inst_outline);
+    odb::Rect inst_outline = inst->getBBox()->getBox();
 
     auto color = setting.color;
     painter->setPen(QPen(color, 0));

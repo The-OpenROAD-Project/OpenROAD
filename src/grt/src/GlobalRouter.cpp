@@ -1746,7 +1746,7 @@ void GlobalRouter::checkPinPlacement()
     }
     int layer = port->getLayers()[0];  // port have only one layer
 
-    tech_layer = routing_layers_[layer + 1];
+    tech_layer = routing_layers_[layer];
     if (layer_positions_map[layer].empty()) {
       layer_positions_map[layer].push_back(port->getPosition());
     } else {
@@ -2170,8 +2170,7 @@ void GlobalRouter::initGrid(int max_layer)
 {
   int track_spacing = trackSpacing();
 
-  odb::Rect rect;
-  block_->getDieArea(rect);
+  odb::Rect rect = block_->getDieArea();
 
   int upper_rightX = rect.xMax();
   int upper_rightY = rect.yMax();
@@ -2630,8 +2629,7 @@ void GlobalRouter::makeItermPins(Net* net,
       int last_layer = -1;
 
       for (odb::dbBox* box : mterm->getGeometry()) {
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         transform.apply(rect);
 
         odb::dbTechLayer* tech_layer = box->getTechLayer();
@@ -3053,8 +3051,7 @@ int GlobalRouter::findInstancesObstructions(
       for (odb::dbBox* box : master->getObstructions()) {
         int layer = box->getTechLayer()->getRoutingLevel();
         if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           if (macro_obs_per_layer.find(layer) == macro_obs_per_layer.end()) {
@@ -3084,8 +3081,7 @@ int GlobalRouter::findInstancesObstructions(
       for (odb::dbBox* box : master->getObstructions()) {
         int layer = box->getTechLayer()->getRoutingLevel();
         if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
@@ -3112,8 +3108,7 @@ int GlobalRouter::findInstancesObstructions(
         int pin_layer;
 
         for (odb::dbBox* box : mterm->getGeometry()) {
-          odb::Rect rect;
-          box->getBox(rect);
+          odb::Rect rect = box->getBox();
           transform.apply(rect);
 
           odb::dbTechLayer* tech_layer = box->getTechLayer();
@@ -3172,8 +3167,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
           if (s->isVia()) {
             continue;
           } else {
-            odb::Rect wire_rect;
-            s->getBox(wire_rect);
+            odb::Rect wire_rect = s->getBox();
             int l = s->getTechLayer()->getRoutingLevel();
 
             if (min_routing_layer_ <= l && l <= max_routing_layer_) {
@@ -3205,8 +3199,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
           if (pshape.shape.isVia()) {
             continue;
           } else {
-            odb::Rect wire_rect;
-            pshape.shape.getBox(wire_rect);
+            odb::Rect wire_rect = pshape.shape.getBox();
             int l = pshape.shape.getTechLayer()->getRoutingLevel();
 
             if (min_routing_layer_ <= l && l <= max_routing_layer_) {

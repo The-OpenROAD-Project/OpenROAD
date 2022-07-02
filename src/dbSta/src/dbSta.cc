@@ -783,8 +783,7 @@ PathRenderer::highlightInst(const Pin *pin,
   if (!network->isTopInstance(inst)) {
     dbInst *db_inst = network->staToDb(inst);
     odb::dbBox *bbox = db_inst->getBBox();
-    odb::Rect rect;
-    bbox->getBox(rect);
+    odb::Rect rect = bbox->getBox();
     gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
     painter.setBrush(inst_color);
     painter.drawRect(rect);

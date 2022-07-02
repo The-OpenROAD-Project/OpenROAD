@@ -221,51 +221,45 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     currNet = it->second;
   }
 
-  Rect box;
-  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
     auto pathSeg = static_cast<frPathSeg*>(obj);
-    pathSeg->getBBox(box);
-    currNet->addPolygon(box, pathSeg->getLayerNum(), false);
+    currNet->addPolygon(pathSeg->getBBox(), pathSeg->getLayerNum(), false);
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    via->getTransform(xform);
+    dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addRectangle(box, layerNum, false);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      Rect bbox;
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
   } else if (obj->typeId() == frcPatchWire) {
     auto pwire = static_cast<frPatchWire*>(obj);
-    pwire->getBBox(box);
-    currNet->addPolygon(box, pwire->getLayerNum(), false);
+    currNet->addPolygon(pwire->getBBox(), pwire->getLayerNum(), false);
   }
 }
 void addNonTaperedPatches(gcNet* gNet,
                           const std::vector<unique_ptr<drConnFig>>& figs)
 {
-  Rect box;
   for (auto& obj : figs) {
     if (obj->typeId() == drcPatchWire) {
       auto pwire = static_cast<drPatchWire*>(obj.get());
-      pwire->getBBox(box);
+      Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {
         if (nt.intersects(box)) {
@@ -287,12 +281,11 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  Rect box;
   dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
-    pathSeg->getBBox(box);
+    Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
     if (pathSeg->isTapered())
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
@@ -302,9 +295,9 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    via->getTransform(xform);
+    xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered())
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -315,14 +308,14 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       currNet->addRectangle(box, layerNum);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       xform.apply(box);
       if (via->isTapered())
         currNet->addTaperedRect(box, layerNum / 2 - 1);
@@ -332,8 +325,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     }
   } else if (obj->typeId() == drcPatchWire) {
     auto pwire = static_cast<drPatchWire*>(obj);
-    pwire->getBBox(box);
-    currNet->addPolygon(box, pwire->getLayerNum());
+    currNet->addPolygon(pwire->getBBox(), pwire->getLayerNum());
   }
   return currNet;
 }

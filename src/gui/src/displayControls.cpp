@@ -434,6 +434,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
+  makeLeafItem(misc_.manufacturing_grid, "Manufacturing Grid", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -1498,6 +1499,11 @@ bool DisplayControls::areRegionsVisible() const
   return isRowVisible(&misc_.regions);
 }
 
+bool DisplayControls::isManufacturingGridVisible() const
+{
+  return isRowVisible(&misc_.manufacturing_grid);
+}
+
 bool DisplayControls::isModuleView() const
 {
   return isRowVisible(&misc_.module);
@@ -1618,6 +1624,10 @@ void DisplayControls::techInit()
   if (!tech) {
     return;
   }
+
+  // disable if grid is not present
+  misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
+  misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0

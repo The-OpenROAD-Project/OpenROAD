@@ -61,15 +61,14 @@ frDesign* FlexTAWorkerRegionQuery::getDesign() const
 void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 {
   Rect box;
-  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
-    obj->getPoints(bp, ep);
+    auto [bp, ep] = obj->getPoints();
     box = Rect(bp, ep);
     impl_->shapes_.at(obj->getLayerNum()).insert(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
-    obj->getOrigin(bp);
+    auto bp = obj->getOrigin();
     box = Rect(bp, bp);
     impl_->shapes_.at(obj->getViaDef()->getCutLayerNum())
         .insert(make_pair(box, obj));
@@ -81,15 +80,14 @@ void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
 {
   Rect box;
-  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
-    obj->getPoints(bp, ep);
+    auto [bp, ep] = obj->getPoints();
     box = Rect(bp, ep);
     impl_->shapes_.at(obj->getLayerNum()).remove(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
-    obj->getOrigin(bp);
+    auto bp = obj->getOrigin();
     box = Rect(bp, bp);
     impl_->shapes_.at(obj->getViaDef()->getCutLayerNum())
         .remove(make_pair(box, obj));

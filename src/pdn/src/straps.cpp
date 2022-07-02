@@ -338,8 +338,7 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   auto rows = getDomain()->getRows();
   if (!rows.empty()) {
     auto* row = *rows.begin();
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     setPitch(2 * bbox.dy());
 
     if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
@@ -391,8 +390,7 @@ void FollowPins::makeShapes(const ShapeTreeMap& other_shapes)
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
 
     int x0 = bbox.xMin();
@@ -513,12 +511,10 @@ void PadDirectConnectionStraps::initialize(
 {
   auto* inst = iterm_->getInst();
 
-  odb::Rect inst_rect;
-  inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
-  odb::Rect core_rect;
-  block->getCoreArea(core_rect);
+  odb::Rect core_rect = block->getCoreArea();
 
   const bool is_north = inst_rect.yMin() > core_rect.yMax();
   const bool is_south = inst_rect.yMax() < core_rect.yMin();
@@ -580,32 +576,28 @@ void PadDirectConnectionStraps::initialize(
   if (is_north) {
     pad_edge_ = odb::dbDirection::NORTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMin() != box_rect.yMin();
     };
   } else if (is_south) {
     pad_edge_ = odb::dbDirection::SOUTH;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.yMax() != box_rect.yMax();
     };
   } else if (is_west) {
     pad_edge_ = odb::dbDirection::WEST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMax() != box_rect.xMax();
     };
   } else {
     pad_edge_ = odb::dbDirection::EAST;
     remove_func = [inst_rect, transform](odb::dbBox* box) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
       return inst_rect.xMin() != box_rect.xMin();
     };
@@ -659,12 +651,10 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 
   auto* inst = iterm_->getInst();
 
-  odb::Rect inst_rect;
-  inst->getBBox()->getBox(inst_rect);
+  odb::Rect inst_rect = inst->getBBox()->getBox();
 
   auto* block = inst->getBlock();
-  odb::Rect die_rect;
-  block->getDieArea(die_rect);
+  odb::Rect die_rect = block->getDieArea();
 
   odb::dbTransform transform;
   inst->getTransform(transform);
@@ -678,8 +668,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 
   auto* net = iterm_->getNet();
   for (auto* pin : pins_) {
-    odb::Rect pin_rect;
-    pin->getBox(pin_rect);
+    odb::Rect pin_rect = pin->getBox();
     transform.apply(pin_rect);
 
     auto* layer = pin->getTechLayer();
@@ -1367,20 +1356,20 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       }
     }
 
-    if (!channel.area.intersects(grid_core)) {
-      // channel is not in the core
-      continue;
-    }
-
-    // ensure areas are inside the core
-    channel.area = channel.area.intersect(grid_core);
-    channel.obs_area = channel.obs_area.intersect(grid_core);
-
     // all followpins must be repaired
     const bool channel_has_followpin = followpin_count >= 1;
     // single straps can be skipped
     const bool channel_has_more_than_one_strap = strap_count > 1;
     if (channel_has_followpin || channel_has_more_than_one_strap) {
+      if (!channel.area.intersects(grid_core)) {
+        // channel is not in the core
+        continue;
+      }
+
+      // ensure areas are inside the core
+      channel.area = channel.area.intersect(grid_core);
+      channel.obs_area = channel.obs_area.intersect(grid_core);
+
       channels.push_back(channel);
     }
   }

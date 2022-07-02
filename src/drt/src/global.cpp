@@ -125,8 +125,7 @@ ostream& operator<<(ostream& os, const frRect& pinFigIn)
   //    pinFigIn.getPin()->getTerm()->getName()
   //       << " " << pinFigIn.getLayerNum() << endl;
   //  }
-  Rect tmpBox;
-  pinFigIn.getBBox(tmpBox);
+  Rect tmpBox = pinFigIn.getBBox();
   os << "  RECT " << tmpBox.xMin() << " " << tmpBox.yMin() << " "
      << tmpBox.xMax() << " " << tmpBox.yMax();
   return os;
@@ -233,8 +232,7 @@ ostream& operator<<(ostream& os, const frViaDef& viaDefIn)
 
 ostream& operator<<(ostream& os, const frBlock& blockIn)
 {
-  Rect box;
-  blockIn.getBBox(box);
+  Rect box = blockIn.getBBox();
   os << "MACRO " << blockIn.getName() << endl
      << "  ORIGIN " << box.xMin() << " " << box.yMin() << endl
      << "  SIZE " << box.xMax() << " " << box.yMax();
@@ -246,13 +244,10 @@ ostream& operator<<(ostream& os, const frBlock& blockIn)
 
 ostream& operator<<(ostream& os, const frInst& instIn)
 {
-  Point tmpPoint;
-  frString tmpString;
-  frString tmpName;
-  instIn.getOrigin(tmpPoint);
+  Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
-  tmpName = instIn.getName();
-  tmpString = instIn.getMaster()->getName();
+  frString tmpName = instIn.getName();
+  frString tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
      << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
   for (auto& m : instIn.getInstTerms()) {
@@ -268,8 +263,7 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
       auto p = static_cast<const drPathSeg*>(&fig);
       os << "drPathSeg: begin (" << p->getBeginX() << " " << p->getBeginY()
          << " ) end ( " << p->getEndX() << " " << p->getEndY() << " ) layerNum " << p->getLayerNum();
-      frSegStyle st;
-      p->getStyle(st);
+      frSegStyle st = p->getStyle();
       os << "\n\tbeginStyle: " << st.getBeginStyle() << "\n\tendStyle: " << st.getEndStyle();
       break;
     }
@@ -280,9 +274,7 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
     }
     case drcPatchWire: {
       auto p = static_cast<const drPatchWire*>(&fig);
-      Rect b;
-      p->getBBox(b);
-      os << "drPatchWire: " << b;
+      os << "drPatchWire: " << p->getBBox();
       break;
     }
     default:
@@ -297,8 +289,7 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
   os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
      << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
      << p.getEndPoint().y() << " ) layerNum " << p.getLayerNum();
-  frSegStyle st;
-  p.getStyle(st);
+  frSegStyle st = p.getStyle();
   os << "\n\tbeginStyle: " << st.getBeginStyle() << "\n\tendStyle: " << st.getEndStyle();
   return os;
 }
@@ -326,9 +317,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcPatchWire: {
       auto p = static_cast<const frPatchWire*>(&fig);
-      Rect b;
-      p->getBBox(b);
-      os << "frPatchWire: " << b;
+      os << "frPatchWire: " << p->getBBox();
       break;
     }
     case frcGuide: {
@@ -338,9 +327,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcRect: {
       auto p = static_cast<const frRect*>(&fig);
-      Rect b;
-      p->getBBox(b);
-      os << "frRect: " << b;
+      os << "frRect: " << p->getBBox();
       break;
     }
     case frcPolygon: {
