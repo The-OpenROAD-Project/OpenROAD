@@ -171,6 +171,7 @@ class FlexGCWorker::Impl
   bool ignoreDB_;
   bool ignoreMinArea_;
   bool ignoreLongSideEOL_;
+  bool ignoreCornerSpacing_;
   bool surgicalFixEnabled_;
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
@@ -282,9 +283,6 @@ class FlexGCWorker::Impl
   void checkMetalCornerSpacing_main(gcCorner* corner);
   void checkMetalCornerSpacing_main(gcCorner* corner,
                                     gcRect* rect,
-                                    frLef58CornerSpacingConstraint* con);
-  void checkMetalCornerSpacing_main(gcCorner* corner,
-                                    gcSegment* seg,
                                     frLef58CornerSpacingConstraint* con);
 
   void checkMetalShape();
@@ -483,7 +481,9 @@ class FlexGCWorker::Impl
 
   // surgical fix
   void patchMetalShape();
-  void patchMetalShape_helper();
+  void patchMetalShape_minStep();
+  void patchMetalShape_cornerSpacing();
+
 
   // utility
   bool isCornerOverlap(gcCorner* corner, const Rect& box);

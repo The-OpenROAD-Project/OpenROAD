@@ -322,7 +322,7 @@ Opendp::place()
       sorted_cells.push_back(&cell);
       if (!cellFitsInCore(&cell)) {
         logger_->error(DPL, 15, "instance {} does not fit inside the ROW core area.",
-                      cell.name());
+                       cell.name());
       }
     }
   }

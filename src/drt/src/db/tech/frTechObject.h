@@ -123,6 +123,11 @@ class frTechObject
   void addUConstraint(std::unique_ptr<frConstraint> in)
   {
     in->setId(uConstraints.size());
+    auto type = in->typeId();
+    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
+        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+      hasCornerSpacingConstraint_ = true;
+    }
     uConstraints.push_back(std::move(in));
   }
   frConstraint* getConstraint(int idx)
@@ -253,6 +258,7 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
+  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -336,6 +342,7 @@ class frTechObject
   // for up via
   ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
+  bool hasCornerSpacingConstraint_ = false;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)

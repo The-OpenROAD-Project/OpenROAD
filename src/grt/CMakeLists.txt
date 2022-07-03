@@ -47,7 +47,6 @@ swig_lib(NAME      grt
 
 target_sources(grt
   PRIVATE
-    src/AntennaRepair.cpp
     src/GlobalRouter.cpp
     src/Grid.cpp
     src/MakeGlobalRouter.cpp
@@ -55,6 +54,7 @@ target_sources(grt
     src/Pin.cpp
     src/MakeWireParasitics.cpp
     src/heatMap.cpp
+    src/RepairAntennas.cpp
 )
 
 target_include_directories(grt

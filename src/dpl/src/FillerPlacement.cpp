@@ -183,4 +183,14 @@ Opendp::gapFillers(int gap,
   return fillers;
 }
 
+void Opendp::removeFillers()
+{
+  block_ = db_->getChip()->getBlock();
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
+      odb::dbInst::destroy(inst);
+    }
+  }
+}
+
 }  // namespace opendp

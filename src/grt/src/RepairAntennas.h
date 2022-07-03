@@ -65,19 +65,18 @@ namespace bgi = boost::geometry::index;
 
 namespace grt {
 
-typedef std::map<odb::dbNet*, std::vector<ant::ViolationInfo>>
-    AntennaViolations;
+typedef std::map<odb::dbNet*, std::vector<ant::Violation>> AntennaViolations;
 
 class GlobalRouter;
 
-class AntennaRepair
+class RepairAntennas
 {
  public:
-  AntennaRepair(GlobalRouter* grouter,
-                ant::AntennaChecker* arc,
-                dpl::Opendp* opendp,
-                odb::dbDatabase* db,
-                utl::Logger* logger);
+  RepairAntennas(GlobalRouter* grouter,
+                 ant::AntennaChecker* arc,
+                 dpl::Opendp* opendp,
+                 odb::dbDatabase* db,
+                 utl::Logger* logger);
 
   bool checkAntennaViolations(NetRouteMap& routing,
                               int max_routing_layer,
@@ -92,7 +91,6 @@ class AntennaRepair
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void deleteFillerCells();
   void makeNetWires(NetRouteMap& routing,
                     int max_routing_layer);
   void destroyNetWires();

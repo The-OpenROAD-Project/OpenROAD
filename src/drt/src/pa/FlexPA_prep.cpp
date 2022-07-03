@@ -736,12 +736,6 @@ void FlexPA::prepPoint_pin_genPoints(
   bool allowVia = true;
   frLayerNum layerNum = (int) pinShapes.size() - 1;
   for (auto it = pinShapes.rbegin(); it != pinShapes.rend(); it++) {
-    if ((layerNum == VIA_ACCESS_LAYERNUM || layerNum == VIA_ACCESS_LAYERNUM + 2)
-        && instTerm != nullptr) {
-      allowVia = true;
-    } else {
-      allowVia = false;
-    }
     if (!it->empty()
         && getDesign()->getTech()->getLayer(layerNum)->getType()
                == dbTechLayerType::ROUTING) {
@@ -861,6 +855,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
+  gcWorker.setIgnoreCornerSpacing();
   Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
@@ -1025,6 +1020,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
   gcWorker.setIgnoreLongSideEOL();
+  gcWorker.setIgnoreCornerSpacing();
   Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
@@ -2199,6 +2195,7 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
   gcWorker.setIgnoreLongSideEOL();
+  gcWorker.setIgnoreCornerSpacing();
 
   frCoord llx = std::numeric_limits<frCoord>::max();
   frCoord lly = std::numeric_limits<frCoord>::max();
