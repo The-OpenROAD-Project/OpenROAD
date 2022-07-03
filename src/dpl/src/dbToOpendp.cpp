@@ -70,6 +70,7 @@ Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
+  have_fillers_ = false;
 
   importClear();
   examineRows();
@@ -134,6 +135,8 @@ Opendp::makeCells()
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
     dbMaster *db_master = db_inst->getMaster();
+    if (db_master->getType() == odb::dbMasterType::CORE_SPACER)
+      have_fillers_ = true;
     if (db_master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
@@ -146,6 +149,7 @@ Opendp::makeCells()
       cell.x_ = bbox.xMin();
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
+      // Cell is already placed if it is FIXED.
       cell.is_placed_ = isFixed(&cell);
 
       Master &master = db_master_map_[db_master];

@@ -9,7 +9,6 @@
 [INFO ODB-0133]     Created 2 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: sw130_random.def
 Net net50
-  _264_/B2 (sky130_fd_sc_ms__a222oi_1)
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
     PAR:  419.64* Ratio:  400.00 (S.Area)
@@ -21,7 +20,7 @@ Net net50
   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
     met3
     PAR:   40.63  Ratio:    0.00 (Area)
-    PAR:  218.43  Ratio: 2609.52 (S.Area)
+    PAR:  218.43  Ratio: 2878.88 (S.Area)
     CAR:  138.03  Ratio:    0.00 (C.Area)
     CAR:  707.18  Ratio:    0.00 (C.S.Area)
 
@@ -58,7 +57,7 @@ Net net50
   output50/A (sky130_fd_sc_ms__buf_1)
     met3
     PAR:   40.63  Ratio:    0.00 (Area)
-    PAR:  218.43  Ratio: 2609.52 (S.Area)
+    PAR:  218.43  Ratio: 2878.88 (S.Area)
     CAR:  179.21  Ratio:    0.00 (C.Area)
     CAR:  912.89  Ratio:    0.00 (C.S.Area)
 
@@ -96,7 +95,6 @@ Net net50
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.
 Net net50
-  _264_/B2 (sky130_fd_sc_ms__a222oi_1)
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
     PAR:  419.64* Ratio:  400.00 (S.Area)

@@ -49,7 +49,7 @@
 #include <utility>
 #include <vector>
 
-#include "AntennaRepair.h"
+#include "RepairAntennas.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "MakeWireParasitics.h"
@@ -101,7 +101,7 @@ GlobalRouter::GlobalRouter()
       sta_(nullptr),
       db_(nullptr),
       block_(nullptr),
-      antenna_repair_(nullptr),
+      repair_antennas_(nullptr),
       heatmap_(nullptr)
 {
 }
@@ -149,7 +149,7 @@ GlobalRouter::~GlobalRouter()
   delete grid_;
   for (auto net_itr : db_net_map_)
     delete net_itr.second;
-  delete antenna_repair_;
+  delete repair_antennas_;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
@@ -246,16 +246,16 @@ void GlobalRouter::updateDbCongestion()
 void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations)
 {
-  if (antenna_repair_ == nullptr)
-    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  if (repair_antennas_ == nullptr)
+    repair_antennas_ = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
 
   if (diode_mterm == nullptr) {
-    diode_mterm = antenna_repair_->findDiodeMTerm();
+    diode_mterm = repair_antennas_->findDiodeMTerm();
     if (diode_mterm == nullptr)
-      logger_->error(GRT, 246, "No diode LEF class CORE ANTENNACELL found.");
+      logger_->error(GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
   }
-  if (antenna_repair_->diffArea(diode_mterm) == 0.0)
-    logger_->error(GRT, 244, "Diode {}/{} diffusion area is zero.",
+  if (repair_antennas_->diffArea(diode_mterm) == 0.0)
+    logger_->error(GRT, 244, "Diode {}/{} ANTENNADIFFSIDEAREARATIO is zero.",
                    diode_mterm->getMaster()->getConstName(),
                    diode_mterm->getConstName());
 
@@ -269,24 +269,22 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     // Copy the routes so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
-    violations = antenna_repair_->checkAntennaViolations(routes,
+    violations = repair_antennas_->checkAntennaViolations(routes,
                                                          max_routing_layer_,
                                                          diode_mterm);
 
     if (violations) {
-      antenna_repair_->deleteFillerCells();
-
       IncrementalGRoute incr_groute(this, block_);
-      antenna_repair_->repairAntennas(diode_mterm);
-      logger_->info(GRT, 15, "Inserted {} diodes.", antenna_repair_->getDiodesCount());
-      int illegal_diode_placement_count = antenna_repair_->illegalDiodePlacementCount();
+      repair_antennas_->repairAntennas(diode_mterm);
+      logger_->info(GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
+      int illegal_diode_placement_count = repair_antennas_->illegalDiodePlacementCount();
       if (illegal_diode_placement_count > 0)
         logger_->info(GRT, 54, "Using detailed placer to place {} diodes.",
                       illegal_diode_placement_count);
-      antenna_repair_->legalizePlacedCells();
+      repair_antennas_->legalizePlacedCells();
       incr_groute.updateRoutes();
     }
-    antenna_repair_->clearViolations();
+    repair_antennas_->clearViolations();
     itr++;
   }
   saveGuides();
@@ -295,21 +293,19 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 void
 GlobalRouter::makeNetWires()
 {
-  if (antenna_repair_ == nullptr)
-    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
+  if (repair_antennas_ == nullptr)
+    repair_antennas_ = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
   // Antenna checker requires local connections to create dbWires.
   // Copy the routes so the originals are not side-effected.
   NetRouteMap routes = routes_;
   addLocalConnections(routes);
-  antenna_repair_->makeNetWires(routes, max_routing_layer_);
+  repair_antennas_->makeNetWires(routes, max_routing_layer_);
 }
 
 void
 GlobalRouter::destroyNetWires()
 {
-  if (antenna_repair_ == nullptr)
-    antenna_repair_ = new AntennaRepair(this, antenna_checker_, opendp_, db_, logger_);
-  antenna_repair_->destroyNetWires();
+  repair_antennas_->destroyNetWires();
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
