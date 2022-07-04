@@ -131,6 +131,12 @@ void Search::inDbSWireAddSBox(odb::dbSBox* box)
 {
   clearShapes();
 }
+
+void Search::inDbSWireRemoveSBox(odb::dbSBox* box)
+{
+  clearShapes();
+}
+
 void Search::inDbBlockageCreate(odb::dbBlockage* blockage)
 {
   clearBlockages();
