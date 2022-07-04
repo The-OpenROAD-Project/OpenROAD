@@ -2332,27 +2332,39 @@ std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(utl::Logger* logger
 {
   const TechViaGenerator generator(logger, via, {}, {}, {}, {});
 
-  const int x_pitch = generator.getCutPitchX();
-  const int y_pitch = generator.getCutPitchY();
+  const int x_pitch = generator.getCutPitchX() - 1;
+  const int y_pitch = generator.getCutPitchY() - 1;
 
   std::set<odb::Rect> obs;
 
   const odb::dbTransform xform(odb::Point(x, y));
   for (auto* box : via->getBoxes()) {
-    if (box->getTechLayer()->getType() != odb::dbTechLayerType::CUT) {
+    auto* layer = box->getTechLayer();
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
       continue;
     }
 
-    const odb::Rect rect = box->getBox();
+    odb::Rect rect = box->getBox();
+    xform.apply(rect);
 
-    odb::Rect obs_rect(
+    const odb::Rect x_obs_rect(
         rect.xMax() - x_pitch,
-        rect.yMax() - y_pitch,
+        rect.yMax(),
         rect.xMin() + x_pitch,
+        rect.yMin());
+
+    const odb::Rect y_obs_rect(
+        rect.xMax(),
+        rect.yMax() - y_pitch,
+        rect.xMin(),
         rect.yMin() + y_pitch);
 
-    xform.apply(obs_rect);
-    obs.insert(obs_rect);
+    odb::Rect min_space_obs;
+    rect.bloat(layer->getSpacing() - 1, min_space_obs);
+
+    obs.insert(x_obs_rect);
+    obs.insert(y_obs_rect);
+    obs.insert(min_space_obs);
   }
 
   return obs;
