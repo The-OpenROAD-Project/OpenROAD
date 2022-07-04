@@ -2328,6 +2328,36 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std:
   }
 }
 
+std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(utl::Logger* logger, odb::dbTechVia* via, int x, int y)
+{
+  const TechViaGenerator generator(logger, via, {}, {}, {}, {});
+
+  const int x_pitch = generator.getCutPitchX();
+  const int y_pitch = generator.getCutPitchY();
+
+  std::set<odb::Rect> obs;
+
+  const odb::dbTransform xform(odb::Point(x, y));
+  for (auto* box : via->getBoxes()) {
+    if (box->getTechLayer()->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+
+    const odb::Rect rect = box->getBox();
+
+    odb::Rect obs_rect(
+        rect.xMax() - x_pitch,
+        rect.yMax() - y_pitch,
+        rect.xMin() + x_pitch,
+        rect.yMin() + y_pitch);
+
+    xform.apply(obs_rect);
+    obs.insert(obs_rect);
+  }
+
+  return obs;
+}
+
 /////////
 
 Via::Via(Connect* connect,

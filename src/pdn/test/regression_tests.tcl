@@ -89,4 +89,6 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
+  
+  repair_vias
 }

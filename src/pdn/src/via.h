@@ -643,6 +643,8 @@ class TechViaGenerator : public ViaGenerator
                                  int cols,
                                  int col_pitch) const override;
 
+  static std::set<odb::Rect> getViaObstructionRects(utl::Logger* logger, odb::dbTechVia* via, int x, int y);
+
  protected:
   virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
 

@@ -208,6 +208,8 @@ class PdnGen
 
   void checkSetup() const;
 
+  void repairVias(const std::set<odb::dbNet*>& nets);
+
  private:
   using regexPairs
       = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
