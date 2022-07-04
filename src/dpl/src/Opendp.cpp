@@ -198,7 +198,7 @@ Opendp::detailedPlacement(int max_displacement_x,
   importDb();
 
   if (have_fillers_)
-    logger_->error(DPL, 37, "Use remove_fillers before detailed placement.");
+    logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
 
   if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults
