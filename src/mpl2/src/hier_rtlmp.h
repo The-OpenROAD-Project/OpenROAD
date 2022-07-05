@@ -69,24 +69,23 @@ class HierRTLMP {
               odb::dbDatabase* db,
               sta::dbSta* sta,
               utl::Logger* logger);
+    
+    // Top Level Interface Function
     // This function is the inferface for calling HierRTLMP
     // This function works as following:
-    // 1) Traverse the logical hierarchy, get all the statistics of each logical module in logical_module_map_
-    //    and associate each hard macro with its HardMacro object
+    // 1) Traverse the logical hierarchy, get all the statistics of each logical module 
+    //    in logical_module_map_ and associate each hard macro with its HardMacro object
     // 2) Create Bundled pins and treat each bundled pin as a cluster with no size
     //    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
-    // 3) 
-    
-    
+    // 3) Create physical hierarchy tree in a DFS manner (Postorder)
+    // 4) Place clusters and macros in a BFS manner (Preorder)
     void HierRTLMacroPlacer();
-    
-    // We may enable a list of interface functions for different options
+
+    // Interfaces functions for setting options
     // Hierarchical Macro Placement Related Options
     void SetGlobalFence(float fence_lx, float fence_ly,
-                        float fence_ux, float fence_ux);
+                        float fence_ux, float fence_uy);
     void SetHaloWidth(float halo_width);
-
-
     // Hierarchical Clustering Related Options
     void SetNumBundledIOsPerBoundary(int num_bundled_ios);
     void SetTopLevelClusterSize(int max_num_macro, int min_num_macro,
@@ -97,7 +96,6 @@ class HierRTLMP {
     void SetLargeNetThreshold(int large_net_threshold);
     void SetSignatureNetThreshold(int signature_net_threshold);
 
-
   private:
     ord::dbNetwork* network_ = nullptr;
     odb::dbDatabase* db_ = nullptr;
@@ -107,14 +105,14 @@ class HierRTLMP {
  
     // technology-related variables
     float dbu_ = 0.0;
-    
+   
+    // Parameters related to macro placement
     // User can specify a global region for some designs
     int global_fence_lx_ = -1;
     int global_fence_ly_ = -1;
     int global_fence_ux_ = -1;
     int global_fence_uy_ = -1;
 
-    // Parameters related to macro placement
     float halo_width_ = 0.0;
 
     // design-related variables
@@ -125,11 +123,13 @@ class HierRTLMP {
     int floorplan_uy_ = -1;
 
     // statistics of the design
+    // Here when we calculate macro area, we do not include halo_width
     Metric* metric_ = nullptr;
     // store the metric for each hierarchical logical module
     std::map<const odb::dbModule*, Metric*> logical_module_map_;
-    Metric* ComputeMetric(odb::dbModule* module); // DFS-manner function to traverse the
-                                                  // logical hierarchy
+    // DFS-manner function to traverse the logical hierarchy
+    Metric* ComputeMetric(odb::dbModule* module); 
+    // Calculate metric for cluster based its type
     void SetClusterMetric(Cluster* cluster);
     // associate each Macro to the HardMacro object
     std::map<odb::dbInst*, HardMacro*> hard_macro_map_;
@@ -161,48 +161,65 @@ class HierRTLMP {
     // We ignore global nets during clustering
     int large_net_threshold_ = 100; 
 
+    // Determine if the cluster is macro dominated
+    // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
+    // then the cluster is macro-dominated cluster
+    float macro_dominated_cluster_threshold_ = 0.01;
+
+
     // Physical hierarchy tree 
     int cluster_id_ = 0;
-    Cluster* root_cluster_ = nullptr; // root cluster does not correspond to any logical
-                                      // module, it's a special node in the physical hierachy tree
-                                      // Our physical hierarchy tree is as following:
-                                      //                  root_cluster_
-                                      //            /    /     |       \    \
-                                      //           L    T  top_design   B    T (L, T, B, T are clusters for bundled IOs)
-                                      //                  /    |    \
-                                      //                 A     B     C    (A, B, C are clusters for logical modules)
+    // root cluster does not correspond to top design 
+    // it's a special node in the physical hierachy tree
+    // Our physical hierarchy tree is as following:
+    //             root_cluster_ (top design)
+    //            /    /    /    \    \    \
+    //           L    T     M1   M2    B    T  (L, T, B, T are clusters for bundled IOs)
+    //                    /    \
+    //                   M3    M4     (M1, M2, M3 and M4 are clusters for logical modules
+    Cluster* root_cluster_ = nullptr; // cluster_id = 0 for root cluster
     std::map<int, Cluster*> cluster_map_;  // cluster_id, cluster
 
     // All the bundled IOs are children of root_cluster_
     // Bundled IO (Pads)
     // In the bundled IO clusters, we don't store the ios in their corresponding clusters
     // However, we store the instances in their corresponding clusters
-    std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_; // map IO pins to Pads (for designs with IO pads)
-    void MapIOPads(); // Map IOs to Pads (for designs with IO pads)
-    void CreateBundledIOs(); // create bundled IOs as clusters (for designs with IO pins or Pads)
+    // map IO pins to Pads (for designs with IO pads)
+    std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_; 
+    // Map IOs to Pads (for designs with IO pads)
+    void MapIOPads(); 
+    // create bundled IOs as clusters (for designs with IO pins or Pads)
+    void CreateBundledIOs(); 
 
+    // update the cluster_id property of insts in the cluster
     // Create physical hierarchy tree in a post-order DFS manner
-    void MultiLevelCluster(Cluster* parent);  // Recursive call for creating the tree
-    void SetInstProperty(Cluster* cluster); // update the cluster_id property of insts in the cluster
-    void SetInstProperty(odb::dbModule* module, int cluster_id); // update the cluster_id of inss in a logical module
+    void MultiLevelCluster(Cluster* parent); 
+    void SetInstProperty(Cluster* cluster); 
+    void SetInstProperty(odb::dbModule* module, int cluster_id, bool include_macro); 
     void BreakCluster(Cluster* parent);
-    void UpdateSubTree(Cluster* parent);
     void MergeClusters(std::vector<Cluster*>& candidate_clusters);
-    
+    void CalculateConnection();
+    void UpdateSubTree(Cluster* parent);
     // Break large flat clusters with MLPart 
     // A flat cluster does not have a logical module
     void BreakLargeFlatCluster(Cluster* cluster); 
-     
-    void CalculateConnection();
-    void PrintPhysicalHierarchyTree(Cluster* parent, int level = 0);
+   
+    // Traverse the physical hierarchy tree in a DFS manner
+    // Split macros and std cells in the leaf clusters
+    // In the normal operation, we call this function after
+    // creating the physical hierarchy tree
+    void LeafClusterStdCellHardMacroSep(Cluster* root_cluster);
+    // Map all the macros into their HardMacro objects for all the clusters
+    void MapMacroInCluster2HardMacro(Cluster* cluster);
+    // Get all the hard macros in a logical module
+    void GetHardMacros(odb::dbModule* module, std::vector<HardMacro*>& hard_macros);
 
-    // Metrics for dbModule and Cluster
-    // store the metric for each hierarchical logical module
-    // The ComputeMetric for cluster is based on
-    // the result of ComputeMetric for module
-    // So we need to compute the metrics for each
-    // module first
-    Metric ComputeMetric(Cluster* cluster);
-    Metric ComputeMetric(std::vector<Cluster*>& clusters);
+    // Print the physical hierachical tree in a DFS manner
+    void PrintPhysicalHierarchyTree(Cluster* parent, int level);
+
+    // Place macros in a hierarchical mode based on the above
+    // physcial hierarchical tree 
+    // The macro placement is done in a BFS manner (PreOrder)
+    // MultiLevelMacroPlacement(root_cluster_);
   };
 }  // namespace mpl

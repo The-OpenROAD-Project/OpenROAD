@@ -82,7 +82,6 @@ namespace mpl {
 // cells as our inputs.
 //*********************************************************************************
 
-
 // Basic utility functions
 
 // converion between dbu and micro
@@ -99,9 +98,19 @@ int Micro2Dbu(float metric, float dbu);
 enum PinAccess { B, L, T, R };
 
 
+class Metric;
+class HardMacro;
+class SoftMacro;
+class Cluster;
+
+
+// Define the type for clusters
+// StdCellCluster only has std cells. In the cluster type, it
+// only has leaf_std_cells_ and dbModules_
+// HardMacroCluster only has hard macros. In the cluster type,
+// it only has leaf_macros_;
+// MixedCluster has std cells and hard macros
 enum ClusterType { StdCellCluster, HardMacroCluster, MixedCluster};
-
-
 
 // Metric class for logical modules and clusters
 class Metric {
@@ -153,28 +162,37 @@ class Metric {
 // we convert the original gate-level netlist into a cluster-level netlist
 class Cluster {
   public:
+    // constructors
     Cluster() {  }
-    Cluster(int cluster_id);
+    Cluster(int cluster_id); // cluster name can be updated
     Cluster(int cluster_id, std::string cluster_name);
-    Cluster(Cluster& cluster);
+    // destructor
+    ~Cluster();  // we need to define this for remove pointers
 
+    // cluster id can not be changed
     int GetId() const;
+    // cluster name can be updated 
     const std::string GetName() const;
-    void SetName(std::string name);
-
+    void SetName(const std::string name);
+    // cluster type (default type = MixedCluster)
+    void SetClusterType(const ClusterType&  cluster_type);
+    const ClusterType GetClusterType() const;
+    
+    // Instances (Here we store dbModule to reduce memory)
     void AddDbModule(odb::dbModule* dbModule);
-    void AddLeafStdCell(odb:dbInst* leaf_std_cell);
+    void AddLeafStdCell(odb::dbInst* leaf_std_cell);
     void AddLeafMacro(odb::dbInst* leaf_macro);
     void SpecifyHardMacros(std::vector<HardMacro*>& hard_macros);
-    void ClearDbModules();
-    void ClearLeafStdCells();
-    void ClearLeafMacros();
-    void ClearHardMacros();
     const std::vector<odb::dbModule*> GetDbModules() const;
     const std::vector<odb::dbInst*> GetLeafStdCells() const;
     const std::vector<odb::dbInst*> GetLeafMacros() const;
     const std::vector<HardMacro*> GetHardMacros() const;
-
+    void ClearDbModules();
+    void ClearLeafStdCells();
+    void ClearLeafMacros();
+    void ClearHardMacros();
+    void CopyInstances(const Cluster& cluster); // only based on cluster type
+    
     // IO cluster
     // When you specify the io cluster, you must specify the postion
     // of this IO cluster
@@ -184,7 +202,9 @@ class Cluster {
     // Metric Support
     void SetMetric(const Metric& metric);
     const Metric GetMetric() const;
-    
+    int GetNumStdCell() const;
+    int GetNumMacro() const;
+
     // Physical location support
     float GetWidth() const;
     float GetHeight() const;
@@ -195,8 +215,8 @@ class Cluster {
     // Hierarchy Support
     void SetParent(Cluster* parent);
     void AddChild(Cluster* child);
-    void RemoveChild(Cluster* child);
-    void AddChildren(std::vector<Cluster*>& children);
+    void RemoveChild(const Cluster* child);
+    void AddChildren(const std::vector<Cluster*>& children);
     void RemoveChildren();
     Cluster* GetParent() const;
     std::set<Cluster*> GetChildren() const;
@@ -218,17 +238,20 @@ class Cluster {
 
     // Path synthesis support
     void SetPinAccess(int cluster_id, PinAccess pin_access);
-    PinAccess GetPinAccess(int cluster_id) const;
+    PinAccess GetPinAccess(int cluster_id);
  
     // Print Basic Information
     void PrintBasicInformation(utl::Logger* logger) const;
 
-    friend class HierRTLMP;
+    // Macro Placement Support
+    SoftMacro* GetSoftMacro() const;
+
   private:
     // Private Variables
     int id_ = -1;  // cluster id (a valid cluster id should be nonnegative)
-    std::string name_ = "";  //cluster name
-
+    std::string name_ = "";  // cluster name
+    ClusterType type_ = MixedCluster; // cluster type
+   
     // Instances in the cluster
     // the logical module included in the cluster 
     // dbModule is a object representing logical module in the OpenDB
@@ -273,11 +296,9 @@ class Cluster {
 class HardMacro {
   public:
     HardMacro() {  }
-
     // Create a macro with specified size
     // In this case, we model the pin position at the center of the macro
     HardMacro(float width, float height, const std::string name);
-
     // create a macro from dbInst
     // dbu is needed to convert the database unit to real size
     HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
@@ -289,11 +310,10 @@ class HardMacro {
 
     // Get Physical Information
     // Note that the default X and Y include halo_width
-    void SetPos(const std::pair<float, float> pos);
+    void SetLocation(const std::pair<float, float>& location);
     void SetX(float x);
     void SetY(float y);
-    
-    const std::pair<float, float> GetPos() const;
+    const std::pair<float, float> GetLocation() const;
     float GetX() const;
     float GetY() const;
     // The position of pins relative to the lower left of the instance
@@ -302,17 +322,19 @@ class HardMacro {
     // The position of pins relative to the origin of the canvas;
     float GetAbsPinX() const;
     float GetAbsPinY() const;
-
+    // width, height (include halo_width)
+    float GetWidth() const;
+    float GetHeight() const;
 
     // Note that the real X and Y does NOT include halo_width
-    void SetRealPos(const std::pair<float, float> pos);
+    void SetRealLocation(const std::pair<float, float>&  location);
     void SetRealX(float x);
     void SetRealY(float y);
-    
-    const std::pair<float, float> GetRealPos() const;
+    const std::pair<float, float> GetRealLocation() const;
     float GetRealX() const;
     float GetRealY() const;
-
+    float GetRealWidth() const;
+    float GetRealHeight() const;
     
     // Orientation support
     std::string GetOrientation() const;
@@ -321,10 +343,6 @@ class HardMacro {
     // axis = true, flip horizontally
     // axis = false, flip vertically
     void Flip(bool axis); 
-    
-    // Align Flag support
-    void SetAlignFlag(bool flag);
-    bool GetAlignFlag() const;
 
     // Interfaces with OpenDB
     odb::dbInst* GetInst() const;
@@ -334,7 +352,6 @@ class HardMacro {
     // The macro should be snaped to placement grids
     void UpdateDb(float pitch_x, float pitch_y);
     
-
   private:
     // We define x_, y_ and orientation_ here
     // to avoid keep updating OpenDB during simulated annealing
@@ -347,149 +364,68 @@ class HardMacro {
     std::string name_ = ""; // macro name
     odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
-    // we assume all the pins locate at the center of all pins\
+    // we assume all the pins locate at the center of all pins
     // related to the lower left corner
     float pin_x_ = 0.0; 
     float pin_y_ = 0.0; 
     
-    // Alignment support
-    // if the macro has been aligned related to other macros or boundaries
-    bool align_flag_ = false;
 
     // Interface for OpenDB
     // Except for the fake hard macros (pin access blockage or other blockage),
     // each HardMacro cooresponds to one macro
     odb::dbInst* inst_ = nullptr;
     float dbu_  = 0.0;  // DbuPerMicro
-}
+};
 
 
-// A hard macro have fixed width and height
-// User can specify a halo width for each macro
-// We specify the position of macros in terms (x, y, width, height)
-// Here (x, y) is the lower left corner of the macro
-class HardMacro {
-  public:
-    HardMacro() {  }
-
-    // Create a macro with specified size
-    // In this case, we model the pin position at the center of the macro
-    HardMacro(float width, float height, const std::string name);
-
-    // create a macro from dbInst
-    // dbu is needed to convert the database unit to real size
-    HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
- 
-    // overload the comparison operators
-    // based on area, width, height order
-    bool operator<(const HardMacro& macro) const;
-    bool operator==(const HardMacro& macro) const;
-
-    // Get Physical Information
-    // Note that the default X and Y include halo_width
-    void SetPos(const std::pair<float, float> pos);
-    void SetX(float x);
-    void SetY(float y);
-    
-    const std::pair<float, float> GetPos() const;
-    float GetX() const;
-    float GetY() const;
-    // The position of pins relative to the lower left of the instance
-    float GetPinX() const;
-    float GetPinY() const;
-    // The position of pins relative to the origin of the canvas;
-    float GetAbsPinX() const;
-    float GetAbsPinY() const;
-
-
-    // Note that the real X and Y does NOT include halo_width
-    void SetRealPos(const std::pair<float, float> pos);
-    void SetRealX(float x);
-    void SetRealY(float y);
-    
-    const std::pair<float, float> GetRealPos() const;
-    float GetRealX() const;
-    float GetRealY() const;
-
-    
-    // Orientation support
-    std::string GetOrientation() const;
-    // We do not allow rotation of macros
-    // This may violate the direction of metal layers
-    // axis = true, flip horizontally
-    // axis = false, flip vertically
-    void Flip(bool axis); 
-    
-    // Align Flag support
-    void SetAlignFlag(bool flag);
-    bool GetAlignFlag() const;
-
-    // Interfaces with OpenDB
-    odb::dbInst* GetInst() const;
-    const std::string GetName() const;
-    const std::string GetMasterName() const;
-    // update the location and orientation of the macro inst in OpenDB
-    // The macro should be snaped to placement grids
-    void UpdateDb(float pitch_x, float pitch_y);
-    
-
-  private:
-    // We define x_, y_ and orientation_ here
-    // to avoid keep updating OpenDB during simulated annealing
-    // Also enable the multi-threading
-    float x_ = 0.0;  // lower left corner
-    float y_ = 0.0;  // lower left corner
-    float halo_width_ = 0.0; // halo width
-    float width_ = 0.0;  // width_ = macro_width + 2 * halo_width
-    float height_ = 0.0; // height_ = macro_height + 2 * halo_width
-    std::string name_ = ""; // macro name
-    odb::dbOrientType orientation_ = odb::dbOrientType::R0;
-
-    // we assume all the pins locate at the center of all pins\
-    // related to the lower left corner
-    float pin_x_ = 0.0; 
-    float pin_y_ = 0.0; 
-    
-    // Alignment support
-    // if the macro has been aligned related to other macros or boundaries
-    bool align_flag_ = false;
-
-    // Interface for OpenDB
-    // Except for the fake hard macros (pin access blockage or other blockage),
-    // each HardMacro cooresponds to one macro
-    odb::dbInst* inst_ = nullptr;
-    float dbu_  = 0.0;  // DbuPerMicro
-}
-
-
-// We model each cluster in the netlist as a soft macro
-// A soft macro have fixed area and variable aspect ratios 
-// Here some soft macro only has one possible aspect ratio
-// We still think it's a soft macro. But we treat it as a 
-// HardMacroCluster (hard_macro_cluster_flag_ = true)
-// We specify the position of macros in terms (x, y, width, height)
+// We have three types of SoftMacros
+// Type 1:  a SoftMacro corresponding to a Cluster (MixedCluster, 
+// StdCellCluster, HardMacroCluster)
+// Type 2:  a SoftMacro corresponding to a IO cluster
+// Type 3:  a SoftMacro corresponding to a all kinds of blockages
 // Here (x, y) is the lower left corner of the soft macro
 // For all the soft macros, we model the bundled pin at the center
 // of the soft macro. So we do not need private variables for pin positions
+// SoftMacro is a physical abstraction for Cluster.
 class SoftMacro {
   public:
     SoftMacro() {  }
-    
     // Create a SoftMacro with specified size
-    // In this case, we think the cluster is a macro cluster with only one macro
+    // Create a SoftMacro representing the blockage
     SoftMacro(float width, float height, const std::string name);
-
     // Create a SoftMacro representing the IO cluster
-    SoftMacro(const std::pair<float, float> pos, const std::string name);
-
+    SoftMacro(const std::pair<float, float>& pos, const std::string name);
     // create a SoftMacro from a cluster
     SoftMacro(Cluster* cluster);
- 
-    // overload the comparison operators based on area
-    bool operator<(const SoftMacro& macro) const;
-    bool operator==(const SoftMacro& macro) const;
-    
-    friend class Cluster;
+
+    // name
+    const std::string GetName() const;
+    // Physical Information
+    void SetX(float x);
+    void SetY(float y);
+    void SetLocation(const std::pair<float, float>& location);
+    void SetWidth(float width);
+    void SetHeight(float height);
+    void SetArea(float area);
+    void SetAspectRatio(float aspect_ratio);
+    void ResizeHardMacroCluster(); 
+    void SetAspectRatios(const std::vector<std::pair<float, float> >& aspect_ratios);
+    float GetX() const;
+    float GetY() const;
+    float GetPinX() const;
+    float GetPinY() const;
+    const std::pair<float, float> GetLocation() const;
+    float GetWidth() const;
+    float GetHeight() const;
+    float GetArea() const;
+    // Num Macros
+    bool IsMacroCluster() const;
+    int GetNumMacro() const;
+    // Align Flag support
+    void SetAlignFlag(bool flag);
+    bool GetAlignFlag() const;
+    // cluster
+    Cluster* GetCluster() const;
 
   private:
     // We define x_, y_ and orientation_ here
@@ -501,9 +437,6 @@ class SoftMacro {
     float area_ = 0.0; // area of the standard cell cluster
     std::string name_ = ""; // macro name
     std::vector<std::pair<float, float> > aspect_ratios_; // possible aspect ratios
-    int num_macro_ = 0;
-    bool macro_clustrer_flag_ = false; // if the cluster only includes hard macros 
-    bool io_cluster_flag_ = false; // if the cluster is a bundled IOS or pads
 
     // Interfaces with hard macro
     Cluster* cluster_ = nullptr;
@@ -511,17 +444,21 @@ class SoftMacro {
     // Alignment support
     // if the cluster has been aligned related to other macro_cluster or boundaries
     bool align_flag_ = false;
-}
+};
 
 
-
-
-
-
-
-
-
-
+// In our netlist model, we only have two-pin nets
+struct BundledNet {
+  std::pair<int, int> terminals; // id for terminals
+                                 // here the id can be the id of hard macro or soft macro
+  float weight;                  // Number of bundled connections (can be timing-related weight)
+  BundledNet() {  }
+  BundledNet(const std::pair<int, int>& terminals, float weight) 
+  {
+    this->terminals = terminals;
+    this->weight = weight;
+  }
+};
 
 
 }  // namespace mpl

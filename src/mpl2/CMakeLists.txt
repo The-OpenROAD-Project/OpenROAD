@@ -43,10 +43,9 @@ target_sources(mpl2
   PRIVATE
     src/MakeMacroPlacer.cpp
     src/rtl_mp.cpp
-    src/pin_alignment.cpp
-    src/block_placement.cpp
-    src/shape_engine.cpp
-    src/util.cpp
+    src/hier_rtlmp.cpp
+    src/object.cpp
+    src/macro_placement.cpp
 )
 
 messages(
