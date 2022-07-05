@@ -1019,12 +1019,26 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             xLoc = *(xLocs.begin());
           } else {
             xLoc = (xl(pinRect) + xh(pinRect)) / 2;
+            frCoord manuGrid = getTech()->getManufacturingGrid();
+            if (xLoc % manuGrid != 0) {
+              xLoc = manuGrid * std::floor(static_cast<float>(xLoc) / manuGrid);
+              if (xLoc < routeBox.ll().x()) {
+                xLoc = manuGrid * std::ceil(static_cast<float>(xLoc) / manuGrid);
+              }
+            }
           }
           // xLoc
           if (!yLocs.empty()) {
             yLoc = *(yLocs.begin());
           } else {
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
+            frCoord manuGrid = getTech()->getManufacturingGrid();
+            if (yLoc % manuGrid != 0) {
+              yLoc = manuGrid * std::round(static_cast<float>(yLoc) / manuGrid);
+              if (yLoc < routeBox.ll().y()) {
+                yLoc = manuGrid * std::ceil(static_cast<float>(yLoc) / manuGrid);
+              }
+            }
           }
           if (restrictedRouting)
             specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
