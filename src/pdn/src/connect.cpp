@@ -469,6 +469,7 @@ void Connect::makeVia(odb::dbSWire* wire,
       = std::make_pair(intersection.dx(), intersection.dy());
   auto& via = vias_[via_index];
 
+  bool skip_caching = false;
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
     std::vector<ViaLayerRects> stack_rects;
@@ -498,23 +499,27 @@ void Connect::makeVia(odb::dbSWire* wire,
       auto* l0 = layers[i - 1];
       auto* l1 = layers[i];
 
-      ViaGenerator::Constraint lower_constraint{false, false};
+      ViaGenerator::Constraint lower_constraint{false, false, true};
       if (lower->getLayer() == l0) {
         if (!lower->isModifiable() || lower->hasTermConnections()) {
           // lower is not modifiable to all sides must fit
+          skip_caching = true;
           lower_constraint.must_fit_x = true;
           lower_constraint.must_fit_y = true;
+          lower_constraint.intersection_only = false;
         } else {
           lower_constraint.must_fit_x = !lower->isHorizontal();
           lower_constraint.must_fit_y = !lower->isVertical();
         }
       }
-      ViaGenerator::Constraint upper_constraint{false, false};
+      ViaGenerator::Constraint upper_constraint{false, false, true};
       if (upper->getLayer() == l1) {
         if (!upper->isModifiable() || upper->hasTermConnections()) {
           // upper is not modifiable to all sides must fit
+          skip_caching = true;
           upper_constraint.must_fit_x = true;
           upper_constraint.must_fit_y = true;
+          upper_constraint.intersection_only = false;
         } else {
           upper_constraint.must_fit_x = !upper->isHorizontal();
           upper_constraint.must_fit_y = !upper->isVertical();
@@ -556,6 +561,10 @@ void Connect::makeVia(odb::dbSWire* wire,
   }
 
   shapes = via->generate(wire->getBlock(), wire, type, x, y);
+
+  if (skip_caching) {
+    via = nullptr;
+  }
 }
 
 DbVia* Connect::generateDbVia(
@@ -662,6 +671,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                 upper_constraint);
 
         if (!rule->isSetupValid(lower, upper)) {
+          debugPrint(grid_->getLogger(),
+                     utl::PDN,
+                     "Via",
+                     3,
+                     "Generate via rule deamed not valid: {}",
+                     rule->getName());
           continue;
         }
 
@@ -698,6 +713,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                                                upper_constraint);
 
         if (!rule->isSetupValid(lower, upper)) {
+          debugPrint(grid_->getLogger(),
+                     utl::PDN,
+                     "Via",
+                     3,
+                     "Tech via rule deamed not valid: {}",
+                     rule->getName());
           continue;
         }
 

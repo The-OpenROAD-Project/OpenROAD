@@ -364,7 +364,7 @@ OpenRoad::writeDef(const char *filename, string version)
 
 void
 OpenRoad::writeCdl(const char *outFilename,
-                   const char *mastersFilename,
+                   const std::vector<const char*>& mastersFilenames,
                    bool includeFillers)
 {
   odb::dbChip *chip = db_->getChip();
@@ -374,7 +374,7 @@ OpenRoad::writeCdl(const char *outFilename,
       odb::cdl::writeCdl(getLogger(),
                          block,
                          outFilename,
-                         mastersFilename,
+                         mastersFilenames,
                          includeFillers);
     }
   }

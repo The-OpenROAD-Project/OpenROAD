@@ -204,7 +204,7 @@ public:
 		string version);
   
   void writeCdl(const char *outFilename,
-                const char *mastersFilename,
+                const std::vector<const char*>& mastersFilenames,
                 bool includeFillers);
 
   void readVerilog(const char *filename);

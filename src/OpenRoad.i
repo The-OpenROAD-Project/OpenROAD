@@ -48,6 +48,8 @@
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 
+#include <vector>
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ helper functions used by the interface functions.
@@ -256,6 +258,24 @@ using odb::dbTech;
   $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
+%typemap(in) vector<const char*> * {
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, $input, &argc, &argv) == TCL_OK) {
+    vector<const char*>* seq = new vector<const char*>;
+    for (int i = 0; i < argc; i++) {
+      int length;
+      const char* str = Tcl_GetStringFromObj(argv[i], &length);
+      seq->push_back(str);
+    }
+    $1 = seq;
+  }
+  else {
+    $1 = nullptr;
+  }
+}
+
 %typemap(in) utl::ToolId {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
@@ -308,11 +328,11 @@ write_def_cmd(const char *filename,
 
 void 
 write_cdl_cmd(const char *outFilename,
-              const char *mastersFilename,
+              vector<const char*>* mastersFilenames,
               bool includeFillers)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeCdl(outFilename, mastersFilename, includeFillers);
+  ord->writeCdl(outFilename, *mastersFilenames, includeFillers);
 }
 
 void

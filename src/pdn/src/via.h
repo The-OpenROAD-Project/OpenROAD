@@ -406,6 +406,7 @@ class ViaGenerator
   struct Constraint {
     bool must_fit_x;
     bool must_fit_y;
+    bool intersection_only;
   };
 
   ViaGenerator(utl::Logger* logger,
