@@ -186,11 +186,20 @@ Opendp::gapFillers(int gap,
 void Opendp::removeFillers()
 {
   block_ = db_->getChip()->getBlock();
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
-      odb::dbInst::destroy(inst);
+  for (odb::dbInst* db_inst : block_->getInsts()) {
+    if (isFiller(db_inst)) {
+      odb::dbInst::destroy(db_inst);
     }
   }
+}
+
+bool 
+Opendp::isFiller(odb::dbInst *db_inst)
+{
+  dbMaster *db_master = db_inst->getMaster();
+  return db_master->getType() == odb::dbMasterType::CORE_SPACER
+    // Filter spacer cells used as tapcells.
+    && db_inst->getPlacementStatus() != odb::dbPlacementStatus::LOCKED;
 }
 
 }  // namespace opendp

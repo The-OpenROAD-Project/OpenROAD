@@ -387,6 +387,8 @@ private:
   void placeRowFillers(int row,
                        const char* prefix,
                        dbMasterSeq *filler_masters);
+  bool isFiller(odb::dbInst *db_inst);
+
   const char *gridInstName(int row,
                            int col);
 
