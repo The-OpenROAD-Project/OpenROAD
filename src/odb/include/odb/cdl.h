@@ -52,7 +52,7 @@ class cdl
   static bool writeCdl(utl::Logger* logger,
                        dbBlock* block,
                        const char* outFileName,
-                       const char* mastersFileName,
+                       const std::vector<const char*>& mastersFileNames,
                        bool includeFillers = 0);
 };
 

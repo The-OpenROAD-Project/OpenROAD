@@ -125,7 +125,9 @@ repair_antennas [diode_cell/diode_pin] [-iterations iterations]
 The repair_antenna command checks the global routing for antenna
 violations and repairs the violations by inserting diodes near the
 gates of the violating nets.  By default the command runs only one
-iteration to repair antennas.
+iteration to repair antennas. Filler instances added by the
+`filler_placement` command should NOT be in the database when
+`repair_antennas` is called.
 
 See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
 Fixing Process Antenna Violations" for a description of antenna

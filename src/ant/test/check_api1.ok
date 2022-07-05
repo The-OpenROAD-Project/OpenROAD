@@ -9,7 +9,6 @@
 [INFO ODB-0133]     Created 2 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: sw130_random.def
 Net net50
-  _264_/B2 (sky130_fd_sc_ms__a222oi_1)
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
     PAR:  419.64* Ratio:  400.00 (S.Area)

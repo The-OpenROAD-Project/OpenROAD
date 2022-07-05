@@ -85,7 +85,7 @@ class dbNetwork;
 namespace grt {
 
 class FastRouteCore;
-class AntennaRepair;
+class RepairAntennas;
 class Grid;
 class Pin;
 class Net;
@@ -405,12 +405,12 @@ class GlobalRouter
 
   std::set<odb::dbNet*> dirty_nets_;
 
-  AntennaRepair *antenna_repair_;
+  RepairAntennas *repair_antennas_;
   std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
-  friend class AntennaRepair;
+  friend class RepairAntennas;
 };
 
 std::string getITermName(odb::dbITerm* iterm);

@@ -261,7 +261,7 @@ class LayoutViewer : public QWidget
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  int depth);
-  void drawRegionOutlines(QPainter* painter);
+  void drawRegions(QPainter* painter);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
