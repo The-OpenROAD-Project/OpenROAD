@@ -411,8 +411,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(tracks_group_);
 
   // Misc group
-  auto misc = makeParentItem(
-      misc_group_, "Misc", root, Qt::Unchecked);
+  auto misc = makeParentItem(misc_group_, "Misc", root, Qt::Unchecked, true);
 
   instance_name_font_ = QApplication::font(); // use default font
   instance_name_color_ = Qt::yellow;
@@ -427,10 +426,12 @@ DisplayControls::DisplayControls(QWidget* parent)
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
   });
 
+  region_color_ = QColor(0x70, 0x70, 0x70, 0x70);
+  region_pattern_ = Qt::SolidPattern;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
-  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked);
+  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked, true, region_color_);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
@@ -594,9 +595,11 @@ void DisplayControls::readSettings(QSettings* settings)
   getColor(rows_, row_color_, "row");
   getColor(rulers_, ruler_color_, "ruler");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
+  getColor(misc_.regions, region_color_, "region");
   settings->endGroup();
   settings->beginGroup("pattern");
   getPattern(placement_blockage_pattern_, "blockages_placement");
+  getPattern(region_pattern_, "region");
   settings->endGroup();
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
@@ -658,10 +661,12 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("row", row_color_);
   settings->setValue("ruler", ruler_color_);
   settings->setValue("instance_name", instance_name_color_);
+  settings->setValue("region", region_color_);
   settings->endGroup();
   settings->beginGroup("pattern");
   // save pattern as int
   settings->setValue("blockages_placement", static_cast<int>(placement_blockage_pattern_));
+  settings->setValue("region", static_cast<int>(region_pattern_));
   settings->endGroup();
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
@@ -728,7 +733,9 @@ void DisplayControls::toggleAllChildren(bool checked,
   Qt::CheckState state = checked ? Qt::Checked : Qt::Unchecked;
   for (int row = 0; row < parent->rowCount(); ++row) {
     auto child = parent->child(row, column);
-    child->setCheckState(state);
+    if (child) {
+      child->setCheckState(state);
+    }
   }
   emit changed();
 }
@@ -745,9 +752,12 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   bool all_checked = true;
 
   for (int row = 0; row < parent->rowCount(); ++row) {
-    bool checked = parent->child(row, column)->checkState() == Qt::Checked;
-    at_least_one_checked |= checked;
-    all_checked &= checked;
+    auto child = parent->child(row, column);
+    if (child) {
+      bool checked = child->checkState() == Qt::Checked;
+      at_least_one_checked |= checked;
+      all_checked &= checked;
+    }
   }
 
   ignore_callback_ = true;
@@ -892,6 +902,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
+    } else if (color_item == misc_.regions.swatch) {
+      item_color = &region_color_;
+      item_pattern = &region_pattern_;
     } else if (color_item == instance_shapes_.names.swatch) {
       item_color = &instance_name_color_;
     } else if (color_item == rows_.swatch) {
@@ -1233,6 +1246,16 @@ Qt::BrushStyle DisplayControls::placementBlockagePattern()
   return placement_blockage_pattern_;
 }
 
+QColor DisplayControls::regionColor()
+{
+  return region_color_;
+}
+
+Qt::BrushStyle DisplayControls::regionPattern()
+{
+  return region_pattern_;
+}
+
 QColor DisplayControls::instanceNameColor()
 {
   return instance_name_color_;
@@ -1442,6 +1465,11 @@ bool DisplayControls::areObstructionsVisible()
 bool DisplayControls::areObstructionsSelectable()
 {
   return isRowSelectable(&blockages_.obstructions);
+}
+
+bool DisplayControls::areRegionsSelectable() const
+{
+  return isRowSelectable(&misc_.regions);
 }
 
 bool DisplayControls::areRowsVisible()

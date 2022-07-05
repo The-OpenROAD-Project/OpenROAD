@@ -191,6 +191,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   QColor placementBlockageColor() override;
   Qt::BrushStyle placementBlockagePattern() override;
+  QColor regionColor() override;
+  Qt::BrushStyle regionPattern() override;
   QColor instanceNameColor() override;
   QFont instanceNameFont() override;
   QColor rowColor() override;
@@ -226,6 +228,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+  bool areRegionsSelectable() const override;
   bool isManufacturingGridVisible() const override;
 
   bool isModuleView() const override;
@@ -483,6 +486,9 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont ruler_font_;
 
   QColor row_color_;
+
+  QColor region_color_;
+  Qt::BrushStyle region_pattern_;
 
   QFont pin_markers_font_;
 
