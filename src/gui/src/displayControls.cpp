@@ -426,7 +426,7 @@ DisplayControls::DisplayControls(QWidget* parent)
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
   });
 
-  region_color_ = QColor(0x70, 0x70, 0x70, 0x70);
+  region_color_ = QColor(0x70, 0x70, 0x70, 0x70); // semi-transparent mid-gray
   region_pattern_ = Qt::SolidPattern;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
