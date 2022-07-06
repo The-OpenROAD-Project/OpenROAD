@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,83 +32,56 @@
 
 #pragma once
 
-#include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "odb.h"
+#include <map>
+#include <set>
+
+#include "shape.h"
 
 namespace odb {
-
-class _dbSWire;
-class _dbNet;
-class _dbSBox;
-class dbDiff;
-
-struct _dbSWireFlags
-{
-  dbWireType::Value _wire_type : 6;
-  uint _spare_bits : 26;
-};
-
-class _dbSWire : public _dbObject
-{
- public:
-  _dbSWireFlags _flags;
-  dbId<_dbNet> _net;
-  dbId<_dbNet> _shield;
-  dbId<_dbSBox> _wires;
-  dbId<_dbSWire> _next_swire;
-
-  _dbSWire(_dbDatabase*)
-  {
-    _flags._wire_type = dbWireType::NONE;
-    _flags._spare_bits = 0;
-  }
-
-  _dbSWire(_dbDatabase*, const _dbSWire& s)
-      : _flags(s._flags),
-        _net(s._net),
-        _shield(s._shield),
-        _wires(s._wires),
-        _next_swire(s._next_swire)
-  {
-  }
-
-  ~_dbSWire() {}
-
-  void addSBox(_dbSBox* box);
-  void removeSBox(_dbSBox* box);
-
-  bool operator==(const _dbSWire& rhs) const;
-  bool operator!=(const _dbSWire& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbSWire& rhs) const;
-
-  void differences(dbDiff& diff, const char* field, const _dbSWire& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-};
-
-inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
-{
-  uint* bit_field = (uint*) &wire._flags;
-  stream << *bit_field;
-  stream << wire._net;
-  stream << wire._shield;
-  stream << wire._wires;
-  stream << wire._next_swire;
-
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbSWire& wire)
-{
-  uint* bit_field = (uint*) &wire._flags;
-  stream >> *bit_field;
-  stream >> wire._net;
-  stream >> wire._shield;
-  stream >> wire._wires;
-  stream >> wire._next_swire;
-
-  return stream;
-}
-
+class dbBlock;
+class dbNet;
+class dbSBox;
+class dbTechLayer;
 }  // namespace odb
+
+namespace utl {
+class Logger;
+}
+
+namespace pdn {
+
+class ViaRepair
+{
+  using ViaValue = std::pair<Box, odb::dbSBox*>;
+  using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
+  using LayerViaTree = std::map<odb::dbTechLayer*, ViaTree>;
+
+ public:
+  ViaRepair(utl::Logger* logger,
+            const std::set<odb::dbNet*>& nets);
+
+  void repair();
+
+  void report() const;
+
+ private:
+  utl::Logger* logger_;
+  std::set<odb::dbNet*> nets_;
+
+  bool use_obs_;
+  bool use_nets_;
+  bool use_inst_;
+
+  std::map<odb::dbTechLayer*, int> via_count_;
+  std::map<odb::dbTechLayer*, int> removal_count_;
+
+  LayerViaTree collectVias();
+
+  using ObsRect = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
+
+  ObsRect collectBlockObstructions(odb::dbBlock* block);
+  ObsRect collectInstanceObstructions(odb::dbBlock* block);
+  ObsRect collectNetObstructions(odb::dbBlock* block);
+};
+
+}  // namespace pdn

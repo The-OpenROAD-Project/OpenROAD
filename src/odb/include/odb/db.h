@@ -753,6 +753,11 @@ class dbSBox : public dbBox
   /// This function translates any dbBox whichs is part of a block
   ///
   static dbSBox* getSBox(dbBlock* block, uint oid);
+
+  ///
+  /// Destroy a SBox.
+  ///
+  static void destroy(dbSBox* box);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

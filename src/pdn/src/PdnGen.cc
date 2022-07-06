@@ -49,6 +49,7 @@
 #include "rings.h"
 #include "straps.h"
 #include "utl/Logger.h"
+#include "via_repair.h"
 
 namespace pdn {
 
@@ -955,6 +956,13 @@ void PdnGen::checkSetup() const
   for (auto* domain : getDomains()) {
     domain->checkSetup();
   }
+}
+
+void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
+{
+  ViaRepair repair(logger_, nets);
+  repair.repair();
+  repair.report();
 }
 
 }  // namespace pdn

@@ -707,6 +707,43 @@ proc add_pdn_connect {args} {
                     $dont_use
 }
 
+sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
+                                         -all
+}
+proc repair_pdn_vias { args } {
+  sta::parse_key_args "repair_pdn_vias" args \
+    keys {-net} \
+    flags {-all}
+
+  sta::check_argc_eq0 "repair_pdn_vias" $args
+  pdn::check_design_state "repair_pdn_vias"
+
+  if {[info exists keys(-net)] && [info exists flags(-all)]} {
+    utl::error PDN 1191 "Cannot use both -net and -all arguments."
+  }
+  if {![info exists keys(-net)] && ![info exists flags(-all)]} {
+    utl::error PDN 1192 "Must use either -net or -all arguments."
+  }
+
+  set nets []
+  if {[info exists keys(-net)]} {
+    set net [[ord::get_db_block] findNet $keys(-net)]
+    if {$net == "NULL"} {
+      utl::error PDN 1190 "Unable to find net: $keys(-net)"
+    }
+    lappend nets $net
+  }
+  if {[info exists flags(-all)]} {
+    foreach net [[ord::get_db_block] getNets] {
+      if {[$net getSigType] == "POWER" || [$net getSigType] == "GROUND"} {
+        lappend nets $net
+      }
+    }
+  }
+
+  pdn::repair_pdn_vias $nets
+}
+
 # conversion utility
 sta::define_hidden_cmd_args  "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {

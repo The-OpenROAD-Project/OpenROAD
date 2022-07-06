@@ -147,6 +147,7 @@ class dbBlockCallBackObj
   virtual void inDbSWireCreate(dbSWire*) {}
   virtual void inDbSWireDestroy(dbSWire*) {}
   virtual void inDbSWireAddSBox(dbSBox*) {}
+  virtual void inDbSWireRemoveSBox(dbSBox*) {}
   virtual void inDbSWirePreDestroySBoxes(dbSWire*) {}
   virtual void inDbSWirePostDestroySBoxes(dbSWire*) {}
   // dbSWire End
