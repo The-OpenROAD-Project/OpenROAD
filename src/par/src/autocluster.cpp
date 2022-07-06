@@ -2057,12 +2057,13 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   map_iter = cluster_map_.begin();
   const float dbu = db_->getTech()->getDbUnitsPerMicron();
   while (map_iter != cluster_map_.end()) {
-    const float area = map_iter->second->calculateArea(network_);
+    const Cluster* cluster = map_iter->second;
+    const float area = cluster->calculateArea(network_);
     if (area != 0.0) {
-      output_file << "cluster: " << map_iter->second->getName() << endl;
+      output_file << "cluster: " << cluster->getName() << endl;
       output_file << "area:  " << area << endl;
-      if (map_iter->second->getNumMacro() > 0) {
-        vector<dbInst*> macro_vec = map_iter->second->getMacros();
+      if (cluster->getNumMacro() > 0) {
+        vector<dbInst*> macro_vec = cluster->getMacros();
         for (int i = 0; i < macro_vec.size(); i++) {
           dbMaster* master = macro_vec[i]->getMaster();
           const float width = master->getWidth() / dbu;
@@ -2072,6 +2073,14 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
         }
       }
       output_file << endl;
+
+      auto group = odb::dbGroup::create(block_, cluster->getName().c_str());
+      for (auto inst : cluster->getMacros()) {
+        group->addInst(inst);
+      }
+      for (auto inst : cluster->getInsts()) {
+        group->addInst(inst);
+      }
     }
     map_iter++;
   }
