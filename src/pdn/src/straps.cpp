@@ -694,6 +694,15 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
     }
   }
 
+  // remove pins that do not form a complete ring
+  auto remove_itr = std::remove_if(pins.begin(), pins.end(), [master](odb::dbBox* box) {
+    const odb::Rect rect = box->getBox();
+    const bool matches_x = rect.dx() == master->getWidth() || rect.dx() == master->getHeight();
+    const bool matches_y = rect.dy() == master->getWidth() || rect.dy() == master->getHeight();
+    return !matches_x && !matches_y;
+  });
+  pins.erase(remove_itr, pins.end());
+
   if (pad_edge_ == odb::dbDirection::EAST || pad_edge_ == odb::dbDirection::WEST) {
     setDirection(odb::dbTechLayerDir::HORIZONTAL);
   } else if (pad_edge_ == odb::dbDirection::SOUTH || pad_edge_ == odb::dbDirection::NORTH) {
@@ -973,7 +982,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_sha
   const int inst_width = is_horizontal ? inst_rect.dy() : inst_rect.dx();
   const int inst_offset = is_horizontal ? inst_rect.yMin() : inst_rect.xMin();
 
-  const int max_width = inst_width / (2 * straps.size() + 1);
+  const int max_width = inst_width / (2 * (straps.size() + 1));
   TechLayer layer(getLayer());
   const int target_width = layer.snapToManufacturingGrid(max_width, false);
   if (target_width < layer.getMinWidth()) {
@@ -988,7 +997,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_sha
     return;
   }
   setWidth(std::min(target_width, layer.getMaxWidth()));
-  setSpacing(layer.getSpacing(getWidth(), std::numeric_limits<int>::max()));
+  setSpacing(std::max(getWidth(), layer.getSpacing(getWidth())));
   Straps::checkLayerSpecifications();
 
   const int target_offset = layer.snapToManufacturingGrid(inst_offset + getSpacing() + getWidth() / 2, false);

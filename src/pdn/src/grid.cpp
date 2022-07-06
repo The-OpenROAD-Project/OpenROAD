@@ -745,7 +745,7 @@ const std::vector<GridComponent*> Grid::getGridComponents() const
 }
 
 void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                     bool do_pins) const
+                     bool do_pins, const ShapeTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
   std::vector<ViaPtr> vias;
@@ -768,7 +768,7 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
            < std::tie(r_low_level, r_high_level, r_area);
   });
   for (const auto& via : vias) {
-    via->writeToDb(net_map.at(via->getNet()), getBlock());
+    via->writeToDb(net_map.at(via->getNet()), getBlock(), obstructions);
   }
   for (const auto& connect : connect_) {
     connect->printViaReport();

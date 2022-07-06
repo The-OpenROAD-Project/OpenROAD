@@ -836,9 +836,23 @@ void PdnGen::writeToDb(bool add_pins) const
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 
+  // collect all the SWires from the block
+  auto* block = db_->getChip()->getBlock();
+  ShapeTreeMap obstructions;
+  for (auto* net : block->getNets()) {
+    ShapeTreeMap net_shapes;
+    Shape::populateMapFromDb(net, net_shapes);
+    for (const auto& [layer, net_obs_layer] : net_shapes) {
+      auto& obs_layer = obstructions[layer];
+      for (const auto& [box, shape] : net_obs_layer) {
+        obs_layer.insert({shape->getObstructionBox(), shape});
+      }
+    }
+  }
+
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      grid->writeToDb(net_map, add_pins);
+      grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
     }
   }
