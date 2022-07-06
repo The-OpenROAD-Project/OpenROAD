@@ -3413,3 +3413,17 @@ void FlexDRWorker::init(const frDesign* design)
   setGCWorker(std::move(gcWorker));
   initMazeCost(design);
 }
+
+frCoord FlexDRWorker::snapCoordToManufacturingGrid(const frCoord coord, const int lowerLeftCoord)
+{
+  frCoord manuGrid = getTech()->getManufacturingGrid();
+  frCoord onGridCoord = coord;
+  if (coord % manuGrid != 0) {
+    onGridCoord = manuGrid * std::floor(static_cast<float>(coord) / manuGrid);
+    if (onGridCoord < lowerLeftCoord) {
+      onGridCoord = manuGrid * std::ceil(static_cast<float>(coord) / manuGrid);
+    }
+  }
+
+  return onGridCoord;
+}
