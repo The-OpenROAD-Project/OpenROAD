@@ -1019,26 +1019,14 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             xLoc = *(xLocs.begin());
           } else {
             xLoc = (xl(pinRect) + xh(pinRect)) / 2;
-            frCoord manuGrid = getTech()->getManufacturingGrid();
-            if (xLoc % manuGrid != 0) {
-              xLoc = manuGrid * std::floor(static_cast<float>(xLoc) / manuGrid);
-              if (xLoc < routeBox.ll().x()) {
-                xLoc = manuGrid * std::ceil(static_cast<float>(xLoc) / manuGrid);
-              }
-            }
+            xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
           }
           // xLoc
           if (!yLocs.empty()) {
             yLoc = *(yLocs.begin());
           } else {
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
-            frCoord manuGrid = getTech()->getManufacturingGrid();
-            if (yLoc % manuGrid != 0) {
-              yLoc = manuGrid * std::round(static_cast<float>(yLoc) / manuGrid);
-              if (yLoc < routeBox.ll().y()) {
-                yLoc = manuGrid * std::ceil(static_cast<float>(yLoc) / manuGrid);
-              }
-            }
+            yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
           }
           if (restrictedRouting)
             specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
@@ -1332,14 +1320,18 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             if (instPinCenterX >= xl(routeRect)
                 && instPinCenterX < xh(routeRect)) {
               xLoc = instPinCenterX;
+              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
             } else {
               xLoc = pinCenterX;
+              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
             }
             if (instPinCenterY >= yl(routeRect)
                 && instPinCenterY < yh(routeRect)) {
               yLoc = instPinCenterY;
+              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
             } else {
               yLoc = pinCenterY;
+              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
             }
 
             if (!isInitDR() || xLoc != xh(routeRect) || yLoc != yh(routeRect)) {
