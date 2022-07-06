@@ -1,0 +1,84 @@
+#define BOOST_TEST_MODULE TestBalancer
+
+#include <boost/asio.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread/thread.hpp>
+#include <string>
+
+#include "LoadBalancer.h"
+#include "dst/Distributed.h"
+#include "dst/JobMessage.h"
+#include "helper.cpp"
+#include "stubs.cpp"
+#include "utl/Logger.h"
+
+using namespace dst;
+using namespace std;
+
+BOOST_AUTO_TEST_SUITE(test_suite)
+
+BOOST_AUTO_TEST_CASE(test_default)
+{
+  utl::Logger* logger = new utl::Logger();
+  Distributed* dist = new Distributed(logger);
+  string local_ip = "127.0.0.1";
+  unsigned short balancer_port = 5555;
+  unsigned short worker_port_1 = 5556;
+  unsigned short worker_port_2 = 5557;
+  unsigned short worker_port_3 = 5558;
+  unsigned short worker_port_4 = 5559;
+  asio::io_service io_service;
+  LoadBalancer* balancer = new LoadBalancer(
+      dist, io_service, logger, local_ip.c_str(), "", balancer_port);
+
+  // Checking simple interface functions
+  balancer->addWorker(local_ip, worker_port_1);
+  balancer->addWorker(local_ip, worker_port_2);
+  balancer->updateWorker(asio::ip::address::from_string(local_ip),
+                         worker_port_1);
+  asio::ip::address address;
+  unsigned short port;
+  balancer->getNextWorker(address, port);
+  BOOST_TEST(address.to_string() == local_ip);
+  BOOST_TEST(port == worker_port_2);
+
+  // Checking if balancer is up and responding
+  boost::thread t(boost::bind(&asio::io_service::run, &io_service));
+  JobMessage msg(JobMessage::JobType::BALANCER);
+  JobMessage result;
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result)
+             == true);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+
+  // Checking if a balancer can relay a message to a worker and send the result
+  // correctly note currently worker 2, which is not running, is the next
+  // worker. That should be handled correctly by balancer.
+  dist->addCallBack(new HelperCallBack(dist));
+  dist->runWorker(local_ip.c_str(), worker_port_1, true);
+  msg.setJobType(JobMessage::JobType::ROUTING);
+  result.setJobType(JobMessage::JobType::NONE);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result)
+             == true);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+
+  // Checking broadcast message relaying and handling.
+  JobMessage broadcast_msg(JobMessage::JobType::ROUTING,
+                           JobMessage::MessageType::BROADCAST);
+  result.setJobType(JobMessage::JobType::NONE);
+  balancer->addWorker(local_ip, worker_port_3);
+  BOOST_TEST(
+      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result)
+      == true);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::ERROR);
+
+  // Now worker 3 shall have been removed and relaying messages to the up
+  // workers shall work correctly.
+  balancer->addWorker(local_ip, worker_port_4);
+  dist->runWorker(local_ip.c_str(), worker_port_4, true);
+  result.setJobType(JobMessage::JobType::NONE);
+  BOOST_TEST(
+      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result)
+      == true);
+  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+}
+BOOST_AUTO_TEST_SUITE_END()
