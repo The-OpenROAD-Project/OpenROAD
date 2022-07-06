@@ -1019,12 +1019,14 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             xLoc = *(xLocs.begin());
           } else {
             xLoc = (xl(pinRect) + xh(pinRect)) / 2;
+            xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
           }
           // xLoc
           if (!yLocs.empty()) {
             yLoc = *(yLocs.begin());
           } else {
             yLoc = (yl(pinRect) + yh(pinRect)) / 2;
+            yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
           }
           if (restrictedRouting)
             specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
@@ -1318,14 +1320,18 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
             if (instPinCenterX >= xl(routeRect)
                 && instPinCenterX < xh(routeRect)) {
               xLoc = instPinCenterX;
+              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
             } else {
               xLoc = pinCenterX;
+              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
             }
             if (instPinCenterY >= yl(routeRect)
                 && instPinCenterY < yh(routeRect)) {
               yLoc = instPinCenterY;
+              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
             } else {
               yLoc = pinCenterY;
+              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
             }
 
             if (!isInitDR() || xLoc != xh(routeRect) || yLoc != yh(routeRect)) {
@@ -3398,4 +3404,18 @@ void FlexDRWorker::init(const frDesign* design)
   gcWorker->setEnableSurgicalFix(true);
   setGCWorker(std::move(gcWorker));
   initMazeCost(design);
+}
+
+frCoord FlexDRWorker::snapCoordToManufacturingGrid(const frCoord coord, const int lowerLeftCoord)
+{
+  frCoord manuGrid = getTech()->getManufacturingGrid();
+  frCoord onGridCoord = coord;
+  if (coord % manuGrid != 0) {
+    onGridCoord = manuGrid * std::floor(static_cast<float>(coord) / manuGrid);
+    if (onGridCoord < lowerLeftCoord) {
+      onGridCoord = manuGrid * std::ceil(static_cast<float>(coord) / manuGrid);
+    }
+  }
+
+  return onGridCoord;
 }
