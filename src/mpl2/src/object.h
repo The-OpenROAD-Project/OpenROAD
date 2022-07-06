@@ -41,6 +41,8 @@
 #include <queue>
 #include <string>
 #include <vector>
+#include <random>
+
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -408,7 +410,8 @@ class SoftMacro {
     void SetHeight(float height);
     void SetArea(float area);
     void SetAspectRatio(float aspect_ratio);
-    void ResizeHardMacroCluster(); 
+    void ResizeRandomly(std::uniform_real_distribution<float>& distribution,
+                        std::mt19937& generator);
     void SetAspectRatios(const std::vector<std::pair<float, float> >& aspect_ratios);
     float GetX() const;
     float GetY() const;
@@ -447,6 +450,8 @@ class SoftMacro {
 };
 
 
+
+
 // In our netlist model, we only have two-pin nets
 struct BundledNet {
   std::pair<int, int> terminals; // id for terminals
@@ -459,6 +464,28 @@ struct BundledNet {
     this->weight = weight;
   }
 };
+
+// Here we redefine the Rect class 
+// odb::Rect use database unit
+// Rect class use float type for Micro unit
+struct Rect {
+  float lx = 0.0;
+  float ly = 0.0;
+  float ux = 0.0;
+  float uy = 0.0;
+
+  Rect() {   }
+  Rect(const float lx, const float ly, const float ux, const float uy) 
+    : lx(lx), ly(ly), ux(ux), uy(uy) {   }
+
+  float xMin() const { return lx; }
+  float yMin() const { return ly; }
+  float xMax() const { return ux; }
+  float yMax() const { return uy; }
+};
+
+
+
 
 
 }  // namespace mpl

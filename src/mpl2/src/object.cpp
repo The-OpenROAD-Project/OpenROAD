@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <random>
 
 #include "object.h"
 #include "db_sta/dbReadVerilog.hh"
@@ -975,28 +976,17 @@ int SoftMacro::GetNumMacro() const
     return cluster_->GetNumMacro();
 }
 
-void SoftMacro::ResizeHardMacroCluster() 
+void SoftMacro::ResizeRandomly(std::uniform_real_distribution<float>& distribution,
+                               std::mt19937& generator) 
 {
-  if (cluster_ == nullptr)
+  if (aspect_ratios_.size() == 0)
     return;
-  if (this->IsMacroCluster() == false)
-    return;
-  if (width_ == 0.0 || aspect_ratios_.size() == 1)
-    return;
-
-  float cur_ar = height_ / width_;
-  int cur_ar_idx = 0; 
-  for (int i = 0; i < aspect_ratios_.size(); i++) {
-    if (aspect_ratios_[i].first == cur_ar) {
-      cur_ar_idx = i;
-      break;
-    }
-  }
-  if (cur_ar_idx == aspect_ratios_.size() - 1)
-    cur_ar_idx = 0;
-  else 
-    cur_ar_idx++;
-  this->SetAspectRatio(aspect_ratios_[cur_ar_idx].first);
+  const int idx = static_cast<int>(std::floor(
+                    (distribution)(generator) * aspect_ratios_.size()));
+  const float min_ar = aspect_ratios_[idx].first;
+  const float max_ar = aspect_ratios_[idx].second;
+  const float ar = min_ar + (distribution)(generator) * (max_ar - min_ar);
+  this->SetAspectRatio(ar);
 }
 
 // Align Flag support

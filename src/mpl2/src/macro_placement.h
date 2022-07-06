@@ -81,9 +81,9 @@ class SimulatedAnnealingCore {
 
     void SetNets(const std::vector<BundledNet>& nets);
     // Fence corresponds to each macro (macro_id, fence)
-    void SetFences(const std::map<int, odb::Rect*>& fences);
+    void SetFences(const std::map<int, Rect*>& fences);
     // Guidance corresponds to each macro (macro_id, guide)
-    void SetGuides(const std::map<int, odb::Rect*>& guides);
+    void SetGuides(const std::map<int, Rect*>& guides);
 
     float GetWidth() const;
     float GetHeight() const;
@@ -131,8 +131,8 @@ class SimulatedAnnealingCore {
    
     // nets, fences, guides, blockages
     std::vector<BundledNet> nets_;
-    std::map<int, odb::Rect*> fences_;
-    std::map<int, odb::Rect*> guides_;
+    std::map<int, Rect*> fences_;
+    std::map<int, Rect*> guides_;
 
     // weight for different penalty
     float outline_weight_    = 0.0; 
@@ -199,12 +199,11 @@ class SimulatedAnnealingCore {
 };
 
 
-template <class T> 
-class SACoreHardMacro : public SimulatedAnnealingCore {
+class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
   public:
     SACoreHardMacro() {   };
     SACoreHardMacro(float outline_width, float outline_height, // boundary constraints
-                    const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
+                    const std::vector<HardMacro>& macros, 
                     // weight for different penalty
                     float outline_weight, 
                     float wirelength_weight,
@@ -237,12 +236,11 @@ class SACoreHardMacro : public SimulatedAnnealingCore {
 
 
 
-template <class T> 
-class SACoreSoftMacro : public SimulatedAnnealingCore {
+class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
   public:
     SACoreSoftMacro() {   };
     SACoreSoftMacro(float outline_width, float outline_height, // boundary constraints
-                    const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
+                    const std::vector<SoftMacro>& macros,
                     // weight for different penalty
                     float outline_weight, 
                     float wirelength_weight,
@@ -250,6 +248,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore {
                     float fence_weight, // each blockage will be modeled by a macro with fences
                     float boundary_weight,
                     float notch_weight,
+                    // notch threshold
+                    float notch_h_threshold,
+                    float notch_v_threshold,
                     // action prob
                     float pos_swap_prob, 
                     float neg_swap_prob,
@@ -277,6 +278,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore {
     // actions used
     void Resize();
 
+    // notch threshold
+    float notch_h_th_;
+    float notch_v_th_;
+  
     // additional penalties
     float boundary_weight_   = 0.0;
     float notch_weight_      = 0.0;
@@ -291,8 +296,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore {
     float norm_notch_penalty_    = 0.0;
 
     void CalBoundaryPenalty();
+    void AlignMacroClusters();
     void CalNotchPenalty();
-
+   
     // action prob
     float resize_prob_ = 0.0;
 };

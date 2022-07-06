@@ -469,15 +469,12 @@ void SimulatedAnnealingCore<T>::FastSA()
   CalPenalty();
 }
 
-
-
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
 // constructors
-template <class T>
-SACoreHardMacro<T>::SACoreHardMacro(float outline_width, 
+SACoreHardMacro::SACoreHardMacro(float outline_width, 
                 float outline_height, // boundary constraints
-                const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
+                const std::vector<HardMacro>& macros, 
                 // weight for different penalty
                 float outline_weight,
                 float wirelength_weight,
@@ -492,7 +489,7 @@ SACoreHardMacro<T>::SACoreHardMacro(float outline_width,
                 // Fast SA hyperparameter
                 float init_prob, int max_num_step, int num_perturb_per_step,
                 int k, int c, unsigned seed) 
-  : SimulatedAnnealingCore<T>(outline_width, outline_height, macros,
+  : SimulatedAnnealingCore<HardMacro>(outline_width, outline_height, macros,
                               outline_weight, wirelength_weight, guidance_weight, fence_weight,
                               pos_swap_prob, neg_swap_prob, double_swap_prob, exchange_prob,
                               init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
@@ -501,8 +498,7 @@ SACoreHardMacro<T>::SACoreHardMacro(float outline_width,
 }
 
 
-template <class T>
-float SACoreHardMacro<T>::CalNormCost() 
+float SACoreHardMacro::CalNormCost() 
 {
   float cost = 0.0; // Initialize cost
   if (norm_outline_penalty_ > 0.0)
@@ -517,8 +513,7 @@ float SACoreHardMacro<T>::CalNormCost()
 }
 
 
-template <class T>
-void SACoreHardMacro<T>::CalPenalty()
+void SACoreHardMacro::CalPenalty()
 {
   CalOutlinePenalty();
   CalWirelength();
@@ -526,10 +521,9 @@ void SACoreHardMacro<T>::CalPenalty()
   CalFencePenalty();
 }
 
-template <class T>
-void SACoreHardMacro<T>::FlipMacro()
+void SACoreHardMacro::FlipMacro()
 {
-  macro_id_ = std::static_cast<int>(std::floor(
+  macro_id_ = static_cast<int>(std::floor(
               (distribution_)(generator_) * macros_.size()));
   const float prob = (distribution_) (generator_);
   if (prob <= 0.5)
@@ -538,8 +532,7 @@ void SACoreHardMacro<T>::FlipMacro()
     macros_[macro_id_].Flip(false);
 }
 
-template <class T>
-void SACoreHardMacro<T>::Perturb()
+void SACoreHardMacro::Perturb()
 {
   if (macros_.size() == 0)
     return;
@@ -586,8 +579,7 @@ void SACoreHardMacro<T>::Perturb()
   CalPenalty();
 }
 
-template <class T>
-void SACoreHardMacro<T>::Restore()
+void SACoreHardMacro::Restore()
 {
   if (macros_.size() == 0)
     return;
@@ -614,8 +606,7 @@ void SACoreHardMacro<T>::Restore()
   fence_penalty_    = pre_fence_penalty_;
 }
 
-template <class T>
-void SACoreHardMacro<T>::Initialize()
+void SACoreHardMacro::Initialize()
 {  
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
@@ -627,7 +618,7 @@ void SACoreHardMacro<T>::Initialize()
     // store current penalties 
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
-    gudiance_penalty_list.push_back(guidance_penalty_);
+    guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
   }
  
@@ -654,10 +645,9 @@ void SACoreHardMacro<T>::Initialize()
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
 // constructors
-template <class T>
-SACoreSoftMacro<T>::SACoreSoftMacro(float outline_width, 
+SACoreSoftMacro::SACoreSoftMacro(float outline_width, 
                 float outline_height, // boundary constraints
-                const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
+                const std::vector<SoftMacro>& macros, 
                 // weight for different penalty
                 float outline_weight,
                 float wirelength_weight,
@@ -665,6 +655,9 @@ SACoreSoftMacro<T>::SACoreSoftMacro(float outline_width,
                 float fence_weight, // each blockage will be modeled by a macro with fences
                 float boundary_weight,
                 float notch_weight,
+                // notch threshold
+                float notch_h_threshold,
+                float notch_v_threshold,
                 // probability of each action 
                 float pos_swap_prob,
                 float neg_swap_prob,
@@ -674,7 +667,7 @@ SACoreSoftMacro<T>::SACoreSoftMacro(float outline_width,
                 // Fast SA hyperparameter
                 float init_prob, int max_num_step, int num_perturb_per_step,
                 int k, int c, unsigned seed) 
-  : SimulatedAnnealingCore<T>(outline_width, outline_height, macros,
+  : SimulatedAnnealingCore<SoftMacro>(outline_width, outline_height, macros,
                               outline_weight, wirelength_weight, guidance_weight, fence_weight,
                               pos_swap_prob, neg_swap_prob, double_swap_prob, exchange_prob,
                               init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
@@ -682,37 +675,34 @@ SACoreSoftMacro<T>::SACoreSoftMacro(float outline_width,
   boundary_weight_ = boundary_weight;
   notch_weight_    = notch_weight;
   resize_prob_     = resize_prob;
+  notch_h_th_      = notch_h_threshold;
+  notch_v_th_      = notch_v_threshold;
 }
 
 // acessors functions
-template <class T>
-float SACoreSoftMacro<T>::GetBoundaryPenalty() const 
+float SACoreSoftMacro::GetBoundaryPenalty() const 
 {
   return boundary_penalty_;
 }
 
-template <class T>
-float SACoreSoftMacro<T>::GetNormBoundaryPenalty() const 
+float SACoreSoftMacro::GetNormBoundaryPenalty() const 
 {
   return norm_boundary_penalty_;
 }
 
-template <class T>
-float SACoreSoftMacro<T>::GetNotchPenalty() const 
+float SACoreSoftMacro::GetNotchPenalty() const 
 {
   return notch_penalty_;
 }
 
-template <class T>
-float SACoreSoftMacro<T>::GetNormNotchPenalty() const 
+float SACoreSoftMacro::GetNormNotchPenalty() const 
 {
   return norm_notch_penalty_;
 }
 
 
 // Operations
-template <class T>
-float SACoreSoftMacro<T>::CalNormCost() 
+float SACoreSoftMacro::CalNormCost() 
 {
   float cost = 0.0; // Initialize cost
   if (norm_outline_penalty_ > 0.0)
@@ -731,8 +721,7 @@ float SACoreSoftMacro<T>::CalNormCost()
 }
 
 
-template <class T>
-void SACoreSoftMacro<T>::CalPenalty()
+void SACoreSoftMacro::CalPenalty()
 {
   CalOutlinePenalty();
   CalWirelength();
@@ -743,8 +732,7 @@ void SACoreSoftMacro<T>::CalPenalty()
 }
 
 
-template <class T>
-void SACoreSoftMacro<T>::Perturb()
+void SACoreSoftMacro::Perturb()
 {
   if (macros_.size() == 0)
     return;
@@ -793,8 +781,7 @@ void SACoreSoftMacro<T>::Perturb()
   CalPenalty();
 }
 
-template <class T>
-void SACoreSoftMacro<T>::Restore()
+void SACoreSoftMacro::Restore()
 {
   if (macros_.size() == 0)
     return;
@@ -823,8 +810,7 @@ void SACoreSoftMacro<T>::Restore()
   notch_penalty_    = pre_notch_penalty_;
 }
 
-template <class T>
-void SACoreSoftMacro<T>::Initialize()
+void SACoreSoftMacro::Initialize()
 {  
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
@@ -837,7 +823,7 @@ void SACoreSoftMacro<T>::Initialize()
     // store current penalties 
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
-    gudiance_penalty_list.push_back(guidance_penalty_);
+    guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
     boundary_penalty_list.push_back(boundary_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
@@ -869,8 +855,7 @@ void SACoreSoftMacro<T>::Initialize()
 
 // We only push hard macro clusters to boundaries
 // Note that we do not push MixedCluster into boundaries
-template <class T>
-void SACoreSoftMacro<T>::CalBoundaryPenalty()
+void SACoreSoftMacro::CalBoundaryPenalty()
 {
   // Initialization
   boundary_penalty_ = 0.0;
@@ -888,9 +873,38 @@ void SACoreSoftMacro<T>::CalBoundaryPenalty()
 }
 
 
+// Align macro clusters to reduce notch
+void SACoreSoftMacro::AlignMacroClusters()
+{
+  if (width_ > outline_width_ || height_ > outline_height_)
+    return;
+  
+  // Align macro clusters to boundaries
+  for (auto& macro : macros_) {
+    if (macro.IsMacroCluster() == true) {
+      const float lx = macro.GetX();
+      const float ly = macro.GetY();
+      const float ux = lx + macro.GetWidth();
+      const float uy = ly + macro.GetHeight();
+      // align to left / right boundaries
+      if (lx <= notch_h_th_)
+        macro.SetX(0.0);
+      else if (outline_width_ - ux <= notch_h_th_)
+        macro.SetX(outline_width_ - macro.GetWidth());
+      // align to top / bottom boundaries
+      if (ly <= notch_v_th_)
+        macro.SetY(0.0);
+      else if (outline_height_ - uy <= notch_v_th_)
+        macro.SetY(outline_height_ - macro.GetHeight());
+    }
+  }
+  // Align macro clusters horizontally
+  // Align macro clusters vertically
+}
+
+
 // If there is no HardMacroCluster, we do not consider the notch penalty
-template <class T>
-void SACoreSoftMacro<T>::CalNotchPenalty()
+void SACoreSoftMacro::CalNotchPenalty()
 {
   // Initialization
   notch_penalty_ = 0.0;
@@ -914,18 +928,75 @@ void SACoreSoftMacro<T>::CalNotchPenalty()
   }
    
   // Calculate the notch penalty cost based on the area of notches
-
-
-
-
+  // First align macro clusters to reduce notches
+  AlignMacroClusters();
+  // Then calculate notch penalty
+  return;
 }
 
-template <class T>
-void SACoreSoftMacro<T>::Resize()
+
+void SACoreSoftMacro::Resize()
 {
-    
+  int idx = static_cast<int>(std::floor((distribution_)(generator_) * macros_.size()));
+  SoftMacro& src_macro = macros_[idx];
+  if (src_macro.IsMacroCluster() == true) {
+    src_macro.ResizeRandomly(distribution_, generator_);
+    return;
+  }
+  
+  const float lx = src_macro.GetX();
+  const float ly = src_macro.GetY();
+  const float ux = lx + src_macro.GetWidth();
+  const float uy = ly + src_macro.GetHeight();
+  // if the macro is outside of the outline, we randomly resize the macro
+  if (lx >= outline_width_ || ly >= outline_height_) {
+    src_macro.ResizeRandomly(distribution_, generator_);
+    return;
+  } 
 
-
+  float option = (distribution_) (generator_);
+  if (option <= 0.25) {
+    // Change the width of soft block to Rb = e.x2 - b.x1
+    float e_x2 = outline_width_;
+    for (const auto& macro : macros_) {
+      float cur_x2 = macro.GetX() + macro.GetWidth();
+      if (cur_x2 > ux && cur_x2 < e_x2)
+        e_x2 = cur_x2;
+    }
+    src_macro.SetWidth(e_x2 - lx);
+  } else if (option <= 0.5) {
+    float d_x2 = lx;
+    for (const auto& macro : macros_) {
+      float cur_x2 = macro.GetX() + macro.GetWidth();
+      if (cur_x2 < ux && cur_x2 > d_x2)
+        d_x2 = cur_x2;
+    }
+    if (d_x2 <= lx)
+      return;
+    else    
+      src_macro.SetWidth(d_x2 - lx);
+  } else if (option <= 0.75) {
+    // change the height of soft block to Tb = a.y2 - b.y1
+    float a_y2 = outline_height_;
+    for (const auto& macro : macros_) {
+      float cur_y2 = macro.GetY() + macro.GetHeight();
+      if (cur_y2 > uy && cur_y2 < a_y2)
+        a_y2 = cur_y2;
+    }
+    src_macro.SetHeight(a_y2 - ly);
+  } else {
+    // Change the height of soft block to Bb = c.y2 - b.y1
+    float c_y2 = ly;
+    for (const auto& macro : macros_) {
+      float cur_y2 = macro.GetY() + macro.GetHeight();
+      if (cur_y2 < uy && cur_y2 > c_y2)
+        c_y2 = cur_y2;
+    }
+    if (c_y2 <= ly)
+      return;
+    else
+      src_macro.SetHeight(c_y2 - ly);
+  }
 }
 
 
