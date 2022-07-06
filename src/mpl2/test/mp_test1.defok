@@ -409,4 +409,12 @@ NETS 23 ;
     - w41 ( U6 I4 ) ( U5 O1 ) + USE SIGNAL ;
     - w42 ( U6 O4 ) + USE SIGNAL ;
 END NETS
+GROUPS 4 ;
+    - top_glue_logic_macro_cluster_0_part_0 U1 ;
+    - top_glue_logic_macro_cluster_1_part_0 U9 U8 U7
+         U10 ;
+    - top_glue_logic_macro_cluster_2_part_0 U6 ;
+    - top_glue_logic_macro_cluster_2_part_1 U5 U4 U3
+         U2 ;
+END GROUPS
 END DESIGN
