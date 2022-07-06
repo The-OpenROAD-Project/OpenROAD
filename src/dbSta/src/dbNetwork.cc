@@ -66,9 +66,12 @@ using odb::dbSet;
 using odb::dbObjectType;
 using odb::dbITermObj;
 using odb::dbBTermObj;
+using odb::dbInstObj;
+using odb::dbModInstObj;
 using odb::dbIntProperty;
 using odb::dbPlacementStatus;
 using odb::dbBoolProperty;
+using odb::dbModule;
 
 // TODO: move to StringUtil
 char *
@@ -239,9 +242,13 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance *inst,
     bitr_end_ = block->getBTerms().end();
   }
   else {
-    dbInst *dinst = network_->staToDb(inst);
-    iitr_ = dinst->getITerms().begin();
-    iitr_end_ = dinst->getITerms().end();
+    dbInst* db_inst;
+    dbModInst* mod_inst; // has no inst pins in odb
+    network_->staToDb(inst, db_inst, mod_inst);
+    if (db_inst) {
+      iitr_ = db_inst->getITerms().begin();
+      iitr_end_ = db_inst->getITerms().end();
+    }
   }
 }
 
@@ -435,8 +442,13 @@ dbNetwork::name(const Instance *instance) const
   if (instance == top_instance_)
     return tmpStringCopy(block_->getConstName());
   else {
-    dbInst *dinst = staToDb(instance);
-    return tmpStringCopy(dinst->getConstName());
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    staToDb(instance, db_inst, mod_inst);
+    if (db_inst) {
+      return tmpStringCopy(db_inst->getConstName());
+    }
+    return tmpStringCopy(mod_inst->getName().c_str());
   }
 }
 
@@ -446,9 +458,17 @@ dbNetwork::cell(const Instance *instance) const
   if (instance == top_instance_)
     return reinterpret_cast<Cell*>(top_cell_);
   else {
-    dbInst *dinst = staToDb(instance);
-    dbMaster *master = dinst->getMaster();
-    return dbToSta(master);
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    staToDb(instance, db_inst, mod_inst);
+    if (db_inst) {
+      dbMaster *master = db_inst->getMaster();
+      return dbToSta(master);
+    }
+    // no traversal of the hierarchy this way; we would have to split
+    // Cell into dbMaster and dbModule otherwise.  When we have full
+    // odb hierarchy this can be revisited.
+    return nullptr;
   }
 }
 
@@ -481,10 +501,30 @@ dbNetwork::findChild(const Instance *parent,
 {
   if (parent == top_instance_) {
     dbInst *inst = block_->findInst(name);
+    if (!inst) {
+      auto top_module = block_->getTopModule();
+      dbModInst* mod_inst = top_module->findModInst(name);
+      return dbToSta(mod_inst);
+    }
+
     return dbToSta(inst);
   }
-  else
+  dbInst *db_inst;
+  dbModInst* mod_inst;
+  staToDb(parent, db_inst, mod_inst);
+  if (!mod_inst) {
     return nullptr;
+  }
+  dbModule* master_module = mod_inst->getMaster();
+  dbModInst* child_inst = master_module->findModInst(name);
+  if (child_inst) {
+    return dbToSta(child_inst);
+  }
+  // Look for a leaf instance
+  std::string full_name = mod_inst->getHierarchicalName();
+  full_name += pathDivider() + std::string(name);
+  dbInst *inst = block_->findInst(full_name.c_str());
+  return dbToSta(inst);  
 }
 
 Pin *
@@ -496,9 +536,14 @@ dbNetwork::findPin(const Instance *instance,
     return dbToSta(bterm);
   }
   else {
-    dbInst *dinst = staToDb(instance);
-    dbITerm *iterm = dinst->findITerm(port_name);
-    return dbToSta(iterm);
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    staToDb(instance, db_inst, mod_inst);
+    if (db_inst) {
+      dbITerm *iterm = db_inst->findITerm(port_name);
+      return dbToSta(iterm);
+    }
+    return nullptr; // no pins on dbModInst in odb currently
   }
 }
 
@@ -1069,15 +1114,25 @@ dbNetwork::replaceCell(Instance *inst,
 		       Cell *cell)
 {
   dbMaster *master = staToDb(cell);
-  dbInst *dinst = staToDb(inst);
-  dinst->swapMaster(master);
+  dbInst *db_inst;
+  dbModInst* mod_inst;
+  staToDb(inst, db_inst, mod_inst);
+  if (db_inst) {
+    db_inst->swapMaster(master);
+  }
 }
 
 void
 dbNetwork::deleteInstance(Instance *inst)
 {
-  dbInst *dinst = staToDb(inst);
-  dbInst::destroy(dinst);
+  dbInst *db_inst;
+  dbModInst* mod_inst;
+  staToDb(inst, db_inst, mod_inst);
+  if (db_inst) {
+    dbInst::destroy(db_inst);
+  } else {
+    dbModInst::destroy(mod_inst);
+  }
 }
 
 Pin *
@@ -1104,11 +1159,15 @@ dbNetwork::connect(Instance *inst,
     pin = dbToSta(bterm);
   }
   else {
-    dbInst *dinst = staToDb(inst);
-    dbMTerm *dterm = staToDb(port);
-    dbITerm *iterm = dinst->getITerm(dterm);
-    iterm->connect(dnet);
-    pin = dbToSta(iterm);
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    staToDb(inst, db_inst, mod_inst);
+    if (db_inst) {
+      dbMTerm *dterm = staToDb(port);
+      dbITerm *iterm = db_inst->getITerm(dterm);
+      iterm->connect(dnet);
+      pin = dbToSta(iterm);
+    }
   }
   return pin;
 }
@@ -1149,12 +1208,16 @@ dbNetwork::connect(Instance *inst,
     pin = dbToSta(bterm);
   }
   else {
-    dbInst *dinst = staToDb(inst);
-    dbMaster *master = dinst->getMaster();
-    dbMTerm *dterm = master->findMTerm(port_name);
-    dbITerm *iterm = dinst->getITerm(dterm);
-    iterm->connect(dnet);
-    pin = dbToSta(iterm);
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    staToDb(inst, db_inst, mod_inst);
+    if (db_inst) {
+      dbMaster *master = db_inst->getMaster();
+      dbMTerm *dterm = master->findMTerm(port_name);
+      dbITerm *iterm = db_inst->getITerm(dterm);
+      iterm->connect(dnet);
+      pin = dbToSta(iterm);
+    }
   }
   return pin;
 }
@@ -1245,10 +1308,35 @@ dbNetwork::isSpecial(Net *net)
 
 ////////////////////////////////////////////////////////////////
 
-dbInst *
-dbNetwork::staToDb(const Instance *instance) const
+dbInst* dbNetwork::staToDb(const Instance *instance) const
 {
-  return reinterpret_cast<dbInst*>(const_cast<Instance*>(instance));
+  dbInst *db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+  return db_inst;
+}
+
+void
+dbNetwork::staToDb(const Instance *instance,
+		   // Return values.
+		   dbInst *&db_inst,
+		   dbModInst *&mod_inst) const
+{
+  if (instance) {
+    dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
+    dbObjectType type = obj->getObjectType();
+    if (type == dbInstObj) {
+      db_inst = static_cast<dbInst*>(obj);
+      mod_inst = nullptr;
+    } else if (type == dbModInstObj) {
+      db_inst = nullptr;
+      mod_inst = static_cast<dbModInst*>(obj);
+    } else
+      logger_->critical(ORD, 1016, "instance is not Inst or ModInst");
+  } else {
+    db_inst = nullptr;
+    mod_inst = nullptr;
+  }
 }
 
 dbNet *
@@ -1350,6 +1438,12 @@ dbNetwork::staToDb(PortDirection *dir,
 
 Instance *
 dbNetwork::dbToSta(dbInst *inst) const
+{
+  return reinterpret_cast<Instance*>(inst);
+}
+
+Instance *
+dbNetwork::dbToSta(dbModInst *inst) const
 {
   return reinterpret_cast<Instance*>(inst);
 }

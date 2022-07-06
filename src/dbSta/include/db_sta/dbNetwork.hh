@@ -55,6 +55,7 @@ using odb::dbLib;
 using odb::dbMaster;
 using odb::dbBlock;
 using odb::dbInst;
+using odb::dbModInst;
 using odb::dbNet;
 using odb::dbBTerm;
 using odb::dbITerm;
@@ -114,7 +115,13 @@ public:
 
   LibertyCell *libertyCell(dbInst *inst);
 
-  dbInst *staToDb(const Instance *instance) const;
+  // Use the this if you know you are dealing with a leaf instance
+  dbInst* staToDb(const Instance* instance) const;
+  // Use the this if you might have a hierarchical instance
+  void staToDb(const Instance* instance,
+               // Return values.
+               dbInst*& db_inst,
+               dbModInst*& mod_inst) const;
   dbNet *staToDb(const Net *net) const;
   void staToDb(const Pin *pin,
 	       // Return values.
@@ -134,6 +141,7 @@ public:
   Term *dbToStaTerm(dbBTerm *bterm) const;
   Pin *dbToSta(dbITerm *iterm) const;
   Instance *dbToSta(dbInst *inst) const;
+  Instance *dbToSta(dbModInst *inst) const;
   Net *dbToSta(dbNet *net) const;
   const Net *dbToSta(const dbNet *net) const;
   Cell *dbToSta(dbMaster *master) const;

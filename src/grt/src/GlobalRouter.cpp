@@ -1253,8 +1253,8 @@ void GlobalRouter::perturbCapacities()
   g.seed(seed_);
 
   for (int layer = 1; layer <= max_routing_layer_; layer++) {
-    std::uniform_int_distribution<int> uni_x(1, x_grids - 1);
-    std::uniform_int_distribution<int> uni_y(1, y_grids - 1);
+    std::uniform_int_distribution<int> uni_x(1, std::max(x_grids - 1, 1));
+    std::uniform_int_distribution<int> uni_y(1, std::max(y_grids - 1, 1));
     std::bernoulli_distribution add_or_subtract;
 
     for (int i = 0; i < num_perturbations; i++) {
