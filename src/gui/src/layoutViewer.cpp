@@ -1083,6 +1083,16 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
   }
+
+  if (options_->areRegionsVisible() && options_->areRegionsSelectable()) {
+    for (auto db_region : block_->getRegions()) {
+      for (auto box : db_region->getBoundaries()) {
+        if (box->getBox().intersects(region)) {
+          selections.push_back(makeSelected_(db_region));
+        }
+      }
+    }
+  }
 }
 
 int LayoutViewer::selectArea(const odb::Rect& area, bool append)
@@ -2112,7 +2122,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawModuleView(painter, insts);
 
-  drawRegionOutlines(painter);
+  drawRegions(painter);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -2161,14 +2171,14 @@ void LayoutViewer::drawManufacturingGrid(QPainter* painter, const odb::Rect& bou
   painter->drawPoints(points);
 }
 
-void LayoutViewer::drawRegionOutlines(QPainter* painter)
+void LayoutViewer::drawRegions(QPainter* painter)
 {
   if (!options_->areRegionsVisible()) {
     return;
   }
 
   painter->setPen(QPen(Qt::gray, 0));
-  painter->setBrush(Qt::BrushStyle::NoBrush);
+  painter->setBrush(QBrush(options_->regionColor(), options_->regionPattern()));
 
   for (auto* region : block_->getRegions()) {
     for (auto* box : region->getBoundaries()) {

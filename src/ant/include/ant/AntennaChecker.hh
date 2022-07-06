@@ -61,11 +61,11 @@ struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
 
-struct ViolationInfo
+struct Violation
 {
   int routing_level;
-  vector<odb::dbITerm*> iterms;
-  int required_diode_count;
+  vector<odb::dbITerm*> gates;
+  int diode_count_per_gate;
 };
 
 class AntennaChecker
@@ -87,8 +87,8 @@ class AntennaChecker
 
   void findMaxWireLength();
 
-  vector<ViolationInfo> getAntennaViolations(dbNet* net,
-                                                  odb::dbMTerm* diode_mterm);
+  vector<Violation> getAntennaViolations(dbNet* net,
+                                         odb::dbMTerm* diode_mterm);
   void initAntennaRules();
 
  private:
@@ -192,7 +192,7 @@ class AntennaChecker
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_;
 
-  static constexpr int repair_max_diode_count = 10;
+  static constexpr int max_diode_count_per_gate = 10;
 };
 
 }  // namespace ant

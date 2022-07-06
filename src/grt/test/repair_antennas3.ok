@@ -8,8 +8,8 @@
 [INFO ODB-0127] Reading DEF file: repair_antennas2.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 7167 components and 29882 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 14334 connections.
+[INFO ODB-0131]     Created 1277 components and 6322 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2554 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
 Net _224_
@@ -19,7 +19,6 @@ Net _224_
 
 
 Net net48
-  _560_/B (sky130_fd_sc_hs__nand2_1)
   output48/A (sky130_fd_sc_hs__clkbuf_1)
     met1
     PAR:  437.21* Ratio:  400.00 (S.Area)
@@ -27,7 +26,7 @@ Net net48
 
 [INFO ANT-0002] Found 2 net violations.
 [INFO ANT-0001] Found 2 pin violations.
-[INFO GRT-0012] Antenna violations: 2
+[INFO GRT-0012] Found 2 antenna violations.
 [INFO GRT-0015] Inserted 2 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

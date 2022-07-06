@@ -12,6 +12,6 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ODB-0134] Finished DEF file: gcd_sky130.def
-[INFO GRT-0012] Antenna violations: 8
+[INFO GRT-0012] Found 8 antenna violations.
 [WARNING GRT-0243] Unable to repair antennas on net with diodes.
 [INFO GRT-0015] Inserted 0 diodes.

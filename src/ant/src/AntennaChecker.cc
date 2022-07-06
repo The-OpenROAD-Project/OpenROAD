@@ -699,23 +699,23 @@ double AntennaChecker::getPwlFactor(dbTechLayerAntennaRule::pwl_pair pwl_info,
     if (pwl_info.indices.size() == 1) {
       return pwl_info.ratios[0];
     } else {
-      double pwl_info_indice1 = pwl_info.indices[0];
+      double pwl_info_index1 = pwl_info.indices[0];
       double pwl_info_ratio1 = pwl_info.ratios[0];
-      double slope_factor = 1.0;
+      double slope = 1.0;
       for (int i = 0; i < pwl_info.indices.size(); i++) {
-        double pwl_info_indice2 = pwl_info.indices[i];
+        double pwl_info_index2 = pwl_info.indices[i];
         double pwl_info_ratio2 = pwl_info.ratios[i];
-        slope_factor = (pwl_info_ratio2 - pwl_info_ratio1)
-          / (pwl_info_ratio2 - pwl_info_indice1);
+        slope = (pwl_info_ratio2 - pwl_info_ratio1)
+          / (pwl_info_index2 - pwl_info_index1);
 
-        if (ref_value >= pwl_info_indice1 && ref_value < pwl_info_indice2) {
-          return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
+        if (ref_value >= pwl_info_index1 && ref_value < pwl_info_index2) {
+          return pwl_info_ratio1 + (ref_value - pwl_info_index1) * slope;
         } else {
-          pwl_info_indice1 = pwl_info_indice2;
+          pwl_info_index1 = pwl_info_index2;
           pwl_info_ratio1 = pwl_info_ratio2;
         }
       }
-      return slope_factor * (ref_value - pwl_info_indice1) + pwl_info_ratio1;
+      return pwl_info_ratio1 + (ref_value - pwl_info_index1) * slope;
     }
   }
   return default_value;
@@ -1369,12 +1369,6 @@ void AntennaChecker::checkNet(dbNet* net,
       logger_->report("Net {}", net->getConstName());
 
       for (dbWireGraph::Node* gate : gate_nodes) {
-        dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
-        dbMTerm* mterm = iterm->getMTerm();
-        logger_->report("  {}/{} ({})",
-                        iterm->getInst()->getConstName(),
-                        mterm->getConstName(),
-                        mterm->getMaster()->getConstName());
         checkGate(gate, CARtable, VIA_CARtable,
                   true, verbose, violation, violated_gates);
       }
@@ -1392,6 +1386,7 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
                                bool &violation,
                                unordered_set<dbWireGraph::Node*> &violated_gates)
 {
+  bool first_pin_violation = true;
   for (auto ar : CARtable) {
     if (ar.GateNode == gate) {
       auto wire_PAR_violation = checkWirePar(ar, false, verbose);
@@ -1403,9 +1398,19 @@ void AntennaChecker::checkGate(dbWireGraph::Node* gate,
         violated_gates.insert(gate);
 
       if (report) {
-        if (wire_violation || verbose)
+        if (wire_violation || verbose) {
+          if (first_pin_violation) {
+            dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
+            dbMTerm* mterm = iterm->getMTerm();
+            logger_->report("  {}/{} ({})",
+                            iterm->getInst()->getConstName(),
+                            mterm->getConstName(),
+                            mterm->getMaster()->getConstName());
+          }
           logger_->report("    {}",
-                  ar.wire_root->layer()->getConstName());
+                          ar.wire_root->layer()->getConstName());
+          first_pin_violation = false;
+        }
         checkWirePar(ar, true, verbose);
         checkWireCar(ar, wire_PAR_violation.second, true, verbose);
         if (wire_violation || verbose)
@@ -1659,14 +1664,14 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   return false;
 }
 
-vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
-                                                           dbMTerm* diode_mterm)
+vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
+                                                       dbMTerm* diode_mterm)
 {
   double diode_diff_area = 0.0;
   if (diode_mterm) 
     diode_diff_area = diffArea(diode_mterm);
 
-  vector<ViolationInfo> antenna_violations;
+  vector<Violation> antenna_violations;
   if (net->isSpecial())
     return antenna_violations;
   dbWire* wire = net->getWire();
@@ -1683,23 +1688,23 @@ vector<ViolationInfo> AntennaChecker::getAntennaViolations(dbNet* net,
         vector<dbITerm*> gates;
         findWireRootIterms(par_info.wire_root,
                            layer->getRoutingLevel(), gates);
-        int required_diode_count = 0;
+        int diode_count_per_gate = 0;
         if (diode_mterm && antennaRatioDiffDependent(layer)) {
           while (wire_PAR_violation) {
             par_info.iterm_diff_area += diode_diff_area * gates.size();
-            required_diode_count += gates.size();
+            diode_count_per_gate++;
             calculateParInfo(par_info);
             wire_PAR_violation = checkViolation(par_info, layer);
-            if (required_diode_count > repair_max_diode_count) {
-              logger_->warn(ANT, 9, "Net {} requires more than {} diodes to repair violations.",
+            if (diode_count_per_gate > max_diode_count_per_gate) {
+              logger_->warn(ANT, 9, "Net {} requires more than {} diodes per gate to repair violations.",
                             net->getConstName(),
-                            repair_max_diode_count);
+                            max_diode_count_per_gate);
               break;
             }
           }
         }
-        ViolationInfo antenna_violation
-            = {layer->getRoutingLevel(), gates, required_diode_count};
+        Violation antenna_violation
+          = {layer->getRoutingLevel(), gates, diode_count_per_gate};
         antenna_violations.push_back(antenna_violation);
       }
     }

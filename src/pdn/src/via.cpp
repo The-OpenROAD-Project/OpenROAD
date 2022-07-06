@@ -2217,10 +2217,11 @@ bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
                                       const odb::Rect& small_shape,
                                       const Constraint& contraint) const
 {
-  const bool inside_top = intersection.yMax() >= small_shape.yMax();
-  const bool inside_right = intersection.xMax() >= small_shape.xMax();
-  const bool inside_bottom = intersection.yMin() <= small_shape.yMin();
-  const bool inside_left = intersection.xMin() <= small_shape.xMin();
+  const odb::Rect check_rect = contraint.intersection_only ? intersection : full_shape;
+  const bool inside_top = check_rect.yMax() >= small_shape.yMax();
+  const bool inside_right = check_rect.xMax() >= small_shape.xMax();
+  const bool inside_bottom = check_rect.yMin() <= small_shape.yMin();
+  const bool inside_left = check_rect.xMin() <= small_shape.xMin();
 
   const bool inside_x = inside_right && inside_left;
   const bool inside_y = inside_top && inside_bottom;

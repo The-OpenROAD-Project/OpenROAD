@@ -70,6 +70,7 @@ Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
+  have_fillers_ = false;
 
   importClear();
   examineRows();
@@ -146,6 +147,7 @@ Opendp::makeCells()
       cell.x_ = bbox.xMin();
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
+      // Cell is already placed if it is FIXED.
       cell.is_placed_ = isFixed(&cell);
 
       Master &master = db_master_map_[db_master];
@@ -155,6 +157,8 @@ Opendp::makeCells()
         have_multi_row_cells_ = true;
       }
     }
+    if (isFiller(db_inst))
+      have_fillers_ = true;
   }
 }
 
