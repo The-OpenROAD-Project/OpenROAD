@@ -123,8 +123,7 @@ set_bump_options \
   -rdl_layer metal10 \
   -rdl_width 10 \
   -rdl_spacing 10 \
-  -padcell_to_rdl {via9_0} \
-  -rdl_to_bump {via9_0 via8_0} \
+  -rdl_route_style under
 
 set_padring_options \
   -type flipchip \
@@ -139,22 +138,11 @@ set_padring_options \
 
 place_cell -cell MARKER -inst_name u_marker_0 -origin {1197.5 1199.3} -orient R0 -status FIRM
 
-puts "Trigger errors"
-# Trigger errors
-catch {add_pad -edge other  -signal p_ddr_dm_1_o         -type sig   -location {center {x  292.000 y  105.000}} -bondpad {center {x  292.000 y   63.293}}}
-puts "No more errors expected"
-
 # Define the same padring for soc_bsg_black_parrot_nangate45 using TCL commands, rather than strategy file.
 #
 add_pad -edge bottom -inst_name u_cbrk0                 -type cbk   -location {origin {x  175 y   35}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 23 col 1}}
-catch {add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 0}}
 add_pad -edge bottom -signal p_ddr_dm_1_o               -type sig   -location {origin {x  205 y   35}} -bump {row 17 col 1}
-if {![catch {add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  206 y   35}} -bump {row 17 col 1}}]} {
-  puts "Expected error not triggered"
-  exit
-}
-add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2} -padcell_to_rdl {via7_0 via8_0 via9_0} -rdl_to_bump {via6_0}
+add_pad -edge bottom -signal p_ddr_dqs_n_1_io           -type sig   -location {origin {x  335 y   35}} -bump {row 16 col 2}
 add_pad -edge bottom -inst_name u_vzz_0 -signal DVSS_0  -type vssio -location {origin {x  365 y   35}} -bump {row 17 col 2}
 add_pad -edge bottom -inst_name u_v18_0 -signal DVDD_0  -type vddio -location {origin {x  495 y   35}} -bump {row 16 col 3}
 add_pad -edge bottom -signal p_ddr_dqs_p_1_io           -type sig   -location {origin {x  525 y   35}} -bump {row 17 col 3}
@@ -479,12 +467,6 @@ set_bump -row 10 -col 12 -power  VDD4
 set_bump -row 11 -col 12 -power  VDD4
 set_bump -row 12 -col 12 -power  VDD4
 
-puts "Trigger errors for incorrect bump options"
-set_bump_options -rdl_layer metal10 -rdl_width 0.5 -rdl_spacing 1
-catch {initialize_padring}
-set_bump_options -rdl_layer metal10 -rdl_width 1.0 -rdl_spacing 0.5
-catch {initialize_padring}
-
 puts "Reset bump options"
 set_bump_options -rdl_layer metal10 -rdl_width 10  -rdl_spacing 10
 
@@ -494,7 +476,7 @@ if {[catch {initialize_padring} msg]} {
   return
 }
 
-set def_file  [make_result_file "tcl_interface.flipchip.def"]
+set def_file  [make_result_file "tcl_interface.flipchip2.def"]
 
 write_def $def_file
-diff_files $def_file "tcl_interface.flipchip.defok"
+diff_files $def_file "tcl_interface.flipchip2.defok"
