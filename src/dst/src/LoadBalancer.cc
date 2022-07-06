@@ -119,9 +119,24 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
   }
 }
 
-void LoadBalancer::lookUpWorkers(
-    const char* domain,
-    unsigned short port)
+void LoadBalancer::removeWorker(ip::address ip, unsigned short port, bool lock)
+{
+  if (lock)
+    workers_mutex_.lock();
+  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  while (!workers_.empty()) {
+    auto worker = workers_.top();
+    workers_.pop();
+    if (worker.ip == ip && worker.port == port)
+      continue;
+    newQueue.push(worker);
+  }
+  workers_.swap(newQueue);
+  if (lock)
+    workers_mutex_.unlock();
+}
+
+void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
 {
   asio::io_service ios;
   std::vector<worker> workers_set;
@@ -134,11 +149,11 @@ void LoadBalancer::lookUpWorkers(
     auto it = resolver.resolve(resolver_query, ec);
     if (ec)
       logger_->warn(utl::DST,
-                     203,
-                     "Workers domain resolution failed with error code = {}. "
-                     "Message = {}.",
-                     ec.value(),
-                     ec.message());
+                    203,
+                    "Workers domain resolution failed with error code = {}. "
+                    "Message = {}.",
+                    ec.value(),
+                    ec.message());
     int new_workers_count = 0;
     udp::resolver::iterator it_end;
     for (; it != it_end; ++it) {
@@ -173,7 +188,8 @@ void LoadBalancer::lookUpWorkers(
     for (auto worker : new_workers)
       addWorker(worker.ip.to_string(), worker.port);
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(workers_discovery_period * 1000));
+    boost::this_thread::sleep(
+        boost::posix_time::milliseconds(workers_discovery_period * 1000));
   }
 }
 

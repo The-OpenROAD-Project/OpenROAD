@@ -41,7 +41,8 @@ class Logger;
 }
 
 namespace dst {
-const int workers_discovery_period = 15; // time in seconds between retrying to find new workers on the network
+const int workers_discovery_period = 15;  // time in seconds between retrying to
+                                          // find new workers on the network
 class Distributed;
 class LoadBalancer
 {
@@ -57,6 +58,7 @@ class LoadBalancer
   void addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
+  void removeWorker(ip::address ip, unsigned short port, bool lock = true);
 
  private:
   struct worker

@@ -66,5 +66,6 @@ class BalancerConnection
   asio::streambuf in_packet_;
   utl::Logger* logger_;
   LoadBalancer* owner_;
+  const int MAX_FAILED_WORKERS_TRIALS = 3;
 };
 }  // namespace dst
