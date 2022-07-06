@@ -2282,6 +2282,11 @@ Descriptor::Properties DbGroupDescriptor::getProperties(std::any object) const
   if (parent != nullptr) {
     props.push_back({"Parent", gui->makeSelected(parent)});
   }
+ 
+  auto* region = group->getRegion();
+  if (region != nullptr) {
+    props.push_back({"Region", gui->makeSelected(region)});
+  }
 
   SelectionSet groups;
   for (auto* subgroup : group->getGroups()) {
