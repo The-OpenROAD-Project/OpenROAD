@@ -2387,6 +2387,11 @@ void DbRegionDescriptor::highlight(std::any object,
                                   void* additional_data) const
 {
   auto* region = std::any_cast<odb::dbRegion*>(object);
+
+  for (auto box : region->getBoundaries()) {
+    painter.drawRect(box->getBox());
+  }
+
   auto* group_descriptor = Gui::get()->getDescriptor<odb::dbGroup*>();
   for (auto* child : region->getGroups()) {
     group_descriptor->highlight(child, painter, nullptr);
