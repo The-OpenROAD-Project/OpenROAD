@@ -38,7 +38,7 @@
 namespace gui {
 
 Ruler::Ruler(const odb::Point& pt0, const odb::Point& pt1, const std::string& name, const std::string& label) :
-    pt0_(pt0), pt1_(pt1), name_(name), label_(label)
+    pt0_(pt0), pt1_(pt1), euclidian_(true), name_(name), label_(label)
 {
   // update name if empty
   if (name_.empty()) {
@@ -61,6 +61,10 @@ bool Ruler::fuzzyIntersection(const odb::Rect& region, int margin) const
 
   linestring_t ls;
   boost::geometry::append(ls, point_t(pt0_.x(), pt0_.y()));
+  if (euclidian_) {
+    const auto middle = getEuclidianJoinPt();
+    boost::geometry::append(ls, point_t(middle.x(), middle.y()));
+  }
   boost::geometry::append(ls, point_t(pt1_.x(), pt1_.y()));
   polygon_t poly;
   boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMin() - margin));
@@ -77,7 +81,25 @@ std::string Ruler::getTclCommand(double dbu_to_microns) const
   return "gui::add_ruler " +
          std::to_string(pt0_.x() / dbu_to_microns) + " " + std::to_string(pt0_.y() / dbu_to_microns) + " " +
          std::to_string(pt1_.x() / dbu_to_microns) + " " + std::to_string(pt1_.y() / dbu_to_microns) + " " +
-         "{" + label_ + "} {" + name_ + "}";
+         "{" + label_ + "} {" + name_ + "} " +
+         "{" + (euclidian_ ? "1" : "0") + "}";
+}
+
+const odb::Point Ruler::getEuclidianJoinPt() const
+{
+  return odb::Point(pt1_.x(), pt0_.y());
+}
+
+double Ruler::getLength() const
+{
+  const int x_dist = std::abs(pt0_.x() - pt1_.x());
+  const int y_dist = std::abs(pt0_.y() - pt1_.y());
+  if (euclidian_) {
+    return x_dist + y_dist;
+  } else {
+    return std::sqrt(std::pow(x_dist, 2) +
+                     std::pow(y_dist, 2));
+  }
 }
 
 ////////////
@@ -112,7 +134,13 @@ void RulerDescriptor::highlight(std::any object,
                void* additional_data) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  painter.drawLine(ruler->getPt0(), ruler->getPt1());
+  if (ruler->isEuclidian()) {
+    const auto middle = ruler->getEuclidianJoinPt();
+    painter.drawLine(ruler->getPt0(), middle);
+    painter.drawLine(middle, ruler->getPt1());
+  } else {
+    painter.drawLine(ruler->getPt0(), ruler->getPt1());
+  }
 }
 
 Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
@@ -122,7 +150,9 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
           {"Point 0 - x", Property::convert_dbu(ruler->getPt0().x(), true)},
           {"Point 0 - y", Property::convert_dbu(ruler->getPt0().y(), true)},
           {"Point 1 - x", Property::convert_dbu(ruler->getPt1().x(), true)},
-          {"Point 1 - y", Property::convert_dbu(ruler->getPt1().y(), true)}};
+          {"Point 1 - y", Property::convert_dbu(ruler->getPt1().y(), true)},
+          {"Length", Property::convert_dbu(ruler->getLength(), true)},
+          {"Euclidian", ruler->isEuclidian()}};
 }
 
 Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
@@ -151,6 +181,11 @@ Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
     {"Point 0 - y", makeEditor([ruler, dbu_per_uu_](std::any value) { return RulerDescriptor::editPoint(value, dbu_per_uu_, ruler->getPt0(), false); })},
     {"Point 1 - x", makeEditor([ruler, dbu_per_uu_](std::any value) { return RulerDescriptor::editPoint(value, dbu_per_uu_, ruler->getPt1(), true); })},
     {"Point 1 - y", makeEditor([ruler, dbu_per_uu_](std::any value) { return RulerDescriptor::editPoint(value, dbu_per_uu_, ruler->getPt1(), false); })},
+    {"Euclidian", makeEditor([ruler](std::any value) {
+      bool euclidian = std::any_cast<bool>(value);
+      ruler->setEuclidian(euclidian);
+      return true;
+    })}
   };
 }
 

@@ -873,9 +873,10 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
-std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
+std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name, bool euclidian)
 {
   auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  new_ruler->setEuclidian(euclidian);
   std::string new_name = new_ruler->getName();
 
   // check if ruler name is unique

@@ -313,8 +313,30 @@ class GuiPainter : public Painter
     return {xMin, yMin, xMax, yMax};
   }
 
-  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
+  void drawRuler(int x0, int y0, int x1, int y1, bool euclidian = true, const std::string& label = "") override
   {
+    if (euclidian) {
+      const int x_dist = std::abs(x0 - x1);
+      const int y_dist = std::abs(y0 - y1);
+      std::string x_label = label;
+      std::string y_label = "";
+      if (y_dist > x_dist) {
+        std::swap(x_label, y_label);
+      }
+      drawRuler(x0, y0, x1, y0, x_label);
+      drawRuler(x1, y0, x1, y1, y_label);
+    } else {
+      drawRuler(x0, y0, x1, y1, label);
+    }
+  }
+
+  QPainter* getPainter() { return painter_; }
+
+ private:
+  QPainter* painter_;
+  int dbu_per_micron_;
+
+  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label) {
     const QColor ruler_color_qt = getOptions()->rulerColor();
     const Color ruler_color(ruler_color_qt.red(), ruler_color_qt.green(), ruler_color_qt.blue(), ruler_color_qt.alpha());
     const QFont ruler_font = getOptions()->rulerFont();
@@ -420,12 +442,6 @@ class GuiPainter : public Painter
 
     painter_->setTransform(initial_xfm);
   }
-
-  QPainter* getPainter() { return painter_; }
-
- private:
-  QPainter* painter_;
-  int dbu_per_micron_;
 };
 
 LayoutViewer::LayoutViewer(
@@ -1748,7 +1764,10 @@ void LayoutViewer::drawRulers(Painter& painter)
 
   for (auto& ruler : rulers_) {
     painter.drawRuler(
-        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
+        ruler->getPt0().x(), ruler->getPt0().y(),
+        ruler->getPt1().x(), ruler->getPt1().y(),
+        ruler->isEuclidian(),
+        ruler->getLabel());
   }
 }
 

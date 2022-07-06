@@ -52,10 +52,14 @@ class Ruler
   const odb::Point getPt0() const { return pt0_; }
   odb::Point& getPt1() { return pt1_; }
   const odb::Point getPt1() const { return pt1_; }
+  const odb::Point getEuclidianJoinPt() const;
   const std::string getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
   const std::string getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
+  bool isEuclidian() const { return euclidian_; }
+  void setEuclidian(bool euclidian) { euclidian_ = euclidian; }
+  double getLength() const;
 
   std::string getTclCommand(double dbu_to_microns) const;
 
@@ -66,6 +70,8 @@ class Ruler
  private:
   odb::Point pt0_;
   odb::Point pt1_;
+
+  bool euclidian_;
 
   std::string name_;
   std::string label_;

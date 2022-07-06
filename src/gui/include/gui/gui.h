@@ -217,7 +217,7 @@ class Painter
   virtual void drawString(int x, int y, Anchor anchor, const std::string& s, bool rotate_90 = false) = 0;
   virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) = 0;
 
-  virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
+  virtual void drawRuler(int x0, int y0, int x1, int y1, bool euclidian = true, const std::string& label = "") = 0;
 
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)
@@ -551,7 +551,7 @@ class Gui
   int selectPrevious();
   void animateSelection(int repeat = 0);
 
-  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
+  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "", bool euclidian = true);
   void deleteRuler(const std::string& name);
 
   void clearSelections();
