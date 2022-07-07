@@ -452,6 +452,7 @@ LayoutViewer::LayoutViewer(
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     std::function<bool(void)> usingDBU,
+    std::function<bool(void)> showRulerAsEuclidian,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -468,6 +469,7 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       usingDBU_(usingDBU),
+      showRulerAsEuclidian_(showRulerAsEuclidian),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
@@ -2617,7 +2619,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // draw partial ruler if present
   if (building_ruler_ && ruler_start_ != nullptr) {
     odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
-    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
+    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y(), showRulerAsEuclidian_());
   }
 
   // draw edge currently considered snapped to

@@ -298,6 +298,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* default_ruler_style_;
   QAction* font_;
 
   QLabel* location_;
