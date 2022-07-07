@@ -23,6 +23,7 @@ record_tests {
   def_parser
   ndr
   gcd_abstract_lef
+  gcd_abstract_lef_with_power
 }
 
 record_pass_fail_tests {
