@@ -2043,9 +2043,9 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
           /* 59 */ {7, -1, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 60 */ {7, -2, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 61 */ {7, -3, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 56 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 62 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 63 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
+          /* 62 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 63 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 64 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
