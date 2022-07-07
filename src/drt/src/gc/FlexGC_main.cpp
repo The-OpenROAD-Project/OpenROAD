@@ -2984,10 +2984,19 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         } else {
           fig_bbox = via->getLayer2BBox();
         }
+        origin = via->getOrigin();
         break;
       } else if (connFig->typeId() == drcPathSeg) {
         obj = connFig;
-        fig_bbox = static_cast<drPathSeg*>(connFig)->getBBox();
+        auto seg = static_cast<drPathSeg*>(connFig);
+        fig_bbox = seg->getBBox();
+        // Pick nearest of begin/end points
+        const auto [bp, ep] = seg->getPoints();
+        auto dist_bp = Point::manhattanDistance(markerBBox.closestPtInside(bp),
+                                                bp);
+        auto dist_ep = Point::manhattanDistance(markerBBox.closestPtInside(ep),
+                                                ep);
+        origin = (dist_bp < dist_ep) ? bp : ep;
         break;
       }
     }
@@ -3001,20 +3010,16 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       markerBBox.set_ylo(fig_bbox.yMin());
       markerBBox.set_yhi(fig_bbox.yMax());
       if (fig_bbox.xMin() == markerBBox.xMax()) {
-        origin = fig_bbox.ll();
         markerBBox.set_xlo(markerBBox.xMin() - mgrid);
       } else {
-        origin = fig_bbox.lr();
         markerBBox.set_xhi(markerBBox.xMax() + mgrid);
       }
     } else {
       markerBBox.set_xlo(fig_bbox.xMin());
       markerBBox.set_xhi(fig_bbox.xMax());
       if (fig_bbox.yMin() == markerBBox.yMax()) {
-        origin = fig_bbox.ll();
         markerBBox.set_ylo(markerBBox.yMin() - mgrid);
       } else {
-        origin = fig_bbox.ul();
         markerBBox.set_yhi(markerBBox.yMax() + mgrid);
       }
     }
