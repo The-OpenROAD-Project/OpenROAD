@@ -126,8 +126,10 @@ class DbVia
  public:
   struct ViaLayerShape
   {
-    std::set<odb::Rect> bottom;
-    std::set<odb::Rect> top;
+    using RectBoxPair = std::pair<odb::Rect, odb::dbSBox*>;
+    std::set<RectBoxPair> bottom;
+    std::set<RectBoxPair> middle;
+    std::set<RectBoxPair> top;
   };
 
   virtual ~DbVia() {}

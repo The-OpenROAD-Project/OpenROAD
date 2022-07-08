@@ -98,7 +98,6 @@ void ViaRepair::repair()
     std::vector<Rectangle> layer_obstructions_rect;
     layer_obstructions.get_rectangles(layer_obstructions_rect);
 
-
     const auto& layer_vias = vias[layer];
     auto& tech_vias = tech_vias_to_remove[layer];
     auto& block_vias = block_vias_to_remove[layer];
