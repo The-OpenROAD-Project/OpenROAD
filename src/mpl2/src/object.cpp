@@ -69,6 +69,17 @@ int Micro2Dbu(float metric, float dbu)
   return metric * dbu;
 }
 
+// Sort shapes
+bool SortShape(const std::pair<float, float>& shape1,
+               const std::pair<float, float>& shape2)
+{
+  // first sort based on area, then based on aspect ratios
+  if (shape1.first * shape1.second == shape2.first * shape2.second) 
+    return shape1.second / shape1.first < shape2.second / shape2.first;
+  else
+    return shape1.first * shape2.second < shape2.first * shape2.second;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // Metric Class
 Metric::Metric(unsigned int num_std_cell, 
@@ -543,9 +554,25 @@ void Cluster::PrintBasicInformation(utl::Logger* logger) const {
 
 
 // Macro Placement Support
+void Cluster::SetSoftMacro(SoftMacro* soft_macro)
+{
+  delete soft_macro_;
+  soft_macro_ = soft_macro;
+}
+
 SoftMacro* Cluster::GetSoftMacro() const
 {
   return soft_macro_;
+}
+
+void Cluster::SetMacroTilings(const std::vector<std::pair<float, float> >& tilings)
+{
+  macro_tilings_ = tilings;
+}
+
+const std::vector<std::pair<float, float> > Cluster::GetMacroTilings() const
+{
+  return macro_tilings_;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -792,6 +819,7 @@ SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name)
   name_ = name;
   x_ = pos.first;
   y_ = pos.second;
+  fixed_ = true;
 }
 
 // create a SoftMacro from a cluster
@@ -810,16 +838,20 @@ const std::string SoftMacro::GetName() const
 // Physical Information
 void SoftMacro::SetX(float x) 
 {
-  x_ = x;
+  if (fixed_ == false)
+    x_ = x;
 }
  
 void SoftMacro::SetY(float y)
 {
-  y_ = y;
+  if (fixed_ == false)
+    y_ = y;
 }
 
 void SoftMacro::SetLocation(const std::pair<float, float>& location)
 {
+  if (fixed_ == true)
+    return;  
   x_ = location.first;
   y_ = location.second;
 }

@@ -90,6 +90,9 @@ namespace mpl {
 float Dbu2Micro(int metric, float dbu);
 int Micro2Dbu(float metric, float dbu);
 
+// Sort shapes
+bool SortShape(const std::pair<float, float>& shape1, 
+               const std::pair<float, float>& shape2);
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
@@ -245,9 +248,13 @@ class Cluster {
     // Print Basic Information
     void PrintBasicInformation(utl::Logger* logger) const;
 
-    // Macro Placement Support
+    // Macro Placement Support 
+    void SetSoftMacro(SoftMacro* soft_macro);
     SoftMacro* GetSoftMacro() const;
-
+    
+    void SetMacroTilings(const std::vector<std::pair<float, float> >& tilings);
+    const std::vector<std::pair<float, float> > GetMacroTilings() const;
+  
   private:
     // Private Variables
     int id_ = -1;  // cluster id (a valid cluster id should be nonnegative)
@@ -280,6 +287,9 @@ class Cluster {
     // Thus we need to define related to parent and children pointers
     Cluster* parent_ = nullptr;  // parent of current cluster
     std::set<Cluster*> children_;  // children of current cluster
+
+    // macro tilings for hard macros 
+    std::vector<std::pair<float, float> > macro_tilings_; // <width, height>
 
     // To support grouping small clusters based connection signature, 
     // we define connection_map_
@@ -443,7 +453,9 @@ class SoftMacro {
 
     // Interfaces with hard macro
     Cluster* cluster_ = nullptr;
-    
+    bool fixed_ = false;
+
+
     // Alignment support
     // if the cluster has been aligned related to other macro_cluster or boundaries
     bool align_flag_ = false;
@@ -463,6 +475,13 @@ struct BundledNet {
     this->terminals = terminals;
     this->weight = weight;
   }
+
+  bool operator==(const BundledNet& net) {
+    return (terminals.first == net.terminals.first) &&
+           (terminals.second == net.terminals.second);
+  }
+
+
 };
 
 // Here we redefine the Rect class 
@@ -482,6 +501,37 @@ struct Rect {
   float yMin() const { return ly; }
   float xMax() const { return ux; }
   float yMax() const { return uy; }
+
+  bool  IsValid() const {
+    return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
+  }
+
+  void Merge(const Rect& rect) {
+    if (IsValid() == false)
+      return;
+
+    lx = std::min(lx, rect.lx);
+    ly = std::min(ly, rect.ly);
+    ux = std::max(ux, rect.ux);
+    uy = std::max(uy, rect.uy);
+  }
+  
+  void Relocate(float outline_lx, float outline_ly,
+          float outline_ux, float outline_uy) {
+    if (IsValid() == false)
+      return;
+     
+    lx = std::max(lx, outline_lx);
+    ly = std::max(ly, outline_ly);
+    ux = std::min(ux, outline_ux);
+    uy = std::min(uy, outline_uy);
+    lx -= outline_lx;
+    ly -= outline_ly;
+    ux -= outline_lx;
+    uy -= outline_ly;
+  }
+
+
 };
 
 

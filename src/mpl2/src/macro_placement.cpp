@@ -127,6 +127,18 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(float outline_width,
 
 // access functions
 template <class T>
+bool SimulatedAnnealingCore<T>::IsValid() const
+{
+  return (width_ <= outline_width_) && (height_ <= outline_height_);
+}
+
+template <class T>
+float SimulateAnnealingCore<T>::GetNormCost() const
+{
+  return CalNormCost();
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::GetWidth() const
 {
   return width_;
@@ -241,10 +253,10 @@ void SimulatedAnnealingCore<T>::CalFencePenalty()
     const float ly = macros_[id].GetY();
     const float ux = lx + macros_[id].GetWidth();
     const float uy = ly + macros_[id].GetHeight();
-    const float width  = std::max(ux, bbox->xMax()) - std::min(lx, bbox->xMin()) 
-                         - (bbox->xMax() - bbox->xMin());
-    const float height = std::max(uy, bbox->yMax()) - std::min(ly, bbox->yMin()) 
-                         - (bbox->yMax() - bbox->yMin());
+    const float width  = std::max(ux, bbox.xMax()) - std::min(lx, bbox.xMin()) 
+                         - (bbox.xMax() - bbox.xMin());
+    const float height = std::max(uy, bbox.yMax()) - std::min(ly, bbox.yMin()) 
+                         - (bbox.yMax() - bbox.yMin());
     fence_penalty_ += width * height;
   } 
 }
@@ -260,10 +272,10 @@ void SimulatedAnnealingCore<T>::CalGuidancePenalty()
     const float macro_ux = macro_lx + macros_[id].GetWidth();
     const float macro_uy = macro_ly + macros_[id].GetHeight();
     // center to center distance
-    const float width  = (macro_ux - macro_lx) + (bbox->xMax() - bbox->xMin());
-    const float height = (macro_uy - macro_ly) + (bbox->yMax() - bbox->yMin());
-    float x_dist = std::abs((macro_ux + macro_lx) / 2.0 - (bbox->xMax() + bbox->xMin()) / 2.0);
-    float y_dist = std::abs((macro_uy + macro_ly) / 2.0 - (bbox->yMax() + bbox->yMin()) / 2.0);
+    const float width  = (macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin());
+    const float height = (macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin());
+    float x_dist = std::abs((macro_ux + macro_lx) / 2.0 - (bbox.xMax() + bbox.xMin()) / 2.0);
+    float y_dist = std::abs((macro_uy + macro_ly) / 2.0 - (bbox.yMax() + bbox.yMin()) / 2.0);
     x_dist = x_dist - width > 0.0 ? x_dist - width : 0.0;
     y_dist = y_dist - height > 0.0 ? y_dist - height : 0.0;
     if (x_dist >= 0.0 && y_dist >= 0.0)

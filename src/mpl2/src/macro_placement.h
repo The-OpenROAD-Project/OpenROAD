@@ -81,9 +81,13 @@ class SimulatedAnnealingCore {
 
     void SetNets(const std::vector<BundledNet>& nets);
     // Fence corresponds to each macro (macro_id, fence)
-    void SetFences(const std::map<int, Rect*>& fences);
+    void SetFences(const std::map<int, Rect>& fences);
     // Guidance corresponds to each macro (macro_id, guide)
-    void SetGuides(const std::map<int, Rect*>& guides);
+    void SetGuides(const std::map<int, Rect>& guides);
+    
+
+    bool IsValid() const;
+    float GetNormCost() const;
 
     float GetWidth() const;
     float GetHeight() const;
@@ -302,6 +306,16 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     // action prob
     float resize_prob_ = 0.0;
 };
+
+
+// SACore wrapper function
+// T can be SACoreHardMacro or SACoreSoftMacro
+template <class T> 
+void RunSA(T* sa_core) 
+{
+  sa_core->Initialize();
+  sa_core->FastSA();
+}
 
 
 } // namespace mpl

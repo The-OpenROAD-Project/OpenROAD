@@ -108,19 +108,58 @@ class HierRTLMP {
    
     // Parameters related to macro placement
     // User can specify a global region for some designs
-    int global_fence_lx_ = -1;
-    int global_fence_ly_ = -1;
-    int global_fence_ux_ = -1;
-    int global_fence_uy_ = -1;
+    float global_fence_lx_ = std::numeric_limits<float>::max();
+    float global_fence_ly_ = std::numeric_limits<float>::max();
+    float global_fence_ux_ = 0.0;
+    float global_fence_uy_ = 0.0;
 
     float halo_width_ = 0.0;
 
+    int num_runs_ = 10;  // number of runs for SA
+    int num_threads_ = 10;  // number of threads
+    int random_seed_ = 0;   // random seed for deterministic   
+
+    float target_util_ = 0.75;  // target utilization of the design
+    float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+
+    // SA related parameters
+    // weight for different penalty
+    float outline_weight_    = 0.2;
+    float wirelength_weight_ = 0.16;
+    float guidance_weight_   = 0.16;
+    float fence_weight_      = 0.16;
+    float boundary_weight_   = 0.16;
+    float notch_weight_      = 0.16;
+
+
+    // gudiances, fences, constraints
+    std::map<std::string, Rect> fences_; // macro_name, fence
+    std::map<std::string, Rect> guides_; // macro_name, guide
+    std::vector<Rect> blockages_;  // blockages
+    
+    // Fast SA hyperparameter
+    float init_prob_         = 0.9;
+    int max_num_step_        = 2000;
+    int num_perturb_per_step_  = 100;
+    // if step < k_, T = init_T_ / (c_ * step_);
+    // else T = init_T_ / step
+    int k_ = 100;
+    int c_ = 10;
+
+    // probability of each action
+    float pos_swap_prob_    = 0.2
+    float neg_swap_prob_    = 0.2;
+    float double_swap_prob_ = 0.1;
+    float exchange_prob_    = 0.1;
+    float flip_prob_ = 0.2;
+    float resize_prob_ = 0.2;
+
     // design-related variables
-    // core area (in DBU)
-    int floorplan_lx_ = -1;
-    int floorplan_ly_ = -1;
-    int floorplan_ux_ = -1;
-    int floorplan_uy_ = -1;
+    // core area (in float)
+    float floorplan_lx_ = 0.0;
+    float floorplan_ly_ = 0.0;
+    float floorplan_ux_ = 0.0;
+    float floorplan_uy_ = 0.0;
 
     // statistics of the design
     // Here when we calculate macro area, we do not include halo_width
@@ -219,7 +258,18 @@ class HierRTLMP {
 
     // Place macros in a hierarchical mode based on the above
     // physcial hierarchical tree 
-    // The macro placement is done in a BFS manner (PreOrder)
-    // MultiLevelMacroPlacement(root_cluster_);
+    // The macro placement is done in a DFS manner (PreOrder)
+    void MultiLevelMacroPlacement(Cluster* cluster); 
+    // Determine the shape (area, possible aspect ratios) of each cluster
+    void CalClusterShape(Cluster* cluster);
+    // Determine positions and implementation of each children cluster
+    void PlaceChildrenClusters(Cluster* parent);
+    // Merge nets to reduce runtime
+    void MergeNets(std::vector<BundledNet>& nets);
+    // Route buses within the parent cluster
+    void CallPathSynthesis(Cluster* parent); 
+    // Determine the orientation and position of each hard macro
+    // in each HardMacroCluster
+    void PlaceHardMacros(Cluster* cluster);
   };
 }  // namespace mpl
