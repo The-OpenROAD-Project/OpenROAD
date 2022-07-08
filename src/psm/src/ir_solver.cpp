@@ -379,7 +379,9 @@ void IRSolver::ReadC4Data() {
                                      supply_voltage_src});
     }
     int num_b_x = coreW / m_bump_pitch_x;
+    int centering_offset_x = (coreW % m_bump_pitch_x)/2;
     int num_b_y = coreL / m_bump_pitch_y;
+    int centering_offset_y = (coreL % m_bump_pitch_y)/2;
     m_logger->warn(utl::PSM, 65,
                    "VSRC location not specified, using default checkerboard "
                    "pattern with one VDD every size bumps in x-direction and "
@@ -387,8 +389,9 @@ void IRSolver::ReadC4Data() {
     for (int i = 0; i < num_b_y; i++) {
       for (int j = 0; j < num_b_x; j = j + 6) {
         x_cor =
-            (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) + offset_x;
-        y_cor = (m_bump_pitch_y * i) + offset_y;
+            (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) +
+            offset_x + centering_offset_x;
+        y_cor = (m_bump_pitch_y * i) + offset_y + centering_offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
           m_C4Bumps.push_back(
               {x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src});
