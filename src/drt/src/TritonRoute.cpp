@@ -782,9 +782,9 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
   initDesign();
-  Rect box(design_->getTopBlock()->getBBox());
-  if (x1 != x2 || y1 != y2) {
-    box.init(x1, y1, x2, y2);
+  Rect box(x1, y1, x2, y2);
+  if (box.area() == 0) {
+    box = design_->getTopBlock()->getBBox();
   }
   auto gcWorker = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
   gcWorker->setDrcBox(box);
@@ -970,7 +970,7 @@ int TritonRoute::getWorkerResultsSize()
 
 void TritonRoute::reportDRC(const string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
-                            Rect box)
+                            Rect drcBox)
 {
   double dbu = getDesign()->getTech()->getDBUPerUU();
 
@@ -988,7 +988,7 @@ void TritonRoute::reportDRC(const string& file_name,
     for (const auto& marker : markers) {
       // get violation bbox
       Rect bbox = marker->getBBox();
-      if (box != Rect(0, 0, 0, 0) && !box.intersects(bbox))
+      if (drcBox != Rect(0, 0, 0, 0) && !drcBox.intersects(bbox))
         continue;
       auto tech = getDesign()->getTech();
       auto layer = tech->getLayer(marker->getLayerNum());
