@@ -98,7 +98,6 @@ void ViaRepair::repair()
     std::vector<Rectangle> layer_obstructions_rect;
     layer_obstructions.get_rectangles(layer_obstructions_rect);
 
-
     const auto& layer_vias = vias[layer];
     auto& tech_vias = tech_vias_to_remove[layer];
     auto& block_vias = block_vias_to_remove[layer];
@@ -271,6 +270,7 @@ void ViaRepair::report() const
     nets += net->getName();
   }
   logger_->report("Via repair on {}", nets);
+  bool removed_vias = false;
   for (const auto& [layer, removals] : removal_count_) {
     if (removals == 0) {
       continue;
@@ -278,6 +278,11 @@ void ViaRepair::report() const
     const int total = via_count_.at(layer);
     double percent = static_cast<double>(removals) / total * 100;
     logger_->report("{} removed {} vias out of {} vias ({:.2f}%).", layer->getName(), removals, total, percent);
+    removed_vias = true;
+  }
+
+  if (!removed_vias) {
+    logger_->report("No vias removed.");
   }
 }
 

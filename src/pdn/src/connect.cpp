@@ -105,9 +105,6 @@ void Connect::setCutPitch(int x, int y)
 void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
 {
   ongrid_.insert(layers.begin(), layers.end());
-  // remove top and bottom layers of the stack
-  ongrid_.erase(layer0_);
-  ongrid_.erase(layer1_);
 }
 
 void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, int>& splits)
@@ -552,12 +549,7 @@ void Connect::makeVia(odb::dbSWire* wire,
       }
     }
 
-    if (stack.size() > 1) {
-      via = std::make_unique<DbGenerateStackedVia>(
-          stack, layer0_, wire->getBlock(), ongrid_);
-    } else {
-      via = std::unique_ptr<DbVia>(stack[0]);
-    }
+    via = std::make_unique<DbGenerateStackedVia>(stack, layer0_, wire->getBlock(), ongrid_);
   }
 
   shapes = via->generate(wire->getBlock(), wire, type, x, y);
