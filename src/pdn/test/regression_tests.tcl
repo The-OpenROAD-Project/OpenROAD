@@ -81,6 +81,7 @@ record_tests {
   asap7_vias_dont_use
   asap7_taper
   asap7_offcenter_via
+  asap7_no_via_generate_v1_snapped
 
   existing
 

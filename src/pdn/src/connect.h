@@ -134,7 +134,7 @@ class Connect
   // map of built vias, where the key is the width and height of the via intersection,
   // and the value points of the associated via stack.
   using ViaIndex = std::pair<int, int>;
-  std::map<ViaIndex, std::unique_ptr<DbVia>> vias_;
+  std::map<ViaIndex, std::unique_ptr<DbGenerateStackedVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
   std::vector<odb::dbTechVia*> tech_vias_;
 
