@@ -1896,7 +1896,7 @@ void ViaGenerator::determineCutSpacing()
 
       if (rule->isSameNet()) {
         // use this rule since it's the same net
-        max_spacing_x = rule_spacing_y;
+        max_spacing_x = rule_spacing_x;
         max_spacing_y = rule_spacing_y;
         break;
       } else {
@@ -1907,7 +1907,7 @@ void ViaGenerator::determineCutSpacing()
     }
     if (max_spacing_x != 0 && max_spacing_y != 0) {
       setCutPitchX(cut.dx() + max_spacing_x);
-      setCutPitchY(cut.dy() + max_spacing_x);
+      setCutPitchY(cut.dy() + max_spacing_y);
     }
   }
 }
@@ -2446,7 +2446,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
         if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
           valid_change = false;
         }
-      } else {
+      } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
         if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
           valid_change = false;
         }
