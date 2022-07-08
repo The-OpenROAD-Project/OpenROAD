@@ -1088,9 +1088,7 @@ void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs,
     sta::Instance* inst = leaf_iter->next();
     sta::LibertyCell* lib_cell = network->libertyCell(inst);
     if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
-      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while (seq_iter.hasNext()) {
-        sta::Sequential* seq = seq_iter.next();
+      for (sta::Sequential* seq : lib_cell->sequentials()) {
         sta::FuncExpr* data_expr = seq->data();
         sta::FuncExprPortIterator data_port_iter(data_expr);
         while (data_port_iter.hasNext()) {

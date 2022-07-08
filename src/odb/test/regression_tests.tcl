@@ -1,6 +1,7 @@
 record_tests {
   import_package
   read_lef
+  read_db
   read_zipped
   create_sboxes
   dump_via_rules
@@ -22,6 +23,7 @@ record_tests {
   def_parser
   ndr
   gcd_abstract_lef
+  gcd_abstract_lef_with_power
 }
 
 record_pass_fail_tests {

@@ -61,6 +61,7 @@ target_sources(pdn
     via.cpp
     connect.cpp
     renderer.cpp
+    via_repair.cpp
 )
 
 target_include_directories(pdn

@@ -57,25 +57,25 @@ class frBlock : public frBlockObject
         dbUnit_(0){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
-  void getBBox(Rect& boxIn) const
+  Rect getBBox() const
   {
+    Rect box;
     if (boundaries_.size()) {
-      boundaries_.begin()->getBBox(boxIn);
+      box = boundaries_.begin()->getBBox();
     }
-    frCoord llx = boxIn.xMin();
-    frCoord lly = boxIn.yMin();
-    frCoord urx = boxIn.xMax();
-    frCoord ury = boxIn.yMax();
-    Rect tmpBox;
+    frCoord llx = box.xMin();
+    frCoord lly = box.yMin();
+    frCoord urx = box.xMax();
+    frCoord ury = box.yMax();
     for (auto& boundary : boundaries_) {
-      boundary.getBBox(tmpBox);
+      Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
       ury = ury > tmpBox.yMax() ? ury : tmpBox.yMax();
     }
     for (auto& inst : getInsts()) {
-      inst->getBBox(tmpBox);
+      Rect tmpBox = inst->getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -84,7 +84,7 @@ class frBlock : public frBlockObject
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
-          fig->getBBox(tmpBox);
+          Rect tmpBox = fig->getBBox();
           llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
           lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
           urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -92,9 +92,8 @@ class frBlock : public frBlockObject
         }
       }
     }
-    boxIn.init(llx, lly, urx, ury);
+    return Rect(llx, lly, urx, ury);
   }
-  void getDieBox(Rect& boxIn) const { boxIn = dieBox_; }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -203,11 +202,10 @@ class frBlock : public frBlockObject
   }
   frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
   // idx must be legal
-  void getGCellBox(const Point& idx1, Rect& box) const
+  Rect getGCellBox(const Point& idx1) const
   {
     Point idx(idx1);
-    Rect dieBox;
-    getDieBox(dieBox);
+    Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
@@ -241,12 +239,11 @@ class frBlock : public frBlockObject
     if (idx.y() >= (int) ygp.getCount() - 1) {
       yh = dieBox.yMax();
     }
-    box.init(xl, yl, xh, yh);
+    return Rect(xl, yl, xh, yh);
   }
-  void getGCellCenter(const Point& idx, Point& pt) const
+  Point getGCellCenter(const Point& idx) const
   {
-    Rect dieBox;
-    getDieBox(dieBox);
+    Rect dieBox = getDieBox();
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
     auto& ygp = gp[1];
@@ -268,9 +265,9 @@ class frBlock : public frBlockObject
     if (idx.y() == (int) ygp.getCount() - 1) {
       yh = dieBox.yMax();
     }
-    pt.set((xl + xh) / 2, (yl + yh) / 2);
+    return Point((xl + xh) / 2, (yl + yh) / 2);
   }
-  void getGCellIdx(const Point& pt, Point& idx) const
+  Point getGCellIdx(const Point& pt) const
   {
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -289,7 +286,7 @@ class frBlock : public frBlockObject
     if (idxY >= (int) ygp.getCount()) {
       idxY = (int) ygp.getCount() - 1;
     }
-    idx.set(idxX, idxY);
+    return Point(idxX, idxY);
   }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
@@ -314,6 +311,28 @@ class frBlock : public frBlockObject
     name2inst_[in->getName()] = in.get();
     insts_.push_back(std::move(in));
   }
+  void removeInst(frInst* inst)
+  {
+    for (const auto& iterm : inst->getInstTerms()) {
+      auto net = iterm->getNet();
+      if (net != nullptr)
+        net->removeInstTerm(iterm.get());
+    }
+    name2inst_.erase(inst->getName());
+    inst->setToBeDeleted(true);
+  }
+  void removeDeletedInsts()
+  {
+    insts_.erase(std::remove_if(insts_.begin(),
+                                insts_.end(),
+                                [](const std::unique_ptr<frInst>& inst) {
+                                  return inst->isToBeDeleted();
+                                }),
+                 insts_.end());
+    int id = 0;
+    for(const auto& inst : insts_)
+      inst->setId(id++);
+  }
   void addNet(std::unique_ptr<frNet> in)
   {
     in->setId(nets_.size());
@@ -331,15 +350,14 @@ class frBlock : public frBlockObject
   {
     boundaries_ = in;
     if (boundaries_.size()) {
-      boundaries_.begin()->getBBox(dieBox_);
+      dieBox_ = boundaries_.begin()->getBBox();
     }
     frCoord llx = dieBox_.xMin();
     frCoord lly = dieBox_.yMin();
     frCoord urx = dieBox_.xMax();
     frCoord ury = dieBox_.yMax();
-    Rect tmpBox;
     for (auto& boundary : boundaries_) {
-      boundary.getBBox(tmpBox);
+      Rect tmpBox = boundary.getBBox();
       llx = std::min(llx, tmpBox.xMin());
       lly = std::min(lly, tmpBox.yMin());
       urx = std::max(urx, tmpBox.xMax());

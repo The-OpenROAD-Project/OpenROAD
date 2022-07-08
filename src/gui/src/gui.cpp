@@ -488,7 +488,7 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
       logger_->error(utl::GUI, 65, "No design loaded.");
     }
 
-    block->getBBox()->getBox(save_region); // get die area since screen area is not reliable
+    save_region = block->getBBox()->getBox(); // get die area since screen area is not reliable
     const double bloat_by = 0.05; // 5%
     const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
 
@@ -856,6 +856,16 @@ void Gui::addFocusNet(odb::dbNet* net)
   main_window->getLayoutViewer()->addFocusNet(net);
 }
 
+void Gui::addRouteGuides(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addRouteGuides(net);
+}
+
+void Gui::removeRouteGuides(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeRouteGuides(net);
+}
+
 void Gui::removeFocusNet(odb::dbNet* net)
 {
   main_window->getLayoutViewer()->removeFocusNet(net);
@@ -864,6 +874,11 @@ void Gui::removeFocusNet(odb::dbNet* net)
 void Gui::clearFocusNets()
 {
   main_window->getLayoutViewer()->clearFocusNets();
+}
+
+void Gui::clearRouteGuides()
+{
+  main_window->getLayoutViewer()->clearRouteGuides();
 }
 
 void Gui::setLogger(utl::Logger* logger)

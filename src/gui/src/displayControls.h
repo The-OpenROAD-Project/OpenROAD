@@ -165,6 +165,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   DisplayControls(QWidget* parent = nullptr);
   ~DisplayControls();
 
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
@@ -189,6 +191,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   QColor placementBlockageColor() override;
   Qt::BrushStyle placementBlockagePattern() override;
+  QColor regionColor() override;
+  Qt::BrushStyle regionPattern() override;
   QColor instanceNameColor() override;
   QFont instanceNameFont() override;
   QColor rowColor() override;
@@ -224,6 +228,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+  bool areRegionsSelectable() const override;
+  bool isManufacturingGridVisible() const override;
 
   bool isModuleView() const override;
 
@@ -353,6 +359,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow detailed;
     ModelRow selected;
     ModelRow module;
+    ModelRow manufacturing_grid;
   };
 
   struct InstanceShapeModels
@@ -425,6 +432,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   odb::dbTechLayer* layers_menu_layer_;
 
   bool ignore_callback_;
+  bool ignore_selection_;
 
   // Categories in the model
   ModelRow layers_group_;
@@ -478,6 +486,9 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   QFont ruler_font_;
 
   QColor row_color_;
+
+  QColor region_color_;
+  Qt::BrushStyle region_pattern_;
 
   QFont pin_markers_font_;
 

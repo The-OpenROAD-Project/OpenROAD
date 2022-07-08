@@ -33,7 +33,7 @@
 using namespace std;
 using namespace fr;
 
-void frRPin::getBBox(Rect& in)
+Rect frRPin::getBBox()
 {
   Point pt;
 
@@ -41,23 +41,22 @@ void frRPin::getBBox(Rect& in)
     case frcInstTerm:
       {
         auto inst = static_cast<frInstTerm*>(term)->getInst();
-        dbTransform shiftXform;
-        inst->getTransform(shiftXform);
+        dbTransform shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
-        accessPoint->getPoint(pt);
+        pt = accessPoint->getPoint();
         shiftXform.apply(pt);
         break;
       }
     case frcBTerm:
-      accessPoint->getPoint(pt);
+      pt = accessPoint->getPoint();
       break;
     default:
       cout << "ERROR: Invalid term type in frRPin." << endl;
       break;
   }
 
-  in.init(pt.x(), pt.y(), pt.x(), pt.y());
+  return Rect(pt.x(), pt.y(), pt.x(), pt.y());
 }
 
 frLayerNum frRPin::getLayerNum()

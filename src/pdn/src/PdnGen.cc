@@ -49,6 +49,7 @@
 #include "rings.h"
 #include "straps.h"
 #include "utl/Logger.h"
+#include "via_repair.h"
 
 namespace pdn {
 
@@ -266,6 +267,7 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
+  updateRenderer();
 }
 
 void PdnGen::resetShapes()
@@ -273,6 +275,7 @@ void PdnGen::resetShapes()
   for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
+  updateRenderer();
 }
 
 void PdnGen::buildGrids(bool trim)
@@ -325,9 +328,7 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
-  if (debug_renderer_ != nullptr) {
-    debug_renderer_->update();
-  }
+  updateRenderer();
 }
 
 void PdnGen::cleanupVias()
@@ -768,7 +769,7 @@ void PdnGen::setDebugRenderer(bool on)
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this);
-      debug_renderer_->update();
+      rendererRedraw();
     }
   } else {
     debug_renderer_ = nullptr;
@@ -784,6 +785,13 @@ void PdnGen::rendererRedraw()
       // do nothing, dont want grid error to prevent debug renderer
       debug_renderer_->update();
     }
+  }
+}
+
+void PdnGen::updateRenderer() const
+{
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->update();
   }
 }
 
@@ -854,7 +862,9 @@ void PdnGen::ripUp(odb::dbNet* net)
   ShapeTreeMap net_shapes;
   Shape::populateMapFromDb(net, net_shapes);
   // remove bterms that connect to swires
+  std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {
+    std::set<odb::dbBPin*> pins;
     for (auto* pin : bterm->getBPins()) {
       bool remove = false;
       for (auto* box : pin->getBoxes()) {
@@ -866,8 +876,7 @@ void PdnGen::ripUp(odb::dbNet* net)
           continue;
         }
 
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
         Box search_box(Point(rect.xMin(), rect.yMin()),
                        Point(rect.xMax(), rect.yMax()));
@@ -877,12 +886,18 @@ void PdnGen::ripUp(odb::dbNet* net)
         }
       }
       if (remove) {
-        odb::dbBPin::destroy(pin);
+        pins.insert(pin);
       }
     }
-    if (bterm->getBPins().empty()) {
-      odb::dbBTerm::destroy(bterm);
+    for (auto* pin : pins) {
+        odb::dbBPin::destroy(pin);
     }
+    if (bterm->getBPins().empty()) {
+      terms.insert(bterm);
+    }
+  }
+  for (auto* term : terms) {
+    odb::dbBTerm::destroy(term);
   }
   auto swires = net->getSWires();
   for (auto iter = swires.begin(); iter != swires.end(); ) {
@@ -941,6 +956,13 @@ void PdnGen::checkSetup() const
   for (auto* domain : getDomains()) {
     domain->checkSetup();
   }
+}
+
+void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
+{
+  ViaRepair repair(logger_, nets);
+  repair.repair();
+  repair.report();
 }
 
 }  // namespace pdn

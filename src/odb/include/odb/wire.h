@@ -522,49 +522,6 @@ class Ath__grid
   void dealloc();
 };
 
-class Ath__gridTile
-{
- private:
-  Ath__grid** _gTable;
-  uint _levelCnt;
-  Rect _bb;
-
-  bool _poolFlag;
-  AthPool<Ath__track>* _trackPool;
-  AthPool<Ath__wire>* _wirePool;
-
- public:
-  Ath__gridTile(uint levelCnt,
-                int x1,
-                int y1,
-                int x2,
-                int y2,
-                AthPool<Ath__track>* trackPoolPtr = NULL,
-                AthPool<Ath__wire>* wirePoolPtr = NULL);
-  ~Ath__gridTile();
-  Ath__grid* addGrid(Ath__box* bb,
-                     uint level,
-                     uint dir,
-                     uint layerNum,
-                     uint width,
-                     uint pitch);
-  Ath__grid* addGrid(int x1,
-                     int y1,
-                     int x2,
-                     int y2,
-                     uint level,
-                     uint dir,
-                     uint layerNum,
-                     uint width,
-                     uint pitch);
-
-  void getBounds(int* x1, int* y1, int* x2, int* y2);
-  Ath__grid* getGrid(uint level);
-  void addGrid(Ath__grid* g);
-
-  void getBuses(Ath__array1D<Ath__box*>* boxTable, dbTech* tech);
-};
-
 class Ath__gridTable
 {
  private:

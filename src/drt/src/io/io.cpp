@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "io/io.h"
-
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +33,9 @@
 
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
+#include "frRTree.h"
 #include "global.h"
+#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -54,8 +54,7 @@ void io::Parser::setDieArea(odb::dbBlock* block)
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<Point> points;
-  odb::Rect box;
-  block->getDieArea(box);
+  odb::Rect box = block->getDieArea();
   points.push_back(
       Point(defdist(block, box.xMin()), defdist(block, box.yMin())));
   points.push_back(
@@ -857,16 +856,17 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
     }
   }
   auto db_path_segs = db_ap->getSegments();
-  for(const auto& [db_rect, begin_style_trunc, end_style_trunc] : db_path_segs) {
+  for (const auto& [db_rect, begin_style_trunc, end_style_trunc] :
+       db_path_segs) {
     frPathSeg path_seg;
     path_seg.setPoints_safe(db_rect.ll(), db_rect.ur());
-    if(begin_style_trunc == true){
+    if (begin_style_trunc == true) {
       path_seg.setBeginStyle(frcTruncateEndStyle);
     }
-    if(end_style_trunc == true){
+    if (end_style_trunc == true) {
       path_seg.setEndStyle(frcTruncateEndStyle);
     }
-    
+
     ap->addPathSeg(path_seg);
   }
 }
@@ -1066,6 +1066,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         rptr->setSameMask(rule->isSameMask());
         if (rule->isCornerOnly()) {
           rptr->setWithin(rule->getWithin());
+        } else if (rule->isCornerToCorner()) {
+          rptr->setCornerToCorner(true);
         }
         if (rule->isExceptEol()) {
           rptr->setEolWidth(rule->getEolWidth());
@@ -1922,8 +1924,15 @@ void io::Parser::setLayers(odb::dbTech* tech)
 
 void io::Parser::setMacros(odb::dbDatabase* db)
 {
+  const frLayerNum numLayers = tech->getLayers().size();
+  std::vector<RTree<frMPin*>> pin_shapes;
+  pin_shapes.resize(numLayers);
+
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
+      for (auto& tree : pin_shapes) {
+        tree.clear();
+      }
       auto tmpMaster = make_unique<frMaster>(master->getName());
       frCoord originX;
       frCoord originY;
@@ -1983,6 +1992,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             pinFig->setLayerNum(layerNum);
             unique_ptr<frPinFig> uptr(std::move(pinFig));
             pinIn->addPinFig(std::move(uptr));
+            pin_shapes[layerNum].insert(
+                make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
           }
           term->addPin(std::move(pinIn));
         }
@@ -1990,29 +2001,64 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
-        string layer = obs->getTechLayer()->getName();
-        if (tech->name2layer.find(layer) == tech->name2layer.end()) {
-          auto type = obs->getTechLayer()->getType();
-          if (type == odb::dbTechLayerType::ROUTING
-              || type == odb::dbTechLayerType::CUT)
+        auto layer = obs->getTechLayer();
+        string layer_name = layer->getName();
+        auto layer_type = layer->getType();
+        if (tech->name2layer.find(layer_name) == tech->name2layer.end()) {
+          if (layer_type == odb::dbTechLayerType::ROUTING
+              || layer_type == odb::dbTechLayerType::CUT)
             logger->warn(DRT,
                          123,
                          "Layer {} is skipped for {}/OBS.",
-                         layer,
+                         layer_name,
                          tmpMaster->getName());
           continue;
-        } else
-          layerNum = tech->name2layer.at(layer)->getLayerNum();
+        } else {
+          layerNum = tech->name2layer.at(layer_name)->getLayerNum();
+        }
+        frCoord xl = obs->xMin();
+        frCoord yl = obs->yMin();
+        frCoord xh = obs->xMax();
+        frCoord yh = obs->yMax();
+
+        // In some LEF they put contact cut shapes in the pin and in others
+        // they put them in OBS for some unknown reason.  The later confuses gc
+        // into thinking the cuts are diff-net.  To resolve this we move
+        // any cut OBS enclosed by a pin shape into the pin.
+        if (layer_type == odb::dbTechLayerType::CUT) {
+          std::vector<rq_box_value_t<frMPin*>> containing_pins;
+          if (layerNum + 1 < pin_shapes.size()) {
+            pin_shapes[layerNum + 1].query(
+                bgi::intersects(Rect{xl, yl, xh, yh}),
+                back_inserter(containing_pins));
+          }
+          if (!containing_pins.empty()) {
+            frMPin* pin = nullptr;
+            for (auto& [box, rqPin] : containing_pins) {
+              if (!pin) {
+                pin = rqPin;
+              } else if (pin != rqPin) {
+                pin = nullptr;
+                break;  // skip if more than one pin
+              }
+            }
+            if (pin) {
+              unique_ptr<frRect> pinFig = make_unique<frRect>();
+              pinFig->setBBox(Rect(xl, yl, xh, yh));
+              pinFig->addToPin(pin);
+              pinFig->setLayerNum(layerNum);
+              unique_ptr<frPinFig> uptr(std::move(pinFig));
+              pin->addPinFig(std::move(uptr));
+              continue;
+            }
+          }
+        }
         auto blkIn = make_unique<frBlockage>();
         blkIn->setId(numBlockages);
         blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
         auto pinIn = make_unique<frBPin>();
         pinIn->setId(0);
-        frCoord xl = obs->xMin();
-        frCoord yl = obs->yMin();
-        frCoord xh = obs->xMax();
-        frCoord yh = obs->yMax();
         // pinFig
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
@@ -2211,8 +2257,7 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
     frLef58CutClass* cutClass = nullptr;
 
     for (auto& cutFig : viaDef->getCutFigs()) {
-      Rect box;
-      cutFig->getBBox(box);
+      Rect box = cutFig->getBBox();
       auto width = box.minDXDY();
       auto length = box.maxDXDY();
       cutClassIdx = cutLayer->getCutClassIdx(width, length);
@@ -2244,7 +2289,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   setNDRs(db);
 }
 
-void io::Parser::readDb(odb::dbDatabase* db)
+void io::Parser::readDb()
 {
   if (design->getTopBlock() != nullptr)
     return;
@@ -2272,8 +2317,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
 
   if (VERBOSE > 0) {
     logger->report("");
-    Rect dieBox;
-    design->getTopBlock()->getDieBox(dieBox);
+    Rect dieBox = design->getTopBlock()->getDieBox();
     logger->report("Design:                   {}",
                    design->getTopBlock()->getName());
     // TODO Rect can't be logged directly
@@ -2296,105 +2340,59 @@ void io::Parser::readDb(odb::dbDatabase* db)
   }
 }
 
-void io::Parser::readGuide()
+bool io::Parser::readGuide()
 {
   ProfileTask profile("IO:readGuide");
-
-  if (VERBOSE > 0) {
-    logger->info(DRT, 151, "Reading guide.");
-  }
-
   int numGuides = 0;
-
-  string netName = "";
-  frNet* net = nullptr;
-
-  ifstream fin(GUIDE_FILE.c_str());
-  string line;
-  Rect box;
-  frLayerNum layerNum;
-
-  if (fin.is_open()) {
-    while (fin.good()) {
-      getline(fin, line);
-      // cout <<line <<endl <<line.size() <<endl;
-      if (line == "(" || line == "")
-        continue;
-      if (line == ")") {
-        continue;
-      }
-
-      stringstream ss(line);
-      string word = "";
-      vector<string> vLine;
-      while (!ss.eof()) {
-        ss >> word;
-        vLine.push_back(word);
-        // cout <<word <<" ";
-      }
-      // cout <<endl;
-
-      if (vLine.size() == 0) {
-        logger->error(DRT, 152, "Error reading guide file {}.", GUIDE_FILE);
-      } else if (vLine.size() == 1) {
-        netName = vLine[0];
-        if (design->topBlock_->name2net_.find(vLine[0])
-            == design->topBlock_->name2net_.end()) {
-          logger->error(DRT, 153, "Cannot find net {}.", vLine[0]);
+  auto block = db->getChip()->getBlock();
+  for (auto dbNet : block->getNets()) {
+    if (dbNet->getGuides().empty())
+      continue;
+    frNet* net = design->topBlock_->findNet(dbNet->getName());
+    if (net == nullptr)
+      logger->error(DRT, 153, "Cannot find net {}.", dbNet->getName());
+    for (auto dbGuide : dbNet->getGuides()) {
+      frLayer* layer = design->tech_->getLayer(dbGuide->getLayer()->getName());
+      if (layer == nullptr)
+        logger->error(
+            DRT, 154, "Cannot find layer {}.", dbGuide->getLayer()->getName());
+      frLayerNum layerNum = layer->getLayerNum();
+      if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
+          || layerNum > TOP_ROUTING_LAYER)
+        logger->error(DRT,
+                      155,
+                      "Guide in net {} uses layer {} ({})"
+                      " that is outside the allowed routing range "
+                      "[{} ({}), ({})].",
+                      net->getName(),
+                      layer->getName(),
+                      layerNum,
+                      tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
+                      BOTTOM_ROUTING_LAYER,
+                      tech->getLayer(TOP_ROUTING_LAYER)->getName(),
+                      TOP_ROUTING_LAYER);
+      frRect rect;
+      rect.setBBox(dbGuide->getBox());
+      rect.setLayerNum(layerNum);
+      tmpGuides[net].push_back(rect);
+      ++numGuides;
+      if (numGuides < 1000000) {
+        if (numGuides % 100000 == 0) {
+          logger->info(DRT, 156, "guideIn read {} guides.", numGuides);
         }
-        net = design->topBlock_->name2net_[netName];
-      } else if (vLine.size() == 5) {
-        if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
-          logger->error(DRT, 154, "Cannot find layer {}.", vLine[4]);
-        }
-        layerNum = tech->name2layer[vLine[4]]->getLayerNum();
-
-        if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
-            || layerNum > TOP_ROUTING_LAYER)
-          logger->error(DRT,
-                        155,
-                        "Guide in net {} uses layer {} ({})"
-                        " that is outside the allowed routing range "
-                        "[{} ({}), ({})].",
-                        netName,
-                        vLine[4],
-                        layerNum,
-                        tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
-                        BOTTOM_ROUTING_LAYER,
-                        tech->getLayer(TOP_ROUTING_LAYER)->getName(),
-                        TOP_ROUTING_LAYER);
-
-        box.init(
-            stoi(vLine[0]), stoi(vLine[1]), stoi(vLine[2]), stoi(vLine[3]));
-        frRect rect;
-        rect.setBBox(box);
-        rect.setLayerNum(layerNum);
-        tmpGuides[net].push_back(rect);
-        ++numGuides;
-        if (numGuides < 1000000) {
-          if (numGuides % 100000 == 0) {
-            logger->info(DRT, 156, "guideIn read {} guides.", numGuides);
-          }
-        } else {
-          if (numGuides % 1000000 == 0) {
-            logger->info(DRT, 157, "guideIn read {} guides.", numGuides);
-          }
-        }
-
       } else {
-        logger->error(DRT, 158, "Error reading guide file {}.", GUIDE_FILE);
+        if (numGuides % 1000000 == 0) {
+          logger->info(DRT, 157, "guideIn read {} guides.", numGuides);
+        }
       }
     }
-    fin.close();
-  } else {
-    logger->error(DRT, 159, "Failed to open guide file {}.", GUIDE_FILE);
   }
-
   if (VERBOSE > 0) {
     logger->report("");
     logger->report("Number of guides:     {}", numGuides);
     logger->report("");
   }
+  return !tmpGuides.empty();
 }
 
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
@@ -2423,9 +2421,6 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
-        Point start, end;
-        pathSeg.getPoints(start, end);
-
         connFigs[netName].push_back(make_shared<frPathSeg>(pathSeg));
       }
     }
@@ -2451,14 +2446,12 @@ void io::Writer::splitVia_helper(
       && mergedPathSegs.at(layerNum).at(isH).find(trackLoc)
              != mergedPathSegs.at(layerNum).at(isH).end()) {
     for (auto& pathSeg : mergedPathSegs.at(layerNum).at(isH).at(trackLoc)) {
-      Point begin, end;
-      pathSeg->getPoints(begin, end);
+      auto [begin, end] = pathSeg->getPoints();
       if ((isH == 0 && (begin.x() < x) && (end.x() > x))
           || (isH == 1 && (begin.y() < y) && (end.y() > y))) {
-        frSegStyle style1, style2, style_default;
-        pathSeg->getStyle(style1);
-        pathSeg->getStyle(style2);
-        style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
+        frSegStyle style1 = pathSeg->getStyle();
+        frSegStyle style2 = pathSeg->getStyle();
+        frSegStyle style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
         shared_ptr<frPathSeg> newPathSeg = make_shared<frPathSeg>(*pathSeg);
         pathSeg->setPoints(begin, Point(x, y));
         style1.setEndStyle(style_default.getEndStyle(),
@@ -2490,8 +2483,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
   for (auto& connFig : connFigs) {
     if (connFig->typeId() == frcPathSeg) {
       auto pathSeg = dynamic_pointer_cast<frPathSeg>(connFig);
-      Point begin, end;
-      pathSeg->getPoints(begin, end);
+      auto [begin, end] = pathSeg->getPoints();
       frLayerNum layerNum = pathSeg->getLayerNum();
       if (begin == end) {
         // std::cout << "Warning: 0 length connFig\n";
@@ -2510,8 +2502,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
     } else if (connFig->typeId() == frcVia) {
       auto via = dynamic_pointer_cast<frVia>(connFig);
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
-      Point viaPoint;
-      via->getOrigin(viaPoint);
+      Point viaPoint = via->getOrigin();
       viaMergeMap[make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)] = via;
       // cout <<"found via" <<endl;
     }
@@ -2531,7 +2522,6 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
     int cnt = 0;
     shared_ptr<frPathSeg> newPathSeg;
     frSegStyle style;
-    Point begin, end;
     for (auto& it2 : it1.second) {
       // cout <<"coord " <<coord <<endl;
       for (auto& pathSegTuple : it2.second) {
@@ -2546,9 +2536,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
           auto pathSeg = get<0>(pathSegTuple);
           auto isBegin = get<1>(pathSegTuple);
           if (isBegin) {
-            pathSeg->getPoints(begin, end);
-            frSegStyle tmpStyle;
-            pathSeg->getStyle(tmpStyle);
+            frSegStyle tmpStyle = pathSeg->getStyle();
             if (tmpStyle.getBeginExt() > style.getBeginExt()) {
               style.setBeginStyle(tmpStyle.getBeginStyle(),
                                   tmpStyle.getBeginExt());
@@ -2559,15 +2547,14 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
         hasSeg = true;
         // newPathSeg end
       } else if (hasSeg && cnt == 0) {
-        newPathSeg->getPoints(begin, end);
+        auto [begin, end] = newPathSeg->getPoints();
         for (auto& pathSegTuple : it2.second) {
           auto pathSeg = get<0>(pathSegTuple);
           auto isBegin = get<1>(pathSegTuple);
           if (!isBegin) {
             Point tmp;
-            pathSeg->getPoints(tmp, end);
-            frSegStyle tmpStyle;
-            pathSeg->getStyle(tmpStyle);
+            std::tie(tmp, end) = pathSeg->getPoints();
+            frSegStyle tmpStyle = pathSeg->getStyle();
             if (tmpStyle.getEndExt() > style.getEndExt()) {
               style.setEndStyle(tmpStyle.getEndStyle(), tmpStyle.getEndExt());
             }
@@ -2622,11 +2609,9 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
         for (auto& seg1 : mapIt1.second) {
           bool skip = false;
           // seg2 is horizontal
-          Point seg1Begin, seg1End;
-          seg1->getPoints(seg1Begin, seg1End);
+          auto [seg1Begin, seg1End] = seg1->getPoints();
           for (auto& seg2 : mapIt2.second) {
-            Point seg2Begin, seg2End;
-            seg2->getPoints(seg2Begin, seg2End);
+            auto [seg2Begin, seg2End] = seg2->getPoints();
             bool pushNewSeg1 = false;
             bool pushNewSeg2 = false;
             shared_ptr<frPathSeg> newSeg1;
@@ -2641,12 +2626,9 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
               newSeg1->setPoints(Point(seg1End.x(), seg2Begin.y()), seg1End);
               // modify endstyle
               auto layerNum = seg1->getLayerNum();
-              frSegStyle tmpStyle1;
-              frSegStyle tmpStyle2;
-              frSegStyle style_default;
-              seg1->getStyle(tmpStyle1);
-              seg1->getStyle(tmpStyle2);
-              style_default
+              frSegStyle tmpStyle1 = seg1->getStyle();
+              frSegStyle tmpStyle2 = seg1->getStyle();
+              frSegStyle style_default
                   = getTech()->getLayer(layerNum)->getDefaultSegStyle();
               tmpStyle1.setEndStyle(frcExtendEndStyle,
                                     style_default.getEndExt());
@@ -2665,12 +2647,9 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
               newSeg2->setPoints(Point(seg1End.x(), seg2Begin.y()), seg2End);
               // modify endstyle
               auto layerNum = seg2->getLayerNum();
-              frSegStyle tmpStyle1;
-              frSegStyle tmpStyle2;
-              frSegStyle style_default;
-              seg2->getStyle(tmpStyle1);
-              seg2->getStyle(tmpStyle2);
-              style_default
+              frSegStyle tmpStyle1 = seg2->getStyle();
+              frSegStyle tmpStyle2 = seg2->getStyle();
+              frSegStyle style_default
                   = getTech()->getLayer(layerNum)->getDefaultSegStyle();
               tmpStyle1.setEndStyle(frcExtendEndStyle,
                                     style_default.getEndExt());
@@ -2746,7 +2725,6 @@ void io::Writer::fillConnFigs(bool isTA)
 
 void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
 {
-  Rect box;
   for (auto via : viaDefs) {
     if (block->findVia(via->getName().c_str()) != nullptr)
       continue;
@@ -2765,18 +2743,18 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
     _db_via->setDefault(true);
     for (auto& fig : via->getLayer2Figs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       odb::dbBox::create(
           _db_via, _layer2, box.xMin(), box.yMin(), box.xMax(), box.yMax());
     }
     for (auto& fig : via->getCutFigs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       odb::dbBox::create(
           _db_via, _cut_layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
     }
 
     for (auto& fig : via->getLayer1Figs()) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       odb::dbBox::create(
           _db_via, _layer1, box.xMin(), box.yMin(), box.xMax(), box.yMax());
     }
@@ -2806,10 +2784,8 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                   layer,
                   odb::dbWireType("ROUTED"),
                   net->getNonDefaultRule()->getLayerRule(layer));
-            Point begin, end;
-            frSegStyle segStyle;
-            pathSeg->getPoints(begin, end);
-            pathSeg->getStyle(segStyle);
+            auto [begin, end] = pathSeg->getPoints();
+            frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
               _wire_encoder.addPoint(begin.x(), begin.y());
             } else if (segStyle.getBeginStyle()
@@ -2845,8 +2821,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                   layer,
                   odb::dbWireType("ROUTED"),
                   net->getNonDefaultRule()->getLayerRule(layer));
-            Point origin;
-            via->getOrigin(origin);
+            Point origin = via->getOrigin();
             _wire_encoder.addPoint(origin.x(), origin.y());
             odb::dbTechVia* tech_via = tech->findVia(viaName.c_str());
             if (tech_via != nullptr) {
@@ -2863,10 +2838,8 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                 = getTech()->getLayer(pwire->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
-            Point origin;
-            Rect offsetBox;
-            pwire->getOrigin(origin);
-            pwire->getOffsetBox(offsetBox);
+            Point origin = pwire->getOrigin();
+            Rect offsetBox = pwire->getOffsetBox();
             _wire_encoder.addPoint(origin.x(), origin.y());
             _wire_encoder.addRect(offsetBox.xMin(),
                                   offsetBox.yMin(),
@@ -2926,7 +2899,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     ++numCuts;
   }
   auto path_segs = ap->getPathSegs();
-  for(const auto& path_seg : path_segs) {
+  for (const auto& path_seg : path_segs) {
     Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
     bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
     bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);

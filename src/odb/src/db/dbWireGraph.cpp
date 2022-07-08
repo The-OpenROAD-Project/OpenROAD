@@ -403,11 +403,13 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::ITERM: {
+#if 0
 #ifndef NDEBUG
         if (prev->_object)
           assert(prev->_object == (dbObject*) decoder.getITerm());
         else
           assert(prev->_object == NULL);
+#endif
 #endif
         prev->_object = (dbObject*) decoder.getITerm();
         break;

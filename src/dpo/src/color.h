@@ -32,76 +32,77 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <iostream>
 #include <vector>
 
 namespace dpo {
 
-class Graph {
+class Graph
+{
  public:
-  Graph(int v) : m_v(v) {
-    m_adj.resize(m_v);
+  Graph(int v) : v_(v)
+  {
+    adj_.resize(v_);
 
-    m_color.resize(m_v);
-    std::fill(m_color.begin(), m_color.end(), -1);
-    m_ncolors = 0;
+    color_.resize(v_);
+    std::fill(color_.begin(), color_.end(), -1);
+    ncolors_ = 0;
   }
-  virtual ~Graph() {}
-  void addEdge(int u, int v) {
-    m_adj[u].push_back(v);
-    m_adj[v].push_back(u);
+
+  void addEdge(int u, int v)
+  {
+    adj_[u].push_back(v);
+    adj_[v].push_back(u);
   }
-  void removeDuplicates() {
-    for (int i = 0; i < m_v; i++) {
-      std::sort(m_adj[i].begin(), m_adj[i].end());
-      m_adj[i].erase(std::unique(m_adj[i].begin(), m_adj[i].end()),
-                     m_adj[i].end());
+
+  void removeDuplicates()
+  {
+    for (int i = 0; i < v_; i++) {
+      std::sort(adj_[i].begin(), adj_[i].end());
+      adj_[i].erase(std::unique(adj_[i].begin(), adj_[i].end()), adj_[i].end());
     }
   }
 
-  void greedyColoring() {
-    m_color.resize(m_v);
-    std::fill(m_color.begin(), m_color.end(), -1);
-    m_color[0] = 0;  // first node gets first color.
+  void greedyColoring()
+  {
+    color_.resize(v_);
+    std::fill(color_.begin(), color_.end(), -1);
+    color_[0] = 0;  // first node gets first color.
 
-    m_ncolors = 1;
+    ncolors_ = 1;
 
-    std::vector<int> avail(m_v, -1);
+    std::vector<int> avail(v_, -1);
 
     // Do subsequent nodes.
-    for (int v = 1; v < m_v; v++) {
+    for (int v = 1; v < v_; v++) {
       // Determine which colors cannot be used.  Pick the smallest
       // color which can be used.
-      for (int i = 0; i < m_adj[v].size(); i++) {
-        int u = m_adj[v][i];
-        if (m_color[u] != -1) {
+      for (int i = 0; i < adj_[v].size(); i++) {
+        int u = adj_[v][i];
+        if (color_[u] != -1) {
           // Node "u" has a color.  So, it is not available to "v".
-          avail[m_color[u]] = v;  // Marking "avail[color]" with a "v" means it
-                                  // is not available for node v.
+          avail[color_[u]] = v;  // Marking "avail[color]" with a "v" means it
+                                 // is not available for node v.
         }
       }
 
-      for (int cr = 0; cr < m_v; cr++) {
+      for (int cr = 0; cr < v_; cr++) {
         if (avail[cr] != v) {
-          m_color[v] = cr;
-          m_ncolors = std::max(m_ncolors, cr + 1);
+          color_[v] = cr;
+          ncolors_ = std::max(ncolors_, cr + 1);
           break;
         }
       }
     }
   }
 
-  int getColor(int i) const { return m_color[i]; }
-  int getNColors() const { return m_ncolors; }
+  int getColor(int i) const { return color_[i]; }
+  int getNColors() const { return ncolors_; }
 
  private:
-  int m_v;
-  std::vector<std::vector<int>> m_adj;
-  std::vector<int> m_color;
-  int m_ncolors;
+  int v_;
+  std::vector<std::vector<int>> adj_;
+  std::vector<int> color_;
+  int ncolors_;
 };
 
 }  // namespace dpo

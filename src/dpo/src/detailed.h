@@ -35,8 +35,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
@@ -46,50 +46,40 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedSeg;
 class DetailedMgr;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedParams {
- public:
-  DetailedParams()
-      : m_targetUt(1.0) {
-    m_script = "";
-  }
-  virtual ~DetailedParams() {}
-
- public:
-  std::string m_script;
-  double m_targetUt;
+struct DetailedParams
+{
+  std::string script_;
+  double targetUt_ = 1.0;
 };
 
-class Detailed {
+class Detailed
+{
  public:
   Detailed(DetailedParams& params)
-    : m_params(params),
-      m_mgr(nullptr),
-      m_arch(nullptr),
-      m_network(nullptr),
-      m_rt(nullptr)
-  {}
-  virtual ~Detailed() {}
+      : params_(params),
+        mgr_(nullptr),
+        arch_(nullptr),
+        network_(nullptr),
+        rt_(nullptr)
+  {
+  }
 
-  // Interface for script.
-  // bool improve( Architecture* arch, Network* network, RoutingParams* rt );
   bool improve(DetailedMgr& mgr);
 
- protected:
+ private:
   void doDetailedCommand(std::vector<std::string>& args);
 
-  DetailedParams& m_params;
+  DetailedParams& params_;
+  DetailedMgr* mgr_;
 
-  DetailedMgr* m_mgr;
-
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 };
 
 }  // namespace dpo

@@ -52,6 +52,7 @@ target_link_libraries(ant
   PUBLIC
     odb
     OpenSTA
+    grt
     utl
 )
 

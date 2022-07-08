@@ -70,14 +70,14 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       ignoreDB_(false),
       ignoreMinArea_(false),
       ignoreLongSideEOL_(false),
+      ignoreCornerSpacing_(false),
       surgicalFixEnabled_(false)
 {
 }
 
 void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
-  Rect bbox;
-  in->getBBox(bbox);
+  Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
   std::vector<frBlockObject*> srcs(2, nullptr);
@@ -194,6 +194,11 @@ void FlexGCWorker::setIgnoreDB()
 void FlexGCWorker::setIgnoreMinArea()
 {
   impl_->ignoreMinArea_ = true;
+}
+
+void FlexGCWorker::setIgnoreCornerSpacing()
+{
+  impl_->ignoreCornerSpacing_ = true;
 }
 
 void FlexGCWorker::setIgnoreLongSideEOL()

@@ -217,10 +217,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   if (flag)
@@ -231,10 +231,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -252,7 +252,7 @@ void SimulatedAnnealingCore::Perturb()
   pre_height_ = height_;
   pre_area_ = area_;
 
-  float op = (distribution_) (generator_);
+  float op = (distribution_)(generator_);
   if (op <= pos_swap_prob_) {
     action_id_ = 0;
     SingleSwap(true);

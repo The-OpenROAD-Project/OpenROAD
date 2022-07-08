@@ -58,3 +58,16 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
       design->getRegionQuery()->addBlockObj(inst);
   }
 }
+
+void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
+{
+  auto design = router_->getDesign();
+  if (design != nullptr && design->getTopBlock() != nullptr) {
+    auto inst = design->getTopBlock()->getInst(db_inst->getName());
+    if (inst == nullptr)
+      return;
+    if (design->getRegionQuery() != nullptr)
+      design->getRegionQuery()->removeBlockObj(inst);
+    design->getTopBlock()->removeInst(inst);
+  }
+}

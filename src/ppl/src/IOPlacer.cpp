@@ -282,14 +282,12 @@ std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
 
 void IOPlacer::getBlockedRegionsFromMacros()
 {
-  odb::Rect die_area;
-  block_->getDieArea(die_area);
+  odb::Rect die_area = block_->getDieArea();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
     if (master->isBlock() && inst->isPlaced()) {
-      odb::Rect inst_area;
-      inst->getBBox()->getBox(inst_area);
+      odb::Rect inst_area = inst->getBBox()->getBox();
       odb::Rect intersect = die_area.intersect(inst_area);
 
       std::vector<Interval> intervals
@@ -303,13 +301,11 @@ void IOPlacer::getBlockedRegionsFromMacros()
 
 void IOPlacer::getBlockedRegionsFromDbObstructions()
 {
-  odb::Rect die_area;
-  block_->getDieArea(die_area);
+  odb::Rect die_area = block_->getDieArea();
 
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* obstructBox = obstruction->getBBox();
-    odb::Rect obstructArea;
-    obstructBox->getBox(obstructArea);
+    odb::Rect obstructArea = obstructBox->getBox();
     odb::Rect intersect = die_area.intersect(obstructArea);
 
     std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
@@ -1244,8 +1240,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   odb::Point pos = odb::Point(x, y);
 
-  Rect die_boundary;
-  block_->getDieArea(die_boundary);
+  Rect die_boundary = block_->getDieArea();
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
 
@@ -1432,8 +1427,7 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
 {
   int database_unit = tech_->getLefUnits();
 
-  Rect boundary;
-  block_->getDieArea(boundary);
+  Rect boundary = block_->getDieArea();
 
   std::vector<int> min_spacings_x;
   std::vector<int> min_spacings_y;
@@ -1542,8 +1536,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
     if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-      odb::Rect obstruction_rect;
-      box->getBox(obstruction_rect);
+      odb::Rect obstruction_rect = box->getBox();
       obstructions.push_back(obstruction_rect);
     }
   }
@@ -1555,8 +1548,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
             if (wire->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-              odb::Rect obstruction_rect;
-              wire->getBox(obstruction_rect);
+              odb::Rect obstruction_rect = wire->getBox();
               obstructions.push_back(obstruction_rect);
             }
           }
@@ -1571,8 +1563,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
           if (box->getTechLayer()->getRoutingLevel() == top_grid_.layer) {
-            odb::Rect obstruction_rect;
-            box->getBox(obstruction_rect);
+            odb::Rect obstruction_rect = box->getBox();
             obstructions.push_back(obstruction_rect);
           }
         }
@@ -1581,8 +1572,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   }
 
   // check for slots that go beyond the die boundary
-  odb::Rect die_area;
-  block_->getDieArea(die_area);
+  odb::Rect die_area = block_->getDieArea();
   for (auto& slot : top_layer_slots_) {
     odb::Point& point = slot.pos;
     if (point.x() - top_grid_.width / 2 < die_area.xMin()

@@ -69,8 +69,6 @@ namespace triton_route {
 
 struct ParamStruct
 {
-  std::string guideFile;
-  std::string outputGuideFile;
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::string outputCmapFile;
@@ -89,6 +87,7 @@ struct ParamStruct
   bool doPa = false;
   bool singleStepDR = false;
   int minAccessPoints = -1;
+  bool saveGuideUpdates = false;
 };
 
 class TritonRoute
@@ -182,7 +181,7 @@ class TritonRoute
   boost::asio::thread_pool dist_pool_;
 
   void initDesign();
-  void initGuide();
+  bool initGuide();
   void prep();
   void gr();
   void ta();

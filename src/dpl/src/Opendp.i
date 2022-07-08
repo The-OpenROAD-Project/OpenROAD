@@ -148,6 +148,13 @@ filler_placement_cmd(dpl::dbMasterSeq *filler_masters,
 }
 
 void
+remove_fillers_cmd()
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->removeFillers();
+}
+
+void
 optimize_mirroring_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();

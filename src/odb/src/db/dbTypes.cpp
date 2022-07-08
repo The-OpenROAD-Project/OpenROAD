@@ -595,6 +595,42 @@ dbMasterType::dbMasterType(const char* value)
 
   else if (strcasecmp(value, "ENDCAP BOTTOMRIGHT") == 0)
     _value = ENDCAP_BOTTOMRIGHT;
+
+  else if (strcasecmp(value, "ENDCAP BOTTOMEDGE") == 0)
+    _value = ENDCAP_LEF58_BOTTOMEDGE;
+
+  else if (strcasecmp(value, "ENDCAP TOPEDGE") == 0)
+    _value = ENDCAP_LEF58_TOPEDGE;
+
+  else if (strcasecmp(value, "ENDCAP RIGHTEDGE") == 0)
+    _value = ENDCAP_LEF58_RIGHTEDGE;
+
+  else if (strcasecmp(value, "ENDCAP LEFTEDGE") == 0)
+    _value = ENDCAP_LEF58_LEFTEDGE;
+
+  else if (strcasecmp(value, "ENDCAP RIGHTBOTTOMEDGE") == 0)
+    _value = ENDCAP_LEF58_RIGHTBOTTOMEDGE;
+
+  else if (strcasecmp(value, "ENDCAP LEFTBOTTOMEDGE") == 0)
+    _value = ENDCAP_LEF58_LEFTBOTTOMEDGE;
+
+  else if (strcasecmp(value, "ENDCAP RIGHTTOPEDGE") == 0)
+    _value = ENDCAP_LEF58_RIGHTTOPEDGE;
+
+  else if (strcasecmp(value, "ENDCAP LEFTTOPEDGE") == 0)
+    _value = ENDCAP_LEF58_LEFTTOPEDGE;
+
+  else if (strcasecmp(value, "ENDCAP RIGHTBOTTOMCORNER") == 0)
+    _value = ENDCAP_LEF58_RIGHTBOTTOMCORNER;
+
+  else if (strcasecmp(value, "ENDCAP LEFTBOTTOMCORNER") == 0)
+    _value = ENDCAP_LEF58_LEFTBOTTOMCORNER;
+
+  else if (strcasecmp(value, "ENDCAP RIGHTTOPCORNER") == 0)
+    _value = ENDCAP_LEF58_RIGHTTOPCORNER;
+
+  else if (strcasecmp(value, "ENDCAP LEFTTOPCORNER") == 0)
+    _value = ENDCAP_LEF58_LEFTTOPCORNER;
 }
 
 dbMasterType::dbMasterType(Value value)
@@ -728,6 +764,54 @@ const char* dbMasterType::getString() const
     case ENDCAP_BOTTOMRIGHT:
       value = "ENDCAP BOTTOMRIGHT";
       break;
+
+    case ENDCAP_LEF58_BOTTOMEDGE:
+      value = "ENDCAP BOTTOMEDGE";
+      break;
+
+    case ENDCAP_LEF58_TOPEDGE:
+      value = "ENDCAP TOPEDGE";
+      break;
+
+    case ENDCAP_LEF58_RIGHTEDGE:
+      value = "ENDCAP RIGHTEDGE";
+      break;
+
+    case ENDCAP_LEF58_LEFTEDGE:
+      value = "ENDCAP LEFTEDGE";
+      break;
+
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+      value = "ENDCAP RIGHTBOTTOMEDGE";
+      break;
+
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+      value = "ENDCAP LEFTBOTTOMEDGE";
+      break;
+
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+      value = "ENDCAP RIGHTTOPEDGE";
+      break;
+
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+      value = "ENDCAP LEFTTOPEDGE";
+      break;
+
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+      value = "ENDCAP RIGHTBOTTOMCORNER";
+      break;
+
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+      value = "ENDCAP LEFTBOTTOMCORNER";
+      break;
+
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+      value = "ENDCAP RIGHTTOPCORNER";
+      break;
+
+    case ENDCAP_LEF58_LEFTTOPCORNER:
+      value = "ENDCAP LEFTTOPCORNER";
+      break;
   }
 
   return value;
@@ -765,6 +849,18 @@ bool dbMasterType::isBlock() const
     case ENDCAP_TOPRIGHT:
     case ENDCAP_BOTTOMLEFT:
     case ENDCAP_BOTTOMRIGHT:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
       return false;
   }
   assert(false);
@@ -803,6 +899,18 @@ bool dbMasterType::isCore() const
     case ENDCAP_TOPRIGHT:
     case ENDCAP_BOTTOMLEFT:
     case ENDCAP_BOTTOMRIGHT:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
       return false;
   }
   assert(false);
@@ -841,6 +949,18 @@ bool dbMasterType::isPad() const
     case ENDCAP_TOPRIGHT:
     case ENDCAP_BOTTOMLEFT:
     case ENDCAP_BOTTOMRIGHT:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
       return false;
   }
   assert(false);
@@ -857,6 +977,18 @@ bool dbMasterType::isEndCap() const
     case ENDCAP_TOPRIGHT:
     case ENDCAP_BOTTOMLEFT:
     case ENDCAP_BOTTOMRIGHT:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
       return true;
     case NONE:
     case COVER:
@@ -917,6 +1049,18 @@ bool dbMasterType::isCover() const
     case ENDCAP_TOPRIGHT:
     case ENDCAP_BOTTOMLEFT:
     case ENDCAP_BOTTOMRIGHT:
+    case ENDCAP_LEF58_BOTTOMEDGE:
+    case ENDCAP_LEF58_TOPEDGE:
+    case ENDCAP_LEF58_RIGHTEDGE:
+    case ENDCAP_LEF58_LEFTEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case ENDCAP_LEF58_RIGHTTOPEDGE:
+    case ENDCAP_LEF58_LEFTTOPEDGE:
+    case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case ENDCAP_LEF58_RIGHTTOPCORNER:
+    case ENDCAP_LEF58_LEFTTOPCORNER:
       return false;
   }
   assert(false);

@@ -122,7 +122,7 @@ proc write_abstract_lef { args } {
 }
 
 sta::define_cmd_args "write_cdl" {[-include_fillers]
-    -masters masters_filename out_filename }
+    -masters masters_filenames out_filename }
 
 proc write_cdl { args } {
 
@@ -133,8 +133,11 @@ proc write_cdl { args } {
     utl::error ORD 1013 "-masters is required."
   }
   set out_filename [file nativename [lindex $args 0]]
-  set masters_filename [file nativename [lindex $args 1]]
-  ord::write_cdl_cmd $out_filename $keys(-masters) $fillers
+  set masters_filenames []
+  foreach masters_filename $keys(-masters) {
+    lappend masters_filenames [file nativename $masters_filename]
+  }
+  ord::write_cdl_cmd $out_filename $masters_filenames $fillers
 }
 
 

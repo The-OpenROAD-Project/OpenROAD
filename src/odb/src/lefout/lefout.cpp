@@ -314,6 +314,10 @@ void lefout::writePowerPins(dbBlock* db_block)
     if (!net->getSigType().isSupply()) {
       continue;
     }
+    if (net->get1stBTerm() != nullptr) {
+      // net already has pins that will be added
+      continue;
+    }
     fprintf(_out, "  PIN %s\n", net->getName().c_str());
     fprintf(_out, "    USE %s ;\n", net->getSigType().getString());
     fprintf(

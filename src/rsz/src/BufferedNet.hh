@@ -100,7 +100,8 @@ public:
   BufferedNet(BufferedNetType type,
               Point location,
               BufferedNetPtr ref,
-              BufferedNetPtr ref2);
+              BufferedNetPtr ref2,
+              const Resizer *resizer);
   // buffer
   BufferedNet(BufferedNetType type,
               Point location,
@@ -161,10 +162,6 @@ public:
 private:
   BufferedNetType type_;
   Point location_;
-  // Capacitance looking downstream from here.
-  float cap_;
-  float fanout_;
-  float max_load_slew_;
   // load
   Pin *load_pin_;
   // buffer
@@ -175,6 +172,11 @@ private:
   BufferedNetPtr ref_;
   // junc
   BufferedNetPtr ref2_;
+
+  // Capacitance looking downstream from here.
+  float cap_;
+  float fanout_;
+  float max_load_slew_;
 
   // Rebuffer annotations
   // PathRef for worst required path at load.

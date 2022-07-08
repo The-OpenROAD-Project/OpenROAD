@@ -170,10 +170,14 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
 bool cdl::writeCdl(utl::Logger* logger,
                    dbBlock* block,
                    const char* outFileName,
-                   const char* mastersFileName,
+                   const std::vector<const char*>& mastersFileNames,
                    bool includeFillers)
 {
-  auto mtermMap = readMasters(logger, block, mastersFileName);
+  std::unordered_map<dbMaster*, std::vector<dbMTerm*>> mtermMap;
+  for (const char* mastersFileName : mastersFileNames) {
+    auto submtermMap = readMasters(logger, block, mastersFileName);
+    mtermMap.insert(submtermMap.begin(), submtermMap.end());
+  }
   int unconnectedNets = 0;
   FILE* f = fopen(outFileName, "w");
 
@@ -204,9 +208,8 @@ bool cdl::writeCdl(utl::Logger* logger,
     if (it == mtermMap.end()) {
       logger->error(utl::ODB,
                     287,
-                    "Master {} was not in the masters CDL file {}.",
-                    master->getName(),
-                    mastersFileName);
+                    "Master {} was not in the masters CDL files.",
+                    master->getName());
     }
 
     for (auto&& mterm : it->second) {

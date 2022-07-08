@@ -426,10 +426,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *blocks_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *blocks_.size()));
   }
 
   if (flag)
@@ -441,11 +441,11 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 void SimulatedAnnealingCore::DoubleSwap()
 {
   unsigned int index1
-      = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+      = (unsigned) (floor((distribution_)(generator_) *blocks_.size()));
   unsigned int index2
-      = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+      = (unsigned) (floor((distribution_)(generator_) *blocks_.size()));
   while (index1 == index2) {
-    index2 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+    index2 = (unsigned) (floor((distribution_)(generator_) *blocks_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -465,9 +465,9 @@ void SimulatedAnnealingCore::DoubleSwap()
 void SimulatedAnnealingCore::Resize()
 {
   unsigned int index1
-      = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+      = (unsigned) (floor((distribution_)(generator_) *blocks_.size()));
   while (blocks_[index1].IsResizeable() == false) {
-    index1 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+    index1 = (unsigned) (floor((distribution_)(generator_) *blocks_.size()));
   }
 
   block_id_ = index1;
@@ -476,7 +476,7 @@ void SimulatedAnnealingCore::Resize()
     return;
   }
 
-  float option = (distribution_) (generator_);
+  float option = (distribution_)(generator_);
   if (option <= 0.2) {
     // Change the aspect ratio of the soft block to a random value in the
     // range of the given soft aspect-ratio constraint
@@ -569,7 +569,7 @@ void SimulatedAnnealingCore::Perturb()
   pre_location_penalty_ = location_penalty_;
   pre_notch_penalty_ = notch_penalty_;
 
-  float op = (distribution_) (generator_);
+  float op = (distribution_)(generator_);
   if (op <= resize_prob_) {
     action_id_ = 0;
     pre_blocks_ = blocks_;

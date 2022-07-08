@@ -249,6 +249,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       layers_menu_(new QMenu(this)),
       layers_menu_layer_(nullptr),
       ignore_callback_(false),
+      ignore_selection_(false),
       db_(nullptr),
       logger_(nullptr),
       sta_(nullptr),
@@ -258,6 +259,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   setObjectName("layers");  // for settings
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  view_->viewport()->installEventFilter(this);
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -408,8 +411,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(tracks_group_);
 
   // Misc group
-  auto misc = makeParentItem(
-      misc_group_, "Misc", root, Qt::Unchecked);
+  auto misc = makeParentItem(misc_group_, "Misc", root, Qt::Unchecked, true);
 
   instance_name_font_ = QApplication::font(); // use default font
   instance_name_color_ = Qt::yellow;
@@ -424,13 +426,16 @@ DisplayControls::DisplayControls(QWidget* parent)
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
   });
 
+  region_color_ = QColor(0x70, 0x70, 0x70, 0x70); // semi-transparent mid-gray
+  region_pattern_ = Qt::SolidPattern;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
-  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked);
+  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked, true, region_color_);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
+  makeLeafItem(misc_.manufacturing_grid, "Manufacturing Grid", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -590,9 +595,11 @@ void DisplayControls::readSettings(QSettings* settings)
   getColor(rows_, row_color_, "row");
   getColor(rulers_, ruler_color_, "ruler");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
+  getColor(misc_.regions, region_color_, "region");
   settings->endGroup();
   settings->beginGroup("pattern");
   getPattern(placement_blockage_pattern_, "blockages_placement");
+  getPattern(region_pattern_, "region");
   settings->endGroup();
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
@@ -654,10 +661,12 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("row", row_color_);
   settings->setValue("ruler", ruler_color_);
   settings->setValue("instance_name", instance_name_color_);
+  settings->setValue("region", region_color_);
   settings->endGroup();
   settings->beginGroup("pattern");
   // save pattern as int
   settings->setValue("blockages_placement", static_cast<int>(placement_blockage_pattern_));
+  settings->setValue("region", static_cast<int>(region_pattern_));
   settings->endGroup();
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
@@ -724,7 +733,9 @@ void DisplayControls::toggleAllChildren(bool checked,
   Qt::CheckState state = checked ? Qt::Checked : Qt::Unchecked;
   for (int row = 0; row < parent->rowCount(); ++row) {
     auto child = parent->child(row, column);
-    child->setCheckState(state);
+    if (child) {
+      child->setCheckState(state);
+    }
   }
   emit changed();
 }
@@ -741,9 +752,12 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   bool all_checked = true;
 
   for (int row = 0; row < parent->rowCount(); ++row) {
-    bool checked = parent->child(row, column)->checkState() == Qt::Checked;
-    at_least_one_checked |= checked;
-    all_checked &= checked;
+    auto child = parent->child(row, column);
+    if (child) {
+      bool checked = child->checkState() == Qt::Checked;
+      at_least_one_checked |= checked;
+      all_checked &= checked;
+    }
   }
 
   ignore_callback_ = true;
@@ -845,6 +859,10 @@ void DisplayControls::itemChanged(QStandardItem* item)
 
 void DisplayControls::displayItemSelected(const QItemSelection& selection)
 {
+  if (ignore_selection_) {
+    return;
+  }
+
   for (const auto& index : selection.indexes()) {
     const QModelIndex name_index = model_->index(index.row(), Name, index.parent());
     auto* name_item = model_->itemFromIndex(name_index);
@@ -884,6 +902,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
+    } else if (color_item == misc_.regions.swatch) {
+      item_color = &region_color_;
+      item_pattern = &region_pattern_;
     } else if (color_item == instance_shapes_.names.swatch) {
       item_color = &instance_name_color_;
     } else if (color_item == rows_.swatch) {
@@ -1225,6 +1246,16 @@ Qt::BrushStyle DisplayControls::placementBlockagePattern()
   return placement_blockage_pattern_;
 }
 
+QColor DisplayControls::regionColor()
+{
+  return region_color_;
+}
+
+Qt::BrushStyle DisplayControls::regionPattern()
+{
+  return region_pattern_;
+}
+
 QColor DisplayControls::instanceNameColor()
 {
   return instance_name_color_;
@@ -1436,6 +1467,11 @@ bool DisplayControls::areObstructionsSelectable()
   return isRowSelectable(&blockages_.obstructions);
 }
 
+bool DisplayControls::areRegionsSelectable() const
+{
+  return isRowSelectable(&misc_.regions);
+}
+
 bool DisplayControls::areRowsVisible()
 {
   return isRowVisible(&rows_);
@@ -1489,6 +1525,11 @@ bool DisplayControls::areAccessPointsVisible() const
 bool DisplayControls::areRegionsVisible() const
 {
   return isRowVisible(&misc_.regions);
+}
+
+bool DisplayControls::isManufacturingGridVisible() const
+{
+  return isRowVisible(&misc_.manufacturing_grid);
 }
 
 bool DisplayControls::isModuleView() const
@@ -1611,6 +1652,10 @@ void DisplayControls::techInit()
   if (!tech) {
     return;
   }
+
+  // disable if grid is not present
+  misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
+  misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
@@ -1823,6 +1868,27 @@ void DisplayControls::checkLiberty(bool assume_loaded)
       selectable->setEnabled(enable);
     }
   }
+}
+
+bool DisplayControls::eventFilter(QObject* obj, QEvent* event)
+{
+  if (obj == view_->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+      if (mouse_event->button() == Qt::RightButton) {
+        ignore_selection_ = true;
+      } else {
+        ignore_selection_ = false;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      ignore_selection_ = false;
+    } else if (event->type() == QEvent::ContextMenu) {
+      // reset because the context menu has popped up.
+      ignore_selection_ = false;
+    }
+  }
+
+  return QDockWidget::eventFilter(obj, event);
 }
 
 }  // namespace gui

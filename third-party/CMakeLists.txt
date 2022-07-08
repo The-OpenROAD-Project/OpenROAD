@@ -42,6 +42,10 @@ if (NOT USE_SYSTEM_ABC)
      set(ABC_USE_STDINT_H 1)
   endif()
 
+  # make sure not to include readline headers to avoid extra dependencies
+  # readline is not needed since we call abc from c++
+  set(READLINE_FOUND FALSE)
+
   add_subdirectory(abc)
 
 endif()

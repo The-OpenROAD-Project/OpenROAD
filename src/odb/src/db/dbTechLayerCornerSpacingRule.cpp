@@ -85,6 +85,9 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (flags_.except_same_metal_ != rhs.flags_.except_same_metal_)
     return false;
 
+  if (flags_.corner_to_corner_ != rhs.flags_.corner_to_corner_)
+    return false;
+
   if (within_ != rhs.within_)
     return false;
 
@@ -133,6 +136,7 @@ void _dbTechLayerCornerSpacingRule::differences(
   DIFF_FIELD(flags_.except_notch_length_valid_);
   DIFF_FIELD(flags_.except_same_net_);
   DIFF_FIELD(flags_.except_same_metal_);
+  DIFF_FIELD(flags_.corner_to_corner_);
   DIFF_FIELD(within_);
   DIFF_FIELD(eol_width_);
   DIFF_FIELD(jog_length_);
@@ -160,6 +164,7 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(flags_.except_notch_length_valid_);
   DIFF_OUT_FIELD(flags_.except_same_net_);
   DIFF_OUT_FIELD(flags_.except_same_metal_);
+  DIFF_OUT_FIELD(flags_.corner_to_corner_);
   DIFF_OUT_FIELD(within_);
   DIFF_OUT_FIELD(eol_width_);
   DIFF_OUT_FIELD(jog_length_);
@@ -200,6 +205,7 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
   flags_.except_notch_length_valid_ = r.flags_.except_notch_length_valid_;
   flags_.except_same_net_ = r.flags_.except_same_net_;
   flags_.except_same_metal_ = r.flags_.except_same_metal_;
+  flags_.corner_to_corner_ = r.flags_.corner_to_corner_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   within_ = r.within_;
   eol_width_ = r.eol_width_;
@@ -493,6 +499,20 @@ bool dbTechLayerCornerSpacingRule::isExceptSameMetal() const
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
   return obj->flags_.except_same_metal_;
+}
+
+void dbTechLayerCornerSpacingRule::setCornerToCorner(bool corner_to_corner)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->flags_.corner_to_corner_ = corner_to_corner;
+}
+
+bool dbTechLayerCornerSpacingRule::isCornerToCorner() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  return obj->flags_.corner_to_corner_;
 }
 
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods

@@ -116,11 +116,13 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
+  block_(nullptr),
   pad_left_(0),
   pad_right_(0),
   max_displacement_x_(0),
   max_displacement_y_(0),
-  grid_(nullptr)
+  grid_(nullptr),
+  have_fillers_(false)
 {
   dummy_cell_.is_placed_ = true;
 }
@@ -142,7 +144,7 @@ void
 Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
 }
 
 void
@@ -194,6 +196,9 @@ Opendp::detailedPlacement(int max_displacement_x,
                           int max_displacement_y)
 {
   importDb();
+
+  if (have_fillers_)
+    logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
 
   if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults
@@ -339,6 +344,8 @@ Opendp::isPaddedType(dbInst *inst) const
     case dbMasterType::ENDCAP:
     case dbMasterType::ENDCAP_PRE:
     case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
       return true;
     case dbMasterType::CORE_SPACER:
     case dbMasterType::BLOCK:
@@ -348,6 +355,16 @@ Opendp::isPaddedType(dbInst *inst) const
     case dbMasterType::ENDCAP_TOPRIGHT:
     case dbMasterType::ENDCAP_BOTTOMLEFT:
     case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
       // These classes are completely ignored by the placer.
     case dbMasterType::COVER:
     case dbMasterType::COVER_BUMP:
@@ -390,6 +407,18 @@ Opendp::isStdCell(const Cell *cell) const
     case dbMasterType::ENDCAP_TOPRIGHT:
     case dbMasterType::ENDCAP_BOTTOMLEFT:
     case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
       // These classes are completely ignored by the placer.
     case dbMasterType::COVER:
     case dbMasterType::COVER_BUMP:
