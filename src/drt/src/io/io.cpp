@@ -1518,6 +1518,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tech->addLayer(std::move(uLayer));
@@ -1774,6 +1775,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     unique_ptr<frConstraint> uCon
         = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+    rptr->setLayer(tmpLayer);
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
       logger->warn(
@@ -1826,6 +1828,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tmpLayer->setType(dbTechLayerType::CUT);

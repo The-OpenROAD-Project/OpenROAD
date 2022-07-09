@@ -403,6 +403,17 @@ BOOST_DATA_TEST_CASE(spacing_prl,
 BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 {
   // Setup
+  auto dbLayer = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
+  dbLayer->initTwoWidths(2);
+  dbLayer->addTwoWidthsIndexEntry(90);
+  dbLayer->addTwoWidthsIndexEntry(190);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,0,0);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,1,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,0,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,1,150);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(2);
+  layer->setDbLayer(dbLayer);
   makeSpacingTableTwConstraint(2, {90, 190}, {-1, -1}, {{0, 50}, {50, 100}});
   /*
   WIDTH  90     0      50
@@ -584,6 +595,17 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
 BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
 {
   // Setup
+  auto dbLayer = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
+  dbLayer->initTwoWidths(2);
+  dbLayer->addTwoWidthsIndexEntry(90);
+  dbLayer->addTwoWidthsIndexEntry(190);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,0,0);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,1,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,0,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,1,150);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(2);
+  layer->setDbLayer(dbLayer);
   makeSpacingTableTwConstraint(2, {90, 190}, {-1, -1}, {{0, 50}, {50, 100}});
 
   frNet* n1 = makeNet("n1");
