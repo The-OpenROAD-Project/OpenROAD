@@ -209,7 +209,8 @@ RepairDesign::repairClkNets(double max_wire_length)
         Net *net = network_->isTopLevelPort(clk_pin)
           ? network_->net(network_->term(clk_pin))
           : network_->net(clk_pin);
-        if (network_->isDriver(clk_pin)) {
+        if (net &&
+            network_->isDriver(clk_pin)) {
           Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
           // Do not resize clock tree gates.
           repairNet(net, clk_pin, drvr, 0.0, 0.0,
