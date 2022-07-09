@@ -528,7 +528,6 @@ bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
   lefrSetLogFunction(errorCB);
   lefrSetWarningLogFunction(warningCB);
   lefrSetLineNumberFunction(lineNumberCB);
-
   // Available callbacks not registered - FIXME??
   // lefrSetDensityCbk
   // lefrSetExtensionCbk

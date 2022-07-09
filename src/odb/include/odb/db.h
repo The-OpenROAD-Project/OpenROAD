@@ -141,6 +141,7 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
+class dbMetalWidthViaMap;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -5877,6 +5878,11 @@ class dbTech : public dbObject
   ///
   ///
   ///
+  dbSet<dbMetalWidthViaMap> getMetalWidthViaMap();
+
+  ///
+  ///
+  ///
   dbTechViaRule* findViaRule(const char* name);
 
   ///
@@ -8809,6 +8815,54 @@ class dbGuide : public dbObject
   static void destroy(dbGuide* guide);
 
   // User Code End dbGuide
+};
+
+class dbMetalWidthViaMap : public dbObject
+{
+ public:
+  // User Code Begin dbMetalWidthViaMapEnums
+  // User Code End dbMetalWidthViaMapEnums
+  void setViaCutClass(bool via_cut_class);
+
+  bool isViaCutClass() const;
+
+  void setCutLayer(dbTechLayer* cut_layer);
+
+  void setBelowLayerWidthLow(int below_layer_width_low);
+
+  int getBelowLayerWidthLow() const;
+
+  void setBelowLayerWidthHigh(int below_layer_width_high);
+
+  int getBelowLayerWidthHigh() const;
+
+  void setAboveLayerWidthLow(int above_layer_width_low);
+
+  int getAboveLayerWidthLow() const;
+
+  void setAboveLayerWidthHigh(int above_layer_width_high);
+
+  int getAboveLayerWidthHigh() const;
+
+  void setViaName(std::string via_name);
+
+  std::string getViaName() const;
+
+  void setPgVia(bool pg_via);
+
+  bool isPgVia() const;
+
+  // User Code Begin dbMetalWidthViaMap
+
+  dbTechLayer* getCutLayer() const;
+
+  static dbMetalWidthViaMap* create(dbTech* tech);
+
+  static void destroy(dbMetalWidthViaMap* via_map);
+
+  static dbMetalWidthViaMap* getMetalWidthViaMap(dbTech* tech, uint dbid);
+
+  // User Code End dbMetalWidthViaMap
 };
 
 class dbModule : public dbObject

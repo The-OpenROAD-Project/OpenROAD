@@ -18,6 +18,7 @@ add_library(lefin
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp
+    MetalWidthViaMapParser.cpp
 )
 
 target_include_directories(lefin
