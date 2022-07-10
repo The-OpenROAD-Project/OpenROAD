@@ -39,12 +39,17 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <unordered_map>
+#include <stack>
 #include <string_view>
 #include <cstdlib>
 #include <type_traits>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/fmt/fmt.h"
+
+#include "Metrics.h"
 
 namespace utl {
 
@@ -169,18 +174,20 @@ class Logger
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
-            typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+            typename = std::enable_if_t<std::is_arithmetic<T>::value>>
   inline void metric(const std::string_view metric,
                      T value)
   {
-    log_metric(metric, value);
+    log_metric(std::string(metric), std::to_string(value));
   }
 
   inline void metric(const std::string_view metric,
                      const std::string& value)
   {
-    log_metric(metric, '"' +  value + '"');
+    log_metric(std::string(metric), '"' +  value + '"' );
   }
+
+
 
   void setDebugLevel(ToolId tool, const char* group, int level);
 
@@ -196,6 +203,16 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
+
+  void setMetricsStage(std::string_view format);
+  void clearMetricsStage();
+  void pushMetricsStage(std::string_view format);
+  std::string popMetricsStage();
+
+  std::vector<std::string> metrics_sinks_;
+  std::list<MetricsEntry> metrics_entries_;
+  std::vector<MetricsPolicy> metrics_policies_;
+
 
  private:
   template <typename... Args>
@@ -230,16 +247,19 @@ class Logger
       }
     }
 
-  template <typename Value>
-    inline void log_metric(const std::string_view metric,
-                           const Value& value)
+    inline void log_metric(const std::string metric,
+                           const std::string value)
     {
-      metrics_logger_->info("  {}\"{}\" : {}",
-                            first_metric_ ? "  " : ", ",
-                            metric,
-                            value);
-      first_metric_ = false;
+      std::string key;
+      if (metrics_stages_.empty()) 
+        key = metric;
+      else 
+        key = fmt::format(metrics_stages_.top(), metric);
+      metrics_entries_.push_back({key, value});
+
     }
+
+    void finalizeMetrics();
 
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup
@@ -258,7 +278,8 @@ class Logger
 
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
-  std::shared_ptr<spdlog::logger> metrics_logger_;
+  //std::shared_ptr<spdlog::logger> metrics_logger_;
+  std::stack<std::string> metrics_stages_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
