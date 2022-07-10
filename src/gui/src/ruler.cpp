@@ -61,8 +61,8 @@ bool Ruler::fuzzyIntersection(const odb::Rect& region, int margin) const
 
   linestring_t ls;
   boost::geometry::append(ls, point_t(pt0_.x(), pt0_.y()));
-  if (euclidian_) {
-    const auto middle = getEuclidianJoinPt();
+  if (!euclidian_) {
+    const auto middle = getManhattanJoinPt();
     boost::geometry::append(ls, point_t(middle.x(), middle.y()));
   }
   boost::geometry::append(ls, point_t(pt1_.x(), pt1_.y()));
@@ -85,9 +85,14 @@ std::string Ruler::getTclCommand(double dbu_to_microns) const
          "{" + (euclidian_ ? "1" : "0") + "}";
 }
 
-const odb::Point Ruler::getEuclidianJoinPt() const
+const odb::Point Ruler::getManhattanJoinPt() const
 {
-  return odb::Point(pt1_.x(), pt0_.y());
+  return getManhattanJoinPt(pt0_, pt1_);
+}
+
+const odb::Point Ruler::getManhattanJoinPt(const odb::Point& pt0, const odb::Point& pt1)
+{
+  return odb::Point(pt1.x(), pt0.y());
 }
 
 double Ruler::getLength() const
@@ -95,10 +100,10 @@ double Ruler::getLength() const
   const int x_dist = std::abs(pt0_.x() - pt1_.x());
   const int y_dist = std::abs(pt0_.y() - pt1_.y());
   if (euclidian_) {
-    return x_dist + y_dist;
-  } else {
     return std::sqrt(std::pow(x_dist, 2) +
                      std::pow(y_dist, 2));
+  } else {
+    return x_dist + y_dist;
   }
 }
 
@@ -135,11 +140,11 @@ void RulerDescriptor::highlight(std::any object,
 {
   auto ruler = std::any_cast<Ruler*>(object);
   if (ruler->isEuclidian()) {
-    const auto middle = ruler->getEuclidianJoinPt();
+    painter.drawLine(ruler->getPt0(), ruler->getPt1());
+  } else {
+    const auto middle = ruler->getManhattanJoinPt();
     painter.drawLine(ruler->getPt0(), middle);
     painter.drawLine(middle, ruler->getPt1());
-  } else {
-    painter.drawLine(ruler->getPt0(), ruler->getPt1());
   }
 }
 
@@ -151,6 +156,8 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
           {"Point 0 - y", Property::convert_dbu(ruler->getPt0().y(), true)},
           {"Point 1 - x", Property::convert_dbu(ruler->getPt1().x(), true)},
           {"Point 1 - y", Property::convert_dbu(ruler->getPt1().y(), true)},
+          {"Delta x", Property::convert_dbu(std::abs(ruler->getPt1().x() - ruler->getPt0().x()), true)},
+          {"Delta y", Property::convert_dbu(std::abs(ruler->getPt1().y() - ruler->getPt0().y()), true)},
           {"Length", Property::convert_dbu(ruler->getLength(), true)},
           {"Euclidian", ruler->isEuclidian()}};
 }

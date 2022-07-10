@@ -316,6 +316,8 @@ class GuiPainter : public Painter
   void drawRuler(int x0, int y0, int x1, int y1, bool euclidian = true, const std::string& label = "") override
   {
     if (euclidian) {
+      drawRuler(x0, y0, x1, y1, label);
+    } else {
       const int x_dist = std::abs(x0 - x1);
       const int y_dist = std::abs(y0 - y1);
       std::string x_label = label;
@@ -323,10 +325,9 @@ class GuiPainter : public Painter
       if (y_dist > x_dist) {
         std::swap(x_label, y_label);
       }
-      drawRuler(x0, y0, x1, y0, x_label);
-      drawRuler(x1, y0, x1, y1, y_label);
-    } else {
-      drawRuler(x0, y0, x1, y1, label);
+      const odb::Point mid_pt = Ruler::getManhattanJoinPt({x0, y0}, {x1, y1});
+      drawRuler(x0, y0, mid_pt.x(), mid_pt.y(), x_label);
+      drawRuler(mid_pt.x(), mid_pt.y(), x1, y1, y_label);
     }
   }
 

@@ -52,7 +52,8 @@ class Ruler
   const odb::Point getPt0() const { return pt0_; }
   odb::Point& getPt1() { return pt1_; }
   const odb::Point getPt1() const { return pt1_; }
-  const odb::Point getEuclidianJoinPt() const;
+  const odb::Point getManhattanJoinPt() const;
+  static const odb::Point getManhattanJoinPt(const odb::Point& pt0, const odb::Point& pt1);
   const std::string getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
   const std::string getLabel() const { return label_; }
