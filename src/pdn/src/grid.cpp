@@ -134,23 +134,25 @@ void Grid::addConnect(std::unique_ptr<Connect> connect)
 void Grid::makeShapes(const ShapeTreeMap& global_shapes,
                       const ShapeTreeMap& obstructions)
 {
-  ShapeTreeMap all_shapes = global_shapes;
   auto* logger = getLogger();
   logger->info(utl::PDN, 1, "Inserting grid: {}", getLongName());
 
   // copy obstructions
   ShapeTreeMap local_obstructions = obstructions;
 
+  ShapeTreeMap local_shapes = global_shapes;
   // make shapes
   for (auto* component : getGridComponents()) {
     // make initial shapes
-    component->makeShapes(all_shapes);
+    component->makeShapes(local_shapes);
     // cut shapes to avoid obstructions
     component->cutShapes(local_obstructions);
-    // add obstructions to they are accounted for in future shapes
+    // add shapes and obstructions to they are accounted for in future components
     component->getObstructions(local_obstructions);
+    component->getShapes(local_shapes);
   }
 
+  ShapeTreeMap all_shapes = global_shapes;
   // insert power switches
   if (switched_power_cell_ != nullptr) {
     switched_power_cell_->build();
@@ -451,7 +453,7 @@ void Grid::report() const
 }
 
 void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
-                            const ShapeTreeMap& shapes) const
+                            const ShapeTreeMap& search_shapes) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -459,6 +461,13 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
              1,
              "Getting via intersections in \"{}\" - start",
              name_);
+
+  ShapeTreeMap shapes = search_shapes;
+  // Populate with additional shapes from grid components
+  for (auto* comp : getGridComponents()) {
+    comp->getConnectableShapes(shapes);
+  }
+
   // loop over connect statements
   for (const auto& connect : connect_) {
     odb::dbTechLayer* lower_layer = connect->getLowerLayer();
@@ -738,7 +747,7 @@ const std::vector<GridComponent*> Grid::getGridComponents() const
 }
 
 void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                     bool do_pins) const
+                     bool do_pins, const ShapeTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
   std::vector<ViaPtr> vias;
@@ -761,7 +770,7 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
            < std::tie(r_low_level, r_high_level, r_area);
   });
   for (const auto& via : vias) {
-    via->writeToDb(net_map.at(via->getNet()), getBlock());
+    via->writeToDb(net_map.at(via->getNet()), getBlock(), obstructions);
   }
   for (const auto& connect : connect_) {
     connect->printViaReport();
@@ -833,7 +842,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
+void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts)
 {
   // routing obs
   for (auto* ob : block->getObstructions()) {
@@ -862,11 +871,14 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
 
   // placed block obs
   for (auto* inst : block->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isFixed()) {
+      continue;
+    }
+    if (inst->isCore()) {
       continue;
     }
 
-    if (!inst->isPlaced()) {
+    if (skip_insts.find(inst) != skip_insts.end()) {
       continue;
     }
 
@@ -876,10 +888,9 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs)
   }
 }
 
-void Grid::makeInitialShapes(const std::set<odb::dbNet*>& nets,
-                             ShapeTreeMap& shapes)
+void Grid::makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes)
 {
-  for (auto* net : nets) {
+  for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, shapes);
   }
 }
@@ -903,6 +914,20 @@ void Grid::setSwitchedPower(GridSwitchedPower* cell)
 {
   switched_power_cell_ = std::unique_ptr<GridSwitchedPower>(cell);
   cell->setGrid(this);
+}
+
+std::set<odb::dbInst*> Grid::getInstances() const
+{
+  std::set<odb::dbInst*> insts;
+
+  for (auto* comp : getGridComponents()) {
+    if (comp->type() == GridComponent::PadConnect) {
+      auto* pad_connect = dynamic_cast<PadDirectConnectionStraps*>(comp);
+      insts.insert(pad_connect->getITerm()->getInst());
+    }
+  }
+
+  return insts;
 }
 
 ///////////////
@@ -1267,9 +1292,7 @@ ExistingGrid::ExistingGrid(PdnGen* pdngen,
 
 void ExistingGrid::populate()
 {
-  const auto nets = getNets();
-  std::set<odb::dbNet*> nets_set(nets.begin(), nets.end());
-  Grid::makeInitialShapes(nets_set, shapes_);
+  Grid::makeInitialShapes(domain_->getBlock(), shapes_);
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {

@@ -51,6 +51,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       rect_(rect),
       type_(type),
       shape_type_(SHAPE),
+      allow_non_preferred_change_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -64,6 +65,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       rect_(rect),
       type_(odb::dbWireShapeType::NONE),
       shape_type_(shape_type),
+      allow_non_preferred_change_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -85,6 +87,7 @@ Shape* Shape::copy() const
   shape->obs_ = obs_;
   shape->iterm_connections_ = iterm_connections_;
   shape->bterm_connections_ = bterm_connections_;
+  shape->allow_non_preferred_change_ = allow_non_preferred_change_;
   return shape;
 }
 

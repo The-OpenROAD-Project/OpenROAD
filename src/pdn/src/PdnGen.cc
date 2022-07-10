@@ -284,8 +284,17 @@ void PdnGen::buildGrids(bool trim)
 
   resetShapes();
 
+  const std::vector<Grid*> grids = getGrids();
+
+  // connect instances already assigned to grids
+  std::set<odb::dbInst*> insts_in_grids;
+  for (auto* grid : grids) {
+    auto insts_in_grid = grid->getInstances();
+    insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
+  }
+
   ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs);
+  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
 
   ShapeTreeMap all_shapes;
 
@@ -296,7 +305,7 @@ void PdnGen::buildGrids(bool trim)
       nets.insert(net);
     }
   }
-  Grid::makeInitialShapes(nets, all_shapes);
+  Grid::makeInitialShapes(block, all_shapes);
   for (const auto& [layer, layer_shapes] : all_shapes) {
     auto& layer_obs = block_obs[layer];
     for (const auto& [box, shape] : layer_shapes) {
@@ -304,7 +313,6 @@ void PdnGen::buildGrids(bool trim)
     }
   }
 
-  const std::vector<Grid*> grids = getGrids();
   for (auto* grid : grids) {
     ShapeTreeMap obs_local = block_obs;
     for (auto* grid_other : grids) {
@@ -828,9 +836,23 @@ void PdnGen::writeToDb(bool add_pins) const
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 
+  // collect all the SWires from the block
+  auto* block = db_->getChip()->getBlock();
+  ShapeTreeMap obstructions;
+  for (auto* net : block->getNets()) {
+    ShapeTreeMap net_shapes;
+    Shape::populateMapFromDb(net, net_shapes);
+    for (const auto& [layer, net_obs_layer] : net_shapes) {
+      auto& obs_layer = obstructions[layer];
+      for (const auto& [box, shape] : net_obs_layer) {
+        obs_layer.insert({shape->getObstructionBox(), shape});
+      }
+    }
+  }
+
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      grid->writeToDb(net_map, add_pins);
+      grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
     }
   }
@@ -935,6 +957,9 @@ void PdnGen::filterVias(const std::string& filter)
 void PdnGen::checkDesign(odb::dbBlock* block) const
 {
   for (auto* inst : block->getInsts()) {
+    if (!inst->getPlacementStatus().isFixed()) {
+      continue;
+    }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
         logger_->warn(utl::PDN,

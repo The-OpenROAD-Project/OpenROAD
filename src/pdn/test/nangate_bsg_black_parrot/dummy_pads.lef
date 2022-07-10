@@ -82,17 +82,17 @@ MACRO PADCELL_SIG_V
     PORT
       CLASS CORE ;
       LAYER metal4 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal5 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal6 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal7 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal8 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal9 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
     END
   END Y
   PIN PU
@@ -172,17 +172,17 @@ MACRO PADCELL_SIG_H
     PORT
       CLASS CORE ;
       LAYER metal4 ;
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal5 ; 
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal6 ; 
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal7 ; 
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal8 ; 
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
       LAYER metal9 ; 
-        RECT 28.936 139.900 29.096 140.000 ;
+        RECT 23.936 139.900 24.096 140.000 ;
     END
   END Y
   PIN PU
@@ -1197,48 +1197,6 @@ MACRO PAD_FILL1_V
   ORIGIN 0 0 ;
   SIZE 1 BY 140 ;
   SYMMETRY X Y R90 ;
-  PIN VDD
-    USE POWER ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 20.0 0.100 21.0 ;
-      LAYER metal4 ;
-      RECT 24.90 20.0 25.00 21.0 ;
-    END
-  END VDD
-  PIN VSS
-    USE GROUND ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 40.0 0.100 41.0 ;
-      LAYER metal4 ;
-      RECT 24.90 40.0 25.00 41.0 ;
-    END
-  END VSS
-  PIN DVDD
-    USE GROUND ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 60.0 0.100 61.0 ;
-      LAYER metal4 ;
-      RECT 24.90 60.0 25.00 61.0 ;
-    END
-  END DVDD
-  PIN DVSS
-    DIRECTION INOUT ;
-    USE GROUND ;
-    SHAPE ABUTMENT ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 80.0 0.100 81.0 ;
-      LAYER metal4 ;
-      RECT 24.90 80.0 25.00 81.0 ;
-    END
-  END DVSS
 END PAD_FILL1_V
 
 MACRO PAD_FILL5_V
@@ -1246,48 +1204,6 @@ MACRO PAD_FILL5_V
   ORIGIN 0 0 ;
   SIZE 5 BY 140 ;
   SYMMETRY X Y R90 ;
-  PIN VDD
-    USE POWER ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 20.0 0.100 21.0 ;
-      LAYER metal4 ;
-      RECT 24.90 20.0 25.00 21.0 ;
-    END
-  END VDD
-  PIN VSS
-    USE GROUND ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 40.0 0.100 41.0 ;
-      LAYER metal4 ;
-      RECT 24.90 40.0 25.00 41.0 ;
-    END
-  END VSS
-  PIN DVDD
-    USE GROUND ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 60.0 0.100 61.0 ;
-      LAYER metal4 ;
-      RECT 24.90 60.0 25.00 61.0 ;
-    END
-  END DVDD
-  PIN DVSS
-    DIRECTION INOUT ;
-    USE GROUND ;
-    SHAPE ABUTMENT ;
-    PORT
-      CLASS CORE ;
-      LAYER metal4 ;
-      RECT 0.000 80.0 0.100 81.0 ;
-      LAYER metal4 ;
-      RECT 24.90 80.0 25.00 81.0 ;
-    END
-  END DVSS
 END PAD_FILL5_V
 
 MACRO PAD_FILL1_H
