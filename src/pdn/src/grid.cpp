@@ -134,23 +134,25 @@ void Grid::addConnect(std::unique_ptr<Connect> connect)
 void Grid::makeShapes(const ShapeTreeMap& global_shapes,
                       const ShapeTreeMap& obstructions)
 {
-  ShapeTreeMap all_shapes = global_shapes;
   auto* logger = getLogger();
   logger->info(utl::PDN, 1, "Inserting grid: {}", getLongName());
 
   // copy obstructions
   ShapeTreeMap local_obstructions = obstructions;
 
+  ShapeTreeMap local_shapes = global_shapes;
   // make shapes
   for (auto* component : getGridComponents()) {
     // make initial shapes
-    component->makeShapes(all_shapes);
+    component->makeShapes(local_shapes);
     // cut shapes to avoid obstructions
     component->cutShapes(local_obstructions);
-    // add obstructions to they are accounted for in future shapes
+    // add shapes and obstructions to they are accounted for in future components
     component->getObstructions(local_obstructions);
+    component->getShapes(local_shapes);
   }
 
+  ShapeTreeMap all_shapes = global_shapes;
   // insert power switches
   if (switched_power_cell_ != nullptr) {
     switched_power_cell_->build();

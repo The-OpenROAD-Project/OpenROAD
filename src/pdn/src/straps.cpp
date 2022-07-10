@@ -201,10 +201,9 @@ void Straps::makeShapes(const ShapeTreeMap& other_shapes)
   }
 
   // collect shapes to avoid placing straps over
-  const auto other_grid_shapes = getGrid()->getShapes();
   ShapeTree avoid;
-  if (other_grid_shapes.count(layer_) != 0) {
-    for (const auto& [box, shape] : other_grid_shapes.at(layer_)) {
+  if (other_shapes.count(layer_) != 0) {
+    for (const auto& [box, shape] : other_shapes.at(layer_)) {
       if (shape->getType() == odb::dbWireShapeType::RING) {
         // avoid ring shapes
         avoid.insert({shape->getObstructionBox(), shape});
@@ -835,13 +834,12 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(const ShapeTree& search_shap
 
 void PadDirectConnectionStraps::makeShapesFacingCore(const ShapeTreeMap& other_shapes)
 {
-  auto search_shapes = getGrid()->getShapes();
-  if (search_shapes.empty()) {
+  if (other_shapes.empty()) {
     return;
   }
 
   std::set<odb::dbTechLayer*> connectable_layers;
-  for (const auto& [layer, shapes] : search_shapes) {
+  for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& [box, shape] : shapes) {
       if (shape->getType() == target_shapes_) {
         const auto layers = getGrid()->connectableLayers(layer);
@@ -873,7 +871,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(const ShapeTreeMap& other_s
     }
 
     // find nearest target
-    for (const auto& [search_layer, search_shape_tree] : search_shapes) {
+    for (const auto& [search_layer, search_shape_tree] : other_shapes) {
       if (layer == search_layer) {
         continue;
       }
@@ -954,8 +952,7 @@ std::vector<PadDirectConnectionStraps*> PadDirectConnectionStraps::getAssociated
 
 void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_shapes)
 {
-  auto search_shapes = getGrid()->getShapes();
-  if (search_shapes.empty()) {
+  if (other_shapes.empty()) {
     return;
   }
 
@@ -1024,7 +1021,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(const ShapeTreeMap& other_sha
                  "Connecting using shape: {}", Shape::getRectText(pin_shape, layer.getLefUnits()));
 
   ShapePtr closest_shape = nullptr;
-  for (const auto& [layer, layer_shapes] : search_shapes) {
+  for (const auto& [layer, layer_shapes] : other_shapes) {
     ShapePtr layer_closest_shape = getClosestShape(layer_shapes, pin_shape, iterm_->getNet());
     if (layer_closest_shape != nullptr) {
       closest_shape = layer_closest_shape;
