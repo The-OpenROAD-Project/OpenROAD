@@ -750,6 +750,7 @@ void IOPlacer::printConfig()
 {
   logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
   logger_->info(PPL, 2, "Number of I/O            {}", netlist_.numIOPins());
+  logger_->metric("floorplan__design__io", netlist_.numIOPins());
   logger_->info(
       PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_.numIOPins());
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());

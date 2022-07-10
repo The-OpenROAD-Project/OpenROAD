@@ -85,5 +85,55 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
+rename report_units report_units_raw
+
+proc report_units { args } {
+
+  report_units_raw
+
+  utl::push_metrics_stage "run__flow__platform__{}_units"
+
+  foreach unit {{"time" "timing"} {"power" "power"} {"distance" "distance"}} {
+    set utype [lindex $unit 0]
+    set umetric [lindex $unit 1]
+    utl::metric "$umetric" "[unit_suffix $utype]"
+  }
+
+  utl::pop_metrics_stage
+}
+
+rename report_tns report_tns_raw
+
+proc report_tns { args } {
+  global sta_report_default_digits
+  eval [linsert $args 0 report_tns_raw]
+
+  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
+}
+
+rename report_worst_slack report_worst_slack_raw
+
+proc report_worst_slack { args } {
+  global sta_report_default_digits
+  eval [linsert $args 0 report_worst_slack_raw]
+
+  utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
+}
+
+rename report_power_design report_power_design_raw
+
+proc report_power_design { corner digits } {
+  set power_result [design_power $corner]
+  set totals        [lrange $power_result  0  3]
+  lassign $totals design_internal design_switching design_leakage design_total
+
+  utl::metric_float "power__internal__total" $design_internal
+  utl::metric_float "power__switchng__total" $design_switching
+  utl::metric_float "power__leakage__total" $design_leakage
+  utl::metric_float "power__total" $design_total
+
+  [report_power_design_raw $corner $digits]
+}
+
 # namespace
 }
