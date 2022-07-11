@@ -1,5 +1,6 @@
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,11 +92,11 @@ void MetalWidthViaMapParser::parse(std::string s)
 bool MetalWidthViaMapParser::parseSubRule(std::string s)
 {
   cut_class_ = false;
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
+  qi::rule<std::string::iterator, std::string(), ascii::space_type> string_;
+  string_ %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
   qi::rule<std::string::iterator, space_type> ENTRY
-      = (lit("VIA") >> (_string >> double_ >> double_ >> -double_ >> -double_
-                        >> _string)[boost::bind(
+      = (lit("VIA") >> (string_ >> double_ >> double_ >> -double_ >> -double_
+                        >> string_)[boost::bind(
              &MetalWidthViaMapParser::addEntry, this, _1)]
          >> -lit(
              "PGVIA")[boost::bind(&MetalWidthViaMapParser::setPGVia, this)]);
