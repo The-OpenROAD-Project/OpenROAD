@@ -563,8 +563,10 @@ dbNetwork::findNet(const Instance *instance,
     dbNet *dnet = block_->findNet(net_name);
     return dbToSta(dnet);
   }
-  else
-    return nullptr;
+  std::string flat_net_name = name(instance);
+  flat_net_name += pathDivider() + std::string(net_name);
+  dbNet *dnet = block_->findNet(flat_net_name.c_str());
+  return dbToSta(dnet);
 }
 
 void
