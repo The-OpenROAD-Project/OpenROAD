@@ -2182,6 +2182,23 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any obje
                     {"Directions", directions},
                     {"Layer", gui->makeSelected(ap->getLayer())}
                     });
+
+  auto vias_by_cuts = ap->getVias();
+  for (int cuts = 0; cuts < vias_by_cuts.size(); ++cuts) {
+    Descriptor::PropertyList vias_property;
+    int cnt = 1;
+    for (auto via : vias_by_cuts[cuts]) {
+      std::string name;
+      if (via->getObjectType() == odb::dbTechViaObj) {
+        name = static_cast<odb::dbTechVia*>(via)->getName();
+      } else {
+        name = static_cast<odb::dbVia*>(via)->getName();
+      }
+      vias_property.push_back({cnt++, name});
+    }
+    props.push_back({fmt::format("{} cut vias", cuts + 1), vias_property});
+  }
+
   populateODBProperties(props, ap);
   return props;
 }
