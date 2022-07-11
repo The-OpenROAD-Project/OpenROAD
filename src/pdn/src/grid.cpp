@@ -869,12 +869,15 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const
     }
   }
 
-  // placed block obs
+  // placed instances obs
   for (auto* inst : block->getInsts()) {
     if (!inst->isFixed()) {
       continue;
     }
-    if (inst->isCore()) {
+    auto* master = inst->getMaster();
+    if (!master->isPad() &&
+        !master->isBlock() &&
+        !master->isCover()) {
       continue;
     }
 
