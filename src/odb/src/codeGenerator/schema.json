@@ -49,6 +49,9 @@
       "src":"dbGuide.json"
     },
     {
+      "src":"dbMetalWidthViaMap.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
