@@ -313,8 +313,31 @@ class GuiPainter : public Painter
     return {xMin, yMin, xMax, yMax};
   }
 
-  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
+  void drawRuler(int x0, int y0, int x1, int y1, bool euclidian = true, const std::string& label = "") override
   {
+    if (euclidian) {
+      drawRuler(x0, y0, x1, y1, label);
+    } else {
+      const int x_dist = std::abs(x0 - x1);
+      const int y_dist = std::abs(y0 - y1);
+      std::string x_label = label;
+      std::string y_label = "";
+      if (y_dist > x_dist) {
+        std::swap(x_label, y_label);
+      }
+      const odb::Point mid_pt = Ruler::getManhattanJoinPt({x0, y0}, {x1, y1});
+      drawRuler(x0, y0, mid_pt.x(), mid_pt.y(), x_label);
+      drawRuler(mid_pt.x(), mid_pt.y(), x1, y1, y_label);
+    }
+  }
+
+  QPainter* getPainter() { return painter_; }
+
+ private:
+  QPainter* painter_;
+  int dbu_per_micron_;
+
+  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label) {
     const QColor ruler_color_qt = getOptions()->rulerColor();
     const Color ruler_color(ruler_color_qt.red(), ruler_color_qt.green(), ruler_color_qt.blue(), ruler_color_qt.alpha());
     const QFont ruler_font = getOptions()->rulerFont();
@@ -420,12 +443,6 @@ class GuiPainter : public Painter
 
     painter_->setTransform(initial_xfm);
   }
-
-  QPainter* getPainter() { return painter_; }
-
- private:
-  QPainter* painter_;
-  int dbu_per_micron_;
 };
 
 LayoutViewer::LayoutViewer(
@@ -436,6 +453,7 @@ LayoutViewer::LayoutViewer(
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     std::function<bool(void)> usingDBU,
+    std::function<bool(void)> showRulerAsEuclidian,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -452,6 +470,7 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       usingDBU_(usingDBU),
+      showRulerAsEuclidian_(showRulerAsEuclidian),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
@@ -1748,7 +1767,10 @@ void LayoutViewer::drawRulers(Painter& painter)
 
   for (auto& ruler : rulers_) {
     painter.drawRuler(
-        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
+        ruler->getPt0().x(), ruler->getPt0().y(),
+        ruler->getPt1().x(), ruler->getPt1().y(),
+        ruler->isEuclidian(),
+        ruler->getLabel());
   }
 }
 
@@ -2598,7 +2620,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // draw partial ruler if present
   if (building_ruler_ && ruler_start_ != nullptr) {
     odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
-    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
+    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y(), showRulerAsEuclidian_());
   }
 
   // draw edge currently considered snapped to
