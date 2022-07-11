@@ -897,6 +897,63 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   }
 }
 
+void FlexPA::getViasFromMetalWidthMap(
+    const Point& pt,
+    const frLayerNum layerNum,
+    const gtl::polygon_90_set_data<frCoord>& polyset,
+    vector<pair<int, frViaDef*>>& viaDefs)
+{
+  const auto tech = getTech();
+  const auto cutLayer = tech->getLayer(layerNum + 1)->getDbLayer();
+  // If the upper layer has an NDR special handling will be needed
+  // here. Assuming normal min-width routing for now.
+  const frCoord top_width = tech->getLayer(layerNum + 2)->getMinWidth();
+  const auto width_orient = tech->isHorizontalLayer(layerNum) ? gtl::VERTICAL
+                                                              : gtl::HORIZONTAL;
+  frCoord bottom_width = -1;
+  auto viaMap = cutLayer->getTech()->getMetalWidthViaMap();
+  for (auto entry : viaMap) {
+    if (entry->getCutLayer() != cutLayer) {
+      continue;
+    }
+
+    if (entry->isPgVia()) {
+      continue;
+    }
+
+    if (entry->isViaCutClass()) {
+      logger_->warn(
+          DRT,
+          519,
+          "Via cut classes in LEF58_METALWIDTHVIAMAP are not supported.");
+      continue;
+    }
+
+    if (entry->getAboveLayerWidthLow() > top_width
+        || entry->getAboveLayerWidthHigh() < top_width) {
+      continue;
+    }
+
+    if (bottom_width < 0) {  // compute bottom_width once
+      vector<gtl::rectangle_data<frCoord>> maxrects;
+      gtl::get_max_rectangles(maxrects, polyset);
+      for (auto& rect : maxrects) {
+        if (contains(rect, gtl::point_data<frCoord>(pt.x(), pt.y()))) {
+          const frCoord width = delta(rect, width_orient);
+          bottom_width = std::max(bottom_width, width);
+        }
+      }
+    }
+
+    if (entry->getBelowLayerWidthLow() > bottom_width
+        || entry->getBelowLayerWidthHigh() < bottom_width) {
+      continue;
+    }
+
+    viaDefs.push_back({viaDefs.size(), tech->getVia(entry->getViaName())});
+  }
+}
+
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_via(
     frAccessPoint* ap,
@@ -928,13 +985,17 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   int maxNumViaTrial = 2;
   // use std:pair to ensure deterministic behavior
   vector<pair<int, frViaDef*>> viaDefs;
-  // hardcode first two single vias
-  int cnt = 0;
-  for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-    viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
-    cnt++;
-    if (cnt >= maxNumViaTrial) {
-      break;
+  getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
+
+  if (viaDefs.empty()) { // no via map entry
+    // hardcode first two single vias
+    int cnt = 0;
+    for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
+      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+      cnt++;
+      if (cnt >= maxNumViaTrial) {
+        break;
+      }
     }
   }
 
