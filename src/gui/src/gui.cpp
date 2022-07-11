@@ -290,9 +290,9 @@ void Gui::animateSelection(int repeat)
   main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
-std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
+std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name, bool euclidian)
 {
-  return main_window->addRuler(x0, y0, x1, y1, label, name);
+  return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
 }
 
 void Gui::deleteRuler(const std::string& name)

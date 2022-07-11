@@ -160,7 +160,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void removeHighlighted(const Selected& selection);
 
   // Add Ruler to Layout View
-  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
+  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "", bool euclidian = true);
 
   // Delete Ruler to Layout View
   void deleteRuler(const std::string& name);
@@ -298,6 +298,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* default_ruler_style_;
   QAction* font_;
 
   QLabel* location_;

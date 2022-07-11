@@ -127,6 +127,7 @@ class LayoutViewer : public QWidget
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                std::function<bool(void)> usingDBU,
+               std::function<bool(void)> showRulerAsEuclidian,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -365,6 +366,7 @@ class LayoutViewer : public QWidget
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
   std::function<bool(void)> usingDBU_;
+  std::function<bool(void)> showRulerAsEuclidian_;
 
   std::map<odb::dbModule*, ModuleSettings> modules_;
 
