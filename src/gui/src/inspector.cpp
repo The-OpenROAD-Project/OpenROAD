@@ -964,7 +964,7 @@ void Inspector::handleAction(QWidget* action)
   auto callback = actions_[action];
   auto new_selection = callback();
 
-  if (new_selection == selection_) {
+  if (new_selection && new_selection == selection_) {
     return;
   }
 
@@ -976,7 +976,6 @@ void Inspector::handleAction(QWidget* action)
     emit addSelected(new_selection);
     inspect(new_selection);
   } else {
-
     if (selected_.empty()) {
       // set is empty
       emit selected(Selected());
