@@ -2970,6 +2970,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     Rect markerBBox = marker->getBBox();
     workerRegionQuery.query(markerBBox, lNum, results);
     auto& sourceNets = marker->getSrcs();
+    const Rect routeBox = getDRWorker()->getRouteBox();
     drConnFig* obj = nullptr;
     for (auto connFig : results) {
       net = connFig->getNet();
@@ -2977,7 +2978,6 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         continue;
       }
       if (connFig->typeId() == drcVia) {
-        obj = connFig;
         auto via = static_cast<drVia*>(connFig);
         if (via->getViaDef()->getLayer1Num() == lNum) {
           fig_bbox = via->getLayer1BBox();
@@ -2985,9 +2985,11 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
           fig_bbox = via->getLayer2BBox();
         }
         origin = via->getOrigin();
-        break;
+        if (routeBox.intersects(origin)) {
+          obj = connFig;
+          break;
+        }
       } else if (connFig->typeId() == drcPathSeg) {
-        obj = connFig;
         auto seg = static_cast<drPathSeg*>(connFig);
         fig_bbox = seg->getBBox();
         // Pick nearest of begin/end points
@@ -2997,7 +2999,10 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         auto dist_ep = Point::manhattanDistance(markerBBox.closestPtInside(ep),
                                                 ep);
         origin = (dist_bp < dist_ep) ? bp : ep;
-        break;
+        if (routeBox.intersects(origin)) {
+          obj = connFig;
+          break;
+        }
       }
     }
 
