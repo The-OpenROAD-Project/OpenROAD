@@ -59,18 +59,18 @@ void Graphics::drawCluster(gui::Painter& painter)
     const unsigned color = clusterCounter % colors.size();
 
     std::vector<Point<double>> clusterNodes;
-    int tile_size_= 6900;
+    int tile_size_= 48000 * 13;
     for (unsigned idx : clusters) {
       const Point<double>& point = SinkClustering_->getPoints()[idx];
       clusterNodes.emplace_back(SinkClustering_->getPoints()[idx]); 
 
       painter.setBrush(colors[color]);
       painter.setPen(colors[color]);
-      painter.setPenWidth(150);
+      painter.setPenWidth(2500);
       int xreal= tile_size_ * (point.getX() + 0.5);
       int yreal= tile_size_ * (point.getY() + 0.5);
 
-      painter.drawCircle(xreal, yreal, 50);
+      painter.drawCircle(xreal, yreal, 3500);
     }
     const double wl = SinkClustering_->getWireLength(clusterNodes);
     totalWL += wl;
@@ -84,7 +84,7 @@ void Graphics::drawHTree(gui::Painter& painter)
   color.a = 180;
   painter.setBrush(color);
   painter.setPenWidth(700);
-  int tile_size_= 6900;
+  int tile_size_= 8000;
 
    clock_->forEachSink([&](const ClockInst& sink) { 
     int xreal= tile_size_ * (sink.getX() / HTreeBuilder_->getWireSegmentUnit() + 0.5);
