@@ -4,4 +4,5 @@ record_tests {
   ext_pattern
   gcd 
   45_gcd
+  names
 }

@@ -781,12 +781,16 @@ PathRenderer::highlightInst(const Pin *pin,
   dbNetwork *network = sta_->getDbNetwork();
   const Instance *inst = network->instance(pin);
   if (!network->isTopInstance(inst)) {
-    dbInst *db_inst = network->staToDb(inst);
-    odb::dbBox *bbox = db_inst->getBBox();
-    odb::Rect rect = bbox->getBox();
-    gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
-    painter.setBrush(inst_color);
-    painter.drawRect(rect);
+    dbInst *db_inst;
+    dbModInst* mod_inst;
+    network->staToDb(inst, db_inst, mod_inst);
+    if (db_inst) {
+      odb::dbBox *bbox = db_inst->getBBox();
+      odb::Rect rect = bbox->getBox();
+      gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
+      painter.setBrush(inst_color);
+      painter.drawRect(rect);
+    }
   }
 }
 
