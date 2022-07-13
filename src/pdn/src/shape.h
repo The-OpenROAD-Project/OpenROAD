@@ -209,12 +209,16 @@ class Shape
 
   static const Box rectToBox(const odb::Rect& rect);
 
+  bool allowsNonPreferredDirectionChange() const { return allow_non_preferred_change_; }
+  virtual void setAllowsNonPreferredDirectionChange() { allow_non_preferred_change_ = true; }
+
  private:
   odb::dbTechLayer* layer_;
   odb::dbNet* net_;
   odb::Rect rect_;
   odb::dbWireShapeType type_;
   ShapeType shape_type_;
+  bool allow_non_preferred_change_;
 
   odb::Rect obs_;
 
@@ -247,6 +251,8 @@ class FollowPinShape : public Shape
 
   // followpins cannot be removed
   virtual bool isRemovable() const override { return false; }
+
+  virtual void setAllowsNonPreferredDirectionChange() override {}
 
   virtual bool cut(const ShapeTree& obstructions,
                    std::vector<Shape*>& replacements) const override;

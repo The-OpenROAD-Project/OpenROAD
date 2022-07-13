@@ -39,8 +39,8 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "sta/Sta.hh"
 #include "ord/OpenRoad.hh"
+#include "sta/Sta.hh"
 
 namespace gui {
 class Gui;
@@ -66,88 +66,80 @@ class PowerDensityDataSource;
 using ord::OpenRoad;
 using utl::Logger;
 
+using odb::dbBlock;
+using odb::dbBlockCallBackObj;
+using odb::dbBTerm;
 using odb::dbDatabase;
-using odb::dbLib;
-using odb::dbNet;
 using odb::dbInst;
 using odb::dbITerm;
-using odb::dbBTerm;
-using odb::dbBlock;
-using odb::dbTech;
 using odb::dbLib;
 using odb::dbMaster;
-using odb::dbBlockCallBackObj;
+using odb::dbNet;
+using odb::dbTech;
 
 class dbSta : public Sta, public ord::OpenRoad::Observer
 {
-public:
+ public:
   dbSta();
   virtual ~dbSta();
-  void init(Tcl_Interp *tcl_interp,
-	    dbDatabase *db,
-            gui::Gui *gui,
-            Logger *logger);
+  void init(Tcl_Interp* tcl_interp,
+            dbDatabase* db,
+            gui::Gui* gui,
+            Logger* logger);
   // for makeBlockSta
-  void initVars(Tcl_Interp *tcl_interp,
-                dbDatabase *db,
-                gui::Gui *gui,
-                Logger *logger);
+  void initVars(Tcl_Interp* tcl_interp,
+                dbDatabase* db,
+                gui::Gui* gui,
+                Logger* logger);
 
-  dbDatabase *db() { return db_; }
-  dbNetwork *getDbNetwork() { return db_network_; }
-  dbStaReport *getDbReport() { return db_report_; }
+  dbDatabase* db() { return db_; }
+  dbNetwork* getDbNetwork() { return db_network_; }
+  dbStaReport* getDbReport() { return db_report_; }
 
-  Slack netSlack(const dbNet *net,
-		 const MinMax *min_max);
+  Slack netSlack(const dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
   virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   virtual void postReadDef(odb::dbBlock* block) override;
   virtual void postReadDb(odb::dbDatabase* db) override;
 
-  // Find clock nets connected by combinational gates from the clock roots. 
+  // Find clock nets connected by combinational gates from the clock roots.
   std::set<dbNet*> findClkNets();
-  std::set<dbNet*> findClkNets(const Clock *clk);
+  std::set<dbNet*> findClkNets(const Clock* clk);
 
-  virtual void deleteInstance(Instance *inst) override;
-  virtual void deleteNet(Net *net) override;
-  virtual void connectPin(Instance *inst,
-			  Port *port,
-			  Net *net) override;
-  virtual void connectPin(Instance *inst,
-			  LibertyPort *port,
-			  Net *net) override;
-  virtual void disconnectPin(Pin *pin) override;
+  virtual void deleteInstance(Instance* inst) override;
+  virtual void deleteNet(Net* net) override;
+  virtual void connectPin(Instance* inst, Port* port, Net* net) override;
+  virtual void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
+  virtual void disconnectPin(Pin* pin) override;
   // Highlight path in the gui.
-  void highlight(PathRef *path);
+  void highlight(PathRef* path);
 
   using Sta::netSlack;
   using Sta::replaceCell;
 
-protected:
+ protected:
   virtual void makeReport() override;
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;
 
-  virtual void replaceCell(Instance *inst,
-                           Cell *to_cell,
-                           LibertyCell *to_lib_cell) override;
+  virtual void replaceCell(Instance* inst,
+                           Cell* to_cell,
+                           LibertyCell* to_lib_cell) override;
 
-  dbDatabase *db_;
-  gui::Gui *gui_;
-  Logger *logger_;
+  dbDatabase* db_;
+  gui::Gui* gui_;
+  Logger* logger_;
 
-  dbNetwork *db_network_;
-  dbStaReport *db_report_;
-  dbStaCbk *db_cbk_;
-  PathRenderer *path_renderer_;
+  dbNetwork* db_network_;
+  dbStaReport* db_report_;
+  dbStaCbk* db_cbk_;
+  PathRenderer* path_renderer_;
 
   std::unique_ptr<PowerDensityDataSource> power_density_heatmap_;
 };
 
 // Make a stand-alone (scratchpad) sta for block.
-dbSta *
-makeBlockSta(OpenRoad *openroad,
-             dbBlock *block);
+dbSta* makeBlockSta(OpenRoad* openroad, dbBlock* block);
 
-} // namespace
+}  // namespace sta
