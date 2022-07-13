@@ -66,4 +66,4 @@ class PowerDensityDataSource : public gui::RealValueHeatMapDataSource
   void setCorner(const std::string& name);
 };
 
-}  // namespace gui
+}  // namespace sta
