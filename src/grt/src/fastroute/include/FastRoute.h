@@ -37,16 +37,16 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "DataType.h"
-#include "boost/multi_array.hpp"
-#include "grt/GRoute.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "odb/geom.h"
 #include "boost/icl/interval.hpp"
 #include "boost/icl/interval_set.hpp"
+#include "boost/multi_array.hpp"
+#include "grt/GRoute.h"
+#include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
 class Logger;
@@ -64,9 +64,9 @@ namespace gui {
 class Gui;
 }
 
+using boost::multi_array;
 using boost::icl::interval;
 using boost::icl::interval_set;
-using boost::multi_array;
 
 namespace grt {
 
@@ -121,13 +121,11 @@ class FastRouteCore
              int cost,
              int min_layer,
              int max_layer,
-             std::vector<int> *edge_cost_per_layer);
+             std::vector<int>* edge_cost_per_layer);
   void setNetDriverIdx(int netID, int root_idx);
   void addPin(int netID, int x, int y, int layer);
   void clearPins(int netID);
-  void getNetId(odb::dbNet* db_net,
-                int &net_id,
-                bool &exists);
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearRoute(const int netID);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
@@ -149,16 +147,16 @@ class FastRouteCore
                                   int first_tile_reduce,
                                   int last_tile_reduce);
   void addVerticalAdjustments(const odb::Point& first_tile,
-                                const odb::Point& last_tile,
-                                int layer,
-                                interval<int>::type first_tile_reduce_interval,
-                                interval<int>::type last_tile_reduce_interval);
+                              const odb::Point& last_tile,
+                              int layer,
+                              interval<int>::type first_tile_reduce_interval,
+                              interval<int>::type last_tile_reduce_interval);
   void addHorizontalAdjustments(const odb::Point& first_tile,
                                 const odb::Point& last_tile,
                                 int layer,
                                 interval<int>::type first_tile_reduce_interval,
                                 interval<int>::type last_tile_reduce_interval);
-  void initBlockedIntervals(std::vector<int> &track_space);
+  void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   void initNetAuxVars();
   NetRouteMap run();
@@ -174,11 +172,9 @@ class FastRouteCore
   int getEdgeCurrentUsage(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
-  void
-  setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
+  void setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
-  void
-  setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
+  void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);
@@ -493,7 +489,7 @@ class FastRouteCore
   int enlarge_;
   int costheight_;
   int ahth_;
-  std::vector<int> route_net_ids_; // IDs of nets to route
+  std::vector<int> route_net_ids_;  // IDs of nets to route
   int num_layers_;
   int total_overflow_;  // total # overflow
   bool has_2D_overflow_;
@@ -561,8 +557,14 @@ class FastRouteCore
   FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
 
-  std::unordered_map<std::tuple<int,int,int>, interval_set<int>, boost::hash<std::tuple<int,int,int>>> vertical_blocked_intervals_;
-  std::unordered_map<std::tuple<int,int,int>, interval_set<int>, boost::hash<std::tuple<int,int,int>>> horizontal_blocked_intervals_;
+  std::unordered_map<std::tuple<int, int, int>,
+                     interval_set<int>,
+                     boost::hash<std::tuple<int, int, int>>>
+      vertical_blocked_intervals_;
+  std::unordered_map<std::tuple<int, int, int>,
+                     interval_set<int>,
+                     boost::hash<std::tuple<int, int, int>>>
+      horizontal_blocked_intervals_;
 };
 
 }  // namespace grt
