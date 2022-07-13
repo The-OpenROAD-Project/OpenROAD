@@ -35,17 +35,16 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include <QDockWidget>
-#include <QTreeView>
-#include <QStandardItemModel>
-#include <QPushButton>
 #include <QCheckBox>
+#include <QDockWidget>
+#include <QPushButton>
 #include <QSettings>
-
+#include <QStandardItemModel>
+#include <QTreeView>
 #include <memory>
 #include <variant>
 
+#include "gui/gui.h"
 #include "odb/db.h"
 
 namespace utl {
@@ -54,144 +53,147 @@ class Logger;
 
 namespace gui {
 
-class DRCViolation {
-  public:
-    using DRCLine = std::pair<odb::Point, odb::Point>;
-    using DRCRect = odb::Rect;
-    using DRCPoly = std::vector<odb::Point>;
-    using DRCShape = std::variant<DRCLine, DRCRect, DRCPoly>;
+class DRCViolation
+{
+ public:
+  using DRCLine = std::pair<odb::Point, odb::Point>;
+  using DRCRect = odb::Rect;
+  using DRCPoly = std::vector<odb::Point>;
+  using DRCShape = std::variant<DRCLine, DRCRect, DRCPoly>;
 
-    DRCViolation(const std::string& name,
-                 const std::string& type,
-                 const std::vector<std::any>& srcs,
-                 const std::vector<DRCShape>& shapes,
-                 odb::dbTechLayer* layer,
-                 const std::string& comment,
-                 int file_line);
-    DRCViolation(const std::string& name,
-                 const std::string& type,
-                 const std::vector<DRCShape>& shapes,
-                 const std::string& comment,
-                 int file_line);
-    ~DRCViolation() {}
+  DRCViolation(const std::string& name,
+               const std::string& type,
+               const std::vector<std::any>& srcs,
+               const std::vector<DRCShape>& shapes,
+               odb::dbTechLayer* layer,
+               const std::string& comment,
+               int file_line);
+  DRCViolation(const std::string& name,
+               const std::string& type,
+               const std::vector<DRCShape>& shapes,
+               const std::string& comment,
+               int file_line);
+  ~DRCViolation() {}
 
-    const std::string& getName() { return name_; }
-    const std::string& getType() { return type_; }
-    const std::vector<std::any>& getSources() { return srcs_; }
-    const std::vector<DRCShape>& getShapes() { return shapes_; }
-    const odb::Rect& getBBox() { return bbox_; }
-    const std::string getComment() { return comment_; }
-    odb::dbTechLayer* getLayer() { return layer_; }
-    int getFileLine() { return file_line_; }
+  const std::string& getName() { return name_; }
+  const std::string& getType() { return type_; }
+  const std::vector<std::any>& getSources() { return srcs_; }
+  const std::vector<DRCShape>& getShapes() { return shapes_; }
+  const odb::Rect& getBBox() { return bbox_; }
+  const std::string getComment() { return comment_; }
+  odb::dbTechLayer* getLayer() { return layer_; }
+  int getFileLine() { return file_line_; }
 
-    bool isViewed() { return viewed_; }
-    void setViewed() { viewed_ = true; }
-    void clearViewed() { viewed_ = false; }
+  bool isViewed() { return viewed_; }
+  void setViewed() { viewed_ = true; }
+  void clearViewed() { viewed_ = false; }
 
-    void paint(Painter& painter);
+  void paint(Painter& painter);
 
-  private:
-    void computeBBox();
+ private:
+  void computeBBox();
 
-    std::string name_;
-    std::string type_;
-    std::vector<std::any> srcs_;
-    std::vector<DRCShape> shapes_;
-    odb::dbTechLayer* layer_;
-    std::string comment_;
-    odb::Rect bbox_;
-    int file_line_;
+  std::string name_;
+  std::string type_;
+  std::vector<std::any> srcs_;
+  std::vector<DRCShape> shapes_;
+  odb::dbTechLayer* layer_;
+  std::string comment_;
+  odb::Rect bbox_;
+  int file_line_;
 
-    bool viewed_;
+  bool viewed_;
 };
 
 class DRCDescriptor : public Descriptor
 {
-  public:
-    DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+ public:
+  DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations);
 
-    std::string getName(std::any object) const override;
-    std::string getTypeName() const override;
-    bool getBBox(std::any object, odb::Rect& bbox) const override;
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-    void highlight(std::any object,
-                   Painter& painter,
-                   void* additional_data) const override;
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
 
-    Properties getProperties(std::any object) const override;
-    Selected makeSelected(std::any object, void* additional_data) const override;
-    bool lessThan(std::any l, std::any r) const override;
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
-    bool getAllObjects(SelectionSet& objects) const override;
+  bool getAllObjects(SelectionSet& objects) const override;
 
-  private:
-    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
+ private:
+  const std::vector<std::unique_ptr<DRCViolation>>& violations_;
 };
 
 class DRCItemModel : public QStandardItemModel
 {
-  public:
-    DRCItemModel(QWidget* parent = nullptr) : QStandardItemModel(parent) {}
-    QVariant data(const QModelIndex& index, int role) const override;
+ public:
+  DRCItemModel(QWidget* parent = nullptr) : QStandardItemModel(parent) {}
+  QVariant data(const QModelIndex& index, int role) const override;
 };
 
 class DRCRenderer : public Renderer
 {
-  public:
-    DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+ public:
+  DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations);
 
-    // Renderer
-    void drawObjects(Painter& painter) override;
-    SelectionSet select(odb::dbTechLayer* layer, const odb::Rect& region) override;
+  // Renderer
+  void drawObjects(Painter& painter) override;
+  SelectionSet select(odb::dbTechLayer* layer,
+                      const odb::Rect& region) override;
 
-  private:
-    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
+ private:
+  const std::vector<std::unique_ptr<DRCViolation>>& violations_;
 };
 
 class DRCWidget : public QDockWidget
 {
   Q_OBJECT
 
-  public:
-    DRCWidget(QWidget* parent = nullptr);
-    ~DRCWidget() {}
+ public:
+  DRCWidget(QWidget* parent = nullptr);
+  ~DRCWidget() {}
 
-    void setLogger(utl::Logger* logger);
+  void setLogger(utl::Logger* logger);
 
-  signals:
-    void selectDRC(const Selected& selected);
+ signals:
+  void selectDRC(const Selected& selected);
 
-  public slots:
-    void loadReport(const QString& filename);
-    void setBlock(odb::dbBlock* block);
-    void clicked(const QModelIndex& index);
-    void selectReport();
-    void toggleRenderer(bool visible);
-    void updateSelection(const Selected& selection);
+ public slots:
+  void loadReport(const QString& filename);
+  void setBlock(odb::dbBlock* block);
+  void clicked(const QModelIndex& index);
+  void selectReport();
+  void toggleRenderer(bool visible);
+  void updateSelection(const Selected& selection);
 
-    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+  void selectionChanged(const QItemSelection& selected,
+                        const QItemSelection& deselected);
 
-  protected:
-    void showEvent(QShowEvent* event) override;
-    void hideEvent(QHideEvent* event) override;
+ protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
-  private:
-    void loadTRReport(const QString& filename);
-    void loadJSONReport(const QString& filename);
-    void updateModel();
+ private:
+  void loadTRReport(const QString& filename);
+  void loadJSONReport(const QString& filename);
+  void updateModel();
 
-    utl::Logger* logger_;
+  utl::Logger* logger_;
 
-    QTreeView* view_;
-    DRCItemModel* model_;
+  QTreeView* view_;
+  DRCItemModel* model_;
 
-    odb::dbBlock* block_;
+  odb::dbBlock* block_;
 
-    QPushButton* load_;
+  QPushButton* load_;
 
-    std::unique_ptr<DRCRenderer> renderer_;
+  std::unique_ptr<DRCRenderer> renderer_;
 
-    std::vector<std::unique_ptr<DRCViolation>> violations_;
+  std::vector<std::unique_ptr<DRCViolation>> violations_;
 };
 
 }  // namespace gui

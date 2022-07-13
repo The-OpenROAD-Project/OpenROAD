@@ -37,11 +37,11 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QModelIndex>
-#include <QTableView>
-#include <QSpinBox>
 #include <QPushButton>
 #include <QSettings>
+#include <QSpinBox>
 #include <QSplitter>
+#include <QTableView>
 #include <vector>
 
 #include "odb/db.h"
@@ -74,7 +74,8 @@ class TimingWidget : public QDockWidget
  public slots:
   void showPathDetails(const QModelIndex& index);
   void clearPathDetails();
-  void highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index);
+  void highlightPathStage(TimingPathDetailModel* model,
+                          const QModelIndex& index);
 
   void toggleRenderer(bool enable);
 

@@ -52,10 +52,9 @@
 #include <set>
 #include <vector>
 
-#include "options.h"
-
-#include "gui/gui.h"
 #include "db_sta/dbNetwork.hh"
+#include "gui/gui.h"
+#include "options.h"
 
 namespace odb {
 class dbDatabase;
@@ -67,11 +66,11 @@ class dbInst;
 namespace sta {
 class dbSta;
 class LibertyCell;
-} // namespace sta
+}  // namespace sta
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace gui {
 class DbInstDescriptor;
@@ -104,8 +103,7 @@ class DisplayColorDialog : public QDialog
   DisplayColorDialog(QColor color,
                      Qt::BrushStyle pattern,
                      QWidget* parent = nullptr);
-  DisplayColorDialog(QColor color,
-                     QWidget* parent = nullptr);
+  DisplayColorDialog(QColor color, QWidget* parent = nullptr);
   ~DisplayColorDialog();
 
   QColor getSelectedColor() const { return color_; }
@@ -143,8 +141,11 @@ class DisplayControlModel : public QStandardItemModel
  public:
   DisplayControlModel(int user_data_item_idx, QWidget* parent = nullptr);
 
-  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QVariant data(const QModelIndex& index,
+                int role = Qt::DisplayRole) const override;
+  QVariant headerData(int section,
+                      Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const override;
 
  private:
   const int user_data_item_idx_;
@@ -157,7 +158,9 @@ class DisplayControlModel : public QStandardItemModel
 //
 // It also implements the Options interface so that other clients can
 // access the data.
-class DisplayControls : public QDockWidget, public Options, public sta::dbNetworkObserver
+class DisplayControls : public QDockWidget,
+                        public Options,
+                        public sta::dbNetworkObserver
 {
   Q_OBJECT
 
@@ -175,7 +178,9 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
-  void setControlByPath(const std::string& path, bool is_visible, Qt::CheckState value);
+  void setControlByPath(const std::string& path,
+                        bool is_visible,
+                        Qt::CheckState value);
   bool checkControlByPath(const std::string& path, bool is_visible);
 
   void registerRenderer(Renderer* renderer);
@@ -255,7 +260,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   void displayItemDblClicked(const QModelIndex& index);
 
  private slots:
-  void itemContextMenu(const QPoint &point);
+  void itemContextMenu(const QPoint& point);
 
  private:
   // The columns in the tree view
@@ -397,24 +402,39 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   const QIcon makeSwatchIcon(const QColor& color);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
-  void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
+  void toggleParent(const QStandardItem* parent,
+                    QStandardItem* parent_flag,
+                    int column);
   void toggleParent(ModelRow& row);
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
-  void readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible = nullptr, QStandardItem* selectable = nullptr);
+  void readSettingsForRow(QSettings* settings,
+                          const QStandardItem* name,
+                          QStandardItem* visible = nullptr,
+                          QStandardItem* selectable = nullptr);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
-  void writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible = nullptr, const QStandardItem* selectable = nullptr);
+  void writeSettingsForRow(QSettings* settings,
+                           const QStandardItem* name,
+                           const QStandardItem* visible = nullptr,
+                           const QStandardItem* selectable = nullptr);
 
-  void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
+  void buildRestoreTclCommands(std::vector<std::string>& cmds,
+                               const QStandardItem* parent,
+                               const std::string& prefix = "");
 
   void saveRendererState(Renderer* renderer);
 
-  void setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback);
-  void setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity);
+  void setNameItemDoubleClickAction(ModelRow& row,
+                                    const std::function<void(void)>& callback);
+  void setItemExclusivity(ModelRow& row,
+                          const std::set<std::string>& exclusivity);
 
   void createLayerMenu();
   void layerShowOnlySelectedNeighbors(int lower, int upper);
-  void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
+  void collectNeighboringLayers(odb::dbTechLayer* layer,
+                                int lower,
+                                int upper,
+                                std::set<const odb::dbTechLayer*>& layers);
   void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
 
   const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
