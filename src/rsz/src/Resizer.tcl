@@ -412,7 +412,7 @@ proc repair_timing { args } {
 
 ################################################################
 
-proc report_design_area { } {
+proc report_design_area {} {
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."

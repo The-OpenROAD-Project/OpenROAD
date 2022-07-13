@@ -278,7 +278,6 @@ class Logger
 
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
-  //std::shared_ptr<spdlog::logger> metrics_logger_;
   std::stack<std::string> metrics_stages_;
 
   // This matrix is pre-allocated so it can be safely updated

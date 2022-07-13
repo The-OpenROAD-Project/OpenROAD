@@ -46,7 +46,7 @@ struct MetricsEntry
   std::string key;
   std::string value;
 
-  static std::string assembleJSON(std::list<MetricsEntry> entries);
+  static std::string assembleJSON(const std::list<MetricsEntry>& entries);
 };
 
 enum class MetricsPolicyType
@@ -60,7 +60,7 @@ enum class MetricsPolicyType
 class MetricsPolicy
 {
  public:
-  MetricsPolicy(std::string key_pattern,
+  MetricsPolicy(const std::string& key_pattern,
                 MetricsPolicyType policy,
                 bool repeating_use_exact_match);
 

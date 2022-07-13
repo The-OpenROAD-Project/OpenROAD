@@ -1732,10 +1732,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                         logger_->report("    Completing {}% with {} violations.",
                                         prev_perc,
                                         getDesign()->getTopBlock()->getNumMarkers());
-                        logger_->metric("detailedroute__route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
                         logger_->report("    {}.", t);
                       } else {
-                      logger_->metric("detailedroute__route__drc_errors", 0);
                       }
                     }
                   }
@@ -1876,15 +1874,17 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("drt::wire length::total",
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric("drt::vias::total", totSCut + totMCut);
+    logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("route__vias", totSCut + totMCut);
+    logger_->metric("route__vias__singlecut", totSCut);
+    logger_->metric("route__vias__multicut", totMCut);
+    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
   }
+
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric("detailedroute__route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
 
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
@@ -1896,7 +1896,6 @@ void FlexDR::end(bool done)
       }
     }
     logger_->report("Total number of vias = {}.", totSCut + totMCut);
-    logger_->metric("detailedroute__route__wirelength", totSCut + totMCut);
     if (totMCut > 0) {
       logger_->report("Total number of multi-cut vias = {} ({:5.1f}%).",
                       totMCut,

@@ -85,11 +85,8 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
-rename report_units report_units_raw
-
-proc report_units { args } {
-
-  report_units_raw
+define_cmd_args "report_units_metric" {}
+proc report_units_metric { args } {
 
   utl::push_metrics_stage "run__flow__platform__{}_units"
 
@@ -102,27 +99,24 @@ proc report_units { args } {
   utl::pop_metrics_stage
 }
 
-rename report_tns report_tns_raw
-
-proc report_tns { args } {
+define_cmd_args "report_tns_metric" {}
+proc report_tns_metric { args } {
   global sta_report_default_digits
-  eval [linsert $args 0 report_tns_raw]
 
   utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
 }
 
-rename report_worst_slack report_worst_slack_raw
 
-proc report_worst_slack { args } {
+define_cmd_args "report_worsrt_slack_metric" {}
+proc report_worst_slack_metric { args } {
   global sta_report_default_digits
-  eval [linsert $args 0 report_worst_slack_raw]
 
   utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
 }
 
-rename report_power_design report_power_design_raw
 
-proc report_power_design { corner digits } {
+define_cmd_args "report_power_design_metric" {}
+proc report_power_design_metric { corner digits } {
   set power_result [design_power $corner]
   set totals        [lrange $power_result  0  3]
   lassign $totals design_internal design_switching design_leakage design_total
@@ -131,8 +125,6 @@ proc report_power_design { corner digits } {
   utl::metric_float "power__switchng__total" $design_switching
   utl::metric_float "power__leakage__total" $design_leakage
   utl::metric_float "power__total" $design_total
-
-  [report_power_design_raw $corner $digits]
 }
 
 # namespace

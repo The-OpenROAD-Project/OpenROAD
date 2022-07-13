@@ -41,19 +41,19 @@
 
 namespace utl {
 
-std::string MetricsEntry::assembleJSON(std::list<MetricsEntry> entries)
+std::string MetricsEntry::assembleJSON(const std::list<MetricsEntry>& entries)
 {
   std::string json = "{";
   std::string separator = "";
   for (MetricsEntry entry : entries) {
-    json += fmt::format("{}\n\t\"{}\":{}", separator, entry.key, entry.value);
+    json += fmt::format("{}\n\t\"{}\": {}", separator, entry.key, entry.value);
     separator = ",";
   }
 
   return json + "\n}";
 }
 
-MetricsPolicy::MetricsPolicy(std::string key_pattern,
+MetricsPolicy::MetricsPolicy(const std::string& key_pattern,
                              MetricsPolicyType policy,
                              bool repeating_use_regex)
     : policy_(policy),
@@ -105,7 +105,7 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
       std::list<MetricsEntry>::iterator last;
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
         if (matching(iter->key)) {
-          iter->key = iter->key + "_" + std::to_string(ctr);
+          iter->key += "_" + std::to_string(ctr);
           ctr++;
         }
       }
