@@ -69,7 +69,11 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger, od
                            "Layer:",
                            [this]() {
                              std::vector<std::string> layers{"All"};
-                             for (auto* layer : db_->getTech()->getLayers()) {
+                             auto* tech = db_->getTech();
+                             if (tech == nullptr) {
+                              return layers;
+                             }
+                             for (auto* layer : tech->getLayers()) {
                                if (layer->getRoutingLevel() != 0) {
                                  layers.push_back(layer->getName());
                                }
@@ -84,10 +88,11 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger, od
                              }
                            },
                            [this](const std::string& value) {
-                             if (value == "All") {
+                            auto* tech = db_->getTech();
+                             if (value == "All" || tech == nullptr) {
                                layer_ = nullptr;
                              } else {
-                               layer_ = db_->getTech()->findLayer(value.c_str());
+                               layer_ = tech->findLayer(value.c_str());
                              }
                            });
 }
