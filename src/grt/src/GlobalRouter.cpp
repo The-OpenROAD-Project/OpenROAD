@@ -124,7 +124,7 @@ void GlobalRouter::init(utl::Logger* logger,
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = sta;
 
-  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
+  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
   heatmap_->registerHeatMap();
 }
 
