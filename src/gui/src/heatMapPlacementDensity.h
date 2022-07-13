@@ -39,7 +39,8 @@
 
 namespace gui {
 
-class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlockCallBackObj
+class PlacementDensityDataSource : public HeatMapDataSource,
+                                   public odb::dbBlockCallBackObj
 {
  public:
   PlacementDensityDataSource(utl::Logger* logger);
@@ -52,7 +53,9 @@ class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlock
   virtual void inDbInstCreate(odb::dbInst*) override;
   virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   virtual void inDbInstDestroy(odb::dbInst*) override;
-  virtual void inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&) override;
+  virtual void inDbInstPlacementStatusBefore(
+      odb::dbInst*,
+      const odb::dbPlacementStatus&) override;
   virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
   virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
   virtual void inDbPreMoveInst(odb::dbInst*) override;

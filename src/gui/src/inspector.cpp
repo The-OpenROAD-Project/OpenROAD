@@ -36,8 +36,8 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
-#include <QPushButton>
 #include <QLineEdit>
+#include <QPushButton>
 
 #include "gui/gui.h"
 
@@ -54,11 +54,11 @@ using namespace odb;
 SelectedItemModel::SelectedItemModel(const Selected& object,
                                      const QColor& selectable,
                                      const QColor& editable,
-                                     QObject* parent) :
-                                         QStandardItemModel(0, 2, parent),
-                                         selectable_item_(selectable),
-                                         editable_item_(editable),
-                                         object_(object)
+                                     QObject* parent)
+    : QStandardItemModel(0, 2, parent),
+      selectable_item_(selectable),
+      editable_item_(editable),
+      object_(object)
 {
   setHorizontalHeaderLabels({"Name", "Value"});
 }
@@ -66,15 +66,17 @@ SelectedItemModel::SelectedItemModel(const Selected& object,
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ForegroundRole) {
-    const bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+    const bool has_selected
+        = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
 
-    if (has_selected){
+    if (has_selected) {
       return QBrush(selectable_item_);
     }
   } else {
     if (index.column() == 1) {
       if (role == Qt::BackgroundRole) {
-        const bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+        const bool has_editor
+            = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
 
         if (has_editor) {
           return QBrush(editable_item_);
@@ -110,14 +112,20 @@ void SelectedItemModel::updateObject()
     auto editor_found = editors.find(prop.name);
     if (editor_found != editors.end()) {
       auto editor = (*editor_found).second;
-      makeItemEditor(prop.name, value_item, object_, EditorItemDelegate::getEditorType(prop.value), editor);
+      makeItemEditor(prop.name,
+                     value_item,
+                     object_,
+                     EditorItemDelegate::getEditorType(prop.value),
+                     editor);
     }
   }
 
   endResetModel();
 }
 
-void SelectedItemModel::makePropertyItem(const Descriptor::Property& property, QStandardItem*& name_item, QStandardItem*& value_item)
+void SelectedItemModel::makePropertyItem(const Descriptor::Property& property,
+                                         QStandardItem*& name_item,
+                                         QStandardItem*& value_item)
 {
   const std::string& name = property.name;
   const std::any& value = property.value;
@@ -151,7 +159,8 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   return item;
 }
 
-QStandardItem* SelectedItemModel::makeItem(const std::any& item, bool short_name)
+QStandardItem* SelectedItemModel::makeItem(const std::any& item,
+                                           bool short_name)
 {
   if (auto selected = std::any_cast<Selected>(&item)) {
     QStandardItem* item = nullptr;
@@ -160,15 +169,19 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item, bool short_name
     } else {
       item = makeItem(QString::fromStdString(selected->getName()));
     }
-    item->setData(QVariant::fromValue(*selected), EditorItemDelegate::selected_);
+    item->setData(QVariant::fromValue(*selected),
+                  EditorItemDelegate::selected_);
     return item;
   } else {
-    return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
+    return makeItem(
+        QString::fromStdString(Descriptor::Property::toString(item)));
   }
 }
 
-template<typename Iterator>
-QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+template <typename Iterator>
+QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item,
+                                           const Iterator& begin,
+                                           const Iterator& end)
 {
   int index = 0;
   for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
@@ -182,8 +195,10 @@ QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item, const Itera
   return makeItem(items);
 }
 
-template<typename Iterator>
-QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+template <typename Iterator>
+QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item,
+                                                   const Iterator& begin,
+                                                   const Iterator& end)
 {
   for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
     auto& [name, value] = *use_itr;
@@ -201,7 +216,8 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
                                        const EditorItemDelegate::EditType type,
                                        const Descriptor::Editor& editor)
 {
-  item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
+  item->setData(QVariant::fromValue(selected),
+                EditorItemDelegate::editor_select_);
   item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
 
   Descriptor::Editor used_editor = editor;
@@ -216,24 +232,29 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
     item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
   } else {
     // options are not empty so use list type
-    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), EditorItemDelegate::editor_type_);
+    item->setData(QVariant::fromValue(EditorItemDelegate::LIST),
+                  EditorItemDelegate::editor_type_);
   }
 }
 
 /////////
 
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
-                                       QObject* parent) : QItemDelegate(parent),
-                                       model_(model),
-                                       background_(model->getEditableColor())
+                                       QObject* parent)
+    : QItemDelegate(parent),
+      model_(model),
+      background_(model->getEditableColor())
 {
 }
 
-QWidget* EditorItemDelegate::createEditor(QWidget* parent,
-                                          const QStyleOptionViewItem& /* option */,
-                                          const QModelIndex& index) const
+QWidget* EditorItemDelegate::createEditor(
+    QWidget* parent,
+    const QStyleOptionViewItem& /* option */,
+    const QModelIndex& index) const
 {
-  auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+  auto type = index.model()
+                  ->data(index, editor_type_)
+                  .value<EditorItemDelegate::EditType>();
   QWidget* editor;
   if (type == LIST) {
     editor = new QComboBox(parent);
@@ -247,8 +268,11 @@ QWidget* EditorItemDelegate::createEditor(QWidget* parent,
 void EditorItemDelegate::setEditorData(QWidget* editor,
                                        const QModelIndex& index) const
 {
-  auto type = index.model()->data(index, editor_type_).value<EditorItemDelegate::EditType>();
-  auto [callback, values] = index.model()->data(index, editor_).value<Descriptor::Editor>();
+  auto type = index.model()
+                  ->data(index, editor_type_)
+                  .value<EditorItemDelegate::EditType>();
+  auto [callback, values]
+      = index.model()->data(index, editor_).value<Descriptor::Editor>();
   QString value = index.model()->data(index, Qt::EditRole).toString();
 
   if (type != LIST) {
@@ -260,7 +284,8 @@ void EditorItemDelegate::setEditorData(QWidget* editor,
     combo_box->disconnect();
     combo_box->clear();
     for (const auto& [name, option_value] : values) {
-      combo_box->addItem(QString::fromStdString(name), QVariant::fromValue(option_value));
+      combo_box->addItem(QString::fromStdString(name),
+                         QVariant::fromValue(option_value));
     }
     combo_box->setCurrentText(value);
     // listen for changes and update immediately
@@ -276,8 +301,10 @@ void EditorItemDelegate::setModelData(QWidget* editor,
                                       QAbstractItemModel* model,
                                       const QModelIndex& index) const
 {
-  auto type = model->data(index, editor_type_).value<EditorItemDelegate::EditType>();
-  auto [callback, values] = model->data(index, editor_).value<Descriptor::Editor>();
+  auto type
+      = model->data(index, editor_type_).value<EditorItemDelegate::EditType>();
+  auto [callback, values]
+      = model->data(index, editor_).value<Descriptor::Editor>();
 
   const QString old_value = index.model()->data(index, Qt::EditRole).toString();
 
@@ -304,7 +331,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     accepted = callback(callback_value);
   }
 
-  QString edit_save = old_value; // default to set to old value
+  QString edit_save = old_value;  // default to set to old value
   if (accepted) {
     // retrieve property again
     auto selected = model->data(index, editor_select_).value<Selected>();
@@ -315,7 +342,8 @@ void EditorItemDelegate::setModelData(QWidget* editor,
       auto new_selected = std::any_cast<Selected>(new_property);
       model->setData(index, QVariant::fromValue(new_selected), selected_);
     }
-    edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
+    edit_save
+        = QString::fromStdString(Descriptor::Property::toString(new_property));
     model_->selectedItemChanged(index);
   }
   model->setData(index, edit_save, Qt::EditRole);
@@ -324,7 +352,8 @@ void EditorItemDelegate::setModelData(QWidget* editor,
   model_->itemFromIndex(index)->setEditable(false);
 }
 
-EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
+EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
+    const std::any& value)
 {
   if (std::any_cast<const char*>(&value)) {
     return EditorItemDelegate::STRING;
@@ -406,7 +435,8 @@ QSize ActionLayout::minimumSize() const
   }
 
   const QMargins margins = contentsMargins();
-  size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom());
+  size += QSize(margins.left() + margins.right(),
+                margins.top() + margins.bottom());
   return size;
 }
 
@@ -465,7 +495,8 @@ void ActionLayout::setGeometry(const QRect& rect)
 
     int x = effective_rect.x();
     int empty_space = effective_rect.right() - (x + rowWidth(items));
-    const int size_adder = std::ceil(empty_space / static_cast<double>(items.size()));
+    const int size_adder
+        = std::ceil(empty_space / static_cast<double>(items.size()));
 
     for (auto& item : items) {
       QSize size = item->sizeHint();
@@ -504,7 +535,8 @@ int ActionLayout::heightForWidth(int width) const
   return height;
 }
 
-void ActionLayout::organizeItemsToRows(int width, std::vector<ItemList>& rows) const
+void ActionLayout::organizeItemsToRows(int width,
+                                       std::vector<ItemList>& rows) const
 {
   if (actions_.empty()) {
     return;
@@ -572,18 +604,25 @@ int ActionLayout::rowWidth(ItemList& row) const
 
 ////////
 
-Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlighted, QWidget* parent)
+Inspector::Inspector(const SelectionSet& selected,
+                     const HighlightSet& highlighted,
+                     QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new ObjectTree(this)),
-      model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
+      model_(new SelectedItemModel(selection_,
+                                   Qt::blue,
+                                   QColor(0xc6, 0xff, 0xc4) /* pale green */,
+                                   this)),
       layout_(new QVBoxLayout),
       action_layout_(new ActionLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
       selection_(Selected()),
       button_frame_(new QFrame(this)),
-      button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
-      button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
+      button_next_(
+          new QPushButton("Next \u2192", this)),  // \u2192 = right arrow
+      button_prev_(
+          new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
       mouse_timer_(),
       clicked_index_(),
@@ -616,9 +655,9 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
   setWidget(container);
 
   // connect so announcements can be made about changes
-  connect(model_,
-          &SelectedItemModel::selectedItemChanged,
-          [this]() { emit selectedItemChanged(selection_); });
+  connect(model_, &SelectedItemModel::selectedItemChanged, [this]() {
+    emit selectedItemChanged(selection_);
+  });
 
   connect(model_,
           SIGNAL(selectedItemChanged(const QModelIndex&)),
@@ -630,15 +669,9 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
           this,
           SLOT(clicked(const QModelIndex&)));
 
-  connect(button_prev_,
-          SIGNAL(pressed()),
-          this,
-          SLOT(selectPrevious()));
+  connect(button_prev_, SIGNAL(pressed()), this, SLOT(selectPrevious()));
 
-  connect(button_next_,
-          SIGNAL(pressed()),
-          this,
-          SLOT(selectNext()));
+  connect(button_next_, SIGNAL(pressed()), this, SLOT(selectNext()));
 
   view_->setMouseTracking(true);
   connect(view_,
@@ -646,21 +679,13 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
           this,
           SLOT(focusIndex(const QModelIndex&)));
 
-  connect(view_,
-          SIGNAL(viewportEntered()),
-          this,
-          SLOT(defocus()));
-  connect(view_,
-          SIGNAL(mouseExited()),
-          this,
-          SLOT(defocus()));
+  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
+  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
 
-  mouse_timer_.setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
+  mouse_timer_.setInterval(mouse_double_click_scale_
+                           * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
-  connect(&mouse_timer_,
-          SIGNAL(timeout()),
-          this,
-          SLOT(indexClicked()));
+  connect(&mouse_timer_, SIGNAL(timeout()), this, SLOT(indexClicked()));
 }
 
 void Inspector::adjustHeaders()
@@ -697,7 +722,7 @@ int Inspector::selectNext()
     return 0;
   }
 
-  selected_itr_++; // go to next
+  selected_itr_++;  // go to next
   if (selected_itr_ == selected_.end()) {
     selected_itr_ = selected_.begin();
   }
@@ -735,7 +760,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   // check if object is part of history, otherwise delete history
-  if (std::find(navigation_history_.begin(), navigation_history_.end(), object) == navigation_history_.end()) {
+  if (std::find(navigation_history_.begin(), navigation_history_.end(), object)
+      == navigation_history_.end()) {
     navigation_history_.clear();
   }
 
@@ -747,9 +773,8 @@ void Inspector::inspect(const Selected& object)
   // update iterator
   selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
   selected_itr_label_->setText(
-      QString::number(getSelectedIteratorPosition() + 1) +
-      "/" +
-      QString::number(selected_.size()));
+      QString::number(getSelectedIteratorPosition() + 1) + "/"
+      + QString::number(selected_.size()));
 
   // Auto open small lists
   for (int row = 0; row < model_->rowCount(); row++) {
@@ -786,7 +811,7 @@ void Inspector::loadActions()
     auto it = actions_.begin();
     auto widget = it->first;
     actions_.erase(it);
-    delete widget; // no longer in the map so it's safe to delete
+    delete widget;  // no longer in the map so it's safe to delete
   }
 
   deselect_action_ = Descriptor::ActionCallback();
@@ -805,39 +830,36 @@ void Inspector::loadActions()
   }
   if (isHighlighted(selection_)) {
     makeAction({"Remove from highlight", [this]() -> Selected {
-      emit removeHighlight({&selection_});
-      return selection_;
-    }});
+                  emit removeHighlight({&selection_});
+                  return selection_;
+                }});
   } else {
     makeAction({"Add to highlight", [this]() -> Selected {
-      emit addHighlight({selection_});
-      return selection_;
-    }});
+                  emit addHighlight({selection_});
+                  return selection_;
+                }});
   }
 
   if (!navigation_history_.empty()) {
     makeAction({"Navigate back", [this]() -> Selected {
-      navigateBack();
-      return selection_;
-    }});
+                  navigateBack();
+                  return selection_;
+                }});
   }
 }
 
 void Inspector::makeAction(const Descriptor::Action& action)
 {
   std::vector<std::pair<std::string, QString>> button_replacements{
-    {"Delete", ":/delete.png"},
-    {"Zoom to", ":/zoom_to.png"},
-    {"Remove from highlight", ":/highlight_off.png"},
-    {"Add to highlight", ":/highlight_on.png"},
-    {"Focus", ":/focus.png"},
-    {"De-focus", ":/defocus.png"},
-    {"Navigate back", ":/undo.png"}
-  };
+      {"Delete", ":/delete.png"},
+      {"Zoom to", ":/zoom_to.png"},
+      {"Remove from highlight", ":/highlight_off.png"},
+      {"Add to highlight", ":/highlight_on.png"},
+      {"Focus", ":/focus.png"},
+      {"De-focus", ":/defocus.png"},
+      {"Navigate back", ":/undo.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
-    {"Fanin Cone", "\u25B7"},
-    {"Fanout Cone", "\u25C1"}
-  };
+      {"Fanin Cone", "\u25B7"}, {"Fanout Cone", "\u25C1"}};
 
   const std::string& name = action.name;
 
@@ -845,7 +867,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
   for (const auto& [label, icon] : button_replacements) {
     if (name == label) {
       button = new QPushButton(QIcon(icon), "", this);
-      button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
+      button->setToolTip(
+          QString::fromStdString(name));  // set tool since this is an icon
       break;
     }
   }
@@ -853,7 +876,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
     for (const auto& [label, new_text] : symbol_replacements) {
       if (name == label) {
         button = new QPushButton(new_text, this);
-        button->setToolTip(QString::fromStdString(name)); // set tool since this is a symbol
+        button->setToolTip(
+            QString::fromStdString(name));  // set tool since this is a symbol
         break;
       }
     }
@@ -871,8 +895,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
 
 void Inspector::clicked(const QModelIndex& index)
 {
-  // QT sends both single and double clicks, so they need to be handled with a timer to
-  // be able to tell the difference
+  // QT sends both single and double clicks, so they need to be handled with a
+  // timer to be able to tell the difference
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
     mouse_timer_.start();
@@ -886,7 +910,8 @@ void Inspector::indexClicked()
 {
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
-  auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
+  auto new_selected
+      = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
     if (navigation_history_.empty()) {
       // add starting object
@@ -964,7 +989,7 @@ void Inspector::handleAction(QWidget* action)
   auto callback = actions_[action];
   auto new_selection = callback();
 
-  if (new_selection == selection_) {
+  if (new_selection && new_selection == selection_) {
     return;
   }
 
@@ -976,7 +1001,6 @@ void Inspector::handleAction(QWidget* action)
     emit addSelected(new_selection);
     inspect(new_selection);
   } else {
-
     if (selected_.empty()) {
       // set is empty
       emit selected(Selected());
@@ -1053,8 +1077,7 @@ void Inspector::navigateBack()
 
 ////////////
 
-ObjectTree::ObjectTree(QWidget* parent) :
-    QTreeView(parent)
+ObjectTree::ObjectTree(QWidget* parent) : QTreeView(parent)
 {
 }
 
