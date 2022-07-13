@@ -904,6 +904,9 @@ void FlexPA::getViasFromMetalWidthMap(
     vector<pair<int, frViaDef*>>& viaDefs)
 {
   const auto tech = getTech();
+  if (layerNum == tech->getTopLayerNum()) {
+    return;
+  }
   const auto cutLayer = tech->getLayer(layerNum + 1)->getDbLayer();
   // If the upper layer has an NDR special handling will be needed
   // here. Assuming normal min-width routing for now.
