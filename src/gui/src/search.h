@@ -37,8 +37,8 @@
 #include <boost/geometry/index/rtree.hpp>
 
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/geom.h"
 
 namespace gui {
 
@@ -163,8 +163,9 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   virtual void inDbNetDestroy(odb::dbNet* net) override;
   virtual void inDbInstDestroy(odb::dbInst* inst) override;
   virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
-  virtual void inDbInstPlacementStatusBefore(odb::dbInst* inst,
-                                             const odb::dbPlacementStatus& status) override;
+  virtual void inDbInstPlacementStatusBefore(
+      odb::dbInst* inst,
+      const odb::dbPlacementStatus& status) override;
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
   virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;

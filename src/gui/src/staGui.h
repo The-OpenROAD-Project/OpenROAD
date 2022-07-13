@@ -35,10 +35,6 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
-#include <set>
-#include <vector>
 #include <QAbstractTableModel>
 #include <QCheckBox>
 #include <QColor>
@@ -48,6 +44,10 @@
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QSpinBox>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -89,7 +89,7 @@ class GuiDBChangeListener;
 
 class TimingPathsModel : public QAbstractTableModel
 {
- Q_OBJECT
+  Q_OBJECT
 
  public:
   TimingPathsModel(sta::dbSta* sta, QObject* parent = nullptr);
@@ -128,7 +128,8 @@ class TimingPathsModel : public QAbstractTableModel
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
-  enum Column {
+  enum Column
+  {
     Clock,
     Required,
     Arrival,
@@ -172,8 +173,14 @@ class TimingPathNode
   odb::dbInst* getInstance() const;
   bool hasInstance() const { return getInstance() != nullptr; }
 
-  bool isPinITerm() const { return pin_->getObjectType() == odb::dbObjectType::dbITermObj; }
-  bool isPinBTerm() const { return pin_->getObjectType() == odb::dbObjectType::dbBTermObj; }
+  bool isPinITerm() const
+  {
+    return pin_->getObjectType() == odb::dbObjectType::dbITermObj;
+  }
+  bool isPinBTerm() const
+  {
+    return pin_->getObjectType() == odb::dbObjectType::dbBTermObj;
+  }
 
   odb::dbObject* getPin() const { return pin_; }
   odb::dbITerm* getPinAsITerm() const;
@@ -198,7 +205,10 @@ class TimingPathNode
 
   void addPairedNode(const TimingPathNode* node) { paired_nodes_.insert(node); }
   void clearPairedNodes() { paired_nodes_.clear(); }
-  const std::set<const TimingPathNode*>& getPairedNodes() const { return paired_nodes_; }
+  const std::set<const TimingPathNode*>& getPairedNodes() const
+  {
+    return paired_nodes_;
+  }
   void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
   const TimingPathNode* getInstanceNode() const { return instance_node_; }
 
@@ -249,7 +259,10 @@ class TimingPath
 
   using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 
-  void appendNode(TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node)); }
+  void appendNode(TimingPathNode* node)
+  {
+    path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node));
+  }
 
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
@@ -277,8 +290,15 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
-  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded);
-  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded);
+  void populatePath(sta::Path* path,
+                    sta::dbSta* sta,
+                    sta::DcalcAnalysisPt* dcalc_ap,
+                    bool clock_expanded);
+  void populateCapturePath(sta::Path* path,
+                           sta::dbSta* sta,
+                           sta::DcalcAnalysisPt* dcalc_ap,
+                           float offset,
+                           bool clock_expanded);
 
  private:
   TimingNodeList path_nodes_;
@@ -292,7 +312,12 @@ class TimingPath
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
-  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, TimingNodeList& list);
+  void populateNodeList(sta::Path* path,
+                        sta::dbSta* sta,
+                        sta::DcalcAnalysisPt* dcalc_ap,
+                        float offset,
+                        bool clock_expanded,
+                        TimingNodeList& list);
 
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
@@ -300,7 +325,9 @@ class TimingPath
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel(bool is_hold, sta::dbSta* sta, QObject* parent = nullptr);
+  TimingPathDetailModel(bool is_hold,
+                        sta::dbSta* sta,
+                        QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -311,18 +338,25 @@ class TimingPathDetailModel : public QAbstractTableModel
   QVariant headerData(int section,
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-  Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
+  Qt::ItemFlags flags(const QModelIndex& index) const Q_DECL_OVERRIDE;
 
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
   bool hasNodes() const { return nodes_ != nullptr && !nodes_->empty(); }
-  int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
+  int getClockEndIndex() const
+  {
+    return is_capture_ ? path_->getClkCaptureEndIndex()
+                       : path_->getClkPathEndIndex();
+  }
 
   const TimingPathNode* getNodeAt(const QModelIndex& index) const;
   void setExpandClock(bool state) { expand_clock_ = state; }
   bool shouldHide(const QModelIndex& index) const;
 
-  bool isClockSummaryRow(const QModelIndex& index) const { return index.row() == clock_summary_row_; }
+  bool isClockSummaryRow(const QModelIndex& index) const
+  {
+    return index.row() == clock_summary_row_;
+  }
 
   void populateModel(TimingPath* path, TimingPath::TimingNodeList* nodes);
 
@@ -338,7 +372,8 @@ class TimingPathDetailModel : public QAbstractTableModel
   static constexpr char up_down_arrows_[] = "\u21C5";
   static constexpr char up_arrow_[] = "\u2191";
   static constexpr char down_arrow_[] = "\u2193";
-  enum Column {
+  enum Column
+  {
     Pin,
     RiseFall,
     Time,
@@ -377,7 +412,8 @@ class TimingPathRenderer : public gui::Renderer
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
 
-  struct HighlightStage {
+  struct HighlightStage
+  {
     odb::dbNet* net;
     odb::dbInst* inst;
     odb::dbObject* sink;
@@ -421,7 +457,10 @@ class TimingConeRenderer : public gui::Renderer
   using DepthMapSet = std::map<int, std::set<odb::dbObject*>>;
   void getFaninCone(sta::Pin* pin, DepthMapSet& depth_map);
   void getFanoutCone(sta::Pin* pin, DepthMapSet& depth_map);
-  void getCone(sta::Pin* pin, sta::PinSet* pin_set, DepthMapSet& depth_map, bool is_fanin);
+  void getCone(sta::Pin* pin,
+               sta::PinSet* pin_set,
+               DepthMapSet& depth_map,
+               bool is_fanin);
   void buildConnectivity();
   void annotateTiming(sta::Pin* pin);
   bool isSupplyPin(sta::Pin* pin) const;
@@ -431,69 +470,36 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), is_modified_(false) {}
+  GuiDBChangeListener(QObject* parent = nullptr)
+      : QObject(parent), is_modified_(false)
+  {
+  }
 
-  void inDbInstCreate(odb::dbInst* /* inst */) override
-  {
-    callback();
-  }
-  void inDbInstDestroy(odb::dbInst* /* inst */) override
-  {
-    callback();
-  }
+  void inDbInstCreate(odb::dbInst* /* inst */) override { callback(); }
+  void inDbInstDestroy(odb::dbInst* /* inst */) override { callback(); }
   void inDbInstSwapMasterBefore(odb::dbInst* /* inst */,
                                 odb::dbMaster* /* master */) override
   {
     callback();
   }
-  void inDbInstSwapMasterAfter(odb::dbInst* /* inst */) override
-  {
-    callback();
-  }
-  void inDbNetCreate(odb::dbNet* /* net */) override
-  {
-    callback();
-  }
-  void inDbNetDestroy(odb::dbNet* /* net */) override
-  {
-    callback();
-  }
-  void inDbITermPostConnect(odb::dbITerm* /* iterm */) override
-  {
-    callback();
-  }
+  void inDbInstSwapMasterAfter(odb::dbInst* /* inst */) override { callback(); }
+  void inDbNetCreate(odb::dbNet* /* net */) override { callback(); }
+  void inDbNetDestroy(odb::dbNet* /* net */) override { callback(); }
+  void inDbITermPostConnect(odb::dbITerm* /* iterm */) override { callback(); }
   void inDbITermPreDisconnect(odb::dbITerm* /* iterm */) override
   {
     callback();
   }
-  void inDbITermDestroy(odb::dbITerm* /* iterm */) override
-  {
-    callback();
-  }
-  void inDbBTermPostConnect(odb::dbBTerm* /* bterm */) override
-  {
-    callback();
-  }
+  void inDbITermDestroy(odb::dbITerm* /* iterm */) override { callback(); }
+  void inDbBTermPostConnect(odb::dbBTerm* /* bterm */) override { callback(); }
   void inDbBTermPreDisconnect(odb::dbBTerm* /* bterm */) override
   {
     callback();
   }
-  void inDbBTermDestroy(odb::dbBTerm* /* bterm */) override
-  {
-    callback();
-  }
-  void inDbWireCreate(odb::dbWire* /* wire */) override
-  {
-    callback();
-  }
-  void inDbWireDestroy(odb::dbWire* /* wire */) override
-  {
-    callback();
-  }
-  void inDbFillCreate(odb::dbFill* /* fill */) override
-  {
-    callback();
-  }
+  void inDbBTermDestroy(odb::dbBTerm* /* bterm */) override { callback(); }
+  void inDbWireCreate(odb::dbWire* /* wire */) override { callback(); }
+  void inDbWireDestroy(odb::dbWire* /* wire */) override { callback(); }
+  void inDbFillCreate(odb::dbFill* /* fill */) override { callback(); }
 
  signals:
   void dbUpdated();
@@ -519,7 +525,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 
 class PinSetWidget : public QWidget
 {
- Q_OBJECT
+  Q_OBJECT
  public:
   PinSetWidget(bool add_remove_button, QWidget* parent = nullptr);
 
@@ -568,13 +574,16 @@ class PinSetWidget : public QWidget
 
 class TimingControlsDialog : public QDialog
 {
- Q_OBJECT
+  Q_OBJECT
  public:
   TimingControlsDialog(QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta);
 
-  void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
+  void setPathCount(int path_count)
+  {
+    path_count_spin_box_->setValue(path_count);
+  }
   int getPathCount() const { return path_count_spin_box_->value(); }
 
   void setUnconstrained(bool uncontrained);
