@@ -142,31 +142,31 @@ interval<int>::type Grid::computeTileReduceInterval(const odb::Rect& obs,
                             bool first,
                             odb::dbTechLayerDir direction)
 {
-  int startPoint, endPoint;
+  int start_point, end_point;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
     if (obs.xMin() >= tile.xMin() && obs.xMax() <= tile.xMax()) {
-      startPoint = obs.xMin();
-      endPoint = obs.xMax();
+      start_point = obs.xMin();
+      end_point = obs.xMax();
     } else if (first) {
-      startPoint = obs.xMin();
-      endPoint = tile.xMax();
+      start_point = obs.xMin();
+      end_point = tile.xMax();
     } else {
-      startPoint = tile.xMin();
-      endPoint = obs.xMax();
+      start_point = tile.xMin();
+      end_point = obs.xMax();
     }
   } else {
     if (obs.yMin() >= tile.yMin() && obs.yMax() <= tile.yMax()) {
-      startPoint = obs.yMin();
-      endPoint = obs.yMax();
+      start_point = obs.yMin();
+      end_point = obs.yMax();
     } else if (first) {
-      startPoint = obs.yMin();
-      endPoint = tile.yMax();
+      start_point = obs.yMin();
+      end_point = tile.yMax();
     } else {
-      startPoint = tile.yMin();
-      endPoint = obs.yMax();
+      start_point = tile.yMin();
+      end_point = obs.yMax();
     }
   }  
-  interval<int>::type reduce_interval(startPoint, endPoint);
+  interval<int>::type reduce_interval(start_point, end_point);
   return reduce_interval;
 }
 
