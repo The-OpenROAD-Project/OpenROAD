@@ -677,6 +677,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              Rect(100, 0, 350, 100));
 }
+
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
                      ext,
@@ -704,6 +705,46 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
                  frConstraintTypeEnum::frcLef58EolExtensionConstraint,
                  Rect(500, 50, 690, 150));
   }
+}
+
+BOOST_AUTO_TEST_CASE(eol_prlend)
+{
+  // Setup
+  makeLef58SpacingEolConstraint(2,    // layer_num
+                                200,  // space
+                                200,  // width
+                                 50,  // within
+                                400,  // end_prl_spacing
+                                 50); // end_prl
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {320, 100}, {1000, 100});
+
+  // Test if you have a non-prl case when you have prl rule
+  // this yields no violation
+  makePathseg(n1, 2, {0, 500}, {100, 500});
+  makePathseg(n1, 2, {320, 500}, {1000, 500});
+
+  // Test if you have a non-prl case when you have prl rule
+  // this still yields a violation
+  makePathseg(n1, 2, {0, 1000}, {100, 1000});
+  makePathseg(n1, 2, {220, 1000}, {1000, 1000});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 2);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 50, 320, 100));
+  testMarker(markers[1].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 950, 220, 1050));
 }
 
 BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
