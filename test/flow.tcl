@@ -190,7 +190,9 @@ write_db $grt_db
 ################################################################
 # Global routing
 
-pin_access
+pin_access -bottom_routing_layer $min_routing_layer \
+           -top_routing_layer $max_routing_layer
+
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
   -congestion_iterations 100
@@ -213,6 +215,8 @@ detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rp
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \
                -save_guide_updates \
+               -bottom_routing_layer $min_routing_layer \
+               -top_routing_layer $max_routing_layer \
                -verbose 0
 
 write_guides [make_result_file "${design}_${platform}_output_guide.mod"]

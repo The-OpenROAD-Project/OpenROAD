@@ -124,7 +124,7 @@ void GlobalRouter::init(utl::Logger* logger,
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = sta;
 
-  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
+  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
   heatmap_->registerHeatMap();
 }
 
@@ -1366,6 +1366,11 @@ void GlobalRouter::updateEdgesUsage()
 
       int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize();
       int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize();
+
+      // The last gcell is oversized and includes space that the above
+      // calculation doesn't represent so correct it:
+      x1 = std::min(x1, grid_->getXGrids() - 1);
+      y1 = std::min(y1, grid_->getYGrids() - 1);
 
       fastroute_->incrementEdge3DUsage(x0, y0, x1, y1, l0);
     }

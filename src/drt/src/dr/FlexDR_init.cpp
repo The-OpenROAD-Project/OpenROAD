@@ -310,13 +310,20 @@ void FlexDRWorker::initNetObjs(
   }
 }
 
-bool onBorder(Rect routeBox, Point begin, Point end)
+static bool segOnBorder(Rect routeBox, Point begin, Point end)
 {
   if (begin.x() == end.x()) {
     return begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax();
   } else {
     return begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax();
   }
+}
+
+// The origin is strictly inside the routeBox and not on an edge
+static bool viaInInterior(Rect routeBox, Point origin)
+{
+  return routeBox.xMin() < origin.x() && origin.x() < routeBox.xMax()
+         && routeBox.yMin() < origin.y() && origin.y() < routeBox.yMax();
 }
 
 // inits nets based on the pins
@@ -362,7 +369,7 @@ void FlexDRWorker::initNets_initDR(
         auto [bp, ep] = ps->getPoints();
         auto& box = getRouteBox();
         if (box.intersects(bp) && box.intersects(ep)
-            && !(onBorder(box, bp, ep)
+            && !(segOnBorder(box, bp, ep)
                  && (style.getBeginStyle() != frcTruncateEndStyle
                      || style.getEndStyle() != frcTruncateEndStyle))) {
           vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
@@ -370,7 +377,12 @@ void FlexDRWorker::initNets_initDR(
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
         }
       } else if (obj->typeId() == drcVia) {
-        vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
+        auto via = static_cast<drVia*>(obj.get());
+        if (viaInInterior(getRouteBox(), via->getOrigin())) {
+          vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
+        } else {
+          vExtObjs.push_back(std::move(netRouteObjs[net][i]));
+        }
       } else if (obj->typeId() == drcPatchWire) {
         vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
       }
