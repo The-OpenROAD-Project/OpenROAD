@@ -107,11 +107,29 @@ proc report_tns_metric { args } {
 }
 
 
-define_cmd_args "report_worsrt_slack_metric" {}
+define_cmd_args "report_worst_slack_metric" {}
 proc report_worst_slack_metric { args } {
   global sta_report_default_digits
 
   utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
+}
+
+define_cmd_args "report_erc_metrics" {}
+proc report_erc_metrics { args } {
+
+    set max_slew_limit [sta::max_slew_check_slack_limit]
+    set max_cap_limit [sta::max_capacitance_check_slack_limit]
+    set max_fanout_limit [sta::max_fanout_check_limit]
+    set max_slew_violation [sta::max_slew_violation_count]
+    set max_cap_violation [sta::max_capacitance_violation_count]
+    set max_fanout_violation [sta::max_fanout_violation_count]
+
+    utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
+    utl::metric_int "timing__drv__max_slew" $max_slew_violation
+    utl::metric_float "timing__drv__max_cap_limit" $max_cap_limit
+    utl::metric_int "timing__drv__max_cap" $max_cap_violation
+    utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
+    utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
 }
 
 
@@ -125,6 +143,53 @@ proc report_power_design_metric { corner digits } {
   utl::metric_float "power__switchng__total" $design_switching
   utl::metric_float "power__leakage__total" $design_leakage
   utl::metric_float "power__total" $design_total
+}
+
+define_cmd_args "report_design_area_metrics" {}
+proc report_design_area_metrics {args} {
+  set db [::ord::get_db]
+  set dbu_per_uu [[$db getTech] getDbUnitsPerMicron]
+  set block [[$db getChip] getBlock]
+
+  set num_ios [llength [$block getBTerms]]
+
+  set num_insts 0
+  set num_stdcells 0
+  set num_macros 0
+  set total_area 0.0
+  set macro_area 0.0
+  set stdcell_area 0.0
+
+  foreach inst [$block getInsts] {
+    set inst_master [$inst getMaster]
+    if {[$inst_master isFiller]} {
+      continue
+    }
+    set wid [$inst_master getWidth]
+    set ht [$inst_master getHeight]
+    set inst_area  [expr $wid * $ht]
+    set total_area [expr $total_area + $inst_area] 
+    set num_insts [expr $num_insts + 1]
+    if { [string match [$inst_master getType] "BLOCK"] } {
+      set num_macros [expr $num_macros + 1]
+      set macro_area [expr $macro_area + $inst_area]
+    } else {
+      set num_stdcells [expr $num_stdcells + 1]
+      set stdcell_area [expr $stdcell_area + $inst_area]
+    }
+  }
+
+  set total_area [expr $total_area / [expr $dbu_per_uu * $dbu_per_uu]]
+  set stdcell_area [expr $stdcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
+  set macro_area [expr $macro_area / [expr $dbu_per_uu * $dbu_per_uu]]
+
+  utl::metric_int "design__io" $num_ios
+  utl::metric_int "design__instance__count" $num_insts
+  utl::metric_float "design__instance__area" $total_area
+  utl::metric_int "design__instance__count__stdcell" $num_stdcells
+  utl::metric_float "design__instance__area__stdcell" $stdcell_area
+  utl::metric_int "design__instance__count__macros" $num_macros
+  utl::metric_float "design__instance__area__macros" $macro_area
 }
 
 # namespace
