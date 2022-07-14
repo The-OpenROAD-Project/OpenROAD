@@ -149,6 +149,9 @@ class dbGroup;
 class dbGCellGrid;
 class dbAccessPoint;
 class dbGlobalConnect;
+class dbPowerDomain;
+class dbPowerSwitch;
+class dbIsolation;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -894,6 +897,21 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
 
   ///
+  /// Get the modules of this block.
+  ///
+  dbSet<dbPowerDomain> getPowerDomains();
+
+  ///
+  /// Get the modules of this block.
+  ///
+  dbSet<dbPowerSwitch> getPowerSwitches();
+
+  ///
+  /// Get the modules of this block.
+  ///
+  dbSet<dbIsolation> getIsolations();
+
+  ///
   /// Get the groups of this block.
   ///
   dbSet<dbGroup> getGroups();
@@ -940,6 +958,24 @@ class dbBlock : public dbObject
   /// master_module_name/modinst_name Returns NULL if the object was not found.
   ///
   dbModInst* findModInst(const char* path);
+
+  ///
+  /// Find a specific PowerDomain in this block.
+  /// Returns NULL if the object was not found.
+  ///
+  dbPowerDomain* findPowerDomain(const char* name);
+
+  ///
+  /// Find a specific PowerSwitch in this block.
+  /// Returns NULL if the object was not found.
+  ///
+  dbPowerSwitch* findPowerSwitch(const char* name);
+
+  ///
+  /// Find a specific Isolation in this block.
+  /// Returns NULL if the object was not found.
+  ///
+  dbIsolation* findIsolation(const char* name);
 
   ///
   /// Find a specific group in this block.
@@ -9331,6 +9367,98 @@ class dbGlobalConnect : public dbObject
 
   static void destroy(dbGlobalConnect* global_connect);
   // User Code End dbGlobalConnect
+};
+
+class dbPowerDomain : public dbObject
+{
+ public:
+  // User Code Begin dbPowerDomainEnums
+  // User Code End dbPowerDomainEnums
+  const char* getName() const;
+
+  void setPowerSwitch(dbPowerSwitch* power_switch);
+
+  dbPowerSwitch* getPowerSwitch() const;
+
+  void setIsolation(dbIsolation* isolation);
+
+  dbIsolation* getIsolation() const;
+
+  // User Code Begin dbPowerDomain
+  static dbPowerDomain* create(dbBlock* block, const char* name, std::vector<dbModInst*> modules);
+  static void destroy(dbPowerDomain* pd);
+  // User Code End dbPowerDomain
+};
+
+class dbPowerSwitch : public dbObject
+{
+ public:
+  // User Code Begin dbPowerSwitchEnums
+  // User Code End dbPowerSwitchEnums
+  const char* getName() const;
+
+  void setInSupplyPort(std::string in_supply_port);
+
+  std::string getInSupplyPort() const;
+
+  void setOutSupplyPort(std::string out_supply_port);
+
+  std::string getOutSupplyPort() const;
+
+  void setControlPort(std::string control_port);
+
+  std::string getControlPort() const;
+
+  void setControlNet(dbNet* control_net);
+
+  dbNet* getControlNet() const;
+
+  void setPowerDomain(dbPowerDomain* power_domain);
+
+  dbPowerDomain* getPowerDomain() const;
+
+  // User Code Begin dbPowerSwitch
+  static dbPowerSwitch* create(dbBlock* block, const char* name);
+  static void destroy(dbPowerSwitch* ps);
+  // User Code End dbPowerSwitch
+};
+
+class dbIsolation : public dbObject
+{
+ public:
+  // User Code Begin dbIsolationEnums
+  // User Code End dbIsolationEnums
+
+  const char* getName() const;
+
+  void setAppliesTo(std::string applies_to);
+
+  std::string getAppliesTo() const;
+
+  void setIsolationSignal(dbNet* isolation_signal);
+
+  dbNet* getIsolationSignal() const;
+
+  void setLocation(std::string location);
+
+  std::string getLocation() const;
+
+  void setPowerDomain(dbPowerDomain* power_domain);
+
+  dbPowerDomain* getPowerDomain() const;
+
+  void setClampValue(dbSigType::Value clamp_value);
+
+  dbSigType::Value getClampValue() const;
+
+  void setIsolationSense(dbSigType::Value isolation_sense);
+
+  dbSigType::Value getIsolationSense() const;
+
+  // User Code Begin dbIsolation
+  static dbIsolation* create(dbBlock* block, const char* name);
+  static void destroy(dbIsolation* iso);
+  // User Code End dbIsolation
 };
 
 // Generator Code End ClassDefinition

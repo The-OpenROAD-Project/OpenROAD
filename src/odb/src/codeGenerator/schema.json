@@ -149,6 +149,150 @@
     },
     {
       "src":"dbGlobalConnect.json"
+    },
+    {
+      "name":"dbPowerDomain",
+      "type":"dbObject",
+      "fields":[
+        {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set"]
+        },
+        {
+          "name":"_next_entry",
+          "type":"dbId<_dbPowerDomain>",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name":"_elements",
+          "type":"dbVector<dbId<_dbModInst>>",
+          "flags":["no-set","no-get"],
+          "parent":"dbBlock"
+        },
+        {
+          "name":"_power_switch",
+          "type":"dbId<_dbPowerSwitch>",
+          "flags":[],
+          "parent":"dbBlock"
+        },
+        {
+          "name":"_isolation",
+          "type":"dbId<_dbIsolation>",
+          "flags":[],
+          "parent":"dbBlock"
+        }
+      ],
+      "constructors":[],
+      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+      "h_includes": [
+        "dbVector.h"
+      ]
+    },
+    {
+      "name":"dbPowerSwitch",
+      "type":"dbObject",
+      "fields":[
+        {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set"]
+        },
+        {
+          "name":"_next_entry",
+          "type":"dbId<_dbPowerSwitch>",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name":"_in_supply_port",
+          "type":"std::string",
+          "flags":[]
+        },
+        {
+          "name":"_out_supply_port",
+          "type":"std::string",
+          "flags":[]
+        },
+        {
+          "name":"_control_port",
+          "type":"std::string",
+          "flags":[]
+        },
+        {
+          "name":"_control_net",
+          "type":"dbId<_dbNet>",
+          "flags":[],
+          "parent":"dbBlock"
+        },
+        {
+          "name":"_power_domain",
+          "type":"dbId<_dbPowerDomain>",
+          "flags":[],
+          "parent":"dbBlock"
+        }
+      ],
+      "constructors":[],
+      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h"]
+    },
+    {
+      "name":"dbIsolation",
+      "type":"dbObject",
+      "fields":[
+        {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set"]
+        },
+        {
+          "name":"_next_entry",
+          "type":"dbId<_dbIsolation>",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name":"_applies_to",
+          "type":"std::string",
+          "flags":[]
+        },
+        {
+          "name":"_clamp_value",
+          "type":"dbSigType::Value",
+          "flags":[],
+          "bits": 4
+        },
+        {
+          "name":"_isolation_signal",
+          "type":"dbId<_dbNet>",
+          "flags":[],
+          "parent":"dbBlock"
+        },
+        {
+          "name":"_isolation_sense",
+          "type":"dbSigType::Value",
+          "flags":[],
+          "bits": 4
+        },
+        {
+          "name":"_location",
+          "type":"std::string",
+          "flags":[]
+        },
+        {
+          "name": "_isolation_cells", 
+          "type": "dbVector<dbId<_dbMaster>>",
+          "flags": ["no-get", "no-set"]
+        },
+        {
+          "name":"_power_domain",
+          "type":"dbId<_dbPowerDomain>",
+          "flags":[],
+          "parent":"dbBlock"
+        }
+      ],
+      "constructors":[],
+      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbPowerDomain.h", "dbNet.h", "dbMaster.h"],
+      "h_includes": [
+        "dbVector.h"
+      ]
     }
   ],
   "iterators":[

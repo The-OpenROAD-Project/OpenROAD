@@ -115,6 +115,9 @@ add_library(db
     dbGCellGrid.cpp
     dbAccessPoint.cpp
     dbGlobalConnect.cpp
+    dbPowerDomain.cpp
+    dbPowerSwitch.cpp
+    dbIsolation.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
