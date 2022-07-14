@@ -151,6 +151,9 @@ void FastRouteCore::clear()
   cost_hvh_test_.clear();
   cost_v_test_.clear();
   cost_tb_test_.clear();
+
+  vertical_blocked_intervals_.clear();
+  horizontal_blocked_intervals_.clear();
 }
 
 void FastRouteCore::clearNets()
