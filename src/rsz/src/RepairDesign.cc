@@ -313,6 +313,10 @@ RepairDesign::repairNet(Net *net,
   if (!db_network_->isSpecial(net)) {
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
+    if (resize_drvr) {
+      resize_drvr = !db_network_->isFixed(db_network_->instance(drvr_pin));
+    }
+
     // Resize the driver to normalize slews before repairing limit violations.
     if (resize_drvr)
       resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
