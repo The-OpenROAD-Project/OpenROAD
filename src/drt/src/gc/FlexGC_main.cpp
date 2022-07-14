@@ -2979,19 +2979,18 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       }
       if (connFig->typeId() == drcVia) {
         auto via = static_cast<drVia*>(connFig);
-        if (via->getViaDef()->getLayer1Num() == lNum) {
-          fig_bbox = via->getLayer1BBox();
-        } else {
-          fig_bbox = via->getLayer2BBox();
-        }
         origin = via->getOrigin();
         if (routeBox.intersects(origin)) {
+          if (via->getViaDef()->getLayer1Num() == lNum) {
+            fig_bbox = via->getLayer1BBox();
+          } else {
+            fig_bbox = via->getLayer2BBox();
+          }
           obj = connFig;
           break;
         }
       } else if (connFig->typeId() == drcPathSeg) {
         auto seg = static_cast<drPathSeg*>(connFig);
-        fig_bbox = seg->getBBox();
         // Pick nearest of begin/end points
         const auto [bp, ep] = seg->getPoints();
         auto dist_bp = Point::manhattanDistance(markerBBox.closestPtInside(bp),
@@ -3000,8 +2999,16 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
                                                 ep);
         origin = (dist_bp < dist_ep) ? bp : ep;
         if (routeBox.intersects(origin)) {
+          fig_bbox = seg->getBBox();
           obj = connFig;
           break;
+        }
+      } else if (connFig->typeId() == drcPatchWire) {
+        auto patch = static_cast<drPatchWire*>(connFig);
+        origin = patch->getOrigin();
+        if (routeBox.intersects(origin)) {
+          fig_bbox = patch->getBBox();
+          obj = connFig;
         }
       }
     }

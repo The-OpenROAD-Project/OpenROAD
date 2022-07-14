@@ -39,7 +39,7 @@ namespace grt {
 class RoutingCongestionDataSource : public gui::HeatMapDataSource
 {
  public:
-  RoutingCongestionDataSource(utl::Logger* logger);
+  RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
   ~RoutingCongestionDataSource() {}
 
   virtual bool canAdjustGrid() const override { return false; }
@@ -56,12 +56,14 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource
                               const double rect_area) override;
 
  private:
+  odb::dbDatabase* db_;
   enum Direction {
     ALL,
     HORIZONTAL,
     VERTICAL
   };
   Direction direction_;
+  odb::dbTechLayer* layer_;
 
   static constexpr double default_grid_ = 10.0;
 };
