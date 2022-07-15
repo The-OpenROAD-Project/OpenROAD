@@ -68,10 +68,12 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "boost/icl/interval.hpp"
 
 namespace grt {
 
 using utl::GRT;
+using boost::icl::interval;
 
 GlobalRouter::GlobalRouter()
     : logger_(nullptr),
