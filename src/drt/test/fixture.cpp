@@ -423,7 +423,9 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
     frLayerNum layer_num,
     frCoord space,
     frCoord width,
-    frCoord within)
+    frCoord within,
+    frCoord end_prl_spacing,
+    frCoord end_prl)
 {
   auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
   auto con = uCon.get();
@@ -431,6 +433,7 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
   withinCon->setEolWithin(within);
+  withinCon->setEndPrl(end_prl_spacing, end_prl);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58SpacingEndOfLineConstraint(con);

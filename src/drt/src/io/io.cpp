@@ -1137,14 +1137,6 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                    layer->getName());
       continue;
     }
-    if (rule->isEndPrlSpacingValid()) {
-      logger->warn(utl::DRT,
-                   402,
-                   "Unsupported LEF58_SPACING rule with option ENDPRLSPACING "
-                   "for layer {}.",
-                   layer->getName());
-      continue;
-    }
     if (rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
                    403,
@@ -1164,6 +1156,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     con->setWithinConstraint(within);
     if (rule->isOppositeWidthValid()) {
       within->setOppositeWidth(rule->getOppositeWidth());
+    }
+    if (rule->isEndPrlSpacingValid()) {
+      within->setEndPrl(rule->getEndPrlSpace(), rule->getEndPrl());
     }
     within->setEolWithin(rule->getEolWithin());
     if (rule->isWrongDirWithinValid()) {
