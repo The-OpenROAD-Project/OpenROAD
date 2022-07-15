@@ -352,6 +352,7 @@ RepairDesign::repairNet(Net *net,
           if (max_fanout > 0.0 && fanout_slack < 0.0) {
             fanout_violations++;
             repair_fanout = true;
+
           }
         }
         int wire_length = bnet->maxLoadWireLength();
@@ -925,6 +926,8 @@ RepairDesign::makeRepeater(const char *where,
                repeater_max_slew);
 }
 
+////////////////////////////////////////////////////////////////
+
 void
 RepairDesign::makeRepeater(const char *where,
                            int x,
@@ -1116,6 +1119,12 @@ double
 RepairDesign::dbuToMeters(int dist) const
 {
   return dist / (dbu_ * 1e+6);
+}
+
+double
+RepairDesign::dbuToMicrons(int dist) const
+{
+  return dist / dbu_;
 }
 
 int

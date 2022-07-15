@@ -180,6 +180,7 @@ private:
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  double dbuToMicrons(int dist) const;
 
   Logger *logger_;
   dbSta *sta_;

@@ -35,6 +35,143 @@
 
 // Resizer code on injured reserve.
 
+////////////////////////////////////////////////////////////////
+
+GroupedPins
+RepairDesign::groupLoadsCluster(const Pin *drvr_pin,
+                                int group_count,
+                                int group_size)
+{
+  GroupedPins grouped_loads;
+  Vector<Point> centers;
+  grouped_loads.resize(group_count);
+  centers.resize(group_count);
+
+  PinSeq loads;
+  findLoads(drvr_pin, loads);
+  // Find the bbox of the loads.
+  Rect bbox;
+  bbox.mergeInit();
+  for (Pin *load : loads) {
+    Point loc = db_network_->location(load);
+    Rect r(loc.x(), loc.y(), loc.x(), loc.y());
+    bbox.merge(r);
+  }
+
+  // Assign each load to the group with the nearest center.
+  for (Pin *load : loads) {
+    Point loc = db_network_->location(load);
+    int64_t min_dist2 = std::numeric_limits<int64_t>::max();
+    int min_index = 0;
+    int col_count = sqrt(group_count);
+    int row_count = group_count / col_count;
+    for(int i = 0; i < group_count; i++) {
+      int row = 0;
+      int col = 0;
+      for(int i = 0; i < group_count; i++) {
+        Point center(bbox.xMin() + col * bbox.dx() / col_count,
+                     bbox.yMin() + row * bbox.dy() / row_count);
+        centers[i] = center;
+        col++;
+        if (col == col_count) {
+          col = 0;
+          row++;
+        }
+      }
+
+      int64_t dist2 = Point::squaredDistance(loc, center);
+      if (dist2 < min_dist2) {
+        min_dist2 = dist2;
+        min_index = i;
+      }
+    }
+    grouped_loads[min_index].push_back(load);
+  }
+  return grouped_loads;
+}
+
+void
+RepairDesign::reportGroupedLoads(GroupedPins &grouped_loads)
+{
+  auto gui = gui::Gui::get();
+  int i = 0;
+  for (Vector<Pin*> &loads : grouped_loads) {
+    if (!loads.empty()) {
+      printf("Group %d %lu members\n", i, loads.size());
+      Point center = findCenter(loads);
+      double max_dist = 0.0;
+      double sum_dist = 0.0;
+      if (gui)
+        gui->clearSelections();
+      for (Pin *load : loads) {
+        if (gui)
+          // piece of shit gui api uses names
+          gui->addSelectedInst(db_network_->staToDb(network_->instance(load))->getConstName());
+        Point load_pt = db_network_->location(load);
+        uint64_t dist2 = Point::squaredDistance(load_pt, center);
+        double dist = std::sqrt(dist2);
+        printf(" %5.1f %5.1f d=%5.1fu %s\n",
+               dbuToMicrons(load_pt.x()),
+               dbuToMicrons(load_pt.y()),
+               dbuToMicrons(dist),
+               db_network_->pathName(load));
+        sum_dist += dist;
+        if (dist > max_dist)
+          max_dist = dist;
+      }
+      double avg_dist = std::sqrt(sum_dist / loads.size());
+      printf(" avg dist %.2eu\n", dbuToMicrons(avg_dist));
+      printf(" max dist %.2eu\n", dbuToMicrons(max_dist));
+      if (gui) {
+        gui->redraw();
+        gui->pause();
+      }
+      i++;
+    }
+  }
+}
+
+void
+RepairDesign::findLoads(const Pin *drvr_pin,
+                        PinSeq &loads)
+{
+  Pin *drvr_pin1 = const_cast<Pin*>(drvr_pin);
+  PinSeq drvrs;
+  PinSet visited_drvrs;
+  sta::FindNetDrvrLoads visitor(drvr_pin1, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin1, visitor);
+}
+
+Point
+RepairDesign::findCenter(PinSeq &pins)
+{
+  long sum_x = 0;
+  long sum_y = 0;
+  for (Pin *pin : pins) {
+    Point loc = db_network_->location(pin);
+    sum_x += loc.x();
+    sum_y += loc.y();
+  }
+  return Point(sum_x / pins.size(), sum_y / pins.size());
+}
+
+////////////////////////////////////////////////////////////////
+
+typedef Vector<Vector<Pin*>> GroupedPins;
+
+  GroupedPins groupLoadsCluster(const Pin *drvr_pin,
+                                int group_count,
+                                int group_size);
+  void reportGroupedLoads(GroupedPins &grouped_loads);
+  void findLoads(const Pin *drvr_pin,
+                 PinSeq &loads);
+  Point findCenter(PinSeq &pins);
+
+            int group_count = ceil(static_cast<double>(fanout) / max_fanout);
+            GroupedPins grouped_loads = groupLoadsCluster(drvr_pin, group_count,
+                                                          max_fanout);
+            reportGroupedLoads(grouped_loads);
+
 // K means clustering algorithm.
 void
 Resizer::groupLoadsCluster(Pin *drvr_pin,
@@ -491,99 +628,6 @@ Resizer::closestPt(Pin *pin,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairTiming()
-{
-  init();
-  Slack worst_slack;
-  Vertex *worst_vertex;
-  sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
-  PathRef worst_path;
-  sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
-  PathExpanded worst_expanded(&worst_path, sta_);
-  if (worst_expanded.size() > 1) {
-    // slack_room says how much slack can be taken out at a vertex before
-    // another tributary downstream becomes the worst path.
-    int worst_length = worst_expanded.size();
-    vector<Slack> slack_room(worst_length);
-    vector<Delay> arc_delays(worst_length);
-    int end_index = worst_length - 1;
-    PathRef *path = worst_expanded.path(end_index);
-    Slack downstream_room = INF;
-    slack_room[end_index] = downstream_room;
-    for (int i = worst_length - 2; i >= worst_expanded.startIndex(); i--) {
-      PathRef *prev_path = worst_expanded.path(i);
-      Vertex *path_vertex = path->vertex(sta_);
-      const RiseFall *path_rf = path->transition(sta_);
-      Vertex *prev_vertex = prev_path ? prev_path->vertex(sta_) : nullptr;
-      slack_room[i] = downstream_room;
-      arc_delays[i + 1] = path->arrival(sta_) - prev_path->arrival(sta_);
-      if (path_vertex->isDriver(network_)) {
-        printf("%s\n", path_vertex->name(network_));
-        VertexInEdgeIterator edge_iter(path_vertex, graph_);
-        while (edge_iter.hasNext()) {
-          Edge *edge = edge_iter.next();
-          Vertex *fanin_vertex = edge->from(graph_);
-          if (fanin_vertex != prev_vertex
-              && !search_->isClock(fanin_vertex)) {
-            TimingArcSet *arc_set = edge->timingArcSet();
-            for (TimingArc *arc : arc_set->arcs()) {
-              if (arc->toTrans()->asRiseFall() == path_rf) {
-                const RiseFall *fanin_rf = arc->fromTrans()->asRiseFall();
-                Slack fanin_slack = sta_->vertexSlack(fanin_vertex, fanin_rf,
-                                                      MinMax::max());
-                Slack room = fanin_slack - worst_slack;
-#if 1
-                printf(" %s room = %s\n",
-                       fanin_vertex->name(network_),
-                       units_->timeUnit()->asString(room, 3));
-#endif
-                downstream_room = min(downstream_room, room);
-              }
-            }
-          }
-        }
-      }
-      path = prev_path;
-    }
-#if 1
-    for (int i = worst_expanded.startIndex(); i < worst_length; i++) {
-      PathRef *path = worst_expanded.path(i);
-      Vertex *path_vertex = path->vertex(sta_);
-      printf("%s delay = %s room = %s\n",
-             path_vertex->name(network_),
-             units_->timeUnit()->asString(arc_delays[i], 3),
-             units_->timeUnit()->asString(slack_room[i], 3));
-    }
-#endif
-    vector<pair<int, Delay>> sorted_arc_delays;
-    for (int i = worst_expanded.startIndex(); i < worst_length; i++)
-      sorted_arc_delays.push_back(pair(i, arc_delays[i]));
-    sort(sorted_arc_delays.begin(), sorted_arc_delays.end(),
-         [](pair<int, Delay> pair1,
-            pair<int, Delay> pair2) {
-           return pair1.second > pair2.second;
-         });
-    printf("sorted arcs\n");
-    for (auto index_delay : sorted_arc_delays) {
-      int i = index_delay.first;
-      PathRef *path = worst_expanded.path(i);
-      Vertex *path_vertex = path->vertex(sta_);
-      printf("%3d %s delay = %s room = %s\n",
-             i,
-             path_vertex->name(network_),
-             units_->timeUnit()->asString(arc_delays[i], 3),
-             units_->timeUnit()->asString(slack_room[i], 3));
-    }
-  }
-}
-
-////////////////////////////////////////////////////////////////
-
-  float findBufferMinCap(LibertyLibrarySeq *resize_libs);
-  LibertyCell *findMinDelayBuffer(LibertyLibrarySeq *resize_libs,
-                                  float cap);
-
-void
 Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
 {
   LibertyCellSet keepers;
@@ -637,103 +681,4 @@ Resizer::findBufferMinCap(LibertyLibrarySeq *resize_libs)
     }
   }
   return min_cap;
-}
-
-////////////////////////////////////////////////////////////////
-
-static void
-highlightPdRevGraph(PD::PdRev *pdrev,
-                    gui::Gui *gui);
-
-void
-highlightPdrevTree(const Pin *drvr_pin,
-                   float alpha,
-                   bool use_pd)
-{
-  gui::Gui *gui = gui::Gui::get();
-  if (drvr_pin) {
-    ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
-    sta::dbNetwork *network = openroad->getDbNetwork();
-    utl::Logger *logger = openroad->getLogger();
-    Net *net = network->isTopLevelPort(drvr_pin)
-      ? network->net(network->term(drvr_pin))
-      : network->net(drvr_pin);
-    PinSeq pins;
-    connectedPins(net, network, pins);
-    int pin_count = pins.size();
-    bool is_placed = true;
-    if (pin_count >= 2) {
-      int *x = new int[pin_count];
-      int *y = new int[pin_count];
-      int drvr_idx = 0;
-      bool found_drvr = false;
-      for (int i = 0; i < pin_count; i++) {
-        Pin *pin = pins[i];
-        if (pin == drvr_pin)
-          drvr_idx = i;
-        Point loc = network->location(pin);
-        x[i] = loc.x();
-        y[i] = loc.y();
-        is_placed &= network->isPlaced(pin);
-      }
-      if (is_placed) {
-        // Move the driver to the pole position.
-        std::swap(pins[0], pins[drvr_idx]);
-        std::swap(x[0], x[drvr_idx]);
-        std::swap(y[0], y[drvr_idx]);
-
-        PD::PdRev* pd = new PD::PdRev(logger);
-        std::vector<unsigned> vec_x(x, x + pin_count);
-        std::vector<unsigned> vec_y(y, y + pin_count);
-        // Must be called before addNet.
-        pd->setAlphaPDII(alpha);
-        pd->addNet(vec_x, vec_y);
-        if (use_pd)
-          pd->runPD(alpha);
-        else
-          pd->runPDII();
-        highlightPdRevGraph(pd, gui::Gui::get());
-        delete pd;
-      }
-    }
-  }
-  else
-    highlightPdRevGraph(nullptr, gui);
-}
-
-static void
-highlightPdRevGraph(PD::PdRev *pdrev,
-                    gui::Gui *gui)
-{
-  if (gui) {
-    if (lines_renderer == nullptr) {
-      lines_renderer = new LinesRenderer();
-      gui->registerRenderer(lines_renderer);
-    }
-    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> xy_lines;
-    if (pdrev)
-      pdrev->graphLines(xy_lines);
-    std::vector<std::pair<odb::Point, odb::Point>> lines;
-    for (int i = 0; i < xy_lines.size(); i++) {
-      std::pair<int, int> xy1 = xy_lines[i].first;
-      std::pair<int, int> xy2 = xy_lines[i].second;
-      lines.push_back(std::pair(odb::Point(xy1.first, xy1.second),
-                                odb::Point(xy2.first, xy2.second)));
-    }
-    lines_renderer->highlight(lines, gui::Painter::red);
-  }
-}
-
-void
-highlight_pd_tree(const Pin *drvr_pin,
-                  float alpha)
-{
-  highlightPdrevTree(drvr_pin, alpha, true);
-}
-
-void
-highlight_pdII_tree(const Pin *drvr_pin,
-                    float alpha)
-{
-  highlightPdrevTree(drvr_pin, alpha, false);
 }
