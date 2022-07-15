@@ -460,6 +460,8 @@ class FastRouteCore
                            bool is3DVisualization);
   int netCount() const { return nets_.size(); }
 
+  typedef std::tuple<int, int, int> Tile;
+
   static const int MAXLEN = 20000;
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
@@ -557,13 +559,9 @@ class FastRouteCore
   FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
 
-  std::unordered_map<std::tuple<int, int, int>,
-                     interval_set<int>,
-                     boost::hash<std::tuple<int, int, int>>>
+  std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       vertical_blocked_intervals_;
-  std::unordered_map<std::tuple<int, int, int>,
-                     interval_set<int>,
-                     boost::hash<std::tuple<int, int, int>>>
+  std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
 };
 
