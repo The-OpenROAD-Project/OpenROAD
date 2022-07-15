@@ -209,12 +209,12 @@ class Logger
   void pushMetricsStage(std::string_view format);
   std::string popMetricsStage();
 
+
+ private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
   std::vector<MetricsPolicy> metrics_policies_;
 
-
- private:
   template <typename... Args>
     inline void log(ToolId tool,
                     spdlog::level::level_enum level,

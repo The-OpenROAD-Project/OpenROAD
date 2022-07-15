@@ -173,9 +173,7 @@ void Logger::finalizeMetrics() {
   
   for(std::string sink_path : metrics_sinks_) {
     std::ofstream sink_file(sink_path);
-    //sink_file.open(sink_path); 
     sink_file << json;
-    sink_file.close();
   }
 }
 

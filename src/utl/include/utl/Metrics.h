@@ -68,7 +68,6 @@ class MetricsPolicy
 
   static std::vector<MetricsPolicy> makeDefaultPolicies();
 
- protected:
   MetricsPolicyType policy_;
   std::string pattern_;
   bool repeating_use_regex_;
