@@ -87,7 +87,7 @@ class SimulatedAnnealingCore {
     
 
     bool IsValid() const;
-    float GetNormCost() const;
+    float GetNormCost(); // This is not a const function
 
     float GetWidth() const;
     float GetHeight() const;
@@ -135,8 +135,8 @@ class SimulatedAnnealingCore {
    
     // nets, fences, guides, blockages
     std::vector<BundledNet> nets_;
-    std::map<int, Rect*> fences_;
-    std::map<int, Rect*> guides_;
+    std::map<int, Rect> fences_;
+    std::map<int, Rect> guides_;
 
     // weight for different penalty
     float outline_weight_    = 0.0; 
@@ -202,112 +202,6 @@ class SimulatedAnnealingCore {
     float exchange_prob_    = 0.0;
 };
 
-
-class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
-  public:
-    SACoreHardMacro() {   };
-    SACoreHardMacro(float outline_width, float outline_height, // boundary constraints
-                    const std::vector<HardMacro>& macros, 
-                    // weight for different penalty
-                    float outline_weight, 
-                    float wirelength_weight,
-                    float guidance_weight,
-                    float fence_weight, // each blockage will be modeled by a macro with fences
-                    // probability of each action 
-                    float pos_swap_prob,
-                    float neg_swap_prob,
-                    float double_swap_prob,
-                    float exchange_prob,
-                    float flip_prob,
-                    // Fast SA hyperparameter
-                    float init_prob, int max_num_step, int num_perturb_per_step,
-                    int k, int c, unsigned seed = 0);
-
-    // Initialize the SA worker
-    void Initialize(); 
-
-  private:
-    float CalNormCost();
-    void CalPenalty();
-
-    void Perturb();
-    void Restore();
-    // actions used
-    void FlipMacro(); // flip hard macros
-
-    float flip_prob_ = 0.0;
-};
-
-
-
-class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
-  public:
-    SACoreSoftMacro() {   };
-    SACoreSoftMacro(float outline_width, float outline_height, // boundary constraints
-                    const std::vector<SoftMacro>& macros,
-                    // weight for different penalty
-                    float outline_weight, 
-                    float wirelength_weight,
-                    float guidance_weight,
-                    float fence_weight, // each blockage will be modeled by a macro with fences
-                    float boundary_weight,
-                    float notch_weight,
-                    // notch threshold
-                    float notch_h_threshold,
-                    float notch_v_threshold,
-                    // action prob
-                    float pos_swap_prob, 
-                    float neg_swap_prob,
-                    float double_swap_prob, 
-                    float exchange_prob, 
-                    float resize_prob,
-                    // Fast SA hyperparameter
-                    float init_prob, int max_num_step, int num_perturb_per_step,
-                    int k, int c, unsigned seed = 0);
-    // accessors
-    float GetBoundaryPenalty()     const;
-    float GetNormBoundaryPenalty() const;
-    float GetNotchPenalty()        const;
-    float GetNormNotchPenalty()    const;
-    
-    // Initialize the SA worker
-    void Initialize(); 
-
-  private:
-    float CalNormCost();
-    void CalPenalty();
-
-    void Perturb();
-    void Restore();
-    // actions used
-    void Resize();
-
-    // notch threshold
-    float notch_h_th_;
-    float notch_v_th_;
-  
-    // additional penalties
-    float boundary_weight_   = 0.0;
-    float notch_weight_      = 0.0;
-    
-    float boundary_penalty_ = 0.0;
-    float notch_penalty_    = 0.0;
-    
-    float pre_boundary_penalty_ = 0.0;
-    float pre_notch_penalty_    = 0.0;
-
-    float norm_boundary_penalty_ = 0.0;
-    float norm_notch_penalty_    = 0.0;
-
-    void CalBoundaryPenalty();
-    void AlignMacroClusters();
-    void CalNotchPenalty();
-   
-    // action prob
-    float resize_prob_ = 0.0;
-};
-
-
 // SACore wrapper function
 // T can be SACoreHardMacro or SACoreSoftMacro
 template <class T> 
@@ -318,6 +212,8 @@ void RunSA(T* sa_core)
 }
 
 
+
 } // namespace mpl
+
 
 

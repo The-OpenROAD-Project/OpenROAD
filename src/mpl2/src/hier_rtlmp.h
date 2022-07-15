@@ -51,6 +51,10 @@
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "object.h"
+#include "SimulatedAnnealingCore.h"
+#include "SACoreHardMacro.h"
+#include "SACoreSoftMacro.h"
+
 
 namespace mpl {
 // Hierarchial RTL-MP
@@ -105,7 +109,12 @@ class HierRTLMP {
  
     // technology-related variables
     float dbu_ = 0.0;
-   
+    
+    // enable bus synthesis or not
+    // this feature is just for test
+    bool path_syn_flag_ = false;
+
+
     // Parameters related to macro placement
     // User can specify a global region for some designs
     float global_fence_lx_ = std::numeric_limits<float>::max();
@@ -121,6 +130,10 @@ class HierRTLMP {
 
     float target_util_ = 0.75;  // target utilization of the design
     float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+    
+    float notch_v_th_ = 20.0;
+    float notch_h_th_ = 20.0;
+
 
     // SA related parameters
     // weight for different penalty
@@ -147,10 +160,10 @@ class HierRTLMP {
     int c_ = 10;
 
     // probability of each action
-    float pos_swap_prob_    = 0.2
+    float pos_swap_prob_    = 0.2;
     float neg_swap_prob_    = 0.2;
     float double_swap_prob_ = 0.1;
-    float exchange_prob_    = 0.1;
+    float exchange_swap_prob_    = 0.1;
     float flip_prob_ = 0.2;
     float resize_prob_ = 0.2;
 
@@ -262,6 +275,8 @@ class HierRTLMP {
     void MultiLevelMacroPlacement(Cluster* cluster); 
     // Determine the shape (area, possible aspect ratios) of each cluster
     void CalClusterShape(Cluster* cluster);
+    // Calculate possible macro tilings for HardMacroCluster
+    void CalMacroTilings(Cluster* cluster);
     // Determine positions and implementation of each children cluster
     void PlaceChildrenClusters(Cluster* parent);
     // Merge nets to reduce runtime

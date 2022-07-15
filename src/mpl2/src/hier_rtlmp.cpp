@@ -32,6 +32,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#include "hier_rtlmp.h"
+
 
 #include <sys/stat.h>
 
@@ -46,6 +48,7 @@
 #include <tuple>
 #include <vector>
 #include <thread>
+
 
 // Partitioner note : currently we are still using MLPart to partition large flat clusters
 // Later this will be replaced by our TritonPart
@@ -75,7 +78,9 @@
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "object.h"
-#include "hier_rtlmp.h"
+#include "SimulatedAnnealingCore.h"
+#include "SACoreHardMacro.h"
+#include "SACoreSoftMacro.h"
 
 namespace mpl {
 
@@ -168,10 +173,10 @@ void HierRTLMP::HierRTLMacroPlacer()
 
   // Get the floorplan information
   odb::Rect die_box = block_->getDieArea();
-  floorplan_lx_ = Dbu2Micro(die_box.xMin());
-  floorplan_ly_ = Dbu2Micro(die_box.yMin());
-  floorplan_ux_ = Dbu2Micro(die_box.xMax());
-  floorplan_uy_ = Dbu2Micro(die_box.yMax());
+  floorplan_lx_ = Dbu2Micro(die_box.xMin(), dbu_);
+  floorplan_ly_ = Dbu2Micro(die_box.yMin(), dbu_);
+  floorplan_ux_ = Dbu2Micro(die_box.xMax(), dbu_);
+  floorplan_uy_ = Dbu2Micro(die_box.yMax(), dbu_);
   logger_->info(MPL,
                 2023,
                 "Basic Floorplan Information\n"
@@ -1285,7 +1290,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   // Step3 : check if we need path synthesis to determine the routing paths
   // of buses for some MixedCluster childrens
   bool path_synthesis_flag = false;
-  for (auto& cluster : parent) {
+  for (auto& cluster : parent->GetChildren()) {
     if (cluster->GetClusterType() == MixedCluster) {
       path_synthesis_flag = true;
       break;
@@ -1295,12 +1300,12 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     CallPathSynthesis(parent); // route buses within the parent cluster
   // Step4 : Determine the orientation and position of each hard macro
   // in each HardMacroCluster
-  for (auto& cluster : parent)
+  for (auto& cluster : parent->GetChildren())
     if (cluster->GetClusterType() == HardMacroCluster)
       PlaceHardMacros(cluster);
 
   // Traverse the physical hierarchy tree in a DFS manner
-  for (auto& cluster : parent)
+  for (auto& cluster : parent->GetChildren())
     if (cluster->GetClusterType() == MixedCluster)
       MultiLevelMacroPlacement(cluster);
 
@@ -1321,19 +1326,20 @@ void HierRTLMP::CalMacroTilings(Cluster* cluster)
   
   std::vector<HardMacro*> hard_macros = cluster->GetHardMacros();
   // macro tilings
-  std::set<std:pair<float, float> > macro_tilings; // <width, height>
+  std::set<std::pair<float, float> > macro_tilings; // <width, height>
   // if the cluster only has one macro
   if (hard_macros.size() == 1) {
     float width = hard_macros[0]->GetWidth();
     float height = hard_macros[0]->GetHeight();
-    cluster->SetMacroTilings(std::vector<std::pair<float, float> > (
-                            std::pair<float, float>(width, height)));
+    std::vector<std::pair<float, float> > tilings;
+    tilings.push_back(std::pair<float, float>(width, height));
+    cluster->SetMacroTilings(tilings);
     return;
   }
 
   // set the action probabilities
   const float action_sum  = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                            + exchange_prob_;
+                            + exchange_swap_prob_;
   const float pos_swap_prob      = pos_swap_prob_ / action_sum;
   const float neg_swap_prob      = neg_swap_prob_ / action_sum;
   const float double_swap_prob   = double_swap_prob_ / action_sum;
@@ -1344,7 +1350,7 @@ void HierRTLMP::CalMacroTilings(Cluster* cluster)
   // We vary the outline of cluster to generate differnt tilings
   std::vector<float> vary_factor_list { 1.0 };
   float vary_step = 1.0 / num_runs_;  // change the outline by at most halfly
-  for (i = 1; i <= num_runs_ / 2 + 1; i++) {
+  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
     vary_factor_list.push_back(1.0 + i * vary_step);
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
@@ -1352,6 +1358,8 @@ void HierRTLMP::CalMacroTilings(Cluster* cluster)
   std::vector<HardMacro> macros;
   for (auto& macro : hard_macros)
     macros.push_back(*macro);
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
+                                      macros.size() : num_perturb_per_step_;
   int run_thread = num_threads_;
   int remaining_runs = num_runs_;
   int run_id = 0;
@@ -1362,11 +1370,11 @@ void HierRTLMP::CalMacroTilings(Cluster* cluster)
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_width * outline_height / width;
       SACoreHardMacro* sa = new SACoreHardMacro(width, height, macros,
-                                                1.0, 0.0, 0.0, 0.0  // penalty weight
+                                                1.0, 0.0, 0.0, 0.0,  // penalty weight
                                                 pos_swap_prob, neg_swap_prob,
                                                 double_swap_prob, exchange_swap_prob, 0.0,
                                                 init_prob_, max_num_step_,
-                                                std::max(macros.size(), num_perturb_per_step_),
+                                                num_perturb_per_step,
                                                 k_, c_, random_seed_);
       sa_vector.push_back(sa);
     }
@@ -1396,6 +1404,13 @@ void HierRTLMP::CalMacroTilings(Cluster* cluster)
   std::sort(unique_tilings.begin(), unique_tilings.end(), SortShape);
   cluster->SetMacroTilings(unique_tilings);
 }
+
+// Determine the shape of each child cluster
+void HierRTLMP::CalClusterShape(Cluster* parent) 
+{
+  return;
+}
+
 
 // Determine positions and implementation of each children cluster
 void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
@@ -1502,7 +1517,7 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
   // Determine the locations for each cluster
   // set the action probabilities
   const float action_sum  = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                            + exchange_prob_ + resize_prob_;
+                            + exchange_swap_prob_ + resize_prob_;
   // set the penalty weight
   const float weight_sum   =  outline_weight_ + wirelength_weight_
                               + guidance_weight_   + fence_weight_    
@@ -1510,7 +1525,7 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
   // We vary the target utilization to generate different layouts
   std::vector<float> target_util_list { target_util_ };
   float util_step = (1.0 - target_util_) * 2 / num_runs_;  // change util by at most halfly
-  for (i = 1; i <= num_runs_ / 2 + 1; i++) {
+  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
     target_util_list.push_back(1.0 + i * util_step);
     target_util_list.push_back(1.0 - i * util_step);
   }
@@ -1539,6 +1554,7 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
   }
   MergeNets(nets);
 
+
   // Place each clusters in multithreads
   std::vector<SACoreSoftMacro*> candidates;
   int run_thread = num_threads_;
@@ -1550,6 +1566,9 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
     for (int i = 0; i < run_thread; i++) {
       // determine the shapes of each SoftMacro
       std::vector<SoftMacro> macros;
+      
+      const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
+                                          macros.size() : num_perturb_per_step_;
       // create SA core
       SACoreSoftMacro* sa = new SACoreSoftMacro(outline_width, outline_height, macros,
                                 outline_weight_ / weight_sum, 
@@ -1562,10 +1581,10 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
                                 pos_swap_prob_ / action_sum,
                                 neg_swap_prob_ / action_sum,
                                 double_swap_prob_ / action_sum,
-                                exchange_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
                                 resize_prob_ / action_sum,
                                 init_prob_, max_num_step_,
-                                std::max(macros.size(), num_perturb_per_step_),
+                                num_perturb_per_step,
                                 k_, c_, random_seed_);
       sa->SetNets(nets);
       sa->SetFences(fences);
@@ -1599,7 +1618,7 @@ void HierRTLMP::MergeNets(std::vector<BundledNet>& nets)
   std::vector<int> net_class(nets.size(), -1);
   for (int i = 0; i < nets.size(); i++) {
     if (net_class[i] == -1) {
-      for (j = i + 1; j < nets.size(); j++) 
+      for (int j = i + 1; j < nets.size(); j++) 
         if (nets[i] == nets[j])
           net_class[j] = i;
     }
@@ -1621,7 +1640,8 @@ void HierRTLMP::MergeNets(std::vector<BundledNet>& nets)
 // route buses within the parent cluster
 void HierRTLMP::CallPathSynthesis(Cluster* parent)
 {
-
+  if (path_syn_flag_ == false)
+    return;
 }
 
 // Determine the orientation and position of each hard macro
@@ -1630,8 +1650,6 @@ void HierRTLMP::PlaceHardMacros(Cluster* parent)
 {
   if (parent->GetClusterType() != HardMacroCluster)
     return;
-  
-
 }
 
 

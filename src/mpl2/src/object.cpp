@@ -80,6 +80,20 @@ bool SortShape(const std::pair<float, float>& shape1,
     return shape1.first * shape2.second < shape2.first * shape2.second;
 }
 
+
+std::string to_string(const PinAccess& pin_access)
+{
+  if (pin_access == L)
+    return std::string("L");
+  else if (pin_access == T)
+    return std::string("T");
+  else if (pin_access == R)
+    return std::string("R");
+  else
+    return std::string("B");
+}
+
+
 ///////////////////////////////////////////////////////////////////////
 // Metric Class
 Metric::Metric(unsigned int num_std_cell, 
@@ -526,6 +540,13 @@ PinAccess Cluster::GetPinAccess(int cluster_id)
 {
   return this->pin_access_map_[cluster_id];  
 }
+
+
+const std::map<int, PinAccess> Cluster::GetPinAccessMap() const
+{
+  return pin_access_map_;
+}
+
 
 // Print Basic Information
 // Normally we call this after macro placement is done

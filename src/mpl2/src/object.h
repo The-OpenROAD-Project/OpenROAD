@@ -101,6 +101,7 @@ bool SortShape(const std::pair<float, float>& shape1,
 // The size of the hard macro blockage is determined the by the
 // size of that cluster
 enum PinAccess { B, L, T, R };
+std::string to_string(const PinAccess& pin_access);
 
 
 class Metric;
@@ -244,7 +245,8 @@ class Cluster {
     // Path synthesis support
     void SetPinAccess(int cluster_id, PinAccess pin_access);
     PinAccess GetPinAccess(int cluster_id);
- 
+    const std::map<int, PinAccess> GetPinAccessMap() const;
+
     // Print Basic Information
     void PrintBasicInformation(utl::Logger* logger) const;
 
@@ -468,8 +470,24 @@ class SoftMacro {
 struct BundledNet {
   std::pair<int, int> terminals; // id for terminals
                                  // here the id can be the id of hard macro or soft macro
-  float weight;                  // Number of bundled connections (can be timing-related weight)
+  float weight;                  // Number of bundled connections (can be timing-related 
+                                 // weight)
+  // support for bus synthsis
+  float HPWL;    // HPWL of the Net (in terms of path length)
+  // shortest paths:  to minimize timing
+  // store all the shortest paths between two soft macros
+  std::vector<std::vector<int> > edge_paths;   
+  // store all the shortest paths between two soft macros in terms of
+  // boundary edges.  All the internal edges are removed
+  std::vector<std::vector<int> > boundary_edge_paths; 
+
   BundledNet() {  }
+  BundledNet(int src, int target, float weight)
+  {
+    terminals = std::pair<int, int>(src, target);
+    weight = weight;
+  }
+  
   BundledNet(const std::pair<int, int>& terminals, float weight) 
   {
     this->terminals = terminals;

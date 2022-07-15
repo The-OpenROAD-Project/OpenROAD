@@ -45,7 +45,9 @@ target_sources(mpl2
     src/rtl_mp.cpp
     src/hier_rtlmp.cpp
     src/object.cpp
-    src/macro_placement.cpp
+    src/SimulatedAnnealingCore.cpp
+    src/SACoreHardMacro.cpp
+    src/SACoreSoftMacro.cpp
 )
 
 messages(
