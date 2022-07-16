@@ -50,6 +50,8 @@ namespace rsz {
 
 class Resizer;
 
+using std::vector;
+
 using sta::StaState;
 using sta::Net;
 using sta::Pin;
@@ -62,6 +64,29 @@ using sta::LibertyPort;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::MinMax;
+using sta::Vector;
+
+using odb::Rect;
+
+// Quad tree for partioning fanout pins.
+class Quad
+{
+public:
+  Quad();
+  Quad(Vector<Pin*> &pins,
+       Rect &bbox);
+  void reportTree(Logger *logger);
+  void reportTree(int level,
+                  Logger *logger);
+
+  Vector<Pin*> pins_;
+  Rect bbox_; // dbu
+  // Quadrant indices
+  // 2 3
+  // 0 1
+  vector<Quad> quads_;
+  enum Index {SW, SE, NW, NE};
+};
 
 class RepairDesign : StaState
 {
@@ -151,6 +176,25 @@ private:
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap);
+  Quad groupLoadsInQuads(const Pin *drvr_pin,
+                         int max_fanout);
+  void subdivideQuad(Quad &quad,
+                     int max_fanout);
+  void makeQuadRepeaters(Quad &quad,
+                         int max_fanout,
+                         int level,
+                         double slew_margin,
+                         double max_cap_margin,
+                         bool check_slew,
+                         bool check_cap,
+                         bool check_fanout,
+                         int max_length,
+                         bool resize_drvr);
+  PinSeq findLoads(const Pin *drvr_pin);
+  Rect findBbox(PinSeq &pins);
+  Point findCenter(PinSeq &pins);
+  Point center(Rect &rect);
+  bool isRepeater(const Pin *load_pin);
   void makeRepeater(const char *where,
                     Point loc,
                     LibertyCell *buffer_cell,
@@ -171,7 +215,10 @@ private:
                     PinSeq &load_pins,
                     float &repeater_cap,
                     float &repeater_fanout,
-                    float &repeater_max_slew);
+                    float &repeater_max_slew,
+                    Net *&out_net,
+                    Pin *&repeater_in_pin,
+                    Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
   float bufferSlew(LibertyCell *buffer_cell,
