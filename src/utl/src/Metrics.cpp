@@ -125,9 +125,11 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
 std::vector<MetricsPolicy> MetricsPolicy::makeDefaultPolicies()
 {
   return {
-      MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
-      MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
-      MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, false)};
+      // Examples of Metrics policy to appy before writing JSON file
+      //MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
+      //MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
+      //MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, true)
+      };
 }
 
 }  // namespace utl
