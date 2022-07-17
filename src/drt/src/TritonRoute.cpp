@@ -988,7 +988,7 @@ void TritonRoute::reportDRC(const string& file_name,
     for (const auto& marker : markers) {
       // get violation bbox
       Rect bbox = marker->getBBox();
-      if (drcBox != Rect(0, 0, 0, 0) && !drcBox.intersects(bbox))
+      if (drcBox != Rect() && !drcBox.intersects(bbox))
         continue;
       auto tech = getDesign()->getTech();
       auto layer = tech->getLayer(marker->getLayerNum());

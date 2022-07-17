@@ -311,28 +311,28 @@ proc pin_access { args } {
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }
 sta::define_cmd_args "check_drc" {
-    [-drc_box box]
-    [-output_drc filename]
+    [-box box]
+    [-output_file filename]
 }
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
-      keys { -drc_box -output_drc } \
+      keys { -box -output_file } \
       flags {}
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
-  if [info exists keys(-drc_box)] {
-    set box $keys(-drc_box)
+  if [info exists keys(-box)] {
+    set box $keys(-box)
     if { [llength $box] != 4 } {
-      utl::error DRT 612 "-drc_box is a list of 4 coordinates."
+      utl::error DRT 612 "-box is a list of 4 coordinates."
     }    
   }
   lassign $box x1 y1 x2 y2
-   if { [info exists keys(-output_drc)] } {
-    set output_drc $keys(-output_drc)
+   if { [info exists keys(-output_file)] } {
+    set output_file $keys(-output_file)
   } else {
-    utl::error DRT 613 "-output_drc is required for check_drc command"
+    utl::error DRT 613 "-output_file is required for check_drc command"
   }
-  drt::check_drc $output_drc $x1 $y1 $x2 $y2
+  drt::check_drc $output_file $x1 $y1 $x2 $y2
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {
