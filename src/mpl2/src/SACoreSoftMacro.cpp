@@ -273,6 +273,9 @@ void SACoreSoftMacro::CalBoundaryPenalty()
 {
   // Initialization
   boundary_penalty_ = 0.0;
+  if (boundary_weight_ <= 0.0)
+    return;
+  
   for (const auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {
       const float lx = macro.GetX();
@@ -322,6 +325,9 @@ void SACoreSoftMacro::CalNotchPenalty()
 {
   // Initialization
   notch_penalty_ = 0.0;
+  if (notch_weight_ <= 0.0)
+    return;
+  
   bool hard_macro_cluster_flag = false;
   for (const auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {

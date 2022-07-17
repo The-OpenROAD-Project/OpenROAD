@@ -129,8 +129,10 @@ class HierRTLMP {
     int random_seed_ = 0;   // random seed for deterministic   
 
     float target_util_ = 0.75;  // target utilization of the design
-    float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+    float min_ar_ = 0.4; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
+    
+    float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
     float notch_v_th_ = 20.0;
     float notch_h_th_ = 20.0;
 
@@ -209,7 +211,7 @@ class HierRTLMP {
     // connection signature
     // minimum number of connections between two clusters 
     // for them to be identified as connected
-    int signature_net_threshold_ = 20.0;
+    int signature_net_threshold_ = 20;
     // We ignore global nets during clustering
     int large_net_threshold_ = 100; 
 
@@ -251,6 +253,8 @@ class HierRTLMP {
     void BreakCluster(Cluster* parent);
     void MergeClusters(std::vector<Cluster*>& candidate_clusters);
     void CalculateConnection();
+    void PrintConnection(); 
+    void PrintClusters();
     void UpdateSubTree(Cluster* parent);
     // Break large flat clusters with MLPart 
     // A flat cluster does not have a logical module
@@ -268,7 +272,15 @@ class HierRTLMP {
 
     // Print the physical hierachical tree in a DFS manner
     void PrintPhysicalHierarchyTree(Cluster* parent, int level);
+    // Determine the macro tilings within each cluster in a bottom-up manner
+    // (Post-Order DFS manner)
+    void CalClusterMacroTilings(Cluster* root_cluster);
+    // Determine the macro tilings for each HardMacroCluster
+    // multi thread enabled
+    // random seed deterministic enabled
+    void CalHardMacroClusterShape(Cluster* cluster);
 
+    /*
     // Place macros in a hierarchical mode based on the above
     // physcial hierarchical tree 
     // The macro placement is done in a DFS manner (PreOrder)
@@ -286,5 +298,6 @@ class HierRTLMP {
     // Determine the orientation and position of each hard macro
     // in each HardMacroCluster
     void PlaceHardMacros(Cluster* cluster);
+    */
   };
 }  // namespace mpl

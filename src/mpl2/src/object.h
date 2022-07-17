@@ -94,6 +94,8 @@ int Micro2Dbu(float metric, float dbu);
 bool SortShape(const std::pair<float, float>& shape1, 
                const std::pair<float, float>& shape2);
 
+bool ComparePairFirst(std::pair<float, float> p1, std::pair<float, float> p2);
+
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
 // Each pin access blockage is modeled by a movable hard macro
@@ -228,7 +230,7 @@ class Cluster {
     std::set<Cluster*> GetChildren() const;
     
     bool IsLeaf() const;  // if the cluster is a leaf cluster
-    void MergeCluster(const Cluster& cluster);
+    bool MergeCluster(const Cluster& cluster); // return true if succeed
 
     // Connection signature support
     void InitConnection();
@@ -239,8 +241,8 @@ class Cluster {
     // For example, if a small cluster A is closely connected to a
     // well-formed cluster B, (there are also other well-formed clusters
     // C, D), A is only connected to B and A has no connection with C, D
-    Cluster* GetCloseCluster(const std::vector<Cluster*>& candidate_clusters, 
-                             float net_threshold);
+    int GetCloseCluster(const std::vector<int>& candidate_clusters, 
+                        float net_threshold);
 
     // Path synthesis support
     void SetPinAccess(int cluster_id, PinAccess pin_access);
@@ -401,12 +403,31 @@ class HardMacro {
 // For all the soft macros, we model the bundled pin at the center
 // of the soft macro. So we do not need private variables for pin positions
 // SoftMacro is a physical abstraction for Cluster.
+// Note that constrast to classical soft macro definition,
+// we allow the soft macro to change its area.
+// For the SoftMacro cooresponding to different types of clusters,
+// we allow different shape constraints:
+// For SoftMacro corresponding to MixedCluster and StdCellCluster,
+// the macro must have fixed area
+// For SoftMacro corresponding to HardMacroCluster,
+// the macro can have different sizes. In this case, the width_list and height_list is
+// not sorted.
+// Generally speaking we can have following types of SoftMacro
+// (1) SoftMacro : MixedCluster
+// (2) SoftMacro : StdCellCluster
+// (3) SoftMacro : HardMacroCluster
+// (4) SoftMacro : Fixed Hard Macro (or blockage)
+// (5) SoftMacro : Hard Macro (or pin access blockage)
+// (6) SoftMacro : Fixed Terminals
+
 class SoftMacro {
   public:
     SoftMacro() {  }
     // Create a SoftMacro with specified size
     // Create a SoftMacro representing the blockage
     SoftMacro(float width, float height, const std::string name);
+    // Create a SoftMacro representing fixed hard macro or blockage
+    SoftMacro(float width, float height, const std::string name, float lx, float ly);
     // Create a SoftMacro representing the IO cluster
     SoftMacro(const std::pair<float, float>& pos, const std::string name);
     // create a SoftMacro from a cluster
@@ -418,13 +439,17 @@ class SoftMacro {
     void SetX(float x);
     void SetY(float y);
     void SetLocation(const std::pair<float, float>& location);
-    void SetWidth(float width);
-    void SetHeight(float height);
-    void SetArea(float area);
-    void SetAspectRatio(float aspect_ratio);
+    void SetWidth(float width); // only for StdCellCluster and MixedCluster
+    void SetHeight(float height); // only for StdCellCluster and MixedCluster
+    void SetArea(float area); // only for StdCellCluster and MixedCluster
     void ResizeRandomly(std::uniform_real_distribution<float>& distribution,
                         std::mt19937& generator);
-    void SetAspectRatios(const std::vector<std::pair<float, float> >& aspect_ratios);
+    // This function for discrete shape curves, HardMacroCluster
+    // If force_flag_ = true, it will force the update of width_list_ and height_list_
+    void SetShapes(const std::vector<std::pair<float, float> >& shapes, bool force_flag = false); // < <width, height> 
+    // This function for specify shape curves (piecewise function), 
+    // for StdCellCluster and MixedCluster
+    void SetShapes(const std::vector<std::pair<float, float> >& width_list, float area);
     float GetX() const;
     float GetY() const;
     float GetPinX() const;
@@ -451,16 +476,21 @@ class SoftMacro {
     float height_ = 0.0; // height_
     float area_ = 0.0; // area of the standard cell cluster
     std::string name_ = ""; // macro name
-    std::vector<std::pair<float, float> > aspect_ratios_; // possible aspect ratios
+    // variables to describe shape curves (discrete or piecewise curves)
+    std::vector<std::pair<float, float> > width_list_;  // nondecreasing order
+    std::vector<std::pair<float, float> > height_list_; // nonincreasing order
 
     // Interfaces with hard macro
     Cluster* cluster_ = nullptr;
-    bool fixed_ = false;
-
+    bool fixed_ = false; // if the macro is fixed
 
     // Alignment support
     // if the cluster has been aligned related to other macro_cluster or boundaries
     bool align_flag_ = false;
+    
+    // utility function
+    int FindPos(std::vector<std::pair<float, float> >& list,
+                float& value,  bool increase_order);
 };
 
 

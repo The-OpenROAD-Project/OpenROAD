@@ -93,6 +93,12 @@ std::string to_string(const PinAccess& pin_access)
     return std::string("B");
 }
 
+// Compare two intervals according to starting points
+bool ComparePairFirst(std::pair<float, float> p1, std::pair<float, float> p2)
+{
+  return p1.first < p2.first;
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 // Metric Class
@@ -438,19 +444,29 @@ bool Cluster::IsLeaf() const
 }
 
 // We only merge clusters with the same parent cluster
-void Cluster::MergeCluster(const Cluster& cluster) 
+bool Cluster::MergeCluster(const Cluster& cluster) 
 {
   if (parent_ != cluster.parent_)
-    return;
-   
+    return false;
+
   // modify name
   name_ += "||" + cluster.name_;
   // add instances (std cells and macros)
-  this->CopyInstances(cluster); 
+  //this->CopyInstances(cluster); 
+  leaf_macros_.insert(leaf_macros_.end(),
+                      cluster.leaf_macros_.begin(),
+                      cluster.leaf_macros_.end());
+  leaf_std_cells_.insert(leaf_std_cells_.end(),
+                cluster.leaf_std_cells_.begin(),
+                cluster.leaf_std_cells_.end());
+  dbModules_.insert(dbModules_.end(),
+                cluster.dbModules_.begin(),
+                cluster.dbModules_.end());
   // Add Metric
   metric_.AddMetric(cluster.metric_);
   // Remove this cluster from the children list of the parent
   parent_->RemoveChild(&cluster);
+  return true;
 }
 
 // Connection signature support
@@ -510,24 +526,26 @@ bool Cluster::IsSameConnSignature(const Cluster& cluster,
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-Cluster* Cluster::GetCloseCluster(const std::vector<Cluster*>& candidate_clusters,
+// candidate_clusters are small clusters, 
+// any cluster not in candidate_clusters is a well-formed cluster
+int Cluster::GetCloseCluster(const std::vector<int>& candidate_clusters,
                          float net_threshold)
 {
-  Cluster* closely_cluster = nullptr;
+  int closely_cluster = -1;
   int num_closely_clusters = 0;
-  for (auto& cluster : candidate_clusters) {
-    int cluster_id = cluster->GetId();
-    if (connection_map_.find(cluster_id) != connection_map_.end() &&
-            connection_map_[cluster_id] > net_threshold) {
+  for (auto& [cluster_id, num_nets] : connection_map_) {
+    if (num_nets > net_threshold &&
+        std::find(candidate_clusters.begin(), candidate_clusters.end(), cluster_id) 
+        == candidate_clusters.end()) {
       num_closely_clusters++;
-      closely_cluster = cluster;
+      closely_cluster = cluster_id;
     }
-  } 
+  }
 
   if (num_closely_clusters == 1)
     return closely_cluster;
   else
-    return nullptr;
+    return -1;
 }
 
 // Pin Access Support
@@ -822,25 +840,41 @@ void HardMacro::UpdateDb(float pitch_x, float pitch_y)
 // SoftMacro Class
 // Create a SoftMacro with specified size
 // In this case, we think the cluster is a macro cluster with only one macro
+// SoftMacro : Hard Macro (or pin access blockage)
 SoftMacro::SoftMacro(float width, float height, const std::string name) 
 {
   name_ = name;
   width_ = width;
   height_  = height;
   area_ = width * height;
-  float ar = 1.0;
-  if (width_ > 0.0)
-    ar = height_ / width_;
-  aspect_ratios_.push_back(std::pair<float, float>(ar, ar));
+  cluster_ = nullptr;
 }
 
-// Create a SoftMacro representing the IO cluster
+// SoftMacro : Fixed Hard Macro (or blockage)
+SoftMacro::SoftMacro(float width, float height, const std::string name,
+                     float lx, float ly) 
+{
+  name_    = name;
+  width_   = width;
+  height_  = height;
+  area_    = width * height;
+  x_       = lx;
+  y_       = ly;
+  cluster_ = nullptr;
+  fixed_   = true;
+}
+
+// Create a SoftMacro representing the IO cluster or fixed terminals
 SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name) 
 { 
   name_ = name;
   x_ = pos.first;
   y_ = pos.second;
-  fixed_ = true;
+  width_  = 0.0;
+  height_ = 0.0;
+  area_   = 0.0;
+  cluster_ = nullptr;
+  fixed_  = true;
 }
 
 // create a SoftMacro from a cluster
@@ -877,100 +911,156 @@ void SoftMacro::SetLocation(const std::pair<float, float>& location)
   y_ = location.second;
 }
 
+// This is a utility function called by SetWidth, SetHeight
+int SoftMacro::FindPos(std::vector<std::pair<float, float> >& list, 
+                       float& value,  bool increase_order)
+{
+  // We assume the value is within the range of list
+  int idx = 0;
+  if (increase_order == true) {
+    while ((idx < list.size()) && (list[idx].second < value))
+      idx++;
+    if (list[idx].first > value) 
+      value = list[idx].first;    
+  } else {
+    while ((idx < list.size()) && (list[idx].second > value))
+      idx++;
+    if (list[idx].first < value) 
+      value = list[idx].first;    
+  }
+  return idx;
+}
+
 void SoftMacro::SetWidth(float width)
 {
-  if (width <= 0.0 || area_ == 0.0 || aspect_ratios_.size() == 0)
+  if (width <= 0.0 || area_ == 0.0 || 
+      width_list_.size() != height_list_.size() ||
+      width_list_.size() == 0 ||
+      cluster_ == nullptr ||
+      cluster_->GetClusterType() == HardMacroCluster ||
+      cluster_->GetIOClusterFlag() == true)
     return;
-  
-  float ar = area_ / width / width;
-  if (ar <= aspect_ratios_[0].first) {
-    ar = aspect_ratios_[0].first;   
-  } else if (ar >= aspect_ratios_[aspect_ratios_.size() - 1].second) {
-    ar = aspect_ratios_[aspect_ratios_.size() - 1].second;
+
+  // the width_list_ is sorted in nondecreasing order
+  if (width <= width_list_[0].first) {
+    width_  = width_list_[0].first;
+    height_ = height_list_[0].first;
+    area_   = width_ * height_;
+  } else if (width  >= width_list_[width_list_.size() - 1].second) {
+    width_   = width_list_[width_list_.size() - 1].second;
+    height_  = height_list_[height_list_.size() - 1].second;
+    area_    = width_ * height_;
   } else {
-    auto vec_it = aspect_ratios_.begin(); 
-    while (vec_it->second < ar)
-      vec_it++;
-    if (ar < vec_it->first) {
-      float ar_high = vec_it->first;
-      vec_it--;
-      float ar_low  = vec_it->second;
-      if (ar_high - ar > ar - ar_low)
-        ar = ar_low;
-      else
-        ar = ar_high;
-    } // otherwise, we can use the ar directly
+    width_ = width;
+    int idx = FindPos(width_list_, width_, true);
+    area_ = width_list_[idx].second * height_list_[idx].second;
+    height_ = area_ / width_;
   }
-  height_ = std::sqrt(area_ * ar);
-  width_  = area_ / height_;
 }
 
 void SoftMacro::SetHeight(float height)
-{
-  if (height <= 0.0 || area_ == 0.0 || aspect_ratios_.size() == 0)
+{  
+  if (height <= 0.0 || area_ == 0.0 || 
+      width_list_.size() != height_list_.size() ||
+      width_list_.size() == 0 ||
+      cluster_ == nullptr ||
+      cluster_->GetClusterType() == HardMacroCluster ||
+      cluster_->GetIOClusterFlag() == true)
     return;
   
-  float ar = height / (area_ / height);
-  if (ar <= aspect_ratios_[0].first) {
-    ar = aspect_ratios_[0].first;   
-  } else if (ar >= aspect_ratios_[aspect_ratios_.size() - 1].second) {
-    ar = aspect_ratios_[aspect_ratios_.size() - 1].second;
+  // the height_list_ is sorted in nonincreasing order
+  if (height >= height_list_[0].first) {
+    height_ = height_list_[0].first;
+    width_  = width_list_[0].first;
+    area_   = width_ * height_;
+  } else if (height <= height_list_[height_list_.size() - 1].second) {
+    height_  = height_list_[height_list_.size() - 1].second;
+    width_   = width_list_[width_list_.size() - 1].second;
+    area_ = width_ * height_;
   } else {
-    auto vec_it = aspect_ratios_.begin(); 
-    while (vec_it->second < ar)
-      vec_it++;
-    if (ar < vec_it->first) {
-      float ar_high = vec_it->first;
-      vec_it--;
-      float ar_low  = vec_it->second;
-      if (ar_high - ar > ar - ar_low)
-        ar = ar_low;
-      else
-        ar = ar_high;
-    } // otherwise, we can use the ar directly
+    height_ = height;
+    int idx = FindPos(height_list_, height_, false);
+    area_ = width_list_[idx].second * height_list_[idx].second;
+    width_ = area_ / height_;
   }
-  height_ = std::sqrt(area_ * ar);
-  width_  = area_ / height_;
 }
 
 void SoftMacro::SetArea(float area)
 {
+  if (area_ == 0.0 || 
+      width_list_.size() != height_list_.size() ||
+      width_list_.size() == 0 ||
+      cluster_ == nullptr ||
+      cluster_->GetClusterType() == HardMacroCluster ||
+      cluster_->GetIOClusterFlag() == true ||
+      area <= width_list_[0].first * height_list_[0].first)
+    return;
+  
+  // area must be larger than area_
+  std::vector<std::pair<float, float> > width_list;
+  std::vector<std::pair<float, float> > height_list;
+  for (int i = 0; i < width_list_.size(); i++) {
+    const float min_width = width_list_[i].first;
+    const float min_height = height_list_[i].second;
+    const float max_width = area / min_height;
+    const float max_height = area / min_width;
+    if (width_list.size() == 0 || 
+        min_width > width_list[width_list.size() - 1].second) {
+      width_list.push_back(std::pair<float, float>(min_width, max_width));
+      height_list.push_back(std::pair<float, float>(max_height, min_height));
+    } else {
+      width_list[width_list.size() - 1].second = max_width;
+      height_list[height_list.size() - 1].second = min_height;
+    }
+  }
+
+  width_list_ = width_list;
+  height_list_ = height_list;
   area_ = area;
 }
 
-
-void SoftMacro::SetAspectRatio(float aspect_ratio)
+// This function for discrete shape curves, HardMacroCluster
+void SoftMacro::SetShapes(const std::vector<std::pair<float, float> >& shapes, bool force_flag)
 {
-  if (area_ == 0.0 || aspect_ratios_.size() == 0)
+  if (force_flag == false && (shapes.size() == 0 || cluster_ == nullptr || 
+      cluster_->GetClusterType() != HardMacroCluster))
     return;
-  
-  float ar = aspect_ratio;
-  if (ar <= aspect_ratios_[0].first) {
-    ar = aspect_ratios_[0].first;   
-  } else if (ar >= aspect_ratios_[aspect_ratios_.size() - 1].second) {
-    ar = aspect_ratios_[aspect_ratios_.size() - 1].second;
-  } else {
-    auto vec_it = aspect_ratios_.begin(); 
-    while (vec_it->second < ar)
-      vec_it++;
-    if (ar < vec_it->first) {
-      float ar_high = vec_it->first;
-      vec_it--;
-      float ar_low  = vec_it->second;
-      if (ar_high - ar > ar - ar_low)
-        ar = ar_low;
-      else
-        ar = ar_high;
-    } // otherwise, we can use the ar directly
+
+  // Here we do not need to sort width_list_, height_list_
+  for (auto& shape : shapes) {
+    width_list_.push_back(std::pair<float, float>(shape.first, shape.first));
+    height_list_.push_back(std::pair<float, float>(shape.second, shape.second));
   }
-  height_ = std::sqrt(area_ * ar);
-  width_  = area_ / height_;
+  area_ = shapes[0].first * shapes[0].second;
+}
+    
+
+// This function for specify shape curves (piecewise function),
+// for StdCellCluster and MixedCluster
+void SoftMacro::SetShapes(const std::vector<std::pair<float, float> >& width_list, float area)
+{
+  if (width_list.size() == 0 || area_ <= 0.0 ||
+      cluster_ == nullptr || cluster_->GetIOClusterFlag() == true ||
+      cluster_->GetClusterType() == HardMacroCluster)
+    return;
+  area_ = area;
+  // sort width list based 
+  height_list_ = width_list;
+  std::sort(height_list_.begin(), height_list_.end(), ComparePairFirst);
+  for (auto& shape : height_list_) {
+    const float min_width = shape.first;
+    const float max_width = shape.second;
+    if (width_list_.size() == 0 || 
+        min_width > width_list_[width_list_.size() - 1].second) 
+      width_list_.push_back(std::pair<float, float>(min_width, max_width));
+    else 
+      width_list_[width_list_.size() - 1].second = max_width;
+  }
+  height_list_.clear();
+  for (auto& shape : width_list_) 
+    height_list_.push_back(std::pair<float, float>(area / shape.first, area / shape.second));
 }
 
-void SoftMacro::SetAspectRatios(const std::vector<std::pair<float, float> >& aspect_ratios)
-{
-  aspect_ratios_ = aspect_ratios;
-}
 
 float SoftMacro::GetX() const
 {
@@ -1032,14 +1122,15 @@ int SoftMacro::GetNumMacro() const
 void SoftMacro::ResizeRandomly(std::uniform_real_distribution<float>& distribution,
                                std::mt19937& generator) 
 {
-  if (aspect_ratios_.size() == 0)
+  if (width_list_.size() == 0)
     return;
   const int idx = static_cast<int>(std::floor(
-                    (distribution)(generator) * aspect_ratios_.size()));
-  const float min_ar = aspect_ratios_[idx].first;
-  const float max_ar = aspect_ratios_[idx].second;
-  const float ar = min_ar + (distribution)(generator) * (max_ar - min_ar);
-  this->SetAspectRatio(ar);
+                    (distribution)(generator) * width_list_.size()));
+  const float min_width = width_list_[idx].first;
+  const float max_width = width_list_[idx].second;
+  width_ = min_width + (distribution)(generator) * (max_width - min_width);
+  area_ = width_list_[idx].first * height_list_[idx].second;
+  height_ = area_ / width_;
 }
 
 // Align Flag support

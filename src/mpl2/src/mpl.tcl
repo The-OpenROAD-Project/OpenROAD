@@ -83,7 +83,7 @@ proc rtl_macro_placer { args } {
                                       $signature_net_threshold \
                                       $halo_width \
                                       $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
-                                      ] {
+                                      ]} {
         return false
     }
 

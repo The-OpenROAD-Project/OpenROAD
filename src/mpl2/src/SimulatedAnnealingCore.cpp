@@ -230,6 +230,9 @@ void SimulatedAnnealingCore<T>::CalWirelength()
 {
   // Initialization
   wirelength_ = 0.0;
+  if (wirelength_weight_ <= 0.0)
+    return;
+  
   for (const auto& net : nets_) {
     const float x1 = macros_[net.terminals.first].GetPinX();
     const float y1 = macros_[net.terminals.first].GetPinY();
@@ -245,6 +248,9 @@ void SimulatedAnnealingCore<T>::CalFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
+  if (fence_weight_ <= 0.0)
+    return;
+  
   for (const auto& [id , bbox] : fences_) {
     const float lx = macros_[id].GetX();
     const float ly = macros_[id].GetY();
@@ -263,6 +269,9 @@ void SimulatedAnnealingCore<T>::CalGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
+  if (guidance_weight_ <= 0.0)
+    return;
+
   for (const auto& [id , bbox] : guides_) {
     const float macro_lx = macros_[id].GetX();
     const float macro_ly = macros_[id].GetY();
