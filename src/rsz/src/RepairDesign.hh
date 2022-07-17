@@ -187,9 +187,17 @@ private:
                          double max_cap_margin,
                          bool check_slew,
                          bool check_cap,
-                         bool check_fanout,
                          int max_length,
                          bool resize_drvr);
+  void makeFanoutRepeater(PinSeq &repeater_loads,
+                          PinSeq &repeater_inputs,
+                          Point loc,
+                          double slew_margin,
+                          double max_cap_margin,
+                          bool check_slew,
+                          bool check_cap,
+                          int max_length,
+                          bool resize_drvr);
   PinSeq findLoads(const Pin *drvr_pin);
   Rect findBbox(PinSeq &pins);
   Point findCenter(PinSeq &pins);
@@ -238,7 +246,6 @@ private:
   // Implicit arguments to repairNet bnet recursion.
   const Pin *drvr_pin_;
   float max_cap_;
-  float max_fanout_;
   int max_length_;
   const Corner *corner_;
 

@@ -329,7 +329,7 @@ RepairDesign::repairNet(Net *net,
         corner_ = corner;
         makeQuadRepeaters(quad, max_fanout, 1,
                           slew_margin, max_cap_margin, check_slew,
-                          check_cap, check_fanout, max_length, resize_drvr);
+                          check_cap, max_length, resize_drvr);
 
       }
     }
@@ -582,7 +582,6 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
 {
   drvr_pin_ = drvr_pin;
   max_cap_ = max_cap;
-  max_fanout_ = max_fanout;
   max_length_ = max_length;
   corner_ = corner;
 
@@ -863,19 +862,6 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
     else
       repeater_right = true;
   }
-  bool fanout_violation = max_fanout_ > 0
-    // Note that if both fanout_left==max_fanout and fanout_right==max_fanout
-    // there is no way repair the violation (adding a buffer to either branch
-    // results in max_fanout+1, which is a violation).
-    // Leave room for one buffer on the other branch by using >= to avoid
-    // this situation.
-    && (fanout_left + fanout_right) >= max_fanout_;
-  if (fanout_violation) {
-    if (fanout_left > fanout_right)
-      repeater_left = true;
-    else
-      repeater_right = true;
-  }
 
   if (repeater_left) {
     makeRepeater("left", loc, buffer_cell, true, level,
@@ -1018,7 +1004,6 @@ RepairDesign::makeQuadRepeaters(Quad &quad,
                                 double max_cap_margin,
                                 bool check_slew,
                                 bool check_cap,
-                                bool check_fanout,
                                 int max_length,
                                 bool resize_drvr)
 {
@@ -1028,8 +1013,7 @@ RepairDesign::makeQuadRepeaters(Quad &quad,
     // Buffer from the bottom up.
     for (Quad &sub : quad.quads_)
       makeQuadRepeaters(sub, max_fanout, level + 1, slew_margin, max_cap_margin,
-                        check_slew, check_cap, check_fanout, max_length,
-                        resize_drvr);
+                        check_slew, check_cap, max_length, resize_drvr);
 
     PinSeq repeater_inputs;
     PinSeq repeater_loads;
@@ -1038,72 +1022,31 @@ RepairDesign::makeQuadRepeaters(Quad &quad,
       while (!sub_pins.empty()) {
         repeater_loads.push_back(sub_pins.back());
         sub_pins.pop_back();
-        if (repeater_loads.size() == max_fanout) {
-          Point buffer_loc = findCenter(repeater_loads);
-          //Point buffer_loc = center(sub.bbox_);
-          float ignore2, ignore3, ignore4;
-          Net *out_net;
-          Pin *repeater_in_pin, *repeater_out_pin;
-          makeRepeater("fanout", buffer_loc.x(), buffer_loc.y(),
-                       resizer_->buffer_lowest_drive_, false, 1,
-                       repeater_loads, ignore2, ignore3, ignore4,
-                       out_net, repeater_in_pin, repeater_out_pin);
-          Vertex *repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
-          int repaired_net_count, slew_violations, cap_violations;
-          int fanout_violations, length_violations;
-          repairNet(out_net, repeater_out_pin, repeater_out_vertex,
-                    slew_margin, max_cap_margin, check_slew, check_cap, false /* check_fanout */,
-                    max_length, resize_drvr, repaired_net_count, slew_violations,
-                    cap_violations, fanout_violations, length_violations);
-          repeater_inputs.push_back(repeater_in_pin);
-          repeater_loads.clear();
-        }
+        if (repeater_loads.size() == max_fanout)
+          makeFanoutRepeater(repeater_loads, repeater_inputs,
+                             findCenter(repeater_loads),
+                             slew_margin, max_cap_margin,
+                             check_slew, check_cap, max_length,
+                             resize_drvr);
       }
     }
     while (!quad.pins_.empty()) {
       repeater_loads.push_back(quad.pins_.back());
       quad.pins_.pop_back();
-      if (repeater_loads.size() == max_fanout) {
-        //Point buffer_loc = findCenter(repeater_loads);
-        Point buffer_loc = center(quad.bbox_);
-        float ignore2, ignore3, ignore4;
-        Net *out_net;
-        Pin *repeater_in_pin, *repeater_out_pin;
-        makeRepeater("fanout", buffer_loc.x(), buffer_loc.y(),
-                     resizer_->buffer_lowest_drive_, false, 1,
-                     repeater_loads, ignore2, ignore3, ignore4,
-                     out_net, repeater_in_pin, repeater_out_pin);
-        Vertex *repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
-        int repaired_net_count, slew_violations, cap_violations;
-        int fanout_violations, length_violations;
-        repairNet(out_net, repeater_out_pin, repeater_out_vertex,
-                  slew_margin, max_cap_margin, check_slew, check_cap, false /* check_fanout */,
-                  max_length, resize_drvr, repaired_net_count, slew_violations,
-                  cap_violations, fanout_violations, length_violations);
-        repeater_loads.clear();
-        repeater_inputs.push_back(repeater_in_pin);
-      }
+      if (repeater_loads.size() == max_fanout)
+        makeFanoutRepeater(repeater_loads, repeater_inputs,
+                           center(quad.bbox_),
+                           slew_margin, max_cap_margin,
+                           check_slew, check_cap, max_length,
+                           resize_drvr);
+
     }
-    if (!repeater_loads.empty()) {
-      //Point buffer_loc = findCenter(repeater_loads);
-      Point buffer_loc = center(quad.bbox_);
-      float ignore2, ignore3, ignore4;
-      Net *out_net;
-      Pin *repeater_in_pin, *repeater_out_pin;
-      makeRepeater("fanout", buffer_loc.x(), buffer_loc.y(),
-                   resizer_->buffer_lowest_drive_, false, 1,
-                   repeater_loads, ignore2, ignore3, ignore4,
-                   out_net, repeater_in_pin, repeater_out_pin);
-      Vertex *repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
-      int repaired_net_count, slew_violations, cap_violations;
-      int fanout_violations, length_violations;
-      repairNet(out_net, repeater_out_pin, repeater_out_vertex,
-                slew_margin, max_cap_margin, check_slew, check_cap, false /* check_fanout */,
-                max_length, resize_drvr, repaired_net_count, slew_violations,
-                cap_violations, fanout_violations, length_violations);
-      repeater_loads.clear();
-      repeater_inputs.push_back(repeater_in_pin);
-    }
+    if (!repeater_loads.empty())
+      makeFanoutRepeater(repeater_loads, repeater_inputs,
+                         center(quad.bbox_),
+                         slew_margin, max_cap_margin,
+                         check_slew, check_cap, max_length,
+                         resize_drvr);
 
     debugPrint(logger_, RSZ, "repair_fanout", 1, "{:{}s}repeaters={} leftovers={}",
                "", level,
@@ -1112,6 +1055,35 @@ RepairDesign::makeQuadRepeaters(Quad &quad,
     for (Pin *pin : repeater_inputs)
       quad.pins_.push_back(pin);
   }
+}
+
+void
+RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
+                                 PinSeq &repeater_inputs,
+                                 Point loc,
+                                 double slew_margin,
+                                 double max_cap_margin,
+                                 bool check_slew,
+                                 bool check_cap,
+                                 int max_length,
+                                 bool resize_drvr)
+{
+  float ignore2, ignore3, ignore4;
+  Net *out_net;
+  Pin *repeater_in_pin, *repeater_out_pin;
+  makeRepeater("fanout", loc.x(), loc.y(),
+               resizer_->buffer_lowest_drive_, false, 1,
+               repeater_loads, ignore2, ignore3, ignore4,
+               out_net, repeater_in_pin, repeater_out_pin);
+  Vertex *repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
+  int repaired_net_count, slew_violations, cap_violations;
+  int fanout_violations, length_violations;
+  repairNet(out_net, repeater_out_pin, repeater_out_vertex,
+            slew_margin, max_cap_margin, check_slew, check_cap, false /* check_fanout */,
+            max_length, resize_drvr, repaired_net_count, slew_violations,
+            cap_violations, fanout_violations, length_violations);
+  repeater_inputs.push_back(repeater_in_pin);
+  repeater_loads.clear();
 }
 
 Point
