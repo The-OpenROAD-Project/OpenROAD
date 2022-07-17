@@ -203,7 +203,7 @@ private:
   Point findCenter(PinSeq &pins);
   Point center(Rect &rect);
   bool isRepeater(const Pin *load_pin);
-  void makeRepeater(const char *where,
+  void makeRepeater(const char *reason,
                     Point loc,
                     LibertyCell *buffer_cell,
                     bool resize,
@@ -213,7 +213,7 @@ private:
                     float &repeater_cap,
                     float &repeater_fanout,
                     float &repeater_max_slew);
-  void makeRepeater(const char *where,
+  void makeRepeater(const char *reason,
                     int x,
                     int y,
                     LibertyCell *buffer_cell,

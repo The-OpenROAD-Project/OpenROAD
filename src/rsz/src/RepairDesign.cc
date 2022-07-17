@@ -823,6 +823,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   float load_slew = (r_drvr + wire_length1 * wire_res)
     * load_cap * elmore_skew_factor_;
   bool load_slew_violation = load_slew > max_load_slew;
+  const char *repeater_reason = nullptr;
   // Driver slew checks were converted to max cap.
   if (load_slew_violation) {
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load slew violation {} > {}",
@@ -844,6 +845,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
       repeater_left = true;
     else
       repeater_right = true;
+    repeater_reason = "load_slew";
   }
   bool cap_violation = (cap_left + cap_right) > max_cap_;
   if (cap_violation) {
@@ -852,6 +854,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
       repeater_left = true;
     else
       repeater_right = true;
+    repeater_reason = "max_cap";
   }
   bool length_violation = max_length_ > 0
     && (wire_length_left + wire_length_right) > max_length_;
@@ -861,15 +864,16 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
       repeater_left = true;
     else
       repeater_right = true;
+    repeater_reason = "max_length";
   }
 
   if (repeater_left) {
-    makeRepeater("left", loc, buffer_cell, true, level,
+    makeRepeater(repeater_reason, loc, buffer_cell, true, level,
                  loads_left, cap_left, fanout_left, max_load_slew_left);
     wire_length_left = 0;
   }
   if (repeater_right) {
-    makeRepeater("right", loc, buffer_cell, true, level,
+    makeRepeater(repeater_reason, loc, buffer_cell, true, level,
                  loads_right, cap_right, fanout_right, max_load_slew_right);
     wire_length_right = 0;
   }
@@ -1142,7 +1146,7 @@ RepairDesign::isRepeater(const Pin *load_pin)
 ////////////////////////////////////////////////////////////////
 
 void
-RepairDesign::makeRepeater(const char *where,
+RepairDesign::makeRepeater(const char *reason,
                            Point loc,
                            LibertyCell *buffer_cell,
                            bool resize,
@@ -1155,7 +1159,7 @@ RepairDesign::makeRepeater(const char *where,
 {
   Net *out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
-  makeRepeater(where, loc.getX(), loc.getY(), buffer_cell, resize,
+  makeRepeater(reason, loc.getX(), loc.getY(), buffer_cell, resize,
                level, load_pins, repeater_cap, repeater_fanout,
                repeater_max_slew,
                out_net, repeater_in_pin, repeater_out_pin);
@@ -1164,7 +1168,7 @@ RepairDesign::makeRepeater(const char *where,
 ////////////////////////////////////////////////////////////////
 
 void
-RepairDesign::makeRepeater(const char *where,
+RepairDesign::makeRepeater(const char *reason,
                            int x,
                            int y,
                            LibertyCell *buffer_cell,
@@ -1181,10 +1185,10 @@ RepairDesign::makeRepeater(const char *where,
 {
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  string buffer_name = resizer_->makeUniqueInstName(where);
+  string buffer_name = resizer_->makeUniqueInstName(reason);
   debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}{} {} {} ({} {})",
              "", level,
-             where,
+             reason,
              buffer_name.c_str(),
              buffer_cell->name(),
              units_->distanceUnit()->asString(dbuToMeters(x), 1),
