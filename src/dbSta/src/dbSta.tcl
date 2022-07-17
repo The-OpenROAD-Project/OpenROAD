@@ -85,20 +85,6 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
-define_cmd_args "report_units_metric" {}
-proc report_units_metric { args } {
-
-  utl::push_metrics_stage "run__flow__platform__{}_units"
-
-  foreach unit {{"time" "timing"} {"power" "power"} {"distance" "distance"}} {
-    set utype [lindex $unit 0]
-    set umetric [lindex $unit 1]
-    utl::metric "$umetric" "[unit_suffix $utype]"
-  }
-
-  utl::pop_metrics_stage
-}
-
 define_cmd_args "report_tns_metric" {}
 proc report_tns_metric { args } {
   global sta_report_default_digits
@@ -145,11 +131,28 @@ proc report_power_design_metric { corner digits } {
   utl::metric_float "power__total" $design_total
 }
 
+
+define_cmd_args "report_units_metric" {}
+proc report_units_metric { args } {
+
+  utl::push_metrics_stage "run__flow__platform__{}_units"
+
+  foreach unit {"time" "capacitance" "resistance" "voltage" "current" "power" "distance"} {
+    utl::metric $unit "1[unit_scale_abreviation $unit][unit_suffix $unit]"
+  }
+
+  utl::pop_metrics_stage
+}
+
+
 define_cmd_args "report_design_area_metrics" {}
 proc report_design_area_metrics {args} {
   set db [::ord::get_db]
   set dbu_per_uu [[$db getTech] getDbUnitsPerMicron]
   set block [[$db getChip] getBlock]
+  set core_bbox [$block getCoreArea]
+  set core_area [expr [$core_bbox dx] * [$core_bbox dy]]
+  puts "Core area = $core_area"
 
   set num_ios [llength [$block getBTerms]]
 
@@ -179,9 +182,12 @@ proc report_design_area_metrics {args} {
     }
   }
 
+  set core_area [expr $core_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set total_area [expr $total_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set stdcell_area [expr $stdcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set macro_area [expr $macro_area / [expr $dbu_per_uu * $dbu_per_uu]]
+  set core_util [expr $total_area / $core_area]
+  set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
 
   utl::metric_int "design__io" $num_ios
   utl::metric_int "design__instance__count" $num_insts
@@ -190,6 +196,8 @@ proc report_design_area_metrics {args} {
   utl::metric_float "design__instance__area__stdcell" $stdcell_area
   utl::metric_int "design__instance__count__macros" $num_macros
   utl::metric_float "design__instance__area__macros" $macro_area
+  utl::metric_float "design__instance__utilization" $core_util
+  utl::metric_float "design__instance__utilization__stdcell" $stdcell_util
 }
 
 # namespace

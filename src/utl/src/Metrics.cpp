@@ -126,9 +126,10 @@ std::vector<MetricsPolicy> MetricsPolicy::makeDefaultPolicies()
 {
   return {
       // Examples of Metrics policy to appy before writing JSON file
-      //MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
-      //MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
-      //MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, true)
+      //
+      // MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
+      // MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
+      // MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, true)
       };
 }
 
