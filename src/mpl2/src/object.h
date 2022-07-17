@@ -95,6 +95,8 @@ bool SortShape(const std::pair<float, float>& shape1,
                const std::pair<float, float>& shape2);
 
 bool ComparePairFirst(std::pair<float, float> p1, std::pair<float, float> p2);
+bool ComparePairProduct(std::pair<float, float> p1, std::pair<float, float> p2);
+
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
@@ -140,6 +142,7 @@ class Metric {
     unsigned int GetNumStdCell() const;
     float GetStdCellArea() const;
     float GetMacroArea() const;
+    float GetArea() const;
     float GetInflatStdCellArea() const;
     float GetInflatMacroArea() const;
     float GetInflatArea() const;
@@ -212,12 +215,17 @@ class Cluster {
     const Metric GetMetric() const;
     int GetNumStdCell() const;
     int GetNumMacro() const;
+    float GetArea()  const;
+    float GetMacroArea() const;
+    float GetStdCellArea() const;
 
     // Physical location support
     float GetWidth() const;
     float GetHeight() const;
     float GetX() const;
     float GetY() const;
+    void SetX(float x);
+    void SetY(float y);
     const std::pair<float, float> GetLocation() const;
 
     // Hierarchy Support
@@ -245,9 +253,15 @@ class Cluster {
                         float net_threshold);
 
     // Path synthesis support
+    // After path synthesis, the children cluster of current cluster will
+    // not have any connections outsize the parent cluster
+    // All the outside connections have been converted to the connections
+    // related to pin access
     void SetPinAccess(int cluster_id, PinAccess pin_access);
+    void AddBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
     PinAccess GetPinAccess(int cluster_id);
     const std::map<int, PinAccess> GetPinAccessMap() const;
+    const std::map<PinAccess, std::map<PinAccess, float> > GetBoundaryConnection() const;
 
     // Print Basic Information
     void PrintBasicInformation(utl::Logger* logger) const;
@@ -302,6 +316,7 @@ class Cluster {
 
     // pin access for each bundled connection
     std::map<int, PinAccess> pin_access_map_; // cluster_id, pin_access (B, L, T, R)
+    std::map<PinAccess, std::map<PinAccess, float> > boundary_connection_map_;
 };
 
 

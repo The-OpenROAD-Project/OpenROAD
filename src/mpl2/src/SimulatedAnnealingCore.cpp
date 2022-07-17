@@ -196,9 +196,9 @@ float SimulatedAnnealingCore<T>::GetNormFencePenalty() const
 }
 
 template <class T>
-std::vector<T> SimulatedAnnealingCore<T>::GetMacros() const
+void SimulatedAnnealingCore<T>::GetMacros(std::vector<T>& macros) const
 {
-  return macros_;
+  macros =  macros_;
 }
 
 
@@ -310,6 +310,9 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   std::vector<float> length(macros_.size(), 0.0);
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i]; // macro_id
+    // add the continue syntax to handle fixed terminals
+    if (macros_[b].GetWidth() <= 0)
+      continue;
     const int p = match[b].second; // the position of current macro in neg_seq_
     macros_[b].SetX(length[p]);
     const float t = macros_[b].GetX() + macros_[b].GetWidth(); 
@@ -334,6 +337,9 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   }
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i]; // macro_id
+    // add continue syntax to handle fixed terminals
+    if (macros_[b].GetHeight() <= 0)
+      continue;
     const int p = match[b].second; // the position of current macro in neg_seq_
     macros_[b].SetY(length[p]);
     const float t = macros_[b].GetY() + macros_[b].GetHeight(); 

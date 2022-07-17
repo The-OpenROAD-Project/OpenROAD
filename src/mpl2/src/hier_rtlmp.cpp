@@ -170,6 +170,10 @@ void HierRTLMP::HierRTLMacroPlacer()
   // Get the database information
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
+  pitch_x_  = Dbu2Micro(static_cast<float>(
+        db_->getTech()->findRoutingLayer(snap_layer_)->getPitchX()), dbu_);
+  pitch_y_  = Dbu2Micro(static_cast<float>(
+        db_->getTech()->findRoutingLayer(snap_layer_)->getPitchY()), dbu_);
 
   // Get the floorplan information
   odb::Rect die_box = block_->getDieArea();
@@ -263,16 +267,17 @@ void HierRTLMP::HierRTLMacroPlacer()
 
   // Place macros in a hierarchical mode based on the above
   // physcial hierarchical tree
+  // Shape Engine Starts .................................................
   // Determine the shape and area for each cluster in a bottom-up manner
   // We first determine the macro tilings within each cluster
   // Then when we place clusters in each level, we can dynamic adjust the utilization
   // of std cells
   // Step 1 : Determine the size of root cluster
   SoftMacro* root_soft_macro = new SoftMacro(root_cluster_);
-  const float root_lx = std::max(floorplan_lx_, global_fence_lx_);
-  const float root_ly = std::max(floorplan_ly_, global_fence_ly_);
-  const float root_ux = std::min(floorplan_ux_, global_fence_ux_);
-  const float root_uy = std::min(floorplan_uy_, global_fence_uy_);
+  const float root_lx = std::max(Dbu2Micro(block_->getDieArea().xMin(), dbu_), global_fence_lx_);
+  const float root_ly = std::max(Dbu2Micro(block_->getDieArea().yMin(), dbu_), global_fence_ly_);
+  const float root_ux = std::min(Dbu2Micro(block_->getDieArea().xMax(), dbu_), global_fence_ux_);
+  const float root_uy = std::min(Dbu2Micro(block_->getDieArea().yMax(), dbu_), global_fence_uy_);
   const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
   const float root_width = root_ux - root_lx;
   const std::vector<std::pair<float, float> > root_width_list = 
@@ -285,10 +290,12 @@ void HierRTLMP::HierRTLMacroPlacer()
   // Step 2:  Determine the macro tilings within each cluster in a bottom-up manner
   // (Post-Order DFS manner)
   CalClusterMacroTilings(root_cluster_);
-
-  
-  // The macro placement is done in a DFS manner (pre-order)
-  //MultiLevelMacroPlacement(root_cluster_);
+  // Cluster Placement Engine Starts ...........................................
+  // create pin blockage for IO pins
+  CreatePinBlockage();
+  // The cluster placement is done in a top-down manner
+  // (Preorder DFS)
+  MultiLevelMacroPlacement(root_cluster_);
     
   // Clear the memory to avoid memory leakage
   // release all the pointers
@@ -783,17 +790,6 @@ void HierRTLMP::BreakCluster(Cluster* parent)
       parent->AddChild(cluster);
     }
   }
-
-  /*
-  // Merge small clusters
-  std::vector<Cluster*> candidate_clusters;
-  for (auto& cluster : parent->GetChildren()) 
-    if (cluster->GetIOClusterFlag() == false     && 
-        cluster->GetNumStdCell() < min_num_inst_ &&
-        cluster->GetNumMacro()   < min_num_macro_)
-      candidate_clusters.push_back(cluster);
-  MergeClusters(candidate_clusters);
-  */
 
   // Recursively break down large clusters with logical modules
   // For large flat cluster, we will break it in the UpdateSubTree function
@@ -1552,8 +1548,14 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
     sa_vector.clear();
     remaining_runs -= run_thread;
   }
-  std::vector<std::pair<float, float> > tilings(macro_tilings.begin(), macro_tilings.end());  
+  std::vector<std::pair<float, float> > tilings(macro_tilings.begin(), macro_tilings.end()); 
+  std::sort(tilings.begin(), tilings.end(), ComparePairProduct);
   parent->SetMacroTilings(tilings);
+  if (tilings.size() == 0) {
+    std::string line = "This is no valid tilings for cluster ";
+    line += parent->GetName();
+    logger_->error(MPL, 2031, line);      
+  }
 }
 
 
@@ -1637,241 +1639,166 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
     remaining_runs -= run_thread;
   }
   std::vector<std::pair<float, float> > tilings(macro_tilings.begin(), macro_tilings.end());  
+  std::sort(tilings.begin(), tilings.end(), ComparePairProduct);
   cluster->SetMacroTilings(tilings);
+  if (tilings.size() == 0) {
+    std::string line = "This is no valid tilings for cluster ";
+    line += cluster->GetName();
+    logger_->error(MPL, 2030, line);      
+  }
+}
+
+
+// Create pin blockage for Bundled IOs
+void HierRTLMP::CreatePinBlockage()
+{
+  CalculateConnection();
+  // if the design has IO pads, we do not create pin blockage
+  if (io_pad_map_.size() > 0)
+    return;
+  // Then we check the range of IO spans
+  std::map<PinAccess, std::pair<float, float> > pin_ranges;
+  pin_ranges[L] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
+  pin_ranges[T] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
+  pin_ranges[R] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
+  pin_ranges[B] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
+  int floorplan_lx = Micro2Dbu(floorplan_lx_, dbu_);
+  int floorplan_ly = Micro2Dbu(floorplan_ly_, dbu_);
+  int floorplan_ux = Micro2Dbu(floorplan_ux_, dbu_);
+  int floorplan_uy = Micro2Dbu(floorplan_uy_, dbu_);
+  for (auto term : block_->getBTerms()) {
+    int lx = std::numeric_limits<int>::max();
+    int ly = std::numeric_limits<int>::max();
+    int ux = 0;
+    int uy = 0; 
+    // If the design with IO pads, these block terms
+    // will not have block pins.
+    // Otherwise, the design will have IO pins.
+    for (const auto pin : term->getBPins()) {
+      for (const auto box : pin->getBoxes()) {
+        lx = std::min(lx, box->xMin());
+        ly = std::min(ly, box->yMin());
+        ux = std::max(ux, box->xMax());
+        uy = std::max(uy, box->yMax());
+      }
+    }
+    // remove power pins
+    if (term->getSigType().isSupply()) {
+       continue;
+    }
+    // modify the pin ranges
+    if (lx <= floorplan_lx) {
+      pin_ranges[L].first = std::min(pin_ranges[L].first,   Dbu2Micro(ly, dbu_));
+      pin_ranges[L].second = std::max(pin_ranges[L].second, Dbu2Micro(uy, dbu_));
+    } else if (uy >= floorplan_uy) {
+      pin_ranges[T].first = std::min(pin_ranges[T].first,   Dbu2Micro(lx, dbu_));
+      pin_ranges[T].second = std::max(pin_ranges[T].second, Dbu2Micro(ux, dbu_));
+    } else if (ux >= floorplan_ux) {
+      pin_ranges[R].first = std::min(pin_ranges[R].first,   Dbu2Micro(ly, dbu_));
+      pin_ranges[R].second = std::max(pin_ranges[R].second, Dbu2Micro(uy, dbu_));
+    } else {
+      pin_ranges[B].first = std::min(pin_ranges[B].first,   Dbu2Micro(lx, dbu_));
+      pin_ranges[B].second = std::max(pin_ranges[B].second, Dbu2Micro(ux, dbu_));
+    }
+  }
+  // add the blockages into the blockages_
+  const float v_blockage = (floorplan_uy_ - floorplan_ly_) * pin_access_th_;
+  const float h_blockage = (floorplan_ux_ - floorplan_lx_) * pin_access_th_;
+  float sum_range = 0.0;
+  blockages_.push_back(Rect(floorplan_lx_, pin_ranges[L].first, 
+                            floorplan_lx_ + h_blockage, pin_ranges[L].second));
+  blockages_.push_back(Rect(pin_ranges[T].first, floorplan_uy_ - v_blockage,
+                            pin_ranges[L].second, floorplan_uy_));
+  blockages_.push_back(Rect(floorplan_ux_ - h_blockage, pin_ranges[L].first, 
+                            floorplan_ux_, pin_ranges[L].second));
+  blockages_.push_back(Rect(pin_ranges[T].first, floorplan_ly_,
+                            pin_ranges[L].second, floorplan_ly_ + v_blockage));
+  for (auto& [pin, range] : pin_ranges)
+    sum_range += range.second - range.first;
+  float net_sum = 0.0;
+  for (auto& cluster : root_cluster_->GetChildren()) {
+    if (cluster->GetIOClusterFlag() == false)
+      continue;
+    for (auto& [cluster_id, num_net] : cluster->GetConnection())
+      net_sum += num_net;
+  }
+  sum_range /= 2 * (floorplan_uy_ - floorplan_ly_ + floorplan_ux_ - floorplan_lx_);
+  // update the pin_access_net_width_ratio_
+  pin_access_net_width_ratio_ = sum_range / net_sum;
 }
 
 
 
-/*
-// Place macros in a hierarchical mode based on the above
-// physcial hierarchical tree 
-// The macro placement is done in a DFS manner (PreOrder)
+
+// Cluster Placement Engine Starts ...........................................
+// The cluster placement is done in a top-down manner
+// (Preorder DFS)
 void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
 {
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster)
+  // base case
+  // If the parent cluster has no macros (parent cluster is a StdCellCluster or IOCluster)
   // We do not need to determine the positions and shapes of its children clusters
-  if (parent->GetHardMacros().size() == 0)
+  if (parent->GetNumMacro() == 0)
     return;
+  // If the parent is a HardMacroCluster
+  if (parent->GetClusterType() == HardMacroCluster) {
+    HardMacroClusterMacroPlacement(parent);
+    return;
+  }
   
-  // update the cluster_id of instances in the cluster
-  SetInstProperty(parent);
-
-  // Handle children clusters
-  // Step1 : determine the shape (area, possible aspect ratios) of each cluster
-  for (auto& cluster : parent->GetChildren())
-    CalClusterShape(cluster);  // determine the shape of a cluster 
-  
-  return;
-  
-  // Step2 : determine positions and implementation of each children cluster
-  PlaceChildrenClusters(parent);
-  // Step3 : check if we need path synthesis to determine the routing paths
-  // of buses for some MixedCluster childrens
-  bool path_synthesis_flag = false;
+  // Place children clusters
+  // map children cluster to soft macro
   for (auto& cluster : parent->GetChildren()) {
-    if (cluster->GetClusterType() == MixedCluster) {
-      path_synthesis_flag = true;
-      break;
-    }
-  }  
-  if (path_synthesis_flag == true) 
-    CallPathSynthesis(parent); // route buses within the parent cluster
-  // Step4 : Determine the orientation and position of each hard macro
-  // in each HardMacroCluster
-  for (auto& cluster : parent->GetChildren())
-    if (cluster->GetClusterType() == HardMacroCluster)
-      PlaceHardMacros(cluster);
-
-  // Traverse the physical hierarchy tree in a DFS manner
-  for (auto& cluster : parent->GetChildren())
-    if (cluster->GetClusterType() == MixedCluster)
-      MultiLevelMacroPlacement(cluster);
-
-  // done this branch and update the cluster_id property back
-  SetInstProperty(parent);
-}
-
-
-// Determine the macro tilings within each cluster with macros
-// multi thread enabled
-// random seed deterministic enabled
-void HierRTLMP::CalMacroTilings(Cluster* cluster) 
-{
-  // Check if the cluster is an IO cluster or StdCellCluster
-  if (cluster->GetIOClusterFlag() == true ||
-      cluster->GetClusterType() == StdCellCluster)
-    return;
-  
-  std::vector<HardMacro*> hard_macros = cluster->GetHardMacros();
-  // macro tilings
-  std::set<std::pair<float, float> > macro_tilings; // <width, height>
-  // if the cluster only has one macro
-  if (hard_macros.size() == 1) {
-    float width = hard_macros[0]->GetWidth();
-    float height = hard_macros[0]->GetHeight();
-    std::vector<std::pair<float, float> > tilings;
-    tilings.push_back(std::pair<float, float>(width, height));
-    cluster->SetMacroTilings(tilings);
-    return;
+    if (cluster->GetIOClusterFlag() == true)
+      continue;
+    SoftMacro* macro = new SoftMacro(cluster); 
+    cluster->SetSoftMacro(macro); // we will detele the old one, no memory leakage
   }
-
-  // set the action probabilities
-  const float action_sum  = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                            + exchange_swap_prob_;
-  const float pos_swap_prob      = pos_swap_prob_ / action_sum;
-  const float neg_swap_prob      = neg_swap_prob_ / action_sum;
-  const float double_swap_prob   = double_swap_prob_ / action_sum;
-  const float exchange_swap_prob = exchange_swap_prob_ / action_sum;
-  // get outline constraint
-  const float outline_width = cluster->GetWidth();
-  const float outline_height = cluster->GetHeight();
-  // We vary the outline of cluster to generate differnt tilings
-  std::vector<float> vary_factor_list { 1.0 };
-  float vary_step = 1.0 / num_runs_;  // change the outline by at most halfly
-  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
-    vary_factor_list.push_back(1.0 + i * vary_step);
-    vary_factor_list.push_back(1.0 - i * vary_step);
-  }
-  // update macros
-  std::vector<HardMacro> macros;
-  for (auto& macro : hard_macros)
-    macros.push_back(*macro);
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                      macros.size() : num_perturb_per_step_;
-  int run_thread = num_threads_;
-  int remaining_runs = num_runs_;
-  int run_id = 0;
-  while (remaining_runs > 0) {
-    std::vector<SACoreHardMacro*> sa_vector;
-    run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_width * outline_height / width;
-      SACoreHardMacro* sa = new SACoreHardMacro(width, height, macros,
-                                                1.0, 0.0, 0.0, 0.0,  // penalty weight
-                                                pos_swap_prob, neg_swap_prob,
-                                                double_swap_prob, exchange_swap_prob, 0.0,
-                                                init_prob_, max_num_step_,
-                                                num_perturb_per_step,
-                                                k_, c_, random_seed_);
-      sa_vector.push_back(sa);
-    }
-    // multi threads 
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
-    for (auto& th : threads)
-      th.join();
-    // add macro tilings
-    for (auto& sa : sa_vector) {
-      macro_tilings.insert(std::pair<float, float>(sa->GetWidth(), 
-                                                   sa->GetHeight()));
-      delete sa; // avoid memory leakage
-    }
-    sa_vector.clear();
-    remaining_runs -= run_thread;
-  }
-  // sort tilings based on area and aspect ratios
-  // remove duplicate tilings
-  std::vector<std::pair<float, float> > unique_tilings;
-  for (auto& tiling : macro_tilings)
-    if (tiling.first  <= outline_width && 
-        tiling.second <= outline_height)
-      unique_tilings.push_back(tiling);
-
-  std::sort(unique_tilings.begin(), unique_tilings.end(), SortShape);
-  cluster->SetMacroTilings(unique_tilings);
-}
-
-// Determine the shape of each child cluster
-void HierRTLMP::CalClusterShape(Cluster* parent) 
-{
-  return;
-}
-
-
-// Determine positions and implementation of each children cluster
-void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
-{
-  // Get physical information
+  // detemine the settings for simulated annealing engine
+  // Set outline information
   const float lx = parent->GetX();
   const float ly = parent->GetY();
-  const float ux = lx + parent->GetWidth();
-  const float uy = ly + parent->GetHeight();
-  const float outline_width = ux - lx;
-  const float outline_height = uy - ly;
+  const float outline_width  = parent->GetWidth();
+  const float outline_height = parent->GetHeight();
+  const float ux = lx + outline_width;
+  const float uy = ly + outline_height;
   // Suppose the region, fence, guide has been mapped to cooresponding macros
-  // Eech blockage will be modeled as SoftMacro with fence
-  std::map<std::string, int> soft_macro_id_map;
+  std::map<std::string, int> soft_macro_id_map; // cluster_name, macro_id
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
-  // Eech blockage will be modeled as SoftMacro with fence
   std::vector<SoftMacro> macros;
-  int blockage_id = 1;
+  std::vector<BundledNet> nets;
+  // create macros
+  // Eech blockage will be modeled as fixed SoftMacro
   for (auto& blockage : blockages_) {
-    // calculate the overlap
+    // calculate the overlap between blockage and parent cluster
     const float b_lx = std::max(lx, blockage.xMin());
     const float b_ly = std::max(ly, blockage.yMin());
     const float b_ux = std::min(ux, blockage.xMax());
     const float b_uy = std::min(uy, blockage.yMax());
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {
-      std::string name = std::string("blockage_") + std::to_string(blockage_id++);
-      macros.push_back(SoftMacro(b_ux - b_lx, b_uy - b_ly, name));
-      soft_macro_id_map[name] = macros.size() - 1;
-      fences[macros.size() - 1] = Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
+    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) { // blockage exists
+      std::string name = std::string("blockage_") + std::to_string(macros.size());
+      soft_macro_id_map[name] = macros.size();
+      macros.push_back(SoftMacro(b_ux - b_lx, b_uy - b_ly, name, b_lx - lx, b_ly -ly));
     }
   }
-
-  // Model each pin access as a movable macro with fence
-  std::set<PinAccess> pin_access_set;
-  for (auto& [cluster_id, pin_access] : parent->GetPinAccessMap())
-    pin_access_set.insert(pin_access);
-  for (auto& pin_access : pin_access_set) {
-    std::string name = "L";
-    if (pin_access == L) {
-      name = "L";
-      macros.push_back(SoftMacro(outline_height * pin_access_th_,
-                                 outline_width  * pin_access_th_,
-                                 name));
-      fences[macros.size() - 1] = Rect(0.0,  0.0, outline_width * pin_access_th_, 
-                                       outline_height);
-    } else if (pin_access == T) {
-      name = "T";
-      macros.push_back(SoftMacro(outline_width * pin_access_th_,
-                                 outline_height  * pin_access_th_,
-                                 name));
-      fences[macros.size() - 1] = Rect(0.0, outline_height - outline_height  * pin_access_th_,
-                                       outline_width, outline_height);
-    } else if (pin_access == R) {
-      name = "R";
-      macros.push_back(SoftMacro(outline_height * pin_access_th_,
-                                 outline_width  * pin_access_th_,
-                                 name));
-      fences[macros.size() - 1] = Rect(outline_width - outline_width * pin_access_th_, 0.0,
-                                       outline_width, outline_height);
-    } else {
-      name = "B";
-      macros.push_back(SoftMacro(outline_width * pin_access_th_,
-                                 outline_height  * pin_access_th_,
-                                 name));
-      fences[macros.size() - 1] = Rect(0.0, outline_height  * pin_access_th_,
-                                       outline_width, outline_height  * pin_access_th_);
-    }
-    soft_macro_id_map[name] = macros.size() - 1;
-  }
-
-  // handle fences and guides for hard macros
+  // Each cluster is modeled as Soft Macro
+  // The fences or guides for each cluster is created by merging
+  // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->GetChildren()) {
+    // for IO cluster
     if (cluster->GetIOClusterFlag() == true) {
-      macros.push_back(*cluster->GetSoftMacro());
-      soft_macro_id_map[cluster->GetName()] = macros.size() - 1;
+      soft_macro_id_map[cluster->GetName()] = macros.size();
+      macros.push_back(SoftMacro(std::pair<float, float>(cluster->GetX() - lx, 
+                                 cluster->GetY() - ly), cluster->GetName()));
       continue;
     }
+    // for other clusters
+    soft_macro_id_map[cluster->GetName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    SetInstProperty(cluster);
+    SetInstProperty(cluster); // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->SetSoftMacro(soft_macro);
-    soft_macro_id_map[cluster->GetName()] = macros.size() - 1;
     // merge fences and guides for hard macros within cluster
     if (cluster->GetClusterType() == StdCellCluster)
       continue;
@@ -1884,87 +1811,149 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
       if (guides_.find(hard_macro->GetName()) != guides_.end())
         guide.Merge(guides_[hard_macro->GetName()]);
     }
-    fence.Relocate(lx, ly, ux, uy);
-    guide.Relocate(lx, ly, ux, uy);
+    fence.Relocate(lx, ly, ux, uy); // calculate the overlap with outline
+    guide.Relocate(lx, ly, ux, uy); // calculate the overlap with outline
     if (fence.IsValid())
-      fences[macros.size() - 1] = fence;
+      fences[macros.size() - 1] = fence; // current macro id is macros.size() - 1
     if (guide.IsValid())
-      guides[macros.size() - 1] = guide;
+      guides[macros.size() - 1] = guide; // current macro id is macros.size() - 1
   }
-
-  // Determine the locations for each cluster
-  // set the action probabilities
-  const float action_sum  = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                            + exchange_swap_prob_ + resize_prob_;
-  // set the penalty weight
-  const float weight_sum   =  outline_weight_ + wirelength_weight_
-                              + guidance_weight_   + fence_weight_    
-                              + boundary_weight_   + notch_weight_;
-  // We vary the target utilization to generate different layouts
-  std::vector<float> target_util_list { target_util_ };
-  float util_step = (1.0 - target_util_) * 2 / num_runs_;  // change util by at most halfly
-  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
-    target_util_list.push_back(1.0 + i * util_step);
-    target_util_list.push_back(1.0 - i * util_step);
-  }
-
-  // Processing nets
-  // update the connections
-  std::vector<BundledNet> nets;
+  
+  // update the connnection
   CalculateConnection();
+  if (parent->GetParent() == nullptr) { 
+    // the parent cluster is not the root cluster
+    // First step model each pin access as the a dummy softmacro
+    // In our simulated annealing engine, the dummary softmacro will 
+    // no effect on SA
+    // We have four dummy SoftMacros based on our definition
+    std::vector<PinAccess> pins = {L, T, R, B};
+    for (auto& pin : pins) {
+      soft_macro_id_map[to_string(pin)] = macros.size();
+      macros.push_back(SoftMacro(0.0, 0.0, to_string(pin)));
+    }
+    // add the connections between pin access
+    for (auto& [src_pin, pin_map] : parent->GetBoundaryConnection()) 
+      for (auto& [target_pin, weight] : pin_map)
+        nets.push_back(BundledNet(soft_macro_id_map[to_string(src_pin)],
+                                  soft_macro_id_map[to_string(target_pin)], weight));
+  }
+  // convert the connections between clusters to SoftMacros
   for (auto& cluster : parent->GetChildren()) {
     const int src_id = cluster->GetId();
     const std::string src_name = cluster->GetName();
     for (auto& [cluster_id, weight] : cluster->GetConnection()) {
-      if (src_id >= cluster_id)
+      if (src_id >= cluster_id) // the connection graph is undirected
         continue;
       const std::string name = cluster_map_[cluster_id]->GetName();
-      if (soft_macro_id_map.find(name) == soft_macro_id_map.end()) {
-        // connection with pin access
-        const PinAccess pin_access = parent->GetPinAccess(cluster_id);
+      // if the connection with pin access
+      if (soft_macro_id_map.find(name) == soft_macro_id_map.end())
         nets.push_back(BundledNet(soft_macro_id_map[src_name],
-                       soft_macro_id_map[to_string(pin_access)], weight));
-      } else { // net between children clusters
+          soft_macro_id_map[to_string(parent->GetPinAccess(cluster_id))], weight));
+      else
         nets.push_back(BundledNet(soft_macro_id_map[src_name],
                                   soft_macro_id_map[name], weight));
-      }
     }
   }
+  // merge nets to reduce runtime
   MergeNets(nets);
+  if (parent->GetParent() == nullptr) {
+    // update the size of each pin access macro
+    // each pin access macro with have their fences
+    // check the net connection
+    std::map<int, float> net_map;
+    net_map[soft_macro_id_map[to_string(L)]] = 0.0;
+    net_map[soft_macro_id_map[to_string(T)]] = 0.0;
+    net_map[soft_macro_id_map[to_string(R)]] = 0.0;
+    net_map[soft_macro_id_map[to_string(B)]] = 0.0;
+    for (auto& net : nets) {
+      if (net_map.find(net.terminals.first) != net_map.end())
+        net_map[net.terminals.first] += net.weight;
+      if (net_map.find(net.terminals.second) != net_map.end())
+        net_map[net.terminals.second] += net.weight;
+    }
+    float h_size = outline_width * pin_access_th_;
+    float v_size = outline_height * pin_access_th_;
+    float L_size = std::min(outline_height, 
+                   outline_height * net_map[soft_macro_id_map[to_string(L)]] 
+                   * pin_access_net_width_ratio_);
+    float R_size = std::min(outline_height, 
+                   outline_height * net_map[soft_macro_id_map[to_string(R)]] 
+                   * pin_access_net_width_ratio_);
+    float B_size = std::min(outline_width, 
+                   outline_width * net_map[soft_macro_id_map[to_string(B)]] 
+                   * pin_access_net_width_ratio_);
+    float T_size = std::min(outline_width, 
+                   outline_width * net_map[soft_macro_id_map[to_string(T)]] 
+                   * pin_access_net_width_ratio_);
+    // update the size of pin access macro
+    if (L_size > 0) {
+      macros[soft_macro_id_map[to_string(L)]] = SoftMacro(h_size, L_size, to_string(L));
+      fences[soft_macro_id_map[to_string(L)]] = Rect(0.0, 0.0, h_size, outline_height);
+    }
+    if (R_size > 0) {
+      macros[soft_macro_id_map[to_string(R)]] = SoftMacro(h_size, R_size, to_string(R));
+      fences[soft_macro_id_map[to_string(R)]] = Rect(outline_width - h_size, 0.0, 
+                                                     outline_width, outline_height);
+    }
+    if (T_size > 0) {
+      macros[soft_macro_id_map[to_string(T)]] = SoftMacro(T_size, v_size, to_string(T));
+      fences[soft_macro_id_map[to_string(T)]] = Rect(0.0, outline_height - v_size, 
+                                                     outline_width, outline_height);
+    }
+    if (B_size > 0) {
+      macros[soft_macro_id_map[to_string(B)]] = SoftMacro(B_size, v_size, to_string(B));
+      fences[soft_macro_id_map[to_string(B)]] = Rect(0.0, 0.0, outline_width, v_size);
+    }
+  }
 
-
-  // Place each clusters in multithreads
-  std::vector<SACoreSoftMacro*> candidates;
+  // Call Simulated Annealing Engine to place children
+  // set the action probabilities
+  const float action_sum  = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
+                            + exchange_swap_prob_ + resize_prob_;
+  // set the penalty weight
+  const float weight_sum  = outline_weight_ + wirelength_weight_
+                            + guidance_weight_   + fence_weight_    
+                            + boundary_weight_   + notch_weight_;
+  // We vary the target utilization to generate different tilings
+  std::vector<float> target_util_list { target_util_ };
+  float vary_step = (1.0 - target_util_) * 2 / num_runs_; 
+  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
+    target_util_list.push_back(target_util_ + i * vary_step);
+    target_util_list.push_back(target_util_ - i * vary_step);
+  }
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
+                                    macros.size() : num_perturb_per_step_;
   int run_thread = num_threads_;
-  int remaining_runs = num_runs_;
+  int remaining_runs = target_util_list.size();
   int run_id = 0;
+  SACoreSoftMacro* best_sa = nullptr;
+  float best_cost = std::numeric_limits<float>::max();
   while (remaining_runs > 0) {
-    run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
     std::vector<SACoreSoftMacro*> sa_vector;
+    run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
     for (int i = 0; i < run_thread; i++) {
-      // determine the shapes of each SoftMacro
-      std::vector<SoftMacro> macros;
-      
-      const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                          macros.size() : num_perturb_per_step_;
-      // create SA core
-      SACoreSoftMacro* sa = new SACoreSoftMacro(outline_width, outline_height, macros,
-                                outline_weight_ / weight_sum, 
-                                wirelength_weight_ / weight_sum,
-                                guidance_weight_ / weight_sum,
-                                fence_weight_ / weight_sum,
-                                boundary_weight_ / weight_sum,
-                                notch_weight_ / weight_sum,
-                                notch_h_th_, notch_v_th_,
-                                pos_swap_prob_ / action_sum,
-                                neg_swap_prob_ / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
-                                resize_prob_ / action_sum,
-                                init_prob_, max_num_step_,
-                                num_perturb_per_step,
-                                k_, c_, random_seed_);
-      sa->SetNets(nets);
+      std::vector<SoftMacro> shaped_macros = macros; // copy for multithread
+      // determine the shape for each macro
+      ShapeChildrenCluster(parent, shaped_macros, soft_macro_id_map, 
+                                         target_util_list[run_id++]);
+      SACoreSoftMacro* sa = new SACoreSoftMacro(outline_width, outline_height, 
+                                                shaped_macros,
+                                                outline_weight_ / weight_sum,
+                                                wirelength_weight_ / weight_sum,
+                                                guidance_weight_ / weight_sum,
+                                                fence_weight_ / weight_sum,
+                                                boundary_weight_ / weight_sum,
+                                                notch_weight_ / weight_sum,
+                                                notch_h_th_, notch_v_th_,
+                                                pos_swap_prob_ / action_sum,
+                                                neg_swap_prob_ / action_sum,
+                                                double_swap_prob_ / action_sum,
+                                                exchange_swap_prob_ / action_sum,
+                                                resize_prob_ / action_sum,
+                                                init_prob_, max_num_step_,
+                                                num_perturb_per_step,
+                                                k_, c_, random_seed_);
       sa->SetFences(fences);
       sa->SetGuides(guides);
       sa_vector.push_back(sa);
@@ -1975,20 +1964,48 @@ void HierRTLMP::PlaceChildrenClusters(Cluster* parent)
       threads.push_back(std::thread(RunSA<SACoreSoftMacro>, sa));
     for (auto& th : threads)
       th.join();
-    for (auto& sa : sa_vector) 
-      if (sa->IsValid())
-        candidates.push_back(sa);
-      else
-        delete sa;
+    // add macro tilings
+    for (auto& sa : sa_vector) {
+      if (sa->IsValid() && sa->GetNormCost() < best_cost) {
+        best_cost = sa->GetNormCost();
+        best_sa = sa;
+      } else {
+        delete sa; // avoid memory leakage
+      }
+    }
     sa_vector.clear();
     remaining_runs -= run_thread;
   }
-   
-  // get
+  if (best_sa == nullptr) {
+    std::string line = "This is no valid tilings for cluster ";
+    line += parent->GetName();
+    logger_->error(MPL, 2032, line);      
+  } else {
+    std::vector<SoftMacro> shaped_macros;
+    best_sa->GetMacros(shaped_macros);
+    for (auto& cluster : parent->GetChildren()) 
+      *(cluster->GetSoftMacro()) = shaped_macros[soft_macro_id_map[cluster->GetName()]]; 
+    delete best_sa;
+  }
+  
+  // Call Path Synthesis to route buses
 
+
+  
+  // update the location of children cluster to their real location
+  for (auto& cluster : parent->GetChildren()) {
+    cluster->SetX(cluster->GetX() + lx);
+    cluster->SetY(cluster->GetY() + ly);
+  }
+
+  // Traverse the physical hierarchy tree in a DFS manner
+  for (auto& cluster : parent->GetChildren())
+    if (cluster->GetClusterType() == MixedCluster)
+      MultiLevelMacroPlacement(cluster);
+
+  // done this branch and update the cluster_id property back
+  SetInstProperty(parent);
 }
-
-
 
 // Merge nets to reduce runtime
 void HierRTLMP::MergeNets(std::vector<BundledNet>& nets)
@@ -2014,22 +2031,183 @@ void HierRTLMP::MergeNets(std::vector<BundledNet>& nets)
   nets = merged_nets;
 }
 
-
-// route buses within the parent cluster
-void HierRTLMP::CallPathSynthesis(Cluster* parent)
+// Determine the shape of each cluster based on target utilization
+void HierRTLMP::ShapeChildrenCluster(Cluster* parent, 
+                      std::vector<SoftMacro>& macros,
+        std::map<std::string, int>& soft_macro_id_map, 
+                                    float target_util)
 {
-  if (path_syn_flag_ == false)
-    return;
+  if (target_util > 1.0)
+    target_util = 1.0;
+  const float outline_width = parent->GetWidth();
+  const float outline_height = parent->GetHeight();
+  // (1) we need to calculate available space for std cells
+  float macro_area_tot = 0.0;
+  float std_cell_area_tot = 0.0;
+  for (auto& cluster : parent->GetChildren()) {
+    if (cluster->GetClusterType() == HardMacroCluster ||
+        cluster->GetClusterType() == MixedCluster) {
+      std::vector<std::pair<float, float> > shapes;
+      for (auto& shape : cluster->GetMacroTilings())
+        if (shape.first < outline_width && shape.second < outline_height)
+          shapes.push_back(shape);
+      if (shapes.size() == 0) {
+        std::string line = "This is not enough space in cluster ";
+        line += cluster->GetName();
+        logger_->error(MPL, 2029, line);      
+      } else {
+        macro_area_tot += shapes[0].first * shapes[0].second;
+        cluster->SetMacroTilings(shapes);
+      }
+    } 
+    std_cell_area_tot += cluster->GetStdCellArea();
+  } 
+  const float avail_space = parent->GetWidth() * parent->GetHeight() - macro_area_tot;
+  if (avail_space <= std_cell_area_tot) {
+    std::string line = "This is not enough space in cluster ";
+    line += parent->GetName();
+    logger_->error(MPL, 2028, line);
+  } else {
+    target_util = std::max(target_util, std_cell_area_tot / avail_space);
+  }
+
+  // set the shape for each macro
+  for (auto& cluster : parent->GetChildren()) {
+    if (cluster->GetIOClusterFlag() == true)
+      continue;
+    if (cluster->GetClusterType() == StdCellCluster) {
+      float area = cluster->GetArea() / target_util;
+      const float width = std::sqrt(area / min_ar_);
+      std::vector<std::pair<float, float> > width_list;
+      width_list.push_back(std::pair<float, float>(width, width));
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(width_list, area);
+    } else if (cluster->GetClusterType() == HardMacroCluster) {
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(cluster->GetMacroTilings());
+    } else { // Mixed cluster
+      float area = cluster->GetStdCellArea() / target_util;
+      const std::vector<std::pair<float, float> > tilings = cluster->GetMacroTilings();
+      std::vector<std::pair<float, float> > width_list;
+      area += tilings[0].first * tilings[0].second;
+      for (auto& shape : tilings)
+        width_list.push_back(std::pair<float, float>(shape.first, area / shape.second));
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(width_list, area);
+    }
+  }
 }
 
-// Determine the orientation and position of each hard macro
-// in each HardMacroCluster
-void HierRTLMP::PlaceHardMacros(Cluster* parent)
+
+// place macros within the HardMacroCluster
+void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
 {
-  if (parent->GetClusterType() != HardMacroCluster)
+  // Check if the cluster is a HardMacroCluster
+  if (cluster->GetClusterType() != HardMacroCluster)
     return;
+  
+  std::vector<HardMacro*> hard_macros = cluster->GetHardMacros();
+  if (hard_macros.size() > 1) {
+    // set the action probabilities
+    const float action_sum  = pos_swap_prob_ + neg_swap_prob_ 
+                              + double_swap_prob_  + exchange_swap_prob_;
+    // set the penalty weight
+    const float weight_sum  = outline_weight_  + guidance_weight_ + fence_weight_;
+    // get outline constraint
+    const float lx = cluster->GetX();
+    const float ly = cluster->GetY();
+    const float outline_width = cluster->GetWidth();
+    const float outline_height = cluster->GetHeight();
+    const float ux = lx + outline_width;
+    const float uy = ly + outline_height;
+    // We vary the outline of cluster to generate differnt tilings
+    std::vector<float> vary_factor_list { 1.0 };
+    float vary_step = 0.1 / num_runs_;  // change the outline by at most 10 percent
+    for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
+      vary_factor_list.push_back(1.0 + i * vary_step);
+      vary_factor_list.push_back(1.0 - i * vary_step);
+    }
+    std::vector<HardMacro> macros;
+    for (auto& macro : hard_macros)
+      macros.push_back(*macro);
+    const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
+                                      macros.size() : num_perturb_per_step_;
+    // set fences and guides
+    std::map<int, Rect> fences;
+    std::map<int, Rect> guides;
+    for (int i = 0; i < hard_macros.size(); i++) {
+      if (fences_.find(hard_macros[i]->GetName()) != fences_.end()) {
+        fences[i] = fences_[hard_macros[i]->GetName()];
+        fences[i].Relocate(lx, ly, ux, uy); // calculate the overlap with outline
+      }
+      if (guides_.find(hard_macros[i]->GetName()) != guides_.end()) {
+        guides[i] = guides_[hard_macros[i]->GetName()];
+        guides[i].Relocate(lx, ly, ux, uy); // calculate the overlap with outline
+      }
+    }
+    int run_thread = num_threads_;
+    int remaining_runs = num_runs_;
+    int run_id = 0;
+    SACoreHardMacro* best_sa = nullptr;
+    float best_cost = std::numeric_limits<float>::max();
+    while (remaining_runs > 0) {
+      std::vector<SACoreHardMacro*> sa_vector;
+      run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+      for (int i = 0; i < run_thread; i++) {
+        const float width = outline_width * vary_factor_list[run_id++];
+        const float height = outline_width * outline_height / width;
+        SACoreHardMacro* sa = new SACoreHardMacro(width, height, macros,
+                                            outline_weight_ / weight_sum, 0.0,
+                                            guidance_weight_ / weight_sum,
+                                            fence_weight_ / weight_sum,
+                                            pos_swap_prob_ / action_sum,
+                                            neg_swap_prob_ / action_sum,
+                                            double_swap_prob_ / action_sum,
+                                            exchange_swap_prob_ / action_sum,
+                                            0.0, // no flip   
+                                            init_prob_, max_num_step_,
+                                            num_perturb_per_step,
+                                            k_, c_, random_seed_);
+        sa->SetFences(fences);
+        sa->SetGuides(guides);
+        sa_vector.push_back(sa);
+      }
+      // multi threads 
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector)
+        threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
+      for (auto& th : threads)
+        th.join();
+      // add macro tilings
+      for (auto& sa : sa_vector) {
+        if (sa->IsValid() && sa->GetNormCost() < best_cost) {
+          best_cost = sa->GetNormCost();
+          best_sa = sa;
+        } else {
+          delete sa; // avoid memory leakage
+        }
+      }
+      sa_vector.clear();
+      remaining_runs -= run_thread;
+    }
+    // update the hard macro
+    if (best_sa == nullptr) {
+      std::string line = "This is no valid tilings for cluster ";
+      line += cluster->GetName();
+      logger_->error(MPL, 2033, line);      
+    } else {
+      std::vector<HardMacro> best_macros;
+      best_sa->GetMacros(best_macros);
+      for (int i = 0; i < hard_macros.size(); i++)
+        *(hard_macros[i]) = best_macros[i];
+      delete best_sa;
+    }
+  }    
+  // change the orientation of macros to face std cell clusters
+  for (auto& hard_macro : hard_macros)
+    hard_macro->UpdateDb(pitch_x_, pitch_y_);
+  // done this branch and update the cluster_id property back
+  //SetInstProperty(parent);
 }
-*/
+
+
 
 
 }  // namespace mpl

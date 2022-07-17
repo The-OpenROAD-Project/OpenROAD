@@ -99,6 +99,11 @@ bool ComparePairFirst(std::pair<float, float> p1, std::pair<float, float> p2)
   return p1.first < p2.first;
 }
 
+// Compare two intervals according to the product
+bool ComparePairProduct(std::pair<float, float> p1, std::pair<float, float> p2)
+{
+  return p1.first * p1.second < p2.first * p2.second;
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Metric Class
@@ -165,6 +170,11 @@ float Metric::GetStdCellArea() const
 float Metric::GetMacroArea() const 
 {
   return macro_area_;
+}
+
+float Metric::GetArea() const 
+{
+  return std_cell_area_ + macro_area_;
 }
 
 float Metric::GetInflatStdCellArea() const 
@@ -361,6 +371,21 @@ int Cluster::GetNumMacro() const
   return metric_.GetNumMacro();
 }
 
+float Cluster::GetArea() const
+{
+  return metric_.GetArea();
+}
+
+float Cluster::GetStdCellArea() const
+{
+  return metric_.GetStdCellArea();
+}
+
+float Cluster::GetMacroArea() const
+{
+  return metric_.GetMacroArea();
+}
+
 // Physical location support
 float Cluster::GetWidth() const 
 {
@@ -392,6 +417,18 @@ float Cluster::GetY() const
     return 0.0;
   else
     return soft_macro_->GetY();
+}
+
+void Cluster::SetX(float x)  
+{
+  if (soft_macro_ != nullptr)
+    soft_macro_->SetX(x);
+}
+
+void Cluster::SetY(float y)  
+{
+  if (soft_macro_ != nullptr)
+    soft_macro_->SetX(y);
 }
 
 const std::pair<float, float> Cluster::GetLocation() const 
@@ -563,6 +600,26 @@ PinAccess Cluster::GetPinAccess(int cluster_id)
 const std::map<int, PinAccess> Cluster::GetPinAccessMap() const
 {
   return pin_access_map_;
+}
+
+
+const std::map<PinAccess, std::map<PinAccess, float> > Cluster::GetBoundaryConnection() const 
+{
+  return boundary_connection_map_;
+}
+
+void Cluster::AddBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net)
+{
+  if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
+    std::map<PinAccess, float> pin_map;
+    pin_map[pin_b] = num_net;
+    boundary_connection_map_[pin_a] = pin_map;
+  } else {
+    if (boundary_connection_map_[pin_a].find(pin_b) == boundary_connection_map_[pin_a].end())
+      boundary_connection_map_[pin_a][pin_b] = num_net;
+    else
+      boundary_connection_map_[pin_a][pin_b] += num_net;
+  }
 }
 
 

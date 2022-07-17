@@ -99,7 +99,7 @@ class SimulatedAnnealingCore {
     float GetNormGuidancePenalty() const;
     float GetFencePenalty() const;
     float GetNormFencePenalty() const;
-    std::vector<T> GetMacros() const;
+    void GetMacros(std::vector<T>& macros) const;
 
     // Initialize the SA worker
     virtual void Initialize(); 

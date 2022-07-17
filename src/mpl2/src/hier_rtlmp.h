@@ -133,9 +133,14 @@ class HierRTLMP {
     
     
     float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+    float pin_access_net_width_ratio_ = 0.0; // define the ratio of number of connections 
+                                             // related to IOs to the range of these IO spans
     float notch_v_th_ = 20.0;
     float notch_h_th_ = 20.0;
 
+    float snap_layer_ = 4;
+    float pitch_x_    = 0.0;
+    float pitch_y_    = 0.0;
 
     // SA related parameters
     // weight for different penalty
@@ -275,10 +280,23 @@ class HierRTLMP {
     // Determine the macro tilings within each cluster in a bottom-up manner
     // (Post-Order DFS manner)
     void CalClusterMacroTilings(Cluster* root_cluster);
+    // calculate the pin blockage for IO pins
+    void CreatePinBlockage();
     // Determine the macro tilings for each HardMacroCluster
     // multi thread enabled
     // random seed deterministic enabled
     void CalHardMacroClusterShape(Cluster* cluster);
+    // The cluster placement is done in a top-down manner
+    // (Preorder DFS)
+    void MultiLevelMacroPlacement(Cluster* parent);
+    // place macros within the HardMacroCluster
+    void HardMacroClusterMacroPlacement(Cluster* parent);
+    // Merge nets to reduce runtime
+    void MergeNets(std::vector<BundledNet>& nets);
+    // determine the shape for children cluster
+    void ShapeChildrenCluster(Cluster* parent, std::vector<SoftMacro>& macros,
+             std::map<std::string, int>& soft_macro_id_map, float target_util);
+
 
     /*
     // Place macros in a hierarchical mode based on the above
