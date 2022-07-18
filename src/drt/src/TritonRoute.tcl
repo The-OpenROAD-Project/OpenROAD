@@ -62,7 +62,7 @@ sta::define_cmd_args "detailed_route" {
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap -output_guide_coverage \
+    keys {-param -output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume -cloud_size -min_access_points} \
