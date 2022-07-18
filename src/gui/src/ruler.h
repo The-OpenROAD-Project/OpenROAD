@@ -34,6 +34,7 @@
 
 #include <memory>
 #include <vector>
+
 #include "gui/gui.h"
 
 namespace odb {
@@ -46,26 +47,37 @@ namespace gui {
 class Ruler
 {
  public:
-  Ruler(const odb::Point& pt0, const odb::Point& pt1, const std::string& name = "", const std::string& label = "");
+  Ruler(const odb::Point& pt0,
+        const odb::Point& pt1,
+        const std::string& name = "",
+        const std::string& label = "");
 
   odb::Point& getPt0() { return pt0_; }
   const odb::Point getPt0() const { return pt0_; }
   odb::Point& getPt1() { return pt1_; }
   const odb::Point getPt1() const { return pt1_; }
+  const odb::Point getManhattanJoinPt() const;
+  static const odb::Point getManhattanJoinPt(const odb::Point& pt0,
+                                             const odb::Point& pt1);
   const std::string getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
   const std::string getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
+  bool isEuclidian() const { return euclidian_; }
+  void setEuclidian(bool euclidian) { euclidian_ = euclidian; }
+  double getLength() const;
 
   std::string getTclCommand(double dbu_to_microns) const;
 
   bool fuzzyIntersection(const odb::Rect& region, int margin) const;
 
-  bool operator ==(const Ruler& other) const;
+  bool operator==(const Ruler& other) const;
 
  private:
   odb::Point pt0_;
   odb::Point pt1_;
+
+  bool euclidian_;
 
   std::string name_;
   std::string label_;
@@ -74,7 +86,8 @@ class Ruler
 class RulerDescriptor : public Descriptor
 {
  public:
-  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers, odb::dbDatabase* db);
+  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
+                  odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -93,7 +106,10 @@ class RulerDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);
+  static bool editPoint(std::any value,
+                        int dbu_per_uu,
+                        odb::Point& pt,
+                        bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   odb::dbDatabase* db_;

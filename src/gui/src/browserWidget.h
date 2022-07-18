@@ -35,21 +35,19 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include "layoutViewer.h"
-
 #include <QDockWidget>
 #include <QMenu>
-#include <QTreeView>
 #include <QSettings>
 #include <QStandardItemModel>
-
+#include <QTreeView>
 #include <array>
 #include <memory>
 
+#include "db_sta/dbNetwork.hh"
+#include "gui/gui.h"
+#include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "db_sta/dbNetwork.hh"
 
 namespace sta {
 class dbSta;
@@ -58,196 +56,197 @@ class dbSta;
 namespace gui {
 class DbInstDescriptor;
 
-class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public sta::dbNetworkObserver
+class BrowserWidget : public QDockWidget,
+                      public odb::dbBlockCallBackObj,
+                      public sta::dbNetworkObserver
 {
   Q_OBJECT
 
-  public:
-    BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings,
-                  QWidget* parent = nullptr);
+ public:
+  BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+                    modulesettings,
+                QWidget* parent = nullptr);
 
-    void setSTA(sta::dbSta* sta);
-    void setDBInstDescriptor(DbInstDescriptor* desciptor);
+  void setSTA(sta::dbSta* sta);
+  void setDBInstDescriptor(DbInstDescriptor* desciptor);
 
-    void readSettings(QSettings* settings);
-    void writeSettings(QSettings* settings);
+  void readSettings(QSettings* settings);
+  void writeSettings(QSettings* settings);
 
-    bool eventFilter(QObject* obj, QEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
-    // dbBlockCallBackObj
-    virtual void inDbInstCreate(odb::dbInst*) override;
-    virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
-    virtual void inDbInstDestroy(odb::dbInst*) override;
-    virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  // dbBlockCallBackObj
+  virtual void inDbInstCreate(odb::dbInst*) override;
+  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  virtual void inDbInstDestroy(odb::dbInst*) override;
+  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
 
-    // API from dbNetworkObserver
-    virtual void postReadLiberty() override;
-    virtual void postReadDb() override;
+  // API from dbNetworkObserver
+  virtual void postReadLiberty() override;
+  virtual void postReadDb() override;
 
-    // from QT
-    virtual void paintEvent(QPaintEvent* event) override;
+  // from QT
+  virtual void paintEvent(QPaintEvent* event) override;
 
-  signals:
-    void select(const SelectionSet& selected);
-    void removeSelect(const Selected& selected);
-    void highlight(const SelectionSet& selected);
-    void removeHighlight(const Selected& selected);
+ signals:
+  void select(const SelectionSet& selected);
+  void removeSelect(const Selected& selected);
+  void highlight(const SelectionSet& selected);
+  void removeHighlight(const Selected& selected);
 
-    void updateModuleVisibility(odb::dbModule* module, bool visible);
-    void updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected);
+  void updateModuleVisibility(odb::dbModule* module, bool visible);
+  void updateModuleColor(odb::dbModule* module,
+                         const QColor& color,
+                         bool user_selected);
 
-  public slots:
-    void setBlock(odb::dbBlock* block);
-    void clicked(const QModelIndex& index);
-    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+ public slots:
+  void setBlock(odb::dbBlock* block);
+  void clicked(const QModelIndex& index);
+  void selectionChanged(const QItemSelection& selected,
+                        const QItemSelection& deselected);
 
-  protected:
-    void showEvent(QShowEvent* event) override;
-    void hideEvent(QHideEvent* event) override;
+ protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
-  private slots:
-    void itemContextMenu(const QPoint &point);
-    void itemChanged(QStandardItem* item);
+ private slots:
+  void itemContextMenu(const QPoint& point);
+  void itemChanged(QStandardItem* item);
 
-    void itemCollapsed(const QModelIndex& index);
-    void itemExpanded(const QModelIndex& index);
-    void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
+  void itemCollapsed(const QModelIndex& index);
+  void itemExpanded(const QModelIndex& index);
+  void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
 
-  private:
-    void updateModel();
-    void clearModel();
-    void markModelModified();
+ private:
+  void updateModel();
+  void clearModel();
+  void markModelModified();
 
-    void makeMenu();
+  void makeMenu();
 
-    Selected getSelectedFromIndex(const QModelIndex& index);
+  Selected getSelectedFromIndex(const QModelIndex& index);
 
-    void toggleParent(QStandardItem* item);
+  void toggleParent(QStandardItem* item);
 
-    odb::dbBlock* block_;
-    sta::dbSta* sta_;
-    DbInstDescriptor* inst_descriptor_;
+  odb::dbBlock* block_;
+  sta::dbSta* sta_;
+  DbInstDescriptor* inst_descriptor_;
 
-    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
+  const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
 
-    QTreeView* view_;
-    QStandardItemModel* model_;
-    bool model_modified_;
+  QTreeView* view_;
+  QStandardItemModel* model_;
+  bool model_modified_;
 
-    bool ignore_selection_;
+  bool ignore_selection_;
 
-    QMenu* menu_;
-    Selected menu_item_;
-    std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
-    std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
-    SelectionSet getMenuItemChildren();
+  QMenu* menu_;
+  Selected menu_item_;
+  std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
+  std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
+  SelectionSet getMenuItemChildren();
 
-    void updateChildren(odb::dbModule* module, const QColor& color);
-    void resetChildren(odb::dbModule* module);
+  void updateChildren(odb::dbModule* module, const QColor& color);
+  void resetChildren(odb::dbModule* module);
 
-    std::map<odb::dbModule*, QStandardItem*> modulesmap_;
+  std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 
-    struct ModuleStats {
-      int64_t area;
-      int macros;
-      int insts;
-      int modules;
+  struct ModuleStats
+  {
+    int64_t area;
+    int macros;
+    int insts;
+    int modules;
 
-      int hier_macros;
-      int hier_insts;
-      int hier_modules;
+    int hier_macros;
+    int hier_insts;
+    int hier_modules;
 
-      ModuleStats()
-      {
-        area = 0;
-        macros = 0;
-        insts = 0;
-        modules = 0;
+    ModuleStats()
+    {
+      area = 0;
+      macros = 0;
+      insts = 0;
+      modules = 0;
 
-        resetInstances();
-        resetMacros();
-        resetModules();
-      }
+      resetInstances();
+      resetMacros();
+      resetModules();
+    }
 
-      void incrementInstances()
-      {
-        insts++;
-        hier_insts++;
-      }
+    void incrementInstances()
+    {
+      insts++;
+      hier_insts++;
+    }
 
-      void resetInstances()
-      {
-        hier_insts = 0;
-      }
+    void resetInstances() { hier_insts = 0; }
 
-      void incrementMacros()
-      {
-        macros++;
-        hier_macros++;
-      }
+    void incrementMacros()
+    {
+      macros++;
+      hier_macros++;
+    }
 
-      void resetMacros()
-      {
-        hier_macros = 0;
-      }
+    void resetMacros() { hier_macros = 0; }
 
-      void incrementModules()
-      {
-        modules++;
-        hier_modules++;
-      }
+    void incrementModules()
+    {
+      modules++;
+      hier_modules++;
+    }
 
-      void resetModules()
-      {
-        hier_modules = 0;
-      }
+    void resetModules() { hier_modules = 0; }
 
-      ModuleStats& operator+=(const ModuleStats& other)
-      {
-        area += other.area;
-        macros += other.macros;
-        insts += other.insts;
-        modules += other.modules;
+    ModuleStats& operator+=(const ModuleStats& other)
+    {
+      area += other.area;
+      macros += other.macros;
+      insts += other.insts;
+      modules += other.modules;
 
-        hier_macros += other.hier_macros;
-        hier_insts += other.hier_insts;
-        hier_modules += other.hier_modules;
+      hier_macros += other.hier_macros;
+      hier_insts += other.hier_insts;
+      hier_modules += other.hier_modules;
 
-        return *this;
-      }
+      return *this;
+    }
 
-      friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
-      {
-        lhs += other;
+    friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
+    {
+      lhs += other;
 
-        return lhs;
-      }
-    };
+      return lhs;
+    }
+  };
 
-    ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
+  ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
-    ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
-    ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
-                                 const std::string& title,
-                                 QStandardItem* parent);
-    ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand);
+  ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
+  ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
+                               const std::string& title,
+                               QStandardItem* parent);
+  ModuleStats addModuleItem(odb::dbModule* module,
+                            QStandardItem* parent,
+                            bool expand);
 
-    const QIcon makeModuleIcon(const QColor& color);
+  const QIcon makeModuleIcon(const QColor& color);
 
-    void makeRowItems(QStandardItem* item,
-                      const std::string& master,
-                      const ModuleStats& stats,
-                      QStandardItem* parent,
-                      bool is_leaf) const;
+  void makeRowItems(QStandardItem* item,
+                    const std::string& master,
+                    const ModuleStats& stats,
+                    QStandardItem* parent,
+                    bool is_leaf) const;
 
-    enum Columns {
-      Instance,
-      Master,
-      Instances,
-      Macros,
-      Modules,
-      Area
-    };
+  enum Columns
+  {
+    Instance,
+    Master,
+    Instances,
+    Macros,
+    Modules,
+    Area
+  };
 };
 
 }  // namespace gui

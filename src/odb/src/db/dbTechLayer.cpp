@@ -915,14 +915,16 @@ uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  int sz = _two_widths_sp_idx.size();
-  for (int i = 0; i < sz; i++) {
-    if (width <= _two_widths_sp_idx[i])
-      return std::max(0, i - 1);
-    if (_two_widths_sp_prl[i] != -1 && prl <= _two_widths_sp_prl[i])
-      return std::max(0, i - 1);
+  auto pos = std::lower_bound(_two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
+  if(pos != _two_widths_sp_idx.begin())
+    --pos;
+  int idx = std::max(0, (int) std::distance(_two_widths_sp_idx.begin(), pos));
+  for(; idx >= 0; idx--)
+  {
+    if (prl >= _two_widths_sp_prl[idx])
+      return idx;
   }
-  return sz - 1;
+  return 0;
 }
 // User Code End PrivateMethods
 
@@ -1626,9 +1628,10 @@ int dbTechLayer::findTwSpacing(const int width1,
 {
   if (!hasTwoWidthsSpacingRules())
     return 0;
+  auto reqPrl = std::max(0, prl);
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  auto rowIdx = layer->getTwIdx(width1, prl);
-  auto colIdx = layer->getTwIdx(width2, prl);
+  auto rowIdx = layer->getTwIdx(width1, reqPrl);
+  auto colIdx = layer->getTwIdx(width2, reqPrl);
   return layer->_two_widths_sp_spacing(rowIdx, colIdx);
 }
 

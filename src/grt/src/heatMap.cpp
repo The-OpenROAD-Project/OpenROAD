@@ -34,9 +34,11 @@
 
 namespace grt {
 
-RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger) :
+RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db) :
     gui::HeatMapDataSource(logger, "Routing Congestion", "Routing", "RoutingCongestion"),
-    direction_(ALL)
+    db_(db),
+    direction_(ALL),
+    layer_(nullptr)
 {
   addMultipleChoiceSetting("Direction",
                            "Direction:",
@@ -61,6 +63,36 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger) :
                                direction_ = VERTICAL;
                              } else {
                                direction_ = ALL; // default to all
+                             }
+                           });
+  addMultipleChoiceSetting("Layer",
+                           "Layer:",
+                           [this]() {
+                             std::vector<std::string> layers{"All"};
+                             auto* tech = db_->getTech();
+                             if (tech == nullptr) {
+                              return layers;
+                             }
+                             for (auto* layer : tech->getLayers()) {
+                               if (layer->getRoutingLevel() != 0) {
+                                 layers.push_back(layer->getName());
+                               }
+                             }
+                             return layers;
+                           },
+                           [this]() -> std::string {
+                             if (layer_ == nullptr) {
+                               return "All"; // default to all
+                             } else {
+                               return layer_->getName();
+                             }
+                           },
+                           [this](const std::string& value) {
+                            auto* tech = db_->getTech();
+                             if (value == "All" || tech == nullptr) {
+                               layer_ = nullptr;
+                             } else {
+                               layer_ = tech->findLayer(value.c_str());
                              }
                            });
 }
@@ -120,7 +152,7 @@ bool RoutingCongestionDataSource::populateMap()
     return false;
   }
 
-  auto gcell_congestion_data = grid->getCongestionMap();
+  auto gcell_congestion_data = grid->getCongestionMap(layer_);
   if (gcell_congestion_data.empty()) {
     return false;
   }

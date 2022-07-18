@@ -34,17 +34,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "browserWidget.h"
-#include "dbDescriptors.h"
 
 #include <QColorDialog>
-#include <QHeaderView>
 #include <QEvent>
+#include <QHeaderView>
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
 
-#include "utl/Logger.h"
+#include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
 Q_DECLARE_METATYPE(odb::dbModule*);
@@ -54,8 +54,10 @@ namespace gui {
 
 ///////
 
-BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings,
-                             QWidget* parent)
+BrowserWidget::BrowserWidget(
+    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+        modulesettings,
+    QWidget* parent)
     : QDockWidget("Hierarchy Browser", parent),
       block_(nullptr),
       sta_(nullptr),
@@ -69,7 +71,8 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
 {
   setObjectName("hierarchy_viewer");  // for settings
 
-  model_->setHorizontalHeaderLabels({"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
+  model_->setHorizontalHeaderLabels(
+      {"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -108,10 +111,11 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
           this,
           SLOT(itemExpanded(const QModelIndex&)));
 
-  connect(view_->selectionModel(),
-          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-          this,
-          SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+  connect(
+      view_->selectionModel(),
+      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+      this,
+      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
 
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -126,91 +130,73 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
 
 void BrowserWidget::makeMenu()
 {
-  connect(menu_->addAction("Select"),
-          &QAction::triggered,
-          [&](bool) {
-            emit select({menu_item_});
-          });
-  connect(menu_->addAction("Select children"),
-          &QAction::triggered,
-          [&](bool) {
-            emit select(getMenuItemChildren());
-          });
-  connect(menu_->addAction("Select all"),
-          &QAction::triggered,
-          [&](bool) {
-            auto children = getMenuItemChildren();
-            children.insert(menu_item_);
-            emit select(children);
-          });
+  connect(menu_->addAction("Select"), &QAction::triggered, [&](bool) {
+    emit select({menu_item_});
+  });
+  connect(menu_->addAction("Select children"), &QAction::triggered, [&](bool) {
+    emit select(getMenuItemChildren());
+  });
+  connect(menu_->addAction("Select all"), &QAction::triggered, [&](bool) {
+    auto children = getMenuItemChildren();
+    children.insert(menu_item_);
+    emit select(children);
+  });
   connect(menu_->addAction("Remove from selected"),
           &QAction::triggered,
-          [&](bool) {
-            emit removeSelect(menu_item_);
-          });
+          [&](bool) { emit removeSelect(menu_item_); });
 
   menu_->addSeparator();
 
-  connect(menu_->addAction("Highlight"),
-          &QAction::triggered,
-          [&](bool) {
-            emit highlight({menu_item_});
-          });
+  connect(menu_->addAction("Highlight"), &QAction::triggered, [&](bool) {
+    emit highlight({menu_item_});
+  });
   connect(menu_->addAction("Highlight children"),
           &QAction::triggered,
-          [&](bool) {
-            emit highlight(getMenuItemChildren());
-          });
-  connect(menu_->addAction("Highlight all"),
-          &QAction::triggered,
-          [&](bool) {
-            auto children = getMenuItemChildren();
-            children.insert(menu_item_);
-            emit highlight(children);
-          });
+          [&](bool) { emit highlight(getMenuItemChildren()); });
+  connect(menu_->addAction("Highlight all"), &QAction::triggered, [&](bool) {
+    auto children = getMenuItemChildren();
+    children.insert(menu_item_);
+    emit highlight(children);
+  });
   connect(menu_->addAction("Remove from highlight"),
           &QAction::triggered,
-          [&](bool) {
-            emit removeHighlight(menu_item_);
-          });
+          [&](bool) { emit removeHighlight(menu_item_); });
 
   menu_->addSeparator();
 
-  connect(menu_->addAction("Change color"),
-          &QAction::triggered,
-          [&](bool) {
-            auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
-            if (module == nullptr) {
-              return;
-            }
+  connect(menu_->addAction("Change color"), &QAction::triggered, [&](bool) {
+    auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
+    if (module == nullptr) {
+      return;
+    }
 
-            auto& setting = modulesettings_.at(module);
-            QColor color = setting.color;
+    auto& setting = modulesettings_.at(module);
+    QColor color = setting.color;
 
-            color = QColorDialog::getColor(color, this, "Module color", QColorDialog::ShowAlphaChannel);
-            if (color.isValid()) {
-              emit updateModuleColor(module, color, true);
-            }
-          });
-  connect(menu_->addAction("Reset color"),
-          &QAction::triggered,
-          [&](bool) {
-            auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
-            if (module == nullptr) {
-              return;
-            }
+    color = QColorDialog::getColor(
+        color, this, "Module color", QColorDialog::ShowAlphaChannel);
+    if (color.isValid()) {
+      emit updateModuleColor(module, color, true);
+    }
+  });
+  connect(menu_->addAction("Reset color"), &QAction::triggered, [&](bool) {
+    auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
+    if (module == nullptr) {
+      return;
+    }
 
-            auto& setting = modulesettings_.at(module);
-            QColor color = setting.orig_color;
+    auto& setting = modulesettings_.at(module);
+    QColor color = setting.orig_color;
 
-            emit updateModuleColor(module, color, true);
-          });
+    emit updateModuleColor(module, color, true);
+  });
 }
 
 void BrowserWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
-  view_->header()->restoreState(settings->value("headers", view_->header()->saveState()).toByteArray());
+  view_->header()->restoreState(
+      settings->value("headers", view_->header()->saveState()).toByteArray());
   settings->endGroup();
 }
 
@@ -251,7 +237,8 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
   return Selected();
 }
 
-void BrowserWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+void BrowserWidget::selectionChanged(const QItemSelection& selected,
+                                     const QItemSelection& deselected)
 {
   auto indexes = selected.indexes();
   if (indexes.isEmpty()) {
@@ -348,7 +335,8 @@ void BrowserWidget::clearModel()
   modulesmap_.clear();
 }
 
-BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
+                                                         QStandardItem* parent)
 {
   ModuleStats stats;
   for (auto* child : module->getChildren()) {
@@ -366,18 +354,20 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, 
   return stats;
 }
 
-BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(const std::vector<odb::dbInst*>& insts,
-                                                           const std::string& title,
-                                                           QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
+    const std::vector<odb::dbInst*>& insts,
+    const std::string& title,
+    QStandardItem* parent)
 {
-  auto make_leaf_item = [] (const std::string& title) -> QStandardItem* {
+  auto make_leaf_item = [](const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
     leaf->setEditable(false);
     leaf->setSelectable(false);
     return leaf;
   };
 
-  struct Leaf {
+  struct Leaf
+  {
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
@@ -386,7 +376,8 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(const std::vector<odb
     auto type = inst_descriptor_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
-      leaf_parent.item = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+      leaf_parent.item
+          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
     }
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item);
   }
@@ -408,7 +399,8 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(const std::vector<odb
   return total;
 }
 
-BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
+                                                          QStandardItem* parent)
 {
   QStandardItem* item = new QStandardItem(inst->getConstName());
   item->setEditable(false);
@@ -431,7 +423,9 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst, QSt
   return stats;
 }
 
-BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand)
+BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module,
+                                                        QStandardItem* parent,
+                                                        bool expand)
 {
   auto* inst = module->getModInst();
   QString item_name;
@@ -472,20 +466,23 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
-  QLocale locale(QLocale::English); // for number formatting
+  QLocale locale(QLocale::English);  // for number formatting
 
-  double scale_to_um = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
+  double scale_to_um
+      = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
-  QString units = "\u03BC"; // mu
+  QString units = "\u03BC";  // mu
   double disp_area = stats.area / scale_to_um;
   if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
-  QString text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
+  QString text
+      = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
-  auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
+  auto makeDataItem
+      = [item](const QString& text, bool right_align = true) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
     data_item->setEditable(false);
     if (right_align) {
@@ -495,7 +492,8 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     return data_item;
   };
 
-  auto makeHierText = [&locale](int current, int total, bool is_leaf) -> QString {
+  auto makeHierText
+      = [&locale](int current, int total, bool is_leaf) -> QString {
     if (!is_leaf) {
       return locale.toString(current) + "/" + locale.toString(total);
     } else {
@@ -503,15 +501,19 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     }
   };
 
-  QStandardItem* master_item = makeDataItem(QString::fromStdString(master), false);
+  QStandardItem* master_item
+      = makeDataItem(QString::fromStdString(master), false);
 
   QStandardItem* area = makeDataItem(text);
 
-  QStandardItem* insts = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
+  QStandardItem* insts
+      = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
 
-  QStandardItem* macros = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
+  QStandardItem* macros
+      = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
 
-  QStandardItem* modules = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
+  QStandardItem* modules
+      = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
 
   parent->appendRow({item, master_item, insts, macros, modules, area});
 }
@@ -536,7 +538,7 @@ void BrowserWidget::inDbInstSwapMasterAfter(odb::dbInst*)
   markModelModified();
 }
 
-void BrowserWidget::itemContextMenu(const QPoint &point)
+void BrowserWidget::itemContextMenu(const QPoint& point)
 {
   const QModelIndex index = view_->indexAt(point);
 
@@ -614,12 +616,14 @@ void BrowserWidget::toggleParent(QStandardItem* item)
     }
   }
 
-  const bool all_on = std::all_of(childstates.begin(), childstates.end(), [](Qt::CheckState state) {
-    return state == Qt::Checked;
-  });
-  const bool all_off = std::all_of(childstates.begin(), childstates.end(), [](Qt::CheckState state) {
-    return state == Qt::Unchecked;
-  });
+  const bool all_on = std::all_of(
+      childstates.begin(), childstates.end(), [](Qt::CheckState state) {
+        return state == Qt::Checked;
+      });
+  const bool all_off = std::all_of(
+      childstates.begin(), childstates.end(), [](Qt::CheckState state) {
+        return state == Qt::Unchecked;
+      });
 
   if (all_on) {
     parent->setCheckState(Qt::Checked);
@@ -704,7 +708,8 @@ void BrowserWidget::resetChildren(odb::dbModule* module)
   }
 }
 
-void BrowserWidget::updateModuleColorIcon(odb::dbModule* module, const QColor& color)
+void BrowserWidget::updateModuleColorIcon(odb::dbModule* module,
+                                          const QColor& color)
 {
   auto* item = modulesmap_[module];
   item->setIcon(makeModuleIcon(color));

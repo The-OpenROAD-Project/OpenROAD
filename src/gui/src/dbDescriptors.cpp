@@ -32,22 +32,20 @@
 
 #include "dbDescriptors.h"
 
-#include "db.h"
-#include "dbShape.h"
-
-#include "db_sta/dbSta.hh"
-#include "db_sta/dbNetwork.hh"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
-
 #include <QInputDialog>
 #include <QStringList>
-
 #include <iomanip>
 #include <limits>
 #include <queue>
 #include <regex>
 #include <sstream>
+
+#include "db.h"
+#include "dbShape.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 namespace gui {
 
@@ -133,29 +131,32 @@ static std::string convertUnits(double value, bool area = false)
 }
 
 // renames an object
-template<typename T>
+template <typename T>
 static void addRenameEditor(T obj, Descriptor::Editors& editor)
 {
-  editor.insert({"Name", Descriptor::makeEditor([obj](std::any value) {
-    const std::string new_name = std::any_cast<std::string>(value);
-    // check if empty
-    if (new_name.empty()) {
-      return false;
-    }
-    // check for illegal characters
-    for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
-      if (new_name.find(ch) != std::string::npos) {
-        return false;
-      }
-    }
-    obj->rename(new_name.c_str());
-    return true;
-  })});
+  editor.insert(
+      {"Name", Descriptor::makeEditor([obj](std::any value) {
+         const std::string new_name = std::any_cast<std::string>(value);
+         // check if empty
+         if (new_name.empty()) {
+           return false;
+         }
+         // check for illegal characters
+         for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
+           if (new_name.find(ch) != std::string::npos) {
+             return false;
+           }
+         }
+         obj->rename(new_name.c_str());
+         return true;
+       })});
 }
 
 // timing cone actions
-template<typename T>
-static void addTimingActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
+template <typename T>
+static void addTimingActions(T obj,
+                             const Descriptor* desc,
+                             Descriptor::Actions& actions)
 {
   if (obj->getSigType().isSupply()) {
     // no timing actions needed
@@ -164,34 +165,38 @@ static void addTimingActions(T obj, const Descriptor* desc, Descriptor::Actions&
 
   auto* gui = Gui::get();
 
-  actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
-    gui->timingCone(static_cast<T>(nullptr), false, false);
-    return desc->makeSelected(obj, nullptr);
-  }});
+  actions.push_back(
+      {std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
+         gui->timingCone(static_cast<T>(nullptr), false, false);
+         return desc->makeSelected(obj, nullptr);
+       }});
   actions.push_back({"Fanin Cone", [obj, desc, gui]() {
-    gui->timingCone(obj, true, false);
-    return desc->makeSelected(obj, nullptr);
-  }});
+                       gui->timingCone(obj, true, false);
+                       return desc->makeSelected(obj, nullptr);
+                     }});
   actions.push_back({"Fanout Cone", [obj, desc, gui]() {
-    gui->timingCone(obj, false, true);
-    return desc->makeSelected(obj, nullptr);
-  }});
+                       gui->timingCone(obj, false, true);
+                       return desc->makeSelected(obj, nullptr);
+                     }});
   actions.push_back({"Timing", [obj, desc, gui]() {
-    gui->timingPathsThrough({obj});
-    return desc->makeSelected(obj, nullptr);
-  }});
+                       gui->timingPathsThrough({obj});
+                       return desc->makeSelected(obj, nullptr);
+                     }});
 }
 
 // get list of tech layers as EditorOption list
-static void addLayersToOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
+static void addLayersToOptions(odb::dbTech* tech,
+                               std::vector<Descriptor::EditorOption>& options)
 {
   for (auto layer : tech->getLayers()) {
     options.push_back({layer->getName(), layer});
   }
 }
 
-// request user input to select tech layer, returns nullptr or current if none was selected
-static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* current = nullptr)
+// request user input to select tech layer, returns nullptr or current if none
+// was selected
+static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
+                                           odb::dbTechLayer* current = nullptr)
 {
   std::vector<Descriptor::EditorOption> options;
   addLayersToOptions(tech, options);
@@ -200,15 +205,17 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
     layers.append(QString::fromStdString(name));
   }
   bool okay;
-  int default_selection = current == nullptr ? 0 : layers.indexOf(QString::fromStdString(current->getName()));
-  QString selection = QInputDialog::getItem(
-      nullptr,
-      "Select technology layer",
-      "Layer",
-      layers,
-      default_selection, // current layer
-      false,
-      &okay);
+  int default_selection
+      = current == nullptr
+            ? 0
+            : layers.indexOf(QString::fromStdString(current->getName()));
+  QString selection = QInputDialog::getItem(nullptr,
+                                            "Select technology layer",
+                                            "Layer",
+                                            layers,
+                                            default_selection,  // current layer
+                                            false,
+                                            &okay);
   if (okay) {
     int selection_idx = layers.indexOf(selection);
     if (selection_idx != -1) {
@@ -224,9 +231,8 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
 
 ////////
 
-DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
-    db_(db),
-    sta_(sta)
+DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
+    : db_(db), sta_(sta)
 {
 }
 
@@ -318,10 +324,11 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
 Descriptor::Actions DbInstDescriptor::getActions(std::any object) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
-  return Actions({{"Delete", [inst]() {
-    odb::dbInst::destroy(inst);
-    return Selected(); // unselect since this object is now gone
-  }}});
+  return Actions(
+      {{"Delete", [inst]() {
+          odb::dbInst::destroy(inst);
+          return Selected();  // unselect since this object is now gone
+        }}});
 }
 
 Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
@@ -340,31 +347,45 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
   Editors editors;
   addRenameEditor(inst, editors);
   if (!master_options.empty()) {
-    editors.insert({"Master", makeEditor([inst](std::any value) {
-      inst->swapMaster(std::any_cast<odb::dbMaster*>(value));
-      return true;
-    }, master_options)});
+    editors.insert({"Master",
+                    makeEditor(
+                        [inst](std::any value) {
+                          inst->swapMaster(
+                              std::any_cast<odb::dbMaster*>(value));
+                          return true;
+                        },
+                        master_options)});
   }
-  editors.insert({"Orientation", makeEditor([inst](std::any value) {
-      inst->setLocationOrient(std::any_cast<odb::dbOrientType>(value));
-      return true;
-    }, orient_options)});
-  editors.insert({"Placement status", makeEditor([inst](std::any value) {
-      inst->setPlacementStatus(std::any_cast<odb::dbPlacementStatus>(value));
-      return true;
-    }, placement_options)});
+  editors.insert({"Orientation",
+                  makeEditor(
+                      [inst](std::any value) {
+                        inst->setLocationOrient(
+                            std::any_cast<odb::dbOrientType>(value));
+                        return true;
+                      },
+                      orient_options)});
+  editors.insert({"Placement status",
+                  makeEditor(
+                      [inst](std::any value) {
+                        inst->setPlacementStatus(
+                            std::any_cast<odb::dbPlacementStatus>(value));
+                        return true;
+                      },
+                      placement_options)});
 
   editors.insert({"X", makeEditor([this, inst](std::any value) {
-    return setNewLocation(inst, value, true);
-    })});
+                    return setNewLocation(inst, value, true);
+                  })});
   editors.insert({"Y", makeEditor([this, inst](std::any value) {
-    return setNewLocation(inst, value, false);
-    })});
+                    return setNewLocation(inst, value, false);
+                  })});
   return editors;
 }
 
 // get list of equivalent masters as EditorOptions
-void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const
+void DbInstDescriptor::makeMasterOptions(
+    odb::dbMaster* master,
+    std::vector<EditorOption>& options) const
 {
   std::set<odb::dbMaster*> masters;
   DbMasterDescriptor::getMasterEquivalent(sta_, master, masters);
@@ -374,41 +395,44 @@ void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<Edit
 }
 
 // get list if instance orientations for the editor
-void DbInstDescriptor::makeOrientationOptions(std::vector<EditorOption>& options) const
+void DbInstDescriptor::makeOrientationOptions(
+    std::vector<EditorOption>& options) const
 {
-  for (odb::dbOrientType type :
-      {odb::dbOrientType::R0,
-       odb::dbOrientType::R90,
-       odb::dbOrientType::R180,
-       odb::dbOrientType::R270,
-       odb::dbOrientType::MY,
-       odb::dbOrientType::MYR90,
-       odb::dbOrientType::MX,
-       odb::dbOrientType::MXR90}) {
+  for (odb::dbOrientType type : {odb::dbOrientType::R0,
+                                 odb::dbOrientType::R90,
+                                 odb::dbOrientType::R180,
+                                 odb::dbOrientType::R270,
+                                 odb::dbOrientType::MY,
+                                 odb::dbOrientType::MYR90,
+                                 odb::dbOrientType::MX,
+                                 odb::dbOrientType::MXR90}) {
     options.push_back({type.getString(), type});
   }
 }
 
 // get list of placement statuses for the editor
-void DbInstDescriptor::makePlacementStatusOptions(std::vector<EditorOption>& options) const
+void DbInstDescriptor::makePlacementStatusOptions(
+    std::vector<EditorOption>& options) const
 {
-  for (odb::dbPlacementStatus type :
-      {odb::dbPlacementStatus::NONE,
-       odb::dbPlacementStatus::UNPLACED,
-       odb::dbPlacementStatus::SUGGESTED,
-       odb::dbPlacementStatus::PLACED,
-       odb::dbPlacementStatus::LOCKED,
-       odb::dbPlacementStatus::FIRM,
-       odb::dbPlacementStatus::COVER}) {
+  for (odb::dbPlacementStatus type : {odb::dbPlacementStatus::NONE,
+                                      odb::dbPlacementStatus::UNPLACED,
+                                      odb::dbPlacementStatus::SUGGESTED,
+                                      odb::dbPlacementStatus::PLACED,
+                                      odb::dbPlacementStatus::LOCKED,
+                                      odb::dbPlacementStatus::FIRM,
+                                      odb::dbPlacementStatus::COVER}) {
     options.push_back({type.getString(), type});
   }
 }
 
 // change location of instance
-bool DbInstDescriptor::setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const
+bool DbInstDescriptor::setNewLocation(odb::dbInst* inst,
+                                      std::any value,
+                                      bool is_x) const
 {
   bool accept = false;
-  int new_value = Descriptor::Property::convert_string(std::any_cast<std::string>(value), &accept);
+  int new_value = Descriptor::Property::convert_string(
+      std::any_cast<std::string>(value), &accept);
   if (!accept) {
     return false;
   }
@@ -459,64 +483,65 @@ bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
 std::string DbInstDescriptor::getInstanceTypeText(Type type) const
 {
   switch (type) {
-  case BLOCK:
-    return "Macro";
-  case PAD:
-    return "Pad";
-  case PAD_INPUT:
-    return "Input pad";
-  case PAD_OUTPUT:
-    return "Output pad";
-  case PAD_INOUT:
-    return "Input/output pad";
-  case PAD_POWER:
-    return "Power pad";
-  case PAD_SPACER:
-    return"Pad spacer";
-  case PAD_AREAIO:
-    return "Area IO";
-  case ENDCAP:
-    return "Endcap";
-  case FILL:
-    return "Fill";
-  case TAPCELL:
-    return "Tapcell";
-  case BUMP:
-    return "Bump";
-  case COVER:
-    return "Cover";
-  case ANTENNA:
-    return "Antenna";
-  case TIE:
-    return "Tie";
-  case LEF_OTHER:
-    return "Other";
-  case STD_CELL:
-    return "Standard cell";
-  case STD_BUFINV:
-    return "Buffer/inverter";
-  case STD_BUFINV_CLK_TREE:
-    return "Clock buffer/inverter";
-  case STD_BUFINV_TIMING_REPAIR:
-    return "Buffer/inverter from timing repair";
-  case STD_CLOCK_GATE:
-    return "Clock gate";
-  case STD_LEVEL_SHIFT:
-    return "Level shifter";
-  case STD_SEQUENTIAL:
-    return "Sequential";
-  case STD_PHYSICAL:
-    return "Physical";
-  case STD_COMBINATIONAL:
-    return "Combinational";
-  case STD_OTHER:
-    return "Other";
+    case BLOCK:
+      return "Macro";
+    case PAD:
+      return "Pad";
+    case PAD_INPUT:
+      return "Input pad";
+    case PAD_OUTPUT:
+      return "Output pad";
+    case PAD_INOUT:
+      return "Input/output pad";
+    case PAD_POWER:
+      return "Power pad";
+    case PAD_SPACER:
+      return "Pad spacer";
+    case PAD_AREAIO:
+      return "Area IO";
+    case ENDCAP:
+      return "Endcap";
+    case FILL:
+      return "Fill";
+    case TAPCELL:
+      return "Tapcell";
+    case BUMP:
+      return "Bump";
+    case COVER:
+      return "Cover";
+    case ANTENNA:
+      return "Antenna";
+    case TIE:
+      return "Tie";
+    case LEF_OTHER:
+      return "Other";
+    case STD_CELL:
+      return "Standard cell";
+    case STD_BUFINV:
+      return "Buffer/inverter";
+    case STD_BUFINV_CLK_TREE:
+      return "Clock buffer/inverter";
+    case STD_BUFINV_TIMING_REPAIR:
+      return "Buffer/inverter from timing repair";
+    case STD_CLOCK_GATE:
+      return "Clock gate";
+    case STD_LEVEL_SHIFT:
+      return "Level shifter";
+    case STD_SEQUENTIAL:
+      return "Sequential";
+    case STD_PHYSICAL:
+      return "Physical";
+    case STD_COMBINATIONAL:
+      return "Combinational";
+    case STD_OTHER:
+      return "Other";
   }
 
   return "Unknown";
 }
 
-DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) const
+DbInstDescriptor::Type DbInstDescriptor::getInstanceType(
+    odb::dbInst* inst) const
 {
   odb::dbMaster* master = inst->getMaster();
   const auto master_type = master->getType();
@@ -552,7 +577,8 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) cons
     }
   } else if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
     return ANTENNA;
-  } else if (master_type == odb::dbMasterType::CORE_TIEHIGH || master_type == odb::dbMasterType::CORE_TIELOW) {
+  } else if (master_type == odb::dbMasterType::CORE_TIEHIGH
+             || master_type == odb::dbMasterType::CORE_TIELOW) {
     return TIE;
   } else if (source_type == odb::dbSourceType::DIST) {
     return LEF_OTHER;
@@ -568,7 +594,8 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) cons
     if (master->isCore()) {
       return STD_CELL;
     }
-    // default to use overall instance setting if there is no liberty cell and it's not a core cell.
+    // default to use overall instance setting if there is no liberty cell and
+    // it's not a core cell.
     return STD_OTHER;
   }
 
@@ -590,12 +617,13 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) cons
     }
   } else if (lib_cell->isClockGate()) {
     return STD_CLOCK_GATE;
-  } if (lib_cell->isLevelShifter()) {
+  }
+  if (lib_cell->isLevelShifter()) {
     return STD_LEVEL_SHIFT;
   } else if (lib_cell->hasSequentials()) {
     return STD_SEQUENTIAL;
   } else if (lib_cell->portCount() == 0) {
-    return STD_PHYSICAL; // generic physical
+    return STD_PHYSICAL;  // generic physical
   } else {
     // not anything else, so combinational
     return STD_COMBINATIONAL;
@@ -604,9 +632,8 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) cons
 
 //////////////////////////////////////////////////
 
-DbMasterDescriptor::DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
-    db_(db),
-    sta_(sta)
+DbMasterDescriptor::DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
+    : db_(db), sta_(sta)
 {
 }
 
@@ -706,9 +733,9 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
   auto network = sta->getDbNetwork();
 
   sta::LibertyLibrarySeq libs;
-  sta::LibertyLibraryIterator *lib_iter = network->libertyLibraryIterator();
+  sta::LibertyLibraryIterator* lib_iter = network->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
-    sta::LibertyLibrary *lib = lib_iter->next();
+    sta::LibertyLibrary* lib = lib_iter->next();
     libs.push_back(lib);
   }
   delete lib_iter;
@@ -727,7 +754,8 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
 }
 
 // get list of instances of that type
-void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const
+void DbMasterDescriptor::getInstances(odb::dbMaster* master,
+                                      std::set<odb::dbInst*>& insts) const
 {
   for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
@@ -761,11 +789,8 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
                                  sta::dbSta* sta,
                                  const std::set<odb::dbNet*>& focus_nets,
-                                 const std::set<odb::dbNet*>& guide_nets) :
-    db_(db),
-    sta_(sta),
-    focus_nets_(focus_nets),
-    guide_nets_(guide_nets)
+                                 const std::set<odb::dbNet*>& guide_nets)
+    : db_(db), sta_(sta), focus_nets_(focus_nets), guide_nets_(guide_nets)
 {
 }
 
@@ -817,7 +842,9 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
                                           std::vector<GraphTarget>& sinks) const
 {
   // gets all the shapes that make up the iterm
-  auto get_graph_iterm_targets = [](odb::dbMTerm* mterm, const odb::dbTransform& transform, std::vector<GraphTarget>& targets) {
+  auto get_graph_iterm_targets = [](odb::dbMTerm* mterm,
+                                    const odb::dbTransform& transform,
+                                    std::vector<GraphTarget>& targets) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* box : mpin->getGeometry()) {
         odb::Rect rect = box->getBox();
@@ -828,14 +855,15 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   };
 
   // gets all the shapes that make up the bterm
-  auto get_graph_bterm_targets = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
-    for (auto* bpin : bterm->getBPins()) {
-      for (auto* box : bpin->getBoxes()) {
-        odb::Rect rect = box->getBox();
-        targets.push_back({rect, box->getTechLayer()});
-      }
-    }
-  };
+  auto get_graph_bterm_targets
+      = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
+          for (auto* bpin : bterm->getBPins()) {
+            for (auto* box : bpin->getBoxes()) {
+              odb::Rect rect = box->getBox();
+              targets.push_back({rect, box->getTechLayer()});
+            }
+          }
+        };
 
   // find sources and sinks on this net
   for (auto* iterm : net->getITerms()) {
@@ -847,8 +875,7 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
     }
 
     auto iotype = iterm->getIoType();
-    if (iotype == odb::dbIoType::OUTPUT ||
-        iotype == odb::dbIoType::INOUT) {
+    if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
       odb::dbTransform transform;
       iterm->getInst()->getTransform(transform);
       get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
@@ -861,9 +888,8 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
     }
 
     auto iotype = bterm->getIoType();
-    if (iotype == odb::dbIoType::INPUT ||
-        iotype == odb::dbIoType::INOUT ||
-        iotype == odb::dbIoType::FEEDTHRU) {
+    if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
+        || iotype == odb::dbIoType::FEEDTHRU) {
       get_graph_bterm_targets(bterm, sources);
     }
   }
@@ -902,7 +928,9 @@ void DbNetDescriptor::findSourcesAndSinksInGraph(odb::dbNet* net,
   }
 }
 
-void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const
+void DbNetDescriptor::drawPathSegment(odb::dbNet* net,
+                                      const odb::dbObject* sink,
+                                      Painter& painter) const
 {
   odb::dbWireGraph graph;
   graph.decode(net->getWire());
@@ -955,7 +983,8 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
   painter.restoreState();
 }
 
-void DbNetDescriptor::buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const
+void DbNetDescriptor::buildNodeMap(odb::dbWireGraph* graph,
+                                   NodeMap& node_map) const
 {
   for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
     const auto* node = *itr;
@@ -1022,13 +1051,14 @@ void DbNetDescriptor::findPath(NodeMap& graph,
   std::map<const Node*, int> g_score;
   std::map<const Node*, int> f_score;
 
-  struct DistNode {
+  struct DistNode
+  {
     const Node* node;
     int dist;
 
-    public:
-      // used for priority queue
-      bool operator<(const DistNode& other) const { return dist > other.dist; }
+   public:
+    // used for priority queue
+    bool operator<(const DistNode& other) const { return dist > other.dist; }
   };
   std::priority_queue<DistNode> open_set;
   std::set<const Node*> open_set_nodes;
@@ -1064,7 +1094,8 @@ void DbNetDescriptor::findPath(NodeMap& graph,
 
     const int current_g_score = g_score[current];
     for (const auto& neighbor : graph[current]) {
-      const int possible_g_score = current_g_score + distance(current, neighbor);
+      const int possible_g_score
+          = current_g_score + distance(current, neighbor);
       if (possible_g_score < g_score[neighbor]) {
         const int new_f_score = possible_g_score + distance(neighbor, sink);
         came_from[neighbor] = current;
@@ -1105,30 +1136,26 @@ void DbNetDescriptor::highlight(std::any object,
 
   auto is_source_iterm = [](odb::dbITerm* iterm) -> bool {
     const auto iotype = iterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT ||
-           iotype == odb::dbIoType::INOUT;
+    return iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT;
   };
   auto is_sink_iterm = [](odb::dbITerm* iterm) -> bool {
     const auto iotype = iterm->getIoType();
-    return iotype == odb::dbIoType::INPUT ||
-           iotype == odb::dbIoType::INOUT;
+    return iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT;
   };
 
   auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::INPUT ||
-           iotype == odb::dbIoType::INOUT ||
-           iotype == odb::dbIoType::FEEDTHRU;
+    return iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
+           || iotype == odb::dbIoType::FEEDTHRU;
   };
   auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT ||
-           iotype == odb::dbIoType::INOUT ||
-           iotype == odb::dbIoType::FEEDTHRU;
+    return iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT
+           || iotype == odb::dbIoType::FEEDTHRU;
   };
 
   // Draw regular routing
-  if (!is_supply) { // don't draw iterms on supply nets
+  if (!is_supply) {  // don't draw iterms on supply nets
     // draw iterms
     for (auto* iterm : net->getITerms()) {
       if (is_sink_iterm(iterm)) {
@@ -1285,21 +1312,21 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
   Editors editors;
   addRenameEditor(net, editors);
   editors.insert({"Special", makeEditor([net](std::any value) {
-    const bool new_special = std::any_cast<bool>(value);
-    if (new_special) {
-      net->setSpecial();
-    } else {
-      net->clearSpecial();
-    }
-    for (auto* iterm : net->getITerms()) {
-      if (new_special) {
-        iterm->setSpecial();
-      } else {
-        iterm->clearSpecial();
-      }
-    }
-    return true;
-  })});
+                    const bool new_special = std::any_cast<bool>(value);
+                    if (new_special) {
+                      net->setSpecial();
+                    } else {
+                      net->clearSpecial();
+                    }
+                    for (auto* iterm : net->getITerms()) {
+                      if (new_special) {
+                        iterm->setSpecial();
+                      } else {
+                        iterm->clearSpecial();
+                      }
+                    }
+                    return true;
+                  })});
   return editors;
 }
 
@@ -1311,49 +1338,50 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
   Descriptor::Actions actions;
   if (focus_nets_.count(net) == 0) {
     actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
-      gui->addFocusNet(net);
-      return makeSelected(net, nullptr);
-    }});
+                                           gui->addFocusNet(net);
+                                           return makeSelected(net, nullptr);
+                                         }});
   } else {
     actions.push_back(Descriptor::Action{"De-focus", [this, gui, net]() {
-      gui->removeFocusNet(net);
-      return makeSelected(net, nullptr);
-    }});
+                                           gui->removeFocusNet(net);
+                                           return makeSelected(net, nullptr);
+                                         }});
   }
 
   if (!net->getSigType().isSupply()) {
     actions.push_back({"Timing", [this, gui, net]() {
-      auto* network = sta_->getDbNetwork();
-      auto* drivers = network->drivers(network->dbToSta(net));
+                         auto* network = sta_->getDbNetwork();
+                         auto* drivers
+                             = network->drivers(network->dbToSta(net));
 
-      if (drivers->size() > 0) {
-        std::set<Gui::odbTerm> terms;
+                         if (drivers->size() > 0) {
+                           std::set<Gui::odbTerm> terms;
 
-        for (auto* driver : *drivers) {
-          odb::dbITerm* iterm = nullptr;
-          odb::dbBTerm* bterm = nullptr;
+                           for (auto* driver : *drivers) {
+                             odb::dbITerm* iterm = nullptr;
+                             odb::dbBTerm* bterm = nullptr;
 
-          network->staToDb(driver, iterm, bterm);
-          if (iterm != nullptr) {
-            terms.insert(iterm);
-          } else {
-            terms.insert(bterm);
-          }
-        }
+                             network->staToDb(driver, iterm, bterm);
+                             if (iterm != nullptr) {
+                               terms.insert(iterm);
+                             } else {
+                               terms.insert(bterm);
+                             }
+                           }
 
-        gui->timingPathsThrough(terms);
-      }
-      return makeSelected(net, nullptr);
-    }});
+                           gui->timingPathsThrough(terms);
+                         }
+                         return makeSelected(net, nullptr);
+                       }});
   }
-  if(!net->getGuides().empty())
+  if (!net->getGuides().empty())
     actions.push_back(Descriptor::Action{"Route Guides", [this, gui, net]() {
-      if(guide_nets_.count(net) == 0)
-        gui->addRouteGuides(net);
-      else
-        gui->removeRouteGuides(net);
-      return makeSelected(net, nullptr);
-    }});
+                                           if (guide_nets_.count(net) == 0)
+                                             gui->addRouteGuides(net);
+                                           else
+                                             gui->removeRouteGuides(net);
+                                           return makeSelected(net, nullptr);
+                                         }});
   return actions;
 }
 
@@ -1392,8 +1420,7 @@ bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -1460,7 +1487,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
   }
   SelectionSet aps;
   for (auto& [mpin, ap_vec] : iterm->getAccessPoints()) {
-    for (auto ap :ap_vec) {
+    for (auto ap : ap_vec) {
       DbItermAccessPoint iap{ap, iterm};
       aps.insert(gui->makeSelected(iap));
     }
@@ -1522,8 +1549,7 @@ bool DbITermDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbBTermDescriptor::DbBTermDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbBTermDescriptor::DbBTermDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -1623,8 +1649,7 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbBlockageDescriptor::DbBlockageDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbBlockageDescriptor::DbBlockageDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -1655,7 +1680,8 @@ void DbBlockageDescriptor::highlight(std::any object,
   painter.drawRect(rect);
 }
 
-Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbBlockageDescriptor::getProperties(
+    std::any object) const
 {
   auto gui = Gui::get();
   auto blockage = std::any_cast<odb::dbBlockage*>(object);
@@ -1667,13 +1693,14 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
     inst_value = "<none>";
   }
   odb::Rect rect = blockage->getBBox()->getBox();
-  Properties props{{"Instance", inst_value},
-                   {"X", Property::convert_dbu(rect.xMin(), true)},
-                   {"Y", Property::convert_dbu(rect.yMin(), true)},
-                   {"Width", Property::convert_dbu(rect.dx(), true)},
-                   {"Height", Property::convert_dbu(rect.dy(), true)},
-                   {"Soft", blockage->isSoft()},
-                   {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
+  Properties props{
+      {"Instance", inst_value},
+      {"X", Property::convert_dbu(rect.xMin(), true)},
+      {"Y", Property::convert_dbu(rect.yMin(), true)},
+      {"Width", Property::convert_dbu(rect.dx(), true)},
+      {"Height", Property::convert_dbu(rect.dy(), true)},
+      {"Soft", blockage->isSoft()},
+      {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
 
   populateODBProperties(props, blockage);
 
@@ -1685,25 +1712,26 @@ Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
   auto blockage = std::any_cast<odb::dbBlockage*>(object);
   Editors editors;
   editors.insert({"Max density", makeEditor([blockage](std::any any_value) {
-    std::string value = std::any_cast<std::string>(any_value);
-    std::regex density_regex("(1?[0-9]?[0-9]?(\\.[0-9]*)?)\\s*%?");
-    std::smatch base_match;
-    if (std::regex_match(value, base_match, density_regex)) {
-      try {
-        // try to convert to float
-        float density = std::stof(base_match[0]);
-        if (0 <= density && density <= 100) {
-          blockage->setMaxDensity(density);
-          return true;
-        }
-      } catch (std::out_of_range&) {
-        // catch poorly formatted string
-      } catch (std::logic_error&) {
-        // catch poorly formatted string
-      }
-    }
-    return false;
-  })});
+                    std::string value = std::any_cast<std::string>(any_value);
+                    std::regex density_regex(
+                        "(1?[0-9]?[0-9]?(\\.[0-9]*)?)\\s*%?");
+                    std::smatch base_match;
+                    if (std::regex_match(value, base_match, density_regex)) {
+                      try {
+                        // try to convert to float
+                        float density = std::stof(base_match[0]);
+                        if (0 <= density && density <= 100) {
+                          blockage->setMaxDensity(density);
+                          return true;
+                        }
+                      } catch (std::out_of_range&) {
+                        // catch poorly formatted string
+                      } catch (std::logic_error&) {
+                        // catch poorly formatted string
+                      }
+                    }
+                    return false;
+                  })});
   return editors;
 }
 
@@ -1742,8 +1770,7 @@ bool DbBlockageDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbObstructionDescriptor::DbObstructionDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbObstructionDescriptor::DbObstructionDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -1775,7 +1802,8 @@ void DbObstructionDescriptor::highlight(std::any object,
   painter.drawRect(rect);
 }
 
-Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbObstructionDescriptor::getProperties(
+    std::any object) const
 {
   auto gui = Gui::get();
   auto obs = std::any_cast<odb::dbObstruction*>(object);
@@ -1787,20 +1815,23 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
     inst_value = "<none>";
   }
   odb::Rect rect = obs->getBBox()->getBox();
-  Properties props({{"Instance", inst_value},
-                    {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
-                    {"X", Property::convert_dbu(rect.xMin(), true)},
-                    {"Y", Property::convert_dbu(rect.yMin(), true)},
-                    {"Width", Property::convert_dbu(rect.dx(), true)},
-                    {"Height", Property::convert_dbu(rect.dy(), true)},
-                    {"Slot", obs->isSlotObstruction()},
-                    {"Fill", obs->isFillObstruction()}});
+  Properties props(
+      {{"Instance", inst_value},
+       {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
+       {"X", Property::convert_dbu(rect.xMin(), true)},
+       {"Y", Property::convert_dbu(rect.yMin(), true)},
+       {"Width", Property::convert_dbu(rect.dx(), true)},
+       {"Height", Property::convert_dbu(rect.dy(), true)},
+       {"Slot", obs->isSlotObstruction()},
+       {"Fill", obs->isFillObstruction()}});
   if (obs->hasEffectiveWidth()) {
-    props.push_back({"Effective width", Property::convert_dbu(obs->getEffectiveWidth(), true)});
+    props.push_back({"Effective width",
+                     Property::convert_dbu(obs->getEffectiveWidth(), true)});
   }
 
   if (obs->hasMinSpacing()) {
-    props.push_back({"Min spacing", Property::convert_dbu(obs->getMinSpacing(), true)});
+    props.push_back(
+        {"Min spacing", Property::convert_dbu(obs->getMinSpacing(), true)});
   }
 
   populateODBProperties(props, obs);
@@ -1811,34 +1842,35 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
 Descriptor::Actions DbObstructionDescriptor::getActions(std::any object) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
-  return Actions({{"Copy to layer", [obs, object]() {
-    odb::dbBox* box = obs->getBBox();
-    odb::dbTechLayer* layer = getLayerSelection(obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
-    auto gui = gui::Gui::get();
-    if (layer == nullptr) {
-      // select old layer again
-      return gui->makeSelected(obs);
-    }
-    else {
-      auto new_obs = odb::dbObstruction::create(
-          obs->getBlock(),
-          layer,
-          box->xMin(),
-          box->yMin(),
-          box->xMax(),
-          box->yMax());
-      // does not copy other parameters
-      return gui->makeSelected(new_obs);
-    }
-  }},
-  {"Delete", [obs]() {
-    odb::dbObstruction::destroy(obs);
-    return Selected(); // unselect since this object is now gone
-  }}});
+  return Actions(
+      {{"Copy to layer",
+        [obs, object]() {
+          odb::dbBox* box = obs->getBBox();
+          odb::dbTechLayer* layer = getLayerSelection(
+              obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
+          auto gui = gui::Gui::get();
+          if (layer == nullptr) {
+            // select old layer again
+            return gui->makeSelected(obs);
+          } else {
+            auto new_obs = odb::dbObstruction::create(obs->getBlock(),
+                                                      layer,
+                                                      box->xMin(),
+                                                      box->yMin(),
+                                                      box->xMax(),
+                                                      box->yMax());
+            // does not copy other parameters
+            return gui->makeSelected(new_obs);
+          }
+        }},
+       {"Delete", [obs]() {
+          odb::dbObstruction::destroy(obs);
+          return Selected();  // unselect since this object is now gone
+        }}});
 }
 
 Selected DbObstructionDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                               void* additional_data) const
 {
   if (auto obs = std::any_cast<odb::dbObstruction*>(&object)) {
     return Selected(*obs, this, additional_data);
@@ -1872,8 +1904,7 @@ bool DbObstructionDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbTechLayerDescriptor::DbTechLayerDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbTechLayerDescriptor::DbTechLayerDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -1894,12 +1925,13 @@ bool DbTechLayerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 void DbTechLayerDescriptor::highlight(std::any object,
-                                        Painter& painter,
-                                        void* additional_data) const
+                                      Painter& painter,
+                                      void* additional_data) const
 {
 }
 
-Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbTechLayerDescriptor::getProperties(
+    std::any object) const
 {
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Direction", layer->getDirection().getString()},
@@ -1912,29 +1944,41 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
     props.push_back({"Routing layer", layer->getRoutingLevel()});
   }
   if (layer->getWidth() != 0) {
-    props.push_back({"Default width", Property::convert_dbu(layer->getWidth(), true)});
+    props.push_back(
+        {"Default width", Property::convert_dbu(layer->getWidth(), true)});
   }
   if (layer->getMinWidth() != 0) {
-    props.push_back({"Minimum width", Property::convert_dbu(layer->getMinWidth(), true)});
+    props.push_back(
+        {"Minimum width", Property::convert_dbu(layer->getMinWidth(), true)});
   }
   if (layer->hasMaxWidth()) {
-    props.push_back({"Max width", Property::convert_dbu(layer->getMaxWidth(), true)});
+    props.push_back(
+        {"Max width", Property::convert_dbu(layer->getMaxWidth(), true)});
   }
   if (layer->getSpacing() != 0) {
-    props.push_back({"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
+    props.push_back(
+        {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
   }
   const char* micron = "\u03BC";
   if (layer->hasArea()) {
-    props.push_back({"Minimum area", convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m\u00B2"}); // m^2
+    props.push_back({"Minimum area",
+                     convertUnits(layer->getArea() * 1e-6 * 1e-6, true)
+                         + "m\u00B2"});  // m^2
   }
   if (layer->getResistance() != 0.0) {
-    props.push_back({"Resistance", convertUnits(layer->getResistance()) + "\u03A9/sq"}); // ohm/sq
+    props.push_back(
+        {"Resistance",
+         convertUnits(layer->getResistance()) + "\u03A9/sq"});  // ohm/sq
   }
   if (layer->getCapacitance() != 0.0) {
-    props.push_back({"Capacitance", convertUnits(layer->getCapacitance() * 1e-12) + "F/" + micron + "m\u00B2"}); // F/um^2
+    props.push_back({"Capacitance",
+                     convertUnits(layer->getCapacitance() * 1e-12) + "F/"
+                         + micron + "m\u00B2"});  // F/um^2
   }
   if (layer->getEdgeCapacitance() != 0.0) {
-    props.push_back({"Edge capacitance", convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/" + micron + "m"}); // F/um
+    props.push_back({"Edge capacitance",
+                     convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/"
+                         + micron + "m"});  // F/um
   }
 
   for (auto* width_table : layer->getTechLayerWidthTableRules()) {
@@ -1955,7 +1999,8 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
 
   PropertyList cutclasses;
   for (auto* cutclass : layer->getTechLayerCutClassRules()) {
-    std::string text = Property::convert_dbu(cutclass->getWidth(), true) + " x ";
+    std::string text
+        = Property::convert_dbu(cutclass->getWidth(), true) + " x ";
     if (cutclass->isLengthValid()) {
       text += Property::convert_dbu(cutclass->getLength(), true);
     } else {
@@ -1987,22 +2032,24 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
       text += " - below";
     }
 
-    const std::string enc0 = Property::convert_dbu(enc_rule->getFirstOverhang(), true);
-    const std::string enc1 = Property::convert_dbu(enc_rule->getSecondOverhang(), true);
+    const std::string enc0
+        = Property::convert_dbu(enc_rule->getFirstOverhang(), true);
+    const std::string enc1
+        = Property::convert_dbu(enc_rule->getSecondOverhang(), true);
     std::string enclosure;
     switch (enc_rule->getType()) {
-    case odb::dbTechLayerCutEnclosureRule::DEFAULT:
-      enclosure = enc0 + " x " + enc1;
-      break;
-    case odb::dbTechLayerCutEnclosureRule::EOL:
-      enclosure = "EOL: " + enc0 + " x " + enc1;
-      break;
-    case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
-      enclosure = "End: " + enc0 + " x Side: " + enc1;
-      break;
-    case odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT:
-      enclosure = "Horizontal: " + enc0 + " x Vertical: " + enc1;
-      break;
+      case odb::dbTechLayerCutEnclosureRule::DEFAULT:
+        enclosure = enc0 + " x " + enc1;
+        break;
+      case odb::dbTechLayerCutEnclosureRule::EOL:
+        enclosure = "EOL: " + enc0 + " x " + enc1;
+        break;
+      case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
+        enclosure = "End: " + enc0 + " x Side: " + enc1;
+        break;
+      case odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT:
+        enclosure = "Horizontal: " + enc0 + " x Vertical: " + enc1;
+        break;
     }
 
     cut_enclosures.emplace_back(text, enclosure);
@@ -2085,7 +2132,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
 }
 
 Selected DbTechLayerDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                             void* additional_data) const
 {
   if (auto layer = std::any_cast<odb::dbTechLayer*>(&object)) {
     return Selected(*layer, this, additional_data);
@@ -2115,8 +2162,8 @@ bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbItermAccessPointDescriptor::DbItermAccessPointDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbItermAccessPointDescriptor::DbItermAccessPointDescriptor(odb::dbDatabase* db)
+    : db_(db)
 {
 }
 
@@ -2134,7 +2181,8 @@ std::string DbItermAccessPointDescriptor::getTypeName() const
   return "Access Point";
 }
 
-bool DbItermAccessPointDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool DbItermAccessPointDescriptor::getBBox(std::any object,
+                                           odb::Rect& bbox) const
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
@@ -2147,8 +2195,8 @@ bool DbItermAccessPointDescriptor::getBBox(std::any object, odb::Rect& bbox) con
 }
 
 void DbItermAccessPointDescriptor::highlight(std::any object,
-                                        Painter& painter,
-                                        void* additional_data) const
+                                             Painter& painter,
+                                             void* additional_data) const
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
@@ -2160,7 +2208,8 @@ void DbItermAccessPointDescriptor::highlight(std::any object,
   painter.drawX(pt.x(), pt.y(), shape_size);
 }
 
-Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbItermAccessPointDescriptor::getProperties(
+    std::any object) const
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   auto ap = iterm_ap.ap;
@@ -2180,14 +2229,30 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any obje
   Properties props({{"Low Type", ap->getLowType().getString()},
                     {"High Type", ap->getHighType().getString()},
                     {"Directions", directions},
-                    {"Layer", gui->makeSelected(ap->getLayer())}
-                    });
+                    {"Layer", gui->makeSelected(ap->getLayer())}});
+
+  auto vias_by_cuts = ap->getVias();
+  for (int cuts = 0; cuts < vias_by_cuts.size(); ++cuts) {
+    Descriptor::PropertyList vias_property;
+    int cnt = 1;
+    for (auto via : vias_by_cuts[cuts]) {
+      std::string name;
+      if (via->getObjectType() == odb::dbTechViaObj) {
+        name = static_cast<odb::dbTechVia*>(via)->getName();
+      } else {
+        name = static_cast<odb::dbVia*>(via)->getName();
+      }
+      vias_property.push_back({cnt++, name});
+    }
+    props.push_back({fmt::format("{} cut vias", cuts + 1), vias_property});
+  }
+
   populateODBProperties(props, ap);
   return props;
 }
 
 Selected DbItermAccessPointDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                                    void* additional_data) const
 {
   if (object.type() == typeid(DbItermAccessPoint)) {
     auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
@@ -2229,8 +2294,7 @@ bool DbItermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbGroupDescriptor::DbGroupDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbGroupDescriptor::DbGroupDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -2249,8 +2313,7 @@ bool DbGroupDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* group = std::any_cast<odb::dbGroup*>(object);
   auto* region = group->getRegion();
-  if(region != nullptr && region->getBoundaries().size() == 1)
-  {
+  if (region != nullptr && region->getBoundaries().size() == 1) {
     bbox = region->getBoundaries().begin()->getBox();
     return true;
   }
@@ -2281,6 +2344,11 @@ Descriptor::Properties DbGroupDescriptor::getProperties(std::any object) const
   auto* parent = group->getParentGroup();
   if (parent != nullptr) {
     props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  auto* region = group->getRegion();
+  if (region != nullptr) {
+    props.push_back({"Region", gui->makeSelected(region)});
   }
 
   SelectionSet groups;
@@ -2351,8 +2419,7 @@ bool DbGroupDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbRegionDescriptor::DbRegionDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbRegionDescriptor::DbRegionDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -2383,10 +2450,15 @@ bool DbRegionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 void DbRegionDescriptor::highlight(std::any object,
-                                  Painter& painter,
-                                  void* additional_data) const
+                                   Painter& painter,
+                                   void* additional_data) const
 {
   auto* region = std::any_cast<odb::dbRegion*>(object);
+
+  for (auto box : region->getBoundaries()) {
+    painter.drawRect(box->getBox());
+  }
+
   auto* group_descriptor = Gui::get()->getDescriptor<odb::dbGroup*>();
   for (auto* child : region->getGroups()) {
     group_descriptor->highlight(child, painter, nullptr);
@@ -2425,7 +2497,7 @@ Descriptor::Properties DbRegionDescriptor::getProperties(std::any object) const
 }
 
 Selected DbRegionDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                          void* additional_data) const
 {
   if (auto region = std::any_cast<odb::dbRegion*>(&object)) {
     return Selected(*region, this, additional_data);
@@ -2459,8 +2531,7 @@ bool DbRegionDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbModuleDescriptor::DbModuleDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbModuleDescriptor::DbModuleDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -2502,8 +2573,8 @@ bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 void DbModuleDescriptor::highlight(std::any object,
-                                  Painter& painter,
-                                  void* additional_data) const
+                                   Painter& painter,
+                                   void* additional_data) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
 
@@ -2564,7 +2635,7 @@ Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
 }
 
 Selected DbModuleDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                          void* additional_data) const
 {
   if (auto module = std::any_cast<odb::dbModule*>(&object)) {
     return Selected(*module, this, additional_data);
@@ -2595,7 +2666,8 @@ bool DbModuleDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-void DbModuleDescriptor::getModules(odb::dbModule* module, SelectionSet& objects) const
+void DbModuleDescriptor::getModules(odb::dbModule* module,
+                                    SelectionSet& objects) const
 {
   objects.insert(makeSelected(module, nullptr));
 
@@ -2606,8 +2678,7 @@ void DbModuleDescriptor::getModules(odb::dbModule* module, SelectionSet& objects
 
 //////////////////////////////////////////////////
 
-DbTechViaDescriptor::DbTechViaDescriptor(odb::dbDatabase* db) :
-  db_(db)
+DbTechViaDescriptor::DbTechViaDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -2655,11 +2726,12 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
   PropertyList layers;
   auto make_layer = [gui, &shapes, &layers](odb::dbTechLayer* layer) {
     const auto& shape = shapes[layer];
-    std::string shape_text = fmt::format("({}, {}), ({}, {})",
-                                         Property::convert_dbu(shape.xMin(), false),
-                                         Property::convert_dbu(shape.yMin(), false),
-                                         Property::convert_dbu(shape.xMax(), false),
-                                         Property::convert_dbu(shape.yMax(), false));
+    std::string shape_text
+        = fmt::format("({}, {}), ({}, {})",
+                      Property::convert_dbu(shape.xMin(), false),
+                      Property::convert_dbu(shape.yMin(), false),
+                      Property::convert_dbu(shape.xMax(), false),
+                      Property::convert_dbu(shape.yMax(), false));
     layers.push_back({gui->makeSelected(layer), shape_text});
   };
   make_layer(via->getBottomLayer());
@@ -2673,7 +2745,8 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
   props.push_back({"Is top of stack", via->isTopOfStack()});
 
   if (via->getResistance() != 0.0) {
-    props.push_back({"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
+    props.push_back(
+        {"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
   }
 
   populateODBProperties(props, via);
@@ -2682,7 +2755,7 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
 }
 
 Selected DbTechViaDescriptor::makeSelected(std::any object,
-                                         void* additional_data) const
+                                           void* additional_data) const
 {
   if (auto via = std::any_cast<odb::dbTechVia*>(&object)) {
     return Selected(*via, this, additional_data);
@@ -2710,8 +2783,7 @@ bool DbTechViaDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbGenerateViaDescriptor::DbGenerateViaDescriptor(odb::dbDatabase* db) :
-  db_(db)
+DbGenerateViaDescriptor::DbGenerateViaDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -2738,7 +2810,8 @@ void DbGenerateViaDescriptor::highlight(std::any object,
   return;
 }
 
-Descriptor::Properties DbGenerateViaDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbGenerateViaDescriptor::getProperties(
+    std::any object) const
 {
   auto* via = std::any_cast<odb::dbTechViaGenerateRule*>(object);
   auto* gui = Gui::get();

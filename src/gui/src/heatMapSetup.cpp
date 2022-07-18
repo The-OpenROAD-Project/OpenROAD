@@ -33,12 +33,11 @@
 #include "heatMapSetup.h"
 
 #include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QVBoxLayout>
-
-#include <QDebug>
 
 namespace gui {
 
@@ -46,26 +45,26 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
                            const QString& title,
                            bool use_dbu,
                            int dbu,
-                           QWidget* parent) :
-    QDialog(parent),
-    source_(source),
-    use_dbu_(use_dbu),
-    dbu_(dbu),
-    log_scale_(new QCheckBox(this)),
-    reverse_log_scale_(new QCheckBox(this)),
-    show_numbers_(new QCheckBox(this)),
-    show_legend_(new QCheckBox(this)),
-    grid_x_size_(nullptr),
-    grid_y_size_(nullptr),
-    grid_x_size_dbu_(nullptr),
-    grid_y_size_dbu_(nullptr),
-    min_range_selector_(new QDoubleSpinBox(this)),
-    show_mins_(new QCheckBox(this)),
-    max_range_selector_(new QDoubleSpinBox(this)),
-    show_maxs_(new QCheckBox(this)),
-    alpha_selector_(new QSpinBox(this)),
-    rebuild_(new QPushButton("Rebuild data", this)),
-    close_(new QPushButton("Close", this))
+                           QWidget* parent)
+    : QDialog(parent),
+      source_(source),
+      use_dbu_(use_dbu),
+      dbu_(dbu),
+      log_scale_(new QCheckBox(this)),
+      reverse_log_scale_(new QCheckBox(this)),
+      show_numbers_(new QCheckBox(this)),
+      show_legend_(new QCheckBox(this)),
+      grid_x_size_(nullptr),
+      grid_y_size_(nullptr),
+      grid_x_size_dbu_(nullptr),
+      grid_y_size_dbu_(nullptr),
+      min_range_selector_(new QDoubleSpinBox(this)),
+      show_mins_(new QCheckBox(this)),
+      max_range_selector_(new QDoubleSpinBox(this)),
+      show_maxs_(new QCheckBox(this)),
+      alpha_selector_(new QSpinBox(this)),
+      rebuild_(new QPushButton("Rebuild data", this)),
+      close_(new QPushButton("Close", this))
 {
   setWindowTitle(title);
 
@@ -74,9 +73,12 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   for (const auto& option : source_.getMapSettings()) {
     if (std::holds_alternative<HeatMapDataSource::MapSettingBoolean>(option)) {
-      addBooleanOption(form, std::get<HeatMapDataSource::MapSettingBoolean>(option));
-    } else if (std::holds_alternative<HeatMapDataSource::MapSettingMultiChoice>(option)) {
-      addMultiChoiceOption(form, std::get<HeatMapDataSource::MapSettingMultiChoice>(option));
+      addBooleanOption(form,
+                       std::get<HeatMapDataSource::MapSettingBoolean>(option));
+    } else if (std::holds_alternative<HeatMapDataSource::MapSettingMultiChoice>(
+                   option)) {
+      addMultiChoiceOption(
+          form, std::get<HeatMapDataSource::MapSettingMultiChoice>(option));
     }
   }
 
@@ -92,10 +94,12 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     grid_x_size_ = new QDoubleSpinBox(this);
     grid_y_size_ = new QDoubleSpinBox(this);
 
-    const QString grid_suffix(" \u03BCm"); // micro meters
-    grid_x_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+    const QString grid_suffix(" \u03BCm");  // micro meters
+    grid_x_size_->setRange(source_.getGridSizeMinimumValue(),
+                           source_.getGridSizeMaximumValue());
     grid_x_size_->setSuffix(grid_suffix);
-    grid_y_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+    grid_y_size_->setRange(source_.getGridSizeMinimumValue(),
+                           source_.getGridSizeMaximumValue());
     grid_y_size_->setSuffix(grid_suffix);
     grid_layout->addWidget(new QLabel("X", this));
     grid_layout->addWidget(grid_x_size_);
@@ -109,8 +113,10 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     grid_x_size_dbu_ = new QSpinBox(this);
     grid_y_size_dbu_ = new QSpinBox(this);
 
-    grid_x_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_, source_.getGridSizeMaximumValue() * dbu_);
-    grid_y_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_, source_.getGridSizeMaximumValue() * dbu_);
+    grid_x_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_,
+                               source_.getGridSizeMaximumValue() * dbu_);
+    grid_y_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_,
+                               source_.getGridSizeMaximumValue() * dbu_);
     grid_layout->addWidget(new QLabel("X", this));
     grid_layout->addWidget(grid_x_size_dbu_);
     grid_layout->addWidget(new QLabel("Y", this));
@@ -136,7 +142,8 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   max_grid->addWidget(show_maxs_);
   form->addRow(tr("Maximum"), max_grid);
 
-  alpha_selector_->setRange(source_.getColorAlphaMinimum(), source_.getColorAlphaMaximum());
+  alpha_selector_->setRange(source_.getColorAlphaMinimum(),
+                            source_.getColorAlphaMaximum());
   form->addRow(tr("Color alpha"), alpha_selector_);
 
   overall_layout->addLayout(form);
@@ -151,10 +158,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   updateWidgets();
 
-  connect(log_scale_,
-          SIGNAL(stateChanged(int)),
-          this,
-          SLOT(updateScale(int)));
+  connect(log_scale_, SIGNAL(stateChanged(int)), this, SLOT(updateScale(int)));
 
   connect(reverse_log_scale_,
           SIGNAL(stateChanged(int)),
@@ -208,47 +212,44 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           this,
           SLOT(updateShowMaxRange(int)));
 
-  connect(alpha_selector_,
-          SIGNAL(valueChanged(int)),
-          this,
-          SLOT(updateAlpha(int)));
+  connect(
+      alpha_selector_, SIGNAL(valueChanged(int)), this, SLOT(updateAlpha(int)));
 
-  connect(this,
-          SIGNAL(changed()),
-          this,
-          SLOT(updateWidgets()));
+  connect(this, SIGNAL(changed()), this, SLOT(updateWidgets()));
 
-  connect(rebuild_,
-          SIGNAL(pressed()),
-          this,
-          SLOT(destroyMap()));
+  connect(rebuild_, SIGNAL(pressed()), this, SLOT(destroyMap()));
 
-  connect(close_,
-          SIGNAL(pressed()),
-          this,
-          SLOT(accept()));
+  connect(close_, SIGNAL(pressed()), this, SLOT(accept()));
 }
 
 void HeatMapSetup::updateWidgets()
 {
-  show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked : Qt::Unchecked);
+  show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked
+                                                           : Qt::Unchecked);
 
   min_range_selector_->blockSignals(true);
-  min_range_selector_->setRange(source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
-                                source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
-  min_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMin()));
+  min_range_selector_->setRange(
+      source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
+      source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
+  min_range_selector_->setValue(
+      source_.convertPercentToValue(source_.getDisplayRangeMin()));
   min_range_selector_->blockSignals(false);
-  min_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
+  min_range_selector_->setSuffix(
+      " " + QString::fromStdString(source_.getValueUnits()));
   min_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
-  show_maxs_->setCheckState(source_.getDrawAboveRangeMax() ? Qt::Checked : Qt::Unchecked);
+  show_maxs_->setCheckState(source_.getDrawAboveRangeMax() ? Qt::Checked
+                                                           : Qt::Unchecked);
 
   max_range_selector_->blockSignals(true);
-  max_range_selector_->setRange(source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
-                                source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
-  max_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMax()));
+  max_range_selector_->setRange(
+      source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
+      source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
+  max_range_selector_->setValue(
+      source_.convertPercentToValue(source_.getDisplayRangeMax()));
   max_range_selector_->blockSignals(false);
-  max_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
+  max_range_selector_->setSuffix(
+      " " + QString::fromStdString(source_.getValueUnits()));
   max_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
   if (!use_dbu_) {
@@ -261,11 +262,15 @@ void HeatMapSetup::updateWidgets()
 
   alpha_selector_->setValue(source_.getColorAlpha());
 
-  log_scale_->setCheckState(source_.getLogScale() ? Qt::Checked : Qt::Unchecked);
-  reverse_log_scale_->setCheckState(source_.getReverseLogScale() ? Qt::Checked : Qt::Unchecked);
+  log_scale_->setCheckState(source_.getLogScale() ? Qt::Checked
+                                                  : Qt::Unchecked);
+  reverse_log_scale_->setCheckState(
+      source_.getReverseLogScale() ? Qt::Checked : Qt::Unchecked);
   reverse_log_scale_->setEnabled(source_.getLogScale());
-  show_numbers_->setCheckState(source_.getShowNumbers() ? Qt::Checked : Qt::Unchecked);
-  show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked : Qt::Unchecked);
+  show_numbers_->setCheckState(source_.getShowNumbers() ? Qt::Checked
+                                                        : Qt::Unchecked);
+  show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked
+                                                      : Qt::Unchecked);
 }
 
 void HeatMapSetup::destroyMap()
@@ -311,8 +316,9 @@ void HeatMapSetup::updateShowMaxRange(int option)
 
 void HeatMapSetup::updateRange()
 {
-  source_.setDisplayRange(source_.convertValueToPercent(min_range_selector_->value()),
-                          source_.convertValueToPercent(max_range_selector_->value()));
+  source_.setDisplayRange(
+      source_.convertValueToPercent(min_range_selector_->value()),
+      source_.convertValueToPercent(max_range_selector_->value()));
   emit changed();
 }
 
@@ -322,7 +328,8 @@ void HeatMapSetup::updateGridSize()
     source_.setGridSizes(grid_x_size_->value(), grid_y_size_->value());
   } else {
     const double dbu = dbu_;
-    source_.setGridSizes(grid_x_size_dbu_->value() / dbu, grid_x_size_dbu_->value() / dbu);
+    source_.setGridSizes(grid_x_size_dbu_->value() / dbu,
+                         grid_x_size_dbu_->value() / dbu);
   }
   emit changed();
 }
@@ -333,23 +340,26 @@ void HeatMapSetup::updateAlpha(int alpha)
   emit changed();
 }
 
-void HeatMapSetup::addBooleanOption(QFormLayout* layout, const HeatMapDataSource::MapSettingBoolean& option)
+void HeatMapSetup::addBooleanOption(
+    QFormLayout* layout,
+    const HeatMapDataSource::MapSettingBoolean& option)
 {
   QCheckBox* check_box = new QCheckBox(this);
   check_box->setCheckState(option.getter() ? Qt::Checked : Qt::Unchecked);
 
   layout->addRow(QString::fromStdString(option.label), check_box);
 
-  QObject::connect(check_box,
-                   &QCheckBox::stateChanged,
-                   [this, option](int value) {
-                     option.setter(value == Qt::Checked);
-                     destroyMap();
-                     source_.redraw();
-                   });
+  QObject::connect(
+      check_box, &QCheckBox::stateChanged, [this, option](int value) {
+        option.setter(value == Qt::Checked);
+        destroyMap();
+        source_.redraw();
+      });
 }
 
-void HeatMapSetup::addMultiChoiceOption(QFormLayout* layout, const HeatMapDataSource::MapSettingMultiChoice& option)
+void HeatMapSetup::addMultiChoiceOption(
+    QFormLayout* layout,
+    const HeatMapDataSource::MapSettingMultiChoice& option)
 {
   QComboBox* combo_box = new QComboBox(this);
   for (const auto& value : option.choices()) {
@@ -365,7 +375,7 @@ void HeatMapSetup::addMultiChoiceOption(QFormLayout* layout, const HeatMapDataSo
                      option.setter(value.toStdString());
                      destroyMap();
                      source_.redraw();
-                  });
+                   });
 }
 
 }  // namespace gui
