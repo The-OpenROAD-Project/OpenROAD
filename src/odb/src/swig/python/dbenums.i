@@ -1401,3 +1401,53 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	PyObject *obj;
+	switch ($1.getValue()) {
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST:
+			obj = PyString_FromString("FIRST");
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND:
+			obj = PyString_FromString("SECOND");
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
+			obj = PyString_FromString("MAX");
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN:
+			obj = PyString_FromString("MIN");
+			break;
+	}
+	$result=obj;
+}
+%typemap(in) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	if (strcasecmp(str, "FIRST") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST;
+	} else if (strcasecmp(str, "SECOND") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
+	} else if (strcasecmp(str, "MAX") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
+	} else if (strcasecmp(str, "MIN") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
+	}
+}
+%typemap(typecheck) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "FIRST") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SECOND") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MAX") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MIN") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}

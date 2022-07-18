@@ -1646,3 +1646,53 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	Tcl_Obj *obj = nullptr;
+	switch ($1) {
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST:
+			obj = Tcl_NewStringObj("FIRST", -1);
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND:
+			obj = Tcl_NewStringObj("SECOND", -1);
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
+			obj = Tcl_NewStringObj("MAX", -1);
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN:
+			obj = Tcl_NewStringObj("MIN", -1);
+			break;
+	}
+	Tcl_SetObjResult(interp, obj);
+}
+%typemap(in) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	if (strcasecmp(str, "FIRST") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST;
+	} else if (strcasecmp(str, "SECOND") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
+	} else if (strcasecmp(str, "MAX") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
+	} else if (strcasecmp(str, "MIN") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
+	}
+}
+%typemap(typecheck) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "FIRST") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SECOND") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MAX") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MIN") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
