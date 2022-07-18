@@ -1874,11 +1874,15 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
+    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
     logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     logger_->metric("route__vias", totSCut + totMCut);
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
-    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
+  }
+  else if (VERBOSE > 0) {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
   }
 
 
