@@ -136,13 +136,15 @@ proc set_io_pin_constraint { args } {
     if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
       if {$begin == {*}} {
         set begin [ppl::get_edge_extreme "-region" 1 $edge]
-      }
-      if {$end == {*}} {
-        set end [ppl::get_edge_extreme "-region" 0 $edge]
+      } else {
+        set begin [ord::microns_to_dbu $begin]
       }
 
-      set begin [expr { int($begin * $lef_units) }]
-      set end [expr { int($end * $lef_units) }]
+      if {$end == {*}} {
+        set end [ppl::get_edge_extreme "-region" 0 $edge]
+      } else {
+        set end [ord::microns_to_dbu $end]
+      }
     } elseif {$interval == {*}} {
       set begin [ppl::get_edge_extreme "-region" 1 $edge]
       set end [ppl::get_edge_extreme "-region" 0 $edge]
@@ -578,6 +580,8 @@ proc get_edge_extreme { cmd begin edge } {
       utl::error PPL 30 "Invalid edge for command $cmd, should be one of top, bottom, left, right."
     }
   }
+
+  return $extreme
 }
 
 proc exclude_intervals { cmd intervals } {
