@@ -145,8 +145,8 @@ class IRSolver {
   GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
   int m_node_density{0};  // Initialize to zero
-  int m_node_density_factor{5};  // TODO get from somewhere
-  int m_node_density_factor_user{0};  // TODO get from somewhere
+  int m_node_density_factor{5};  // Default value
+  int m_node_density_factor_user{0};  // User defined value
   float m_node_density_um{-1}; // Initialize to negative unless set by user 
   //! Routing Level of the top layer
   int m_top_layer{0};
