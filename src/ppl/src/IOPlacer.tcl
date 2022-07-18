@@ -578,6 +578,8 @@ proc get_edge_extreme { cmd begin edge } {
       utl::error PPL 30 "Invalid edge for command $cmd, should be one of top, bottom, left, right."
     }
   }
+
+  return $extreme
 }
 
 proc exclude_intervals { cmd intervals } {
