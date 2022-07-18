@@ -1733,7 +1733,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                                         prev_perc,
                                         getDesign()->getTopBlock()->getNumMarkers());
                         logger_->report("    {}.", t);
-                      } else {
                       }
                     }
                   }
@@ -1880,7 +1879,7 @@ void FlexDR::end(bool done)
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
   }
-  else if (VERBOSE > 0) {
+  else {
     logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
     logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
   }
