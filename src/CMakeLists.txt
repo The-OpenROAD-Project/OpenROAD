@@ -159,6 +159,7 @@ swig_lib(NAME      openroad_swig
          I_FILE    OpenRoad.i
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
+                   Metrics.tcl
                    ${PAD_HOME}/src/pad.tcl
                    ${ODB_HOME}/src/db/odb.tcl
 )

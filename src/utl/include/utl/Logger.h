@@ -36,6 +36,7 @@
 #pragma once
 
 #include <string>
+#include <iomanip>
 #include <vector>
 #include <array>
 #include <map>
@@ -178,7 +179,9 @@ class Logger
   inline void metric(const std::string_view metric,
                      T value)
   {
-    log_metric(std::string(metric), std::to_string(value));
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4) << value;
+    log_metric(std::string(metric), oss.str());
   }
 
   inline void metric(const std::string_view metric,
