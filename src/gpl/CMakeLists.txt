@@ -44,6 +44,8 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
 
+#enable_language(CUDA)
+
 swig_lib(NAME      gpl
          NAMESPACE gpl
          I_FILE    src/replace.i
@@ -75,6 +77,11 @@ target_include_directories(gpl
     include
 )
 
+find_package(CUDA REQUIRED)
+
+include_directories(${CUDA_INCLUDE_DIRS}
+)
+
 target_link_libraries(gpl
   PRIVATE
     utl
@@ -84,6 +91,10 @@ target_link_libraries(gpl
     OpenSTA
     rsz
     grt
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_cusparse_LIBRARY}
+    ${CUDA_cusolver_LIBRARY}
 )
 
 # CIMG_USE case
@@ -95,6 +106,8 @@ if( USE_CIMG_LIB )
       PRIVATE
         ${X11_LIBRARIES}
         ${JPEG_LIBRARIES}
+        ${CUDA_LIBRARIES}
+        ${CUDA_cusolver_LIBRARY}
     )
     target_include_directories( gpl
       PUBLIC

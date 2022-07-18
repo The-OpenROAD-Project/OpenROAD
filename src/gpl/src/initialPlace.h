@@ -42,6 +42,11 @@ namespace utl {
 class Logger;
 }
 
+struct tri{
+  int rowInd, colInd;
+  float val;
+};
+
 namespace gpl {
 
 class PlacerBase;
@@ -69,7 +74,6 @@ class InitialPlace {
         std::shared_ptr<PlacerBase> pb,
         utl::Logger* logger);
     ~InitialPlace();
-
     void doBicgstabPlace();
 
   private:
@@ -102,6 +106,11 @@ class InitialPlace {
     Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
     Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
     SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;
+    bool GPU = 1;
+    std::vector<tri> triX;
+    std::vector<tri> triY;
+    std::vector<int> cooRowIndexX, cooColIndexX;
+    std::vector<float> cooValX;
 
     void placeInstsCenter();
     void setPlaceInstExtId();
