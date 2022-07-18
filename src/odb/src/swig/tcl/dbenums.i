@@ -1658,7 +1658,7 @@
 		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
 			obj = Tcl_NewStringObj("MAX", -1);
 			break;
-		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN:
+		default:
 			obj = Tcl_NewStringObj("MIN", -1);
 			break;
 	}
@@ -1672,7 +1672,7 @@
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
 	} else if (strcasecmp(str, "MAX") == 0) {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
-	} else if (strcasecmp(str, "MIN") == 0) {
+	} else {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
 	}
 }

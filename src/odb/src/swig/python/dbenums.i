@@ -1413,7 +1413,7 @@
 		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
 			obj = PyString_FromString("MAX");
 			break;
-		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN:
+		default:
 			obj = PyString_FromString("MIN");
 			break;
 	}
@@ -1427,7 +1427,7 @@
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
 	} else if (strcasecmp(str, "MAX") == 0) {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
-	} else if (strcasecmp(str, "MIN") == 0) {
+	} else {
 		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
 	}
 }
