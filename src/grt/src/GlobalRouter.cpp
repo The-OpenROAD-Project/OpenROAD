@@ -68,10 +68,12 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "boost/icl/interval.hpp"
 
 namespace grt {
 
 using utl::GRT;
+using boost::icl::interval;
 
 GlobalRouter::GlobalRouter()
     : logger_(nullptr),
@@ -185,6 +187,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
+  std::vector<int> track_space = grid_->getMinWidths(); 
+  fastroute_->initBlockedIntervals(track_space);
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
@@ -195,7 +199,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
   }
-
   fastroute_->initAuxVar();
 }
 
@@ -1100,7 +1103,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
     // specific adjustments
     fastroute_->applyVerticalAdjustments(
         first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
-  }
+ }
 }
 
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
@@ -1129,24 +1132,24 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   int layer = tech_layer->getRoutingLevel();
 
   int track_space = grid_->getMinWidths()[layer - 1];
-  int first_tile_reduce = grid_->computeTileReduce(obstruction_rect,
+
+  interval<int>::type first_tile_reduce_interval = grid_->computeTileReduceInterval(obstruction_rect,
                                                    first_tile_box,
                                                    track_space,
                                                    true,
                                                    tech_layer->getDirection());
-
-  int last_tile_reduce = grid_->computeTileReduce(obstruction_rect,
+  interval<int>::type last_tile_reduce_interval = grid_->computeTileReduceInterval(obstruction_rect,
                                                   last_tile_box,
                                                   track_space,
                                                   false,
                                                   tech_layer->getDirection());
 
   if (!vertical) {
-    fastroute_->applyHorizontalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+    fastroute_->addHorizontalAdjustments(
+        first_tile, last_tile, layer, first_tile_reduce_interval, last_tile_reduce_interval);
   } else {
-    fastroute_->applyVerticalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+    fastroute_->addVerticalAdjustments(
+        first_tile, last_tile, layer, first_tile_reduce_interval, last_tile_reduce_interval);
   }
 }
 
