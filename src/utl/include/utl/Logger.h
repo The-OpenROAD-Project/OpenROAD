@@ -45,6 +45,7 @@
 #include <string_view>
 #include <cstdlib>
 #include <type_traits>
+#include <sstream>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
