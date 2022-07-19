@@ -289,7 +289,6 @@ class Logger
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;
-  bool first_metric_;
   static constexpr const char *level_names[] = {"TRACE",
                                                 "DEBUG",
                                                 "INFO",
