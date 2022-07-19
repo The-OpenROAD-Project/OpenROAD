@@ -42,8 +42,8 @@ Options description:
 - ``outfile``: (optional) filename specified per-instance voltage written into file.
 - ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists.
 - ``voltage``: (optional) Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
-- ``node_density``: (optional)  This value can be specfied by the user in um to determine the pitch of the PDN nodes in M1 layer.
-- ``node_density_factor``: (optional) Integer value factor which is multiplied by standard cell height to set node denisty.
+- ``node_density``: (optional)  This value can be specfied by the user in um to determine the node density on the std. cell rails. Cannot be used together with node_density_factor.
+- ``node_density_factor``: (optional) Integer value factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with node_density.
 
 ## Example scripts
 

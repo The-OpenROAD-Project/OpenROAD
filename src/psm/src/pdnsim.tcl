@@ -35,6 +35,11 @@ proc analyze_power_grid { args } {
     set bump_pitch_y $keys(-dy)
     psm::set_bump_pitch_y $bump_pitch_y
   }
+
+  if { [info exists keys(-node_density)] && [info exists keys(-node_density_factor)] } {
+    utl::error PSM 77 "Cannot use both node_density and node_density_factor together. Use any one argument"
+  }
+  
   if { [info exists keys(-node_density)] } {
     set val_node_density $keys(-node_density)
     psm::set_node_density $val_node_density
