@@ -2335,6 +2335,8 @@ void io::Parser::readDb()
     logger->report("Number of nets:           {}",
                    design->getTopBlock()->nets_.size());
     logger->report("");
+    logger->metric("route__net", design->getTopBlock()->nets_.size());
+    logger->metric("route__net__special", design->getTopBlock()->snets_.size());
   }
 }
 

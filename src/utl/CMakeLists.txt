@@ -24,6 +24,7 @@ target_sources(utl
   PRIVATE
     src/Logger.cpp
     src/MakeLogger.cpp
+    src/Metrics.cpp
 )
   
 target_include_directories(utl

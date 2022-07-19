@@ -815,6 +815,7 @@ void MacroPlacer::findMacros()
   }
 
   logger_->info(MPL, 5, "Found {} macros.", macros_.size());
+  logger_->metric("floorplan__design__instance__count__macros", macros_.size());
 }
 
 static bool isWithIn(int val, int min, int max)

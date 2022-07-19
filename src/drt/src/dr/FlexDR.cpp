@@ -1719,25 +1719,24 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
               else
                 workersInBatch[i]->main(getDesign());
 #pragma omp critical
-              {
-                cnt++;
-                if (VERBOSE > 0) {
-                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                      && prev_perc < 90) {
-                    if (prev_perc == 0 && t.isExceed(0)) {
-                      isExceed = true;
-                    }
-                    prev_perc += 10;
-                    if (isExceed) {
-                      logger_->report(
-                          "    Completing {}% with {} violations.",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-                      logger_->report("    {}.", t);
+                {
+                  cnt++;
+                  if (VERBOSE > 0) {
+                    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                        && prev_perc < 90) {
+                      if (prev_perc == 0 && t.isExceed(0)) {
+                        isExceed = true;
+                      }
+                      prev_perc += 10;
+                      if (isExceed) {
+                        logger_->report("    Completing {}% with {} violations.",
+                                        prev_perc,
+                                        getDesign()->getTopBlock()->getNumMarkers());
+                        logger_->report("    {}.", t);
+                      }
                     }
                   }
                 }
-              }
             } catch (...) {
               exception.capture();
             }
@@ -1874,14 +1873,22 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("drt::wire length::total",
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric("drt::vias::total", totSCut + totMCut);
+    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("route__vias", totSCut + totMCut);
+    logger_->metric("route__vias__singlecut", totSCut);
+    logger_->metric("route__vias__multicut", totMCut);
   }
+  else {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+  }
+
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
