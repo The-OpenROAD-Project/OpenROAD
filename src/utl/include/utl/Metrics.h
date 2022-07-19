@@ -53,7 +53,6 @@ enum class MetricsPolicyType
 {
   KeepFirst,
   KeepLast,
-  EnumerateFirstToLast,
   Remove
 };
 
