@@ -76,12 +76,15 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
   switch (policy_) {
     case MetricsPolicyType::KeepFirst: {
       bool matched = false;
-      for (auto iter = entries.begin(); iter != entries.end(); iter++) {
-        if (matching(iter->key)) {
-          if (matched)
-            entries.erase(iter);
-          matched = true;
-        }
+      auto iter = entries.begin();
+      while (iter != entries.end()) {
+          auto copy_iter = iter;
+          iter++;
+          if (matching(copy_iter->key)) {
+              if (matched)
+                entries.erase(copy_iter);
+              matched = true;
+          }
       }
       break;
     }
@@ -100,22 +103,14 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
       break;
     }
 
-    case MetricsPolicyType::EnumerateFirstToLast: {
-      int ctr = 0;
-      std::list<MetricsEntry>::iterator last;
-      for (auto iter = entries.begin(); iter != entries.end(); iter++) {
-        if (matching(iter->key)) {
-          iter->key += "_" + std::to_string(ctr);
-          ctr++;
-        }
-      }
-      break;
-    }
-
     case MetricsPolicyType::Remove: {
-      for (auto iter = entries.begin(); iter != entries.end(); iter++) {
-        if (matching(iter->key))
-          entries.erase(iter--);
+      auto iter = entries.begin();
+      while (iter != entries.end()) {
+          auto copy_iter = iter;
+          iter++;
+          if (matching(copy_iter->key)) {
+              entries.erase(copy_iter);
+          }
       }
       break;
     }
