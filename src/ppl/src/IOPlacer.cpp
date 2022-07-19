@@ -665,7 +665,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       }
     }
     for (auto i : sortIndexes(dst)) {
-      if (sections[i].used_slots + group_size < sections[i].num_slots) {
+      if (sections[i].used_slots + group_size <= sections[i].num_slots) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin& io_pin = net.getIoPin(pin_idx);
@@ -678,6 +678,14 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         sections[i].pin_groups.push_back(group);
         group_assigned = true;
         break;
+      } else {
+        int available_slots = sections[i].num_slots - sections[i].used_slots;
+        logger_->warn(PPL,
+                      78,
+                      "Not enough available positions ({}) to place the pin "
+                      "group of size {}.",
+                      available_slots,
+                      group_size);
       }
     }
     if (!group_assigned) {

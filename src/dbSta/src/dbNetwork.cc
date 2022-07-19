@@ -557,6 +557,19 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
+bool dbNetwork::isFixed(const Instance* instance) const
+{
+  if (!instance || instance == top_instance_) {
+    return false;
+  }
+
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+
+  return db_inst && db_inst->getPlacementStatus().isFixed();
+}
+
 ////////////////////////////////////////////////////////////////
 
 Instance* dbNetwork::instance(const Pin* pin) const

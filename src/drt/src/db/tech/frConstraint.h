@@ -747,6 +747,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
         oppositeWidth(0),
         eolWithin(0),
         wrongDirWithin(false),
+        endPrlSpacing(0),
+        endPrl(0),
         sameMask(false),
         endToEndConstraint(nullptr),
         parallelEdgeConstraint(nullptr)
@@ -758,6 +760,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   frCoord getOppositeWidth() const { return oppositeWidth; }
   frCoord getEolWithin() const { return sameMask ? 0 : eolWithin; }
   frCoord getWrongDirWithin() const { return wrongDirWithin; }
+  frCoord getEndPrlSpacing() const { return endPrlSpacing; }
+  frCoord getEndPrl() const { return endPrl; }
   bool hasSameMask() const { return sameMask; }
   bool hasExceptExactWidth() const
   {
@@ -773,7 +777,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasEndPrlSpacing() const
   {
-    return false;  // skip for now
+    return endPrlSpacing;
   }
   bool hasEndToEndConstraint() const
   {
@@ -830,6 +834,11 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     eolWithin = in;
     wrongDirWithin = in;
   }
+  void setEndPrl(frCoord endPrlSpacingIn, frCoord endPrlIn)
+  {
+    endPrlSpacing = endPrlSpacingIn;
+    endPrl = endPrlIn;
+  }
   void setWrongDirWithin(frCoord in) { wrongDirWithin = in; }
   void setSameMask(bool in) { sameMask = in; }
   void setEndToEndConstraint(
@@ -865,12 +874,14 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   {
     logger->report(
         "\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} "
-        "wrongDirWithin {} sameMask {} ",
+        "wrongDirWithin {} sameMask {} endPrlSpacing {} endPrl {}",
         hOppositeWidth,
         oppositeWidth,
         eolWithin,
         wrongDirWithin,
-        sameMask);
+        sameMask,
+        endPrlSpacing,
+        endPrl);
     if (endToEndConstraint != nullptr)
       endToEndConstraint->report(logger);
     if (parallelEdgeConstraint != nullptr)
@@ -882,6 +893,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   frCoord oppositeWidth;
   frCoord eolWithin;
   frCoord wrongDirWithin;
+  frCoord endPrlSpacing;
+  frCoord endPrl;
   bool sameMask;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>
       endToEndConstraint;
