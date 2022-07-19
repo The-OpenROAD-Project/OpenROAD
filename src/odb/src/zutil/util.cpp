@@ -181,22 +181,17 @@ void cutRows(dbBlock* block,
         });
 
   // Gather rows needing to be cut up front
-  vector<dbRow*> blocked_rows;
-  std::map<dbRow*, vector<dbBox*>> row_blockages;
   for (dbBox* blockage : blockages) {
+    std::map<dbRow*, vector<dbBox*>> row_blockages;
     for (dbRow* row : block->getRows()) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
-        if (row_blockages.find(row) == row_blockages.end()) {
-          blocked_rows.push_back(row);
-        }
         row_blockages[row].push_back(blockage);
       }
     }
-  }
-
-  // Cut rows around macros
-  for (auto& [k, ignored] : row_blockages) {
-    cutRow(block, k, row_blockages[k], min_row_width, halo_x, halo_y);
+    // Cut rows around macros
+    for (auto& [k, ignored] : row_blockages) {
+      cutRow(block, k, row_blockages[k], min_row_width, halo_x, halo_y);
+    }
   }
 
   const int final_sites_count
