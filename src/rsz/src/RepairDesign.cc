@@ -82,8 +82,14 @@ RepairDesign::RepairDesign(Resizer *resizer) :
   resize_count_(0),
   inserted_buffer_count_(0),
   min_(MinMax::min()),
-  max_(MinMax::max())
+  max_(MinMax::max()),
+  fanout_render_(new FanoutRender(this))
 {
+}
+
+RepairDesign::~RepairDesign()
+{
+  delete fanout_render_;
 }
 
 void
@@ -315,6 +321,7 @@ RepairDesign::repairNet(Net *net,
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
     const Corner *corner = sta_->cmdCorner();
+    bool repair_fanout = false;
     if (check_fanout) {
       float fanout, fanout_slack;
       float max_fanout = INF;
@@ -322,14 +329,14 @@ RepairDesign::repairNet(Net *net,
                         fanout, max_fanout, fanout_slack);
       if (max_fanout > 0.0 && fanout_slack < 0.0) {
         fanout_violations++;
+        repair_fanout = true;
 
         debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
-        Quad quad = groupLoadsInQuads(drvr_pin, max_fanout);
-        //quad.reportTree(logger_);
+        LoadRegion region = groupLoadsIntoRegions(drvr_pin, max_fanout);
         corner_ = corner;
-        makeQuadRepeaters(quad, max_fanout, 1,
-                          slew_margin, max_cap_margin, check_slew,
-                          check_cap, max_length, resize_drvr);
+        makeRegionRepeaters(region, max_fanout, 1,
+                            slew_margin, max_cap_margin, check_slew,
+                            check_cap, max_length, resize_drvr);
 
       }
     }
@@ -348,7 +355,6 @@ RepairDesign::repairNet(Net *net,
         float max_fanout = INF;
         bool repair_slew = false;
         bool repair_cap = false;
-        bool repair_fanout = false;
         bool repair_wire = false;
         if (check_cap) {
           float cap1, max_cap1, cap_slack1;
@@ -913,157 +919,148 @@ RepairDesign::repairNetLoad(BufferedNetPtr bnet,
 
 ////////////////////////////////////////////////////////////////
 
-Quad::Quad()
+LoadRegion::LoadRegion()
 {
 }
 
-Quad::Quad(Vector<Pin*> &pins,
+LoadRegion::LoadRegion(Vector<Pin*> &pins,
            Rect &bbox) :
   pins_(pins),
   bbox_(bbox)
 {
 }
 
-void
-Quad::reportTree(Logger *logger)
-{
-  reportTree(1, logger);
-}
-
-void
-Quad::reportTree(int level,
-                 Logger *logger)
-{
-  logger->report("{:{}s}[{} {} {} {}] {} members",
-                 "", level,
-                 bbox_.xMin(), bbox_.xMax(), bbox_.yMin(), bbox_.yMax(),
-                 pins_.size());
-  for (Quad &sub : quads_)
-    sub.reportTree(level + 1, logger);
-}
-
-Quad
-RepairDesign::groupLoadsInQuads(const Pin *drvr_pin,
-                                int max_fanout)
+LoadRegion
+RepairDesign::groupLoadsIntoRegions(const Pin *drvr_pin,
+                                    int max_fanout)
 {
   PinSeq loads = findLoads(drvr_pin);
   Rect bbox = findBbox(loads);
-  Quad quad(loads, bbox);
-  subdivideQuad(quad, max_fanout);
-  return quad;
+  LoadRegion region(loads, bbox);
+  subdivideRegion(region, max_fanout);
+  return region;
 }
 
 void
-RepairDesign::subdivideQuad(Quad &quad,
-                            int max_fanout)
+RepairDesign::subdivideRegion(LoadRegion &region,
+                              int max_fanout)
 {
-  if (quad.pins_.size() > max_fanout) {
-    int x_min = quad.bbox_.xMin();
-    int x_max = quad.bbox_.xMax();
-    int y_min = quad.bbox_.yMin();
-    int y_max = quad.bbox_.yMax();
+  if (region.pins_.size() > max_fanout) {
+    int x_min = region.bbox_.xMin();
+    int x_max = region.bbox_.xMax();
+    int y_min = region.bbox_.yMin();
+    int y_max = region.bbox_.yMax();
+    region.regions_.resize(2);
     int64_t x_mid = (x_min + x_max) / 2;
     int64_t y_mid = (y_min + y_max) / 2;
-    quad.quads_.resize(4);
-    quad.quads_[Quad::Index::SW].bbox_ = Rect(x_min, y_min, x_mid, y_mid);
-    quad.quads_[Quad::Index::SE].bbox_ = Rect(x_mid, y_min, x_max, y_mid);
-    quad.quads_[Quad::Index::NW].bbox_ = Rect(x_min, y_mid, x_mid, y_max);
-    quad.quads_[Quad::Index::NE].bbox_ = Rect(x_mid, y_mid, x_max, y_max);
-    for (Pin *pin : quad.pins_) {
+    bool horz_partition;
+    if (region.bbox_.dx() > region.bbox_.dy()) {
+      region.regions_[LoadRegion::Index::SW].bbox_ = Rect(x_min, y_min, x_mid, y_max);
+      region.regions_[LoadRegion::Index::SE].bbox_ = Rect(x_mid, y_min, x_max, y_max);
+      horz_partition = true;
+    }
+    else {
+      region.regions_[LoadRegion::Index::SW].bbox_ = Rect(x_min, y_min, x_max, y_mid);
+      region.regions_[LoadRegion::Index::SE].bbox_ = Rect(x_min, y_mid, x_max, y_max);
+      horz_partition = false;
+    }
+    for (Pin *pin : region.pins_) {
       Point loc = db_network_->location(pin);
       int x = loc.x();
       int y = loc.y();
-      Quad::Index index;
-      if (x <= x_mid
-          && y <= y_mid)
-        index = Quad::Index::SW;
-      else if (x > x_mid
-               && y <= y_mid)
-        index = Quad::Index::SE;
-      else if (x <= x_mid
-               && y > y_mid)
-        index = Quad::Index::NW;
-      else if (x > x_mid
-               && y > y_mid)
-        index = Quad::Index::NE;
+      LoadRegion::Index index;
+      if ((horz_partition
+           && x <= x_mid)
+          || (!horz_partition
+              && y <= y_mid))
+        index = LoadRegion::Index::SW;
+      else if ((horz_partition
+                && x > x_mid)
+               || (!horz_partition
+                   && y > y_mid))
+        index = LoadRegion::Index::SE;
       else {
-        logger_->critical(RSZ, 83, "pin outside all quadrants");
-        index = Quad::Index::SW;
+        logger_->critical(RSZ, 83, "pin outside all regionrants");
+        index = LoadRegion::Index::SW;
       }
-      quad.quads_[index].pins_.push_back(pin);
+      region.regions_[index].pins_.push_back(pin);
     }
-    quad.pins_.clear();
-    for (Quad &sub : quad.quads_) {
+    region.pins_.clear();
+    for (LoadRegion &sub : region.regions_) {
       if (!sub.pins_.empty())
-        subdivideQuad(sub, max_fanout);
+        subdivideRegion(sub, max_fanout);
     }
   }
 }
 
 void
-RepairDesign::makeQuadRepeaters(Quad &quad,
-                                int max_fanout,
-                                int level,
-                                double slew_margin,
-                                double max_cap_margin,
-                                bool check_slew,
-                                bool check_cap,
-                                int max_length,
-                                bool resize_drvr)
+RepairDesign::makeRegionRepeaters(LoadRegion &region,
+                                  int max_fanout,
+                                  int level,
+                                  double slew_margin,
+                                  double max_cap_margin,
+                                  bool check_slew,
+                                  bool check_cap,
+                                  int max_length,
+                                  bool resize_drvr)
 {
-  // Leaf quadrants have less than max_fanout pins and are buffered
-  // by the enclosing quadrant.
-  if (!quad.quads_.empty()) {
+  // Leaf regionrants have less than max_fanout pins and are buffered
+  // by the enclosing regionrant.
+  if (!region.regions_.empty()) {
     // Buffer from the bottom up.
-    for (Quad &sub : quad.quads_)
-      makeQuadRepeaters(sub, max_fanout, level + 1, slew_margin, max_cap_margin,
-                        check_slew, check_cap, max_length, resize_drvr);
+    for (LoadRegion &sub : region.regions_)
+      makeRegionRepeaters(sub, max_fanout, level + 1, slew_margin, max_cap_margin,
+                          check_slew, check_cap, max_length, resize_drvr);
 
     PinSeq repeater_inputs;
     PinSeq repeater_loads;
-    for (Quad &sub : quad.quads_) {
+    for (LoadRegion &sub : region.regions_) {
       PinSeq &sub_pins = sub.pins_;
       while (!sub_pins.empty()) {
         repeater_loads.push_back(sub_pins.back());
         sub_pins.pop_back();
         if (repeater_loads.size() == max_fanout)
           makeFanoutRepeater(repeater_loads, repeater_inputs,
+                             sub.bbox_,
                              findCenter(repeater_loads),
                              slew_margin, max_cap_margin,
                              check_slew, check_cap, max_length,
                              resize_drvr);
       }
     }
-    while (!quad.pins_.empty()) {
-      repeater_loads.push_back(quad.pins_.back());
-      quad.pins_.pop_back();
+    while (!region.pins_.empty()) {
+      repeater_loads.push_back(region.pins_.back());
+      region.pins_.pop_back();
       if (repeater_loads.size() == max_fanout)
         makeFanoutRepeater(repeater_loads, repeater_inputs,
-                           center(quad.bbox_),
+                           region.bbox_,
+                           //findCenter(repeater_loads),
+                           center(region.bbox_),
                            slew_margin, max_cap_margin,
                            check_slew, check_cap, max_length,
                            resize_drvr);
 
     }
-    if (!repeater_loads.empty())
+    if (repeater_loads.size() >= max_fanout / 2)
       makeFanoutRepeater(repeater_loads, repeater_inputs,
-                         center(quad.bbox_),
+                         region.bbox_,
+                         //findCenter(repeater_loads),
+                         center(region.bbox_),
                          slew_margin, max_cap_margin,
                          check_slew, check_cap, max_length,
                          resize_drvr);
+    else
+      region.pins_ = repeater_loads;
 
-    debugPrint(logger_, RSZ, "repair_fanout", 1, "{:{}s}repeaters={} leftovers={}",
-               "", level,
-               repeater_inputs.size(),
-               repeater_loads.size());
     for (Pin *pin : repeater_inputs)
-      quad.pins_.push_back(pin);
+      region.pins_.push_back(pin);
   }
 }
 
 void
 RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  PinSeq &repeater_inputs,
+                                 Rect bbox,
                                  Point loc,
                                  double slew_margin,
                                  double max_cap_margin,
@@ -1072,6 +1069,14 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  int max_length,
                                  bool resize_drvr)
 {
+  if (false && gui::Gui::enabled()) {
+    fanout_render_->setRect(bbox);
+    fanout_render_->setPins(&repeater_loads);
+    fanout_render_->setDrvrLoc(loc);
+    gui::Gui *gui = gui::Gui::get();
+    gui->pause();
+  }
+
   float ignore2, ignore3, ignore4;
   Net *out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
@@ -1375,6 +1380,54 @@ int
 RepairDesign::metersToDbu(double dist) const
 {
   return dist * dbu_ * 1e+6;
+}
+
+////////////////////////////////////////////////////////////////
+
+FanoutRender::FanoutRender(RepairDesign *repair) :
+  repair_(repair),
+  pins_(nullptr)
+{
+  gui::Gui::get()->registerRenderer(this);
+}
+
+void
+FanoutRender::setPins(PinSeq *pins)
+{
+  pins_ = pins;
+}
+
+void
+FanoutRender::setRect(Rect &rect)
+{
+  rect_ = rect;
+}
+
+void
+FanoutRender::setDrvrLoc(Point loc)
+{
+  drvr_loc_ = loc;
+}
+
+void
+FanoutRender::drawObjects(gui::Painter &painter)
+{
+  if (pins_) {
+    auto color = gui::Painter::yellow;
+    painter.setPen(color, /* cosmetic */ true);
+    painter.setBrush(color, gui::Painter::SOLID);
+
+    painter.drawCircle(drvr_loc_.x(), drvr_loc_.y(), 5000);
+    painter.setBrush(color, gui::Painter::NONE);
+    painter.drawRect(rect_);
+
+    dbNetwork *network = repair_->db_network_;
+    for (Pin *pin : *pins_) {
+      dbInst *db_inst = network->staToDb(network->instance(pin));
+      Rect rect = db_inst->getBBox()->getBox();
+      painter.drawRect(rect);
+    }
+  }
 }
 
 } // namespace

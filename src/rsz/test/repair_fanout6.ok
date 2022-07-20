@@ -12,10 +12,10 @@
 [INFO ODB-0133]     Created 8003 nets and 24003 connections.
 [INFO ODB-0134] Finished DEF file: repair_fanout6.def
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 769 buffers in 0 nets.
-[INFO RSZ-0039] Resized 683 instances.
+[INFO RSZ-0038] Inserted 508 buffers in 1 nets.
+[INFO RSZ-0039] Resized 509 instances.
 Startpoint: source (rising edge-triggered flip-flop clocked by clk)
-Endpoint: sink6281 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink4789 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -24,49 +24,34 @@ Fanout     Cap    Slew   Delay    Time   Description
                   0.00    0.00    0.00   clock clk (rise edge)
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ source/CLK (sky130_fd_sc_hd__dfxtp_4)
-                  1.53    1.20    1.20 ^ source/Q (sky130_fd_sc_hd__dfxtp_4)
-     1    0.69                           net (net)
-                  3.12    1.35    2.55 ^ fanout769/A (sky130_fd_sc_hd__buf_16)
-                  2.38    1.49    4.03 ^ fanout769/X (sky130_fd_sc_hd__buf_16)
-     4    2.73                           net769 (net)
-                  3.61    1.35    5.38 ^ fanout580/A (sky130_fd_sc_hd__buf_16)
-                  0.62    0.47    5.85 ^ fanout580/X (sky130_fd_sc_hd__buf_16)
-     2    0.69                           net580 (net)
-                  0.93    0.34    6.19 ^ fanout579/A (sky130_fd_sc_hd__buf_12)
-                  0.19    0.29    6.48 ^ fanout579/X (sky130_fd_sc_hd__buf_12)
-     1    0.18                           net579 (net)
-                  0.27    0.09    6.57 ^ fanout578/A (sky130_fd_sc_hd__buf_12)
-                  0.20    0.26    6.84 ^ fanout578/X (sky130_fd_sc_hd__buf_12)
-     2    0.18                           net578 (net)
-                  0.21    0.02    6.86 ^ fanout521/A (sky130_fd_sc_hd__buf_6)
-                  0.18    0.24    7.11 ^ fanout521/X (sky130_fd_sc_hd__buf_6)
-     2    0.09                           net521 (net)
-                  0.18    0.01    7.11 ^ fanout520/A (sky130_fd_sc_hd__clkbuf_4)
-                  0.14    0.26    7.37 ^ fanout520/X (sky130_fd_sc_hd__clkbuf_4)
-     2    0.05                           net520 (net)
-                  0.14    0.00    7.37 ^ fanout506/A (sky130_fd_sc_hd__buf_2)
-                  0.18    0.24    7.61 ^ fanout506/X (sky130_fd_sc_hd__buf_2)
-     4    0.04                           net506 (net)
-                  0.18    0.00    7.61 ^ fanout505/A (sky130_fd_sc_hd__buf_4)
-                  0.18    0.25    7.86 ^ fanout505/X (sky130_fd_sc_hd__buf_4)
-    20    0.06                           net505 (net)
-                  0.18    0.00    7.86 ^ fanout502/A (sky130_fd_sc_hd__buf_4)
-                  0.15    0.24    8.10 ^ fanout502/X (sky130_fd_sc_hd__buf_4)
-    20    0.05                           net502 (net)
-                  0.15    0.00    8.10 ^ sink6281/D (sky130_fd_sc_hd__dfxtp_1)
-                                  8.10   data arrival time
+                  1.71    1.42    1.42 v source/Q (sky130_fd_sc_hd__dfxtp_4)
+     7    3.52                           net (net)
+                 15.69    7.75    9.18 v fanout253/A (sky130_fd_sc_hd__buf_16)
+                  0.82    3.66   12.84 v fanout253/X (sky130_fd_sc_hd__buf_16)
+    10    2.42                           net253 (net)
+                  5.02    2.51   15.34 v fanout111/A (sky130_fd_sc_hd__buf_4)
+                  0.22    1.52   16.86 v fanout111/X (sky130_fd_sc_hd__buf_4)
+    11    0.05                           net111 (net)
+                  0.22    0.00   16.86 v fanout105/A (sky130_fd_sc_hd__clkbuf_2)
+                  0.11    0.24   17.10 v fanout105/X (sky130_fd_sc_hd__clkbuf_2)
+    10    0.03                           net105 (net)
+                  0.11    0.00   17.10 v fanout104/A (sky130_fd_sc_hd__buf_4)
+                  0.08    0.22   17.32 v fanout104/X (sky130_fd_sc_hd__buf_4)
+    20    0.06                           net104 (net)
+                  0.08    0.00   17.32 v sink4789/D (sky130_fd_sc_hd__dfxtp_1)
+                                 17.32   data arrival time
 
                   0.00    5.00    5.00   clock clk (rise edge)
                           0.00    5.00   clock network delay (ideal)
                           0.00    5.00   clock reconvergence pessimism
-                                  5.00 ^ sink6281/CLK (sky130_fd_sc_hd__dfxtp_1)
-                         -0.09    4.91   library setup time
-                                  4.91   data required time
+                                  5.00 ^ sink4789/CLK (sky130_fd_sc_hd__dfxtp_1)
+                         -0.14    4.86   library setup time
+                                  4.86   data required time
 -----------------------------------------------------------------------------
-                                  4.91   data required time
-                                 -8.10   data arrival time
+                                  4.86   data required time
+                                -17.32   data arrival time
 -----------------------------------------------------------------------------
-                                 -3.19   slack (VIOLATED)
+                                -12.46   slack (VIOLATED)
 
 
 max fanout
@@ -74,4 +59,62 @@ max fanout
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout1/X                                20     20      0 (MET)
+
+[INFO RSZ-0040] Inserted 22 buffers.
+[INFO RSZ-0041] Resized 111 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: source (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink84 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock clk (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ source/CLK (sky130_fd_sc_hd__dfxtp_4)
+                  0.04    0.33    0.33 v source/Q (sky130_fd_sc_hd__dfxtp_4)
+     2    0.02                           net (net)
+                  0.04    0.00    0.33 v rebuffer512/A (sky130_fd_sc_hd__buf_16)
+                  0.27    0.30    0.64 v rebuffer512/X (sky130_fd_sc_hd__buf_16)
+     2    1.00                           net512 (net)
+                  4.69    2.35    2.99 v rebuffer518/A (sky130_fd_sc_hd__clkbuf_2)
+                  0.16    1.03    4.02 v rebuffer518/X (sky130_fd_sc_hd__clkbuf_2)
+     1    0.01                           net518 (net)
+                  0.16    0.00    4.02 v fanout253/A (sky130_fd_sc_hd__buf_16)
+                  0.26    0.34    4.36 v fanout253/X (sky130_fd_sc_hd__buf_16)
+     6    1.03                           net253 (net)
+                  0.26    0.00    4.36 v split511/A (sky130_fd_sc_hd__buf_16)
+                  0.25    0.38    4.74 v split511/X (sky130_fd_sc_hd__buf_16)
+     4    0.90                           net511 (net)
+                  0.25    0.00    4.74 v rebuffer509/A (sky130_fd_sc_hd__buf_12)
+                  0.21    0.37    5.11 v rebuffer509/X (sky130_fd_sc_hd__buf_12)
+     1    0.85                           net509 (net)
+                  3.38    1.69    6.81 v fanout252/A (sky130_fd_sc_hd__buf_16)
+                  0.17    0.97    7.78 v fanout252/X (sky130_fd_sc_hd__buf_16)
+    12    0.27                           net252 (net)
+                  0.30    0.12    7.90 v fanout210/A (sky130_fd_sc_hd__buf_6)
+                  0.08    0.28    8.18 v fanout210/X (sky130_fd_sc_hd__buf_6)
+    11    0.08                           net210 (net)
+                  0.08    0.01    8.19 v fanout200/A (sky130_fd_sc_hd__clkbuf_4)
+                  0.10    0.22    8.41 v fanout200/X (sky130_fd_sc_hd__clkbuf_4)
+    15    0.05                           net200 (net)
+                  0.10    0.00    8.42 v fanout199/A (sky130_fd_sc_hd__buf_4)
+                  0.08    0.21    8.63 v fanout199/X (sky130_fd_sc_hd__buf_4)
+    20    0.05                           net199 (net)
+                  0.08    0.00    8.63 v sink84/D (sky130_fd_sc_hd__dfxtp_1)
+                                  8.63   data arrival time
+
+                  0.00    5.00    5.00   clock clk (rise edge)
+                          0.00    5.00   clock network delay (ideal)
+                          0.00    5.00   clock reconvergence pessimism
+                                  5.00 ^ sink84/CLK (sky130_fd_sc_hd__dfxtp_1)
+                         -0.14    4.86   library setup time
+                                  4.86   data required time
+-----------------------------------------------------------------------------
+                                  4.86   data required time
+                                 -8.63   data arrival time
+-----------------------------------------------------------------------------
+                                 -3.77   slack (VIOLATED)
+
 

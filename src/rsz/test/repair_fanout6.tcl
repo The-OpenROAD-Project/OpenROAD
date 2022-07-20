@@ -18,6 +18,13 @@ estimate_parasitics -placement
 
 repair_design -max_wire_length 100000
 
-report_checks -path_delay max -fields {slew cap input nets fanout} -format full_clock_expanded
+report_checks -path_delay max -fields {slew cap input nets fanout}
 
 report_check_types -max_fanout
+
+# It is possible to get better timing resuilts with repair_design 
+# but there is no point in inserting extra buffers to fix non critical
+# paths. What matters is repair_timning's ability to optimize the timing
+# when it matters.
+repair_timing -setup
+report_checks -path_delay max -fields {slew cap input nets fanout}

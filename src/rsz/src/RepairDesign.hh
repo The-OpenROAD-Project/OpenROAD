@@ -39,6 +39,7 @@
 
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -49,6 +50,7 @@
 namespace rsz {
 
 class Resizer;
+class FanoutRender;
 
 using std::vector;
 
@@ -68,23 +70,20 @@ using sta::Vector;
 
 using odb::Rect;
 
-// Quad tree for partioning fanout pins.
-class Quad
+// Region for partioning fanout pins.
+class LoadRegion
 {
 public:
-  Quad();
-  Quad(Vector<Pin*> &pins,
+  LoadRegion();
+  LoadRegion(Vector<Pin*> &pins,
        Rect &bbox);
-  void reportTree(Logger *logger);
-  void reportTree(int level,
-                  Logger *logger);
 
   Vector<Pin*> pins_;
   Rect bbox_; // dbu
-  // Quadrant indices
+  // LoadRegionrant indices
   // 2 3
   // 0 1
-  vector<Quad> quads_;
+  vector<LoadRegion> regions_;
   enum Index {SW, SE, NW, NE};
 };
 
@@ -92,6 +91,7 @@ class RepairDesign : StaState
 {
 public:
   RepairDesign(Resizer *resizer);
+  ~RepairDesign();
   void repairDesign(double max_wire_length,
                     double slew_margin,
                     double cap_margin);
@@ -111,7 +111,7 @@ public:
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
 
-private:
+protected:
   void init();
   void repairNet(Net *net,
                  const Pin *drvr_pin,
@@ -176,21 +176,22 @@ private:
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap);
-  Quad groupLoadsInQuads(const Pin *drvr_pin,
-                         int max_fanout);
-  void subdivideQuad(Quad &quad,
-                     int max_fanout);
-  void makeQuadRepeaters(Quad &quad,
-                         int max_fanout,
-                         int level,
-                         double slew_margin,
-                         double max_cap_margin,
-                         bool check_slew,
-                         bool check_cap,
-                         int max_length,
-                         bool resize_drvr);
+  LoadRegion groupLoadsIntoRegions(const Pin *drvr_pin,
+                                   int max_fanout);
+  void subdivideRegion(LoadRegion &region,
+                       int max_fanout);
+  void makeRegionRepeaters(LoadRegion &region,
+                           int max_fanout,
+                           int level,
+                           double slew_margin,
+                           double max_cap_margin,
+                           bool check_slew,
+                           bool check_cap,
+                           int max_length,
+                           bool resize_drvr);
   void makeFanoutRepeater(PinSeq &repeater_loads,
                           PinSeq &repeater_inputs,
+                          Rect bbox,
                           Point loc,
                           double slew_margin,
                           double max_cap_margin,
@@ -254,8 +255,28 @@ private:
   const MinMax *min_;
   const MinMax *max_;
 
+  FanoutRender *fanout_render_;
+
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
+
+  friend class FanoutRender;
+};
+
+class FanoutRender : public gui::Renderer
+{
+public:
+  FanoutRender(RepairDesign *repair);
+  void setRect(Rect &rect);
+  void setDrvrLoc(Point loc);
+  void setPins(PinSeq *pins);
+  void drawObjects(gui::Painter &painter);
+
+private:
+  RepairDesign *repair_;
+  Rect rect_;
+  PinSeq *pins_;
+  Point drvr_loc_;
 };
 
 } // namespace
