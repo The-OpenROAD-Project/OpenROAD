@@ -143,7 +143,7 @@ void InitialPlace::doBicgstabPlace() {
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  // Background variables for CUDA. Don't change with the iterating
+  // Parameters that don't change with iteration
   int m = pb_->placeInsts().size(); // number of rows of matrix A
   float tol = 1e-6; // Threshold to decide if the 
   int reorder = 0;  // "0" for common matrix meaning no extra processing
@@ -153,7 +153,6 @@ void InitialPlace::doBicgstabPlace() {
     updatePinInfo();
     createSparseMatrix();
     if (GPU == 1){
-
       // Set sparse matrices from dense matrices.
       cooRowIndexX.clear();
       cooColIndexX.clear();
@@ -272,8 +271,8 @@ void InitialPlace::doBicgstabPlace() {
       CUSPARSE_ERROR(cusparseDestroy(handleCusparseY));
       CUSOLVER_ERROR(cusolverSpDestroy(handleCusolverY));   
 
-      std::cout << "GPU X: " << instLocVecX_[0] << ", " << instLocVecX_[1] << ", " << instLocVecX_[200] << std:: endl;
-      std::cout << "GPU Y: " << instLocVecY_[0] << ", " << instLocVecY_[1] << ", " << instLocVecY_[200] << std:: endl;
+      // std::cout << "GPU X: " << instLocVecX_[0] << ", " << instLocVecX_[1] << ", " << instLocVecX_[200] << std:: endl;
+      // std::cout << "GPU Y: " << instLocVecY_[0] << ", " << instLocVecY_[1] << ", " << instLocVecY_[200] << std:: endl;
          
     }
     else{
@@ -291,8 +290,8 @@ void InitialPlace::doBicgstabPlace() {
       log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
         i, max(errorX, errorY), pb_->hpwl());
 
-      std::cout << "CPU X: " << instLocVecX_[0] << ", " << instLocVecX_[1] << ", " << instLocVecX_[200] << std:: endl;
-      std::cout << "CPU Y: " << instLocVecY_[0] << ", " << instLocVecY_[1] << ", " << instLocVecY_[200] << std:: endl;
+      // std::cout << "CPU X: " << instLocVecX_[0] << ", " << instLocVecX_[1] << ", " << instLocVecX_[200] << std:: endl;
+      // std::cout << "CPU Y: " << instLocVecY_[0] << ", " << instLocVecY_[1] << ", " << instLocVecY_[200] << std:: endl;
     }
     updateCoordi();
 
