@@ -106,7 +106,7 @@ class InitialPlace {
     Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
     Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
     SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;
-    bool GPU = 0;
+    bool GPU = 1;
     std::vector<int> cooRowIndexX, cooColIndexX, cooRowIndexY, cooColIndexY;
     std::vector<float> cooValX, cooValY;
 
