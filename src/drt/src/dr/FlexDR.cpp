@@ -46,10 +46,12 @@
 #include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "io/io.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -1585,9 +1587,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (iter > END_ITERATION) {
-    return;
-  }
   if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
     return;
   }
@@ -2221,6 +2220,15 @@ int FlexDR::main()
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
+    }
+    if (iter_ >= END_ITERATION) {
+      break;
+    }
+    if (logger_->debugCheck(DRT, "snapshot", 1)) {
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_);
+      ord::OpenRoad::openRoad()->writeDb(
+          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }
   }
 
