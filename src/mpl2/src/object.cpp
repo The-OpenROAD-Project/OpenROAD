@@ -89,8 +89,24 @@ std::string to_string(const PinAccess& pin_access)
     return std::string("T");
   else if (pin_access == R)
     return std::string("R");
-  else
+  else if (pin_access == B)
     return std::string("B");
+  else
+    return std::string("NONE");
+}
+
+PinAccess Opposite(const PinAccess& pin_access) 
+{
+  if (pin_access == L)
+    return R;
+  else if (pin_access == T)
+    return B;
+  else if (pin_access == R)
+    return L;
+  else if (pin_access == B)
+    return T;
+  else
+    return NONE;
 }
 
 // Compare two intervals according to starting points
@@ -587,22 +603,18 @@ int Cluster::GetCloseCluster(const std::vector<int>& candidate_clusters,
 }
 
 // Pin Access Support
-void Cluster::SetPinAccess(int cluster_id, PinAccess pin_access) 
+void Cluster::SetPinAccess(PinAccess pin_access, float net_weight) 
 {
-  pin_access_map_[cluster_id] = pin_access;  
-}
-     
-PinAccess Cluster::GetPinAccess(int cluster_id)
-{
-  return this->pin_access_map_[cluster_id];  
+  if (pin_access_map_.find(pin_access) != pin_access_map_.end())
+    pin_access_map_[pin_access] = net_weight;
+  else
+    pin_access_map_[pin_access] += net_weight;
 }
 
-
-const std::map<int, PinAccess> Cluster::GetPinAccessMap() const
+const std::map<PinAccess, float> Cluster::GetPinAccessMap() const
 {
   return pin_access_map_;
 }
-
 
 const std::map<PinAccess, std::map<PinAccess, float> > Cluster::GetBoundaryConnection() const 
 {

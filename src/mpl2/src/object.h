@@ -104,9 +104,9 @@ bool ComparePairProduct(std::pair<float, float> p1, std::pair<float, float> p2);
 // along the corresponding { B, L, T, R } boundary
 // The size of the hard macro blockage is determined the by the
 // size of that cluster
-enum PinAccess { B, L, T, R };
+enum PinAccess { NONE,  B, L, T, R };
 std::string to_string(const PinAccess& pin_access);
-
+PinAccess Opposite(const PinAccess& pin_access);
 
 class Metric;
 class HardMacro;
@@ -258,10 +258,9 @@ class Cluster {
     // not have any connections outsize the parent cluster
     // All the outside connections have been converted to the connections
     // related to pin access
-    void SetPinAccess(int cluster_id, PinAccess pin_access);
+    void SetPinAccess(PinAccess pin_access, float weight);
     void AddBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
-    PinAccess GetPinAccess(int cluster_id);
-    const std::map<int, PinAccess> GetPinAccessMap() const;
+    const std::map<PinAccess, float> GetPinAccessMap() const;
     const std::map<PinAccess, std::map<PinAccess, float> > GetBoundaryConnection() const;
 
     // Print Basic Information
@@ -316,7 +315,7 @@ class Cluster {
     std::map<int, float> connection_map_;   // cluster_id, number of connections 
 
     // pin access for each bundled connection
-    std::map<int, PinAccess> pin_access_map_; // cluster_id, pin_access (B, L, T, R)
+    std::map<PinAccess, float> pin_access_map_; // pin_access (B, L, T, R)
     std::map<PinAccess, std::map<PinAccess, float> > boundary_connection_map_;
 };
 

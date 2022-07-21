@@ -50,7 +50,8 @@ struct Edge {
   int edge_id;                    // edge id of current edge  
   std::pair<int, int> terminals;  // the vertex_id of two terminal vertices
   bool direction;                 // True for horizontal and False for vertical
-  bool internal;                  // True for edge within one SoftMacro otherwise false
+  bool internal = true;           // True for edge within one SoftMacro otherwise false
+  PinAccess pin_access = NONE;    // pin_access for internal == false (for src vertex)
   float length = 0.0;             // the length of edge
   float length_w = 0.0;           // weighted length : weight * length
   float weight = 0.0;  // the largeest macro utilization of terminals

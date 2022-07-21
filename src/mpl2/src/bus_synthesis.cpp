@@ -430,11 +430,26 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
       edge_list.push_back(edge);
     }
   }
-  // update edge weight
-  for (auto& edge : edge_list) 
+  // update edge weight and pin access
+  for (auto& edge : edge_list)  {
     edge.weight = std::max(vertex_list[edge.terminals.first].weight, 
                            vertex_list[edge.terminals.second].weight);
-
+    // for the edge crossing soft macros
+    if (edge.internal == false) {
+      const Vertex& src = vertex_list[edge.terminals.first];
+      if (edge.direction == true) { // horizontal
+        if (soft_macros[src.macro_id].GetX() < src.pos.first) // right access
+          edge.pin_access = R;
+        else
+          edge.pin_access = L;
+      } else {
+        if (soft_macros[src.macro_id].GetY() < src.pos.second) // top access
+          edge.pin_access = T;
+        else
+          edge.pin_access = B;
+      }
+    } // update crossing edge
+  } // update edge weight
 }
 
 // Calculate the paths for global buses with ILP
@@ -459,10 +474,9 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
   }
   // Find all the shortest paths based on graph
   int num_paths = 0;
-  // encode path id in a net dominated manner
-  std::map<int, int> net_map; // path_id, net_id 
-                              // (this is used as a base to find a path in a net)
-  std::map<int, int> net_path_map; // path_id, path_id of a net
+  // map each candidate path to its related net
+  std::map<int, int> path_net_map; // <path_id, net_id>
+  std::map<int, int> path_net_path_map; // <path_id, path_id>
   int net_id = 0;
   for (auto& net : nets) {
     // calculate candidate paths
@@ -471,8 +485,8 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
     int path_id = 0;
     for (const auto& edge_path : net.edge_paths) {
       // here the edge paths only include edges crossing soft macros (IOs)
-      net_map[num_paths] = net_id;
-      net_path_map[num_paths++] = path_id++;
+      path_net_path_map[num_paths] = path_id++;
+      path_net_map[num_paths++] = net_id;
     }
     net_id++;
   }
@@ -505,31 +519,43 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
     obj_expr += edge_list[i].weight * y[i]; // reduce the edges cross soft macros
   mymodel.add(IloMinimize(myenv, obj_expr));  // adding minimization objective
   obj_expr.end();  // clear memory
-
   // Model Solution
   IloCplex mycplex(myenv);
   mycplex.extract(mymodel);
   // solves model and stores whether or 
   // not it is feasible in an IloBool variable called "feasible
   IloBool feasible = mycplex.solve();
-
   // solves model and stores whether or 
   // not it is feasible in an IloBool variable called "feasible
   if (feasible != IloTrue) 
     return false; // Something wrong, no feasible solution
-
   // Generate the solution and check which edge get selected
-  for (int i = 0; i < edge_list.size(); i++) {
-    if (mycplex.getValue(y[i]) == 1) {
-      return true;      
+  for (int i = 0; i < num_paths; i++) {
+    if (mycplex.getValue(x[i]) == 0)
+      continue; 
+    auto target_cluster= soft_macros[nets[path_net_map[i]].terminals.second].GetCluster();
+    PinAccess src_pin = NONE;
+    int last_edge_id = -1;
+    const float net_weight = nets[path_net_map[i]].weight;
+    for (auto& edge_id : nets[path_net_map[i]].edge_paths[path_net_path_map[i]]) {
+      auto& edge = edge_list[edge_id];
+      last_edge_id = edge_id;
+      auto cluster = soft_macros[vertex_list[edge.terminals.first].macro_id].GetCluster();
+      if (src_pin == NONE) {
+        src_pin = Opposite(edge.pin_access); 
+        if (cluster != nullptr)
+          cluster->SetPinAccess(edge.pin_access, net_weight);
+      }
+      if (cluster != nullptr)
+        cluster->AddBoundaryConnection(src_pin, edge.pin_access, net_weight);
     }
+    if (target_cluster != nullptr)
+      target_cluster->SetPinAccess(Opposite(edge_list[last_edge_id].pin_access), net_weight);
   }
-
-  return true;
-
   // closing the model
   mycplex.clear();
   myenv.end();
+  return true;
 }
 
 

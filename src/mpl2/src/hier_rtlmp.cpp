@@ -81,6 +81,7 @@
 #include "SimulatedAnnealingCore.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
+#include "bus_synthesis.h"
 
 namespace mpl {
 
@@ -1854,13 +1855,19 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
         continue;
       const std::string name = cluster_map_[cluster_id]->GetName();
       // if the connection with pin access
-      if (soft_macro_id_map.find(name) == soft_macro_id_map.end())
-        nets.push_back(BundledNet(soft_macro_id_map[src_name],
-          soft_macro_id_map[to_string(parent->GetPinAccess(cluster_id))], weight));
-      else
+      //if (soft_macro_id_map.find(name) == soft_macro_id_map.end())
+      //  nets.push_back(BundledNet(soft_macro_id_map[src_name],
+      //    soft_macro_id_map[to_string(parent->GetPinAccess(cluster_id))], weight));
+      //else
+      //  nets.push_back(BundledNet(soft_macro_id_map[src_name],
+      //                            soft_macro_id_map[name], weight));
+      if (soft_macro_id_map.find(name) != soft_macro_id_map.end())
         nets.push_back(BundledNet(soft_macro_id_map[src_name],
                                   soft_macro_id_map[name], weight));
     }
+    for (auto& [target_pin, weight] : cluster->GetPinAccessMap())
+      nets.push_back(BundledNet(soft_macro_id_map[src_name],
+                                soft_macro_id_map[to_string(target_pin)], weight));
   }
   // merge nets to reduce runtime
   MergeNets(nets);
@@ -1963,6 +1970,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
                                                 k_, c_, random_seed_);
       sa->SetFences(fences);
       sa->SetGuides(guides);
+      sa->SetNets(nets);
       sa_vector.push_back(sa);
     }
     // multi threads 
@@ -1987,17 +1995,16 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     std::string line = "This is no valid tilings for cluster ";
     line += parent->GetName();
     logger_->error(MPL, 2032, line);      
-  } else {
-    std::vector<SoftMacro> shaped_macros;
-    best_sa->GetMacros(shaped_macros);
-    for (auto& cluster : parent->GetChildren()) 
-      *(cluster->GetSoftMacro()) = shaped_macros[soft_macro_id_map[cluster->GetName()]]; 
-    delete best_sa;
-  }
-  
+  } 
+  // update the clusters and do bus planning
+  std::vector<SoftMacro> shaped_macros;
+  best_sa->GetMacros(shaped_macros);
+  for (auto& cluster : parent->GetChildren()) 
+    *(cluster->GetSoftMacro()) = shaped_macros[soft_macro_id_map[cluster->GetName()]]; 
   // Call Path Synthesis to route buses
-
-
+  CallBusPlanning(shaped_macros, nets);
+  // remove sa
+  delete best_sa;
   
   // update the location of children cluster to their real location
   for (auto& cluster : parent->GetChildren()) {
@@ -2103,6 +2110,23 @@ void HierRTLMP::ShapeChildrenCluster(Cluster* parent,
 }
 
 
+// Call Path Synthesis to route buses
+void HierRTLMP::CallBusPlanning(std::vector<SoftMacro>&  shaped_macros, 
+     std::vector<BundledNet>& nets_old)
+{
+  std::vector<BundledNet> nets;
+  for (auto& net : nets_old)
+    if (net.weight > bus_net_threshold_)
+      nets.push_back(net);
+
+  std::vector<int> soft_macro_vertex_id;
+  std::vector<Edge> edge_list;
+  std::vector<Vertex> vertex_list;
+  if (CalNetPaths(shaped_macros, soft_macro_vertex_id, edge_list, vertex_list, 
+      nets, congestion_weight_) == false)
+    logger_->error(MPL, 2029, "Fail !!! Cannot do bus planning !!!");
+}
+  
 // place macros within the HardMacroCluster
 void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
 {

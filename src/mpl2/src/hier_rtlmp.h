@@ -54,7 +54,7 @@
 #include "SimulatedAnnealingCore.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
-
+#include "bus_synthesis.h"
 
 namespace mpl {
 // Hierarchial RTL-MP
@@ -219,6 +219,11 @@ class HierRTLMP {
     int signature_net_threshold_ = 20;
     // We ignore global nets during clustering
     int large_net_threshold_ = 100; 
+    // we only consider bus when we do bus planning
+    int bus_net_threshold_ = 32;
+    // the weight used for balance timing and congestion
+    float congestion_weight_ = 0.5;
+
 
     // Determine if the cluster is macro dominated
     // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
@@ -296,7 +301,9 @@ class HierRTLMP {
     // determine the shape for children cluster
     void ShapeChildrenCluster(Cluster* parent, std::vector<SoftMacro>& macros,
              std::map<std::string, int>& soft_macro_id_map, float target_util);
-
+    // Call Path Synthesis to route buses
+    void CallBusPlanning(std::vector<SoftMacro>&  shaped_macros,
+                         std::vector<BundledNet>& nets_old);
 
     /*
     // Place macros in a hierarchical mode based on the above
