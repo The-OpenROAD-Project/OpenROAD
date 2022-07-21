@@ -80,11 +80,7 @@ public:
 
   Vector<Pin*> pins_;
   Rect bbox_; // dbu
-  // LoadRegionrant indices
-  // 2 3
-  // 0 1
   vector<LoadRegion> regions_;
-  enum Index {SW, SE, NW, NE};
 };
 
 class RepairDesign : StaState
@@ -175,8 +171,8 @@ protected:
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap);
-  LoadRegion groupLoadsIntoRegions(const Pin *drvr_pin,
-                                   int max_fanout);
+  LoadRegion findLoadRegions(const Pin *drvr_pin,
+                             int max_fanout);
   void subdivideRegion(LoadRegion &region,
                        int max_fanout);
   void makeRegionRepeaters(LoadRegion &region,

@@ -331,7 +331,7 @@ RepairDesign::repairNet(Net *net,
         repaired_net = true;
 
         debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
-        LoadRegion region = groupLoadsIntoRegions(drvr_pin, max_fanout);
+        LoadRegion region = findLoadRegions(drvr_pin, max_fanout);
         corner_ = corner;
         makeRegionRepeaters(region, max_fanout, 1,
                             slew_margin, max_cap_margin, check_slew,
@@ -929,8 +929,8 @@ LoadRegion::LoadRegion(Vector<Pin*> &pins,
 }
 
 LoadRegion
-RepairDesign::groupLoadsIntoRegions(const Pin *drvr_pin,
-                                    int max_fanout)
+RepairDesign::findLoadRegions(const Pin *drvr_pin,
+                              int max_fanout)
 {
   PinSeq loads = findLoads(drvr_pin);
   Rect bbox = findBbox(loads);
@@ -953,35 +953,31 @@ RepairDesign::subdivideRegion(LoadRegion &region,
     int64_t y_mid = (y_min + y_max) / 2;
     bool horz_partition;
     if (region.bbox_.dx() > region.bbox_.dy()) {
-      region.regions_[LoadRegion::Index::SW].bbox_ = Rect(x_min, y_min, x_mid, y_max);
-      region.regions_[LoadRegion::Index::SE].bbox_ = Rect(x_mid, y_min, x_max, y_max);
+      region.regions_[0].bbox_ = Rect(x_min, y_min, x_mid, y_max);
+      region.regions_[1].bbox_ = Rect(x_mid, y_min, x_max, y_max);
       horz_partition = true;
     }
     else {
-      region.regions_[LoadRegion::Index::SW].bbox_ = Rect(x_min, y_min, x_max, y_mid);
-      region.regions_[LoadRegion::Index::SE].bbox_ = Rect(x_min, y_mid, x_max, y_max);
+      region.regions_[0].bbox_ = Rect(x_min, y_min, x_max, y_mid);
+      region.regions_[1].bbox_ = Rect(x_min, y_mid, x_max, y_max);
       horz_partition = false;
     }
     for (Pin *pin : region.pins_) {
       Point loc = db_network_->location(pin);
       int x = loc.x();
       int y = loc.y();
-      LoadRegion::Index index;
       if ((horz_partition
            && x <= x_mid)
           || (!horz_partition
               && y <= y_mid))
-        index = LoadRegion::Index::SW;
+        region.regions_[0].pins_.push_back(pin);
       else if ((horz_partition
                 && x > x_mid)
                || (!horz_partition
                    && y > y_mid))
-        index = LoadRegion::Index::SE;
-      else {
-        logger_->critical(RSZ, 83, "pin outside all regionrants");
-        index = LoadRegion::Index::SW;
-      }
-      region.regions_[index].pins_.push_back(pin);
+        region.regions_[1].pins_.push_back(pin);
+      else
+        logger_->critical(RSZ, 83, "pin outside regions");
     }
     region.pins_.clear();
     for (LoadRegion &sub : region.regions_) {
@@ -1019,7 +1015,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
         sub_pins.pop_back();
         if (repeater_loads.size() == max_fanout)
           makeFanoutRepeater(repeater_loads, repeater_inputs,
-                             sub.bbox_,
+                             region.bbox_,
                              findCenter(repeater_loads),
                              slew_margin, max_cap_margin,
                              check_slew, check_cap, max_length,
@@ -1032,7 +1028,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
       if (repeater_loads.size() == max_fanout)
         makeFanoutRepeater(repeater_loads, repeater_inputs,
                            region.bbox_,
-                           //findCenter(repeater_loads),
                            center(region.bbox_),
                            slew_margin, max_cap_margin,
                            check_slew, check_cap, max_length,
@@ -1042,7 +1037,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
     if (repeater_loads.size() >= max_fanout / 2)
       makeFanoutRepeater(repeater_loads, repeater_inputs,
                          region.bbox_,
-                         //findCenter(repeater_loads),
                          center(region.bbox_),
                          slew_margin, max_cap_margin,
                          check_slew, check_cap, max_length,
