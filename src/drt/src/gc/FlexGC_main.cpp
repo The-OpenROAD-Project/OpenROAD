@@ -2970,6 +2970,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     Rect markerBBox = marker->getBBox();
     workerRegionQuery.query(markerBBox, lNum, results);
     auto& sourceNets = marker->getSrcs();
+    const Rect routeBox = getDRWorker()->getRouteBox();
     drConnFig* obj = nullptr;
     for (auto connFig : results) {
       net = connFig->getNet();
@@ -2977,18 +2978,38 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         continue;
       }
       if (connFig->typeId() == drcVia) {
-        obj = connFig;
         auto via = static_cast<drVia*>(connFig);
-        if (via->getViaDef()->getLayer1Num() == lNum) {
-          fig_bbox = via->getLayer1BBox();
-        } else {
-          fig_bbox = via->getLayer2BBox();
+        origin = via->getOrigin();
+        if (routeBox.intersects(origin)) {
+          if (via->getViaDef()->getLayer1Num() == lNum) {
+            fig_bbox = via->getLayer1BBox();
+          } else {
+            fig_bbox = via->getLayer2BBox();
+          }
+          obj = connFig;
+          break;
         }
-        break;
       } else if (connFig->typeId() == drcPathSeg) {
-        obj = connFig;
-        fig_bbox = static_cast<drPathSeg*>(connFig)->getBBox();
-        break;
+        auto seg = static_cast<drPathSeg*>(connFig);
+        // Pick nearest of begin/end points
+        const auto [bp, ep] = seg->getPoints();
+        auto dist_bp = Point::manhattanDistance(markerBBox.closestPtInside(bp),
+                                                bp);
+        auto dist_ep = Point::manhattanDistance(markerBBox.closestPtInside(ep),
+                                                ep);
+        origin = (dist_bp < dist_ep) ? bp : ep;
+        if (routeBox.intersects(origin)) {
+          fig_bbox = seg->getBBox();
+          obj = connFig;
+          break;
+        }
+      } else if (connFig->typeId() == drcPatchWire) {
+        auto patch = static_cast<drPatchWire*>(connFig);
+        origin = patch->getOrigin();
+        if (routeBox.intersects(origin)) {
+          fig_bbox = patch->getBBox();
+          obj = connFig;
+        }
       }
     }
 
@@ -3001,20 +3022,16 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       markerBBox.set_ylo(fig_bbox.yMin());
       markerBBox.set_yhi(fig_bbox.yMax());
       if (fig_bbox.xMin() == markerBBox.xMax()) {
-        origin = fig_bbox.ll();
         markerBBox.set_xlo(markerBBox.xMin() - mgrid);
       } else {
-        origin = fig_bbox.lr();
         markerBBox.set_xhi(markerBBox.xMax() + mgrid);
       }
     } else {
       markerBBox.set_xlo(fig_bbox.xMin());
       markerBBox.set_xhi(fig_bbox.xMax());
       if (fig_bbox.yMin() == markerBBox.yMax()) {
-        origin = fig_bbox.ll();
         markerBBox.set_ylo(markerBBox.yMin() - mgrid);
       } else {
-        origin = fig_bbox.ul();
         markerBBox.set_yhi(markerBBox.yMax() + mgrid);
       }
     }

@@ -69,6 +69,7 @@ class Straps : public GridComponent
   virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
 
   odb::dbTechLayer* getLayer() const { return layer_; }
+  void setLayer(odb::dbTechLayer* layer) { layer_ = layer; }
   int getWidth() const { return width_; }
   void setWidth(int width) { width_ = width; }
   int getSpacing() const { return spacing_; }
@@ -150,6 +151,16 @@ class PadDirectConnectionStraps : public Straps
   virtual void report() const override;
   virtual Type type() const override { return GridComponent::PadConnect; }
 
+  // disable layer spec checks
+  virtual void checkLayerSpecifications() const override {}
+
+  odb::dbITerm* getITerm() const { return iterm_; }
+
+  virtual void getConnectableShapes(ShapeTreeMap& shapes) const override;
+
+  // cut shapes and remove if connection to ring is not possible
+  virtual void cutShapes(const ShapeTreeMap& obstructions) override;
+
  private:
   odb::dbITerm* iterm_;
   odb::dbWireShapeType target_shapes_;
@@ -163,6 +174,20 @@ class PadDirectConnectionStraps : public Straps
   void initialize(const std::vector<odb::dbTechLayer*>& layers);
 
   bool isConnectHorizontal() const;
+
+  std::vector<odb::dbBox*> getPinsFacingCore(const std::vector<odb::dbTechLayer*>& layers) const;
+  std::vector<odb::dbBox*> getPinsFormingRing();
+  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> getPinsByLayer() const;
+
+  void makeShapesFacingCore(const ShapeTreeMap& other_shapes);
+  void makeShapesOverPads(const ShapeTreeMap& other_shapes);
+
+  std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
+  const std::vector<odb::dbBox*>& getPins() const { return pins_; }
+
+  ShapePtr getClosestShape(const ShapeTree& search_shapes, const odb::Rect& pin_shape, odb::dbNet* net) const;
+
+  bool isEdgeConnecting() const { return getLayer() == nullptr; }
 };
 
 class RepairChannelStraps : public Straps

@@ -172,7 +172,8 @@ const std::string add_ruler(
   double x1, 
   double y1, 
   const std::string& label = "", 
-  const std::string& name = "")
+  const std::string& name = "",
+  bool euclidian = true)
 {
   if (!check_gui("add_ruler")) {
     return "";
@@ -180,7 +181,7 @@ const std::string add_ruler(
   odb::Point ll = make_point(x0, y0);
   odb::Point ur = make_point(x1, y1);
   auto gui = gui::Gui::get();
-  return gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y(), label, name);  
+  return gui->addRuler(ll.x(), ll.y(), ur.x(), ur.y(), label, name, euclidian);
 }
 
 void delete_ruler(const std::string& name)

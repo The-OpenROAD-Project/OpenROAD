@@ -1137,14 +1137,6 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                    layer->getName());
       continue;
     }
-    if (rule->isEndPrlSpacingValid()) {
-      logger->warn(utl::DRT,
-                   402,
-                   "Unsupported LEF58_SPACING rule with option ENDPRLSPACING "
-                   "for layer {}.",
-                   layer->getName());
-      continue;
-    }
     if (rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
                    403,
@@ -1164,6 +1156,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     con->setWithinConstraint(within);
     if (rule->isOppositeWidthValid()) {
       within->setOppositeWidth(rule->getOppositeWidth());
+    }
+    if (rule->isEndPrlSpacingValid()) {
+      within->setEndPrl(rule->getEndPrlSpace(), rule->getEndPrl());
     }
     within->setEolWithin(rule->getEolWithin());
     if (rule->isWrongDirWithinValid()) {
@@ -1518,6 +1513,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tech->addLayer(std::move(uLayer));
@@ -1774,6 +1770,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     unique_ptr<frConstraint> uCon
         = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+    rptr->setLayer(tmpLayer);
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
       logger->warn(
@@ -1826,6 +1823,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tmpLayer->setType(dbTechLayerType::CUT);
@@ -2337,6 +2335,8 @@ void io::Parser::readDb()
     logger->report("Number of nets:           {}",
                    design->getTopBlock()->nets_.size());
     logger->report("");
+    logger->metric("route__net", design->getTopBlock()->nets_.size());
+    logger->metric("route__net__special", design->getTopBlock()->snets_.size());
   }
 }
 

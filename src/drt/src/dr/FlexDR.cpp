@@ -46,10 +46,12 @@
 #include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "io/io.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -1585,9 +1587,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (iter > END_ITERATION) {
-    return;
-  }
   if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
     return;
   }
@@ -1719,25 +1718,24 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
               else
                 workersInBatch[i]->main(getDesign());
 #pragma omp critical
-              {
-                cnt++;
-                if (VERBOSE > 0) {
-                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                      && prev_perc < 90) {
-                    if (prev_perc == 0 && t.isExceed(0)) {
-                      isExceed = true;
-                    }
-                    prev_perc += 10;
-                    if (isExceed) {
-                      logger_->report(
-                          "    Completing {}% with {} violations.",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-                      logger_->report("    {}.", t);
+                {
+                  cnt++;
+                  if (VERBOSE > 0) {
+                    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                        && prev_perc < 90) {
+                      if (prev_perc == 0 && t.isExceed(0)) {
+                        isExceed = true;
+                      }
+                      prev_perc += 10;
+                      if (isExceed) {
+                        logger_->report("    Completing {}% with {} violations.",
+                                        prev_perc,
+                                        getDesign()->getTopBlock()->getNumMarkers());
+                        logger_->report("    {}.", t);
+                      }
                     }
                   }
                 }
-              }
             } catch (...) {
               exception.capture();
             }
@@ -1874,14 +1872,22 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("drt::wire length::total",
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric("drt::vias::total", totSCut + totMCut);
+    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("route__vias", totSCut + totMCut);
+    logger_->metric("route__vias__singlecut", totSCut);
+    logger_->metric("route__vias__multicut", totMCut);
   }
+  else {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+  }
+
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
@@ -2043,9 +2049,9 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
           /* 59 */ {7, -1, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 60 */ {7, -2, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 61 */ {7, -3, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 56 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 62 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 63 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
+          /* 62 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 63 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 64 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
@@ -2214,6 +2220,15 @@ int FlexDR::main()
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
+    }
+    if (iter_ >= END_ITERATION) {
+      break;
+    }
+    if (logger_->debugCheck(DRT, "snapshot", 1)) {
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_);
+      ord::OpenRoad::openRoad()->writeDb(
+          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }
   }
 

@@ -465,7 +465,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
   std::deque<Bucket*> Q;
   Q.push_back(it->second);
   ++traversal_;
-  while (Q.size() > 0) {
+  while (!Q.empty()) {
     Bucket* currPtr = Q.front();
     Q.pop_front();
 

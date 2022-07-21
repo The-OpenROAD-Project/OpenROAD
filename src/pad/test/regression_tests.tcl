@@ -14,4 +14,6 @@ record_tests {
   caravel_sky130
   tcl_interface
   tcl_interface.flipchip
+  tcl_interface.flipchip1
+  tcl_interface.flipchip2
 }

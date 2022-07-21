@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "autocluster.h"
+
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -47,7 +49,6 @@
 #include <vector>
 
 #include "MLPart.h"
-#include "autocluster.h"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
@@ -176,9 +177,9 @@ Metric AutoClusterMgr::computeMetrics(dbModule* module)
     dbMaster* master = inst->getMaster();
     const LibertyCell* liberty_cell = network_->libertyCell(inst);
     // add for designs with pads
-    // check if the instance is a pad or a cover block 
+    // check if the instance is a pad or a cover block
     if (master->isPad() || master->isCover() || liberty_cell == nullptr)
-       continue;
+      continue;
 
     area += liberty_cell->area();
     if (liberty_cell->isBuffer()) {
@@ -322,13 +323,11 @@ void AutoClusterMgr::createBundledIO()
   int core_ux = core_box.xMax();
   int core_uy = core_box.yMax();
 
-
   Rect die_box = block_->getDieArea();
   floorplan_lx_ = die_box.xMin();
   floorplan_ly_ = die_box.yMin();
   floorplan_ux_ = die_box.xMax();
   floorplan_uy_ = die_box.yMax();
-
 
   // Map all the BTerms to IORegions
   for (auto term : block_->getBTerms()) {
@@ -355,7 +354,7 @@ void AutoClusterMgr::createBundledIO()
       ly = io_pad_map_[term]->getBBox()->yMin();
       ux = io_pad_map_[term]->getBBox()->xMax();
       uy = io_pad_map_[term]->getBBox()->yMax();
-      
+
       if (lx <= core_lx)
         lx = floorplan_lx_;
 
@@ -437,10 +436,12 @@ void AutoClusterMgr::createCluster(int& cluster_id)
         // added for designs with pad
         dbMaster* master = inst->getMaster();
         const LibertyCell* liberty_cell = network_->libertyCell(inst);
-        // check if the instance is a pad or empty block (such as marker) or buffer
-        if (master->isPad() || master->isCover() || liberty_cell == nullptr || liberty_cell->isBuffer())
+        // check if the instance is a pad or empty block (such as marker) or
+        // buffer
+        if (master->isPad() || master->isCover() || liberty_cell == nullptr
+            || liberty_cell->isBuffer())
           continue;
-    
+
         if (master->isBlock())
           cluster->addMacro(inst);
         else
@@ -521,7 +522,6 @@ void AutoClusterMgr::updateConnection()
 
   calculateConnection();
 
-
   calculateBufferNetConnection();
 }
 
@@ -592,9 +592,9 @@ void AutoClusterMgr::calculateConnection()
         id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
       else
         id = inst_map_[inst];
-       
+
       if (id == -1)
-       logger_->error( PAR, 488, "Could not find expected PAD instance");
+        logger_->error(PAR, 488, "Could not find expected PAD instance");
 
       if (iterm->getIoType() == dbIoType::OUTPUT) {
         driver_id = id;
@@ -888,7 +888,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   }
 
   int count = 0;
-  
+
   MLPartNetUtil(block_->getTopModule(),
                 src_id,
                 count,
@@ -907,7 +907,6 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                       node_map,
                       idx_to_inst,
                       inst_to_idx);
-
 
   row_ptr.push_back(count);
 
@@ -942,7 +941,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   double balanceArray[2] = {0.5, 0.5};
   double tolerance = 0.05;
   unsigned int seed = 0;
-  
+
   UMpack_mlpart(num_vertices,
                 num_edge,
                 vertexWeight.data(),
@@ -957,7 +956,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                 1,  // Number of Runs
                 0,  // Debug Level
                 seed);
-  
+
   const string name_part0 = cluster->getName() + string("_cluster_0");
   const string name_part1 = cluster->getName() + string("_cluster_1");
   Cluster* cluster_part0 = new Cluster(++cluster_id, name_part0);
@@ -1013,12 +1012,12 @@ void AutoClusterMgr::MLPartNetUtil(dbModule* module,
 
     for (dbITerm* iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
-       int id = -1;
-       if (inst->getMaster()->isPad())
-         id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
-       else
-         id = inst_map_[inst];
-      
+      int id = -1;
+      if (inst->getMaster()->isPad())
+        id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
+      else
+        id = inst_map_[inst];
+
       if (id == src_id)
         id = inst_to_idx[inst];
       else
@@ -1080,7 +1079,7 @@ void AutoClusterMgr::MLPartBufferNetUtil(const int src_id,
             id = bundled_io_map_[bterm_map_[pad_io_map_[inst]]];
           else
             id = inst_map_[inst];
- 
+
           if (id == src_id)
             id = inst_to_idx[inst];
           else
@@ -1199,8 +1198,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
     output_file << width << "   " << height << "    ";
     output_file << pin_pos.first << "   " << pin_pos.second << "  ";
     output_file << endl;
-    Cluster* cluster
-      = new Cluster(++cluster_id, macro_vec[i]->getName());
+    Cluster* cluster = new Cluster(++cluster_id, macro_vec[i]->getName());
     cluster_map_[cluster_id] = cluster;
     inst_map_[macro_vec[i]] = cluster_id;
     cluster->addMacro(macro_vec[i]);
@@ -1642,12 +1640,11 @@ void AutoClusterMgr::addTimingWeight(float weight)
   }
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Following functions are related to pads
 ///////////////////////////////////////////////////////////////////////////////
-void AutoClusterMgr::PrintPadPos(odb::dbModule* module, std::ostream &out) {
+void AutoClusterMgr::PrintPadPos(odb::dbModule* module, std::ostream& out)
+{
   for (odb::dbInst* inst : module->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
     if (master->isPad()) {
@@ -1664,13 +1661,12 @@ void AutoClusterMgr::PrintPadPos(odb::dbModule* module, std::ostream &out) {
   }
 
   for (odb::dbModInst* inst : module->getChildren())
-    PrintPadPos(inst->getMaster(), out); 
+    PrintPadPos(inst->getMaster(), out);
 }
 
-
-void AutoClusterMgr::PrintIOPadNet(std::ostream &out) {
+void AutoClusterMgr::PrintIOPadNet(std::ostream& out)
+{
   for (dbNet* net : block_->getNets()) {
-
     bool flag = false;
     for (dbBTerm* bterm : net->getBTerms()) {
       out << "IO : " << bterm->getName() << "  ";
@@ -1678,29 +1674,28 @@ void AutoClusterMgr::PrintIOPadNet(std::ostream &out) {
     }
 
     if (flag == false)
-        continue;
+      continue;
 
     for (dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
       out << inst->getName() << " ( ";
       out << inst->getMaster()->getName() << " ) ( ";
-      out << inst->getMaster()->isPad()   << " ) ";
+      out << inst->getMaster()->isPad() << " ) ";
     }
 
     out << std::endl;
-    
+
     for (dbBTerm* bterm : net->getBTerms()) {
       for (dbITerm* iterm : net->getITerms()) {
         odb::dbInst* inst = iterm->getInst();
         if (inst->getMaster()->isPad() == true) {
           io_pad_map_[bterm] = inst;
-          pad_io_map_[inst]  = bterm;            
+          pad_io_map_[inst] = bterm;
         }
       }
     }
   }
 }
-
 
 //
 //  Auto clustering by traversing the design hierarchy
@@ -1728,7 +1723,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                                      const char* file_name,
                                      float keepin_lx,
                                      float keepin_ly,
-                                     float keepin_ux, 
+                                     float keepin_ux,
                                      float keepin_uy)
 {
   logger_->report("Running Partition Design...");
@@ -1745,25 +1740,21 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   timing_weight_ = timing_weight;
   std_cell_timing_flag_ = std_cell_timing_flag;
 
-
-
   //***********************
   // write the PAD positions
   string pos_file = string(report_directory) + '/' + "positon.txt";
   ofstream pos_file_out;
   pos_file_out.open(pos_file);
   std::ostream* fp = &pos_file_out;
-  PrintPadPos(block_->getTopModule(), *fp); 
+  PrintPadPos(block_->getTopModule(), *fp);
   pos_file_out.close();
-  //delete fp;
-  
+  // delete fp;
 
   string io_net_file = string(report_directory) + '/' + "io_net.txt";
   pos_file_out.open(io_net_file);
   fp = &pos_file_out;
   PrintIOPadNet(*fp);
   pos_file_out.close();
-  
 
   createBundledIO();
   int cluster_id = 0;
@@ -1851,7 +1842,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     }
   }
 
-
   for (int i = 0; i < par_cluster_vec.size(); i++) {
     Cluster* cluster_old = par_cluster_vec[i];
     int id = (-1) * cluster_old->getId();
@@ -1889,8 +1879,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     vector<dbInst*> macro_vec = cluster_old->getMacros();
     string name = cluster_old->getName();
     for (int i = 0; i < macro_vec.size(); i++) {
-      Cluster* cluster
-        = new Cluster(++cluster_id, macro_vec[i]->getName());
+      Cluster* cluster = new Cluster(++cluster_id, macro_vec[i]->getName());
       cluster->addLogicalModule(macro_vec[i]->getName());
       cluster_map_[cluster_id] = cluster;
       inst_map_[macro_vec[i]] = cluster_id;
@@ -1907,8 +1896,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     updateConnection();
     mergeMacro(name, std_cell_id);
   }
-
-
 
   //
   // group macros based on area footprint, This will allow for more efficient
@@ -1957,19 +1944,14 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   keepin_uy *= dbu_;
 
   // check if the keepin is within the core area
-  if (keepin_lx >= floorplan_lx_ && 
-      keepin_ly >= floorplan_ly_ &&
-      keepin_ux <= floorplan_ux_ &&
-      keepin_uy <= floorplan_uy_) {
+  if (keepin_lx >= floorplan_lx_ && keepin_ly >= floorplan_ly_
+      && keepin_ux <= floorplan_ux_ && keepin_uy <= floorplan_uy_) {
     floorplan_lx_ = keepin_lx;
     floorplan_ly_ = keepin_ly;
     floorplan_ux_ = keepin_ux;
     floorplan_uy_ = keepin_uy;
-  }
-  else
-      logger_->info( PAR, 413, "Ignore keepin as it is outside floorplan bbox");
-
-
+  } else
+    logger_->info(PAR, 413, "Ignore keepin as it is outside floorplan bbox");
 
   //
   // generate block file
@@ -1985,49 +1967,48 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
 
   ofstream output_file;
 
-
   string blockage_file
       = string(report_directory) + '/' + file_name + ".blockage";
   output_file.open(blockage_file);
   if (io_pad_map_.size() == 0) {
-  
-  if (B_pin_.size() > 0) {
-    sort(B_pin_.begin(), B_pin_.end());
-    output_file << "pin_blockage "
-                << "  ";
-    output_file << B_pin_[0] / dbu_ << "  0.0  ";
-    output_file << B_pin_[B_pin_.size() - 1] / dbu_ << "  " << blockage_height;
-    output_file << endl;
-  }
+    if (B_pin_.size() > 0) {
+      sort(B_pin_.begin(), B_pin_.end());
+      output_file << "pin_blockage "
+                  << "  ";
+      output_file << B_pin_[0] / dbu_ << "  0.0  ";
+      output_file << B_pin_[B_pin_.size() - 1] / dbu_ << "  "
+                  << blockage_height;
+      output_file << endl;
+    }
 
-  if (T_pin_.size() > 0) {
-    sort(T_pin_.begin(), T_pin_.end());
-    output_file << "pin_blockage  "
-                << "   ";
-    output_file << T_pin_[0] / dbu_ << " " << outline_height - blockage_height
-                << "   ";
-    output_file << T_pin_[T_pin_.size() - 1] / dbu_ << "  " << outline_height;
-    output_file << endl;
-  }
+    if (T_pin_.size() > 0) {
+      sort(T_pin_.begin(), T_pin_.end());
+      output_file << "pin_blockage  "
+                  << "   ";
+      output_file << T_pin_[0] / dbu_ << " " << outline_height - blockage_height
+                  << "   ";
+      output_file << T_pin_[T_pin_.size() - 1] / dbu_ << "  " << outline_height;
+      output_file << endl;
+    }
 
-  if (L_pin_.size() > 0) {
-    sort(L_pin_.begin(), L_pin_.end());
-    output_file << "pin_blockage  "
-                << "   ";
-    output_file << "0.0  " << L_pin_[0] / dbu_ << "   ";
-    output_file << blockage_width << "  " << L_pin_[L_pin_.size() - 1] / dbu_;
-    output_file << endl;
-  }
+    if (L_pin_.size() > 0) {
+      sort(L_pin_.begin(), L_pin_.end());
+      output_file << "pin_blockage  "
+                  << "   ";
+      output_file << "0.0  " << L_pin_[0] / dbu_ << "   ";
+      output_file << blockage_width << "  " << L_pin_[L_pin_.size() - 1] / dbu_;
+      output_file << endl;
+    }
 
-  if (R_pin_.size() > 0) {
-    sort(R_pin_.begin(), R_pin_.end());
-    output_file << "pin_blockage  "
-                << "  ";
-    output_file << outline_width - blockage_width << "   " << R_pin_[0] / dbu_
-                << "   ";
-    output_file << outline_width << "   " << R_pin_[R_pin_.size() - 1] / dbu_;
-    output_file << endl;
-  }
+    if (R_pin_.size() > 0) {
+      sort(R_pin_.begin(), R_pin_.end());
+      output_file << "pin_blockage  "
+                  << "  ";
+      output_file << outline_width - blockage_width << "   " << R_pin_[0] / dbu_
+                  << "   ";
+      output_file << outline_width << "   " << R_pin_[R_pin_.size() - 1] / dbu_;
+      output_file << endl;
+    }
   }
   output_file.close();
 
@@ -2045,8 +2026,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   output_file << "[INFO] Num std cells: "
               << logical_cluster_map_[block_->getTopModule()].num_inst << endl;
   output_file << "[INFO] Num macros: "
-              << logical_cluster_map_[block_->getTopModule()].num_macro
-              << endl;
+              << logical_cluster_map_[block_->getTopModule()].num_macro << endl;
   output_file << "[INFO] Total area: "
               << logical_cluster_map_[block_->getTopModule()].area << endl;
   output_file << "[INFO] Num buffers:  " << num_buffer_ << endl;
@@ -2057,12 +2037,13 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   map_iter = cluster_map_.begin();
   const float dbu = db_->getTech()->getDbUnitsPerMicron();
   while (map_iter != cluster_map_.end()) {
-    const float area = map_iter->second->calculateArea(network_);
+    const Cluster* cluster = map_iter->second;
+    const float area = cluster->calculateArea(network_);
     if (area != 0.0) {
-      output_file << "cluster: " << map_iter->second->getName() << endl;
+      output_file << "cluster: " << cluster->getName() << endl;
       output_file << "area:  " << area << endl;
-      if (map_iter->second->getNumMacro() > 0) {
-        vector<dbInst*> macro_vec = map_iter->second->getMacros();
+      if (cluster->getNumMacro() > 0) {
+        vector<dbInst*> macro_vec = cluster->getMacros();
         for (int i = 0; i < macro_vec.size(); i++) {
           dbMaster* master = macro_vec[i]->getMaster();
           const float width = master->getWidth() / dbu;
@@ -2072,6 +2053,14 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
         }
       }
       output_file << endl;
+
+      auto group = odb::dbGroup::create(block_, cluster->getName().c_str());
+      for (auto inst : cluster->getMacros()) {
+        group->addInst(inst);
+      }
+      for (auto inst : cluster->getInsts()) {
+        group->addInst(inst);
+      }
     }
     map_iter++;
   }

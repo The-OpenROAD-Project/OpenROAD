@@ -182,7 +182,7 @@ bool cdl::writeCdl(utl::Logger* logger,
   FILE* f = fopen(outFileName, "w");
 
   if (f == NULL) {
-    error(1, "cannot open file %s", outFileName);
+    logger->error(utl::ODB, 358, "cannot open file {}", outFileName);
     return false;
   }
 
@@ -206,14 +206,21 @@ bool cdl::writeCdl(utl::Logger* logger,
     line = "X" + inst->getName();
     auto it = mtermMap.find(master);
     if (it == mtermMap.end()) {
-      logger->error(utl::ODB,
-                    287,
-                    "Master {} was not in the masters CDL files.",
-                    master->getName());
-    }
-
-    for (auto&& mterm : it->second) {
-      line += " " + getNetName(block, inst, mterm, unconnectedNets);
+      if (master->getMTermCount() == 0) {
+        logger->warn(utl::ODB,
+                      357,
+                      "Master {} was not in the masters CDL files, but master has no pins.",
+                      master->getName());
+      } else {
+        logger->error(utl::ODB,
+                      287,
+                      "Master {} was not in the masters CDL files.",
+                      master->getName());
+      }
+    } else {
+      for (auto&& mterm : it->second) {
+        line += " " + getNetName(block, inst, mterm, unconnectedNets);
+      }
     }
 
     line += " " + master->getName();

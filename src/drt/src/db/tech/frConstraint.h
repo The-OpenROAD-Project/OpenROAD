@@ -43,6 +43,7 @@
 #include "utl/Logger.h"
 
 namespace fr {
+class frLayer;
 namespace io {
 class Parser;
 }
@@ -76,12 +77,15 @@ class frConstraint
   virtual ~frConstraint() {}
   virtual frConstraintTypeEnum typeId() const = 0;
   virtual void report(utl::Logger* logger) const = 0;
+  void setLayer(frLayer* layer) { layer_ = layer; }
   void setId(int in) { id_ = in; }
   int getId() const { return id_; }
 
  protected:
   int id_;
-  frConstraint() : id_(-1) {}
+  frLayer* layer_;
+  frConstraint() : id_(-1), layer_(nullptr) {}
+
 };
 
 class frLef58CutClassConstraint : public frConstraint
@@ -743,6 +747,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
         oppositeWidth(0),
         eolWithin(0),
         wrongDirWithin(false),
+        endPrlSpacing(0),
+        endPrl(0),
         sameMask(false),
         endToEndConstraint(nullptr),
         parallelEdgeConstraint(nullptr)
@@ -754,6 +760,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   frCoord getOppositeWidth() const { return oppositeWidth; }
   frCoord getEolWithin() const { return sameMask ? 0 : eolWithin; }
   frCoord getWrongDirWithin() const { return wrongDirWithin; }
+  frCoord getEndPrlSpacing() const { return endPrlSpacing; }
+  frCoord getEndPrl() const { return endPrl; }
   bool hasSameMask() const { return sameMask; }
   bool hasExceptExactWidth() const
   {
@@ -769,7 +777,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasEndPrlSpacing() const
   {
-    return false;  // skip for now
+    return endPrlSpacing;
   }
   bool hasEndToEndConstraint() const
   {
@@ -826,6 +834,11 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     eolWithin = in;
     wrongDirWithin = in;
   }
+  void setEndPrl(frCoord endPrlSpacingIn, frCoord endPrlIn)
+  {
+    endPrlSpacing = endPrlSpacingIn;
+    endPrl = endPrlIn;
+  }
   void setWrongDirWithin(frCoord in) { wrongDirWithin = in; }
   void setSameMask(bool in) { sameMask = in; }
   void setEndToEndConstraint(
@@ -861,12 +874,14 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   {
     logger->report(
         "\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} "
-        "wrongDirWithin {} sameMask {} ",
+        "wrongDirWithin {} sameMask {} endPrlSpacing {} endPrl {}",
         hOppositeWidth,
         oppositeWidth,
         eolWithin,
         wrongDirWithin,
-        sameMask);
+        sameMask,
+        endPrlSpacing,
+        endPrl);
     if (endToEndConstraint != nullptr)
       endToEndConstraint->report(logger);
     if (parallelEdgeConstraint != nullptr)
@@ -878,6 +893,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   frCoord oppositeWidth;
   frCoord eolWithin;
   frCoord wrongDirWithin;
+  frCoord endPrlSpacing;
+  frCoord endPrl;
   bool sameMask;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>
       endToEndConstraint;
@@ -1313,14 +1330,7 @@ class frSpacingTableTwConstraint : public frConstraint
   {
   }
   // getter
-  frCoord find(frCoord width1, frCoord width2, frCoord prl) const
-  {
-    if (rows.empty())
-      return 0;
-    auto rowIdx = getIdx(width1, prl);
-    auto colIdx = getIdx(width2, prl);
-    return spacingTbl[rowIdx][colIdx];
-  }
+  frCoord find(frCoord width1, frCoord width2, frCoord prl) const;
   frCoord findMin() const { return spacingTbl.front().front(); }
   frCoord findMax() const { return spacingTbl.back().back(); }
   // setter

@@ -504,6 +504,7 @@ protected:
                       float &slack,
                       const Corner *&corner);
   void warnBufferMovedIntoCore();
+  bool isLogicStdCell(const Instance *inst);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -522,6 +523,7 @@ protected:
   VertexSet findFanouts(VertexSet &roots);
   bool isRegOutput(Vertex *vertex);
   bool isRegister(Vertex *vertex);
+  ////////////////////////////////////////////////////////////////
 
   Logger *logger() const { return logger_; }
 

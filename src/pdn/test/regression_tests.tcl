@@ -68,6 +68,7 @@ record_tests {
   pads_black_parrot_no_connect
   pads_black_parrot_limit_connect
   pads_black_parrot_flipchip
+  pads_black_parrot_flipchip_connect_overpads
   pads_black_parrot_max_width
 
   asap7_vias
@@ -81,6 +82,7 @@ record_tests {
   asap7_vias_dont_use
   asap7_taper
   asap7_offcenter_via
+  asap7_no_via_generate_v1_snapped
 
   existing
 
@@ -89,4 +91,6 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
+  
+  repair_vias
 }

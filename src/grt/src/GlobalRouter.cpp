@@ -68,10 +68,12 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "boost/icl/interval.hpp"
 
 namespace grt {
 
 using utl::GRT;
+using boost::icl::interval;
 
 GlobalRouter::GlobalRouter()
     : logger_(nullptr),
@@ -124,7 +126,7 @@ void GlobalRouter::init(utl::Logger* logger,
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = sta;
 
-  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
+  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
   heatmap_->registerHeatMap();
 }
 
@@ -185,6 +187,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
+  std::vector<int> track_space = grid_->getMinWidths(); 
+  fastroute_->initBlockedIntervals(track_space);
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
@@ -195,7 +199,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
   }
-
   fastroute_->initAuxVar();
 }
 
@@ -1100,7 +1103,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
     // specific adjustments
     fastroute_->applyVerticalAdjustments(
         first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
-  }
+ }
 }
 
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
@@ -1129,24 +1132,24 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   int layer = tech_layer->getRoutingLevel();
 
   int track_space = grid_->getMinWidths()[layer - 1];
-  int first_tile_reduce = grid_->computeTileReduce(obstruction_rect,
+
+  interval<int>::type first_tile_reduce_interval = grid_->computeTileReduceInterval(obstruction_rect,
                                                    first_tile_box,
                                                    track_space,
                                                    true,
                                                    tech_layer->getDirection());
-
-  int last_tile_reduce = grid_->computeTileReduce(obstruction_rect,
+  interval<int>::type last_tile_reduce_interval = grid_->computeTileReduceInterval(obstruction_rect,
                                                   last_tile_box,
                                                   track_space,
                                                   false,
                                                   tech_layer->getDirection());
 
   if (!vertical) {
-    fastroute_->applyHorizontalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+    fastroute_->addHorizontalAdjustments(
+        first_tile, last_tile, layer, first_tile_reduce_interval, last_tile_reduce_interval);
   } else {
-    fastroute_->applyVerticalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+    fastroute_->addVerticalAdjustments(
+        first_tile, last_tile, layer, first_tile_reduce_interval, last_tile_reduce_interval);
   }
 }
 
@@ -1253,8 +1256,8 @@ void GlobalRouter::perturbCapacities()
   g.seed(seed_);
 
   for (int layer = 1; layer <= max_routing_layer_; layer++) {
-    std::uniform_int_distribution<int> uni_x(1, x_grids - 1);
-    std::uniform_int_distribution<int> uni_y(1, y_grids - 1);
+    std::uniform_int_distribution<int> uni_x(1, std::max(x_grids - 1, 1));
+    std::uniform_int_distribution<int> uni_y(1, std::max(y_grids - 1, 1));
     std::bernoulli_distribution add_or_subtract;
 
     for (int i = 0; i < num_perturbations; i++) {
@@ -1366,6 +1369,11 @@ void GlobalRouter::updateEdgesUsage()
 
       int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize();
       int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize();
+
+      // The last gcell is oversized and includes space that the above
+      // calculation doesn't represent so correct it:
+      x1 = std::min(x1, grid_->getXGrids() - 1);
+      y1 = std::min(y1, grid_->getYGrids() - 1);
 
       fastroute_->incrementEdge3DUsage(x0, y0, x1, y1, l0);
     }

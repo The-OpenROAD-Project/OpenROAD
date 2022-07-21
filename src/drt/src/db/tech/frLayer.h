@@ -35,7 +35,9 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
-
+namespace odb {
+class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -47,7 +49,8 @@ class frLayer
   friend class io::Parser;
   // constructor
   frLayer()
-      : type(dbTechLayerType::IMPLANT),
+      : db_layer_(nullptr),
+        type(dbTechLayerType::IMPLANT),
         layerNum(0),
         pitch(0),
         width(0),
@@ -88,7 +91,8 @@ class frLayer
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
-      : type(dbTechLayerType::IMPLANT),
+      : db_layer_(nullptr),
+        type(dbTechLayerType::IMPLANT),
         layerNum(layerNumIn),
         name(nameIn),
         pitch(0),
@@ -122,6 +126,7 @@ class frLayer
   {
   }
   // setters
+  void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
   void setNumMasks(frUInt4 numMasksIn) { numMasks = numMasksIn; }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setName(const frString& nameIn) { name = nameIn; }
@@ -135,6 +140,7 @@ class frLayer
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
   // getters
+  odb::dbTechLayer* getDbLayer() const { return db_layer_; }
   frUInt4 getNumMasks() const { return numMasks; }
   frLayerNum getLayerNum() const { return layerNum; }
   void getName(frString& nameIn) const { nameIn = name; }
@@ -660,6 +666,7 @@ class frLayer
   void printAllConstraints(utl::Logger* logger);
 
  protected:
+  odb::dbTechLayer* db_layer_;
   dbTechLayerType type;
   frLayerNum layerNum;
   frString name;

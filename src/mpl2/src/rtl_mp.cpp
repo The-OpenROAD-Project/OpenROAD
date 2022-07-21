@@ -436,6 +436,7 @@ bool rtl_macro_placer(const char* config_file,
 
   // Write back to odb
   auto block = db->getChip()->getBlock();
+  bool create_cluster_regions = false; // turned off till validation of flow through gpl and dpl/dpo
   for (const auto cluster : clusters) {
     if (cluster->GetNumMacro() > 0) {
       float cluster_lx = cluster->GetX();
@@ -452,6 +453,17 @@ bool rtl_macro_placer(const char* config_file,
         inst->setOrient(orientation);
         inst->setLocation(round(lx * dbu), round(ly * dbu));
         inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+      }
+    } else if (create_cluster_regions) {
+      auto region = odb::dbRegion::create(block, cluster->GetName().c_str());
+      odb::dbBox::create(region,
+                         cluster->GetX() * dbu,
+                         cluster->GetY() * dbu,
+                         (cluster->GetX() + cluster->GetWidth()) * dbu,
+                         (cluster->GetY() + cluster->GetHeight()) * dbu);
+      auto group = block->findGroup(cluster->GetName().c_str());
+      if (group) {
+        region->addGroup(group);
       }
     }
   }
