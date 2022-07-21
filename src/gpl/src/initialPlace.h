@@ -42,11 +42,6 @@ namespace utl {
 class Logger;
 }
 
-struct tri{
-  int rowInd, colInd;
-  float val;
-};
-
 namespace gpl {
 
 class PlacerBase;
@@ -102,11 +97,13 @@ class InitialPlace {
     //        SparseMatrix that contains connectivity forces on Y // B2B model is used
     //
     // Used the interative BiCGSTAB solver to solve matrix eqs.
-
+    bool cuda = false;
+    #ifdef CUDA
+      cuda = true;
+    #endif
     Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
     Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
     SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;
-    bool GPU = 1;
     std::vector<int> cooRowIndexX, cooColIndexX, cooRowIndexY, cooColIndexY;
     std::vector<float> cooValX, cooValY;
 

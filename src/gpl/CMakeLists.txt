@@ -41,10 +41,8 @@ option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-
+set(CUDA true CACHE BOOL "Choose to use CUDA or not")
 find_package(Eigen3 REQUIRED)
-
-#enable_language(CUDA)
 
 swig_lib(NAME      gpl
          NAMESPACE gpl
@@ -69,6 +67,9 @@ target_sources(gpl
     src/timingBase.cpp
     src/graphics.cpp
 )
+if (CUDA)
+  target_sources(gpl PRIVATE src/cudalibs.cpp)
+endif()
 
 messages(TARGET gpl)
 
