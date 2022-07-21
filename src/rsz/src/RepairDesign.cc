@@ -333,9 +333,9 @@ RepairDesign::repairNet(Net *net,
         debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
         LoadRegion region = findLoadRegions(drvr_pin, max_fanout);
         corner_ = corner;
-        makeRegionRepeaters(region, max_fanout, 1,
-                            slew_margin, max_cap_margin, check_slew,
-                            check_cap, max_length, resize_drvr);
+        makeRegionRepeaters(region, max_fanout, 1, drvr_pin,
+                            slew_margin, max_cap_margin,
+                            check_slew, check_cap, max_length, resize_drvr);
 
       }
     }
@@ -991,6 +991,7 @@ void
 RepairDesign::makeRegionRepeaters(LoadRegion &region,
                                   int max_fanout,
                                   int level,
+                                  const Pin *drvr_pin,
                                   double slew_margin,
                                   double max_cap_margin,
                                   bool check_slew,
@@ -1003,8 +1004,9 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
   if (!region.regions_.empty()) {
     // Buffer from the bottom up.
     for (LoadRegion &sub : region.regions_)
-      makeRegionRepeaters(sub, max_fanout, level + 1, slew_margin, max_cap_margin,
-                          check_slew, check_cap, max_length, resize_drvr);
+      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin, slew_margin,
+                          max_cap_margin, check_slew, check_cap, max_length,
+                          resize_drvr);
 
     PinSeq repeater_inputs;
     PinSeq repeater_loads;
@@ -1016,7 +1018,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
         if (repeater_loads.size() == max_fanout)
           makeFanoutRepeater(repeater_loads, repeater_inputs,
                              region.bbox_,
-                             findCenter(repeater_loads),
+                             findClosedPinLoc(drvr_pin, repeater_loads),
                              slew_margin, max_cap_margin,
                              check_slew, check_cap, max_length,
                              resize_drvr);
@@ -1028,7 +1030,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
       if (repeater_loads.size() == max_fanout)
         makeFanoutRepeater(repeater_loads, repeater_inputs,
                            region.bbox_,
-                           center(region.bbox_),
+                           findClosedPinLoc(drvr_pin, repeater_loads),
                            slew_margin, max_cap_margin,
                            check_slew, check_cap, max_length,
                            resize_drvr);
@@ -1037,7 +1039,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
     if (repeater_loads.size() >= max_fanout / 2)
       makeFanoutRepeater(repeater_loads, repeater_inputs,
                          region.bbox_,
-                         center(region.bbox_),
+                         findClosedPinLoc(drvr_pin, repeater_loads),
                          slew_margin, max_cap_margin,
                          check_slew, check_cap, max_length,
                          resize_drvr);
@@ -1087,13 +1089,6 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
   repeater_loads.clear();
 }
 
-Point
-RepairDesign::center(Rect &rect)
-{
-  return Point((rect.xMin() + rect.xMax()) / 2,
-               (rect.yMin() + rect.yMax()) / 2);
-}
-
 Rect
 RepairDesign::findBbox(PinSeq &pins)
 {
@@ -1120,16 +1115,21 @@ RepairDesign::findLoads(const Pin *drvr_pin)
 }
 
 Point
-RepairDesign::findCenter(PinSeq &pins)
+RepairDesign::findClosedPinLoc(const Pin *drvr_pin,
+                               PinSeq &pins)
 {
-  int64_t sum_x = 0;
-  int64_t sum_y = 0;
+  Point drvr_loc = db_network_->location(drvr_pin);
+  Point closest_pt = drvr_loc;
+  int64_t closest_dist = std::numeric_limits<int64_t>::max();
   for (Pin *pin : pins) {
     Point loc = db_network_->location(pin);
-    sum_x += loc.x();
-    sum_y += loc.y();
+    int64_t dist = Point::manhattanDistance(loc, drvr_loc);
+    if (dist < closest_dist) {
+      closest_pt = loc;
+      closest_dist = dist;
+    }
   }
-  return Point(sum_x / pins.size(), sum_y / pins.size());
+  return closest_pt;
 }
 
 bool

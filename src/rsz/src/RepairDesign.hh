@@ -178,6 +178,7 @@ protected:
   void makeRegionRepeaters(LoadRegion &region,
                            int max_fanout,
                            int level,
+                           const Pin *drvr_pin,
                            double slew_margin,
                            double max_cap_margin,
                            bool check_slew,
@@ -196,8 +197,8 @@ protected:
                           bool resize_drvr);
   PinSeq findLoads(const Pin *drvr_pin);
   Rect findBbox(PinSeq &pins);
-  Point findCenter(PinSeq &pins);
-  Point center(Rect &rect);
+  Point findClosedPinLoc(const Pin *drvr_pin,
+                         PinSeq &pins);
   bool isRepeater(const Pin *load_pin);
   void makeRepeater(const char *reason,
                     Point loc,
