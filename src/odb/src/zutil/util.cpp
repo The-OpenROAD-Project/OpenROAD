@@ -181,16 +181,16 @@ void cutRows(dbBlock* block,
         });
 
   // Gather rows needing to be cut up front
-  for (dbBox* blockage : blockages) {
-    std::map<dbRow*, vector<dbBox*>> row_blockages;
-    for (dbRow* row : block->getRows()) {
+  for (dbRow* row : block->getRows()) {
+    std::vector<dbBox*> row_blockages;
+    for (dbBox* blockage : blockages) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
-        row_blockages[row].push_back(blockage);
+        row_blockages.push_back(blockage);
       }
     }
-    // Cut rows around macros
-    for (auto& [k, ignored] : row_blockages) {
-      cutRow(block, k, row_blockages[k], min_row_width, halo_x, halo_y);
+    // Cut row around macros
+    if (!row_blockages.empty()) {
+      cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
     }
   }
 
