@@ -181,9 +181,9 @@ void cutRows(dbBlock* block,
         });
 
   // Gather rows needing to be cut up front
-  for (dbBox* blockage : blockages) {
+  for (dbRow* row : block->getRows()) {
     std::map<dbRow*, vector<dbBox*>> row_blockages;
-    for (dbRow* row : block->getRows()) {
+    for (dbBox* blockage : blockages) {
       if (overlaps(blockage, row, halo_x, halo_y)) {
         row_blockages[row].push_back(blockage);
       }
