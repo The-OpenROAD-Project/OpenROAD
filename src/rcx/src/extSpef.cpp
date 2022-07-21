@@ -1391,10 +1391,12 @@ bool extSpef::closeOutFile() {
 uint extSpef::writeBlockPorts() {
   if (_partial && !_btermFound)
     return 0;
-  writeKeyword("\n*PORTS");
+  odb::dbSet<odb::dbBTerm> bterms = _block->getBTerms();
+  if (!bterms.empty()) {
+    writeKeyword("\n*PORTS");
+  }
 
   uint cnt = 0;
-  odb::dbSet<odb::dbBTerm> bterms = _block->getBTerms();
   odb::dbSet<odb::dbBTerm>::iterator itr;
   for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
     odb::dbBTerm* bterm = *itr;
@@ -1439,6 +1441,7 @@ char* extSpef::addEscChar(const char* iname, bool esc_bus_brkts) {
   while (iname[ii] != '\0') {
     char ch = iname[ii];
     if (!std::isalnum(ch) && ch != '_' && ch != '\\' &&
+        ch != '/' && // hier delimeters are already escaped if needed
         (esc_bus_brkts || (ch != '[' && ch != ']'))
         // Check if there is an escape char before
         // the non-alphanumeric character

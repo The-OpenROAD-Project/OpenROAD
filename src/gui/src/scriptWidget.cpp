@@ -32,7 +32,6 @@
 
 #include "scriptWidget.h"
 
-#include <mutex>
 #include <errno.h>
 #include <unistd.h>
 
@@ -42,6 +41,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <mutex>
 
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
@@ -83,8 +83,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
-  connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
-  connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
+  connect(input_,
+          SIGNAL(completeCommand(const QString&)),
+          this,
+          SLOT(executeCommand(const QString&)));
+  connect(
+      this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
   connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
   connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
@@ -114,9 +118,10 @@ ScriptWidget::~ScriptWidget()
 }
 
 int ScriptWidget::tclExitHandler(ClientData instance_data,
-                                 Tcl_Interp *interp,
+                                 Tcl_Interp* interp,
                                  int argc,
-                                 const char **argv) {
+                                 const char** argv)
+{
   ScriptWidget* widget = (ScriptWidget*) instance_data;
 
   // exit was called, so ensure continue after close is cleared
@@ -138,7 +143,8 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
 
   // Overwrite exit to allow Qt to handle exit
   Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
-  Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
+  Tcl_CreateCommand(
+      interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
 
   if (do_init_openroad) {
     // OpenRoad is not initialized
@@ -221,7 +227,7 @@ int ScriptWidget::executeTclCommand(const QString& command)
 
 void ScriptWidget::addCommandToOutput(const QString& cmd)
 {
-  const QString first_line_prefix    = ">>> ";
+  const QString first_line_prefix = ">>> ";
   const QString continue_line_prefix = "... ";
 
   QString command = first_line_prefix + cmd;
@@ -275,7 +281,7 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
   for (QString& text_line : output_text.split('\n')) {
     // check for line length limits
     if (text_line.size() > max_output_line_length_) {
-      text_line = text_line.left(max_output_line_length_-3);
+      text_line = text_line.left(max_output_line_length_ - 3);
       text_line += "...";
     }
 
@@ -422,7 +428,8 @@ void ScriptWidget::bufferOutputs(bool state)
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)
 {
-  input_->setMaximumHeight(event->size().height() - output_->sizeHint().height());
+  input_->setMaximumHeight(event->size().height()
+                           - output_->sizeHint().height());
   QDockWidget::resizeEvent(event);
 }
 
@@ -447,23 +454,26 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
 
-    mutex_.lock(); // formatter checks and caches some information
+    mutex_.lock();  // formatter checks and caches some information
     this->formatter_->format(msg, formatted);
     mutex_.unlock();
-    const QString formatted_msg = QString::fromStdString(std::string(formatted.data(), formatted.size()));
+    const QString formatted_msg = QString::fromStdString(
+        std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
       // this comes from a ->report
       widget_->addReportToOutput(formatted_msg);
-    }
-    else {
+    } else {
       // select error message color if message level is error or above.
-      const QColor& msg_color = msg.level >= spdlog::level::level_enum::err ? widget_->tcl_error_msg_ : widget_->buffer_msg_;
+      const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
+                                    ? widget_->tcl_error_msg_
+                                    : widget_->buffer_msg_;
 
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 
-    // process widget event queue, if main thread will process new text, otherwise there is nothing to process from this thread.
+    // process widget event queue, if main thread will process new text,
+    // otherwise there is nothing to process from this thread.
     if (QThread::currentThread() == widget_->thread()) {
       QCoreApplication::sendPostedEvents(widget_);
     }
@@ -478,8 +488,10 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
-  // use spdlog::details::null_mutex instead of std::mutex, Qt will handle the thread transfers to the output viewer
-  // null_mutex prevents deadlock (by not locking) when the logging causes a redraw, which then causes another logging event.
+  // use spdlog::details::null_mutex instead of std::mutex, Qt will handle the
+  // thread transfers to the output viewer null_mutex prevents deadlock (by not
+  // locking) when the logging causes a redraw, which then causes another
+  // logging event.
   sink_ = std::make_shared<GuiSink<spdlog::details::null_mutex>>(this);
   logger_ = logger;
   logger->addSink(sink_);

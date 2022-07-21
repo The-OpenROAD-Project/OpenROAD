@@ -58,6 +58,7 @@ class _dbTechViaLayerRule;
 class _dbTechViaGenerateRule;
 class _dbBox;
 class _dbDatabase;
+class _dbMetalWidthViaMap;
 class dbTechLayerItr;
 class dbBoxItr;
 class dbIStream;
@@ -111,6 +112,7 @@ class _dbTech : public _dbObject
   dbTable<_dbTechViaLayerRule>* _via_layer_rule_tbl;
   dbTable<_dbTechViaGenerateRule>* _via_generate_rule_tbl;
   dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbMetalWidthViaMap>* _metal_width_via_map_tbl;
   _dbNameCache* _name_cache;
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS

@@ -30,10 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "mainWindow.h"
+
+#include <QDebug>
 #include <QDesktopServices>
 #include <QDesktopWidget>
-#include <QInputDialog>
 #include <QFontDialog>
+#include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -42,28 +45,25 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWidgetAction>
-#include <map>
-#include <vector>
-#include <QDebug>
-
 #include <iomanip>
+#include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
+#include "browserWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
+#include "drcWidget.h"
+#include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutViewer.h"
-#include "mainWindow.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
-#include "utl/Logger.h"
 #include "timingWidget.h"
-#include "drcWidget.h"
-#include "browserWidget.h"
-#include "gui/heatMap.h"
+#include "utl/Logger.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -86,8 +86,11 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [](const std::any& object) { return Gui::get()->makeSelected(object); },
+          [](const std::any& object) {
+            return Gui::get()->makeSelected(object);
+          },
           [this]() -> bool { return show_dbu_->isChecked(); },
+          [this]() -> bool { return default_ruler_style_->isChecked(); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -142,10 +145,8 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
-  connect(viewer_,
-          SIGNAL(location(int, int)),
-          this,
-          SLOT(setLocation(int, int)));
+  connect(
+      viewer_, SIGNAL(location(int, int)), this, SLOT(setLocation(int, int)));
   connect(viewer_,
           SIGNAL(selected(const Selected&, bool)),
           this,
@@ -159,10 +160,10 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addSelected(const SelectionSet&)));
 
-  connect(viewer_,
-          SIGNAL(addRuler(int, int, int, int)),
-          this,
-          SLOT(addRuler(int, int, int, int)));
+  connect(
+      viewer_, &LayoutViewer::addRuler, [this](int x0, int y0, int x1, int y1) {
+        addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
+      });
 
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
@@ -185,7 +186,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(removeSelected(const Selected&)),
           this,
           SLOT(removeSelected(const Selected&)));
-  connect(this, SIGNAL(selectionChanged(const Selected&)), inspector_, SLOT(update(const Selected&)));
+  connect(this,
+          SIGNAL(selectionChanged(const Selected&)),
+          inspector_,
+          SLOT(update(const Selected&)));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
@@ -206,10 +210,8 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(focus(const Selected&)),
           viewer_,
           SLOT(selectionFocus(const Selected&)));
-  connect(this,
-          SIGNAL(highlightChanged()),
-          inspector_,
-          SLOT(highlightChanged()));
+  connect(
+      this, SIGNAL(highlightChanged()), inspector_, SLOT(highlightChanged()));
   connect(viewer_,
           SIGNAL(focusNetsChanged()),
           inspector_,
@@ -248,12 +250,11 @@ MainWindow::MainWindow(QWidget* parent)
           viewer_,
           SLOT(updateModuleColor(odb::dbModule*, const QColor&, bool)));
 
-  connect(timing_widget_,
-          &TimingWidget::inspect,
-          [this](const Selected& selected) {
-            inspector_->inspect(selected);
-            inspector_->raise();
-          });
+  connect(
+      timing_widget_, &TimingWidget::inspect, [this](const Selected& selected) {
+        inspector_->inspect(selected);
+        inspector_->raise();
+      });
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
           inspector_,
@@ -308,31 +309,27 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           drc_viewer_,
           SLOT(setBlock(odb::dbBlock*)));
-  connect(drc_viewer_,
-          &DRCWidget::selectDRC,
-          [this](const Selected& selected) {
-            setSelected(selected, false);
-            odb::Rect bbox;
-            selected.getBBox(bbox);
-            // 10 microns
-            const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
-            // twice the largest dimension of bounding box
-            const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
-            // pick smallest
-            const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
-            bbox.set_xlo(bbox.xMin() - zoomout_margin);
-            bbox.set_ylo(bbox.yMin() - zoomout_margin);
-            bbox.set_xhi(bbox.xMax() + zoomout_margin);
-            bbox.set_yhi(bbox.yMax() + zoomout_margin);
-            zoomTo(bbox);
-          });
-  connect(this,
-          &MainWindow::selectionChanged,
-          [this]() {
-            if (!selected_.empty()) {
-              drc_viewer_->updateSelection(*selected_.begin());
-            }
-          });
+  connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
+    setSelected(selected, false);
+    odb::Rect bbox;
+    selected.getBBox(bbox);
+    // 10 microns
+    const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+    // twice the largest dimension of bounding box
+    const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
+    // pick smallest
+    const int zoomout_margin = std::min(zoomout_dist, zoomout_box);
+    bbox.set_xlo(bbox.xMin() - zoomout_margin);
+    bbox.set_ylo(bbox.yMin() - zoomout_margin);
+    bbox.set_xhi(bbox.xMax() + zoomout_margin);
+    bbox.set_yhi(bbox.yMax() + zoomout_margin);
+    zoomTo(bbox);
+  });
+  connect(this, &MainWindow::selectionChanged, [this]() {
+    if (!selected_.empty()) {
+      drc_viewer_->updateSelection(*selected_.begin());
+    }
+  });
 
   createActions();
   createToolbars();
@@ -344,9 +341,15 @@ MainWindow::MainWindow(QWidget* parent)
   settings.beginGroup("main");
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
-  QApplication::setFont(settings.value("font", QApplication::font()).value<QFont>());
-  hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
-  show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+  QApplication::setFont(
+      settings.value("font", QApplication::font()).value<QFont>());
+  hide_option_->setChecked(
+      settings.value("check_exit", hide_option_->isChecked()).toBool());
+  show_dbu_->setChecked(
+      settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+  default_ruler_style_->setChecked(
+      settings.value("ruler_style", default_ruler_style_->isChecked())
+          .toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -358,10 +361,12 @@ MainWindow::MainWindow(QWidget* parent)
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
 
-  Descriptor::Property::convert_dbu = [this](int value, bool add_units) -> std::string {
+  Descriptor::Property::convert_dbu
+      = [this](int value, bool add_units) -> std::string {
     return convertDBUToString(value, add_units);
   };
-  Descriptor::Property::convert_string = [this](const std::string& value, bool* ok) -> int {
+  Descriptor::Property::convert_string
+      = [this](const std::string& value, bool* ok) -> int {
     return convertStringToDBU(value, ok);
   };
 }
@@ -405,18 +410,22 @@ void MainWindow::init(sta::dbSta* sta)
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
-  gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
+  gui->registerDescriptor<odb::dbObstruction*>(
+      new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
-  gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
+  gui->registerDescriptor<DbItermAccessPoint>(
+      new DbItermAccessPointDescriptor(db_));
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechViaGenerateRule*>(new DbGenerateViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
+      new DbGenerateViaDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   controls_->setDBInstDescriptor(inst_descriptor);
@@ -479,6 +488,10 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  default_ruler_style_ = new QAction("Make euclidian rulers", this);
+  default_ruler_style_->setCheckable(true);
+  default_ruler_style_->setChecked(true);
+
   font_ = new QAction("Application font", this);
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
@@ -495,7 +508,10 @@ void MainWindow::createActions()
 
   connect(show_dbu_, SIGNAL(toggled(bool)), viewer_, SLOT(fullRepaint()));
   connect(show_dbu_, SIGNAL(toggled(bool)), inspector_, SLOT(reload()));
-  connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
+  connect(show_dbu_,
+          SIGNAL(toggled(bool)),
+          selection_browser_,
+          SLOT(updateModels()));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
 
@@ -512,7 +528,8 @@ void MainWindow::setUseDBU(bool use_dbu)
 void MainWindow::showApplicationFont()
 {
   bool okay = false;
-  QFont font = QFontDialog::getFont(&okay, QApplication::font(), this, "Application font");
+  QFont font = QFontDialog::getFont(
+      &okay, QApplication::font(), this, "Application font");
 
   if (okay) {
     QApplication::setFont(font);
@@ -553,6 +570,7 @@ void MainWindow::createMenus()
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
+  option_menu->addAction(default_ruler_style_);
   option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
@@ -625,7 +643,7 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
 
   auto cleanupText = [](const QString& text) -> QString {
     QString text_cpy = text;
-    text_cpy.replace(QRegExp("&(?!&)"), ""); // remove single &, but keep &&
+    text_cpy.replace(QRegExp("&(?!&)"), "");  // remove single &, but keep &&
     return text_cpy;
   };
 
@@ -747,11 +765,10 @@ void MainWindow::removeMenuItem(const std::string& name)
   menu_actions_.erase(name);
 }
 
-const std::string MainWindow::requestUserInput(const QString& title, const QString& question)
+const std::string MainWindow::requestUserInput(const QString& title,
+                                               const QString& question)
 {
-  QString text = QInputDialog::getText(this,
-                                       title,
-                                       question);
+  QString text = QInputDialog::getText(this, title, question);
   return text.toStdString();
 }
 
@@ -806,7 +823,7 @@ void MainWindow::removeHighlighted(const Selected& selection)
 void MainWindow::removeSelectedByType(const std::string& type)
 {
   bool changed = false;
-  for (auto itr = selected_.begin(); itr != selected_.end(); ) {
+  for (auto itr = selected_.begin(); itr != selected_.end();) {
     const auto& selection = *itr;
 
     if (selection.getTypeName() == type) {
@@ -830,7 +847,8 @@ void MainWindow::addSelected(const SelectionSet& selections)
       selected_.insert(selection);
     }
   }
-  status(std::string("Added ") + std::to_string(selected_.size() - prev_selected_size));
+  status(std::string("Added ")
+         + std::to_string(selected_.size() - prev_selected_size));
   emit selectionChanged();
 }
 
@@ -873,15 +891,24 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
-std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
+std::string MainWindow::addRuler(int x0,
+                                 int y0,
+                                 int x1,
+                                 int y1,
+                                 const std::string& label,
+                                 const std::string& name,
+                                 bool euclidian)
 {
-  auto new_ruler = std::make_unique<Ruler>(odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  auto new_ruler = std::make_unique<Ruler>(
+      odb::Point(x0, y0), odb::Point(x1, y1), name, label);
+  new_ruler->setEuclidian(euclidian);
   std::string new_name = new_ruler->getName();
 
   // check if ruler name is unique
   for (const auto& ruler : rulers_) {
     if (new_name == ruler->getName()) {
-      logger_->warn(utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
+      logger_->warn(
+          utl::GUI, 24, "Ruler with name \"{}\" already exists", new_name);
       return "";
     }
   }
@@ -893,9 +920,10 @@ std::string MainWindow::addRuler(int x0, int y0, int x1, int y1, const std::stri
 
 void MainWindow::deleteRuler(const std::string& name)
 {
-  auto ruler_find = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
-    return l->getName() == name;
-  });
+  auto ruler_find
+      = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
+          return l->getName() == name;
+        });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
@@ -939,7 +967,8 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
   // Remove any items that might already be selected
   removeFromHighlighted(items);
 
-  highlighted_[highlight_group].insert(items_storage.begin(), items_storage.end());
+  highlighted_[highlight_group].insert(items_storage.begin(),
+                                       items_storage.end());
   emit highlightChanged();
 }
 
@@ -1042,9 +1071,9 @@ void MainWindow::showHelp()
   if (!QDesktopServices::openUrl(help_url)) {
     // failed to open
     logger_->warn(utl::GUI,
-                 23,
-                 "Failed to open help automatically, navigate to: {}",
-                 help_url.toString().toStdString());
+                  23,
+                  "Failed to open help automatically, navigate to: {}",
+                  help_url.toString().toStdString());
   }
 }
 
@@ -1112,7 +1141,8 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet(), inst_term));
+          connected_nets.insert(
+              Gui::get()->makeSelected(inst_term->getNet(), inst_term));
       }
     }
   }
@@ -1133,6 +1163,7 @@ void MainWindow::saveSettings()
   settings.setValue("font", QApplication::font());
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
+  settings.setValue("ruler_style", default_ruler_style_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -1183,7 +1214,8 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
   if (event->key() == Qt::Key_Escape) {
     // Esc stop building ruler
     viewer_->cancelRulerBuild();
-  } else if (event->key() == Qt::Key_K && event->modifiers() & Qt::ShiftModifier) {
+  } else if (event->key() == Qt::Key_K
+             && event->modifiers() & Qt::ShiftModifier) {
     // Shift + K, remove all rulers
     clearRulers();
   }
@@ -1203,9 +1235,11 @@ void MainWindow::closeEvent(QCloseEvent* event)
   exit_check.setIcon(QMessageBox::Question);
   exit_check.setWindowTitle(windowTitle());
   exit_check.setText("Are you sure you want to exit?");
-  QPushButton* exit_button = exit_check.addButton("Exit", QMessageBox::AcceptRole);
+  QPushButton* exit_button
+      = exit_check.addButton("Exit", QMessageBox::AcceptRole);
   QPushButton* cancel_button = exit_check.addButton(QMessageBox::Cancel);
-  QPushButton* hide_button = exit_check.addButton("Hide GUI", QMessageBox::ActionRole);
+  QPushButton* hide_button
+      = exit_check.addButton("Hide GUI", QMessageBox::ActionRole);
 
   // Colorize exit and hide buttons
   exit_button->setStyleSheet("background-color: darkred; color: white;");
@@ -1234,7 +1268,8 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   std::vector<std::string> cmds;
   // Save rulers
   for (const auto& ruler : rulers_) {
-    cmds.push_back(ruler->getTclCommand(db_->getChip()->getBlock()->getDbUnitsPerMicron()));
+    cmds.push_back(ruler->getTclCommand(
+        db_->getChip()->getBlock()->getDbUnitsPerMicron()));
   }
   // Save buttons
   for (const auto& action : view_tool_bar_->actions()) {
@@ -1275,7 +1310,7 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
       ss << std::fixed << std::setprecision(precision) << micron_value;
 
       if (add_units) {
-        ss << " \u03BCm"; // micro meter
+        ss << " \u03BCm";  // micro meter
       }
 
       return ss.str();
@@ -1339,11 +1374,10 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
 void MainWindow::registerHeatMap(HeatMapDataSource* heatmap)
 {
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
-  auto* action = heat_maps->addAction(QString::fromStdString(heatmap->getName()));
+  auto* action
+      = heat_maps->addAction(QString::fromStdString(heatmap->getName()));
   heatmap_actions_[heatmap] = action;
-  connect(action,
-          &QAction::triggered,
-          [heatmap]() { heatmap->showSetup(); });
+  connect(action, &QAction::triggered, [heatmap]() { heatmap->showSetup(); });
 }
 
 void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)

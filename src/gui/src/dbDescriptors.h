@@ -32,20 +32,20 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include "odb/dbWireGraph.h"
-
 #include <map>
 #include <set>
 #include <vector>
 
+#include "gui/gui.h"
+#include "odb/dbWireGraph.h"
+
 namespace odb {
 class dbMaster;
-} // namespace odb
+}  // namespace odb
 
 namespace sta {
 class dbSta;
-} // namespace sta
+}  // namespace sta
 
 namespace gui {
 
@@ -55,7 +55,8 @@ namespace gui {
 class DbInstDescriptor : public Descriptor
 {
  public:
-  enum Type {
+  enum Type
+  {
     BLOCK,
     PAD,
     PAD_INPUT,
@@ -107,7 +108,8 @@ class DbInstDescriptor : public Descriptor
   std::string getInstanceTypeText(Type type) const;
 
  private:
-  void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;
+  void makeMasterOptions(odb::dbMaster* master,
+                         std::vector<EditorOption>& options) const;
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
   bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
@@ -135,7 +137,9 @@ class DbMasterDescriptor : public Descriptor
 
   bool getAllObjects(SelectionSet& objects) const override;
 
-  static void getMasterEquivalent(sta::dbSta* sta, odb::dbMaster* master, std::set<odb::dbMaster*>& masters);
+  static void getMasterEquivalent(sta::dbSta* sta,
+                                  odb::dbMaster* master,
+                                  std::set<odb::dbMaster*>& masters);
 
  private:
   void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
@@ -180,7 +184,9 @@ class DbNetDescriptor : public Descriptor
   using NodeMap = std::map<const Node*, NodeList>;
   using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
 
-  void drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const;
+  void drawPathSegment(odb::dbNet* net,
+                       const odb::dbObject* sink,
+                       Painter& painter) const;
   void findSourcesAndSinksInGraph(odb::dbNet* net,
                                   const odb::dbObject* sink,
                                   odb::dbWireGraph* graph,
@@ -470,7 +476,7 @@ class DbGenerateViaDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-  
+
  private:
   odb::dbDatabase* db_;
 };

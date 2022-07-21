@@ -1014,6 +1014,9 @@ class FlexDRWorker
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
+  // helper functions
+  frCoord snapCoordToManufacturingGrid(const frCoord coord, const int lowerLeftCoord);
+
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;

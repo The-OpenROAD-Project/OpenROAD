@@ -32,11 +32,10 @@
 
 #pragma once
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-
 #include <array>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -49,11 +48,11 @@
 namespace odb {
 class dbBlock;
 class Rect;
-} // namespace odb
+}  // namespace odb
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace gui {
 class HeatMapRenderer;
@@ -65,13 +64,15 @@ namespace bgi = boost::geometry::index;
 class HeatMapDataSource
 {
  public:
-  struct MapSettingBoolean {
+  struct MapSettingBoolean
+  {
     std::string name;
     std::string label;
     std::function<bool(void)> getter;
     std::function<void(bool)> setter;
   };
-  struct MapSettingMultiChoice {
+  struct MapSettingMultiChoice
+  {
     std::string name;
     std::string label;
     std::function<std::vector<std::string>(void)> choices;
@@ -79,7 +80,8 @@ class HeatMapDataSource
     std::function<void(const std::string&)> setter;
   };
 
-  struct MapColor {
+  struct MapColor
+  {
     odb::Rect rect;
     bool has_value;
     double value;
@@ -87,7 +89,8 @@ class HeatMapDataSource
   };
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
-  using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>, bgi::quadratic<16>>;
+  using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>,
+                         bgi::quadratic<16>>;
 
   using MapSetting = std::variant<MapSettingBoolean, MapSettingMultiChoice>;
 
@@ -123,7 +126,10 @@ class HeatMapDataSource
   double getDisplayRangeMin() const { return display_range_min_; }
   double getDisplayRangeMax() const { return display_range_max_; }
   virtual double getDisplayRangeMinimumValue() const { return 0.0; }
-  virtual double getDisplayRangeMaximumValue() const { return std::numeric_limits<double>::max(); }
+  virtual double getDisplayRangeMaximumValue() const
+  {
+    return std::numeric_limits<double>::max();
+  }
   double getRealRangeMinimumValue() const;
   double getRealRangeMaximumValue() const;
   virtual double getDisplayRangeIncrement() const { return 1.0; }
@@ -168,7 +174,10 @@ class HeatMapDataSource
 
   const std::vector<std::pair<int, double>> getLegendValues() const;
   const Painter::Color getColor(double value) const;
-  const SpectrumGenerator& getColorGenerator() const { return color_generator_; }
+  const SpectrumGenerator& getColorGenerator() const
+  {
+    return color_generator_;
+  }
 
   virtual void onShow();
   virtual void onHide();
@@ -180,11 +189,12 @@ class HeatMapDataSource
                          const std::string& label,
                          const std::function<bool(void)>& getter,
                          const std::function<void(bool)>& setter);
-  void addMultipleChoiceSetting(const std::string& name,
-                                const std::string& label,
-                                const std::function<std::vector<std::string>(void)>& choices,
-                                const std::function<std::string(void)>& getter,
-                                const std::function<void(std::string)>& setter);
+  void addMultipleChoiceSetting(
+      const std::string& name,
+      const std::string& label,
+      const std::function<std::vector<std::string>(void)>& choices,
+      const std::function<std::string(void)>& getter,
+      const std::function<void(std::string)>& setter);
 
   odb::dbBlock* getBlock() const { return block_; }
 
@@ -196,7 +206,8 @@ class HeatMapDataSource
                               const double new_data,
                               const double data_area,
                               const double intersection_area,
-                              const double rect_area) = 0;
+                              const double rect_area)
+      = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
@@ -207,7 +218,7 @@ class HeatMapDataSource
   template <typename T>
   T boundValue(T value, T min_value, T max_value)
   {
-    return std::max(min_value , std::min(max_value, value));
+    return std::max(min_value, std::min(max_value, value));
   }
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
@@ -283,7 +294,8 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
                              const std::string& settings_group = "");
   ~RealValueHeatMapDataSource() {}
 
-  virtual const std::string formatValue(double value, bool legend) const override;
+  virtual const std::string formatValue(double value,
+                                        bool legend) const override;
   virtual const std::string getValueUnits() const override;
   virtual double convertValueToPercent(double value) const override;
   virtual double convertPercentToValue(double percent) const override;

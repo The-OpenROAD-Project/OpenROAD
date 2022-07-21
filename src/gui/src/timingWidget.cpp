@@ -33,15 +33,15 @@
 #include "timingWidget.h"
 
 #include <QApplication>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QFrame>
-#include <QLabel>
 #include <QClipboard>
 #include <QDebug>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QLabel>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
-#include <QHeaderView>
+#include <QVBoxLayout>
 
 #include "db_sta/dbSta.hh"
 
@@ -68,7 +68,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       detail_widget_(new QTabWidget(this)),
       focus_view_(nullptr)
 {
-  setObjectName("timing_report"); // for settings
+  setObjectName("timing_report");  // for settings
 
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
@@ -101,19 +101,12 @@ TimingWidget::TimingWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(dbchange_listener_,
-          SIGNAL(dbUpdated()),
-          this,
-          SLOT(handleDbChange()));
   connect(
-      update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
-  connect(
-      update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
+      dbchange_listener_, SIGNAL(dbUpdated()), this, SLOT(handleDbChange()));
+  connect(update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
+  connect(update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
 
-  connect(settings_button_,
-          SIGNAL(clicked()),
-          this,
-          SLOT(showSettings()));
+  connect(settings_button_, SIGNAL(clicked()), this, SLOT(showSettings()));
 
   connect(settings_,
           SIGNAL(inspect(const Selected&)),
@@ -154,12 +147,20 @@ void TimingWidget::init(sta::dbSta* sta)
 
   // default to sorting by slack
   setup_timing_table_view_->setSortingEnabled(true);
-  setup_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
+  setup_timing_table_view_->horizontalHeader()->setSortIndicator(
+      3, Qt::AscendingOrder);
   hold_timing_table_view_->setSortingEnabled(true);
-  hold_timing_table_view_->horizontalHeader()->setSortIndicator(3, Qt::AscendingOrder);
+  hold_timing_table_view_->horizontalHeader()->setSortIndicator(
+      3, Qt::AscendingOrder);
 
-  connect(setup_timing_paths_model_, SIGNAL(modelReset()), this, SLOT(modelWasReset()));
-  connect(hold_timing_paths_model_, SIGNAL(modelReset()), this, SLOT(modelWasReset()));
+  connect(setup_timing_paths_model_,
+          SIGNAL(modelReset()),
+          this,
+          SLOT(modelWasReset()));
+  connect(hold_timing_paths_model_,
+          SIGNAL(modelReset()),
+          this,
+          SLOT(modelWasReset()));
 
   connect(setup_timing_table_view_->horizontalHeader(),
           SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
@@ -207,9 +208,13 @@ void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings_->setPathCount(settings->value("path_count", settings_->getPathCount()).toInt());
-  settings_->setExpandClock(settings->value("expand_clk", settings_->getExpandClock()).toBool());
-  delay_detail_splitter_->restoreState(settings->value("splitter", delay_detail_splitter_->saveState()).toByteArray());
+  settings_->setPathCount(
+      settings->value("path_count", settings_->getPathCount()).toInt());
+  settings_->setExpandClock(
+      settings->value("expand_clk", settings_->getExpandClock()).toBool());
+  delay_detail_splitter_->restoreState(
+      settings->value("splitter", delay_detail_splitter_->saveState())
+          .toByteArray());
 
   settings->endGroup();
 }
@@ -260,7 +265,8 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
     focus_view_ = hold_timing_table_view_;
   }
 
-  TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
 
   auto* path = focus_model->getPathAt(index);
 
@@ -268,10 +274,12 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
   capture_details_model_->populateModel(path, path->getCaptureNodes());
 
   path_details_table_view_->resizeColumnsToContents();
-  path_details_table_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  path_details_table_view_->horizontalHeader()->setSectionResizeMode(
+      0, QHeaderView::Stretch);
 
   capture_details_table_view_->resizeColumnsToContents();
-  capture_details_table_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  capture_details_table_view_->horizontalHeader()->setSectionResizeMode(
+      0, QHeaderView::Stretch);
 
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
@@ -294,23 +302,25 @@ void TimingWidget::updateClockRows()
 
   const bool show = settings_->getExpandClock();
 
-  auto toggleModelView = [show](TimingPathDetailModel* model, QTableView* view) {
-    model->setExpandClock(show);
+  auto toggleModelView
+      = [show](TimingPathDetailModel* model, QTableView* view) {
+          model->setExpandClock(show);
 
-    for (int row = 0; row < model->rowCount(); row++) {
-      if (model->shouldHide(model->index(row, 0))) {
-        view->hideRow(row);
-      } else {
-        view->showRow(row);
-      }
-    }
-  };
+          for (int row = 0; row < model->rowCount(); row++) {
+            if (model->shouldHide(model->index(row, 0))) {
+              view->hideRow(row);
+            } else {
+              view->showRow(row);
+            }
+          }
+        };
 
   toggleModelView(path_details_model_, path_details_table_view_);
   toggleModelView(capture_details_model_, capture_details_table_view_);
 }
 
-void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index)
+void TimingWidget::highlightPathStage(TimingPathDetailModel* model,
+                                      const QModelIndex& index)
 {
   if (!index.isValid()) {
     return;
@@ -344,14 +354,18 @@ void TimingWidget::populatePaths()
   const auto to = settings_->getToPins();
   const bool unconstrained = settings_->getUnconstrained();
 
-  setup_timing_paths_model_->populateModel(true, count, from, thru, to, unconstrained);
-  hold_timing_paths_model_->populateModel(false, count, from, thru, to, unconstrained);
+  setup_timing_paths_model_->populateModel(
+      true, count, from, thru, to, unconstrained);
+  hold_timing_paths_model_->populateModel(
+      false, count, from, thru, to, unconstrained);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
-  setup_timing_paths_model_->sort(setup_header->sortIndicatorSection(), setup_header->sortIndicatorOrder());
+  setup_timing_paths_model_->sort(setup_header->sortIndicatorSection(),
+                                  setup_header->sortIndicatorOrder());
   auto hold_header = hold_timing_table_view_->horizontalHeader();
-  hold_timing_paths_model_->sort(hold_header->sortIndicatorSection(), hold_header->sortIndicatorOrder());
+  hold_timing_paths_model_->sort(hold_header->sortIndicatorSection(),
+                                 hold_header->sortIndicatorOrder());
 }
 
 void TimingWidget::selectedRowChanged(const QItemSelection& selected_row,
@@ -395,7 +409,8 @@ void TimingWidget::selectedCaptureRowChanged(
 
 void TimingWidget::copy()
 {
-  QTableView* focus_view = static_cast<QTableView*>(delay_widget_->currentWidget());
+  QTableView* focus_view
+      = static_cast<QTableView*>(delay_widget_->currentWidget());
 
   QItemSelectionModel* selection = focus_view->selectionModel();
   QModelIndexList indexes = selection->selectedIndexes();
@@ -403,8 +418,8 @@ void TimingWidget::copy()
   if (indexes.size() < 1)
     return;
   auto sel_index = indexes.first();
-  if (focus_view == setup_timing_table_view_ ||
-      focus_view == hold_timing_table_view_) {
+  if (focus_view == setup_timing_table_view_
+      || focus_view == hold_timing_table_view_) {
     auto src_index = sel_index.sibling(sel_index.row(), 5);
     auto sink_index = sel_index.sibling(sel_index.row(), 6);
     auto src_node

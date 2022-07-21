@@ -423,8 +423,14 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     gcSegment* edge,
     frConstraint* constraint,
     box_t& queryBox,
-    gtl::rectangle_data<frCoord>& queryRect)
+    gtl::rectangle_data<frCoord>& queryRect,
+    frCoord& eolNonPrlSpacing,
+    frCoord& endPrlSpacing,
+    frCoord& endPrl)
 {
+  endPrlSpacing = 0;
+  endPrl = 0;
+  eolNonPrlSpacing = 0;
   frCoord eolWithin, eolSpace;
   switch (constraint->typeId()) {
     case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
@@ -434,10 +440,17 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     } break;
     case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint: {
       auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
-      eolWithin = con->getWithinConstraint()->getEolWithin();
+      auto withinCon = con->getWithinConstraint();
+      eolWithin = withinCon->getEolWithin();
       eolSpace = con->getEolSpace();
-      if (con->getWithinConstraint()->hasEndToEndConstraint()) {
-        auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
+      eolNonPrlSpacing = eolSpace;
+      if (withinCon->hasEndPrlSpacing()) {
+        endPrlSpacing = withinCon->getEndPrlSpacing();
+        endPrl = withinCon->getEndPrl();
+        eolSpace = std::max(eolSpace, endPrlSpacing);
+      }
+      if (withinCon->hasEndToEndConstraint()) {
+        auto endToEndCon = withinCon->getEndToEndConstraint();
         eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
       }
     } break;
@@ -575,9 +588,16 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
   auto layerNum = edge->getLayerNum();
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;  // original size
-  checkMetalEndOfLine_eol_hasEol_getQueryBox(
-      edge, constraint, queryBox, queryRect);
-
+  frCoord eolNonPrlSpacing;
+  frCoord endPrlSpacing;
+  frCoord endPrl;
+  checkMetalEndOfLine_eol_hasEol_getQueryBox(edge,
+                                             constraint,
+                                             queryBox,
+                                             queryRect,
+                                             eolNonPrlSpacing,
+                                             endPrlSpacing,
+                                             endPrl);
   gtl::rectangle_data<frCoord> triggerRect;
   vector<pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
@@ -617,6 +637,35 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     if (!hasRoute) {
       continue;
     }
+    // skip if in endprl region but not an endprl case and not in the
+    // non-endprl region.
+    if (endPrlSpacing > 0) {
+      const frDirEnum dir = edge->getDir();
+      const gtl::orientation_2d orient
+          = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
+                                                         : gtl::VERTICAL;
+      const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
+      bool check
+          = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
+            > eolNonPrlSpacing;
+      if (check) {
+        const frCoord edge1_low = edge->low().get(orient);
+        const frCoord edge1_high = edge->high().get(orient);
+        const frCoord edge1_min = std::min(edge1_low, edge1_high);
+        const frCoord edge1_max = std::max(edge1_low, edge1_high);
+
+        const frCoord edge2_low = ptr->low().get(orient);
+        const frCoord edge2_high = ptr->high().get(orient);
+        const frCoord edge2_min = std::min(edge2_low, edge2_high);
+        const frCoord edge2_max = std::max(edge2_low, edge2_high);
+        const frCoord prl
+            = std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+        if (prl < 0 || prl > endPrl) {
+          continue;
+        }
+      }
+    }
+
     // check endtoend
     if (!checkMetalEndOfLine_eol_hasEol_endToEndHelper(edge, ptr, constraint))
       continue;
