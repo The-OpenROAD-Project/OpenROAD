@@ -146,7 +146,6 @@ protected:
   void repairNet(BufferedNetPtr bnet,
                  const Pin *drvr_pin,
                  float max_cap,
-                 float max_fanout,
                  int max_length, // dbu
                  const Corner *corner);
   void repairNet(BufferedNetPtr bnet,

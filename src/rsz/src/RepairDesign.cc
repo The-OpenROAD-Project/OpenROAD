@@ -321,15 +321,14 @@ RepairDesign::repairNet(Net *net,
     debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                sdc_network_->pathName(drvr_pin));
     const Corner *corner = sta_->cmdCorner();
-    bool repair_fanout = false;
+    bool repaired_net = false;
     if (check_fanout) {
-      float fanout, fanout_slack;
-      float max_fanout = INF;
+      float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_,
                         fanout, max_fanout, fanout_slack);
       if (max_fanout > 0.0 && fanout_slack < 0.0) {
         fanout_violations++;
-        repair_fanout = true;
+        repaired_net = true;
 
         debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
         LoadRegion region = groupLoadsIntoRegions(drvr_pin, max_fanout);
@@ -352,7 +351,6 @@ RepairDesign::repairNet(Net *net,
         graph_delay_calc_->findDelays(drvr);
 
         float max_cap = INF;
-        float max_fanout = INF;
         bool repair_slew = false;
         bool repair_cap = false;
         bool repair_wire = false;
@@ -425,7 +423,6 @@ RepairDesign::repairNet(Net *net,
         }
         if (repair_slew
             || repair_cap
-            || repair_fanout
             || repair_wire) {
           Point drvr_loc = db_network_->location(drvr->pin());
           debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
@@ -433,14 +430,16 @@ RepairDesign::repairNet(Net *net,
                      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 1),
                      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
                      units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
-          repairNet(bnet, drvr_pin, max_cap, max_fanout, max_length, corner);
-          repaired_net_count++;
+          repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+          repaired_net = true;
 
           if (resize_drvr)
             resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
         }
       }
     }
+    if (repaired_net)
+      repaired_net_count++;
   }
 }
 
@@ -582,7 +581,6 @@ void
 RepairDesign::repairNet(BufferedNetPtr bnet,
                         const Pin *drvr_pin,
                         float max_cap,
-                        float max_fanout,
                         int max_length, // dbu
                         const Corner *corner)
 {
