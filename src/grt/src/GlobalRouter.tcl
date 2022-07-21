@@ -395,7 +395,7 @@ proc report_wire_length { args } {
       }
     }
   } else {
-    utl::errpr GRT 237 "-net is required."
+    utl::error GRT 238 "-net is required."
   }
 }
 
