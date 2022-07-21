@@ -311,7 +311,7 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i]; // macro_id
     // add the continue syntax to handle fixed terminals
-    if (macros_[b].GetWidth() <= 0)
+    if (macros_[b].GetWidth() <= 0 || macros_[b].GetHeight() <= 0)
       continue;
     const int p = match[b].second; // the position of current macro in neg_seq_
     macros_[b].SetX(length[p]);
@@ -338,7 +338,7 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i]; // macro_id
     // add continue syntax to handle fixed terminals
-    if (macros_[b].GetHeight() <= 0)
+    if (macros_[b].GetHeight() <= 0 || macros_[b].GetWidth() <= 0.0)
       continue;
     const int p = match[b].second; // the position of current macro in neg_seq_
     macros_[b].SetY(length[p]);

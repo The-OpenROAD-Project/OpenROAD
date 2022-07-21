@@ -207,7 +207,8 @@ class Cluster {
     // IO cluster
     // When you specify the io cluster, you must specify the postion
     // of this IO cluster
-    void SetIOClusterFlag(const std::pair<float, float> pos);
+    void SetIOClusterFlag(const std::pair<float, float> pos, const float width, 
+                          const float height);
     bool GetIOClusterFlag() const;
 
     // Metric Support
@@ -366,7 +367,7 @@ class HardMacro {
     float GetRealY() const;
     float GetRealWidth() const;
     float GetRealHeight() const;
-    
+
     // Orientation support
     std::string GetOrientation() const;
     // We do not allow rotation of macros
@@ -444,7 +445,8 @@ class SoftMacro {
     // Create a SoftMacro representing fixed hard macro or blockage
     SoftMacro(float width, float height, const std::string name, float lx, float ly);
     // Create a SoftMacro representing the IO cluster
-    SoftMacro(const std::pair<float, float>& pos, const std::string name);
+    SoftMacro(const std::pair<float, float>& pos, const std::string name, 
+              float width = 0.0, float height = 0.0);
     // create a SoftMacro from a cluster
     SoftMacro(Cluster* cluster);
 
@@ -481,6 +483,8 @@ class SoftMacro {
     bool GetAlignFlag() const;
     // cluster
     Cluster* GetCluster() const;
+    // calculate macro utilization
+    float GetMacroUtil() const;
 
   private:
     // We define x_, y_ and orientation_ here

@@ -336,13 +336,14 @@ void Cluster::CopyInstances(const Cluster& cluster)
 
 // Bundled IO (Pads) cluster support
 // The position is the center of IO pads in the cluster
-void Cluster::SetIOClusterFlag(const std::pair<float, float> pos) 
+void Cluster::SetIOClusterFlag(const std::pair<float, float> pos, 
+                               const float width, const float height) 
 {
   io_cluster_flag_ = true;
   // call the constructor to create a SoftMacro
   // representing the IO cluster
   delete soft_macro_;
-  soft_macro_ = new SoftMacro(pos, name_);
+  soft_macro_ = new SoftMacro(pos, name_, width, height);
 }
 
 bool Cluster::GetIOClusterFlag() const 
@@ -922,14 +923,15 @@ SoftMacro::SoftMacro(float width, float height, const std::string name,
 }
 
 // Create a SoftMacro representing the IO cluster or fixed terminals
-SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name) 
+SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name,
+                     float width, float height) 
 { 
   name_ = name;
   x_ = pos.first;
   y_ = pos.second;
-  width_  = 0.0;
-  height_ = 0.0;
-  area_   = 0.0;
+  width_  = width;
+  height_ = height;
+  area_   = 0.0; // width_ * height_ = 0.0 for this case
   cluster_ = nullptr;
   fixed_  = true;
 }
@@ -1206,5 +1208,21 @@ Cluster* SoftMacro::GetCluster() const
 {
   return cluster_;
 }
+
+// Calculate macro utilization
+float SoftMacro::GetMacroUtil() const 
+{ 
+  if (cluster_ == nullptr || area_ == 0.0)
+    return 0.0;
+
+  if (cluster_->GetClusterType() == HardMacroCluster)
+    return 1.0;
+
+  if (cluster_->GetClusterType() == MixedCluster)
+    return cluster_->GetMacroArea() / area_;
+
+  return 0.0;
+}
+
 
 }  // namespace mpl

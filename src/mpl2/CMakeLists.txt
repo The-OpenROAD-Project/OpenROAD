@@ -33,6 +33,12 @@
 
 include("openroad")
 
+set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -std=c++17 -DIL_STD -m64")
+set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem")
+
+find_package(Cplex)
+include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
+
 swig_lib(NAME      mpl2
          NAMESPACE mpl2
          I_FILE    src/mpl.i
@@ -48,6 +54,7 @@ target_sources(mpl2
     src/SimulatedAnnealingCore.cpp
     src/SACoreHardMacro.cpp
     src/SACoreSoftMacro.cpp
+    src/bus_synthesis.cpp
 )
 
 messages(
@@ -65,4 +72,11 @@ target_link_libraries(mpl2
     OpenSTA
     odb
     gui
+    ${CPLEX_LIBRARIES}
+    dl
 )
+
+
+
+
+

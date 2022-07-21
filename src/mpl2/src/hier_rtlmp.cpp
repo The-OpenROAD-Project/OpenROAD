@@ -484,22 +484,29 @@ void HierRTLMP::CreateBundledIOs()
       cluster_map_[cluster_id_++] = cluster;
       int x = 0.0;
       int y = 0.0;
+      int width = 0;
+      int height = 0;
       if (i == 0) {
         x = floorplan_lx_;
-        y = floorplan_ly_ + y_base * (j + 0.5);
+        y = floorplan_ly_ + y_base * j;
+        height = y_base;
       } else if (i == 1) {
-        x = floorplan_lx_ + x_base * (j + 0.5);
+        x = floorplan_lx_ + x_base * j;
         y = floorplan_uy_;
+        width = x_base;
       } else if (i == 2) {
         x = floorplan_ux_;
-        y = floorplan_uy_ - y_base * (j + 0.5);
+        y = floorplan_uy_ - y_base * (j + 1);
+        height = y_base;
       } else {
-        x = floorplan_ux_ - x_base * (j + 0.5);
+        x = floorplan_ux_ - x_base * (j + 1);
         y = floorplan_ly_;
+        width = x_base;
       }
       // set the cluster to a IO cluster
       cluster->SetIOClusterFlag(std::pair<float, float>(
-                Dbu2Micro(x, dbu_), Dbu2Micro(y, dbu_)));
+                Dbu2Micro(x, dbu_), Dbu2Micro(y, dbu_)), 
+                Dbu2Micro(width, dbu_), Dbu2Micro(height, dbu_));
     }  
   }
 
