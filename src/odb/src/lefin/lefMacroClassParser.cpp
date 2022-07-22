@@ -34,110 +34,122 @@
 
 namespace lefMacroClassType {
 
-typedef std::function<qi::rule<std::string_view::iterator, space_type>(
-    const char*,
-    odb::dbMasterType::Value)> ApplyOdbType;
-
-/**
- * Convient function to encapsulate endcap types.
- *
- * @param make_lit
- * @return qi::rule<std::string_view::iterator, space_type>
- */
-qi::rule<std::string_view::iterator, space_type> endcap(ApplyOdbType& make_lit)
-{
-  return lit("ENDCAP")
-         >> (make_lit("BOTTOMEDGE", odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE)
-             | make_lit("TOPEDGE", odb::dbMasterType::ENDCAP_LEF58_TOPEDGE)
-             | make_lit("RIGHTEDGE", odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE)
-             | make_lit("LEFTEDGE", odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE)
-             | make_lit("RIGHTBOTTOMEDGE",
-                        odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE)
-             | make_lit("LEFTBOTTOMEDGE",
-                        odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE)
-             | make_lit("RIGHTTOPEDGE",
-                        odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE)
-             | make_lit("LEFTTOPEDGE",
-                        odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE)
-             | make_lit("RIGHTBOTTOMCORNER",
-                        odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER)
-             | make_lit("LEFTBOTTOMCORNER",
-                        odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER)
-             | make_lit("RIGHTTOPCORNER",
-                        odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER)
-             | make_lit("LEFTTOPCORNER",
-                        odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER)
-             | make_lit("PRE", odb::dbMasterType::ENDCAP_PRE)
-             | make_lit("POST", odb::dbMasterType::ENDCAP_POST)
-             | make_lit("TOPLEFT", odb::dbMasterType::ENDCAP_TOPLEFT)
-             | make_lit("TOPRIGHT", odb::dbMasterType::ENDCAP_TOPRIGHT)
-             | make_lit("BOTTOMLEFT", odb::dbMasterType::ENDCAP_BOTTOMLEFT)
-             | make_lit("BOTTOMRIGHT", odb::dbMasterType::ENDCAP_BOTTOMRIGHT)
-
-         );
-}
-
-qi::rule<std::string_view::iterator, space_type> cover(ApplyOdbType& make_lit)
-{
-  return (make_lit("COVER", odb::dbMasterType::COVER)
-          >> -(make_lit("BUMP", odb::dbMasterType::COVER_BUMP)));
-}
-
-qi::rule<std::string_view::iterator, space_type> ring(ApplyOdbType& make_lit)
-{
-  return (make_lit("RING", odb::dbMasterType::RING));
-}
-
-qi::rule<std::string_view::iterator, space_type> block(ApplyOdbType& make_lit)
-{
-  return (make_lit("BLOCK", odb::dbMasterType::BLOCK)
-          >> -(make_lit("BLACKBOX", odb::dbMasterType::BLOCK_BLACKBOX))
-          >> -(make_lit("SOFT", odb::dbMasterType::BLOCK_SOFT)));
-}
-
-qi::rule<std::string_view::iterator, space_type> core(ApplyOdbType& make_lit)
-{
-  return (make_lit("CORE", odb::dbMasterType::CORE)
-          >> -(make_lit("FEEDTHRU", odb::dbMasterType::CORE_FEEDTHRU))
-          >> -(make_lit("TIEHIGH", odb::dbMasterType::CORE_TIEHIGH))
-          >> -(make_lit("TIELOW", odb::dbMasterType::CORE_TIELOW))
-          >> -(make_lit("SPACER", odb::dbMasterType::CORE_SPACER))
-          >> -(make_lit("ANTENNACELL", odb::dbMasterType::CORE_ANTENNACELL))
-          >> -(make_lit("WELLTAP", odb::dbMasterType::CORE_WELLTAP)));
-}
-
-qi::rule<std::string_view::iterator, space_type> pad(ApplyOdbType& make_lit)
-{
-  return (make_lit("PAD", odb::dbMasterType::PAD)
-          >> -(make_lit("INPUT", odb::dbMasterType::PAD_INPUT))
-          >> -(make_lit("OUTPUT", odb::dbMasterType::PAD_OUTPUT))
-          >> -(make_lit("INOUT", odb::dbMasterType::PAD_INOUT))
-          >> -(make_lit("POWER", odb::dbMasterType::PAD_POWER))
-          >> -(make_lit("SPACER", odb::dbMasterType::PAD_SPACER))
-          >> -(make_lit("AREAIO", odb::dbMasterType::PAD_AREAIO)));
-}
-
 template <typename Iterator>
-bool parse(Iterator first, Iterator last, odb::dbMaster* master)
-{
-  // Create a quick lambda to automatically apply the type to the given master
-  // instance.
-  ApplyOdbType make_lit
-      = [master](const char* name, odb::dbMasterType::Value type) {
-          return lit(name)[boost::bind(&odb::dbMaster::setType, master, type)];
-        };
+bool parse(Iterator first, Iterator last, odb::dbMaster* master) {
+  qi::rule<std::string_view::iterator, space_type> cover =
+      (lit("COVER")[boost::bind(&odb::dbMaster::setType, master,
+                                odb::dbMasterType::COVER)] >>
+       -(lit("BUMP")[boost::bind(&odb::dbMaster::setType, master,
+                                 odb::dbMasterType::COVER_BUMP)]));
 
-  qi::rule<std::string_view::iterator, space_type> TypeRule
-      = (lit("CLASS") >> (
-          endcap(make_lit)
-          | cover(make_lit)
-          | ring(make_lit)
-          | block(make_lit)
-          | core(make_lit)
-          | pad(make_lit))
-         >> lit(";"));
+  qi::rule<std::string_view::iterator, space_type> ring =
+      (lit("RING")[boost::bind(&odb::dbMaster::setType, master,
+                               odb::dbMasterType::RING)]);
 
-  bool valid = qi::phrase_parse(first, last, TypeRule, space);
+  qi::rule<std::string_view::iterator, space_type> block =
+      (lit("BLOCK")[boost::bind(&odb::dbMaster::setType, master,
+                                odb::dbMasterType::BLOCK)] >>
+       -(lit("BLACKBOX")[boost::bind(&odb::dbMaster::setType, master,
+                                     odb::dbMasterType::BLOCK_BLACKBOX)]) >>
+       -(lit("SOFT")[boost::bind(&odb::dbMaster::setType, master,
+                                 odb::dbMasterType::BLOCK_SOFT)]));
+
+  qi::rule<std::string_view::iterator, space_type> core =
+      (lit("CORE")[boost::bind(&odb::dbMaster::setType, master,
+                               odb::dbMasterType::CORE)] >>
+       -(lit("FEEDTHRU")[boost::bind(&odb::dbMaster::setType, master,
+                                     odb::dbMasterType::CORE_FEEDTHRU)]) >>
+       -(lit("TIEHIGH")[boost::bind(&odb::dbMaster::setType, master,
+                                    odb::dbMasterType::CORE_TIEHIGH)]) >>
+       -(lit("TIELOW")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::CORE_TIELOW)]) >>
+       -(lit("SPACER")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::CORE_SPACER)]) >>
+       -(lit(
+           "ANTENNACELL")[boost::bind(&odb::dbMaster::setType, master,
+                                      odb::dbMasterType::CORE_ANTENNACELL)]) >>
+       -(lit("WELLTAP")[boost::bind(&odb::dbMaster::setType, master,
+                                    odb::dbMasterType::CORE_WELLTAP)]));
+
+  qi::rule<std::string_view::iterator, space_type> pad =
+      (lit("PAD")[boost::bind(&odb::dbMaster::setType, master,
+                              odb::dbMasterType::PAD)] >>
+       -(lit("INPUT")[boost::bind(&odb::dbMaster::setType, master,
+                                  odb::dbMasterType::PAD_INPUT)]) >>
+       -(lit("OUTPUT")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::PAD_OUTPUT)]) >>
+       -(lit("INOUT")[boost::bind(&odb::dbMaster::setType, master,
+                                  odb::dbMasterType::PAD_INOUT)]) >>
+       -(lit("POWER")[boost::bind(&odb::dbMaster::setType, master,
+                                  odb::dbMasterType::PAD_POWER)]) >>
+       -(lit("SPACER")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::PAD_SPACER)]) >>
+       -(lit("AREAIO")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::PAD_AREAIO)]));
+
+  qi::rule<std::string_view::iterator, space_type> endcap =
+      (lit("ENDCAP") >
+       (lit("BOTTOMEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE)] |
+        lit("TOPEDGE")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::ENDCAP_LEF58_TOPEDGE)] |
+        lit("RIGHTEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE)] |
+        lit("LEFTEDGE")[boost::bind(&odb::dbMaster::setType, master,
+                                    odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE)] |
+        lit("RIGHTBOTTOMEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_TOPEDGE)] |
+        lit("RIGHTEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE)] |
+        lit("LEFTEDGE")[boost::bind(&odb::dbMaster::setType, master,
+                                    odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE)] |
+        lit("RIGHTBOTTOMEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE)] |
+        lit("LEFTBOTTOMEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE)] |
+        lit("RIGHTTOPEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE)] |
+        lit("LEFTTOPEDGE")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE)] |
+        lit("RIGHTBOTTOMCORNER")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER)] |
+        lit("LEFTBOTTOMCORNER")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER)] |
+        lit("RIGHTTOPCORNER")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER)] |
+        lit("LEFTTOPCORNER")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER)] |
+        lit("PRE")[boost::bind(&odb::dbMaster::setType, master,
+                               odb::dbMasterType::ENDCAP_PRE)] |
+        lit("POST")[boost::bind(&odb::dbMaster::setType, master,
+                                odb::dbMasterType::ENDCAP_POST)] |
+        lit("TOPLEFT")[boost::bind(&odb::dbMaster::setType, master,
+                                   odb::dbMasterType::ENDCAP_TOPLEFT)] |
+        lit("TOPRIGHT")[boost::bind(&odb::dbMaster::setType, master,
+                                    odb::dbMasterType::ENDCAP_TOPRIGHT)] |
+        lit("BOTTOMLEFT")[boost::bind(&odb::dbMaster::setType, master,
+                                      odb::dbMasterType::ENDCAP_BOTTOMLEFT)] |
+        lit("BOTTOMRIGHT")[boost::bind(
+            &odb::dbMaster::setType, master,
+            odb::dbMasterType::ENDCAP_BOTTOMRIGHT)]));
+
+  qi::rule<std::string_view::iterator, space_type> start =
+      (lit("CLASS") >> (endcap | pad | core | block | ring | cover) >>
+       lit(";"));
+
+  bool valid = qi::phrase_parse(first, last, start, space);
 
   return valid && first == last;
 }
@@ -145,8 +157,7 @@ bool parse(Iterator first, Iterator last, odb::dbMaster* master)
 
 namespace odb {
 
-bool lefMacroClassTypeParser::parse(std::string_view s, dbMaster* master)
-{
+bool lefMacroClassTypeParser::parse(std::string_view s, dbMaster* master) {
   return lefMacroClassType::parse(s.begin(), s.end(), master);
 }
 
