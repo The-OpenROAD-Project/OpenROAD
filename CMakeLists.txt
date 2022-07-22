@@ -15,7 +15,11 @@
 
 cmake_minimum_required (VERSION 3.9)
 
-enable_language(CUDA)
+set(GPU true CACHE BOOL "Choose to use CUDA or not")
+add_definitions("-DCUDA=${GPU}")
+if (${GPU})
+  enable_language(CUDA)
+endif()
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # Use standard target names

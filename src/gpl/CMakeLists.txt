@@ -41,7 +41,7 @@ option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-set(CUDA true CACHE BOOL "Choose to use CUDA or not")
+
 find_package(Eigen3 REQUIRED)
 
 swig_lib(NAME      gpl
@@ -67,20 +67,12 @@ target_sources(gpl
     src/timingBase.cpp
     src/graphics.cpp
 )
-if (CUDA)
-  target_sources(gpl PRIVATE src/cudalibs.cpp)
-endif()
 
 messages(TARGET gpl)
 
 target_include_directories(gpl
   PUBLIC
     include
-)
-
-find_package(CUDA REQUIRED)
-
-include_directories(${CUDA_INCLUDE_DIRS}
 )
 
 target_link_libraries(gpl
@@ -92,11 +84,27 @@ target_link_libraries(gpl
     OpenSTA
     rsz
     grt
-    ${CUDA_LIBRARIES}
-    ${CUDA_CUBLAS_LIBRARIES}
-    ${CUDA_cusparse_LIBRARY}
-    ${CUDA_cusolver_LIBRARY}
 )
+# If using CUDA, the if statement will be activated.
+
+if (${GPU})
+  target_sources(gpl PRIVATE src/cudalibs.cpp)
+  find_package(CUDA REQUIRED)
+  include_directories(${CUDA_INCLUDE_DIRS}
+  )
+  target_link_libraries(gpl
+    PRIVATE
+      ${CUDA_LIBRARIES}
+      ${CUDA_CUBLAS_LIBRARIES}
+      ${CUDA_cusparse_LIBRARY}
+      ${CUDA_cusolver_LIBRARY}
+  )
+  target_link_libraries( gpl
+    PRIVATE
+      ${CUDA_LIBRARIES}
+      ${CUDA_cusolver_LIBRARY}
+  )
+endif()
 
 # CIMG_USE case
 if( USE_CIMG_LIB )
@@ -107,8 +115,6 @@ if( USE_CIMG_LIB )
       PRIVATE
         ${X11_LIBRARIES}
         ${JPEG_LIBRARIES}
-        ${CUDA_LIBRARIES}
-        ${CUDA_cusolver_LIBRARY}
     )
     target_include_directories( gpl
       PUBLIC

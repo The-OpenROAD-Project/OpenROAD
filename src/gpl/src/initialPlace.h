@@ -97,10 +97,7 @@ class InitialPlace {
     //        SparseMatrix that contains connectivity forces on Y // B2B model is used
     //
     // Used the interative BiCGSTAB solver to solve matrix eqs.
-    bool cuda = false;
-    #ifdef CUDA
-      cuda = true;
-    #endif
+
     Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
     Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
     SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;

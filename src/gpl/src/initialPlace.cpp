@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
   
 #include <fstream>
+#include <iostream>
 
 #include "initialPlace.h"
 #include "placerBase.h"
@@ -42,8 +43,9 @@
 #include "graphics.h"
 
 #include "utl/Logger.h"
-#include "cudalibs.h"
-
+#if CUDA
+  #include "cudalibs.h"
+#endif
 namespace gpl {
 using namespace std;
 
@@ -109,16 +111,16 @@ void InitialPlace::doBicgstabPlace() {
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  // Parameters that don't change with iteration
-  int m = pb_->placeInsts().size(); // number of rows of the to-be-solved matrix
-  float tol = 1e-6; // 	Tolerance to decide if singular or not.
-  int reorder = 0;  // "0" for common matrix without ordering
-  int singularity = -1; // Output. -1 = A means invertible
-
   for(size_t iter=1; iter<=ipVars_.maxIter; iter++) {
+
+    // Parameters that don't change with iteration and used in the CUDA code
+    float tol = 1e-6; // 	Tolerance to decide if singular or not.
+    int reorder = 0;  // "0" for common matrix without ordering
+    int singularity = -1; // Output. -1 = A means invertible
+
     updatePinInfo();
     createSparseMatrix();
-    if (cuda){
+    #if CUDA
       // Set sparse matrices from dense matrices.
       cooRowIndexX.clear();
       cooColIndexX.clear();
@@ -144,10 +146,9 @@ void InitialPlace::doBicgstabPlace() {
       int nnz_x = cooRowIndexX.size(); // number of non-zeros for matrix X
       int nnz_y = cooRowIndexY.size(); // number of non-zeros for matrix Y
 
-      cusolveSpQR(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_, instLocVecX_, m, nnz_x, tol, reorder, singularity);
-      cusolveSpQR(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_, instLocVecY_, m, nnz_y, tol, reorder, singularity);
-    }
-    else{
+      cusolverSpQR(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_, instLocVecX_, pb_->placeInsts().size(), nnz_x, tol, reorder, singularity);
+      cusolverSpQR(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_, instLocVecY_, pb_->placeInsts().size(), nnz_y, tol, reorder, singularity);
+    #else
       // BiCGSTAB solver for initial place
       BiCGSTAB< SMatrix, IdentityPreconditioner > solver;
       solver.setMaxIterations(ipVars_.maxSolverIter);
@@ -161,8 +162,7 @@ void InitialPlace::doBicgstabPlace() {
 
       log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
         iter, max(errorX, errorY), pb_->hpwl());
-
-    }
+    #endif
     updateCoordi();
 
 #ifdef ENABLE_CIMG_LIB
