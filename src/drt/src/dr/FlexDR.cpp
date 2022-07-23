@@ -2221,7 +2221,7 @@ int FlexDR::main()
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
     }
-    if (iter_ >= END_ITERATION) {
+    if (iter_ > END_ITERATION) {
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
