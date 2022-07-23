@@ -1,4 +1,4 @@
-/* Author: Mahfouz-z */
+/* Authors: Mahfouz-z */
 /*
  * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
@@ -26,20 +26,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ord/OpenRoad.hh"
+#include "dst/Distributed.h"
+#include "dst/JobCallBack.h"
+#include "dst/JobMessage.h"
 
-// Stubs out functions from OpenRoad that aren't needed by Testing but
-// are referenced from dst modules or its dependencies.
+using namespace dst;
 
-namespace ord {
-
-OpenRoad::OpenRoad()
+class HelperCallBack : public dst::JobCallBack
 {
-}
+ public:
+  HelperCallBack(dst::Distributed* dist) : dist_(dist) {}
+  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  {
+    JobMessage replyMsg;
+    if (msg.getJobType() == JobMessage::JobType::ROUTING)
+      replyMsg.setJobType(JobMessage::JobType::SUCCESS);
+    else
+      replyMsg.setJobType(JobMessage::JobType::ERROR);
+    dist_->sendResult(replyMsg, sock);
+  }
 
-OpenRoad* OpenRoad::openRoad()
-{
-  return nullptr;
-}
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override {}
 
-}  // namespace ord
+ private:
+  dst::Distributed* dist_;
+};

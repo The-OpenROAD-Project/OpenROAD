@@ -59,6 +59,7 @@ class LoadBalancer
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
   void removeWorker(ip::address ip, unsigned short port, bool lock = true);
+  void punishWorker(ip::address ip, unsigned short port);
 
  private:
   struct worker

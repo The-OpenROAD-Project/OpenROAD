@@ -119,6 +119,20 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
   }
 }
 
+void LoadBalancer::punishWorker(ip::address ip, unsigned short port)
+{
+  std::lock_guard<std::mutex> lock(workers_mutex_);
+  std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
+  while (!workers_.empty()) {
+    auto worker = workers_.top();
+    workers_.pop();
+    if (worker.ip == ip && worker.port == port)
+      worker.priority = worker.priority == 0 ? 2 : worker.priority * 2;
+    newQueue.push(worker);
+  }
+  workers_.swap(newQueue);
+}
+
 void LoadBalancer::removeWorker(ip::address ip, unsigned short port, bool lock)
 {
   if (lock)

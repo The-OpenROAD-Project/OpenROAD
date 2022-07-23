@@ -1,4 +1,4 @@
-/* Author: Mahfouz-z */
+/* Authors: Mahfouz-z */
 /*
  * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
@@ -26,20 +26,31 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ord/OpenRoad.hh"
+#pragma once
+#include <boost/serialization/base_object.hpp>
 
-// Stubs out functions from OpenRoad that aren't needed by Testing but
-// are referenced from dst modules or its dependencies.
-
-namespace ord {
-
-OpenRoad::OpenRoad()
-{
+#include "dst/JobMessage.h"
+namespace boost::serialization {
+class access;
 }
+namespace dst {
 
-OpenRoad* OpenRoad::openRoad()
+class BroadcastJobDescription : public JobDescription
 {
-  return nullptr;
-}
+ public:
+  BroadcastJobDescription() {}
+  void setWorkersCount(unsigned short count) { workers_count_ = count; }
+  unsigned short getWorkersCount() const { return workers_count_; }
 
-}  // namespace ord
+ private:
+  unsigned short workers_count_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & workers_count_;
+  }
+  friend class boost::serialization::access;
+};
+}  // namespace dst

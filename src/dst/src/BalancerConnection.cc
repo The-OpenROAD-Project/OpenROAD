@@ -40,12 +40,14 @@
 
 #include "LoadBalancer.h"
 #include "dst/BalancerJobDescription.h"
+#include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
 #include "utl/Logger.h"
 
 using namespace dst;
 
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
+BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)
 
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
                                        LoadBalancer* owner,
@@ -130,11 +132,11 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                 logger_->warn(utl::DST,
                               204,
                               "Exception thrown: {}. worker with ip \"{}\" and "
-                              "port \"{}\" will be removed.",
+                              "port \"{}\" will be pushed back the queue.",
                               ex.what(),
                               workerAddress,
                               port);
-                owner_->removeWorker(workerAddress, port);
+                owner_->punishWorker(workerAddress, port);
                 workerAddress = ip::address();
                 failed_workers_trials++;
                 if (failed_workers_trials == MAX_FAILED_WORKERS_TRIALS) {
@@ -146,14 +148,6 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                   break;
                 }
                 owner_->getNextWorker(workerAddress, port);
-                if (workerAddress.is_unspecified()) {
-                  logger_->warn(utl::DST,
-                                206,
-                                "All available {} workers failed, relaying "
-                                "error to leader.",
-                                failed_workers_trials);
-                  break;
-                }
                 socket.close();
               }
             }
@@ -201,6 +195,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         pool.join();
         JobMessage result(JobMessage::SUCCESS);
         std::string msgStr;
+        unsigned short successBroadcast
+            = owner_->workers_.size() - failed_workers.size();
         if (failed_workers.size() > 0) {
           for (auto worker : failed_workers) {
             owner_->removeWorker(worker.first, worker.second, false);
@@ -210,8 +206,14 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                         "{} workers failed to receive the broadcast message "
                         "and have been removed.",
                         failed_workers.size());
-          result.setJobType(JobMessage::JobType::ERROR);
+          if (failed_workers.size() > MAX_BROADCAST_FAILED_NODES
+              || failed_workers.size() == owner_->workers_.size())
+            result.setJobType(JobMessage::JobType::ERROR);
         }
+        auto uDesc = std::make_unique<BroadcastJobDescription>();
+        auto desc = uDesc.get();
+        desc->setWorkersCount(successBroadcast);
+        result.setJobDescription(std::move(uDesc));
         JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);
         asio::write(sock_, asio::buffer(msgStr), error);
         sock_.close();

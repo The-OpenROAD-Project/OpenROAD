@@ -7,11 +7,10 @@
 #include <boost/thread/thread.hpp>
 #include <string>
 
+#include "HelperCallBack.h"
 #include "Worker.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
-#include "helper.cpp"
-#include "stubs.cpp"
 #include "utl/Logger.h"
 
 using namespace dst;
@@ -33,7 +32,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   dist->addCallBack(new HelperCallBack(dist));
   JobMessage msg(JobMessage::JobType::ROUTING);
   JobMessage result;
-  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), port, result) == true);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), port, result));
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 }
 

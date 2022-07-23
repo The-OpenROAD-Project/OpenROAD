@@ -5,11 +5,11 @@
 #include <boost/thread/thread.hpp>
 #include <string>
 
+#include "HelperCallBack.h"
 #include "LoadBalancer.h"
+#include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
-#include "helper.cpp"
-#include "stubs.cpp"
 #include "utl/Logger.h"
 
 using namespace dst;
@@ -34,31 +34,33 @@ BOOST_AUTO_TEST_CASE(test_default)
   // Checking simple interface functions
   balancer->addWorker(local_ip, worker_port_1);
   balancer->addWorker(local_ip, worker_port_2);
-  balancer->updateWorker(asio::ip::address::from_string(local_ip),
-                         worker_port_1);
   asio::ip::address address;
   unsigned short port;
+
+  balancer->getNextWorker(address, port);
+  BOOST_TEST(address.to_string() == local_ip);
+  BOOST_TEST(port == worker_port_1);
   balancer->getNextWorker(address, port);
   BOOST_TEST(address.to_string() == local_ip);
   BOOST_TEST(port == worker_port_2);
+  balancer->updateWorker(asio::ip::address::from_string(local_ip),
+                         worker_port_2);
 
   // Checking if balancer is up and responding
   boost::thread t(boost::bind(&asio::io_service::run, &io_service));
   JobMessage msg(JobMessage::JobType::BALANCER);
   JobMessage result;
-  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result)
-             == true);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 
   // Checking if a balancer can relay a message to a worker and send the result
-  // correctly note currently worker 2, which is not running, is the next
+  // correctly. note currently worker 2, which is not running, is the next
   // worker. That should be handled correctly by balancer.
   dist->addCallBack(new HelperCallBack(dist));
   dist->runWorker(local_ip.c_str(), worker_port_1, true);
   msg.setJobType(JobMessage::JobType::ROUTING);
   result.setJobType(JobMessage::JobType::NONE);
-  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result)
-             == true);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 
   // Checking broadcast message relaying and handling.
@@ -66,19 +68,30 @@ BOOST_AUTO_TEST_CASE(test_default)
                            JobMessage::MessageType::BROADCAST);
   result.setJobType(JobMessage::JobType::NONE);
   balancer->addWorker(local_ip, worker_port_3);
-  BOOST_TEST(
-      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result)
-      == true);
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::ERROR);
-
-  // Now worker 3 shall have been removed and relaying messages to the up
-  // workers shall work correctly.
   balancer->addWorker(local_ip, worker_port_4);
-  dist->runWorker(local_ip.c_str(), worker_port_4, true);
+  BOOST_TEST(
+      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result));
+  BOOST_TEST(
+      result.getJobType()
+      == JobMessage::JobType::ERROR);  // failed to send to more than 2 workers.
+  BroadcastJobDescription* desc
+      = static_cast<BroadcastJobDescription*>(result.getJobDescription());
+  BOOST_TEST(desc->getWorkersCount()
+             == 1);  // number of successful broadcasts was 1
+
+  // Now worker 1, 3, and 4 shall have been removed and relaying messages to the
+  // up workers shall work correctly.
+  balancer->addWorker(local_ip, worker_port_4);  // re-add worker 4
+  dist->runWorker(
+      local_ip.c_str(), worker_port_4, true);  // make it running for this test
   result.setJobType(JobMessage::JobType::NONE);
   BOOST_TEST(
-      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result)
-      == true);
-  BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
+      dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result));
+  BOOST_TEST(result.getJobType()
+             == JobMessage::JobType::SUCCESS);  // No more than 2 workers failed
+                                                // to receive the broadcast
+  desc = static_cast<BroadcastJobDescription*>(result.getJobDescription());
+  BOOST_TEST(desc->getWorkersCount()
+             == 2);  // number of successful broadcasts was 2
 }
 BOOST_AUTO_TEST_SUITE_END()

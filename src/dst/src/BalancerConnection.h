@@ -67,5 +67,6 @@ class BalancerConnection
   utl::Logger* logger_;
   LoadBalancer* owner_;
   const int MAX_FAILED_WORKERS_TRIALS = 3;
+  const int MAX_BROADCAST_FAILED_NODES = 2;
 };
 }  // namespace dst

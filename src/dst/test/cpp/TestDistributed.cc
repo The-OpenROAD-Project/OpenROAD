@@ -6,10 +6,9 @@
 #include <string>
 #include <vector>
 
+#include "HelperCallBack.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
-#include "helper.cpp"
-#include "stubs.cpp"
 #include "utl/Logger.h"
 
 using namespace dst;
@@ -37,7 +36,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   // Note this test also tests sendJob().
   JobMessage msg(JobMessage::JobType::ROUTING);
   JobMessage result;
-  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), worker_port, result) == true);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), worker_port, result));
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 
   // Running loadbalancer. Since now we know the worker is running correctly, we
@@ -49,8 +48,7 @@ BOOST_AUTO_TEST_CASE(test_default)
                               balancer_port,
                               ""));
   result.setJobType(JobMessage::JobType::NONE);
-  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result)
-             == true);
+  BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 }
 BOOST_AUTO_TEST_SUITE_END()
