@@ -32,7 +32,6 @@
 ///////////////////////////////////////////////////////////////////////////////
   
 #include <fstream>
-#include <iostream>
 
 #include "initialPlace.h"
 #include "placerBase.h"
@@ -44,7 +43,7 @@
 
 #include "utl/Logger.h"
 #if CUDA
-  #include "cudalibs.h"
+  #include "cudasplibs.h"
 #endif
 namespace gpl {
 using namespace std;
@@ -113,14 +112,10 @@ void InitialPlace::doBicgstabPlace() {
 
   for(size_t iter=1; iter<=ipVars_.maxIter; iter++) {
 
-    // Parameters that don't change with iteration and used in the CUDA code
-    float tol = 1e-6; // 	Tolerance to decide if singular or not.
-    int reorder = 0;  // "0" for common matrix without ordering
-    int singularity = -1; // Output. -1 = A means invertible
-
     updatePinInfo();
     createSparseMatrix();
     #if CUDA
+
       // Set sparse matrices from dense matrices.
       cooRowIndexX.clear();
       cooColIndexX.clear();
@@ -143,11 +138,17 @@ void InitialPlace::doBicgstabPlace() {
         }
       }
 
-      int nnz_x = cooRowIndexX.size(); // number of non-zeros for matrix X
-      int nnz_y = cooRowIndexY.size(); // number of non-zeros for matrix Y
+      cudasplibs SP1(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_);
+      SP1.cusolverSpQR(instLocVecX_);
+      errorX = SP1.error_cal();
+      SP1.release();
 
-      cusolverSpQR(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_, instLocVecX_, pb_->placeInsts().size(), nnz_x, tol, reorder, singularity);
-      cusolverSpQR(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_, instLocVecY_, pb_->placeInsts().size(), nnz_y, tol, reorder, singularity);
+      cudasplibs SP2(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_);
+      SP2.cusolverSpQR(instLocVecY_);
+      errorY = SP2.error_cal();
+      SP2.release();
+      log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}", iter, max(errorX, errorY), pb_->hpwl());
+    
     #else
       // BiCGSTAB solver for initial place
       BiCGSTAB< SMatrix, IdentityPreconditioner > solver;

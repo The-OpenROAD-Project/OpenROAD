@@ -88,7 +88,7 @@ target_link_libraries(gpl
 # If using CUDA, the if statement will be activated.
 
 if (${GPU})
-  target_sources(gpl PRIVATE src/cudalibs.cpp)
+  target_sources(gpl PRIVATE src/cudasplibs.cu)
   find_package(CUDA REQUIRED)
   include_directories(${CUDA_INCLUDE_DIRS}
   )
