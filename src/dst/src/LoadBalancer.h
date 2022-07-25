@@ -55,7 +55,7 @@ class LoadBalancer
                const char* workers_domain,
                unsigned short port = 1234);
   ~LoadBalancer();
-  void addWorker(std::string ip, unsigned short port);
+  bool addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
   void removeWorker(ip::address ip, unsigned short port, bool lock = true);
@@ -95,6 +95,7 @@ class LoadBalancer
   uint32_t jobs_;
   std::atomic<bool> alive = true;
   boost::thread workers_lookup_thread;
+  std::vector<std::string> broadcastData;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,

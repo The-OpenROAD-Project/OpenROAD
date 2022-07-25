@@ -165,6 +165,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
       }
       case JobMessage::BROADCAST: {
         std::lock_guard<std::mutex> lock(owner_->workers_mutex_);
+        owner_->broadcastData.push_back(data);
         asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
         std::mutex broadcast_failure_mutex;

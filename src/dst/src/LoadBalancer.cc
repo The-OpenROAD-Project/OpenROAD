@@ -87,10 +87,32 @@ LoadBalancer::~LoadBalancer()
     workers_lookup_thread.join();
 }
 
-void LoadBalancer::addWorker(std::string ip, unsigned short port)
+bool LoadBalancer::addWorker(std::string ip, unsigned short port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
-  workers_.push(worker(ip::address::from_string(ip), port, 0));
+  bool validWorkerState = true;
+  if (broadcastData.size() > 0) {
+    for (auto data : broadcastData) {
+      try {
+        asio::io_service io_service;
+        tcp::socket socket(io_service);
+        socket.connect(tcp::endpoint(ip::address::from_string(ip), port));
+        asio::write(socket, asio::buffer(data));
+        asio::streambuf receive_buffer;
+        asio::read(socket, receive_buffer, asio::transfer_all());
+      } catch (std::exception const& ex) {
+        if (std::string(ex.what()) != "read: End of file") {
+          // Since asio::transfer_all() used with a stream buffer it
+          // always reach an eof file exception!
+          validWorkerState = false;
+          break;
+        }
+      }
+    }
+  }
+  if (validWorkerState)
+    workers_.push(worker(ip::address::from_string(ip), port, 0));
+  return validWorkerState;
 }
 void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
 {

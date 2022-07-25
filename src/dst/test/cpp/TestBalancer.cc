@@ -79,11 +79,13 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(desc->getWorkersCount()
              == 1);  // number of successful broadcasts was 1
 
-  // Now worker 1, 3, and 4 shall have been removed and relaying messages to the
+  // Now worker 2, 3, and 4 shall have been removed and relaying messages to the
   // up workers shall work correctly.
-  balancer->addWorker(local_ip, worker_port_4);  // re-add worker 4
   dist->runWorker(
-      local_ip.c_str(), worker_port_4, true);  // make it running for this test
+      local_ip.c_str(), worker_port_4, true);  // make worker 4 running for this test
+  // For worker 4 to be added correctly, it should have received the saved
+  // broadcast messages. The next boost test confirms that.
+  BOOST_TEST(balancer->addWorker(local_ip, worker_port_4));  // re-add it to the loadbalancer
   result.setJobType(JobMessage::JobType::NONE);
   BOOST_TEST(
       dist->sendJob(broadcast_msg, local_ip.c_str(), balancer_port, result));
@@ -93,5 +95,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   desc = static_cast<BroadcastJobDescription*>(result.getJobDescription());
   BOOST_TEST(desc->getWorkersCount()
              == 2);  // number of successful broadcasts was 2
+
+  // Since we have a histoty of broadcast messages, adding a not running worker
+  // shall be invalid as it wouldn't have received the broadcast messages history
+  // i.e have invalid state.
+  BOOST_TEST(balancer->addWorker(local_ip, worker_port_2) == false);
 }
 BOOST_AUTO_TEST_SUITE_END()
