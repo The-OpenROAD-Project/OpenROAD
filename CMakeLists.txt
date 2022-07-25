@@ -15,7 +15,7 @@
 
 cmake_minimum_required (VERSION 3.9)
 
-set(GPU true CACHE BOOL "Choose to use CUDA or not")
+set(GPU false CACHE BOOL "Choose to use CUDA or not")
 add_definitions("-DCUDA=${GPU}")
 if (${GPU})
   enable_language(CUDA)

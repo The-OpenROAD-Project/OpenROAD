@@ -1,29 +1,30 @@
 #include "cudasplibs.h"
+#include "utl/Logger.h"
 
-void cudaerror(cudaError_t code) {
+void cudasplibs::cudaerror(cudaError_t code) {
     if (code != cudaSuccess){
-        fprintf(stderr, "Error %s at line %d in file %s\n", cudaGetErrorString(code), __LINE__, __FILE__); 
-        exit(-1);
+        log_->report("[CUDA ERROR] {} at line {} in file {} \n", cudaGetErrorString(code), __LINE__, __FILE__);
+        cudaDeviceReset();
     }
 }
-void cusparseerror(cusparseStatus_t code) {
+void cudasplibs::cusparseerror(cusparseStatus_t code) {
     if (code != CUSPARSE_STATUS_SUCCESS){
-        fprintf(stderr, "Error %d at line %d in file %s\n", int(code), __LINE__, __FILE__); 
-        exit(-1);
+        log_->report("[CUSPARSE ERROR] {} at line {} in file {}\n", cusparseGetErrorString(code), __LINE__, __FILE__); 
+        cudaDeviceReset();
     }
 }
 
-void cusolvererror(cusolverStatus_t code) {
+void cudasplibs::cusolvererror(cusolverStatus_t code) {
     if (code != CUSOLVER_STATUS_SUCCESS){
-        fprintf(stderr, "Error %d at line %d in file %s\n", int(code), __LINE__, __FILE__); 
-        exit(-1);
+        log_->report("[CUSOLVER ERROR] {} at line {} in file {}\n", cudaGetErrorString(*(cudaError_t*)&code), __LINE__, __FILE__); 
+        cudaDeviceReset();
     }
 }
 
-cudasplibs::cudasplibs(std::vector<int>& cooRowIndex, std::vector<int>& cooColIndex, std::vector<float>& cooVal, Eigen::VectorXf& fixedInstForceVec){
+cudasplibs::cudasplibs(std::vector<int>& cooRowIndex, std::vector<int>& cooColIndex, std::vector<float>& cooVal, Eigen::VectorXf& fixedInstForceVec, utl::Logger* logger){
     m = fixedInstForceVec.size();
     nnz = cooVal.size();
-
+    log_ = logger;
     // Allocate device memeory and copy data to device
     cudaerror(cudaMalloc((void**)&d_cooRowIndex, nnz * sizeof(int)));
     cudaerror(cudaMalloc((void**)&d_cooColIndex, nnz * sizeof(int)));
@@ -106,7 +107,7 @@ float cudasplibs::error_cal(){
     return (error > 0) ? error : -error;
 }
 
-void cudasplibs::release(){
+cudasplibs::~cudasplibs(){
           
     // Destroy what is not needed in both of device and host
     cudaerror(cudaFree(d_cooColIndex));

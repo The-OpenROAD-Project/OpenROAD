@@ -115,7 +115,6 @@ void InitialPlace::doBicgstabPlace() {
     updatePinInfo();
     createSparseMatrix();
     #if CUDA
-
       // Set sparse matrices from dense matrices.
       cooRowIndexX.clear();
       cooColIndexX.clear();
@@ -138,17 +137,14 @@ void InitialPlace::doBicgstabPlace() {
         }
       }
 
-      cudasplibs SP1(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_);
+      cudasplibs SP1(cooRowIndexX, cooColIndexX, cooValX, fixedInstForceVecX_, log_);
       SP1.cusolverSpQR(instLocVecX_);
       errorX = SP1.error_cal();
-      SP1.release();
 
-      cudasplibs SP2(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_);
+      cudasplibs SP2(cooRowIndexY, cooColIndexY, cooValY, fixedInstForceVecY_, log_);
       SP2.cusolverSpQR(instLocVecY_);
       errorY = SP2.error_cal();
-      SP2.release();
       log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}", iter, max(errorX, errorY), pb_->hpwl());
-    
     #else
       // BiCGSTAB solver for initial place
       BiCGSTAB< SMatrix, IdentityPreconditioner > solver;
@@ -160,7 +156,6 @@ void InitialPlace::doBicgstabPlace() {
       solver.compute(placeInstForceMatrixY_);
       instLocVecY_ = solver.solveWithGuess(fixedInstForceVecY_, instLocVecY_);
       errorY = solver.error();
-
       log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
         iter, max(errorX, errorY), pb_->hpwl());
     #endif

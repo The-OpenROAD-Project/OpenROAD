@@ -14,23 +14,28 @@
 #include <vector>
 #include <Eigen/SparseCore>
 
-// namespace utl {
-// class Logger;
-// }
+namespace utl {
+class Logger;
+}
+
 class cudasplibs{
 private:
 int m;      // Rows of the SP matrix
 int nnz;    // non-zeros
+utl::Logger* log_;
+
+void cudaerror(cudaError_t code);
+void cusparseerror(cusparseStatus_t code);
+void cusolvererror(cusolverStatus_t code);
 
 public:
 
 int *d_cooRowIndex, *d_cooColIndex;
 float *d_cooVal, *d_instLocVec, *d_fixedInstForceVec;
-
-cudasplibs(std::vector<int>& cooRowIndex, std::vector<int>& cooColIndex, std::vector<float>& cooVal, Eigen::VectorXf& fixedInstForceVec);
+cudasplibs(std::vector<int>& cooRowIndex, std::vector<int>& cooColIndex, std::vector<float>& cooVal, Eigen::VectorXf& fixedInstForceVec, utl::Logger* logger);
 void cusolverSpQR(Eigen::VectorXf& instLocVec);
 float error_cal();
-void release();
+~cudasplibs();
 
 };
 
