@@ -202,6 +202,25 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
+void GlobalRouter::saveCongestion(const char * file_name){
+  std::vector<std::pair<GSegment, std::pair<int, int>>> congestionGrids = fastroute_->getCongestionGrid();
+  remove(file_name); 
+  std::ofstream out;
+  out.open(file_name, std::ios::app);
+  printf("Start write file\n");
+  for (auto & it : congestionGrids){
+     out << "violation type: Congestion\n";
+     int capacity = it.second.first;
+     int usage = it.second.second;
+     out << "\tsrcs: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
+     odb::Rect rect = globalRoutingToBox(it.first);
+     out << "\tbbox = ";
+     out << "( " << dbuToMicrons(rect.xMin()) << ", " << dbuToMicrons(rect.yMin()) << " ) - ";
+     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer \n";
+  }
+  printf("End write file\n");
+}
+
 void GlobalRouter::globalRoute(bool save_guides)
 {
   clear();
@@ -224,7 +243,8 @@ void GlobalRouter::globalRoute(bool save_guides)
   routes_ = findRouting(nets, min_layer, max_layer);
   updateDbCongestion();
 
-  if (fastroute_->has2Doverflow() && !allow_congestion_) {
+  if (fastroute_->has2Doverflow() && !allow_congestion_) { 
+    saveCongestion("report.rpt");
     logger_->error(GRT, 118, "Routing congestion too high.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {

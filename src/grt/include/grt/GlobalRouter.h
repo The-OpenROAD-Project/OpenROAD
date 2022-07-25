@@ -178,6 +178,7 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute(bool save_guides = false);
+  void saveCongestion(const char * file_name);
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
   Net* getNet(odb::dbNet* db_net);

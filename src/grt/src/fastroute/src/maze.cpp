@@ -31,7 +31,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-
 #include "DataType.h"
 #include "FastRoute.h"
 #include "utl/Logger.h"
@@ -2088,6 +2087,40 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   h_cost_table_.clear();
   v_cost_table_.clear();
+}
+
+std::vector<std::pair<GSegment, std::pair<int,int>>> FastRouteCore::getCongestionGrid(){
+  printf("Start get congestion too high\n");
+  std::vector<std::pair<GSegment, std::pair<int, int>>> congestionGrid;
+  for (int i = 0; i < y_grid_; i++) {
+    for (int j = 0; j < x_grid_ - 1; j++) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+      if (overflow > 0) {
+        const int xreal = tile_size_ * (j + 0.5) + x_corner_;
+	const int yreal = tile_size_ * (i + 0.5) + y_corner_;
+	const GSegment segment = GSegment(xreal, yreal,1,xreal,yreal,1);
+	const int usage = h_edges_[i][j].usage;
+        const int capacity = h_edges_[i][j].cap;
+	congestionGrid.push_back({segment, {capacity, usage}});
+      }
+    }
+  }
+
+  for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int j = 0; j < x_grid_; j++) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+      if (overflow > 0) {
+	const int xreal = tile_size_ * (j + 0.5) + x_corner_;
+	const int yreal = tile_size_ * (i + 0.5) + y_corner_;
+	GSegment segment = GSegment(xreal, yreal,1,xreal,yreal,1);
+        const int usage = v_edges_[i][j].usage;
+        const int capacity = v_edges_[i][j].cap;
+	congestionGrid.push_back({segment, {capacity, usage}});
+      }
+    }
+  }
+  printf("End get congestion too high\n");
+  return congestionGrid;
 }
 
 int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
