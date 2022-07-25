@@ -203,13 +203,24 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 }
 
 void GlobalRouter::saveCongestion(const char * file_name){
-  std::vector<std::pair<GSegment, std::pair<int, int>>> congestionGrids = fastroute_->getCongestionGrid();
+  std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV, congestionGridsH;
+  fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
   remove(file_name); 
   std::ofstream out;
   out.open(file_name, std::ios::app);
   printf("Start write file\n");
-  for (auto & it : congestionGrids){
-     out << "violation type: Congestion\n";
+  for (auto & it : congestionGridsH){
+     out << "violation type: Horizontal congestion\n";
+     int capacity = it.second.first;
+     int usage = it.second.second;
+     out << "\tsrcs: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
+     odb::Rect rect = globalRoutingToBox(it.first);
+     out << "\tbbox = ";
+     out << "( " << dbuToMicrons(rect.xMin()) << ", " << dbuToMicrons(rect.yMin()) << " ) - ";
+     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer \n";
+  }
+  for (auto & it : congestionGridsV){
+     out << "violation type: Vertical congestion\n";
      int capacity = it.second.first;
      int usage = it.second.second;
      out << "\tsrcs: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
