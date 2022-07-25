@@ -45,6 +45,9 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(port == worker_port_2);
   balancer->updateWorker(asio::ip::address::from_string(local_ip),
                          worker_port_2);
+  balancer->getNextWorker(address, port);
+  BOOST_TEST(address.to_string() == local_ip);
+  BOOST_TEST(port == worker_port_2);
 
   // Checking if balancer is up and responding
   boost::thread t(boost::bind(&asio::io_service::run, &io_service));
@@ -54,8 +57,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(result.getJobType() == JobMessage::JobType::SUCCESS);
 
   // Checking if a balancer can relay a message to a worker and send the result
-  // correctly. note currently worker 2, which is not running, is the next
+  // correctly. note we make worker 2, which is not running, the next
   // worker. That should be handled correctly by balancer.
+  balancer->updateWorker(asio::ip::address::from_string(local_ip),
+                         worker_port_2);
   dist->addCallBack(new HelperCallBack(dist));
   dist->runWorker(local_ip.c_str(), worker_port_1, true);
   msg.setJobType(JobMessage::JobType::ROUTING);

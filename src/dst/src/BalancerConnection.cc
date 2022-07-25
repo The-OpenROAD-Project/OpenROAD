@@ -123,6 +123,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                 asio::read(socket, receive_buffer, asio::transfer_all());
                 failure = false;
               } catch (std::exception const& ex) {
+                if (socket.is_open())
+                  socket.close();
                 if (std::string(ex.what()) == "read: End of file") {
                   // Since asio::transfer_all() used with a stream buffer it
                   // always reach an eof file exception!
@@ -137,7 +139,6 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                               workerAddress,
                               port);
                 owner_->punishWorker(workerAddress, port);
-                workerAddress = ip::address();
                 failed_workers_trials++;
                 if (failed_workers_trials == MAX_FAILED_WORKERS_TRIALS) {
                   logger_->warn(utl::DST,
@@ -148,7 +149,6 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                   break;
                 }
                 owner_->getNextWorker(workerAddress, port);
-                socket.close();
               }
             }
             if (failure) {
