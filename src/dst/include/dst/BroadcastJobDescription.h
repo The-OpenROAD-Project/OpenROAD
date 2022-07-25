@@ -1,6 +1,6 @@
-/* Authors: Osama */
+/* Authors: Mahfouz-z */
 /*
- * Copyright (c) 2021, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,63 +27,30 @@
  */
 
 #pragma once
+#include <boost/serialization/base_object.hpp>
 
-#include <tcl.h>
-
-#include <boost/asio.hpp>
-#include <memory>
-#include <string>
-#include <vector>
-
-namespace utl {
-class Logger;
+#include "dst/JobMessage.h"
+namespace boost::serialization {
+class access;
 }
-
-namespace asio = boost::asio;
-using asio::ip::tcp;
-
 namespace dst {
-using socket = asio::basic_stream_socket<tcp>;
-class JobMessage;
-class JobCallBack;
-class Worker;
 
-class Distributed
+class BroadcastJobDescription : public JobDescription
 {
  public:
-  Distributed(utl::Logger* logger = nullptr);
-  ~Distributed();
-  void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runWorker(const char* ip, unsigned short port, bool interactive);
-  void runLoadBalancer(const char* ip,
-                       unsigned short port,
-                       const char* workers_domain);
-  void addWorkerAddress(const char* address, unsigned short port);
-  bool sendJob(JobMessage& msg,
-               const char* ip,
-               unsigned short port,
-               JobMessage& result);
-  bool sendJobMultiResult(JobMessage& msg,
-                          const char* ip,
-                          unsigned short port,
-                          JobMessage& result);
-  bool sendResult(JobMessage& result, socket& sock);
-  void addCallBack(JobCallBack* cb);
-  const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
+  BroadcastJobDescription() {}
+  void setWorkersCount(unsigned short count) { workers_count_ = count; }
+  unsigned short getWorkersCount() const { return workers_count_; }
 
  private:
-  struct EndPoint
+  unsigned short workers_count_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
   {
-    std::string ip;
-    unsigned short port;
-    EndPoint(std::string ip_in, unsigned short port_in)
-        : ip(ip_in), port(port_in)
-    {
-    }
-  };
-  utl::Logger* logger_;
-  std::vector<EndPoint> end_points_;
-  std::vector<JobCallBack*> callbacks_;
-  std::vector<std::unique_ptr<Worker>> workers_;
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & workers_count_;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace dst

@@ -1,6 +1,6 @@
-/* Authors: Osama */
+/* Authors: Mahfouz-z */
 /*
- * Copyright (c) 2021, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-#include <boost/asio.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
+#include "dst/Distributed.h"
+#include "dst/JobCallBack.h"
+#include "dst/JobMessage.h"
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
-using asio::ip::tcp;
+using namespace dst;
 
-namespace utl {
-class Logger;
-}
-namespace dst {
-class LoadBalancer;
-
-class BalancerConnection
-    : public boost::enable_shared_from_this<BalancerConnection>
+class HelperCallBack : public dst::JobCallBack
 {
  public:
-  typedef boost::shared_ptr<BalancerConnection> pointer;
-  BalancerConnection(asio::io_service& io_service,
-                     LoadBalancer* owner,
-                     utl::Logger* logger);
-  static pointer create(asio::io_service& io_service,
-                        LoadBalancer* owner,
-                        utl::Logger* logger)
+  HelperCallBack(dst::Distributed* dist) : dist_(dist) {}
+  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    return boost::make_shared<BalancerConnection>(io_service, owner, logger);
+    JobMessage replyMsg;
+    if (msg.getJobType() == JobMessage::JobType::ROUTING)
+      replyMsg.setJobType(JobMessage::JobType::SUCCESS);
+    else
+      replyMsg.setJobType(JobMessage::JobType::ERROR);
+    dist_->sendResult(replyMsg, sock);
   }
-  tcp::socket& socket();
-  void start();
-  void handle_read(boost::system::error_code const& err,
-                   size_t bytes_transferred);
-  LoadBalancer* getOwner() const { return owner_; }
+
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override {}
 
  private:
-  tcp::socket sock_;
-  asio::streambuf in_packet_;
-  utl::Logger* logger_;
-  LoadBalancer* owner_;
-  const int MAX_FAILED_WORKERS_TRIALS = 3;
-  const int MAX_BROADCAST_FAILED_NODES = 2;
+  dst::Distributed* dist_;
 };
-}  // namespace dst
