@@ -65,6 +65,7 @@
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
+#include "sta/MinMax.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -705,6 +706,14 @@ void GlobalRouter::findPins(Net* net,
       }
     }
   }
+}
+
+float GlobalRouter::getNetSlack(Net* net)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Net* sta_net = network->dbToSta(net->getDbNet());
+  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  return slack;
 }
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
