@@ -162,6 +162,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
+  void setCongestionReportFile(const char * file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
@@ -178,7 +179,7 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute(bool save_guides = false);
-  void saveCongestion(const char * file_name);
+  void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
   Net* getNet(odb::dbNet* db_net);
@@ -395,6 +396,10 @@ class GlobalRouter
   int seed_;
   float caps_perturbation_percentage_;
   int perturbation_amount_;
+
+  // variables congestion report file
+  bool save_congestion_;
+  const char * congestion_file_name_;
 
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;

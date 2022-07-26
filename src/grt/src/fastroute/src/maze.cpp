@@ -2090,7 +2090,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 }
 
 void FastRouteCore::getCongestionGrid(std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV, std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH){
-  printf("Start get congestion too high\n");
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
@@ -2118,7 +2117,6 @@ void FastRouteCore::getCongestionGrid(std::vector<std::pair<GSegment, TileConges
       }
     }
   }
-  printf("End get congestion too high\n");
 }
 
 int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)

@@ -95,6 +95,7 @@ GlobalRouter::GlobalRouter()
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(false),
+      save_congestion_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
       seed_(0),
@@ -202,13 +203,12 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
-void GlobalRouter::saveCongestion(const char * file_name){
+void GlobalRouter::saveCongestion(){
   std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV, congestionGridsH;
   fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
-  remove(file_name); 
+  remove(congestion_file_name_); 
   std::ofstream out;
-  out.open(file_name, std::ios::app);
-  printf("Start write file\n");
+  out.open(congestion_file_name_, std::ios::app);
   for (auto & it : congestionGridsH){
      out << "violation type: Horizontal congestion\n";
      int capacity = it.second.first;
@@ -229,7 +229,6 @@ void GlobalRouter::saveCongestion(const char * file_name){
      out << "( " << dbuToMicrons(rect.xMin()) << ", " << dbuToMicrons(rect.yMin()) << " ) - ";
      out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer \n";
   }
-  printf("End write file\n");
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -254,8 +253,10 @@ void GlobalRouter::globalRoute(bool save_guides)
   routes_ = findRouting(nets, min_layer, max_layer);
   updateDbCongestion();
 
-  if (fastroute_->has2Doverflow() && !allow_congestion_) { 
-    saveCongestion("report.rpt");
+  if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    if (save_congestion_) {
+      saveCongestion();
+    }
     logger_->error(GRT, 118, "Routing congestion too high.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
@@ -1248,6 +1249,12 @@ void GlobalRouter::setVerbose(const bool v)
 void GlobalRouter::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
+}
+
+void GlobalRouter::setCongestionReportFile(const char * file_name)
+{
+  congestion_file_name_ = file_name;
+  save_congestion_ = true;
 }
 
 void GlobalRouter::setGridOrigin(int x, int y)

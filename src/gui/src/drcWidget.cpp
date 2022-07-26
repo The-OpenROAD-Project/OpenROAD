@@ -441,6 +441,7 @@ void DRCWidget::loadTRReport(const QString& filename)
   std::regex bbox_corners(
       "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
 
+  bool is_congestion_file = false;
   int line_number = 0;
   auto tech = block_->getDataBase()->getTech();
   while (!report.eof()) {
@@ -464,6 +465,10 @@ void DRCWidget::loadTRReport(const QString& filename)
                      "Unable to parse line as violation type (line: {}): {}",
                      line_number,
                      line);
+    }
+
+    if (type == "Horizontal congestion" || type == "Vertical congestion") {
+      is_congestion_file = true;
     }
 
     // sources of violation
@@ -495,7 +500,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr) {
+    if (layer == nullptr && !is_congestion_file) {
       logger_->warn(utl::GUI,
                     40,
                     "Unable to find tech layer (line: {}): {}",
@@ -616,7 +621,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                         "Unable to find obstruction (line: {})",
                         source_line_number);
         }
-      } else {
+      } else if (!is_congestion_file) {
         logger_->warn(utl::GUI,
                       51,
                       "Unknown source type (line: {}): {}",
