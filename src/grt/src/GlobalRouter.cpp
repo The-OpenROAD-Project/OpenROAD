@@ -710,10 +710,14 @@ void GlobalRouter::findPins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
-  return slack;
+  if (critical_nets_percentage_ != 0) {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    sta::Net* sta_net = network->dbToSta(net->getDbNet());
+    sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+    return slack;
+  }
+
+  return 0;
 }
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
@@ -790,6 +794,8 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                         ? max_layer_for_clock_
                         : max_routing_layer_;
 
+    float slack = 0;
+    slack = getNetSlack(net);
     int netID = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
                                    is_clock,
@@ -797,6 +803,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                    edge_cost_for_net,
                                    min_layer - 1,
                                    max_layer - 1,
+                                   slack,
                                    edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
       fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
@@ -1236,6 +1243,10 @@ void GlobalRouter::setMinLayerForClock(const int min_layer)
 void GlobalRouter::setMaxLayerForClock(const int max_layer)
 {
   max_layer_for_clock_ = max_layer;
+}
+
+void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage) {
+  critical_nets_percentage_ = critical_nets_percentage;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
