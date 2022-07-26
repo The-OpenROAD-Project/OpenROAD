@@ -151,6 +151,9 @@ void FastRouteCore::clear()
   cost_hvh_test_.clear();
   cost_v_test_.clear();
   cost_tb_test_.clear();
+
+  vertical_blocked_intervals_.clear();
+  horizontal_blocked_intervals_.clear();
 }
 
 void FastRouteCore::clearNets()
@@ -263,7 +266,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int cost,
                           int min_layer,
                           int max_layer,
-                          std::vector<int> *edge_cost_per_layer)
+                          std::vector<int>* edge_cost_per_layer)
 {
   FrNet* net = new FrNet;
   nets_.push_back(net);
@@ -294,17 +297,14 @@ void FastRouteCore::setNetDriverIdx(int netID, int root_idx)
   nets_[netID]->driver_idx = root_idx;
 }
 
-void FastRouteCore::getNetId(odb::dbNet* db_net,
-                             int &net_id,
-                             bool &exists)
+void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
 {
   auto itr = db_net_id_map_.find(db_net);
   exists = itr != db_net_id_map_.end();
   net_id = exists ? itr->second : 0;
 }
 
-void
-FastRouteCore::clearRoute(const int netID)
+void FastRouteCore::clearRoute(const int netID)
 {
   newRipupNet(netID);
 }
@@ -538,11 +538,93 @@ void FastRouteCore::applyHorizontalAdjustments(const odb::Point& first_tile,
   }
 }
 
-int FastRouteCore::getEdgeCapacity(int x1,
-                                   int y1,
-                                   int x2,
-                                   int y2,
-                                   int layer)
+void FastRouteCore::addVerticalAdjustments(
+    const odb::Point& first_tile,
+    const odb::Point& last_tile,
+    int layer,
+    interval<int>::type first_tile_reduce_interval,
+    interval<int>::type last_tile_reduce_interval)
+{
+  // add intervals to set for each tile
+  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+    for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+      if (x == first_tile.getX()) {
+        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+            += first_tile_reduce_interval;
+      } else if (x == last_tile.getX()) {
+        vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
+            += last_tile_reduce_interval;
+      } else {
+        addAdjustment(x, y, x, y + 1, layer, 0, true);
+      }
+    }
+  }
+}
+
+void FastRouteCore::addHorizontalAdjustments(
+    const odb::Point& first_tile,
+    const odb::Point& last_tile,
+    int layer,
+    interval<int>::type first_tile_reduce_interval,
+    interval<int>::type last_tile_reduce_interval)
+{
+  // add intervals to each tiles
+  for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+    for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+      if (y == first_tile.getY()) {
+        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+            += first_tile_reduce_interval;
+      } else if (y == last_tile.getY()) {
+        horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
+            += last_tile_reduce_interval;
+      } else {
+        addAdjustment(x, y, x + 1, y, layer, 0, true);
+      }
+    }
+  }
+}
+
+void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
+{
+  // Calculate reduce for vertical tiles
+  for (auto it : vertical_blocked_intervals_) {
+    int x = std::get<0>(it.first);
+    int y = std::get<1>(it.first);
+    int layer = std::get<2>(it.first);
+    int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
+    if (edge_cap > 0) {
+      int reduce = 0;
+      for (auto interval_it : it.second) {
+        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+                       / track_space[layer - 1]);
+      }
+      edge_cap -= reduce;
+      if (edge_cap < 0)
+        edge_cap = 0;
+      addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
+    }
+  }
+  // Calculate reduce for horizontal tiles
+  for (auto it : horizontal_blocked_intervals_) {
+    int x = std::get<0>(it.first);
+    int y = std::get<1>(it.first);
+    int layer = std::get<2>(it.first);
+    int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
+    if (edge_cap > 0) {
+      int reduce = 0;
+      for (auto interval_it : it.second) {
+        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+                       / track_space[layer - 1]);
+      }
+      edge_cap -= reduce;
+      if (edge_cap < 0)
+        edge_cap = 0;
+      addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
+    }
+  }
+}
+
+int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 {
   const int k = layer - 1;
 

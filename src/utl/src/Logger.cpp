@@ -37,6 +37,7 @@
 
 #include <mutex>
 #include <atomic>
+#include <fstream>
 
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -47,8 +48,7 @@ namespace utl {
 int Logger::max_message_print = 1000;
 
 Logger::Logger(const char* log_filename, const char *metrics_filename)
-  : debug_on_(false),
-    first_metric_(true)
+  : debug_on_(false)
 {
   // This ensures it is safe to update the message counters
   // without using locks.
@@ -63,9 +63,10 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
   logger_->set_pattern(pattern_);
   logger_->set_level(spdlog::level::level_enum::debug);
 
-  metrics_logger_ = std::make_shared<spdlog::logger>("metrics");
   if (metrics_filename)
     addMetricsSink(metrics_filename);
+
+  metrics_policies_ = MetricsPolicy::makeDefaultPolicies();
 
   for (auto& counters : message_counters_) {
     counters.fill(0);
@@ -74,16 +75,12 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
 
 Logger::~Logger()
 {
-  // Terminate the json object before we disappear
-  metrics_logger_->info("}");
+    finalizeMetrics();
 }
 
 void Logger::addMetricsSink(const char *metrics_filename)
 {
-  auto metrics_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(metrics_filename);
-  metrics_logger_->sinks().push_back(metrics_sink);
-  metrics_logger_->set_pattern("%v");
-  metrics_logger_->info("{"); // start json object
+ metrics_sinks_.push_back(metrics_filename);
 }
 
 ToolId
@@ -135,6 +132,47 @@ void Logger::removeSink(spdlog::sink_ptr sink)
   auto logger_find = std::find(logger_sinks.begin(), logger_sinks.end(), sink);
   if (logger_find != logger_sinks.end()) {
     logger_sinks.erase(logger_find);
+  }
+}
+
+void Logger::setMetricsStage(std::string_view format) {
+
+  if(metrics_stages_.empty())
+    metrics_stages_.push(std::string(format));
+  else
+    metrics_stages_.top() = format;
+}
+
+void Logger::clearMetricsStage() {
+  std::stack<std::string> new_stack;
+  metrics_stages_.swap(new_stack);
+}
+
+void Logger::pushMetricsStage(std::string_view format) {
+  metrics_stages_.push(std::string(format));
+}
+
+std::string Logger::popMetricsStage() {
+  if(!metrics_stages_.empty()) {
+    std::string stage = metrics_stages_.top();
+    metrics_stages_.pop();
+    return stage;
+  }
+  else {
+    return "";
+  }
+}
+
+void Logger::finalizeMetrics() {
+  for(MetricsPolicy policy : metrics_policies_) {
+    policy.applyPolicy(metrics_entries_);
+  }
+
+  std::string json = MetricsEntry::assembleJSON(metrics_entries_);
+  
+  for(std::string sink_path : metrics_sinks_) {
+    std::ofstream sink_file(sink_path);
+    sink_file << json;
   }
 }
 

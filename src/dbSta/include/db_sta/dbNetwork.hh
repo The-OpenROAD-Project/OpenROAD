@@ -173,7 +173,6 @@ class dbNetwork : public ConcreteNetwork
   virtual InstanceChildIterator* childIterator(const Instance* instance) const;
   virtual InstancePinIterator* pinIterator(const Instance* instance) const;
   virtual InstanceNetIterator* netIterator(const Instance* instance) const;
-  bool isFixed(const Instance* instance) const;
   
   ////////////////////////////////////////////////////////////////
   // Pin functions
