@@ -97,6 +97,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int edgeCost;
   int minLayer;
   int maxLayer;
+  float slack;
   // edge_cost_per_layer is null if there is no ndr for this net.
   std::vector<int> *edge_cost_per_layer;
 };

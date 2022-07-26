@@ -266,6 +266,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int cost,
                           int min_layer,
                           int max_layer,
+                          float slack,
                           std::vector<int>* edge_cost_per_layer)
 {
   FrNet* net = new FrNet;
@@ -278,6 +279,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->edgeCost = cost;
   net->minLayer = min_layer;
   net->maxLayer = max_layer;
+  net->slack = slack;
   net->edge_cost_per_layer = edge_cost_per_layer;
 
   db_net_id_map_[db_net] = netID;
