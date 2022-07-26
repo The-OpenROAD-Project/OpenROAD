@@ -46,10 +46,12 @@
 #include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "io/io.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -77,8 +79,8 @@ void serializeWorker(FlexDRWorker* worker, std::string& workerStr)
 }
 
 void deserializeWorker(FlexDRWorker* worker,
-                               frDesign* design,
-                               const std::string& workerStr)
+                       frDesign* design,
+                       const std::string& workerStr)
 {
   std::stringstream stream(
       workerStr,
@@ -146,7 +148,7 @@ std::string FlexDRWorker::reloadedMain()
 }
 
 void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
-                             const std::string& file_name)
+                      const std::string& file_name)
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
@@ -304,7 +306,7 @@ void FlexDR::initGCell2BoundaryPin()
           }
           Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
           Point idx2 = design_->getTopBlock()->getGCellIdx(ep);
-          
+
           // update gcell2BoundaryPin
           // horizontal
           if (bp.y() == ep.y()) {
@@ -312,7 +314,8 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               bool hasLeftBound = true;
@@ -343,7 +346,8 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               bool hasBottomBound = true;
@@ -1585,9 +1589,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (iter > END_ITERATION) {
-    return;
-  }
   if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
     return;
   }
@@ -1639,7 +1640,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
       const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
+      Rect routeBox2
+          = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
                     routeBox1.yMin(),
                     routeBox2.xMax(),
@@ -1767,8 +1769,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 #pragma omp parallel for schedule(dynamic)
               for (int i = 0; i < workers.size(); i++) {
                 deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
-                                   design_,
-                                   workers.at(i).second);
+                                  design_,
+                                  workers.at(i).second);
               }
             }
             logger_->report("    Deserialized Batches:{}.", t);
@@ -1779,7 +1781,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if(workersInBatch[i]->end(getDesign()))
+          if (workersInBatch[i]->end(getDesign()))
             numWorkUnits_ += 1;
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
@@ -1815,11 +1817,11 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
-        utl::DRT,
-        "workers",
-        1,
-        "Number of work units = {}.",
-        numWorkUnits_);
+             utl::DRT,
+             "workers",
+             1,
+             "Number of work units = {}.",
+             numWorkUnits_);
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
@@ -1829,16 +1831,17 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "autotuner", 1) ||
-      logger_->debugCheck(DRT, "report", 1)) {
-    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  if (logger_->debugCheck(DRT, "autotuner", 1)
+      || logger_->debugCheck(DRT, "report", 1)) {
+    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+                       design_->getTopBlock()->getMarkers());
   }
 }
 
 void FlexDR::end(bool done)
 {
   if (done && DRC_RPT_FILE != string("")) {
-    router_->reportDRC(DRC_RPT_FILE);
+    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
@@ -2120,7 +2123,7 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if(routingArea == 0.0)
+        if (routingArea == 0.0)
           coveredPercentage = -1.0;
         else
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
@@ -2172,7 +2175,7 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  if(totalArea == 0)
+  if (totalArea == 0)
     file << "NA";
   else {
     auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
@@ -2221,6 +2224,15 @@ int FlexDR::main()
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
+    }
+    if (iter_ > END_ITERATION) {
+      break;
+    }
+    if (logger_->debugCheck(DRT, "snapshot", 1)) {
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_);
+      ord::OpenRoad::openRoad()->writeDb(
+          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }
   }
 

@@ -1029,7 +1029,7 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
 }
 
 BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
-                     (bdata::make({0, 1})) ^ (bdata::make({1, 0})),
+                     (bdata::make({0, 10})) ^ (bdata::make({1, 0})),
                      x,
                      viol)
 {

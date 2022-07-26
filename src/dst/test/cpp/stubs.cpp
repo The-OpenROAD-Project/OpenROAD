@@ -1,6 +1,6 @@
-/* Authors: Osama */
+/* Author: Mahfouz-z */
 /*
- * Copyright (c) 2021, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-#include <boost/asio.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
+#include "ord/OpenRoad.hh"
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
-using asio::ip::tcp;
+// Stubs out functions from OpenRoad that aren't needed by Testing but
+// are referenced from dst modules or its dependencies.
 
-namespace utl {
-class Logger;
-}
-namespace dst {
-class LoadBalancer;
+namespace ord {
 
-class BalancerConnection
-    : public boost::enable_shared_from_this<BalancerConnection>
+OpenRoad::OpenRoad()
 {
- public:
-  typedef boost::shared_ptr<BalancerConnection> pointer;
-  BalancerConnection(asio::io_service& io_service,
-                     LoadBalancer* owner,
-                     utl::Logger* logger);
-  static pointer create(asio::io_service& io_service,
-                        LoadBalancer* owner,
-                        utl::Logger* logger)
-  {
-    return boost::make_shared<BalancerConnection>(io_service, owner, logger);
-  }
-  tcp::socket& socket();
-  void start();
-  void handle_read(boost::system::error_code const& err,
-                   size_t bytes_transferred);
-  LoadBalancer* getOwner() const { return owner_; }
+}
 
- private:
-  tcp::socket sock_;
-  asio::streambuf in_packet_;
-  utl::Logger* logger_;
-  LoadBalancer* owner_;
-  const int MAX_FAILED_WORKERS_TRIALS = 3;
-  const int MAX_BROADCAST_FAILED_NODES = 2;
-};
-}  // namespace dst
+OpenRoad* OpenRoad::openRoad()
+{
+  return nullptr;
+}
+
+}  // namespace ord

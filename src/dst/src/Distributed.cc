@@ -54,7 +54,7 @@ extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);
 }
 
-Distributed::Distributed() : logger_(nullptr)
+Distributed::Distributed(utl::Logger* logger) : logger_(logger)
 {
 }
 
@@ -171,9 +171,10 @@ bool Distributed::sendJob(JobMessage& msg,
     } catch (const boost::system::system_error& ex) {
       logger_->warn(utl::DST,
                     113,
-                    "Socket connection failed with message \"{}\"",
+                    "Trial {}, socket connection failed with message \"{}\"",
+                    tries,
                     ex.what());
-      return false;
+      continue;
     }
     bool ok = sendMsg(sock, msgStr, resultStr);
     if (!ok)

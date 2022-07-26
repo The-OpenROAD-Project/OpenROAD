@@ -1319,9 +1319,10 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   Rect patchBx;
   Point offset; //the lower left corner of the patch box
   if (prefDirIsVert) {
-        patchBx.set_xhi(chosenEdg->length());
+        patchBx.set_xlo(-chosenEdg->length() / 2);
+        patchBx.set_xhi(chosenEdg->length() / 2);
         patchBx.set_yhi(length);
-        offset.x() = min(chosenEdg->low().x(), chosenEdg->high().x());
+        offset.x() = (chosenEdg->low().x() + chosenEdg->high().x()) / 2;
         if (chosenEdg->getOuterDir() == frDirEnum::N) {
             offset.y() = chosenEdg->low().y();
         } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
@@ -1329,8 +1330,9 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
         } else logger_->error(DRT, 4500, "Edge outer dir should be either North or South");
   } else {
         patchBx.set_xhi(length);
-        patchBx.set_yhi(chosenEdg->length());
-        offset.y() = min(chosenEdg->low().y(), chosenEdg->high().y());
+        patchBx.set_ylo(-chosenEdg->length() / 2);
+        patchBx.set_yhi(chosenEdg->length() / 2);
+        offset.y() = (chosenEdg->low().y() + chosenEdg->high().y()) / 2;
         if (chosenEdg->getOuterDir() == frDirEnum::E) {
             offset.x() = chosenEdg->low().x();
         } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
