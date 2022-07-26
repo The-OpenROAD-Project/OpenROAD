@@ -63,6 +63,7 @@ SACoreHardMacro::SACoreHardMacro(float outline_width,
                 float outline_height, // boundary constraints
                 const std::vector<HardMacro>& macros, 
                 // weight for different penalty
+                float area_weight,
                 float outline_weight,
                 float wirelength_weight,
                 float guidance_weight,
@@ -77,7 +78,8 @@ SACoreHardMacro::SACoreHardMacro(float outline_width,
                 float init_prob, int max_num_step, int num_perturb_per_step,
                 int k, int c, unsigned seed) 
   : SimulatedAnnealingCore<HardMacro>(outline_width, outline_height, macros,
-                              outline_weight, wirelength_weight, guidance_weight, fence_weight,
+                              area_weight, outline_weight, wirelength_weight, 
+                              guidance_weight, fence_weight,
                               pos_swap_prob, neg_swap_prob, double_swap_prob, exchange_prob,
                               init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
 { 
@@ -88,6 +90,8 @@ SACoreHardMacro::SACoreHardMacro(float outline_width,
 float SACoreHardMacro::CalNormCost() 
 {
   float cost = 0.0; // Initialize cost
+  if (norm_area_penalty_ > 0.0)
+    cost += area_weight_ * (width_ * height_) / norm_area_penalty_;
   if (norm_outline_penalty_ > 0.0)
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
   if (norm_wirelength_ > 0.0)
@@ -195,20 +199,26 @@ void SACoreHardMacro::Restore()
 
 void SACoreHardMacro::Initialize()
 {  
+  std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
   std::vector<float> guidance_penalty_list;
   std::vector<float> fence_penalty_list;
- 
+  std::vector<float> width_list;
+  std::vector<float> height_list;
   for (int i = 0; i < num_perturb_per_step_; i++) {
     Perturb();
     // store current penalties 
+    width_list.push_back(width_);
+    height_list.push_back(height_);
+    area_penalty_list.push_back(width_ * height_);
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
   }
  
+  norm_area_penalty_     = CalAverage(area_penalty_list);
   norm_outline_penalty_  = CalAverage(outline_penalty_list);
   norm_wirelength_       = CalAverage(wirelength_list);
   norm_guidance_penalty_ = CalAverage(guidance_penalty_list);
@@ -216,6 +226,8 @@ void SACoreHardMacro::Initialize()
   // Calculate initial temperature
   std::vector<float> cost_list;
   for (int i = 0; i < outline_penalty_list.size(); i++) {
+    width_            = width_list[i];
+    height_           = height_list[i];
     outline_penalty_  = outline_penalty_list[i];
     wirelength_       = wirelength_list[i];
     guidance_penalty_ = guidance_penalty_list[i];

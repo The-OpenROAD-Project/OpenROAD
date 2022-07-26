@@ -66,6 +66,7 @@ class SimulatedAnnealingCore {
     SimulatedAnnealingCore(float outline_width, float outline_height, // boundary constraints
                     const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
                     // weight for different penalty
+                    float area_weight,
                     float outline_weight, 
                     float wirelength_weight,
                     float guidance_weight,
@@ -122,6 +123,8 @@ class SimulatedAnnealingCore {
     void SingleSeqSwap(bool pos);
     void DoubleSeqSwap();
     void ExchangeMacros();
+    
+    virtual void Shrink();  // Shrink the size of macros
 
     // utilities
     float CalAverage(std::vector<float>& value_list);
@@ -139,6 +142,7 @@ class SimulatedAnnealingCore {
     std::map<int, Rect> guides_;
 
     // weight for different penalty
+    float area_weight_       = 0.0;
     float outline_weight_    = 0.0; 
     float wirelength_weight_ = 0.0;
     float guidance_weight_   = 0.0;
@@ -153,10 +157,11 @@ class SimulatedAnnealingCore {
     // else T = init_T_ / step
     int k_ = 0; 
     int c_ = 0;
- 
+
+    // shrink_factor for dynamic weight
+    float shrink_factor_ = 0.8;
+    float shrink_freq_ = 0.1;
     
-
-
     // seed for reproduciabilty
     std::mt19937 generator_;
     std::uniform_real_distribution<float> distribution_;
@@ -173,6 +178,10 @@ class SimulatedAnnealingCore {
     int macro_id_ = -1;  // the macro changed in the perturb
     int action_id_ = -1; // the action_id of current step
 
+
+    // we define accuracy to determine whether the floorplan is valid
+    // because the error introduced by the type conversion
+    float acc_tolerance_ = 0.01;
 
     // metrics 
     float width_ = 0.0;
@@ -194,6 +203,7 @@ class SimulatedAnnealingCore {
     float norm_wirelength_       = 0.0;
     float norm_guidance_penalty_ = 0.0;
     float norm_fence_penalty_    = 0.0;
+    float norm_area_penalty_     = 0.0;
 
     // probability of each action
     float pos_swap_prob_    = 0.0;

@@ -66,6 +66,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
     SACoreHardMacro(float outline_width, float outline_height, // boundary constraints
                     const std::vector<HardMacro>& macros, 
                     // weight for different penalty
+                    float area_weight,
                     float outline_weight, 
                     float wirelength_weight,
                     float guidance_weight,
@@ -86,6 +87,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
   private:
     float CalNormCost();
     void CalPenalty();
+    void Shrink() {    }
 
     void Perturb();
     void Restore();

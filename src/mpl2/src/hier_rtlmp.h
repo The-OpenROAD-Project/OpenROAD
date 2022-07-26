@@ -128,12 +128,17 @@ class HierRTLMP {
     int num_threads_ = 10;  // number of threads
     int random_seed_ = 0;   // random seed for deterministic   
 
-    float target_util_ = 0.75;  // target utilization of the design
-    float min_ar_ = 0.4; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
-    
+    float target_dead_space_ = 0.5; // dead space for the cluster
+    float target_util_ = 0.4;  // target utilization of the design
+    float target_dead_space_step_ = 0.1; // step for dead space
+    float target_util_step_       = 0.1; // step for utilization
+    float num_target_util_        = 3;
+    float num_target_dead_space_  = 5;
+
+    float min_ar_ = 0.15; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
     float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
-    float pin_access_net_width_ratio_ = 0.0; // define the ratio of number of connections 
+    float pin_access_net_width_ratio_ = 0.1; // define the ratio of number of connections 
                                              // related to IOs to the range of these IO spans
     float notch_v_th_ = 20.0;
     float notch_h_th_ = 20.0;
@@ -144,7 +149,8 @@ class HierRTLMP {
 
     // SA related parameters
     // weight for different penalty
-    float outline_weight_    = 0.2;
+    float area_weight_       = 0.01;
+    float outline_weight_    = 1.0;
     float wirelength_weight_ = 0.16;
     float guidance_weight_   = 0.16;
     float fence_weight_      = 0.16;
@@ -159,19 +165,19 @@ class HierRTLMP {
     
     // Fast SA hyperparameter
     float init_prob_         = 0.9;
-    int max_num_step_        = 2000;
-    int num_perturb_per_step_  = 100;
+    int max_num_step_        = 4000;
+    int num_perturb_per_step_  = 2000;
     // if step < k_, T = init_T_ / (c_ * step_);
     // else T = init_T_ / step
     int k_ = 100;
     int c_ = 10;
 
     // probability of each action
-    float pos_swap_prob_    = 0.2;
-    float neg_swap_prob_    = 0.2;
-    float double_swap_prob_ = 0.1;
+    float pos_swap_prob_    = 0.3;
+    float neg_swap_prob_    = 0.3;
+    float double_swap_prob_ = 0.3;
     float exchange_swap_prob_    = 0.1;
-    float flip_prob_ = 0.2;
+    float flip_prob_ = 0.1;
     float resize_prob_ = 0.2;
 
     // design-related variables
@@ -229,6 +235,10 @@ class HierRTLMP {
     // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
     // then the cluster is macro-dominated cluster
     float macro_dominated_cluster_threshold_ = 0.01;
+
+    // since we convert from the database unit to the micrometer
+    // during calculation, we may loss some accuracy.
+    float conversion_tolerance_ = 0.01;
 
 
     // Physical hierarchy tree 
@@ -299,8 +309,9 @@ class HierRTLMP {
     // Merge nets to reduce runtime
     void MergeNets(std::vector<BundledNet>& nets);
     // determine the shape for children cluster
-    void ShapeChildrenCluster(Cluster* parent, std::vector<SoftMacro>& macros,
-             std::map<std::string, int>& soft_macro_id_map, float target_util);
+    bool ShapeChildrenCluster(Cluster* parent, std::vector<SoftMacro>& macros,
+                              std::map<std::string, int>& soft_macro_id_map, 
+                              float target_util, float target_dead_space);
     // Call Path Synthesis to route buses
     void CallBusPlanning(std::vector<SoftMacro>&  shaped_macros,
                          std::vector<BundledNet>& nets_old);

@@ -66,6 +66,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     SACoreSoftMacro(float outline_width, float outline_height, // boundary constraints
                     const std::vector<SoftMacro>& macros,
                     // weight for different penalty
+                    float area_weight,
                     float outline_weight, 
                     float wirelength_weight,
                     float guidance_weight,
@@ -101,6 +102,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     void Restore();
     // actions used
     void Resize();
+    
+    void Shrink();
 
     // notch threshold
     float notch_h_th_;

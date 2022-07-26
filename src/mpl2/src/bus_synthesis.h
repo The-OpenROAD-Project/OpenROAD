@@ -80,10 +80,11 @@ class Graph {
     Graph(int num_vertices, float congestion_weight);
     void AddEdge(int src, int dest, float weight, Edge* edge_ptr);
     // Calculate shortest pathes in terms of boundary edges
-    void CalNetEdgePaths(BundledNet& net);
+    void CalNetEdgePaths(int src, int target, BundledNet& net);
 
   private:
     std::vector<std::vector<Arrow> > adj_; // adjacency matrix
+    int max_num_path_ = 20;  // limit the maximum number of candidate paths to reduce runtime
     float congestion_weight_ = 1.0;
     // store the parent vertices for each vertex in the shortest paths
     // for example, there are two paths from root to dest
@@ -130,7 +131,7 @@ void GetVerticesInSegment(const std::vector<float>& grid,
 void GetVerticesInRect(const std::vector<float>& x_grid,
                        const std::vector<float>& y_grid,
                        const Rect& rect,
-                       int& x_start, int& x_end, int& y_start, int y_end);
+                       int& x_start, int& x_end, int& y_start, int& y_end);
 
 void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
       std::vector<int>& soft_macro_vertex_id, // store the vertex id for each soft macro

@@ -62,6 +62,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(float outline_width,
                      float outline_height, // boundary constraints
                      const std::vector<T>& macros, // macros (T = HardMacro or T = SoftMacro)
                      // weight for different penalty
+                     float area_weight,
                      float outline_weight,
                      float wirelength_weight,
                      float guidance_weight,
@@ -78,6 +79,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(float outline_width,
   outline_width_  = outline_width;
   outline_height_ = outline_height;
 
+  area_weight_       = area_weight;
   outline_weight_    = outline_weight;
   wirelength_weight_ = wirelength_weight;
   guidance_weight_   = guidance_weight;
@@ -102,6 +104,13 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(float outline_width,
    
   // macros and nets
   macros_ = macros;
+
+  for (unsigned int i = 0; i < macros.size(); i++) {
+     pos_seq_.push_back(i);
+     neg_seq_.push_back(i);
+     pre_pos_seq_.push_back(i);
+     pre_neg_seq_.push_back(i);
+  }
 }
 
 // access functions
@@ -126,7 +135,12 @@ void SimulatedAnnealingCore<T>::SetGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::IsValid() const
 {
-  return (width_ <= outline_width_) && (height_ <= outline_height_);
+  std::cout << "width_ :  " << width_ << "   "
+            << "outline_width_ :  " << outline_width_ << std::endl;
+  std::cout << "height_ : " << height_ << "   "
+            << "outline_height_ : " << outline_height_ << std::endl;
+  return (width_ <= outline_width_ * (1.0 + acc_tolerance_)) && 
+         (height_ <= outline_height_ * (1.0 + acc_tolerance_));
 }
 
 template <class T>
@@ -215,7 +229,14 @@ void SimulatedAnnealingCore<T>::CalPenalty()
   return; // this function will be redefined in the derived class
 }
         
-    
+   
+template <class T>
+void SimulatedAnnealingCore<T>::Shrink() 
+{
+  return; // this function will be redefined in the derived class
+}
+
+
 template <class T>
 void SimulatedAnnealingCore<T>::CalOutlinePenalty() 
 {
@@ -336,7 +357,7 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
     length[i] = 0.0; // initialize the length
   }
   for (int i = 0; i < pos_seq_.size(); i++) {
-    const int b = pos_seq_[i]; // macro_id
+    const int b = pos_seq[i]; // macro_id
     // add continue syntax to handle fixed terminals
     if (macros_[b].GetHeight() <= 0 || macros_[b].GetWidth() <= 0.0)
       continue;
@@ -392,12 +413,12 @@ void SimulatedAnnealingCore<T>::DoubleSeqSwap()
 {
   if (macros_.size() <= 1)
     return;
-    
+   
   const int index1 = (int) (std::floor((distribution_) (generator_) * macros_.size()));
   int index2 = (int) (std::floor((distribution_) (generator_) * macros_.size()));
   while (index1 == index2) 
     index2 = (int) (std::floor((distribution_) (generator_) * macros_.size()));
-   
+  
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   std::swap(neg_seq_[index1], neg_seq_[index2]);
 }
@@ -459,6 +480,7 @@ void SimulatedAnnealingCore<T>::FastSA()
   // const for restart
   int num_restart = 1;
   const int max_num_restart = 2;
+  const int shrink_freq = int(max_num_step_ * shrink_freq_); 
   // SA process 
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
@@ -474,23 +496,46 @@ void SimulatedAnnealingCore<T>::FastSA()
     }
     // Update Temperature
     if (step <= k_)
-      t = init_T_ / (step * c_);
+      t = init_T_ / (step * c_ * k_);
     else
-      t = init_T_ / step;
+      t = init_T_ / (step);
     // increase step
     step++;
     // check if restart condition
     if ((num_restart <= max_num_restart) && 
         (step == std::floor(max_num_step_ / max_num_restart)  && 
         (outline_penalty_ > 0.0))) {
+      Shrink();
+      PackFloorplan();
+      CalPenalty();
+      pre_cost = CalNormCost();
       num_restart++;
       step = 1;
       t = init_T_;
     } // end if
+       
+    /*
+    if (step % shrink_freq == 0) {
+      Shrink();
+      PackFloorplan();
+      CalPenalty();
+      pre_cost = CalNormCost();
+    }
+    */
   } // end while
   // update the final results
   PackFloorplan();
   CalPenalty();
+
+  std::ofstream file;
+  file.open("floorplan.txt");
+  for (auto& macro : macros_)
+    file << macro.GetName() << "    "
+         << macro.GetX()    << "    "
+         << macro.GetY()    << "    "
+         << macro.GetWidth() << "   "
+         << macro.GetHeight() << std::endl;
+  file.close();
 }
 
 template class SimulatedAnnealingCore<SoftMacro>;

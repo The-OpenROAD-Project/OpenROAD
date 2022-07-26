@@ -258,9 +258,10 @@ class Cluster {
     // not have any connections outsize the parent cluster
     // All the outside connections have been converted to the connections
     // related to pin access
-    void SetPinAccess(PinAccess pin_access, float weight);
+    void SetPinAccess(int cluster_id, PinAccess pin_access, float weight);
     void AddBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
-    const std::map<PinAccess, float> GetPinAccessMap() const;
+    const std::pair<PinAccess, float> GetPinAccess(int cluster_id);
+    const std::map<int, std::pair<PinAccess, float> > GetPinAccessMap() const;
     const std::map<PinAccess, std::map<PinAccess, float> > GetBoundaryConnection() const;
 
     // Print Basic Information
@@ -315,7 +316,7 @@ class Cluster {
     std::map<int, float> connection_map_;   // cluster_id, number of connections 
 
     // pin access for each bundled connection
-    std::map<PinAccess, float> pin_access_map_; // pin_access (B, L, T, R)
+    std::map<int, std::pair<PinAccess, float> > pin_access_map_;
     std::map<PinAccess, std::map<PinAccess, float> > boundary_connection_map_;
 };
 
@@ -452,11 +453,21 @@ class SoftMacro {
     // name
     const std::string GetName() const;
     // Physical Information
+    void SetReference(float refer_lx, float refer_ly) {
+      refer_lx_ = refer_lx;
+      refer_ly_ = refer_ly;
+      x_        = refer_lx;
+      y_        = refer_ly;
+      std::cout << "refer_lx_ :  " << refer_lx_  << "  "
+                << "refer_ly_ :  " << refer_ly_  << "  "
+                << std::endl;
+    }
     void SetX(float x);
     void SetY(float y);
     void SetLocation(const std::pair<float, float>& location);
     void SetWidth(float width); // only for StdCellCluster and MixedCluster
     void SetHeight(float height); // only for StdCellCluster and MixedCluster
+    void ShrinkArea(float percent);  // only for StdCellCluster
     void SetArea(float area); // only for StdCellCluster and MixedCluster
     void ResizeRandomly(std::uniform_real_distribution<float>& distribution,
                         std::mt19937& generator);
@@ -476,6 +487,7 @@ class SoftMacro {
     float GetArea() const;
     // Num Macros
     bool IsMacroCluster() const;
+    bool IsStdCellCluster() const;
     int GetNumMacro() const;
     // Align Flag support
     void SetAlignFlag(bool flag);
@@ -501,6 +513,8 @@ class SoftMacro {
     // Interfaces with hard macro
     Cluster* cluster_ = nullptr;
     bool fixed_ = false; // if the macro is fixed
+    float refer_lx_ = -1.0;
+    float refer_ly_ = -1.0;
 
     // Alignment support
     // if the cluster has been aligned related to other macro_cluster or boundaries
@@ -528,12 +542,17 @@ struct BundledNet {
   // store all the shortest paths between two soft macros in terms of
   // boundary edges.  All the internal edges are removed
   std::vector<std::vector<int> > boundary_edge_paths; 
-
+   
+  // In our framework, we only bundled connections between clusters.
+  // Thus each net must have both src_cluster_id and target_cluster_id
+  int src_cluster_id = -1;
+  int target_cluster_id = -1; 
+   
   BundledNet() {  }
   BundledNet(int src, int target, float weight)
   {
-    terminals = std::pair<int, int>(src, target);
-    weight = weight;
+    this->terminals = std::pair<int, int>(src, target);
+    this->weight = weight;
   }
   
   BundledNet(const std::pair<int, int>& terminals, float weight) 
