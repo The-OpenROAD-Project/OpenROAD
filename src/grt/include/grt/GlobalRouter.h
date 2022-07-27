@@ -398,7 +398,6 @@ class GlobalRouter
   int perturbation_amount_;
 
   // variables congestion report file
-  bool save_congestion_;
   const char * congestion_file_name_;
 
   // Variables for PADs obstructions handling

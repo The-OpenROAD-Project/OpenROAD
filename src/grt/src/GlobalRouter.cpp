@@ -95,7 +95,7 @@ GlobalRouter::GlobalRouter()
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(false),
-      save_congestion_(false),
+      congestion_file_name_(nullptr),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
       seed_(0),
@@ -207,27 +207,28 @@ void GlobalRouter::saveCongestion(){
   std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV, congestionGridsH;
   fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
   remove(congestion_file_name_); 
-  std::ofstream out;
-  out.open(congestion_file_name_, std::ios::app);
+  std::ofstream out(congestion_file_name_);
   for (auto & it : congestionGridsH){
      out << "violation type: Horizontal congestion\n";
-     int capacity = it.second.first;
-     int usage = it.second.second;
-     out << "\tsrcs: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
+     const int capacity = it.second.first;
+     const int usage = it.second.second;
+     out << "\tsrcs: \n";
+     out << "\tcongestion information: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
      odb::Rect rect = globalRoutingToBox(it.first);
      out << "\tbbox = ";
      out << "( " << dbuToMicrons(rect.xMin()) << ", " << dbuToMicrons(rect.yMin()) << " ) - ";
-     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer \n";
+     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
   }
   for (auto & it : congestionGridsV){
      out << "violation type: Vertical congestion\n";
-     int capacity = it.second.first;
-     int usage = it.second.second;
-     out << "\tsrcs: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
+     const int capacity = it.second.first;
+     const int usage = it.second.second;
+     out << "\tsrcs: \n";
+     out << "\tcongestion information: capacity:" << capacity << " usage:" << usage << " overflow:" <<usage-capacity << "\n";
      odb::Rect rect = globalRoutingToBox(it.first);
      out << "\tbbox = ";
      out << "( " << dbuToMicrons(rect.xMin()) << ", " << dbuToMicrons(rect.yMin()) << " ) - ";
-     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer \n";
+     out << "( " << dbuToMicrons(rect.xMax()) << ", " << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
   }
 }
 
@@ -254,7 +255,7 @@ void GlobalRouter::globalRoute(bool save_guides)
   updateDbCongestion();
 
   if (fastroute_->has2Doverflow() && !allow_congestion_) {
-    if (save_congestion_) {
+    if (congestion_file_name_ != nullptr) {
       saveCongestion();
     }
     logger_->error(GRT, 118, "Routing congestion too high.");
@@ -1254,7 +1255,6 @@ void GlobalRouter::setOverflowIterations(int iterations)
 void GlobalRouter::setCongestionReportFile(const char * file_name)
 {
   congestion_file_name_ = file_name;
-  save_congestion_ = true;
 }
 
 void GlobalRouter::setGridOrigin(int x, int y)
