@@ -85,7 +85,6 @@ Replace::Replace()
   uniformTargetDensityMode_(false),
   skipIoMode_(false),
   padLeft_(0), padRight_(0),
-  verbose_(0),
   gui_debug_(false),
   gui_debug_pause_iterations_(10),
   gui_debug_update_iterations_(10),
@@ -147,7 +146,6 @@ void Replace::reset() {
   skipIoMode_ = false;
 
   padLeft_ = padRight_ = 0;
-  verbose_ = 0;
 
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
@@ -231,9 +229,6 @@ void Replace::doIncrementalPlace()
 
 void Replace::doInitialPlace()
 {
-
-  log_->setDebugLevel(GPL, "replace", verbose_);
-
   if (pb_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -257,8 +252,6 @@ void Replace::doInitialPlace()
 }
 
 void Replace::initNesterovPlace() {
-  log_->setDebugLevel(GPL, "replace", verbose_);
-
   if( !pb_ ) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -428,11 +421,6 @@ Replace::setMaxPhiCoef(float maxPhiCoef) {
 void
 Replace::setReferenceHpwl(float refHpwl) {
   referenceHpwl_ = refHpwl;
-}
-
-void
-Replace::setVerboseLevel(int verbose) {
-  verbose_ = verbose;
 }
 
 void

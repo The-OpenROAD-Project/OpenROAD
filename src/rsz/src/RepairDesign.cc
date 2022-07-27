@@ -209,7 +209,8 @@ RepairDesign::repairClkNets(double max_wire_length)
         Net *net = network_->isTopLevelPort(clk_pin)
           ? network_->net(network_->term(clk_pin))
           : network_->net(clk_pin);
-        if (network_->isDriver(clk_pin)) {
+        if (net &&
+            network_->isDriver(clk_pin)) {
           Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
           // Do not resize clock tree gates.
           repairNet(net, clk_pin, drvr, 0.0, 0.0,
@@ -612,7 +613,8 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}{}",
                  "", level,
              bnet->to_string(resizer_));
-  repairNet(bnet->ref(), level+1, wire_length, load_pins);
+  int wire_length_ref;
+  repairNet(bnet->ref(), level+1, wire_length_ref, load_pins);
   float max_load_slew = bnet->maxLoadSlew();
 
   Point to_loc = bnet->ref()->location();
@@ -620,7 +622,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   int to_y = to_loc.getY();
   Point from_loc = bnet->location();
   int length = Point::manhattanDistance(from_loc, to_loc);
-  wire_length += length;
+  wire_length = wire_length_ref + length;
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
   int from_x = from_loc.getX();
@@ -903,6 +905,7 @@ RepairDesign::repairNetLoad(BufferedNetPtr bnet,
   debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}load {}",
              "", level,
              sdc_network_->pathName(load_pin));
+  wire_length = 0;
   load_pins.push_back(load_pin);
 }
 

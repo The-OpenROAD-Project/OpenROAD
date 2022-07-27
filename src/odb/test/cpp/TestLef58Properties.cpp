@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_CASE(test_default)
       = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
   BOOST_TEST(corner_rule->getType()
              == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
-  BOOST_TEST(corner_rule->isExceptEol() == true);
+  BOOST_TEST(corner_rule->isExceptEol());
+  BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
   vector<pair<int, int>> spacing;
   vector<int> corner_width;
@@ -270,6 +271,18 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
   layer = dbTech->findLayer("metal2");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::TSVMETAL);
+
+  auto viaMaps = dbTech->getMetalWidthViaMap();
+  BOOST_TEST(viaMaps.size() == 1);
+  auto viaMap = (dbMetalWidthViaMap*)(*viaMaps.begin());
+  BOOST_TEST(viaMap->getCutLayer()->getName() == "via1");
+  BOOST_TEST(!viaMap->isPgVia());
+  BOOST_TEST(!viaMap->isViaCutClass());
+  BOOST_TEST(viaMap->getBelowLayerWidthLow() == viaMap->getBelowLayerWidthHigh());
+  BOOST_TEST(viaMap->getBelowLayerWidthHigh() == 0.5 * distFactor);
+  BOOST_TEST(viaMap->getAboveLayerWidthLow() == viaMap->getAboveLayerWidthHigh());
+  BOOST_TEST(viaMap->getAboveLayerWidthHigh() == 0.8 * distFactor);
+  BOOST_TEST(viaMap->getViaName() == "M2_M1_via");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

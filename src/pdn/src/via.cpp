@@ -175,13 +175,12 @@ DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
   std::vector<odb::dbShape> shapes;
   box->getViaBoxes(shapes);
 
-  std::map<int, std::set<odb::Rect>> layer_rects;
+  std::map<int, std::set<ViaLayerShape::RectBoxPair>> layer_rects;
   for (auto& shape : shapes) {
     auto* layer = shape.getTechLayer();
     if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-      odb::Rect box_shape;
-      shape.getBox(box_shape);
-      layer_rects[layer->getRoutingLevel()].insert(box_shape);
+      odb::Rect box_shape = shape.getBox();
+      layer_rects[layer->getRoutingLevel()].insert({box_shape, box});
     }
   }
 
@@ -203,50 +202,14 @@ void DbVia::combineLayerShapes(const ViaLayerShape& other,
                                ViaLayerShape& shapes) const
 {
   shapes.bottom.insert(other.bottom.begin(), other.bottom.end());
+  shapes.middle.insert(other.middle.begin(), other.middle.end());
   shapes.top.insert(other.top.begin(), other.top.end());
 }
 
 odb::Rect DbVia::adjustToMinArea(odb::dbTechLayer* layer, const odb::Rect& rect) const
 {
-  odb::Rect new_rect = rect;
-
-  if (!layer->hasArea()) {
-    return new_rect;
-  }
-
-  const double min_area = layer->getArea();
-  if (min_area == 0.0) {
-    return new_rect;
-  }
-
-  // make sure minimum area is honored
-  const int dbu_per_micron = layer->getTech()->getLefUnits();
-  const double area
-      = min_area * dbu_per_micron * dbu_per_micron;
-
   const TechLayer techlayer(layer);
-
-  const int width = new_rect.dx();
-  const int height = new_rect.dy();
-  if (width * height < area) {
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      const int required_width = std::ceil(area / height);
-      const int added_width = (required_width - width) / 2;
-      const int new_x0 = techlayer.snapToManufacturingGrid(rect.xMin() - added_width, false);
-      const int new_x1 = techlayer.snapToManufacturingGrid(rect.xMax() + added_width, true);
-      new_rect.set_xlo(new_x0);
-      new_rect.set_xhi(new_x1);
-    } else {
-      const int required_height = std::ceil(area / width);
-      const int added_height = (required_height - height) / 2;
-      const int new_y0 = techlayer.snapToManufacturingGrid(rect.yMin() - added_height, false);
-      const int new_y1 = techlayer.snapToManufacturingGrid(rect.yMax() + added_height, true);
-      new_rect.set_ylo(new_y0);
-      new_rect.set_yhi(new_y1);
-    }
-  }
-
-  return new_rect;
+  return techlayer.adjustToMinArea(rect);
 }
 
 void DbVia::addToViaReport(DbVia* via, ViaReport& report) const
@@ -300,8 +263,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       continue;
     }
 
-    odb::Rect rect;
-    box->getBox(rect);
+    odb::Rect rect = box->getBox();
 
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       via_rect_.merge(rect);
@@ -355,15 +317,16 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
   for (int r = 0; r < rows_; r++) {
     int col = via_rect.xMin() - via_center_.getX();
     for (int c = 0; c < cols_; c++) {
+      auto* via = odb::dbSBox::create(wire, via_, col, row, type);
       auto shapes
-          = getLayerShapes(odb::dbSBox::create(wire, via_, col, row, type));
+          = getLayerShapes(via);
       const odb::dbTransform xfm(odb::Point{col, row});
       odb::Rect top_shape = required_top_rect_;
       xfm.apply(top_shape);
-      shapes.top.insert(top_shape);
+      shapes.top.insert({top_shape, via});
       odb::Rect bottom_shape = required_bottom_rect_;
       xfm.apply(bottom_shape);
-      shapes.bottom.insert(bottom_shape);
+      shapes.bottom.insert({bottom_shape, via});
       combineLayerShapes(shapes, via_shapes);
       incrementCount();
 
@@ -376,11 +339,14 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
   return via_shapes;
 }
 
-const odb::Rect DbTechVia::getViaRect(bool include_enclosure, bool include_bottom, bool include_top) const
+const odb::Rect DbTechVia::getViaRect(bool include_enclosure, bool include_via_shape, bool include_bottom, bool include_top) const
 {
   if (include_enclosure) {
     odb::Rect enc;
     enc.mergeInit();
+    if (include_via_shape) {
+      enc.merge(via_rect_);
+    }
     if (include_bottom) {
       enc.merge(enc_bottom_rect_);
     }
@@ -464,7 +430,7 @@ const std::string DbGenerateVia::getViaName() const
   return name;
 }
 
-const odb::Rect DbGenerateVia::getViaRect(bool include_enclosure, bool /* include_bottom */, bool /* include_top */) const
+const odb::Rect DbGenerateVia::getViaRect(bool include_enclosure, bool /* include_via_shape */, bool /* include_bottom */, bool /* include_top */) const
 {
   const int y_enc = std::max(bottom_enclosure_y_, top_enclosure_y_);
   const int height = (rows_ - 1) * cut_pitch_y_ + cut_rect_.dy();
@@ -553,7 +519,7 @@ DbArrayVia::DbArrayVia(DbBaseVia* core_via,
     columns_++;
   }
 
-  const odb::Rect core_via_rect = core_via->getViaRect(false);
+  const odb::Rect core_via_rect = core_via->getViaRect(false, true);
 
   // determine the via array offset from the center
 
@@ -562,7 +528,7 @@ DbArrayVia::DbArrayVia(DbBaseVia* core_via,
         * (array_spacing_x_ + core_via_rect.dx());  // all spacing + core vias
   int x_offset = 0;
   if (end_of_column != nullptr) {
-    const odb::Rect end_rect = end_of_column_->getViaRect(false);
+    const odb::Rect end_rect = end_of_column_->getViaRect(false, true);
     total_width += end_rect.dx();
     x_offset = end_rect.dx() / 2;
   } else {
@@ -575,7 +541,7 @@ DbArrayVia::DbArrayVia(DbBaseVia* core_via,
         * (array_spacing_y_ + core_via_rect.dy());  // all spacing + core vias
   int y_offset = 0;
   if (end_of_row_ != nullptr) {
-    const odb::Rect end_rect = end_of_row_->getViaRect(false);
+    const odb::Rect end_rect = end_of_row_->getViaRect(false, true);
     total_height += end_rect.dy();
     y_offset = end_rect.dy() / 2;
   } else {
@@ -594,7 +560,7 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
                                           int x,
                                           int y)
 {
-  const odb::Rect core_via_rect = core_via_->getViaRect(false);
+  const odb::Rect core_via_rect = core_via_->getViaRect(false, true);
   ViaLayerShape via_shapes;
 
   int array_y = array_start_y_ + y;
@@ -621,7 +587,7 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
       auto shapes = via->generate(block, wire, type, array_x, array_y);
       combineLayerShapes(shapes, via_shapes);
 
-      last_via_rect = via->getViaRect(false);
+      last_via_rect = via->getViaRect(false, true);
 
       array_x
           += (core_via_rect.dx() + last_via_rect.dx()) / 2 + array_spacing_x_;
@@ -800,13 +766,15 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
     if (i == 0) {
       via_shapes.bottom = shapes.bottom;
     }
+    // Copy top shapes into middle
+    via_shapes.middle.insert(via_shapes.top.begin(), via_shapes.top.end());
     via_shapes.top = shapes.top;
 
     Polygon90Set patch_shapes;
     odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
       Polygon90Set bottom_of_current;
-      for (const auto& shape : shapes.bottom) {
+      for (const auto& [shape, box] : shapes.bottom) {
         bottom_of_current += rect_to_poly(shape);
       }
 
@@ -853,19 +821,21 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
 
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
-        odb::dbSBox::create(wire,
-                            add_to_layer,
-                            xl(patch),
-                            yl(patch),
-                            xh(patch),
-                            yh(patch),
-                            type);
+        const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
+        auto* patch_box = odb::dbSBox::create(wire,
+                                              add_to_layer,
+                                              patch_rect.xMin(),
+                                              patch_rect.yMin(),
+                                              patch_rect.xMax(),
+                                              patch_rect.yMax(),
+                                              type);
+        via_shapes.middle.insert({patch_rect, patch_box});
       }
     }
 
     prev_via = via.get();
     top_of_previous.clear();
-    for (const auto& shape : shapes.top) {
+    for (const auto& [shape, box] : shapes.top) {
       top_of_previous += rect_to_poly(shape);
     }
   }
@@ -1352,13 +1322,9 @@ bool ViaGenerator::appliesToLayers(odb::dbTechLayer* lower,
 
 void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
 {
-  auto populate_enc = [this, rules_only](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
+  auto populate_enc = [this](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
     for (auto* rule : getCutMinimumEnclosureRules(width, above)) {
       encs.emplace_back(rule, layer, getCut());
-    }
-    if (encs.empty() && !rules_only) {
-      // assume zero enclosure when nothing is available
-      encs.emplace_back(0, 0);
     }
   };
 
@@ -1915,13 +1881,13 @@ void ViaGenerator::determineCutSpacing()
         rule_pitch_x = rule->getMaxSpacing(cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MIN);
         rule_pitch_y = rule_pitch_x;
       } else {
-        if (cut.dx() < cut.dy()) {
-          rule_pitch_x = rule->getSpacing(cut_class, false, cut_class, false);
-          rule_pitch_y = rule->getSpacing(cut_class, true, cut_class, true);
-        } else {
-          rule_pitch_x = rule->getSpacing(cut_class, true, cut_class, true);
-          rule_pitch_y = rule->getSpacing(cut_class, false, cut_class, false);
-        }
+        const bool x_is_side = cut.dx() > cut.dy();
+        const bool y_is_side = !x_is_side;
+
+        // for x pitch, need to use y_is_side since the dx is the SIDE
+        rule_pitch_x = rule->getSpacing(cut_class, y_is_side, cut_class, y_is_side);
+        // for y pitch, need to use x_is_side since the dy is the SIDE
+        rule_pitch_y = rule->getSpacing(cut_class, x_is_side, cut_class, x_is_side);
       }
       int rule_spacing_x = rule_pitch_x;
       int rule_spacing_y = rule_pitch_y;
@@ -1936,7 +1902,7 @@ void ViaGenerator::determineCutSpacing()
 
       if (rule->isSameNet()) {
         // use this rule since it's the same net
-        max_spacing_x = rule_spacing_y;
+        max_spacing_x = rule_spacing_x;
         max_spacing_y = rule_spacing_y;
         break;
       } else {
@@ -1947,7 +1913,7 @@ void ViaGenerator::determineCutSpacing()
     }
     if (max_spacing_x != 0 && max_spacing_y != 0) {
       setCutPitchX(cut.dx() + max_spacing_x);
-      setCutPitchY(cut.dy() + max_spacing_x);
+      setCutPitchY(cut.dy() + max_spacing_y);
     }
   }
 }
@@ -2167,8 +2133,7 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
       continue;
     }
 
-    odb::Rect cut;
-    box->getBox(cut);
+    odb::Rect cut = box->getBox();
 
     if (cuts_ == 0) {
       cut_ = layer;
@@ -2236,8 +2201,8 @@ bool TechViaGenerator::fitsShapes() const
                  0.5 * (intersection.yMin() + intersection.yMax())));
 
   const DbTechVia via(via_, 1, 0, 1, 0);
-  odb::Rect bottom_rect = via.getViaRect(true, true, false);
-  odb::Rect top_rect = via.getViaRect(true, false, true);
+  odb::Rect bottom_rect = via.getViaRect(true, false, true, false);
+  odb::Rect top_rect = via.getViaRect(true, false, false, true);
 
   transform.apply(bottom_rect);
   if (!mostlyContains(getLowerRect(), intersection, bottom_rect, getLowerConstraint())) {
@@ -2258,10 +2223,11 @@ bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
                                       const odb::Rect& small_shape,
                                       const Constraint& contraint) const
 {
-  const bool inside_top = intersection.yMax() >= small_shape.yMax();
-  const bool inside_right = intersection.xMax() >= small_shape.xMax();
-  const bool inside_bottom = intersection.yMin() <= small_shape.yMin();
-  const bool inside_left = intersection.xMin() <= small_shape.xMin();
+  const odb::Rect check_rect = contraint.intersection_only ? intersection : full_shape;
+  const bool inside_top = check_rect.yMax() >= small_shape.yMax();
+  const bool inside_right = check_rect.xMax() >= small_shape.xMax();
+  const bool inside_bottom = check_rect.yMin() <= small_shape.yMin();
+  const bool inside_left = check_rect.xMin() <= small_shape.xMin();
 
   const bool inside_x = inside_right && inside_left;
   const bool inside_y = inside_top && inside_bottom;
@@ -2293,7 +2259,7 @@ bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
 
 void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
 {
-  ViaGenerator::getMinimumEnclosures(bottom, top, rules_only);
+  ViaGenerator::getMinimumEnclosures(bottom, top, true);
 
   if (rules_only) {
     return;
@@ -2301,9 +2267,9 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std:
 
   const DbTechVia via(via_, 1, 0, 1, 0);
 
-  const odb::Rect via_rect = via.getViaRect(false);
-  const odb::Rect enc_bottom_rect = via.getViaRect(true, true, false);
-  const odb::Rect enc_top_rect = via.getViaRect(true, false, true);
+  const odb::Rect via_rect = via.getViaRect(false, true);
+  const odb::Rect enc_bottom_rect = via.getViaRect(true, false, true, false);
+  const odb::Rect enc_top_rect = via.getViaRect(true, false, false, true);
 
   debugPrint(getLogger(),
              utl::PDN,
@@ -2368,6 +2334,48 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std:
   }
 }
 
+std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(utl::Logger* logger, odb::dbTechVia* via, int x, int y)
+{
+  const TechViaGenerator generator(logger, via, {}, {}, {}, {});
+
+  const int x_pitch = generator.getCutPitchX() - 1;
+  const int y_pitch = generator.getCutPitchY() - 1;
+
+  std::set<odb::Rect> obs;
+
+  const odb::dbTransform xform(odb::Point(x, y));
+  for (auto* box : via->getBoxes()) {
+    auto* layer = box->getTechLayer();
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+
+    odb::Rect rect = box->getBox();
+    xform.apply(rect);
+
+    const odb::Rect x_obs_rect(
+        rect.xMax() - x_pitch,
+        rect.yMin() + 1,
+        rect.xMin() + x_pitch,
+        rect.yMax() - 1);
+
+    const odb::Rect y_obs_rect(
+        rect.xMin() + 1,
+        rect.yMax() - y_pitch,
+        rect.xMax() - 1,
+        rect.yMin() + y_pitch);
+
+    odb::Rect min_space_obs;
+    rect.bloat(layer->getSpacing() - 1, min_space_obs);
+
+    obs.insert(x_obs_rect);
+    obs.insert(y_obs_rect);
+    obs.insert(min_space_obs);
+  }
+
+  return obs;
+}
+
 /////////
 
 Via::Via(Connect* connect,
@@ -2409,7 +2417,7 @@ bool Via::startsBelow(const ViaPtr& via) const
   return connect_->startsBelow(via->getConnect());
 }
 
-void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
+void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const
 {
   odb::dbWireShapeType type = lower_->getType();
 
@@ -2421,14 +2429,24 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
   DbVia::ViaLayerShape shapes;
   connect_->makeVia(wire, lower_, upper_, type, shapes);
 
-  auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
+  auto check_shapes = [this, obstructions](const ShapePtr& shape, const std::set<DbVia::ViaLayerShape::RectBoxPair>& via_shapes) -> std::set<odb::dbSBox*> {
+    std::set<odb::dbSBox*> ripup;
+
     const odb::Rect& rect = shape->getRect();
     odb::Rect new_shape = rect;
     for (const auto& via_shape : via_shapes) {
-      new_shape.merge(via_shape);
+      new_shape.merge(via_shape.first);
     }
     if (new_shape != rect) {
       auto* layer = shape->getLayer();
+      if (obstructions.find(layer) != obstructions.end()) {
+        const auto& obs = obstructions.at(layer);
+        for (const auto& [via_shape, box] : via_shapes) {
+          if (obs.qbegin(bgi::intersects(Shape::rectToBox(via_shape))) != obs.qend()) {
+            ripup.insert(box);
+          }
+        }
+      }
 
       debugPrint(getLogger(),
                  utl::PDN,
@@ -2440,33 +2458,75 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
                  Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
                  Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
       bool valid_change = shape->isModifiable();
-      if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-        if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
-          valid_change = false;
-        }
-      } else {
-        if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
-          valid_change = false;
+      if (!shape->allowsNonPreferredDirectionChange()) {
+        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+          if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
+            valid_change = false;
+          }
+        } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+          if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
+            valid_change = false;
+          }
         }
       }
 
-      if (valid_change) {
+      if (valid_change && ripup.empty()) {
         shape->setRect(new_shape);
       } else {
-        getLogger()->warn(utl::PDN,
-                          195,
-                          "{} shape change required in a non-preferred direction to fit via {}: {} -> {}",
-                          shape->getNet()->getName(),
-                          layer->getName(),
-                          Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
-                          Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+        for (const auto& via_shape : via_shapes) {
+          if (!rect.contains(via_shape.first)) {
+            ripup.insert(via_shape.second);
+          }
+        }
       }
     }
 
+    return ripup;
   };
 
-  check_shapes(lower_, shapes.bottom);
-  check_shapes(upper_, shapes.top);
+  std::set<odb::dbSBox*> ripup_vias_bottom = check_shapes(lower_, shapes.bottom);
+  std::set<odb::dbSBox*> ripup_vias_top = check_shapes(upper_, shapes.top);
+
+  std::set<odb::dbSBox*> ripup_vias;
+  ripup_vias.insert(ripup_vias_bottom.begin(), ripup_vias_bottom.end());
+  ripup_vias.insert(ripup_vias_top.begin(), ripup_vias_top.end());
+
+  std::set<odb::dbSBox*> ripup_vias_middle;
+  for (const auto& [middle_rect, box] : shapes.middle) {
+    for (auto* ripup_via : ripup_vias) {
+      const odb::Rect ripup_area = ripup_via->getBox();
+      if (ripup_area.overlaps(middle_rect)) {
+        ripup_vias_middle.insert(box);
+        break;
+      }
+    }
+  }
+  ripup_vias.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
+
+  if (!ripup_vias.empty()) {
+    const TechLayer tech_layer(lower_->getLayer());
+    int x = 0;
+    int y = 0;
+    for (auto* via : ripup_vias) {
+      int via_x, via_y;
+      via->getViaXY(via_x, via_y);
+      x += via_x;
+      y += via_y;
+
+      odb::dbSBox::destroy(via);
+    }
+
+
+    getLogger()->warn(utl::PDN,
+                      195,
+                      "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
+                      ripup_vias.size(),
+                      lower_->getLayer()->getName(),
+                      upper_->getLayer()->getName(),
+                      tech_layer.dbuToMicron(x / ripup_vias.size()),
+                      tech_layer.dbuToMicron(y / ripup_vias.size()),
+                      lower_->getNet()->getName());
+  }
 }
 
 const std::string Via::getDisplayText() const

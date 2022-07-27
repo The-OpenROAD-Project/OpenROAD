@@ -87,17 +87,8 @@ class taPathSeg : public taShape
   }
   taPathSeg(const frPathSeg& in);
   // getters
-  void getPoints(Point& beginIn, Point& endIn) const
-  {
-    beginIn = begin_;
-    endIn = end_;
-  }
-  void getStyle(frSegStyle& styleIn) const
-  {
-    styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
-    styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
-    styleIn.setWidth(style_.getWidth());
-  }
+  std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
+  frSegStyle getStyle() const { return style_; }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {
@@ -164,7 +155,7 @@ class taPathSeg : public taShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  void getBBox(Rect& boxIn) const override
+  Rect getBBox() const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -174,15 +165,15 @@ class taPathSeg : public taShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      boxIn.init(begin_.x() - beginExt,
-                 begin_.y() - width / 2,
-                 end_.x() + endExt,
-                 end_.y() + width / 2);
+      return Rect(begin_.x() - beginExt,
+                  begin_.y() - width / 2,
+                  end_.x() + endExt,
+                  end_.y() + width / 2);
     } else {
-      boxIn.init(begin_.x() - width / 2,
-                 begin_.y() - beginExt,
-                 end_.x() + width / 2,
-                 end_.y() + endExt);
+      return Rect(begin_.x() - width / 2,
+                  begin_.y() - beginExt,
+                  end_.x() + width / 2,
+                  end_.y() + endExt);
     }
   }
   void move(const dbTransform& xform) override

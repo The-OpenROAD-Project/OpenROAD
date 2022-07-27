@@ -126,8 +126,10 @@ class DbVia
  public:
   struct ViaLayerShape
   {
-    std::set<odb::Rect> bottom;
-    std::set<odb::Rect> top;
+    using RectBoxPair = std::pair<odb::Rect, odb::dbSBox*>;
+    std::set<RectBoxPair> bottom;
+    std::set<RectBoxPair> middle;
+    std::set<RectBoxPair> top;
   };
 
   virtual ~DbVia() {}
@@ -160,7 +162,8 @@ class DbBaseVia : public DbVia
   DbBaseVia();
 
   virtual std::string getName() const = 0;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const = 0;
 
@@ -198,7 +201,8 @@ class DbTechVia : public DbBaseVia
   virtual bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
@@ -246,7 +250,8 @@ class DbGenerateVia : public DbBaseVia
                                  int y) override;
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
@@ -403,6 +408,7 @@ class ViaGenerator
   struct Constraint {
     bool must_fit_x;
     bool must_fit_y;
+    bool intersection_only;
   };
 
   ViaGenerator(utl::Logger* logger,
@@ -503,7 +509,6 @@ class ViaGenerator
   const Constraint& getLowerConstraint() const { return lower_constraint_; }
   const Constraint& getUpperConstraint() const { return upper_constraint_; }
 
- protected:
   int getLowerWidth(bool only_real = true) const;
   int getUpperWidth(bool only_real = true) const;
 
@@ -639,6 +644,8 @@ class TechViaGenerator : public ViaGenerator
                                  int cols,
                                  int col_pitch) const override;
 
+  static std::set<odb::Rect> getViaObstructionRects(utl::Logger* logger, odb::dbTechVia* via, int x, int y);
+
  protected:
   virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
 
@@ -688,7 +695,7 @@ class Via
 
   Connect* getConnect() const { return connect_; }
 
-  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const;
+  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const;
 
   Grid* getGrid() const;
 

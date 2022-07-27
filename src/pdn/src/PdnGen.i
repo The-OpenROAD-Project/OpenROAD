@@ -421,6 +421,13 @@ pdn::PowerCell* find_switched_power_cell(const char* name)
   return pdngen->findSwitchedPowerCell(name);
 }
 
+void repair_pdn_vias(const std::vector<odb::dbNet*>& nets)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  std::set<odb::dbNet*> net_set(nets.begin(), nets.end());
+  pdngen->repairVias(net_set);
+}
+
 // used for building debugging grids and should not be used.
 void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, int start, int stop, const char* direction)
 {
@@ -428,7 +435,7 @@ void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int w
   odb::Rect strap(start, start, stop, stop);
   if (start == stop) {
     auto* block = swire->getBlock();
-    block->getCoreArea(strap);
+    strap = block->getCoreArea();
   }
   if (strcmp(direction, "HORIZONTAL") == 0) {
     strap.set_ylo(offset);

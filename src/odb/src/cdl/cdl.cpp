@@ -170,15 +170,19 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
 bool cdl::writeCdl(utl::Logger* logger,
                    dbBlock* block,
                    const char* outFileName,
-                   const char* mastersFileName,
+                   const std::vector<const char*>& mastersFileNames,
                    bool includeFillers)
 {
-  auto mtermMap = readMasters(logger, block, mastersFileName);
+  std::unordered_map<dbMaster*, std::vector<dbMTerm*>> mtermMap;
+  for (const char* mastersFileName : mastersFileNames) {
+    auto submtermMap = readMasters(logger, block, mastersFileName);
+    mtermMap.insert(submtermMap.begin(), submtermMap.end());
+  }
   int unconnectedNets = 0;
   FILE* f = fopen(outFileName, "w");
 
   if (f == NULL) {
-    error(1, "cannot open file %s", outFileName);
+    logger->error(utl::ODB, 358, "cannot open file {}", outFileName);
     return false;
   }
 
@@ -202,15 +206,21 @@ bool cdl::writeCdl(utl::Logger* logger,
     line = "X" + inst->getName();
     auto it = mtermMap.find(master);
     if (it == mtermMap.end()) {
-      logger->error(utl::ODB,
-                    287,
-                    "Master {} was not in the masters CDL file {}.",
-                    master->getName(),
-                    mastersFileName);
-    }
-
-    for (auto&& mterm : it->second) {
-      line += " " + getNetName(block, inst, mterm, unconnectedNets);
+      if (master->getMTermCount() == 0) {
+        logger->warn(utl::ODB,
+                      357,
+                      "Master {} was not in the masters CDL files, but master has no pins.",
+                      master->getName());
+      } else {
+        logger->error(utl::ODB,
+                      287,
+                      "Master {} was not in the masters CDL files.",
+                      master->getName());
+      }
+    } else {
+      for (auto&& mterm : it->second) {
+        line += " " + getNetName(block, inst, mterm, unconnectedNets);
+      }
     }
 
     line += " " + master->getName();

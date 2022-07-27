@@ -165,8 +165,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
 static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
 {
   // check that some iterm shape intersects/touches shape
-  Rect wrect;
-  shape.getBox(wrect);
+  Rect wrect = shape.getBox();
   dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyr_top = NULL;
   if (shape.isVia()) {
@@ -193,13 +192,12 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
     dbSet<dbBox>::iterator box_itr;
     for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
       dbBox* box = *box_itr;
-      Rect rect;
       if (box->isVia()) {
         dbTechVia* tv = box->getTechVia();
         if (tv->getTopLayer() == wlyr
             || (!wlyr_top && tv->getBottomLayer() == wlyr)
             || tv->getBottomLayer() == wlyr_top) {
-          box->getBox(rect);
+          Rect rect = box->getBox();
           transform.apply(rect);
           if (rect.intersects(wrect)) {
             return true;
@@ -207,7 +205,7 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
         }
       } else {
         if (box->getTechLayer() == wlyr || box->getTechLayer() == wlyr_top) {
-          box->getBox(rect);
+          Rect rect = box->getBox();
           transform.apply(rect);
           if (rect.intersects(wrect)) {
             return true;
@@ -222,8 +220,7 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
 static bool checkBTermConnect(dbBTerm* bterm, dbShape& shape)
 {
   // check that some iterm shape intersects/touches shape
-  Rect wrect;
-  shape.getBox(wrect);
+  Rect wrect = shape.getBox();
   dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyrT = NULL;
   if (shape.isVia()) {
@@ -239,8 +236,7 @@ static bool checkBTermConnect(dbBTerm* bterm, dbShape& shape)
     // TODO
   } else {
     if (pin.getTechLayer() == wlyr || pin.getTechLayer() == wlyrT) {
-      Rect rect;
-      pin.getBox(rect);
+      Rect rect = pin.getBox();
       if (rect.intersects(wrect)) {
         return true;
       }

@@ -163,22 +163,19 @@ class frViaDef
   // setters
   void addLayer1Fig(std::unique_ptr<frShape> figIn)
   {
-    Rect box;
-    figIn->getBBox(box);
+    Rect box = figIn->getBBox();
     layer1ShapeBox.merge(box);
     layer1Figs.push_back(std::move(figIn));
   }
   void addLayer2Fig(std::unique_ptr<frShape> figIn)
   {
-    Rect box;
-    figIn->getBBox(box);
+    Rect box = figIn->getBBox();
     layer2ShapeBox.merge(box);
     layer2Figs.push_back(std::move(figIn));
   }
   void addCutFig(std::unique_ptr<frShape> figIn)
   {
-    Rect box;
-    figIn->getBBox(box);
+    Rect box = figIn->getBBox();
     cutShapeBox.merge(box);
     cutFigs.push_back(std::move(figIn));
   }

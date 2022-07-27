@@ -31,28 +31,35 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "heatMapPlacementDensity.h"
+
 #include "db_sta/dbNetwork.hh"
 
 namespace gui {
 
-PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger) :
-    HeatMapDataSource(logger, "Placement Density", "Placement", "PlacementDensity"),
-    include_taps_(true),
-    include_filler_(false),
-    include_io_(false)
+PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
+    : HeatMapDataSource(logger,
+                        "Placement Density",
+                        "Placement",
+                        "PlacementDensity"),
+      include_taps_(true),
+      include_filler_(false),
+      include_io_(false)
 {
-  addBooleanSetting("Taps",
-                    "Include taps and endcaps:",
-                    [this]() { return include_taps_; },
-                    [this](bool new_value) { include_taps_ = new_value; });
-  addBooleanSetting("Filler",
-                    "Include fillers:",
-                    [this]() { return include_filler_; },
-                    [this](bool new_value) { include_filler_ = new_value; });
-  addBooleanSetting("IO",
-                    "Include IO:",
-                    [this]() { return include_io_; },
-                    [this](bool new_value) { include_io_ = new_value; });
+  addBooleanSetting(
+      "Taps",
+      "Include taps and endcaps:",
+      [this]() { return include_taps_; },
+      [this](bool new_value) { include_taps_ = new_value; });
+  addBooleanSetting(
+      "Filler",
+      "Include fillers:",
+      [this]() { return include_filler_; },
+      [this](bool new_value) { include_filler_ = new_value; });
+  addBooleanSetting(
+      "IO",
+      "Include IO:",
+      [this]() { return include_io_; },
+      [this](bool new_value) { include_io_ = new_value; });
 }
 
 bool PlacementDensityDataSource::populateMap()
@@ -68,14 +75,16 @@ bool PlacementDensityDataSource::populateMap()
     if (!include_filler_ && inst->getMaster()->isFiller()) {
       continue;
     }
-    if (!include_taps_ && (inst->getMaster()->getType() == odb::dbMasterType::CORE_WELLTAP || inst->getMaster()->isEndCap())) {
+    if (!include_taps_
+        && (inst->getMaster()->getType() == odb::dbMasterType::CORE_WELLTAP
+            || inst->getMaster()->isEndCap())) {
       continue;
     }
-    if (!include_io_ && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
+    if (!include_io_
+        && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
       continue;
     }
-    odb::Rect inst_box;
-    inst->getBBox()->getBox(inst_box);
+    odb::Rect inst_box = inst->getBBox()->getBox();
 
     addToMap(inst_box, 100.0);
   }
@@ -122,12 +131,15 @@ void PlacementDensityDataSource::inDbInstDestroy(odb::dbInst*)
   destroyMap();
 }
 
-void PlacementDensityDataSource::inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&)
+void PlacementDensityDataSource::inDbInstPlacementStatusBefore(
+    odb::dbInst*,
+    const odb::dbPlacementStatus&)
 {
   destroyMap();
 }
 
-void PlacementDensityDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
+void PlacementDensityDataSource::inDbInstSwapMasterBefore(odb::dbInst*,
+                                                          odb::dbMaster*)
 {
   destroyMap();
 }

@@ -42,10 +42,11 @@ void run_worker_cmd(
   distributed->runWorker(host, port, interactive);
 }
 
-void run_load_balancer(const char* host, unsigned short port)
+void run_load_balancer(
+    const char* host, unsigned short port, const char* workers_domain)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runLoadBalancer(host, port);
+  distributed->runLoadBalancer(host, port, workers_domain);
 }
 
 void add_worker_address(

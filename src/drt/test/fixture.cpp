@@ -225,24 +225,26 @@ void Fixture::makeDesign()
   USEMINSPACING_OBS = false;
 }
 
-void Fixture::makeCornerConstraint(frLayerNum layer_num,
-                                   frCoord eolWidth,
-                                   frCornerTypeEnum type)
+frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
+    frLayerNum layer_num,
+    frCoord eolWidth,
+    frCornerTypeEnum type)
 {
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
-
-  con->setCornerType(type);
-  con->setSameXY(true);
+  auto rptr = con.get();
+  rptr->setCornerType(type);
+  rptr->setSameXY(true);
   if (eolWidth >= 0) {
-    con->setEolWidth(eolWidth);
+    rptr->setEolWidth(eolWidth);
   }
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58CornerSpacingConstraint(con.get());
+  layer->addLef58CornerSpacingConstraint(rptr);
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeSpacingConstraint(frLayerNum layer_num)
@@ -385,6 +387,7 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   unique_ptr<frConstraint> uCon
       = make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
   auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+  rptr->setLayer(layer);
   tech->addUConstraint(std::move(uCon));
   layer->setMinSpacing(rptr);
   return rptr;
@@ -420,7 +423,9 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
     frLayerNum layer_num,
     frCoord space,
     frCoord width,
-    frCoord within)
+    frCoord within,
+    frCoord end_prl_spacing,
+    frCoord end_prl)
 {
   auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
   auto con = uCon.get();
@@ -428,6 +433,7 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
   withinCon->setEolWithin(within);
+  withinCon->setEndPrl(end_prl_spacing, end_prl);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58SpacingEndOfLineConstraint(con);

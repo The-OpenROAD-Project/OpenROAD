@@ -736,10 +736,8 @@ PlacerBase::init() {
   
   // die-core area update
   dbSet<dbRow> rows = block->getRows();
-  odb::Rect coreRect;
-  block->getCoreArea(coreRect);
-  odb::Rect dieRect;
-  block->getDieArea(dieRect);
+  odb::Rect coreRect = block->getCoreArea();
+  odb::Rect dieRect = block->getDieArea();
 
   if (!dieRect.contains(coreRect))
     log_->error(GPL, 118, "core area outside of die.");
@@ -926,8 +924,7 @@ PlacerBase::initInstsForUnusableSites() {
 
   // fill in rows' bbox
   for(dbRow* row : rows) {
-    Rect rect;
-    row->getBBox(rect);
+    Rect rect = row->getBBox();
     
     std::pair<int, int> pairX 
       = getMinMaxIdx(rect.xMin(), rect.xMax(), 

@@ -33,8 +33,8 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QDateTime>
+#include <QDebug>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
@@ -52,8 +52,10 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
+#include <boost/geometry.hpp>
 #include <deque>
 #include <iostream>
+#include <limits>
 #include <tuple>
 #include <vector>
 
@@ -62,11 +64,10 @@
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
-#include "search.h"
-#include "scriptWidget.h"
-#include "utl/Logger.h"
-
 #include "ruler.h"
+#include "scriptWidget.h"
+#include "search.h"
+#include "utl/Logger.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -150,37 +151,31 @@ class GuiPainter : public Painter
       brush_pattern = Qt::NoBrush;
     } else {
       switch (style) {
-      case NONE:
-        brush_pattern = Qt::NoBrush;
-        break;
-      case DIAGONAL:
-        brush_pattern = Qt::DiagCrossPattern;
-        break;
-      case CROSS:
-        brush_pattern = Qt::CrossPattern;
-        break;
-      case DOTS:
-        brush_pattern = Qt::Dense6Pattern;
-        break;
-      case SOLID:
-      default:
-        brush_pattern = Qt::SolidPattern;
-        break;
+        case NONE:
+          brush_pattern = Qt::NoBrush;
+          break;
+        case DIAGONAL:
+          brush_pattern = Qt::DiagCrossPattern;
+          break;
+        case CROSS:
+          brush_pattern = Qt::CrossPattern;
+          break;
+        case DOTS:
+          brush_pattern = Qt::Dense6Pattern;
+          break;
+        case SOLID:
+        default:
+          brush_pattern = Qt::SolidPattern;
+          break;
       }
     }
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
 
-  void saveState() override
-  {
-    painter_->save();
-  }
+  void saveState() override { painter_->save(); }
 
-  void restoreState() override
-  {
-    painter_->restore();
-  }
+  void restoreState() override { painter_->restore(); }
 
   void drawOctagon(const odb::Oct& oct) override
   {
@@ -224,7 +219,11 @@ class GuiPainter : public Painter
     painter_->drawLine(x - o, y + o, x + o, y - o);
   }
 
-  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false)
+  const odb::Point determineStringOrigin(int x,
+                                         int y,
+                                         Anchor anchor,
+                                         const QString& text,
+                                         bool rotate_90 = false)
   {
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const QPoint text_bbox_center = text_bbox.center();
@@ -274,7 +273,11 @@ class GuiPainter : public Painter
   //       the transformation is mapped to the base transformation and
   //       the world co-ordinates are mapped to the window co-ordinates
   //       before drawing.
-  void drawString(int x, int y, Anchor anchor, const std::string& s, bool rotate_90 = false) override
+  void drawString(int x,
+                  int y,
+                  Anchor anchor,
+                  const std::string& s,
+                  bool rotate_90 = false) override
   {
     const QString text = QString::fromStdString(s);
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
@@ -289,15 +292,19 @@ class GuiPainter : public Painter
 
     const QTransform transform = painter_->transform();
     painter_->translate(origin.x(), origin.y());
-    painter_->scale(scale_adjust, -scale_adjust); // undo original scaling
+    painter_->scale(scale_adjust, -scale_adjust);  // undo original scaling
     if (rotate_90) {
       painter_->rotate(90);
     }
-    painter_->drawText(0, 0, text); // origin of painter is desired location, so paint at 0, 0
+    painter_->drawText(
+        0, 0, text);  // origin of painter is desired location, so paint at 0, 0
     painter_->setTransform(transform);
   }
 
-  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) override
+  virtual const odb::Rect stringBoundaries(int x,
+                                           int y,
+                                           Anchor anchor,
+                                           const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
     const odb::Point origin = determineStringOrigin(x, y, anchor, text);
@@ -311,10 +318,42 @@ class GuiPainter : public Painter
     return {xMin, yMin, xMax, yMax};
   }
 
-  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
+  void drawRuler(int x0,
+                 int y0,
+                 int x1,
+                 int y1,
+                 bool euclidian = true,
+                 const std::string& label = "") override
+  {
+    if (euclidian) {
+      drawRuler(x0, y0, x1, y1, label);
+    } else {
+      const int x_dist = std::abs(x0 - x1);
+      const int y_dist = std::abs(y0 - y1);
+      std::string x_label = label;
+      std::string y_label = "";
+      if (y_dist > x_dist) {
+        std::swap(x_label, y_label);
+      }
+      const odb::Point mid_pt = Ruler::getManhattanJoinPt({x0, y0}, {x1, y1});
+      drawRuler(x0, y0, mid_pt.x(), mid_pt.y(), x_label);
+      drawRuler(mid_pt.x(), mid_pt.y(), x1, y1, y_label);
+    }
+  }
+
+  QPainter* getPainter() { return painter_; }
+
+ private:
+  QPainter* painter_;
+  int dbu_per_micron_;
+
+  void drawRuler(int x0, int y0, int x1, int y1, const std::string& label)
   {
     const QColor ruler_color_qt = getOptions()->rulerColor();
-    const Color ruler_color(ruler_color_qt.red(), ruler_color_qt.green(), ruler_color_qt.blue(), ruler_color_qt.alpha());
+    const Color ruler_color(ruler_color_qt.red(),
+                            ruler_color_qt.green(),
+                            ruler_color_qt.blue(),
+                            ruler_color_qt.alpha());
     const QFont ruler_font = getOptions()->rulerFont();
     const QFont restore_font = painter_->font();
 
@@ -346,12 +385,12 @@ class GuiPainter : public Painter
         ruler_angle = -180;
       }
     } else {
-      ruler_angle = 57.295779 * std::atan(std::abs(y_len / x_len)); // 180 / pi
-      if (x_len < 0) { // adjust for negative dx
+      ruler_angle = 57.295779 * std::atan(std::abs(y_len / x_len));  // 180 / pi
+      if (x_len < 0) {  // adjust for negative dx
         ruler_angle = 180 - ruler_angle;
       }
-      if (y_len < 0) { // adjust for negative dy
-       ruler_angle = -ruler_angle;
+      if (y_len < 0) {  // adjust for negative dy
+        ruler_angle = -ruler_angle;
       }
     }
     painter_->rotate(ruler_angle);
@@ -371,17 +410,21 @@ class GuiPainter : public Painter
     drawLine(len, -endcap_size, len, 0);
 
     // tick mark interval in microns
-    qreal major_tick_mark_interval = std::pow(10.0, std::floor(std::log10(len_microns)));
+    qreal major_tick_mark_interval
+        = std::pow(10.0, std::floor(std::log10(len_microns)));
     qreal minor_tick_mark_interval = major_tick_mark_interval / 10;
-    const int min_tick_spacing = 10; // pixels
-    const bool do_minor_ticks = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU() > min_tick_spacing;
+    const int min_tick_spacing = 10;  // pixels
+    const bool do_minor_ticks
+        = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU()
+          > min_tick_spacing;
 
     // draw tick marks
     const int minor_tick_size = endcap_size / 2;
     const int major_tick_interval = major_tick_mark_interval * dbu_per_micron_;
     const int minor_tick_interval = minor_tick_mark_interval * dbu_per_micron_;
-    //major ticks
-    if (major_tick_interval * getPixelsPerDBU() >= min_tick_spacing) { // only draw tick marks if they are spaces apart
+    // major ticks
+    if (major_tick_interval * getPixelsPerDBU()
+        >= min_tick_spacing) {  // only draw tick marks if they are spaces apart
       for (int tick = 0; tick < len; tick += major_tick_interval) {
         if (do_minor_ticks) {
           for (int m = 1; m < 10; m++) {
@@ -418,12 +461,6 @@ class GuiPainter : public Painter
 
     painter_->setTransform(initial_xfm);
   }
-
-  QPainter* getPainter() { return painter_; }
-
- private:
-  QPainter* painter_;
-  int dbu_per_micron_;
 };
 
 LayoutViewer::LayoutViewer(
@@ -434,6 +471,7 @@ LayoutViewer::LayoutViewer(
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
     std::function<bool(void)> usingDBU,
+    std::function<bool(void)> showRulerAsEuclidian,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -450,6 +488,7 @@ LayoutViewer::LayoutViewer(
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       usingDBU_(usingDBU),
+      showRulerAsEuclidian_(showRulerAsEuclidian),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
@@ -468,10 +507,7 @@ LayoutViewer::LayoutViewer(
 
   addMenuAndActions();
 
-  connect(&search_,
-          SIGNAL(modified()),
-          this,
-          SLOT(fullRepaint()));
+  connect(&search_, SIGNAL(modified()), this, SLOT(fullRepaint()));
 
   connect(&search_,
           SIGNAL(newBlock(odb::dbBlock*)),
@@ -498,7 +534,9 @@ void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
   fullRepaint();
 }
 
-void LayoutViewer::updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected)
+void LayoutViewer::updateModuleColor(odb::dbModule* module,
+                                     const QColor& color,
+                                     bool user_selected)
 {
   modules_[module].color = color;
   if (user_selected) {
@@ -517,38 +555,39 @@ void LayoutViewer::populateModuleColors()
 
   // https://mokole.com/palette.html
   const std::array<QColor, 31> colors{
-    QColor{105, 105, 105},
-    QColor{85, 107, 47},
-    QColor{34, 139, 34},
-    QColor{139, 0, 0},
-    QColor{72, 61, 139},
-    QColor{184, 134, 11},
-    QColor{0, 139, 139},
-    QColor{70, 130, 180},
-    QColor{0, 0, 139},
-    QColor{143, 188, 143},
-    QColor{128, 0, 128},
-    QColor{176, 48, 96},
-    QColor{255, 0, 0},
-    QColor{255, 140, 0},
-//    QColor{255, 255, 0}, // removed because it is the same as OpenROAD highlight yellow.
-    QColor{0, 255, 0},
-    QColor{138, 43, 226},
-    QColor{0, 255, 127},
-    QColor{0, 255, 255},
-    QColor{0, 0, 255},
-    QColor{173, 255, 47},
-    QColor{255, 99, 71},
-    QColor{255, 0, 255},
-    QColor{30, 144, 255},
-    QColor{144, 238, 144},
-    QColor{173, 216, 230},
-    QColor{255, 20, 147},
-    QColor{123, 104, 238},
-    QColor{255, 160, 122},
-    QColor{245, 222, 179},
-    QColor{238, 130, 238},
-    QColor{255, 192, 203}};
+      QColor{105, 105, 105},
+      QColor{85, 107, 47},
+      QColor{34, 139, 34},
+      QColor{139, 0, 0},
+      QColor{72, 61, 139},
+      QColor{184, 134, 11},
+      QColor{0, 139, 139},
+      QColor{70, 130, 180},
+      QColor{0, 0, 139},
+      QColor{143, 188, 143},
+      QColor{128, 0, 128},
+      QColor{176, 48, 96},
+      QColor{255, 0, 0},
+      QColor{255, 140, 0},
+      //    QColor{255, 255, 0}, // removed because it is the same as OpenROAD
+      //    highlight yellow.
+      QColor{0, 255, 0},
+      QColor{138, 43, 226},
+      QColor{0, 255, 127},
+      QColor{0, 255, 255},
+      QColor{0, 0, 255},
+      QColor{173, 255, 47},
+      QColor{255, 99, 71},
+      QColor{255, 0, 255},
+      QColor{30, 144, 255},
+      QColor{144, 238, 144},
+      QColor{173, 216, 230},
+      QColor{255, 20, 147},
+      QColor{123, 104, 238},
+      QColor{255, 160, 122},
+      QColor{245, 222, 179},
+      QColor{238, 130, 238},
+      QColor{255, 192, 203}};
 
   int color_idx = 0;
   for (auto* module : block_->getModules()) {
@@ -593,11 +632,9 @@ void LayoutViewer::cancelRulerBuild()
 
 Rect LayoutViewer::getBounds() const
 {
-  Rect bbox;
-  block_->getBBox()->getBox(bbox);
+  Rect bbox = block_->getBBox()->getBox();
 
-  Rect die;
-  block_->getDieArea(die);
+  Rect die = block_->getDieArea();
 
   bbox.merge(die);
 
@@ -607,19 +644,16 @@ Rect LayoutViewer::getBounds() const
 Rect LayoutViewer::getPaddedRect(const Rect& rect, double factor)
 {
   const int margin = factor * std::max(rect.dx(), rect.dy());
-  return Rect(
-      rect.xMin() - margin,
-      rect.yMin() - margin,
-      rect.xMax() + margin,
-      rect.yMax() + margin
-      );
+  return Rect(rect.xMin() - margin,
+              rect.yMin() - margin,
+              rect.xMax() + margin,
+              rect.yMax() + margin);
 }
 
 qreal LayoutViewer::computePixelsPerDBU(const QSize& size, const Rect& dbu_rect)
 {
-  return std::min(
-      size.width()  / (double) dbu_rect.dx(),
-      size.height() / (double) dbu_rect.dy());
+  return std::min(size.width() / (double) dbu_rect.dx(),
+                  size.height() / (double) dbu_rect.dy());
 }
 
 void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
@@ -630,12 +664,15 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 
   const Rect fitted_bb = getPaddedRect(getBounds());
   // ensure max size is not exceeded
-  qreal maximum_pixels_per_dbu_ = 0.98*computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX), fitted_bb);
-  qreal target_pixels_per_dbu = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
+  qreal maximum_pixels_per_dbu_
+      = 0.98
+        * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
+                              fitted_bb);
+  qreal target_pixels_per_dbu
+      = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  const QSize new_size(
-      ceil(fitted_bb.dx() * target_pixels_per_dbu),
-      ceil(fitted_bb.dy() * target_pixels_per_dbu));
+  const QSize new_size(ceil(fitted_bb.dx() * target_pixels_per_dbu),
+                       ceil(fitted_bb.dy() * target_pixels_per_dbu));
 
   resize(new_size.expandedTo(scroller_->maximumViewportSize()));
   update();
@@ -663,9 +700,8 @@ void LayoutViewer::updateCenter(int dx, int dy)
 void LayoutViewer::centerAt(const odb::Point& focus)
 {
   QPointF pt = dbuToScreen(focus);
-  const QPointF shift_window(
-      0.5 * scroller_->horizontalScrollBar()->pageStep(),
-      0.5 * scroller_->verticalScrollBar()->pageStep());
+  const QPointF shift_window(0.5 * scroller_->horizontalScrollBar()->pageStep(),
+                             0.5 * scroller_->verticalScrollBar()->pageStep());
   // apply shift to corner of the window, instead of the center
   pt -= shift_window;
 
@@ -725,13 +761,16 @@ void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
   zoom(focus, 1 / zoom_scale_factor_, do_delta_focus);
 }
 
-void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_focus)
+void LayoutViewer::zoom(const odb::Point& focus,
+                        qreal factor,
+                        bool do_delta_focus)
 {
   qreal old_pixels_per_dbu = pixels_per_dbu_;
 
   // focus to center, this is only used if doing delta_focus
-  // this holds the distance (x and y) from the desired focus point and the current center
-  // so the new center can be computed and ensure that the new center is in line with the old center.
+  // this holds the distance (x and y) from the desired focus point and the
+  // current center so the new center can be computed and ensure that the new
+  // center is in line with the old center.
   odb::Point center_delta(focus.x() - center_.x(), focus.y() - center_.y());
 
   // update resolution
@@ -742,9 +781,8 @@ void LayoutViewer::zoom(const odb::Point& focus, qreal factor, bool do_delta_foc
     qreal actual_factor = pixels_per_dbu_ / old_pixels_per_dbu;
     // new center based on focus
     // adjust such that the new center follows the mouse
-    new_center = odb::Point(
-        focus.x() - center_delta.x() / actual_factor,
-        focus.y() - center_delta.y() / actual_factor);
+    new_center = odb::Point(focus.x() - center_delta.x() / actual_factor,
+                            focus.y() - center_delta.y() / actual_factor);
   }
 
   centerAt(new_center);
@@ -755,70 +793,45 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
   const Rect padded_rect = getPaddedRect(rect_dbu);
 
   // set resolution required to view the whole padded rect
-  setPixelsPerDBU(computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
+  setPixelsPerDBU(
+      computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
 
   // center the layout at the middle of the rect
-  centerAt(Point(rect_dbu.xMin() + rect_dbu.dx()/2, rect_dbu.yMin() + rect_dbu.dy()/2));
+  centerAt(Point(rect_dbu.xMin() + rect_dbu.dx() / 2,
+                 rect_dbu.yMin() + rect_dbu.dy() / 2));
 }
 
-std::pair<LayoutViewer::Edges, bool> LayoutViewer::searchNearestEdge(const std::vector<Search::Box>& boxes, const odb::Point& pt)
+int LayoutViewer::edgeToPointDistance(const odb::Point& pt,
+                                      const Edge& edge) const
 {
-  // find closest edges for each object returned
-  std::vector<Edges> candidates;
-  for (auto& box : boxes) {
-    auto pt0 = box.min_corner();
-    auto pt1 = box.max_corner();
+  using BPoint = boost::geometry::model::d2::point_xy<int>;
+  using BLine = boost::geometry::model::linestring<BPoint>;
 
-    Edge vertical;
-    // vertical edges
-    if (std::abs(pt.x() - pt0.get<0>()) < std::abs(pt.x() - pt1.get<0>())) {
-      // closer to pt0
-      vertical.first = odb::Point(pt0.get<0>(), pt0.get<1>());
-      vertical.second = odb::Point(pt0.get<0>(), pt1.get<1>());
-    } else {
-      // closer to pt1
-      vertical.first = odb::Point(pt1.get<0>(), pt0.get<1>());
-      vertical.second = odb::Point(pt1.get<0>(), pt1.get<1>());
-    }
+  const BPoint bpt(pt.x(), pt.y());
 
-    Edge horizontal;
-    // horizontal edges
-    if (std::abs(pt.y() - pt0.get<1>()) < std::abs(pt.y() - pt1.get<1>())) {
-      // closer to pt0
-      horizontal.first = odb::Point(pt0.get<0>(), pt0.get<1>());
-      horizontal.second = odb::Point(pt1.get<0>(), pt0.get<1>());
-    } else {
-      // closer to pt1
-      horizontal.first = odb::Point(pt0.get<0>(), pt1.get<1>());
-      horizontal.second = odb::Point(pt1.get<0>(), pt1.get<1>());
-    }
+  BLine bline;
+  bline.push_back(BPoint(edge.first.x(), edge.first.y()));
+  bline.push_back(BPoint(edge.second.x(), edge.second.y()));
 
-    candidates.push_back({horizontal, vertical});
-  }
+  const auto distance = boost::geometry::distance(bpt, bline);
 
-  if (candidates.empty()) {
-    return {Edges(), false};
-  }
-
-  // find closest edge overall, start with last one
-  Edges closest_edges = candidates.back();
-  candidates.pop_back();
-  for (auto& edge_set : candidates) {
-    // vertical edges
-    if (std::abs(pt.x() - edge_set.vertical.first.x()) < std::abs(pt.x() - closest_edges.vertical.first.x())) {
-      closest_edges.vertical = edge_set.vertical;
-    }
-
-    // horizontal edges
-    if (std::abs(pt.y() - edge_set.horizontal.first.y()) < std::abs(pt.y() - closest_edges.horizontal.first.y())) {
-      closest_edges.horizontal = edge_set.horizontal;
-    }
-  }
-
-  return {closest_edges, true};
+  return distance;
 }
 
-std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt, bool horizontal)
+bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
+{
+  const uint64 lhs_length_sqrd = std::pow(lhs.first.x() - lhs.second.x(), 2)
+                                 + std::pow(lhs.first.y() - lhs.second.y(), 2);
+  const uint64 rhs_length_sqrd = std::pow(rhs.first.x() - rhs.second.x(), 2)
+                                 + std::pow(rhs.first.y() - rhs.second.y(), 2);
+
+  return lhs_length_sqrd < rhs_length_sqrd;
+}
+
+std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
+    const odb::Point& pt,
+    bool horizontal,
+    bool vertical)
 {
   if (!hasDesign()) {
     return {Edge(), false};
@@ -826,22 +839,81 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   const int search_radius = block_->getDbUnitsPerMicron();
 
-  std::vector<Search::Box> boxes;
+  Edge closest_edge;
+  int edge_distance = std::numeric_limits<int>::max();
+
+  auto check_rect
+      = [this, &pt, &closest_edge, &edge_distance, &horizontal, &vertical](
+            const odb::Rect& rect) {
+          const odb::Point ll(rect.xMin(), rect.yMin());
+          const odb::Point lr(rect.xMax(), rect.yMin());
+          const odb::Point ul(rect.xMin(), rect.yMax());
+          const odb::Point ur(rect.xMax(), rect.yMax());
+          if (horizontal) {
+            const Edge top_edge{ul, ur};
+            const int top = edgeToPointDistance(pt, top_edge);
+            if (top < edge_distance) {
+              edge_distance = top;
+              closest_edge = top_edge;
+            } else if (top == edge_distance
+                       && compareEdges(top_edge, closest_edge)) {
+              edge_distance = top;
+              closest_edge = top_edge;
+            }
+            const Edge bottom_edge{ll, lr};
+            const int bottom = edgeToPointDistance(pt, bottom_edge);
+            if (bottom < edge_distance) {
+              edge_distance = bottom;
+              closest_edge = bottom_edge;
+            } else if (bottom == edge_distance
+                       && compareEdges(bottom_edge, closest_edge)) {
+              edge_distance = bottom;
+              closest_edge = bottom_edge;
+            }
+          }
+          if (vertical) {
+            const Edge left_edge{ll, ul};
+            const int left = edgeToPointDistance(pt, left_edge);
+            if (left < edge_distance) {
+              edge_distance = left;
+              closest_edge = left_edge;
+            } else if (left == edge_distance
+                       && compareEdges(left_edge, closest_edge)) {
+              edge_distance = left;
+              closest_edge = left_edge;
+            }
+            const Edge right_edge{lr, ur};
+            const int right = edgeToPointDistance(pt, right_edge);
+            if (right < edge_distance) {
+              edge_distance = right;
+              closest_edge = right_edge;
+            } else if (right == edge_distance
+                       && compareEdges(right_edge, closest_edge)) {
+              edge_distance = right;
+              closest_edge = right_edge;
+            }
+          }
+        };
+
+  auto convert_box_to_rect = [](const Search::Box& box) -> odb::Rect {
+    const auto min_corner = box.min_corner();
+    const auto max_corner = box.max_corner();
+    const odb::Point ll(min_corner.x(), min_corner.y());
+    const odb::Point ur(max_corner.x(), max_corner.y());
+
+    return odb::Rect(ll, ur);
+  };
 
   // get die bounding box
-  Rect bbox;
-  block_->getDieArea(bbox);
-  boxes.push_back({{bbox.xMin(), bbox.yMin()},
-                   {bbox.xMax(), bbox.yMax()}});
+  Rect bbox = block_->getDieArea();
+  check_rect(bbox);
 
   if (options_->areRegionsVisible()) {
     for (auto* region : block_->getRegions()) {
       for (auto* box : region->getBoundaries()) {
-        odb::Rect region_box;
-        box->getBox(region_box);
+        odb::Rect region_box = box->getBox();
         if (region_box.area() > 0) {
-          boxes.push_back({{region_box.xMin(), region_box.yMin()},
-                           {region_box.xMax(), region_box.yMax()}});
+          check_rect(region_box);
         }
       }
     }
@@ -849,20 +921,37 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   odb::Rect search_line;
   if (horizontal) {
-    search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
+    search_line = odb::Rect(
+        pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
+  } else if (vertical) {
+    search_line = odb::Rect(
+        pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
   } else {
-    search_line = odb::Rect(pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
+    search_line = odb::Rect(pt.x() - search_radius,
+                            pt.y() - search_radius,
+                            pt.x() + search_radius,
+                            pt.y() + search_radius);
   }
 
-  auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), instanceSizeLimit());
+  auto inst_range = search_.searchInsts(search_line.xMin(),
+                                        search_line.yMin(),
+                                        search_line.xMax(),
+                                        search_line.yMax(),
+                                        instanceSizeLimit());
 
+  const bool inst_pins_visible = options_->areInstancePinsVisible();
+  const bool inst_osb_visible = options_->areInstanceBlockagesVisible();
+  const bool inst_internals_visible = inst_pins_visible || inst_osb_visible;
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
   for (auto& [box, poly, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
-      insts.push_back(inst);
-      boxes.push_back(box);
+      if (inst_internals_visible) {
+        // only add inst if it can be used for pin or obs search
+        insts.push_back(inst);
+      }
+      check_rect(convert_box_to_rect(box));
     }
   }
 
@@ -885,93 +974,102 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
       dbTransform inst_xfm;
       inst->getTransform(inst_xfm);
 
-      if (options_->areObstructionsVisible()) {
+      if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
           odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
           inst_xfm.apply(trans_box);
-          if (trans_box.intersects(search_line)) {
-            boxes.push_back({Search::Point(trans_box.xMin(), trans_box.yMin()), Search::Point(trans_box.xMax(), trans_box.yMax())});
-          }
+          check_rect(trans_box);
         }
       }
-      for (auto& box : inst_boxes->mterms) {
-        odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
-        inst_xfm.apply(trans_box);
-
-        if (trans_box.intersects(search_line)) {
-          boxes.push_back({Search::Point(trans_box.xMin(), trans_box.yMin()), Search::Point(trans_box.xMax(), trans_box.yMax())});
+      if (inst_pins_visible) {
+        for (auto& box : inst_boxes->mterms) {
+          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
+          inst_xfm.apply(trans_box);
+          check_rect(trans_box);
         }
       }
     }
 
-    auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
+    auto shapes = search_.searchShapes(layer,
+                                       search_line.xMin(),
+                                       search_line.yMin(),
+                                       search_line.xMax(),
+                                       search_line.yMax(),
+                                       shape_limit);
     for (auto& [box, poly, net] : shapes) {
       if (isNetVisible(net)) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
 
     if (options_->areFillsVisible()) {
-      auto fills = search_.searchFills(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
+      auto fills = search_.searchFills(layer,
+                                       search_line.xMin(),
+                                       search_line.yMin(),
+                                       search_line.xMax(),
+                                       search_line.yMax(),
+                                       shape_limit);
       for (auto& [box, poly, fill] : fills) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
 
     if (options_->areObstructionsVisible()) {
-      auto obs = search_.searchObstructions(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
+      auto obs = search_.searchObstructions(layer,
+                                            search_line.xMin(),
+                                            search_line.yMin(),
+                                            search_line.xMax(),
+                                            search_line.yMax(),
+                                            shape_limit);
       for (auto& [box, poly, ob] : obs) {
-        boxes.push_back(box);
+        check_rect(convert_box_to_rect(box));
       }
     }
   }
 
   if (options_->areBlockagesVisible()) {
-    auto blcks = search_.searchBlockages(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
+    auto blcks = search_.searchBlockages(search_line.xMin(),
+                                         search_line.yMin(),
+                                         search_line.xMax(),
+                                         search_line.yMax(),
+                                         shape_limit);
     for (auto& [box, poly, blck] : blcks) {
-      boxes.push_back(box);
+      check_rect(convert_box_to_rect(box));
     }
   }
 
   if (options_->areRowsVisible()) {
     for (const auto& row_site : getRowRects(search_line)) {
-      boxes.push_back({{row_site.xMin(), row_site.yMin()},
-                       {row_site.xMax(), row_site.yMax()}});
+      check_rect(row_site);
     }
   }
 
-  const auto& [shape_edges, ok] = searchNearestEdge(boxes, pt);
+  const bool ok = edge_distance != std::numeric_limits<int>::max();
   if (!ok) {
     return {Edge(), false};
   }
 
-  Edge selected_edge;
-  if (horizontal) {
-    selected_edge = shape_edges.horizontal;
-  } else {
-    selected_edge = shape_edges.vertical;
-  }
-
   // check if edge should point instead
-  const int point_snap_distance = std::max(10.0 / pixels_per_dbu_, // pixels
-                                           10.0); //DBU
+  const int point_snap_distance = std::max(10.0 / pixels_per_dbu_,  // pixels
+                                           10.0);                   // DBU
 
-  std::array<odb::Point, 3> snap_points = {
-      snap_edge_.first, // first corner
+  const std::array<odb::Point, 3> snap_points = {
+      closest_edge.first,  // first corner
       odb::Point(
-          (snap_edge_.first.x() + snap_edge_.second.x()) / 2,
-          (snap_edge_.first.y() + snap_edge_.second.y()) / 2),// midpoint
-      snap_edge_.second // last corner
+          (closest_edge.first.x() + closest_edge.second.x()) / 2,
+          (closest_edge.first.y() + closest_edge.second.y()) / 2),  // midpoint
+      closest_edge.second  // last corner
   };
   for (const auto& s_pt : snap_points) {
-    if (std::abs(s_pt.x() - pt.x()) < point_snap_distance && std::abs(s_pt.y() - pt.y()) < point_snap_distance) {
+    if (std::abs(s_pt.x() - pt.x()) < point_snap_distance
+        && std::abs(s_pt.y() - pt.y()) < point_snap_distance) {
       // close to point, so snap to that
-      snap_edge_.first = s_pt;
-      snap_edge_.second = s_pt;
+      closest_edge.first = s_pt;
+      closest_edge.second = s_pt;
     }
   }
 
-  return {selected_edge, true};
+  return {closest_edge, true};
 }
 
 void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
@@ -987,7 +1085,11 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   const int shape_limit = shapeSizeLimit();
 
   if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
-    auto blockages = search_.searchBlockages(region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
+    auto blockages = search_.searchBlockages(region.xMin(),
+                                             region.yMin(),
+                                             region.xMax(),
+                                             region.yMax(),
+                                             shape_limit);
     for (auto iter : blockages) {
       selections.push_back(makeSelected_(std::get<2>(iter)));
     }
@@ -1011,16 +1113,25 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    if (options_->areObstructionsVisible() && options_->areObstructionsSelectable()) {
-      auto obs = search_.searchObstructions(
-          layer, region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
+    if (options_->areObstructionsVisible()
+        && options_->areObstructionsSelectable()) {
+      auto obs = search_.searchObstructions(layer,
+                                            region.xMin(),
+                                            region.yMin(),
+                                            region.xMax(),
+                                            region.yMax(),
+                                            shape_limit);
       for (auto iter : obs) {
         selections.push_back(makeSelected_(std::get<2>(iter)));
       }
     }
 
-    auto shapes = search_.searchShapes(
-        layer, region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
+    auto shapes = search_.searchShapes(layer,
+                                       region.xMin(),
+                                       region.yMin(),
+                                       region.xMax(),
+                                       region.yMax(),
+                                       shape_limit);
 
     // Just return the first one
     for (auto iter : shapes) {
@@ -1039,23 +1150,38 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   // Look for an instance since no shape was found
-  auto insts
-      = search_.searchInsts(region.xMin(), region.yMin(), region.xMax(), region.yMax(), instanceSizeLimit());
+  auto insts = search_.searchInsts(region.xMin(),
+                                   region.yMin(),
+                                   region.xMax(),
+                                   region.yMax(),
+                                   instanceSizeLimit());
 
   for (auto& inst : insts) {
     dbInst* inst_ptr = std::get<2>(inst);
-    if (options_->isInstanceVisible(inst_ptr) && options_->isInstanceSelectable(inst_ptr)) {
+    if (options_->isInstanceVisible(inst_ptr)
+        && options_->isInstanceSelectable(inst_ptr)) {
       selections.push_back(makeSelected_(inst_ptr));
     }
   }
 
   if (options_->areRulersVisible() && options_->areRulersSelectable()) {
     // Look for rulers
-    // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
-    const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
+    // because rulers are 1 pixel wide, we'll add another couple of pixels to
+    // its width
+    const int ruler_margin = 4 / pixels_per_dbu_;  // 4 pixels in each direction
     for (auto& ruler : rulers_) {
       if (ruler->fuzzyIntersection(region, ruler_margin)) {
         selections.push_back(makeSelected_(ruler.get()));
+      }
+    }
+  }
+
+  if (options_->areRegionsVisible() && options_->areRegionsSelectable()) {
+    for (auto db_region : block_->getRegions()) {
+      for (auto box : db_region->getBoundaries()) {
+        if (box->getBox().intersects(region)) {
+          selections.push_back(makeSelected_(db_region));
+        }
       }
     }
   }
@@ -1064,7 +1190,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 int LayoutViewer::selectArea(const odb::Rect& area, bool append)
 {
   if (!append) {
-    emit selected(Selected()); // remove previous selections
+    emit selected(Selected());  // remove previous selections
   }
 
   auto selection_set = selectAt(area);
@@ -1096,24 +1222,30 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
 
     // more than one item possible, so return the "next" one
-    // method: look for the last selected item in the list and select the next one
-    // that will emulate a circular queue so we don't just oscillate between the first two
+    // method: look for the last selected item in the list and select the next
+    // one that will emulate a circular queue so we don't just oscillate between
+    // the first two
     std::vector<bool> is_selected;
     for (auto& sel : selections) {
       is_selected.push_back(selected_.count(sel) != 0);
     }
-    if (std::all_of(is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+    if (std::all_of(
+            is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
       // everything is selected, so just return first item
       return selections[0];
     }
-    is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
+    is_selected.push_back(
+        is_selected[0]);  // add first element to make it a "loop"
 
     int next_selection_idx;
     const int selections_size = static_cast<int>(selections.size());
-    // start at end of list and look for the selection item that is directly after a selected item.
-    for (next_selection_idx = selections_size; next_selection_idx > 0; next_selection_idx--) {
+    // start at end of list and look for the selection item that is directly
+    // after a selected item.
+    for (next_selection_idx = selections_size; next_selection_idx > 0;
+         next_selection_idx--) {
       // looking for true followed by false
-      if (is_selected[next_selection_idx - 1] && !is_selected[next_selection_idx]) {
+      if (is_selected[next_selection_idx - 1]
+          && !is_selected[next_selection_idx]) {
         break;
       }
     }
@@ -1134,8 +1266,9 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
   } else {
     odb::Point snapped = end_pt;
     if (snap_edge_showing_) {
-      if (snap_edge_.first == snap_edge_.second) { // point snap
-        return snap_edge_.first;
+      if (snap_edge_.first.x() == snap_edge_.second.x()
+          && snap_edge_.first.y() == snap_edge_.second.y()) {  // point snap
+        return {snap_edge_.first.x(), snap_edge_.first.y()};
       }
 
       bool is_vertical_edge = snap_edge_.first.x() == snap_edge_.second.x();
@@ -1150,12 +1283,15 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
   }
 }
 
-odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap)
+odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt,
+                                           const odb::Point& start_pt,
+                                           bool snap)
 {
   odb::Point snapped = findNextSnapPoint(end_pt, snap);
   if (snap) {
     // snap to horizontal or vertical ruler
-    if (std::abs(start_pt.x() - snapped.x()) < std::abs(start_pt.y() - snapped.y())) {
+    if (std::abs(start_pt.x() - snapped.x())
+        < std::abs(start_pt.y() - snapped.y())) {
       // vertical
       snapped.setX(start_pt.x());
     } else {
@@ -1185,7 +1321,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
   if (!hasDesign()) {
     return;
   }
-  
+
   mouse_press_pos_ = event->pos();
   Point pt_dbu = screenToDBU(mouse_press_pos_);
   if (building_ruler_ && event->button() == Qt::LeftButton) {
@@ -1194,7 +1330,10 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     if (ruler_start_ == nullptr) {
       ruler_start_ = std::make_unique<odb::Point>(next_ruler_pt);
     } else {
-      emit addRuler(ruler_start_->x(), ruler_start_->y(), next_ruler_pt.x(), next_ruler_pt.y());
+      emit addRuler(ruler_start_->x(),
+                    ruler_start_->y(),
+                    next_ruler_pt.x(),
+                    next_ruler_pt.y());
       cancelRulerBuild();
     }
   }
@@ -1223,10 +1362,12 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
       bool do_ver = true;
       bool do_hor = true;
 
-      if (ruler_start_ != nullptr && !(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
+      if (ruler_start_ != nullptr
+          && !(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
         const odb::Point mouse_pos = pt_dbu;
 
-        if (std::abs(ruler_start_->x() - mouse_pos.x()) < std::abs(ruler_start_->y() - mouse_pos.y())) {
+        if (std::abs(ruler_start_->x() - mouse_pos.x())
+            < std::abs(ruler_start_->y() - mouse_pos.y())) {
           // mostly vertical, so don't look for vertical snaps
           do_ver = false;
         } else {
@@ -1235,27 +1376,9 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
         }
       }
 
-      if (do_ver) {
-        const auto& [edge_ver, ok_ver] = findEdge(pt_dbu, false);
-
-        if (ok_ver && do_ver) {
-          snap_edge_ = edge_ver;
-          snap_edge_showing_ = true;
-        }
-      }
-      if (do_hor) {
-        const auto& [edge_hor, ok_hor] = findEdge(pt_dbu, true);
-        if (ok_hor) {
-          if (!snap_edge_showing_) {
-            snap_edge_ = edge_hor;
-            snap_edge_showing_ = true;
-          } else if ( // check if horizontal is closer
-              std::abs(snap_edge_.first.x() - pt_dbu.x()) >
-              std::abs(edge_hor.first.y() - pt_dbu.y())) {
-            snap_edge_ = edge_hor;
-          }
-        }
-      }
+      const auto& [edge, ok] = searchNearestEdge(pt_dbu, do_hor, do_ver);
+      snap_edge_ = edge;
+      snap_edge_showing_ = ok;
     } else {
       snap_edge_showing_ = false;
     }
@@ -1307,7 +1430,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
       auto selection = selectAt(rubber_band_dbu);
       if (!(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
-        emit selected(Selected()); // remove previous selections
+        emit selected(Selected());  // remove previous selections
       }
       emit addSelected(selection);
     } else if (event->button() == Qt::RightButton) {
@@ -1320,7 +1443,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
       if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
         emit addSelected(selection);
       } else {
-        emit selected(selection, qGuiApp->keyboardModifiers() & Qt::ControlModifier);
+        emit selected(selection,
+                      qGuiApp->keyboardModifiers() & Qt::ControlModifier);
       }
     } else if (event->button() == Qt::RightButton) {
       if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)) {
@@ -1345,15 +1469,16 @@ void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
     const odb::Rect block_bounds = getBounds();
 
     // compute new pixels_per_dbu_
-    pixels_per_dbu_ = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
+    pixels_per_dbu_
+        = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
 
     // compute new centering shift
     // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
     const QSize new_area = new_size.expandedTo(scroller_->size());
-    centering_shift_ = QPoint(
-        (new_area.width()  - block_bounds.dx() * pixels_per_dbu_) / 2,
-        (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
+    centering_shift_
+        = QPoint((new_area.width() - block_bounds.dx() * pixels_per_dbu_) / 2,
+                 (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
 
     fullRepaint();
   }
@@ -1472,8 +1597,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
   }
 
   int min_resolution = shapeSizeLimit();
-  Rect block_bounds;
-  block_->getBBox()->getBox(block_bounds);
+  Rect block_bounds = block_->getBBox()->getBox();
   const Rect draw_bounds = block_bounds.intersect(bounds);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
@@ -1525,8 +1649,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
   }
 }
 
-void LayoutViewer::drawRows(QPainter* painter,
-                            const Rect& bounds)
+void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 {
   if (!options_->areRowsVisible()) {
     return;
@@ -1538,7 +1661,8 @@ void LayoutViewer::drawRows(QPainter* painter,
   painter->setBrush(Qt::NoBrush);
 
   for (const auto& row_site : getRowRects(bounds)) {
-    painter->drawRect(row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+    painter->drawRect(
+        row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
   }
 }
 
@@ -1549,8 +1673,11 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
     min_resolution = 0;
   }
 
-  auto rows = search_.searchRows(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), min_resolution);
+  auto rows = search_.searchRows(bounds.xMin(),
+                                 bounds.yMin(),
+                                 bounds.xMax(),
+                                 bounds.yMax(),
+                                 min_resolution);
 
   std::vector<odb::Rect> rects;
   for (auto& [box, poly, row] : rows) {
@@ -1567,18 +1694,18 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
     bool h_visible = h >= min_resolution;
 
     switch (row->getOrient()) {
-    case dbOrientType::R0:
-    case dbOrientType::R180:
-    case dbOrientType::MY:
-    case dbOrientType::MX:
-      /* do nothing */
-      break;
+      case dbOrientType::R0:
+      case dbOrientType::R180:
+      case dbOrientType::MY:
+      case dbOrientType::MX:
+        /* do nothing */
+        break;
 
-    case dbOrientType::R90:
-    case dbOrientType::R270:
-    case dbOrientType::MYR90:
-    case dbOrientType::MXR90:
-      std::swap(w, h);
+      case dbOrientType::R90:
+      case dbOrientType::R270:
+      case dbOrientType::MYR90:
+      case dbOrientType::MXR90:
+        std::swap(w, h);
     }
 
     dbRowDir dir = row->getDirection();
@@ -1586,10 +1713,9 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
     if (!w_visible) {
       // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
-        w = spacing*count;
-      }
-      else {
-        h = spacing*count;
+        w = spacing * count;
+      } else {
+        h = spacing * count;
       }
       count = 1;
     }
@@ -1623,7 +1749,7 @@ void LayoutViewer::selection(const Selected& selection)
     // stop animation
     selectionAnimation(Selected());
   }
-  inspector_focus_ = Selected(); // reset focus
+  inspector_focus_ = Selected();  // reset focus
   update();
 }
 
@@ -1634,7 +1760,9 @@ void LayoutViewer::selectionFocus(const Selected& focus)
   update();
 }
 
-void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, int update_interval)
+void LayoutViewer::selectionAnimation(const Selected& selection,
+                                      int repeats,
+                                      int update_interval)
 {
   if (animate_selection_ != nullptr) {
     animate_selection_->timer->stop();
@@ -1643,16 +1771,18 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
 
   if (selection) {
     const int state_reset_interval = 3;
-    animate_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{
-      selection,
-      0,
-      state_reset_interval*repeats,
-      state_reset_interval,
-      nullptr});
+    animate_selection_ = std::make_unique<AnimatedSelected>(
+        AnimatedSelected{selection,
+                         0,
+                         state_reset_interval * repeats,
+                         state_reset_interval,
+                         nullptr});
     animate_selection_->timer = std::make_unique<QTimer>();
     animate_selection_->timer->setInterval(update_interval);
 
-    const qint64 max_animate_time = QDateTime::currentMSecsSinceEpoch() + (animate_selection_->max_state_count + 2) * update_interval;
+    const qint64 max_animate_time
+        = QDateTime::currentMSecsSinceEpoch()
+          + (animate_selection_->max_state_count + 2) * update_interval;
     connect(animate_selection_->timer.get(),
             &QTimer::timeout,
             [this, max_animate_time]() {
@@ -1661,9 +1791,12 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
-                  (animate_selection_->state_count == animate_selection_->max_state_count ||
-                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
+              if (animate_selection_->max_state_count != 0
+                  &&  // if max_state_count == 0 animate until new animation is
+                      // selected
+                  (animate_selection_->state_count
+                       == animate_selection_->max_state_count
+                   || QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }
@@ -1688,14 +1821,17 @@ void LayoutViewer::drawSelected(Painter& painter)
   if (animate_selection_ != nullptr) {
     auto brush = Painter::transparent;
 
-    const int pen_width = animate_selection_->state_count % animate_selection_->state_modulo + 1;
+    const int pen_width
+        = animate_selection_->state_count % animate_selection_->state_modulo
+          + 1;
     if (pen_width == 1) {
       // flash with brush, since pen width is the same as normal
       brush = Painter::highlight;
       brush.a = 100;
     }
 
-    animate_selection_->selection.highlight(painter, Painter::highlight, pen_width, brush);
+    animate_selection_->selection.highlight(
+        painter, Painter::highlight, pen_width, brush);
   }
 
   if (inspector_focus_) {
@@ -1714,10 +1850,7 @@ void LayoutViewer::drawHighlighted(Painter& painter)
     auto highlight_color = Painter::highlightColors[highlight_group];
 
     for (auto& highlighted : highlight_set) {
-      highlighted.highlight(painter,
-                            highlight_color,
-                            1,
-                            highlight_color);
+      highlighted.highlight(painter, highlight_color, 1, highlight_color);
     }
 
     highlight_group++;
@@ -1731,8 +1864,12 @@ void LayoutViewer::drawRulers(Painter& painter)
   }
 
   for (auto& ruler : rulers_) {
-    painter.drawRuler(
-        ruler->getPt0().x(), ruler->getPt0().y(), ruler->getPt1().x(), ruler->getPt1().y(), ruler->getLabel());
+    painter.drawRuler(ruler->getPt0().x(),
+                      ruler->getPt0().y(),
+                      ruler->getPt1().x(),
+                      ruler->getPt1().y(),
+                      ruler->isEuclidian(),
+                      ruler->getLabel());
   }
 }
 
@@ -1762,8 +1899,10 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     if (minimum_size > master_box.dx() && minimum_size > master_box.dy()) {
       painter->drawPoint(master_box.xMin(), master_box.yMin());
     } else {
-      painter->drawRect(
-          master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
+      painter->drawRect(master_box.xMin(),
+                        master_box.yMin(),
+                        master_box.dx(),
+                        master_box.dy());
 
       // Draw an orientation tag in corner if useful in size
       qreal master_h = master->getHeight();
@@ -1863,7 +2002,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
 
   // text should not fill more than 90% of the instance height or width
   static const float size_limit = 0.9;
-  static const float rotation_limit = 0.85; // slightly lower to prevent oscillating rotations when zooming
+  static const float rotation_limit
+      = 0.85;  // slightly lower to prevent oscillating rotations when zooming
 
   // limit non-core text to 1/2.0 (50%) of cell height or width
   static const float non_core_scale_limit = 2.0;
@@ -1883,8 +2023,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
       continue;
     }
 
-    Rect instance_box;
-    inst->getBBox()->getBox(instance_box);
+    Rect instance_box = inst->getBBox()->getBox();
 
     QString name = inst->getName().c_str();
     QRectF instance_bbox_in_px = dbuToScreen(instance_box);
@@ -1892,7 +2031,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     QRectF text_bounding_box = font_metrics.boundingRect(name);
 
     bool do_rotate = false;
-    if (text_bounding_box.width() > rotation_limit * instance_bbox_in_px.width()) {
+    if (text_bounding_box.width()
+        > rotation_limit * instance_bbox_in_px.width()) {
       // non-rotated text will not fit without elide
       if (instance_bbox_in_px.height() > instance_bbox_in_px.width()) {
         // check if more text will fit if rotated
@@ -1901,8 +2041,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     }
 
     qreal text_height_check = non_core_scale_limit * text_bounding_box.height();
-    // don't show text if it's more than "non_core_scale_limit" of cell height/width
-    // this keeps text from dominating the cell size
+    // don't show text if it's more than "non_core_scale_limit" of cell
+    // height/width this keeps text from dominating the cell size
     if (!do_rotate && text_height_check > instance_bbox_in_px.height()) {
       continue;
     }
@@ -1911,9 +2051,11 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     }
 
     if (do_rotate) {
-      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
+      name = font_metrics.elidedText(
+          name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
     } else {
-      name = font_metrics.elidedText(name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
+      name = font_metrics.elidedText(
+          name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
     }
 
     painter->translate(instance_box.xMin(), instance_box.yMin());
@@ -1935,21 +2077,23 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   painter->setFont(initial_font);
 }
 
-void LayoutViewer::drawBlockages(QPainter* painter,
-                                 const Rect& bounds)
+void LayoutViewer::drawBlockages(QPainter* painter, const Rect& bounds)
 {
   if (!options_->areBlockagesVisible()) {
     return;
   }
   painter->setPen(Qt::NoPen);
-  painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
+  painter->setBrush(QBrush(options_->placementBlockageColor(),
+                           options_->placementBlockagePattern()));
 
-  auto blockage_range = search_.searchBlockages(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
+  auto blockage_range = search_.searchBlockages(bounds.xMin(),
+                                                bounds.yMin(),
+                                                bounds.xMax(),
+                                                bounds.yMax(),
+                                                shapeSizeLimit());
 
   for (auto& [box, poly, blockage] : blockage_range) {
-    Rect bbox;
-    blockage->getBBox()->getBox(bbox);
+    Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -1967,21 +2111,22 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   Qt::BrushStyle brush_pattern = getPattern(layer);
   painter->setBrush(QBrush(color, brush_pattern));
 
-  auto obstructions_range = search_.searchObstructions(
-      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
+  auto obstructions_range = search_.searchObstructions(layer,
+                                                       bounds.xMin(),
+                                                       bounds.yMin(),
+                                                       bounds.xMax(),
+                                                       bounds.yMax(),
+                                                       shapeSizeLimit());
 
   for (auto& [box, poly, obs] : obstructions_range) {
-    Rect bbox;
-    obs->getBBox()->getBox(bbox);
+    Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
 
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
-void LayoutViewer::drawBlock(QPainter* painter,
-                             const Rect& bounds,
-                             int depth)
+void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 {
   const int instance_limit = instanceSizeLimit();
   const int shape_limit = shapeSizeLimit();
@@ -1998,14 +2143,18 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox;
-  block_->getDieArea(bbox);
+  Rect bbox = block_->getDieArea();
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 
-  auto inst_range = search_.searchInsts(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
+  drawManufacturingGrid(painter, bounds);
+
+  auto inst_range = search_.searchInsts(bounds.xMin(),
+                                        bounds.yMin(),
+                                        bounds.xMax(),
+                                        bounds.yMax(),
+                                        instance_limit);
 
   // Cache the search results as we will iterate over the instances
   // for each layer.
@@ -2029,7 +2178,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < shape_limit) {
+    if (layer->getType() == dbTechLayerType::CUT
+        && cut_maximum_size_[layer] < shape_limit) {
       continue;
     }
 
@@ -2091,13 +2241,13 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     drawTracks(layer, painter, bounds);
+    drawRouteGuides(gui_painter, layer);
     for (auto* renderer : renderers) {
       gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
   }
-
   // draw instance names
   drawInstanceNames(painter, insts);
 
@@ -2108,7 +2258,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawModuleView(painter, insts);
 
-  drawRegionOutlines(painter);
+  drawRegions(painter);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -2121,30 +2271,85 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 }
 
-void LayoutViewer::drawRegionOutlines(QPainter* painter)
+void LayoutViewer::drawManufacturingGrid(QPainter* painter,
+                                         const odb::Rect& bounds)
+{
+  if (!options_->isManufacturingGridVisible()) {
+    return;
+  }
+
+  odb::dbTech* tech = block_->getDb()->getTech();
+  if (!tech->hasManufacturingGrid()) {
+    return;
+  }
+
+  const int grid = tech->getManufacturingGrid();  // DBU
+
+  const int pixels_per_grid_point = grid * pixels_per_dbu_;
+  const int pixels_per_grid_point_limit
+      = 5;  // want 5 pixels between each grid point
+
+  if (pixels_per_grid_point < pixels_per_grid_point_limit) {
+    return;
+  }
+
+  const int first_x = ((bounds.xMin() / grid) + 1) * grid;
+  const int last_x = (bounds.xMax() / grid) * grid;
+  const int first_y = ((bounds.yMin() / grid) + 1) * grid;
+  const int last_y = (bounds.yMax() / grid) * grid;
+
+  QPolygon points;
+  for (int x = first_x; x <= last_x; x += grid) {
+    for (int y = first_y; y <= last_y; y += grid) {
+      points.append(QPoint(x, y));
+    }
+  }
+
+  painter->setPen(Qt::white);
+  painter->drawPoints(points);
+}
+
+void LayoutViewer::drawRegions(QPainter* painter)
 {
   if (!options_->areRegionsVisible()) {
     return;
   }
 
   painter->setPen(QPen(Qt::gray, 0));
-  painter->setBrush(Qt::BrushStyle::NoBrush);
+  painter->setBrush(QBrush(options_->regionColor(), options_->regionPattern()));
 
   for (auto* region : block_->getRegions()) {
     for (auto* box : region->getBoundaries()) {
-      odb::Rect region_box;
-      box->getBox(region_box);
+      odb::Rect region_box = box->getBox();
       if (region_box.area() > 0) {
-        painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+        painter->drawRect(region_box.xMin(),
+                          region_box.yMin(),
+                          region_box.dx(),
+                          region_box.dy());
       }
     }
   }
 }
 
-void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
+void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
+{
+  if (route_guides_.empty())
+    return;
+  painter.setPen(layer);
+  painter.setBrush(layer);
+  for (auto net : route_guides_) {
+    for (auto guide : net->getGuides()) {
+      if (guide->getLayer() != layer)
+        continue;
+      painter.drawRect(guide->getBox());
+    }
+  }
+}
+void LayoutViewer::drawAccessPoints(Painter& painter,
+                                    const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
-  const int shape_size = 100; // units DBU
+  const int shape_size = 100;  // units DBU
   if (shape_limit > shape_size) {
     return;
   }
@@ -2210,26 +2415,29 @@ void LayoutViewer::drawModuleView(QPainter* painter,
       continue;
     }
 
-    odb::Rect inst_outline;
-    inst->getBBox()->getBox(inst_outline);
+    odb::Rect inst_outline = inst->getBBox()->getBox();
 
     auto color = setting.color;
     painter->setPen(QPen(color, 0));
     color.setAlpha(100);
     painter->setBrush(QBrush(color));
-    painter->drawRect(inst_outline.xMin(), inst_outline.yMin(), inst_outline.dx(), inst_outline.dy());
+    painter->drawRect(inst_outline.xMin(),
+                      inst_outline.yMin(),
+                      inst_outline.dx(),
+                      inst_outline.dy());
   }
 }
 
-void LayoutViewer::drawPinMarkers(Painter& painter,
-                                  const odb::Rect& bounds)
+void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
 {
   auto block_bbox = block_->getBBox();
   auto block_width = block_bbox->getWidth();
   auto block_height = block_bbox->getLength();
-  const double scale_factor = 0.02; // 4 Percent of bounds is used to draw pin-markers
-  const int block_max_dim = std::min(std::max(block_width, block_height), bounds.maxDXDY());
-  const double abs_min_dim = 8.0; // prevent markers from falling apart
+  const double scale_factor
+      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+  const int block_max_dim
+      = std::min(std::max(block_width, block_height), bounds.maxDXDY());
+  const double abs_min_dim = 8.0;  // prevent markers from falling apart
   const double max_dim = std::max(scale_factor * block_max_dim, abs_min_dim);
 
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
@@ -2239,33 +2447,33 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
 
   const QFontMetrics font_metrics(marker_font);
   // draw names of pins when 100 pins would fit on an edge
-  const bool draw_names = std::max(block_width, block_height) * pixels_per_dbu_ > 100 * font_metrics.height();
+  const bool draw_names = std::max(block_width, block_height) * pixels_per_dbu_
+                          > 100 * font_metrics.height();
   const int text_margin = 2.0 / pixels_per_dbu_;
 
   // templates of pin markers (block top)
-  const std::vector<Point> in_marker{ // arrow head pointing in to block
-    Point( max_dim / 4, max_dim),
-    Point(0, 0),
-    Point(-max_dim / 4, max_dim),
-    Point( max_dim / 4, max_dim)
-  };
-  const std::vector<Point> out_marker{ // arrow head pointing out of block
-    Point(0, max_dim),
-    Point(-max_dim / 4, 0),
-    Point( max_dim / 4, 0),
-    Point(0, max_dim)
-  };
-  const std::vector<Point> bi_marker{ // diamond
-    Point(0, 0),
-    Point(-max_dim / 4, max_dim / 2),
-    Point(0, max_dim),
-    Point( max_dim / 4, max_dim / 2),
-    Point(0, 0)
-  };
+  const std::vector<Point> in_marker{// arrow head pointing in to block
+                                     Point(max_dim / 4, max_dim),
+                                     Point(0, 0),
+                                     Point(-max_dim / 4, max_dim),
+                                     Point(max_dim / 4, max_dim)};
+  const std::vector<Point> out_marker{// arrow head pointing out of block
+                                      Point(0, max_dim),
+                                      Point(-max_dim / 4, 0),
+                                      Point(max_dim / 4, 0),
+                                      Point(0, max_dim)};
+  const std::vector<Point> bi_marker{// diamond
+                                     Point(0, 0),
+                                     Point(-max_dim / 4, max_dim / 2),
+                                     Point(0, max_dim),
+                                     Point(max_dim / 4, max_dim / 2),
+                                     Point(0, 0)};
 
-  // RTree used to search for overlapping shapes and decide if rotation of text is needed.
+  // RTree used to search for overlapping shapes and decide if rotation of text
+  // is needed.
   bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
-  struct PinText {
+  struct PinText
+  {
     Search::Box rect;
     bool can_rotate;
     odb::dbTechLayer* layer;
@@ -2299,24 +2507,24 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
             dists.begin(), std::min_element(dists.begin(), dists.end()));
 
         odb::dbTransform xfm(pin_center);
-        if (arg_min == 0) { // left
+        if (arg_min == 0) {  // left
           xfm.setOrient(dbOrientType::R90);
-          if (dist_to_left == 0) { // touching edge so draw on edge
+          if (dist_to_left == 0) {  // touching edge so draw on edge
             xfm.setOffset({block_bbox->xMin(), pin_center.y()});
           }
-        } else if (arg_min == 1) { // right
+        } else if (arg_min == 1) {  // right
           xfm.setOrient(dbOrientType::R270);
-          if (dist_to_right == 0) { // touching edge so draw on edge
+          if (dist_to_right == 0) {  // touching edge so draw on edge
             xfm.setOffset({block_bbox->xMax(), pin_center.y()});
           }
-        } else if (arg_min == 2) { // top
+        } else if (arg_min == 2) {  // top
           // none needed
-          if (dist_to_top == 0) { // touching edge so draw on edge
+          if (dist_to_top == 0) {  // touching edge so draw on edge
             xfm.setOffset({pin_center.x(), block_bbox->yMax()});
           }
-        } else { // bottom
+        } else {  // bottom
           xfm.setOrient(dbOrientType::MX);
-          if (dist_to_bot == 0) { // touching edge so draw on edge
+          if (dist_to_bot == 0) {  // touching edge so draw on edge
             xfm.setOffset({pin_center.x(), block_bbox->yMin()});
           }
         }
@@ -2347,16 +2555,16 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
           Point text_anchor_pt = xfm.getOffset();
 
           auto text_anchor = Painter::BOTTOM_CENTER;
-          if (arg_min == 0) { // left
+          if (arg_min == 0) {  // left
             text_anchor = Painter::RIGHT_CENTER;
             text_anchor_pt.setX(text_anchor_pt.x() - max_dim - text_margin);
-          } else if (arg_min == 1) { // right
+          } else if (arg_min == 1) {  // right
             text_anchor = Painter::LEFT_CENTER;
             text_anchor_pt.setX(text_anchor_pt.x() + max_dim + text_margin);
-          } else if (arg_min == 2) { // top
+          } else if (arg_min == 2) {  // top
             text_anchor = Painter::BOTTOM_CENTER;
             text_anchor_pt.setY(text_anchor_pt.y() + max_dim + text_margin);
-          } else { // bottom
+          } else {  // bottom
             text_anchor = Painter::TOP_CENTER;
             text_anchor_pt.setY(text_anchor_pt.y() - max_dim - text_margin);
           }
@@ -2369,10 +2577,14 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
           pin_specs.can_rotate = arg_min == 2 || arg_min == 3;
           // only need bounding box when rotation is possible
           if (pin_specs.can_rotate) {
-            odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(), pin_specs.pt.y(), pin_specs.anchor, pin_specs.text);
+            odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(),
+                                                           pin_specs.pt.y(),
+                                                           pin_specs.anchor,
+                                                           pin_specs.text);
             text_rect.bloat(text_margin, text_rect);
-            pin_specs.rect = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
-                                         Search::Point(text_rect.xMax(), text_rect.yMax()));
+            pin_specs.rect = Search::Box(
+                Search::Point(text_rect.xMin(), text_rect.yMin()),
+                Search::Point(text_rect.xMax(), text_rect.yMax()));
             pin_text_spec_shapes.insert(pin_specs.rect);
           } else {
             pin_specs.rect = Search::Box();
@@ -2389,9 +2601,11 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     bool do_rotate = false;
     auto anchor = pin.anchor;
     if (pin.can_rotate) {
-      if (pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect) && bgi::satisfies([&](const auto& other) {
-          return !bg::equals(other, pin.rect);
-        })) != pin_text_spec_shapes.qend()) {
+      if (pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect)
+                                      && bgi::satisfies([&](const auto& other) {
+                                           return !bg::equals(other, pin.rect);
+                                         }))
+          != pin_text_spec_shapes.qend()) {
         // adjust anchor
         if (pin.anchor == Painter::BOTTOM_CENTER) {
           anchor = Painter::RIGHT_CENTER;
@@ -2405,7 +2619,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     painter.setPen(layer);
     painter.setBrush(layer);
 
-    painter.drawString(pin.pt.x(),  pin.pt.y(), anchor, pin.text, do_rotate);
+    painter.drawString(pin.pt.x(), pin.pt.y(), anchor, pin.text, do_rotate);
   }
 
   qpainter->setFont(initial_font);
@@ -2414,17 +2628,21 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
 odb::Point LayoutViewer::screenToDBU(const QPointF& point)
 {
   // Flip the y-coordinate (see file level comments)
-  return Point((point.x()-centering_shift_.x()) / pixels_per_dbu_,
-               (centering_shift_.y()-point.y()) / pixels_per_dbu_);
+  return Point((point.x() - centering_shift_.x()) / pixels_per_dbu_,
+               (centering_shift_.y() - point.y()) / pixels_per_dbu_);
 }
 
 Rect LayoutViewer::screenToDBU(const QRectF& screen_rect)
 {
-  int dbu_left = (int) floor((screen_rect.left()-centering_shift_.x()) / pixels_per_dbu_);
-  int dbu_right = (int) ceil((screen_rect.right()-centering_shift_.x()) / pixels_per_dbu_);
+  int dbu_left = (int) floor((screen_rect.left() - centering_shift_.x())
+                             / pixels_per_dbu_);
+  int dbu_right = (int) ceil((screen_rect.right() - centering_shift_.x())
+                             / pixels_per_dbu_);
   // Flip the y-coordinate (see file level comments)
-  int dbu_top = (int) floor((centering_shift_.y()-screen_rect.top()) / pixels_per_dbu_);
-  int dbu_bottom = (int) ceil((centering_shift_.y()-screen_rect.bottom()) / pixels_per_dbu_);
+  int dbu_top = (int) floor((centering_shift_.y() - screen_rect.top())
+                            / pixels_per_dbu_);
+  int dbu_bottom = (int) ceil((centering_shift_.y() - screen_rect.bottom())
+                              / pixels_per_dbu_);
 
   return Rect(dbu_left, dbu_bottom, dbu_right, dbu_top);
 }
@@ -2441,10 +2659,11 @@ QPointF LayoutViewer::dbuToScreen(const Point& dbu_point)
 QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 {
   // Flip the y-coordinate (see file level comments)
-  qreal screen_left   = centering_shift_.x() + dbu_rect.xMin() * pixels_per_dbu_;
-  qreal screen_right  = centering_shift_.x() + dbu_rect.xMax() * pixels_per_dbu_;
-  qreal screen_top    = centering_shift_.y() - dbu_rect.yMax() * pixels_per_dbu_;
-  qreal screen_bottom = centering_shift_.y() - dbu_rect.yMin() * pixels_per_dbu_;
+  qreal screen_left = centering_shift_.x() + dbu_rect.xMin() * pixels_per_dbu_;
+  qreal screen_right = centering_shift_.x() + dbu_rect.xMax() * pixels_per_dbu_;
+  qreal screen_top = centering_shift_.y() - dbu_rect.yMax() * pixels_per_dbu_;
+  qreal screen_bottom
+      = centering_shift_.y() - dbu_rect.yMin() * pixels_per_dbu_;
 
   return QRectF(QPointF(screen_left, screen_top),
                 QPointF(screen_right, screen_bottom));
@@ -2458,7 +2677,11 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   }
 
   auto now = std::chrono::system_clock::now();
-  if (block_drawing_ != nullptr && std::chrono::duration_cast<std::chrono::milliseconds>(now - last_paint_time_).count() < repaint_interval_) {
+  if (block_drawing_ != nullptr
+      && std::chrono::duration_cast<std::chrono::milliseconds>(
+             now - last_paint_time_)
+                 .count()
+             < repaint_interval_) {
     // re-emit update since a paint will be needed later
     emit update();
     return;
@@ -2535,23 +2758,27 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   // draw partial ruler if present
   if (building_ruler_ && ruler_start_ != nullptr) {
-    odb::Point snapped_mouse_pos = findNextRulerPoint(screenToDBU(mouse_move_pos_));
-    gui_painter.drawRuler(ruler_start_->x(), ruler_start_->y(), snapped_mouse_pos.x(), snapped_mouse_pos.y());
+    odb::Point snapped_mouse_pos
+        = findNextRulerPoint(screenToDBU(mouse_move_pos_));
+    gui_painter.drawRuler(ruler_start_->x(),
+                          ruler_start_->y(),
+                          snapped_mouse_pos.x(),
+                          snapped_mouse_pos.y(),
+                          showRulerAsEuclidian_());
   }
 
   // draw edge currently considered snapped to
   if (snap_edge_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
-    if (snap_edge_.first != snap_edge_.second) {
-      painter.drawLine(
-          QLine(
-              QPoint(snap_edge_.first.x(), snap_edge_.first.y()),
-              QPoint(snap_edge_.second.x(), snap_edge_.second.y())));
-    } else {
+    if (snap_edge_.first == snap_edge_.second) {
       painter.drawEllipse(QPointF(snap_edge_.first.x(), snap_edge_.first.y()),
                           5.0 / pixels_per_dbu_,
                           5.0 / pixels_per_dbu_);
+    } else {
+      painter.drawLine(
+          QLine(QPoint(snap_edge_.first.x(), snap_edge_.first.y()),
+                QPoint(snap_edge_.second.x(), snap_edge_.second.y())));
     }
   }
 
@@ -2582,11 +2809,13 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
     return;
   }
 
-  const qreal pixels_per_mircon = pixels_per_dbu_ * block_->getDbUnitsPerMicron();
+  const qreal pixels_per_mircon
+      = pixels_per_dbu_ * block_->getDbUnitsPerMicron();
   const qreal window_width = rect.width() / pixels_per_mircon;
   const qreal target_width = 0.1 * window_width;
 
-  const qreal peg_width = std::pow(10.0, std::floor(std::log10(target_width))); // microns
+  const qreal peg_width
+      = std::pow(10.0, std::floor(std::log10(target_width)));  // microns
   int peg_incr = std::round(target_width / peg_width);
   const qreal bar_size = peg_incr * peg_width;
   if (peg_incr == 1) {
@@ -2594,7 +2823,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
     peg_incr = 10;
   }
 
-  const int bar_height = 10; // px
+  const int bar_height = 10;  // px
 
   int bar_width = bar_size * pixels_per_mircon;
 
@@ -2609,7 +2838,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
       unit_text = "mm";
     } else if (bar_size > 1) {
       scale_unit = 1;
-      unit_text = "\u03bcm"; // um
+      unit_text = "\u03bcm";  // um
     } else if (bar_size > 0.001) {
       scale_unit = 1000;
       unit_text = "nm";
@@ -2623,50 +2852,62 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
   painter->setPen(QPen(color, 2));
   painter->setBrush(Qt::transparent);
 
-  const QRectF scale_bar_outline(rect.left() + 10, rect.bottom() - 20, bar_width, bar_height);
+  const QRectF scale_bar_outline(
+      rect.left() + 10, rect.bottom() - 20, bar_width, bar_height);
 
   // draw base half bar shape |_|
-  painter->drawLine(scale_bar_outline.topLeft(), scale_bar_outline.bottomLeft());
-  painter->drawLine(scale_bar_outline.bottomLeft(), scale_bar_outline.bottomRight());
-  painter->drawLine(scale_bar_outline.bottomRight(), scale_bar_outline.topRight());
+  painter->drawLine(scale_bar_outline.topLeft(),
+                    scale_bar_outline.bottomLeft());
+  painter->drawLine(scale_bar_outline.bottomLeft(),
+                    scale_bar_outline.bottomRight());
+  painter->drawLine(scale_bar_outline.bottomRight(),
+                    scale_bar_outline.topRight());
 
   const QFontMetrics font_metric = painter->fontMetrics();
 
   const int text_px_offset = 2;
-  const int text_keep_out = font_metric.averageCharWidth(); // ensure text has approx one characters spacing
+  const int text_keep_out
+      = font_metric.averageCharWidth();  // ensure text has approx one
+                                         // characters spacing
 
   // draw total size over right size
-  const QString bar_text_end = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
+  const QString bar_text_end
+      = QString::number(static_cast<int>(bar_size * scale_unit)) + unit_text;
   const QRect end_box = font_metric.boundingRect(bar_text_end);
-  painter->drawText(
-      scale_bar_outline.topRight() - QPointF(end_box.center().x(), text_px_offset),
-      bar_text_end);
-  const qreal end_offset  = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
+  painter->drawText(scale_bar_outline.topRight()
+                        - QPointF(end_box.center().x(), text_px_offset),
+                    bar_text_end);
+  const qreal end_offset
+      = scale_bar_outline.right() - 0.5 * end_box.width() - text_keep_out;
 
   // draw "0" over left side
   const QRect zero_box = font_metric.boundingRect("0");
   // dont draw if the 0 is too close or overlapping with the right side text
   if (scale_bar_outline.left() + zero_box.center().x() < end_offset) {
-    painter->drawText(
-        scale_bar_outline.topLeft() - QPointF(zero_box.center().x(), text_px_offset),
-        "0");
+    painter->drawText(scale_bar_outline.topLeft()
+                          - QPointF(zero_box.center().x(), text_px_offset),
+                      "0");
   }
 
   // margin around 0 to avoid drawing first available increment
-  const qreal zero_offset = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
+  const qreal zero_offset
+      = scale_bar_outline.left() + 0.5 * zero_box.width() + text_keep_out;
   const qreal segment_width = static_cast<double>(bar_width) / peg_incr;
   const double peg_increment = bar_size / peg_incr;
-  bool middle_shown = false; // flag to indicate the middle tick marker has been drawn
+  bool middle_shown
+      = false;  // flag to indicate the middle tick marker has been drawn
 
   if (segment_width > 4) {
     // draw pegs, don't draw if they are basically overlapping
     for (int i = 1; i < peg_incr; i++) {
-      QPointF p1(scale_bar_outline.left() + i * segment_width, scale_bar_outline.bottom());
+      QPointF p1(scale_bar_outline.left() + i * segment_width,
+                 scale_bar_outline.bottom());
       QPointF p2 = p1 - QPointF(0, bar_height / 2);
 
       if (!middle_shown) {
         // only one peg increment
-        QString peg_text = QString::number(static_cast<int>(i * peg_increment * scale_unit));
+        QString peg_text
+            = QString::number(static_cast<int>(i * peg_increment * scale_unit));
         QRect peg_text_box = font_metric.boundingRect(peg_text);
 
         // check if text will fit next to "0"
@@ -2675,10 +2916,12 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
 
           // check to make sure there is room at the end
           if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
-            p2 = p1 - QPointF(0, 3 * bar_height / 4.0); // make this peg a little taller
-            painter->drawText(
-                QPointF(p2.x() - peg_text_box.center().x(), scale_bar_outline.top() - text_px_offset),
-                peg_text);
+            p2 = p1
+                 - QPointF(
+                     0, 3 * bar_height / 4.0);  // make this peg a little taller
+            painter->drawText(QPointF(p2.x() - peg_text_box.center().x(),
+                                      scale_bar_outline.top() - text_px_offset),
+                              peg_text);
           }
         }
       }
@@ -2773,8 +3016,12 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 
   // ensure changes in the scroll area are announced to the layout viewer
   connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
-  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(updateCenter(int, int)));
-  connect(scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(fullRepaint()));
+  connect(scroller_,
+          SIGNAL(centerChanged(int, int)),
+          this,
+          SLOT(updateCenter(int, int)));
+  connect(
+      scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(fullRepaint()));
 }
 
 void LayoutViewer::viewportUpdated()
@@ -2787,9 +3034,8 @@ void LayoutViewer::viewportUpdated()
   bool zoomed_in = fit_pixels_per_dbu_ < pixels_per_dbu_;
 
   // determine new fit_pixels_per_dbu_ based on current viewport size
-  fit_pixels_per_dbu_ = computePixelsPerDBU(
-      scroller_->maximumViewportSize(),
-      getPaddedRect(getBounds()));
+  fit_pixels_per_dbu_ = computePixelsPerDBU(scroller_->maximumViewportSize(),
+                                            getPaddedRect(getBounds()));
 
   // when zoomed in don't update size,
   // else update size of window
@@ -2798,7 +3044,9 @@ void LayoutViewer::viewportUpdated()
   }
 }
 
-void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double dbu_per_pixel)
+void LayoutViewer::saveImage(const QString& filepath,
+                             const Rect& region,
+                             double dbu_per_pixel)
 {
   if (!hasDesign()) {
     return;
@@ -2815,10 +3063,7 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
     images_filter += ")";
 
     save_filepath = QFileDialog::getSaveFileName(
-        this,
-        tr("Save Layout"),
-        "",
-        images_filter);
+        this, tr("Save Layout"), "", images_filter);
   } else {
     save_filepath = filepath;
   }
@@ -2828,14 +3073,17 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
   }
 
   // check for a valid extension, if not found add .png
-  if (!std::any_of(
-      valid_extensions.begin(),
-      valid_extensions.end(),
-      [save_filepath](const QString& ext) {
-        return save_filepath.endsWith("."+ext);
-      })) {
+  if (!std::any_of(valid_extensions.begin(),
+                   valid_extensions.end(),
+                   [save_filepath](const QString& ext) {
+                     return save_filepath.endsWith("." + ext);
+                   })) {
     save_filepath += ".png";
-    logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
+    logger_->warn(
+        utl::GUI,
+        10,
+        "File path does not end with a valid extension, new path is: {}",
+        save_filepath.toStdString());
   }
 
   Rect save_area = region;
@@ -2851,12 +3099,15 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
 
   // convert back to pixels based on new resolution
   const QRectF screen_region = dbuToScreen(save_area);
-  const QRegion save_region = QRegion(
-      screen_region.left(),  screen_region.top(),
-      screen_region.width(), screen_region.height());
+  const QRegion save_region = QRegion(screen_region.left(),
+                                      screen_region.top(),
+                                      screen_region.width(),
+                                      screen_region.height());
 
   const QRect bounding_rect = save_region.boundingRect();
-  QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
+  QImage img(bounding_rect.width(),
+             bounding_rect.height(),
+             QImage::Format_ARGB32_Premultiplied);
   if (!img.isNull()) {
     img.fill(background_);
     // need to remove cache to ensure image is correct
@@ -2866,13 +3117,20 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
 
     render(&img, {0, 0}, save_region);
     if (!img.save(save_filepath)) {
-      logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
+      logger_->warn(utl::GUI,
+                    11,
+                    "Failed to write image: {}",
+                    save_filepath.toStdString());
     }
     // restore cache
     block_drawing_ = std::move(saved_cache);
     last_paint_time_ = last_paint_time;
   } else {
-    logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
+    logger_->warn(utl::GUI,
+                  12,
+                  "Image is too big to be generated: {}px x {}px",
+                  bounding_rect.width(),
+                  bounding_rect.height());
   }
 
   pixels_per_dbu_ = old_pixels_per_dbu;
@@ -2913,14 +3171,17 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
 
   // Save actions
-  menu_actions_[SAVE_VISIBLE_IMAGE_ACT] = save_menu->addAction(tr("Visible layout"));
-  menu_actions_[SAVE_WHOLE_IMAGE_ACT] = save_menu->addAction(tr("Entire layout"));
+  menu_actions_[SAVE_VISIBLE_IMAGE_ACT]
+      = save_menu->addAction(tr("Visible layout"));
+  menu_actions_[SAVE_WHOLE_IMAGE_ACT]
+      = save_menu->addAction(tr("Entire layout"));
 
   // Clear Actions
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
+  menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2968,33 +3229,39 @@ void LayoutViewer::addMenuAndActions()
     fit();
   });
 
-  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
-    saveImage("");
-  });
-  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
-    const QSize whole_size = size();
-    saveImage("", screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
-  });
+  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { saveImage(""); });
+  connect(
+      menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
+        const QSize whole_size = size();
+        saveImage(
+            "",
+            screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
+      });
 
-  connect(
-      menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
-        Gui::get()->clearSelections();
-      });
-  connect(
-      menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, []() {
-        Gui::get()->clearHighlights(-1);
-      });
+  connect(menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearSelections();
+  });
+  connect(menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearHighlights(-1);
+  });
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearFocusNets();
   });
+  connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearRouteGuides();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
+    menu_actions_[CLEAR_GUIDES_ACT]->trigger();
   });
 }
 
@@ -3005,7 +3272,9 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
   if (block_ != nullptr) {
     const double dbu_per_micron = block_->getDbUnitsPerMicron();
 
-    cmds.push_back(fmt::format("gui::center_at {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
+    cmds.push_back(fmt::format("gui::center_at {} {}",
+                               center_.x() / dbu_per_micron,
+                               center_.y() / dbu_per_micron));
   }
 }
 
@@ -3032,10 +3301,25 @@ void LayoutViewer::addFocusNet(odb::dbNet* net)
   }
 }
 
+void LayoutViewer::addRouteGuides(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = route_guides_.insert(net);
+  if (inserted) {
+    fullRepaint();
+  }
+}
+
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeRouteGuides(odb::dbNet* net)
+{
+  if (route_guides_.erase(net) > 0) {
     fullRepaint();
   }
 }
@@ -3045,6 +3329,14 @@ void LayoutViewer::clearFocusNets()
   if (!focus_nets_.empty()) {
     focus_nets_.clear();
     emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearRouteGuides()
+{
+  if (!route_guides_.empty()) {
+    route_guides_.clear();
     fullRepaint();
   }
 }
@@ -3061,12 +3353,12 @@ bool LayoutViewer::isNetVisible(odb::dbNet* net)
 
 void LayoutViewer::setResetRepaintInterval()
 {
-  repaint_interval_ = 0; // no delay in repaints
+  repaint_interval_ = 0;  // no delay in repaints
 }
 
 void LayoutViewer::setLongRepaintInterval()
 {
-  repaint_interval_ = 1000; // wait one second before repainting layout
+  repaint_interval_ = 1000;  // wait one second before repainting layout
 }
 
 ////// LayoutScroll ///////
@@ -3090,7 +3382,8 @@ void LayoutScroll::scrollContentsBy(int dx, int dy)
   QScrollArea::scrollContentsBy(dx, dy);
   // announce the amount the viewport has changed by
   emit centerChanged(dx, dy);
-  // make sure the whole visible layout is updated, not just the newly visible part
+  // make sure the whole visible layout is updated, not just the newly visible
+  // part
   widget()->update();
 }
 
@@ -3102,14 +3395,15 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
     return;
   }
 
-  const odb::Point mouse_pos = viewer_->screenToDBU(viewer_->mapFromGlobal(QCursor::pos()));
+  const odb::Point mouse_pos
+      = viewer_->screenToDBU(viewer_->mapFromGlobal(QCursor::pos()));
   if (event->angleDelta().y() > 0) {
     viewer_->zoomIn(mouse_pos, true);
   } else {
     viewer_->zoomOut(mouse_pos, true);
   }
-  // ensure changes are processed before the next wheel event to prevent zoomIn and Out
-  // from jumping around on the ScrollBars
+  // ensure changes are processed before the next wheel event to prevent zoomIn
+  // and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
@@ -3132,7 +3426,9 @@ void LayoutViewer::generateCutLayerMaximumSizes()
         for (auto via : tech->getVias()) {
           for (auto box : via->getBoxes()) {
             if (box->getTechLayer() == layer) {
-              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+              width = std::max(
+                  width,
+                  static_cast<int>(std::max(box->getDX(), box->getDY())));
             }
           }
         }
@@ -3148,7 +3444,9 @@ void LayoutViewer::generateCutLayerMaximumSizes()
             for (dbMPin* pin : term->getMPins()) {
               for (dbBox* box : pin->getGeometry()) {
                 if (box->getTechLayer() == layer) {
-                  width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+                  width = std::max(
+                      width,
+                      static_cast<int>(std::max(box->getDX(), box->getDY())));
                 }
               }
             }
@@ -3156,7 +3454,9 @@ void LayoutViewer::generateCutLayerMaximumSizes()
 
           for (dbBox* box : master->getObstructions()) {
             if (box->getTechLayer() == layer) {
-              width = std::max(width, static_cast<int>(std::max(box->getDX(), box->getDY())));
+              width = std::max(
+                  width,
+                  static_cast<int>(std::max(box->getDX(), box->getDY())));
             }
           }
         }

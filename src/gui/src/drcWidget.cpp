@@ -40,8 +40,8 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
-#include <boost/property_tree/json_parser.hpp>
 #include <array>
+#include <boost/property_tree/json_parser.hpp>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -123,8 +123,9 @@ void DRCViolation::paint(Painter& painter)
 
 ///////
 
-DRCDescriptor::DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
-    violations_(violations)
+DRCDescriptor::DRCDescriptor(
+    const std::vector<std::unique_ptr<DRCViolation>>& violations)
+    : violations_(violations)
 {
 }
 
@@ -264,10 +265,11 @@ DRCWidget::DRCWidget(QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(clicked(const QModelIndex&)));
-  connect(view_->selectionModel(),
-          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-          this,
-          SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+  connect(
+      view_->selectionModel(),
+      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+      this,
+      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
 
   Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
@@ -285,13 +287,15 @@ void DRCWidget::selectReport()
       this,
       tr("DRC Report"),
       QString(),
-      tr("DRC Report (*.rpt *.drc *.json);;TritonRoute Report (*.rpt *.drc);;JSON (*.json);;All (*)"));
+      tr("DRC Report (*.rpt *.drc *.json);;TritonRoute Report (*.rpt "
+         "*.drc);;JSON (*.json);;All (*)"));
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
 }
 
-void DRCWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+void DRCWidget::selectionChanged(const QItemSelection& selected,
+                                 const QItemSelection& deselected)
 {
   auto indexes = selected.indexes();
   if (indexes.isEmpty()) {
@@ -455,8 +459,11 @@ void DRCWidget::loadTRReport(const QString& filename)
     if (std::regex_match(line, base_match, violation_type)) {
       type = base_match[1].str();
     } else {
-      logger_->error(
-          utl::GUI, 45, "Unable to parse line as violation type (line: {}): {}", line_number, line);
+      logger_->error(utl::GUI,
+                     45,
+                     "Unable to parse line as violation type (line: {}): {}",
+                     line_number,
+                     line);
     }
 
     // sources of violation
@@ -467,8 +474,11 @@ void DRCWidget::loadTRReport(const QString& filename)
     if (std::regex_match(line, base_match, srcs)) {
       sources = base_match[1].str();
     } else {
-      logger_->error(
-          utl::GUI, 46, "Unable to parse line as violation source (line: {}): {}", line_number, line);
+      logger_->error(utl::GUI,
+                     46,
+                     "Unable to parse line as violation source (line: {}): {}",
+                     line_number,
+                     line);
     }
 
     line_number++;
@@ -476,14 +486,21 @@ void DRCWidget::loadTRReport(const QString& filename)
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
       logger_->error(
-          utl::GUI, 47, "Unable to parse line as violation location (line: {}): {}", line_number, line);
+          utl::GUI,
+          47,
+          "Unable to parse line as violation location (line: {}): {}",
+          line_number,
+          line);
     }
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
     if (layer == nullptr) {
-      logger_->warn(
-          utl::GUI, 40, "Unable to find tech layer (line: {}): {}", line_number, base_match[2].str());
+      logger_->warn(utl::GUI,
+                    40,
+                    "Unable to find tech layer (line: {}): {}",
+                    line_number,
+                    base_match[2].str());
     }
 
     odb::Rect rect;
@@ -498,12 +515,24 @@ void DRCWidget::loadTRReport(const QString& filename)
         rect.set_yhi(std::stod(base_match[4].str())
                      * block_->getDbUnitsPerMicron());
       } catch (std::invalid_argument&) {
-        logger_->error(utl::GUI, 48, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
+        logger_->error(utl::GUI,
+                       48,
+                       "Unable to parse bounding box (line: {}): {}",
+                       line_number,
+                       bbox);
       } catch (std::out_of_range&) {
-        logger_->error(utl::GUI, 49, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
+        logger_->error(utl::GUI,
+                       49,
+                       "Unable to parse bounding box (line: {}): {}",
+                       line_number,
+                       bbox);
       }
     } else {
-      logger_->error(utl::GUI, 50, "Unable to parse bounding box (line: {}): {}", line_number, bbox);
+      logger_->error(utl::GUI,
+                     50,
+                     "Unable to parse bounding box (line: {}): {}",
+                     line_number,
+                     bbox);
     }
 
     std::vector<std::any> srcs_list;
@@ -528,28 +557,44 @@ void DRCWidget::loadTRReport(const QString& filename)
         if (net != nullptr) {
           item = net;
         } else {
-          logger_->warn(utl::GUI, 44, "Unable to find net (line: {}): {}", source_line_number, item_name);
+          logger_->warn(utl::GUI,
+                        44,
+                        "Unable to find net (line: {}): {}",
+                        source_line_number,
+                        item_name);
         }
       } else if (item_type == "inst") {
         odb::dbInst* inst = block_->findInst(item_name.c_str());
         if (inst != nullptr) {
           item = inst;
         } else {
-          logger_->warn(utl::GUI, 43, "Unable to find instance (line: {}): {}", source_line_number, item_name);
+          logger_->warn(utl::GUI,
+                        43,
+                        "Unable to find instance (line: {}): {}",
+                        source_line_number,
+                        item_name);
         }
       } else if (item_type == "iterm") {
         odb::dbITerm* iterm = block_->findITerm(item_name.c_str());
         if (iterm != nullptr) {
           item = iterm;
         } else {
-          logger_->warn(utl::GUI, 42, "Unable to find iterm (line: {}): {}", source_line_number, item_name);
+          logger_->warn(utl::GUI,
+                        42,
+                        "Unable to find iterm (line: {}): {}",
+                        source_line_number,
+                        item_name);
         }
       } else if (item_type == "bterm") {
         odb::dbBTerm* bterm = block_->findBTerm(item_name.c_str());
         if (bterm != nullptr) {
           item = bterm;
         } else {
-          logger_->warn(utl::GUI, 41, "Unable to find bterm (line: {}): {}", source_line_number, item_name);
+          logger_->warn(utl::GUI,
+                        41,
+                        "Unable to find bterm (line: {}): {}",
+                        source_line_number,
+                        item_name);
         }
       } else if (item_type == "obstruction") {
         bool found = false;
@@ -557,8 +602,7 @@ void DRCWidget::loadTRReport(const QString& filename)
           for (const auto obs : block_->getObstructions()) {
             auto obs_bbox = obs->getBBox();
             if (obs_bbox->getTechLayer() == layer) {
-              odb::Rect obs_rect;
-              obs_bbox->getBox(obs_rect);
+              odb::Rect obs_rect = obs_bbox->getBox();
               if (obs_rect.intersects(rect)) {
                 srcs_list.push_back(obs);
                 found = true;
@@ -567,10 +611,17 @@ void DRCWidget::loadTRReport(const QString& filename)
           }
         }
         if (!found) {
-          logger_->warn(utl::GUI, 52, "Unable to find obstruction (line: {})", source_line_number);
+          logger_->warn(utl::GUI,
+                        52,
+                        "Unable to find obstruction (line: {})",
+                        source_line_number);
         }
       } else {
-        logger_->warn(utl::GUI, 51, "Unknown source type (line: {}): {}", source_line_number, item_type);
+        logger_->warn(utl::GUI,
+                      51,
+                      "Unknown source type (line: {}): {}",
+                      source_line_number,
+                      item_type);
       }
 
       if (item.has_value()) {
@@ -603,9 +654,12 @@ void DRCWidget::loadJSONReport(const QString& filename)
   boost::property_tree::ptree tree;
   try {
     boost::property_tree::json_parser::read_json(filename.toStdString(), tree);
-  }
-  catch (const boost::property_tree::json_parser_error& e1) {
-    logger_->error(utl::GUI, 55, "Unable to parse JSON file {}: {}", filename.toStdString(), e1.what());
+  } catch (const boost::property_tree::json_parser_error& e1) {
+    logger_->error(utl::GUI,
+                   55,
+                   "Unable to parse JSON file {}: {}",
+                   filename.toStdString(),
+                   e1.what());
   }
 
   for (const auto& rule : tree.get_child("DRC")) {
@@ -614,45 +668,45 @@ void DRCWidget::loadJSONReport(const QString& filename)
     const std::string violation_type = drc_rule.get<std::string>("name");
     const std::string violation_text = drc_rule.get<std::string>("description");
 
-    int  i = 0;
+    int i = 0;
     for (const auto& violation_shape : drc_rule.get_child("violations")) {
       auto& shape = violation_shape.second;
 
       std::vector<odb::Point> shape_points;
       for (const auto& shape_pt : shape.get_child("shape")) {
         auto& pt = shape_pt.second;
-        shape_points.push_back(odb::Point(
-            pt.get<double>("x") * block_->getDbUnitsPerMicron(),
-            pt.get<double>("y") * block_->getDbUnitsPerMicron()));
+        shape_points.push_back(
+            odb::Point(pt.get<double>("x") * block_->getDbUnitsPerMicron(),
+                       pt.get<double>("y") * block_->getDbUnitsPerMicron()));
       }
 
       std::vector<DRCViolation::DRCShape> shapes;
       const std::string shape_type = shape.get<std::string>("type");
       if (shape_type == "box") {
-        shapes.push_back(DRCViolation::DRCRect(shape_points[0], shape_points[1]));
+        shapes.push_back(
+            DRCViolation::DRCRect(shape_points[0], shape_points[1]));
       } else if (shape_type == "edge") {
-        shapes.push_back(DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+        shapes.push_back(
+            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
       } else if (shape_type == "polygon") {
         shapes.push_back(DRCViolation::DRCPoly(shape_points));
       } else {
-        logger_->error(utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
+        logger_->error(
+            utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
       }
 
       std::string name = violation_type + " - " + std::to_string(++i);
       violations_.push_back(std::make_unique<DRCViolation>(
-          name,
-          violation_type,
-          shapes,
-          violation_text,
-          0));
+          name, violation_type, shapes, violation_text, 0));
     }
   }
 }
 
 ////////
 
-DRCRenderer::DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
-    violations_(violations)
+DRCRenderer::DRCRenderer(
+    const std::vector<std::unique_ptr<DRCViolation>>& violations)
+    : violations_(violations)
 {
 }
 
@@ -677,7 +731,8 @@ void DRCRenderer::drawObjects(Painter& painter)
   }
 }
 
-SelectionSet DRCRenderer::select(odb::dbTechLayer* layer, const odb::Rect& region)
+SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
+                                 const odb::Rect& region)
 {
   if (layer != nullptr) {
     return SelectionSet();

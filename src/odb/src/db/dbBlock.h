@@ -91,6 +91,7 @@ class _dbModule;
 class _dbModInst;
 class _dbGroup;
 class _dbAccessPoint;
+class _dbGuide;
 class dbJournal;
 
 class dbNetBTermItr;
@@ -119,6 +120,7 @@ class dbOStream;
 class dbDiff;
 class dbBlockSearch;
 class dbBlockCallBackObj;
+class dbGuideItr;
 
 struct _dbBTermPin
 {
@@ -212,6 +214,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbModInst>* _modinst_tbl;
   dbTable<_dbGroup>* _group_tbl;
   dbTable<_dbAccessPoint>* ap_tbl_;
+  dbTable<_dbGuide>* _guide_tbl;
   _dbNameCache* _name_cache;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
@@ -237,6 +240,7 @@ class _dbBlock : public _dbObject
   dbModuleModInstItr* _module_modinst_itr;
   dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
+  dbGuideItr* _guide_itr;
   dbGroupInstItr* _group_inst_itr;
   dbGroupModInstItr* _group_modinst_itr;
   dbGroupPowerNetItr* _group_power_net_itr;

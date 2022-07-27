@@ -275,7 +275,7 @@ void
 Resizer::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0
                    && core_.xMax() == 0
                    && core_.yMin() == 0
@@ -643,7 +643,8 @@ Resizer::driveResistance(const Pin *drvr_pin)
             float res;
             bool exists;
             drive->driveResistance(rf, min_max, res, exists);
-            max_res = max(max_res, res);
+            if (exists)
+              max_res = max(max_res, res);
           }
         }
       }
@@ -726,7 +727,9 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 {
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
-  if (cell) {
+  if (!network_->isTopLevelPort(drvr_pin)
+      && cell
+      && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.hasKey(inst);
@@ -751,6 +754,13 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
     }
   }
   return 0;
+}
+
+bool
+Resizer::isLogicStdCell(const Instance *inst)
+{
+  return !db_network_->isTopInstance(inst)
+    && db_network_->staToDb(inst)->getMaster()->getType() == odb::dbMasterType::CORE;
 }
 
 LibertyCell *
@@ -2348,7 +2358,7 @@ Resizer::maxInputSlew(const LibertyPort *input,
   bool exists;
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
   // umich brain damage control
-  if (limit == 0.0)
+  if (!exists || limit == 0.0)
     limit = INF;
   return limit;
 }

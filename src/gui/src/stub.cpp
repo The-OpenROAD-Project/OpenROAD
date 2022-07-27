@@ -42,23 +42,26 @@ namespace gui {
 Gui* Gui::singleton_ = nullptr;
 
 // Used by toString to convert dbu to microns
-DBUToString Descriptor::Property::convert_dbu = [](int value, bool) { return std::to_string(value); };
-StringToDBU Descriptor::Property::convert_string = [](const std::string& value, bool*) { return 0; };
+DBUToString Descriptor::Property::convert_dbu
+    = [](int value, bool) { return std::to_string(value); };
+StringToDBU Descriptor::Property::convert_string
+    = [](const std::string& value, bool*) { return 0; };
 
 // empty heat map class
 class PlacementDensityDataSource
 {
  public:
-   PlacementDensityDataSource() {}
-   ~PlacementDensityDataSource() {}
+  PlacementDensityDataSource() {}
+  ~PlacementDensityDataSource() {}
 };
 
 ////
 
-Gui::Gui() : continue_after_close_(false),
-             logger_(nullptr),
-             db_(nullptr),
-             placement_density_heat_map_(nullptr)
+Gui::Gui()
+    : continue_after_close_(false),
+      logger_(nullptr),
+      db_(nullptr),
+      placement_density_heat_map_(nullptr)
 {
 }
 
@@ -69,7 +72,7 @@ Gui* gui::Gui::get()
 
 bool gui::Gui::enabled()
 {
-   return false;
+  return false;
 }
 
 void gui::Gui::registerRenderer(gui::Renderer*)
@@ -104,8 +107,7 @@ Renderer::~Renderer()
 {
 }
 
-SpectrumGenerator::SpectrumGenerator(double scale) :
-    scale_(scale)
+SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
 {
 }
 
@@ -114,10 +116,11 @@ bool Renderer::checkDisplayControl(const std::string& /* name */)
   return false;
 }
 
-void Renderer::addDisplayControl(const std::string& /* name */,
-                                 bool /* initial_visible */,
-                                 const DisplayControlCallback& /* setup */,
-                                 const std::vector<std::string>& /* mutual_exclusivity */)
+void Renderer::addDisplayControl(
+    const std::string& /* name */,
+    bool /* initial_visible */,
+    const DisplayControlCallback& /* setup */,
+    const std::vector<std::string>& /* mutual_exclusivity */)
 {
 }
 
@@ -140,7 +143,7 @@ void Gui::setSelected(Selected selection)
 }
 
 void Gui::registerDescriptor(const std::type_info& type,
-                        const Descriptor* descriptor)
+                             const Descriptor* descriptor)
 {
 }
 
@@ -163,7 +166,11 @@ std::string Descriptor::Property::toString(const std::any& /* value */)
 }
 
 // using namespace odb;
-int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc,
+             char* argv[],
+             Tcl_Interp* interp,
+             const std::string& script,
+             bool interactive)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

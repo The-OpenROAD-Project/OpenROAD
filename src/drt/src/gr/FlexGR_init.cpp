@@ -98,9 +98,8 @@ void FlexGR::initLayerPitch()
     frCoord minLine2ViaPitch = -1;
 
     if (downVia) {
-      Rect viaBox;
       frVia via(downVia);
-      via.getLayer2BBox(viaBox);
+      Rect viaBox = via.getLayer2BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -142,9 +141,8 @@ void FlexGR::initLayerPitch()
     }
 
     if (upVia) {
-      Rect viaBox;
       frVia via(upVia);
-      via.getLayer1BBox(viaBox);
+      Rect viaBox = via.getLayer1BBox();
       frCoord enclosureWidth = viaBox.minDXDY();
       frCoord prl = isLayerHorz ? (viaBox.xMax() - viaBox.xMin())
                                 : (viaBox.yMax() - viaBox.yMin());
@@ -227,8 +225,7 @@ void FlexGR::initGCell()
          << "Generating GCell with size = 15 tracks, using layer "
          << layer->getName() << " pitch  = "
          << pitch / (double) (design_->getTopBlock()->getDBUPerUU()) << "\n";
-    Rect dieBox;
-    design_->getTopBlock()->getDieBox(dieBox);
+    Rect dieBox = design_->getTopBlock()->getDieBox();
 
     frGCellPattern xgp, ygp;
     // set xgp
@@ -289,8 +286,7 @@ void FlexGRWorker::initBoundary()
 // split pathSeg at boudnary
 void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 {
-  Point bp, ep;
-  pathSeg->getPoints(bp, ep);
+  auto [bp, ep] = pathSeg->getPoints();
   // skip if both endpoints are inside extBox (i.e., no intersection)
   if (extBox_.intersects(bp) && extBox_.intersects(ep)) {
     return;
@@ -374,8 +370,7 @@ frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
   auto pathSeg = static_cast<grPathSeg*>(child->getConnFig());
   auto net = pathSeg->getNet();
   auto lNum = pathSeg->getLayerNum();
-  Point bp, ep;
-  pathSeg->getPoints(bp, ep);
+  auto [bp, ep] = pathSeg->getPoints();
   Point childLoc = child->getLoc();
   bool isChildBP = (childLoc == bp);
 
@@ -940,10 +935,9 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
     if (node->getLayerNum() == node->getParent()->getLayerNum()) {
       // pathSeg
       auto parent = node->getParent();
-      Point childLoc, parentLoc;
+      Point childLoc = node->getLoc();
+      Point parentLoc = parent->getLoc();
       Point bp, ep;
-      node->getLoc(childLoc);
-      parent->getLoc(parentLoc);
       if (childLoc < parentLoc) {
         bp = childLoc;
         ep = parentLoc;
@@ -968,9 +962,8 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
     } else {
       // via
       auto parent = node->getParent();
-      Point loc;
       frLayerNum beginLayerNum, endLayerNum;
-      node->getLoc(loc);
+      Point loc = node->getLoc();
       beginLayerNum = node->getLayerNum();
       endLayerNum = parent->getLayerNum();
 

@@ -67,6 +67,9 @@ using sta::INF;
 
 using utl::RSZ;
 
+static const char *
+to_string(BufferedNetType type);
+
 ////////////////////////////////////////////////////////////////
 
 // load
@@ -74,16 +77,19 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          Pin *load_pin,
                          const Corner *corner,
-                         const Resizer *resizer) :
-  type_(type),
-  location_(location),
-  load_pin_(load_pin),
-  buffer_cell_(nullptr),
-  layer_(null_layer),
-  ref_(nullptr),
-  ref2_(nullptr),
-  required_delay_(0.0)
+                         const Resizer *resizer)
 {
+  if (type != BufferedNetType::load)
+    resizer->logger()->critical(RSZ, 78, "incorrect BufferedNet type {}",
+                                rsz::to_string(type));
+  type_ = BufferedNetType::load;
+  location_ = location;
+  load_pin_ = load_pin;
+  buffer_cell_ = nullptr;
+  layer_ = null_layer;
+  ref_ = nullptr;
+  ref2_ = nullptr;
+
   LibertyPort *load_port = resizer->network()->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
@@ -95,25 +101,35 @@ BufferedNet::BufferedNet(BufferedNetType type,
     fanout_ = 1;
     max_load_slew_ = INF;
   }
+
+  required_path_.init();
+  required_delay_ = 0.0;
 }
 
 // junc
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          BufferedNetPtr ref,
-                         BufferedNetPtr ref2) :
-  type_(type),
-  location_(location),
-  cap_(ref->cap() + ref2->cap()),
-  fanout_(ref->fanout() + ref2->fanout()),
-  max_load_slew_(min(ref->maxLoadSlew(), ref2->maxLoadSlew())),
-  load_pin_(nullptr),
-  buffer_cell_(nullptr),
-  layer_(null_layer),
-  ref_(ref),
-  ref2_(ref2),
-  required_delay_(0.0)
+                         BufferedNetPtr ref2,
+                         const Resizer *resizer)
 {
+  if (type != BufferedNetType::junction)
+    resizer->logger()->critical(RSZ, 79, "incorrect BufferedNet type {}",
+                                rsz::to_string(type));
+  type_ = BufferedNetType::junction;
+  location_ = location;
+  load_pin_ = nullptr;
+  buffer_cell_ = nullptr;
+  layer_ = null_layer;
+  ref_ = ref;
+  ref2_ = ref2;
+
+  cap_ = ref->cap() + ref2->cap();
+  fanout_ = ref->fanout() + ref2->fanout();
+  max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
+
+  required_path_.init();
+  required_delay_ = 0.0;
 }
   
 // wire
@@ -122,21 +138,27 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          int layer,
                          BufferedNetPtr ref,
                          const Corner *corner,
-                         const Resizer *resizer)  :
-  type_(type),
-  location_(location),
-  fanout_(ref->fanout()),
-  max_load_slew_(ref->maxLoadSlew()),
-  load_pin_(nullptr),
-  buffer_cell_(nullptr),
-  layer_(layer),
-  ref_(ref),
-  ref2_(nullptr),
-  required_delay_(0.0)
+                         const Resizer *resizer)
 {
+  if (type != BufferedNetType::wire)
+    resizer->logger()->critical(RSZ, 80, "incorrect BufferedNet type {}",
+                                rsz::to_string(type));
+  type_ = BufferedNetType::wire;
+  location_= location;
+  load_pin_ = nullptr;
+  buffer_cell_ = nullptr;
+  layer_ =  layer;
+  ref_ = ref;
+  ref2_ = nullptr;
+
   double wire_res, wire_cap;
   wireRC(corner, resizer, wire_res, wire_cap);
   cap_ = ref->cap() + resizer->dbuToMeters(length()) * wire_cap;
+  fanout_ = ref->fanout();
+  max_load_slew_ = ref->maxLoadSlew();
+
+  required_path_.init();
+  required_delay_ = 0.0;
 }
 
 // buffer
@@ -145,21 +167,27 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          LibertyCell *buffer_cell,
                          BufferedNetPtr ref,
                          const Corner *corner,
-                         const Resizer *resizer)  :
-  type_(type),
-  location_(location),
-  load_pin_(nullptr),
-  buffer_cell_(buffer_cell),
-  layer_(null_layer),
-  ref_(ref),
-  ref2_(nullptr),
-  required_delay_(0.0)
+                         const Resizer *resizer)
 {
+  if (type != BufferedNetType::buffer)
+    resizer->logger()->critical(RSZ, 81, "incorrect BufferedNet type {}",
+                                rsz::to_string(type));
+  type_ = BufferedNetType::buffer;
+  location_ = location;
+  load_pin_ = nullptr;
+  buffer_cell_ = buffer_cell;
+  layer_ = null_layer;
+  ref_ = ref;
+  ref2_ = nullptr;
+
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   cap_ = resizer->portCapacitance(input, corner);
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
+
+  required_path_.init();
+  required_delay_ = 0.0;
 }
 
 void
@@ -310,10 +338,28 @@ BufferedNet::wireRC(const Corner *corner,
                     double &res,
                     double &cap)
 {
+  if (type_ != BufferedNetType::wire)
+    resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   if (layer_ == BufferedNet::null_layer)
     resizer->wireSignalRC(corner, res, cap);
   else
     resizer->layerRC(layer_, corner, res, cap);
+}
+
+static const char *
+to_string(BufferedNetType type)
+{
+  switch (type) {
+  case BufferedNetType::load:
+    return "load";
+  case BufferedNetType::junction:
+    return "junction";
+  case BufferedNetType::wire:
+    return "wire";
+  case BufferedNetType::buffer:
+    return "buffer";
+  }
+  return "??";
 }
 
 ////////////////////////////////////////////////////////////////
@@ -400,7 +446,7 @@ makeBufferedNet(SteinerTree *tree,
           if (bnet)
             bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                             tree->location(to),
-                                            bnet, bnet1);
+                                            bnet, bnet1, resizer);
           else
             bnet = bnet1;
         }
@@ -417,7 +463,7 @@ makeBufferedNet(SteinerTree *tree,
         if (bnet)
           bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                           tree->location(to),
-                                          bnet, bnet1);
+                                          bnet, bnet1, resizer);
         else
           bnet = bnet1;
       }
@@ -591,7 +637,7 @@ makeBufferedNet(RoutePt &from,
                  "", level, load_bnet->to_string(resizer));
       if (bnet)
         bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        to_pt, bnet, load_bnet);
+                                        to_pt, bnet, load_bnet, resizer);
       else
         bnet = load_bnet;
     }
@@ -604,7 +650,7 @@ makeBufferedNet(RoutePt &from,
                                              db_network);
       if (bnet)
         bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        to_pt, bnet, bnet1);
+                                        to_pt, bnet, bnet1, resizer);
       else
         bnet = bnet1;
     }

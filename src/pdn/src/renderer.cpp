@@ -75,6 +75,17 @@ void PDNRenderer::update()
   repair_.clear();
 
   for (const auto& domain : pdn_->getDomains()) {
+    for (auto* net : domain->getBlock()->getNets()) {
+      ShapeTreeMap net_shapes;
+      Shape::populateMapFromDb(net, net_shapes);
+      for (const auto& [layer, net_obs_layer] : net_shapes) {
+        auto& obs_layer = grid_obstructions_[layer];
+        for (const auto& [box, shape] : net_obs_layer) {
+          obs_layer.insert({shape->getObstructionBox(), shape});
+        }
+      }
+    }
+
     for (const auto& grid : domain->getGrids()) {
       grid->getGridLevelObstructions(grid_obstructions_);
 

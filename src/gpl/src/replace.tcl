@@ -57,7 +57,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
-    [-verbose_level level]\
 }
 
 proc global_placement { args } {
@@ -74,8 +73,7 @@ proc global_placement { args } {
       -routability_max_inflation_ratio \
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
-      -pad_left -pad_right \
-      -verbose_level} \
+      -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
       -timing_driven \
@@ -269,13 +267,6 @@ proc global_placement { args } {
     gpl::set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
 
-  if { [info exists keys(-verbose_level)] } {
-    set verbose_level $keys(-verbose_level)
-    sta::check_positive_integer "-verbose_level" $verbose_level
-    gpl::set_verbose_level_cmd $verbose_level
-  } 
-
-
   # temp code. 
   if { [info exists keys(-pad_left)] } {
     set pad_left $keys(-pad_left)
@@ -348,7 +339,6 @@ proc get_global_placement_uniform_density { args } {
   gpl::set_initial_place_max_iter_cmd 0
   gpl::set_routability_driven_mode 0
   gpl::set_timing_driven_mode 0
-  gpl::set_verbose_level 0
 
   
   # pad setting

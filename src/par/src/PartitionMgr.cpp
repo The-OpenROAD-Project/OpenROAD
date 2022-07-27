@@ -498,10 +498,7 @@ void PartitionMgr::runMlPart()
               .count();
 
     currentResults.addAssignment(clusters, runtime, seed);
-    logger_->info(PAR,
-                  59,
-                  "[MLPart] Partitioned graph for seed {}.",
-                  seed);
+    logger_->info(PAR, 59, "[MLPart] Partitioned graph for seed {}.", seed);
 
     std::fill(clusters.begin(), clusters.end(), 0);
   }
@@ -1265,7 +1262,9 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
 
 // Read partitioning input file
 
-unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const std::string& instance_map_file)
+unsigned PartitionMgr::readPartitioningFile(
+    const std::string& filename,
+    const std::string& instance_map_file)
 {
   hypergraph();
   PartSolutions currentResults;
@@ -1311,9 +1310,19 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
       try {
         inst_partitions.push_back(std::stoi(line));
       } catch (const std::invalid_argument&) {
-        logger_->error(PAR, 71, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
+        logger_->error(
+            PAR,
+            71,
+            "Unable to convert line \"{}\" to an integer in file: {}",
+            line,
+            filename);
       } catch (const std::out_of_range&) {
-        logger_->error(PAR, 72, "Unable to convert line \"{}\" to an integer in file: {}", line, filename);
+        logger_->error(
+            PAR,
+            72,
+            "Unable to convert line \"{}\" to an integer in file: {}",
+            line,
+            filename);
       }
     }
     file.close();
@@ -1322,9 +1331,12 @@ unsigned PartitionMgr::readPartitioningFile(const std::string& filename, const s
   }
 
   if (inst_partitions.size() != instance_order.size()) {
-    logger_->error(PAR, 74, "Instances in partitioning ({}) does not match instances in netlist ({}).",
-        inst_partitions.size(),
-        instance_order.size());
+    logger_->error(PAR,
+                   74,
+                   "Instances in partitioning ({}) does not match instances in "
+                   "netlist ({}).",
+                   inst_partitions.size(),
+                   instance_order.size());
   }
 
   std::vector<unsigned long> partitions(inst_partitions.size());
@@ -1380,7 +1392,8 @@ void PartitionMgr::reportGraph()
   hypergraph();
   toGraph();
   logger_->info(PAR, 67, "Number of Nodes: {}", graph_->getNumVertex());
-  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
+  logger_->info(
+      PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
 }
 
 void PartitionMgr::partitionDesign(unsigned int max_num_macro,
@@ -1394,7 +1407,11 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int timing_weight,
                                    bool std_cell_timing_flag,
                                    const char* report_directory,
-                                   const char* file_name)
+                                   const char* file_name,
+                                   float keepin_lx,
+                                   float keepin_ly,
+                                   float keepin_ux,
+                                   float keepin_uy)
 {
   auto clusterer
       = std::make_unique<AutoClusterMgr>(db_network_, db_, _sta, logger_);
@@ -1409,7 +1426,11 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              timing_weight,
                              std_cell_timing_flag,
                              report_directory,
-                             file_name);
+                             file_name,
+                             keepin_lx,
+                             keepin_ly,
+                             keepin_ux,
+                             keepin_uy);
 }
 
 }  // namespace par

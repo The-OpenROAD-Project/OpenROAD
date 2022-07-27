@@ -1,7 +1,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: region_adjustment.def
 [INFO ODB-0128] Design: top
@@ -35,7 +35,7 @@ Adjusting region on layer metal2
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal       2940          2739          6.84%
+metal1     Horizontal       2940          2741          6.77%
 metal2     Vertical         2156          1343          37.71%
 metal3     Horizontal       2940          2756          6.26%
 metal4     Vertical         1372          1287          6.20%
@@ -56,7 +56,7 @@ metal10    Vertical          196           169          13.78%
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1            2739            15            0.55%             0 /  0 /  0
+metal1            2741            15            0.55%             0 /  0 /  0
 metal2            1343             4            0.30%             0 /  0 /  0
 metal3            2756            12            0.44%             0 /  0 /  0
 metal4            1287            15            1.17%             0 /  0 /  0
@@ -67,7 +67,7 @@ metal8             364             0            0.00%             0 /  0 /  0
 metal9             169             0            0.00%             0 /  0 /  0
 metal10            169             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            11765            46            0.39%             0 /  0 /  0
+Total            11767            46            0.39%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 168 um
 [INFO GRT-0014] Routed nets: 10

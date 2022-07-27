@@ -145,13 +145,6 @@ replace_incremental_place_cmd()
 }
 
 void
-set_verbose_level_cmd(int verbose)
-{
-  Replace* replace = getReplace();
-  replace->setVerboseLevel(verbose);
-}
-
-void
 set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();

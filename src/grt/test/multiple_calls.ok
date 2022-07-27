@@ -1,7 +1,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: multiple_calls.def
 [INFO ODB-0128] Design: gcd
@@ -34,7 +34,7 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33840         32066          5.24%
+metal1     Horizontal      33840         32148          5.00%
 metal2     Vertical        24816         24581          0.95%
 metal3     Horizontal      33840         33028          2.40%
 metal4     Vertical        15792         15698          0.60%
@@ -55,7 +55,7 @@ metal10    Vertical         2256          2209          2.08%
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           32066           346            1.08%             0 /  0 /  0
+metal1           32148           346            1.08%             0 /  0 /  0
 metal2           24581           310            1.26%             0 /  0 /  0
 metal3           33028             0            0.00%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
@@ -66,7 +66,7 @@ metal8            4512             0            0.00%             0 /  0 /  0
 metal9            2162             0            0.00%             0 /  0 /  0
 metal10           2209             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           149734           656            0.44%             0 /  0 /  0
+Total           149816           656            0.44%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2333 um
 [INFO GRT-0014] Routed nets: 87
@@ -95,7 +95,7 @@ Total           149734           656            0.44%             0 /  0 /  0
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33840          4899          85.52%
+metal1     Horizontal      33840          4910          85.49%
 metal2     Vertical        24816          5123          79.36%
 metal3     Horizontal      33840          4968          85.32%
 metal4     Vertical        15792          2726          82.74%
@@ -116,7 +116,7 @@ metal10    Vertical         2256            47          97.92%
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1            4899           321            6.55%             0 /  0 /  0
+metal1            4910           321            6.54%             0 /  0 /  0
 metal2            5123           306            5.97%             0 /  0 /  0
 metal3            4968            24            0.48%             0 /  0 /  0
 metal4            2726             5            0.18%             0 /  0 /  0
@@ -127,7 +127,7 @@ metal8             188             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10             47             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            23161           656            2.83%             0 /  0 /  0
+Total            23172           656            2.83%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2352 um
 [INFO GRT-0014] Routed nets: 87

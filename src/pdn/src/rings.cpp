@@ -78,10 +78,8 @@ void Rings::setOffset(const std::array<int, 4>& offset)
 
 void Rings::setPadOffset(const std::array<int, 4>& offset)
 {
-  odb::Rect die_area;
-  getBlock()->getDieArea(die_area);
-  odb::Rect core;
-  getBlock()->getCoreArea(core);
+  odb::Rect die_area = getBlock()->getDieArea();
+  odb::Rect core = getBlock()->getCoreArea();
 
   odb::Rect pads_inner = die_area;
 
@@ -101,8 +99,7 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
       continue;
     }
 
-    odb::Rect box;
-    inst->getBBox()->getBox(box);
+    odb::Rect box = inst->getBBox()->getBox();
 
     const bool is_ns_with_core
         = box.xMin() >= core.xMin() && box.xMax() <= core.xMax();
@@ -130,7 +127,7 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
                       105,
                       "Unable to determine location of pad offset, using die "
                       "boundary instead.");
-    getBlock()->getDieArea(pads_inner);
+    pads_inner = getBlock()->getDieArea();
   }
 
   int hor_width;

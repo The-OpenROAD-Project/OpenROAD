@@ -301,7 +301,8 @@ class PartitionMgr
   void writeClusteringToDb(unsigned clusteringId);
   void dumpClusIdToFile(std::string name) const;
   void reportNetlistPartitions(unsigned partitionId);
-  unsigned readPartitioningFile(const std::string& filename, const std::string& instance_map_file);
+  unsigned readPartitioningFile(const std::string& filename,
+                                const std::string& instance_map_file);
   void reportGraph();
 
   void writePartitionVerilog(const char* path,
@@ -319,7 +320,11 @@ class PartitionMgr
                        unsigned int timing_weight,
                        bool std_cell_timing_flag_,
                        const char* report_directory,
-                       const char* file_name);
+                       const char* file_name,
+                       float keepin_lx,
+                       float keepin_ly,
+                       float keepin_ux,
+                       float keepin_uy);
 
  private:
   sta::Instance* buildPartitionedInstance(

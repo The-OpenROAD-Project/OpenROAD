@@ -31,21 +31,27 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "heatMap.h"
-#include "db_sta/dbSta.hh"
+
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 
 namespace sta {
 
-PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger) :
-    gui::RealValueHeatMapDataSource(logger, "W", "Power Density", "Power", "PowerDensity"),
-    sta_(sta),
-    include_internal_(true),
-    include_leakage_(true),
-    include_switching_(true),
-    corner_(nullptr)
+PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
+                                               utl::Logger* logger)
+    : gui::RealValueHeatMapDataSource(logger,
+                                      "W",
+                                      "Power Density",
+                                      "Power",
+                                      "PowerDensity"),
+      sta_(sta),
+      include_internal_(true),
+      include_leakage_(true),
+      include_switching_(true),
+      corner_(nullptr)
 {
-  setIssueRedraw(false); // disable during initial setup
+  setIssueRedraw(false);  // disable during initial setup
   setLogScale(true);
   setIssueRedraw(true);
 
@@ -100,7 +106,8 @@ bool PowerDensityDataSource::populateMap()
 
   auto* network = sta_->getDbNetwork();
 
-  const bool include_all = include_internal_ && include_leakage_ && include_switching_;
+  const bool include_all
+      = include_internal_ && include_leakage_ && include_switching_;
   for (auto* inst : getBlock()->getInsts()) {
     if (!inst->getPlacementStatus().isPlaced()) {
       continue;
@@ -124,8 +131,7 @@ bool PowerDensityDataSource::populateMap()
       }
     }
 
-    odb::Rect inst_box;
-    inst->getBBox()->getBox(inst_box);
+    odb::Rect inst_box = inst->getBBox()->getBox();
 
     addToMap(inst_box, pwr);
   }

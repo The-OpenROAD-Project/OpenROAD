@@ -185,8 +185,7 @@ void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
 
     for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
       dbBox* box = *itr;
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + x;
       int ymin = b.yMin() + y;
       int xmax = b.xMax() + x;
@@ -208,8 +207,7 @@ void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
 
     for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
       dbBox* box = *itr;
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + x;
       int ymin = b.yMin() + y;
       int xmax = b.xMax() + x;

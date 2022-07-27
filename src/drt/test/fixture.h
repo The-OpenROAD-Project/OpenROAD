@@ -73,9 +73,10 @@ class Fixture
 
   frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
 
-  void makeCornerConstraint(frLayerNum layer_num,
-                            frCoord eolWidth = -1,
-                            frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
+  frLef58CornerSpacingConstraint* makeCornerConstraint(
+      frLayerNum layer_num,
+      frCoord eolWidth = -1,
+      frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
 
   void makeSpacingConstraint(frLayerNum layer_num);
 
@@ -106,7 +107,9 @@ class Fixture
       frLayerNum layer_num,
       frCoord space = 200,
       frCoord width = 200,
-      frCoord within = 50);
+      frCoord within = 50,
+      frCoord end_prl_spacing = 0,
+      frCoord end_prl = 0);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
   makeLef58SpacingEolParEdgeConstraint(frLef58SpacingEndOfLineConstraint* con,

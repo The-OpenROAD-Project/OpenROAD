@@ -1,7 +1,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: gcd.def
 [INFO ODB-0128] Design: gcd
@@ -47,29 +47,29 @@ metal10    Vertical         2256            47          97.92%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 3388
-[INFO GRT-0198] Via related Steiner nodes: 221
+[INFO GRT-0197] Via related to pin nodes: 3381
+[INFO GRT-0198] Via related Steiner nodes: 254
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 4832
-[INFO GRT-0112] Final usage 3D: 19619
+[INFO GRT-0111] Final number of vias: 4850
+[INFO GRT-0112] Final usage 3D: 19918
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1               0             1            0.00%             1 /  0 /  1
-metal2            3008          1231           40.92%             0 /  1 /  3
-metal3            2806          1378           49.11%             1 /  0 /  2
-metal4            2726          1028           37.71%             0 /  1 /  1
-metal5            2438           839           34.41%             1 /  0 /  4
-metal6            2726           646           23.70%             0 /  1 /  1
+metal1               0             0            0.00%             0 /  0 /  0
+metal2            3008          1286           42.75%             0 /  1 /  2
+metal3            2806          1345           47.93%             1 /  0 /  2
+metal4            2726          1159           42.52%             0 /  0 /  0
+metal5            2438           978           40.11%             1 /  0 /  4
+metal6            2726           600           22.01%             1 /  0 /  1
 metal7              46             0            0.00%             0 /  0 /  0
 metal8             188             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10             47             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            13985          5123           36.63%             3 /  3 / 12
+Total            13985          5368           38.38%             3 /  1 /  9
 
-[INFO GRT-0018] Total wirelength: 15449 um
+[INFO GRT-0018] Total wirelength: 15985 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.
