@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "lefin.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -43,9 +45,9 @@
 #include "dbTransform.h"
 #include "geom.h"
 #include "lefLayerPropParser.h"
+#include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
-#include "lefin.h"
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
@@ -344,11 +346,11 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
                   (dbMPin*) object, layer, x1 + dx, y1 + dy, x2 + dx, y2 + dy);
             else
               box = dbBox::create((dbMaster*) object,
-                            layer,
-                            x1 + dx,
-                            y1 + dy,
-                            x2 + dx,
-                            y2 + dy);
+                                  layer,
+                                  x1 + dx,
+                                  y1 + dy,
+                                  x2 + dx,
+                                  y2 + dy);
             box->setDesignRuleWidth(designRuleWidth);
           }
         }
@@ -839,7 +841,6 @@ void lefin::layer(lefiLayer* layer)
       for (int i = 0; i < cur_two->numWidth(); i++) {
         int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i))
                                           : defaultPrl;
-        defaultPrl = prl;
         l->addTwoWidthsIndexEntry(dbdist(cur_two->width(i)), prl);
       }
 
@@ -1115,7 +1116,21 @@ void lefin::macro(lefiMacro* macro)
     return;
 
   for (int i = 0; i < macro->numProperties(); i++) {
-    dbStringProperty::create(_master, macro->propName(i), macro->propValue(i));
+    bool valid = true;
+    if (!strcmp(macro->propName(i), "LEF58_CLASS")) {
+      valid = lefMacroClassTypeParser::parse(macro->propValue(i), _master);
+    } else {
+      dbStringProperty::create(
+          _master, macro->propName(i), macro->propValue(i));
+    }
+
+    if (!valid) {
+      _logger->warn(utl::ODB,
+                    2000,
+                    "Cannot parse LEF property '{}' with value '{}'",
+                    macro->propName(i),
+                    macro->propValue(i));
+    }
   }
 
   if (macro->hasClass()) {
@@ -1580,8 +1595,12 @@ void lefin::propDefBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::propDef(lefiProp* /* unused: prop */)
+void lefin::propDef(lefiProp* prop)
 {
+  if (std::string(prop->propName()) == "LEF58_METALWIDTHVIAMAP") {
+    auto parser = MetalWidthViaMapParser(_tech, this, _incomplete_props);
+    parser.parse(prop->string());
+  }
 }
 
 void lefin::propDefEnd(void* /* unused: ptr */)
@@ -2040,47 +2059,61 @@ bool lefin::readLef(const char* lef_file)
 
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
-    if (obj->getObjectType() != odb::dbTechLayerCutSpacingRuleObj
-        && obj->getObjectType() != odb::dbTechLayerCutSpacingTableDefRuleObj)
-      _logger->error(utl::ODB,
-                     246,
-                     "unknown incomplete layer prop of type {}",
-                     obj->getObjName());
     auto layer = _tech->findLayer(name.c_str());
-    if (layer != nullptr) {
-      if (obj->getObjectType() == odb::dbTechLayerCutSpacingRuleObj) {
+    switch (obj->getObjectType()) {
+      case odb::dbTechLayerCutSpacingRuleObj: {
         odb::dbTechLayerCutSpacingRule* cutSpacingRule
             = (odb::dbTechLayerCutSpacingRule*) obj;
-        cutSpacingRule->setSecondLayer(layer);
-      } else if (obj->getObjectType()
-                 == odb::dbTechLayerCutSpacingTableDefRuleObj) {
+        if (layer != nullptr) {
+          cutSpacingRule->setSecondLayer(layer);
+        } else {
+          _logger->warn(utl::ODB,
+                        277,
+                        "dropping LEF58_SPACING rule for cut layer {} for "
+                        "referencing undefined layer {}",
+                        cutSpacingRule->getTechLayer()->getName(),
+                        name);
+          odb::dbTechLayerCutSpacingRule::destroy(cutSpacingRule);
+        }
+        break;
+      }
+      case odb::dbTechLayerCutSpacingTableDefRuleObj: {
         odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule
             = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
-        cutSpacingTableRule->setSecondLayer(layer);
+        if (layer != nullptr) {
+          cutSpacingTableRule->setSecondLayer(layer);
+        } else {
+          _logger->warn(utl::ODB,
+                        280,
+                        "dropping LEF58_SPACINGTABLE rule for cut layer {} for "
+                        "referencing undefined layer {}",
+                        cutSpacingTableRule->getTechLayer()->getName(),
+                        name);
+          odb::dbTechLayerCutSpacingTableDefRule::destroy(cutSpacingTableRule);
+        }
+        break;
       }
-    } else {
-      if (obj->getObjectType() == odb::dbTechLayerCutSpacingRuleObj) {
-        odb::dbTechLayerCutSpacingRule* cutSpacingRule
-            = (odb::dbTechLayerCutSpacingRule*) obj;
-        _logger->warn(utl::ODB,
-                      277,
-                      "dropping LEF58_SPACING rule for cut layer {} for "
-                      "referencing undefined layer {}",
-                      cutSpacingRule->getTechLayer()->getName(),
-                      name);
-        odb::dbTechLayerCutSpacingRule::destroy(cutSpacingRule);
-      } else if (obj->getObjectType()
-                 == odb::dbTechLayerCutSpacingTableDefRuleObj) {
-        odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule
-            = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
-        _logger->warn(utl::ODB,
-                      280,
-                      "dropping LEF58_SPACINGTABLE rule for cut layer {} for "
-                      "referencing undefined layer {}",
-                      cutSpacingTableRule->getTechLayer()->getName(),
-                      name);
-        odb::dbTechLayerCutSpacingTableDefRule::destroy(cutSpacingTableRule);
+      case odb::dbMetalWidthViaMapObj: {
+        odb::dbMetalWidthViaMap* metalWidthViaMap
+            = (odb::dbMetalWidthViaMap*) obj;
+        if (layer != nullptr) {
+          metalWidthViaMap->setCutLayer(layer);
+        } else {
+          _logger->warn(utl::ODB,
+                        356,
+                        "dropping LEF58_METALWIDTHVIAMAP for "
+                        "referencing undefined layer {}",
+                        name);
+          odb::dbMetalWidthViaMap::destroy(metalWidthViaMap);
+        }
+        break;
       }
+      default:
+        _logger->error(utl::ODB,
+                       246,
+                       "unknown incomplete layer prop of type {}",
+                       obj->getObjName());
+        break;
     }
   }
   _incomplete_props.clear();

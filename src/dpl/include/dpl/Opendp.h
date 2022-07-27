@@ -210,6 +210,7 @@ public:
   void checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
+  void removeFillers();
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void findDisplacementStats();
@@ -386,6 +387,8 @@ private:
   void placeRowFillers(int row,
                        const char* prefix,
                        dbMasterSeq *filler_masters);
+  bool isFiller(odb::dbInst *db_inst);
+
   const char *gridInstName(int row,
                            int col);
 
@@ -431,6 +434,7 @@ private:
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
   int filler_count_;
+  bool have_fillers_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_;

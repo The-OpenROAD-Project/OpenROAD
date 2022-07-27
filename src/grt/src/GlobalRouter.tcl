@@ -256,35 +256,38 @@ proc global_route { args } {
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
-    grt::write_guides $out_file
+    write_guides $out_file
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port \
+sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
                                          [-iterations iterations]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
                  keys {-iterations}
   if { [grt::have_routes] } {
-    sta::check_argc_eq1 "repair_antennas" $args
-    set lib_port [lindex $args 0]
-    if { ![sta::is_object $lib_port] } {
-      set lib_port [sta::get_lib_pins [lindex $args 0]]
+    if { [llength $args] == 0 } {
+      # repairAntennas locates diode
+      set diode_mterm "NULL"
+    } elseif { [llength $args] == 1 } {
+      set diode_port_name [lindex $args 0]
+      set diode_port [sta::get_lib_pins -quiet $diode_port_name]
+      if { $diode_port == "" } {
+        utl::error GRT 69 "Diode $diode_port_name not found."
+      }
+      set diode_mterm [sta::sta_to_db_mterm $diode_port]
+    } else {
+      utl::error GRT 245 "Too arguments to repair_antennas."
     }
 
+    set iterations 1
     if { [info exists keys(-iterations)] } {
       set iterations $keys(-iterations)
-      sta::check_positive_integer "-repair_antennas_iterations" $iterations
-    } else {
-      set iterations 1
+      sta::check_positive_integer "-iterations" $iterations
     }
 
-    if { $lib_port != "" } {
-      grt::repair_antennas $lib_port $iterations
-    } else {
-      utl::error GRT 69 "Diode not found."
-    }
+    grt::repair_antennas $diode_mterm $iterations
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
@@ -295,13 +298,6 @@ sta::define_cmd_args "read_guides" { file_name }
 proc read_guides { args } {
   set file_name $args
   grt::read_guides $file_name
-}
-
-sta::define_cmd_args "write_guides" { file_name }
-
-proc write_guides { args } {
-  set file_name $args
-  grt::write_guides $file_name
 }
 
 sta::define_cmd_args "draw_route_guides" { net_names \
@@ -399,7 +395,7 @@ proc report_wire_length { args } {
       }
     }
   } else {
-    utl::errpr GRT 237 "-net is required."
+    utl::error GRT 238 "-net is required."
   }
 }
 

@@ -114,6 +114,15 @@ class frNet : public frBlockObject
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
+  void removeInstTerm(frInstTerm* in)
+  {
+    for (auto itr = instTerms_.begin(); itr != instTerms_.end(); itr++) {
+      if (*itr == in) {
+        instTerms_.erase(itr);
+        return;
+      }
+    }
+  }
   void addBTerm(frBTerm* in) { bterms_.push_back(in); }
   void setName(const frString& stringIn) { name_ = stringIn; }
   void addShape(std::unique_ptr<frShape> in)
@@ -262,7 +271,6 @@ class frNet : public frBlockObject
   bool isSpecial_;
 
   std::vector<frPinFig*> all_pinfigs_;
-
 };
 }  // namespace fr
 

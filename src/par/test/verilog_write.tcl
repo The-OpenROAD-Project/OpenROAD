@@ -9,4 +9,4 @@ set id [partition_netlist -tool mlpart -num_partitions 2 -seeds {50}]
 
 set v_file [make_result_file verilog_write.v]
 write_partition_verilog -partitioning_id $id $v_file
-#diff_files verilog_write.vok $v_file
+diff_files verilog_write.vok $v_file

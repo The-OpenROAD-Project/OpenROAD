@@ -53,6 +53,8 @@ class Options
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
   virtual QColor placementBlockageColor() = 0;
   virtual Qt::BrushStyle placementBlockagePattern() = 0;
+  virtual QColor regionColor() = 0;
+  virtual Qt::BrushStyle regionPattern() = 0;
   virtual QColor instanceNameColor() = 0;
   virtual QFont instanceNameFont() = 0;
   virtual QColor rowColor() = 0;
@@ -88,6 +90,8 @@ class Options
   virtual QFont pinMarkersFont() = 0;
   virtual bool areAccessPointsVisible() const = 0;
   virtual bool areRegionsVisible() const = 0;
+  virtual bool areRegionsSelectable() const = 0;
+  virtual bool isManufacturingGridVisible() const = 0;
 
   virtual bool isModuleView() const = 0;
 };

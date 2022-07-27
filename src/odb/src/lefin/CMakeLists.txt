@@ -14,9 +14,11 @@ add_library(lefin
     lefTechLayerTypeParser.cpp
     lefTechLayerEolExtensionParser.cpp
     lefTechLayerEolKeepOutRuleParser.cpp
+    lefMacroClassParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp
+    MetalWidthViaMapParser.cpp
 )
 
 target_include_directories(lefin

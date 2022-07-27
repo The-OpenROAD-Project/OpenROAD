@@ -37,6 +37,7 @@ class DesignCallBack : public odb::dbBlockCallBackObj
  public:
   DesignCallBack(triton_route::TritonRoute* router) : router_(router) {}
   void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbInstDestroy(odb::dbInst* inst) override;
 
  private:
   triton_route::TritonRoute* router_;

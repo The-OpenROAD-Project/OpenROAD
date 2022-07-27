@@ -635,8 +635,7 @@ bool dbITerm::getAvgXY(int* x, int* y)
     dbSet<dbBox>::iterator box_itr;
     for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
       dbBox* box = *box_itr;
-      Rect rect;
-      box->getBox(rect);
+      Rect rect = box->getBox();
       transform.apply(rect);
       xx += rect.xMin() + rect.xMax();
       yy += rect.yMin() + rect.yMax();
@@ -723,8 +722,7 @@ std::vector<Rect> dbITerm::getGeometries() const
   std::vector<Rect> geometries;
   for (dbMPin* mpin : getMTerm()->getMPins()) {
     for (dbBox* box : mpin->getGeometry()) {
-      Rect rect;
-      box->getBox(rect);
+      Rect rect = box->getBox();
       transform.apply(rect);
       geometries.push_back(rect);
     }

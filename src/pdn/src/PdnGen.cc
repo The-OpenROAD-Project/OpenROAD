@@ -49,6 +49,7 @@
 #include "rings.h"
 #include "straps.h"
 #include "utl/Logger.h"
+#include "via_repair.h"
 
 namespace pdn {
 
@@ -266,6 +267,7 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
+  updateRenderer();
 }
 
 void PdnGen::resetShapes()
@@ -273,6 +275,7 @@ void PdnGen::resetShapes()
   for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
+  updateRenderer();
 }
 
 void PdnGen::buildGrids(bool trim)
@@ -281,8 +284,17 @@ void PdnGen::buildGrids(bool trim)
 
   resetShapes();
 
+  const std::vector<Grid*> grids = getGrids();
+
+  // connect instances already assigned to grids
+  std::set<odb::dbInst*> insts_in_grids;
+  for (auto* grid : grids) {
+    auto insts_in_grid = grid->getInstances();
+    insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
+  }
+
   ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs);
+  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
 
   ShapeTreeMap all_shapes;
 
@@ -293,7 +305,7 @@ void PdnGen::buildGrids(bool trim)
       nets.insert(net);
     }
   }
-  Grid::makeInitialShapes(nets, all_shapes);
+  Grid::makeInitialShapes(block, all_shapes);
   for (const auto& [layer, layer_shapes] : all_shapes) {
     auto& layer_obs = block_obs[layer];
     for (const auto& [box, shape] : layer_shapes) {
@@ -301,7 +313,6 @@ void PdnGen::buildGrids(bool trim)
     }
   }
 
-  const std::vector<Grid*> grids = getGrids();
   for (auto* grid : grids) {
     ShapeTreeMap obs_local = block_obs;
     for (auto* grid_other : grids) {
@@ -325,9 +336,7 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
-  if (debug_renderer_ != nullptr) {
-    debug_renderer_->update();
-  }
+  updateRenderer();
 }
 
 void PdnGen::cleanupVias()
@@ -768,7 +777,7 @@ void PdnGen::setDebugRenderer(bool on)
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this);
-      debug_renderer_->update();
+      rendererRedraw();
     }
   } else {
     debug_renderer_ = nullptr;
@@ -784,6 +793,13 @@ void PdnGen::rendererRedraw()
       // do nothing, dont want grid error to prevent debug renderer
       debug_renderer_->update();
     }
+  }
+}
+
+void PdnGen::updateRenderer() const
+{
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->update();
   }
 }
 
@@ -820,9 +836,23 @@ void PdnGen::writeToDb(bool add_pins) const
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 
+  // collect all the SWires from the block
+  auto* block = db_->getChip()->getBlock();
+  ShapeTreeMap obstructions;
+  for (auto* net : block->getNets()) {
+    ShapeTreeMap net_shapes;
+    Shape::populateMapFromDb(net, net_shapes);
+    for (const auto& [layer, net_obs_layer] : net_shapes) {
+      auto& obs_layer = obstructions[layer];
+      for (const auto& [box, shape] : net_obs_layer) {
+        obs_layer.insert({shape->getObstructionBox(), shape});
+      }
+    }
+  }
+
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      grid->writeToDb(net_map, add_pins);
+      grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
     }
   }
@@ -854,7 +884,9 @@ void PdnGen::ripUp(odb::dbNet* net)
   ShapeTreeMap net_shapes;
   Shape::populateMapFromDb(net, net_shapes);
   // remove bterms that connect to swires
+  std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {
+    std::set<odb::dbBPin*> pins;
     for (auto* pin : bterm->getBPins()) {
       bool remove = false;
       for (auto* box : pin->getBoxes()) {
@@ -866,8 +898,7 @@ void PdnGen::ripUp(odb::dbNet* net)
           continue;
         }
 
-        odb::Rect rect;
-        box->getBox(rect);
+        odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
         Box search_box(Point(rect.xMin(), rect.yMin()),
                        Point(rect.xMax(), rect.yMax()));
@@ -877,12 +908,18 @@ void PdnGen::ripUp(odb::dbNet* net)
         }
       }
       if (remove) {
-        odb::dbBPin::destroy(pin);
+        pins.insert(pin);
       }
     }
-    if (bterm->getBPins().empty()) {
-      odb::dbBTerm::destroy(bterm);
+    for (auto* pin : pins) {
+        odb::dbBPin::destroy(pin);
     }
+    if (bterm->getBPins().empty()) {
+      terms.insert(bterm);
+    }
+  }
+  for (auto* term : terms) {
+    odb::dbBTerm::destroy(term);
   }
   auto swires = net->getSWires();
   for (auto iter = swires.begin(); iter != swires.end(); ) {
@@ -920,6 +957,9 @@ void PdnGen::filterVias(const std::string& filter)
 void PdnGen::checkDesign(odb::dbBlock* block) const
 {
   for (auto* inst : block->getInsts()) {
+    if (!inst->getPlacementStatus().isFixed()) {
+      continue;
+    }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
         logger_->warn(utl::PDN,
@@ -941,6 +981,13 @@ void PdnGen::checkSetup() const
   for (auto* domain : getDomains()) {
     domain->checkSetup();
   }
+}
+
+void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
+{
+  ViaRepair repair(logger_, nets);
+  repair.repair();
+  repair.report();
 }
 
 }  // namespace pdn

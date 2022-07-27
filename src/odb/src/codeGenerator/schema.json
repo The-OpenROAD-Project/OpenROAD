@@ -46,6 +46,12 @@
       "src":"dbTechLayerMinCutRule.json"
     },
     {
+      "src":"dbGuide.json"
+    },
+    {
+      "src":"dbMetalWidthViaMap.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -191,6 +197,14 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbGroup.h"]
+    },
+    {
+      "name": "dbGuideItr",
+      "parentObject": "dbGuide",
+      "tableName": "guide_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0
     }
   ],
   "relations":[

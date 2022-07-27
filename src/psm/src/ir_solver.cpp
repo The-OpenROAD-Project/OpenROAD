@@ -57,6 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 using odb::dbBlock;
+using odb::dbRow;
 using odb::dbBox;
 using odb::dbChip;
 using odb::dbDatabase;
@@ -315,12 +316,10 @@ void IRSolver::ReadC4Data() {
                    "pad location to checkerboard pattern on core area.");
     dbChip* chip = m_db->getChip();
     dbBlock* block = chip->getBlock();
-    odb::Rect coreRect;
-    block->getCoreArea(coreRect);
+    odb::Rect coreRect = block->getCoreArea();
     int coreW = coreRect.xMax() - coreRect.xMin();
     int coreL = coreRect.yMax() - coreRect.yMin();
-    odb::Rect dieRect;
-    block->getDieArea(dieRect);
+    odb::Rect dieRect = block->getDieArea();
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
@@ -336,12 +335,6 @@ void IRSolver::ReadC4Data() {
           utl::PSM, 18,
           "Y direction bump pitch is not specified, defaulting to {}um.",
           m_bump_pitch_default);
-    }
-    if (m_node_density_um > 0) {
-      m_node_density = m_node_density_um * unit_micron;
-      m_logger->info(utl::PSM, 73,
-                   "Setting lower metal node density to {}um.",
-                   m_node_density_um);
     }
     if (!m_net_voltage_map.empty() &&
         m_net_voltage_map.count(m_power_net) > 0) {
@@ -386,7 +379,9 @@ void IRSolver::ReadC4Data() {
                                      supply_voltage_src});
     }
     int num_b_x = coreW / m_bump_pitch_x;
+    int centering_offset_x = (coreW % m_bump_pitch_x)/2;
     int num_b_y = coreL / m_bump_pitch_y;
+    int centering_offset_y = (coreL % m_bump_pitch_y)/2;
     m_logger->warn(utl::PSM, 65,
                    "VSRC location not specified, using default checkerboard "
                    "pattern with one VDD every size bumps in x-direction and "
@@ -394,8 +389,9 @@ void IRSolver::ReadC4Data() {
     for (int i = 0; i < num_b_y; i++) {
       for (int j = 0; j < num_b_x; j = j + 6) {
         x_cor =
-            (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) + offset_x;
-        y_cor = (m_bump_pitch_y * i) + offset_y;
+            (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) +
+            offset_x + centering_offset_x;
+        y_cor = (m_bump_pitch_y * i) + offset_y + centering_offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
           m_C4Bumps.push_back(
               {x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src});
@@ -955,13 +951,29 @@ bool IRSolver::CreateGmat(bool connection_only) {
   dbSet<dbTechLayer>::iterator litr;
   int unit_micron = tech->getDbUnitsPerMicron();
   int num_routing_layers = tech->getRoutingLayerCount();
-
-  m_Gmat = new GMat(num_routing_layers, m_logger);
   dbChip* chip = m_db->getChip();
   dbBlock* block = chip->getBlock();
+  
+  if (m_node_density_um > 0) { // User-specified node density
+    m_node_density = m_node_density_um * unit_micron;
+    m_logger->info(utl::PSM, 73,
+               "Setting lower metal node density to {}um as specfied by user.",
+               m_node_density_um);
+  } else { // Node density as a factor of row height either set by user or by default
+    dbSet<dbRow> rows = block->getRows();
+    int siteHeight = (*rows.begin())->getSite()->getHeight();
+    if (m_node_density_factor_user > 0) {
+      m_node_density_factor = m_node_density_factor_user;
+    }
+    m_logger->info(utl::PSM, 76,
+                 "Setting metal node density to "
+                 "be standard cell height times {}.",
+                 m_node_density_factor);
+    m_node_density = siteHeight * m_node_density_factor;
+  }
 
+  m_Gmat = new GMat(num_routing_layers, m_logger);
   auto macro_boundaries = GetMacroBoundaries();
-
   dbNet* power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
     m_logger->error(utl::PSM, 27,

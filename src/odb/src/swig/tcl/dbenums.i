@@ -414,6 +414,42 @@
 	 	case odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT:
 			obj = Tcl_NewStringObj("ENDCAP_BOTTOMRIGHT", -1);
 			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_BOTTOMEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_BOTTOMEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_TOPEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_TOPEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_RIGHTEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_LEFTEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_LEFTEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_RIGHTBOTTOMEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_LEFTBOTTOMEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_RIGHTTOPEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPEDGE:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_LEFTTOPEDGE", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_RIGHTBOTTOMCORNER", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_LEFTBOTTOMCORNER", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPCORNER:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_RIGHTTOPCORNER", -1);
+			break;
+		case odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPCORNER:
+			obj = Tcl_NewStringObj("ENDCAP_LEF58_LEFTTOPCORNER", -1);
+			break;
 	}
 	Tcl_SetObjResult(interp, obj);
 }
@@ -475,6 +511,30 @@
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMLEFT;
 	} else if (strcasecmp(str, "ENDCAP_BOTTOMRIGHT") == 0) {
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_BOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_BOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_TOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_TOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPCORNER;
 	}
 }
 %typemap(typecheck) odb::dbMasterType, dbMasterType {
@@ -537,8 +597,33 @@
 			found = true;
 		} 	else if (strcasecmp(str, "ENDCAP_BOTTOMRIGHT") == 0) {
 			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_BOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_TOPEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPEDGE") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMCORNER") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMCORNER") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPCORNER") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPCORNER") == 0) {
+			found = true;
 		}
 	}
+	
 	if (found) {
 		$1 = 1;
 	} else {
@@ -1552,6 +1637,56 @@
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
 		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
+%typemap(out) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	Tcl_Obj *obj = nullptr;
+	switch ($1) {
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST:
+			obj = Tcl_NewStringObj("FIRST", -1);
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND:
+			obj = Tcl_NewStringObj("SECOND", -1);
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
+			obj = Tcl_NewStringObj("MAX", -1);
+			break;
+		default:
+			obj = Tcl_NewStringObj("MIN", -1);
+			break;
+	}
+	Tcl_SetObjResult(interp, obj);
+}
+%typemap(in) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	if (strcasecmp(str, "FIRST") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST;
+	} else if (strcasecmp(str, "SECOND") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
+	} else if (strcasecmp(str, "MAX") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
+	} else {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
+	}
+}
+%typemap(typecheck) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "FIRST") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SECOND") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MAX") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MIN") == 0) {
 			found = true;
 		}
 	}

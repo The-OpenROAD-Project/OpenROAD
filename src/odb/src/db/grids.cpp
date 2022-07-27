@@ -2439,89 +2439,6 @@ bool Ath__intersect(int X1, int DX, int x1, int dx, int* ix1, int* ix2)
   }
   return true;
 }
-Ath__gridTile::Ath__gridTile(uint levelCnt,
-                             int x1,
-                             int y1,
-                             int x2,
-                             int y2,
-                             AthPool<Ath__track>* trackPoolPtr,
-                             AthPool<Ath__wire>* wirePoolPtr)
-{
-  assert(levelCnt > 0);
-  _levelCnt = levelCnt;
-
-  _bb.reset(x1, y1, x2, y2);
-
-  _gTable = new Ath__grid*[levelCnt];
-  for (uint ii = 0; ii < levelCnt; ii++)
-    _gTable[ii] = NULL;
-
-  _poolFlag = true;
-  if (trackPoolPtr != NULL) {
-    _trackPool = trackPoolPtr;
-    _wirePool = wirePoolPtr;
-    _poolFlag = false;
-  } else {
-    _trackPool = new AthPool<Ath__track>(false, 512);
-    _wirePool = new AthPool<Ath__wire>(false, 512);
-  }
-}
-Ath__gridTile::~Ath__gridTile()
-{
-  for (uint ii = 1; ii < _levelCnt; ii++) {
-    if (_gTable[ii] != NULL)
-      delete _gTable[ii];
-  }
-  delete[] _gTable;
-
-  if (_poolFlag) {
-    delete _trackPool;
-    delete _wirePool;
-  }
-}
-Ath__grid* Ath__gridTile::getGrid(uint level)
-{
-  return _gTable[level];
-}
-void Ath__gridTile::addGrid(Ath__grid* g)
-{
-  Ath__searchBox sbb;
-  g->getBbox(&sbb);
-
-  uint level = sbb.getLevel();
-  assert(level < _levelCnt);
-  _gTable[level] = g;
-}
-Ath__grid* Ath__gridTile::addGrid(Ath__box* bb,
-                                  uint level,
-                                  uint dir,
-                                  uint layerNum,
-                                  uint width,
-                                  uint pitch)
-{
-  assert(level < _levelCnt);
-  _gTable[level] = new Ath__grid(
-      NULL, _trackPool, _wirePool, bb, level, dir, layerNum, width, pitch);
-
-  return _gTable[level];
-}
-
-void Ath__gridTile::getBuses(Ath__array1D<Ath__box*>* boxTable, dbTech* tech)
-{
-  for (uint level = 1; level < _levelCnt; level++) {
-    uint width = tech->findRoutingLayer(level)->getWidth();
-
-    _gTable[level]->getBuses(boxTable, width);
-  }
-}
-
-void Ath__gridTile::getBounds(int* x1, int* y1, int* x2, int* y2)
-{
-  *x1 = _bb.xMin();
-  *y1 = _bb.yMin();
-  *x2 = _bb.xMax();
-  *y2 = _bb.yMax();
-}
 
 void Ath__gridTable::init1(uint memChunk,
                            uint rowSize,
@@ -2600,7 +2517,7 @@ Ath__gridTable::Ath__gridTable(dbBox* bb,
                                uint minWidth)
 {
   init1(1024, rowSize, colSize, bb->getDX(), bb->getDY());
-  bb->getBox(_rectBB);
+  _rectBB = bb->getBox();
   _schema = 1;
   _overlapTouchCheck = 1;
   _noPowerSource = 0;

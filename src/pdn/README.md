@@ -389,6 +389,22 @@ pdngen [-skip_trim] \
 | `-ripup` | Ripup the existing power grid, as specified by the voltage domains |
 | `-report_only` | Print the current specifications |
 
+### Repairing power grid vias after detailed routing
+
+To remove vias which generate DRC violations after detailed placement and routing use `repair_pdn_vias`.
+
+```
+repair_pdn_vias [-all] \
+                [-net net_name]
+```
+
+##### Options
+
+| Name | Description |
+| ----- | ----- |
+| `-all` | Repair vias on all supply nets |
+| `-net` | Repair only vias on the specified net |
+
 ### Converting former PDNGEN configuration file to tcl commands
 
 To get an initial conversion from the former PDNGEN configuration file to the current tcl commands use `convert_pdn_config`.

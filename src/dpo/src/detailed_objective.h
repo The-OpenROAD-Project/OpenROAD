@@ -35,8 +35,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
+
 #include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
@@ -52,29 +52,33 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedObjective {
+class DetailedObjective
+{
  public:
-  DetailedObjective(const char* name = "objective")
-    : m_name(name) {}
-  virtual ~DetailedObjective() {}
+  DetailedObjective(const char* name = "objective") : name_(name) {}
+  virtual ~DetailedObjective() = default;
 
-  virtual const std::string& getName() const { return m_name; }
+  virtual const std::string& getName() const { return name_; }
 
   virtual double curr() = 0;
 
   // Different methods for generating moves.  We _must_ overload these.  The
   // generated move should be stored in the manager.
-  virtual double delta(int n, std::vector<Node*>& nodes,
-                       std::vector<int>& curLeft, std::vector<int>& curBottom,
-                       std::vector<unsigned>& curOri, 
-                       std::vector<int>& newLeft, std::vector<int>& newBottom,
-                       std::vector<unsigned>& newOri) = 0;
+  virtual double delta(int n,
+                       std::vector<Node*>& nodes,
+                       std::vector<int>& curLeft,
+                       std::vector<int>& curBottom,
+                       std::vector<unsigned>& curOri,
+                       std::vector<int>& newLeft,
+                       std::vector<int>& newBottom,
+                       std::vector<unsigned>& newOri)
+      = 0;
 
   virtual void accept() {}
   virtual void reject() {}
 
  private:
-  const std::string m_name;
+  const std::string name_;
 };
 
 }  // namespace dpo

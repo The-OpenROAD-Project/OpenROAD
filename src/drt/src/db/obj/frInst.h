@@ -46,7 +46,7 @@ class frInst : public frRef
  public:
   // constructors
   frInst(const frString& name, frMaster* master)
-      : name_(name), master_(master), pinAccessIdx_(0)
+      : name_(name), master_(master), pinAccessIdx_(0), toBeDeleted_(false)
   {
   }
   // getters
@@ -61,6 +61,7 @@ class frInst : public frRef
     return instBlockages_;
   }
   int getPinAccessIdx() const { return pinAccessIdx_; }
+  bool isToBeDeleted() const { return toBeDeleted_; }
   // setters
   void addInstTerm(std::unique_ptr<frInstTerm> in)
   {
@@ -72,6 +73,7 @@ class frInst : public frRef
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
+  void setToBeDeleted(bool in) { toBeDeleted_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcInst; }
 
@@ -86,16 +88,9 @@ class frInst : public frRef
 
   dbOrientType getOrient() const override { return xform_.getOrient(); }
   void setOrient(const dbOrientType& tmpOrient) override { xform_.setOrient(tmpOrient); }
-  void getOrigin(Point& tmpOrigin) const override
-  {
-    tmpOrigin = xform_.getOffset();
-  }
-  Point getOrigin() const { return xform_.getOffset(); }
+  Point getOrigin() const override { return xform_.getOffset(); }
   void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
-  void getTransform(dbTransform& xformIn) const override
-  {
-    xformIn = xform_;
-  }
+  dbTransform getTransform() const override { return xform_; }
   void setTransform(const dbTransform& xformIn) override
   {
     xform_ = xformIn;
@@ -132,14 +127,14 @@ class frInst : public frRef
    * intersects
    */
 
-  void getBBox(Rect& boxIn) const override;
+  Rect getBBox() const override;
 
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
+  dbTransform getUpdatedXform(bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);
-  void getBoundaryBBox(Rect& in) const;
+  Rect getBoundaryBBox() const;
   
   frInstTerm* getInstTerm(const std::string& name);
 
@@ -150,6 +145,7 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
   int pinAccessIdx_;
+  bool toBeDeleted_;
 };
 
 }  // namespace fr

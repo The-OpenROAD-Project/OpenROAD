@@ -613,8 +613,6 @@ void serializeViaDef(Archive& ar, frViaDef*& viadef)
 template <class Archive>
 void serializeGlobals(Archive& ar)
 {
-  (ar) & GUIDE_FILE;
-  (ar) & OUTGUIDE_FILE;
   (ar) & DBPROCESSNODE;
   (ar) & OUT_MAZE_FILE;
   (ar) & DRC_RPT_FILE;

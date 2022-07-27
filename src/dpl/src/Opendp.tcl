@@ -127,6 +127,13 @@ proc filler_placement { args } {
   dpl::filler_placement_cmd $filler_masters $prefix
 }
 
+sta::define_cmd_args "remove_fillers" {}
+
+proc remove_fillers { args } {
+  sta::check_argc_eq0 "remove_fillers" $args
+  dpl::remove_fillers_cmd
+}
+
 sta::define_cmd_args "check_placement" {[-verbose]}
 
 proc check_placement { args } {

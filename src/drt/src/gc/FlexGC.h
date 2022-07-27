@@ -60,6 +60,7 @@ class FlexGCWorker
   void setIgnoreDB();
   void setIgnoreMinArea();
   void setIgnoreLongSideEOL();
+  void setIgnoreCornerSpacing();
   void setEnableSurgicalFix(bool in);
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters

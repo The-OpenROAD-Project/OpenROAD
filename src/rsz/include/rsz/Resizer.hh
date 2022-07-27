@@ -133,7 +133,6 @@ public:
 };
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
-typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 
 enum class ParasiticsSrc { none, placement, global_routing };
@@ -424,7 +423,6 @@ protected:
   bool overMaxArea();
   bool bufferBetweenPorts(Instance *buffer);
   bool hasPort(const Net *net);
-  bool hasInputPort(const Net *net);
   Point location(Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
@@ -505,6 +503,8 @@ protected:
                       float &limit,
                       float &slack,
                       const Corner *&corner);
+  void warnBufferMovedIntoCore();
+  bool isLogicStdCell(const Instance *inst);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -523,6 +523,7 @@ protected:
   VertexSet findFanouts(VertexSet &roots);
   bool isRegOutput(Vertex *vertex);
   bool isRegister(Vertex *vertex);
+  ////////////////////////////////////////////////////////////////
 
   Logger *logger() const { return logger_; }
 
@@ -581,6 +582,7 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  bool buffer_moved_into_core_;
   // Slack map variables.
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;

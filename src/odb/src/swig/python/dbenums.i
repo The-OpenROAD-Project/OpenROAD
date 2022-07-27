@@ -369,9 +369,33 @@
 		obj = PyString_FromString("ENDCAP_BOTTOMLEFT");
 	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT) {
 		obj = PyString_FromString("ENDCAP_BOTTOMRIGHT");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_BOTTOMEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_BOTTOMEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_TOPEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_TOPEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_RIGHTEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_LEFTEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_LEFTEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_RIGHTBOTTOMEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_LEFTBOTTOMEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_RIGHTTOPEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPEDGE) {
+		obj = PyString_FromString("ENDCAP_LEF58_LEFTTOPEDGE");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMCORNER) {
+		obj = PyString_FromString("ENDCAP_LEF58_RIGHTBOTTOMCORNER");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMCORNER) {
+		obj = PyString_FromString("ENDCAP_LEF58_LEFTBOTTOMCORNER");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPCORNER) {
+		obj = PyString_FromString("ENDCAP_LEF58_RIGHTTOPCORNER");
+	} else if ($1.getValue() == odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPCORNER) {
+		obj = PyString_FromString("ENDCAP_LEF58_LEFTTOPCORNER");
 	} else {
-                SWIG_exception(SWIG_ValueError, "Unknown master type");
-        }
+        SWIG_exception(SWIG_ValueError, "Unknown master type");
+    }
 	$result=obj;
 }
 %typemap(in) odb::dbMasterType, dbMasterType {
@@ -432,6 +456,30 @@
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMLEFT;
 	} else if (strcasecmp(str, "ENDCAP_BOTTOMRIGHT") == 0) {
 		$1 = odb::dbMasterType::Value::ENDCAP_BOTTOMRIGHT;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_BOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_BOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_TOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_TOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPEDGE") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPEDGE;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTBOTTOMCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTBOTTOMCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_RIGHTTOPCORNER;
+	} else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPCORNER") == 0) {
+		$1 = odb::dbMasterType::Value::ENDCAP_LEF58_LEFTTOPCORNER;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown master type");
         }          
@@ -495,6 +543,30 @@
 		} 	else if (strcasecmp(str, "ENDCAP_BOTTOMLEFT") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "ENDCAP_BOTTOMRIGHT") == 0) {
+			found = true;
+		}   else if (strcasecmp(str, "ENDCAP_LEF58_BOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_TOPEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPEDGE") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTBOTTOMCORNER") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTBOTTOMCORNER") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_RIGHTTOPCORNER") == 0) {
+			found = true;
+		}	else if (strcasecmp(str, "ENDCAP_LEF58_LEFTTOPCORNER") == 0) {
 			found = true;
 		}
 	}
@@ -1320,6 +1392,56 @@
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
 		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
+%typemap(out) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	PyObject *obj;
+	switch ($1.getValue()) {
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST:
+			obj = PyString_FromString("FIRST");
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND:
+			obj = PyString_FromString("SECOND");
+			break;
+		case odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX:
+			obj = PyString_FromString("MAX");
+			break;
+		default:
+			obj = PyString_FromString("MIN");
+			break;
+	}
+	$result=obj;
+}
+%typemap(in) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	if (strcasecmp(str, "FIRST") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::FIRST;
+	} else if (strcasecmp(str, "SECOND") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::SECOND;
+	} else if (strcasecmp(str, "MAX") == 0) {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MAX;
+	} else {
+		$1 = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY::MIN;
+	}
+}
+%typemap(typecheck) odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY, dbTechLayerCutSpacingTableDefRule_LOOKUP_STRATEGY {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "FIRST") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "SECOND") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MAX") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "MIN") == 0) {
 			found = true;
 		}
 	}

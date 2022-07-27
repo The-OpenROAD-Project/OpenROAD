@@ -1,5 +1,4 @@
 record_tests {
-  hypergraph
   graph_star
   graph_clique
   graph_hybrid
@@ -9,4 +8,5 @@ record_tests {
   verilog_write
   report_netlist_partitions
   read_partitioning
+  cluster
 }

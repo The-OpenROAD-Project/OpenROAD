@@ -67,7 +67,21 @@ sta_to_db_inst(Instance *inst)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  return db_network->staToDb(inst);
+  dbInst *db_inst;
+  dbModInst* mod_inst;
+  db_network->staToDb(inst, db_inst, mod_inst);
+  if (db_inst) {
+    return db_inst;
+  }
+  return nullptr;
+}
+
+odb::dbMTerm *
+sta_to_db_mterm(LibertyPort *port)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->staToDb(port);
 }
 
 odb::dbBTerm *

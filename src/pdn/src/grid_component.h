@@ -89,13 +89,17 @@ class GridComponent
 
   const ShapeTreeMap& getShapes() const { return shapes_; }
   void getShapes(ShapeTreeMap& shapes) const;
+  void removeShapes(ShapeTreeMap& shapes) const;
   void removeShape(Shape* shape);
   void replaceShape(Shape* shape, const std::vector<Shape*>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
 
+  virtual void getConnectableShapes(ShapeTreeMap& shapes) const {}
+
   // returns all the obstructions in this grid shape
   void getObstructions(ShapeTreeMap& obstructions) const;
+  void removeObstructions(ShapeTreeMap& obstructions) const;
 
   // cut the shapes according to the obstructions to avoid generating any DRC
   // violations.

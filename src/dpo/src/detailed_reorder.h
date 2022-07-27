@@ -32,45 +32,51 @@
 
 #pragma once
 
-#include <deque>
+#include <string>
 #include <vector>
-#include "architecture.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
+class Architecture;
 class DetailedSeg;
 class DetailedMgr;
+class Network;
+class Node;
+class RoutingParams;
 
 // CLASSES ===================================================================
-class DetailedReorderer {
+class DetailedReorderer
+{
  public:
   DetailedReorderer(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedReorderer();
 
-  void run(DetailedMgr* mgrPtr, std::string command);
-  void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
+  void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
 
- protected:
+ private:
   void reorder();
-  void reorder(std::vector<Node*>& nodes, int istrt, int istop,
-               int leftLimit, int rightLimit, int segId, int rowId);
-  double cost(std::vector<Node*>& nodes, int istrt, int istop);
+  void reorder(std::vector<Node*>& nodes,
+               int istrt,
+               int istop,
+               int leftLimit,
+               int rightLimit,
+               int segId,
+               int rowId);
+  double cost(const std::vector<Node*>& nodes, int istrt, int istop);
 
   // Standard stuff.
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // For segments.
-  DetailedMgr* m_mgrPtr;
+  DetailedMgr* mgrPtr_;
 
   // Other.
-  int m_skipNetsLargerThanThis;
-  std::vector<int> m_edgeMask;
-  int m_traversal;
-  int m_windowSize;
+  int skipNetsLargerThanThis_;
+  std::vector<int> edgeMask_;
+  int traversal_;
+  int windowSize_;
 };
 
 }  // namespace dpo

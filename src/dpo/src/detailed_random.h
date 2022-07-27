@@ -35,40 +35,39 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
-#include "architecture.h"
+
 #include "detailed_generator.h"
-#include "detailed_manager.h"
-#include "detailed_objective.h"
-#include "detailed_segment.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
+class DetailedObjective;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedRandom {
+class DetailedRandom
+{
  public:
-  enum DrcMode {
+  enum DrcMode
+  {
     DrcMode_NoPenalty = 0,
     DrcMode_NormalPenalty,
     DrcMode_Eliminate,
     DrcMode_Unknown
   };
-  enum MoveMode {
+  enum MoveMode
+  {
     MoveMode_Median = 0,
     MoveMode_CellDensity1,
     MoveMode_RandomWindow,
     MoveMode_Unknown
   };
-  enum MoveSource {
+  enum MoveSource
+  {
     MoveSource_All = 0,
     MoveSource_Wirelength,
     MoveSource_DrcViolators,
@@ -77,12 +76,11 @@ class DetailedRandom {
 
  public:
   DetailedRandom(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedRandom();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
- protected:
+ private:
   double go();
 
   double eval(std::vector<double>& costs, std::vector<std::string>& expr);
@@ -94,74 +92,74 @@ class DetailedRandom {
   void collectCandidates();
 
   // Standard stuff.
-  DetailedMgr* m_mgrPtr;
+  DetailedMgr* mgrPtr_;
 
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
   // Candidate cells.
-  std::vector<Node*> m_candidates;
+  std::vector<Node*> candidates_;
 
   // For generating move lists.
-  std::vector<DetailedGenerator*> m_generators;
+  std::vector<DetailedGenerator*> generators_;
 
   // For evaluating objectives.
-  std::vector<DetailedObjective*> m_objectives;
+  std::vector<DetailedObjective*> objectives_;
 
   // Parameters controlling the moves.
-  double m_movesPerCandidate;
+  double movesPerCandidate_;
 
   // For costing.
-  std::vector<double> m_initCost;
-  std::vector<double> m_currCost;
-  std::vector<double> m_nextCost;
-  std::vector<double> m_deltaCost;
+  std::vector<double> initCost_;
+  std::vector<double> currCost_;
+  std::vector<double> nextCost_;
+  std::vector<double> deltaCost_;
 
   // For obj evaluation.
-  std::vector<std::string> m_expr;
+  std::vector<std::string> expr_;
 };
 
-class RandomGenerator : public DetailedGenerator {
+class RandomGenerator : public DetailedGenerator
+{
  public:
   RandomGenerator();
-  virtual ~RandomGenerator();
 
  public:
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr*) {}
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr*) override {}
 
- protected:
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
-class DisplacementGenerator : public DetailedGenerator {
+class DisplacementGenerator : public DetailedGenerator
+{
  public:
   DisplacementGenerator();
-  virtual ~DisplacementGenerator();
 
  public:
-  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats();
-  virtual void init(DetailedMgr*) {}
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  void stats() override;
+  void init(DetailedMgr*) override {}
 
- protected:
-  DetailedMgr* m_mgr;
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  DetailedMgr* mgr_;
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  int m_attempts;
-  int m_moves;
-  int m_swaps;
+  int attempts_;
+  int moves_;
+  int swaps_;
 };
 
 }  // namespace dpo

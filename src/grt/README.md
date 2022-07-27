@@ -119,19 +119,32 @@ Example:
   -perturbation_amount 2`
 
 ```
-repair_antennas diodeCellName/diodePinName [-iterations iterations]
+repair_antennas [diode_cell/diode_pin] [-iterations iterations]
 ```
 
-The repair_antenna command evaluates the global routing results to find
-antenna violations, and repairs the violations by inserting diodes. The
-input for this command is the diode cell and its pin names, and a prescribed
-number of
-iterations. By default, the command runs only one iteration to repair
-antennas.  It uses the  `antennachecker` tool to identify any nets with antenna
-violations and, for each such net, the exact number of diodes necessary to fix the
-antenna violation.
+The repair_antenna command checks the global routing for antenna
+violations and repairs the violations by inserting diodes near the
+gates of the violating nets.  By default the command runs only one
+iteration to repair antennas. Filler instances added by the
+`filler_placement` command should NOT be in the database when
+`repair_antennas` is called.
 
-Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`
+See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
+Fixing Process Antenna Violations" for a description of antenna
+violations.
+
+Example: `repair_antennas`
+
+If no diode_cell/diode_pin argument is specified the LEF cell with
+class CORE ANTENNACELL will be used.
+If any repairs are made the filler instances are remove and must be
+placed with the `filler_placement` command.
+
+If the LEF technology layer ANTENNADIFFSIDEAREARATIO properties are constant
+instead of PWL, inserting diodes does not improve the antenna ratios and no
+diodes are inserted. The following error message will be reported:
+
+[WARNING GRT-0243] Unable to repair antennas on net with diodes.
 
 ```
 write_guides file_name

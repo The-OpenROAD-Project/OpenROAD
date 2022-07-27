@@ -34,242 +34,229 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
-#include <iostream>
-#include <limits>
 #include <map>
 #include <vector>
-#include "orientation.h"
+#include <string>
+
 #include "rectangle.h"
-#include "symmetry.h"
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class RoutingParams;
-class Architecture;
 class Network;
 class Node;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class Architecture {
-  // This class represents information about the layout area. 
+class Architecture
+{
+  // This class represents information about the layout area.
 
  public:
   class Row;
   class Spacing;
   class Region;
 
- public:
   Architecture();
-  virtual ~Architecture();
+  ~Architecture();
 
-  std::vector<Architecture::Row*>& getRows() { return m_rows; }
-  int getNumRows() const { return (int)m_rows.size(); }
-  Architecture::Row* getRow(int r) const { return m_rows[r]; }
+  const std::vector<Architecture::Row*>& getRows() const { return rows_; }
+  int getNumRows() const { return (int) rows_.size(); }
+  Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  std::vector<Architecture::Region*>& getRegions() { return m_regions; }
-  int getNumRegions() const { return (int)m_regions.size(); }
-  Architecture::Region* getRegion(int r) const { return m_regions[r]; }
+  const std::vector<Architecture::Region*>& getRegions() const
+  {
+    return regions_;
+  }
+  int getNumRegions() const { return (int) regions_.size(); }
+  Architecture::Region* getRegion(int r) const { return regions_[r]; }
   Architecture::Region* createAndAddRegion();
 
-  bool isSingleHeightCell(Node* ndi) const;
-  bool isMultiHeightCell(Node* ndi) const;
+  bool isSingleHeightCell(const Node* ndi) const;
+  bool isMultiHeightCell(const Node* ndi) const;
 
-  int getCellHeightInRows(Node* ndi) const;
+  int getCellHeightInRows(const Node* ndi) const;
 
-  int postProcess( Network* network );
-  int find_closest_row(int y);
+  int postProcess(Network* network);
+  int find_closest_row(const int y);
 
   void clear_edge_type();
   void init_edge_type();
   int add_edge_type(const char* name);
 
-  int getMinX() const { return m_xmin; }
-  int getMaxX() const { return m_xmax; }
-  int getMinY() const { return m_ymin; }
-  int getMaxY() const { return m_ymax; }
+  int getMinX() const { return xmin_; }
+  int getMaxX() const { return xmax_; }
+  int getMinY() const { return ymin_; }
+  int getMaxY() const { return ymax_; }
 
-  int getWidth() const { return m_xmax - m_xmin; }
-  int getHeight() const { return m_ymax - m_ymin; }
+  int getWidth() const { return xmax_ - xmin_; }
+  int getHeight() const { return ymax_ - ymin_; }
 
-  void setMinX(int xmin) { m_xmin = xmin; }
-  void setMaxX(int xmax) { m_xmax = xmax; }
-  void setMinY(int ymin) { m_ymin = ymin; }
-  void setMaxY(int ymax) { m_ymax = ymax; }
+  void setMinX(int xmin) { xmin_ = xmin; }
+  void setMaxX(int xmax) { xmax_ = xmax; }
+  void setMinY(int ymin) { ymin_ = ymin; }
+  void setMaxY(int ymax) { ymax_ = ymax; }
 
-  bool power_compatible(Node* ndi, Row* row, bool& flip);
+  bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
 
   // Using tables...
-  void setUseSpacingTable(bool val = true) { m_useSpacingTable = val; }
-  bool getUseSpacingTable() const { return m_useSpacingTable; }
+  void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
+  bool getUseSpacingTable() const { return useSpacingTable_; }
   void clearSpacingTable();
-  int getCellSpacingUsingTable(int firstEdge, int secondEdge);
+  int getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
   void addCellSpacingUsingTable(int firstEdge, int secondEdge, int sep);
-  std::vector<Architecture::Spacing*>& getCellSpacings() { 
-    return m_cellSpacings;
-  }
-  std::vector<std::pair<char*,int> >& getEdgeTypes() { 
-    return m_edgeTypes;
+
+  const std::vector<Spacing*>& getCellSpacings() const { return cellSpacings_; }
+
+  const std::vector<std::pair<std::string, int>>& getEdgeTypes() const
+  {
+    return edgeTypes_;
   }
 
   // Using padding...
-  void setUsePadding(bool val = true) { m_usePadding = val; }
-  bool getUsePadding() const { return m_usePadding; }
+  void setUsePadding(bool val = true) { usePadding_ = val; }
+  bool getUsePadding() const { return usePadding_; }
   void addCellPadding(Node* ndi, int leftPadding, int rightPadding);
-  bool getCellPadding(Node* ndi, int& leftPadding, int& rightPadding);
+  bool getCellPadding(const Node* ndi,
+                      int& leftPadding,
+                      int& rightPadding) const;
 
-  int getCellSpacing(Node* leftNode, Node* rightNode);
+  int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
- protected:
+ private:
   // Boundary around rows.
-  int m_xmin;
-  int m_xmax;
-  int m_ymin;
-  int m_ymax;
+  int xmin_;
+  int xmax_;
+  int ymin_;
+  int ymax_;
 
   // Rows...
-  std::vector<Row*> m_rows;
+  std::vector<Row*> rows_;
 
   // Regions...
-  std::vector<Region*> m_regions;
+  std::vector<Region*> regions_;
 
   // Spacing tables...
-  bool m_useSpacingTable;
-  std::vector<std::pair<char*, int> > m_edgeTypes;
-  std::vector<Spacing*> m_cellSpacings;
+  bool useSpacingTable_;
+  std::vector<std::pair<std::string, int>> edgeTypes_;
+  std::vector<Spacing*> cellSpacings_;
 
   // Padding...
-  bool m_usePadding;
-  std::map<int, std::pair<int,int> >
-      m_cellPaddings;  // Padding to left,right.
+  bool usePadding_;
+  std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
 };
 
-class Architecture::Spacing {
+class Architecture::Spacing
+{
  public:
   Spacing(int i1, int i2, int sep);
 
-  int getFirstEdge() const { return m_i1; }
-  int getSecondEdge() const { return m_i2; }
-  int getSeparation() const { return m_sep; }
+  int getFirstEdge() const { return i1_; }
+  int getSecondEdge() const { return i2_; }
+  int getSeparation() const { return sep_; }
 
- protected:
-  int m_i1;
-  int m_i2;
-  int m_sep;
+ private:
+  int i1_;
+  int i2_;
+  int sep_;
 };
 
-const unsigned RowPower_UNK = 0x00000001;
-const unsigned RowPower_VDD = 0x00000002;
-const unsigned RowPower_VSS = 0x00000004;
-
-class Architecture::Row {
+class Architecture::Row
+{
  public:
-  Row();
-  virtual ~Row();
-
-  void setId(int id) { m_id = id; }
-  int getId() const { return m_id; }
-
-  void setOrient(unsigned orient) { m_siteOrient = orient; }
-  unsigned getOrient() const { return m_siteOrient; }
-
-  void setSymmetry(unsigned sym) { m_siteSymmetry = sym; }
-  unsigned getSymmetry() const { return m_siteSymmetry; }
-
-  void setBottom(int bottom) { m_rowLoc = bottom; }
-  void setHeight(int height) { m_rowHeight = height; }
-  void setSubRowOrigin(int origin) { m_subRowOrigin = origin; }
-  void setSiteSpacing(int spacing) { m_siteSpacing = spacing; }
-  void setSiteWidth(int width) { m_siteWidth = width; }
-  void setNumSites(int nsites) { m_numSites = nsites; }
-
-  int getBottom() const { return m_rowLoc; }
-  int getTop() const { return m_rowLoc+m_rowHeight; }
-  int getLeft() const { return m_subRowOrigin; }
-  int getRight() const { 
-    return m_subRowOrigin+m_numSites*m_siteSpacing; 
-  }
-  int getHeight() const { return m_rowHeight; }
-  int getSiteWidth() const { return m_siteWidth; }
-  int getSiteSpacing() const { return m_siteSpacing; }
-  int getNumSites() const { return m_numSites; }
-
-  void setTopPower(int pwr) { m_powerTop = pwr; }
-  int getTopPower() const { return m_powerTop; }
-
-  void setBottomPower(int pwr) { m_powerBot = pwr; }
-  int getBottomPower() const { return m_powerBot; }
-
-  double getCenterY() const { return m_rowLoc+0.5*m_rowHeight; } 
-
- public:
-  struct compareRowBottom {
-    bool operator()(Architecture::Row* p, Architecture::Row* q) const {
-      return p->getBottom() < q->getBottom();
-    }
-    bool operator()(Architecture::Row*& s, double i) const {
-      return s->getBottom() < i;
-    }
-    bool operator()(double i, Architecture::Row*& s) const {
-      return i < s->getBottom();
-    }
+  enum PowerType
+  {
+    Power_UNK,
+    Power_VDD,
+    Power_VSS
   };
 
- protected:
-  int m_id;              // Every row  needs an id...  Filled in after sorting.
-  int m_rowLoc;          // Y-location of the row.
-  int m_rowHeight;       // Height of the row.
-  int m_subRowOrigin;    // Starting X location (xmin) of the row.
-  int m_siteSpacing;     // Spacing between sites in the row. XXX: Likely
+  Row();
+
+  void setId(int id) { id_ = id; }
+  int getId() const { return id_; }
+
+  void setOrient(unsigned orient) { siteOrient_ = orient; }
+  unsigned getOrient() const { return siteOrient_; }
+
+  void setSymmetry(unsigned sym) { siteSymmetry_ = sym; }
+  unsigned getSymmetry() const { return siteSymmetry_; }
+
+  void setBottom(int bottom) { rowLoc_ = bottom; }
+  void setHeight(int height) { rowHeight_ = height; }
+  void setSubRowOrigin(int origin) { subRowOrigin_ = origin; }
+  void setSiteSpacing(int spacing) { siteSpacing_ = spacing; }
+  void setSiteWidth(int width) { siteWidth_ = width; }
+  void setNumSites(int nsites) { numSites_ = nsites; }
+
+  int getBottom() const { return rowLoc_; }
+  int getTop() const { return rowLoc_ + rowHeight_; }
+  int getLeft() const { return subRowOrigin_; }
+  int getRight() const { return subRowOrigin_ + numSites_ * siteSpacing_; }
+  int getHeight() const { return rowHeight_; }
+  int getSiteWidth() const { return siteWidth_; }
+  int getSiteSpacing() const { return siteSpacing_; }
+  int getNumSites() const { return numSites_; }
+
+  void setTopPower(int pwr) { powerTop_ = pwr; }
+  int getTopPower() const { return powerTop_; }
+
+  void setBottomPower(int pwr) { powerBot_ = pwr; }
+  int getBottomPower() const { return powerBot_; }
+
+  double getCenterY() const { return rowLoc_ + 0.5 * rowHeight_; }
+
+ private:
+  int id_;               // Every row  needs an id...  Filled in after sorting.
+  int rowLoc_;           // Y-location of the row.
+  int rowHeight_;        // Height of the row.
+  int subRowOrigin_;     // Starting X location (xmin) of the row.
+  int siteSpacing_;      // Spacing between sites in the row. XXX: Likely
                          // assumed to be the same as the width...
-  int m_siteWidth;       // Width of sites in the row.
-  int m_numSites;        // Number of sites...  Ending X location (xmax) is =
-                         // m_subRowOrigin + m_numSites * m_siteSpacing;
-  unsigned m_siteOrient;    // Orientation of sites in the row.
-  unsigned m_siteSymmetry;  // Symmetry of sites in the row.  Symmetry allows
-                            // for certain orientations...
+  int siteWidth_;        // Width of sites in the row.
+  int numSites_;         // Number of sites...  Ending X location (xmax) is =
+                         // subRowOrigin_ + numSites_ * siteSpacing_;
+  unsigned siteOrient_;  // Orientation of sites in the row.
+  unsigned siteSymmetry_;  // Symmetry of sites in the row.  Symmetry allows
+                           // for certain orientations...
   // Voltages at the top and bottom of the row.
-  int m_powerTop;
-  int m_powerBot;
+  int powerTop_;
+  int powerBot_;
 };
 
-class Architecture::Region {
+class Architecture::Region
+{
  public:
-  Region();
-  virtual ~Region();
+  int getId() const { return id_; }
+  void setId(int id) { id_ = id; }
 
-  int getId() const { return m_id; }
-  void setId(int id) { m_id = id; }
+  int getMinX() const { return xmin_; }
+  int getMaxX() const { return xmax_; }
+  int getMinY() const { return ymin_; }
+  int getMaxY() const { return ymax_; }
 
-  int getMinX() const { return m_xmin; }
-  int getMaxX() const { return m_xmax; }
-  int getMinY() const { return m_ymin; }
-  int getMaxY() const { return m_ymax; }
+  void setMinX(int xmin) { xmin_ = xmin; }
+  void setMaxX(int xmax) { xmax_ = xmax; }
+  void setMinY(int ymin) { ymin_ = ymin; }
+  void setMaxY(int ymax) { ymax_ = ymax; }
 
-  void setMinX(int xmin) { m_xmin = xmin; }
-  void setMaxX(int xmax) { m_xmax = xmax; }
-  void setMinY(int ymin) { m_ymin = ymin; }
-  void setMaxY(int ymax) { m_ymax = ymax; }
+  void addRect(Rectangle_i& rect) { rects_.push_back(rect); }
+  const std::vector<Rectangle_i>& getRects() const { return rects_; }
 
-  void addRect(Rectangle_i& rect) { m_rects.push_back(rect); }
-  const std::vector<Rectangle_i>& getRects() const { return  m_rects; }
-
- protected:
+ private:
   // Id for the region.
-  int m_id;  
+  int id_ = -1;
 
   // Box around all sub-rectangles.
-  int m_xmin;
-  int m_ymin;
-  int m_xmax;
-  int m_ymax;
+  int xmin_ = std::numeric_limits<int>::max();
+  int ymin_ = std::numeric_limits<int>::max();
+  int xmax_ = std::numeric_limits<int>::lowest();
+  int ymax_ = std::numeric_limits<int>::lowest();
 
   // Sub-rectangles forming the rectilinear region.
-  std::vector<Rectangle_i> m_rects;
+  std::vector<Rectangle_i> rects_;
 };
 
 }  // namespace dpo

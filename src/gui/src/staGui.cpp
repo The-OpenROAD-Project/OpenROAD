@@ -33,12 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "staGui.h"
+
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
 #include <QDebug>
-#include <QLineEdit>
 #include <QKeyEvent>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
@@ -70,7 +72,6 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VertexVisitor.hh"
-#include "staGui.h"
 
 Q_DECLARE_METATYPE(sta::Corner*);
 
@@ -80,10 +81,14 @@ const Painter::Color TimingPathRenderer::inst_highlight_color_
     = Painter::Color(gui::Painter::highlight, 100);
 const Painter::Color TimingPathRenderer::path_inst_color_
     = Painter::Color(gui::Painter::magenta, 100);
-const Painter::Color TimingPathRenderer::term_color_ = Painter::Color(gui::Painter::blue, 100);
-const Painter::Color TimingPathRenderer::signal_color_ = Painter::Color(gui::Painter::red, 100);
-const Painter::Color TimingPathRenderer::clock_color_ = Painter::Color(gui::Painter::cyan, 100);
-const Painter::Color TimingPathRenderer::capture_clock_color_ = Painter::Color(gui::Painter::green, 100);
+const Painter::Color TimingPathRenderer::term_color_
+    = Painter::Color(gui::Painter::blue, 100);
+const Painter::Color TimingPathRenderer::signal_color_
+    = Painter::Color(gui::Painter::red, 100);
+const Painter::Color TimingPathRenderer::clock_color_
+    = Painter::Color(gui::Painter::cyan, 100);
+const Painter::Color TimingPathRenderer::capture_clock_color_
+    = Painter::Color(gui::Painter::green, 100);
 
 static QString convertDelay(float time, sta::Unit* convert)
 {
@@ -164,18 +169,18 @@ QVariant TimingPathsModel::headerData(int section,
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     switch (static_cast<Column>(section)) {
-    case Clock:
-      return "Capture Clock";
-    case Required:
-      return "Required";
-    case Arrival:
-      return "Arrival";
-    case Slack:
-      return "Slack";
-    case Start:
-      return "Start";
-    case End:
-      return "End";
+      case Clock:
+        return "Capture Clock";
+      case Required:
+        return "Required";
+      case Arrival:
+        return "Arrival";
+      case Slack:
+        return "Slack";
+      case Start:
+        return "Start";
+      case End:
+        return "End";
     }
   }
   return QVariant();
@@ -190,29 +195,37 @@ void TimingPathsModel::resetModel()
 
 void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 {
-  std::function<bool(const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2)> sort_func;
+  std::function<bool(const std::unique_ptr<TimingPath>& path1,
+                     const std::unique_ptr<TimingPath>& path2)>
+      sort_func;
   if (col_index == Clock) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getEndClock() < path2->getEndClock();
     };
   } else if (col_index == Required) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathRequiredTime() < path2->getPathRequiredTime();
     };
   } else if (col_index == Arrival) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathArrivalTime() < path2->getPathArrivalTime();
     };
   } else if (col_index == Slack) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
     };
   } else if (col_index == Start) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getStartStageName() < path2->getStartStageName();
     };
   } else if (col_index == End) {
-    sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
       return path1->getEndStageName() < path2->getEndStageName();
     };
   } else {
@@ -230,12 +243,13 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   endResetModel();
 }
 
-void TimingPathsModel::populateModel(bool setup_hold,
-                                     int path_count,
-                                     const std::set<sta::Pin*>& from,
-                                     const std::vector<std::set<sta::Pin*>>& thru,
-                                     const std::set<sta::Pin*>& to,
-                                     bool unconstrainted)
+void TimingPathsModel::populateModel(
+    bool setup_hold,
+    int path_count,
+    const std::set<sta::Pin*>& from,
+    const std::vector<std::set<sta::Pin*>>& thru,
+    const std::set<sta::Pin*>& to,
+    bool unconstrainted)
 {
   beginResetModel();
   timing_paths_.clear();
@@ -243,23 +257,24 @@ void TimingPathsModel::populateModel(bool setup_hold,
   endResetModel();
 }
 
-bool TimingPathsModel::populatePaths(bool get_max,
-                                     int path_count,
-                                     const std::set<sta::Pin*>& from,
-                                     const std::vector<std::set<sta::Pin*>>& thru,
-                                     const std::set<sta::Pin*>& to,
-                                     bool unconstrainted)
+bool TimingPathsModel::populatePaths(
+    bool get_max,
+    int path_count,
+    const std::set<sta::Pin*>& from,
+    const std::vector<std::set<sta::Pin*>>& thru,
+    const std::set<sta::Pin*>& to,
+    bool unconstrainted)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   TimingPath::buildPaths(sta_,
                          get_max,
-                         unconstrainted, // unconstrained
+                         unconstrainted,  // unconstrained
                          path_count,
-                         from, // from
-                         thru, // through
-                         to, // to
+                         from,  // from
+                         thru,  // through
+                         to,    // to
                          true,
                          timing_paths_);
 
@@ -286,10 +301,8 @@ void TimingPath::buildPaths(sta::dbSta* sta,
   if (!from.empty()) {
     sta::PinSet* pins = new sta::PinSet;
     pins->insert(from.begin(), from.end());
-    e_from = sta->makeExceptionFrom(pins,
-                                    nullptr,
-                                    nullptr,
-                                    sta::RiseFallBoth::riseFall());
+    e_from = sta->makeExceptionFrom(
+        pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
   }
   sta::ExceptionThruSeq* e_thrus = nullptr;
   if (!thrus.empty()) {
@@ -302,10 +315,8 @@ void TimingPath::buildPaths(sta::dbSta* sta,
       }
       sta::PinSet* pins = new sta::PinSet;
       pins->insert(thru_set.begin(), thru_set.end());
-      e_thrus->push_back(sta->makeExceptionThru(pins,
-                                                nullptr,
-                                                nullptr,
-                                                sta::RiseFallBoth::riseFall()));
+      e_thrus->push_back(sta->makeExceptionThru(
+          pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
     }
   }
   sta::ExceptionTo* e_to = nullptr;
@@ -382,10 +393,7 @@ void TimingPath::buildPaths(sta::dbSta* sta,
 
     const bool clock_expaneded = clock_propagated;
 
-    timing_path->populatePath(path,
-                              sta,
-                              dcalc_ap,
-                              clock_expaneded);
+    timing_path->populatePath(path, sta, dcalc_ap, clock_expaneded);
     if (include_capture) {
       timing_path->populateCapturePath(path_end->targetClkPath(),
                                        sta,
@@ -427,9 +435,11 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (is_driver
         && !(!clock_expanded && (sta->network()->isCheckClk(pin) || !i))) {
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      sta::Parasitic* parasitic = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
+      sta::Parasitic* parasitic
+          = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(pin, parasitic, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(
+          pin, parasitic, ref->transition(sta), dcalc_ap);
     }
 
     odb::dbITerm* term;
@@ -441,16 +451,17 @@ void TimingPath::populateNodeList(sta::Path* path,
     }
     arrival_cur_stage = arrival;
 
-    list.push_back(std::make_unique<TimingPathNode>(pin_object,
-        pin_is_clock,
-        is_rising,
-        !is_driver,
-        true,
-        arrival + offset,
-        arrival_cur_stage - arrival_prev_stage,
-        slew,
-        cap));
-      arrival_prev_stage = arrival_cur_stage;
+    list.push_back(
+        std::make_unique<TimingPathNode>(pin_object,
+                                         pin_is_clock,
+                                         is_rising,
+                                         !is_driver,
+                                         true,
+                                         arrival + offset,
+                                         arrival_cur_stage - arrival_prev_stage,
+                                         slew,
+                                         cap));
+    arrival_prev_stage = arrival_cur_stage;
   }
 
   // populate list with source/sink nodes
@@ -524,7 +535,7 @@ void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
     }
   }
 
-  index = nodes.size() - 1; // assume last index is the end of the clock path
+  index = nodes.size() - 1;  // assume last index is the end of the clock path
 }
 
 void TimingPath::computeClkEndIndex()
@@ -629,8 +640,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
     auto* mterm = iterm->getMTerm();
     for (auto* pin : mterm->getMPins()) {
       for (auto* box : pin->getGeometry()) {
-        odb::Rect box_rect;
-        box->getBox(box_rect);
+        odb::Rect box_rect = box->getBox();
         transform.apply(box_rect);
         if (pin_rect.dx() < box_rect.dx()) {
           pin_rect = box_rect;
@@ -645,8 +655,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
     odb::Rect pin_rect;
     for (auto* pin : bterm->getBPins()) {
       for (auto* box : pin->getBoxes()) {
-        odb::Rect box_rect;
-        box->getBox(box_rect);
+        odb::Rect box_rect = box->getBox();
         if (pin_rect.dx() < box_rect.dx()) {
           pin_rect = box_rect;
         }
@@ -658,13 +667,15 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 
 /////////
 
-TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta, QObject* parent)
-  : QAbstractTableModel(parent),
-    sta_(sta),
-    is_capture_(is_capture),
-    expand_clock_(false),
-    path_(nullptr),
-    nodes_(nullptr)
+TimingPathDetailModel::TimingPathDetailModel(bool is_capture,
+                                             sta::dbSta* sta,
+                                             QObject* parent)
+    : QAbstractTableModel(parent),
+      sta_(sta),
+      is_capture_(is_capture),
+      expand_clock_(false),
+      path_(nullptr),
+      nodes_(nullptr)
 {
 }
 
@@ -682,7 +693,8 @@ int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
   return 6;
 }
 
-const TimingPathNode* TimingPathDetailModel::getNodeAt(const QModelIndex& index) const
+const TimingPathNode* TimingPathDetailModel::getNodeAt(
+    const QModelIndex& index) const
 {
   int node_idx = index.row();
 
@@ -696,9 +708,7 @@ const TimingPathNode* TimingPathDetailModel::getNodeAt(const QModelIndex& index)
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
-  if (path_ == nullptr ||
-      nodes_ == nullptr ||
-      !hasNodes()) {
+  if (path_ == nullptr || nodes_ == nullptr || !hasNodes()) {
     return QVariant();
   }
 
@@ -726,20 +736,22 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {
-      case Pin:
-        return "clock network delay";
-      case Time:
-        return convertDelay(node->getArrival(), time_units);
-      case Delay:
-        return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(), time_units);
-      default:
-        return QVariant();
+        case Pin:
+          return "clock network delay";
+        case Time:
+          return convertDelay(node->getArrival(), time_units);
+        case Delay:
+          return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(),
+                              time_units);
+        default:
+          return QVariant();
       }
     } else {
       const auto* node = getNodeAt(index);
       switch (col_index) {
         case Pin:
-          return QString::fromStdString(node->getNodeName(/* include_master */ true));
+          return QString::fromStdString(
+              node->getNodeName(/* include_master */ true));
         case RiseFall:
           return node->isRisingEdge() ? up_arrow_ : down_arrow_;
         case Time:
@@ -763,7 +775,8 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 bool TimingPathDetailModel::shouldHide(const QModelIndex& index) const
 {
   const int row = index.row();
-  const int last_clock = getClockEndIndex() + 1; // accounting for clock_summary would +1
+  const int last_clock
+      = getClockEndIndex() + 1;  // accounting for clock_summary would +1
 
   if (row == 0) {
     return false;
@@ -796,24 +809,25 @@ QVariant TimingPathDetailModel::headerData(int section,
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     switch (static_cast<Column>(section)) {
-    case Pin:
-      return "Pin";
-    case RiseFall:
-      return up_down_arrows_;
-    case Time:
-      return "Time";
-    case Delay:
-      return "Delay";
-    case Slew:
-      return "Slew";
-    case Load:
-      return "Load";
+      case Pin:
+        return "Pin";
+      case RiseFall:
+        return up_down_arrows_;
+      case Time:
+        return "Time";
+      case Delay:
+        return "Delay";
+      case Slew:
+        return "Slew";
+      case Load:
+        return "Load";
     }
   }
   return QVariant();
 }
 
-void TimingPathDetailModel::populateModel(TimingPath* path, TimingPath::TimingNodeList* nodes)
+void TimingPathDetailModel::populateModel(TimingPath* path,
+                                          TimingPath::TimingNodeList* nodes)
 {
   beginResetModel();
   path_ = path;
@@ -823,9 +837,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path, TimingPath::TimingNo
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer() :
-    path_(nullptr),
-    highlight_stage_()
+TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
 {
 }
 
@@ -857,7 +869,8 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
-      highlight_stage_.push_back(std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
+      highlight_stage_.push_back(
+          std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
 
     redraw();
@@ -888,9 +901,12 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
     if (node->isSource()) {
       for (auto* sink_node : node->getPairedNodes()) {
         if (sink_node != nullptr) {
-          gui::Painter::Color wire_color = node->isClock() ? clock_color : TimingPathRenderer::signal_color_;
+          gui::Painter::Color wire_color
+              = node->isClock() ? clock_color
+                                : TimingPathRenderer::signal_color_;
           painter.setPenAndBrush(wire_color, true);
-          net_descriptor->highlight(node->getNet(), painter, sink_node->getPin());
+          net_descriptor->highlight(
+              node->getNet(), painter, sink_node->getPin());
         }
       }
     }
@@ -947,17 +963,17 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
 
 /////////
 
-TimingConeRenderer::TimingConeRenderer() :
-    sta_(nullptr),
-    term_(nullptr),
-    fanin_(false),
-    fanout_(false),
-    map_(),
-    min_map_index_(0),
-    max_map_index_(0),
-    min_timing_(0.0),
-    max_timing_(0.0),
-    color_generator_(SpectrumGenerator(1.0))
+TimingConeRenderer::TimingConeRenderer()
+    : sta_(nullptr),
+      term_(nullptr),
+      fanin_(false),
+      fanout_(false),
+      map_(),
+      min_map_index_(0),
+      max_map_index_(0),
+      min_timing_(0.0),
+      max_timing_(0.0),
+      color_generator_(SpectrumGenerator(1.0))
 {
 }
 
@@ -1079,9 +1095,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
 
   std::function<double(const TimingPathNode* node)> timingToRatio;
   if (timing_range == 0.0 || cone_unconstrained) {
-    timingToRatio = [](const TimingPathNode* node) {
-      return 0.5;
-    };
+    timingToRatio = [](const TimingPathNode* node) { return 0.5; };
   } else {
     timingToRatio = [this, timing_range](const TimingPathNode* node) {
       double value = 0.0;
@@ -1123,12 +1137,13 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     inst_descriptor->highlight(inst, painter);
   }
 
-  const int line_width = 2; // 2 pixels
+  const int line_width = 2;  // 2 pixels
   auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
-      const auto color = color_generator_.getColor(timingToRatio(pin.get()), 255);
+      const auto color
+          = color_generator_.getColor(timingToRatio(pin.get()), 255);
       painter.setPenAndBrush(color, true);
 
       if (pin->isPinITerm()) {
@@ -1144,11 +1159,14 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
 
       for (auto* source_node : pin->getPairedNodes()) {
         const odb::Rect source_rect = source_node->getPinLargestBox();
-        const odb::Point source_pt(0.5 * (source_rect.xMin() + source_rect.xMax()),
-                                   0.5 * (source_rect.yMin() + source_rect.yMax()));
-        const auto source_color = color_generator_.getColor(timingToRatio(source_node), 255);
+        const odb::Point source_pt(
+            0.5 * (source_rect.xMin() + source_rect.xMax()),
+            0.5 * (source_rect.yMin() + source_rect.yMax()));
+        const auto source_color
+            = color_generator_.getColor(timingToRatio(source_node), 255);
         painter.setPen(source_color, true, line_width);
-        painter.drawLine(source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
+        painter.drawLine(
+            source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
       }
     }
   }
@@ -1164,9 +1182,11 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
                               0.5 * (pin_rect.yMin() + pin_rect.yMax()));
 
       const std::string text = std::to_string(level);
-      const odb::Rect text_bound = painter.stringBoundaries(pin_pt.x(), pin_pt.y(), text_anchor, text);
+      const odb::Rect text_bound
+          = painter.stringBoundaries(pin_pt.x(), pin_pt.y(), text_anchor, text);
 
-      if (text_bound.dx() < text_margin * pin_rect.dx() && text_bound.dy() < text_margin * pin_rect.dy()) {
+      if (text_bound.dx() < text_margin * pin_rect.dx()
+          && text_bound.dy() < text_margin * pin_rect.dy()) {
         painter.drawString(pin_pt.x(), pin_pt.y(), text_anchor, text);
       }
     }
@@ -1177,7 +1197,8 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     const int legend_keys = 5;
     const int color_count = color_generator_.getColorCount();
     auto* units = sta_->units()->timeUnit();
-    const std::string text_units = std::string(units->scaleAbreviation()) + units->suffix();
+    const std::string text_units
+        = std::string(units->scaleAbreviation()) + units->suffix();
     std::vector<std::pair<int, std::string>> legend;
     for (int i = 0; i < legend_keys; i++) {
       const double scale = static_cast<double>(i) / (legend_keys - 1);
@@ -1191,18 +1212,19 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 }
 
-void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_map)
+void TimingConeRenderer::getFaninCone(sta::Pin* source_pin,
+                                      DepthMapSet& depth_map)
 {
   sta::PinSeq pins_to;
   pins_to.push_back(source_pin);
 
   auto* pins = sta_->findFaninPins(&pins_to,
-                                   true, // flat
-                                   false, // startpoints_only
+                                   true,   // flat
+                                   false,  // startpoints_only
                                    0,
                                    0,
-                                   true, // thru_disabled
-                                   true); // thru_constants
+                                   true,   // thru_disabled
+                                   true);  // thru_constants
 
   DepthMapSet depth_map_set;
   getCone(source_pin, pins, depth_map_set, true);
@@ -1211,29 +1233,32 @@ void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_m
   }
 }
 
-void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin, DepthMapSet& depth_map)
+void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin,
+                                       DepthMapSet& depth_map)
 {
   sta::PinSeq pins_from;
   pins_from.push_back(source_pin);
 
   auto* pins = sta_->findFanoutPins(&pins_from,
-                                    true, // flat
-                                    false, // startpoints_only
+                                    true,   // flat
+                                    false,  // startpoints_only
                                     0,
                                     0,
-                                    true, // thru_disabled
-                                    true); // thru_constants
+                                    true,   // thru_disabled
+                                    true);  // thru_constants
   getCone(source_pin, pins, depth_map, false);
 }
 
-void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, DepthMapSet& depth_map, bool is_fanin)
+void TimingConeRenderer::getCone(sta::Pin* source_pin,
+                                 sta::PinSet* pins,
+                                 DepthMapSet& depth_map,
+                                 bool is_fanin)
 {
   auto* network = sta_->getDbNetwork();
   auto* graph = sta_->graph();
 
-  auto filter_pins = [network](sta::Pin* pin) {
-    return network->isRegClkPin(pin);
-  };
+  auto filter_pins
+      = [network](sta::Pin* pin) { return network->isRegClkPin(pin); };
 
   auto pin_to_object = [network](sta::Pin* pin) -> odb::dbObject* {
     odb::dbITerm* iterm = nullptr;
@@ -1340,7 +1365,8 @@ void TimingConeRenderer::buildConnectivity()
       } else {
         sta_pin = network->dbToSta(source_pin->getPinAsBTerm());
       }
-      sta::VertexOutEdgeIterator fanout_iter(graph->pinDrvrVertex(sta_pin), graph);
+      sta::VertexOutEdgeIterator fanout_iter(graph->pinDrvrVertex(sta_pin),
+                                             graph);
       while (fanout_iter.hasNext()) {
         sta::Edge* edge = fanout_iter.next();
         sta::Vertex* fanout = edge->to(graph);
@@ -1355,7 +1381,8 @@ void TimingConeRenderer::buildConnectivity()
 
 void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
 {
-  // annotate critical path and work forwards/backwards until all pins have timing
+  // annotate critical path and work forwards/backwards until all pins have
+  // timing
   std::vector<TimingPathNode*> pin_order;
   for (int i = 0; i <= std::max(-min_map_index_, max_map_index_); i++) {
     if (i <= -min_map_index_) {
@@ -1375,19 +1402,21 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
 
   std::vector<std::unique_ptr<TimingPath>> paths;
   TimingPath::buildPaths(sta_,
-      true, // max
-      true, // unconstrained
-      path_count, // paths
-      {}, // from
-      {{source_pin}}, // thru
-      {}, // to
-      false,
-      paths);
+                         true,            // max
+                         true,            // unconstrained
+                         path_count,      // paths
+                         {},              // from
+                         {{source_pin}},  // thru
+                         {},              // to
+                         false,
+                         paths);
   for (const auto& path : paths) {
     for (const auto& node : *path->getPathNodes()) {
-      auto pin_find = std::find_if(pin_order.begin(), pin_order.end(), [&node](const TimingPathNode* other) {
-        return node->getPin() == other->getPin();
-      });
+      auto pin_find = std::find_if(pin_order.begin(),
+                                   pin_order.end(),
+                                   [&node](const TimingPathNode* other) {
+                                     return node->getPin() == other->getPin();
+                                   });
 
       if (pin_find != pin_order.end()) {
         TimingPathNode* pin_node = *pin_find;
@@ -1414,23 +1443,24 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
   }
 
   for (auto& [level, pin_list] : map_) {
-    std::sort(pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
-      return l->getPathSlack() > r->getPathSlack();
-    });
+    std::sort(
+        pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
+          return l->getPathSlack() > r->getPathSlack();
+        });
   }
 }
 
 /////////
 
-PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent) :
-    QWidget(parent),
-    sta_(nullptr),
-    pins_({}),
-    box_(new QListWidget(this)),
-    find_pin_(new QLineEdit(this)),
-    clear_(new QPushButton(this)),
-    add_remove_(nullptr),
-    add_mode_(true)
+PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent)
+    : QWidget(parent),
+      sta_(nullptr),
+      pins_({}),
+      box_(new QListWidget(this)),
+      find_pin_(new QLineEdit(this)),
+      clear_(new QPushButton(this)),
+      add_remove_(nullptr),
+      add_mode_(true)
 {
   const int min_characters = 25;
   const auto font_metrics = fontMetrics();
@@ -1446,15 +1476,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent) :
   clear_->setToolTip(tr("Clear pins"));
   clear_->setAutoDefault(false);
   clear_->setDefault(false);
-  connect(clear_,
-          SIGNAL(pressed()),
-          this,
-          SLOT(clearPins()));
+  connect(clear_, SIGNAL(pressed()), this, SLOT(clearPins()));
 
-  connect(find_pin_,
-          SIGNAL(returnPressed()),
-          this,
-          SLOT(findPin()));
+  connect(find_pin_, SIGNAL(returnPressed()), this, SLOT(findPin()));
 
   QVBoxLayout* layout = new QVBoxLayout;
   QHBoxLayout* row_layout = new QHBoxLayout;
@@ -1467,11 +1491,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent) :
 
     add_remove_->setAutoDefault(false);
     add_remove_->setDefault(false);
-    connect(add_remove_,
-            &QPushButton::pressed,
-            [this]() {
-              emit addRemoveTriggered(this);
-            });
+    connect(add_remove_, &QPushButton::pressed, [this]() {
+      emit addRemoveTriggered(this);
+    });
     setAddMode();
   }
 
@@ -1523,7 +1545,7 @@ void PinSetWidget::updatePins()
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
       auto* item = new QListWidgetItem(network->name(pin));
-      item->setData(Qt::UserRole, QVariant::fromValue((void*)pin));
+      item->setData(Qt::UserRole, QVariant::fromValue((void*) pin));
       box_->addItem(item);
     }
   }
@@ -1553,7 +1575,6 @@ void PinSetWidget::addPin(sta::Pin* pin)
   }
 
   pins_.push_back(pin);
-
 }
 
 void PinSetWidget::removePin(sta::Pin* pin)
@@ -1565,7 +1586,7 @@ void PinSetWidget::removeSelectedPins()
 {
   for (auto* selection : box_->selectedItems()) {
     void* pin_data = selection->data(Qt::UserRole).value<void*>();
-    removePin((sta::Pin*)pin_data);
+    removePin((sta::Pin*) pin_data);
   }
   updatePins();
 }
@@ -1628,42 +1649,31 @@ void PinSetWidget::showMenu(const QPoint& point)
     return;
   }
 
-  sta::Pin* pin = (sta::Pin*)pin_item->data(Qt::UserRole).value<void*>();
+  sta::Pin* pin = (sta::Pin*) pin_item->data(Qt::UserRole).value<void*>();
 
   // Create menu and insert some actions
   QMenu pin_menu;
   QAction* remove = pin_menu.addAction("Remove");
-  connect(remove,
-          &QAction::triggered,
-          [this, pin]() {
-            removePin(pin);
-            updatePins();
-          });
+  connect(remove, &QAction::triggered, [this, pin]() {
+    removePin(pin);
+    updatePins();
+  });
   QAction* remove_sel = pin_menu.addAction("Remove selected");
-  connect(remove_sel,
-          &QAction::triggered,
-          [this]() {
-            removeSelectedPins();
-          });
+  connect(remove_sel, &QAction::triggered, [this]() { removeSelectedPins(); });
   QAction* clear_all = pin_menu.addAction("Clear all");
-  connect(clear_all,
-          SIGNAL(triggered()),
-          this,
-          SLOT(clearPins()));
+  connect(clear_all, SIGNAL(triggered()), this, SLOT(clearPins()));
   QAction* inspect_action = pin_menu.addAction("Inspect");
-  connect(inspect_action,
-          &QAction::triggered,
-          [this, pin]() {
-            auto* gui = Gui::get();
-            odb::dbITerm* iterm;
-            odb::dbBTerm* bterm;
-            sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
-            if (iterm != nullptr) {
-              emit inspect(gui->makeSelected(iterm));
-            } else {
-              emit inspect(gui->makeSelected(bterm));
-            }
-          });
+  connect(inspect_action, &QAction::triggered, [this, pin]() {
+    auto* gui = Gui::get();
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+    if (iterm != nullptr) {
+      emit inspect(gui->makeSelected(iterm));
+    } else {
+      emit inspect(gui->makeSelected(bterm));
+    }
+  });
 
   // Show context menu at handling position
   pin_menu.exec(global);
@@ -1671,17 +1681,17 @@ void PinSetWidget::showMenu(const QPoint& point)
 
 /////////
 
-TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
-    QDialog(parent),
-    sta_(nullptr),
-    layout_(new QFormLayout),
-    path_count_spin_box_(new QSpinBox(this)),
-    corner_box_(new QComboBox(this)),
-    uncontrained_(new QCheckBox(this)),
-    expand_clk_(new QCheckBox(this)),
-    from_(new PinSetWidget(false, this)),
-    thru_({}),
-    to_(new PinSetWidget(false, this))
+TimingControlsDialog::TimingControlsDialog(QWidget* parent)
+    : QDialog(parent),
+      sta_(nullptr),
+      layout_(new QFormLayout),
+      path_count_spin_box_(new QSpinBox(this)),
+      corner_box_(new QComboBox(this)),
+      uncontrained_(new QCheckBox(this)),
+      expand_clk_(new QCheckBox(this)),
+      from_(new PinSetWidget(false, this)),
+      thru_({}),
+      to_(new PinSetWidget(false, this))
 {
   setWindowTitle("Timing Controls");
 
@@ -1711,13 +1721,12 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
             sta_->setCmdCorner(corner);
           });
 
-  connect(expand_clk_,
-          SIGNAL(toggled(bool)),
-          this,
-          SIGNAL(expandClock(bool)));
+  connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
 }
 
-void TimingControlsDialog::setupPinRow(const QString& label, PinSetWidget* row, int row_index)
+void TimingControlsDialog::setupPinRow(const QString& label,
+                                       PinSetWidget* row,
+                                       int row_index)
 {
   if (row_index < 0) {
     layout_->addRow(label, row);
@@ -1779,7 +1788,8 @@ void TimingControlsDialog::populate()
 
   if (corner_box_->count() > 1) {
     selection += 1;
-    corner_box_->insertItem(0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
+    corner_box_->insertItem(
+        0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
     if (current_corner == nullptr) {
       selection = 0;
     }
@@ -1808,7 +1818,8 @@ sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
   }
 }
 
-void TimingControlsDialog::setThruPin(const std::vector<std::set<sta::Pin*>>& pins)
+void TimingControlsDialog::setThruPin(
+    const std::vector<std::set<sta::Pin*>>& pins)
 {
   for (size_t i = 0; i < thru_.size(); i++) {
     layout_->removeRow(thru_start_row_);
@@ -1818,7 +1829,7 @@ void TimingControlsDialog::setThruPin(const std::vector<std::set<sta::Pin*>>& pi
 
   auto new_pins = pins;
   if (pins.empty()) {
-    new_pins.push_back({}); // add one row
+    new_pins.push_back({});  // add one row
   }
 
   for (const auto& pin_set : new_pins) {

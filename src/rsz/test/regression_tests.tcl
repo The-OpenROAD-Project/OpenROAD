@@ -34,6 +34,7 @@ record_tests {
   repair_fanout3
   repair_fanout4
   repair_fanout5
+  repair_fanout6
   repair_hold1
   repair_hold2
   repair_hold3
@@ -86,5 +87,6 @@ record_tests {
   repair_wire8
   repair_wire9
   repair_wire10
+  repair_wire11
   gcd_resize
 }

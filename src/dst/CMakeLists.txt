@@ -68,3 +68,5 @@ target_link_libraries(dst
 messages(
   TARGET dst
 )
+
+add_subdirectory(test/cpp)

@@ -170,12 +170,11 @@ class Grid
   void resetShapes();
 
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                 bool do_pins) const;
+                 bool do_pins, const ShapeTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs);
-  static void makeInitialShapes(const std::set<odb::dbNet*>& nets,
-                                ShapeTreeMap& shapes);
+  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts);
+  static void makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes);
 
   virtual bool isReplaceable() const { return false; }
 
@@ -184,6 +183,8 @@ class Grid
   void setSwitchedPower(GridSwitchedPower* cell);
 
   void ripup();
+
+  virtual std::set<odb::dbInst*> getInstances() const;
 
  protected:
   // find all intersections in the shapes which may become vias
@@ -247,6 +248,7 @@ class InstanceGrid : public Grid
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }
+  virtual std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
 
   virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 

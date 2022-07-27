@@ -107,8 +107,7 @@ Graphics::drawObjects(gui::Painter &painter)
   float min_length = min_displacement_ * dp_->getRowHeight();
   min_length *= min_length;
 
-  odb::Rect core;
-  block_->getCoreArea(core);
+  odb::Rect core = block_->getCoreArea();
 
   for (auto cell : dp_->getCells()) {
     if (!cell.is_placed_) {
