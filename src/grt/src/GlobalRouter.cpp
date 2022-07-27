@@ -95,7 +95,6 @@ GlobalRouter::GlobalRouter()
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(false),
-      congestion_file_name_(nullptr),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
       seed_(0),
@@ -105,7 +104,8 @@ GlobalRouter::GlobalRouter()
       db_(nullptr),
       block_(nullptr),
       repair_antennas_(nullptr),
-      heatmap_(nullptr)
+      heatmap_(nullptr),
+      congestion_file_name_(nullptr)
 {
 }
 

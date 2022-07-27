@@ -397,9 +397,6 @@ class GlobalRouter
   float caps_perturbation_percentage_;
   int perturbation_amount_;
 
-  // variables congestion report file
-  const char * congestion_file_name_;
-
   // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;
 
@@ -412,6 +409,9 @@ class GlobalRouter
 
   RepairAntennas *repair_antennas_;
   std::unique_ptr<RoutingCongestionDataSource> heatmap_;
+
+  // variables congestion report file
+  const char * congestion_file_name_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
