@@ -1,0 +1,114 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0127] Reading DEF file: repair_fanout6.def
+[INFO ODB-0128] Design: test
+[INFO ODB-0130]     Created 8002 pins.
+[INFO ODB-0131]     Created 8001 components and 40005 component-terminals.
+[INFO ODB-0133]     Created 8003 nets and 24003 connections.
+[INFO ODB-0134] Finished DEF file: repair_fanout6.def
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0038] Inserted 508 buffers in 1 nets.
+[INFO RSZ-0039] Resized 509 instances.
+Startpoint: source (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink735 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock clk (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ source/CLK (sky130_fd_sc_hd__dfxtp_4)
+                  6.05    3.73    3.73 ^ source/Q (sky130_fd_sc_hd__dfxtp_4)
+     7    2.85                           net (net)
+                 14.00    6.28   10.01 ^ fanout321/A (sky130_fd_sc_hd__buf_4)
+                  0.30    1.32   11.33 ^ fanout321/X (sky130_fd_sc_hd__buf_4)
+    13    0.06                           net321 (net)
+                  0.30    0.00   11.33 ^ fanout320/A (sky130_fd_sc_hd__clkbuf_4)
+                  0.16    0.30   11.63 ^ fanout320/X (sky130_fd_sc_hd__clkbuf_4)
+    11    0.05                           net320 (net)
+                  0.16    0.00   11.63 ^ fanout319/A (sky130_fd_sc_hd__buf_2)
+                  0.18    0.24   11.87 ^ fanout319/X (sky130_fd_sc_hd__buf_2)
+    10    0.04                           net319 (net)
+                  0.18    0.00   11.87 ^ fanout318/A (sky130_fd_sc_hd__buf_4)
+                  0.16    0.24   12.11 ^ fanout318/X (sky130_fd_sc_hd__buf_4)
+    20    0.06                           net318 (net)
+                  0.16    0.00   12.11 ^ sink735/D (sky130_fd_sc_hd__dfxtp_1)
+                                 12.11   data arrival time
+
+                  0.00    5.00    5.00   clock clk (rise edge)
+                          0.00    5.00   clock network delay (ideal)
+                          0.00    5.00   clock reconvergence pessimism
+                                  5.00 ^ sink735/CLK (sky130_fd_sc_hd__dfxtp_1)
+                         -0.09    4.91   library setup time
+                                  4.91   data required time
+-----------------------------------------------------------------------------
+                                  4.91   data required time
+                                -12.11   data arrival time
+-----------------------------------------------------------------------------
+                                 -7.20   slack (VIOLATED)
+
+
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+fanout1/X                                20     20      0 (MET)
+
+[INFO RSZ-0040] Inserted 17 buffers.
+[INFO RSZ-0041] Resized 65 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: source (rising edge-triggered flip-flop clocked by clk)
+Endpoint: sink3646 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock clk (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ source/CLK (sky130_fd_sc_hd__dfxtp_4)
+                  0.05    0.34    0.34 v source/Q (sky130_fd_sc_hd__dfxtp_4)
+     2    0.02                           net (net)
+                  0.05    0.00    0.34 v fanout253/A (sky130_fd_sc_hd__buf_16)
+                  0.37    0.37    0.70 v fanout253/X (sky130_fd_sc_hd__buf_16)
+     4    1.36                           net253 (net)
+                  0.37    0.01    0.71 v rebuffer516/A (sky130_fd_sc_hd__buf_16)
+                  0.32    0.47    1.18 v rebuffer516/X (sky130_fd_sc_hd__buf_16)
+     2    1.34                           net516 (net)
+                  8.23    4.12    5.30 v fanout198/A (sky130_fd_sc_hd__buf_16)
+                  0.20    1.75    7.05 v fanout198/X (sky130_fd_sc_hd__buf_16)
+     7    0.09                           net198 (net)
+                  0.20    0.02    7.07 v fanout167/A (sky130_fd_sc_hd__buf_12)
+                  0.05    0.22    7.29 v fanout167/X (sky130_fd_sc_hd__buf_12)
+    10    0.07                           net167 (net)
+                  0.05    0.00    7.29 v fanout161/A (sky130_fd_sc_hd__buf_2)
+                  0.09    0.19    7.48 v fanout161/X (sky130_fd_sc_hd__buf_2)
+    10    0.04                           net161 (net)
+                  0.09    0.00    7.48 v fanout160/A (sky130_fd_sc_hd__buf_4)
+                  0.08    0.21    7.69 v fanout160/X (sky130_fd_sc_hd__buf_4)
+    18    0.05                           net160 (net)
+                  0.08    0.00    7.69 v fanout159/A (sky130_fd_sc_hd__buf_4)
+                  0.08    0.20    7.89 v fanout159/X (sky130_fd_sc_hd__buf_4)
+    20    0.05                           net159 (net)
+                  0.08    0.00    7.89 v sink3646/D (sky130_fd_sc_hd__dfxtp_1)
+                                  7.89   data arrival time
+
+                  0.00    5.00    5.00   clock clk (rise edge)
+                          0.00    5.00   clock network delay (ideal)
+                          0.00    5.00   clock reconvergence pessimism
+                                  5.00 ^ sink3646/CLK (sky130_fd_sc_hd__dfxtp_1)
+                         -0.14    4.86   library setup time
+                                  4.86   data required time
+-----------------------------------------------------------------------------
+                                  4.86   data required time
+                                 -7.89   data arrival time
+-----------------------------------------------------------------------------
+                                 -3.03   slack (VIOLATED)
+
+

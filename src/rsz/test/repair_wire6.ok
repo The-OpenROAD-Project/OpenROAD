@@ -38,8 +38,8 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
-repeater2/Z manhtn 568.6 steiner 568.6 0.04
-repeater1/Z manhtn 567.3 steiner 567.3 0.04
+wire2/Z manhtn 568.6 steiner 568.6 0.04
+wire1/Z manhtn 567.3 steiner 567.3 0.04
 u2/Z manhtn 357.8 steiner 357.8 0.02
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
@@ -55,10 +55,10 @@ Path Type: max
   12.444    0.017    0.035    0.035 ^ u1/Z (CLKBUF_X2)
             0.017    0.000    0.035 ^ u2/A (BUF_X16)
   33.478    0.006    0.023    0.058 ^ u2/Z (BUF_X16)
-            0.024    0.019    0.077 ^ repeater2/A (BUF_X8)
-  55.143    0.011    0.029    0.107 ^ repeater2/Z (BUF_X8)
-            0.065    0.052    0.159 ^ repeater1/A (BUF_X16)
-  42.637    0.009    0.031    0.189 ^ repeater1/Z (BUF_X16)
+            0.024    0.019    0.077 ^ wire2/A (BUF_X8)
+  55.143    0.011    0.029    0.107 ^ wire2/Z (BUF_X8)
+            0.065    0.052    0.159 ^ wire1/A (BUF_X16)
+  42.637    0.009    0.031    0.189 ^ wire1/Z (BUF_X16)
             0.039    0.032    0.221 ^ out1 (out)
                               0.221   data arrival time
 ---------------------------------------------------------------------------

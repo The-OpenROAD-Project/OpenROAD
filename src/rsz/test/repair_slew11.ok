@@ -37,12 +37,12 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-repeater1/Z                            60.65   20.68   39.97 (MET)
+wire1/Z                                60.65   20.68   39.97 (MET)
 
 Net in1
 Driver pins
  in1 input port (0, 0)
 
 Load pins
- repeater7/A input (BUF_X1) (166, 1)
+ wire7/A input (BUF_X1) (166, 1)
 

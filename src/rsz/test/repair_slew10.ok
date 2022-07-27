@@ -35,5 +35,5 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-repeater1/Z                            60.65   14.13   46.53 (MET)
+wire1/Z                                60.65   14.13   46.53 (MET)
 

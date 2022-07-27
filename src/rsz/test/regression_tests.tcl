@@ -34,6 +34,7 @@ record_tests {
   repair_fanout3
   repair_fanout4
   repair_fanout5
+  repair_fanout6
   repair_hold1
   repair_hold2
   repair_hold3

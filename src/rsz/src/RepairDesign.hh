@@ -39,6 +39,7 @@
 
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -49,6 +50,9 @@
 namespace rsz {
 
 class Resizer;
+class FanoutRender;
+
+using std::vector;
 
 using sta::StaState;
 using sta::Net;
@@ -62,11 +66,28 @@ using sta::LibertyPort;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::MinMax;
+using sta::Vector;
+
+using odb::Rect;
+
+// Region for partioning fanout pins.
+class LoadRegion
+{
+public:
+  LoadRegion();
+  LoadRegion(Vector<Pin*> &pins,
+       Rect &bbox);
+
+  Vector<Pin*> pins_;
+  Rect bbox_; // dbu
+  vector<LoadRegion> regions_;
+};
 
 class RepairDesign : StaState
 {
 public:
   RepairDesign(Resizer *resizer);
+  ~RepairDesign();
   void repairDesign(double max_wire_length,
                     double slew_margin,
                     double cap_margin);
@@ -86,7 +107,7 @@ public:
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
 
-private:
+protected:
   void init();
   void repairNet(Net *net,
                  const Pin *drvr_pin,
@@ -121,7 +142,6 @@ private:
   void repairNet(BufferedNetPtr bnet,
                  const Pin *drvr_pin,
                  float max_cap,
-                 float max_fanout,
                  int max_length, // dbu
                  const Corner *corner);
   void repairNet(BufferedNetPtr bnet,
@@ -151,7 +171,36 @@ private:
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap);
-  void makeRepeater(const char *where,
+  LoadRegion findLoadRegions(const Pin *drvr_pin,
+                             int max_fanout);
+  void subdivideRegion(LoadRegion &region,
+                       int max_fanout);
+  void makeRegionRepeaters(LoadRegion &region,
+                           int max_fanout,
+                           int level,
+                           const Pin *drvr_pin,
+                           double slew_margin,
+                           double max_cap_margin,
+                           bool check_slew,
+                           bool check_cap,
+                           int max_length,
+                           bool resize_drvr);
+  void makeFanoutRepeater(PinSeq &repeater_loads,
+                          PinSeq &repeater_inputs,
+                          Rect bbox,
+                          Point loc,
+                          double slew_margin,
+                          double max_cap_margin,
+                          bool check_slew,
+                          bool check_cap,
+                          int max_length,
+                          bool resize_drvr);
+  PinSeq findLoads(const Pin *drvr_pin);
+  Rect findBbox(PinSeq &pins);
+  Point findClosedPinLoc(const Pin *drvr_pin,
+                         PinSeq &pins);
+  bool isRepeater(const Pin *load_pin);
+  void makeRepeater(const char *reason,
                     Point loc,
                     LibertyCell *buffer_cell,
                     bool resize,
@@ -161,7 +210,7 @@ private:
                     float &repeater_cap,
                     float &repeater_fanout,
                     float &repeater_max_slew);
-  void makeRepeater(const char *where,
+  void makeRepeater(const char *reason,
                     int x,
                     int y,
                     LibertyCell *buffer_cell,
@@ -171,7 +220,10 @@ private:
                     PinSeq &load_pins,
                     float &repeater_cap,
                     float &repeater_fanout,
-                    float &repeater_max_slew);
+                    float &repeater_max_slew,
+                    Net *&out_net,
+                    Pin *&repeater_in_pin,
+                    Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
   float bufferSlew(LibertyCell *buffer_cell,
@@ -180,6 +232,7 @@ private:
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  double dbuToMicrons(int dist) const;
 
   Logger *logger_;
   dbSta *sta_;
@@ -190,7 +243,6 @@ private:
   // Implicit arguments to repairNet bnet recursion.
   const Pin *drvr_pin_;
   float max_cap_;
-  float max_fanout_;
   int max_length_;
   const Corner *corner_;
 
@@ -199,8 +251,28 @@ private:
   const MinMax *min_;
   const MinMax *max_;
 
+  FanoutRender *fanout_render_;
+
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
+
+  friend class FanoutRender;
+};
+
+class FanoutRender : public gui::Renderer
+{
+public:
+  FanoutRender(RepairDesign *repair);
+  void setRect(Rect &rect);
+  void setDrvrLoc(Point loc);
+  void setPins(PinSeq *pins);
+  void drawObjects(gui::Painter &painter);
+
+private:
+  RepairDesign *repair_;
+  Rect rect_;
+  PinSeq *pins_;
+  Point drvr_loc_;
 };
 
 } // namespace
