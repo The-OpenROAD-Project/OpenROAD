@@ -67,6 +67,7 @@ class IRSolver {
            std::string vsrc_loc, std::string power_net, std::string out_file,
            std::string em_out_file, std::string spice_out_file, int em_analyze,
            int bump_pitch_x, int bump_pitch_y, float node_density_um,
+           int node_density_factor_user,
            std::map<std::string, float> net_voltage_map) {
     m_db = t_db;
     m_sta = t_sta;
@@ -80,6 +81,7 @@ class IRSolver {
     m_bump_pitch_x = bump_pitch_x;
     m_bump_pitch_y = bump_pitch_y;
     m_node_density_um = node_density_um;
+    m_node_density_factor_user = node_density_factor_user;
     m_net_voltage_map = net_voltage_map;
   }
   //! IRSolver destructor
@@ -142,8 +144,10 @@ class IRSolver {
   //! G matrix for voltage
   GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
-  int m_node_density{5400};  // TODO get from somewhere
-  float m_node_density_um{-1};  // TODO get from somewhere
+  int m_node_density{0};  // Initialize to zero
+  int m_node_density_factor{5};  // Default value
+  int m_node_density_factor_user{0};  // User defined value
+  float m_node_density_um{-1}; // Initialize to negative unless set by user 
   //! Routing Level of the top layer
   int m_top_layer{0};
   int m_bump_pitch_x{0};

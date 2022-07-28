@@ -41,7 +41,8 @@ class Logger;
 }
 
 namespace dst {
-const int workers_discovery_period = 15; // time in seconds between retrying to find new workers on the network
+const int workers_discovery_period = 15;  // time in seconds between retrying to
+                                          // find new workers on the network
 class Distributed;
 class LoadBalancer
 {
@@ -54,9 +55,11 @@ class LoadBalancer
                const char* workers_domain,
                unsigned short port = 1234);
   ~LoadBalancer();
-  void addWorker(std::string ip, unsigned short port);
+  bool addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
+  void removeWorker(ip::address ip, unsigned short port, bool lock = true);
+  void punishWorker(ip::address ip, unsigned short port);
 
  private:
   struct worker
@@ -92,6 +95,7 @@ class LoadBalancer
   uint32_t jobs_;
   std::atomic<bool> alive = true;
   boost::thread workers_lookup_thread;
+  std::vector<std::string> broadcastData;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,

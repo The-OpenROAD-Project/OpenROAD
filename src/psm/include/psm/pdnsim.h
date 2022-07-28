@@ -76,6 +76,7 @@ class PDNSim
   void set_bump_pitch_x(float bump_pitch);
   void set_bump_pitch_y(float bump_pitch);
   void set_node_density(float node_density);
+  void set_node_density_factor(int node_density_factor);
   void set_pdnsim_net_voltage(std::string net, float voltage);
   int  analyze_power_grid();
   void write_pg_spice();
@@ -100,6 +101,8 @@ class PDNSim
   std::map<std::string, float> _net_voltage_map;
   IRDropByLayer                _ir_drop;
   float                        _node_density;
+  int                          _node_density_factor;
+  float                        _min_resolution;
   std::unique_ptr<DebugGui>    _debug_gui;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
