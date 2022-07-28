@@ -944,7 +944,9 @@ void
 RepairDesign::subdivideRegion(LoadRegion &region,
                               int max_fanout)
 {
-  if (region.pins_.size() > max_fanout) {
+  if (region.pins_.size() > max_fanout
+      && region.bbox_.dx() > dbu_
+      && region.bbox_.dy() > dbu_) {
     int x_min = region.bbox_.xMin();
     int x_max = region.bbox_.xMax();
     int y_min = region.bbox_.yMin();
