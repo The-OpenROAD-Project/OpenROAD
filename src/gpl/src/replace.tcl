@@ -155,6 +155,9 @@ proc global_placement { args } {
     set uniform_mode 1
   } else {
     sta::check_positive_float "-density" $target_density
+    if {$target_density > 1.0} {
+      utl::error GPL 135 "Target density must be in \[0, 1\]."
+    }
     gpl::set_density_cmd $target_density
   } 
     
