@@ -85,13 +85,13 @@ target_link_libraries(gpl
     rsz
     grt
 )
-# If using CUDA, the if statement will be activated.
-
-if (${GPU})
-  target_sources(gpl PRIVATE src/cudasplibs.cu)
-  find_package(CUDA REQUIRED)
-  include_directories(${CUDA_INCLUDE_DIRS}
-  )
+# Allow users to use GPU or not
+option(GPU "Enable GPU" OFF)
+if (GPU)
+  find_package(CUDA)  
+  message(STATUS "GPU is enabled")
+  enable_language(CUDA)
+  target_sources(gpl PRIVATE src/gpuSolver.cu)
   target_link_libraries(gpl
     PRIVATE
       ${CUDA_LIBRARIES}
@@ -99,10 +99,9 @@ if (${GPU})
       ${CUDA_cusparse_LIBRARY}
       ${CUDA_cusolver_LIBRARY}
   )
-  target_link_libraries( gpl
-    PRIVATE
-      ${CUDA_LIBRARIES}
-      ${CUDA_cusolver_LIBRARY}
+  target_compile_definitions( gpl
+  PRIVATE
+    ENABLE_GPU
   )
 endif()
 

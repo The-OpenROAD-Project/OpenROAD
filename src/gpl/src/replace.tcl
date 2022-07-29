@@ -57,6 +57,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
+    [-gpu choose to use cuda version or not]\
 }
 
 proc global_placement { args } {

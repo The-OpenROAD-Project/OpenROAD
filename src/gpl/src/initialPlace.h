@@ -38,6 +38,7 @@
 #include "odb/db.h"
 #include <memory>
 
+
 namespace utl {
 class Logger;
 }
@@ -47,8 +48,9 @@ namespace gpl {
 class PlacerBase;
 class Graphics;
 
-class InitialPlaceVars {
-public:
+class InitialPlaceVars
+{
+ public:
   int maxIter;
   int minDiffLength;
   int maxSolverIter;
@@ -62,55 +64,58 @@ public:
 
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
-class InitialPlace {
-  public:
-    InitialPlace();
-    InitialPlace(InitialPlaceVars ipVars, 
-        std::shared_ptr<PlacerBase> pb,
-        utl::Logger* logger);
-    ~InitialPlace();
-    void doBicgstabPlace();
+class InitialPlace
+{
+ public:
+  InitialPlace();
+  InitialPlace(InitialPlaceVars ipVars,
+               std::shared_ptr<PlacerBase> pb,
+               utl::Logger* logger);
+  ~InitialPlace();
+  void doBicgstabPlace();
 
-  private:
-    InitialPlaceVars ipVars_;
-    std::shared_ptr<PlacerBase> pb_;
-    utl::Logger* log_;
+ private:
+  InitialPlaceVars ipVars_;
+  std::shared_ptr<PlacerBase> pb_;
+  utl::Logger* log_;
 
-    // Solve two SparseMatrix equations here;
-    //
-    // find instLocVecX_
-    // s.t. satisfies placeInstForceMatrixX_ * instLocVecX_ = fixedInstForceVecX_
-    //
-    // find instLocVecY_
-    // s.t. satisfies placeInstForceMatrixY_ * instLocVecY_ = fixedInstForceVecY_
-    //
-    // instLocVecX_ : current/target instances' center X coordinates. 1-col vector.
-    // instLocVecY_ : current/target instances' center Y coordinates. 1-col vector.
-    //
-    // fixedInstForceVecX_ : contains fixed instances' forces toward X coordi. 1-col vector.
-    // fixedInstForceVecY_ : contains fixed instances' forces toward Y coordi. 1-col vector.
-    //
-    // placeInstForceMatrixX_ :
-    //        SparseMatrix that contains connectivity forces on X // B2B model is used
-    //
-    // placeInstForceMatrixY_ :
-    //        SparseMatrix that contains connectivity forces on Y // B2B model is used
-    //
-    // Used the interative BiCGSTAB solver to solve matrix eqs.
+  // Solve two SparseMatrix equations here;
+  //
+  // find instLocVecX_
+  // s.t. satisfies placeInstForceMatrixX_ * instLocVecX_ = fixedInstForceVecX_
+  //
+  // find instLocVecY_
+  // s.t. satisfies placeInstForceMatrixY_ * instLocVecY_ = fixedInstForceVecY_
+  //
+  // instLocVecX_ : current/target instances' center X coordinates. 1-col
+  // vector. instLocVecY_ : current/target instances' center Y coordinates.
+  // 1-col vector.
+  //
+  // fixedInstForceVecX_ : contains fixed instances' forces toward X coordi.
+  // 1-col vector. fixedInstForceVecY_ : contains fixed instances' forces toward
+  // Y coordi. 1-col vector.
+  //
+  // placeInstForceMatrixX_ :
+  //        SparseMatrix that contains connectivity forces on X // B2B model is
+  //        used
+  //
+  // placeInstForceMatrixY_ :
+  //        SparseMatrix that contains connectivity forces on Y // B2B model is
+  //        used
+  //
+  // Used the interative BiCGSTAB solver to solve matrix eqs.
 
-    Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
-    Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
-    SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;
-    std::vector<int> cooRowIndexX, cooColIndexX, cooRowIndexY, cooColIndexY;
-    std::vector<float> cooValX, cooValY;
+  Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
+  Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;
+  SMatrix placeInstForceMatrixX_, placeInstForceMatrixY_;
 
-    void placeInstsCenter();
-    void setPlaceInstExtId();
-    void updatePinInfo();
-    void createSparseMatrix();
-    void updateCoordi();
-    void reset();
+  void placeInstsCenter();
+  void setPlaceInstExtId();
+  void updatePinInfo();
+  void createSparseMatrix();
+  void updateCoordi();
+  void reset();
 };
 
-}
+}  // namespace gpl
 #endif
