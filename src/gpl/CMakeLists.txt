@@ -85,10 +85,15 @@ target_link_libraries(gpl
     rsz
     grt
 )
+# If CUDA is not installed there will not be cmake
+# support for the package so this needs to be "quiet".
+find_package(CUDA QUIET COMPONENTS Core Widgets)
+
 # Allow users to use GPU or not
 option(GPU "Enable GPU" OFF)
-if (GPU)
-  find_package(CUDA)  
+
+if (CUDA_FOUND AND GPU)
+ 
   message(STATUS "GPU is enabled")
   enable_language(CUDA)
   target_sources(gpl PRIVATE src/gpuSolver.cu)
@@ -103,6 +108,8 @@ if (GPU)
   PRIVATE
     ENABLE_GPU
   )
+else()
+  message(STATUS "GPU is not enabled")
 endif()
 
 # CIMG_USE case

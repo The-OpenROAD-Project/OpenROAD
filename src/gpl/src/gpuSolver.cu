@@ -9,20 +9,24 @@ using utl::GPL;
 void GpuSolver::cudaerror(cudaError_t code)
 {
   if (code != cudaSuccess) {
-    log_->error(GPL, 1, "[CUDA ERROR] {} at line {} in file {} \n",
-                 cudaGetErrorString(code),
-                 __LINE__,
-                 __FILE__);
+    log_->error(GPL,
+                1,
+                "[CUDA ERROR] {} at line {} in file {} \n",
+                cudaGetErrorString(code),
+                __LINE__,
+                __FILE__);
     cudaDeviceReset();
   }
 }
 void GpuSolver::cusparseerror(cusparseStatus_t code)
 {
   if (code != CUSPARSE_STATUS_SUCCESS) {
-    log_->error(GPL, 1, "[CUSPARSE ERROR] {} at line {} in file {}\n",
-                 cusparseGetErrorString(code),
-                 __LINE__,
-                 __FILE__);
+    log_->error(GPL,
+                1,
+                "[CUSPARSE ERROR] {} at line {} in file {}\n",
+                cusparseGetErrorString(code),
+                __LINE__,
+                __FILE__);
     cudaDeviceReset();
   }
 }
@@ -30,60 +34,89 @@ void GpuSolver::cusparseerror(cusparseStatus_t code)
 void GpuSolver::cusolvererror(cusolverStatus_t code)
 {
   if (code != CUSOLVER_STATUS_SUCCESS) {
-    log_->error(GPL, 1, "[CUSOLVER ERROR] {} at line {} in file {}\n",
-                 cudaGetErrorString(*(cudaError_t*) &code),
-                 __LINE__,
-                 __FILE__);
+    log_->error(GPL,
+                1,
+                "[CUSOLVER ERROR] {} at line {} in file {}\n",
+                cudaGetErrorString(*(cudaError_t*) &code),
+                __LINE__,
+                __FILE__);
     cudaDeviceReset();
   }
 }
 
-GpuSolver::GpuSolver(){}
-
-GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix, Eigen::VectorXf& fixedInstForceVec, utl::Logger* logger)
+GpuSolver::GpuSolver()
 {
-    // {cooRowIndex_, cooColIndex_, cooVal_} is the triplet vector stored as COO format to represent placeInstForceMatrix
-    vector<int> cooRowIndex_, cooColIndex_;
-    vector<float> cooVal_;
-
-    for (size_t row = 0; row < placeInstForceMatrix.rows(); row++) {
-      for (size_t col = 0; col < placeInstForceMatrix.cols(); col++) {
-        if (placeInstForceMatrix.coeffRef(row, col) != 0) {
-          cooRowIndex_.push_back(row);
-          cooColIndex_.push_back(col);
-          cooVal_.push_back(placeInstForceMatrix.coeffRef(row, col));
-        }
-      }
-    }
-
-    m_ = fixedInstForceVec.size();
-    nnz_ = cooVal_.size();
-    log_ = logger;
-
-    cudaerror(cudaMalloc((void**)&d_cooRowIndex_, nnz_ * sizeof(int)));
-    cudaerror(cudaMalloc((void**)&d_cooColIndex_, nnz_ * sizeof(int)));
-    cudaerror(cudaMalloc((void**)&d_cooVal_, nnz_ * sizeof(float)));
-    cudaerror(cudaMalloc((void**) &d_fixedInstForceVec_, m_ * sizeof(float)));
-    cudaerror(cudaMalloc((void**) &d_instLocVec_, m_ * sizeof(float)));
-
-    //Copy data (COO storage method)
-    cudaerror(cudaMemcpy(d_cooRowIndex_, cooRowIndex_.data(), sizeof(int)*nnz_,
-    cudaMemcpyHostToDevice));
-    cudaerror(cudaMemcpy(d_cooColIndex_,
-                        cooColIndex_.data(),
-                        sizeof(int) * nnz_,
-                        cudaMemcpyHostToDevice));
-    cudaerror(cudaMemcpy(d_cooVal_, cooVal_.data(), sizeof(float)*nnz_,
-    cudaMemcpyHostToDevice));
-    cudaerror(cudaMemcpy(d_fixedInstForceVec_,
-                        fixedInstForceVec.data(),
-                        sizeof(float) * m_,
-                        cudaMemcpyHostToDevice));
-
-    std:: cout << "Yes!" << std::endl;
 }
 
-void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec){
+GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
+                     Eigen::VectorXf& fixedInstForceVec,
+                     utl::Logger* logger)
+{
+  // {cooRowIndex_, cooColIndex_, cooVal_} are the host vectors used to store
+  // the sparse format of placeInstForceMatrix.
+  vector<int> cooRowIndex, cooColIndex;
+  vector<float> cooVal;
+
+  for (size_t row = 0; row < placeInstForceMatrix.rows(); row++) {
+    for (size_t col = 0; col < placeInstForceMatrix.cols(); col++) {
+      if (placeInstForceMatrix.coeffRef(row, col) != 0) {
+        cooRowIndex.push_back(row);
+        cooColIndex.push_back(col);
+        cooVal.push_back(placeInstForceMatrix.coeffRef(row, col));
+      }
+    }
+  }
+
+  m_ = fixedInstForceVec.size();
+  nnz_ = cooVal.size();
+  log_ = logger;
+
+  d_cooRowIndex_.resize(nnz_);
+  d_cooColIndex_.resize(nnz_);
+  d_cooVal_.resize(nnz_);
+  d_fixedInstForceVec_.resize(m_);
+  d_instLocVec_.resize(m_);
+
+  thrust::copy(cooRowIndex.begin(), cooRowIndex.end(), d_cooRowIndex_.begin());
+  thrust::copy(cooColIndex.begin(), cooColIndex.end(), d_cooColIndex_.begin());
+  thrust::copy(cooVal.begin(), cooVal.end(), d_cooVal_.begin());
+  thrust::copy(&fixedInstForceVec[0],
+               &fixedInstForceVec[m_ - 1],
+               d_fixedInstForceVec_.begin());
+
+  r_cooRowIndex_ = thrust::raw_pointer_cast(d_cooRowIndex_.data());
+  r_cooColIndex_ = thrust::raw_pointer_cast(d_cooColIndex_.data());
+  r_cooVal_ = thrust::raw_pointer_cast(d_cooVal_.data());
+  r_fixedInstForceVec_ = thrust::raw_pointer_cast(d_fixedInstForceVec_.data());
+  r_instLocVec_ = thrust::raw_pointer_cast(d_instLocVec_.data());
+
+  std::cout << d_cooRowIndex_[0] << ", " << d_cooRowIndex_[200] << std::endl;
+
+  // cudaerror(cudaMalloc((void**)&d_cooRowIndex_, nnz_ * sizeof(int)));
+  // cudaerror(cudaMalloc((void**)&d_cooColIndex_, nnz_ * sizeof(int)));
+  // cudaerror(cudaMalloc((void**)&d_cooVal_, nnz_ * sizeof(float)));
+  // cudaerror(cudaMalloc((void**) &d_fixedInstForceVec_, m_ * sizeof(float)));
+  // cudaerror(cudaMalloc((void**) &d_instLocVec_, m_ * sizeof(float)));
+
+  // //Copy data (COO storage method)
+  // cudaerror(cudaMemcpy(d_cooRowIndex_, cooRowIndex_.data(), sizeof(int)*nnz_,
+  // cudaMemcpyHostToDevice));
+  // cudaerror(cudaMemcpy(d_cooColIndex_,
+  //                     cooColIndex_.data(),
+  //                     sizeof(int) * nnz_,
+  //                     cudaMemcpyHostToDevice));
+  // cudaerror(cudaMemcpy(d_cooVal_, cooVal_.data(), sizeof(float)*nnz_,
+  // cudaMemcpyHostToDevice));
+  // cudaerror(cudaMemcpy(d_fixedInstForceVec_,
+  //                     fixedInstForceVec.data(),
+  //                     sizeof(float) * m_,
+  //                     cudaMemcpyHostToDevice));
+
+  std::cout << "Yes!" << std::endl;
+}
+
+void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
+{
   // Parameters that don't change with iteration and used in the CUDA code
   float tol = 1e-6;      // 	Tolerance to decide if singular or not.
   int reorder = 0;       // "0" for common matrix without ordering
@@ -109,39 +142,40 @@ void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec){
 
   // transform from coordinates (COO) values to compressed row pointers (CSR)
   // values https://docs.nvidia.com/cuda/cusparse/index.html
-  int* d_csrRowInd = NULL;
-  //   thrust::device_vector<int> t_csrRowInd(m_ + 1, 0);
-  // d_csrRowInd = thrust::raw_pointer_cast(t_csrRowInd.data());
-  cudaerror(cudaMalloc((void**)&d_csrRowInd, (m_+1) * sizeof(int)));
+  int* r_csrRowInd = NULL;
+  thrust::device_vector<int> d_csrRowInd(m_ + 1, 0);
+  r_csrRowInd = thrust::raw_pointer_cast(d_csrRowInd.data());
+  // cudaerror(cudaMalloc((void**)&d_csrRowInd, (m_+1) * sizeof(int)));
+
   cusparseerror(cusparseXcoo2csr(handleCusparse,
-                                 d_cooRowIndex_,
+                                 r_cooRowIndex_,
                                  nnz_,
                                  m_,
-                                 d_csrRowInd,
+                                 r_csrRowInd,
                                  CUSPARSE_INDEX_BASE_ZERO));
 
   cusolvererror(cusolverSpScsrlsvqr(handleCusolver,
                                     m_,
                                     nnz_,
                                     descr,
-                                    d_cooVal_,
-                                    d_csrRowInd,
-                                    d_cooColIndex_,
-                                    d_fixedInstForceVec_,
+                                    r_cooVal_,
+                                    r_csrRowInd,
+                                    r_cooColIndex_,
+                                    r_fixedInstForceVec_,
                                     tol,
                                     reorder,
-                                    d_instLocVec_,
+                                    r_instLocVec_,
                                     &singularity));
 
   // Sync and Copy data to host
   cudaerror(cudaMemcpyAsync(instLocVec.data(),
-                            d_instLocVec_,
+                            r_instLocVec_,
                             sizeof(float) * m_,
                             cudaMemcpyDeviceToHost,
                             stream));
 
-  cudaerror(cudaFree(d_csrRowInd));
-  cusparseerror(cusparseDestroyMatDescr( descr ) );
+  // cudaerror(cudaFree(r_csrRowInd));
+  cusparseerror(cusparseDestroyMatDescr(descr));
   cusparseerror(cusparseDestroy(handleCusparse));
   cusolvererror(cusolverSpDestroy(handleCusolver));
 }
@@ -149,26 +183,26 @@ void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec){
 __global__ void Multi_MatVec(float error,
                              int nnz_,
                              int m_,
-                             float* d_Ax,
-                             float* d_fixedInstForceVec_,
-                             float* d_instLocVec_,
-                             int* d_cooRowIndex_,
-                             int* d_cooColIndex_,
-                             float* d_cooVal_)
+                             float* r_Ax,
+                             float* r_fixedInstForceVec_,
+                             float* r_instLocVec_,
+                             int* r_cooRowIndex_,
+                             int* r_cooColIndex_,
+                             float* r_cooVal_)
 {
   float sum = 0;
   int num = blockIdx.x * blockDim.x + threadIdx.x;
   if (num < nnz_) {
-    d_Ax[d_cooRowIndex_[num]]
-        += d_cooVal_[num] * d_instLocVec_[d_cooColIndex_[num]];
+    r_Ax[r_cooRowIndex_[num]]
+        += r_cooVal_[num] * r_instLocVec_[r_cooColIndex_[num]];
   }
   for (size_t row = 0; row < m_; row++) {
-    sum += (d_fixedInstForceVec_[row] > 0) ? d_fixedInstForceVec_[row]
-                                           : -d_fixedInstForceVec_[row];
-    if (d_fixedInstForceVec_[row] > d_Ax[row])
-      error += d_fixedInstForceVec_[row] - d_Ax[row];
+    sum += (r_fixedInstForceVec_[row] > 0) ? r_fixedInstForceVec_[row]
+                                           : -r_fixedInstForceVec_[row];
+    if (r_fixedInstForceVec_[row] > r_Ax[row])
+      error += r_fixedInstForceVec_[row] - r_Ax[row];
     else
-      error -= d_fixedInstForceVec_[row] - d_Ax[row];
+      error -= r_fixedInstForceVec_[row] - r_Ax[row];
   }
   if (sum != 0)
     error = error / sum;
@@ -177,31 +211,37 @@ __global__ void Multi_MatVec(float error,
 float GpuSolver::error_cal()
 {
   float error = 0;
-  float* d_Ax;
-  cudaerror(cudaMalloc((void**)&d_Ax, m_ * sizeof(float)));
-  cudaerror(cudaMemset(d_Ax, 0, m_));
+  float* r_Ax;
+  thrust::device_vector<float> t_Ax(m_);
+  thrust::fill(t_Ax.begin(), t_Ax.end(), 0);
+  r_Ax = thrust::raw_pointer_cast(t_Ax.data());
+
+  int* _cooRowIndex_ = (int*) malloc(sizeof(int) * nnz_);
+  cudaMemcpy(_cooRowIndex_,
+             r_cooRowIndex_,
+             sizeof(int) * nnz_,
+             cudaMemcpyDeviceToHost);
+  std::cout << "Pointer for d_cooRowIndex: " << &d_cooRowIndex_[0]
+            << &d_cooRowIndex_[1] << std::endl;
+  std::cout << d_cooRowIndex_[0] << ", " << d_cooRowIndex_[200] << std::endl;
+  std::cout << "Pointer for _cooRowIndex_: " << &_cooRowIndex_[0]
+            << &_cooRowIndex_[1] << std::endl;
+  std::cout << _cooRowIndex_[0] << ", " << _cooRowIndex_[200] << std::endl;
   unsigned int threads = 512;
   unsigned int blocks = (m_ + threads - 1) / threads;
   Multi_MatVec<<<blocks, threads>>>(error,
                                     nnz_,
                                     m_,
-                                    d_Ax,
-                                    d_fixedInstForceVec_,
-                                    d_instLocVec_,
-                                    d_cooRowIndex_,
-                                    d_cooColIndex_,
-                                    d_cooVal_);
-  cudaerror(cudaFree(d_Ax));
+                                    r_Ax,
+                                    r_fixedInstForceVec_,
+                                    r_instLocVec_,
+                                    r_cooRowIndex_,
+                                    r_cooColIndex_,
+                                    r_cooVal_);
   return (error > 0) ? error : -error;
 }
 
 GpuSolver::~GpuSolver()
 {
-  // Destroy what is not needed in both of device and host
-  cudaerror(cudaFree(d_cooColIndex_));
-  cudaerror(cudaFree(d_cooRowIndex_));
-  cudaerror(cudaFree(d_cooVal_));
-  cudaerror(cudaFree(d_instLocVec_));
-  cudaerror(cudaFree(d_fixedInstForceVec_));
 }
-}
+}  // namespace gpl

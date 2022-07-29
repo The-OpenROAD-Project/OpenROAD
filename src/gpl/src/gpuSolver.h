@@ -9,14 +9,14 @@
 #include <thrust/sequence.h>
 
 #include <Eigen/SparseCore>
-#include "utl/Logger.h"
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "odb/db.h"
 #include "cusolverSp.h"
 #include "cusparse.h"
 #include "device_launch_parameters.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace utl {
 class Logger;
@@ -24,30 +24,40 @@ class Logger;
 
 namespace gpl {
 
-  using namespace std;
-  typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
-  class GpuSolver
-  {
-    public:
-      GpuSolver();
-      GpuSolver(SMatrix& placeInstForceMatrix, Eigen::VectorXf& fixedInstForceVec, utl::Logger* logger);
-      void cusolverCal(Eigen::VectorXf& instLocVec);
-      float error_cal();
-      ~GpuSolver();
+using namespace std;
+typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
+class GpuSolver
+{
+ public:
+  GpuSolver();
+  GpuSolver(SMatrix& placeInstForceMatrix,
+            Eigen::VectorXf& fixedInstForceVec,
+            utl::Logger* logger);
+  void cusolverCal(Eigen::VectorXf& instLocVec);
+  float error_cal();
+  ~GpuSolver();
 
-    private:
-      int m_;    // Rows of the SP matrix
-      int nnz_;  // non-zeros
-      utl::Logger* log_;
+ private:
+  int m_;    // Rows of the SP matrix
+  int nnz_;  // non-zeros
+  utl::Logger* log_;
 
-      // {d_cooRowIndex_, d_cooColIndex_, d_cooVal_} is its corresponding device triplet vector
-      // d_instLocVec_ and d_fixedInstForceVec_ are the device list corresponding to instLocVec and fixedInstForceVec.
-      int *d_cooRowIndex_, *d_cooColIndex_;
-      float *d_cooVal_, *d_instLocVec_, *d_fixedInstForceVec_;
+  // {d_cooRowIndex_, d_cooColIndex_, d_cooVal_} are the device vectors used to
+  // store the COO formatted triplets.
+  // https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)
+  // d_instLocVec_ and d_fixedInstForceVec_ are the device lists corresponding
+  // to instLocVec and fixedInstForceVec.
+  thrust::device_vector<int> d_cooRowIndex_, d_cooColIndex_;
+  thrust::device_vector<float> d_cooVal_, d_fixedInstForceVec_, d_instLocVec_;
 
-      void cudaerror(cudaError_t code);
-      void cusparseerror(cusparseStatus_t code);
-      void cusolvererror(cusolverStatus_t code);
-  };
-}
+  // {r_cooRowIndex_, r_cooColIndex_, r_cooVal_} are the raw pointing to the
+  // device ectors above.
+  int *r_cooRowIndex_, *r_cooColIndex_;
+  float *r_cooVal_, *r_instLocVec_, *r_fixedInstForceVec_;
+
+  void cudaerror(cudaError_t code);
+  void cusparseerror(cusparseStatus_t code);
+  void cusolvererror(cusolverStatus_t code);
+};
+}  // namespace gpl
 #endif
