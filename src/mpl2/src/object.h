@@ -488,6 +488,9 @@ class SoftMacro {
     // Num Macros
     bool IsMacroCluster() const;
     bool IsStdCellCluster() const;
+    bool IsMixedCluster() const;
+    void SetLocationF(float x, float y);
+    void SetShapeF(float width, float height);
     int GetNumMacro() const;
     // Align Flag support
     void SetAlignFlag(bool flag);

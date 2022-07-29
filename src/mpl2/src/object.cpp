@@ -1323,5 +1323,25 @@ float SoftMacro::GetMacroUtil() const
   return 0.0;
 }
 
+bool SoftMacro::IsMixedCluster() const
+{
+  if (cluster_ == nullptr)
+    return false;
+  else
+    return (cluster_->GetClusterType() == MixedCluster);
+}
+
+void SoftMacro::SetLocationF(float x, float y)
+{
+  x_ = x;
+  y_ = y;
+}
+
+void SoftMacro::SetShapeF(float width, float height)
+{
+  width_ = width;
+  height_ = height;
+  area_ = width * height;
+}
 
 }  // namespace mpl

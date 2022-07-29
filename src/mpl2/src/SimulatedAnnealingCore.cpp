@@ -236,6 +236,12 @@ void SimulatedAnnealingCore<T>::Shrink()
   return; // this function will be redefined in the derived class
 }
 
+template <class T>
+void SimulatedAnnealingCore<T>::FillDeadSpace() 
+{
+  return; // this function will be redefined in the derived class
+}
+
 
 template <class T>
 void SimulatedAnnealingCore<T>::CalOutlinePenalty() 
@@ -281,7 +287,7 @@ void SimulatedAnnealingCore<T>::CalFencePenalty()
                          - (bbox.xMax() - bbox.xMin());
     const float height = std::max(uy, bbox.yMax()) - std::min(ly, bbox.yMin()) 
                          - (bbox.yMax() - bbox.yMin());
-    fence_penalty_ += width * height;
+    fence_penalty_ += width * width + height * height;
   } 
 }
 
@@ -477,6 +483,7 @@ void SimulatedAnnealingCore<T>::FastSA()
   float delta_cost = 0.0;
   int step = 1;
   float t = init_T_;
+  notch_weight_ = 0.0;
   // const for restart
   int num_restart = 1;
   const int max_num_restart = 2;
@@ -513,7 +520,13 @@ void SimulatedAnnealingCore<T>::FastSA()
       step = 1;
       t = init_T_;
     } // end if
-       
+    // only consider the last step to optimize notch weight
+    if (step == max_num_step_) {
+      notch_weight_ = original_notch_weight_;
+      PackFloorplan();
+      CalPenalty();
+      pre_cost = CalNormCost();
+    }
     /*
     if (step % shrink_freq == 0) {
       Shrink();
@@ -525,6 +538,7 @@ void SimulatedAnnealingCore<T>::FastSA()
   } // end while
   // update the final results
   PackFloorplan();
+  //FillDeadSpace();
   CalPenalty();
 
   std::ofstream file;

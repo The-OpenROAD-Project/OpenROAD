@@ -106,6 +106,8 @@ class SimulatedAnnealingCore {
     virtual void Initialize(); 
     // Run FastSA algorithm
     void FastSA();
+    virtual void FillDeadSpace();
+
 
   protected:
     virtual float CalNormCost();
@@ -148,6 +150,10 @@ class SimulatedAnnealingCore {
     float guidance_weight_   = 0.0;
     float fence_weight_      = 0.0;
     
+    float original_notch_weight_ = 0.0;
+    float notch_weight_ = 0.0;
+
+
     // Fast SA hyperparameter
     float init_prob_         = 0.0;
     float init_T_            = 1.0;

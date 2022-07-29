@@ -83,6 +83,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
 
     // Initialize the SA worker
     void Initialize(); 
+    void FillDeadSpace() {   }
+
 
   private:
     float CalNormCost();

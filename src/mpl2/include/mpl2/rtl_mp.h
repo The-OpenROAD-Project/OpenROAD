@@ -70,7 +70,14 @@ class MacroPlacer2
                const float fence_lx,
                const float fence_ly,
                const float fence_ux,
-               const float fence_uy);
+               const float fence_uy,
+               const float area_weight,
+               const float outline_weight,
+               const float wirelength_weight,
+               const float guidance_weight,
+               const float fence_weight,
+               const float boundary_weight,
+               const float notch_weight);
   private:
     ord::dbNetwork* network_ = nullptr;
     sta::dbSta* sta_ = nullptr;

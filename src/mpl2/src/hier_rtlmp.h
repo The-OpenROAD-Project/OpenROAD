@@ -99,6 +99,14 @@ class HierRTLMP {
     void SetClusterSizeRatioPerLevel(float coarsening_ratio);
     void SetLargeNetThreshold(int large_net_threshold);
     void SetSignatureNetThreshold(int signature_net_threshold);
+    void SetAreaWeight(float area_weight);
+    void SetOutlineWeight(float outline_weight);
+    void SetWirelengthWeight(float wirelength_weight);
+    void SetGuidanceWeight(float guidance_weight);
+    void SetFenceWeight(float fence_weight);
+    void SetBoundaryWeight(float boundary_weight);
+    void SetNotchWeight(float notch_weight);
+
 
   private:
     ord::dbNetwork* network_ = nullptr;
@@ -128,20 +136,20 @@ class HierRTLMP {
     int num_threads_ = 10;  // number of threads
     int random_seed_ = 0;   // random seed for deterministic   
 
-    float target_dead_space_ = 0.5; // dead space for the cluster
-    float target_util_ = 0.4;  // target utilization of the design
-    float target_dead_space_step_ = 0.1; // step for dead space
-    float target_util_step_       = 0.1; // step for utilization
+    float target_dead_space_ = 0.2; // dead space for the cluster
+    float target_util_ = 0.2;  // target utilization of the design
+    float target_dead_space_step_ = 0.05; // step for dead space
+    float target_util_step_       = 0.05; // step for utilization
     float num_target_util_        = 3;
-    float num_target_dead_space_  = 5;
+    float num_target_dead_space_  = 3;
 
-    float min_ar_ = 0.15; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
+    float min_ar_ = 0.33; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
-    float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+    float pin_access_th_ = 0.25; // each pin access is modeled as a SoftMacro
     float pin_access_net_width_ratio_ = 0.1; // define the ratio of number of connections 
                                              // related to IOs to the range of these IO spans
-    float notch_v_th_ = 20.0;
-    float notch_h_th_ = 20.0;
+    float notch_v_th_ = 100.0;
+    float notch_h_th_ = 100.0;
 
     float snap_layer_ = 4;
     float pitch_x_    = 0.0;
@@ -149,13 +157,13 @@ class HierRTLMP {
 
     // SA related parameters
     // weight for different penalty
-    float area_weight_       = 0.01;
+    float area_weight_       = 0.1;
     float outline_weight_    = 1.0;
-    float wirelength_weight_ = 0.16;
-    float guidance_weight_   = 0.16;
-    float fence_weight_      = 0.16;
-    float boundary_weight_   = 0.16;
-    float notch_weight_      = 0.16;
+    float wirelength_weight_ = 1.0;
+    float guidance_weight_   = 10.0;
+    float fence_weight_      = 10.0;
+    float boundary_weight_   = 5.0;
+    float notch_weight_      = 1.0;
 
 
     // gudiances, fences, constraints
@@ -165,7 +173,7 @@ class HierRTLMP {
     
     // Fast SA hyperparameter
     float init_prob_         = 0.9;
-    int max_num_step_        = 4000;
+    int max_num_step_        = 5000;
     int num_perturb_per_step_  = 2000;
     // if step < k_, T = init_T_ / (c_ * step_);
     // else T = init_T_ / step
@@ -186,6 +194,39 @@ class HierRTLMP {
     float floorplan_ly_ = 0.0;
     float floorplan_ux_ = 0.0;
     float floorplan_uy_ = 0.0;
+
+    // dataflow parameters and store the dataflow
+    int max_num_ff_dist_ = 3; // maximum number of FF distances between 
+    float dataflow_factor_ = 2.0; 
+    std::vector<std::pair<odb::dbITerm*, 
+           std::vector<std::set<odb::dbInst*> > > >  macro_ffs_conn_map_;  
+    std::vector<std::pair<odb::dbBTerm*, 
+           std::vector<std::set<odb::dbInst*> > > >  io_ffs_conn_map_;
+    std::vector<std::pair<odb::dbITerm*, 
+           std::vector<std::set<odb::dbInst*> > > > macro_macro_conn_map_;
+    void CalDataFlow();
+    void UpdateDataFlow();
+    void DataFlowDFSIOPin(int parent, int idx,
+            std::vector<std::set<odb::dbInst*> >& insts,
+            std::map<int, odb::dbBTerm*>& io_pin_vertex,
+            std::map<int, odb::dbInst*>& std_cell_vertex,
+            std::map<int, odb::dbITerm*>& macro_pin_vertex,
+            std::vector<bool>& stop_flag_vec,
+            std::vector<bool>& visited, 
+            std::vector<std::vector<int> >& vertices,
+            std::vector<std::vector<int> >& hyperedges,
+            bool backward_flag);
+    void DataFlowDFSMacroPin(int parent, int idx,
+            std::vector<std::set<odb::dbInst*> >& std_cells,
+            std::vector<std::set<odb::dbInst*> >& macros,
+            std::map<int, odb::dbBTerm*>& io_pin_vertex,
+            std::map<int, odb::dbInst*>& std_cell_vertex,
+            std::map<int, odb::dbITerm*>& macro_pin_vertex,
+            std::vector<bool>& stop_flag_vec,
+            std::vector<bool>& visited,
+            std::vector<std::vector<int> >& vertices,
+            std::vector<std::vector<int> >& hyperedges,
+            bool backward_flag);
 
     // statistics of the design
     // Here when we calculate macro area, we do not include halo_width

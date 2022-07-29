@@ -496,7 +496,14 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float fence_lx,
                          const float fence_ly,
                          const float fence_ux,
-                         const float fence_uy)
+                         const float fence_uy,
+                         const float area_weight,
+                         const float outline_weight,
+                         const float wirelength_weight,
+                         const float guidance_weight,
+                         const float fence_weight,
+                         const float boundary_weight,
+                         const float notch_weight)
 {
   HierRTLMP* rtlmp_engine_ = new HierRTLMP(network_, db_, sta_, logger_);
   rtlmp_engine_->SetTopLevelClusterSize(max_num_macro,
@@ -512,6 +519,13 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetHaloWidth(halo_width);
   rtlmp_engine_->SetGlobalFence(fence_lx, fence_ly,
                                 fence_ux, fence_ux);
+  rtlmp_engine_->SetAreaWeight(area_weight);
+  rtlmp_engine_->SetOutlineWeight(outline_weight);
+  rtlmp_engine_->SetWirelengthWeight(wirelength_weight);
+  rtlmp_engine_->SetGuidanceWeight(guidance_weight);
+  rtlmp_engine_->SetFenceWeight(fence_weight);
+  rtlmp_engine_->SetBoundaryWeight(boundary_weight);
+  rtlmp_engine_->SetNotchWeight(notch_weight);
   rtlmp_engine_->HierRTLMacroPlacer();
 
   return true;

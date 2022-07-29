@@ -46,6 +46,13 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
                                           -fence_uy   fence_uy \
+                                          -area_weight area_weight \
+                                          -outline_weight outline_weight \
+                                          -wirelength_weight wirelength_weight \
+                                          -guidance_weight guidance_weight \
+                                          -fence_weight fence_weight \
+                                          -boundary_weight boundary_weight \
+                                          -notch_weight notch_weight \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
@@ -53,6 +60,8 @@ proc rtl_macro_placer { args } {
         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
         -signature_net_threshold -halo_width \
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
+        -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
+        -boundary_weight -notch_weight \
     } flag {  }
      
     set max_num_macro  $keys(-max_num_macro)  
@@ -70,6 +79,13 @@ proc rtl_macro_placer { args } {
     set fence_ly    $keys(-fence_ly) 
     set fence_ux    $keys(-fence_ux) 
     set fence_uy    $keys(-fence_uy)
+    set area_weight $keys(-area_weight)
+    set wirelength_weight $keys(-wirelength_weight)
+    set outline_weight $keys(-outline_weight)
+    set guidance_weight $keys(-guidance_weight)
+    set fence_weight  $keys(-fence_weight)
+    set boundary_weight $keys(-boundary_weight)
+    set notch_weight  $keys(-notch_weight)
         
     if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
                                       $min_num_macro  \
@@ -83,6 +99,9 @@ proc rtl_macro_placer { args } {
                                       $signature_net_threshold \
                                       $halo_width \
                                       $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
+                                      $area_weight $outline_weight $wirelength_weight \
+                                      $guidance_weight $fence_weight $boundary_weight \
+                                      $notch_weight \
                                       ]} {
         return false
     }

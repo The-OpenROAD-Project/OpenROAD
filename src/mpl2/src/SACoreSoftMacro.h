@@ -90,10 +90,14 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     float GetNormBoundaryPenalty() const;
     float GetNotchPenalty()        const;
     float GetNormNotchPenalty()    const;
-    
+    void PrintResults() const; // just for test
+
     // Initialize the SA worker
     void Initialize(); 
-
+    // adjust the size of MixedCluster to fill the empty space
+    void FillDeadSpace();
+    void AlignMacroClusters();
+ 
   private:
     float CalNormCost();
     void CalPenalty();
@@ -105,13 +109,22 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     
     void Shrink();
 
+    // A utility function for FillDeadSpace.
+    // It's used for calculate the start point and end point for a segment in a grid
+    void CalSegmentLoc(float seg_start, float seg_end,
+                       int& start_id,   int& end_id,
+                       std::vector<float>& grid);
+
     // notch threshold
     float notch_h_th_;
     float notch_v_th_;
-  
+    
+    float adjust_h_th_; // the threshold for adjust hard macro clusters horizontally
+    float adjust_v_th_; // the threshold for adjust hard macro clusters vertically
+
+
     // additional penalties
     float boundary_weight_   = 0.0;
-    float notch_weight_      = 0.0;
     
     float boundary_penalty_ = 0.0;
     float notch_penalty_    = 0.0;
@@ -123,7 +136,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     float norm_notch_penalty_    = 0.0;
 
     void CalBoundaryPenalty();
-    void AlignMacroClusters();
     void CalNotchPenalty();
    
     // action prob

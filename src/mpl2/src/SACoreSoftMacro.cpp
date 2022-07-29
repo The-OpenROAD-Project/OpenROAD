@@ -89,10 +89,12 @@ SACoreSoftMacro::SACoreSoftMacro(float outline_width,
                               init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
 { 
   boundary_weight_ = boundary_weight;
-  notch_weight_    = notch_weight;
+  original_notch_weight_    = notch_weight;
   resize_prob_     = resize_prob;
   notch_h_th_      = notch_h_threshold;
   notch_v_th_      = notch_v_threshold;
+  adjust_h_th_     = notch_h_th_;
+  adjust_v_th_     = notch_v_th_;
 }
 
 // acessors functions
@@ -259,7 +261,8 @@ void SACoreSoftMacro::Initialize()
   norm_guidance_penalty_ = CalAverage(guidance_penalty_list);
   norm_fence_penalty_    = CalAverage(fence_penalty_list);
   norm_boundary_penalty_ = CalAverage(boundary_penalty_list);
-  norm_notch_penalty_    = CalAverage(notch_penalty_list);
+  //norm_notch_penalty_    = CalAverage(notch_penalty_list);
+  norm_notch_penalty_    = outline_width_ * outline_height_;
 
   // Calculate initial temperature
   std::vector<float> cost_list;
@@ -308,7 +311,15 @@ void SACoreSoftMacro::AlignMacroClusters()
 {
   if (width_ > outline_width_ || height_ > outline_height_)
     return;
-  
+  // update threshold value  
+  adjust_h_th_ = notch_h_th_;
+  adjust_v_th_ = notch_v_th_;
+  for (auto& macro : macros_) {
+    if (macro.IsMacroCluster() == true) {
+      adjust_h_th_ = std::min(adjust_h_th_, macro.GetWidth());
+      adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight());
+    }
+  }
   // Align macro clusters to boundaries
   for (auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {
@@ -317,21 +328,18 @@ void SACoreSoftMacro::AlignMacroClusters()
       const float ux = lx + macro.GetWidth();
       const float uy = ly + macro.GetHeight();
       // align to left / right boundaries
-      if (lx <= notch_h_th_)
+      if (lx <= adjust_h_th_)
         macro.SetX(0.0);
-      else if (outline_width_ - ux <= notch_h_th_)
+      else if (outline_width_ - ux <= adjust_h_th_)
         macro.SetX(outline_width_ - macro.GetWidth());
       // align to top / bottom boundaries
-      if (ly <= notch_v_th_)
+      if (ly <= adjust_v_th_)
         macro.SetY(0.0);
-      else if (outline_height_ - uy <= notch_v_th_)
+      else if (outline_height_ - uy <= adjust_v_th_)
         macro.SetY(outline_height_ - macro.GetHeight());
     }
   }
-  // Align macro clusters horizontally
-  // Align macro clusters vertically
 }
-
 
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::CalNotchPenalty()
@@ -340,32 +348,168 @@ void SACoreSoftMacro::CalNotchPenalty()
   notch_penalty_ = 0.0;
   if (notch_weight_ <= 0.0)
     return;
-  
-  bool hard_macro_cluster_flag = false;
-  for (const auto& macro : macros_) {
-    if (macro.IsMacroCluster() == true) {
-      hard_macro_cluster_flag = true;
-      break;
-    }
-  }
-  
-  // If there is no HardMacroCluster, we do not consider the notch penalty
-  if (hard_macro_cluster_flag == false)
-    return;
-  
   // If the floorplan cannot fit into the outline
+  // We think the entire floorplan is a "huge" notch
   if (width_ > outline_width_ || height_ > outline_height_) {
-    const float area = std::max(width_, outline_width_) 
-                       * std::max(height_, outline_height_);
-    notch_penalty_ = std::sqrt(area / (outline_width_ * outline_height_));
+    notch_penalty_ += outline_width_ * outline_height_;
     return;
   }
-   
-  // Calculate the notch penalty cost based on the area of notches
-  // First align macro clusters to reduce notches
+
+  pre_macros_ = macros_;
+  // Fill dead space
+  FillDeadSpace();
+  // align macro clusters to reduce notches
   AlignMacroClusters();
-  // Then calculate notch penalty
-  return;
+  // Create grids based on location of MixedCluster and HardMacroCluster
+  std::set<float> x_point;
+  std::set<float> y_point;
+  std::vector<bool> macro_mask;
+  for (auto& macro : macros_) {
+    if (macro.GetArea() <= 0.0 ||
+       (macro.IsMacroCluster() == false && macro.IsMixedCluster() == false)) {
+      macro_mask.push_back(false);
+      continue;
+    }
+    x_point.insert(macro.GetX());
+    x_point.insert(macro.GetX() + macro.GetWidth());
+    y_point.insert(macro.GetY());
+    y_point.insert(macro.GetY() + macro.GetHeight());
+    macro_mask.push_back(true);
+  }
+  x_point.insert(0.0);
+  y_point.insert(0.0);
+  x_point.insert(outline_width_);
+  y_point.insert(outline_height_);
+  // create grid
+  std::vector<float> x_grid(x_point.begin(), x_point.end());
+  std::vector<float> y_grid(y_point.begin(), y_point.end());
+  // create grid in a row-based manner
+  std::vector<std::vector<int> > grids; // store the macro id
+  const int num_x = x_grid.size() - 1;
+  const int num_y = y_grid.size() - 1;
+  for (int j = 0; j < num_y; j++) {
+    std::vector<int> macro_ids(num_x, -1);
+    grids.push_back(macro_ids);
+  }
+  // detect the notch region around each MixedCluster and HardMacroCluster
+  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+    if (macro_mask[macro_id] == false)
+      continue;
+    int x_start = 0;
+    int x_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetX(), 
+                  macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
+                  x_start, x_end, x_grid);
+    int y_start = 0;
+    int y_end   = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(), 
+                  macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
+                  y_start, y_end, y_grid);
+    for (int j = y_start; j < y_end; j++)
+      for (int i = x_start; i < x_end; i++)
+        grids[j][i] = macro_id;
+  }
+  // check surroundings of each HardMacroCluster and MixecCluster
+  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+    if (macro_mask[macro_id] == false)
+      continue;
+    int x_start = 0;
+    int x_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetX(), 
+                  macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
+                  x_start, x_end, x_grid);
+    int y_start = 0;
+    int y_end   = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(), 
+                  macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
+                  y_start, y_end, y_grid);
+    int x_start_new = x_start;
+    int x_end_new   = x_end;
+    int y_start_new = y_start;
+    int y_end_new   = y_end;
+    // check left first
+    for (int i = x_start - 1; i >= 0; i--) {
+      bool flag = true;
+      for (int j = y_start; j < y_end; j++) {
+        if (grids[j][i] != -1) {
+          flag = false; // we cannot extend the current cluster   
+          break;
+        } // end if
+      } // end y
+      if (flag == false) { // extension done
+        break; 
+      } else {
+        x_start_new--; // extend left
+        for (int j = y_start; j < y_end; j++) 
+          grids[j][i] = macro_id;
+      } // end update
+    } // end left 
+    // check top second
+    for (int j = y_end; j < num_y; j++) {
+      bool flag = true;
+      for (int i = x_start; i < x_end; i++) {
+        if (grids[j][i] != -1) {
+          flag = false; // we cannot extend the current cluster   
+          break;
+        } // end if
+      } // end y
+      if (flag == false) { // extension done
+        break; 
+      } else {
+        y_end_new++; // extend top
+        for (int i = x_start; i < x_end; i++) 
+          grids[j][i] = macro_id;
+      } // end update
+    } // end top 
+    // check right third
+    for (int i = x_end; i < num_x; i++) {
+      bool flag = true;
+      for (int j = y_start; j < y_end; j++) {
+        if (grids[j][i] != -1) {
+          flag = false; // we cannot extend the current cluster   
+          break;
+        } // end if
+      } // end y
+      if (flag == false) { // extension done
+        break; 
+      } else {
+        x_end_new++; // extend right
+        for (int j = y_start; j < y_end; j++) 
+          grids[j][i] = macro_id;
+      } // end update
+    } // end right
+    // check down second
+    for (int j = y_start - 1; j >= 0; j--) {
+      bool flag = true;
+      for (int i = x_start; i < x_end; i++) {
+        if (grids[j][i] != -1) {
+          flag = false; // we cannot extend the current cluster   
+          break;
+        } // end if
+      } // end y
+      if (flag == false) { // extension done
+        break; 
+      } else {
+        y_start_new--; // extend down
+        for (int i = x_start; i < x_end; i++) 
+          grids[j][i] = macro_id;
+      } // end update
+    } // end down 
+    // check the notch area
+    if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_)
+      notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new]) * 
+                        macros_[macro_id].GetHeight();    
+    if ((x_grid[x_end_new] - x_grid[x_end]) <= notch_h_th_)
+      notch_penalty_ += (x_grid[x_end_new] - x_grid[x_end]) * 
+                        macros_[macro_id].GetHeight();   
+    if ((y_grid[y_start] - y_grid[y_start_new]) <= notch_v_th_)
+      notch_penalty_ += (y_grid[y_start] - y_grid[y_start_new]) * 
+                        macros_[macro_id].GetWidth();
+    if ((y_grid[y_end_new] - y_grid[y_end]) <= notch_v_th_)
+      notch_penalty_ += (y_grid[y_end_new] - y_grid[y_end]) * 
+                        macros_[macro_id].GetWidth();   
+  } 
+  macros_ = pre_macros_;
 }
 
 
@@ -440,5 +584,196 @@ void SACoreSoftMacro::Shrink()
   for (auto& macro : macros_)
     macro.ShrinkArea(shrink_factor_);
 }
+
+void SACoreSoftMacro::PrintResults() const
+{
+  std::cout << "outline_penalty : "
+            << outline_penalty_ / norm_outline_penalty_ << std::endl;
+  std::cout << "wirelength : "
+            << wirelength_ / norm_wirelength_ << std::endl;
+  std::cout << "guidance_penalty : "
+            << guidance_penalty_ / norm_guidance_penalty_ << std::endl;
+  std::cout << "fence_penalty : "
+            << fence_penalty_ / norm_fence_penalty_ << std::endl;
+  std::cout << "boundary_penalty : " 
+            << boundary_penalty_ / norm_boundary_penalty_ << std::endl;
+  std::cout << "notch_penalty : " << notch_penalty_ / norm_notch_penalty_ << std::endl;
+}
+
+
+// fill the dead space by adjust the size of MixedCluster
+void SACoreSoftMacro::FillDeadSpace()
+{ 
+  // if the floorplan is invalid, do nothing
+  if (width_ > outline_width_ || height_ > outline_height_)
+    return;
+
+  // adjust the location of MixedCluster
+  // Step1 : Divide the entire floorplan into grids
+  std::set<float> x_point;
+  std::set<float> y_point;
+  for (auto& macro : macros_) {
+    if (macro.GetArea() <= 0.0)
+      continue;
+    x_point.insert(macro.GetX());
+    x_point.insert(macro.GetX() + macro.GetWidth());
+    y_point.insert(macro.GetY());
+    y_point.insert(macro.GetY() + macro.GetHeight());
+  }
+  x_point.insert(0.0);
+  y_point.insert(0.0);
+  x_point.insert(outline_width_);
+  y_point.insert(outline_height_);
+  // create grid
+  std::vector<float> x_grid(x_point.begin(), x_point.end());
+  std::vector<float> y_grid(y_point.begin(), y_point.end());
+  // create grid in a row-based manner
+  std::vector<std::vector<int> > grids; // store the macro id
+  const int num_x = x_grid.size() - 1;
+  const int num_y = y_grid.size() - 1;
+  for (int j = 0; j < num_y; j++) {
+    std::vector<int> macro_ids(num_x, -1);
+    grids.push_back(macro_ids);
+  }
+
+  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+    if (macros_[macro_id].GetArea() <= 0.0)
+      continue;
+    int x_start = 0;
+    int x_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetX(), 
+                  macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
+                  x_start, x_end, x_grid);
+    int y_start = 0;
+    int y_end   = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(), 
+                  macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
+                  y_start, y_end, y_grid);
+    for (int j = y_start; j < y_end; j++)
+      for (int i = x_start; i < x_end; i++)
+        grids[j][i] = macro_id;
+  }
+  // propagate from the MixedCluster and then StdCellCluster
+  for (int order = 0; order <= 1; order++) {
+    for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+      if (macros_[macro_id].GetArea() <= 0.0)
+        continue;
+      const bool forward_flag = (order == 0) ?
+                                 macros_[macro_id].IsMixedCluster() :
+                                 macros_[macro_id].IsStdCellCluster();
+      if (forward_flag == false)
+        continue;
+      int x_start = 0;
+      int x_end = 0;
+      CalSegmentLoc(macros_[macro_id].GetX(), 
+                    macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
+                    x_start, x_end, x_grid);
+      int y_start = 0;
+      int y_end   = 0;
+      CalSegmentLoc(macros_[macro_id].GetY(), 
+                    macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
+                    y_start, y_end, y_grid);
+      int x_start_new = x_start;
+      int x_end_new   = x_end;
+      int y_start_new = y_start;
+      int y_end_new   = y_end;
+      // propagate left first
+      for (int i = x_start - 1; i >= 0; i--) {
+        bool flag = true;
+        for (int j = y_start; j < y_end; j++) {
+          if (grids[j][i] != -1) {
+            flag = false; // we cannot extend the current cluster   
+            break;
+          } // end if
+        } // end y
+        if (flag == false) { // extension done
+          break; 
+        } else {
+          x_start_new--; // extend left
+          for (int j = y_start; j < y_end; j++) 
+            grids[j][i] = macro_id;
+        } // end update
+      } // end left 
+      x_start = x_start_new;
+      // propagate top second
+      for (int j = y_end; j < num_y; j++) {
+        bool flag = true;
+        for (int i = x_start; i < x_end; i++) {
+          if (grids[j][i] != -1) {
+            flag = false; // we cannot extend the current cluster   
+            break;
+          } // end if
+        } // end y
+        if (flag == false) { // extension done
+          break; 
+        } else {
+          y_end_new++; // extend top
+          for (int i = x_start; i < x_end; i++) 
+            grids[j][i] = macro_id;
+        } // end update
+      } // end top
+      y_end = y_end_new;
+      // propagate right third
+      for (int i = x_end; i < num_x; i++) {
+        bool flag = true;
+        for (int j = y_start; j < y_end; j++) {
+          if (grids[j][i] != -1) {
+            flag = false; // we cannot extend the current cluster   
+            break;
+          } // end if
+        } // end y
+        if (flag == false) { // extension done
+          break; 
+        } else {
+          x_end_new++; // extend right
+          for (int j = y_start; j < y_end; j++) 
+            grids[j][i] = macro_id;
+        } // end update
+      } // end right
+      x_end = x_end_new;
+      // propagate down second
+      for (int j = y_start - 1; j >= 0; j--) {
+        bool flag = true;
+        for (int i = x_start; i < x_end; i++) {
+          if (grids[j][i] != -1) {
+            flag = false; // we cannot extend the current cluster   
+            break;
+          } // end if
+        } // end y
+        if (flag == false) { // extension done
+          break; 
+        } else {
+          y_start_new--; // extend down
+          for (int i = x_start; i < x_end; i++) 
+            grids[j][i] = macro_id;
+        } // end update
+      } // end down 
+      y_start = y_start_new;
+      // update the location of cluster
+      macros_[macro_id].SetLocationF(x_grid[x_start], y_grid[y_start]);
+      macros_[macro_id].SetShapeF(x_grid[x_end] - x_grid[x_start], 
+                                  y_grid[y_end] - y_grid[y_start]);
+    }
+  }
+}
+
+// A utility function for FillDeadSpace.
+// It's used for calculate the start point and end point for a segment in a grid
+void SACoreSoftMacro::CalSegmentLoc(float seg_start, float seg_end,
+                                    int& start_id,   int& end_id,
+                                    std::vector<float>& grid)
+{
+  start_id = -1;
+  end_id = -1;
+  for (int i = 0; i < grid.size() - 1; i++) {
+    if ((grid[i] <= seg_start) && (grid[i+1] > seg_start))
+      start_id = i;
+    if ((grid[i] <= seg_end) && (grid[i+1] > seg_end))
+      end_id = i;
+  } 
+  if (end_id == -1)
+    end_id = grid.size() - 1;
+}
+
 
 }  // namespace mpl
