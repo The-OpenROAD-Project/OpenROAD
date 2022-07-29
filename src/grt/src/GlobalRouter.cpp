@@ -98,6 +98,7 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
+      critical_nets_percentage_(0),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -710,14 +711,10 @@ void GlobalRouter::findPins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  if (critical_nets_percentage_ != 0) {
-    sta::dbNetwork* network = sta_->getDbNetwork();
-    sta::Net* sta_net = network->dbToSta(net->getDbNet());
-    sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
-    return slack;
-  }
-
-  return 0;
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Net* sta_net = network->dbToSta(net->getDbNet());
+  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  return slack;
 }
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
@@ -795,7 +792,9 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                         : max_routing_layer_;
 
     float slack = 0;
-    slack = getNetSlack(net);
+    if (critical_nets_percentage_ != 0) {
+      slack = getNetSlack(net);
+    }
     int netID = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
                                    is_clock,
