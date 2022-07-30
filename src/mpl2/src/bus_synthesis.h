@@ -84,7 +84,7 @@ class Graph {
 
   private:
     std::vector<std::vector<Arrow> > adj_; // adjacency matrix
-    int max_num_path_ = 20;  // limit the maximum number of candidate paths to reduce runtime
+    int max_num_path_ = 10;  // limit the maximum number of candidate paths to reduce runtime
     float congestion_weight_ = 1.0;
     // store the parent vertices for each vertex in the shortest paths
     // for example, there are two paths from root to dest

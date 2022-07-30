@@ -316,8 +316,8 @@ void SACoreSoftMacro::AlignMacroClusters()
   adjust_v_th_ = notch_v_th_;
   for (auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {
-      adjust_h_th_ = std::min(adjust_h_th_, macro.GetWidth());
-      adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight());
+      adjust_h_th_ = std::min(adjust_h_th_, macro.GetWidth() * (1 - acc_tolerance_));
+      adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight() * (1 - acc_tolerance_));
     }
   }
   const float ratio = 0.1;

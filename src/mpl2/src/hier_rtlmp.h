@@ -136,8 +136,8 @@ class HierRTLMP {
     int num_threads_ = 10;  // number of threads
     int random_seed_ = 0;   // random seed for deterministic   
 
-    float target_dead_space_ = 0.05; // dead space for the cluster
-    float target_util_ = 0.20;  // target utilization of the design
+    float target_dead_space_ = 0.2; // dead space for the cluster
+    float target_util_ = 0.25;  // target utilization of the design
     float target_dead_space_step_ = 0.1; // step for dead space
     float target_util_step_       = 0.05; // step for utilization
     float num_target_util_        = 6;
@@ -190,7 +190,7 @@ class HierRTLMP {
     float neg_swap_prob_    = 0.3;
     float double_swap_prob_ = 0.3;
     float exchange_swap_prob_    = 0.1;
-    float flip_prob_ = 0.1;
+    float flip_prob_ = 0.2;
     float resize_prob_ = 0.2;
 
     // design-related variables

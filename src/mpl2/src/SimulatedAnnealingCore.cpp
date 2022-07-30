@@ -501,11 +501,14 @@ void SimulatedAnnealingCore<T>::FastSA()
       else 
         Restore();
     }
+    /*
     // Update Temperature
     if (step <= k_)
       t = init_T_ / (step * c_ * k_);
     else
       t = init_T_ / (step);
+    */
+    t *= 0.98;
     // increase step
     step++;
     // check if restart condition

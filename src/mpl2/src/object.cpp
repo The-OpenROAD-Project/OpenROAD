@@ -715,6 +715,17 @@ void Cluster::AddVirtualConnection(int src, int target)
 
 ///////////////////////////////////////////////////////////////////////
 // Metric HardMacro
+HardMacro::HardMacro(std::pair<float, float> loc, const std::string name) 
+{
+  width_ = 0.0;
+  height_ = 0.0;
+  name_ = name;
+  pin_x_ = 0.0;
+  pin_y_ = 0.0;
+  x_ = loc.first;
+  y_ = loc.second;
+}
+
 HardMacro::HardMacro(float width, float height, const std::string name) 
 {
   width_ = width;
@@ -780,17 +791,23 @@ bool HardMacro::operator==(const HardMacro& macro) const
 // Note that the default X and Y include halo_width
 void HardMacro::SetLocation(const std::pair<float, float>& location) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
   x_ = location.first;
   y_ = location.second;
 }
 
 void HardMacro::SetX(float x) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
   x_ = x;  
 }
-     
+  
 void HardMacro::SetY(float y) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
   y_ = y; 
 }
  
@@ -847,17 +864,24 @@ float HardMacro::GetHeight() const
 // Note that the real X and Y does NOT include halo_width
 void HardMacro::SetRealLocation(const std::pair<float, float>& location) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
+  
   x_ = location.first - halo_width_;
   y_ = location.second - halo_width_;
 }
      
 void HardMacro::SetRealX(float x) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
   x_ = x - halo_width_;  
 }
      
 void HardMacro::SetRealY(float y) 
 {
+  if (width_ * height_ <= 0.0)
+    return;
   y_ = y - halo_width_;  
 }
  
@@ -899,12 +923,15 @@ std::string HardMacro::GetOrientation() const
 // axis = false, flip vertically
 void HardMacro::Flip(bool axis) 
 {
+  //if (orientation_.getString() == std::string("MY"))
+  //  return;
   if (axis == true) {
     orientation_ = orientation_.flipX();
     pin_y_ = height_ - pin_y_; 
   } else {
     orientation_ = orientation_.flipY();
     pin_x_ = width_ - pin_x_;
+    //std::cout << "action :  " << orientation_.getString() << std::endl;
   }
 }
 
@@ -932,11 +959,29 @@ void HardMacro::UpdateDb(float pitch_x, float pitch_y)
 {
   if ((inst_ == nullptr) || (dbu_ <= 0.0)) 
     return;
-
+  float lx = this->GetRealX();
+  float ly = this->GetRealY();
+  float ux = lx + this->GetRealWidth();
+  float uy = ly + this->GetRealHeight();
+  lx = std::round(lx / pitch_x) * pitch_x;
+  ux = std::round(ux / pitch_x) * pitch_x;
+  ly = std::round(ly / pitch_y) * pitch_y;
+  uy = std::round(uy / pitch_y) * pitch_y;
   std::cout << "Update macro " << this->GetName() << std::endl;
-  int lx = Micro2Dbu(std::round((x_ + halo_width_) / pitch_x) * pitch_x, dbu_);
-  int ly = Micro2Dbu(std::round((y_ + halo_width_) / pitch_y) * pitch_y, dbu_);
-  inst_->setLocation(lx, ly);
+  std::cout << "lx :  " << lx << "  "
+            << "ly :  " << ly << "  "
+            << "ux :  " << ux << "  "
+            << "uy :  " << uy << "  "
+            << "orientation : " << orientation_.getString()
+            << std::endl;
+  if (orientation_.getString() == std::string("MX")) 
+    inst_->setLocation(Micro2Dbu(lx, dbu_), Micro2Dbu(uy, dbu_));
+  else if (orientation_.getString() == std::string("MY"))
+    inst_->setLocation(Micro2Dbu(ux, dbu_), Micro2Dbu(ly, dbu_));
+  else if (orientation_.getString() == std::string("R180"))
+    inst_->setLocation(Micro2Dbu(ux, dbu_), Micro2Dbu(uy, dbu_));
+  else
+    inst_->setLocation(Micro2Dbu(lx, dbu_), Micro2Dbu(ly, dbu_));
   inst_->setOrient(orientation_);
   inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 }

@@ -2914,126 +2914,165 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
   // Check if the cluster is a HardMacroCluster
   if (cluster->GetClusterType() != HardMacroCluster)
     return;
-
+  
   std::cout << "Enter the HardMacroClusterMacroPlacement :  " 
             << cluster->GetName()
             << std::endl;
-
+  
+  // get outline constraint
+  const float lx = cluster->GetX();
+  const float ly = cluster->GetY();
+  const float outline_width = cluster->GetWidth();
+  const float outline_height = cluster->GetHeight();
+  const float ux = lx + outline_width;
+  const float uy = ly + outline_height;
+  std::vector<HardMacro> macros;
+  std::vector<Cluster*> macro_clusters;
+  std::map<int, int> cluster_id_macro_id_map;
   std::vector<HardMacro*> hard_macros = cluster->GetHardMacros();
-  if (hard_macros.size() > 1) {
-    // set the action probabilities
-    const float action_sum  = pos_swap_prob_ + neg_swap_prob_ 
-                              + double_swap_prob_  + exchange_swap_prob_;
-    // set the penalty weight
-    const float weight_sum  = outline_weight_  + guidance_weight_ + fence_weight_;
-    // get outline constraint
-    const float lx = cluster->GetX();
-    const float ly = cluster->GetY();
-    const float outline_width = cluster->GetWidth();
-    const float outline_height = cluster->GetHeight();
-    const float ux = lx + outline_width;
-    const float uy = ly + outline_height;
-    // We vary the outline of cluster to generate differnt tilings
-    std::vector<float> vary_factor_list { 1.0 };
-    float vary_step = 0.2 / num_runs_;  // change the outline by at most 10 percent
-    for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
-      vary_factor_list.push_back(1.0 + i * vary_step);
-      vary_factor_list.push_back(1.0 - i * vary_step);
+  std::map<int, Rect> fences;
+  std::map<int, Rect> guides;
+  // create a cluster for each macro
+  for (auto& hard_macro : hard_macros) {
+    int macro_id = macros.size();
+    std::string cluster_name = hard_macro->GetName();
+    Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name);
+    macro_cluster->AddLeafMacro(hard_macro->GetInst());
+    SetInstProperty(macro_cluster);
+    cluster_id_macro_id_map[cluster_id_] = macro_id;
+    if (fences_.find(hard_macro->GetName()) != fences_.end()) {
+      fences[macro_id] = fences_[hard_macro->GetName()];
+      fences[macro_id].Relocate(lx, ly, ux, uy); 
     }
-    std::vector<HardMacro> macros;
-    for (auto& macro : hard_macros)
-      macros.push_back(*macro);
-    const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                      macros.size() : num_perturb_per_step_;
-    //const int num_perturb_per_step = macros.size();
-    // set fences and guides
-    std::map<int, Rect> fences;
-    std::map<int, Rect> guides;
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (fences_.find(hard_macros[i]->GetName()) != fences_.end()) {
-        fences[i] = fences_[hard_macros[i]->GetName()];
-        fences[i].Relocate(lx, ly, ux, uy); // calculate the overlap with outline
-      }
-      if (guides_.find(hard_macros[i]->GetName()) != guides_.end()) {
-        guides[i] = guides_[hard_macros[i]->GetName()];
-        guides[i].Relocate(lx, ly, ux, uy); // calculate the overlap with outline
-      }
+    if (guides_.find(hard_macro->GetName()) != guides_.end()) {
+      guides[macro_id] = guides_[hard_macro->GetName()];
+      guides[macro_id].Relocate(lx, ly, ux, uy); 
     }
-    int run_thread = num_threads_;
-    int remaining_runs = num_runs_;
-    int run_id = 0;
-    SACoreHardMacro* best_sa = nullptr;
-    float best_cost = std::numeric_limits<float>::max();
-    while (remaining_runs > 0) {
-      std::vector<SACoreHardMacro*> sa_vector;
-      run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-      for (int i = 0; i < run_thread; i++) {
-        const float width = outline_width * vary_factor_list[run_id++];
-        const float height = outline_width * outline_height / width;
-        SACoreHardMacro* sa = new SACoreHardMacro(width, height, macros,
-                                            area_weight_,
-                                            outline_weight_ / weight_sum, 0.0,
+    macros.push_back(*hard_macro);
+    cluster_map_[cluster_id_++] = macro_cluster;
+    macro_clusters.push_back(macro_cluster);
+  }
+  CalculateConnection();
+  std::set<int> cluster_id_set;
+  for (auto macro_cluster : macro_clusters) 
+    for (auto [cluster_id, weight] : macro_cluster->GetConnection())
+      cluster_id_set.insert(cluster_id);
+  // create macros for other clusters
+  for (auto cluster_id : cluster_id_set) {
+    if (cluster_id_macro_id_map.find(cluster_id) !=
+        cluster_id_macro_id_map.end())
+      continue;
+    auto& temp_cluster = cluster_map_[cluster_id];
+    if (temp_cluster->GetIOClusterFlag() == true)
+      continue;
+    // model other cluster as a fixed macro with zero size
+    cluster_id_macro_id_map[cluster_id] = macros.size();
+    macros.push_back(HardMacro(std::pair<float, float>(
+            temp_cluster->GetX() + temp_cluster->GetWidth() / 2.0,
+            temp_cluster->GetY() + temp_cluster->GetHeight() / 2.0),
+            temp_cluster->GetName()));
+  }
+  // create bundled net
+  std::vector<BundledNet> nets;
+  for (auto macro_cluster : macro_clusters) {
+    const int src_id = macro_cluster->GetId();
+    for (auto [cluster_id, weight] : macro_cluster->GetConnection()) {
+      if (cluster_map_[cluster_id]->GetIOClusterFlag() == true)
+        continue;
+      BundledNet net(cluster_id_macro_id_map[src_id],
+                     cluster_id_macro_id_map[cluster_id], weight);
+      net.src_cluster_id = src_id;
+      net.target_cluster_id = cluster_id;
+      nets.push_back(net);
+    } // end connection
+  } // end macro cluster
+  // set global configuration
+  // set the action probabilities
+  const float action_sum  = pos_swap_prob_ + neg_swap_prob_ 
+                          + double_swap_prob_  + exchange_swap_prob_
+                          + flip_prob_;
+  // set the penalty weight
+  const float weight_sum  = area_weight_ + outline_weight_  
+                          + wirelength_weight_  
+                          + guidance_weight_ + fence_weight_;
+  // We vary the outline of cluster to generate differnt tilings
+  std::vector<float> vary_factor_list { 1.0 };
+  float vary_step = 0.2 / num_runs_;  // change the outline by at most 10 percent
+  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
+    vary_factor_list.push_back(1.0 + i * vary_step);
+    vary_factor_list.push_back(1.0 - i * vary_step);
+  }
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
+                                    macros.size() : num_perturb_per_step_;
+  //const int num_perturb_per_step = macros.size();
+  int run_thread = num_threads_;
+  int remaining_runs = num_runs_;
+  int run_id = 0;
+  SACoreHardMacro* best_sa = nullptr;
+  float best_cost = std::numeric_limits<float>::max();
+  while (remaining_runs > 0) {
+    std::vector<SACoreHardMacro*> sa_vector;
+    run_thread = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    for (int i = 0; i < run_thread; i++) {
+      const float width = outline_width * vary_factor_list[run_id++];
+      const float height = outline_width * outline_height / width;
+      SACoreHardMacro* sa = new SACoreHardMacro(width, height, macros,
+                                            area_weight_ / weight_sum,
+                                            outline_weight_ / weight_sum, 
+                                            wirelength_weight_ / weight_sum,
                                             guidance_weight_ / weight_sum,
                                             fence_weight_ / weight_sum,
                                             pos_swap_prob_ / action_sum,
                                             neg_swap_prob_ / action_sum,
                                             double_swap_prob_ / action_sum,
                                             exchange_swap_prob_ / action_sum,
-                                            0.0, // no flip   
+                                            flip_prob_ / action_sum,
                                             init_prob_, max_num_step_,
                                             num_perturb_per_step,
                                             k_, c_, random_seed_);
-        sa->SetFences(fences);
-        sa->SetGuides(guides);
-        sa_vector.push_back(sa);
-      }
-      // multi threads 
-      std::vector<std::thread> threads;
-      for (auto& sa : sa_vector)
-        threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
-      for (auto& th : threads)
-        th.join();
-      // add macro tilings
-      for (auto& sa : sa_vector) {
-        if (sa->IsValid() && sa->GetNormCost() < best_cost) {
-          best_cost = sa->GetNormCost();
-          best_sa = sa;
-        } else {
-          delete sa; // avoid memory leakage
-        }
-      }
-      sa_vector.clear();
-      remaining_runs -= run_thread;
+      sa->SetNets(nets);
+      sa->SetFences(fences);
+      sa->SetGuides(guides);
+      sa_vector.push_back(sa);
     }
-    // update the hard macro
-    if (best_sa == nullptr) {
-      std::string line = "This is no valid tilings for cluster ";
-      line += cluster->GetName();
-      logger_->error(MPL, 2033, line);      
-    } else {
-      std::vector<HardMacro> best_macros;
-      best_sa->GetMacros(best_macros);
-      for (int i = 0; i < hard_macros.size(); i++)
-        *(hard_macros[i]) = best_macros[i];
-      delete best_sa;
+    // multi threads 
+    std::vector<std::thread> threads;
+    for (auto& sa : sa_vector)
+      threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
+    for (auto& th : threads)
+      th.join();
+    // add macro tilings
+    for (auto& sa : sa_vector) {
+      if (sa->IsValid() && sa->GetNormCost() < best_cost) {
+        best_cost = sa->GetNormCost();
+        best_sa = sa;
+      } else {
+        delete sa; // avoid memory leakage
+      }
     }
-  }  
-
-
-
-  // change the orientation of macros to face std cell clusters
-  const float lx = cluster->GetX();
-  const float ly = cluster->GetY();
+    sa_vector.clear();
+    remaining_runs -= run_thread;
+  }
+  // update the hard macro
+  if (best_sa == nullptr) {
+    std::string line = "This is no valid tilings for cluster ";
+    line += cluster->GetName();
+    logger_->error(MPL, 2033, line);      
+  } else {
+    std::vector<HardMacro> best_macros;
+    best_sa->GetMacros(best_macros);
+    best_sa->PrintResults();
+    for (int i = 0; i < hard_macros.size(); i++)
+      *(hard_macros[i]) = best_macros[i];
+    delete best_sa;
+  }
+  // update OpenDB
   for (auto& hard_macro : hard_macros) {
     hard_macro->SetX(hard_macro->GetX() + lx);
     hard_macro->SetY(hard_macro->GetY() + ly);
     hard_macro->UpdateDb(pitch_x_, pitch_y_);
   }
-  // done this branch and update the cluster_id property back
-  //SetInstProperty(parent);
+  SetInstProperty(cluster);
 }
-
-
-
 
 }  // namespace mpl

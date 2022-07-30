@@ -340,6 +340,9 @@ class HardMacro {
   public:
     HardMacro() {  }
     // Create a macro with specified size
+    // Model fixed terminals
+    HardMacro(std::pair<float, float> loc, const std::string name);
+    
     // In this case, we model the pin position at the center of the macro
     HardMacro(float width, float height, const std::string name);
     // create a macro from dbInst

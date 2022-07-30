@@ -117,10 +117,13 @@ void SACoreHardMacro::FlipMacro()
   macro_id_ = static_cast<int>(std::floor(
               (distribution_)(generator_) * macros_.size()));
   const float prob = (distribution_) (generator_);
+  macros_[macro_id_].Flip(false);
+  /*
   if (prob <= 0.5)
     macros_[macro_id_].Flip(true);
   else
     macros_[macro_id_].Flip(false);
+  */
 }
 
 void SACoreHardMacro::Perturb()
@@ -238,6 +241,15 @@ void SACoreHardMacro::Initialize()
   for (int i = 1; i < cost_list.size(); i++)
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
   init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+}
+
+void SACoreHardMacro::PrintResults() const
+{
+  std::cout << "SACoreHardMacro" << std::endl;  
+  std::cout << "outline_penalty_  = " << outline_penalty_ << std::endl;
+  std::cout << "wirelength_  = " << wirelength_ << std::endl;
+  std::cout << "guidance_penalty_  = " << guidance_penalty_ << std::endl;
+  std::cout << "fence_penalty_  = " << fence_penalty_ << std::endl;
 }
 
 }  // namespace mpl
