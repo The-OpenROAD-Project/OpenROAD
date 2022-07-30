@@ -17,7 +17,7 @@ estimate_parasitics -placement
 set guide_file [make_result_file critical_nets_percentage.guide]
 
 set_routing_layers -signal met1-met5 -clock met3-met5
-set_global_routing_layer_adjustment met1-met5 0.5
+set_global_routing_layer_adjustment met1-met5 0.8
 set_critical_nets_percentage 0.3
 
 global_route -verbose
