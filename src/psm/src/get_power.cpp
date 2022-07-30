@@ -54,8 +54,8 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
                                                             utl::Logger* logger)
 {
   // STA object create
-  m_sta = sta;
-  m_logger = logger;
+  sta_ = sta;
+  logger_ = logger;
   // environment settings
   string cornerName = "wst";
   // string cornerNameFF="bst";
@@ -66,10 +66,10 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
   //  // define_corners
   //  _sta->makeCorners(&cornerNameSet);
   //  Corner* corner = _sta->findCorner(cornerName.c_str());
-  Corner* corner = m_sta->cmdCorner();
+  Corner* corner = sta_->cmdCorner();
 
   vector<pair<string, double>> power_report;
-  dbNetwork* network = m_sta->getDbNetwork();
+  dbNetwork* network = sta_->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult total_calc;
   total_calc.clear();
@@ -78,11 +78,11 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
     LibertyCell* cell = network->libertyCell(inst);
     if (cell) {
       PowerResult inst_power;
-      m_sta->power(inst, corner, inst_power);
+      sta_->power(inst, corner, inst_power);
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-      debugPrint(m_logger,
+      debugPrint(logger_,
                  utl::PSM,
                  "get power",
                  2,
@@ -93,12 +93,8 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
   }
   delete inst_iter;
 
-  debugPrint(m_logger,
-             utl::PSM,
-             "get power",
-             1,
-             "Total power: {}",
-             total_calc.total());
+  debugPrint(
+      logger_, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
   return power_report;
 }
 }  // namespace psm

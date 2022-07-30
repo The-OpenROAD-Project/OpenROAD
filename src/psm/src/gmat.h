@@ -56,16 +56,16 @@ class GMat
  public:
   //! Constructor for creating the G matrix
   GMat(int t_num_layers, utl::Logger* logger)
-      : m_layer_maps(t_num_layers + 1, NodeMap())
+      : layer_maps_(t_num_layers + 1, NodeMap())
   {  // as it start from 0 and everywhere we use layer
-    m_logger = logger;
+    logger_ = logger;
   }
   //! Destructor of the G matrix
   ~GMat()
   {
-    while (!m_G_mat_nodes.empty()) {
-      delete m_G_mat_nodes.back();
-      m_G_mat_nodes.pop_back();
+    while (!G_mat_nodes_.empty()) {
+      delete G_mat_nodes_.back();
+      G_mat_nodes_.pop_back();
     }
   }
   //! Function to return a pointer to the node with a index
@@ -125,21 +125,21 @@ class GMat
 
  private:
   //! Pointer to the logger
-  utl::Logger* m_logger;
+  utl::Logger* logger_;
   //! Number of nodes in G matrix
-  NodeIdx m_n_nodes{0};
+  NodeIdx n_nodes_{0};
   //! Dictionary of keys for G matrix
-  DokMatrix m_G_mat_dok;
+  DokMatrix G_mat_dok_;
   //! Compressed sparse column matrix for superLU
-  CscMatrix m_G_mat_csc;
+  CscMatrix G_mat_csc_;
   //! Dictionary of keys for A matrix
-  DokMatrix m_A_mat_dok;
+  DokMatrix A_mat_dok_;
   //! Compressed sparse column matrix for A
-  CscMatrix m_A_mat_csc;
+  CscMatrix A_mat_csc_;
   //! Vector of pointers to all nodes in the G matrix
-  std::vector<Node*> m_G_mat_nodes;
+  std::vector<Node*> G_mat_nodes_;
   //! Vector of maps to all nodes
-  std::vector<NodeMap> m_layer_maps;
+  std::vector<NodeMap> layer_maps_;
   //! Function to get the conductance value at a row and column of the matrix
   double GetConductance(NodeIdx t_row, NodeIdx t_col);
   //! Function to add a conductance value at the specified location of the

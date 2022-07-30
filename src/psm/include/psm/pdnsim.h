@@ -87,23 +87,23 @@ class PDNSim
   void setDebugGui();
 
  private:
-  odb::dbDatabase* _db;
-  sta::dbSta* _sta;
-  utl::Logger* _logger;
-  std::string _vsrc_loc;
-  std::string _out_file;
-  std::string _em_out_file;
-  int _enable_em;
-  int _bump_pitch_x;
-  int _bump_pitch_y;
-  std::string _spice_out_file;
-  std::string _power_net;
-  std::map<std::string, float> _net_voltage_map;
-  IRDropByLayer _ir_drop;
-  float _node_density;
-  int _node_density_factor;
-  float _min_resolution;
-  std::unique_ptr<DebugGui> _debug_gui;
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
+  std::string vsrc_loc_;
+  std::string out_file_;
+  std::string em_out_file_;
+  int enable_em_;
+  int bump_pitch_x_;
+  int bump_pitch_y_;
+  std::string spice_out_file_;
+  std::string power_net_;
+  std::map<std::string, float> net_voltage_map_;
+  IRDropByLayer ir_drop_;
+  float node_density_;
+  int node_density_factor_;
+  float min_resolution_;
+  std::unique_ptr<DebugGui> debug_gui_;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
 }  // namespace psm

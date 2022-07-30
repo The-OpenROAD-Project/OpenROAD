@@ -48,14 +48,10 @@ namespace psm {
 */
 class SupplyVoltage
 {
- private:
-  //! Instance to OpenSTA object.
-  sta::dbSta* _sta;
-
  public:
   //! Function for power per instance calculation
   std::pair<double, double> getSupplyVoltage(sta::dbSta* sta);
 };
-// epower namespace end
+
 }  // namespace psm
 #endif

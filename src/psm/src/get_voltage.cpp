@@ -46,9 +46,8 @@ std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta)
 {
   std::pair<double, double> supply_voltage;
   sta::LibertyLibrary* default_library;
-  _sta = sta;
-  sta::dbNetwork* network = _sta->getDbNetwork();
-  sta::Corner* corner = _sta->cmdCorner();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Corner* corner = sta->cmdCorner();
   sta::MinMax* mm = sta::MinMax::max();
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(mm);
   float power_voltage_;
