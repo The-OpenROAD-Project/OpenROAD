@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "get_voltage.h"
+
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
@@ -41,7 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "sta/Liberty.hh"
 
 namespace psm {
-std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
+std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta)
+{
   std::pair<double, double> supply_voltage;
   sta::LibertyLibrary* default_library;
   _sta = sta;

@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_NODE__
 
 #include <map>
+
 #include "odb/db.h"
 #include "utl/Logger.h"
 namespace psm {
@@ -46,14 +47,16 @@ typedef int NodeIdx;  // TODO temp as it interfaces with SUPERLU
 typedef std::pair<NodeIdx, NodeIdx> GMatLoc;
 
 //! Data structure for the Dictionary of Keys Matrix
-typedef struct {
+typedef struct
+{
   NodeIdx num_rows;
   NodeIdx num_cols;
   std::map<GMatLoc, double> values;  // pair < col_num, row_num >
 } DokMatrix;
 
 //! Data structure for the Compressed Sparse Column Matrix
-typedef struct {
+typedef struct
+{
   NodeIdx num_rows;
   NodeIdx num_cols;
   NodeIdx nnz;
@@ -63,7 +66,8 @@ typedef struct {
 } CscMatrix;
 
 //! Node class which stores the properties of the node of the PDN
-class Node {
+class Node
+{
  public:
   Node() : m_loc(std::make_pair(0.0, 0.0)), m_bBox(std::make_pair(0.0, 0.0)) {}
   ~Node() {}

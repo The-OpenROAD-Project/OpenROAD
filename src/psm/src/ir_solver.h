@@ -37,8 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-namespace sta
-{
+namespace sta {
 class dbSta;
 }
 
@@ -49,9 +48,11 @@ namespace psm {
  * Builds the equations GV=J and uses SuperLU
  * to solve the matrix equations
  */
-class IRSolver {
+class IRSolver
+{
  public:
-  struct BumpData {
+  struct BumpData
+  {
     int x;
     int y;
     int size;
@@ -63,12 +64,21 @@ class IRSolver {
    * This constructor creates an instance of the class using
    * the given inputs.
    */
-  IRSolver(odb::dbDatabase* t_db, sta::dbSta* t_sta, utl::Logger* t_logger,
-           std::string vsrc_loc, std::string power_net, std::string out_file,
-           std::string em_out_file, std::string spice_out_file, int em_analyze,
-           int bump_pitch_x, int bump_pitch_y, float node_density_um,
+  IRSolver(odb::dbDatabase* t_db,
+           sta::dbSta* t_sta,
+           utl::Logger* t_logger,
+           std::string vsrc_loc,
+           std::string power_net,
+           std::string out_file,
+           std::string em_out_file,
+           std::string spice_out_file,
+           int em_analyze,
+           int bump_pitch_x,
+           int bump_pitch_y,
+           float node_density_um,
            int node_density_factor_user,
-           std::map<std::string, float> net_voltage_map) {
+           std::map<std::string, float> net_voltage_map)
+  {
     m_db = t_db;
     m_sta = t_sta;
     m_logger = t_logger;
@@ -144,10 +154,10 @@ class IRSolver {
   //! G matrix for voltage
   GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
-  int m_node_density{0};  // Initialize to zero
-  int m_node_density_factor{5};  // Default value
+  int m_node_density{0};              // Initialize to zero
+  int m_node_density_factor{5};       // Default value
   int m_node_density_factor_user{0};  // User defined value
-  float m_node_density_um{-1}; // Initialize to negative unless set by user 
+  float m_node_density_um{-1};  // Initialize to negative unless set by user
   //! Routing Level of the top layer
   int m_top_layer{0};
   int m_bump_pitch_x{0};
@@ -182,20 +192,22 @@ class IRSolver {
   bool CreateJ();
   //! Function to create a G matrix using the nodes
   bool CreateGmat(bool connection_only = false);
-  //! Function to find and store the upper and lower PDN layers and return a list
-  //of wires for all PDN tasks
+  //! Function to find and store the upper and lower PDN layers and return a
+  //! list
+  // of wires for all PDN tasks
   std::vector<odb::dbSBox*> FindPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of the G matrix
   void CreateGmatNodes(std::vector<odb::dbSBox*> power_wires,
                        std::vector<std::tuple<int, int, int, int>> macros);
-  
+
   //! Function to find and store the macro boundaries
   std::vector<std::tuple<int, int, int, int>> GetMacroBoundaries();
 
   //! Function to create the nodes for the c4 bumps
   int CreateC4Nodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
-  void CreateGmatConnections(std::vector<odb::dbSBox*> power_wires, bool connection_only);
+  void CreateGmatConnections(std::vector<odb::dbSBox*> power_wires,
+                             bool connection_only);
 };
 }  // namespace psm
 #endif

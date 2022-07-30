@@ -31,30 +31,41 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "psm/MakePDNSim.hh"
+
 #include <tcl.h>
-#include "sta/StaMain.hh"
+
 #include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
-#include "psm/MakePDNSim.hh"
+#include "sta/StaMain.hh"
 
 namespace sta {
 extern const char* psm_tcl_inits[];
 }
 
-extern "C" { extern int Psm_Init(Tcl_Interp* interp); }
+extern "C" {
+extern int Psm_Init(Tcl_Interp* interp);
+}
 
 namespace ord {
 
-psm::PDNSim* makePDNSim() { return new psm::PDNSim(); }
+psm::PDNSim* makePDNSim()
+{
+  return new psm::PDNSim();
+}
 
-void initPDNSim(OpenRoad* openroad) {
+void initPDNSim(OpenRoad* openroad)
+{
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Psm_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::psm_tcl_inits);
-  openroad->getPDNSim()->init(openroad->getLogger(), openroad->getDb(),
-                              openroad->getSta());
+  openroad->getPDNSim()->init(
+      openroad->getLogger(), openroad->getDb(), openroad->getSta());
 }
 
-void deletePDNSim(psm::PDNSim* pdnsim) { delete pdnsim; }
+void deletePDNSim(psm::PDNSim* pdnsim)
+{
+  delete pdnsim;
+}
 
 }  // namespace ord

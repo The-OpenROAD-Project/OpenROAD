@@ -33,8 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __IRSOLVER_Voltage__
 #define __IRSOLVER_Voltage__
 
-#include <vector>
 #include <string>
+#include <vector>
 namespace sta {
 class dbSta;
 }  // namespace sta
@@ -46,7 +46,8 @@ namespace psm {
   Uses OpenSTA to report total power per instance and
   use it for IR drop estimation.
 */
-class SupplyVoltage {
+class SupplyVoltage
+{
  private:
   //! Instance to OpenSTA object.
   sta::dbSta* _sta;
