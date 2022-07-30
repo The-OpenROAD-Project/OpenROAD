@@ -137,7 +137,7 @@ sta::define_cmd_args "set_critical_nets_percentage" { percentage }
 proc set_critical_nets_percentage { args } {
   if {[llength $args] == 1} {
     lassign $args percentage
-    sta::check_positive_float "critical_nets_percentage" $percentage
+    sta::check_percent "critical_nets_percentage" $percentage
     grt::set_critical_nets_percentage $percentage
   } else {
     utl::error GRT 205 "Command set_critical_nets_percentage needs one argument: percentage."
