@@ -1117,6 +1117,15 @@ void FastRouteCore::StNetOrder()
 
   std::stable_sort(
       tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
+  
+  auto compareSlack = [this](const OrderTree a, const OrderTree b) {
+    const FrNet* net_a = nets_[a.treeIndex];
+    const FrNet* net_b = nets_[b.treeIndex];
+    return net_a->slack < net_b->slack;
+  };
+  // sort by slack after congestion sort
+  std::stable_sort(
+    tree_order_cong_.begin(), tree_order_cong_.end(), compareSlack);
 }
 
 void FastRouteCore::recoverEdge(int netID, int edgeID)
