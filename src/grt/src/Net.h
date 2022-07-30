@@ -55,12 +55,15 @@ class Net
   void addPin(Pin& pin);
   std::vector<Pin>& getPins() { return pins_; }
   int getNumPins() const { return pins_.size(); }
+  float getSlack() const { return slack_; }
+  void setSlack(float slack) { slack_ = slack; }
   bool isLocal();
   void destroyPins();
 
  private:
   odb::dbNet* net_;
   std::vector<Pin> pins_;
+  float slack_;
 };
 
 }  // namespace grt

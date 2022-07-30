@@ -717,6 +717,43 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
+void GlobalRouter::computeNetSlacks()
+{
+  // Find the slack for all nets
+  std::unordered_map<Net*, float> net_slack_map;
+  std::vector<float> slacks;
+  for (auto net_itr : db_net_map_) {
+    Net* net = net_itr.second;
+    float slack = getNetSlack(net);
+    net_slack_map[net] = slack;
+    slacks.push_back(slack);
+  }
+  std::sort(slacks.begin(), slacks.end());
+
+  // Find the slack threshold based on the percentage of critical nets
+  // defined by the user
+  int th_index = std::ceil(slacks.size() * critical_nets_percentage_);
+  float slack_th = slacks[th_index];
+
+  // Ensure the slack threshold is negative
+  if (slack_th >= 0) {
+    for (float slack : slacks) {
+      if (slack >= 0)
+        break;
+      slack_th = slack;
+    }
+  }
+
+  // Add the slack values smaller than the threshold to the nets
+  for (auto net_itr : net_slack_map) {
+    Net* net = net_itr.first;
+    float slack = net_itr.second;
+    if (slack <= slack_th) {
+      net->setSlack(slack);
+    }
+  }
+}
+
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -734,6 +771,10 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     g.seed(seed_);
 
     utl::shuffle(nets.begin(), nets.end(), g);
+  }
+
+  if (critical_nets_percentage_ != 0) {
+    computeNetSlacks();
   }
 
   for (Net* net : nets) {
@@ -791,10 +832,6 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                         ? max_layer_for_clock_
                         : max_routing_layer_;
 
-    float slack = 0;
-    if (critical_nets_percentage_ != 0) {
-      slack = getNetSlack(net);
-    }
     int netID = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
                                    is_clock,
@@ -802,7 +839,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                    edge_cost_for_net,
                                    min_layer - 1,
                                    max_layer - 1,
-                                   slack,
+                                   net->getSlack(),
                                    edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
       fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
