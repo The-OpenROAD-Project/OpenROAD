@@ -31,9 +31,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <vector>
-#include <iostream>
 #include "gmat.h"
+
+#include <iostream>
+#include <vector>
+
 #include "node.h"
 
 namespace psm {
@@ -47,7 +49,8 @@ using std::vector;
      \param t_node Node index number
      \return Pointer to the node in the matrix
 */
-Node* GMat::GetNode(NodeIdx t_node) {
+Node* GMat::GetNode(NodeIdx t_node)
+{
   if (0 <= t_node && m_n_nodes > t_node) {
     return m_G_mat_nodes[t_node];
   } else {
@@ -63,23 +66,29 @@ Node* GMat::GetNode(NodeIdx t_node) {
      \return Pointer to the node in the matrix
 */
 
-vector<Node*> GMat::GetNodes(int t_l, int t_x_min, int t_x_max,
-                             int t_y_min, int t_y_max) {
-    vector<Node*> block_nodes;
-    NodeMap& layer_map = m_layer_maps[t_l];
+vector<Node*> GMat::GetNodes(int t_l,
+                             int t_x_min,
+                             int t_x_max,
+                             int t_y_min,
+                             int t_y_max)
+{
+  vector<Node*> block_nodes;
+  NodeMap& layer_map = m_layer_maps[t_l];
 
-    for (auto x_itr = layer_map.lower_bound(t_x_min);
-         x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
-      map<int, Node*> y_itr_map = x_itr->second;
-      for (auto y_map_itr = y_itr_map.lower_bound(t_y_min);
-           y_map_itr != y_itr_map.end() && y_map_itr->first <= t_y_max;
-           ++y_map_itr)
-        block_nodes.push_back(y_map_itr->second);
-    }
-    return block_nodes; 
+  for (auto x_itr = layer_map.lower_bound(t_x_min);
+       x_itr != layer_map.end() && x_itr->first <= t_x_max;
+       ++x_itr) {
+    map<int, Node*> y_itr_map = x_itr->second;
+    for (auto y_map_itr = y_itr_map.lower_bound(t_y_min);
+         y_map_itr != y_itr_map.end() && y_map_itr->first <= t_y_max;
+         ++y_map_itr)
+      block_nodes.push_back(y_map_itr->second);
+  }
+  return block_nodes;
 }
 
-Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
+Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/)
+{
   NodeMap& layer_map = m_layer_maps[t_l];
   if (t_l != 1 && t_nearest == false) {
     NodeMap::iterator x_itr = layer_map.find(t_x);
@@ -97,8 +106,8 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
     int dist = 0;
     NodeMap::iterator x_itr = layer_map.lower_bound(t_x);
     vector<pair<int, Node*>> node_dist_vector;
-    if (layer_map.size() == 1 || x_itr == layer_map.end() ||
-        x_itr == layer_map.begin()) {
+    if (layer_map.size() == 1 || x_itr == layer_map.end()
+        || x_itr == layer_map.begin()) {
       if (layer_map.size() == 1) {
         x_itr = layer_map.begin();
       } else if (x_itr == layer_map.end()) {
@@ -109,16 +118,17 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
     Node* node = NearestYNode(x_itr, t_y);
     NodeLoc node_loc = node->GetLoc();
     dist = abs(node_loc.first - t_x) + abs(node_loc.second - t_y);
-    //Searching a bounding box of all nodes nearby to see if a closer one exists.
+    // Searching a bounding box of all nodes nearby to see if a closer one
+    // exists.
     vector<Node*> contender_nodes = GMat::GetNodes(t_l,
-                                            t_x - dist,//xmin
-                                            t_x + dist,//xmax
-                                            t_y - dist,//ymin
-                                            t_y + dist);//ymax
-    for(auto new_node : contender_nodes){
+                                                   t_x - dist,   // xmin
+                                                   t_x + dist,   // xmax
+                                                   t_y - dist,   // ymin
+                                                   t_y + dist);  // ymax
+    for (auto new_node : contender_nodes) {
       node_loc = new_node->GetLoc();
       int new_dist = abs(node_loc.first - t_x) + abs(node_loc.second - t_y);
-      if(new_dist<dist){
+      if (new_dist < dist) {
         dist = new_dist;
         node = new_node;
       }
@@ -135,7 +145,8 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
      \param t_l layer number
      \return nothing
 */
-void GMat::SetNode(NodeIdx t_node_loc, Node* t_node) {
+void GMat::SetNode(NodeIdx t_node_loc, Node* t_node)
+{
   if (0 <= t_node_loc && m_n_nodes > t_node_loc) {
     t_node->SetGLoc(t_node_loc);
     m_G_mat_nodes[t_node_loc] = t_node;
@@ -148,7 +159,8 @@ void GMat::SetNode(NodeIdx t_node_loc, Node* t_node) {
      \param t_node Location to insert the node
      \return nothing
 */
-void GMat::InsertNode(Node* t_node) {
+void GMat::InsertNode(Node* t_node)
+{
   t_node->SetGLoc(m_n_nodes);
   int layer = t_node->GetLayerNum();
   NodeLoc nodeLoc = t_node->GetLoc();
@@ -166,7 +178,8 @@ void GMat::InsertNode(Node* t_node) {
      \param t_bBox layer number
      \return Pointer to the created node
 */
-Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox) {
+Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox)
+{
   NodeMap& layer_map = m_layer_maps[t_layer];
   if (layer_map.empty()) {
     Node* node = new Node();
@@ -200,7 +213,8 @@ Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox) {
 }
 
 //! Function to print the G matrix
-void GMat::Print() {
+void GMat::Print()
+{
   m_logger->info(utl::PSM, 48, "Printing GMat obj, with {} nodes.", m_n_nodes);
   for (NodeIdx i = 0; i < m_n_nodes; i++) {
     Node* node_ptr = m_G_mat_nodes[i];
@@ -218,7 +232,8 @@ void GMat::Print() {
      \param t_cond conductance value to be added between node 1 and 2
      \return nothing
 */
-void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond) {
+void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond)
+{
   NodeIdx node1_r = t_node1->GetGLoc();
   NodeIdx node2_r = t_node2->GetGLoc();
   double node11_cond = GetConductance(node1_r, node1_r);
@@ -227,15 +242,15 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond) {
   double node21_cond = GetConductance(node2_r, node1_r);
   // Only perform an update if the conductance is higher in case of overlaps.
   // Higher conductance implies larger width.
-  // node12_cond is only set for 1 pair of nodes and is negative. 
+  // node12_cond is only set for 1 pair of nodes and is negative.
   // Since there are multiple metal segments over the same area in the same
   // layer
-  if((t_cond + node12_cond)>0) {
+  if ((t_cond + node12_cond) > 0) {
     UpdateConductance(node1_r, node1_r, node11_cond + t_cond + node12_cond);
     UpdateConductance(node2_r, node2_r, node22_cond + t_cond + node12_cond);
-    UpdateConductance(node1_r, node2_r, - t_cond);
-    UpdateConductance(node2_r, node1_r, - t_cond);
-  } else { //to add connection even if there is not change in conductance
+    UpdateConductance(node1_r, node2_r, -t_cond);
+    UpdateConductance(node2_r, node1_r, -t_cond);
+  } else {  // to add connection even if there is not change in conductance
     UpdateConductance(node1_r, node1_r, node11_cond);
     UpdateConductance(node2_r, node2_r, node22_cond);
     UpdateConductance(node1_r, node2_r, node12_cond);
@@ -247,10 +262,11 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond) {
 /*! Based on the size of the G matrix
  * initialize the number of rows and columns
  */
-void GMat::InitializeGmatDok(int t_numC4) {
+void GMat::InitializeGmatDok(int t_numC4)
+{
   if (m_n_nodes <= 0) {
-    m_logger->error(utl::PSM, 49,
-                    "No nodes in object, initialization stopped.");
+    m_logger->error(
+        utl::PSM, 49, "No nodes in object, initialization stopped.");
   } else {
     m_G_mat_dok.num_cols = m_n_nodes + t_numC4;
     m_G_mat_dok.num_rows = m_n_nodes + t_numC4;
@@ -260,22 +276,26 @@ void GMat::InitializeGmatDok(int t_numC4) {
 }
 
 //! Function that returns the number of nodes in the G matrix
-NodeIdx GMat::GetNumNodes() {  // debug
+NodeIdx GMat::GetNumNodes()
+{  // debug
   return m_n_nodes;
 }
 
 //! Function to return a pointer to the G matrix in CSC format
-CscMatrix* GMat::GetGMat() {  // Nodes debug
+CscMatrix* GMat::GetGMat()
+{  // Nodes debug
   return &m_G_mat_csc;
 }
 
 //! Function to return a pointer to the A matrix in CSC format
-CscMatrix* GMat::GetAMat() {  // Nodes debug
+CscMatrix* GMat::GetAMat()
+{  // Nodes debug
   return &m_A_mat_csc;
 }
 
 //! Function to return a pointer to the G matrix in DOK format
-DokMatrix* GMat::GetGMatDOK() {  // Nodes debug
+DokMatrix* GMat::GetGMatDOK()
+{  // Nodes debug
   return &m_G_mat_dok;
 }
 
@@ -293,11 +313,16 @@ DokMatrix* GMat::GetGMatDOK() {  // Nodes debug
 */
 void GMat::GenerateStripeConductance(int t_l,
                                      odb::dbTechLayerDir::Value layer_dir,
-                                     int t_x_min, int t_x_max, int t_y_min,
-                                     int t_y_max, double t_rho) {
+                                     int t_x_min,
+                                     int t_x_max,
+                                     int t_y_min,
+                                     int t_y_max,
+                                     double t_rho)
+{
   NodeMap& layer_map = m_layer_maps[t_l];
   if (t_x_min > t_x_max || t_y_min > t_y_max)
-    m_logger->warn(utl::PSM, 50,
+    m_logger->warn(utl::PSM,
+                   50,
                    "Creating stripe condunctance with invalid inputs. Min and "
                    "max values for X or Y are interchanged.");
   if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
@@ -306,7 +331,8 @@ void GMat::GenerateStripeConductance(int t_l,
     // int               y_loc = (t_y_min + t_y_max) / 2;
     int i = 0;
     for (x_itr = layer_map.lower_bound(t_x_min);
-         x_itr != layer_map.upper_bound(t_x_max); ++x_itr) {
+         x_itr != layer_map.upper_bound(t_x_max);
+         ++x_itr) {
       map<int, Node*>::iterator y_itr = (x_itr->second).lower_bound(t_y_min);
       if (y_itr == (x_itr->second).end())
         continue;
@@ -336,7 +362,8 @@ void GMat::GenerateStripeConductance(int t_l,
 
     map<pair<int, int>, Node*> y_map;
     for (auto x_itr = layer_map.lower_bound(t_x_min);
-         x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
+         x_itr != layer_map.end() && x_itr->first <= t_x_max;
+         ++x_itr) {
       map<int, Node*> y_itr_map = x_itr->second;
       map<int, Node*>::iterator y_map_itr;
       for (y_map_itr = y_itr_map.lower_bound(t_y_min);
@@ -378,9 +405,13 @@ void GMat::GenerateStripeConductance(int t_l,
      \param t_y_max Upper right y location
      \return std::vector<Node*>
 */
-vector<Node*> GMat::GetRDLNodes(int t_l, odb::dbTechLayerDir::Value layer_dir,
-                                int t_x_min, int t_x_max, int t_y_min,
-                                int t_y_max) {
+vector<Node*> GMat::GetRDLNodes(int t_l,
+                                odb::dbTechLayerDir::Value layer_dir,
+                                int t_x_min,
+                                int t_x_max,
+                                int t_y_min,
+                                int t_y_max)
+{
   vector<Node*> RDLNodes;
   NodeMap& layer_map = m_layer_maps[t_l];
   NodeLoc node_loc;
@@ -397,13 +428,15 @@ vector<Node*> GMat::GetRDLNodes(int t_l, odb::dbTechLayerDir::Value layer_dir,
     map<int, Node*> y_map = layer_map.at(x1);
     map<int, Node*>::iterator y_itr;
     for (y_itr = y_map.lower_bound(t_y_min);
-         y_itr->first <= t_y_max && y_itr != y_map.end(); ++y_itr) {
+         y_itr->first <= t_y_max && y_itr != y_map.end();
+         ++y_itr) {
       node1 = y_itr->second;
       RDLNodes.push_back(node1);
     }
     y_map = layer_map.at(x2);
     for (y_itr = y_map.lower_bound(t_y_min);
-         y_itr->first <= t_y_max && y_itr != y_map.end(); ++y_itr) {
+         y_itr->first <= t_y_max && y_itr != y_map.end();
+         ++y_itr) {
       node2 = y_itr->second;
       RDLNodes.push_back(node2);
     }
@@ -417,7 +450,8 @@ vector<Node*> GMat::GetRDLNodes(int t_l, odb::dbTechLayerDir::Value layer_dir,
     int y2 = node_loc.second;
     NodeMap::iterator x_itr;
     for (x_itr = layer_map.lower_bound(t_x_min);
-         x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
+         x_itr != layer_map.end() && x_itr->first <= t_x_max;
+         ++x_itr) {
       map<int, Node*>::iterator y_iter;
       y_iter = (x_itr->second).find(y1);
       if (y_iter != (x_itr->second).end()) {
@@ -440,7 +474,8 @@ vector<Node*> GMat::GetRDLNodes(int t_l, odb::dbTechLayerDir::Value layer_dir,
      \param t_C4Num  C4 bump number
      \return nothing
 */
-void GMat::AddC4Bump(int t_loc, int t_C4Num) {
+void GMat::AddC4Bump(int t_loc, int t_C4Num)
+{
   UpdateConductance(t_loc, t_C4Num + m_n_nodes, 1);
   UpdateConductance(t_C4Num + m_n_nodes, t_loc, 1);
 }
@@ -448,7 +483,8 @@ void GMat::AddC4Bump(int t_loc, int t_C4Num) {
 //! Function which converts the DOK matrix into CSC format in a sparse method
 /*!
  */
-bool GMat::GenerateCSCMatrix() {
+bool GMat::GenerateCSCMatrix()
+{
   m_G_mat_csc.num_cols = m_G_mat_dok.num_cols;
   m_G_mat_csc.num_rows = m_G_mat_dok.num_rows;
   m_G_mat_csc.nnz = 0;
@@ -456,10 +492,10 @@ bool GMat::GenerateCSCMatrix() {
   for (NodeIdx col = 0; col < m_G_mat_csc.num_cols; ++col) {
     m_G_mat_csc.col_ptr.push_back(m_G_mat_csc.nnz);
     map<GMatLoc, double>::iterator it;
-    map<GMatLoc, double>::iterator it_lower =
-        m_G_mat_dok.values.lower_bound(make_pair(col, 0));
-    map<GMatLoc, double>::iterator it_upper =
-        m_G_mat_dok.values.upper_bound(make_pair(col, m_G_mat_csc.num_rows));
+    map<GMatLoc, double>::iterator it_lower
+        = m_G_mat_dok.values.lower_bound(make_pair(col, 0));
+    map<GMatLoc, double>::iterator it_upper
+        = m_G_mat_dok.values.upper_bound(make_pair(col, m_G_mat_csc.num_rows));
     for (it = it_lower; it != it_upper; ++it) {
       m_G_mat_csc.values.push_back(it->second);           // push back value
       m_G_mat_csc.row_idx.push_back((it->first).second);  // push back row idx
@@ -469,7 +505,8 @@ bool GMat::GenerateCSCMatrix() {
   m_G_mat_csc.col_ptr.push_back(m_G_mat_csc.nnz);
   return true;
 }
-bool GMat::GenerateACSCMatrix() {
+bool GMat::GenerateACSCMatrix()
+{
   m_A_mat_csc.num_cols = m_A_mat_dok.num_cols;
   m_A_mat_csc.num_rows = m_A_mat_dok.num_rows;
   m_A_mat_csc.nnz = 0;
@@ -477,10 +514,10 @@ bool GMat::GenerateACSCMatrix() {
   for (NodeIdx col = 0; col < m_A_mat_csc.num_cols; ++col) {
     m_A_mat_csc.col_ptr.push_back(m_A_mat_csc.nnz);
     map<GMatLoc, double>::iterator it;
-    map<GMatLoc, double>::iterator it_lower =
-        m_A_mat_dok.values.lower_bound(make_pair(col, 0));
-    map<GMatLoc, double>::iterator it_upper =
-        m_A_mat_dok.values.upper_bound(make_pair(col, m_A_mat_csc.num_rows));
+    map<GMatLoc, double>::iterator it_lower
+        = m_A_mat_dok.values.lower_bound(make_pair(col, 0));
+    map<GMatLoc, double>::iterator it_upper
+        = m_A_mat_dok.values.upper_bound(make_pair(col, m_A_mat_csc.num_rows));
     for (it = it_lower; it != it_upper; ++it) {
       m_A_mat_csc.values.push_back(it->second);           // push back value
       m_A_mat_csc.row_idx.push_back((it->first).second);  // push back row idx
@@ -499,9 +536,11 @@ bool GMat::GenerateACSCMatrix() {
      \param t_col Column index
      \return Conductance value
 */
-double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col) {
+double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
+{
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    m_logger->error(utl::PSM, 51,
+    m_logger->error(utl::PSM,
+                    51,
                     "Index out of bound for getting G matrix conductance. ",
                     "Ensure object is initialized to the correct size first.");
   }
@@ -524,9 +563,11 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col) {
      \return nothing
 */
 
-void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond) {
+void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
+{
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    m_logger->error(utl::PSM, 52,
+    m_logger->error(utl::PSM,
+                    52,
                     "Index out of bound for getting G matrix conductance. ",
                     "Ensure object is initialized to the correct size first.");
   }
@@ -543,7 +584,8 @@ void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond) {
      \param t_cond  New conductance value
      \return Pointer to the node
 */
-Node* GMat::NearestYNode(NodeMap::iterator x_itr, int t_y) {
+Node* GMat::NearestYNode(NodeMap::iterator x_itr, int t_y)
+{
   map<int, Node*>& y_map = x_itr->second;
   map<int, Node*>::iterator y_itr = y_map.lower_bound(t_y);
   if (y_map.size() == 1 || y_itr == y_map.end() || y_itr == y_map.begin()) {
@@ -575,7 +617,8 @@ Node* GMat::NearestYNode(NodeMap::iterator x_itr, int t_y) {
      \param rho  Resistivity of the material of the wire
      \return Conductance
 */
-double GMat::GetConductivity(double width, double length, double rho) {
+double GMat::GetConductivity(double width, double length, double rho)
+{
   if (0 >= length || 0 >= width || 0 >= rho) {
     return 0.0;
   } else {
@@ -584,5 +627,8 @@ double GMat::GetConductivity(double width, double length, double rho) {
 }
 
 //! Function to return a vector which contains pointers to all nodes
-vector<Node*> GMat::GetAllNodes() { return m_G_mat_nodes; }
+vector<Node*> GMat::GetAllNodes()
+{
+  return m_G_mat_nodes;
+}
 }  // namespace psm

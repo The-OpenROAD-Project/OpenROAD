@@ -51,17 +51,18 @@ typedef std::map<int, std::map<int, Node*>> NodeMap;
  * related operations.
  *
  */
-class GMat {
+class GMat
+{
  public:
   //! Constructor for creating the G matrix
   GMat(int t_num_layers, utl::Logger* logger)
-      : m_layer_maps(
-            t_num_layers + 1,
-            NodeMap()) {  // as it start from 0 and everywhere we use layer
+      : m_layer_maps(t_num_layers + 1, NodeMap())
+  {  // as it start from 0 and everywhere we use layer
     m_logger = logger;
   }
   //! Destructor of the G matrix
-  ~GMat() {
+  ~GMat()
+  {
     while (!m_G_mat_nodes.empty()) {
       delete m_G_mat_nodes.back();
       m_G_mat_nodes.pop_back();
@@ -72,8 +73,11 @@ class GMat {
   //! Function to return a pointer to the node with the x, y, and layer number
   Node* GetNode(int t_x, int t_y, int t_l, bool t_nearest = false);
   //! Function to return a vector to all nodes in the region defined
-  std::vector<Node*> GetNodes(int t_l, int t_x_min, int t_x_max,
-                               int t_y_min, int t_y_max);
+  std::vector<Node*> GetNodes(int t_l,
+                              int t_x_min,
+                              int t_x_max,
+                              int t_y_min,
+                              int t_y_max);
   //! Function to set attributes of the node with index and node pointer
   void SetNode(NodeIdx t_node_loc, Node* t_node);
   //! Function to create a node
@@ -93,12 +97,19 @@ class GMat {
   //! Function to return a pointer to the A matrix
   CscMatrix* GetAMat();
   //! Function to get the conductance of the strip of the power grid
-  void GenerateStripeConductance(int t_l, odb::dbTechLayerDir::Value layer_dir,
-                                 int t_x_min, int t_x_max, int t_y_min,
-                                 int t_y_max, double t_rho);
+  void GenerateStripeConductance(int t_l,
+                                 odb::dbTechLayerDir::Value layer_dir,
+                                 int t_x_min,
+                                 int t_x_max,
+                                 int t_y_min,
+                                 int t_y_max,
+                                 double t_rho);
   //! Function to get location of vias to the redistribution layer
-  std::vector<Node*> GetRDLNodes(int t_l, odb::dbTechLayerDir::Value layer_dir,
-                                 int t_x_min, int t_x_max, int t_y_min,
+  std::vector<Node*> GetRDLNodes(int t_l,
+                                 odb::dbTechLayerDir::Value layer_dir,
+                                 int t_x_min,
+                                 int t_x_max,
+                                 int t_y_min,
                                  int t_y_max);
   //! Function to add the voltage source based on C4 bump location
   void AddC4Bump(int t_loc, int t_C4Num);

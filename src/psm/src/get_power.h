@@ -33,8 +33,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __IRSOLVER_Power__
 #define __IRSOLVER_Power__
 
-#include <vector>
 #include <string>
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace sta {
@@ -47,7 +48,8 @@ namespace psm {
   Uses OpenSTA to report total power per instance and
   use it for IR drop estimation.
 */
-class PowerInst {
+class PowerInst
+{
  private:
   //! Instance to OpenSTA object.
   sta::dbSta* m_sta;
@@ -56,7 +58,8 @@ class PowerInst {
  public:
   //! Function for power per instance calculation
   std::vector<std::pair<std::string, double>> executePowerPerInst(
-      sta::dbSta* sta, utl::Logger* logger);
+      sta::dbSta* sta,
+      utl::Logger* logger);
 };
 // power namespace end
 }  // namespace psm

@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "get_power.h"
+
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
@@ -49,8 +50,9 @@ using std::string;
 using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(
-    sta::dbSta* sta, utl::Logger* logger) {
+vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
+                                                            utl::Logger* logger)
+{
   // STA object create
   m_sta = sta;
   m_logger = logger;
@@ -80,14 +82,22 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-      debugPrint(m_logger, utl::PSM, "get power", 2,
-                 "Power of instance {} is {}", network->name(inst),
+      debugPrint(m_logger,
+                 utl::PSM,
+                 "get power",
+                 2,
+                 "Power of instance {} is {}",
+                 network->name(inst),
                  inst_power.total());
     }
   }
   delete inst_iter;
 
-  debugPrint(m_logger, utl::PSM, "get power", 1, "Total power: {}",
+  debugPrint(m_logger,
+             utl::PSM,
+             "get power",
+             1,
+             "Total power: {}",
              total_calc.total());
   return power_report;
 }
