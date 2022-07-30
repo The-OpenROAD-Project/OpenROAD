@@ -78,7 +78,7 @@ class PDNSim
   void set_node_density(float node_density);
   void set_node_density_factor(int node_density_factor);
   void set_pdnsim_net_voltage(std::string net, float voltage);
-  int  analyze_power_grid();
+  void analyze_power_grid();
   void write_pg_spice();
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
