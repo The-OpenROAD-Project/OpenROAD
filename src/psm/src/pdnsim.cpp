@@ -157,16 +157,25 @@ void PDNSim::write_pg_spice() {
   }
 }
 
-int PDNSim::analyze_power_grid() {
+void PDNSim::analyze_power_grid() {
   GMat* gmat_obj;
-  IRSolver* irsolve_h =
-      new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
-                   _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _node_density, _node_density_factor, _net_voltage_map);
+  auto irsolve_h = std::make_unique<IRSolver>(_db,
+                                              _sta,
+                                              _logger,
+                                              _vsrc_loc,
+                                              _power_net,
+                                              _out_file,
+                                              _em_out_file,
+                                              _spice_out_file,
+                                              _enable_em,
+                                              _bump_pitch_x,
+                                              _bump_pitch_y,
+                                              _node_density,
+                                              _node_density_factor,
+                                              _net_voltage_map);
 
   if (!irsolve_h->Build()) {
-    delete irsolve_h;
-    return 0;
+    _logger->error(utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
@@ -208,9 +217,6 @@ int PDNSim::analyze_power_grid() {
   if (_debug_gui) {
     _debug_gui->setBumps(irsolve_h->getBumps(), irsolve_h->getTopLayer());
   }
-
-  delete irsolve_h;
-  return 1;
 }
 
 int PDNSim::check_connectivity() {
