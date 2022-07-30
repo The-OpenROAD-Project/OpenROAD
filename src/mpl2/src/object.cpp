@@ -702,6 +702,17 @@ const std::vector<std::pair<float, float> > Cluster::GetMacroTilings() const
   return macro_tilings_;
 }
 
+// Virtual Connections
+const std::vector<std::pair<int, int> > Cluster::GetVirtualConnections() const
+{
+  return virtual_connections_;
+}
+
+void Cluster::AddVirtualConnection(int src, int target)
+{
+  virtual_connections_.push_back(std::pair<int, int>(src, target));
+}
+
 ///////////////////////////////////////////////////////////////////////
 // Metric HardMacro
 HardMacro::HardMacro(float width, float height, const std::string name) 
@@ -1343,5 +1354,18 @@ void SoftMacro::SetShapeF(float width, float height)
   height_ = height;
   area_ = width * height;
 }
+
+void SoftMacro::PrintShape()
+{
+  std::cout << "width_list : ";
+  for (auto& width : width_list_)
+    std::cout << " <" << width.first << " , " << width.second << " >  ";
+  std::cout << std::endl;
+  std::cout << "width_list : ";
+  for (auto& width : height_list_)
+    std::cout << " <" << width.first << " , " << width.second << " >  ";
+  std::cout << std::endl;
+}
+
 
 }  // namespace mpl

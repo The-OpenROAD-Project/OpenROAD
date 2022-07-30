@@ -773,6 +773,9 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
       }
       expr += x[x_id++];
     }
+    // need take a detail look [fix]
+    if (net.edge_paths.size() == 0)
+     continue;
     std::cout << "new num_constraints : " << num_constraints << std::endl;
     mymodel.add(expr == 1);
     expr.end(); // clear memory

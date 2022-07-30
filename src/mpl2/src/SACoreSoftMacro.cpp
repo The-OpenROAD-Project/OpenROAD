@@ -320,6 +320,10 @@ void SACoreSoftMacro::AlignMacroClusters()
       adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight());
     }
   }
+  const float ratio = 0.1;
+  adjust_h_th_ = std::min(adjust_h_th_, outline_height_ * ratio);
+  adjust_v_th_ = std::min(adjust_v_th_, outline_width_  * ratio);
+
   // Align macro clusters to boundaries
   for (auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {

@@ -136,16 +136,16 @@ class HierRTLMP {
     int num_threads_ = 10;  // number of threads
     int random_seed_ = 0;   // random seed for deterministic   
 
-    float target_dead_space_ = 0.2; // dead space for the cluster
-    float target_util_ = 0.2;  // target utilization of the design
-    float target_dead_space_step_ = 0.05; // step for dead space
+    float target_dead_space_ = 0.05; // dead space for the cluster
+    float target_util_ = 0.20;  // target utilization of the design
+    float target_dead_space_step_ = 0.1; // step for dead space
     float target_util_step_       = 0.05; // step for utilization
-    float num_target_util_        = 3;
-    float num_target_dead_space_  = 3;
+    float num_target_util_        = 6;
+    float num_target_dead_space_  = 9;
 
-    float min_ar_ = 0.33; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
+    float min_ar_ = 0.25; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
-    float pin_access_th_ = 0.25; // each pin access is modeled as a SoftMacro
+    float pin_access_th_ = 0.05; // each pin access is modeled as a SoftMacro
     float pin_access_net_width_ratio_ = 0.1; // define the ratio of number of connections 
                                              // related to IOs to the range of these IO spans
     float notch_v_th_ = 100.0;
@@ -179,6 +179,11 @@ class HierRTLMP {
     // else T = init_T_ / step
     int k_ = 100;
     int c_ = 10;
+
+    // the virtual weight between std cell part and corresponding macro part
+    // to force them stay together
+    float virtual_weight_ = 100.0;
+
 
     // probability of each action
     float pos_swap_prob_    = 0.3;

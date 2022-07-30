@@ -263,6 +263,10 @@ class Cluster {
     const std::pair<PinAccess, float> GetPinAccess(int cluster_id);
     const std::map<int, std::pair<PinAccess, float> > GetPinAccessMap() const;
     const std::map<PinAccess, std::map<PinAccess, float> > GetBoundaryConnection() const;
+    
+    // virtual connections
+    const std::vector<std::pair<int, int> > GetVirtualConnections() const;
+    void AddVirtualConnection(int src, int target);
 
     // Print Basic Information
     void PrintBasicInformation(utl::Logger* logger) const;
@@ -273,7 +277,9 @@ class Cluster {
     
     void SetMacroTilings(const std::vector<std::pair<float, float> >& tilings);
     const std::vector<std::pair<float, float> > GetMacroTilings() const;
-  
+     
+   
+
   private:
     // Private Variables
     int id_ = -1;  // cluster id (a valid cluster id should be nonnegative)
@@ -314,6 +320,11 @@ class Cluster {
     // we define connection_map_
     // Here we do not differentiate the input and output connections
     std::map<int, float> connection_map_;   // cluster_id, number of connections 
+
+    // store the virtual connection between childrens
+    // the virtual connection is used to tie the std cell part and the corresponding 
+    // macro part together
+    std::vector<std::pair<int, int> > virtual_connections_;
 
     // pin access for each bundled connection
     std::map<int, std::pair<PinAccess, float> > pin_access_map_;
@@ -449,6 +460,8 @@ class SoftMacro {
               float width = 0.0, float height = 0.0);
     // create a SoftMacro from a cluster
     SoftMacro(Cluster* cluster);
+
+    void PrintShape();
 
     // name
     const std::string GetName() const;

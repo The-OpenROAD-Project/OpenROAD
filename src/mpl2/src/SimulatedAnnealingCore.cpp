@@ -521,7 +521,7 @@ void SimulatedAnnealingCore<T>::FastSA()
       t = init_T_;
     } // end if
     // only consider the last step to optimize notch weight
-    if (step == max_num_step_) {
+    if (step == max_num_step_ - macros_.size()) {
       notch_weight_ = original_notch_weight_;
       PackFloorplan();
       CalPenalty();
