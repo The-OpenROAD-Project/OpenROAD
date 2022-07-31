@@ -45,6 +45,8 @@ class DebugGui : public gui::Renderer
 
   void setBumps(const std::vector<IRSolver::BumpData>& bumps, int bump_layer);
 
+  void draw_pause();
+
  private:
   PDNSim* pdnsim_;
   std::vector<IRSolver::BumpData> bumps_;

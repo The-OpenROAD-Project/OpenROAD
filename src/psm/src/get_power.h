@@ -52,8 +52,8 @@ class PowerInst
 {
  private:
   //! Instance to OpenSTA object.
-  sta::dbSta* m_sta;
-  utl::Logger* m_logger;
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
 
  public:
   //! Function for power per instance calculation

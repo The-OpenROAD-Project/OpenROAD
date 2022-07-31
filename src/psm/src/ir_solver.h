@@ -79,23 +79,23 @@ class IRSolver
            int node_density_factor_user,
            std::map<std::string, float> net_voltage_map)
   {
-    m_db = t_db;
-    m_sta = t_sta;
-    m_logger = t_logger;
-    m_vsrc_file = vsrc_loc;
-    m_power_net = power_net;
-    m_out_file = out_file;
-    m_em_out_file = em_out_file;
-    m_em_flag = em_analyze;
-    m_spice_out_file = spice_out_file;
-    m_bump_pitch_x = bump_pitch_x;
-    m_bump_pitch_y = bump_pitch_y;
-    m_node_density_um = node_density_um;
-    m_node_density_factor_user = node_density_factor_user;
-    m_net_voltage_map = net_voltage_map;
+    db_ = t_db;
+    sta_ = t_sta;
+    logger_ = t_logger;
+    vsrc_file_ = vsrc_loc;
+    power_net_ = power_net;
+    out_file_ = out_file;
+    em_out_file_ = em_out_file;
+    em_flag_ = em_analyze;
+    spice_out_file_ = spice_out_file;
+    bump_pitch_x_ = bump_pitch_x;
+    bump_pitch_y_ = bump_pitch_y;
+    node_density_um_ = node_density_um;
+    node_density_factor_user_ = node_density_factor_user;
+    net_voltage_map_ = net_voltage_map;
   }
   //! IRSolver destructor
-  ~IRSolver() { delete m_Gmat; }
+  ~IRSolver() { delete Gmat_; }
   //! Worst case voltage at the lowest layer nodes
   double wc_voltage;
   //! Worst case current at the lowest layer nodes
@@ -133,56 +133,56 @@ class IRSolver
   bool BuildConnection();
   float supply_voltage_src;
 
-  const std::vector<BumpData>& getBumps() const { return m_C4Bumps; }
-  int getTopLayer() const { return m_top_layer; }
+  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
+  int getTopLayer() const { return top_layer_; }
 
  private:
   //! Pointer to the Db
-  odb::dbDatabase* m_db;
+  odb::dbDatabase* db_;
   //! Pointer to STA
-  sta::dbSta* m_sta;
+  sta::dbSta* sta_;
   //! Pointer to Logger
-  utl::Logger* m_logger;
+  utl::Logger* logger_;
   //! Voltage source file
-  std::string m_vsrc_file;
-  std::string m_power_net;
+  std::string vsrc_file_;
+  std::string power_net_;
   //! Resistance configuration file
-  std::string m_out_file;
-  std::string m_em_out_file;
-  int m_em_flag;
-  std::string m_spice_out_file;
+  std::string out_file_;
+  std::string em_out_file_;
+  int em_flag_;
+  std::string spice_out_file_;
   //! G matrix for voltage
-  GMat* m_Gmat;
+  GMat* Gmat_;
   //! Node density in the lower most layer to append the current sources
-  int m_node_density{0};              // Initialize to zero
-  int m_node_density_factor{5};       // Default value
-  int m_node_density_factor_user{0};  // User defined value
-  float m_node_density_um{-1};  // Initialize to negative unless set by user
+  int node_density_{0};              // Initialize to zero
+  int node_density_factor_{5};       // Default value
+  int node_density_factor_user_{0};  // User defined value
+  float node_density_um_{-1};  // Initialize to negative unless set by user
   //! Routing Level of the top layer
-  int m_top_layer{0};
-  int m_bump_pitch_x{0};
-  int m_bump_pitch_y{0};
-  int m_bump_pitch_default{140};
-  int m_bump_size{10};
+  int top_layer_{0};
+  int bump_pitch_x_{0};
+  int bump_pitch_y_{0};
+  int bump_pitch_default_{140};
+  int bump_size_{10};
 
-  int m_bottom_layer{10};
+  int bottom_layer_{10};
 
-  bool m_result{false};
-  bool m_connection{false};
+  bool result_{false};
+  bool connection_{false};
   //! Direction of the top layer
-  odb::dbTechLayerDir::Value m_top_layer_dir;
+  odb::dbTechLayerDir::Value top_layer_dir_;
 
-  odb::dbTechLayerDir::Value m_bottom_layer_dir;
-  odb::dbSigType m_power_net_type;
-  std::map<std::string, float> m_net_voltage_map;
+  odb::dbTechLayerDir::Value bottom_layer_dir_;
+  odb::dbSigType power_net_type_;
+  std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D
-  std::vector<double> m_J;
+  std::vector<double> J_;
   //! C4 bump locations and values
-  std::vector<BumpData> m_C4Bumps;
+  std::vector<BumpData> C4Bumps_;
   //! Per unit R and via R for each routing layer
-  std::vector<std::tuple<int, double, double>> m_layer_res;
+  std::vector<std::tuple<int, double, double>> layer_res_;
   //! Locations of the C4 bumps in the G matrix
-  std::map<NodeIdx, double> m_C4Nodes;
+  std::map<NodeIdx, double> C4Nodes_;
   //! Function to add C4 bumps to the G matrix
   bool AddC4Bump();
   //! Function that parses the Vsrc file

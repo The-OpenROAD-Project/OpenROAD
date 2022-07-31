@@ -78,4 +78,10 @@ void DebugGui::setBumps(const std::vector<IRSolver::BumpData>& bumps,
   bump_layer_ = bump_layer;
 }
 
+void DebugGui::draw_pause()
+{
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
+}
+
 }  // namespace psm

@@ -41,21 +41,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace psm {
 using odb::dbInst;
 
-typedef std::pair<int, int> NodeLoc;
-typedef std::pair<int, int> BBox;
-typedef int NodeIdx;  // TODO temp as it interfaces with SUPERLU
-typedef std::pair<NodeIdx, NodeIdx> GMatLoc;
+using NodeLoc = std::pair<int, int>;
+using BBox = std::pair<int, int>;
+using NodeIdx = int;  // TODO temp as it interfaces with SUPERLU
+using GMatLoc = std::pair<NodeIdx, NodeIdx>;
 
 //! Data structure for the Dictionary of Keys Matrix
-typedef struct
+struct DokMatrix
 {
   NodeIdx num_rows;
   NodeIdx num_cols;
   std::map<GMatLoc, double> values;  // pair < col_num, row_num >
-} DokMatrix;
+};
 
 //! Data structure for the Compressed Sparse Column Matrix
-typedef struct
+struct CscMatrix
 {
   NodeIdx num_rows;
   NodeIdx num_cols;
@@ -63,13 +63,13 @@ typedef struct
   std::vector<NodeIdx> row_idx;
   std::vector<NodeIdx> col_ptr;
   std::vector<double> values;
-} CscMatrix;
+};
 
 //! Node class which stores the properties of the node of the PDN
 class Node
 {
  public:
-  Node() : m_loc(std::make_pair(0.0, 0.0)), m_bBox(std::make_pair(0.0, 0.0)) {}
+  Node() : loc_(std::make_pair(0.0, 0.0)), bBox_(std::make_pair(0.0, 0.0)) {}
   ~Node() {}
   //! Get the layer number of the node
   int GetLayerNum();
@@ -115,15 +115,15 @@ class Node
   void AddInstance(dbInst* inst);
 
  private:
-  int m_layer;
-  NodeLoc m_loc;  // layer,x,y
-  NodeIdx m_node_loc{0};
-  BBox m_bBox;
-  double m_current_src{0.0};
-  double m_voltage{0.0};
-  bool m_connected{false};
-  bool m_has_instances{false};
-  std::vector<dbInst*> m_connected_instances;
+  int layer_;
+  NodeLoc loc_;  // layer,x,y
+  NodeIdx node_loc_{0};
+  BBox bBox_;
+  double current_src_{0.0};
+  double voltage_{0.0};
+  bool connected_{false};
+  bool has_instances_{false};
+  std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm
 #endif
