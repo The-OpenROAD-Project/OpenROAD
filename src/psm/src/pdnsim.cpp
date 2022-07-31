@@ -250,7 +250,8 @@ void PDNSim::analyze_power_grid()
     odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
-    ir_drop[node_layer][point] = abs(irsolve_h->getSupplyVoltageSrc() - voltage);
+    ir_drop[node_layer][point]
+        = abs(irsolve_h->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
   min_resolution_ = irsolve_h->getMinimumResolution();

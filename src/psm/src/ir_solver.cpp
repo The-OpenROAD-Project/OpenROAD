@@ -30,6 +30,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include "ir_solver.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -50,7 +52,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "get_power.h"
 #include "get_voltage.h"
 #include "gmat.h"
-#include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
 
@@ -239,7 +240,6 @@ void IRSolver::solveIR()
   ir_report.close();
   avg_voltage = sum_volt / num_nodes;
   if (em_flag_ == 1) {
-    map<GMatLoc, double>::iterator it;
     DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
     int resistance_number = 0;
     max_cur = 0;
@@ -254,14 +254,14 @@ void IRSolver::solveIR()
                 << "\n";
     }
     Point node_loc;
-    for (it = Gmat_dok->values.begin(); it != Gmat_dok->values.end(); it++) {
-      NodeIdx col = (it->first).first;
-      NodeIdx row = (it->first).second;
+    for (auto [loc, value] : Gmat_dok->values) {
+      NodeIdx col = loc.first;
+      NodeIdx row = loc.second;
       if (col <= row) {
         continue;  // ignore lower half and diagonal as matrix is symmetric
       }
-      double cond = it->second;  // get cond value
-      if (abs(cond) < 1e-15) {   // ignore if an empty cell
+      double cond = value;      // get cond value
+      if (abs(cond) < 1e-15) {  // ignore if an empty cell
         continue;
       }
       string net_name = power_net_;
@@ -466,19 +466,7 @@ bool IRSolver::createJ()
   int num_nodes = Gmat_->getNumNodes();
   J_.resize(num_nodes, 0);
 
-  vector<pair<string, double>> power_report = getPower();
-  dbChip* chip = db_->getChip();
-  dbBlock* block = chip->getBlock();
-  for (vector<pair<string, double>>::iterator it = power_report.begin();
-       it != power_report.end();
-       ++it) {
-    dbInst* inst = block->findInst(it->first.c_str());
-    if (inst == NULL) {
-      logger_->warn(
-          utl::PSM, 23, "Instance {} not found in the database.", it->first);
-      continue;
-    }
-    int x, y;
+  for (auto [inst, power] : getPower()) {
     if (!inst->getPlacementStatus().isPlaced()) {
       logger_->warn(utl::PSM,
                     71,
@@ -486,9 +474,10 @@ bool IRSolver::createJ()
                     " power drawn by this instance is not considered for IR "
                     " drop estimation. Please run analyze_power_grid after "
                     "instances are placed.",
-                    it->first);
+                    inst->getName());
       continue;
     }
+    int x, y;
     inst->getLocation(x, y);
     int l = bottom_layer_;  // attach to the bottom most routing layer
     // Special condition to distribute power across multiple nodes for macro
@@ -563,7 +552,7 @@ bool IRSolver::createJ()
       }
       // Distribute the power across all nodes within the bounding box
       for (auto node_J : nodes_J) {
-        node_J->addCurrentSrc(it->second / num_nodes);
+        node_J->addCurrentSrc(power / num_nodes);
         node_J->addInstance(inst);
       }
       // For normal instances we only attach the current source to one node
@@ -576,7 +565,7 @@ bool IRSolver::createJ()
                       24,
                       "Instance {}, current node at ({}, {}) at layer {} have "
                       "been moved from ({}, {}).",
-                      it->first,
+                      inst->getName(),
                       node_loc.getX(),
                       node_loc.getY(),
                       l,
@@ -584,7 +573,7 @@ bool IRSolver::createJ()
                       y);
       }
       // Both these lines will change in the future for multiple power domains
-      node_J->addCurrentSrc(it->second);
+      node_J->addCurrentSrc(power);
       node_J->addInstance(inst);
     }
   }
@@ -1128,7 +1117,7 @@ bool IRSolver::createGmat(bool connection_only)
                 Gmat_->getNumNodes());
   Gmat_->initializeGmatDok(num_C4);
 
-  // Iterate through all the wires to populate condactance matrix
+  // Iterate through all the wires to populate conductance matrix
   createGmatConnections(power_wires, connection_only);
 
   debugPrint(
@@ -1156,9 +1145,9 @@ bool IRSolver::checkConnectivity(bool connection_only)
   if (connection_only) {
     Node* c4_node = Gmat_->getNode(C4Nodes_.begin()->first);
     node_q.push(c4_node);
-    // If we do IR analysis, we assume the grid can be connected by differne
-    // bumps
   } else {
+    // If we do IR analysis, we assume the grid can be connected by different
+    // bumps
     for (auto [node_loc, voltage] : C4Nodes_) {
       Node* c4_node = Gmat_->getNode(node_loc);
       node_q.push(c4_node);
@@ -1179,11 +1168,9 @@ bool IRSolver::checkConnectivity(bool connection_only)
     vector<NodeIdx> col_vec(Amat->row_idx.begin() + col_loc,
                             Amat->row_idx.begin() + n_col_loc);
 
-    vector<NodeIdx>::iterator col_vec_it;
-    for (col_vec_it = col_vec.begin(); col_vec_it != col_vec.end();
-         col_vec_it++) {
-      if (*col_vec_it < num_nodes) {
-        Node* node_next = Gmat_->getNode(*col_vec_it);
+    for (NodeIdx idx : col_vec) {
+      if (idx < num_nodes) {
+        Node* node_next = Gmat_->getNode(idx);
         if (!(node_next->getConnected())) {
           node_q.push(node_next);
         }
@@ -1195,13 +1182,12 @@ bool IRSolver::checkConnectivity(bool connection_only)
   vector<Node*> node_list = Gmat_->getAllNodes();
   vector<Node*>::iterator node_list_it;
   bool unconnected_node = false;
-  for (node_list_it = node_list.begin(); node_list_it != node_list.end();
-       node_list_it++) {
-    if (!(*node_list_it)->getConnected()) {
+  for (Node* node : node_list) {
+    if (!node->getConnected()) {
       uncon_err_cnt++;
-      Point node_loc = (*node_list_it)->getLoc();
-      float loc_x = ((float) node_loc.getX()) / ((float) unit_micron);
-      float loc_y = ((float) node_loc.getY()) / ((float) unit_micron);
+      Point node_loc = node->getLoc();
+      float loc_x = node_loc.getX() / ((float) unit_micron);
+      float loc_y = node_loc.getY() / ((float) unit_micron);
       unconnected_node = true;
       logger_->warn(utl::PSM,
                     38,
@@ -1210,9 +1196,9 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     power_net_,
                     loc_x,
                     loc_y,
-                    (*node_list_it)->getLayerNum());
-      if ((*node_list_it)->hasInstances()) {
-        for (dbInst* inst : (*node_list_it)->getInstances()) {
+                    node->getLayerNum());
+      if (node->hasInstances()) {
+        for (dbInst* inst : node->getInstances()) {
           uncon_inst_cnt++;
           logger_->warn(utl::PSM,
                         39,
@@ -1221,7 +1207,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
                         inst->getName(),
                         loc_x,
                         loc_y,
-                        (*node_list_it)->getLayerNum());
+                        node->getLayerNum());
         }
       }
     }
@@ -1247,7 +1233,7 @@ int IRSolver::getConnectionTest()
  *\return vector of pairs of instance name
  and its corresponding power value
 */
-vector<pair<string, double>> IRSolver::getPower()
+vector<pair<odb::dbInst*, double>> IRSolver::getPower()
 {
   PowerInst power_inst;
 

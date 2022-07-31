@@ -31,10 +31,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "gmat.h"
+
 #include <iostream>
 #include <vector>
 
-#include "gmat.h"
 #include "node.h"
 
 namespace psm {
