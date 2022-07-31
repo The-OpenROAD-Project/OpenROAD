@@ -438,9 +438,9 @@ void IRSolver::readC4Data()
           {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
     }
     int num_b_x = coreW / bump_pitch_x_;
-    int centering_offset_x = (coreW % bump_pitch_x_) / 2;
+    int centering_offset_x = (coreW  - (num_b_x - 1) * bump_pitch_x_) / 2;
     int num_b_y = coreL / bump_pitch_y_;
-    int centering_offset_y = (coreL % bump_pitch_y_) / 2;
+    int centering_offset_y = (coreL - (num_b_y - 1) * bump_pitch_y_) / 2;
     logger_->warn(utl::PSM,
                   65,
                   "VSRC location not specified, using default checkerboard "
