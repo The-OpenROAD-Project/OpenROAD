@@ -50,16 +50,16 @@ namespace psm {
 */
 class PowerInst
 {
- private:
-  //! Instance to OpenSTA object.
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
-
  public:
   //! Function for power per instance calculation
   std::vector<std::pair<std::string, double>> executePowerPerInst(
       sta::dbSta* sta,
       utl::Logger* logger);
+
+ private:
+  //! Instance to OpenSTA object.
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
 };
 // power namespace end
 }  // namespace psm

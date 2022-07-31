@@ -47,7 +47,7 @@ using std::vector;
 /*
  * \return Layer number of the node
  * */
-int Node::GetLayerNum()
+int Node::getLayerNum()
 {
   return layer_;
 }
@@ -56,7 +56,7 @@ int Node::GetLayerNum()
 /*
  \param t_layer Layer number
 */
-void Node::SetLayerNum(int t_layer)
+void Node::setLayerNum(int t_layer)
 {
   layer_ = t_layer;
 }
@@ -65,7 +65,7 @@ void Node::SetLayerNum(int t_layer)
 /*
  * \return NodeLoc which is x and y index
  * */
-NodeLoc Node::GetLoc()
+Point Node::getLoc()
 {
   return loc_;
 }
@@ -75,9 +75,9 @@ NodeLoc Node::GetLoc()
  * \param t_x x index
  * \param t_y y index
  * */
-void Node::SetLoc(int t_x, int t_y)
+void Node::setLoc(int t_x, int t_y)
 {
-  loc_ = make_pair(t_x, t_y);
+  loc_ = Point(t_x, t_y);
 }
 
 //! Set the location of the node using x,y and layer information
@@ -86,17 +86,17 @@ void Node::SetLoc(int t_x, int t_y)
  * \param t_y y index
  * \param t_l Layer number
  * */
-void Node::SetLoc(int t_x, int t_y, int t_l)
+void Node::setLoc(int t_x, int t_y, int t_l)
 {
-  SetLayerNum(t_l);
-  SetLoc(t_x, t_y);
+  setLayerNum(t_l);
+  setLoc(t_x, t_y);
 }
 
 //! Get location of the node in G matrix
 /*
  * \return Location in G matrix
  */
-NodeIdx Node::GetGLoc()
+NodeIdx Node::getGLoc()
 {
   return node_loc_;
 }
@@ -105,17 +105,17 @@ NodeIdx Node::GetGLoc()
 /*
  * \param t_loc Location in the G matrix
  */
-void Node::SetGLoc(NodeIdx t_loc)
+void Node::setGLoc(NodeIdx t_loc)
 {
   node_loc_ = t_loc;
 }
 
 //! Function to print node details
-void Node::Print(utl::Logger* logger)
+void Node::print(utl::Logger* logger)
 {
   logger->report("Node: {}", node_loc_);
   logger->report(
-      "  Location: Layer {}, x {}, y {}", layer_, loc_.first, loc_.second);
+      "  Location: Layer {}, x {}, y {}", layer_, loc_.getX(), loc_.getY());
   logger->report("  Bounding box: x {}, y {} ", bBox_.first, bBox_.second);
   logger->report("  Current: {:5.4e}A", current_src_);
   logger->report("  Voltage: {:5.4e}V", voltage_);
@@ -124,13 +124,13 @@ void Node::Print(utl::Logger* logger)
 }
 
 //! Function to set the bounding box of the stripe
-void Node::SetBbox(int t_dX, int t_dY)
+void Node::setBbox(int t_dX, int t_dY)
 {
   bBox_ = make_pair(t_dX, t_dY);
 }
 
 //! Function to get the bounding box of the stripe
-BBox Node::GetBbox()
+BBox Node::getBbox()
 {
   return bBox_;
 }
@@ -141,25 +141,25 @@ BBox Node::GetBbox()
  * \param t_dY Change in the y value
  * \return nothing
  */
-void Node::UpdateMaxBbox(int t_dX, int t_dY)
+void Node::updateMaxBbox(int t_dX, int t_dY)
 {
   BBox nodeBbox = bBox_;
-  int DX = max(nodeBbox.first, t_dX);
-  int DY = max(nodeBbox.second, t_dY);
-  SetBbox(DX, DY);
+  int dx = max(nodeBbox.first, t_dX);
+  int dy = max(nodeBbox.second, t_dY);
+  setBbox(dx, dy);
 }
 
 //! Function to set the current value at a particular node
 /*
  * \param t_current Current magnitude
  */
-void Node::SetCurrent(double t_current)
+void Node::setCurrent(double t_current)
 {
   current_src_ = t_current;
 }
 
 //! Function to get the value of current at a node
-double Node::GetCurrent()
+double Node::getCurrent()
 {
   return current_src_;
 }
@@ -168,17 +168,17 @@ double Node::GetCurrent()
 /*
  * \param t_current Value of current source
  */
-void Node::AddCurrentSrc(double t_current)
+void Node::addCurrentSrc(double t_current)
 {
-  double node_cur = GetCurrent();
-  SetCurrent(node_cur + t_current);
+  double node_cur = getCurrent();
+  setCurrent(node_cur + t_current);
 }
 
 //! Function to set the value of the voltage source
 /*
  * \param t_voltage Voltage source magnitude
  * */
-void Node::SetVoltage(double t_voltage)
+void Node::setVoltage(double t_voltage)
 {
   voltage_ = t_voltage;
 }
@@ -187,32 +187,32 @@ void Node::SetVoltage(double t_voltage)
 /*
  * \return Voltage value at the node
  */
-double Node::GetVoltage()
+double Node::getVoltage()
 {
   return voltage_;
 }
 
-bool Node::GetConnected()
+bool Node::getConnected()
 {
   return connected_;
 }
 
-void Node::SetConnected()
+void Node::setConnected()
 {
   connected_ = true;
 }
 
-bool Node::HasInstances()
+bool Node::hasInstances()
 {
   return has_instances_;
 }
 
-vector<dbInst*> Node::GetInstances()
+vector<dbInst*> Node::getInstances()
 {
   return connected_instances_;
 }
 
-void Node::AddInstance(dbInst* inst)
+void Node::addInstance(dbInst* inst)
 {
   has_instances_ = true;
   connected_instances_.push_back(inst);

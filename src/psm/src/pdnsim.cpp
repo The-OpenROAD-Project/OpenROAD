@@ -180,10 +180,10 @@ void PDNSim::write_pg_spice()
                                      node_density_factor_,
                                      net_voltage_map_);
 
-  if (!irsolve_h->Build()) {
+  if (!irsolve_h->build()) {
     delete irsolve_h;
   } else {
-    int check_spice = irsolve_h->PrintSpice();
+    int check_spice = irsolve_h->printSpice();
     if (check_spice) {
       logger_->info(
           utl::PSM, 6, "SPICE file is written at: {}.", spice_out_file_);
@@ -212,63 +212,48 @@ void PDNSim::analyze_power_grid()
                                               node_density_factor_,
                                               net_voltage_map_);
 
-  if (!irsolve_h->Build()) {
-    IRDropByLayer ir_drop;
-    gmat_obj = irsolve_h->GetGMat();
-    std::vector<Node*> nodes = gmat_obj->GetAllNodes();
-    int vsize;
-    vsize = nodes.size();
-    odb::dbTech* tech = db_->getTech();
-    for (int n = 0; n < vsize; n++) {
-      Node* node = nodes[n];
-      int node_layer_num = node->GetLayerNum();
-      NodeLoc node_loc = node->GetLoc();
-      odb::Point point = odb::Point(node_loc.first, node_loc.second);
-      odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
-      // Absolute is needed for GND nets. In case of GND net voltage is higher
-      // than supply.
-      ir_drop[node_layer][point] = 0;
-    }
-    ir_drop_ = ir_drop;
-    debug_gui_->draw_pause();
+  if (!irsolve_h->build()) {
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
-  gmat_obj = irsolve_h->GetGMat();
-  irsolve_h->SolveIR();
+  gmat_obj = irsolve_h->getGMat();
+  irsolve_h->solveIR();
   logger_->report("########## IR report #################");
-  logger_->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);
-  logger_->report("Average IR drop  : {:3.2e} V",
-                  abs(irsolve_h->supply_voltage_src - irsolve_h->avg_voltage));
-  logger_->report("Worstcase IR drop: {:3.2e} V",
-                  abs(irsolve_h->supply_voltage_src - irsolve_h->wc_voltage));
+  logger_->report("Worstcase voltage: {:3.2e} V",
+                  irsolve_h->getWorstCaseVoltage());
+  logger_->report(
+      "Average IR drop  : {:3.2e} V",
+      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
+  logger_->report(
+      "Worstcase IR drop: {:3.2e} V",
+      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getWorstCaseVoltage()));
   logger_->report("######################################");
   if (enable_em_ == 1) {
     logger_->report("########## EM analysis ###############");
-    logger_->report("Maximum current: {:3.2e} A", irsolve_h->max_cur);
-    logger_->report("Average current: {:3.2e} A", irsolve_h->avg_cur);
-    logger_->report("Number of resistors: {}", irsolve_h->num_res);
+    logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
+    logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
+    logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
     logger_->report("######################################");
   }
 
   IRDropByLayer ir_drop;
-  std::vector<Node*> nodes = gmat_obj->GetAllNodes();
+  std::vector<Node*> nodes = gmat_obj->getAllNodes();
   int vsize;
   vsize = nodes.size();
   odb::dbTech* tech = db_->getTech();
   for (int n = 0; n < vsize; n++) {
     Node* node = nodes[n];
-    int node_layer_num = node->GetLayerNum();
-    NodeLoc node_loc = node->GetLoc();
-    odb::Point point = odb::Point(node_loc.first, node_loc.second);
-    double voltage = node->GetVoltage();
+    int node_layer_num = node->getLayerNum();
+    Point node_loc = node->getLoc();
+    odb::Point point = odb::Point(node_loc.getX(), node_loc.getY());
+    double voltage = node->getVoltage();
     odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
-    ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
+    ir_drop[node_layer][point] = abs(irsolve_h->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
-  min_resolution_ = irsolve_h->GetMinimumResolution();
+  min_resolution_ = irsolve_h->getMinimumResolution();
 
   heatmap_->update();
   if (debug_gui_) {
@@ -292,11 +277,11 @@ int PDNSim::check_connectivity()
                                      node_density_,
                                      node_density_factor_,
                                      net_voltage_map_);
-  if (!irsolve_h->BuildConnection()) {
+  if (!irsolve_h->buildConnection()) {
     delete irsolve_h;
     return 0;
   }
-  int val = irsolve_h->GetConnectionTest();
+  int val = irsolve_h->getConnectionTest();
   delete irsolve_h;
   return val;
 }

@@ -77,25 +77,45 @@ class IRSolver
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           std::map<std::string, float> net_voltage_map)
-  {
-    db_ = t_db;
-    sta_ = t_sta;
-    logger_ = t_logger;
-    vsrc_file_ = vsrc_loc;
-    power_net_ = power_net;
-    out_file_ = out_file;
-    em_out_file_ = em_out_file;
-    em_flag_ = em_analyze;
-    spice_out_file_ = spice_out_file;
-    bump_pitch_x_ = bump_pitch_x;
-    bump_pitch_y_ = bump_pitch_y;
-    node_density_um_ = node_density_um;
-    node_density_factor_user_ = node_density_factor_user;
-    net_voltage_map_ = net_voltage_map;
-  }
+           const std::map<std::string, float>& net_voltage_map);
   //! IRSolver destructor
-  ~IRSolver() { delete Gmat_; }
+  ~IRSolver();
+  //! Returns the created G matrix for the design
+  GMat* getGMat();
+  //! Returns current map represented as a 1D vector
+  std::vector<double> getJ();
+  //! Function to solve for IR drop
+  void solveIR();
+  //! Function to get the power value from OpenSTA
+  std::vector<std::pair<std::string, double>> getPower();
+  std::pair<double, double> getSupplyVoltage();
+
+  bool checkConnectivity(bool connection_only = false);
+  bool checkValidR(double R);
+
+  int getConnectionTest();
+
+  bool getResult();
+  int getMinimumResolution();
+
+  int printSpice();
+
+  bool build();
+
+  bool buildConnection();
+
+  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
+  int getTopLayer() const { return top_layer_; }
+
+  double getWorstCaseVoltage() const { return wc_voltage; }
+  double getMaxCurrent() const { return max_cur; }
+  double getAvgCurrent() const { return avg_cur; }
+  int getNumResistors() const { return num_res; }
+  double getAvgVoltage() const { return avg_voltage; }
+  float getSupplyVoltageSrc() const { return supply_voltage_src; }
+
+ private:
+  float supply_voltage_src;
   //! Worst case voltage at the lowest layer nodes
   double wc_voltage;
   //! Worst case current at the lowest layer nodes
@@ -108,35 +128,6 @@ class IRSolver
   double avg_voltage;
   //! Vector of worstcase voltages in the lowest layers
   std::vector<double> wc_volt_layer;
-  //! Returns the created G matrix for the design
-  GMat* GetGMat();
-  //! Returns current map represented as a 1D vector
-  std::vector<double> GetJ();
-  //! Function to solve for IR drop
-  void SolveIR();
-  //! Function to get the power value from OpenSTA
-  std::vector<std::pair<std::string, double>> GetPower();
-  std::pair<double, double> GetSupplyVoltage();
-
-  bool CheckConnectivity(bool connection_only = false);
-  bool CheckValidR(double R);
-
-  int GetConnectionTest();
-
-  bool GetResult();
-  int GetMinimumResolution();
-
-  int PrintSpice();
-
-  bool Build();
-
-  bool BuildConnection();
-  float supply_voltage_src;
-
-  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
-  int getTopLayer() const { return top_layer_; }
-
- private:
   //! Pointer to the Db
   odb::dbDatabase* db_;
   //! Pointer to STA
@@ -152,7 +143,7 @@ class IRSolver
   int em_flag_;
   std::string spice_out_file_;
   //! G matrix for voltage
-  GMat* Gmat_;
+  std::unique_ptr<GMat> Gmat_;
   //! Node density in the lower most layer to append the current sources
   int node_density_{0};              // Initialize to zero
   int node_density_factor_{5};       // Default value
@@ -184,29 +175,30 @@ class IRSolver
   //! Locations of the C4 bumps in the G matrix
   std::map<NodeIdx, double> C4Nodes_;
   //! Function to add C4 bumps to the G matrix
-  bool AddC4Bump();
+  bool addC4Bump();
   //! Function that parses the Vsrc file
-  void ReadC4Data();
+  void readC4Data();
   //  void                                           ReadResData();
   //! Function to create a J vector from the current map
-  bool CreateJ();
+  bool createJ();
   //! Function to create a G matrix using the nodes
-  bool CreateGmat(bool connection_only = false);
+  bool createGmat(bool connection_only = false);
   //! Function to find and store the upper and lower PDN layers and return a
   //! list
   // of wires for all PDN tasks
-  std::vector<odb::dbSBox*> FindPdnWires(odb::dbNet* power_net);
+  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of the G matrix
-  void CreateGmatNodes(std::vector<odb::dbSBox*> power_wires,
-                       std::vector<std::tuple<int, int, int, int>> macros);
+  void createGmatNodes(
+      const std::vector<odb::dbSBox*>& power_wires,
+      const std::vector<std::tuple<int, int, int, int>>& macros);
 
   //! Function to find and store the macro boundaries
-  std::vector<std::tuple<int, int, int, int>> GetMacroBoundaries();
+  std::vector<std::tuple<int, int, int, int>> getMacroBoundaries();
 
   //! Function to create the nodes for the c4 bumps
-  int CreateC4Nodes(bool connection_only, int unit_micron);
+  int createC4Nodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
-  void CreateGmatConnections(std::vector<odb::dbSBox*> power_wires,
+  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
                              bool connection_only);
 };
 }  // namespace psm
