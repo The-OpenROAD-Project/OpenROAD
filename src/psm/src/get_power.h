@@ -42,6 +42,10 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
+namespace odb {
+class dbInst;
+}  // namespace odb
+
 namespace psm {
 //!  Calculates the power per instance using OpenSTA
 /*!
@@ -52,7 +56,7 @@ class PowerInst
 {
  public:
   //! Function for power per instance calculation
-  std::vector<std::pair<std::string, double>> executePowerPerInst(
+  std::vector<std::pair<odb::dbInst*, double>> executePowerPerInst(
       sta::dbSta* sta,
       utl::Logger* logger);
 

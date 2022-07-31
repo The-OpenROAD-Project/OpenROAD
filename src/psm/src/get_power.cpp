@@ -50,8 +50,9 @@ using std::string;
 using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
-                                                            utl::Logger* logger)
+vector<pair<odb::dbInst*, double>> PowerInst::executePowerPerInst(
+    sta::dbSta* sta,
+    utl::Logger* logger)
 {
   // STA object create
   sta_ = sta;
@@ -68,7 +69,7 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
   //  Corner* corner = _sta->findCorner(cornerName.c_str());
   Corner* corner = sta_->cmdCorner();
 
-  vector<pair<string, double>> power_report;
+  vector<pair<odb::dbInst*, double>> power_report;
   dbNetwork* network = sta_->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult total_calc;
@@ -80,8 +81,7 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta,
       PowerResult inst_power;
       sta_->power(inst, corner, inst_power);
       total_calc.incr(inst_power);
-      power_report.push_back(
-          make_pair(string(network->name(inst)), inst_power.total()));
+      power_report.push_back({network->staToDb(inst), inst_power.total()});
       debugPrint(logger_,
                  utl::PSM,
                  "get power",

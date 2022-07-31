@@ -87,7 +87,7 @@ class IRSolver
   //! Function to solve for IR drop
   void solveIR();
   //! Function to get the power value from OpenSTA
-  std::vector<std::pair<std::string, double>> getPower();
+  std::vector<std::pair<odb::dbInst*, double>> getPower();
   std::pair<double, double> getSupplyVoltage();
 
   bool checkConnectivity(bool connection_only = false);
