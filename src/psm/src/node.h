@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace psm {
 using odb::dbInst;
 
-using NodeLoc = std::pair<int, int>;
+using odb::Point;
 using BBox = std::pair<int, int>;
 using NodeIdx = int;  // TODO temp as it interfaces with SUPERLU
 using GMatLoc = std::pair<NodeIdx, NodeIdx>;
@@ -69,54 +69,53 @@ struct CscMatrix
 class Node
 {
  public:
-  Node() : loc_(std::make_pair(0.0, 0.0)), bBox_(std::make_pair(0.0, 0.0)) {}
-  ~Node() {}
+  Node() : bBox_(std::make_pair(0.0, 0.0)) {}
   //! Get the layer number of the node
-  int GetLayerNum();
+  int getLayerNum();
   //! Set the layer number of the node
-  void SetLayerNum(int layer);
+  void setLayerNum(int layer);
   //! Get the location of the node
-  NodeLoc GetLoc();
+  Point getLoc();
   //! Set the location of the node using x and y coordinates
-  void SetLoc(int x, int y);
+  void setLoc(int x, int y);
   //! Set the location of the node using x,y and layer information
-  void SetLoc(int x, int y, int l);
+  void setLoc(int x, int y, int l);
   //! Get location of the node in G matrix
-  NodeIdx GetGLoc();
+  NodeIdx getGLoc();
   //! Get location of the node in G matrix
-  void SetGLoc(NodeIdx loc);
+  void setGLoc(NodeIdx loc);
   //! Function to print node details
-  void Print(utl::Logger* logger);
+  void print(utl::Logger* logger);
   //! Function to set the bounding box of the stripe
-  void SetBbox(int dX, int dY);
+  void setBbox(int dX, int dY);
   //! Function to get the bounding box of the stripe
-  BBox GetBbox();
+  BBox getBbox();
   //! Function to update the stripe
-  void UpdateMaxBbox(int dX, int dY);
+  void updateMaxBbox(int dX, int dY);
   //! Function to set the current value at a particular node
-  void SetCurrent(double t_current);
+  void setCurrent(double t_current);
   //! Function to get the value of current at a node
-  double GetCurrent();
+  double getCurrent();
   //! Function to add the current source
-  void AddCurrentSrc(double t_current);
+  void addCurrentSrc(double t_current);
   //! Function to set the value of the voltage source
-  void SetVoltage(double t_voltage);
+  void setVoltage(double t_voltage);
   //! Function to get the value of the voltage source
-  double GetVoltage();
+  double getVoltage();
 
-  bool GetConnected();
+  bool getConnected();
 
-  void SetConnected();
+  void setConnected();
 
-  bool HasInstances();
+  bool hasInstances();
 
-  std::vector<dbInst*> GetInstances();
+  std::vector<dbInst*> getInstances();
 
-  void AddInstance(dbInst* inst);
+  void addInstance(dbInst* inst);
 
  private:
   int layer_;
-  NodeLoc loc_;  // layer,x,y
+  Point loc_;
   NodeIdx node_loc_{0};
   BBox bBox_;
   double current_src_{0.0};

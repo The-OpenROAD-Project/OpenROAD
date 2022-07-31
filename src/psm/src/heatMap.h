@@ -41,7 +41,6 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
 {
  public:
   IRDropDataSource(PDNSim* psm, utl::Logger* logger);
-  ~IRDropDataSource() {}
 
   virtual void setBlock(odb::dbBlock* block) override;
 
