@@ -6,7 +6,6 @@
 #include <iostream>
 #include <memory>
 
-#include "gpuSolver.h"
 #include "graphics.h"
 #include "odb/db.h"
 #include "placerBase.h"
