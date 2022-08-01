@@ -133,7 +133,6 @@ public:
 };
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
-typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 
 enum class ParasiticsSrc { none, placement, global_routing };

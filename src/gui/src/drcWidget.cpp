@@ -465,7 +465,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                      "Unable to parse line as violation type (line: {}): {}",
                      line_number,
                      line);
-    }    
+    }
 
     // sources of violation
     line_number++;
@@ -480,14 +480,14 @@ void DRCWidget::loadTRReport(const QString& filename)
                      "Unable to parse line as violation source (line: {}): {}",
                      line_number,
                      line);
-    } 
+    }
 
     line_number++;
     std::getline(report, line);
     std::string congestion_information = "";
 
     // congestion information (optional)
-    if (std::regex_match(line, base_match, congestion_line)){
+    if (std::regex_match(line, base_match, congestion_line)) {
       congestion_information = base_match[1].str();
       line_number++;
       std::getline(report, line);
@@ -505,7 +505,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr && base_match[2].str()!="-") {
+    if (layer == nullptr && base_match[2].str() != "-") {
       logger_->warn(utl::GUI,
                     40,
                     "Unable to find tech layer (line: {}): {}",
