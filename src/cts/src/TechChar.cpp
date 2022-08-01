@@ -542,8 +542,11 @@ void TechChar::initCharacterization()
   }
   // Creates the new characterization block. (Wiresegments are created here
   // instead of the main block)
-  std::string characterizationBlockName = "CharacterizationBlock";
-  charBlock_ = odb::dbBlock::create(block, characterizationBlockName.c_str());
+  const char* characterizationBlockName = "CharacterizationBlock";
+  if (auto char_block = block->findChild(characterizationBlockName)) {
+    odb::dbBlock::destroy(char_block);
+  }
+  charBlock_ = odb::dbBlock::create(block, characterizationBlockName);
 
   // Defines the different wirelengths to test and the characterization unit.
   unsigned wirelengthIterations = options_->getCharWirelengthIterations();
