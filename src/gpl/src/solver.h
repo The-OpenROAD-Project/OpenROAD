@@ -3,9 +3,11 @@
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseCore>
-#include <iostream>
 #include <memory>
 
+#ifdef ENABLE_GPU
+#include "gpuSolver.h"
+#endif
 #include "graphics.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -22,11 +24,11 @@ using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
 using utl::GPL;
 
+using namespace std;
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
 #ifdef ENABLE_GPU
-#include "gpuSolver.h"
-void cudaSparseSolve(int iter,
+ void cudaSparseSolve(int iter,
                      SMatrix& placeInstForceMatrixX,
                      Eigen::VectorXf& fixedInstForceVecX,
                      Eigen::VectorXf& instLocVecX,
@@ -52,7 +54,7 @@ void cudaSparseSolve(int iter,
 }
 #endif
 
-void cpuDenseSolve(int maxSolverIter,
+void cpuSparseSolve(int maxSolverIter,
                     int iter,
                     SMatrix& placeInstForceMatrixX,
                     Eigen::VectorXf& fixedInstForceVecX,

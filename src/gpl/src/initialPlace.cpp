@@ -118,7 +118,7 @@ void InitialPlace::doBicgstabPlace()
     else{
       log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
       // BiCGSTAB solver for initial place
-      cpuDenseSolve(ipVars_.maxSolverIter, iter,
+      cpuSparseSolve(ipVars_.maxSolverIter, iter,
               placeInstForceMatrixX_,
               fixedInstForceVecX_,
               instLocVecX_,
@@ -130,7 +130,7 @@ void InitialPlace::doBicgstabPlace()
     }
   }
   else{
-      cpuDenseSolve(ipVars_.maxSolverIter, iter,
+      cpuSparseSolve(ipVars_.maxSolverIter, iter,
                     placeInstForceMatrixX_,
                     fixedInstForceVecX_,
                     instLocVecX_,
@@ -142,7 +142,7 @@ void InitialPlace::doBicgstabPlace()
   }
 
 #else
-    cpuDenseSolve(ipVars_.maxSolverIter, iter,
+    cpuSparseSolve(ipVars_.maxSolverIter, iter,
                    placeInstForceMatrixX_,
                    fixedInstForceVecX_,
                    instLocVecX_,
