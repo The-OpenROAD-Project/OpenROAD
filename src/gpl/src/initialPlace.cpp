@@ -32,17 +32,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "initialPlace.h"
-#include "placerBase.h"
-#include <iostream>
-
-#include <Eigen/IterativeLinearSolvers>
-
-
-#include "plot.h"
-#include "graphics.h"
-
-#include "utl/Logger.h"
 #include "solver.h"
+#include "placerBase.h"
 
 namespace gpl {
 using namespace std;
@@ -127,7 +118,7 @@ void InitialPlace::doBicgstabPlace()
     else{
       log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
       // BiCGSTAB solver for initial place
-      cpuSparseSolve(ipVars_.maxSolverIter, iter,
+      cpuDenseSolve(ipVars_.maxSolverIter, iter,
               placeInstForceMatrixX_,
               fixedInstForceVecX_,
               instLocVecX_,
@@ -139,7 +130,7 @@ void InitialPlace::doBicgstabPlace()
     }
   }
   else{
-      cpuSparseSolve(ipVars_.maxSolverIter, iter,
+      cpuDenseSolve(ipVars_.maxSolverIter, iter,
                     placeInstForceMatrixX_,
                     fixedInstForceVecX_,
                     instLocVecX_,
@@ -151,7 +142,7 @@ void InitialPlace::doBicgstabPlace()
   }
 
 #else
-    cpuSparseSolve(ipVars_.maxSolverIter, iter,
+    cpuDenseSolve(ipVars_.maxSolverIter, iter,
                    placeInstForceMatrixX_,
                    fixedInstForceVecX_,
                    instLocVecX_,

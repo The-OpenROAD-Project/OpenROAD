@@ -91,9 +91,9 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
 void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
 {
   // Parameters that don't change with iteration and used in the CUDA code
-  float tol = 1e-6;      // 	Tolerance to decide if singular or not.
-  int reorder = 0;       // "0" for common matrix without ordering
-  int singularity = -1;  // Output. -1 = A means invertible
+  const float tol = 1e-6;      // 	Tolerance to decide if singular or not.
+  const int reorder = 0;       // "0" for common matrix without ordering
+  const int singularity = -1;  // Output. -1 = A means invertible
 
   // Set handler
   cusolverSpHandle_t handleCusolver = NULL;

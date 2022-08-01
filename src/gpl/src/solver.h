@@ -52,7 +52,7 @@ void cudaSparseSolve(int iter,
 }
 #endif
 
-void cpuSparseSolve(int maxSolverIter,
+void cpuDenseSolve(int maxSolverIter,
                     int iter,
                     SMatrix& placeInstForceMatrixX,
                     Eigen::VectorXf& fixedInstForceVecX,
