@@ -199,6 +199,32 @@ void HierRTLMP::SetSignatureNetThreshold(int signature_net_threshold)
   signature_net_threshold_ = signature_net_threshold;
 }
 
+void HierRTLMP::SetPinAccessThreshold(float pin_access_th)
+{
+  pin_access_th_ = pin_access_th;
+}
+
+void HierRTLMP::SetTargetUtil(float target_util)
+{
+  target_util_ = target_util;
+}
+
+
+void HierRTLMP::SetTargetDeadSpace(float target_dead_space)
+{
+  target_dead_space_ = target_dead_space;
+}
+
+void HierRTLMP::SetMinAR(float min_ar)
+{
+  min_ar_ = min_ar;
+}
+
+void HierRTLMP::SetSnapLayer(int snap_layer)
+{
+  snap_layer_ = snap_layer;
+}
+
 
 ///////////////////////////////////////////////////////////////
 // Top Level Interface function
@@ -1304,7 +1330,7 @@ void HierRTLMP::UpdateDataFlow()
     const int driver_id = odb::dbIntProperty::find(bterm_pair.first, 
                                "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
-      const float weight = std::pow(dataflow_factor_, i);
+      const float weight = 1.0 /  std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
       for (auto& inst : bterm_pair.second[i]) {
         const int cluster_id = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
@@ -1322,7 +1348,7 @@ void HierRTLMP::UpdateDataFlow()
     const int driver_id = odb::dbIntProperty::find(iterm_pair.first->getInst(), 
                                "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
-      const float weight = std::pow(dataflow_factor_, i);
+      const float weight = 1.0 / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
       for (auto& inst : iterm_pair.second[i]) {
         const int cluster_id = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
@@ -1656,6 +1682,7 @@ void HierRTLMP::LeafClusterStdCellHardMacroSep(Cluster* root_cluster)
       }
     }
     //std::vector<int> macro_size_class(hard_macros.size(), 1); 
+    //std::vector<int> macro_size_class(hard_macros.size(), 1); 
     for (auto& id : macro_size_class)
       std::cout << id << "   ";
     std::cout << std::endl;
@@ -1788,11 +1815,20 @@ void HierRTLMP::LeafClusterStdCellHardMacroSep(Cluster* root_cluster)
       SetClusterMetric(macro_clusters[i]);
       virtual_conn_clusters.push_back(cluster->GetId());
     }
+    
+
     // add virtual connections
     for (int i = 0; i < virtual_conn_clusters.size(); i++) 
       for (int j = i + 1; j < virtual_conn_clusters.size(); j++)
         parent_cluster->AddVirtualConnection(virtual_conn_clusters[i],
-                                             virtual_conn_clusters[j]);
+        virtual_conn_clusters[j]);
+    /*
+    // add virtual connections
+    for (int i = 0; i < 1; i++) 
+      for (int j = i + 1; j < virtual_conn_clusters.size(); j++)
+        parent_cluster->AddVirtualConnection(virtual_conn_clusters[i],
+        virtual_conn_clusters[j]);
+    */
   }
   // Set the inst property back
   SetInstProperty(root_cluster);
@@ -2968,9 +3004,12 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
     // model other cluster as a fixed macro with zero size
     cluster_id_macro_id_map[cluster_id] = macros.size();
     macros.push_back(HardMacro(std::pair<float, float>(
-            temp_cluster->GetX() + temp_cluster->GetWidth() / 2.0,
-            temp_cluster->GetY() + temp_cluster->GetHeight() / 2.0),
+            temp_cluster->GetX() + temp_cluster->GetWidth() / 2.0 - lx,
+            temp_cluster->GetY() + temp_cluster->GetHeight() / 2.0 - ly),
             temp_cluster->GetName()));
+    std::cout << "terminal : lx = " << temp_cluster->GetX() + temp_cluster->GetWidth() / 2.0 - lx
+              << "  ly = " << temp_cluster->GetY() + temp_cluster->GetHeight() / 2.0 - ly
+              << std::endl;
   }
   // create bundled net
   std::vector<BundledNet> nets;
@@ -3005,6 +3044,7 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
                                     macros.size() : num_perturb_per_step_;
   //const int num_perturb_per_step = macros.size();
+  //num_threads_  = 1; 
   int run_thread = num_threads_;
   int remaining_runs = num_runs_;
   int run_id = 0;

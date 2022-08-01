@@ -70,7 +70,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float guidance_weight,
                           const float fence_weight,
                           const float boundary_weight,
-                          const float notch_weight) {
+                          const float notch_weight,
+                          const float pin_access_th,
+                          const float target_util,
+                          const float target_dead_space,
+                          const float min_ar,
+                          const int snap_layer) {
   auto macro_placer = getMacroPlacer2();
   return macro_placer->place(max_num_macro,
                              min_num_macro,
@@ -93,7 +98,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              guidance_weight,
                              fence_weight,
                              boundary_weight,
-                             notch_weight);
+                             notch_weight,
+                             pin_access_th,
+                             target_util,
+                             target_dead_space,
+                             min_ar,
+                             snap_layer);
 }
 
 } // namespace

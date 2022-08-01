@@ -106,7 +106,11 @@ class HierRTLMP {
     void SetFenceWeight(float fence_weight);
     void SetBoundaryWeight(float boundary_weight);
     void SetNotchWeight(float notch_weight);
-
+    void SetPinAccessThreshold(float pin_access_th);
+    void SetTargetUtil(float target_util);
+    void SetTargetDeadSpace(float target_dead_space);
+    void SetMinAR(float min_ar);
+    void SetSnapLayer(int snap_layer);
 
   private:
     ord::dbNetwork* network_ = nullptr;
@@ -143,15 +147,15 @@ class HierRTLMP {
     float num_target_util_        = 6;
     float num_target_dead_space_  = 9;
 
-    float min_ar_ = 0.25; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
+    float min_ar_ = 0.33; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
-    float pin_access_th_ = 0.05; // each pin access is modeled as a SoftMacro
+    float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
     float pin_access_net_width_ratio_ = 0.1; // define the ratio of number of connections 
                                              // related to IOs to the range of these IO spans
     float notch_v_th_ = 100.0;
     float notch_h_th_ = 100.0;
 
-    float snap_layer_ = 4;
+    int snap_layer_ = 4;
     float pitch_x_    = 0.0;
     float pitch_y_    = 0.0;
 
@@ -173,8 +177,8 @@ class HierRTLMP {
     
     // Fast SA hyperparameter
     float init_prob_         = 0.9;
-    int max_num_step_        = 5000;
-    int num_perturb_per_step_  = 2000;
+    int max_num_step_        = 4000;
+    int num_perturb_per_step_  = 3000;
     // if step < k_, T = init_T_ / (c_ * step_);
     // else T = init_T_ / step
     int k_ = 100;
@@ -182,7 +186,7 @@ class HierRTLMP {
 
     // the virtual weight between std cell part and corresponding macro part
     // to force them stay together
-    float virtual_weight_ = 100.0;
+    float virtual_weight_ = 2000.0;
 
 
     // probability of each action
@@ -201,7 +205,7 @@ class HierRTLMP {
     float floorplan_uy_ = 0.0;
 
     // dataflow parameters and store the dataflow
-    int max_num_ff_dist_ = 3; // maximum number of FF distances between 
+    int max_num_ff_dist_ = 1; // maximum number of FF distances between 
     float dataflow_factor_ = 2.0; 
     std::vector<std::pair<odb::dbITerm*, 
            std::vector<std::set<odb::dbInst*> > > >  macro_ffs_conn_map_;  

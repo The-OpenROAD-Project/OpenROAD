@@ -503,7 +503,12 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float guidance_weight,
                          const float fence_weight,
                          const float boundary_weight,
-                         const float notch_weight)
+                         const float notch_weight,
+                         const float pin_access_th,
+                         const float target_util,
+                         const float target_dead_space, 
+                         const float min_ar, 
+                         const int snap_layer)
 {
   HierRTLMP* rtlmp_engine_ = new HierRTLMP(network_, db_, sta_, logger_);
   rtlmp_engine_->SetTopLevelClusterSize(max_num_macro,
@@ -526,6 +531,11 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetFenceWeight(fence_weight);
   rtlmp_engine_->SetBoundaryWeight(boundary_weight);
   rtlmp_engine_->SetNotchWeight(notch_weight);
+  rtlmp_engine_->SetPinAccessThreshold(pin_access_th);
+  rtlmp_engine_->SetTargetUtil(target_util);
+  rtlmp_engine_->SetTargetDeadSpace(target_dead_space);
+  rtlmp_engine_->SetMinAR(min_ar);
+  rtlmp_engine_->SetSnapLayer(snap_layer);
   rtlmp_engine_->HierRTLMacroPlacer();
 
   return true;

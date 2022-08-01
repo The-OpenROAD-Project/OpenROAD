@@ -114,16 +114,19 @@ void SACoreHardMacro::CalPenalty()
 
 void SACoreHardMacro::FlipMacro()
 {
+  /*
   macro_id_ = static_cast<int>(std::floor(
               (distribution_)(generator_) * macros_.size()));
   const float prob = (distribution_) (generator_);
   macros_[macro_id_].Flip(false);
-  /*
+
   if (prob <= 0.5)
     macros_[macro_id_].Flip(true);
   else
     macros_[macro_id_].Flip(false);
   */
+  for (auto& macro : macros_)
+    macro.Flip(false);
 }
 
 void SACoreHardMacro::Perturb()
@@ -171,6 +174,11 @@ void SACoreHardMacro::Perturb()
   PackFloorplan();
   // Update all the penalties
   CalPenalty();
+  if (action_id_ == 105)
+    std::cout << "wirelength_weight_ = " << wirelength_weight_ << "  "
+              << "pre_wirelength_ = " << pre_wirelength_ << "  "
+              << "wirelength_ = " << wirelength_ << "   "
+              << std::endl;
 }
 
 void SACoreHardMacro::Restore()
@@ -182,7 +190,8 @@ void SACoreHardMacro::Restore()
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
   if (action_id_ == 5)
-    macros_[macro_id_] = pre_macros_[macro_id_];
+    macros_ = pre_macros_;
+      //macros_[macro_id_] = pre_macros_[macro_id_];
   else if (action_id_ == 1)
     pos_seq_ = pre_pos_seq_;
   else if (action_id_ == 2)
@@ -243,11 +252,36 @@ void SACoreHardMacro::Initialize()
   init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
-void SACoreHardMacro::PrintResults() const
+void SACoreHardMacro::PrintResults() 
 {
   std::cout << "SACoreHardMacro" << std::endl;  
   std::cout << "outline_penalty_  = " << outline_penalty_ << std::endl;
   std::cout << "wirelength_  = " << wirelength_ << std::endl;
+  for (auto& net : nets_)
+    std::cout << "net  src = " << net.terminals.first  << "  "
+              << "target = " << net.terminals.second << "  "
+              << "weight = " << net.weight << std::endl;
+  
+  for (auto& macro : macros_)
+    std::cout << "name : " << macro.GetName()
+              << "lx = " << macro.GetX() << "  "
+              << "ly = " << macro.GetY() << "  "
+              << "pin_x = " << macro.GetPinX() << "  "
+              << "pin_y = " << macro.GetPinY() << "  "
+              << "orientation = " << macro.GetOrientation()
+              << std::endl;
+  FlipMacro();
+  CalPenalty();
+  std::cout << "wirelength_  = " << wirelength_ << std::endl;
+  for (auto& macro : macros_)
+    std::cout << "name : " << macro.GetName()
+              << "lx = " << macro.GetX() << "  "
+              << "ly = " << macro.GetY() << "  "
+              << "pin_x = " << macro.GetPinX() << "  "
+              << "pin_y = " << macro.GetPinY() << "  "
+              << "orientation = " << macro.GetOrientation()
+              << std::endl;
+
   std::cout << "guidance_penalty_  = " << guidance_penalty_ << std::endl;
   std::cout << "fence_penalty_  = " << fence_penalty_ << std::endl;
 }

@@ -77,7 +77,12 @@ class MacroPlacer2
                const float guidance_weight,
                const float fence_weight,
                const float boundary_weight,
-               const float notch_weight);
+               const float notch_weight,
+               const float pin_access_th,
+               const float target_util,
+               const float target_dead_space,
+               const float min_ar, 
+               const int snap_layer);
   private:
     ord::dbNetwork* network_ = nullptr;
     sta::dbSta* sta_ = nullptr;

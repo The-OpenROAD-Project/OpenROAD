@@ -66,7 +66,7 @@ float Dbu2Micro(int metric, float dbu)
 
 int Micro2Dbu(float metric, float dbu) 
 {
-  return metric * dbu;
+  return std::round(metric * std::round(dbu));
 }
 
 // Sort shapes
@@ -761,6 +761,8 @@ HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width)
         }
   pin_x_ = Dbu2Micro((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
   pin_y_ = Dbu2Micro((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_width_;
+  std::cout << "pin_x : " << pin_x_ << std::endl;
+  std::cout << "pin_y : " << pin_y_ << std::endl;
 }
 
 
@@ -829,23 +831,23 @@ float HardMacro::GetY() const
 // The position of pins relative to the lower left of the instance
 float HardMacro::GetPinX() const 
 {
-  return pin_x_;  
+  return x_ + pin_x_;  
 }
 
 float HardMacro::GetPinY() const 
 {
-  return pin_y_;
+  return y_ + pin_y_;
 }
 
 // The position of pins relative to the origin of the canvas;
 float HardMacro::GetAbsPinX() const 
 {
-  return x_ + pin_x_;
+  return pin_x_;
 }
 
 float HardMacro::GetAbsPinY() const 
 {
-  return y_ + pin_y_;
+  return pin_y_;
 }
 
 // width and height

@@ -53,6 +53,11 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -fence_weight fence_weight \
                                           -boundary_weight boundary_weight \
                                           -notch_weight notch_weight \
+                                          -pin_access_th pin_access_th \
+                                          -target_util   target_util \
+                                          -target_dead_space target_dead_space \
+                                          -min_ar  min_ar \
+                                          -snap_layer snap_layer \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
@@ -62,6 +67,8 @@ proc rtl_macro_placer { args } {
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
         -boundary_weight -notch_weight \
+        -pin_access_th -target_util \
+        -target_dead_space -min_ar -snap_layer \
     } flag {  }
      
     set max_num_macro  $keys(-max_num_macro)  
@@ -86,6 +93,11 @@ proc rtl_macro_placer { args } {
     set fence_weight  $keys(-fence_weight)
     set boundary_weight $keys(-boundary_weight)
     set notch_weight  $keys(-notch_weight)
+    set pin_access_th $keys(-pin_access_th)
+    set target_util   $keys(-target_util)
+    set target_dead_space $keys(-target_dead_space)
+    set min_ar $keys(-min_ar)
+    set snap_layer $keys(-snap_layer)
         
     if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
                                       $min_num_macro  \
@@ -102,6 +114,11 @@ proc rtl_macro_placer { args } {
                                       $area_weight $outline_weight $wirelength_weight \
                                       $guidance_weight $fence_weight $boundary_weight \
                                       $notch_weight \
+                                      $pin_access_th \
+                                      $target_util \
+                                      $target_dead_space \
+                                      $min_ar \
+                                      $snap_layer \
                                       ]} {
         return false
     }
