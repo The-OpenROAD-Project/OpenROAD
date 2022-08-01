@@ -192,6 +192,7 @@ proc set_global_routing_random { args } {
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
+                                  [-congestion_report_file file_name] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
@@ -201,7 +202,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -congestion_iterations \
+    keys {-guide_file -congestion_iterations -congestion_report_file \
           -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow -verbose}
@@ -236,6 +237,11 @@ proc global_route { args } {
     grt::set_overflow_iterations $iterations
   } else {
     grt::set_overflow_iterations 50
+  }
+
+  if { [info exists keys(-congestion_report_file) ] } {
+    set file_name $keys(-congestion_report_file)
+    grt::set_congestion_report_file $file_name
   }
 
   if { [info exists keys(-overflow_iterations)] } {

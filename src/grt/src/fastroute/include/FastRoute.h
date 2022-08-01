@@ -94,6 +94,8 @@ struct DebugSetting
 
 using stt::Tree;
 
+typedef std::pair<int, int> TileCongestion;
+
 class FastRouteCore
 {
  public:
@@ -163,6 +165,9 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
+  void getCongestionGrid(
+      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
+      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
