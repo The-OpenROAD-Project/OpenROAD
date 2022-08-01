@@ -15,7 +15,6 @@ void GpuSolver::cudaerror(cudaError_t code)
                 cudaGetErrorString(code),
                 __LINE__,
                 __FILE__);
-    cudaDeviceReset();
   }
 }
 void GpuSolver::cusparseerror(cusparseStatus_t code)
@@ -27,7 +26,6 @@ void GpuSolver::cusparseerror(cusparseStatus_t code)
                 cusparseGetErrorString(code),
                 __LINE__,
                 __FILE__);
-    cudaDeviceReset();
   }
 }
 
@@ -40,7 +38,6 @@ void GpuSolver::cusolvererror(cusolverStatus_t code)
                 cudaGetErrorString(*(cudaError_t*) &code),
                 __LINE__,
                 __FILE__);
-    cudaDeviceReset();
   }
 }
 
@@ -56,7 +53,6 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
   // the sparse format of placeInstForceMatrix.
   vector<int> cooRowIndex, cooColIndex;
   vector<float> cooVal;
-
   for (size_t row = 0; row < placeInstForceMatrix.rows(); row++) {
     for (size_t col = 0; col < placeInstForceMatrix.cols(); col++) {
       if (placeInstForceMatrix.coeffRef(row, col) != 0) {
@@ -70,13 +66,13 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
   m_ = fixedInstForceVec.size();
   nnz_ = cooVal.size();
   log_ = logger;
-
   d_cooRowIndex_.resize(nnz_);
   d_cooColIndex_.resize(nnz_);
   d_cooVal_.resize(nnz_);
   d_fixedInstForceVec_.resize(m_);
   d_instLocVec_.resize(m_);
 
+  // Copy the COO formatted triplets to device
   thrust::copy(cooRowIndex.begin(), cooRowIndex.end(), d_cooRowIndex_.begin());
   thrust::copy(cooColIndex.begin(), cooColIndex.end(), d_cooColIndex_.begin());
   thrust::copy(cooVal.begin(), cooVal.end(), d_cooVal_.begin());
@@ -84,35 +80,12 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
                &fixedInstForceVec[m_ - 1],
                d_fixedInstForceVec_.begin());
 
+  // Set raw pointers to point to the triplets in the device
   r_cooRowIndex_ = thrust::raw_pointer_cast(d_cooRowIndex_.data());
   r_cooColIndex_ = thrust::raw_pointer_cast(d_cooColIndex_.data());
   r_cooVal_ = thrust::raw_pointer_cast(d_cooVal_.data());
   r_fixedInstForceVec_ = thrust::raw_pointer_cast(d_fixedInstForceVec_.data());
   r_instLocVec_ = thrust::raw_pointer_cast(d_instLocVec_.data());
-
-  std::cout << d_cooRowIndex_[0] << ", " << d_cooRowIndex_[200] << std::endl;
-
-  // cudaerror(cudaMalloc((void**)&d_cooRowIndex_, nnz_ * sizeof(int)));
-  // cudaerror(cudaMalloc((void**)&d_cooColIndex_, nnz_ * sizeof(int)));
-  // cudaerror(cudaMalloc((void**)&d_cooVal_, nnz_ * sizeof(float)));
-  // cudaerror(cudaMalloc((void**) &d_fixedInstForceVec_, m_ * sizeof(float)));
-  // cudaerror(cudaMalloc((void**) &d_instLocVec_, m_ * sizeof(float)));
-
-  // //Copy data (COO storage method)
-  // cudaerror(cudaMemcpy(d_cooRowIndex_, cooRowIndex_.data(), sizeof(int)*nnz_,
-  // cudaMemcpyHostToDevice));
-  // cudaerror(cudaMemcpy(d_cooColIndex_,
-  //                     cooColIndex_.data(),
-  //                     sizeof(int) * nnz_,
-  //                     cudaMemcpyHostToDevice));
-  // cudaerror(cudaMemcpy(d_cooVal_, cooVal_.data(), sizeof(float)*nnz_,
-  // cudaMemcpyHostToDevice));
-  // cudaerror(cudaMemcpy(d_fixedInstForceVec_,
-  //                     fixedInstForceVec.data(),
-  //                     sizeof(float) * m_,
-  //                     cudaMemcpyHostToDevice));
-
-  std::cout << "Yes!" << std::endl;
 }
 
 void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
@@ -145,7 +118,6 @@ void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
   int* r_csrRowInd = NULL;
   thrust::device_vector<int> d_csrRowInd(m_ + 1, 0);
   r_csrRowInd = thrust::raw_pointer_cast(d_csrRowInd.data());
-  // cudaerror(cudaMalloc((void**)&d_csrRowInd, (m_+1) * sizeof(int)));
 
   cusparseerror(cusparseXcoo2csr(handleCusparse,
                                  r_cooRowIndex_,
@@ -216,17 +188,6 @@ float GpuSolver::error_cal()
   thrust::fill(t_Ax.begin(), t_Ax.end(), 0);
   r_Ax = thrust::raw_pointer_cast(t_Ax.data());
 
-  int* _cooRowIndex_ = (int*) malloc(sizeof(int) * nnz_);
-  cudaMemcpy(_cooRowIndex_,
-             r_cooRowIndex_,
-             sizeof(int) * nnz_,
-             cudaMemcpyDeviceToHost);
-  std::cout << "Pointer for d_cooRowIndex: " << &d_cooRowIndex_[0]
-            << &d_cooRowIndex_[1] << std::endl;
-  std::cout << d_cooRowIndex_[0] << ", " << d_cooRowIndex_[200] << std::endl;
-  std::cout << "Pointer for _cooRowIndex_: " << &_cooRowIndex_[0]
-            << &_cooRowIndex_[1] << std::endl;
-  std::cout << _cooRowIndex_[0] << ", " << _cooRowIndex_[200] << std::endl;
   unsigned int threads = 512;
   unsigned int blocks = (m_ + threads - 1) / threads;
   Multi_MatVec<<<blocks, threads>>>(error,

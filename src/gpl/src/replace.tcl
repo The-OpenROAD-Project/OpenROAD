@@ -37,6 +37,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
+    [-force_gpu_acceleration]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -82,7 +83,8 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental}
+      -incremental\
+      -force_cpu}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -91,7 +93,10 @@ proc global_placement { args } {
     set initial_place_max_iter $keys(-initial_place_max_iter)
     sta::check_positive_integer "-initial_place_max_iter" $initial_place_max_iter
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
-  } 
+  }
+
+  set force_cpu [info exists flags(-force_cpu)]
+  gpl::set_force_cpu $force_cpu
 
   set skip_io [info exists flags(-skip_io)]
   gpl::set_skip_io_mode_cmd $skip_io

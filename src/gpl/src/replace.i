@@ -144,12 +144,20 @@ replace_incremental_place_cmd()
   replace->doIncrementalPlace();
 }
 
+
 void
-set_timing_driven_mode(bool timing_driven)
+set_force_cpu(bool force_cpu)
+{
+  Replace* replace = getReplace();
+  replace->setForceCPU(force_cpu);
+}
+
+void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
   replace->setTimingDrivenMode(timing_driven);
 }
+
 
 void
 set_routability_driven_mode(bool routability_driven)

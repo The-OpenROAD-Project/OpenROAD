@@ -61,6 +61,7 @@ void InitialPlaceVars::reset() {
   maxFanout = 200;
   netWeightScale = 800.0;
   debug = false;
+  forceCPU = false;
 }
 
 InitialPlace::InitialPlace()
@@ -109,9 +110,11 @@ void InitialPlace::doBicgstabPlace()
     updatePinInfo();
     createSparseMatrix();
 #ifdef ENABLE_GPU
-    bool gpu = 1;
-    // CUSOLVER based on sparse matrix and QR decomposition for initial place
-    if (gpu)
+  if (!ipVars_.forceCPU){
+    int gpu_count = 0;
+    cudaGetDeviceCount(&gpu_count);	
+    if(gpu_count != 0){
+      // CUSOLVER based on sparse matrix and QR decomposition for initial place
       cudaSparseSolve(iter, placeInstForceMatrixX_,
                       fixedInstForceVecX_,
                       instLocVecX_,
@@ -120,19 +123,34 @@ void InitialPlace::doBicgstabPlace()
                       instLocVecY_,
                       errorX, errorY,
                       log_, pb_->hpwl());
-    else
+    }
+    else{
+      log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
+      // BiCGSTAB solver for initial place
       cpuSparseSolve(ipVars_.maxSolverIter, iter,
-                     placeInstForceMatrixX_,
-                     fixedInstForceVecX_,
-                     instLocVecX_,
-                     placeInstForceMatrixY_,
-                     fixedInstForceVecY_,
-                     instLocVecY_,
-                     errorX, errorY,
-                     log_, pb_->hpwl());
+              placeInstForceMatrixX_,
+              fixedInstForceVecX_,
+              instLocVecX_,
+              placeInstForceMatrixY_,
+              fixedInstForceVecY_,
+              instLocVecY_,
+              errorX, errorY,
+              log_, pb_->hpwl());
+    }
+  }
+  else{
+      cpuSparseSolve(ipVars_.maxSolverIter, iter,
+                    placeInstForceMatrixX_,
+                    fixedInstForceVecX_,
+                    instLocVecX_,
+                    placeInstForceMatrixY_,
+                    fixedInstForceVecY_,
+                    instLocVecY_,
+                    errorX, errorY,
+                    log_, pb_->hpwl());
+  }
 
 #else
-    // BiCGSTAB solver for initial place
     cpuSparseSolve(ipVars_.maxSolverIter, iter,
                    placeInstForceMatrixX_,
                    fixedInstForceVecX_,

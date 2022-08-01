@@ -120,6 +120,7 @@ class Replace
     void setPadLeft(int padding);
     void setPadRight(int padding);
 
+    void setForceCPU(bool force_cpu);
     void setTimingDrivenMode(bool mode);
 
     void setSkipIoMode(bool mode);
@@ -165,6 +166,7 @@ class Replace
     int initialPlaceMaxSolverIter_;
     int initialPlaceMaxFanout_;
     float initialPlaceNetWeightScale_;
+    bool forceCPU_;
 
     int nesterovPlaceMaxIter_;
     int binGridCntX_;

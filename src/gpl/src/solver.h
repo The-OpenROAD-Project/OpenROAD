@@ -80,5 +80,5 @@ void cpuSparseSolve(int maxSolverIter,
                  std::max(errorX, errorY),
                  hpwl);
 }
-}  // namespace gpl
+}  
 #endif

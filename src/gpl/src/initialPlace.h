@@ -33,7 +33,8 @@
 
 #ifndef __REPLACE_INIT_PLACE__
 #define __REPLACE_INIT_PLACE__
-
+    
+#include "nesterovPlace.h"
 #include <Eigen/SparseCore>
 #include "odb/db.h"
 #include <memory>
@@ -57,6 +58,7 @@ class InitialPlaceVars
   int maxFanout;
   float netWeightScale;
   bool debug;
+  bool forceCPU;
 
   InitialPlaceVars();
   void reset();
