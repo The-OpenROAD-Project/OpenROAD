@@ -124,9 +124,7 @@ enum class NetType
 
 struct PinGridLocation
 {
-  PinGridLocation(odb::dbITerm* iterm,
-                  odb::dbBTerm* bterm,
-                  odb::Point pt);
+  PinGridLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm, odb::Point pt);
 
   odb::dbITerm* iterm_;
   odb::dbBTerm* bterm_;
@@ -162,7 +160,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
-  void setCongestionReportFile(const char * file_name);
+  void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
@@ -176,7 +174,8 @@ class GlobalRouter
   void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
   void estimateRC(odb::dbNet* db_net);
-  // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
+  // Return GRT layer lengths in dbu's for db_net's route indexed by routing
+  // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute(bool save_guides = false);
   void saveCongestion();
@@ -186,8 +185,7 @@ class GlobalRouter
   int getTileSize() const;
 
   // repair antenna public functions
-  void repairAntennas(odb::dbMTerm* diode_mterm,
-                      int iterations);
+  void repairAntennas(odb::dbMTerm* diode_mterm, int iterations);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
@@ -235,7 +233,7 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
-  std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
+  std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
  private:
   // Net functions
@@ -265,8 +263,8 @@ class GlobalRouter
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
-                               int &track_consumption,
-                               std::vector<int> *&edge_costs_per_layer);
+                               int& track_consumption,
+                               std::vector<int>*& edge_costs_per_layer);
 
   // aux functions
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
@@ -335,13 +333,15 @@ class GlobalRouter
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
-  bool layerIsBlocked(int layer,
-                    odb::dbTechLayerDir& direction,
-                    const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-                    odb::Rect& extended_obs);
-  void extendObstructions(std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-                        int bottom_layer,
-                        int top_layer);
+  bool layerIsBlocked(
+      int layer,
+      odb::dbTechLayerDir& direction,
+      const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+      odb::Rect& extended_obs);
+  void extendObstructions(
+      std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+      int bottom_layer,
+      int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
                                 const std::vector<int>& layer_extensions);
   void findNetsObstructions(odb::Rect& die_area);
@@ -407,11 +407,11 @@ class GlobalRouter
 
   std::set<odb::dbNet*> dirty_nets_;
 
-  RepairAntennas *repair_antennas_;
+  RepairAntennas* repair_antennas_;
   std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   // variables congestion report file
-  const char * congestion_file_name_;
+  const char* congestion_file_name_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

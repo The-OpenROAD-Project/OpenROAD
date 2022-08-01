@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+
 #include "DataType.h"
 #include "FastRoute.h"
 #include "utl/Logger.h"
@@ -1310,7 +1311,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     h_cost_table_[i]
         = getCost(i, logis_cof, cost_height, slope, h_capacity_, cost_type);
   }
-  for (int i = 0; i < max_usage_multiplier * v_capacity_; i++){
+  for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
     v_cost_table_[i]
         = getCost(i, logis_cof, cost_height, slope, v_capacity_, cost_type);
   }
@@ -2089,17 +2090,20 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   v_cost_table_.clear();
 }
 
-void FastRouteCore::getCongestionGrid(std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV, std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH){
+void FastRouteCore::getCongestionGrid(
+    std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
+    std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH)
+{
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
-	const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-	const GSegment segment = GSegment(xreal, yreal,1,xreal,yreal,1);
-	const int usage = h_edges_[i][j].usage;
+        const int yreal = tile_size_ * (i + 0.5) + y_corner_;
+        const GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
+        const int usage = h_edges_[i][j].usage;
         const int capacity = h_edges_[i][j].cap;
-	congestionGridH.push_back({segment, {capacity, usage}});
+        congestionGridH.push_back({segment, {capacity, usage}});
       }
     }
   }
@@ -2108,12 +2112,12 @@ void FastRouteCore::getCongestionGrid(std::vector<std::pair<GSegment, TileConges
     for (int j = 0; j < x_grid_; j++) {
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
-	const int xreal = tile_size_ * (j + 0.5) + x_corner_;
-	const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-	GSegment segment = GSegment(xreal, yreal,1,xreal,yreal,1);
+        const int xreal = tile_size_ * (j + 0.5) + x_corner_;
+        const int yreal = tile_size_ * (i + 0.5) + y_corner_;
+        GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
         const int usage = v_edges_[i][j].usage;
         const int capacity = v_edges_[i][j].cap;
-	congestionGridV.push_back({segment, {capacity, usage}});
+        congestionGridV.push_back({segment, {capacity, usage}});
       }
     }
   }
