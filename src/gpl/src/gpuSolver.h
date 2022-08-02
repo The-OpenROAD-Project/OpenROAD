@@ -50,8 +50,8 @@ class GpuSolver
   thrust::device_vector<int> d_cooRowIndex_, d_cooColIndex_;
   thrust::device_vector<float> d_cooVal_, d_fixedInstForceVec_, d_instLocVec_;
 
-  // {r_cooRowIndex_, r_cooColIndex_, r_cooVal_} are the raw pointing to the
-  // device ectors above.
+  // {r_cooRowIndex_, r_cooColIndex_, r_cooVal_} are the raw pointers to the
+  // device vectors above.
   int *r_cooRowIndex_, *r_cooColIndex_;
   float *r_cooVal_, *r_instLocVec_, *r_fixedInstForceVec_;
 

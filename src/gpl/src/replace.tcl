@@ -37,7 +37,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
-    [-force_gpu_acceleration]\
+    [-force_cpu]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\

@@ -24,7 +24,6 @@ using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
 using utl::GPL;
 
-using namespace std;
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
 #ifdef ENABLE_GPU
@@ -40,11 +39,11 @@ typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
                      utl::Logger* logger,
                      int hpwl)
 {
-  class GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
+  GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
   SP1.cusolverCal(instLocVecX);
   errorX = SP1.error_cal();
 
-  class GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
+  GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
   SP2.cusolverCal(instLocVecY);
   errorY = SP2.error_cal();
   logger->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
