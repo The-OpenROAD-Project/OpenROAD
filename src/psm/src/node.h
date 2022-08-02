@@ -35,91 +35,94 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_NODE__
 
 #include <map>
+
 #include "odb/db.h"
 #include "utl/Logger.h"
 namespace psm {
 using odb::dbInst;
 
-typedef std::pair<int, int> NodeLoc;
-typedef std::pair<int, int> BBox;
-typedef int NodeIdx;  // TODO temp as it interfaces with SUPERLU
-typedef std::pair<NodeIdx, NodeIdx> GMatLoc;
+using odb::Point;
+using BBox = std::pair<int, int>;
+using NodeIdx = int;  // TODO temp as it interfaces with SUPERLU
+using GMatLoc = std::pair<NodeIdx, NodeIdx>;
 
 //! Data structure for the Dictionary of Keys Matrix
-typedef struct {
+struct DokMatrix
+{
   NodeIdx num_rows;
   NodeIdx num_cols;
   std::map<GMatLoc, double> values;  // pair < col_num, row_num >
-} DokMatrix;
+};
 
 //! Data structure for the Compressed Sparse Column Matrix
-typedef struct {
+struct CscMatrix
+{
   NodeIdx num_rows;
   NodeIdx num_cols;
   NodeIdx nnz;
   std::vector<NodeIdx> row_idx;
   std::vector<NodeIdx> col_ptr;
   std::vector<double> values;
-} CscMatrix;
+};
 
 //! Node class which stores the properties of the node of the PDN
-class Node {
+class Node
+{
  public:
-  Node() : m_loc(std::make_pair(0.0, 0.0)), m_bBox(std::make_pair(0.0, 0.0)) {}
-  ~Node() {}
+  Node() : bBox_(std::make_pair(0.0, 0.0)) {}
   //! Get the layer number of the node
-  int GetLayerNum();
+  int getLayerNum();
   //! Set the layer number of the node
-  void SetLayerNum(int layer);
+  void setLayerNum(int layer);
   //! Get the location of the node
-  NodeLoc GetLoc();
+  Point getLoc();
   //! Set the location of the node using x and y coordinates
-  void SetLoc(int x, int y);
+  void setLoc(int x, int y);
   //! Set the location of the node using x,y and layer information
-  void SetLoc(int x, int y, int l);
+  void setLoc(int x, int y, int l);
   //! Get location of the node in G matrix
-  NodeIdx GetGLoc();
+  NodeIdx getGLoc();
   //! Get location of the node in G matrix
-  void SetGLoc(NodeIdx loc);
+  void setGLoc(NodeIdx loc);
   //! Function to print node details
-  void Print(utl::Logger* logger);
+  void print(utl::Logger* logger);
   //! Function to set the bounding box of the stripe
-  void SetBbox(int dX, int dY);
+  void setBbox(int dX, int dY);
   //! Function to get the bounding box of the stripe
-  BBox GetBbox();
+  BBox getBbox();
   //! Function to update the stripe
-  void UpdateMaxBbox(int dX, int dY);
+  void updateMaxBbox(int dX, int dY);
   //! Function to set the current value at a particular node
-  void SetCurrent(double t_current);
+  void setCurrent(double t_current);
   //! Function to get the value of current at a node
-  double GetCurrent();
+  double getCurrent();
   //! Function to add the current source
-  void AddCurrentSrc(double t_current);
+  void addCurrentSrc(double t_current);
   //! Function to set the value of the voltage source
-  void SetVoltage(double t_voltage);
+  void setVoltage(double t_voltage);
   //! Function to get the value of the voltage source
-  double GetVoltage();
+  double getVoltage();
 
-  bool GetConnected();
+  bool getConnected();
 
-  void SetConnected();
+  void setConnected();
 
-  bool HasInstances();
+  bool hasInstances();
 
-  std::vector<dbInst*> GetInstances();
+  std::vector<dbInst*> getInstances();
 
-  void AddInstance(dbInst* inst);
+  void addInstance(dbInst* inst);
 
  private:
-  int m_layer;
-  NodeLoc m_loc;  // layer,x,y
-  NodeIdx m_node_loc{0};
-  BBox m_bBox;
-  double m_current_src{0.0};
-  double m_voltage{0.0};
-  bool m_connected{false};
-  bool m_has_instances{false};
-  std::vector<dbInst*> m_connected_instances;
+  int layer_;
+  Point loc_;
+  NodeIdx node_loc_{0};
+  BBox bBox_;
+  double current_src_{0.0};
+  double voltage_{0.0};
+  bool connected_{false};
+  bool has_instances_{false};
+  std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm
 #endif

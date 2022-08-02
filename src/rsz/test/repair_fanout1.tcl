@@ -18,7 +18,3 @@ estimate_parasitics -placement
 report_check_types -max_fanout
 repair_design
 report_check_types -max_fanout
-
-# set repaired_filename [make_result_file "repair_fanout1.def"]
-# write_def $repaired_filename
-# diff_file repair_fanout1.defok $repaired_filename

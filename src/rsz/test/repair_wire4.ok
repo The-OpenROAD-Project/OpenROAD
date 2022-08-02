@@ -20,9 +20,9 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
-repeater1/Z manhtn 858.7 steiner 858.7 0.10
-repeater2/Z manhtn 857.7 steiner 857.7 0.10
-repeater3/Z manhtn 654.4 steiner 654.4 0.06
+wire1/Z manhtn 858.7 steiner 858.7 0.10
+wire2/Z manhtn 857.7 steiner 857.7 0.10
+max_length3/Z manhtn 654.4 steiner 654.4 0.06
 u2/Z manhtn 650.2 steiner 650.2 0.06
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00

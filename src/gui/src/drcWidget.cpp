@@ -437,6 +437,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
   std::regex violation_type("\\s*violation type: (.*)");
   std::regex srcs("\\s*srcs: (.*)");
+  std::regex congestion_line("\\s*congestion information: (.*)");
   std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
   std::regex bbox_corners(
       "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
@@ -483,6 +484,15 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     line_number++;
     std::getline(report, line);
+    std::string congestion_information = "";
+
+    // congestion information (optional)
+    if (std::regex_match(line, base_match, congestion_line)) {
+      congestion_information = base_match[1].str();
+      line_number++;
+      std::getline(report, line);
+    }
+
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
       logger_->error(
@@ -495,7 +505,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr) {
+    if (layer == nullptr && base_match[2].str() != "-") {
       logger_->warn(utl::GUI,
                     40,
                     "Unable to find tech layer (line: {}): {}",
@@ -640,6 +650,8 @@ void DRCWidget::loadTRReport(const QString& filename)
       name += "<unknown>";
     }
     name += ", Sources: " + sources;
+
+    comment += congestion_information;
 
     std::vector<DRCViolation::DRCShape> shapes({rect});
     violations_.push_back(std::make_unique<DRCViolation>(
