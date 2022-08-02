@@ -57,9 +57,9 @@ A shared folder on a NFS is used to share routing updates between the leader and
 **N.B:** Since we are using google cloud, we set up our shared folder on a VM instance and record its internal IP to be used in later steps. 
 
 
-## YAML file to run the workers and the load balancer 
+## Configuring the cluster
 
-In the first step, we created a cluster on Google cloud. In this step we connect to this cluster and configure it using the yaml configuration file found in this [link](https://github.com/osamahammad21/OpenROAD-K8S/blob/master/balancer_and_workers.yaml).
+In the first step, we created a cluster on Google cloud. In this step we connect to this cluster and configure it.
 
 
 ### Connecting to the cluster:
@@ -118,7 +118,7 @@ For the leader to communicate with the cluster, we need to supply:
 
 ## Leader TCL file
 
-An example of the leader tcl file could found at this link. The important parameters to change are the following in the detailed_route command:
+An example of the leader tcl file could found at this [link](../test/Distributed/example_leader.tcl). The important parameters to change are the following in the detailed_route command:
 
 * remote_host: the IP that you obtained in the previous section.
 * remote_port: the value of the nodePort from the previous section.
