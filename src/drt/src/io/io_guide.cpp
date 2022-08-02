@@ -125,7 +125,7 @@ void io::Parser::patchGuides(frNet* net,
       Point gCell(x, y);
       Rect gCellBox = design->getTopBlock()->getGCellBox(gCell);
       for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
-        if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
+        if (design->getTech()->getLayer(z)->getType() != dbTechLayerType::ROUTING)
           continue;
         area = 0;
         for (auto& pinRect : pinShapes) {

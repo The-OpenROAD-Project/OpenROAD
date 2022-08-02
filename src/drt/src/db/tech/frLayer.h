@@ -50,12 +50,9 @@ class frLayer
   // constructor
   frLayer()
       : db_layer_(nullptr),
-        type(dbTechLayerType::IMPLANT),
+        fakeCut(false),
+        fakeMs(false),
         layerNum(0),
-        pitch(0),
-        width(0),
-        minWidth(0),
-        numMasks(1),
         defaultViaDef(nullptr),
         hasMinStepViol(false),
         minSpc(nullptr),
@@ -90,15 +87,11 @@ class frLayer
         drEolCon()
   {
   }
-  frLayer(frLayerNum layerNumIn, const frString& nameIn)
+  frLayer(frLayerNum layerNumIn, const frString& nameIn) //remove name from signature
       : db_layer_(nullptr),
-        type(dbTechLayerType::IMPLANT),
+        fakeCut(false),
+        fakeMs(false),
         layerNum(layerNumIn),
-        name(nameIn),
-        pitch(0),
-        width(0),
-        minWidth(-1),
-        numMasks(1),
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
@@ -127,30 +120,29 @@ class frLayer
   }
   // setters
   void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
-  void setNumMasks(frUInt4 numMasksIn) { numMasks = numMasksIn; }
+  void setFakeCut(bool fakeCutIn) { fakeCut = fakeCutIn; }
+  void setFakeMs(bool fakeMsIn) { fakeMs = fakeMsIn; }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
-  void setName(const frString& nameIn) { name = nameIn; }
-  void setPitch(frUInt4 in) { pitch = in; }
   void setWidth(frUInt4 widthIn) { width = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
-  void setDir(dbTechLayerDir dirIn) { dir = dirIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
   void addConstraint(frConstraint* consIn) { constraints.push_back(consIn); }
-  void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
   // getters
   odb::dbTechLayer* getDbLayer() const { return db_layer_; }
-  frUInt4 getNumMasks() const { return numMasks; }
+  bool getFakeCut() const { return fakeCut;}
+  bool getFakeMs() const { return fakeMs;}
+  frUInt4 getNumMasks() const { return (fakeCut || fakeMs)? 1 : db_layer_->getNumMasks(); }
   frLayerNum getLayerNum() const { return layerNum; }
-  void getName(frString& nameIn) const { nameIn = name; }
-  frString getName() const { return name; }
-  frUInt4 getPitch() const { return pitch; }
+  void getName(frString& nameIn) const { nameIn = (fakeCut)? "FR_VIA": (fakeMs)? "FR_MASTERSLICE": db_layer_->getName(); }
+  frString getName() const { return (fakeCut)? "Fr_VIA": (fakeMs)? "FR_MASTERSLICE": db_layer_->getName(); }
+  frUInt4 getPitch() const { return (fakeCut || fakeMs)? 0 : db_layer_->getPitch(); }
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
-  dbTechLayerDir getDir() const { return dir; }
-  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
-  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
+  dbTechLayerDir getDir() const { return (fakeCut || fakeMs)? dbTechLayerDir("none") : db_layer_->getDirection(); }
+  bool isVertical() { return (fakeCut || fakeMs)? false : db_layer_->getDirection() == dbTechLayerDir::VERTICAL; }
+  bool isHorizontal() { return (fakeCut || fakeMs)? false : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL; }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any double/triple patterned
@@ -170,7 +162,7 @@ class frLayer
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
-  dbTechLayerType getType() const { return type; }
+  dbTechLayerType getType() const { return (fakeCut)? dbTechLayerType("cut") : (fakeMs)? dbTechLayerType("masterslice") : db_layer_->getType(); }
 
   // cut class (new)
   void addCutClass(frLef58CutClass* in)
@@ -500,7 +492,7 @@ class frLayer
     }
   }
   void setRecheckConstraint(frRecheckConstraint* in) { recheckConstraint = in; }
-  frRecheckConstraint* getRecheckConstraint() { return recheckConstraint; }
+  frRecheckConstraint* getRecheckConstraint() { return recheckConstraint; } 
   void setShortConstraint(frShortConstraint* in) { shortConstraint = in; }
   frShortConstraint* getShortConstraint() { return shortConstraint; }
   void setOffGridConstraint(frOffGridConstraint* in) { offGridConstraint = in; }
@@ -667,14 +659,11 @@ class frLayer
 
  protected:
   odb::dbTechLayer* db_layer_;
-  dbTechLayerType type;
+  bool fakeCut;
+  bool fakeMs;
   frLayerNum layerNum;
-  frString name;
-  frUInt4 pitch;
   frUInt4 width;
   frUInt4 minWidth;
-  frUInt4 numMasks;
-  dbTechLayerDir dir;
   frViaDef* defaultViaDef;
   bool hasMinStepViol;
   std::set<frViaDef*> viaDefs;

@@ -1486,21 +1486,19 @@ void io::Parser::addDefaultMasterSliceLayer()
 {
   unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
+  tmpMSLayer->setFakeMs(true);
   tmpMSLayer->setLayerNum(readLayerCnt++);
-  tmpMSLayer->setName(masterSliceLayerName);
   tech->addLayer(std::move(uMSLayer));
-  tmpMSLayer->setType(dbTechLayerType::MASTERSLICE);
-}
+  }
 
 void io::Parser::addDefaultCutLayer()
 {
   std::string viaLayerName("FR_VIA");
   unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
   auto tmpCutLayer = uCutLayer.get();
+  tmpCutLayer->setFakeCut(true);
   tmpCutLayer->setLayerNum(readLayerCnt++);
-  tmpCutLayer->setName(viaLayerName);
   tech->addLayer(std::move(uCutLayer));
-  tmpCutLayer->setType(dbTechLayerType::CUT);
 }
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
@@ -1515,7 +1513,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
-  tmpLayer->setName(layer->getName());
   tech->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
@@ -1532,14 +1529,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech->addUConstraint(std::move(minWidthConstraint));
 
-  tmpLayer->setType(dbTechLayerType::ROUTING);
-  if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
-    tmpLayer->setDir(dbTechLayerDir::HORIZONTAL);
-  else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
-    tmpLayer->setDir(dbTechLayerDir::VERTICAL);
-
-  tmpLayer->setPitch(layer->getPitch());
-  tmpLayer->setNumMasks(layer->getNumMasks());
 
   // Add off grid rule for every layer
   auto recheckConstraint = make_unique<frRecheckConstraint>();
@@ -1825,8 +1814,6 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
-  tmpLayer->setName(layer->getName());
-  tmpLayer->setType(dbTechLayerType::CUT);
   tech->addLayer(std::move(uLayer));
 
   auto shortConstraint = make_unique<frShortConstraint>();

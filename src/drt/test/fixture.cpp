@@ -52,13 +52,13 @@ void Fixture::addLayer(frTechObject* tech,
 {
   auto layer = std::make_unique<frLayer>();
   layer->setLayerNum(tech->getTopLayerNum() + 1);
-  layer->setName(name);
-  layer->setType(type);
-  layer->setDir(dir);
-
+  layer->setDbLayer(odb::dbTechLayer::create(NULL, name, type));
+  // layer->setName(name);
+  // layer->setType(type);
+  // layer->getDbLayer()->setDirection(dir);
   layer->setWidth(100);
   layer->setMinWidth(100);
-  layer->setPitch(200);
+  //layer->getDbLayer()->setPitch(200);
 
   // These constraints are mandatory
   if (type == dbTechLayerType::ROUTING) {
