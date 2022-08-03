@@ -26,6 +26,8 @@ The Diagram above shows four main components to run distributed routing:
 
 ## Setting up the cluster on Google Cloud
 
+![alt_text](create_cluster.gif "Creating a cluster")
+
 * Sign in to your Google cloud console dashboard.
 * At the top left, select the navigation menu represented by the three lines icon.
 * Click “Kubernetes Engine” from the menu. 
@@ -48,9 +50,9 @@ A shared folder on a NFS is used to share routing updates between the leader and
 
 
 
-1. The IP of the NFS server shall be kept to be used in further steps.
-2. The folder shall be mounted to the leader’s machine. Mounting is also explained in the tutorial.
-3. The machine should be at the same zone of the cluster[^1].
+1. The IP of the NFS server must be kept to be used in further steps.
+2. The folder will be mounted to the leader’s machine. Mounting is also explained in the tutorial.
+3. The machine should be in the same zone of the cluster[^1].
 
 [https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04)
 
@@ -61,22 +63,21 @@ A shared folder on a NFS is used to share routing updates between the leader and
 
 In the first step, we created a cluster on Google cloud. In this step we connect to this cluster and configure it.
 
-
-### Connecting to the cluster:
+![alt_text](connect_to_cluster.gif "Connecting to cluster")
 
 1. Go to your google cloud console.
+
 2. On the top right to the left of the notification icon, click the “Activate cloud shell” icon. 
-3. When the shell is done loading use the following command to autogenerate the kubeconfig that will allow you to access your cluster using “kubectl” commands: 
+
+3. Right above the terminal on the right, click the “Open editor” button and wait for it to load.
+
+3. When it is done loading use the following command to autogenerate the kubeconfig that will allow you to access your cluster using “kubectl” commands: 
 
        gcloud container clusters get-credentials <cluster name> --zone <cluster zone>
 
-4. Now your cluster shall be connected to your Google cloud CLI.
+5. Now your cluster is connected to your Google cloud CLI.
 
-
-### Adding the yaml configuration file:
-
-1. Right above the terminal on the right, click the “Open editor” button and wait for it to load.
-2. The file [k8s-drt.yaml](../test/Distributed/k8s-drt.yaml) is an example configuration file. **However**, you need to replace *${SHARED_FOLDER_PATH}* and *${NFS_SERVER_IP}* with the actual values.
+4. The file [k8s-drt.yaml](../test/Distributed/k8s-drt.yaml) is an example configuration file. **However**, you need to replace *${SHARED_FOLDER_PATH}* and *${NFS_SERVER_IP}* with the actual values.
 
 
 ### Explaining configuration file:
@@ -84,18 +85,18 @@ In the first step, we created a cluster on Google cloud. In this step we connect
 * Every section of the configuration file is separated by “---” 
 * The first section of the file is a service with the name “workers”, this service is responsible for creating the domain name for the auto discovery of the workers by the loadbalancer node. The domain name is the exact same name of the service, in this case “workers”. Furthermore, the port of the domain server is the same as the port of the service, in this case “1111”.
 * The second section of the configuration creates a StatefulSet of workers. This section has many important configurations listed below:
-1. The value of “replicas” under “spec” represents the number of workers that will be created in the cluster.
-2. The value of “serviceName” under “spec” must match the value of the service name in the first section.
-3.  Under “spec” / “template” / “spec” / “containers”:
-    1. “image” must have the value of openroad docker image directory on docker hub.
-    2. Under “command”, you can find two commands, the first runs openroad. The second runs the tcl file in the shared directory. It’s necessary to change the directory to match your shared folder directory.
-    3. Under “volumeMounts”, the value of “mountPath” must match the path of the shared directory.
-    4. Under “env” for the “value” under the name: “MY_POD_CPU” determines the thread count that openroad will be using.
-    5. Under “resources” / “requests” the value of “cpu” determines the number of cpus assigned to the worker pod. Note that this value should at least match the number provide for the thread count. Further, this value must not exceed the maximum number of cpus of the machines used for the cluster.
-    6. Under “lifecycle” / “preStop” / “exec” / “command” you should change the directory of the shared folder to match yours.
-4. Under “volumes” / “nfs”:
-    7. The value of “server” must match the value of the IP of the machine that has your NFS. Since we are making the tutorial for google cloud, we use the internal IP of the NFS machine. 
-    8. For the value of “path”, change the directory of the shared folder to match yours.
+    1. The value of “replicas” under “spec” represents the number of workers that will be created in the cluster.
+    2. The value of “serviceName” under “spec” must match the value of the service name in the first section.
+    3.  Under “spec” / “template” / “spec” / “containers”:
+        1. “image” must have the value of openroad docker image directory on docker hub.
+        2. Under “command”, you can find two commands, the first runs openroad. The second runs the tcl file in the shared directory. It’s necessary to change the directory to match your shared folder directory.
+        3. Under “volumeMounts”, the value of “mountPath” must match the path of the shared directory.
+        4. Under “env” for the “value” under the name: “MY_POD_CPU” determines the thread count that openroad will be using.
+        5. Under “resources” / “requests” the value of “cpu” determines the number of cpus assigned to the worker pod. Note that this value should at least match the number provide for the thread count. Further, this value must not exceed the maximum number of cpus of the machines used for the cluster.
+        6. Under “lifecycle” / “preStop” / “exec” / “command” you should change the directory of the shared folder to match yours.
+    4. Under “volumes” / “nfs”:
+        7. The value of “server” must match the value of the IP of the machine that has your NFS. Since we are making the tutorial for google cloud, we use the internal IP of the NFS machine. 
+        8. For the value of “path”, change the directory of the shared folder to match yours.
 * The third section of the configuration file creates the pod that runs the loadbalancer. The configuration of this section is very similar to what is explained for the second section; therefore, no further explanation is needed.
 * The fourth section creates the service that connects the pods with the distributed routing leader. The important value in this section is “nodePort” under “spec” / “ports”. This value should be kept to be used later in the leader TCL file. 
 * After editing the file, run the following command in Google cloud console terminal:

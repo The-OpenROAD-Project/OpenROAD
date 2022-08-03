@@ -89,9 +89,6 @@ spec:
               /usr/bin/openroad /home/balancer.tcl ;
           ports:
           - containerPort: 1111
-          volumeMounts:
-          - name: nfs-volume
-            mountPath: ${SHARED_FOLDER_PATH}
           env:
           - name: MY_POD_IP
             valueFrom:
@@ -100,12 +97,6 @@ spec:
           resources:
             requests:
               cpu: 31
-      volumes:
-      - name: nfs-volume
-        nfs:
-          server: ${NFS_SERVER_IP}
-          path: ${SHARED_FOLDER_PATH}
-          readOnly: no
 ---
 apiVersion: v1
 kind: Service
