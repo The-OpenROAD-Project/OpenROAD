@@ -2627,7 +2627,16 @@ std::vector<Net*> GlobalRouter::initNetlist()
       nets.push_back(net);
     }
   }
+
+  auto compareIsNonLeafClock = [this](const Net* a, const Net* b) {
+    short is_non_leaf_clock_a = isNonLeafClock(a->getDbNet()) ? 1 : 0;
+    short is_non_leaf_clock_b = isNonLeafClock(b->getDbNet()) ? 1 : 0;
+
+    return is_non_leaf_clock_a > is_non_leaf_clock_b;
+  };
+
   std::sort(nets.begin(), nets.end(), nameLess);
+  std::sort(nets.begin(), nets.end(), compareIsNonLeafClock);
   return nets;
 }
 
