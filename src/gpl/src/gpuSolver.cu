@@ -49,15 +49,18 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
 {
   // {cooRowIndex_, cooColIndex_, cooVal_} are the host vectors used to store
   // the sparse format of placeInstForceMatrix.
+  nnz_ = placeInstForceMatrix.nonZeros();
   vector<int> cooRowIndex, cooColIndex;
   vector<float> cooVal;
-  for (size_t row = 0; row < placeInstForceMatrix.rows(); row++) {
-    for (size_t col = 0; col < placeInstForceMatrix.cols(); col++) {
-      if (placeInstForceMatrix.coeffRef(row, col) != 0) {
-        cooRowIndex.push_back(row);
-        cooColIndex.push_back(col);
-        cooVal.push_back(placeInstForceMatrix.coeffRef(row, col));
-      }
+  cooRowIndex.reserve(nnz_);
+  cooColIndex.reserve(nnz_);
+  cooVal.reserve(nnz_);
+
+  for(int row = 0; row < placeInstForceMatrix.outerSize(); row++){
+    for(typename Eigen::SparseMatrix<float,Eigen::RowMajor>::InnerIterator it(placeInstForceMatrix,row); it; ++it){
+      cooRowIndex.push_back(it.row());
+      cooColIndex.push_back(it.col());
+      cooVal.push_back(it.value());
     }
   }
 
