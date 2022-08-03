@@ -2502,7 +2502,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   // merge nets to reduce runtime
   MergeNets(nets);
   if (parent->GetParent() != nullptr) {
-    pin_access_th_ = 0.05;
+    //pin_access_th_ = 0.05;
     // update the size of each pin access macro
     // each pin access macro with have their fences
     // check the net connection
@@ -2561,7 +2561,12 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   }
   
   std::ofstream file;
-  file.open("net.txt");
+  std::string file_name = parent->GetName();
+  for (int i = 0; i < file_name.size(); i++)
+    if (file_name[i] == '/')
+      file_name[i] = '*';
+      
+  file.open(file_name + "net.txt");
   for (auto& net : nets)
     file << macros[net.terminals.first].GetName() << "   "
          << macros[net.terminals.second].GetName() << "   "
@@ -2676,11 +2681,9 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   best_sa->PrintResults();
   std::cout << "\n\n";
 
-  if (parent->GetParent() == nullptr) {
   // For debug
   //std::ofstream file;
-  std::string file_name = "test_floorplan.txt";
-  file.open(file_name);
+  file.open(file_name + ".fp.txt");
   for (auto& macro : shaped_macros)
     file << macro.GetName() << "   "
          << macro.GetX()    << "   "
@@ -2688,15 +2691,6 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
          << macro.GetWidth() << "   "
          << macro.GetHeight() << std::endl;
   file.close();
- 
-  file.open("net.txt");
-  for (auto& net : nets)
-    file << macros[net.terminals.first].GetName() << "   "
-         << macros[net.terminals.second].GetName() << "   "
-         << net.weight << std::endl;
-  file.close();
-  }
-
 
   for (auto& macro : shaped_macros) {
     std::cout << macro.GetName() << "   "
@@ -2900,10 +2894,13 @@ bool HierRTLMP::ShapeChildrenCluster(Cluster* parent,
       float area = cluster->GetStdCellArea() / target_util;
       const std::vector<std::pair<float, float> > tilings = cluster->GetMacroTilings();
       std::vector<std::pair<float, float> > width_list;
-      area += tilings[0].first * tilings[0].second;
+      area += tilings[0].first * (1 + pin_access_th_)
+             * tilings[0].second * (1 + pin_access_th_);
       for (auto& shape : tilings) {
         if (shape.first * shape.second <= area)
-          width_list.push_back(std::pair<float, float>(shape.first, area / shape.second));
+          width_list.push_back(std::pair<float, float>(
+                        shape.first * (1 + pin_access_th_), 
+                        area / shape.second / (1 + pin_access_th_)));
       }
       //width_list.push_back(std::pair<float, float>(shape.first, area / shape.second));
       std::cout << "[Debug][CalShape] name:  " << cluster->GetName() << "  ";
