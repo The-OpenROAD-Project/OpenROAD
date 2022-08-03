@@ -543,6 +543,12 @@ thread_count()
   return ord->getThreadCount();
 }
 
+void design_created()
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->designCreated();
+}
+
 }
 
 %} // inline

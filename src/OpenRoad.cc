@@ -425,6 +425,14 @@ OpenRoad::linkDesign(const char *design_name)
 }
 
 void
+OpenRoad::designCreated()
+{
+  for (Observer* observer : observers_) {
+    observer->postReadDb(db_);
+  }
+}
+
+void
 OpenRoad::writeVerilog(const char *filename,
                        bool sort,
                        bool include_pwr_gnd,
