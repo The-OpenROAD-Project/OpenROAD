@@ -1,8 +1,10 @@
-diff --git a/include/openroad/OpenRoad.hh b/include/openroad/OpenRoad.hh
-index 5026a61e..10fd7594 100755
---- a/include/openroad/OpenRoad.hh
-+++ b/include/openroad/OpenRoad.hh
-@@ -104,6 +104,9 @@ namespace antenna_checker {
+diff --git a/include/ord/OpenRoad.hh b/include/ord/OpenRoad.hh
+old mode 100644
+new mode 100755
+index 1b063e650..c2ab92e89
+--- a/include/ord/OpenRoad.hh
++++ b/include/ord/OpenRoad.hh
+@@ -120,6 +120,9 @@ namespace ant {
  class AntennaChecker;
  }
  
@@ -10,106 +12,86 @@ index 5026a61e..10fd7594 100755
 +class Tool;
 +}
  
- namespace ord {
- 
-@@ -134,6 +137,8 @@ public:
-   psm::PDNSim* getPDNSim() { return pdnsim_; }
-   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
-   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+ namespace par {
+ class PartitionMgr;
+@@ -183,6 +186,7 @@ public:
+   pdn::PdnGen *getPdnGen() { return pdngen_; }
+   dst::Distributed *getDistributed() { return distributer_; }
+   stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
 +  tool::Tool *getTool(){ return tool_; }
-+
+ 
    // Return the bounding box of the db rows.
    odb::Rect getCore();
-   // Return true if the command units have been initialized.
-@@ -205,6 +210,7 @@ private:
- #endif
-   replace::Replace *replace_;
-   psm::PDNSim *pdnsim_; 
+@@ -276,6 +280,7 @@ private:
+   pdn::PdnGen *pdngen_;
+   dst::Distributed *distributer_;
+   stt::SteinerTreeBuilder *stt_builder_;
 +  tool::Tool *tool_;
  
    std::set<Observer *> observers_;
  
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index a39167a0..e8b2a8b5 100755
+index 5a3f49c0d..7bc37144a 100755
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -32,7 +32,9 @@ set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
- set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
- set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
- set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
-+set(TOOL_HOME ${OPENROAD_HOME}/src/tool)
- 
-+set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
- set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
- 
- set(OPENROAD_SOURCE
-@@ -235,6 +237,7 @@ if(BUILD_OPENPHYSYN)
-   add_subdirectory(OpenPhySyn)
- endif()
- add_subdirectory(gui)
+@@ -223,6 +223,7 @@ add_subdirectory(drt)
+ add_subdirectory(utl)
+ add_subdirectory(dst)
+ add_subdirectory(pdn)
 +add_subdirectory(tool)
  
  ################################################################
  
-@@ -272,6 +275,8 @@ target_include_directories(openroad
-   ${OPENRCX_HOME}/include
-   ${PDNSIM_HOME}/include
-   ${ANTENNACHECKER_HOME}/include
-+  ${TOOL_HOME}/include
-+
-   ${TCL_INCLUDE_PATH}
-   ${Boost_INCLUDE_DIRS}
-   )
-@@ -297,6 +302,7 @@ target_link_libraries(openroad
-   ParquetFP
-   ABKCommon
-   pdnsim
+@@ -283,6 +284,7 @@ target_link_libraries(openroad
+   par
+   utl
+   pdn
 +  tool
-   zlib
-   tm
-   defin
+   ${ABC_LIBRARY}
+   ${TCL_LIBRARY}
+   ${CMAKE_THREAD_LIBS_INIT}
 diff --git a/src/OpenRoad.cc b/src/OpenRoad.cc
-index 622aa11e..fff8e1a9 100755
+index d5e1a6ed9..f41608400 100755
 --- a/src/OpenRoad.cc
 +++ b/src/OpenRoad.cc
-@@ -70,6 +70,8 @@
-   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
- #endif
+@@ -85,6 +85,8 @@
+ #include "dst/MakeDistributed.h"
+ #include "stt/MakeSteinerTreeBuilder.h"
  
 +#include "tool/MakeTool.hh"
 +
  namespace sta {
- extern const char *openroad_tcl_inits[];
+ extern const char *openroad_swig_tcl_inits[];
  }
-@@ -197,6 +199,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
- #ifdef BUILD_OPENPHYSYN
-   psn_ = makePsn();
- #endif
+@@ -228,6 +230,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
+   pdngen_ = makePdnGen();
+   distributer_ = makeDistributed();
+   stt_builder_ = makeSteinerTreeBuilder();
 +  tool_ = makeTool();
  
    // Init components.
-   Openroad_Init(tcl_interp);
-@@ -222,6 +225,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
- #ifdef BUILD_OPENPHYSYN
-     initPsn(this);
- #endif
+   Openroad_swig_Init(tcl_interp);
+@@ -260,6 +263,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
+   initPdnGen(this);
+   initDistributed(this);
+   initSteinerTreeBuilder(this);
 +  initTool(this);
  
    // Import exported commands to global namespace.
    Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
 diff --git a/src/tool/.gitignore b/src/tool/.gitignore
 new file mode 100644
-index 00000000..f820cf94
+index 000000000..f820cf945
 --- /dev/null
 +++ b/src/tool/.gitignore
 @@ -0,0 +1 @@
 +test/results
 diff --git a/src/tool/CMakeLists.txt b/src/tool/CMakeLists.txt
 new file mode 100644
-index 00000000..9fe88f75
+index 000000000..c8396ce39
 --- /dev/null
 +++ b/src/tool/CMakeLists.txt
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,45 @@
 +# Copyright (c) 2021, The Regents of the University of California
 +# All rights reserved.
 +# 
@@ -126,10 +108,38 @@ index 00000000..9fe88f75
 +# You should have received a copy of the GNU General Public License
 +# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 +
-+add_subdirectory(src)
++include("openroad")
++
++project(tool)
++
++swig_lib(NAME      tool
++         NAMESPACE tool
++         I_FILE    src/Tool.i
++         SCRIPTS   src/Tool.tcl
++)
++
++target_sources(tool
++  PRIVATE
++  src/MakeTool.cc
++  src/Tool.cc
++)
++
++target_include_directories(tool
++  PUBLIC
++    include
++)
++
++target_link_libraries(tool
++    OpenSTA
++    odb
++)
++
++messages(
++  TARGET tool
++)
 diff --git a/src/tool/include/tool/MakeTool.hh b/src/tool/include/tool/MakeTool.hh
 new file mode 100644
-index 00000000..d8e4b6dc
+index 000000000..0c4aeaac4
 --- /dev/null
 +++ b/src/tool/include/tool/MakeTool.hh
 @@ -0,0 +1,38 @@
@@ -173,7 +183,7 @@ index 00000000..d8e4b6dc
 +#endif
 diff --git a/src/tool/include/tool/Tool.hh b/src/tool/include/tool/Tool.hh
 new file mode 100644
-index 00000000..3aa04be5
+index 000000000..dc575d1fb
 --- /dev/null
 +++ b/src/tool/include/tool/Tool.hh
 @@ -0,0 +1,39 @@
@@ -216,61 +226,9 @@ index 00000000..3aa04be5
 +};
 +
 +}
-diff --git a/src/tool/src/CMakeLists.txt b/src/tool/src/CMakeLists.txt
-new file mode 100644
-index 00000000..dccb8cf4
---- /dev/null
-+++ b/src/tool/src/CMakeLists.txt
-@@ -0,0 +1,46 @@
-+# Copyright (c) 2021, The Regents of the University of California
-+# All rights reserved.
-+# 
-+# This program is free software: you can redistribute it and/or modify
-+# it under the terms of the GNU General Public License as published by
-+# the Free Software Foundation, either version 3 of the License, or
-+# (at your option) any later version.
-+# 
-+# This program is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+# 
-+# You should have received a copy of the GNU General Public License
-+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-+
-+set(TOOL_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Tool_wrap.cc)
-+set(TOOL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ToolTclInitVar.cc)
-+
-+add_custom_command(OUTPUT ${TOOL_WRAP}
-+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix tool -I${OPENROAD_HOME}/include -o ${TOOL_WRAP} ${TOOL_HOME}/src/Tool.i
-+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${CMAKE_CURRENT_BINARY_DIR}/Tool_wrap.cc
-+  WORKING_DIRECTORY ${TOOL_HOME}/src
-+  DEPENDS ${TOOL_HOME}/src/Tool.i
-+  )
-+
-+add_custom_command(OUTPUT ${TOOL_TCL_INIT}
-+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TOOL_TCL_INIT} tool_tcl_inits Tool.tcl
-+  WORKING_DIRECTORY ${TOOL_HOME}/src
-+  DEPENDS Tool.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-+  )
-+
-+add_library(tool
-+  MakeTool.cc
-+  Tool.cc
-+  ${TOOL_WRAP}
-+  ${TOOL_TCL_INIT}
-+  )
-+
-+target_include_directories(tool
-+  PUBLIC ${TOOL_HOME}/include
-+  PRIVATE
-+  ${OPENROAD_HOME}/include
-+  ${ODB_HOME}/include
-+  ${OPENSTA_HOME}/include
-+  )
 diff --git a/src/tool/src/MakeTool.cc b/src/tool/src/MakeTool.cc
 new file mode 100644
-index 00000000..637332c8
+index 000000000..350c25eae
 --- /dev/null
 +++ b/src/tool/src/MakeTool.cc
 @@ -0,0 +1,42 @@
@@ -290,7 +248,7 @@ index 00000000..637332c8
 +// You should have received a copy of the GNU General Public License
 +// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 +
-+#include "openroad/OpenRoad.hh"
++#include "ord/OpenRoad.hh"
 +#include "tool/Tool.hh"
 +#include "tool/MakeTool.hh"
 +
@@ -318,7 +276,7 @@ index 00000000..637332c8
 +}
 diff --git a/src/tool/src/Tool.cc b/src/tool/src/Tool.cc
 new file mode 100644
-index 00000000..251003c3
+index 000000000..ea232dc50
 --- /dev/null
 +++ b/src/tool/src/Tool.cc
 @@ -0,0 +1,73 @@
@@ -397,7 +355,7 @@ index 00000000..251003c3
 +}
 diff --git a/src/tool/src/Tool.i b/src/tool/src/Tool.i
 new file mode 100644
-index 00000000..cc67558b
+index 000000000..4daaac5da
 --- /dev/null
 +++ b/src/tool/src/Tool.i
 @@ -0,0 +1,52 @@
@@ -422,7 +380,7 @@ index 00000000..cc67558b
 +%{
 +
 +#include "tool/Tool.hh"
-+#include "openroad/OpenRoad.hh"
++#include "ord/OpenRoad.hh"
 +
 +tool::Tool *
 +getTool()
@@ -455,7 +413,7 @@ index 00000000..cc67558b
 +%} // inline
 diff --git a/src/tool/src/Tool.tcl b/src/tool/src/Tool.tcl
 new file mode 100644
-index 00000000..9ef81cb1
+index 000000000..16830d000
 --- /dev/null
 +++ b/src/tool/src/Tool.tcl
 @@ -0,0 +1,48 @@
@@ -509,7 +467,7 @@ index 00000000..9ef81cb1
 +}
 diff --git a/src/tool/test/regression b/src/tool/test/regression
 new file mode 100755
-index 00000000..1303225f
+index 000000000..8bb4aeb27
 --- /dev/null
 +++ b/src/tool/test/regression
 @@ -0,0 +1,36 @@
@@ -551,7 +509,7 @@ index 00000000..1303225f
 +# End:
 diff --git a/src/tool/test/regression.tcl b/src/tool/test/regression.tcl
 new file mode 120000
-index 00000000..58d7f3fa
+index 000000000..58d7f3fa9
 --- /dev/null
 +++ b/src/tool/test/regression.tcl
 @@ -0,0 +1 @@
@@ -559,7 +517,7 @@ index 00000000..58d7f3fa
 \ No newline at end of file
 diff --git a/src/tool/test/regression_tests.tcl b/src/tool/test/regression_tests.tcl
 new file mode 100644
-index 00000000..775d384b
+index 000000000..775d384be
 --- /dev/null
 +++ b/src/tool/test/regression_tests.tcl
 @@ -0,0 +1,3 @@
@@ -568,7 +526,7 @@ index 00000000..775d384b
 +}
 diff --git a/src/tool/test/save_ok b/src/tool/test/save_ok
 new file mode 100644
-index 00000000..19e9de4b
+index 000000000..a529cf787
 --- /dev/null
 +++ b/src/tool/test/save_ok
 @@ -0,0 +1,34 @@
@@ -608,7 +566,7 @@ index 00000000..19e9de4b
 +# End:
 diff --git a/src/tool/test/toolize1.ok b/src/tool/test/toolize1.ok
 new file mode 100644
-index 00000000..05857f02
+index 000000000..05857f023
 --- /dev/null
 +++ b/src/tool/test/toolize1.ok
 @@ -0,0 +1,4 @@
@@ -618,7 +576,7 @@ index 00000000..05857f02
 +Gotta flag1 true
 diff --git a/src/tool/test/toolize1.tcl b/src/tool/test/toolize1.tcl
 new file mode 100644
-index 00000000..815688f9
+index 000000000..815688f93
 --- /dev/null
 +++ b/src/tool/test/toolize1.tcl
 @@ -0,0 +1 @@

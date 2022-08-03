@@ -51,7 +51,7 @@ class Worker;
 class Distributed
 {
  public:
-  Distributed();
+  Distributed(utl::Logger* logger = nullptr);
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
   void runWorker(const char* ip, unsigned short port, bool interactive);

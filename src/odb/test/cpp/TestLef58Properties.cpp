@@ -15,6 +15,30 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
+
+BOOST_AUTO_TEST_CASE(lef58_class)
+{
+  utl::Logger* logger = new utl::Logger();
+  dbDatabase* db1 = dbDatabase::create();
+  db1->setLogger(logger);
+  lefin lefParser(db1, logger, false);
+
+  const char* libname = "gscl45nm.lef";
+  std::string path
+      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  lefParser.createTechAndLib(libname, path.c_str());
+
+  odb::dbLib* dbLib = db1->findLib(libname);
+
+  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  lefParser.updateLib(dbLib, path.c_str());
+
+  odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
+  BOOST_CHECK(endcap);
+
+  BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+}
+
 BOOST_AUTO_TEST_CASE(test_default)
 {
   utl::Logger* logger = new utl::Logger();

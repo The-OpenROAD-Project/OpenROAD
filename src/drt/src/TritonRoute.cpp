@@ -245,7 +245,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
              worker->getBestNumMarkers(),
              updated);
   if (updated)
-    reportDRC(drcRpt, worker.get());
+    reportDRC(
+        drcRpt, design_->getTopBlock()->getMarkers(), worker->getDrcBox());
 }
 
 void TritonRoute::updateGlobals(const char* file_name)
@@ -778,6 +779,26 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
   writer.updateDb(db_, true);
 }
 
+void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
+{
+  initDesign();
+  Rect box(x1, y1, x2, y2);
+  if (box.area() == 0) {
+    box = design_->getTopBlock()->getBBox();
+  }
+  auto gcWorker = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
+  gcWorker->setDrcBox(box);
+  gcWorker->setExtBox(box);
+  gcWorker->init(design_.get());
+  gcWorker->main();
+  logger_->info(
+      utl::DRT, 614, "Found {} violations", gcWorker->getMarkers().size());
+  frList<std::unique_ptr<frMarker>> markers;
+  for (auto& marker : gcWorker->getMarkers())
+    markers.push_back(std::make_unique<frMarker>(*marker));
+  reportDRC(filename, markers, box);
+}
+
 void TritonRoute::readParams(const string& fileName)
 {
   logger_->warn(utl::DRT, 252, "params file is deprecated. Use tcl arguments.");
@@ -947,7 +968,9 @@ int TritonRoute::getWorkerResultsSize()
   return results_sz_;
 }
 
-void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
+void TritonRoute::reportDRC(const string& file_name,
+                            const frList<std::unique_ptr<frMarker>>& markers,
+                            Rect drcBox)
 {
   double dbu = getDesign()->getTech()->getDBUPerUU();
 
@@ -960,18 +983,17 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
     }
     return;
   }
-
   ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
-    for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    for (const auto& marker : markers) {
       // get violation bbox
       Rect bbox = marker->getBBox();
-      if (worker != nullptr && !worker->getDrcBox().intersects(bbox))
+      if (drcBox != Rect() && !drcBox.intersects(bbox))
         continue;
       auto tech = getDesign()->getTech();
       auto layer = tech->getLayer(marker->getLayerNum());
       auto layerType = layer->getType();
-      
+
       auto con = marker->getConstraint();
       drcRpt << "  violation type: ";
       if (con) {

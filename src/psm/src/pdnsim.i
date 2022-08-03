@@ -41,12 +41,22 @@ set_bump_pitch_y_cmd(float bump_pitch)
   PDNSim* pdnsim = getPDNSim();
   pdnsim->set_bump_pitch_y(bump_pitch);
 }
+
 void
 set_node_density(float node_density)
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->set_node_density(node_density);
 }
+
+void
+set_node_density_factor(int node_density_factor)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->set_node_density_factor(node_density_factor);
+}
+
+
 
 void 
 set_net_voltage_cmd(const char* net_name, float voltage)
