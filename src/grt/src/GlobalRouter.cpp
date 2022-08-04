@@ -728,7 +728,7 @@ void GlobalRouter::computeNetSlacks()
     net_slack_map[net] = slack;
     slacks.push_back(slack);
   }
-  std::sort(slacks.begin(), slacks.end());
+  std::stable_sort(slacks.begin(), slacks.end());
 
   // Find the slack threshold based on the percentage of critical nets
   // defined by the user
@@ -2635,8 +2635,8 @@ std::vector<Net*> GlobalRouter::initNetlist()
     return is_non_leaf_clock_a > is_non_leaf_clock_b;
   };
 
-  std::sort(nets.begin(), nets.end(), nameLess);
-  std::sort(nets.begin(), nets.end(), compareIsNonLeafClock);
+  std::stable_sort(nets.begin(), nets.end(), nameLess);
+  std::stable_sort(nets.begin(), nets.end(), compareIsNonLeafClock);
   return nets;
 }
 
