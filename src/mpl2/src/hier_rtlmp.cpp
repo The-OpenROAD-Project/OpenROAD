@@ -231,10 +231,10 @@ void HierRTLMP::SetSnapLayer(int snap_layer)
 void HierRTLMP::HierRTLMacroPlacer() 
 {
   // user just need to specify the lowest level size of cluster
-  max_num_macro_base_ = max_num_macro_base_ * std::pow(coarsening_ratio_, level_ - 1);
-  min_num_macro_base_ = min_num_macro_base_ * std::pow(coarsening_ratio_, level_ - 1);
-  max_num_inst_base_  = max_num_inst_base_  * std::pow(coarsening_ratio_, level_ - 1);
-  min_num_inst_base_  = min_num_inst_base_  * std::pow(coarsening_ratio_, level_ - 1);
+  max_num_macro_base_ = max_num_macro_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
+  min_num_macro_base_ = min_num_macro_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
+  max_num_inst_base_  = max_num_inst_base_  * std::pow(coarsening_ratio_, max_num_level_ - 1);
+  min_num_inst_base_  = min_num_inst_base_  * std::pow(coarsening_ratio_, max_num_level_ - 1);
  
   // Get the database information
   block_ = db_->getChip()->getBlock();
