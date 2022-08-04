@@ -510,30 +510,36 @@ bool Cluster::IsLeaf() const
 }
 
 // We only merge clusters with the same parent cluster
-bool Cluster::MergeCluster(const Cluster& cluster) 
+// We only merge clusters with the same parent cluster
+bool Cluster::MergeCluster(Cluster& cluster, bool& delete_flag)
 {
   if (parent_ != cluster.parent_)
     return false;
-
+ 
+  parent_->RemoveChild(&cluster);
+  metric_.AddMetric(cluster.metric_);
   // modify name
   name_ += "||" + cluster.name_;
-  // add instances (std cells and macros)
-  //this->CopyInstances(cluster); 
+  // if current cluster is a leaf cluster 
   leaf_macros_.insert(leaf_macros_.end(),
                       cluster.leaf_macros_.begin(),
                       cluster.leaf_macros_.end());
   leaf_std_cells_.insert(leaf_std_cells_.end(),
-                cluster.leaf_std_cells_.begin(),
-                cluster.leaf_std_cells_.end());
+                         cluster.leaf_std_cells_.begin(),
+                         cluster.leaf_std_cells_.end());
   dbModules_.insert(dbModules_.end(),
-                cluster.dbModules_.begin(),
-                cluster.dbModules_.end());
-  // Add Metric
-  metric_.AddMetric(cluster.metric_);
-  // Remove this cluster from the children list of the parent
-  parent_->RemoveChild(&cluster);
+                    cluster.dbModules_.begin(),
+                    cluster.dbModules_.end());
+  delete_flag = true;
+  // if current cluster is not a leaf cluster
+  if (children_.size() > 0) {
+    children_.insert(&cluster);
+    cluster.SetParent(this);
+    delete_flag = false;
+  }
   return true;
 }
+
 
 // Connection signature support
 void Cluster::InitConnection() 

@@ -230,6 +230,12 @@ void HierRTLMP::SetSnapLayer(int snap_layer)
 // Top Level Interface function
 void HierRTLMP::HierRTLMacroPlacer() 
 {
+  // user just need to specify the lowest level size of cluster
+  max_num_macro_base_ = max_num_macro_base_ * std::pow(coarsening_ratio_, level_ - 1);
+  min_num_macro_base_ = min_num_macro_base_ * std::pow(coarsening_ratio_, level_ - 1);
+  max_num_inst_base_  = max_num_inst_base_  * std::pow(coarsening_ratio_, level_ - 1);
+  min_num_inst_base_  = min_num_inst_base_  * std::pow(coarsening_ratio_, level_ - 1);
+ 
   // Get the database information
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
@@ -381,6 +387,9 @@ void HierRTLMP::HierRTLMacroPlacer()
   for (auto& [cluster_id, cluster] : cluster_map_)
     delete cluster;
   cluster_map_.clear();
+
+  std::cout << "number of updated macros : " << num_updated_macros_ << std::endl;
+  std::cout << "number of macros in HardMacroCluster : " << num_hard_macros_cluster_ << std::endl;
 }
 
 
@@ -964,9 +973,12 @@ void HierRTLMP::MergeClusters(std::vector<Cluster*>& candidate_clusters)
         std::cout << "\t\t" + candidate_clusters[i]->GetName() << "  \n";
         */
         //end debug
-        if (cluster->MergeCluster(*candidate_clusters[i]) == true) {
-          cluster_map_.erase(candidate_clusters[i]->GetId());
-          delete candidate_clusters[i];
+        bool delete_flag = false;
+        if (cluster->MergeCluster(*candidate_clusters[i], delete_flag) == true) {
+          if (delete_flag == true) {
+            cluster_map_.erase(candidate_clusters[i]->GetId());
+            delete candidate_clusters[i];
+          }
           SetInstProperty(cluster);
           SetClusterMetric(cluster);
           cluster_class[i] = cluster->GetId();
@@ -986,9 +998,13 @@ void HierRTLMP::MergeClusters(std::vector<Cluster*>& candidate_clusters)
                       *candidate_clusters[j], signature_net_threshold_);
           if (flag == true) {
             cluster_class[j] = i;
-            if (candidate_clusters[i]->MergeCluster(*candidate_clusters[j]) == true) {
-              cluster_map_.erase(candidate_clusters[j]->GetId());
-              delete candidate_clusters[j];
+            bool delete_flag = false;
+            if (candidate_clusters[i]->MergeCluster(
+                    *candidate_clusters[j], delete_flag) == true) {
+              if (delete_flag == true) {
+                cluster_map_.erase(candidate_clusters[j]->GetId());
+                delete candidate_clusters[j];
+              }
               SetInstProperty(candidate_clusters[i]);
               SetClusterMetric(candidate_clusters[i]);
             }
@@ -1751,10 +1767,13 @@ void HierRTLMP::LeafClusterStdCellHardMacroSep(Cluster* root_cluster)
             macro_class[j] = i;
             std::cout << "merge " << macro_clusters[i]->GetName() << "   "
                       << macro_clusters[j]->GetName() << std::endl;
-            macro_clusters[i]->MergeCluster(*macro_clusters[j]);
-            // remove the merged macro cluster
-            cluster_map_.erase(macro_clusters[j]->GetId());
-            delete macro_clusters[j];
+            bool delete_flag = false;
+            macro_clusters[i]->MergeCluster(*macro_clusters[j], delete_flag);
+            if (delete_flag == true) {
+              // remove the merged macro cluster
+              cluster_map_.erase(macro_clusters[j]->GetId());
+              delete macro_clusters[j];
+            }
           }
         }
       } 
@@ -1882,6 +1901,13 @@ void HierRTLMP::PrintPhysicalHierarchyTree(Cluster* parent, int level)
   line += "  macro_area :  " + std::to_string(parent->GetMacroArea());
   line += "  std_cell_area : " + std::to_string(parent->GetStdCellArea());
   logger_->info(MPL, 2025, line);
+  int tot_num_macro_in_children = 0;
+  for (auto& cluster : parent->GetChildren())
+     tot_num_macro_in_children += cluster->GetNumMacro();
+  std::cout << "tot_num_macro_in_children = "
+             << tot_num_macro_in_children
+             << "\n\n" << std::endl;
+
   for (auto& cluster : parent->GetChildren())
     PrintPhysicalHierarchyTree(cluster, level + 1);
 }
@@ -2963,6 +2989,7 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
   std::vector<Cluster*> macro_clusters;
   std::map<int, int> cluster_id_macro_id_map;
   std::vector<HardMacro*> hard_macros = cluster->GetHardMacros();
+  num_hard_macros_cluster_ += hard_macros.size();
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
   // create a cluster for each macro
@@ -3105,6 +3132,7 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
   }
   // update OpenDB
   for (auto& hard_macro : hard_macros) {
+    num_updated_macros_++;
     hard_macro->SetX(hard_macro->GetX() + lx);
     hard_macro->SetY(hard_macro->GetY() + ly);
     hard_macro->UpdateDb(pitch_x_, pitch_y_);

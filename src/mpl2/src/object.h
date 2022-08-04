@@ -239,7 +239,7 @@ class Cluster {
     std::set<Cluster*> GetChildren() const;
     
     bool IsLeaf() const;  // if the cluster is a leaf cluster
-    bool MergeCluster(const Cluster& cluster); // return true if succeed
+    bool MergeCluster(Cluster& cluster, bool& delete_flag); // return true if succeed
 
     // Connection signature support
     void InitConnection();
