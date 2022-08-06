@@ -59,6 +59,8 @@ proc report_erc_metrics { args } {
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
+    set setup_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
+    set hold_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
 
     utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
     utl::metric_int "timing__drv__max_slew" $max_slew_violation
@@ -66,6 +68,8 @@ proc report_erc_metrics { args } {
     utl::metric_int "timing__drv__max_cap" $max_cap_violation
     utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
     utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
+    utl::metric_int "timing__drv__setup_violation_count" $setup_violation
+    utl::metric_int "timing__drv__hold_violation_count" $hold_violation
 }
 
 
@@ -102,16 +106,20 @@ proc report_design_area_metrics {args} {
   set block [[$db getChip] getBlock]
   set core_bbox [$block getCoreArea]
   set core_area [expr [$core_bbox dx] * [$core_bbox dy]]
-  puts "Core area = $core_area"
 
   set num_ios [llength [$block getBTerms]]
 
   set num_insts 0
   set num_stdcells 0
   set num_macros 0
+  set num_padcells 0
+  set num_cover 0
+
   set total_area 0.0
-  set macro_area 0.0
   set stdcell_area 0.0
+  set macro_area 0.0
+  set padcell_area 0.0
+  set cover_area 0.0
 
   foreach inst [$block getInsts] {
     set inst_master [$inst getMaster]
@@ -123,9 +131,16 @@ proc report_design_area_metrics {args} {
     set inst_area  [expr $wid * $ht]
     set total_area [expr $total_area + $inst_area] 
     set num_insts [expr $num_insts + 1]
-    if { [string match [$inst_master getType] "BLOCK"] } {
+
+    if { [$inst_master isBlock] } {
       set num_macros [expr $num_macros + 1]
       set macro_area [expr $macro_area + $inst_area]
+    } elseif {[$inst_master isCover]} {
+      set num_cover [expr $num_cover + 1]
+      set cover_area [expr $cover_area + $inst_area]
+    } elseif {[$inst_master isPad]} {
+      set num_padcells [expr $num_padcells + 1]
+      set padcell_area [expr $padcell_area + $inst_area]
     } else {
       set num_stdcells [expr $num_stdcells + 1]
       set stdcell_area [expr $stdcell_area + $inst_area]
@@ -136,12 +151,17 @@ proc report_design_area_metrics {args} {
   set total_area [expr $total_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set stdcell_area [expr $stdcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set macro_area [expr $macro_area / [expr $dbu_per_uu * $dbu_per_uu]]
-  set core_util [expr $total_area / $core_area]
+  set padcell_area [expr $padcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
+  set cover_area [expr $cover_area / [expr $dbu_per_uu * $dbu_per_uu]]
+
+  set total_active_area [expr $stdcell_area + $macro_area]
+
+  set core_util [expr $total_active_area / $core_area]
   set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
 
   utl::metric_int "design__io" $num_ios
   utl::metric_int "design__instance__count" $num_insts
-  utl::metric_float "design__instance__area" $total_area
+  utl::metric_float "design__instance__area" $total_active_area
   utl::metric_int "design__instance__count__stdcell" $num_stdcells
   utl::metric_float "design__instance__area__stdcell" $stdcell_area
   utl::metric_int "design__instance__count__macros" $num_macros
