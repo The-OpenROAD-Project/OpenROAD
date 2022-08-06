@@ -82,6 +82,7 @@ Opendp::checkPlacement(bool verbose)
   });
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
 
+  logger_->metric("design__violations", placed_failures.size() + in_rows_failures.size() + overlap_failures.size() + site_align_failures.size());
   if (placed_failures.size()
       + in_rows_failures.size()
       + overlap_failures.size()
