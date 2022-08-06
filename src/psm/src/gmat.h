@@ -77,7 +77,9 @@ class GMat
   //! Function that prints the G matrix for debug purposes
   void print();
   //! Function to add the conductance value between two nodes
-  void setConductance(Node* t_node1, Node* t_node2, double t_cond);
+  void setConductance(const Node* t_node1,
+                      const Node* t_node2,
+                      const double t_cond);
   //! Function to initialize the sparse dok matrix
   void initializeGmatDok(int t_numC4);
   //! Function that returns the number of nodes in the G matrix

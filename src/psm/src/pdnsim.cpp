@@ -58,7 +58,7 @@ PDNSim::PDNSim()
       vsrc_loc_(""),
       out_file_(""),
       em_out_file_(""),
-      enable_em_(0),
+      enable_em_(false),
       bump_pitch_x_(0),
       bump_pitch_y_(0),
       spice_out_file_(""),
@@ -77,7 +77,7 @@ PDNSim::~PDNSim()
   power_net_ = "";
   out_file_ = "";
   em_out_file_ = "";
-  enable_em_ = 0;
+  enable_em_ = false;
   spice_out_file_ = "";
   bump_pitch_x_ = 0;
   bump_pitch_y_ = 0;
@@ -148,10 +148,10 @@ void PDNSim::import_em_out_file(std::string em_out_file)
   em_out_file_ = em_out_file;
   logger_->info(utl::PSM, 3, "Output current file specified {}.", em_out_file_);
 }
-void PDNSim::import_enable_em(int enable_em)
+void PDNSim::import_enable_em(bool enable_em)
 {
   enable_em_ = enable_em;
-  if (enable_em_ == 1) {
+  if (enable_em_) {
     logger_->info(utl::PSM, 4, "EM calculation is enabled.");
   }
 }
@@ -228,7 +228,7 @@ void PDNSim::analyze_power_grid()
       "Worstcase IR drop: {:3.2e} V",
       abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getWorstCaseVoltage()));
   logger_->report("######################################");
-  if (enable_em_ == 1) {
+  if (enable_em_) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
@@ -262,29 +262,26 @@ void PDNSim::analyze_power_grid()
   }
 }
 
-int PDNSim::check_connectivity()
+bool PDNSim::check_connectivity()
 {
-  IRSolver* irsolve_h = new IRSolver(db_,
-                                     sta_,
-                                     logger_,
-                                     vsrc_loc_,
-                                     power_net_,
-                                     out_file_,
-                                     em_out_file_,
-                                     spice_out_file_,
-                                     enable_em_,
-                                     bump_pitch_x_,
-                                     bump_pitch_y_,
-                                     node_density_,
-                                     node_density_factor_,
-                                     net_voltage_map_);
+  auto irsolve_h = std::make_unique<IRSolver>(db_,
+                                              sta_,
+                                              logger_,
+                                              vsrc_loc_,
+                                              power_net_,
+                                              out_file_,
+                                              em_out_file_,
+                                              spice_out_file_,
+                                              enable_em_,
+                                              bump_pitch_x_,
+                                              bump_pitch_y_,
+                                              node_density_,
+                                              node_density_factor_,
+                                              net_voltage_map_);
   if (!irsolve_h->buildConnection()) {
-    delete irsolve_h;
-    return 0;
+    return false;
   }
-  int val = irsolve_h->getConnectionTest();
-  delete irsolve_h;
-  return val;
+  return irsolve_h->getConnectionTest();
 }
 
 void PDNSim::getIRDropMap(IRDropByLayer& ir_drop)
