@@ -54,6 +54,7 @@ namespace odb {
 class dbDatabase;
 class dbChip;
 class dbTech;
+class dbWireEncoder;
 }  // namespace odb
 
 namespace utl {
@@ -68,6 +69,8 @@ namespace grt {
 typedef std::map<odb::dbNet*, std::vector<ant::Violation>> AntennaViolations;
 
 class GlobalRouter;
+class Net;
+class Pin;
 
 class RepairAntennas
 {
@@ -118,6 +121,18 @@ class RepairAntennas
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*> &default_vias);
+  void addWireTerms(Net *net,
+                    GRoute& route,
+                    int grid_x,
+                    int grid_y,
+                    int layer,
+                    odb::dbTechLayer *tech_layer,
+                    int jct_id,
+                    odb::dbWireEncoder &wire_encoder);
+  bool pinOverlapsGSegment(const odb::Point& pin_position,
+                           const int pin_layer,
+                           const std::vector<odb::Rect>& pin_boxes,
+                           const GRoute& route);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;
