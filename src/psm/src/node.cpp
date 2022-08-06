@@ -47,7 +47,7 @@ using std::vector;
 /*
  * \return Layer number of the node
  * */
-int Node::getLayerNum()
+int Node::getLayerNum() const
 {
   return layer_;
 }
@@ -65,7 +65,7 @@ void Node::setLayerNum(int t_layer)
 /*
  * \return NodeLoc which is x and y index
  * */
-Point Node::getLoc()
+Point Node::getLoc() const
 {
   return loc_;
 }
@@ -96,7 +96,7 @@ void Node::setLoc(int t_x, int t_y, int t_l)
 /*
  * \return Location in G matrix
  */
-NodeIdx Node::getGLoc()
+NodeIdx Node::getGLoc() const
 {
   return node_loc_;
 }
@@ -111,7 +111,7 @@ void Node::setGLoc(NodeIdx t_loc)
 }
 
 //! Function to print node details
-void Node::print(utl::Logger* logger)
+void Node::print(utl::Logger* logger) const
 {
   logger->report("Node: {}", node_loc_);
   logger->report(
@@ -120,7 +120,7 @@ void Node::print(utl::Logger* logger)
   logger->report("  Current: {:5.4e}A", current_src_);
   logger->report("  Voltage: {:5.4e}V", voltage_);
   logger->report("  Has connection: {}", connected_ ? "true" : "false");
-  logger->report("  Has instances:  {}", has_instances_ ? "true" : "false");
+  logger->report("  Has instances:  {}", hasInstances() ? "true" : "false");
 }
 
 //! Function to set the bounding box of the stripe
@@ -130,7 +130,7 @@ void Node::setBbox(int t_dX, int t_dY)
 }
 
 //! Function to get the bounding box of the stripe
-BBox Node::getBbox()
+BBox Node::getBbox() const
 {
   return bBox_;
 }
@@ -159,7 +159,7 @@ void Node::setCurrent(double t_current)
 }
 
 //! Function to get the value of current at a node
-double Node::getCurrent()
+double Node::getCurrent() const
 {
   return current_src_;
 }
@@ -187,12 +187,12 @@ void Node::setVoltage(double t_voltage)
 /*
  * \return Voltage value at the node
  */
-double Node::getVoltage()
+double Node::getVoltage() const
 {
   return voltage_;
 }
 
-bool Node::getConnected()
+bool Node::getConnected() const
 {
   return connected_;
 }
@@ -202,19 +202,18 @@ void Node::setConnected()
   connected_ = true;
 }
 
-bool Node::hasInstances()
+bool Node::hasInstances() const
 {
-  return has_instances_;
+  return !connected_instances_.empty();
 }
 
-vector<dbInst*> Node::getInstances()
+vector<dbInst*> Node::getInstances() const
 {
   return connected_instances_;
 }
 
 void Node::addInstance(dbInst* inst)
 {
-  has_instances_ = true;
   connected_instances_.push_back(inst);
 }
 }  // namespace psm

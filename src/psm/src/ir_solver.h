@@ -72,7 +72,7 @@ class IRSolver
            std::string out_file,
            std::string em_out_file,
            std::string spice_out_file,
-           int em_analyze,
+           bool em_analyze,
            int bump_pitch_x,
            int bump_pitch_y,
            float node_density_um,
@@ -93,7 +93,7 @@ class IRSolver
   bool checkConnectivity(bool connection_only = false);
   bool checkValidR(double R);
 
-  int getConnectionTest();
+  bool getConnectionTest();
 
   bool getResult();
   int getMinimumResolution();
@@ -140,7 +140,7 @@ class IRSolver
   //! Resistance configuration file
   std::string out_file_;
   std::string em_out_file_;
-  int em_flag_;
+  bool em_flag_;
   std::string spice_out_file_;
   //! G matrix for voltage
   std::unique_ptr<GMat> Gmat_;
@@ -188,12 +188,11 @@ class IRSolver
   // of wires for all PDN tasks
   std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of the G matrix
-  void createGmatNodes(
-      const std::vector<odb::dbSBox*>& power_wires,
-      const std::vector<std::tuple<int, int, int, int>>& macros);
+  void createGmatNodes(const std::vector<odb::dbSBox*>& power_wires,
+                       const std::vector<odb::Rect>& macros);
 
   //! Function to find and store the macro boundaries
-  std::vector<std::tuple<int, int, int, int>> getMacroBoundaries();
+  std::vector<odb::Rect> getMacroBoundaries();
 
   //! Function to create the nodes for the c4 bumps
   int createC4Nodes(bool connection_only, int unit_micron);

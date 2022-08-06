@@ -71,45 +71,45 @@ class Node
  public:
   Node() : bBox_(std::make_pair(0.0, 0.0)) {}
   //! Get the layer number of the node
-  int getLayerNum();
+  int getLayerNum() const;
   //! Set the layer number of the node
   void setLayerNum(int layer);
   //! Get the location of the node
-  Point getLoc();
+  Point getLoc() const;
   //! Set the location of the node using x and y coordinates
   void setLoc(int x, int y);
   //! Set the location of the node using x,y and layer information
   void setLoc(int x, int y, int l);
   //! Get location of the node in G matrix
-  NodeIdx getGLoc();
+  NodeIdx getGLoc() const;
   //! Get location of the node in G matrix
   void setGLoc(NodeIdx loc);
   //! Function to print node details
-  void print(utl::Logger* logger);
+  void print(utl::Logger* logger) const;
   //! Function to set the bounding box of the stripe
   void setBbox(int dX, int dY);
   //! Function to get the bounding box of the stripe
-  BBox getBbox();
+  BBox getBbox() const;
   //! Function to update the stripe
   void updateMaxBbox(int dX, int dY);
   //! Function to set the current value at a particular node
   void setCurrent(double t_current);
   //! Function to get the value of current at a node
-  double getCurrent();
+  double getCurrent() const;
   //! Function to add the current source
   void addCurrentSrc(double t_current);
   //! Function to set the value of the voltage source
   void setVoltage(double t_voltage);
   //! Function to get the value of the voltage source
-  double getVoltage();
+  double getVoltage() const;
 
-  bool getConnected();
+  bool getConnected() const;
 
   void setConnected();
 
-  bool hasInstances();
+  bool hasInstances() const;
 
-  std::vector<dbInst*> getInstances();
+  std::vector<dbInst*> getInstances() const;
 
   void addInstance(dbInst* inst);
 
@@ -121,7 +121,6 @@ class Node
   double current_src_{0.0};
   double voltage_{0.0};
   bool connected_{false};
-  bool has_instances_{false};
   std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm

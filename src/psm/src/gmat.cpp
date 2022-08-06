@@ -249,7 +249,9 @@ void GMat::print()
      \param t_cond conductance value to be added between node 1 and 2
      \return nothing
 */
-void GMat::setConductance(Node* t_node1, Node* t_node2, double t_cond)
+void GMat::setConductance(const Node* t_node1,
+                          const Node* t_node2,
+                          const double t_cond)
 {
   NodeIdx node1_r = t_node1->getGLoc();
   NodeIdx node2_r = t_node2->getGLoc();
