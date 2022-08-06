@@ -108,7 +108,7 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
     odb::dbTech* tech = db_->getTech();
     odb::dbWireEncoder wire_encoder;
     wire_encoder.begin(wire);
-    std::unordered_set<Pin*> wire_pins;
+    RoutePtPins route_pt_pins = findRoutePtPins(net);
     std::unordered_set<GSegment, GSegmentHash> wire_segments;
     for (GSegment& seg : route) {
       if (std::abs(seg.init_layer - seg.final_layer) > 1) {
@@ -127,7 +127,7 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
           wire_encoder.addPoint(x1, y1);
           int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
           addWireTerms(net, route, x1, y1, bottom_layer, bottom_tech_layer,
-                       jct_id, wire_encoder);
+                       jct_id, route_pt_pins, wire_encoder);
           wire_segments.insert(seg);
         }
         else {
@@ -140,9 +140,9 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
             int jct_id1 = wire_encoder.addPoint(x1, y1);
             int jct_id2 = wire_encoder.addPoint(x2, y2);
             addWireTerms(net, route, x1, y1, l1, tech_layer,
-                         jct_id1, wire_encoder);
+                         jct_id1, route_pt_pins, wire_encoder);
             addWireTerms(net, route, x2, y2, l1, tech_layer,
-                         jct_id2, wire_encoder);
+                         jct_id2, route_pt_pins, wire_encoder);
             wire_segments.insert(seg);
           }
         }
@@ -160,6 +160,17 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
   }
 }
 
+RoutePtPins RepairAntennas::findRoutePtPins(Net* net)
+{
+  RoutePtPins route_pt_pins;
+  for (Pin& pin : net->getPins()) {
+    int top_layer = pin.getTopLayer();
+    odb::Point grid_pt = pin.getOnGridPosition();
+    route_pt_pins[RoutePt(grid_pt.x(), grid_pt.y(), top_layer)].push_back(&pin);
+  }
+  return route_pt_pins;
+}
+    
 void RepairAntennas::addWireTerms(Net *net,
                                   GRoute& route,
                                   int grid_x,
@@ -167,32 +178,33 @@ void RepairAntennas::addWireTerms(Net *net,
                                   int layer,
                                   odb::dbTechLayer *tech_layer,
                                   int jct_id,
+                                  RoutePtPins &route_pt_pins,
                                   odb::dbWireEncoder &wire_encoder)
 {
-  for (Pin& pin : net->getPins()) {
-    int top_layer = pin.getTopLayer();
-    std::vector<odb::Rect> pin_boxes = pin.getBoxes().at(top_layer);
-    odb::Point grid_pt = pin.getOnGridPosition();
-    if (grid_pt.x() == grid_x
-        && grid_pt.y() == grid_y
-        && top_layer == layer
-        // create the local connection only when the global segment
-        // doesn't overlap the pin
-        && !pinOverlapsGSegment(grid_pt, top_layer, pin_boxes, route)) {
-      odb::Point pin_pt;
-      int min_dist = std::numeric_limits<int>::max();
-      for (const odb::Rect& pin_box : pin_boxes) {
-        odb::Point pos = grouter_->getRectMiddle(pin_box);
-        int dist = odb::Point::manhattanDistance(pos, pin_pt);
-        if (dist < min_dist) {
-          min_dist = dist;
-          pin_pt = pos;
+  auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, layer));
+  if (itr != route_pt_pins.end()) {
+    for (const Pin* pin : itr->second) {
+      int top_layer = pin->getTopLayer();
+      std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(top_layer);
+      odb::Point grid_pt = pin->getOnGridPosition();
+      // create the local connection only when the global segment
+      // doesn't overlap the pin
+      if (!pinOverlapsGSegment(grid_pt, top_layer, pin_boxes, route)) {
+        odb::Point pin_pt;
+        int min_dist = std::numeric_limits<int>::max();
+        for (const odb::Rect& pin_box : pin_boxes) {
+          odb::Point pos = grouter_->getRectMiddle(pin_box);
+          int dist = odb::Point::manhattanDistance(pos, pin_pt);
+          if (dist < min_dist) {
+            min_dist = dist;
+            pin_pt = pos;
+          }
         }
+        wire_encoder.newPathVirtualWire(jct_id, tech_layer, odb::dbWireType::ROUTED);
+        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
       }
-      wire_encoder.newPathVirtualWire(jct_id, tech_layer, odb::dbWireType::ROUTED);
-      wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-      wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-      wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
     }
   }
 }
