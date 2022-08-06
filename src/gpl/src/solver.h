@@ -27,33 +27,33 @@ using utl::GPL;
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
 #ifdef ENABLE_GPU
- void cudaSparseSolve(int iter,
+ float cudaSparseSolve(int iter,
                      SMatrix& placeInstForceMatrixX,
                      Eigen::VectorXf& fixedInstForceVecX,
                      Eigen::VectorXf& instLocVecX,
                      SMatrix& placeInstForceMatrixY,
                      Eigen::VectorXf& fixedInstForceVecY,
                      Eigen::VectorXf& instLocVecY,
-                     float errorX,
-                     float errorY,
                      utl::Logger* logger,
-                     int hpwl)
+                     std::shared_ptr<PlacerBase> pb)
 {
+  float errorX, errorY;
   GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
   SP1.cusolverCal(instLocVecX);
   errorX = SP1.error_cal();
 
   GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
   SP2.cusolverCal(instLocVecY);
-  errorY = SP2.error_cal();
+  errorY = std::max(errorX, SP2.error_cal());
   logger->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
-                 std::max(errorX, errorY),
-                 hpwl);
+                 errorY,
+                 pb->hpwl());
+  return errorY;
 }
 #endif
 
-void cpuSparseSolve(int maxSolverIter,
+float cpuSparseSolve(int maxSolverIter,
                     int iter,
                     SMatrix& placeInstForceMatrixX,
                     Eigen::VectorXf& fixedInstForceVecX,
@@ -61,11 +61,10 @@ void cpuSparseSolve(int maxSolverIter,
                     SMatrix& placeInstForceMatrixY,
                     Eigen::VectorXf& fixedInstForceVecY,
                     Eigen::VectorXf& instLocVecY,
-                    float errorX,
-                    float errorY,
                     utl::Logger* logger,
-                    int hpwl)
+                    std::shared_ptr<PlacerBase> pb)
 {
+  float errorX, errorY;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);
   solver.compute(placeInstForceMatrixX);
@@ -74,11 +73,12 @@ void cpuSparseSolve(int maxSolverIter,
 
   solver.compute(placeInstForceMatrixY);
   instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
-  errorY = solver.error();
+  errorY = std::max(errorX, solver.error());
   logger->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
-                 std::max(errorX, errorY),
-                 hpwl);
+                 errorY,
+                 pb->hpwl());
+  return errorY;
 }
 }  
 #endif

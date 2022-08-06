@@ -79,7 +79,7 @@ static PlotEnv pe;
 
 void InitialPlace::doBicgstabPlace()
 {
-  float errorX = 0.0f, errorY = 0.0f;
+  float error = 0.0f;
 
 #ifdef ENABLE_CIMG_LIB
   pe.setPlacerBase(pb_);
@@ -106,51 +106,47 @@ void InitialPlace::doBicgstabPlace()
     cudaGetDeviceCount(&gpu_count);	
     if(gpu_count != 0){
       // CUSOLVER based on sparse matrix and QR decomposition for initial place
-      cudaSparseSolve(iter, placeInstForceMatrixX_,
+      error = cudaSparseSolve(iter, placeInstForceMatrixX_,
                       fixedInstForceVecX_,
                       instLocVecX_,
                       placeInstForceMatrixY_,
                       fixedInstForceVecY_,
                       instLocVecY_,
-                      errorX, errorY,
-                      log_, pb_->hpwl());
+                      log_, pb_);
     }
     else{
       log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
       // BiCGSTAB solver for initial place
-      cpuSparseSolve(ipVars_.maxSolverIter, iter,
+      error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
               placeInstForceMatrixX_,
               fixedInstForceVecX_,
               instLocVecX_,
               placeInstForceMatrixY_,
               fixedInstForceVecY_,
               instLocVecY_,
-              errorX, errorY,
-              log_, pb_->hpwl());
+              log_, pb_);
     }
   }
   else{
-      cpuSparseSolve(ipVars_.maxSolverIter, iter,
+      error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
                     placeInstForceMatrixX_,
                     fixedInstForceVecX_,
                     instLocVecX_,
                     placeInstForceMatrixY_,
                     fixedInstForceVecY_,
                     instLocVecY_,
-                    errorX, errorY,
-                    log_, pb_->hpwl());
+                    log_, pb_);
   }
 
 #else
-    cpuSparseSolve(ipVars_.maxSolverIter, iter,
+    error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
                    placeInstForceMatrixX_,
                    fixedInstForceVecX_,
                    instLocVecX_,
                    placeInstForceMatrixY_,
                    fixedInstForceVecY_,
                    instLocVecY_,
-                   errorX, errorY,
-                   log_, pb_->hpwl());
+                   log_, pb_);
 #endif
     updateCoordi();
 
@@ -165,7 +161,7 @@ void InitialPlace::doBicgstabPlace()
       graphics->cellPlot(true);
     }
 
-    if (max(errorX, errorY) <= 1e-5 && iter >= 5) {
+    if (error <= 1e-5 && iter >= 5) {
       break;
     }
   }
