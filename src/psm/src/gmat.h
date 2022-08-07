@@ -45,6 +45,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace psm {
 typedef std::map<int, std::map<int, Node*>> NodeMap;
 
+using GMatLoc = std::pair<NodeIdx, NodeIdx>;
+
+//! Data structure for the Dictionary of Keys Matrix
+struct DokMatrix
+{
+  NodeIdx num_rows;
+  NodeIdx num_cols;
+  std::map<GMatLoc, double> values;  // pair < col_num, row_num >
+};
+
+//! Data structure for the Compressed Sparse Column Matrix
+struct CscMatrix
+{
+  NodeIdx num_rows;
+  NodeIdx num_cols;
+  NodeIdx nnz;
+  std::vector<NodeIdx> row_idx;
+  std::vector<NodeIdx> col_ptr;
+  std::vector<double> values;
+};
+
 //! G matrix class
 /*!
  * Class to store the G matrix. Contains the member functions for all node

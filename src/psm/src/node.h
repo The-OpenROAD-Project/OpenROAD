@@ -44,26 +44,6 @@ using odb::dbInst;
 using odb::Point;
 using BBox = std::pair<int, int>;
 using NodeIdx = int;  // TODO temp as it interfaces with SUPERLU
-using GMatLoc = std::pair<NodeIdx, NodeIdx>;
-
-//! Data structure for the Dictionary of Keys Matrix
-struct DokMatrix
-{
-  NodeIdx num_rows;
-  NodeIdx num_cols;
-  std::map<GMatLoc, double> values;  // pair < col_num, row_num >
-};
-
-//! Data structure for the Compressed Sparse Column Matrix
-struct CscMatrix
-{
-  NodeIdx num_rows;
-  NodeIdx num_cols;
-  NodeIdx nnz;
-  std::vector<NodeIdx> row_idx;
-  std::vector<NodeIdx> col_ptr;
-  std::vector<double> values;
-};
 
 //! Node class which stores the properties of the node of the PDN
 class Node
