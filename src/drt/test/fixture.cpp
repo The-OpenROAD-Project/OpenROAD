@@ -85,8 +85,8 @@ void Fixture::addLayer(frTechObject* tech,
 
 void Fixture::setupTech(frTechObject* tech)
 {
-  tech->setManufacturingGrid(10);
-  tech->setDBUPerUU(1000);
+  // tech->setManufacturingGrid(10);
+  // tech->setDBUPerUU(1000);
 
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
@@ -267,7 +267,8 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   auto con = std::make_unique<frMinStepConstraint>();
 
   con->setMinstepType(frMinstepTypeEnum::STEP);
-  con->setMinStepLength(50);
+  //create layer and set it TODO
+  //con->setMinStepLength(50);
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -279,9 +280,10 @@ void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
-  con->setMinStepLength(50);
-  con->setMaxEdges(1);
-  con->setEolWidth(200);
+  //create rule and set it TODO
+  //con->setMinStepLength(50);
+  //con->setMaxEdges(1);
+  //con->setEolWidth(200);
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -301,7 +303,9 @@ void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
 
 void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
 {
-  auto con = std::make_unique<frMinEnclosedAreaConstraint>(200 * 200);
+  //TODO create rule and set area to be 200*200
+  //auto con = std::make_unique<frMinEnclosedAreaConstraint>(200 * 200);
+  auto con = std::make_unique<frMinEnclosedAreaConstraint>();
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -451,8 +455,9 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
   auto parallelEdge
       = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
   con->getWithinConstraint()->setParallelEdgeConstraint(parallelEdge);
-  parallelEdge->setPar(par_space, par_within);
-  parallelEdge->setTwoEdges(two_edges);
+  // create rule and set it TODO
+  //parallelEdge->setPar(par_space, par_within);
+  //parallelEdge->setTwoEdges(two_edges);
   return parallelEdge;
 }
 
@@ -466,7 +471,8 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
   auto minMax
       = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
   con->getWithinConstraint()->setMaxMinLengthConstraint(minMax);
-  minMax->setLength(max, min_max_length, two_sides);
+  //create and set rule TODO
+  //minMax->setLength(max, min_max_length, two_sides);
   return minMax;
 }
 
@@ -483,9 +489,10 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
       = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
           encloseDist, cutToMetalSpacing);
   con->getWithinConstraint()->setEncloseCutConstraint(cutEnc);
-  cutEnc->setAbove(above);
-  cutEnc->setBelow(below);
-  cutEnc->setAllCuts(allCuts);
+  //create rule and set it TODO
+  // cutEnc->setAbove(above);
+  // cutEnc->setBelow(below);
+  // cutEnc->setAllCuts(allCuts);
   return cutEnc;
 }
 

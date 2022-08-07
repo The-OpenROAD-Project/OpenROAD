@@ -659,7 +659,8 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   auto endToEnd
       = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
   con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
-  endToEnd->setEndToEndSpace(300);
+  //creaate rule and set it TODO
+  //endToEnd->setEndToEndSpace(300);
   con->getWithinConstraint()->setSameMask(true);
 
   frNet* n1 = makeNet("n1");

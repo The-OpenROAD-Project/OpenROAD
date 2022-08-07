@@ -48,10 +48,12 @@ class frTechObject
 {
  public:
   // constructors
-  frTechObject() : dbUnit(0), manufacturingGrid(0) {}
+  // frTechObject() : dbUnit(0), manufacturingGrid(0) {}
+  frTechObject() : db_tech_(nullptr) {}
   // getters
-  frUInt4 getDBUPerUU() const { return dbUnit; }
-  frUInt4 getManufacturingGrid() const { return manufacturingGrid; }
+  odb::dbTech* getDbTech() const { return db_tech_; }
+  frUInt4 getDBUPerUU() const { return db_tech_->getDbUnitsPerMicron(); }
+  frUInt4 getManufacturingGrid() const { return db_tech_->getManufacturingGrid(); }
   frLayer* getLayer(const frString& name) const
   {
     if (name2layer.find(name) == name2layer.end()) {
@@ -89,8 +91,9 @@ class frTechObject
   }
 
   // setters
-  void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
-  void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
+  void setTechObject(odb::dbTech* dbTechIn) { db_tech_ = dbTechIn; }
+  // void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
+  // void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
   void addLayer(std::unique_ptr<frLayer> in)
   {
     name2layer[in->getName()] = in.get();
@@ -271,8 +274,9 @@ class frTechObject
   }
 
  private:
-  frUInt4 dbUnit;
-  frUInt4 manufacturingGrid;
+  // frUInt4 dbUnit;
+  // frUInt4 manufacturingGrid;
+  odb::dbTech* db_tech_;
 
   std::map<frString, frLayer*> name2layer;
   std::vector<std::unique_ptr<frLayer>> layers;

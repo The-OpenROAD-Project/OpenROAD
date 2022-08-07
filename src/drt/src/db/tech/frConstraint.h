@@ -176,13 +176,27 @@ class frMinEnclosedAreaConstraint : public frConstraint
 {
  public:
   // constructor
-  frMinEnclosedAreaConstraint(frCoord areaIn) : area(areaIn), width(-1) {}
+  frMinEnclosedAreaConstraint() : rule_(nullptr) {}
   // getter
-  frCoord getArea() const { return area; }
-  bool hasWidth() const { return (width != -1); }
-  frCoord getWidth() const { return width; }
+  odb::dbTechMinEncRule* getDbTechMinEncRule() const { return rule_; }
+  frCoord getArea() const 
+  { 
+    frUInt4 _minEnclosedArea;
+    rule_->getEnclosure(_minEnclosedArea);
+    return _minEnclosedArea;
+  }
+  bool hasWidth() const 
+  { 
+    frUInt4 width;
+    return rule_->getEnclosureWidth(width);
+  }
+  frCoord getWidth() const
+  { 
+    frUInt4 width;
+    return (rule_->getEnclosureWidth(width))? width : -1; 
+  }
   // setter
-  void setWidth(frCoord widthIn) { width = widthIn; }
+  void setDbTechMinEncRule(odb::dbTechMinEncRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -191,11 +205,11 @@ class frMinEnclosedAreaConstraint : public frConstraint
 
   void report(utl::Logger* logger) const override
   {
-    logger->report("Min enclosed area {} width {}", area, width);
+    logger->report("Min enclosed area {} width {}", getArea(), getWidth());
   }
 
  protected:
-  frCoord area, width;
+  odb::dbTechMinEncRule* rule_;
 };
 
 // LEF58_MINSTEP (currently only implement GF14 related API)
@@ -204,13 +218,11 @@ class frLef58MinStepConstraint : public frConstraint
  public:
   // constructor
   frLef58MinStepConstraint()
-      : minStepLength(-1),
+      : rule_(nullptr),
         insideCorner(false),
         outsideCorner(false),
         step(false),
         maxLength(-1),
-        maxEdges(-1),
-        minAdjLength(-1),
         convexCorner(false),
         exceptWithin(-1),
         concaveCorner(false),
@@ -219,24 +231,21 @@ class frLef58MinStepConstraint : public frConstraint
         minAdjLength2(-1),
         minBetweenLength(-1),
         exceptSameCorners(false),
-        eolWidth(-1),
         concaveCorners(false)
   {
   }
   // getter
-  frCoord getMinStepLength() const { return minStepLength; }
-  bool hasMaxEdges() const { return (maxEdges != -1); }
-  int getMaxEdges() const { return maxEdges; }
-  bool hasMinAdjacentLength() const { return (minAdjLength != -1); }
-  frCoord getMinAdjacentLength() const { return minAdjLength; }
-  bool hasEolWidth() const { return (eolWidth != -1); }
-  frCoord getEolWidth() const { return eolWidth; }
+  odb::dbTechLayerMinStepRule* getDbTechLayerMinStepRule() const { return rule_; }
+  frCoord getMinStepLength() const { return rule_->getMinStepLength(); }
+  bool hasMaxEdges() const { return rule_->isMaxEdgesValid(); }
+  int getMaxEdges() const { return rule_->isMaxEdgesValid() ? rule_->getMaxEdges() : -1; }
+  bool hasMinAdjacentLength() const { return rule_->isMinAdjLength1Valid(); }
+  frCoord getMinAdjacentLength() const { return  rule_->isMinAdjLength1Valid() ? rule_->getMinAdjLength1() : -1; }
+  bool hasEolWidth() const { return  rule_->isNoBetweenEol(); }
+  frCoord getEolWidth() const { return rule_->isNoBetweenEol() ? rule_->getEolWidth() : -1; }
 
   // setter
-  void setMinStepLength(frCoord in) { minStepLength = in; }
-  void setMaxEdges(int in) { maxEdges = in; }
-  void setMinAdjacentLength(frCoord in) { minAdjLength = in; }
-  void setEolWidth(frCoord in) { eolWidth = in; }
+  void setDbTechLayerMinStepRule(odb::dbTechLayerMinStepRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -250,13 +259,13 @@ class frLef58MinStepConstraint : public frConstraint
         "{} concaveCorner {} threeConcaveCorners {} width {} minAdjLength2 {} "
         "minBetweenLength {} exceptSameCorners {} eolWidth {} concaveCorners "
         "{} ",
-        minStepLength,
+        getMinStepLength(),
         insideCorner,
         outsideCorner,
         step,
         maxLength,
-        maxEdges,
-        minAdjLength,
+        getMaxEdges(),
+        getMinAdjacentLength(),
         convexCorner,
         exceptWithin,
         concaveCorner,
@@ -265,18 +274,16 @@ class frLef58MinStepConstraint : public frConstraint
         minAdjLength2,
         minBetweenLength,
         exceptSameCorners,
-        eolWidth,
+        getEolWidth(),
         concaveCorners);
   }
 
  protected:
-  frCoord minStepLength;
+  odb::dbTechLayerMinStepRule* rule_;
   bool insideCorner;
   bool outsideCorner;
   bool step;
   frCoord maxLength;
-  int maxEdges;
-  frCoord minAdjLength;
   bool convexCorner;
   frCoord exceptWithin;
   bool concaveCorner;
@@ -285,7 +292,6 @@ class frLef58MinStepConstraint : public frConstraint
   frCoord minAdjLength2;
   frCoord minBetweenLength;
   bool exceptSameCorners;
-  frCoord eolWidth;
   bool concaveCorners;
 };
 
@@ -295,19 +301,17 @@ class frMinStepConstraint : public frConstraint
  public:
   // constructor
   frMinStepConstraint()
-      : minStepLength(-1),
+      : layer_(nullptr),
         minstepType(frMinstepTypeEnum::UNKNOWN),
-        maxLength(-1),
         insideCorner(false),
         outsideCorner(true),
-        step(false),
-        maxEdges(-1)
+        step(false)
   {
   }
   // getter
-  frCoord getMinStepLength() const { return minStepLength; }
-  bool hasMaxLength() const { return (maxLength != -1); }
-  frCoord getMaxLength() const { return maxLength; }
+  frCoord getMinStepLength() const { return layer_->getMinStep(); }
+  bool hasMaxLength() const { return layer_->hasMinStepMaxLength(); }
+  frCoord getMaxLength() const { return layer_->getMinStepMaxLength(); }
   bool hasMinstepType() const
   {
     return minstepType != frMinstepTypeEnum::UNKNOWN;
@@ -316,16 +320,14 @@ class frMinStepConstraint : public frConstraint
   bool hasInsideCorner() const { return insideCorner; }
   bool hasOutsideCorner() const { return outsideCorner; }
   bool hasStep() const { return step; }
-  bool hasMaxEdges() const { return (maxEdges != -1); }
-  int getMaxEdges() const { return maxEdges; }
+  bool hasMaxEdges() const { return layer_->hasMinStepMaxEdges(); }
+  int getMaxEdges() const { return layer_->getMinStepMaxEdges(); }
   // setter
+  void setDbTechLayer(odb::dbTechLayer* layerIn) { layer_ = layerIn; }
   void setMinstepType(frMinstepTypeEnum in) { minstepType = in; }
   void setInsideCorner(bool in) { insideCorner = in; }
   void setOutsideCorner(bool in) { outsideCorner = in; }
   void setStep(bool in) { step = in; }
-  void setMinStepLength(frCoord in) { minStepLength = in; }
-  void setMaxLength(frCoord in) { maxLength = in; }
-  void setMaxEdges(int in) { maxEdges = in; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -337,23 +339,21 @@ class frMinStepConstraint : public frConstraint
     logger->report(
         "Min step length min {} type {} max {} "
         "insideCorner {} outsideCorner {} step {} maxEdges {}",
-        minStepLength,
+        getMinStepLength(),
         int(minstepType),
-        maxLength,
+        getMaxLength(),
         insideCorner,
         outsideCorner,
         step,
-        maxEdges);
+        getMaxEdges());
   }
 
  protected:
-  frCoord minStepLength;
+  odb::dbTechLayer *layer_;
   frMinstepTypeEnum minstepType;
-  frCoord maxLength;
   bool insideCorner;
   bool outsideCorner;
   bool step;
-  int maxEdges;
 };
 
 // minimumcut
@@ -361,37 +361,55 @@ class frMinimumcutConstraint : public frConstraint
 {
  public:
   frMinimumcutConstraint()
-      : numCuts(-1),
-        width(-1),
-        cutDistance(-1),
-        connection(frMinimumcutConnectionEnum::UNKNOWN),
-        length(-1),
-        distance(-1)
+      : rule_(nullptr),
+        connection(frMinimumcutConnectionEnum::UNKNOWN)
   {
   }
   // getters
-  int getNumCuts() const { return numCuts; }
-  frCoord getWidth() const { return width; }
-  bool hasWithin() const { return !(cutDistance == -1); }
-  frCoord getCutDistance() const { return cutDistance; }
+  odb::dbTechMinCutRule* getDbTechMinCutRule() const { return rule_; }
+  int getNumCuts() const
+  { 
+    frUInt4 numCuts, temp;
+    return (rule_->getMinimumCuts(numCuts, temp))? numCuts : -1; 
+  }
+  frCoord getWidth() const
+  { 
+    frUInt4 width, temp;
+    return (rule_->getMinimumCuts(temp, width))? width : -1; 
+  }
+  bool hasWithin() const
+  { 
+    frUInt4 within;
+    return rule_->getCutDistance(within); 
+  }
+  frCoord getCutDistance() const
+  { 
+    frUInt4 within;
+    return (rule_->getCutDistance(within))? within : -1; 
+  }
   bool hasConnection() const
   {
     return !(connection == frMinimumcutConnectionEnum::UNKNOWN);
   }
   frMinimumcutConnectionEnum getConnection() const { return connection; }
-  bool hasLength() const { return !(length == -1); }
-  frCoord getLength() const { return length; }
-  frCoord getDistance() const { return distance; }
-  // setters
-  void setNumCuts(int in) { numCuts = in; }
-  void setWidth(frCoord in) { width = in; }
-  void setWithin(frCoord in) { cutDistance = in; }
-  void setConnection(frMinimumcutConnectionEnum in) { connection = in; }
-  void setLength(frCoord in1, frCoord in2)
-  {
-    length = in1;
-    distance = in2;
+  bool hasLength() const
+  { 
+    frUInt4 length, temp;
+    return rule_->getLengthForCuts(length, temp);
   }
+  frCoord getLength() const
+  { 
+    frUInt4 length, temp;
+    return (rule_->getLengthForCuts(length, temp))? length : -1;
+  }
+  frCoord getDistance() const
+  { 
+    frUInt4 distance, temp;
+    return (rule_->getLengthForCuts(temp, distance))? distance : -1;
+  }
+  // setters
+  void setDbTechMinCutRule(odb::dbTechMinCutRule* ruleIn) { rule_ = ruleIn; }
+  void setConnection(frMinimumcutConnectionEnum in) { connection = in; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -402,21 +420,18 @@ class frMinimumcutConstraint : public frConstraint
     logger->report(
         "Min cut numCuts {} width {} cutDistance {} "
         "connection {} length {} distance {}",
-        numCuts,
-        width,
-        cutDistance,
+        getNumCuts(),
+        getWidth(),
+        getCutDistance(),
         connection,
-        length,
-        distance);
+        getLength(),
+        getDistance());
   }
 
  protected:
-  int numCuts;
-  frCoord width;
-  frCoord cutDistance;
+  odb::dbTechMinCutRule* rule_;
   frMinimumcutConnectionEnum connection;
-  frCoord length;
-  frCoord distance;
+
 };
 
 // minArea
@@ -474,26 +489,19 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
   // constructors
   frLef58SpacingEndOfLineWithinEncloseCutConstraint(frCoord encloseDistIn,
                                                     frCoord cutToMetalSpaceIn)
-      : below(false),
-        above(false),
-        encloseDist(encloseDistIn),
-        cutToMetalSpace(cutToMetalSpaceIn),
-        allCuts(false)
+      : rule_(nullptr)
   {
   }
   // setters
-  void setBelow(bool value) { below = value; }
-  void setAbove(bool value) { above = value; }
-  void setAllCuts(bool value) { allCuts = value; }
-  void setEncloseDist(frCoord value) { encloseDist = value; }
-  void setCutToMetalSpace(frCoord value) { cutToMetalSpace = value; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   // getters
-  bool isAboveOnly() const { return above; }
-  bool isBelowOnly() const { return below; }
-  bool isAboveAndBelow() const { return !(above ^ below); }
-  bool isAllCuts() const { return allCuts; }
-  frCoord getEncloseDist() const { return encloseDist; }
-  frCoord getCutToMetalSpace() const { return cutToMetalSpace; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool isAboveOnly() const { return rule_->isAboveValid(); }
+  bool isBelowOnly() const { return rule_->isBelowValid(); }
+  bool isAboveAndBelow() const { return !(rule_->isAboveValid() ^ rule_->isBelowValid()); }
+  bool isAllCuts() const { return rule_->isAllCutsValid(); }
+  frCoord getEncloseDist() const { return rule_->getEncloseDist(); }
+  frCoord getCutToMetalSpace() const { return rule_->getCutToMetalSpace(); }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -505,19 +513,15 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
     logger->report(
         "\t\tSPACING_WITHIN_ENCLOSECUT below {} above {} encloseDist "
         "{} cutToMetalSpace {} allCuts {}",
-        below,
-        above,
-        encloseDist,
-        cutToMetalSpace,
-        allCuts);
+        isBelowOnly(),
+        isAboveOnly(),
+        getEncloseDist(),
+        getCutToMetalSpace(),
+        isAllCuts());
   }
 
  private:
-  bool below;
-  bool above;
-  frCoord encloseDist;
-  frCoord cutToMetalSpace;
-  bool allCuts;
+  odb::dbTechLayerSpacingEolRule* rule_;
 };
 
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
@@ -525,51 +529,24 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinEndToEndConstraint()
-      : endToEndSpace(0),
-        cutSpace(false),
-        oneCutSpace(0),
-        twoCutSpace(0),
-        hExtension(false),
-        extension(0),
-        wrongDirExtension(false),
-        hOtherEndWidth(false),
-        otherEndWidth(0)
+      : rule_(nullptr),
+         cutSpace(false)
   {
   }
   // getters
-  frCoord getEndToEndSpace() const { return endToEndSpace; }
-  frCoord getOneCutSpace() const { return oneCutSpace; }
-  frCoord getTwoCutSpace() const { return twoCutSpace; }
-  bool hasExtension() const { return hExtension; }
-  frCoord getExtension() const { return extension; }
-  frCoord getWrongDirExtension() const { return wrongDirExtension; }
-  bool hasOtherEndWidth() const { return hOtherEndWidth; }
-  frCoord getOtherEndWidth() const { return otherEndWidth; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getEndToEndSpace() const { return rule_->getEndToEndSpace(); }
+  frCoord getOneCutSpace() const { return rule_->getOneCutSpace(); }
+  frCoord getTwoCutSpace() const { return rule_->getTwoCutSpace(); }
+  bool hasExtension() const { return rule_->isExtensionValid(); }
+  frCoord getExtension() const { return rule_->getExtension(); }
+  frCoord getWrongDirExtension() const { return rule_->getWrongDirExtension(); }
+  bool hasOtherEndWidth() const { return (rule_->getOtherEndWidth() != -1); }
+  frCoord getOtherEndWidth() const { return rule_->getOtherEndWidth(); }
 
   // setters
-  void setEndToEndSpace(frCoord in) { endToEndSpace = in; }
-  void setCutSpace(frCoord one, frCoord two)
-  {
-    oneCutSpace = one;
-    twoCutSpace = two;
-  }
-  void setExtension(frCoord extensionIn)
-  {
-    hExtension = true;
-    extension = extensionIn;
-    wrongDirExtension = extensionIn;
-  }
-  void setExtension(frCoord extensionIn, frCoord wrongDirExtensionIn)
-  {
-    hExtension = true;
-    extension = extensionIn;
-    wrongDirExtension = wrongDirExtensionIn;
-  }
-  void setOtherEndWidth(frCoord in)
-  {
-    hOtherEndWidth = true;
-    otherEndWidth = in;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
+
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -582,27 +559,20 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
         "\t\tSPACING_WITHIN_ENDTOEND endToEndSpace {} cutSpace {} oneCutSpace "
         "{} twoCutSpace {} hExtension {} extension {} wrongDirExtension {} "
         "hOtherEndWidth {} otherEndWidth {} ",
-        endToEndSpace,
+        getEndToEndSpace(),
         cutSpace,
-        oneCutSpace,
-        twoCutSpace,
-        hExtension,
-        extension,
-        wrongDirExtension,
-        hOtherEndWidth,
-        otherEndWidth);
+        getOneCutSpace(),
+        getTwoCutSpace(),
+        hasExtension(),
+        getExtension(),
+        getWrongDirExtension(),
+        hasOtherEndWidth(),
+        getOtherEndWidth());
   }
 
  protected:
-  frCoord endToEndSpace;
+  odb::dbTechLayerSpacingEolRule* rule_;
   bool cutSpace;
-  frCoord oneCutSpace;
-  frCoord twoCutSpace;
-  bool hExtension;
-  frCoord extension;
-  frCoord wrongDirExtension;
-  bool hOtherEndWidth;
-  frCoord otherEndWidth;
 };
 
 class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
@@ -610,52 +580,24 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinParallelEdgeConstraint()
-      : subtractEolWidth(false),
-        parSpace(0),
-        parWithin(0),
-        hPrl(false),
-        prl(0),
-        hMinLength(false),
-        minLength(0),
-        twoEdges(false),
-        sameMetal(false),
-        nonEolCornerOnly(false),
-        parallelSameMask(false)
+      : rule_(nullptr)
   {
   }
   // getters
-  bool hasSubtractEolWidth() const { return subtractEolWidth; }
-  frCoord getParSpace() const { return parSpace; }
-  frCoord getParWithin() const { return parWithin; }
-  bool hasPrl() const { return hPrl; }
-  frCoord getPrl() const { return prl; }
-  bool hasMinLength() const { return hMinLength; }
-  frCoord getMinLength() const { return minLength; }
-  bool hasTwoEdges() const { return twoEdges; }
-  bool hasSameMetal() const { return sameMetal; }
-  bool hasNonEolCornerOnly() const { return nonEolCornerOnly; }
-  bool hasParallelSameMask() const { return parallelSameMask; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool hasSubtractEolWidth() const { return rule_->isSubtractEolWidthValid(); }
+  frCoord getParSpace() const { return rule_->getParSpace(); }
+  frCoord getParWithin() const { return rule_->getParWithin(); }
+  bool hasPrl() const { return rule_->isParPrlValid(); }
+  frCoord getPrl() const { return rule_->getParPrl(); }
+  bool hasMinLength() const { return rule_->isParMinLengthValid(); }
+  frCoord getMinLength() const { return rule_->getParMinLength(); }
+  bool hasTwoEdges() const { return rule_->isTwoEdgesValid(); }
+  bool hasSameMetal() const { return rule_->isSameMetalValid(); }
+  bool hasNonEolCornerOnly() const { return rule_->isNonEolCornerOnlyValid(); }
+  bool hasParallelSameMask() const { return rule_->isParallelSameMaskValid(); }
   // setters
-  void setSubtractEolWidth(bool in) { subtractEolWidth = in; }
-  void setPar(frCoord parSpaceIn, frCoord parWithinIn)
-  {
-    parSpace = parSpaceIn;
-    parWithin = parWithinIn;
-  }
-  void setPrl(frCoord in)
-  {
-    hPrl = true;
-    prl = in;
-  }
-  void setMinLength(frCoord in)
-  {
-    hMinLength = true;
-    minLength = in;
-  }
-  void setTwoEdges(bool in) { twoEdges = in; }
-  void setSameMetal(bool in) { sameMetal = in; }
-  void setNonEolCornerOnly(bool in) { nonEolCornerOnly = in; }
-  void setParallelSameMask(bool in) { parallelSameMask = in; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn;}
 
   // others
   frConstraintTypeEnum typeId() const override
@@ -669,31 +611,21 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
         "\t\tSPACING_WITHIN_PARALLELEDGE subtractEolWidth {} parSpace {} "
         "parWithin {} hPrl {} prl {} hMinLength {} minLength {} twoEdges {} "
         "sameMetal {} nonEolCornerOnly {} parallelSameMask {} ",
-        subtractEolWidth,
-        parSpace,
-        parWithin,
-        hPrl,
-        prl,
-        hMinLength,
-        minLength,
-        twoEdges,
-        sameMetal,
-        nonEolCornerOnly,
-        parallelSameMask);
+        hasSubtractEolWidth(),
+        getParSpace(),
+        getParWithin(),
+        hasPrl(),
+        getPrl(),
+        hasMinLength(),
+        getMinLength(),
+        hasTwoEdges(),
+        hasSameMetal(),
+        hasNonEolCornerOnly(),
+        hasParallelSameMask());
   }
 
  protected:
-  bool subtractEolWidth;
-  frCoord parSpace;
-  frCoord parWithin;
-  bool hPrl;
-  frCoord prl;
-  bool hMinLength;
-  frCoord minLength;
-  bool twoEdges;
-  bool sameMetal;
-  bool nonEolCornerOnly;
-  bool parallelSameMask;
+  odb::dbTechLayerSpacingEolRule *rule_;
 };
 
 class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
@@ -701,22 +633,18 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinMaxMinLengthConstraint()
-      : maxLength(false), length(0), twoSides(false)
+      : rule_(nullptr)
   {
   }
 
   // getters
-  frCoord getLength() const { return length; }
-  bool isMaxLength() const { return maxLength; }
-  bool isTwoSides() const { return twoSides; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getLength() const { return rule_->getMinLength(); }
+  bool isMaxLength() const { return !(rule_->isMinLengthValid()); }
+  bool isTwoSides() const { return rule_->isTwoEdgesValid(); }
 
   // setters
-  void setLength(bool maxLengthIn, frCoord lengthIn, bool twoSidesIn = false)
-  {
-    maxLength = maxLengthIn;
-    length = lengthIn;
-    twoSides = twoSidesIn;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -727,15 +655,13 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
   {
     logger->report(
         "\t\tSPACING_WITHIN_MAXMIN maxLength {} length {} twoSides {} ",
-        maxLength,
-        length,
-        twoSides);
+        isMaxLength(),
+        getLength(),
+        isTwoSides());
   }
 
  protected:
-  bool maxLength;
-  frCoord length;
-  bool twoSides;
+  odb::dbTechLayerSpacingEolRule* rule_;
 };
 
 class frLef58SpacingEndOfLineWithinConstraint : public frConstraint

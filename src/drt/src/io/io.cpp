@@ -1171,63 +1171,54 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       auto endToEnd
           = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
       within->setEndToEndConstraint(endToEnd);
-      endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
-      endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
-      if (rule->isExtensionValid()) {
-        if (rule->isWrongDirExtensionValid()) {
-          endToEnd->setExtension(rule->getExtension(),
-                                 rule->getWrongDirExtension());
-        } else {
-          endToEnd->setExtension(rule->getExtension());
-        }
-      }
-      if (rule->isOtherEndWidthValid()) {
-        endToEnd->setOtherEndWidth(rule->getOtherEndWidth());
-      }
+      endToEnd->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isParallelEdgeValid()) {
       auto parallelEdge
           = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
       within->setParallelEdgeConstraint(parallelEdge);
-      if (rule->isSubtractEolWidthValid()) {
-        parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
-      }
-      parallelEdge->setPar(rule->getParSpace(), rule->getParWithin());
-      if (rule->isParPrlValid()) {
-        parallelEdge->setPrl(rule->getParPrl());
-      }
-      if (rule->isParMinLengthValid()) {
-        parallelEdge->setMinLength(rule->getParMinLength());
-      }
-      if (rule->isTwoEdgesValid()) {
-        parallelEdge->setTwoEdges(rule->isTwoEdgesValid());
-      }
-      if (rule->isSameMetalValid()) {
-        parallelEdge->setSameMetal(rule->isSameMetalValid());
-      }
-      if (rule->isNonEolCornerOnlyValid()) {
-        parallelEdge->setNonEolCornerOnly(rule->isNonEolCornerOnlyValid());
-      }
-      if (rule->isParallelSameMaskValid()) {
-        parallelEdge->setParallelSameMask(rule->isParallelSameMaskValid());
-      }
+      parallelEdge->setDbTechLayerSpacingEolRule(rule);
+      // if (rule->isSubtractEolWidthValid()) {
+      //   parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
+      // }
+      // parallelEdge->setPar(rule->getParSpace(), rule->getParWithin());
+      // if (rule->isParPrlValid()) {
+      //   parallelEdge->setPrl(rule->getParPrl());
+      // }
+      // if (rule->isParMinLengthValid()) {
+      //   parallelEdge->setMinLength(rule->getParMinLength());
+      // }
+      // if (rule->isTwoEdgesValid()) {
+      //   parallelEdge->setTwoEdges(rule->isTwoEdgesValid());
+      // }
+      // if (rule->isSameMetalValid()) {
+      //   parallelEdge->setSameMetal(rule->isSameMetalValid());
+      // }
+      // if (rule->isNonEolCornerOnlyValid()) {
+      //   parallelEdge->setNonEolCornerOnly(rule->isNonEolCornerOnlyValid());
+      // }
+      // if (rule->isParallelSameMaskValid()) {
+      //   parallelEdge->setParallelSameMask(rule->isParallelSameMaskValid());
+      // }
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
       auto len
           = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
       within->setMaxMinLengthConstraint(len);
-      if (rule->isMinLengthValid())
-        len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
-      else
-        len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
+      len->setDbTechLayerSpacingEolRule(rule);
+      // if (rule->isMinLengthValid())
+      //   len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
+      // else
+      //   len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
     }
     if (rule->isEncloseCutValid()) {
       auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
           rule->getEncloseDist(), rule->getCutToMetalSpace());
       within->setEncloseCutConstraint(enc);
-      enc->setAbove(rule->isAboveValid());
-      enc->setBelow(rule->isBelowValid());
-      enc->setAllCuts(rule->isAllCutsValid());
+      enc->setDbTechLayerSpacingEolRule(rule);
+      // enc->setAbove(rule->isAboveValid());
+      // enc->setBelow(rule->isBelowValid());
+      // enc->setAllCuts(rule->isAllCutsValid());
     }
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech->addUConstraint(std::move(con));
@@ -1248,11 +1239,12 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
     auto con = make_unique<frLef58MinStepConstraint>();
-    con->setMinStepLength(rule->getMinStepLength());
-    con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
-    con->setMinAdjacentLength(
-        rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
-    con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
+    con->setDbTechLayerMinStepRule(rule);
+    // con->setMinStepLength(rule->getMinStepLength());
+    // con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
+    // con->setMinAdjacentLength(
+    //     rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
+    // con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
@@ -1582,16 +1574,17 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       default:
         break;
     }
-    if (layer->hasMinStepMaxLength())
-      rptr->setMaxLength(layer->getMinStepMaxLength());
+    rptr->setDbTechLayer(layer);
+    // if (layer->hasMinStepMaxLength())
+      //rptr->setMaxLength(layer->getMinStepMaxLength());
     if (layer->hasMinStepMaxEdges()) {
-      rptr->setMaxEdges(layer->getMinStepMaxEdges());
+      //rptr->setMaxEdges(layer->getMinStepMaxEdges());
       rptr->setInsideCorner(true);
       rptr->setOutsideCorner(true);
       rptr->setStep(true);
       rptr->setMinstepType(frMinstepTypeEnum::UNKNOWN);
     }
-    rptr->setMinStepLength(layer->getMinStep());
+    //rptr->setMinStepLength(layer->getMinStep());
     tech->addUConstraint(std::move(uCon));
     tmpLayer->setMinStepConstraint(rptr);
   }
@@ -1609,12 +1602,13 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           "minEnclosedArea constraint with width is not supported, skipped.");
       continue;
     }
-    frUInt4 _minEnclosedArea;
-    rule->getEnclosure(_minEnclosedArea);
-    frCoord minEnclosedArea = _minEnclosedArea;
+    // frUInt4 _minEnclosedArea;
+    // rule->getEnclosure(_minEnclosedArea);
+    // frCoord minEnclosedArea = _minEnclosedArea;
     auto minEnclosedAreaConstraint
-        = make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
+        = make_unique<frMinEnclosedAreaConstraint>();
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
+    minEnclosedAreaConstraint->setDbTechMinEncRule(rule);
     tech->addUConstraint(std::move(minEnclosedAreaConstraint));
   }
 
@@ -1768,21 +1762,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
 
   for (auto rule : layer->getMinCutRules()) {
-    frUInt4 numCuts, width, within, length, distance;
+    frUInt4 numCuts, width;
     if (!rule->getMinimumCuts(numCuts, width))
       continue;
     unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
-    rptr->setNumCuts(numCuts);
-    rptr->setWidth(width);
-    if (rule->getCutDistance(within))
-      rptr->setWithin(within);
+    rptr->setDbTechMinCutRule(rule);
     if (rule->isAboveOnly())
       rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
     if (rule->isBelowOnly())
       rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
-    if (rule->getLengthForCuts(length, distance))
-      rptr->setLength(length, distance);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
@@ -2264,9 +2253,10 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   auto _tech = db->getTech();
   if (_tech == nullptr)
     logger->error(DRT, 136, "Load design first.");
-  tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
+  tech->setTechObject(_tech);
+  // tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
   USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
-  tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
+  // tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
   setLayers(_tech);
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
