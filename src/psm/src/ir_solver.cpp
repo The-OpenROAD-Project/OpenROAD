@@ -1201,7 +1201,7 @@ vector<pair<odb::dbInst*, double>> IRSolver::getPower()
 
 pair<double, double> IRSolver::getSupplyVoltage()
 {
-  return SupplyVoltage().getSupplyVoltage(sta_);
+  return SupplyVoltage().getSupplyVoltage(sta_, logger_);
 }
 
 bool IRSolver::getResult()

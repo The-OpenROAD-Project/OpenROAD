@@ -49,7 +49,8 @@ class SupplyVoltage
 {
  public:
   //! Function for power per instance calculation
-  std::pair<double, double> getSupplyVoltage(sta::dbSta* sta);
+  std::pair<double, double> getSupplyVoltage(sta::dbSta* sta,
+                                             utl::Logger* logger);
 };
 
 }  // namespace psm
