@@ -132,18 +132,6 @@ proc set_routing_layers { args } {
   }
 }
 
-sta::define_cmd_args "set_critical_nets_percentage" { percentage }
-
-proc set_critical_nets_percentage { args } {
-  if {[llength $args] == 1} {
-    lassign $args percentage
-    sta::check_percent "critical_nets_percentage" $percentage
-    grt::set_critical_nets_percentage $percentage
-  } else {
-    utl::error GRT 205 "Command set_critical_nets_percentage needs one argument: percentage."
-  }
-}
-
 sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
@@ -206,8 +194,9 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
                                   [-grid_origin origin] \
-                                  [-allow_congestion] \
                                   [-overflow_iterations iterations] \
+                                  [-critical_nets_percentage percent] \
+                                  [-allow_congestion] \
                                   [-allow_overflow] \
                                   [-verbose]
 }
@@ -215,7 +204,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin
+          -overflow_iterations -grid_origin -critical_nets_percentage
          } \
     flags {-allow_congestion -allow_overflow -verbose}
 
@@ -261,6 +250,12 @@ proc global_route { args } {
     set iterations $keys(-overflow_iterations)
     sta::check_positive_integer "-overflow_iterations" $iterations
     grt::set_overflow_iterations $iterations
+  }
+
+  if { [info exists keys(-critical_nets_percentage)] } {
+    set percentage $keys(-critical_nets_percentage)
+    sta::check_percent "-critical_nets_percentage" $percentage
+    grt::set_critical_nets_percentage $percentage
   }
 
   if { [info exists flags(-allow_overflow)] } {
