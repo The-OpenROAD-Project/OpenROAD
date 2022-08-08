@@ -181,9 +181,8 @@ __global__ void Multi_MatVec(float error,
     error = error / sum;
 }
 
-float GpuSolver::error_cal()
+float GpuSolver::error()
 {
-  float error = 0;
   float* r_Ax;
   thrust::device_vector<float> t_Ax(m_);
   thrust::fill(t_Ax.begin(), t_Ax.end(), 0);
@@ -191,7 +190,7 @@ float GpuSolver::error_cal()
 
   unsigned int threads = 512;
   unsigned int blocks = (m_ + threads - 1) / threads;
-  Multi_MatVec<<<blocks, threads>>>(error,
+  Multi_MatVec<<<blocks, threads>>>(error_,
                                     nnz_,
                                     m_,
                                     r_Ax,
@@ -200,7 +199,7 @@ float GpuSolver::error_cal()
                                     r_cooRowIndex_,
                                     r_cooColIndex_,
                                     r_cooVal_);
-  return (error > 0) ? error : -error;
+  return (error_ > 0) ? error_ : -error_;
 }
 
 GpuSolver::~GpuSolver()

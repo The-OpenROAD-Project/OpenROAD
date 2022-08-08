@@ -44,11 +44,11 @@ typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
   err error;
   GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
   SP1.cusolverCal(instLocVecX);
-  error.errorX = SP1.error_cal();
+  error.errorX = SP1.error();
 
   GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
   SP2.cusolverCal(instLocVecY);
-  error.errorY = SP1.error_cal();
+  error.errorY = SP1.error();
   return error;
 }
 #endif

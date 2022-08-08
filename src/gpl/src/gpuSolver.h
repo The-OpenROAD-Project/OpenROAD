@@ -34,13 +34,14 @@ class GpuSolver
             Eigen::VectorXf& fixedInstForceVec,
             utl::Logger* logger);
   void cusolverCal(Eigen::VectorXf& instLocVec);
-  float error_cal();
+  float error();
   ~GpuSolver();
 
  private:
   int m_;    // Rows of the SP matrix
   int nnz_;  // non-zeros
   utl::Logger* log_;
+  float error_;
 
   // {d_cooRowIndex_, d_cooColIndex_, d_cooVal_} are the device vectors used to
   // store the COO formatted triplets.
