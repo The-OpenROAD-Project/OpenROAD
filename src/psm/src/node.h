@@ -31,35 +31,29 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __IRSOLVER_NODE__
-#define __IRSOLVER_NODE__
+#pragma once
 
 #include <map>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
-namespace psm {
-using odb::dbInst;
 
+namespace psm {
+
+using odb::dbInst;
 using odb::Point;
 using BBox = std::pair<int, int>;
-using NodeIdx = int;  // TODO temp as it interfaces with SUPERLU
+using NodeIdx = int;
 
 //! Node class which stores the properties of the node of the PDN
 class Node
 {
  public:
-  Node() : bBox_(std::make_pair(0.0, 0.0)) {}
+  Node(const Point& loc, int layer);
   //! Get the layer number of the node
   int getLayerNum() const;
-  //! Set the layer number of the node
-  void setLayerNum(int layer);
   //! Get the location of the node
   Point getLoc() const;
-  //! Set the location of the node using x and y coordinates
-  void setLoc(int x, int y);
-  //! Set the location of the node using x,y and layer information
-  void setLoc(int x, int y, int l);
   //! Get location of the node in G matrix
   NodeIdx getGLoc() const;
   //! Get location of the node in G matrix
@@ -89,12 +83,12 @@ class Node
 
   bool hasInstances() const;
 
-  std::vector<dbInst*> getInstances() const;
+  const std::vector<dbInst*>& getInstances() const;
 
   void addInstance(dbInst* inst);
 
  private:
-  int layer_;
+  int layer_{-1};
   Point loc_;
   NodeIdx node_loc_{0};
   BBox bBox_;
@@ -104,4 +98,3 @@ class Node
   std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm
-#endif

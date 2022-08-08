@@ -30,8 +30,6 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "psm/pdnsim.h"
-
 #include <tcl.h>
 
 #include <fstream>
@@ -47,6 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
+#include "psm/pdnsim.h"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -165,24 +164,22 @@ void PDNSim::import_spice_out_file(std::string out_file)
 
 void PDNSim::write_pg_spice()
 {
-  IRSolver* irsolve_h = new IRSolver(db_,
-                                     sta_,
-                                     logger_,
-                                     vsrc_loc_,
-                                     power_net_,
-                                     out_file_,
-                                     em_out_file_,
-                                     spice_out_file_,
-                                     enable_em_,
-                                     bump_pitch_x_,
-                                     bump_pitch_y_,
-                                     node_density_,
-                                     node_density_factor_,
-                                     net_voltage_map_);
+  auto irsolve_h = std::make_unique<IRSolver>(db_,
+                                              sta_,
+                                              logger_,
+                                              vsrc_loc_,
+                                              power_net_,
+                                              out_file_,
+                                              em_out_file_,
+                                              spice_out_file_,
+                                              enable_em_,
+                                              bump_pitch_x_,
+                                              bump_pitch_y_,
+                                              node_density_,
+                                              node_density_factor_,
+                                              net_voltage_map_);
 
-  if (!irsolve_h->build()) {
-    delete irsolve_h;
-  } else {
+  if (irsolve_h->build()) {
     int check_spice = irsolve_h->printSpice();
     if (check_spice) {
       logger_->info(
