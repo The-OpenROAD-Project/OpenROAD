@@ -512,6 +512,11 @@ class dbBox : public dbObject
   void getViaXY(int& x, int& y);
 
   ///
+  /// Return the placed location of this via.
+  ///
+  Point getViaXY();
+
+  ///
   /// Get the box bounding points.
   ///
   Rect getBox();
