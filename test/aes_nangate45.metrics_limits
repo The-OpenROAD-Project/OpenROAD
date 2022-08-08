@@ -4,7 +4,7 @@
  ,"DPL::utilization" : "4.2"
  ,"RSZ::repair_design_buffer_count" : "416"
  ,"RSZ::max_slew_slack" : "0"
- ,"RSZ::max_capacitance_slack" : "0"
+ ,"RSZ::max_capacitance_slack" : "-2"
  ,"RSZ::max_fanout_slack" : "0"
  ,"RSZ::worst_slack_min" : "-0.07975433227466162"
  ,"RSZ::worst_slack_max" : "-0.25695610443490813"
