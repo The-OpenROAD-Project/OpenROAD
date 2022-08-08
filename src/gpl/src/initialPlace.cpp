@@ -79,7 +79,7 @@ static PlotEnv pe;
 
 void InitialPlace::doBicgstabPlace()
 {
-  float error = 0.0f;
+  err error;
 
 #ifdef ENABLE_CIMG_LIB
   pe.setPlacerBase(pb_);
@@ -112,7 +112,7 @@ void InitialPlace::doBicgstabPlace()
                       placeInstForceMatrixY_,
                       fixedInstForceVecY_,
                       instLocVecY_,
-                      log_, pb_);
+                      log_);
     }
     else{
       log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
@@ -124,7 +124,7 @@ void InitialPlace::doBicgstabPlace()
               placeInstForceMatrixY_,
               fixedInstForceVecY_,
               instLocVecY_,
-              log_, pb_);
+              log_);
     }
   }
   else{
@@ -135,19 +135,22 @@ void InitialPlace::doBicgstabPlace()
                     placeInstForceMatrixY_,
                     fixedInstForceVecY_,
                     instLocVecY_,
-                    log_, pb_);
+                    log_);
   }
 
 #else
     error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
-                   placeInstForceMatrixX_,
-                   fixedInstForceVecX_,
-                   instLocVecX_,
-                   placeInstForceMatrixY_,
-                   fixedInstForceVecY_,
-                   instLocVecY_,
-                   log_, pb_);
+                  placeInstForceMatrixX_,
+                  fixedInstForceVecX_,
+                  instLocVecX_,
+                  placeInstForceMatrixY_,
+                  fixedInstForceVecY_,
+                  instLocVecY_,
+                  log_);
 #endif
+    float error_max = max(error.errorX, error.errorY);
+    log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
+        iter, error_max, pb_->hpwl());
     updateCoordi();
 
 #ifdef ENABLE_CIMG_LIB
@@ -161,7 +164,7 @@ void InitialPlace::doBicgstabPlace()
       graphics->cellPlot(true);
     }
 
-    if (error <= 1e-5 && iter >= 5) {
+    if (error_max <= 1e-5 && iter >= 5) {
       break;
     }
   }
