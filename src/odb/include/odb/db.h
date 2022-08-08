@@ -2817,6 +2817,12 @@ class dbInst : public dbObject
   void getLocation(int& x, int& y) const;
 
   ///
+  /// This method returns the lower-left corner
+  /// of the bounding box of this instance.
+  ///
+  Point getLocation() const;
+
+  ///
   /// This method sets the lower-left corner
   /// of the bounding box of this instance.
   ///
