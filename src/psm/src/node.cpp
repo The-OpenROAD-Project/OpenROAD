@@ -31,10 +31,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "node.h"
-
 #include <iostream>
 #include <vector>
+
+#include "node.h"
 
 namespace psm {
 
@@ -42,6 +42,11 @@ using std::make_pair;
 using std::max;
 using std::pair;
 using std::vector;
+
+Node::Node(const Point& loc, int layer)
+    : layer_(layer), loc_(loc), bBox_({0.0, 0.0})
+{
+}
 
 //! Get the layer number of the node
 /*
@@ -52,15 +57,6 @@ int Node::getLayerNum() const
   return layer_;
 }
 
-//! Set the layer number of the node
-/*
- \param t_layer Layer number
-*/
-void Node::setLayerNum(int t_layer)
-{
-  layer_ = t_layer;
-}
-
 //! Get the location of the node
 /*
  * \return NodeLoc which is x and y index
@@ -68,28 +64,6 @@ void Node::setLayerNum(int t_layer)
 Point Node::getLoc() const
 {
   return loc_;
-}
-
-//! Set the location of the node using x and y coordinates
-/*
- * \param t_x x index
- * \param t_y y index
- * */
-void Node::setLoc(int t_x, int t_y)
-{
-  loc_ = Point(t_x, t_y);
-}
-
-//! Set the location of the node using x,y and layer information
-/*
- * \param t_x x index
- * \param t_y y index
- * \param t_l Layer number
- * */
-void Node::setLoc(int t_x, int t_y, int t_l)
-{
-  setLayerNum(t_l);
-  setLoc(t_x, t_y);
 }
 
 //! Get location of the node in G matrix
@@ -207,7 +181,7 @@ bool Node::hasInstances() const
   return !connected_instances_.empty();
 }
 
-vector<dbInst*> Node::getInstances() const
+const vector<dbInst*>& Node::getInstances() const
 {
   return connected_instances_;
 }

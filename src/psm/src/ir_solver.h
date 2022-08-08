@@ -30,8 +30,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef __IRSOLVER_IRSOLVER_
-#define __IRSOLVER_IRSOLVER_
+#pragma once
 
 #include "gmat.h"
 #include "odb/db.h"
@@ -64,9 +63,9 @@ class IRSolver
    * This constructor creates an instance of the class using
    * the given inputs.
    */
-  IRSolver(odb::dbDatabase* t_db,
-           sta::dbSta* t_sta,
-           utl::Logger* t_logger,
+  IRSolver(odb::dbDatabase* db,
+           sta::dbSta* sta,
+           utl::Logger* logger,
            std::string vsrc_loc,
            std::string power_net,
            std::string out_file,
@@ -90,18 +89,13 @@ class IRSolver
   std::vector<std::pair<odb::dbInst*, double>> getPower();
   std::pair<double, double> getSupplyVoltage();
 
-  bool checkConnectivity(bool connection_only = false);
-  bool checkValidR(double R);
-
   bool getConnectionTest();
 
-  bool getResult();
   int getMinimumResolution();
 
   int printSpice();
 
   bool build();
-
   bool buildConnection();
 
   const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
@@ -115,6 +109,35 @@ class IRSolver
   float getSupplyVoltageSrc() const { return supply_voltage_src; }
 
  private:
+  //! Function to add C4 bumps to the G matrix
+  bool addC4Bump();
+  //! Function that parses the Vsrc file
+  void readC4Data();
+  //! Function to create a J vector from the current map
+  bool createJ();
+  //! Function to create a G matrix using the nodes
+  bool createGmat(bool connection_only = false);
+  //! Function to find and store the upper and lower PDN layers and return a
+  //! list
+  // of wires for all PDN tasks
+  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
+  //! Function to create the nodes of the G matrix
+  void createGmatNodes(const std::vector<odb::dbSBox*>& power_wires,
+                       const std::vector<odb::Rect>& macros);
+
+  //! Function to find and store the macro boundaries
+  std::vector<odb::Rect> getMacroBoundaries();
+
+  //! Function to create the nodes for the c4 bumps
+  int createC4Nodes(bool connection_only, int unit_micron);
+  //! Function to create the connections of the G matrix
+  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
+                             bool connection_only);
+  bool checkConnectivity(bool connection_only = false);
+  bool checkValidR(double R);
+  bool getResult();
+
+
   float supply_voltage_src;
   //! Worst case voltage at the lowest layer nodes
   double wc_voltage;
@@ -174,31 +197,5 @@ class IRSolver
   std::vector<std::tuple<int, double, double>> layer_res_;
   //! Locations of the C4 bumps in the G matrix
   std::map<NodeIdx, double> C4Nodes_;
-  //! Function to add C4 bumps to the G matrix
-  bool addC4Bump();
-  //! Function that parses the Vsrc file
-  void readC4Data();
-  //  void                                           ReadResData();
-  //! Function to create a J vector from the current map
-  bool createJ();
-  //! Function to create a G matrix using the nodes
-  bool createGmat(bool connection_only = false);
-  //! Function to find and store the upper and lower PDN layers and return a
-  //! list
-  // of wires for all PDN tasks
-  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
-  //! Function to create the nodes of the G matrix
-  void createGmatNodes(const std::vector<odb::dbSBox*>& power_wires,
-                       const std::vector<odb::Rect>& macros);
-
-  //! Function to find and store the macro boundaries
-  std::vector<odb::Rect> getMacroBoundaries();
-
-  //! Function to create the nodes for the c4 bumps
-  int createC4Nodes(bool connection_only, int unit_micron);
-  //! Function to create the connections of the G matrix
-  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
-                             bool connection_only);
 };
 }  // namespace psm
-#endif

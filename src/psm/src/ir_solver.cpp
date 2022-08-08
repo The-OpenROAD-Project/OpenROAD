@@ -97,9 +97,9 @@ using Eigen::SparseMatrix;
 using Eigen::Success;
 using Eigen::VectorXd;
 
-IRSolver::IRSolver(odb::dbDatabase* t_db,
-                   sta::dbSta* t_sta,
-                   utl::Logger* t_logger,
+IRSolver::IRSolver(odb::dbDatabase* db,
+                   sta::dbSta* sta,
+                   utl::Logger* logger,
                    std::string vsrc_loc,
                    std::string power_net,
                    std::string out_file,
@@ -112,9 +112,9 @@ IRSolver::IRSolver(odb::dbDatabase* t_db,
                    int node_density_factor_user,
                    const std::map<std::string, float>& net_voltage_map)
 {
-  db_ = t_db;
-  sta_ = t_sta;
-  logger_ = t_logger;
+  db_ = db;
+  sta_ = sta;
+  logger_ = logger;
   vsrc_file_ = vsrc_loc;
   power_net_ = power_net;
   out_file_ = out_file;
@@ -653,19 +653,18 @@ void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
         via_bottom_layer = via->getBottomLayer();
       }
       BBox bBox = make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
-      int x, y;
-      curWire->getViaXY(x, y);
+      Point loc = curWire->getViaXY();
       // TODO: Using a single node for a via requires that the vias are
       // stacked and not staggered, i.e., V1 via cut must overlap either V2
       // via cut or enclosure and connections cannot be made through
       // enclosures only.
       const int lb = via_bottom_layer->getRoutingLevel();
       if (bottom_layer_ != lb) {  // do not set for bottom layers
-        Gmat_->setNode(x, y, lb, bBox);
+        Gmat_->setNode(loc, lb, bBox);
       }
       const int lt = via_top_layer->getRoutingLevel();
       if (bottom_layer_ != lt) {  // do not set for bottom layers
-        Gmat_->setNode(x, y, lt, bBox);
+        Gmat_->setNode(loc, lt, bBox);
       }
       // For a stripe we create nodes at the ends of the stripes and at a fixed
       // frequency in the lowermost layer.
@@ -697,7 +696,7 @@ void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
           x_loc2 = (x_loc2 / node_density_)
                    * node_density_;  // quantize the horizontal direction
           for (int x_i = x_loc1; x_i <= x_loc2; x_i = x_i + node_density_) {
-            Gmat_->setNode(x_i, y_loc1, l, make_pair(0, 0));
+            Gmat_->setNode({x_i, y_loc1}, l, make_pair(0, 0));
           }
         } else {
           y_loc1 = (y_loc1 / node_density_)
@@ -705,13 +704,13 @@ void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
           y_loc2 = (y_loc2 / node_density_)
                    * node_density_;  // quantize the vertical direction
           for (int y_i = y_loc1; y_i <= y_loc2; y_i = y_i + node_density_) {
-            Gmat_->setNode(x_loc1, y_i, l, make_pair(0, 0));
+            Gmat_->setNode({x_loc1, y_i}, l, make_pair(0, 0));
           }
         }
         // For all other layers we just create the end nodes
       } else {
-        Gmat_->setNode(x_loc1, y_loc1, l, make_pair(0, 0));
-        Gmat_->setNode(x_loc2, y_loc2, l, make_pair(0, 0));
+        Gmat_->setNode({x_loc1, y_loc1}, l, make_pair(0, 0));
+        Gmat_->setNode({x_loc2, y_loc2}, l, make_pair(0, 0));
         // Special condition: if the stripe ovelaps a macro ensure a node is
         // created
         for (const auto& macro : macros) {
@@ -722,14 +721,14 @@ void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
               // (Values inside will already have a node at endpoints)
               if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
                 const int x = (macro.xMin() + macro.xMax()) / 2;
-                Gmat_->setNode(x, y_loc1, l, make_pair(0, 0));
+                Gmat_->setNode({x, y_loc1}, l, make_pair(0, 0));
               }
             }
           } else {
             if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
               if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
                 const int y = (macro.yMin() + macro.yMax()) / 2;
-                Gmat_->setNode(x_loc1, y, l, make_pair(0, 0));
+                Gmat_->setNode({x_loc1, y}, l, make_pair(0, 0));
               }
             }
           }

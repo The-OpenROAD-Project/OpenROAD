@@ -31,8 +31,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __IRSOLVER_GMAT_
-#define __IRSOLVER_GMAT_
+#pragma once
+
 #include "node.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -76,33 +76,29 @@ class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int t_num_layers, utl::Logger* logger);
+  GMat(int num_layers, utl::Logger* logger);
   //! Destructor of the G matrix
   ~GMat();
   //! Function to return a pointer to the node with a index
-  Node* getNode(NodeIdx t_node);
+  Node* getNode(NodeIdx node);
   //! Function to return a pointer to the node with the x, y, and layer number
-  Node* getNode(int t_x, int t_y, int t_l, bool t_nearest = false);
+  Node* getNode(int x, int y, int layer, bool nearest = false);
   //! Function to return a vector to all nodes in the region defined
-  std::vector<Node*> getNodes(int t_l,
-                              int t_x_min,
-                              int t_x_max,
-                              int t_y_min,
-                              int t_y_max);
-  //! Function to set attributes of the node with index and node pointer
-  void setNode(NodeIdx t_node_loc, Node* t_node);
+  std::vector<Node*> getNodes(int layer,
+                              int x_min,
+                              int x_max,
+                              int y_min,
+                              int y_max);
   //! Function to create a node
-  Node* setNode(int t_x, int t_y, int t_layer, BBox t_bBox);
+  Node* setNode(const Point& loc, int layer, BBox bBox);
   //! Function to insert a node into the matrix
-  void insertNode(Node* t_node);
+  void insertNode(Node* node);
   //! Function that prints the G matrix for debug purposes
   void print();
   //! Function to add the conductance value between two nodes
-  void setConductance(const Node* t_node1,
-                      const Node* t_node2,
-                      const double t_cond);
+  void setConductance(const Node* node1, const Node* node2, const double cond);
   //! Function to initialize the sparse dok matrix
-  void initializeGmatDok(int t_numC4);
+  void initializeGmatDok(int numC4);
   //! Function that returns the number of nodes in the G matrix
   NodeIdx getNumNodes();
   //! Function to return a pointer to the G matrix
@@ -110,22 +106,22 @@ class GMat
   //! Function to return a pointer to the A matrix
   CscMatrix* getAMat();
   //! Function to get the conductance of the strip of the power grid
-  void generateStripeConductance(int t_l,
+  void generateStripeConductance(int layer,
                                  odb::dbTechLayerDir::Value layer_dir,
-                                 int t_x_min,
-                                 int t_x_max,
-                                 int t_y_min,
-                                 int t_y_max,
-                                 double t_rho);
+                                 int x_min,
+                                 int x_max,
+                                 int y_min,
+                                 int y_max,
+                                 double rho);
   //! Function to get location of vias to the redistribution layer
-  std::vector<Node*> getRDLNodes(int t_l,
+  std::vector<Node*> getRDLNodes(int layer,
                                  odb::dbTechLayerDir::Value layer_dir,
-                                 int t_x_min,
-                                 int t_x_max,
-                                 int t_y_min,
-                                 int t_y_max);
+                                 int x_min,
+                                 int x_max,
+                                 int y_min,
+                                 int y_max);
   //! Function to add the voltage source based on C4 bump location
-  void addC4Bump(int t_loc, int t_C4Num);
+  void addC4Bump(int loc, int C4Num);
   //! Function which generates the compressed sparse column matrix
   bool generateCSCMatrix();
   //! Function which generates the compressed sparse column matrix for A
@@ -136,8 +132,18 @@ class GMat
   DokMatrix* getGMatDOK();
 
  private:
+  //! Function to get the conductance value at a row and column of the matrix
+  double getConductance(NodeIdx row, NodeIdx col);
+  //! Function to add a conductance value at the specified location of the
+  //! matrix
+  void updateConductance(NodeIdx row, NodeIdx col, double cond);
+  //! Function to find the nearest node to a particular location
+  Node* nearestYNode(NodeMap::iterator x_itr, int y);
+  //! Function to find conductivity of a stripe based on width,length, and pitch
+  double getConductivity(double width, double length, double rho);
+
   //! Pointer to the logger
-  utl::Logger* logger_;
+  utl::Logger* logger_{nullptr};
   //! Number of nodes in G matrix
   NodeIdx n_nodes_{0};
   //! Dictionary of keys for G matrix
@@ -152,15 +158,5 @@ class GMat
   std::vector<Node*> G_mat_nodes_;
   //! Vector of maps to all nodes
   std::vector<NodeMap> layer_maps_;
-  //! Function to get the conductance value at a row and column of the matrix
-  double getConductance(NodeIdx t_row, NodeIdx t_col);
-  //! Function to add a conductance value at the specified location of the
-  //! matrix
-  void updateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond);
-  //! Function to find the nearest node to a particular location
-  Node* nearestYNode(NodeMap::iterator x_itr, int t_y);
-  //! Function to find conductivity of a stripe based on width,length, and pitch
-  double getConductivity(double width, double length, double rho);
 };
 }  // namespace psm
-#endif

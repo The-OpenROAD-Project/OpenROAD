@@ -31,8 +31,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __PDNSim_HEADER__
-#define __PDNSim_HEADER__
+#pragma once
 
 #include <map>
 #include <memory>
@@ -107,5 +106,3 @@ class PDNSim
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
 }  // namespace psm
-
-#endif
