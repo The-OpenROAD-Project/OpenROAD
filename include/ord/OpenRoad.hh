@@ -215,6 +215,10 @@ public:
 		    std::vector<sta::LibertyCell*> *remove_cells);
   void linkDesign(const char *top_cell_name);
 
+  // Used if a design is created programmatically rather than loaded
+  // to notify the tools (eg dbSta, gui).
+  void designCreated();
+
   void readDb(const char *filename);
   void writeDb(const char *filename);
 

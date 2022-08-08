@@ -43,28 +43,44 @@ void Graphics::drawCluster(gui::Painter& painter)
                                           gui::Painter::magenta,
                                           gui::Painter::dark_yellow,
                                           gui::Painter::blue,
-                                          gui::Painter::gray,
+                                          gui::Painter::dark_gray,
                                           gui::Painter::dark_green,
                                           gui::Painter::cyan};
 
   unsigned clusterCounter = 0;
   double totalWL = 0;
+  bool first = true;
+  odb::Point last;
   for (const std::vector<unsigned>& clusters :
        sink_clustering_->sinkClusteringSolution()) {
     const unsigned color = clusterCounter % colors.size();
 
     std::vector<Point<double>> clusterNodes;
+    bool first_in_cluster = true;
     for (unsigned idx : clusters) {
       const Point<double>& point = points_.at(idx);
       clusterNodes.emplace_back(point);
 
-      painter.setBrush(colors[color]);
-      painter.setPen(colors[color]);
-      painter.setPenWidth(2500);
       int unit = sink_clustering_->getScaleFactor();
       int xreal = unit * point.getX() + 0.5;
       int yreal = unit * point.getY() + 0.5;
 
+      if (first) {
+        first = false;
+        first_in_cluster = false;
+      } else {
+        if (first_in_cluster) {
+          first_in_cluster = false;
+          painter.setPen(gui::Painter::white, /* cosmetic */ true);
+        } else {
+          painter.setPen(colors[color], /* cosmetic */ true);
+        }
+        painter.drawLine(last, {xreal, yreal});
+      }
+      last = {xreal, yreal};
+
+      painter.setPenAndBrush(colors[color]);
+      painter.setPenWidth(2500);
       painter.drawCircle(xreal, yreal, 500);
     }
     const double wl = sink_clustering_->getWireLength(clusterNodes);

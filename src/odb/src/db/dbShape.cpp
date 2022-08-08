@@ -172,6 +172,14 @@ void dbShape::getViaXY(int& x, int& y) const
   }
 }
 
+Point dbShape::getViaXY() const
+{
+  int x;
+  int y;
+  getViaXY(x, y);
+  return {x, y};
+}
+
 void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
 {
   if (via.getTechVia()) {

@@ -315,14 +315,9 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
   while (violations && itr < iterations) {
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
-
-    // Antenna checker requires local connections to create dbWires.
-    // Copy the routes so the originals are not side-effected.
-    NetRouteMap routes = routes_;
-    addLocalConnections(routes);
-    violations = repair_antennas_->checkAntennaViolations(
-        routes, max_routing_layer_, diode_mterm);
-
+    violations = repair_antennas_->checkAntennaViolations(routes_,
+                                                          max_routing_layer_,
+                                                          diode_mterm);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -347,13 +342,8 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
 void GlobalRouter::makeNetWires()
 {
   if (repair_antennas_ == nullptr)
-    repair_antennas_
-        = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
-  // Antenna checker requires local connections to create dbWires.
-  // Copy the routes so the originals are not side-effected.
-  NetRouteMap routes = routes_;
-  addLocalConnections(routes);
-  repair_antennas_->makeNetWires(routes, max_routing_layer_);
+    repair_antennas_ = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
+  repair_antennas_->makeNetWires(routes_, max_routing_layer_);
 }
 
 void GlobalRouter::destroyNetWires()
@@ -2015,93 +2005,6 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
       new_seg.final_x = std::max(final_x0, final_x1);
       new_seg.final_y = std::max(final_y0, final_y1);
       return true;
-    }
-  }
-
-  return false;
-}
-
-void GlobalRouter::addLocalConnections(NetRouteMap& routes)
-{
-  int top_layer;
-  std::vector<odb::Rect> pin_boxes;
-  odb::Point pin_position;
-  odb::Point real_pin_position;
-  GSegment hor_segment;
-  GSegment ver_segment;
-
-  for (auto& net_route : routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    Net* net = getNet(db_net);
-    if (!net) {
-      continue;
-    }
-    for (Pin& pin : net->getPins()) {
-      top_layer = pin.getTopLayer();
-      pin_boxes = pin.getBoxes().at(top_layer);
-      pin_position = pin.getOnGridPosition();
-
-      // create the local connection only when the global segment
-      // doesn't overlap the pin, avoiding loops in the routing
-      if (!pinOverlapsGSegment(pin_position, top_layer, pin_boxes, route)) {
-        int minimum_distance = std::numeric_limits<int>::max();
-        for (const odb::Rect& pin_box : pin_boxes) {
-          odb::Point pos = getRectMiddle(pin_box);
-          int distance = abs(pos.x() - pin_position.x())
-                         + abs(pos.y() - pin_position.y());
-          if (distance < minimum_distance) {
-            minimum_distance = distance;
-            real_pin_position = pos;
-          }
-        }
-        hor_segment = GSegment(real_pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer,
-                               pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer);
-        ver_segment = GSegment(pin_position.x(),
-                               real_pin_position.y(),
-                               top_layer,
-                               pin_position.x(),
-                               pin_position.y(),
-                               top_layer);
-
-        route.push_back(hor_segment);
-        route.push_back(ver_segment);
-      }
-    }
-  }
-}
-
-bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
-                                       const int pin_layer,
-                                       const std::vector<odb::Rect>& pin_boxes,
-                                       const GRoute& route)
-{
-  // check if pin position on grid overlaps with the pin shape
-  for (const odb::Rect& box : pin_boxes) {
-    if (box.overlaps(pin_position)) {
-      return true;
-    }
-  }
-
-  // check if pin position on grid overlaps with at least one GSegment
-  for (const odb::Rect& box : pin_boxes) {
-    for (const GSegment& seg : route) {
-      if (seg.init_layer == seg.final_layer &&  // ignore vias
-          seg.init_layer == pin_layer) {
-        int x0 = std::min(seg.init_x, seg.final_x);
-        int y0 = std::min(seg.init_y, seg.final_y);
-        int x1 = std::max(seg.init_x, seg.final_x);
-        int y1 = std::max(seg.init_y, seg.final_y);
-        odb::Rect seg_rect(x0, y0, x1, y1);
-
-        if (box.intersects(seg_rect)) {
-          return true;
-        }
-      }
     }
   }
 

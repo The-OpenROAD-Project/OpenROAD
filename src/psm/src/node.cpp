@@ -31,10 +31,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "node.h"
-
 #include <iostream>
 #include <vector>
+
+#include "node.h"
 
 namespace psm {
 
@@ -43,60 +43,34 @@ using std::max;
 using std::pair;
 using std::vector;
 
+Node::Node(const Point& loc, int layer)
+    : layer_(layer), loc_(loc)
+{
+}
+
 //! Get the layer number of the node
 /*
  * \return Layer number of the node
  * */
-int Node::getLayerNum()
+int Node::getLayerNum() const
 {
   return layer_;
-}
-
-//! Set the layer number of the node
-/*
- \param t_layer Layer number
-*/
-void Node::setLayerNum(int t_layer)
-{
-  layer_ = t_layer;
 }
 
 //! Get the location of the node
 /*
  * \return NodeLoc which is x and y index
  * */
-Point Node::getLoc()
+Point Node::getLoc() const
 {
   return loc_;
-}
-
-//! Set the location of the node using x and y coordinates
-/*
- * \param t_x x index
- * \param t_y y index
- * */
-void Node::setLoc(int t_x, int t_y)
-{
-  loc_ = Point(t_x, t_y);
-}
-
-//! Set the location of the node using x,y and layer information
-/*
- * \param t_x x index
- * \param t_y y index
- * \param t_l Layer number
- * */
-void Node::setLoc(int t_x, int t_y, int t_l)
-{
-  setLayerNum(t_l);
-  setLoc(t_x, t_y);
 }
 
 //! Get location of the node in G matrix
 /*
  * \return Location in G matrix
  */
-NodeIdx Node::getGLoc()
+NodeIdx Node::getGLoc() const
 {
   return node_loc_;
 }
@@ -111,42 +85,15 @@ void Node::setGLoc(NodeIdx t_loc)
 }
 
 //! Function to print node details
-void Node::print(utl::Logger* logger)
+void Node::print(utl::Logger* logger) const
 {
   logger->report("Node: {}", node_loc_);
   logger->report(
       "  Location: Layer {}, x {}, y {}", layer_, loc_.getX(), loc_.getY());
-  logger->report("  Bounding box: x {}, y {} ", bBox_.first, bBox_.second);
   logger->report("  Current: {:5.4e}A", current_src_);
   logger->report("  Voltage: {:5.4e}V", voltage_);
   logger->report("  Has connection: {}", connected_ ? "true" : "false");
-  logger->report("  Has instances:  {}", has_instances_ ? "true" : "false");
-}
-
-//! Function to set the bounding box of the stripe
-void Node::setBbox(int t_dX, int t_dY)
-{
-  bBox_ = make_pair(t_dX, t_dY);
-}
-
-//! Function to get the bounding box of the stripe
-BBox Node::getBbox()
-{
-  return bBox_;
-}
-
-//! Function to update the stripe
-/*
- * \param t_dX Change in the x value
- * \param t_dY Change in the y value
- * \return nothing
- */
-void Node::updateMaxBbox(int t_dX, int t_dY)
-{
-  BBox nodeBbox = bBox_;
-  int dx = max(nodeBbox.first, t_dX);
-  int dy = max(nodeBbox.second, t_dY);
-  setBbox(dx, dy);
+  logger->report("  Has instances:  {}", hasInstances() ? "true" : "false");
 }
 
 //! Function to set the current value at a particular node
@@ -159,7 +106,7 @@ void Node::setCurrent(double t_current)
 }
 
 //! Function to get the value of current at a node
-double Node::getCurrent()
+double Node::getCurrent() const
 {
   return current_src_;
 }
@@ -187,12 +134,12 @@ void Node::setVoltage(double t_voltage)
 /*
  * \return Voltage value at the node
  */
-double Node::getVoltage()
+double Node::getVoltage() const
 {
   return voltage_;
 }
 
-bool Node::getConnected()
+bool Node::getConnected() const
 {
   return connected_;
 }
@@ -202,19 +149,18 @@ void Node::setConnected()
   connected_ = true;
 }
 
-bool Node::hasInstances()
+bool Node::hasInstances() const
 {
-  return has_instances_;
+  return !connected_instances_.empty();
 }
 
-vector<dbInst*> Node::getInstances()
+const vector<dbInst*>& Node::getInstances() const
 {
   return connected_instances_;
 }
 
 void Node::addInstance(dbInst* inst)
 {
-  has_instances_ = true;
   connected_instances_.push_back(inst);
 }
 }  // namespace psm

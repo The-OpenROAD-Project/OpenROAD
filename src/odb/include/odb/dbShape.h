@@ -201,6 +201,11 @@ class dbShape
   void getViaXY(int& x, int& y) const;
 
   ///
+  /// Return the placed location of this via.
+  ///
+  Point getViaXY() const;
+
+  ///
   /// Returns true if this object is a via
   ///
   bool isVia() const;
