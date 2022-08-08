@@ -79,7 +79,7 @@ static PlotEnv pe;
 
 void InitialPlace::doBicgstabPlace()
 {
-  err error;
+  ResidualError error;
 
 #ifdef ENABLE_CIMG_LIB
   pe.setPlacerBase(pb_);

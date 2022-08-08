@@ -20,7 +20,7 @@ class Logger;
 
 namespace gpl {
 
-struct err{
+struct ResidualError{
   float errorX; // The relative residual error for X
   float errorY; // The relative residual error for Y
 };
@@ -32,7 +32,7 @@ using utl::GPL;
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
 #ifdef ENABLE_GPU
- err cudaSparseSolve(int iter,
+ ResidualError cudaSparseSolve(int iter,
                      SMatrix& placeInstForceMatrixX,
                      Eigen::VectorXf& fixedInstForceVecX,
                      Eigen::VectorXf& instLocVecX,
@@ -41,7 +41,7 @@ typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
                      Eigen::VectorXf& instLocVecY,
                      utl::Logger* logger)
 {
-  err error;
+  ResidualError error;
   GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
   SP1.cusolverCal(instLocVecX);
   error.errorX = SP1.error();
@@ -53,7 +53,7 @@ typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 }
 #endif
 
-err cpuSparseSolve(int maxSolverIter,
+ResidualError cpuSparseSolve(int maxSolverIter,
                     int iter,
                     SMatrix& placeInstForceMatrixX,
                     Eigen::VectorXf& fixedInstForceVecX,
@@ -63,7 +63,7 @@ err cpuSparseSolve(int maxSolverIter,
                     Eigen::VectorXf& instLocVecY,
                      utl::Logger* logger)
 {
-  err error;
+  ResidualError error;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);
   solver.compute(placeInstForceMatrixX);
