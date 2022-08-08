@@ -49,6 +49,8 @@ void Graphics::drawCluster(gui::Painter& painter)
 
   unsigned clusterCounter = 0;
   double totalWL = 0;
+  bool first = true;
+  odb::Point last;
   for (const std::vector<unsigned>& clusters :
        sink_clustering_->sinkClusteringSolution()) {
     const unsigned color = clusterCounter % colors.size();
@@ -58,13 +60,21 @@ void Graphics::drawCluster(gui::Painter& painter)
       const Point<double>& point = points_.at(idx);
       clusterNodes.emplace_back(point);
 
-      painter.setBrush(colors[color]);
-      painter.setPen(colors[color]);
-      painter.setPenWidth(2500);
       int unit = sink_clustering_->getScaleFactor();
       int xreal = unit * point.getX() + 0.5;
       int yreal = unit * point.getY() + 0.5;
 
+      if (first) {
+        first = false;
+      } else {
+        painter.setPen(colors[color], /* cosmetic */ true);
+        painter.drawLine(last, {xreal, yreal});
+      }
+      last = {xreal, yreal};
+
+      painter.setBrush(colors[color]);
+      painter.setPen(colors[color]);
+      painter.setPenWidth(2500);
       painter.drawCircle(xreal, yreal, 500);
     }
     const double wl = sink_clustering_->getWireLength(clusterNodes);
