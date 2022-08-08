@@ -67,6 +67,7 @@ void Graphics::drawCluster(gui::Painter& painter)
 
       if (first) {
         first = false;
+        first_in_cluster = false;
       } else {
         if (first_in_cluster) {
           first_in_cluster = false;
