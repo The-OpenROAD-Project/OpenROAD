@@ -1486,10 +1486,15 @@ void io::Parser::addDefaultMasterSliceLayer()
 {
   unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
-  tmpMSLayer->setFakeMs(true);
+  if (masterSliceLayerPtr == nullptr)
+  { 
+    tmpMSLayer->setFakeMs(true);
+  } else {
+    tmpMSLayer->setDbLayer(masterSliceLayerPtr);
+  }
   tmpMSLayer->setLayerNum(readLayerCnt++);
   tech->addLayer(std::move(uMSLayer));
-  }
+}
 
 void io::Parser::addDefaultCutLayer()
 {
@@ -1884,12 +1889,13 @@ void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
-    masterSliceLayerName = string(layer->getName());
+    masterSliceLayerPtr = layer;
+
 }
 
 void io::Parser::setLayers(odb::dbTech* tech)
 {
-  masterSliceLayerName = "FR_MASTERSLICE";
+  masterSliceLayerPtr = nullptr;
   for (auto layer : tech->getLayers()) {
     switch (layer->getType().getValue()) {
       case odb::dbTechLayerType::ROUTING:
