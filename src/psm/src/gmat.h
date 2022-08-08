@@ -90,7 +90,7 @@ class GMat
                               int y_min,
                               int y_max);
   //! Function to create a node
-  Node* setNode(const Point& loc, int layer, BBox bBox);
+  Node* setNode(const Point& loc, int layer);
   //! Function to insert a node into the matrix
   void insertNode(Node* node);
   //! Function that prints the G matrix for debug purposes
