@@ -725,15 +725,6 @@ void GlobalRouter::computeNetSlacks()
   int th_index = std::ceil(slacks.size() * critical_nets_percentage_);
   float slack_th = slacks[th_index];
 
-  // Ensure the slack threshold is negative
-  if (slack_th >= 0) {
-    for (float slack : slacks) {
-      if (slack >= 0)
-        break;
-      slack_th = slack;
-    }
-  }
-
   // Add the slack values smaller than the threshold to the nets
   for (auto net_itr : net_slack_map) {
     Net* net = net_itr.first;
