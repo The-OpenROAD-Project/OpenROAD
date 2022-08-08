@@ -178,12 +178,11 @@ void GMat::insertNode(Node* node)
      \param bBox layer number
      \return Pointer to the created node
 */
-Node* GMat::setNode(const Point& loc, int layer, BBox bBox)
+Node* GMat::setNode(const Point& loc, int layer)
 {
   NodeMap& layer_map = layer_maps_[layer];
   if (layer_map.empty()) {
     Node* node = new Node(loc, layer);
-    node->updateMaxBbox(bBox.first, bBox.second);
     insertNode(node);
     return (node);
   }
@@ -192,18 +191,15 @@ Node* GMat::setNode(const Point& loc, int layer, BBox bBox)
     map<int, Node*>::iterator y_itr = x_itr->second.find(loc.getY());
     if (y_itr != x_itr->second.end()) {
       Node* node = y_itr->second;
-      node->updateMaxBbox(bBox.first, bBox.second);
       return (node);
     } else {
       Node* node = new Node(loc, layer);
-      node->updateMaxBbox(bBox.first, bBox.second);
       insertNode(node);
       return (node);
     }
 
   } else {
     Node* node = new Node(loc, layer);
-    node->updateMaxBbox(bBox.first, bBox.second);
     insertNode(node);
     return (node);
   }

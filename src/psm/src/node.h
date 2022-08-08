@@ -42,7 +42,6 @@ namespace psm {
 
 using odb::dbInst;
 using odb::Point;
-using BBox = std::pair<int, int>;
 using NodeIdx = int;
 
 //! Node class which stores the properties of the node of the PDN
@@ -60,12 +59,6 @@ class Node
   void setGLoc(NodeIdx loc);
   //! Function to print node details
   void print(utl::Logger* logger) const;
-  //! Function to set the bounding box of the stripe
-  void setBbox(int dX, int dY);
-  //! Function to get the bounding box of the stripe
-  BBox getBbox() const;
-  //! Function to update the stripe
-  void updateMaxBbox(int dX, int dY);
   //! Function to set the current value at a particular node
   void setCurrent(double t_current);
   //! Function to get the value of current at a node
@@ -91,7 +84,6 @@ class Node
   int layer_{-1};
   Point loc_;
   NodeIdx node_loc_{0};
-  BBox bBox_;
   double current_src_{0.0};
   double voltage_{0.0};
   bool connected_{false};

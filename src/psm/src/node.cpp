@@ -44,7 +44,7 @@ using std::pair;
 using std::vector;
 
 Node::Node(const Point& loc, int layer)
-    : layer_(layer), loc_(loc), bBox_({0.0, 0.0})
+    : layer_(layer), loc_(loc)
 {
 }
 
@@ -90,37 +90,10 @@ void Node::print(utl::Logger* logger) const
   logger->report("Node: {}", node_loc_);
   logger->report(
       "  Location: Layer {}, x {}, y {}", layer_, loc_.getX(), loc_.getY());
-  logger->report("  Bounding box: x {}, y {} ", bBox_.first, bBox_.second);
   logger->report("  Current: {:5.4e}A", current_src_);
   logger->report("  Voltage: {:5.4e}V", voltage_);
   logger->report("  Has connection: {}", connected_ ? "true" : "false");
   logger->report("  Has instances:  {}", hasInstances() ? "true" : "false");
-}
-
-//! Function to set the bounding box of the stripe
-void Node::setBbox(int t_dX, int t_dY)
-{
-  bBox_ = make_pair(t_dX, t_dY);
-}
-
-//! Function to get the bounding box of the stripe
-BBox Node::getBbox() const
-{
-  return bBox_;
-}
-
-//! Function to update the stripe
-/*
- * \param t_dX Change in the x value
- * \param t_dY Change in the y value
- * \return nothing
- */
-void Node::updateMaxBbox(int t_dX, int t_dY)
-{
-  BBox nodeBbox = bBox_;
-  int dx = max(nodeBbox.first, t_dX);
-  int dy = max(nodeBbox.second, t_dY);
-  setBbox(dx, dy);
 }
 
 //! Function to set the current value at a particular node
