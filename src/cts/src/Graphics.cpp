@@ -43,7 +43,7 @@ void Graphics::drawCluster(gui::Painter& painter)
                                           gui::Painter::magenta,
                                           gui::Painter::dark_yellow,
                                           gui::Painter::blue,
-                                          gui::Painter::gray,
+                                          gui::Painter::dark_gray,
                                           gui::Painter::dark_green,
                                           gui::Painter::cyan};
 
@@ -56,6 +56,7 @@ void Graphics::drawCluster(gui::Painter& painter)
     const unsigned color = clusterCounter % colors.size();
 
     std::vector<Point<double>> clusterNodes;
+    bool first_in_cluster = true;
     for (unsigned idx : clusters) {
       const Point<double>& point = points_.at(idx);
       clusterNodes.emplace_back(point);
@@ -67,13 +68,17 @@ void Graphics::drawCluster(gui::Painter& painter)
       if (first) {
         first = false;
       } else {
-        painter.setPen(colors[color], /* cosmetic */ true);
+        if (first_in_cluster) {
+          first_in_cluster = false;
+          painter.setPen(gui::Painter::white, /* cosmetic */ true);
+        } else {
+          painter.setPen(colors[color], /* cosmetic */ true);
+        }
         painter.drawLine(last, {xreal, yreal});
       }
       last = {xreal, yreal};
 
-      painter.setBrush(colors[color]);
-      painter.setPen(colors[color]);
+      painter.setPenAndBrush(colors[color]);
       painter.setPenWidth(2500);
       painter.drawCircle(xreal, yreal, 500);
     }
