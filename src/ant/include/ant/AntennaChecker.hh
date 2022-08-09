@@ -144,7 +144,7 @@ class AntennaChecker
                      vector<dbWireGraph::Node*> &wire_roots,
                      vector<dbWireGraph::Node*> &gate_iterms);
 
-  std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio,
+  std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio, dbNet* net,
                                      bool verbose,
                                      bool report);
   std::pair<bool, bool> checkWireCar(ARinfo AntennaRatio,
@@ -160,7 +160,7 @@ class AntennaChecker
                 // Return values.
                 int &net_violation_count,
                 int &pin_violation_count);
-  void checkGate(dbWireGraph::Node* gate,
+  void checkGate(dbNet* net, dbWireGraph::Node* gate,
                  vector<ARinfo> &CARtable,
                  vector<ARinfo> &VIA_CARtable,
                  bool report,
@@ -193,6 +193,12 @@ class AntennaChecker
   int net_violation_count_;
 
   static constexpr int max_diode_count_per_gate = 10;
+
+  // A map indexed by: pair(net, metal_layer)
+  // It stores the maximum length allowed to be held by that wire in the given layer without violating the antenna rules as
+  // well as the current wire length.
+  std::map<std::pair<const char*, int>, std::pair<double, double>> allowed_wire_length;
+
 };
 
 }  // namespace ant
