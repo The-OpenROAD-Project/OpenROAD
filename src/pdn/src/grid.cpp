@@ -1156,10 +1156,9 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
     local_obs[layer].insert({obs->getObstructionBox(), obs});
   }
 
-  // add obstruction covering ensure instance
+  // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_)) {
-    auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
-    local_obs[layer].insert({obs->getObstructionBox(), obs});
+    local_obs[layer].insert(shapes.begin(), shapes.end());
   }
 
   // merge local and global obs
