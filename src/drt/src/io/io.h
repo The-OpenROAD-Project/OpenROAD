@@ -137,7 +137,7 @@ class Parser
   std::unique_ptr<frBlock> tmpBlock;
   // temporary variables
   int readLayerCnt;
-  odb::dbTechLayer* masterSliceLayerPtr;
+  odb::dbTechLayer* masterSliceLayer;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
   std::vector<std::pair<frBlockObject*, Point>> tmpGRPins;
   std::map<frMaster*,
