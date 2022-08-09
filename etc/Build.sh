@@ -37,7 +37,7 @@ OPTIONS:
                                                   compile. Default: \`nproc\`
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
-  -GPU                                          Enable GPU to accelerate the process
+  -gpu                                          Enable GPU to accelerate the process
 
 EOF
     exit "${1:-1}"
@@ -81,7 +81,7 @@ while [ "$#" -gt 0 ]; do
             echo "${1} requires an argument" >&2
             _help
             ;;
-        -GPU)
+        -gpu)
             cmakeOptions+=( -DGPU=ON )
             ;;
         *)

@@ -32,20 +32,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "initialPlace.h"
-#include "solver.h"
+
 #include "placerBase.h"
+#include "solver.h"
 
 namespace gpl {
 using namespace std;
 
-typedef Eigen::Triplet< float > T;
+typedef Eigen::Triplet<float> T;
 
-InitialPlaceVars::InitialPlaceVars() 
+InitialPlaceVars::InitialPlaceVars()
 {
   reset();
 }
 
-void InitialPlaceVars::reset() {
+void InitialPlaceVars::reset()
+{
   maxIter = 20;
   minDiffLength = 1500;
   maxSolverIter = 100;
@@ -55,10 +57,14 @@ void InitialPlaceVars::reset() {
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace()
-: ipVars_(), pb_(nullptr), log_(nullptr) {} 
+InitialPlace::InitialPlace() : ipVars_(), pb_(nullptr), log_(nullptr)
+{
+}
 
-InitialPlace::InitialPlace(InitialPlaceVars ipVars, std::shared_ptr<PlacerBase> pb, utl::Logger* log): ipVars_(ipVars), pb_(pb), log_(log)
+InitialPlace::InitialPlace(InitialPlaceVars ipVars,
+                           std::shared_ptr<PlacerBase> pb,
+                           utl::Logger* log)
+    : ipVars_(ipVars), pb_(pb), log_(log)
 {
 }
 
@@ -80,6 +86,7 @@ static PlotEnv pe;
 void InitialPlace::doBicgstabPlace()
 {
   ResidualError error;
+  bool run_cpu = true;
 
 #ifdef ENABLE_CIMG_LIB
   pe.setPlacerBase(pb_);
@@ -101,56 +108,43 @@ void InitialPlace::doBicgstabPlace()
     updatePinInfo();
     createSparseMatrix();
 #ifdef ENABLE_GPU
-  if (!ipVars_.forceCPU){
-    int gpu_count = 0;
-    cudaGetDeviceCount(&gpu_count);	
-    if(gpu_count != 0){
-      // CUSOLVER based on sparse matrix and QR decomposition for initial place
-      error = cudaSparseSolve(iter, placeInstForceMatrixX_,
-                      fixedInstForceVecX_,
-                      instLocVecX_,
-                      placeInstForceMatrixY_,
-                      fixedInstForceVecY_,
-                      instLocVecY_,
-                      log_);
+    if (!ipVars_.forceCPU) {
+      int gpu_count = 0;
+      cudaGetDeviceCount(&gpu_count);
+      if (gpu_count != 0) {
+        run_cpu = false;
+        // CUSOLVER based on sparse matrix and QR decomposition for initial
+        // place
+        error = cudaSparseSolve(iter,
+                                placeInstForceMatrixX_,
+                                fixedInstForceVecX_,
+                                instLocVecX_,
+                                placeInstForceMatrixY_,
+                                fixedInstForceVecY_,
+                                instLocVecY_,
+                                log_);
+      } else
+        log_->warn(GPL, 250, "GPU is not available. CPU solve is being used.");
     }
-    else{
-      log_->warn(GPL, 250, "GPU is not available. CPU solver is automatically used.");
-      // BiCGSTAB solver for initial place
-      error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
-              placeInstForceMatrixX_,
-              fixedInstForceVecX_,
-              instLocVecX_,
-              placeInstForceMatrixY_,
-              fixedInstForceVecY_,
-              instLocVecY_,
-              log_);
-    }
-  }
-  else{
-      error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
-                    placeInstForceMatrixX_,
-                    fixedInstForceVecX_,
-                    instLocVecX_,
-                    placeInstForceMatrixY_,
-                    fixedInstForceVecY_,
-                    instLocVecY_,
-                    log_);
-  }
-
-#else
-    error = cpuSparseSolve(ipVars_.maxSolverIter, iter,
-                  placeInstForceMatrixX_,
-                  fixedInstForceVecX_,
-                  instLocVecX_,
-                  placeInstForceMatrixY_,
-                  fixedInstForceVecY_,
-                  instLocVecY_,
-                  log_);
 #endif
-    float error_max = max(error.errorX, error.errorY);
+    if (run_cpu) {
+      if (ipVars_.forceCPU)
+        log_->warn(GPL, 251, "CPU solver is forced to be used.");
+      error = cpuSparseSolve(ipVars_.maxSolverIter,
+                             iter,
+                             placeInstForceMatrixX_,
+                             fixedInstForceVecX_,
+                             instLocVecX_,
+                             placeInstForceMatrixY_,
+                             fixedInstForceVecY_,
+                             instLocVecY_,
+                             log_);
+    }
+    float error_max = max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
-        iter, error_max, pb_->hpwl());
+                 iter,
+                 error_max,
+                 pb_->hpwl());
     updateCoordi();
 
 #ifdef ENABLE_CIMG_LIB
@@ -448,4 +442,4 @@ void InitialPlace::updateCoordi()
   }
 }
 
-} 
+}  // namespace gpl

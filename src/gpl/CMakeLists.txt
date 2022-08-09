@@ -66,6 +66,7 @@ target_sources(gpl
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
+    src/solver.cpp
 )
 
 messages(TARGET gpl)
@@ -85,29 +86,30 @@ target_link_libraries(gpl
     rsz
     grt
 )
-# If CUDA is not installed there will not be cmake
-# support for the package so this needs to be "quiet".
-find_package(CUDA QUIET COMPONENTS Core Widgets)
 
 # Allow users to use GPU or not
 option(GPU "Enable GPU" OFF)
-
-if (CUDA_FOUND AND GPU)
- 
+if (GPU)
   message(STATUS "GPU is enabled")
-  enable_language(CUDA)
-  target_sources(gpl PRIVATE src/gpuSolver.cu)
-  target_link_libraries(gpl
+  find_package(CUDA QUIET COMPONENTS Core Widgets)
+  if (CUDA_FOUND)
+    message(STATUS "CUDA is found")
+    enable_language(CUDA)
+    target_sources(gpl PRIVATE src/gpuSolver.cu)
+    target_link_libraries(gpl
+      PRIVATE
+        ${CUDA_LIBRARIES}
+        ${CUDA_CUBLAS_LIBRARIES}
+        ${CUDA_cusparse_LIBRARY}
+        ${CUDA_cusolver_LIBRARY}
+    )
+    target_compile_definitions( gpl
     PRIVATE
-      ${CUDA_LIBRARIES}
-      ${CUDA_CUBLAS_LIBRARIES}
-      ${CUDA_cusparse_LIBRARY}
-      ${CUDA_cusolver_LIBRARY}
-  )
-  target_compile_definitions( gpl
-  PRIVATE
-    ENABLE_GPU
-  )
+      ENABLE_GPU
+    )
+  else()
+    message(STATUS "CUDA is not found")
+  endif()
 else()
   message(STATUS "GPU is not enabled")
 endif()

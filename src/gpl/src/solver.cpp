@@ -33,38 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/SparseCore>
-#include <memory>
-
-#ifdef ENABLE_GPU
-#include "gpuSolver.h"
-#endif
-#include "graphics.h"
-#include "odb/db.h"
-#include "placerBase.h"
-#include "plot.h"
-#include "utl/Logger.h"
-
-namespace utl {
-class Logger;
-}
+#include "solver.h"
 
 namespace gpl {
-
-struct ResidualError
-{
-  float x;  // The relative residual error for X
-  float y;  // The relative residual error for Y
-};
-
-using Eigen::BiCGSTAB;
-using Eigen::IdentityPreconditioner;
-using utl::GPL;
-
-typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
 #ifdef ENABLE_GPU
 ResidualError cudaSparseSolve(int iter,
@@ -74,9 +45,19 @@ ResidualError cudaSparseSolve(int iter,
                               SMatrix& placeInstForceMatrixY,
                               Eigen::VectorXf& fixedInstForceVecY,
                               Eigen::VectorXf& instLocVecY,
-                              utl::Logger* logger);
-#endif
+                              utl::Logger* logger)
+{
+  ResidualError error;
+  GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
+  SP1.cusolverCal(instLocVecX);
+  error.x = SP1.error();
 
+  GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
+  SP2.cusolverCal(instLocVecY);
+  error.y = SP1.error();
+  return error;
+}
+#endif
 ResidualError cpuSparseSolve(int maxSolverIter,
                              int iter,
                              SMatrix& placeInstForceMatrixX,
@@ -85,5 +66,18 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              SMatrix& placeInstForceMatrixY,
                              Eigen::VectorXf& fixedInstForceVecY,
                              Eigen::VectorXf& instLocVecY,
-                             utl::Logger* logger);
+                             utl::Logger* logger)
+{
+  ResidualError error;
+  BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
+  solver.setMaxIterations(maxSolverIter);
+  solver.compute(placeInstForceMatrixX);
+  instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
+  error.x = solver.error();
+
+  solver.compute(placeInstForceMatrixY);
+  instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
+  error.y = solver.error();
+  return error;
+}
 }  // namespace gpl

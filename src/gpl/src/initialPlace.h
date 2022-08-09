@@ -33,12 +33,12 @@
 
 #ifndef __REPLACE_INIT_PLACE__
 #define __REPLACE_INIT_PLACE__
-    
-#include "nesterovPlace.h"
+
 #include <Eigen/SparseCore>
-#include "odb/db.h"
 #include <memory>
 
+#include "nesterovPlace.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

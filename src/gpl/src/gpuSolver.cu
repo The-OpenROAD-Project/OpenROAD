@@ -1,3 +1,38 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2019, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #include "gpuSolver.h"
 
 namespace gpl {
@@ -56,8 +91,11 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
   cooColIndex.reserve(nnz_);
   cooVal.reserve(nnz_);
 
-  for(int row = 0; row < placeInstForceMatrix.outerSize(); row++){
-    for(typename Eigen::SparseMatrix<float,Eigen::RowMajor>::InnerIterator it(placeInstForceMatrix,row); it; ++it){
+  for (int row = 0; row < placeInstForceMatrix.outerSize(); row++) {
+    for (typename Eigen::SparseMatrix<float, Eigen::RowMajor>::InnerIterator it(
+             placeInstForceMatrix, row);
+         it;
+         ++it) {
       cooRowIndex.push_back(it.row());
       cooColIndex.push_back(it.col());
       cooVal.push_back(it.value());
@@ -92,9 +130,9 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
 void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
 {
   // Parameters that don't change with iteration and used in the CUDA code
-  const float tol = 1e-6;      // 	Tolerance to decide if singular or not.
-  const int reorder = 0;       // "0" for common matrix without ordering
-  int singularity = -1;  // Output. -1 = A means invertible
+  const float tol = 1e-6;  // 	Tolerance to decide if singular or not.
+  const int reorder = 0;   // "0" for common matrix without ordering
+  int singularity = -1;    // Output. -1 = A means invertible
 
   // Set handler
   cusolverSpHandle_t handleCusolver = NULL;
@@ -153,7 +191,7 @@ void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
   cusolvererror(cusolverSpDestroy(handleCusolver));
 }
 
-__global__ void Multi_MatVec(float error,
+__global__ void Multi_MatVec(float* r_error_,
                              int nnz_,
                              int m_,
                              float* r_Ax,
@@ -163,34 +201,37 @@ __global__ void Multi_MatVec(float error,
                              int* r_cooColIndex_,
                              float* r_cooVal_)
 {
-  float sum = 0;
   int num = blockIdx.x * blockDim.x + threadIdx.x;
   if (num < nnz_) {
     r_Ax[r_cooRowIndex_[num]]
         += r_cooVal_[num] * r_instLocVec_[r_cooColIndex_[num]];
   }
-  for (size_t row = 0; row < m_; row++) {
+  float sum = 0;
+  for (int row = 0; row < m_; row++) {
     sum += (r_fixedInstForceVec_[row] > 0) ? r_fixedInstForceVec_[row]
                                            : -r_fixedInstForceVec_[row];
     if (r_fixedInstForceVec_[row] > r_Ax[row])
-      error += r_fixedInstForceVec_[row] - r_Ax[row];
+      r_error_[0] += r_fixedInstForceVec_[row] - r_Ax[row];
     else
-      error -= r_fixedInstForceVec_[row] - r_Ax[row];
+      r_error_[0] -= r_fixedInstForceVec_[row] - r_Ax[row];
   }
   if (sum != 0)
-    error = error / sum;
+    r_error_[0] = r_error_[0] / sum;
 }
 
 float GpuSolver::error()
 {
+  float* r_error_;
+  thrust::device_vector<float> d_error_(1, 0);
+  r_error_ = thrust::raw_pointer_cast(d_error_.data());
   float* r_Ax;
-  thrust::device_vector<float> t_Ax(m_);
-  thrust::fill(t_Ax.begin(), t_Ax.end(), 0);
-  r_Ax = thrust::raw_pointer_cast(t_Ax.data());
+  thrust::device_vector<float> d_Ax(m_, 0);
+  // thrust::fill(d_Ax.begin(), d_Ax.end(), 0);
+  r_Ax = thrust::raw_pointer_cast(d_Ax.data());
 
   unsigned int threads = 512;
   unsigned int blocks = (m_ + threads - 1) / threads;
-  Multi_MatVec<<<blocks, threads>>>(error_,
+  Multi_MatVec<<<blocks, threads>>>(r_error_,
                                     nnz_,
                                     m_,
                                     r_Ax,
@@ -199,6 +240,8 @@ float GpuSolver::error()
                                     r_cooRowIndex_,
                                     r_cooColIndex_,
                                     r_cooVal_);
+  cudaerror(
+      cudaMemcpy(&error_, r_error_, sizeof(float) * 1, cudaMemcpyDeviceToHost));
   return (error_ > 0) ? error_ : -error_;
 }
 
