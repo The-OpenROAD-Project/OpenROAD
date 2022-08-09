@@ -194,7 +194,7 @@ class AntennaChecker
 
   static constexpr int max_diode_count_per_gate = 10;
 
-  // A map indexed by: pair(net, metal_layer)
+  // A map indexed by: pair(net, routing_level)
   // It stores the maximum length allowed to be held by that wire in the given layer without violating the antenna rules as
   // well as the current wire length.
   std::map<std::pair<const char*, int>, std::pair<double, double>> allowed_wire_length;
