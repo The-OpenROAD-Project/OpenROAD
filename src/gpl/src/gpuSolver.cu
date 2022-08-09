@@ -33,6 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <cusp/blas/blas.h>
+#include <cusp/krylov/bicgstab.h>
+
 #include "gpuSolver.h"
 
 namespace gpl {
@@ -129,119 +132,67 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
 
 void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
 {
-  // Parameters that don't change with iteration and used in the CUDA code
-  const float tol = 1e-6;  // 	Tolerance to decide if singular or not.
-  const int reorder = 0;   // "0" for common matrix without ordering
-  int singularity = -1;    // Output. -1 = A means invertible
+  // Updated CUDA solver using CUSP library
+  thrust::device_ptr<int> p_rowInd
+      = thrust::device_pointer_cast(r_cooRowIndex_);
+  thrust::device_ptr<int> p_colInd
+      = thrust::device_pointer_cast(r_cooColIndex_);
+  thrust::device_ptr<float> p_val = thrust::device_pointer_cast(r_cooVal_);
+  thrust::device_ptr<float> d_fixedInstForceVec_
+      = thrust::device_pointer_cast(r_fixedInstForceVec_);
+  thrust::device_ptr<float> p_instLocVec_ = thrust::device_pointer_cast(r_instLocVec_);
 
-  // Set handler
-  cusolverSpHandle_t handleCusolver = NULL;
-  cusparseHandle_t handleCusparse = NULL;
-  cudaStream_t stream = NULL;
+  // use array1d_view to wrap the individual arrays
+  typedef typename cusp::array1d_view<thrust::device_ptr<int>>
+      DeviceIndexArrayView;
+  typedef typename cusp::array1d_view<thrust::device_ptr<float>>
+      DeviceValueArrayView;
+  DeviceIndexArrayView row_indices(p_rowInd, p_rowInd + nnz_);
+  DeviceIndexArrayView column_indices(p_colInd, p_colInd + nnz_);
+  DeviceValueArrayView values(p_val, p_val + nnz_);
+  DeviceValueArrayView d_x(p_instLocVec_, p_instLocVec_ + m_);
+  DeviceValueArrayView d_b(d_fixedInstForceVec_, d_fixedInstForceVec_ + m_);
 
-  // Initialize handler
-  cusolvererror(cusolverSpCreate(&handleCusolver));
-  cusparseerror(cusparseCreate(&handleCusparse));
-  cudaerror(cudaStreamCreate(&stream));
-  cusolvererror(cusolverSpSetStream(handleCusolver, stream));
-  cusparseerror(cusparseSetStream(handleCusparse, stream));
+  // combine the three array1d_views into a coo_matrix_view
+  typedef cusp::coo_matrix_view<DeviceIndexArrayView,
+                                DeviceIndexArrayView,
+                                DeviceValueArrayView>
+      DeviceView;
 
-  // Create and define cusparse descriptor
-  cusparseMatDescr_t descr = NULL;
-  cusparseerror(cusparseCreateMatDescr(&descr));
-  cusparseerror(cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL));
-  cusparseerror(cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO));
+  // construct a coo_matrix_view from the array1d_views
+  DeviceView d_A(m_, m_, nnz_, row_indices, column_indices, values);
 
-  // transform from coordinates (COO) values to compressed row pointers (CSR)
-  // values https://docs.nvidia.com/cuda/cusparse/index.html
-  int* r_csrRowInd = NULL;
-  thrust::device_vector<int> d_csrRowInd(m_ + 1, 0);
-  r_csrRowInd = thrust::raw_pointer_cast(d_csrRowInd.data());
+  // set stopping criteria.
+  int iteration_limit = 100;
+  float relative_tolerance = 1e-15;
+  bool verbose = false;  // Decide if the CUDA solver prints the iteration
+                         // details or not.
+  cusp::monitor<float> monitor_(
+      d_b, iteration_limit, relative_tolerance, verbose);
 
-  cusparseerror(cusparseXcoo2csr(handleCusparse,
-                                 r_cooRowIndex_,
-                                 nnz_,
-                                 m_,
-                                 r_csrRowInd,
-                                 CUSPARSE_INDEX_BASE_ZERO));
-
-  cusolvererror(cusolverSpScsrlsvqr(handleCusolver,
-                                    m_,
-                                    nnz_,
-                                    descr,
-                                    r_cooVal_,
-                                    r_csrRowInd,
-                                    r_cooColIndex_,
-                                    r_fixedInstForceVec_,
-                                    tol,
-                                    reorder,
-                                    r_instLocVec_,
-                                    &singularity));
+  // solve the linear system A * x = b with the BICGSTAB method
+  cusp::krylov::bicgstab(d_A, d_x, d_b, monitor_);
 
   // Sync and Copy data to host
-  cudaerror(cudaMemcpyAsync(instLocVec.data(),
-                            r_instLocVec_,
-                            sizeof(float) * m_,
-                            cudaMemcpyDeviceToHost,
-                            stream));
+  cudaerror(cudaMemcpy(instLocVec.data(),
+                       r_instLocVec_,
+                       sizeof(float) * m_,
+                       cudaMemcpyDeviceToHost));
 
-  // cudaerror(cudaFree(r_csrRowInd));
-  cusparseerror(cusparseDestroyMatDescr(descr));
-  cusparseerror(cusparseDestroy(handleCusparse));
-  cusolvererror(cusolverSpDestroy(handleCusolver));
-}
+  // Calculate  AX = A * X - B
+  cusp::coo_matrix<int, float, cusp::device_memory> A(d_A);
+  cusp::array1d<float, cusp::device_memory> X(d_x);
+  cusp::array1d<float, cusp::device_memory> B(d_b);
+  cusp::array1d<float, cusp::device_memory> AX(m_);
+  cusp::multiply(A, X, AX);
+  cusp::blas::axpy(B, AX, -1);
 
-__global__ void Multi_MatVec(float* r_error_,
-                             int nnz_,
-                             int m_,
-                             float* r_Ax,
-                             float* r_fixedInstForceVec_,
-                             float* r_instLocVec_,
-                             int* r_cooRowIndex_,
-                             int* r_cooColIndex_,
-                             float* r_cooVal_)
-{
-  int num = blockIdx.x * blockDim.x + threadIdx.x;
-  if (num < nnz_) {
-    r_Ax[r_cooRowIndex_[num]]
-        += r_cooVal_[num] * r_instLocVec_[r_cooColIndex_[num]];
-  }
-  float sum = 0;
-  for (int row = 0; row < m_; row++) {
-    sum += (r_fixedInstForceVec_[row] > 0) ? r_fixedInstForceVec_[row]
-                                           : -r_fixedInstForceVec_[row];
-    if (r_fixedInstForceVec_[row] > r_Ax[row])
-      r_error_[0] += r_fixedInstForceVec_[row] - r_Ax[row];
-    else
-      r_error_[0] -= r_fixedInstForceVec_[row] - r_Ax[row];
-  }
-  if (sum != 0)
-    r_error_[0] = r_error_[0] / sum;
+  // Calculate L1 norm of the residual vector.
+  error_ = cusp::blas::nrm1(AX) / cusp::blas::nrm1(B);
 }
 
 float GpuSolver::error()
 {
-  float* r_error_;
-  thrust::device_vector<float> d_error_(1, 0);
-  r_error_ = thrust::raw_pointer_cast(d_error_.data());
-  float* r_Ax;
-  thrust::device_vector<float> d_Ax(m_, 0);
-  // thrust::fill(d_Ax.begin(), d_Ax.end(), 0);
-  r_Ax = thrust::raw_pointer_cast(d_Ax.data());
-
-  unsigned int threads = 512;
-  unsigned int blocks = (m_ + threads - 1) / threads;
-  Multi_MatVec<<<blocks, threads>>>(r_error_,
-                                    nnz_,
-                                    m_,
-                                    r_Ax,
-                                    r_fixedInstForceVec_,
-                                    r_instLocVec_,
-                                    r_cooRowIndex_,
-                                    r_cooColIndex_,
-                                    r_cooVal_);
-  cudaerror(
-      cudaMemcpy(&error_, r_error_, sizeof(float) * 1, cudaMemcpyDeviceToHost));
   return (error_ > 0) ? error_ : -error_;
 }
 
