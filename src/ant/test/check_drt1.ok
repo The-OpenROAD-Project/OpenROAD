@@ -11,7 +11,7 @@
 Net net50
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
-    PAR:  419.64* Ratio:  400.00 (S.Area)
+    PAR:  419.33* Ratio:  400.00 (S.Area)
 
 
 [INFO ANT-0002] Found 1 net violations.
@@ -19,28 +19,28 @@ Net net50
 Net net50
   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
     met3
-    PAR:   40.63  Ratio:    0.00 (Area)
-    PAR:  218.43  Ratio: 2878.88 (S.Area)
-    CAR:  138.03  Ratio:    0.00 (C.Area)
-    CAR:  707.18  Ratio:    0.00 (C.S.Area)
+    PAR:   40.36  Ratio:    0.00 (Area)
+    PAR:  217.37  Ratio: 2878.88 (S.Area)
+    CAR:  137.47  Ratio:    0.00 (C.Area)
+    CAR:  705.14  Ratio:    0.00 (C.S.Area)
 
     met2
-    PAR:   13.57  Ratio:    0.00 (Area)
-    PAR:   68.63  Ratio:  400.00 (S.Area)
-    CAR:   13.71  Ratio:    0.00 (C.Area)
-    CAR:   69.10  Ratio:    0.00 (C.S.Area)
+    PAR:   13.53  Ratio:    0.00 (Area)
+    PAR:   68.43  Ratio:  400.00 (S.Area)
+    CAR:   13.53  Ratio:    0.00 (C.Area)
+    CAR:   68.43  Ratio:    0.00 (C.S.Area)
 
     met1
-    PAR:    0.08  Ratio:    0.00 (Area)
-    PAR:    0.40  Ratio:  400.00 (S.Area)
-    CAR:    0.14  Ratio:    0.00 (C.Area)
-    CAR:    0.47  Ratio:    0.00 (C.S.Area)
+    PAR:    0.00  Ratio:    0.00 (Area)
+    PAR:    0.00  Ratio:  400.00 (S.Area)
+    CAR:    0.00  Ratio:    0.00 (C.Area)
+    CAR:    0.00  Ratio:    0.00 (C.S.Area)
 
     li1
-    PAR:    0.06  Ratio:    0.00 (Area)
-    PAR:    0.07  Ratio:   75.00 (S.Area)
-    CAR:    0.06  Ratio:    0.00 (C.Area)
-    CAR:    0.07  Ratio:    0.00 (C.S.Area)
+    PAR:    0.00  Ratio:    0.00 (Area)
+    PAR:    0.00  Ratio:   75.00 (S.Area)
+    CAR:    0.00  Ratio:    0.00 (C.Area)
+    CAR:    0.00  Ratio:    0.00 (C.S.Area)
 
     M2M3_PR_M
     PAR:    0.16  Ratio:    6.00 (Area)
@@ -56,28 +56,28 @@ Net net50
 
   output50/A (sky130_fd_sc_ms__buf_1)
     met3
-    PAR:   40.63  Ratio:    0.00 (Area)
-    PAR:  218.43  Ratio: 2878.88 (S.Area)
-    CAR:  179.21  Ratio:    0.00 (C.Area)
-    CAR:  912.89  Ratio:    0.00 (C.S.Area)
+    PAR:   40.36  Ratio:    0.00 (Area)
+    PAR:  217.37  Ratio: 2878.88 (S.Area)
+    CAR:  178.73  Ratio:    0.00 (C.Area)
+    CAR:  911.59  Ratio:    0.00 (C.S.Area)
 
     met2
-    PAR:   83.70  Ratio:    0.00 (Area)
-    PAR:  419.64* Ratio:  400.00 (S.Area)
-    CAR:  138.58  Ratio:    0.00 (C.Area)
-    CAR:  694.46  Ratio:    0.00 (C.S.Area)
+    PAR:   83.58  Ratio:    0.00 (Area)
+    PAR:  419.33* Ratio:  400.00 (S.Area)
+    CAR:  138.37  Ratio:    0.00 (C.Area)
+    CAR:  694.21  Ratio:    0.00 (C.S.Area)
 
     met1
-    PAR:   54.81  Ratio:    0.00 (Area)
-    PAR:  274.73  Ratio:  400.00 (S.Area)
-    CAR:   54.88  Ratio:    0.00 (C.Area)
-    CAR:  274.81  Ratio:    0.00 (C.S.Area)
+    PAR:   54.79  Ratio:    0.00 (Area)
+    PAR:  274.88  Ratio:  400.00 (S.Area)
+    CAR:   54.79  Ratio:    0.00 (C.Area)
+    CAR:  274.88  Ratio:    0.00 (C.S.Area)
 
     li1
-    PAR:    0.07  Ratio:    0.00 (Area)
-    PAR:    0.08  Ratio:   75.00 (S.Area)
-    CAR:    0.07  Ratio:    0.00 (C.Area)
-    CAR:    0.08  Ratio:    0.00 (C.S.Area)
+    PAR:    0.00  Ratio:    0.00 (Area)
+    PAR:    0.00  Ratio:   75.00 (S.Area)
+    CAR:    0.00  Ratio:    0.00 (C.Area)
+    CAR:    0.00  Ratio:    0.00 (C.S.Area)
 
     M2M3_PR_M
     PAR:    0.38  Ratio:    6.00 (Area)
@@ -97,7 +97,7 @@ Net net50
 Net net50
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
-    PAR:  419.64* Ratio:  400.00 (S.Area)
+    PAR:  419.33* Ratio:  400.00 (S.Area)
 
 
 [INFO ANT-0002] Found 1 net violations.

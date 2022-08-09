@@ -5,9 +5,12 @@ read_def sw130_random.def
 check_antennas
 puts "violation count = [ant::antenna_violation_count]"
 
-# calculate the available length that can be added to net51, on layer 1
-# while keeping the PAR ratios satified
-ant::check_max_length "net51" 1
+# calculate maximum length allowed for routing levels 2,3 and 4
+# for net50 while keeping the PAR ratios satisfied.
+ant::check_max_length "net50" 2
+ant::check_max_length "net50" 3
+ant::check_max_length "net50" 4
+
 
 # check if net50 has a violation
 set net "net50"

@@ -11,12 +11,13 @@
 Net net50
   output50/A (sky130_fd_sc_ms__buf_1)
     met2
-    PAR:  419.64* Ratio:  400.00 (S.Area)
+    PAR:  419.33* Ratio:  400.00 (S.Area)
 
 
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.
 violation count = 1
-Net net51: Routing Level: 1, Max Length for PAR: -0.09
-Net net51: Routing Level: 1, Max Length for PAR: -0.09
+Net net50: Routing Level: 2, Max Length for PAR: 118.58, Current Length for PAR: 81.40
+Net net50: Routing Level: 3, Max Length for PAR: 118.58, Current Length for PAR: 124.32
+Net net50: Routing Level: 4, Max Length for PAR: 816.28, Current Length for PAR: 61.08
 Net net50 violations: 1
