@@ -91,6 +91,9 @@ target_link_libraries(gpl
 option(GPU "Enable GPU" OFF)
 if (GPU)
   message(STATUS "GPU is enabled")
+  # find_package(CUDA) should be replaced by "FindCUDAToolkit" for CMAKE verison >= 3.17. 
+  # See https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html. 
+  # find_package(CUDA) or FindCUDA is deprecated since vision 3.10.
   find_package(CUDA QUIET COMPONENTS Core Widgets)
   if (CUDA_FOUND)
     message(STATUS "CUDA is found")

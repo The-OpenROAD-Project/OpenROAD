@@ -49,6 +49,7 @@ global_placement
     [-pad_left pad_left]
     [-pad_right pad_right]
     [-verbose_level level]
+    [-force_cpu]
 ```
 
 ### Tuning Parameters
@@ -67,6 +68,7 @@ global_placement
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
 - `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
+- `-force_cpu`: Force to use CPU solver no matter if GPU is enabled during the compiling time.
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and
