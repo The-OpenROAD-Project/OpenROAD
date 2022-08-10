@@ -1355,6 +1355,9 @@ void GlobalRouter::readGuides(const char* file_name)
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
+  std::vector<Net*> nets = initNetlist();
+  initNets(nets);
+
   odb::dbTech* tech = db_->getTech();
 
   std::ifstream fin(file_name);
@@ -1773,11 +1776,11 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
 GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
 {
-  const int x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
-  const int y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
+  const int x0 = (grid_->getTileSize() * (route_bds.xMin() / grid_->getTileSize())) + (grid_->getTileSize() / 2);
+  const int y0 = (grid_->getTileSize() * (route_bds.yMin() / grid_->getTileSize())) + (grid_->getTileSize() / 2); 
 
-  const int x1 = route_bds.xMax() - (grid_->getTileSize() / 2);
-  const int y1 = route_bds.yMax() - (grid_->getTileSize() / 2);
+  const int x1 = (grid_->getTileSize() * (route_bds.xMax() / grid_->getTileSize())) - (grid_->getTileSize() / 2);
+  const int y1 = (grid_->getTileSize() * (route_bds.yMax() / grid_->getTileSize())) - (grid_->getTileSize() / 2); 
 
   return GSegment(x0, y0, layer, x1, y1, layer);
 }
