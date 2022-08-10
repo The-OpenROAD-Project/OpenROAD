@@ -220,8 +220,8 @@ you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
 generating a build.
 
 ### GPU acceleration
-The default solver for initial placement is based on CPU. If you would like 
-to enable GPU and use the CUDA solver, set `-DGPU=true` at the compiling time.
+The default solver for initial placement is single threaded. If you would like 
+to enable GPU and use the CUDA solver, set `-DGPU=true` at compiling time.
 
 ## Regression Tests
 
