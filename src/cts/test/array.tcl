@@ -21,6 +21,7 @@ set db [ord::get_db]
 set tech [ord::get_db_tech]
 set chip [odb::dbChip_create $db]
 set block [odb::dbBlock_create $chip "top"]
+$block setDefUnits 2000
 
 set dbu [$tech getDbUnitsPerMicron]
 
@@ -149,3 +150,6 @@ set_routing_layers -signal metal2-metal5
 global_route -allow_congestion
 estimate_parasitics -global_routing
 report_clock_skew
+
+#set_thread_count 40
+#detailed_route -verbose 1

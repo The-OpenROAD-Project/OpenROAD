@@ -10,7 +10,7 @@ MACRO array_tile
     USE SIGNAL ;
     PORT
       LAYER metal4 ;
-      RECT 0.000 299.93 0.070 300.00 ;
+      RECT 0.000 299.86 0.14 300.00 ;
     END
   END clk
   PIN e_in
