@@ -282,6 +282,9 @@ proc repair_antennas { args } {
       if { $diode_port == "" } {
         utl::error GRT 69 "Diode $diode_port_name not found."
       }
+      if { [llength $diode_port] > 1 } {
+        set diode_port [lindex $diode_port 0]
+      }
       set diode_mterm [sta::sta_to_db_mterm $diode_port]
     } else {
       utl::error GRT 245 "Too arguments to repair_antennas."
