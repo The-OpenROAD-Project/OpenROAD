@@ -33,6 +33,18 @@ check_antennas [-net net] [-verbose]
 - `-verbose` report all antenna calculations for violating nets
 - 'net' check antennas on one net
 
+### `find_max_allowed_length`
+Find the maximum allowed length for a given net and layer
+```
+find_max_allowed_length net_name layer
+```
+
+For example, you can run:
+```
+find_max_allowed_length "net5" "met2"
+```
+This will search for "net5" in your design and if found, it will find the maximum allowed length for that net on the layer `met2` such that no antenna violations occur
+
 ## Limitations
 
 ## FAQs
