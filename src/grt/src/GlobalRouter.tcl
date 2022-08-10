@@ -282,12 +282,12 @@ proc repair_antennas { args } {
       lassign [split $diode_port_name "/"] master mterm
 
       set diode_master [$db findMaster $master]
-      if { $diode_master == "" } {
+      if { $diode_master == "NULL" } {
         utl::error GRT 69 "Diode cell $master not found."
       }
 
       set diode_mterm [$diode_master findMTerm $mterm]
-      if { $diode_mterm == "" } {
+      if { $diode_mterm == "NULL" } {
         utl::error GRT 73 "Diode cell pin $mterm not found."
       }
     } else {
