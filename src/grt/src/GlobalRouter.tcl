@@ -277,15 +277,19 @@ proc repair_antennas { args } {
       # repairAntennas locates diode
       set diode_mterm "NULL"
     } elseif { [llength $args] == 1 } {
+      set db [ord::get_db]
       set diode_port_name [lindex $args 0]
-      set diode_port [sta::get_lib_pins -quiet $diode_port_name]
-      if { $diode_port == "" } {
-        utl::error GRT 69 "Diode $diode_port_name not found."
+      lassign [split $diode_port_name "/"] master mterm
+
+      set diode_master [$db findMaster $master]
+      if { $diode_master == "" } {
+        utl::error GRT 69 "Diode cell $master not found."
       }
-      if { [llength $diode_port] > 1 } {
-        set diode_port [lindex $diode_port 0]
+
+      set diode_mterm [$diode_master findMTerm $mterm]
+      if { $diode_mterm == "" } {
+        utl::error GRT 73 "Diode cell pin $mterm not found."
       }
-      set diode_mterm [sta::sta_to_db_mterm $diode_port]
     } else {
       utl::error GRT 245 "Too arguments to repair_antennas."
     }
