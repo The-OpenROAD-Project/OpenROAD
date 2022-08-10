@@ -1760,13 +1760,13 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
 void AntennaChecker::findMaxAllowedLength(const char* net_name, const char* layer_name)
 {
   dbNet* net = block_->findNet(net_name);
-  if(net == NULL)
+  if(net == nullptr)
   {
       logger_->error(ANT, 15, "No net found with the name: {}", net_name);
   }
 
   dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
-  if(layer == NULL)
+  if(layer == nullptr)
   {
       logger_->error(ANT, 16, "No layer found with the name: {}", layer_name);
   }

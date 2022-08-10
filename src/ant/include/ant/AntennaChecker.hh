@@ -78,10 +78,10 @@ struct NetLayerPair
  
     // constructor
     NetLayerPair(dbNet* net, int routing_level): net(net), routing_level(routing_level) {}
- 
+
     // overload `<` operator to use this struct as a key for an std::map
     bool operator<(const NetLayerPair &ob) const {
-        return net->getId() < ob.net->getId() ||  (!(ob.net->getId()  < net->getId()) && routing_level < ob.routing_level);
+        return net->getId() < ob.net->getId() ||  ((ob.net->getId()  ==  net->getId()) && routing_level < ob.routing_level);
     }
 };
 
