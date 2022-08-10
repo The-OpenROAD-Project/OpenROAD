@@ -61,23 +61,10 @@ proc check_antennas { args } {
 
 
 
-sta::define_cmd_args "check_max_length" {
-    [-net_name name]
-    [-layer layer]
-}
-proc check_max_length { args } {
-  sta::parse_key_args "check_max_length" args \
-    keys {-net_name -routing_level}
-  sta::check_argc_eq0 "check_max_length" $args
-  if { [info exists keys(-net_name)] } {
-    set $net_name $keys(-net_name)
-  } else {
-    utl::error ANT 13 "-net_name is required in check_max_length command."
-  }
-  if { [info exists keys(-routing_level)] } {
-    set $routing_level $keys(-routing_level)
-  } else {
-    utl::error ANT 14 "-routing_level is required in check_max_length command."
-  }
-  return [ant::check_max_length $net_name $routing_level]
+sta::define_cmd_args "find_max_allowed_length" {net_name \
+                                                 layer}
+proc find_max_allowed_length { args } {
+  set net_name [lindex $args 0]
+  set layer [lindex $args 1]
+  return [ant::find_max_allowed_length $net_name $layer]
 }

@@ -190,7 +190,7 @@ void AntennaChecker::initAntennaRules()
     double diff_metal_reduce_factor = 1.0;
 
     if (tech_layer->hasDefaultAntennaRule()) {
-      dbTechLayerAntennaRule* antenna_rule
+      const dbTechLayerAntennaRule* antenna_rule
           = tech_layer->getDefaultAntennaRule();
 
       odb::dbStringProperty* layer_prop = odb::dbStringProperty::find(
@@ -750,7 +750,7 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
   double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
 
   if (tech_layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
     diff_metal_reduce_factor = getPwlFactor(
         antenna_rule->getAreaDiffReduce(), par_info.iterm_diff_area, 1.0);
   }
@@ -761,7 +761,7 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
 
 
   // Find the theoretical limits for PAR and its variants
-  dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
+  const dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule();
 
   double PAR_ratio = antenna_rule->getPAR();
   dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
@@ -850,11 +850,6 @@ AntennaChecker::buildWireCarTable(const vector<PARinfo> &PARtable,
   for (dbWireGraph::Node* gate : gate_iterms) {
     for (const PARinfo &ar : PARtable) {
       dbWireGraph::Node* wire_root = ar.wire_root;
-      double par = ar.PAR;
-      double psr = ar.PSR;
-      double diff_par = ar.diff_PAR;
-      double diff_psr = ar.diff_PSR;
-      double diff_area = ar.iterm_diff_area;
       double car = 0.0;
       double csr = 0.0;
       double diff_car = 0.0;
@@ -890,7 +885,7 @@ AntennaChecker::buildWireCarTable(const vector<PARinfo> &PARtable,
           }
           dbTechLayer* wire_layer = wire_root->layer();
           if (wire_layer->hasDefaultAntennaRule()) {
-            dbTechLayerAntennaRule* antenna_rule
+            const dbTechLayerAntennaRule* antenna_rule
                 = wire_layer->getDefaultAntennaRule();
             if (antenna_rule->hasAntennaCumRoutingPlusCut()) {
               if (car_root->layer()->getRoutingLevel()
@@ -909,15 +904,15 @@ AntennaChecker::buildWireCarTable(const vector<PARinfo> &PARtable,
 
         ARinfo car_info = {wire_root,
           gate,
-          par,
-          psr,
-          diff_par,
-          diff_psr,
+          ar.PAR,
+          ar.PSR,
+          ar.diff_PAR,
+          ar.diff_PSR,
           car,
           csr,
           diff_car,
           diff_csr,
-          diff_area
+          ar.iterm_diff_area
         };
 
         // TODO: add these to the constructor of the Struct
@@ -970,7 +965,7 @@ AntennaChecker::buildViaParTable(const vector<dbWireGraph::Node*> &wire_roots)
       plus_diff_factor = am.plus_diff_factor;
       diff_metal_reduce_factor = am.diff_metal_reduce_factor;
       if (layer->hasDefaultAntennaRule()) {
-        dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+        const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
         diff_metal_reduce_factor = getPwlFactor(
             antenna_rule->getAreaDiffReduce(), iterm_diff_area, 1.0);
       }
@@ -1011,9 +1006,9 @@ AntennaChecker::buildViaCarTable(const vector<PARinfo> &PARtable,
 
     for (const PARinfo &ar : VIA_PARtable) {
       dbWireGraph::Node* wire_root = ar.wire_root;
-      double par = ar.PAR;
-      double diff_par = ar.diff_PAR;
-      double diff_area = ar.iterm_diff_area;
+      const double par = ar.PAR;
+      const double diff_par = ar.diff_PAR;
+      const double diff_area = ar.iterm_diff_area;
       double car = 0.0;
       double diff_car = 0.0;
       vector<dbWireGraph::Node*> current_path;
@@ -1045,7 +1040,7 @@ AntennaChecker::buildViaCarTable(const vector<PARinfo> &PARtable,
           dbTechLayer* via_layer = getViaLayer(
               findVia(wire_root, wire_root->layer()->getRoutingLevel()));
           if (via_layer->hasDefaultAntennaRule()) {
-            dbTechLayerAntennaRule* antenna_rule
+            const dbTechLayerAntennaRule* antenna_rule
                 = via_layer->getDefaultAntennaRule();
             if (antenna_rule->hasAntennaCumRoutingPlusCut()) {
               for (const PARinfo &par : PARtable) {
@@ -1082,11 +1077,11 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
                                                    bool verbose)
 {
   dbTechLayer* layer = AntennaRatio.wire_root->layer();
-  double par = AntennaRatio.PAR;
-  double psr = AntennaRatio.PSR;
-  double diff_par = AntennaRatio.diff_PAR;
-  double diff_psr = AntennaRatio.diff_PSR;
-  double diff_area = AntennaRatio.diff_area;
+  const double par = AntennaRatio.PAR;
+  const double psr = AntennaRatio.PSR;
+  const double diff_par = AntennaRatio.diff_PAR;
+  const double diff_psr = AntennaRatio.diff_PSR;
+  const double diff_area = AntennaRatio.diff_area;
 
   bool checked = false;
   bool violated = false;
@@ -1097,16 +1092,16 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
   bool diff_psr_violation = false;
 
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
 
-    double PAR_ratio = antenna_rule->getPAR();
+    const double PAR_ratio = antenna_rule->getPAR();
     dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
-    double diffPAR_PWL_ratio = getPwlFactor(diffPAR, diff_area, 0);
+    const double diffPAR_PWL_ratio = getPwlFactor(diffPAR, diff_area, 0);
 
-    // A pair to be used to index the 'allowed_wire_length' map.
+    // A struct to be used to index the 'allowed_wire_length' map.
     // For reference, this is a map that stores the maximum allowed wire length for each layer and net along with the current wire length.
-    std::pair<const char*, int> wire_pair = std::make_pair(net->getConstName(), layer->getRoutingLevel());
-    
+    NetLayerPair wire_pair = NetLayerPair(net, layer->getRoutingLevel());
+
     if (PAR_ratio != 0) {
       // Check if no entry exists for the given net-layer pair in our map
       if(par >= 0)
@@ -1151,9 +1146,9 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
       }
     }
 
-    double PSR_ratio = antenna_rule->getPSR();
-    dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
-    double diffPSR_PWL_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
+    const double PSR_ratio = antenna_rule->getPSR();
+    const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
+    const double diffPSR_PWL_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
     if (PSR_ratio != 0) {
       if(psr > 0)
       {
@@ -1250,7 +1245,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
   bool diff_csr_violation = false;
 
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
 
     double CAR_ratio = par_checked ? 0.0 : antenna_rule->getCAR();
     dbTechLayerAntennaRule::pwl_pair diffCAR = antenna_rule->getDiffCAR();
@@ -1339,7 +1334,7 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
   bool diff_par_violation = false;
 
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     double PAR_ratio = antenna_rule->getPAR();
 
     dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
@@ -1392,7 +1387,7 @@ bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
   bool diff_car_violation = false;
 
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     double CAR_ratio = antenna_rule->getCAR();
 
     dbTechLayerAntennaRule::pwl_pair diffCAR = antenna_rule->getDiffCAR();
@@ -1711,7 +1706,7 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
         double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
 
         if (iterm_gate_area != 0 && tech_layer->hasDefaultAntennaRule()) {
-          dbTechLayerAntennaRule* antenna_rule
+          const dbTechLayerAntennaRule* antenna_rule
             = tech_layer->getDefaultAntennaRule();
           dbTechLayerAntennaRule::pwl_pair diff_metal_reduce_factor_pwl
             = antenna_rule->getAreaDiffReduce();
@@ -1762,15 +1757,28 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
   return par_wires;
 }
 
-void AntennaChecker::checkMaxLength(const char* net_name, int routing_level)
+void AntennaChecker::findMaxAllowedLength(const char* net_name, const char* layer_name)
 {
   dbNet* net = block_->findNet(net_name);
+  if(net == NULL)
+  {
+      logger_->error(ANT, 15, "No net found with the name: {}", net_name);
+  }
+
+  dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
+  if(layer == NULL)
+  {
+      logger_->error(ANT, 16, "No layer found with the name: {}", layer_name);
+  }
+
+  int routing_level = layer->getRoutingLevel();
 
   std::pair<double, double> max_length;
-  std::pair<const char*, int> wire_pair = std::make_pair(net->getConstName(), routing_level);
+  NetLayerPair wire_pair = NetLayerPair(net, routing_level);
+
   if(allowed_wire_length.find(wire_pair) != allowed_wire_length.end())
   {
-    max_length = allowed_wire_length[std::make_pair(net->getConstName(), routing_level)];
+    max_length = allowed_wire_length[wire_pair];
     logger_->report("Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}, Current Length for PAR: {:3.2f}",
                   net_name,
                   routing_level,
@@ -1788,7 +1796,7 @@ bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
   double diff_area = par_info.iterm_diff_area;
 
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     double PAR_ratio = antenna_rule->getPAR();
     if (PAR_ratio != 0) {
       if (par > PAR_ratio)
@@ -1866,7 +1874,7 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
 bool AntennaChecker::antennaRatioDiffDependent(dbTechLayer* layer)
 {
   if (layer->hasDefaultAntennaRule()) {
-    dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+    const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
     dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
     return diffPAR.indices.size() > 1
@@ -1927,7 +1935,7 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
       double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
 
       if (wire_root->layer()->hasDefaultAntennaRule()) {
-        dbTechLayerAntennaRule* antenna_rule
+        const dbTechLayerAntennaRule* antenna_rule
             = tech_layer->getDefaultAntennaRule();
         diff_metal_reduce_factor = getPwlFactor(
             antenna_rule->getAreaDiffReduce(), iterm_diff_area, 1.0);

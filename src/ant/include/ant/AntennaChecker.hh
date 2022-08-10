@@ -68,6 +68,25 @@ struct Violation
   int diode_count_per_gate;
 };
 
+// A struct that contains a net as well as one of its routing levels.
+// This struct is used to index the map, allowed_wire_length which is created 
+// in the class below.
+struct NetLayerPair
+{
+    dbNet* net;
+    int routing_level;
+ 
+    // constructor
+    NetLayerPair(dbNet* net, int routing_level): net(net), routing_level(routing_level) {}
+ 
+    // overload `<` operator to use this struct as a key for an std::map
+    bool operator<(const NetLayerPair &ob) const {
+        return net->getId() < ob.net->getId() ||  (!(ob.net->getId()  < net->getId()) && routing_level < ob.routing_level);
+    }
+};
+
+
+
 class AntennaChecker
 {
  public:
@@ -83,7 +102,7 @@ class AntennaChecker
                     bool verbose);
   int antennaViolationCount() const;
 
-  void checkMaxLength(const char* net_name, int layer);
+  void findMaxAllowedLength(const char* net_name, const char* layer);
 
   void findMaxWireLength();
 
@@ -197,7 +216,7 @@ class AntennaChecker
   // A map indexed by: pair(net, routing_level)
   // It stores the maximum length allowed to be held by that wire in the given layer without violating the antenna rules as
   // well as the current wire length.
-  std::map<std::pair<const char*, int>, std::pair<double, double>> allowed_wire_length;
+  std::map<NetLayerPair, std::pair<double, double>> allowed_wire_length;
 
 };
 

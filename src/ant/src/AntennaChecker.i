@@ -66,11 +66,11 @@ antenna_violation_count()
 }
 
 void
-check_max_length(const char *net_name,
-                 int routing_level)
+find_max_allowed_length(const char *net_name,
+                 const char *layer)
 {
   AntennaChecker *checker = getAntennaChecker();
-  checker->checkMaxLength(net_name, routing_level);
+  checker->findMaxAllowedLength(net_name, layer);
 }
 
 // check a net for antenna violations
