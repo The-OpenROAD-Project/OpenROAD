@@ -43,26 +43,16 @@
 using namespace std;
 using namespace fr;
 
-int defdist(odb::dbBlock* block, int x)
-{
-  return x * (double) block->getDefUnits()
-         / (double) block->getDbUnitsPerMicron();
-}
-
 void io::Parser::setDieArea(odb::dbBlock* block)
 {
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<Point> points;
   odb::Rect box = block->getDieArea();
-  points.push_back(
-      Point(defdist(block, box.xMin()), defdist(block, box.yMin())));
-  points.push_back(
-      Point(defdist(block, box.xMax()), defdist(block, box.yMax())));
-  points.push_back(
-      Point(defdist(block, box.xMax()), defdist(block, box.yMin())));
-  points.push_back(
-      Point(defdist(block, box.xMin()), defdist(block, box.yMax())));
+  points.push_back(Point(box.xMin(), box.yMin()));
+  points.push_back(Point(box.xMax(), box.yMax()));
+  points.push_back(Point(box.xMax(), box.yMin()));
+  points.push_back(Point(box.xMin(), box.yMax()));
   bound.setPoints(points);
   bounds.push_back(bound);
   tmpBlock->setDBUPerUU(block->getDbUnitsPerMicron());
@@ -128,8 +118,6 @@ void io::Parser::setInsts(odb::dbBlock* block)
 
     int x, y;
     inst->getLocation(x, y);
-    x = defdist(block, x);
-    y = defdist(block, y);
     tmpInst->setOrigin(Point(x, y));
     tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
@@ -228,20 +216,20 @@ void io::Parser::setVias(odb::dbBlock* block)
         topLayerNum = tech->name2layer.find(params.getTopLayer()->getName())
                           ->second->getLayerNum();
 
-      int xSize = defdist(block, params.getXCutSize());
-      int ySize = defdist(block, params.getYCutSize());
-      int xCutSpacing = defdist(block, params.getXCutSpacing());
-      int yCutSpacing = defdist(block, params.getYCutSpacing());
-      int xOffset = defdist(block, params.getXOrigin());
-      int yOffset = defdist(block, params.getYOrigin());
-      int xTopEnc = defdist(block, params.getXTopEnclosure());
-      int yTopEnc = defdist(block, params.getYTopEnclosure());
-      int xBotEnc = defdist(block, params.getXBottomEnclosure());
-      int yBotEnc = defdist(block, params.getYBottomEnclosure());
-      int xTopOffset = defdist(block, params.getXTopOffset());
-      int yTopOffset = defdist(block, params.getYTopOffset());
-      int xBotOffset = defdist(block, params.getXBottomOffset());
-      int yBotOffset = defdist(block, params.getYBottomOffset());
+      int xSize = params.getXCutSize();
+      int ySize = params.getYCutSize();
+      int xCutSpacing = params.getXCutSpacing();
+      int yCutSpacing = params.getYCutSpacing();
+      int xOffset = params.getXOrigin();
+      int yOffset = params.getYOrigin();
+      int xTopEnc = params.getXTopEnclosure();
+      int yTopEnc = params.getYTopEnclosure();
+      int xBotEnc = params.getXBottomEnclosure();
+      int yBotEnc = params.getYBottomEnclosure();
+      int xTopOffset = params.getXTopOffset();
+      int yTopOffset = params.getYTopOffset();
+      int xBotOffset = params.getXBottomOffset();
+      int yBotOffset = params.getYBottomOffset();
 
       frCoord currX = 0;
       frCoord currY = 0;
@@ -313,10 +301,8 @@ void io::Parser::setVias(odb::dbBlock* block)
       for (auto& [layerNum, boxes] : lNum2Int) {
         for (auto box : boxes) {
           unique_ptr<frRect> pinFig = make_unique<frRect>();
-          pinFig->setBBox(Rect(defdist(block, box->xMin()),
-                               defdist(block, box->yMin()),
-                               defdist(block, box->xMax()),
-                               defdist(block, box->yMax())));
+          pinFig->setBBox(
+              Rect(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
           pinFig->setLayerNum(layerNum);
           switch (cnt) {
             case 0:
@@ -409,7 +395,6 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& endY,
                                frCoord& width)
 {
-  auto block = box->getDb()->getChip()->getBlock();
   int x1 = box->xMin();
   int y1 = box->yMin();
   int x2 = box->xMax();
@@ -480,11 +465,11 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       logger->error(DRT, 103, "Unknown direction.");
       break;
   }
-  beginX = defdist(block, x1);
-  endX = defdist(block, x2);
-  beginY = defdist(block, y1);
-  endY = defdist(block, y2);
-  width = defdist(block, w);
+  beginX = x1;
+  endX = x2;
+  beginY = y1;
+  endY = y2;
+  width = w;
 }
 
 void io::Parser::setNets(odb::dbBlock* block)
@@ -635,10 +620,10 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
-              beginX = defdist(block, beginX);
-              beginY = defdist(block, beginY);
-              endX = defdist(block, endX);
-              endY = defdist(block, endY);
+              beginX = beginX;
+              beginY = beginY;
+              endX = endX;
+              endY = endY;
               break;
             case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
@@ -648,12 +633,12 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
-              beginX = defdist(block, beginX);
-              beginY = defdist(block, beginY);
-              beginExt = defdist(block, beginExt);
-              endX = defdist(block, endX);
-              endY = defdist(block, endY);
-              endExt = defdist(block, endExt);
+              beginX = beginX;
+              beginY = beginY;
+              beginExt = beginExt;
+              endX = endX;
+              endY = endY;
+              endExt = endExt;
 
               break;
             case odb::dbWireDecoder::VIA:
@@ -664,10 +649,10 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
-              left = defdist(block, left);
-              bottom = defdist(block, bottom);
-              right = defdist(block, right);
-              top = defdist(block, top);
+              left = left;
+              bottom = bottom;
+              right = right;
+              top = top;
               hasRect = true;
               break;
             case odb::dbWireDecoder::ITERM:
@@ -801,7 +786,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             else {
               int x, y;
               box->getViaXY(x, y);
-              Point p(defdist(block, x), defdist(block, y));
+              Point p(x, y);
               auto viaDef = tech->name2via[viaName];
               auto tmpP = make_unique<frVia>(viaDef);
               tmpP->setOrigin(p);
@@ -910,10 +895,10 @@ void io::Parser::setBTerms(odb::dbBlock* block)
                         box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
-        frCoord xl = defdist(block, box->xMin());
-        frCoord yl = defdist(block, box->yMin());
-        frCoord xh = defdist(block, box->xMax());
-        frCoord yh = defdist(block, box->yMax());
+        frCoord xl = box->xMin();
+        frCoord yl = box->yMin();
+        frCoord xh = box->xMax();
+        frCoord yh = box->yMax();
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
@@ -2451,7 +2436,8 @@ void io::Writer::splitVia_helper(
           || (isH == 1 && (begin.y() < y) && (end.y() > y))) {
         frSegStyle style1 = pathSeg->getStyle();
         frSegStyle style2 = pathSeg->getStyle();
-        frSegStyle style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
+        frSegStyle style_default
+            = getTech()->getLayer(layerNum)->getDefaultSegStyle();
         shared_ptr<frPathSeg> newPathSeg = make_shared<frPathSeg>(*pathSeg);
         pathSeg->setPoints(begin, Point(x, y));
         style1.setEndStyle(style_default.getEndStyle(),
