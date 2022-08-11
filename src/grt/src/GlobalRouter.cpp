@@ -1397,7 +1397,8 @@ void GlobalRouter::readGuides(const char* file_name)
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
 
       GRoute& route = routes_[net];
-      route.push_back(boxToGlobalRouting(rect, layer->getRoutingLevel()));
+      boxToGlobalRouting(rect, layer->getRoutingLevel(), route);
+      //route.push_back(boxToGlobalRouting(rect, layer->getRoutingLevel()));
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
@@ -1774,15 +1775,19 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
   return route_bds;
 }
 
-GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
+void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route)
 {
-  const int x0 = (grid_->getTileSize() * (route_bds.xMin() / grid_->getTileSize())) + (grid_->getTileSize() / 2);
-  const int y0 = (grid_->getTileSize() * (route_bds.yMin() / grid_->getTileSize())) + (grid_->getTileSize() / 2); 
+  const int tile_size = grid_->getTileSize();
+  int x0 = (tile_size * (route_bds.xMin() / tile_size)) + (tile_size / 2);
+  int y0 = (tile_size * (route_bds.yMin() / tile_size)) + (tile_size / 2); 
 
-  const int x1 = (grid_->getTileSize() * (route_bds.xMax() / grid_->getTileSize())) - (grid_->getTileSize() / 2);
-  const int y1 = (grid_->getTileSize() * (route_bds.yMax() / grid_->getTileSize())) - (grid_->getTileSize() / 2); 
-
-  return GSegment(x0, y0, layer, x1, y1, layer);
+  const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
+  const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2); 
+  while( (x0 + tile_size) <= x1 && (y0 + tile_size) <= y1){
+    route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0 + tile_size, layer));
+    x0 += tile_size;
+    y0 += tile_size;
+  }
 }
 
 void GlobalRouter::checkPinPlacement()

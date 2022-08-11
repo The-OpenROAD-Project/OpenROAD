@@ -223,7 +223,7 @@ class GlobalRouter
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
-  GSegment boxToGlobalRouting(const odb::Rect& route_bds, int layer);
+  void boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
