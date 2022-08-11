@@ -33,6 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <cusp/precond/diagonal.h>
 #include <cusp/blas/blas.h>
 #include <cusp/krylov/bicgstab.h>
 
@@ -170,8 +171,11 @@ void GpuSolver::cusolverCal(Eigen::VectorXf& instLocVec)
   cusp::monitor<float> monitor_(
       d_b, iteration_limit, relative_tolerance, verbose);
 
+  // setup preconditioner
+  cusp::precond::diagonal<float, cusp::device_memory> d_M(d_A);
+
   // solve the linear system A * x = b with the BICGSTAB method
-  cusp::krylov::bicgstab(d_A, d_x, d_b, monitor_);
+  cusp::krylov::bicgstab(d_A, d_x, d_b, monitor_, d_M);
 
   // Sync and Copy data to host
   cudaerror(cudaMemcpy(instLocVec.data(),
