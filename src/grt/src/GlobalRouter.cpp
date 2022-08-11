@@ -1396,9 +1396,7 @@ void GlobalRouter::readGuides(const char* file_name)
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
 
-      GRoute& route = routes_[net];
-      boxToGlobalRouting(rect, layer->getRoutingLevel(), route);
-      //route.push_back(boxToGlobalRouting(rect, layer->getRoutingLevel()));
+      boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
@@ -1783,9 +1781,17 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRo
 
   const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2); 
-  while( (x0 + tile_size) <= x1 && (y0 + tile_size) <= y1){
-    route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0 + tile_size, layer));
+
+  if( x0 == x1 && y0 == y1 )
+    route.push_back(GSegment(x0, y0, layer, x1, y1, layer));
+
+  while( y0 == y1 && (x0 + tile_size) <= x1 ){
+    route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0, layer));
     x0 += tile_size;
+  }
+ 
+  while( x0 == x1 && (y0 + tile_size) <= y1 ){
+    route.push_back(GSegment(x0, y0, layer, x0 , y0 + tile_size, layer));
     y0 += tile_size;
   }
 }
