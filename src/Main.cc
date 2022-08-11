@@ -240,17 +240,52 @@ int main(int argc, char* argv[])
       showSplash();
     }
 
-    std::vector<wchar_t*> args;
-    for (int i = 0; i < cmd_argc; i++) {
-      size_t sz = strlen(cmd_argv[i]);
-      args.push_back(new wchar_t[sz + 1]);
-      args[i][sz] = '\0';
-      for (size_t j = 0; j < sz; j++) {
-        args[i][j] = (wchar_t) cmd_argv[i][j];
+    utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+    if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
+      logger->warn(utl::ORD, 38, "-gui is not yet supported with -python");
+    }
+
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_init")) {
+      logger->warn(utl::ORD, 39, ".openroad ignored with -python");
+    }
+
+    const char* threads = findCmdLineKey(cmd_argc, cmd_argv, "-threads");
+    if (threads) {
+      ord::OpenRoad::openRoad()->setThreadCount(threads);
+    } else {
+      // set to default number of threads
+      ord::OpenRoad::openRoad()->setThreadCount(
+          ord::OpenRoad::openRoad()->getThreadCount(), false);
+    }
+
+    bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    if (cmd_argc > 2 || (cmd_argc > 1 && cmd_argv[1][0] == '-')) {
+      showUsage(cmd_argv[0], init_filename);
+    } else if (cmd_argc == 2) {
+      char* cmd_filename = cmd_argv[1];
+      FILE* cmd_file = fopen(cmd_filename, "r");
+      if (cmd_file) {
+        wchar_t* arg = Py_DecodeLocale(cmd_filename, nullptr);
+        PySys_SetArgv(1, &arg);
+        PyMem_RawFree(arg);
+        int result = PyRun_SimpleFile(cmd_file, cmd_filename);
+        fclose(cmd_file);
+        if (exit_after_cmd_file) {
+          int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+          exit(exit_code);
+        }
       }
     }
 
-    return Py_Main(cmd_argc, args.data());
+    std::vector<wchar_t*> args;
+    size_t sz = strlen(cmd_argv[0]);
+    args.push_back(new wchar_t[sz + 1]);
+    args[0][sz] = '\0';
+    for (size_t j = 0; j < sz; j++) {
+      args[0][j] = (wchar_t) cmd_argv[0][j];
+    }
+
+    return Py_Main(1, args.data());
   } else {
     // Python wants to install its own SIGINT handler to print KeyboardInterrupt
     // on ctrl-C. We don't want that if python is not the main interpreter.

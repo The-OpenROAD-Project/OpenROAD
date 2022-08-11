@@ -453,7 +453,7 @@ proc save_flow_metric_limits_main {} {
   }
 }
 
-proc save_metric_limits { test } {
+proc save_metric_limits { test lang } {
   # Don't require json until it is really needed.
   package require json
 
@@ -512,9 +512,9 @@ proc test_metrics_file { test } {
   return [file join $test_dir "$test.metrics"]
 }
 
-proc test_metrics_result_file { test } {
+proc test_metrics_result_file { test lang } {
   global test_dir
-  return [file join $test_dir "results" "$test.metrics"]
+  return [file join $test_dir "results" "$test-$lang.metrics"]
 }
 
 proc test_metrics_limits_file { test } {

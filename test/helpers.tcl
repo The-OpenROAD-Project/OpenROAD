@@ -8,6 +8,9 @@ proc make_result_file { filename } {
   if { ![file exists $result_dir] } {
     file mkdir $result_dir
   }
+  set root [file rootname $filename]
+  set ext [file extension $filename]
+  set filename "$root-tcl$ext"
   return [file join $result_dir $filename]
 }
 
