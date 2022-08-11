@@ -295,7 +295,7 @@ proc repair_antennas { args } {
       }
 
       if { $non_pg_count > 1 } {
-        utl::warn "Diode cell has more than one non-pg port."
+        utl::error GRT 73 "Diode cell has more than one non power/ground port."
       }
     } else {
       utl::error GRT 245 "Too arguments to repair_antennas."
