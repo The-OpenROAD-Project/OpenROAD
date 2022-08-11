@@ -43,4 +43,5 @@ record_tests {
   tracks1
   tracks2
   tracks3
+  read_guides1
 }

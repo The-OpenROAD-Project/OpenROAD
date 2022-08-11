@@ -1,0 +1,98 @@
+[INFO ODB-0222] Reading LEF file: read_guides1.lef1
+[INFO ODB-0223]     Created 24 technology layers
+[INFO ODB-0224]     Created 9 technology vias
+[INFO ODB-0226] Finished LEF file:  read_guides1.lef1
+[INFO ODB-0222] Reading LEF file: read_guides1.lef2
+[INFO ODB-0225]     Created 212 library cells
+[INFO ODB-0226] Finished LEF file:  read_guides1.lef2
+[INFO ODB-0127] Reading DEF file: read_guides1.def
+[INFO ODB-0128] Design: multiply_add_64x64
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 6 components and 29 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 6 connections.
+[INFO ODB-0134] Finished DEF file: read_guides1.def
+[WARNING STA-0337] port 'clk' not found.
+[WARNING STA-0357] virtual clock clk can not be propagated.
+44010 13770
+44010 13770
+Size:1
+44010 13230
+44010 13770
+Size:2
+44010 13230
+44010 13230
+Size:3
+44010 13230
+44010 13230
+Size:4
+45090 13770
+45090 13770
+Size:5
+45090 13770
+45090 13770
+Size:6
+45090 13770
+45090 14310
+Size:7
+45090 14310
+45090 14310
+Size:8
+45090 14310
+45090 14310
+Size:9
+44010 14310
+44010 14310
+Size:10
+44010 14310
+44010 14310
+Size:11
+44010 13770
+44010 14310
+Size:12
+44010 13770
+45090 13770
+Size:14
+46710 17010
+46710 17010
+Size:1
+46710 17010
+46710 17010
+Size:2
+46710 17010
+46710 17010
+Size:3
+46710 17010
+46710 17010
+Size:4
+46710 17010
+46710 17010
+Size:5
+46710 17010
+49950 17010
+Size:11
+49950 17010
+49950 17010
+Size:12
+49950 17010
+51570 17010
+Size:15
+51570 17010
+51570 17010
+Size:16
+51570 17010
+52650 17010
+Size:18
+52650 17010
+52650 19170
+Size:22
+52650 19170
+53730 19170
+Size:24
+53730 19170
+53730 20250
+Size:26
+53730 20250
+54810 20250
+Size:28
+[WARNING STA-0357] virtual clock clk can not be propagated.
+No paths found.
