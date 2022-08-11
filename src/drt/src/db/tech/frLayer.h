@@ -51,8 +51,10 @@ class frLayer
   frLayer()
       : db_layer_(nullptr),
         fakeCut(false),
-        fakeMs(false),
+        fakeMasterslice(false),
         layerNum(0),
+        width(0),
+        minWidth(0),
         defaultViaDef(nullptr),
         hasMinStepViol(false),
         minSpc(nullptr),
@@ -90,8 +92,10 @@ class frLayer
   frLayer(frLayerNum layerNumIn, const frString& nameIn) //remove name from signature
       : db_layer_(nullptr),
         fakeCut(false),
-        fakeMs(false),
+        fakeMasterslice(false),
         layerNum(layerNumIn),
+        width(0),
+        minWidth(-1),
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
@@ -121,7 +125,7 @@ class frLayer
   // setters
   void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
   void setFakeCut(bool fakeCutIn) { fakeCut = fakeCutIn; }
-  void setFakeMs(bool fakeMsIn) { fakeMs = fakeMsIn; }
+  void setFakeMasterslice(bool fakeMastersliceIn) { fakeMasterslice = fakeMastersliceIn; }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setWidth(frUInt4 widthIn) { width = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
@@ -131,18 +135,18 @@ class frLayer
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
   // getters
   odb::dbTechLayer* getDbLayer() const { return db_layer_; }
-  bool getFakeCut() const { return fakeCut;}
-  bool getFakeMs() const { return fakeMs;}
-  frUInt4 getNumMasks() const { return (fakeCut || fakeMs)? 1 : db_layer_->getNumMasks(); }
+  bool isFakeCut() const { return fakeCut;}
+  bool isFakeMasterslice() const { return fakeMasterslice;}
+  frUInt4 getNumMasks() const { return (fakeCut || fakeMasterslice)? 1 : db_layer_->getNumMasks(); }
   frLayerNum getLayerNum() const { return layerNum; }
-  void getName(frString& nameIn) const { nameIn = (fakeCut)? "FR_VIA": (fakeMs)? "FR_MASTERSLICE": db_layer_->getName(); }
-  frString getName() const { return (fakeCut)? "Fr_VIA": (fakeMs)? "FR_MASTERSLICE": db_layer_->getName(); }
-  frUInt4 getPitch() const { return (fakeCut || fakeMs)? 0 : db_layer_->getPitch(); }
+  void getName(frString& nameIn) const { nameIn = (fakeCut)? "FR_VIA": (fakeMasterslice)? "FR_MASTERSLICE": db_layer_->getName(); }
+  frString getName() const { return (fakeCut)? "Fr_VIA": (fakeMasterslice)? "FR_MASTERSLICE": db_layer_->getName(); }
+  frUInt4 getPitch() const { return (fakeCut || fakeMasterslice)? 0 : db_layer_->getPitch(); }
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
-  dbTechLayerDir getDir() const { return (fakeCut || fakeMs)? dbTechLayerDir("none") : db_layer_->getDirection(); }
-  bool isVertical() { return (fakeCut || fakeMs)? false : db_layer_->getDirection() == dbTechLayerDir::VERTICAL; }
-  bool isHorizontal() { return (fakeCut || fakeMs)? false : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL; }
+  dbTechLayerDir getDir() const { return (fakeCut || fakeMasterslice)? dbTechLayerDir("none") : db_layer_->getDirection(); }
+  bool isVertical() { return (fakeCut || fakeMasterslice)? false : db_layer_->getDirection() == dbTechLayerDir::VERTICAL; }
+  bool isHorizontal() { return (fakeCut || fakeMasterslice)? false : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL; }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any double/triple patterned
@@ -162,7 +166,16 @@ class frLayer
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
-  dbTechLayerType getType() const { return (fakeCut)? dbTechLayerType("cut") : (fakeMs)? dbTechLayerType("masterslice") : db_layer_->getType(); }
+  dbTechLayerType getType() const
+  { 
+    if(fakeCut) 
+      return dbTechLayerType::CUT;
+    
+    if(fakeMasterslice)
+      return dbTechLayerType::MASTERSLICE;
+
+    return db_layer_->getType();
+  }
 
   // cut class (new)
   void addCutClass(frLef58CutClass* in)
@@ -660,7 +673,7 @@ class frLayer
  protected:
   odb::dbTechLayer* db_layer_;
   bool fakeCut;
-  bool fakeMs;
+  bool fakeMasterslice;
   frLayerNum layerNum;
   frUInt4 width;
   frUInt4 minWidth;
