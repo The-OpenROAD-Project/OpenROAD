@@ -718,7 +718,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1 && !net->isLocal()) {
+    if (pin_count > 1 && !net->isLocal() && !net->hasWires()) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
       }
@@ -1395,11 +1395,16 @@ void GlobalRouter::readGuides(const char* file_name)
 
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
-
       boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
+  }
+
+  for (auto& net_route : routes_) {
+    std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
+    GRoute& route = net_route.second;
+    mergeSegments(pins, route);
   }
 
   updateEdgesUsage();
@@ -1680,7 +1685,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       int max_routing_layer)
 {
   for (Net* net : nets) {
-    if (net->getNumPins() > 1) {
+    if (net->getNumPins() > 1 && !net->hasWires()) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
@@ -2497,8 +2502,8 @@ std::vector<Net*> GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      && db_net->getSWires().empty() && db_net->getWire() == nullptr) {
-    Net* net = new Net(db_net);
+      && db_net->getSWires().empty()) {
+    Net* net = new Net(db_net, db_net->getWire() != nullptr);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
