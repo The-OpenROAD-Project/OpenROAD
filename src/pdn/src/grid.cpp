@@ -1086,15 +1086,23 @@ const odb::Rect InstanceGrid::getDomainBoundary() const
 
 const odb::Rect InstanceGrid::getGridArea() const
 {
-  odb::Rect inst_box = getDomainArea();
+  return applyHalo(getDomainArea());
+}
 
-  // apply halo
-  inst_box.set_xlo(inst_box.xMin() - halos_[0]);
-  inst_box.set_ylo(inst_box.yMin() - halos_[1]);
-  inst_box.set_xhi(inst_box.xMax() + halos_[2]);
-  inst_box.set_yhi(inst_box.yMax() + halos_[3]);
+odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect) const
+{
+  return applyHalo(rect, halos_);
+}
 
-  return inst_box;
+odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect, const InstanceGrid::Halo& halo)
+{
+  odb::Rect halo_rect(
+    rect.xMin() - halo[0],
+    rect.yMin() - halo[1],
+    rect.xMax() + halo[2],
+    rect.yMax() + halo[3]
+  );
+  return halo_rect;
 }
 
 const odb::Rect InstanceGrid::getGridBoundary() const
@@ -1102,7 +1110,7 @@ const odb::Rect InstanceGrid::getGridBoundary() const
   return getDomainBoundary();
 }
 
-ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst)
+ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst, const InstanceGrid::Halo& halo)
 {
   ShapeTreeMap obs;
 
@@ -1121,22 +1129,27 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst)
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
+    shape->setObstruction(applyHalo(obs_rect, halo));
     obs[layer].insert({shape->getObstructionBox(), shape});
   }
 
-  for (auto* mterm : master->getMTerms()) {
-    for (auto* mpin : mterm->getMPins()) {
-      for (auto* box : mpin->getGeometry()) {
-        odb::Rect obs_rect = box->getBox();
-
-        // add min spacing
-        auto* layer = box->getTechLayer();
-        obs_rect.bloat(layer->getSpacing(), obs_rect);
-
-        transform.apply(obs_rect);
-        auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
-        obs[layer].insert({shape->getObstructionBox(), shape});
+  // generate obstructions based on pins
+  for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
+    const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const bool is_vertical = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    for (const auto& [box, pin_shape] : pin_shapes) {
+      pin_shape->setShapeType(Shape::BLOCK_OBS);
+      odb::Rect pin_shape_rect = pin_shape->getRect();
+      if (is_horizontal) {
+        pin_shape_rect.set_xlo(pin_shape_rect.xMin() - halo[0]);
+        pin_shape_rect.set_xhi(pin_shape_rect.xMax() + halo[2]);
       }
+      if (is_vertical) {
+        pin_shape_rect.set_ylo(pin_shape_rect.yMin() - halo[1]);
+        pin_shape_rect.set_yhi(pin_shape_rect.yMax() + halo[3]);
+      }
+      pin_shape->setObstruction(pin_shape_rect);
+      obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
     }
   }
 
@@ -1157,7 +1170,7 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 
   // copy instance obstructions
-  for (const auto& [layer, shapes] : getInstanceObstructions(inst_)) {
+  for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
     local_obs[layer].insert(shapes.begin(), shapes.end());
   }
 
