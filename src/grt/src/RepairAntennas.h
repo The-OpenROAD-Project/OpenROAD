@@ -71,7 +71,7 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>> AntennaViolations;
+typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById> AntennaViolations;
 typedef std::map<RoutePt, std::vector<Pin*>> RoutePtPins;
 
 class RepairAntennas
