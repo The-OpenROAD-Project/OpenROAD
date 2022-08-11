@@ -154,6 +154,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
+
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;
@@ -593,6 +594,10 @@ class FlexDRWorker
                              std::map<frNet*,
                                       std::vector<std::unique_ptr<drConnFig>>,
                                       frBlockObjectComp>& netExtObjs);
+  void initNets_segmentTerms(Point bp,
+                             frLayerNum lNum,
+                             frNet* net,
+                             set<frBlockObject*, frBlockObjectComp>& terms);
   void initNets_initDR(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -1015,7 +1020,8 @@ class FlexDRWorker
   void endAddMarkers(frDesign* design);
 
   // helper functions
-  frCoord snapCoordToManufacturingGrid(const frCoord coord, const int lowerLeftCoord);
+  frCoord snapCoordToManufacturingGrid(const frCoord coord,
+                                       const int lowerLeftCoord);
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
