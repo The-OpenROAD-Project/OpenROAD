@@ -313,9 +313,8 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
   while (violations && itr < iterations) {
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
-    violations = repair_antennas_->checkAntennaViolations(routes_,
-                                                          max_routing_layer_,
-                                                          diode_mterm);
+    violations = repair_antennas_->checkAntennaViolations(
+        routes_, max_routing_layer_, diode_mterm);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -340,7 +339,8 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
 void GlobalRouter::makeNetWires()
 {
   if (repair_antennas_ == nullptr)
-    repair_antennas_ = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
+    repair_antennas_
+        = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
   repair_antennas_->makeNetWires(routes_, max_routing_layer_);
 }
 
@@ -1773,25 +1773,27 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
   return route_bds;
 }
 
-void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route)
+void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
+                                      int layer,
+                                      GRoute& route)
 {
   const int tile_size = grid_->getTileSize();
   int x0 = (tile_size * (route_bds.xMin() / tile_size)) + (tile_size / 2);
-  int y0 = (tile_size * (route_bds.yMin() / tile_size)) + (tile_size / 2); 
+  int y0 = (tile_size * (route_bds.yMin() / tile_size)) + (tile_size / 2);
 
   const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
-  const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2); 
+  const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
-  if( x0 == x1 && y0 == y1 )
+  if (x0 == x1 && y0 == y1)
     route.push_back(GSegment(x0, y0, layer, x1, y1, layer));
 
-  while( y0 == y1 && (x0 + tile_size) <= x1 ){
+  while (y0 == y1 && (x0 + tile_size) <= x1) {
     route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0, layer));
     x0 += tile_size;
   }
- 
-  while( x0 == x1 && (y0 + tile_size) <= y1 ){
-    route.push_back(GSegment(x0, y0, layer, x0 , y0 + tile_size, layer));
+
+  while (x0 == x1 && (y0 + tile_size) <= y1) {
+    route.push_back(GSegment(x0, y0, layer, x0, y0 + tile_size, layer));
     y0 += tile_size;
   }
 }
