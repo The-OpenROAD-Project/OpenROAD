@@ -277,12 +277,26 @@ proc repair_antennas { args } {
       # repairAntennas locates diode
       set diode_mterm "NULL"
     } elseif { [llength $args] == 1 } {
-      set diode_port_name [lindex $args 0]
-      set diode_port [sta::get_lib_pins -quiet $diode_port_name]
-      if { $diode_port == "" } {
-        utl::error GRT 69 "Diode $diode_port_name not found."
+      set db [ord::get_db]
+      set diode_cell [lindex $args 0]
+
+      set diode_master [$db findMaster $diode_cell]
+      if { $diode_master == "NULL" } {
+        utl::error GRT 69 "Diode cell $diode_cell not found."
       }
-      set diode_mterm [sta::sta_to_db_mterm $diode_port]
+      
+      set diode_mterms [$diode_master getMTerms]
+      set non_pg_count 0
+      foreach mterm $diode_mterms {
+        if { [$mterm getSigType] != "POWER" && [$mterm getSigType] != "GROUND" } {
+          set diode_mterm $mterm
+          incr non_pg_count
+        }
+      }
+
+      if { $non_pg_count > 1 } {
+        utl::error GRT 73 "Diode cell has more than one non power/ground port."
+      }
     } else {
       utl::error GRT 245 "Too arguments to repair_antennas."
     }

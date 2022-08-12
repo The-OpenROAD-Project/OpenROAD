@@ -531,6 +531,14 @@ void dbInst::getLocation(int& x, int& y) const
   y = bbox->_shape._rect.yMin();
 }
 
+Point dbInst::getLocation() const
+{
+  int x;
+  int y;
+  getLocation(x, y);
+  return {x, y};
+}
+
 void dbInst::setLocation(int x, int y)
 {
   dbMaster* master = getMaster();

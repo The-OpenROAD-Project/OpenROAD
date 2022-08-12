@@ -40,6 +40,7 @@
 #include <boost/iterator/function_output_iterator.hpp>
 #include <string>
 
+#include "grt/RoutePt.h"
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
@@ -54,6 +55,7 @@ namespace odb {
 class dbDatabase;
 class dbChip;
 class dbTech;
+class dbWireEncoder;
 }  // namespace odb
 
 namespace utl {
@@ -65,9 +67,12 @@ namespace bgi = boost::geometry::index;
 
 namespace grt {
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>> AntennaViolations;
-
 class GlobalRouter;
+class Net;
+class Pin;
+
+typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById> AntennaViolations;
+typedef std::map<RoutePt, std::vector<Pin*>> RoutePtPins;
 
 class RepairAntennas
 {
@@ -118,8 +123,22 @@ class RepairAntennas
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*> &default_vias);
-
-  GlobalRouter* grouter_;
+  RoutePtPins findRoutePtPins(Net* net);
+  void addWireTerms(Net *net,
+                    GRoute& route,
+                    int grid_x,
+                    int grid_y,
+                    int layer,
+                    odb::dbTechLayer *tech_layer,
+                    int jct_id,
+                    RoutePtPins &route_pt_pins,
+                    odb::dbWireEncoder &wire_encoder);
+  bool pinOverlapsGSegment(const odb::Point& pin_position,
+                           const int pin_layer,
+                           const std::vector<odb::Rect>& pin_boxes,
+                           const GRoute& route);
+  
+    GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;
   dpl::Opendp* opendp_;
   odb::dbDatabase* db_;

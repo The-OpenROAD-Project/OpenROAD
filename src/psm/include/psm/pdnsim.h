@@ -31,8 +31,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __PDNSim_HEADER__
-#define __PDNSim_HEADER__
+#pragma once
 
 #include <map>
 #include <memory>
@@ -70,7 +69,7 @@ class PDNSim
   void import_vsrc_cfg(std::string vsrc);
   void import_out_file(std::string out_file);
   void import_em_out_file(std::string em_out_file);
-  void import_enable_em(int enable_em);
+  void import_enable_em(bool enable_em);
   void import_spice_out_file(std::string out_file);
   void set_power_net(std::string net);
   void set_bump_pitch_x(float bump_pitch);
@@ -83,7 +82,7 @@ class PDNSim
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
   int getMinimumResolution();
-  int check_connectivity();
+  bool check_connectivity();
   void setDebugGui();
 
  private:
@@ -93,7 +92,7 @@ class PDNSim
   std::string vsrc_loc_;
   std::string out_file_;
   std::string em_out_file_;
-  int enable_em_;
+  bool enable_em_;
   int bump_pitch_x_;
   int bump_pitch_y_;
   std::string spice_out_file_;
@@ -107,5 +106,3 @@ class PDNSim
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
 }  // namespace psm
-
-#endif

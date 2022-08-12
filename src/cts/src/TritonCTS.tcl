@@ -219,3 +219,16 @@ proc report_cts { args } {
 
   cts::report_cts_metrics
 }
+
+namespace eval cts {
+proc clock_tree_synthesis_debug { args } {
+  sta::parse_key_args "clock_tree_synthesis_debug" args \
+      keys {-plot}
+
+  sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
+
+  cts::set_plot_option [info exists flags(-plot)]
+
+  cts::set_debug_cmd
+}
+}

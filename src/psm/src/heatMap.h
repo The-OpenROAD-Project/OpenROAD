@@ -58,13 +58,12 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
   virtual void determineMinMax(const gui::HeatMapDataSource::Map& map) override;
 
  private:
-  psm::PDNSim* psm_;
-  odb::dbTech* tech_;
-
-  odb::dbTechLayer* layer_;
-
   void ensureLayer();
   void setLayer(const std::string& name);
+
+  psm::PDNSim* psm_;
+  odb::dbTech* tech_;
+  odb::dbTechLayer* layer_;
 };
 
 }  // namespace psm

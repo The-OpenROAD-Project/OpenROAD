@@ -55,6 +55,7 @@ target_sources(cts
     TritonCTS.cpp
     Clustering.cpp
     LevelBalancer.cpp
+    Graphics.cpp
 )
 
 target_include_directories(cts

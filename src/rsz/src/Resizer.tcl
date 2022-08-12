@@ -427,7 +427,7 @@ proc report_floating_nets { args } {
   set floating_nets [rsz::find_floating_nets]
   set floating_net_count [llength $floating_nets]
   if { $floating_net_count > 0 } {
-    utl::warn RSZ 20 "found $floating_net_count floatiing nets."
+    utl::warn RSZ 20 "found $floating_net_count floating nets."
     if { $verbose } {
       foreach net $floating_nets {
         utl::report " [get_full_name $net]"

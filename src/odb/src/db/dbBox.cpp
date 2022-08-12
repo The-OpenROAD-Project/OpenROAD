@@ -615,6 +615,14 @@ void dbBox::getViaXY(int& x, int& y)
   box->getViaXY(x, y);
 }
 
+Point dbBox::getViaXY()
+{
+  int x;
+  int y;
+  getViaXY(x, y);
+  return {x, y};
+}
+
 dbObject* dbBox::getBoxOwner()
 {
   _dbBox* box = (_dbBox*) this;

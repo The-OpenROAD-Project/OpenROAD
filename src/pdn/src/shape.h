@@ -128,6 +128,7 @@ class Shape
   // generates the obstruction box needed to avoid DRC violations with
   // surrounding shapes
   void generateObstruction();
+  void setObstruction(const odb::Rect& rect) { obs_ = rect; }
 
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
