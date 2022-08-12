@@ -1383,7 +1383,10 @@ FanoutRender::FanoutRender(RepairDesign *repair) :
   repair_(repair),
   pins_(nullptr)
 {
-  gui::Gui::get()->registerRenderer(this);
+  const bool gui_enabled = gui::Gui::enabled();
+  if (gui_enabled) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void
