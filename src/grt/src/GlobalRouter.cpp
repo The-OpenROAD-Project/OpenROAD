@@ -3661,14 +3661,14 @@ PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
 
 ////////////////////////////////////////////////////////////////
 
-RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
+RoutePt::RoutePt(int x, int y, int layer) : x_(x), y_(y), layer_(layer)
 {
 }
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)
 {
-  return (p1._x < p2._x) || (p1._x == p2._x && p1._y < p2._y)
-         || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
+  return (p1.x_ < p2.x_) || (p1.x_ == p2.x_ && p1.y_ < p2.y_)
+         || (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ < p2.layer_);
 }
 
 class GrouteRenderer : public gui::Renderer
