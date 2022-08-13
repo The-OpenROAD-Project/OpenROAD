@@ -123,8 +123,6 @@ uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2]) {
     if (s.isVia())
       continue;
 
-    Rect r = s.getBox();
-
     //		maxRect.merge(r);
     cnt++;
   }

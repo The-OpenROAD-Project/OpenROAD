@@ -281,7 +281,6 @@ void FlexDR::initFromTA()
 void FlexDR::initGCell2BoundaryPin()
 {
   // initiailize size
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -513,7 +512,6 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  Rect cutBox1 = via1.getCutBBox();
   int width1 = viaBox1.minDXDY();
 
   bool isVia2Above = false;
@@ -526,7 +524,6 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
@@ -1615,7 +1612,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (graphics_) {
     graphics_->startIter(iter);
   }
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
