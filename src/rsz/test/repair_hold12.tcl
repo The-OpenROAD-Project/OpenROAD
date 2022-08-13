@@ -1,4 +1,4 @@
-# repair_timing -hold with hold constraint but no setup constraiint
+# repair_timing -hold with hold constraint but no setup constraint
 source helpers.tcl
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
