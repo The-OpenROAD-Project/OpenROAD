@@ -495,7 +495,7 @@ Resizer::bufferInput(const Pin *top_pin,
                                 parent, pin_loc);
   inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     // Leave input port pin connected to input_net.
@@ -588,7 +588,7 @@ Resizer::bufferOutput(Pin *top_pin,
                                 parent, pin_loc);
   inserted_buffer_count_++;
 
-  NetConnectedPinIterator *pin_iter = network->connectedPinIterator(output_net);
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(output_net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (pin != top_pin) {
