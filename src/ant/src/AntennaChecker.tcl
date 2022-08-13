@@ -58,13 +58,3 @@ proc check_antennas { args } {
   }
   return [ant::check_antennas $net_name $verbose]
 }
-
-
-
-sta::define_cmd_args "find_max_allowed_length" {net_name \
-                                                 layer}
-proc find_max_allowed_length { args } {
-  set net_name [lindex $args 0]
-  set layer [lindex $args 1]
-  return [ant::find_max_allowed_length $net_name $layer]
-}

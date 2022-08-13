@@ -376,9 +376,9 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   double side_wire_area = 0;
 
   double wire_width = dbuToMicrons(node->layer()->getWidth());
-
   uint wire_thickness_dbu = 0;
   node->layer()->getThickness(wire_thickness_dbu);
+  double wire_thickness = dbuToMicrons(wire_thickness_dbu);
 
   int start_x, start_y;
   int end_x, end_y;
@@ -438,11 +438,11 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
                        * wire_width;
           side_wire_area
               += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y)))
-                 * dbuToMicrons(wire_thickness_dbu) * 2;
+                 * wire_thickness * 2;
                  
           // These are added to represent the extensions to the wire segments (0.5 * wire_width)
           wire_area += wire_width * wire_width;
-          side_wire_area += 2 * dbuToMicrons(wire_thickness_dbu) * wire_width;
+          side_wire_area += 2 * wire_thickness * wire_width;
         }
     
         std::pair<double, double> areas
@@ -460,7 +460,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
           side_wire_area
               += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
                   + wire_width)
-                 * dbuToMicrons(wire_thickness_dbu) * 2  + 2 * dbuToMicrons(wire_thickness_dbu) * wire_width;
+                 * wire_thickness* 2  + 2 * wire_thickness * wire_width;
         }
 
         std::pair<double, double> areas
@@ -1098,46 +1098,14 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
     dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
     const double diffPAR_PWL_ratio = getPwlFactor(diffPAR, diff_area, 0);
 
-    // A struct to be used to index the 'allowed_wire_length' map.
-    // For reference, this is a map that stores the maximum allowed wire length for each layer and net along with the current wire length.
-    NetLayerPair wire_pair = NetLayerPair(net, layer->getRoutingLevel());
 
     if (PAR_ratio != 0) {
-      // Check if no entry exists for the given net-layer pair in our map
-      if(par >= 0)
-      {
-        // Check if no entry exists for the given net-layer pair in our map
-        if(allowed_wire_length.find(wire_pair) == allowed_wire_length.end())
-            allowed_wire_length[wire_pair] = MaxLength(wire_pair, AntennaRatio.max_wire_length_PAR, AntennaRatio.wire_length);
-        else
-        {
-            // Minimise the max length allowed and maximise the current wire length 
-            allowed_wire_length[wire_pair].max_length = std::min(allowed_wire_length[wire_pair].max_length, AntennaRatio.max_wire_length_PAR);
-            allowed_wire_length[wire_pair].cur_length = std::max(allowed_wire_length[wire_pair].cur_length, AntennaRatio.wire_length);
-
-        }
-      }
-
       if (par > PAR_ratio) {
         par_violation = true;
         violated = true;
       }
     } else {
       if (diffPAR_PWL_ratio != 0) {
-        if(diff_par > 0)
-        {
-          // Check if no entry exists for the given net-layer pair in our map
-          if(allowed_wire_length.find(wire_pair) == allowed_wire_length.end())
-            allowed_wire_length[wire_pair] = MaxLength(wire_pair, AntennaRatio.max_wire_length_diff_PAR, AntennaRatio.wire_length);
-          else
-          {
-            // Minimise the max length allowed and maximise the current wire length 
-            allowed_wire_length[wire_pair].max_length = std::min(allowed_wire_length[wire_pair].max_length, AntennaRatio.max_wire_length_diff_PAR);
-            allowed_wire_length[wire_pair].cur_length = std::max(allowed_wire_length[wire_pair].cur_length, AntennaRatio.wire_length);
-
-          }
-
-        }
         checked = true;
         if (diff_par > diffPAR_PWL_ratio) {
           diff_par_violation = true;
@@ -1150,40 +1118,12 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
     const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
     const double diffPSR_PWL_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
     if (PSR_ratio != 0) {
-      if(psr > 0)
-      {
-        // Check if no entry exists for the given net-layer pair in our map
-        if(allowed_wire_length.find(wire_pair) == allowed_wire_length.end())
-            allowed_wire_length[wire_pair] = MaxLength(wire_pair, AntennaRatio.max_wire_length_PSR, AntennaRatio.side_wire_length);
-        else
-        {
-          // Minimise the max length allowed and maximise the current wire length 
-          allowed_wire_length[wire_pair].max_length = std::min(allowed_wire_length[wire_pair].max_length, AntennaRatio.max_wire_length_PSR);
-          allowed_wire_length[wire_pair].cur_length = std::max(allowed_wire_length[wire_pair].cur_length, AntennaRatio.side_wire_length);
-
-        }
-      }
-
       if (psr > PSR_ratio) {
         psr_violation = true;
         violated = true;
       }
     } else {
       if (diffPSR_PWL_ratio != 0) {
-        if(diff_psr > 0)
-        {
-          // Check if no entry exists for the given net-layer pair in our map
-
-          if(allowed_wire_length.find(wire_pair) == allowed_wire_length.end())
-              allowed_wire_length[wire_pair] = MaxLength(wire_pair, AntennaRatio.max_wire_length_diff_PSR, AntennaRatio.side_wire_length);
-          else
-          {
-              // Minimise the max length allowed and maximise the current wire length 
-              allowed_wire_length[wire_pair].max_length = std::min(allowed_wire_length[wire_pair].max_length, AntennaRatio.max_wire_length_diff_PSR);
-              allowed_wire_length[wire_pair].cur_length = std::max(allowed_wire_length[wire_pair].cur_length, AntennaRatio.side_wire_length);
-          }
-        }
-
         checked = true;
         if (diff_psr > diffPSR_PWL_ratio) {
           diff_psr_violation = true;
@@ -1533,7 +1473,6 @@ void AntennaChecker::checkGate(dbNet* net,
     if (ar.GateNode == gate) {
       auto wire_PAR_violation = checkWirePar(ar, net, false, verbose);
 
-      // TODO: handle the allowed_wire_length for CAR
       auto wire_CAR_violation = checkWireCar(ar, wire_PAR_violation.second,
                                              false, verbose);
       bool wire_violation = wire_PAR_violation.first || wire_CAR_violation.first;
@@ -1749,35 +1688,6 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
     }
   }
   return par_wires;
-}
-
-void AntennaChecker::findMaxAllowedLength(const char* net_name, const char* layer_name)
-{
-  dbNet* net = block_->findNet(net_name);
-  if(net == nullptr)
-  {
-      logger_->error(ANT, 15, "No net found with the name: {}", net_name);
-  }
-
-  dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
-  if(layer == nullptr)
-  {
-      logger_->error(ANT, 16, "No layer found with the name: {}", layer_name);
-  }
-
-  int routing_level = layer->getRoutingLevel();
-
-  NetLayerPair wire_pair = NetLayerPair(net, routing_level);
-
-  if(allowed_wire_length.find(wire_pair) != allowed_wire_length.end())
-  {
-    MaxLength max_length = allowed_wire_length[wire_pair];
-    logger_->report("Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}, Current Length for PAR: {:3.2f}",
-                  net_name,
-                  routing_level,
-                  max_length.max_length,
-                  max_length.cur_length);
-  }
 }
 
 bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)

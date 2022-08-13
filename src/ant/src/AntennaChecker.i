@@ -65,14 +65,6 @@ antenna_violation_count()
   return getAntennaChecker()->antennaViolationCount();
 }
 
-void
-find_max_allowed_length(const char *net_name,
-                 const char *layer)
-{
-  AntennaChecker *checker = getAntennaChecker();
-  checker->findMaxAllowedLength(net_name, layer);
-}
-
 // check a net for antenna violations
 bool
 check_net_violation(char* net_name)
@@ -84,13 +76,6 @@ check_net_violation(char* net_name)
   }
   else
     return false;
-}
-
-// Prints the longest wire in the design
-void
-find_max_wire_length()
-{
-  getAntennaChecker()->findMaxWireLength();
 }
 
 } // namespace
