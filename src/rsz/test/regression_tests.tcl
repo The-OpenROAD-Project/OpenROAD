@@ -5,6 +5,7 @@ record_tests {
   buffer_ports5
   buffer_ports6
   buffer_ports7
+  buffer_ports8
   fanin_fanout1
   make_parasitics1
   make_parasitics2
