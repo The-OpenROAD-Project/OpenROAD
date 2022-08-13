@@ -1,0 +1,54 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
+[INFO IFP-0001] Added 56 rows of 420 sites.
+Found 0 macro blocks.
+Using 1u default distance from corners.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0007] Random pin placement.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 20140 22400
+[INFO GPL-0005] CoreAreaUxUy: 179740 179200
+[INFO GPL-0006] NumInstances: 1
+[INFO GPL-0007] NumPlaceInstances: 1
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 3
+[INFO GPL-0011] NumPins: 7
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 200000 200000
+[INFO GPL-0014] CoreAreaLxLy: 20140 22400
+[INFO GPL-0015] CoreAreaUxUy: 179740 179200
+[INFO GPL-0016] CoreArea: 25025280000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 18088000
+[INFO GPL-0019] Util(%): 0.07
+[INFO GPL-0020] StdInstsArea: 18088000
+[INFO GPL-0021] MacroInstsArea: 0
+[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 587850
+[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 622912
+[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 596715
+[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 579151
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 568782
+[INFO GPL-0031] FillerInit: NumGCells: 968
+[INFO GPL-0032] FillerInit: NumGNets: 3
+[INFO GPL-0033] FillerInit: NumGPins: 7
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 18088000
+[INFO GPL-0025] IdealBinArea: 25840000
+[INFO GPL-0026] IdealBinCnt: 968
+[INFO GPL-0027] TotalBinArea: 25025280000
+[INFO GPL-0028] BinCnt: 16 16
+[INFO GPL-0029] BinSize: 9975 9800
+[INFO GPL-0030] NumBins: 256
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 565193
+[NesterovSolve] Finished with Overflow: 0.000000
+[INFO RSZ-0027] Inserted 2 input buffers.
+[INFO RSZ-0028] Inserted 2 output buffers.
+Differences found at line 5.
+UNITS DISTANCE MICRONS 1000 ;
+UNITS DISTANCE MICRONS 2000 ;
