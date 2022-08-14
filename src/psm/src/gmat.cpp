@@ -31,11 +31,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "gmat.h"
-
 #include <iostream>
 #include <vector>
 
+#include "gmat.h"
 #include "node.h"
 
 namespace psm {
@@ -106,11 +105,11 @@ vector<Node*> GMat::getNodes(int layer,
 
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
-  NodeMap& layer_map = layer_maps_[layer];
+  const NodeMap& layer_map = layer_maps_[layer];
   if (layer != 1 && nearest == false) {
-    NodeMap::iterator x_itr = layer_map.find(x);
+    const auto x_itr = layer_map.find(x);
     if (x_itr != layer_map.end()) {
-      map<int, Node*>::iterator y_itr = x_itr->second.find(y);
+      const auto y_itr = x_itr->second.find(y);
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
       } else {
@@ -120,31 +119,25 @@ Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
       logger_->error(utl::PSM, 47, "Node location lookup error for x.");
     }
   } else {
-    int dist = 0;
-    NodeMap::iterator x_itr = layer_map.lower_bound(x);
-    vector<pair<int, Node*>> node_dist_vector;
-    if (layer_map.size() == 1 || x_itr == layer_map.end()
-        || x_itr == layer_map.begin()) {
-      if (layer_map.size() == 1) {
-        x_itr = layer_map.begin();
-      } else if (x_itr == layer_map.end()) {
-        x_itr = prev(x_itr);
-      } else {  // do nothing as x_itr has the correct value
-      }
+    auto x_itr = layer_map.lower_bound(x);
+    if (layer_map.size() == 1) {
+      x_itr = layer_map.begin();
+    } else if (x_itr == layer_map.end()) {
+      x_itr = prev(x_itr);
     }
     Node* node = nearestYNode(x_itr, y);
     Point node_loc = node->getLoc();
-    dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
+    int dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
     // Searching a bounding box of all nodes nearby to see if a closer one
     // exists.
-    vector<Node*> contender_nodes = GMat::getNodes(layer,
-                                                   x - dist,   // xmin
-                                                   x + dist,   // xmax
-                                                   y - dist,   // ymin
-                                                   y + dist);  // ymax
+    vector<Node*> contender_nodes = getNodes(layer,
+                                             x - dist,   // xmin
+                                             x + dist,   // xmax
+                                             y - dist,   // ymin
+                                             y + dist);  // ymax
     for (auto new_node : contender_nodes) {
       node_loc = new_node->getLoc();
-      int new_dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
+      const int new_dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
       if (new_dist < dist) {
         dist = new_dist;
         node = new_node;
@@ -578,28 +571,24 @@ void GMat::updateConductance(NodeIdx row, NodeIdx col, double cond)
      \param cond  New conductance value
      \return Pointer to the node
 */
-Node* GMat::nearestYNode(NodeMap::iterator x_itr, int y)
+Node* GMat::nearestYNode(NodeMap::const_iterator x_itr, int y)
 {
-  map<int, Node*>& y_map = x_itr->second;
-  map<int, Node*>::iterator y_itr = y_map.lower_bound(y);
-  if (y_map.size() == 1 || y_itr == y_map.end() || y_itr == y_map.begin()) {
-    if (y_map.size() == 1) {
-      y_itr = y_map.begin();
-    } else if (y_itr == y_map.end()) {
-      y_itr = prev(y_itr);
-    } else {
-    }
+  const map<int, Node*>& y_map = x_itr->second;
+  const auto y_itr = y_map.lower_bound(y);
+  if (y_map.size() == 1) {
+    return y_map.begin()->second;
+  } else if (y_itr == y_map.end()) {
+    return prev(y_itr)->second;
+  } else if (y_itr == y_map.begin()) {
     return y_itr->second;
+  }
+  const auto y_prev = prev(y_itr);
+  const int dist1 = abs(y_prev->first - y);
+  const int dist2 = abs(y_itr->first - y);
+  if (dist1 < dist2) {
+    return y_prev->second;
   } else {
-    map<int, Node*>::iterator y_prev;
-    y_prev = prev(y_itr);
-    int dist1 = abs(y_prev->first - y);
-    int dist2 = abs(y_itr->first - y);
-    if (dist1 < dist2) {
-      return y_prev->second;
-    } else {
-      return y_itr->second;
-    }
+    return y_itr->second;
   }
 }
 
