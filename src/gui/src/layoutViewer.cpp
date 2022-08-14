@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "layoutViewer.h"
-
 #include <QApplication>
 #include <QDateTime>
 #include <QDebug>
@@ -63,6 +61,7 @@
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
+#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -945,7 +944,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
-  for (auto& [box, poly, inst] : inst_range) {
+  for (auto& [box, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       if (inst_internals_visible) {
         // only add inst if it can be used for pin or obs search
@@ -990,13 +989,25 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    auto shapes = search_.searchShapes(layer,
-                                       search_line.xMin(),
-                                       search_line.yMin(),
-                                       search_line.xMax(),
-                                       search_line.yMax(),
-                                       shape_limit);
-    for (auto& [box, poly, net] : shapes) {
+    auto box_shapes = search_.searchBoxShapes(layer,
+                                              search_line.xMin(),
+                                              search_line.yMin(),
+                                              search_line.xMax(),
+                                              search_line.yMax(),
+                                              shape_limit);
+    for (auto& [box, net] : box_shapes) {
+      if (isNetVisible(net)) {
+        check_rect(convert_box_to_rect(box));
+      }
+    }
+
+    auto polygon_shapes = search_.searchPolygonShapes(layer,
+                                                      search_line.xMin(),
+                                                      search_line.yMin(),
+                                                      search_line.xMax(),
+                                                      search_line.yMax(),
+                                                      shape_limit);
+    for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net)) {
         check_rect(convert_box_to_rect(box));
       }
@@ -1009,7 +1020,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.xMax(),
                                        search_line.yMax(),
                                        shape_limit);
-      for (auto& [box, poly, fill] : fills) {
+      for (auto& [box, fill] : fills) {
         check_rect(convert_box_to_rect(box));
       }
     }
@@ -1021,7 +1032,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.xMax(),
                                             search_line.yMax(),
                                             shape_limit);
-      for (auto& [box, poly, ob] : obs) {
+      for (auto& [box, ob] : obs) {
         check_rect(convert_box_to_rect(box));
       }
     }
@@ -1033,7 +1044,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (auto& [box, poly, blck] : blcks) {
+    for (auto& [box, blck] : blcks) {
       check_rect(convert_box_to_rect(box));
     }
   }
@@ -1090,8 +1101,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.xMax(),
                                              region.yMax(),
                                              shape_limit);
-    for (auto iter : blockages) {
-      selections.push_back(makeSelected_(std::get<2>(iter)));
+    for (auto& [box, blockage] : blockages) {
+      selections.push_back(makeSelected_(blockage));
     }
   }
 
@@ -1121,21 +1132,34 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.xMax(),
                                             region.yMax(),
                                             shape_limit);
-      for (auto iter : obs) {
-        selections.push_back(makeSelected_(std::get<2>(iter)));
+      for (auto& [box, obs] : obs) {
+        selections.push_back(makeSelected_(obs));
       }
     }
 
-    auto shapes = search_.searchShapes(layer,
-                                       region.xMin(),
-                                       region.yMin(),
-                                       region.xMax(),
-                                       region.yMax(),
-                                       shape_limit);
+    auto box_shapes = search_.searchBoxShapes(layer,
+                                              region.xMin(),
+                                              region.yMin(),
+                                              region.xMax(),
+                                              region.yMax(),
+                                              shape_limit);
 
     // Just return the first one
-    for (auto iter : shapes) {
-      dbNet* net = std::get<2>(iter);
+    for (auto& [box, net] : box_shapes) {
+      if (isNetVisible(net) && options_->isNetSelectable(net)) {
+        selections.push_back(makeSelected_(net));
+      }
+    }
+
+    auto polygon_shapes = search_.searchPolygonShapes(layer,
+                                                      region.xMin(),
+                                                      region.yMin(),
+                                                      region.xMax(),
+                                                      region.yMax(),
+                                                      shape_limit);
+
+    // Just return the first one
+    for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(makeSelected_(net));
       }
@@ -1156,11 +1180,10 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    region.yMax(),
                                    instanceSizeLimit());
 
-  for (auto& inst : insts) {
-    dbInst* inst_ptr = std::get<2>(inst);
-    if (options_->isInstanceVisible(inst_ptr)
-        && options_->isInstanceSelectable(inst_ptr)) {
-      selections.push_back(makeSelected_(inst_ptr));
+  for (auto& [box, inst] : insts) {
+    if (options_->isInstanceVisible(inst)
+        && options_->isInstanceSelectable(inst)) {
+      selections.push_back(makeSelected_(inst));
     }
   }
 
@@ -1680,7 +1703,7 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
                                  min_resolution);
 
   std::vector<odb::Rect> rects;
-  for (auto& [box, poly, row] : rows) {
+  for (auto& [box, row] : rows) {
     int x;
     int y;
     row->getOrigin(x, y);
@@ -2092,7 +2115,7 @@ void LayoutViewer::drawBlockages(QPainter* painter, const Rect& bounds)
                                                 bounds.yMax(),
                                                 shapeSizeLimit());
 
-  for (auto& [box, poly, blockage] : blockage_range) {
+  for (auto& [box, blockage] : blockage_range) {
     Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
@@ -2118,7 +2141,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
                                                        bounds.yMax(),
                                                        shapeSizeLimit());
 
-  for (auto& [box, poly, obs] : obstructions_range) {
+  for (auto& [box, obs] : obstructions_range) {
     Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
@@ -2160,7 +2183,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, poly, inst] : inst_range) {
+  for (auto& [box, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       insts.push_back(inst);
     }
@@ -2192,31 +2215,39 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     Qt::BrushStyle brush_pattern = getPattern(layer);
     painter->setBrush(QBrush(color, brush_pattern));
     painter->setPen(QPen(color, 0));
-    auto iter = search_.searchShapes(layer,
-                                     bounds.xMin(),
-                                     bounds.yMin(),
-                                     bounds.xMax(),
-                                     bounds.yMax(),
-                                     instance_limit);
+    auto box_iter = search_.searchBoxShapes(layer,
+                                            bounds.xMin(),
+                                            bounds.yMin(),
+                                            bounds.xMax(),
+                                            bounds.yMax(),
+                                            instance_limit);
 
-    for (auto& i : iter) {
-      if (!isNetVisible(std::get<2>(i))) {
+    for (auto& [box, net] : box_iter) {
+      if (!isNetVisible(net)) {
         continue;
       }
-      auto poly = std::get<1>(i);
-      int size = poly.outer().size();
-      if (size == 5) {
-        auto bbox = std::get<0>(i);
-        const auto& ll = bbox.min_corner();
-        const auto& ur = bbox.max_corner();
-        painter->drawRect(
-            QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
-      } else {
-        QPolygon qpoly(size);
-        for (int i = 0; i < size; i++)
-          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
-        painter->drawPolygon(qpoly);
+      const auto& ll = box.min_corner();
+      const auto& ur = box.max_corner();
+      painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+    }
+
+    auto polygon_iter = search_.searchPolygonShapes(layer,
+                                                    bounds.xMin(),
+                                                    bounds.yMin(),
+                                                    bounds.xMax(),
+                                                    bounds.yMax(),
+                                                    instance_limit);
+
+    for (auto& [box, poly, net] : polygon_iter) {
+      if (!isNetVisible(net)) {
+        continue;
       }
+      const int size = poly.outer().size();
+      QPolygon qpoly(size);
+      for (int i = 0; i < size; i++) {
+        qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+      }
+      painter->drawPolygon(qpoly);
     }
 
     // Now draw the fills
