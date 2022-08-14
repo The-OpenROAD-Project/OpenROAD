@@ -138,7 +138,7 @@ class GMat
   //! matrix
   void updateConductance(NodeIdx row, NodeIdx col, double cond);
   //! Function to find the nearest node to a particular location
-  Node* nearestYNode(NodeMap::iterator x_itr, int y);
+  Node* nearestYNode(NodeMap::const_iterator x_itr, int y);
   //! Function to find conductivity of a stripe based on width,length, and pitch
   double getConductivity(double width, double length, double rho);
 
