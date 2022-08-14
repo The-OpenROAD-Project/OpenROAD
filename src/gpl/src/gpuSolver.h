@@ -63,7 +63,6 @@ typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 class GpuSolver
 {
  public:
-  GpuSolver();
   GpuSolver(SMatrix& placeInstForceMatrix,
             Eigen::VectorXf& fixedInstForceVec,
             utl::Logger* logger);

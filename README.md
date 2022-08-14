@@ -221,7 +221,9 @@ generating a build.
 
 ### GPU acceleration
 The default solver for initial placement is single threaded. If you would like 
-to enable GPU and use the CUDA solver, set `-DGPU=true` at compiling time.
+to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time. 
+
+Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html 
 
 ## Regression Tests
 

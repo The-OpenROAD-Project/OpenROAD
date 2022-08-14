@@ -78,10 +78,6 @@ void GpuSolver::cusolvererror(cusolverStatus_t code)
   }
 }
 
-GpuSolver::GpuSolver()
-{
-}
-
 GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
                      Eigen::VectorXf& fixedInstForceVec,
                      utl::Logger* logger)
