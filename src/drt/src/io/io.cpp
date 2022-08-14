@@ -1217,7 +1217,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
-  if (layer->isRectOnly()) {
+  if (layer->isRectOnly() || tech->hasUnidirectionalLayer(layer->getName())) {
     auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(
         layer->isRectOnlyExceptNonCorePins());
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());

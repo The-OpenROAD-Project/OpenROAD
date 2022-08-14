@@ -39,6 +39,7 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+#include <set>
 namespace fr {
 namespace io {
 class Parser;
@@ -86,6 +87,11 @@ class frTechObject
       const
   {
     return viaRuleGenerates;
+  }
+  bool hasUnidirectionalLayer(std::string layerName) const
+  {
+    return unidirectional_layers_.find(layerName)
+           != unidirectional_layers_.end();
   }
 
   // setters
@@ -135,6 +141,10 @@ class frTechObject
     if (idx < uConstraints.size())
       return uConstraints[idx].get();
     return nullptr;
+  }
+  void setUnidirectionalLayer(std::string layer_name)
+  {
+    unidirectional_layers_.insert(layer_name);
   }
 
   // forbidden length table related
@@ -343,6 +353,8 @@ class frTechObject
   ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
+  // unidirectional layers
+  std::set<std::string> unidirectional_layers_;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)

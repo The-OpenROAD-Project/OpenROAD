@@ -911,6 +911,19 @@ void TritonRoute::addUserSelectedVia(const std::string& viaName)
   }
 }
 
+void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
+{
+  if (db_->getTech() == nullptr) {
+    logger_->error(DRT, 615, "Load tech before setting unidirectional layers");
+  }
+  auto tech = db_->getTech();
+  if (tech->findLayer(layerName.c_str()) == nullptr) {
+    logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
+  } else {
+    design_->getTech()->setUnidirectionalLayer(layerName);
+  }
+}
+
 void TritonRoute::setParams(const ParamStruct& params)
 {
   OUT_MAZE_FILE = params.outputMazeFile;
