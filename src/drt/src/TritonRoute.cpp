@@ -917,10 +917,11 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
     logger_->error(DRT, 615, "Load tech before setting unidirectional layers");
   }
   auto tech = db_->getTech();
-  if (tech->findLayer(layerName.c_str()) == nullptr) {
+  auto dbLayer = tech->findLayer(layerName.c_str());
+  if (dbLayer == nullptr) {
     logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
   } else {
-    design_->getTech()->setUnidirectionalLayer(layerName);
+    design_->getTech()->setUnidirectionalLayer(dbLayer);
   }
 }
 

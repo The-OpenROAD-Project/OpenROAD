@@ -40,6 +40,9 @@
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
 #include <set>
+namespace odb {
+  class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -88,9 +91,9 @@ class frTechObject
   {
     return viaRuleGenerates;
   }
-  bool hasUnidirectionalLayer(std::string layerName) const
+  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
   {
-    return unidirectional_layers_.find(layerName)
+    return unidirectional_layers_.find(dbLayer)
            != unidirectional_layers_.end();
   }
 
@@ -142,9 +145,9 @@ class frTechObject
       return uConstraints[idx].get();
     return nullptr;
   }
-  void setUnidirectionalLayer(std::string layer_name)
+  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
   {
-    unidirectional_layers_.insert(layer_name);
+    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -354,7 +357,7 @@ class frTechObject
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
   // unidirectional layers
-  std::set<std::string> unidirectional_layers_;
+  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
