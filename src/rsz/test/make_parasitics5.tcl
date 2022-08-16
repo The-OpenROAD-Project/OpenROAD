@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # 2 corners with set_wire_rc
 define_corners ss ff
 read_liberty -corner ss Nangate45/Nangate45_slow.lib

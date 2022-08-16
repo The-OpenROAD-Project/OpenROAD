@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_slew10 with set_max_transition design
 read_liberty repair_slew10.lib
 read_lef Nangate45/Nangate45.lef

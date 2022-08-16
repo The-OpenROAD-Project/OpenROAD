@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_timing -setup r1/Q 5 loads
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

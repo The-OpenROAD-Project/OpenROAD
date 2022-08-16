@@ -6,12 +6,10 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: east_west1.def
 [INFO ODB-0128] Design: mem2
 [INFO ODB-0130]     Created 15 pins.
 [INFO ODB-0131]     Created 2 components and 64 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 16 connections.
-[INFO ODB-0134] Finished DEF file: east_west1.def
 [INFO MPL-0005] Found 2 macros.
 [INFO MPL-0009] West pins 7.
 [INFO MPL-0009] East pins 5.

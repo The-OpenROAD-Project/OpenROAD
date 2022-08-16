@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design 1 wire
 # in1--u1--u2--------u3-out1
 #             2000u

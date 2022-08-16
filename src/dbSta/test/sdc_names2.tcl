@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # get_cells/pins with brackets
 read_lef liberty1.lef
 read_liberty liberty1.lib

@@ -201,6 +201,14 @@ proc set_debug_level {args} {
   ord::set_debug_level $tool $group $level
 }
 
+sta::define_cmd_args "suppress_message" { tool id }
+proc suppress_message {args} {
+  sta::check_argc_eq2 "suppress_message" $args
+  lassign $args tool id
+  sta::check_integer "suppress_message_level" $id
+  utl::suppress_message $tool $id
+}
+
 sta::define_cmd_args "python" { args }
 proc python {args} {
   ord::python_cmd $args

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # buffer chain with set_max_delay
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef

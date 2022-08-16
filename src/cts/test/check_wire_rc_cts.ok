@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: check_buffers.def
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 288 components and 1728 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 288 connections.
-[INFO ODB-0134] Finished DEF file: check_buffers.def
 [INFO CTS-0049] Characterization buffer is: CLKBUF_X3.
 [INFO CTS-0039] Number of created patterns = 11880.
 [INFO CTS-0084] Compiling LUT.

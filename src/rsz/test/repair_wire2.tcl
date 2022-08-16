@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design 2 loads in L shape wire
 #
 #                    u4-out2

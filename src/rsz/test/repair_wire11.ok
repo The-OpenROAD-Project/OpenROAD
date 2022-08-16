@@ -6,13 +6,11 @@
 [INFO ODB-0222] Reading LEF file: pad.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  pad.lef
-[INFO ODB-0127] Reading DEF file: repair_wire11.def
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 3 connections.
-[INFO ODB-0134] Finished DEF file: repair_wire11.def
 [WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
 [INFO IFP-0001] Added 270 rows of 1999 sites.
 max slew

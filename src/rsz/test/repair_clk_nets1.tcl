@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_clock_nets 1 wire
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

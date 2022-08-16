@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # slack map api
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

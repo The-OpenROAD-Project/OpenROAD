@@ -1,3 +1,4 @@
+source "helpers.tcl"
 gui::highlight_net "resp_val" 0
 gui::highlight_net "resp_rdy" 0
 gui::highlight_net "req_rdy" 0

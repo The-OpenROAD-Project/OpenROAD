@@ -1,3 +1,4 @@
+source "helpers.tcl"
 read_lef NangateOpenCellLibrary.mod.lef
 read_lef dummy_pads.lef
 

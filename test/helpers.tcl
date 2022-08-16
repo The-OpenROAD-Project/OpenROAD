@@ -53,3 +53,16 @@ proc diff_files { file1 file2 } {
     return 0
   }
 }
+
+# Output voltage file is specified as ...
+suppress_message PSM 2
+# Output current file specified ...
+suppress_message PSM 3
+# Output spice file is specified as
+suppress_message PSM 5
+# SPICE file is written at
+suppress_message PSM 6
+# Reading DEF file
+suppress_message ODB 127
+# Finished DEF file
+suppress_message ODB 134

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design 2 loads driven from middle
 #
 #         u4-out2

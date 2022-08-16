@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # 3 corners with +/- 10% derating example
 define_corners ss tt ff
 read_liberty -corner ss example1_slow.lib

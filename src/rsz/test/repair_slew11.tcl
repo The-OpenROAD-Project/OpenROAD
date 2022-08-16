@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design max_slew on input port with set_driving_cell
 read_liberty repair_slew10.lib
 read_lef Nangate45/Nangate45.lef

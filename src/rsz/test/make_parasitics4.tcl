@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # estimate_parasitics input/output pads
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty pad.lib

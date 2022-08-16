@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # buffer_ports lef macro bus pins
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty bus1.lib

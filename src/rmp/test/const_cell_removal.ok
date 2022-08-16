@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: rcon.def
 [INFO ODB-0128] Design: aes_rcon
 [INFO ODB-0130]     Created 34 pins.
 [INFO ODB-0131]     Created 82 components and 406 component-terminals.
 [INFO ODB-0133]     Created 103 nets and 242 connections.
-[INFO ODB-0134] Finished DEF file: rcon.def
 Design area 128 u^2 100% utilization.
 Removed 27 instances with constant outputs.
 Number of paths for restructure are 32
