@@ -187,7 +187,7 @@ class SimulatedAnnealingCore {
 
     // we define accuracy to determine whether the floorplan is valid
     // because the error introduced by the type conversion
-    float acc_tolerance_ = 0.01;
+    float acc_tolerance_ = 0.001;
 
     // metrics 
     float width_ = 0.0;

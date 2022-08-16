@@ -144,14 +144,15 @@ class HierRTLMP {
 
     float target_dead_space_ = 0.2; // dead space for the cluster
     float target_util_ = 0.25;  // target utilization of the design
-    float target_dead_space_step_ = 0.1; // step for dead space
-    float target_util_step_       = 0.05; // step for utilization
-    float num_target_util_        = 6;
-    float num_target_dead_space_  = 9;
+    float target_dead_space_step_ = 0.05; // step for dead space
+    float target_util_step_       = 0.1; // step for utilization
+    float num_target_util_        = 10;
+    float num_target_dead_space_  = 10;
 
-    float min_ar_ = 0.33; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
+    float min_ar_ = 0.3; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
     float pin_access_th_ = 0.1; // each pin access is modeled as a SoftMacro
+    float pin_access_th_orig_ = 0.1;
     float pin_access_net_width_ratio_ = 0.1; // define the ratio of number of connections 
                                              // related to IOs to the range of these IO spans
     float notch_v_th_ = 100.0;
@@ -170,7 +171,7 @@ class HierRTLMP {
     float fence_weight_      = 10.0;
     float boundary_weight_   = 5.0;
     float notch_weight_      = 1.0;
-
+    float macro_blockage_weight_ = 5.0;
 
     // gudiances, fences, constraints
     std::map<std::string, Rect> fences_; // macro_name, fence
@@ -183,8 +184,8 @@ class HierRTLMP {
     int num_perturb_per_step_  = 3000;
     // if step < k_, T = init_T_ / (c_ * step_);
     // else T = init_T_ / step
-    int k_ = 100;
-    int c_ = 10;
+    int k_ = 5000000;
+    int c_ = 1000.0;
 
     // the virtual weight between std cell part and corresponding macro part
     // to force them stay together
@@ -194,8 +195,8 @@ class HierRTLMP {
     // probability of each action
     float pos_swap_prob_    = 0.3;
     float neg_swap_prob_    = 0.3;
-    float double_swap_prob_ = 0.3;
-    float exchange_swap_prob_    = 0.1;
+    float double_swap_prob_ = 0.2;
+    float exchange_swap_prob_    = 0.0;
     float flip_prob_ = 0.2;
     float resize_prob_ = 0.2;
 
@@ -207,7 +208,7 @@ class HierRTLMP {
     float floorplan_uy_ = 0.0;
 
     // dataflow parameters and store the dataflow
-    int max_num_ff_dist_ = 1; // maximum number of FF distances between 
+    int max_num_ff_dist_ = 3; // maximum number of FF distances between 
     float dataflow_factor_ = 2.0; 
     std::vector<std::pair<odb::dbITerm*, 
            std::vector<std::set<odb::dbInst*> > > >  macro_ffs_conn_map_;  

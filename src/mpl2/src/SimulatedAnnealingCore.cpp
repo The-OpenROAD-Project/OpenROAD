@@ -508,7 +508,7 @@ void SimulatedAnnealingCore<T>::FastSA()
     else
       t = init_T_ / (step);
     */
-    t *= 0.98;
+    t *= 0.985;
     // increase step
     step++;
     // check if restart condition

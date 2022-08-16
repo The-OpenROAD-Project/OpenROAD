@@ -359,7 +359,7 @@ void Cluster::SetIOClusterFlag(const std::pair<float, float> pos,
   // call the constructor to create a SoftMacro
   // representing the IO cluster
   delete soft_macro_;
-  soft_macro_ = new SoftMacro(pos, name_, width, height);
+  soft_macro_ = new SoftMacro(pos, name_, width, height, this);
 }
 
 bool Cluster::GetIOClusterFlag() const 
@@ -1024,7 +1024,7 @@ SoftMacro::SoftMacro(float width, float height, const std::string name,
 
 // Create a SoftMacro representing the IO cluster or fixed terminals
 SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name,
-                     float width, float height) 
+                     float width, float height, Cluster* cluster) 
 { 
   name_ = name;
   x_ = pos.first;
@@ -1032,7 +1032,7 @@ SoftMacro::SoftMacro(const std::pair<float, float>& pos, const std::string name,
   width_  = width;
   height_ = height;
   area_   = 0.0; // width_ * height_ = 0.0 for this case
-  cluster_ = nullptr;
+  cluster_ = cluster;
   fixed_  = true;
 }
 

@@ -25,7 +25,7 @@ Graph::Graph(int num_vertices, float congestion_weight)
 void Graph::AddEdge(int src, int dest, float weight, Edge* edge_ptr) 
 {
   adj_[src].push_back(Arrow{dest, weight, edge_ptr});
-  adj_[dest].push_back(Arrow{src, weight, edge_ptr});
+  //adj_[dest].push_back(Arrow{src, weight, edge_ptr});
 }
 
 // Find the shortest paths relative to root vertex based on priority queue 
@@ -303,6 +303,12 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
   std::cout << "soft_macro_vertex_id.size() : " << soft_macro_vertex_id.size() << " ";
   std::cout << "soft_macros.size() : " << soft_macros.size() << std::endl;
   std::cout << "Finish macro_id assignment" << std::endl;
+  // print vertex id
+  for (int i = 0; i < soft_macros.size(); i++) 
+    std::cout << "macro_id : " << i << "  "
+              << "vertex_id : " << soft_macro_vertex_id[i] << "  "
+              << "macro_id : " << vertex_list[soft_macro_vertex_id[i]].vertex_id
+              << std::endl;
 
   // add all the edges between grids (undirected)
   // add all the horizontal edges
@@ -670,7 +676,14 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
       }
     } // update crossing edge
   } // update edge weight
-  
+ 
+  int num_edges = edge_list.size();
+  for (int i = 0; i < num_edges; i++)
+    edge_list.push_back(Edge(edge_list.size(), edge_list[i]));
+
+  //for (auto& edge : edge_list)
+  //  edge.Print();
+
   std::cout << "\n\n****************************************";
   std::cout << "macro_id,  macro,  vertex_id, macro_id" << std::endl;
   for (int i = 0; i < soft_macros.size(); i++)
@@ -700,7 +713,6 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
   for (auto& edge : edge_list) {
     float weight = edge.length * (1 - congestion_weight) 
                    + edge.length_w * congestion_weight; // cal edge weight
-    std::cout << "weight :  " << weight << std::endl;
     if (weight <= 0.0) {
       std::cout << "warning ! "
                 << "edge_length : " << edge.length << "  "
@@ -723,8 +735,10 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
               << soft_macros[net.terminals.second].GetName() << std::endl;
     std::cout << soft_macro_vertex_id[net.terminals.first] << "   "
               << soft_macro_vertex_id[net.terminals.second] << std::endl;
-    graph.CalNetEdgePaths(soft_macro_vertex_id[net.terminals.first], 
-           soft_macro_vertex_id[net.terminals.second], net);
+    //graph.CalNetEdgePaths(soft_macro_vertex_id[net.terminals.first], 
+    //       soft_macro_vertex_id[net.terminals.second], net);
+    graph.CalNetEdgePaths(soft_macro_vertex_id[net.terminals.second], 
+                  soft_macro_vertex_id[net.terminals.first], net);
     // update path id
     int path_id = 0;
     for (const auto& edge_path : net.edge_paths) {
@@ -805,33 +819,118 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
     std::cout << "working on path " << i << std::endl;
     auto target_cluster= soft_macros[nets[path_net_map[i]].terminals.second].GetCluster();
     PinAccess src_pin = NONE;
+    Cluster* pre_cluster = nullptr;
     int last_edge_id = -1;
     const float net_weight = nets[path_net_map[i]].weight;
     const int src_cluster_id = nets[path_net_map[i]].src_cluster_id;
     const int target_cluster_id = nets[path_net_map[i]].target_cluster_id;
+    std::cout << "src_cluster_id : " << src_cluster_id << "  "
+              << "target_cluster_id : " << target_cluster_id << "  "
+              << std::endl;
+    std::cout << "src_macro_id : " << nets[path_net_map[i]].terminals.first << "  "
+              << "target_macro_id : " << nets[path_net_map[i]].terminals.second << std::endl;
+    //std::cout << "src_cluster_name : " 
+    //  << soft_macros[nets[path_net_map[i]].terminals.first].GetCluster()->GetName()
+    //  << std::endl;
+    //std::cout << "target_cluster_name : " 
+    //  << soft_macros[nets[path_net_map[i]].terminals.second].GetCluster()->GetName()
+    //  << std::endl;    
     for (auto& edge_id : nets[path_net_map[i]].edge_paths[path_net_path_map[i]]) {
       auto& edge = edge_list[edge_id];
+      std::cout << "edge_terminals : " << edge.terminals.first << "  "
+                << edge.terminals.second << std::endl;
+      std::cout << "edge_terminals_macro_id : " << vertex_list[edge.terminals.first].macro_id << "  "
+                << vertex_list[edge.terminals.second].macro_id << std::endl;
       last_edge_id = edge_id;
-      Cluster* cluster = nullptr;
-      if (vertex_list[edge.terminals.first].macro_id != -1)
-        cluster = soft_macros[vertex_list[edge.terminals.first].macro_id].GetCluster();
-      if (src_pin == NONE) {
-        src_pin = Opposite(edge.pin_access); 
-        if (cluster != nullptr) {
-          std::cout << "target_cluster_id : " << target_cluster_id << std::endl;  
-          cluster->SetPinAccess(target_cluster_id, edge.pin_access, net_weight);
+      Cluster* start_cluster = nullptr;
+      if (vertex_list[edge.terminals.first].macro_id != -1) {
+        start_cluster = soft_macros[vertex_list[edge.terminals.first].macro_id].GetCluster();
+        std::cout << "start_name : " 
+                  << soft_macros[vertex_list[edge.terminals.first].macro_id].GetName()
+                  << std::endl;
+      }
+      if (start_cluster != nullptr)
+        std::cout << "start_cluster_id : " << start_cluster->GetId() << std::endl;
+      Cluster* end_cluster = nullptr;
+      if (vertex_list[edge.terminals.second].macro_id != -1) {
+        end_cluster = soft_macros[vertex_list[edge.terminals.second].macro_id].GetCluster();
+        std::cout << "end_name : " 
+                  << soft_macros[vertex_list[edge.terminals.second].macro_id].GetName()
+                  << std::endl;
+      }
+      if (end_cluster != nullptr)
+        std::cout << "end_cluster_id : " << end_cluster->GetId() << std::endl;
+     
+      if (start_cluster == nullptr && end_cluster == nullptr) {
+        std::cout << "(1) This should not happen" << std::endl;
+      } else if (start_cluster != nullptr && end_cluster != nullptr) {
+        if (start_cluster->GetId() == src_cluster_id) {
+          start_cluster->SetPinAccess(target_cluster_id, edge.pin_access, net_weight);
+          src_pin = Opposite(edge.pin_access);
+          pre_cluster = end_cluster;
+        } else if (end_cluster->GetId() == src_cluster_id) {
+          end_cluster->SetPinAccess(target_cluster_id, Opposite(edge.pin_access), net_weight);
+          src_pin = edge.pin_access;
+          pre_cluster = start_cluster;
+        } else {
+          if (start_cluster != pre_cluster && end_cluster != pre_cluster) {
+            std::cout << "(2) error ! This should not happen" << std::endl;
+          } else if (start_cluster == pre_cluster) {
+            start_cluster->AddBoundaryConnection(src_pin, edge.pin_access, net_weight);
+            src_pin = Opposite(edge.pin_access);
+            pre_cluster = end_cluster;
+          } else {
+            end_cluster->AddBoundaryConnection(src_pin, Opposite(edge.pin_access), net_weight);
+            src_pin = edge.pin_access;
+            pre_cluster = start_cluster;
+          }
+        }
+      } else if (start_cluster != nullptr) {
+        if (start_cluster->GetId() == src_cluster_id) {
+          start_cluster->SetPinAccess(target_cluster_id, edge.pin_access, net_weight);
+          src_pin = Opposite(edge.pin_access);
+          pre_cluster = end_cluster;
+        } else if (start_cluster != pre_cluster) {
+          src_pin = edge.pin_access;
+          pre_cluster = start_cluster;
+        } else {
+          start_cluster->AddBoundaryConnection(src_pin, edge.pin_access, net_weight);
+          src_pin = Opposite(edge.pin_access);
+          pre_cluster = end_cluster;
+        }
+      } else {
+        if (end_cluster->GetId() == src_cluster_id) {
+          end_cluster->SetPinAccess(target_cluster_id, Opposite(edge.pin_access), net_weight);
+          src_pin = edge.pin_access;
+          pre_cluster = start_cluster;
+        } else if (end_cluster != pre_cluster) {
+          src_pin = Opposite(edge.pin_access);
+          pre_cluster = end_cluster;
+        } else {
+          end_cluster->AddBoundaryConnection(src_pin, Opposite(edge.pin_access), net_weight);
+          src_pin = edge.pin_access;
+          pre_cluster = start_cluster; 
         }
       }
-      if (cluster != nullptr)
-        cluster->AddBoundaryConnection(src_pin, edge.pin_access, net_weight);
     }
     if (target_cluster != nullptr && last_edge_id >= 0) {
-      std::cout << "src_cluster_id : " << src_cluster_id << std::endl;
-      std::cout << "target cluster : " << target_cluster->GetName() << std::endl;
-      std::cout << "pin access : " << to_string(Opposite(edge_list[last_edge_id].pin_access)) << std::endl;
-      std::cout << "net weight : " << net_weight << std::endl;
-      target_cluster->SetPinAccess(src_cluster_id, Opposite(edge_list[last_edge_id].pin_access), net_weight);
-      std::cout << "finish src_cluster_id" << std::endl;
+      auto& edge = edge_list[last_edge_id];
+      Cluster* start_cluster = nullptr;
+      if (vertex_list[edge.terminals.first].macro_id != -1)
+        start_cluster = soft_macros[vertex_list[edge.terminals.first].macro_id].GetCluster();
+      if (start_cluster != nullptr)
+        std::cout << "start_cluster_id : " << start_cluster->GetId() << std::endl;
+      Cluster* end_cluster = nullptr;
+      if (vertex_list[edge.terminals.second].macro_id != -1)
+        end_cluster = soft_macros[vertex_list[edge.terminals.second].macro_id].GetCluster();
+      if (end_cluster != nullptr)
+        std::cout << "end_cluster_id : " << end_cluster->GetId() << std::endl;
+      if (start_cluster == target_cluster) 
+        target_cluster->SetPinAccess(src_cluster_id, edge.pin_access, net_weight);
+      else if (end_cluster == target_cluster)
+        target_cluster->SetPinAccess(src_cluster_id, Opposite(edge.pin_access), net_weight);
+      else
+        std::cout << "(3) Error ! This should not happen" << std::endl;
     }
     std::cout << "finish path " << i << std::endl;
   }

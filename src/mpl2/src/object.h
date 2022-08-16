@@ -460,7 +460,8 @@ class SoftMacro {
     SoftMacro(float width, float height, const std::string name, float lx, float ly);
     // Create a SoftMacro representing the IO cluster
     SoftMacro(const std::pair<float, float>& pos, const std::string name, 
-              float width = 0.0, float height = 0.0);
+              float width = 0.0, float height = 0.0, Cluster* cluster = nullptr);
+
     // create a SoftMacro from a cluster
     SoftMacro(Cluster* cluster);
 

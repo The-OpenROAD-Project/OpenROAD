@@ -58,6 +58,26 @@ struct Edge {
   float num_nets = 0.0; // num_nets passing through this edge
   Edge() {   }
   Edge(int edge_id) : edge_id(edge_id) {  }
+  // create a reverse edge by changing the order of terminals
+  Edge(int edge_id, Edge& edge) {
+    this->edge_id = edge_id;
+    this->terminals = std::pair<int, int>(edge.terminals.second, edge.terminals.first);
+    this->internal = edge.internal;
+    this->pin_access = Opposite(edge.pin_access);
+    this->length = edge.length;
+    this->length_w = edge.length_w;
+    this->weight = edge.weight;
+    this->num_nets = edge.num_nets;
+  }
+
+  void Print() {
+    std::cout << "***********************************" << std::endl;
+    std::cout << "edge_id = " << edge_id << std::endl;
+    std::cout << "terminals =   " << terminals.first << "  " << terminals.second << std::endl;
+    std::cout << "direction =   " << direction << std::endl;
+    std::cout << "pin_access =  " << to_string(pin_access) << std::endl;
+  }
+
 };
 
 
@@ -81,7 +101,7 @@ class Graph {
     void AddEdge(int src, int dest, float weight, Edge* edge_ptr);
     // Calculate shortest pathes in terms of boundary edges
     void CalNetEdgePaths(int src, int target, BundledNet& net);
-
+    bool IsConnected() const; // check the GFS is connected
   private:
     std::vector<std::vector<Arrow> > adj_; // adjacency matrix
     int max_num_path_ = 10;  // limit the maximum number of candidate paths to reduce runtime

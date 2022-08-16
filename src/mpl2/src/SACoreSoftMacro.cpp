@@ -69,6 +69,7 @@ SACoreSoftMacro::SACoreSoftMacro(float outline_width,
                 float guidance_weight,
                 float fence_weight, // each blockage will be modeled by a macro with fences
                 float boundary_weight,
+                float macro_blockage_weight,
                 float notch_weight,
                 // notch threshold
                 float notch_h_threshold,
@@ -89,6 +90,7 @@ SACoreSoftMacro::SACoreSoftMacro(float outline_width,
                               init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
 { 
   boundary_weight_ = boundary_weight;
+  macro_blockage_weight_ = macro_blockage_weight;
   original_notch_weight_    = notch_weight;
   resize_prob_     = resize_prob;
   notch_h_th_      = notch_h_threshold;
@@ -106,6 +108,17 @@ float SACoreSoftMacro::GetBoundaryPenalty() const
 float SACoreSoftMacro::GetNormBoundaryPenalty() const 
 {
   return norm_boundary_penalty_;
+}
+
+
+float SACoreSoftMacro::GetMacroBlockagePenalty() const 
+{
+  return macro_blockage_penalty_;
+}
+
+float SACoreSoftMacro::GetNormMacroBlockagePenalty() const 
+{
+  return norm_macro_blockage_penalty_;
 }
 
 float SACoreSoftMacro::GetNotchPenalty() const 
@@ -135,6 +148,8 @@ float SACoreSoftMacro::CalNormCost()
     cost += fence_weight_ * fence_penalty_ / norm_fence_penalty_;
   if (norm_boundary_penalty_ > 0.0)
     cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
+  if (norm_macro_blockage_penalty_ > 0.0)
+    cost += macro_blockage_weight_ * macro_blockage_penalty_ / norm_macro_blockage_penalty_; 
   if (norm_notch_penalty_ > 0.0)
     cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
   return cost;
@@ -148,6 +163,7 @@ void SACoreSoftMacro::CalPenalty()
   CalGuidancePenalty();
   CalFencePenalty();
   CalBoundaryPenalty();
+  CalMacroBlockagePenalty();
   CalNotchPenalty();
 }
 
@@ -167,7 +183,9 @@ void SACoreSoftMacro::Perturb()
   pre_guidance_penalty_ = guidance_penalty_;
   pre_fence_penalty_    = fence_penalty_;
   pre_boundary_penalty_ = boundary_penalty_;
+  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
   pre_notch_penalty_    = notch_penalty_;   
+
 
   // generate random number (0 - 1) to determine actions
   const float op = (distribution_) (generator_);
@@ -227,6 +245,7 @@ void SACoreSoftMacro::Restore()
   guidance_penalty_ = pre_guidance_penalty_;
   fence_penalty_    = pre_fence_penalty_;
   boundary_penalty_ = pre_boundary_penalty_;
+  macro_blockage_penalty_ = pre_macro_blockage_penalty_;
   notch_penalty_    = pre_notch_penalty_;
 }
 
@@ -237,6 +256,7 @@ void SACoreSoftMacro::Initialize()
   std::vector<float> guidance_penalty_list;
   std::vector<float> fence_penalty_list;
   std::vector<float> boundary_penalty_list;
+  std::vector<float> macro_blockage_penalty_list;
   std::vector<float> notch_penalty_list;
   std::vector<float> area_penalty_list;
   std::vector<float> width_list;
@@ -252,6 +272,7 @@ void SACoreSoftMacro::Initialize()
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
     boundary_penalty_list.push_back(boundary_penalty_);
+    macro_blockage_penalty_list.push_back(macro_blockage_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
   }
  
@@ -261,6 +282,7 @@ void SACoreSoftMacro::Initialize()
   norm_guidance_penalty_ = CalAverage(guidance_penalty_list);
   norm_fence_penalty_    = CalAverage(fence_penalty_list);
   norm_boundary_penalty_ = CalAverage(boundary_penalty_list);
+  norm_macro_blockage_penalty_ = CalAverage(macro_blockage_penalty_list);
   //norm_notch_penalty_    = CalAverage(notch_penalty_list);
   norm_notch_penalty_    = outline_width_ * outline_height_;
 
@@ -274,6 +296,7 @@ void SACoreSoftMacro::Initialize()
     guidance_penalty_ = guidance_penalty_list[i];
     fence_penalty_    = fence_penalty_list[i];
     boundary_penalty_ = boundary_penalty_list[i];
+    macro_blockage_penalty_ = macro_blockage_penalty_list[i];
     notch_penalty_    = notch_penalty_list[i];
     cost_list.push_back(CalNormCost());
   }
@@ -293,7 +316,7 @@ void SACoreSoftMacro::CalBoundaryPenalty()
     return;
   
   for (const auto& macro : macros_) {
-    if (macro.IsMacroCluster() == true) {
+    if (macro.GetNumMacro() > 0) {
       const float lx = macro.GetX();
       const float ly = macro.GetY();
       const float ux = lx + macro.GetWidth();
@@ -305,6 +328,35 @@ void SACoreSoftMacro::CalBoundaryPenalty()
   }
 }
 
+void SACoreSoftMacro::CalMacroBlockagePenalty()
+{
+  macro_blockage_penalty_ = 0.0;
+  if (blockages_.size() == 0)
+    return;
+  
+  for (auto& bbox : blockages_) {
+    for (const auto& macro : macros_) {
+      if (macro.GetNumMacro() > 0) {
+        const float lx = macro.GetX();
+        const float ly = macro.GetY();
+        const float ux = lx + macro.GetWidth();
+        const float uy = ly + macro.GetHeight();
+        const float region_lx = bbox.xMin();
+        const float region_ly = bbox.yMin();
+        const float region_ux = bbox.xMax();
+        const float region_uy = bbox.yMax();
+        if (ux <= region_lx || lx >= region_ux || uy <= region_ly
+             || ly >= region_uy)
+           ;
+        else {
+          const float width = std::min(ux, region_ux) - std::max(lx, region_lx);
+          const float height = std::min(uy, region_uy) - std::max(ly, region_ly);
+          macro_blockage_penalty_ += width * height;
+        }
+      }
+    }
+  }
+}
 
 // Align macro clusters to reduce notch
 void SACoreSoftMacro::AlignMacroClusters()
@@ -532,10 +584,15 @@ void SACoreSoftMacro::Resize()
   const float ux = lx + src_macro.GetWidth();
   const float uy = ly + src_macro.GetHeight();
   // if the macro is outside of the outline, we randomly resize the macro
-  if (lx >= outline_width_ || ly >= outline_height_) {
+  if (ux >= outline_width_ || uy >= outline_height_) {
     src_macro.ResizeRandomly(distribution_, generator_);
     return;
   } 
+
+  if ((distribution_) (generator_) < 0.4) {
+    src_macro.ResizeRandomly(distribution_, generator_);
+    return;
+  }
 
   float option = (distribution_) (generator_);
   if (option <= 0.25) {
@@ -601,6 +658,8 @@ void SACoreSoftMacro::PrintResults() const
             << fence_penalty_ / norm_fence_penalty_ << std::endl;
   std::cout << "boundary_penalty : " 
             << boundary_penalty_ / norm_boundary_penalty_ << std::endl;
+  std::cout << "macro_blockage_penalty : " 
+            << macro_blockage_penalty_ / norm_macro_blockage_penalty_ << std::endl;
   std::cout << "notch_penalty : " << notch_penalty_ / norm_notch_penalty_ << std::endl;
 }
 

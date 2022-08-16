@@ -72,6 +72,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
                     float guidance_weight,
                     float fence_weight, // each blockage will be modeled by a macro with fences
                     float boundary_weight,
+                    float macro_blockage_weight,
                     float notch_weight,
                     // notch threshold
                     float notch_h_threshold,
@@ -90,6 +91,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     float GetNormBoundaryPenalty() const;
     float GetNotchPenalty()        const;
     float GetNormNotchPenalty()    const;
+    float GetMacroBlockagePenalty() const;
+    float GetNormMacroBlockagePenalty() const;
+
     void PrintResults() const; // just for test
 
     // Initialize the SA worker
@@ -97,7 +101,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     // adjust the size of MixedCluster to fill the empty space
     void FillDeadSpace();
     void AlignMacroClusters();
- 
+    void SetBlockages(const std::vector<Rect>& blockages) {
+      blockages_ = blockages;
+    }
+
   private:
     float CalNormCost();
     void CalPenalty();
@@ -108,6 +115,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
     void Resize();
     
     void Shrink();
+
+    std::vector<Rect> blockages_;
 
     // A utility function for FillDeadSpace.
     // It's used for calculate the start point and end point for a segment in a grid
@@ -125,18 +134,23 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro> {
 
     // additional penalties
     float boundary_weight_   = 0.0;
-    
+    float macro_blockage_weight_ = 0.0; 
+
     float boundary_penalty_ = 0.0;
     float notch_penalty_    = 0.0;
+    float macro_blockage_penalty_ = 0.0;
     
     float pre_boundary_penalty_ = 0.0;
     float pre_notch_penalty_    = 0.0;
+    float pre_macro_blockage_penalty_ = 0.0;
 
     float norm_boundary_penalty_ = 0.0;
     float norm_notch_penalty_    = 0.0;
+    float norm_macro_blockage_penalty_ = 0.0;
 
     void CalBoundaryPenalty();
     void CalNotchPenalty();
+    void CalMacroBlockagePenalty();
    
     // action prob
     float resize_prob_ = 0.0;

@@ -202,6 +202,7 @@ void HierRTLMP::SetSignatureNetThreshold(int signature_net_threshold)
 void HierRTLMP::SetPinAccessThreshold(float pin_access_th)
 {
   pin_access_th_ = pin_access_th;
+  pin_access_th_orig_ = pin_access_th;
 }
 
 void HierRTLMP::SetTargetUtil(float target_util)
@@ -964,7 +965,7 @@ void HierRTLMP::MergeClusters(std::vector<Cluster*>& candidate_clusters)
       //for (auto& [cluster_id, cluster] : cluster_map_)
       //  std::cout << cluster->GetName() << "  " << cluster_id << std::endl;
       // end debug
-      if (cluster_id != -1) {
+      if (cluster_id != -1 && cluster_map_[cluster_id]->GetIOClusterFlag() == false) {
         Cluster*& cluster = cluster_map_[cluster_id];
         //for debug
         /*
@@ -1975,8 +1976,8 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
   for (int i = 1; i < num_runs_; i++) {
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                    macros.size() : num_perturb_per_step_;
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10 ) ?
+                                    macros.size() : num_perturb_per_step_ / 10;
   //const int num_perturb_per_step = macros.size() * 10;
   int run_thread = num_threads_;
   int remaining_runs = num_runs_;
@@ -1989,7 +1990,7 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
       const float height = outline_height;
       SACoreSoftMacro* sa = new SACoreSoftMacro(width, height, macros,
                                                 1.0, 
-                                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0,  // penalty weight
+                                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // penalty weight
                                                 0.0, 0.0, // notch size
                                                 pos_swap_prob, neg_swap_prob,
                                                 double_swap_prob, exchange_swap_prob, 
@@ -2026,7 +2027,7 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
       const float height = outline_height * vary_factor_list[run_id++];
       SACoreSoftMacro* sa = new SACoreSoftMacro(width, height, macros,
                                                 1.0, 
-                                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0,  // penalty weight
+                                                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // penalty weight
                                                 0.0, 0.0, // notch size
                                                 pos_swap_prob, neg_swap_prob,
                                                 double_swap_prob, exchange_swap_prob, 
@@ -2134,8 +2135,8 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
   std::vector<HardMacro> macros;
   for (auto& macro : hard_macros)
     macros.push_back(*macro);
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                    macros.size() : num_perturb_per_step_;
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10) ?
+                                    macros.size() : num_perturb_per_step_ / 10;
   //const int num_perturb_per_step = macros.size() * 10; // increase the num_perturb
   int run_thread = num_threads_;
   int remaining_runs = num_runs_;
@@ -2217,13 +2218,18 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
   // we do not want very strange tilngs
   std::vector<std::pair<float, float> > new_tilings;
   for (auto& tiling : tilings) {
+    if (tiling.first * tiling.second <= tilings[0].first * tilings[0].second)
+      new_tilings.push_back(tiling);
+    /*
     if (tiling.second / tiling.first >= min_ar_ &&
-        tiling.second / tiling.first <= 1.0 / min_ar_)
+        tiling.second / tiling.first <= 1.0 / min_ar_ &&
+        tiling.first * tiling.second <= tilings[0].first * tilings[0].second)
       new_tilings.push_back(tiling);
     std::cout << "tiling.second / tiling.first :  " 
               << tiling.second / tiling.first
               << " min_ar_ :   "
               << min_ar_ << std::endl;
+    */
   }
   tilings = new_tilings;
   // update parent
@@ -2240,6 +2246,11 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
 // Create pin blockage for Bundled IOs
 void HierRTLMP::CreatePinBlockage()
 {
+  //pin_access_th_ = pin_access_th_orig_ 
+  //               * ( 1  - (root_cluster_->GetStdCellArea() + root_cluster_->GetMacroArea())
+  //                 / (root_cluster_->GetWidth() * root_cluster_->GetHeight()));  
+  //  pin_access_th_ = pin_access_th_orig_ * root_cluster_->GetStdCellArea() / 
+  //                 (root_cluster_->GetStdCellArea() + root_cluster_->GetMacroArea());
   floorplan_lx_ = root_cluster_->GetX();
   floorplan_ly_ = root_cluster_->GetY();
   floorplan_ux_ = floorplan_lx_ + root_cluster_->GetWidth();
@@ -2280,12 +2291,12 @@ void HierRTLMP::CreatePinBlockage()
        continue;
     }
 
-    //std::cout << "lx " << lx << "ly " << ly << "ux  " << ux << " uy  " << uy << "  "
-    //          << "f_lx " << floorplan_lx << "  "
-    //          << "f_ly " << floorplan_ly << "  "
-    //          << "f_ux " << floorplan_ux << "  "
-    //          << "f_uy " << floorplan_uy << "  "
-    //          << std::endl;
+
+    std::cout << "Aug0815 :  " << Dbu2Micro(lx, dbu_) << "  "
+              << Dbu2Micro(ly, dbu_) << "  "
+              << Dbu2Micro(ux, dbu_) << "  "
+              << Dbu2Micro(uy, dbu_) << "  "
+              << std::endl;
               
 
     // modify the pin ranges
@@ -2348,7 +2359,19 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     HardMacroClusterMacroPlacement(parent);
     return;
   }
+
   
+  //pin_access_th_ = pin_access_th_orig_ * parent->GetStdCellArea() /
+  //                 (parent->GetStdCellArea() + parent->GetMacroArea());
+  //pin_access_th_ = pin_access_th_orig_ 
+  //               * ( 1  - (parent->GetStdCellArea() + parent->GetMacroArea())
+  //                 / (parent->GetWidth() * parent->GetHeight()));
+
+
+  // set the instance property
+  for (auto& cluster : parent->GetChildren())
+    SetInstProperty(parent);
+
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->GetChildren()) {
@@ -2381,8 +2404,10 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   std::map<int, Rect> guides;
   std::vector<SoftMacro> macros;
   std::vector<BundledNet> nets;
+  std::vector<Rect> blockages;
   // create macros
   // Eech blockage will be modeled as fixed SoftMacro
+  /*
   for (auto& blockage : blockages_) {
     //std::cout << "lx:  " << lx << "  xMin : " << blockage.xMin() << std::endl;
     //std::cout << "ly:  " << ly << "  yMin : " << blockage.yMin() << std::endl;
@@ -2403,6 +2428,17 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
       fences[macros.size() - 1] = Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
     }
   }
+  */
+  for (auto& blockage : blockages_) {
+    // calculate the overlap between blockage and parent cluster
+    const float b_lx = std::max(lx, blockage.xMin());
+    const float b_ly = std::max(ly, blockage.yMin());
+    const float b_ux = std::min(ux, blockage.xMax());
+    const float b_uy = std::min(uy, blockage.yMax());
+    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) { // blockage exists
+      blockages.push_back(Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly));
+    }
+  }
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -2413,7 +2449,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
       soft_macro_id_map[cluster->GetName()] = macros.size();
       macros.push_back(SoftMacro(std::pair<float, float>(cluster->GetX() - lx, 
                                  cluster->GetY() - ly), cluster->GetName(),
-                                 cluster->GetWidth(), cluster->GetHeight()));
+                                 cluster->GetWidth(), cluster->GetHeight(), cluster));
       continue;
     }
     // for other clusters
@@ -2475,7 +2511,13 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     net.target_cluster_id = conn.second;
     nets.push_back(net);
   }
-  
+ 
+  for (auto inst : block_->getInsts()) {
+    const int cluster_id = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+    if (cluster_id == root_cluster_->GetId())
+      std::cout << "root  inst_name : " << inst->getName() << std::endl;
+  }
+
   // convert the connections between clusters to SoftMacros
   for (auto& cluster : parent->GetChildren()) {
     const int src_id = cluster->GetId();
@@ -2527,11 +2569,21 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   }
   // merge nets to reduce runtime
   MergeNets(nets);
+  std::cout << "Aug11_test" << std::endl;
+  for (auto& net : nets) {
+    std::cout << "net : " << macros[net.terminals.first].GetName()
+              << "   " << macros[net.terminals.second].GetName()
+              << std::endl;
+  }
+  
   if (parent->GetParent() != nullptr) {
     //pin_access_th_ = 0.05;
     // update the size of each pin access macro
     // each pin access macro with have their fences
     // check the net connection
+    
+      
+      
     std::map<int, float> net_map;
     net_map[soft_macro_id_map[to_string(L)]] = 0.0;
     net_map[soft_macro_id_map[to_string(T)]] = 0.0;
@@ -2548,10 +2600,38 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     
     for (auto [id, weight] : net_map)
       std::cout << id << "   " << weight << std::endl;
-   
+
     float h_size = outline_width * pin_access_th_;
     float v_size = outline_height * pin_access_th_;
-    const float ratio = pin_access_th_;
+    float std_cell_area = 0.0;
+    float macro_area = 0.0;
+    for (auto& cluster : parent->GetChildren()) {
+      std_cell_area += cluster->GetStdCellArea();
+      macro_area += cluster->GetMacroArea();
+    }
+
+    std_cell_area = std_cell_area / (std_cell_area + macro_area) * outline_width * outline_height;
+
+    //float h_size = std_cell_area / 2.0 / outline_height;
+    //float v_size = std_cell_area / 2.0 / outline_width;
+    if (parent->GetParent()->GetParent() == nullptr) {
+      h_size *= 2;
+      v_size *= 2;
+    }
+
+
+    float net_to_width = 1.0 / 12.0 * 4;
+    float L_size = std::min(outline_height - 2 * v_size, 
+                   net_to_width * net_map[soft_macro_id_map[to_string(L)]]);
+    float R_size = std::min(outline_height - 2 * v_size, 
+                   net_to_width * net_map[soft_macro_id_map[to_string(R)]]);
+    float B_size = std::min(outline_width - 2 * h_size,
+                   net_to_width * net_map[soft_macro_id_map[to_string(B)]]); 
+    float T_size = std::min(outline_width - 2 * h_size, 
+                   net_to_width * net_map[soft_macro_id_map[to_string(T)]]);
+
+    /*
+    const float ratio = 1.0;
     float L_size = std::min(outline_height * ratio, 
                    outline_height * net_map[soft_macro_id_map[to_string(L)]] 
                    * pin_access_net_width_ratio_);
@@ -2564,23 +2644,28 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     float T_size = std::min(outline_width * ratio, 
                    outline_width * net_map[soft_macro_id_map[to_string(T)]] 
                    * pin_access_net_width_ratio_);
+    */
     std::cout << "pin_access_net_width_ratio_:  " << pin_access_net_width_ratio_ << std::endl;
     // update the size of pin access macro
     if (L_size > 0) {
+      //L_size = v_size;
       macros[soft_macro_id_map[to_string(L)]] = SoftMacro(h_size, L_size, to_string(L));
       fences[soft_macro_id_map[to_string(L)]] = Rect(0.0, 0.0, h_size, outline_height);
     }
     if (R_size > 0) {
+      //R_size = v_size;
       macros[soft_macro_id_map[to_string(R)]] = SoftMacro(h_size, R_size, to_string(R));
       fences[soft_macro_id_map[to_string(R)]] = Rect(outline_width - h_size, 0.0, 
                                                      outline_width, outline_height);
     }
     if (T_size > 0) {
+      //T_size = h_size;
       macros[soft_macro_id_map[to_string(T)]] = SoftMacro(T_size, v_size, to_string(T));
       fences[soft_macro_id_map[to_string(T)]] = Rect(0.0, outline_height - v_size, 
                                                      outline_width, outline_height);
     }
     if (B_size > 0) {
+      //B_size = h_size;
       macros[soft_macro_id_map[to_string(B)]] = SoftMacro(B_size, v_size, to_string(B));
       fences[soft_macro_id_map[to_string(B)]] = Rect(0.0, 0.0, outline_width, v_size);
     }
@@ -2613,9 +2698,11 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   std::vector<float> target_utils { target_util_  };
   std::vector<float> target_dead_spaces { target_dead_space_ };
   for (int i = 1; i < num_target_util_; i++)
-    target_utils.push_back(target_util_ + i * target_util_step_);
+    //if (target_util_ + i * target_util_step_ < 1.0)
+      target_utils.push_back(target_util_ + i * target_util_step_);
   for (int i = 1; i < num_target_dead_space_; i++)
-    target_dead_spaces.push_back(target_dead_space_ + i * target_dead_space_step_);
+    if (target_dead_space_ + i * target_dead_space_step_ < 1.0)
+      target_dead_spaces.push_back(target_dead_space_ + i * target_dead_space_step_);
   std::vector<float> target_util_list; // target util has higher priority than target_dead_space
   std::vector<float> target_dead_space_list;
   for (auto& target_util : target_utils) {
@@ -2655,6 +2742,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
                                                 guidance_weight_ / weight_sum,
                                                 fence_weight_ / weight_sum,
                                                 boundary_weight_ / weight_sum,
+                                                macro_blockage_weight_ / weight_sum, 
                                                 notch_weight_ / weight_sum,
                                                 notch_h_th_, notch_v_th_,
                                                 pos_swap_prob_ / action_sum,
@@ -2668,6 +2756,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
       sa->SetFences(fences);
       sa->SetGuides(guides);
       sa->SetNets(nets);
+      sa->SetBlockages(blockages);
       sa_vector.push_back(sa);
     }
     // multi threads 
@@ -2829,6 +2918,10 @@ void HierRTLMP::MergeNets(std::vector<BundledNet>& nets)
   nets = merged_nets;
 }
 
+
+
+
+/*
 // Determine the shape of each cluster based on target utilization
 // Note that target_util is used for determining the size of MixedCluster
 // the target_dead_space is used for determining the size of StdCellCluster
@@ -2866,27 +2959,46 @@ bool HierRTLMP::ShapeChildrenCluster(Cluster* parent,
       continue;
     if (cluster->GetClusterType() == HardMacroCluster ||
         cluster->GetClusterType() == MixedCluster) {
+      std::cout << "start this process" << std::endl;
       std::vector<std::pair<float, float> > shapes;
       for (auto& shape : cluster->GetMacroTilings()) {
         if (shape.first < outline_width * (1 + conversion_tolerance_) && 
-            shape.second < outline_height * (1 + conversion_tolerance_))
+            shape.second < outline_height * (1 + conversion_tolerance_)) {
           shapes.push_back(shape);
+          std::cout << "Enter shape" << std::endl;
+          std::cout << "shapes.size() : " << shapes.size() << std::endl;
+          std::cout << "width : " << shape.first << "    "
+                  << "height :  " << shape.second << "   "
+                  << "outline_width : " << outline_width << "   "
+                  << "outline_height :  " << outline_height << "   "
+                  << std::endl;
+        }
+        std::cout << "conversion tolerance : " << conversion_tolerance_ << std::endl;
         std::cout << "width : " << shape.first << "    "
                   << "height :  " << shape.second << "   "
                   << "outline_width : " << outline_width << "   "
                   << "outline_height :  " << outline_height << "   "
                   << std::endl;
       }
+      std::cout << "shapes.size()  :  " << shapes.size() << std::endl;
       if (shapes.size() == 0) {
+        std::cout << "shapes.size() == 0 : " << (shapes.size() == 0) << std::endl;
         std::string line = "This is not enough space in cluster ";
         line += cluster->GetName();
         line += "  num_tilings:  " + std::to_string(cluster->GetMacroTilings().size()); 
         logger_->error(MPL, 2029, line);      
       } else {
-        macro_area_tot += shapes[0].first * shapes[0].second;
+        if (cluster->GetClusterType() == HardMacroCluster)
+          macro_area_tot += shapes[0].first * shapes[0].second;
+        else if (cluster->GetClusterType() == MixedCluster)
+          macro_area_tot += shapes[0].first * shapes[0].second
+                            * (1 + 2 * pin_access_th_)
+                            * (1 + 2 * pin_access_th_);
         cluster->SetMacroTilings(shapes);
       }
-      macro_area_tot += cluster->GetStdCellArea() / target_util;
+      macro_area_tot += cluster->GetStdCellArea() / target_util 
+                        * (1 + 2 * pin_access_th_)
+                        * (1 + 2 * pin_access_th_);
     } else if (cluster->GetClusterType() == StdCellCluster) {
       std_cell_area_tot += cluster->GetStdCellArea();  
     }
@@ -2920,13 +3032,22 @@ bool HierRTLMP::ShapeChildrenCluster(Cluster* parent,
       float area = cluster->GetStdCellArea() / target_util;
       const std::vector<std::pair<float, float> > tilings = cluster->GetMacroTilings();
       std::vector<std::pair<float, float> > width_list;
-      area += tilings[0].first * (1 + pin_access_th_)
-             * tilings[0].second * (1 + pin_access_th_);
+      //area += tilings[0].first * (1 + pin_access_th_)
+      //       * tilings[0].second * (1 + pin_access_th_);
+      //for (auto& shape : tilings) {
+      //  if (shape.first * shape.second <= area)
+      //    width_list.push_back(std::pair<float, float>(
+      //                  shape.first * (1 + pin_access_th_), 
+      //                  area / shape.second / (1 + pin_access_th_)));
+      //}
+      area += tilings[0].first * tilings[0].second;
+      area *= (1 + 2 * pin_access_th_);
+      area *= (1 + 2 * pin_access_th_);
       for (auto& shape : tilings) {
         if (shape.first * shape.second <= area)
           width_list.push_back(std::pair<float, float>(
-                        shape.first * (1 + pin_access_th_), 
-                        area / shape.second / (1 + pin_access_th_)));
+                        shape.first * (1 + 2 * pin_access_th_), 
+                        area / shape.second / (1 + 2* pin_access_th_)));
       }
       //width_list.push_back(std::pair<float, float>(shape.first, area / shape.second));
       std::cout << "[Debug][CalShape] name:  " << cluster->GetName() << "  ";
@@ -2942,6 +3063,169 @@ bool HierRTLMP::ShapeChildrenCluster(Cluster* parent,
               << macro.GetWidth()    << "    "
               << macro.GetHeight()   << std::endl;
   
+  
+  std::cout << "Finish shape function" << std::endl;
+  return true;
+}
+*/
+
+// Determine the shape of each cluster based on target utilization
+// Note that target_util is used for determining the size of MixedCluster
+// the target_dead_space is used for determining the size of StdCellCluster
+bool HierRTLMP::ShapeChildrenCluster(Cluster* parent, 
+                      std::vector<SoftMacro>& macros,
+        std::map<std::string, int>& soft_macro_id_map, 
+           float target_util, float target_dead_space)
+{
+  std::cout << "Enter ShapeChildrenCluster" << std::endl;
+  // check the valid values
+  const float outline_width = parent->GetWidth();
+  const float outline_height = parent->GetHeight();
+  const float outline_area = outline_width * outline_height;
+  std::cout << "target_dead_space : " << target_dead_space << std::endl;
+  std::cout << "target utilization : " << target_util << std::endl;
+  std::cout << "outline_width : " << outline_width << "  ";
+  std::cout << "outline_height : " << outline_height << std::endl;
+  std::cout << "macro_area : " << parent->GetMacroArea() << "  ";
+  std::cout << "std cell area : " << parent->GetStdCellArea() << std::endl;
+  // (1) we need to calculate available space for std cells
+  float macro_area_tot = 0.0;
+  float std_cell_area_tot = 0.0;
+  float std_cell_mixed_cluster = 0.0;
+  // add the macro area for blockages, pin access and so on
+  for (auto& macro : macros) {
+    if (macro.GetCluster() == nullptr)
+      macro_area_tot += macro.GetArea();
+  }
+  std::cout << "pin access area " << macro_area_tot << std::endl;
+  for (auto& cluster : parent->GetChildren()) {
+    if (cluster->GetIOClusterFlag() == true) 
+      continue;
+    if (cluster->GetClusterType() == StdCellCluster) {
+      std_cell_area_tot += cluster->GetStdCellArea();  
+    } else if (cluster->GetClusterType() == HardMacroCluster) {
+      std::vector<std::pair<float, float> > shapes;
+      for (auto& shape : cluster->GetMacroTilings()) {
+        if (shape.first < outline_width * (1 + conversion_tolerance_) && 
+            shape.second < outline_height * (1 + conversion_tolerance_)) {
+          shapes.push_back(shape);
+        }
+      }
+      if (shapes.size() == 0) {
+        std::string line = "This is not enough space in cluster ";
+        line += cluster->GetName();
+        line += "  num_tilings:  " + std::to_string(cluster->GetMacroTilings().size()); 
+        logger_->error(MPL, 2029, line);      
+      }
+      macro_area_tot += shapes[0].first * shapes[0].second;
+      cluster->SetMacroTilings(shapes);
+    } else { // mixed cluster
+      std_cell_area_tot += cluster->GetStdCellArea() * std::pow(1 + 2 * pin_access_th_, 2);  
+      std_cell_mixed_cluster += cluster->GetStdCellArea() * std::pow(1 + 2 * pin_access_th_, 2);
+      std::vector<std::pair<float, float> > shapes;
+      for (auto& shape : cluster->GetMacroTilings()) {
+        if (shape.first * (1 + 2 * pin_access_th_) < outline_width * (1 + conversion_tolerance_) && 
+            shape.second * (1 + 2 * pin_access_th_) < outline_height * (1 + conversion_tolerance_)) {
+          shapes.push_back(shape);
+        }
+      }
+      if (shapes.size() == 0) {
+        std::string line = "This is not enough space in cluster ";
+        line += cluster->GetName();
+        line += "  num_tilings:  " + std::to_string(cluster->GetMacroTilings().size()); 
+        logger_->error(MPL, 2080, line);      
+      }
+      macro_area_tot += shapes[0].first * shapes[0].second 
+                     * std::pow(1 + 2 * pin_access_th_, 2);
+      cluster->SetMacroTilings(shapes);
+    } // end for cluster type
+  }
+  // check how much available space to inflat for mixed cluster
+  const float min_target_util = std_cell_mixed_cluster / 
+                                (outline_area - std_cell_area_tot - macro_area_tot);
+  if (target_util <= min_target_util)
+    target_util = min_target_util;
+  //else if (target_util >= 1.0)
+  //  target_util = 1.0;
+  // check how many empty space left
+  const float avail_space = outline_area - macro_area_tot 
+                          - (std_cell_area_tot - std_cell_mixed_cluster)
+                          - std_cell_mixed_cluster / target_util;
+  // make sure the target_dead_space in range
+  if (target_dead_space <= 0.0)
+    target_dead_space = 0.01;
+  else if (target_dead_space >= 1.0)
+    target_dead_space = 0.99;
+  // shape clusters
+  if (avail_space <= 0.0)
+    return false;   // no feasible solution
+  const float std_cell_inflat = avail_space * (1.0 - target_dead_space) / 
+                            (std_cell_area_tot - std_cell_mixed_cluster);
+  std::cout << "std_cell_inflat : " << std_cell_inflat << std::endl;
+  // set the shape for each macro
+  for (auto& cluster : parent->GetChildren()) {
+    if (cluster->GetIOClusterFlag() == true)
+      continue;
+    if (cluster->GetClusterType() == StdCellCluster) {
+      const float area = cluster->GetArea() * (1.0 + std_cell_inflat);
+      const float width = std::sqrt(area / min_ar_);
+      std::vector<std::pair<float, float> > width_list;
+      width_list.push_back(std::pair<float, float>(width, area / width));
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(width_list, area);
+      std::cout << "[Debug][CalShape] std_cell_cluster : " << cluster->GetName() 
+                << std::endl;
+    } else if (cluster->GetClusterType() == HardMacroCluster) {
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(cluster->GetMacroTilings());
+      std::cout << "[Debug][CalShape] hard_macro_cluster : " << cluster->GetName() 
+                << std::endl;
+      for (auto& shape : cluster->GetMacroTilings())
+        std::cout << " ( " << shape.first << " , " << shape.second << " ) " << "   ";
+      std::cout << std::endl;
+    } else { // Mixed cluster
+      //float area = cluster->GetStdCellArea() / target_util;
+      const std::vector<std::pair<float, float> > tilings = cluster->GetMacroTilings();
+      std::vector<std::pair<float, float> > width_list;
+      //area += tilings[0].first * tilings[0].second;
+      // use the largest area
+      float area = tilings[tilings.size() - 1].first * tilings[tilings.size() - 1].second;
+      //area += cluster->GetStdCellArea() / target_util;
+      float empty_space = area - cluster->GetMacroArea();
+      if (cluster->GetStdCellArea() / target_util - empty_space > 0.0)
+        area += cluster->GetStdCellArea() / target_util - empty_space;
+      // leave the space for pin access
+      area = area / std::pow(1 - 2 * pin_access_th_, 2);
+      for (auto& shape : tilings) {
+        if (shape.first * shape.second <= area) {
+          width_list.push_back(std::pair<float, float>(
+                        shape.first / (1 - 2 * pin_access_th_), 
+                        area / shape.second * (1 - 2 * pin_access_th_)));
+          std::cout << "shape.first " << shape.first << "  "
+                    << "shape.second  " << shape.second << "  "
+                    << std::endl; 
+        } 
+      }
+     /*
+      for (auto& shape : tilings) {
+        if (shape.first * shape.second <= area)
+          width_list.push_back(std::pair<float, float>(
+                        shape.first, 
+                        area / shape.second));
+          std::cout << "shape.first " << shape.first << "  "
+                    << "shape.second  " << shape.second << "  "
+                    << std::endl; 
+      }
+      */
+      std::cout << "[Debug][CalShape] name:  " << cluster->GetName() << "  ";
+      std::cout << "area:  " << area << "  ";
+      std::cout << "width_list :  " << "   ";
+      for (auto& width : width_list)
+        std::cout << " [  " << width.first << "  " << width.second << "  ]  ";
+      std::cout << std::endl;
+      //std::cout << "width_list:  " << width_list[0].first << "   ";
+      //std::cout << width_list[0].second << std::endl;
+      macros[soft_macro_id_map[cluster->GetName()]].SetShapes(width_list, area);
+    }
+  }
   
   std::cout << "Finish shape function" << std::endl;
   return true;
@@ -3065,8 +3349,8 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
     vary_factor_list.push_back(1.0 + i * vary_step);
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_) ?
-                                    macros.size() : num_perturb_per_step_;
+  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10) ?
+                                    macros.size() : num_perturb_per_step_ / 10;
   //const int num_perturb_per_step = macros.size();
   //num_threads_  = 1; 
   int run_thread = num_threads_;
