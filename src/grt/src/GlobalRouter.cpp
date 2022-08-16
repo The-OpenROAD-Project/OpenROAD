@@ -1364,6 +1364,8 @@ void GlobalRouter::readGuides(const char* file_name)
   std::string line;
   odb::dbNet* net = nullptr;
 
+  std::unordered_map<odb::dbNet*,Box> guides;
+
   if (!fin.is_open()) {
     logger_->error(GRT, 233, "Failed to open guide file {}.", file_name);
   }
@@ -1395,6 +1397,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
+      guides[net].push_back(std::make_pair(layer->getRoutingLevel(),rect));
       boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
@@ -1410,7 +1413,7 @@ void GlobalRouter::readGuides(const char* file_name)
   updateEdgesUsage();
   updateDbCongestionFromGuides();
   heatmap_->update();
-  saveGuides();
+  saveGuidesFromFile(guides);
 }
 
 void GlobalRouter::updateEdgesUsage()
@@ -1468,6 +1471,24 @@ void GlobalRouter::updateDbCongestionFromGuides()
         db_gcell->setCapacity(layer, x, y, capH, capV, 0);
         db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
         db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+      }
+    }
+  }
+}
+
+void GlobalRouter::saveGuidesFromFile(std::unordered_map<odb::dbNet*,Box>& guides)
+{
+  odb::dbTechLayer* ph_layer_final = nullptr;
+
+  for (odb::dbNet* db_net : block_->getNets()) {
+    db_net->clearGuides();
+    Box guide_box = guides[db_net];
+
+    if (!guide_box.empty()) {
+
+      for (auto& guide : guide_box) {
+        ph_layer_final = routing_layers_[guide.first];
+        odb::dbGuide::create(db_net, ph_layer_final, guide.second);
       }
     }
   }
