@@ -1826,8 +1826,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                   getDesign()->getTopBlock()->getNumMarkers());
     if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
       // report violations
-      std::map<frLayerNum, std::map<std::string, uint>> violations;
-      std::set<std::string> allTypes;
+      std::map<std::string, std::map<frLayerNum, uint>> violations;
+      std::set<frLayerNum> layers;
       const std::map<std::string, std::string> relabel
           = {{"Lef58SpacingEndOfLine", "EOL"},
              {"Lef58CutSpacingTable", "CutSpcTbl"},
@@ -1836,22 +1836,28 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         if (!marker->getConstraint())
           continue;
         auto type = marker->getConstraint()->getViolName();
-        violations[marker->getLayerNum()][type]++;
-        allTypes.insert(type);
+        violations[type][marker->getLayerNum()]++;
+        layers.insert(marker->getLayerNum());
       }
-      std::string line = fmt::format("{:<15}", "Layer");
-      for (auto type : allTypes) {
-        if (relabel.find(type) != relabel.end())
-          type = relabel.at(type);
-        if (type.size() >= 12)
-          type = type.substr(0, 12) + "..";
-        line += fmt::format("{:<15}", type);
+      std::string line = fmt::format("{:<15}", "Viol/Layer");
+      for (auto lNum : layers) {
+        std::string lName = getTech()->getLayer(lNum)->getName();
+        if (lName.size() >= 7) {
+          lName = lName.substr(0, 2) + ".." + lName.substr(lName.size() - 2, 2);
+        }
+        line += fmt::format("{:<7}", lName);
       }
       logger_->report(line);
-      for (auto& [lNum, layerViolations] : violations) {
-        line = fmt::format("{:<15}", getTech()->getLayer(lNum)->getName());
-        for (auto type : allTypes)
-          line += fmt::format("{:<15}", layerViolations[type]);
+      for (auto [type, typeViolations] : violations) {
+        std::string typeName = type;
+        if (relabel.find(typeName) != relabel.end())
+          typeName = relabel.at(typeName);
+        if (typeName.size() >= 15)
+          typeName = typeName.substr(0, 12) + "..";
+        line = fmt::format("{:<15}", typeName);
+        for (auto lNum : layers) {
+          line += fmt::format("{:<7}", typeViolations[lNum]);
+        }
         logger_->report(line);
       }
     }
