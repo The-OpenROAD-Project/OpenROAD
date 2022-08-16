@@ -80,12 +80,152 @@ class frConstraint
   void setLayer(frLayer* layer) { layer_ = layer; }
   void setId(int in) { id_ = in; }
   int getId() const { return id_; }
+  std::string getViolName() const
+  {
+    switch (typeId()) {
+      case frConstraintTypeEnum::frcShortConstraint:
+        return "Short";
+      case frConstraintTypeEnum::frcMinWidthConstraint:
+        return "MinWid";
+
+      case frConstraintTypeEnum::frcSpacingConstraint:
+        return "MetSpc";
+
+      case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
+        return "EOLSpc";
+
+      case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
+        return "MetSpc";
+
+      case frConstraintTypeEnum::frcCutSpacingConstraint:
+        return "CutSpc";
+
+      case frConstraintTypeEnum::frcMinStepConstraint:
+        return "MinStp";
+
+      case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
+        return "NSMet";
+
+      case frConstraintTypeEnum::frcSpacingSamenetConstraint:
+        return "MetSpc";
+
+      case frConstraintTypeEnum::frcOffGridConstraint:
+        return "OffGrid";
+
+      case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
+        return "MinHole";
+
+      case frConstraintTypeEnum::frcAreaConstraint:
+        return "MinArea";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
+        return "CornerSpc";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
+        return "CutSpc";
+
+      case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
+        return "RectOnly";
+
+      case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
+        return "RightWayOnGridOnly";
+
+      case frConstraintTypeEnum::frcLef58MinStepConstraint:
+        return "MinStp";
+
+      case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
+        return "MetSpcInf";
+
+      case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
+        return "SpacingEndOfLineParallelEdge";
+
+      case frConstraintTypeEnum::frcSpacingTableConstraint:
+        return "SpacingTable";
+
+      case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+        return "SpacingTableTw";
+
+      case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
+        return "Lef58SpacingTable";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
+        return "Lef58CutSpacingTable";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
+        return "Lef58CutSpacingTablePrl";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
+        return "Lef58CutSpacingTableLayer";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
+        return "Lef58CutSpacingParallelWithin";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
+        return "Lef58CutSpacingAdjacentCuts";
+
+      case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
+        return "Lef58CutSpacingLayer";
+
+      case frConstraintTypeEnum::frcMinimumcutConstraint:
+        return "Minimumcut";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingConcaveCornerConstraint:
+        return "Lef58CornerSpacingConcaveCorner";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingConvexCornerConstraint:
+        return "Lef58CornerSpacingConvexCorner";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
+        return "Lef58CornerSpacingSpacing";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
+        return "Lef58CornerSpacingSpacing1D";
+
+      case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
+        return "Lef58CornerSpacingSpacing2D";
+
+      case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
+        return "Lef58SpacingEndOfLine";
+
+      case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
+        return "Lef58SpacingEndOfLineWithin";
+
+      case frConstraintTypeEnum::
+          frcLef58SpacingEndOfLineWithinEndToEndConstraint:
+        return "Lef58SpacingEndOfLineWithinEndToEnd";
+
+      case frConstraintTypeEnum::
+          frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
+        return "Lef58SpacingEndOfLineWithinEncloseCut";
+
+      case frConstraintTypeEnum::
+          frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
+        return "Lef58SpacingEndOfLineWithinParallelEdge";
+
+      case frConstraintTypeEnum::
+          frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
+        return "Lef58SpacingEndOfLineWithinMaxMinLength";
+
+      case frConstraintTypeEnum::frcLef58CutClassConstraint:
+        return "Lef58CutClass";
+
+      case frConstraintTypeEnum::frcRecheckConstraint:
+        return "Recheck";
+
+      case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
+        return "Lef58EolExtension";
+
+      case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
+        return "Lef58EolKeepOut";
+      default:
+        return "UNKNOWN";
+    }
+  }
 
  protected:
   int id_;
   frLayer* layer_;
   frConstraint() : id_(-1), layer_(nullptr) {}
-
 };
 
 class frLef58CutClassConstraint : public frConstraint
@@ -775,10 +915,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   {
     return false;  // skip for now
   }
-  bool hasEndPrlSpacing() const
-  {
-    return endPrlSpacing;
-  }
+  bool hasEndPrlSpacing() const { return endPrlSpacing; }
   bool hasEndToEndConstraint() const
   {
     return (endToEndConstraint) ? true : false;
@@ -1994,7 +2131,8 @@ class frLef58CornerSpacingConstraint : public frConstraint
     logger->report(
         "CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length "
         "{} edgeLength {} includeLShape {} minLength {} exceptNotch {} "
-        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} cornerToCorner {}",
+        "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} "
+        "cornerToCorner {}",
         cornerType,
         sameMask,
         within,

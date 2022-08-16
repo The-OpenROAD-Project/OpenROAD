@@ -46,11 +46,11 @@
 #include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
-#include "io/io.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "io/io.h"
 #include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
@@ -1717,24 +1717,25 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
               else
                 workersInBatch[i]->main(getDesign());
 #pragma omp critical
-                {
-                  cnt++;
-                  if (VERBOSE > 0) {
-                    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                        && prev_perc < 90) {
-                      if (prev_perc == 0 && t.isExceed(0)) {
-                        isExceed = true;
-                      }
-                      prev_perc += 10;
-                      if (isExceed) {
-                        logger_->report("    Completing {}% with {} violations.",
-                                        prev_perc,
-                                        getDesign()->getTopBlock()->getNumMarkers());
-                        logger_->report("    {}.", t);
-                      }
+              {
+                cnt++;
+                if (VERBOSE > 0) {
+                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                      && prev_perc < 90) {
+                    if (prev_perc == 0 && t.isExceed(0)) {
+                      isExceed = true;
+                    }
+                    prev_perc += 10;
+                    if (isExceed) {
+                      logger_->report(
+                          "    Completing {}% with {} violations.",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report("    {}.", t);
                     }
                   }
                 }
+              }
             } catch (...) {
               exception.capture();
             }
@@ -1823,6 +1824,37 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                   199,
                   "  Number of violations = {}.",
                   getDesign()->getTopBlock()->getNumMarkers());
+    if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
+      // report violations
+      std::map<frLayerNum, std::map<std::string, uint>> violations;
+      std::set<std::string> allTypes;
+      const std::map<std::string, std::string> relabel
+          = {{"Lef58SpacingEndOfLine", "EOL"},
+             {"Lef58CutSpacingTable", "CutSpcTbl"},
+             {"Lef58EolKeepOut", "eolKeepOut"}};
+      for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+        if (!marker->getConstraint())
+          continue;
+        auto type = marker->getConstraint()->getViolName();
+        violations[marker->getLayerNum()][type]++;
+        allTypes.insert(type);
+      }
+      std::string line = fmt::format("{:<15}", "Layer");
+      for (auto type : allTypes) {
+        if (relabel.find(type) != relabel.end())
+          type = relabel.at(type);
+        if (type.size() >= 12)
+          type = type.substr(0, 12) + "..";
+        line += fmt::format("{:<15}", type);
+      }
+      logger_->report(line);
+      for (auto& [lNum, layerViolations] : violations) {
+        line = fmt::format("{:<15}", getTech()->getLayer(lNum)->getName());
+        for (auto type : allTypes)
+          line += fmt::format("{:<15}", layerViolations[type]);
+        logger_->report(line);
+      }
+    }
     t.print(logger_);
     cout << flush;
   }
@@ -1872,17 +1904,19 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
-    logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("route__drc_errors",
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric("route__wirelength",
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     logger_->metric("route__vias", totSCut + totMCut);
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
+  } else {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_),
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_),
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
   }
-  else {
-    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
-    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-  }
-
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
