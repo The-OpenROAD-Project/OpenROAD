@@ -252,7 +252,7 @@ proc run_test_lang { test lang } {
           }
         }
         check_metrics {
-          set error_msg [check_test_metrics $test]
+          set error_msg [check_test_metrics $test $lang]
           if { $error_msg != "pass" } {
             puts " *FAIL* $error_msg"
             append_failure $test
