@@ -62,6 +62,7 @@ Replace::Replace()
   initialPlaceMaxSolverIter_(100),
   initialPlaceMaxFanout_(200),
   initialPlaceNetWeightScale_(800),
+  forceCPU_(false),
   nesterovPlaceMaxIter_(5000),
   binGridCntX_(0), binGridCntY_(0), 
   overflow_(0.1), density_(1.0),
@@ -119,6 +120,7 @@ void Replace::reset() {
   initialPlaceMaxSolverIter_ = 100;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
+  forceCPU_ = false;
 
   nesterovPlaceMaxIter_ = 5000;
   binGridCntX_ = binGridCntY_ = 0;
@@ -245,6 +247,7 @@ void Replace::doInitialPlace()
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.debug = gui_debug_initial_;
+  ipVars.forceCPU = forceCPU_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
@@ -438,6 +441,11 @@ Replace::setDebug(int pause_iterations,
 void
 Replace::setSkipIoMode(bool mode) {
   skipIoMode_ = mode;
+}
+
+void
+Replace::setForceCPU(bool force_cpu) {
+  forceCPU_ = force_cpu;
 }
 
 void

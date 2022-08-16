@@ -33,50 +33,51 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Net.h"
+#include "solver.h"
 
-namespace grt {
+namespace gpl {
 
-Net::Net(odb::dbNet* net, bool has_wires) : net_(net), has_wires_(has_wires)
+#ifdef ENABLE_GPU
+ResidualError cudaSparseSolve(int iter,
+                              SMatrix& placeInstForceMatrixX,
+                              Eigen::VectorXf& fixedInstForceVecX,
+                              Eigen::VectorXf& instLocVecX,
+                              SMatrix& placeInstForceMatrixY,
+                              Eigen::VectorXf& fixedInstForceVecY,
+                              Eigen::VectorXf& instLocVecY,
+                              utl::Logger* logger)
 {
-}
+  ResidualError error;
+  GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
+  SP1.cusolverCal(instLocVecX);
+  error.x = SP1.error();
 
-const std::string Net::getName() const
+  GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
+  SP2.cusolverCal(instLocVecY);
+  error.y = SP1.error();
+  return error;
+}
+#endif
+ResidualError cpuSparseSolve(int maxSolverIter,
+                             int iter,
+                             SMatrix& placeInstForceMatrixX,
+                             Eigen::VectorXf& fixedInstForceVecX,
+                             Eigen::VectorXf& instLocVecX,
+                             SMatrix& placeInstForceMatrixY,
+                             Eigen::VectorXf& fixedInstForceVecY,
+                             Eigen::VectorXf& instLocVecY,
+                             utl::Logger* logger)
 {
-  return net_->getName();
+  ResidualError error;
+  BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
+  solver.setMaxIterations(maxSolverIter);
+  solver.compute(placeInstForceMatrixX);
+  instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
+  error.x = solver.error();
+
+  solver.compute(placeInstForceMatrixY);
+  instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
+  error.y = solver.error();
+  return error;
 }
-
-const char* Net::getConstName() const
-{
-  return net_->getConstName();
-}
-
-odb::dbSigType Net::getSignalType() const
-{
-  return net_->getSigType().getString();
-}
-
-void Net::addPin(Pin& pin)
-{
-  pins_.push_back(pin);
-}
-
-bool Net::isLocal()
-{
-  odb::Point position = pins_[0].getOnGridPosition();
-  for (Pin& pin : pins_) {
-    odb::Point pinPos = pin.getOnGridPosition();
-    if (pinPos != position) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void Net::destroyPins()
-{
-  pins_.clear();
-}
-
-}  // namespace grt
+}  // namespace gpl

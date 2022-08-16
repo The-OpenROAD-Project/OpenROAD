@@ -239,6 +239,10 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         domain_xMax = std::max(domain_xMax, boundary->xMax());
         domain_yMax = std::max(domain_yMax, boundary->yMax());
       }
+      // snap inward to site grid
+      domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
+      domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
+
       string domain_name = group->getName();
 
       dbSet<dbRow> rows = block_->getRows();
@@ -293,7 +297,9 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
           // the multiple of site_dx.
           int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
           int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
-
+          // snap to the site grid rightward
+          rcr_xMin = odb::makeSiteLoc(rcr_xMin, site_dx, false, 0);
+          
           // in case there is at least one valid site width on the right, create
           // right core rows
           if (rcr_xMin + site_dx < core_ux) {

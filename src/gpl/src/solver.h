@@ -33,50 +33,57 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Net.h"
+#pragma once
 
-namespace grt {
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/SparseCore>
+#include <memory>
 
-Net::Net(odb::dbNet* net, bool has_wires) : net_(net), has_wires_(has_wires)
-{
+#ifdef ENABLE_GPU
+#include "gpuSolver.h"
+#endif
+#include "graphics.h"
+#include "odb/db.h"
+#include "placerBase.h"
+#include "plot.h"
+#include "utl/Logger.h"
+
+namespace utl {
+class Logger;
 }
 
-const std::string Net::getName() const
+namespace gpl {
+
+struct ResidualError
 {
-  return net_->getName();
-}
+  float x;  // The relative residual error for X
+  float y;  // The relative residual error for Y
+};
 
-const char* Net::getConstName() const
-{
-  return net_->getConstName();
-}
+using Eigen::BiCGSTAB;
+using Eigen::IdentityPreconditioner;
+using utl::GPL;
 
-odb::dbSigType Net::getSignalType() const
-{
-  return net_->getSigType().getString();
-}
+typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 
-void Net::addPin(Pin& pin)
-{
-  pins_.push_back(pin);
-}
+#ifdef ENABLE_GPU
+ResidualError cudaSparseSolve(int iter,
+                              SMatrix& placeInstForceMatrixX,
+                              Eigen::VectorXf& fixedInstForceVecX,
+                              Eigen::VectorXf& instLocVecX,
+                              SMatrix& placeInstForceMatrixY,
+                              Eigen::VectorXf& fixedInstForceVecY,
+                              Eigen::VectorXf& instLocVecY,
+                              utl::Logger* logger);
+#endif
 
-bool Net::isLocal()
-{
-  odb::Point position = pins_[0].getOnGridPosition();
-  for (Pin& pin : pins_) {
-    odb::Point pinPos = pin.getOnGridPosition();
-    if (pinPos != position) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void Net::destroyPins()
-{
-  pins_.clear();
-}
-
-}  // namespace grt
+ResidualError cpuSparseSolve(int maxSolverIter,
+                             int iter,
+                             SMatrix& placeInstForceMatrixX,
+                             Eigen::VectorXf& fixedInstForceVecX,
+                             Eigen::VectorXf& instLocVecX,
+                             SMatrix& placeInstForceMatrixY,
+                             Eigen::VectorXf& fixedInstForceVecY,
+                             Eigen::VectorXf& instLocVecY,
+                             utl::Logger* logger);
+}  // namespace gpl

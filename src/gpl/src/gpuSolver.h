@@ -33,50 +33,64 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Net.h"
+#pragma once
 
-namespace grt {
+#include <cuda_runtime.h>
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
+#include <thrust/fill.h>
+#include <thrust/host_vector.h>
+#include <thrust/sequence.h>
 
-Net::Net(odb::dbNet* net, bool has_wires) : net_(net), has_wires_(has_wires)
-{
+#include <Eigen/SparseCore>
+#include <memory>
+#include <vector>
+
+#include "cusolverSp.h"
+#include "cusparse.h"
+#include "device_launch_parameters.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
+
+namespace utl {
+class Logger;
 }
 
-const std::string Net::getName() const
+namespace gpl {
+
+using namespace std;
+typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
+class GpuSolver
 {
-  return net_->getName();
-}
+ public:
+  GpuSolver(SMatrix& placeInstForceMatrix,
+            Eigen::VectorXf& fixedInstForceVec,
+            utl::Logger* logger);
+  void cusolverCal(Eigen::VectorXf& instLocVec);
+  float error();
+  ~GpuSolver();
 
-const char* Net::getConstName() const
-{
-  return net_->getConstName();
-}
+ private:
+  int m_;    // Rows of the SP matrix
+  int nnz_;  // non-zeros
+  utl::Logger* log_;
+  float error_;
 
-odb::dbSigType Net::getSignalType() const
-{
-  return net_->getSigType().getString();
-}
+  // {d_cooRowIndex_, d_cooColIndex_, d_cooVal_} are the device vectors used to
+  // store the COO formatted triplets.
+  // https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)
+  // d_instLocVec_ and d_fixedInstForceVec_ are the device lists corresponding
+  // to instLocVec and fixedInstForceVec.
+  thrust::device_vector<int> d_cooRowIndex_, d_cooColIndex_;
+  thrust::device_vector<float> d_cooVal_, d_fixedInstForceVec_, d_instLocVec_;
 
-void Net::addPin(Pin& pin)
-{
-  pins_.push_back(pin);
-}
+  // {r_cooRowIndex_, r_cooColIndex_, r_cooVal_} are the raw pointers to the
+  // device vectors above.
+  int *r_cooRowIndex_, *r_cooColIndex_;
+  float *r_cooVal_, *r_instLocVec_, *r_fixedInstForceVec_;
 
-bool Net::isLocal()
-{
-  odb::Point position = pins_[0].getOnGridPosition();
-  for (Pin& pin : pins_) {
-    odb::Point pinPos = pin.getOnGridPosition();
-    if (pinPos != position) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void Net::destroyPins()
-{
-  pins_.clear();
-}
-
-}  // namespace grt
+  void cudaerror(cudaError_t code);
+  void cusparseerror(cusparseStatus_t code);
+  void cusolvererror(cusolverStatus_t code);
+};
+}  // namespace gpl

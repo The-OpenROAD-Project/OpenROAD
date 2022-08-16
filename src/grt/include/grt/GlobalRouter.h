@@ -131,6 +131,8 @@ struct PinGridLocation
   odb::Point pt_;
 };
 
+typedef std::vector<std::pair<int, odb::Rect>> Guides;
+
 class GlobalRouter
 {
  public:
@@ -169,6 +171,7 @@ class GlobalRouter
 
   // flow functions
   void readGuides(const char* file_name);  // just for display
+  void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -223,7 +226,7 @@ class GlobalRouter
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
-  GSegment boxToGlobalRouting(const odb::Rect& route_bds, int layer);
+  void boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,

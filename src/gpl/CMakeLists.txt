@@ -66,6 +66,7 @@ target_sources(gpl
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
+    src/solver.cpp
 )
 
 messages(TARGET gpl)
@@ -85,6 +86,36 @@ target_link_libraries(gpl
     rsz
     grt
 )
+
+# Allow users to use GPU or not
+option(GPU "Enable GPU" OFF)
+if (GPU)
+  message(STATUS "GPU is enabled")
+  # find_package(CUDA) should be replaced by "FindCUDAToolkit" for CMAKE verison >= 3.17. 
+  # See https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html. 
+  # find_package(CUDA) or FindCUDA is deprecated since vision 3.10.
+  find_package(CUDA QUIET COMPONENTS Core Widgets)
+  if (CUDA_FOUND)
+    message(STATUS "CUDA is found")
+    enable_language(CUDA)
+    target_sources(gpl PRIVATE src/gpuSolver.cu)
+    target_link_libraries(gpl
+      PRIVATE
+        ${CUDA_LIBRARIES}
+        ${CUDA_CUBLAS_LIBRARIES}
+        ${CUDA_cusparse_LIBRARY}
+        ${CUDA_cusolver_LIBRARY}
+    )
+    target_compile_definitions( gpl
+    PRIVATE
+      ENABLE_GPU
+    )
+  else()
+    message(STATUS "CUDA is not found")
+  endif()
+else()
+  message(STATUS "GPU is not enabled")
+endif()
 
 # CIMG_USE case
 if( USE_CIMG_LIB )
