@@ -1481,11 +1481,10 @@ void GlobalRouter::saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& g
 
   for (odb::dbNet* db_net : block_->getNets()) {
     db_net->clearGuides();
-    Guides guide_boxes = guides[db_net];
+    const Guides& guide_boxes = guides[db_net];
 
     if (!guide_boxes.empty()) {
-
-      for (auto& guide : guide_boxes) {
+      for (const auto& guide : guide_boxes) {
         ph_layer_final = routing_layers_[guide.first];
         odb::dbGuide::create(db_net, ph_layer_final, guide.second);
       }
