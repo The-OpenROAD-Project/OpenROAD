@@ -15,7 +15,7 @@
 [INFO GRT-0240] Net clk detailed route wire length: 184.95um
 [INFO GRT-0237] Net clknet_0_clk global route wire length: 93.60um
 [INFO GRT-0240] Net clknet_0_clk detailed route wire length: 81.31um
-[INFO GRT-0237] Net clknet_2_0__leaf_clk global route wire length: 273.60um
+[INFO GRT-0237] Net clknet_2_0__leaf_clk global route wire length: 288.00um
 [INFO GRT-0240] Net clknet_2_0__leaf_clk detailed route wire length: 165.22um
 [INFO GRT-0237] Net clknet_2_1__leaf_clk global route wire length: 201.60um
 [INFO GRT-0240] Net clknet_2_1__leaf_clk detailed route wire length: 128.94um

@@ -46,8 +46,7 @@ namespace grt {
 class Net
 {
  public:
-  Net() = default;
-  Net(odb::dbNet* net);
+  Net(odb::dbNet* net, bool has_wires);
   odb::dbNet* getDbNet() const { return net_; }
   const std::string getName() const;
   const char* getConstName() const;
@@ -57,10 +56,12 @@ class Net
   int getNumPins() const { return pins_.size(); }
   bool isLocal();
   void destroyPins();
+  bool hasWires() const { return has_wires_; }
 
  private:
   odb::dbNet* net_;
   std::vector<Pin> pins_;
+  bool has_wires_;
 };
 
 }  // namespace grt
