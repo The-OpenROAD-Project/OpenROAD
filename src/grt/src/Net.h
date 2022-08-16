@@ -46,7 +46,6 @@ namespace grt {
 class Net
 {
  public:
-  Net() = default;
   Net(odb::dbNet* net, bool has_wires);
   odb::dbNet* getDbNet() const { return net_; }
   const std::string getName() const;
