@@ -330,15 +330,6 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial
 }
 
-proc global_placement_plot { args } {
-  sta::parse_key_args "global_placement_plot" args \
-    keys {} \
-    flags {}
-  
-  gpl::set_plot_path_cmd $args
-}
-
-
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right }

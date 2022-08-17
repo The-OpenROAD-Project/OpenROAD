@@ -35,8 +35,6 @@
 
 include("openroad")
 
-option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
-
 # For Multithread
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
@@ -62,7 +60,6 @@ target_sources(gpl
     src/fftsg.cpp
     src/fftsg2d.cpp
     src/point.cpp
-    src/plot.cpp
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
@@ -115,27 +112,4 @@ if (GPU)
   endif()
 else()
   message(STATUS "GPU is not enabled")
-endif()
-
-# CIMG_USE case
-if( USE_CIMG_LIB )
-  find_package(X11 REQUIRED)
-  find_package(JPEG REQUIRED)
-  if ( X11_FOUND AND JPEG_FOUND )
-    target_link_libraries( gpl
-      PRIVATE
-        ${X11_LIBRARIES}
-        ${JPEG_LIBRARIES}
-    )
-    target_include_directories( gpl
-      PUBLIC
-        ${X11_INCLUDE_DIR}
-        ${JPEG_INCLUDE_DIR}
-    )
-    target_compile_definitions( gpl
-      PRIVATE
-        ENABLE_CIMG_LIB
-        cimg_use_jpeg=1
-    )
-  endif()
 endif()

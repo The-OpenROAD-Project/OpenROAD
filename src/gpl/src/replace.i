@@ -272,11 +272,4 @@ set_debug_cmd(int pause_iterations,
                     initial);
 }
 
-void
-set_plot_path_cmd(const char* path) 
-{
-  Replace* replace = getReplace();
-  replace->setPlottingPath(path);
-}
-
 %} // inline
