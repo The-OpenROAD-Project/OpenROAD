@@ -760,6 +760,18 @@ proc convert_pdn_config { args } {
 
 namespace eval pdn {
 
+  proc name_cmp { obj1 obj2 } {
+    set name1 [$obj1 getName]
+    set name2 [$obj2 getName]
+    if { $name1 < $name2 } {
+      return -1
+    } elseif { $name1 == $name2 } {
+      return 0
+    } else {
+      return 1
+    }
+  }
+
   proc check_design_state { args } {
     if {[ord::get_db_block] == "NULL"} {
       utl::error PDN 1022 "Design must be loaded before calling $args."
@@ -973,7 +985,7 @@ namespace eval pdn {
         }
       }
 
-      set insts [lsort -unique $insts]
+      set insts [lsort -unique -command name_cmp $insts]
       foreach inst $insts {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
@@ -994,7 +1006,7 @@ namespace eval pdn {
         }
       }
 
-      set cells [lsort -unique $cells]
+      set cells [lsort -unique -command name_cmp $cells]
       foreach cell $cells {
         foreach inst [[ord::get_db_block] getInsts] {
           # inst must match cells
