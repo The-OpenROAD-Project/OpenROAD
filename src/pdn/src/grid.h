@@ -121,6 +121,9 @@ class Grid
 
   // make the vias for the this grid
   void makeVias(const ShapeTreeMap& global_shapes,
+                const ShapeTreeMap& obstructions,
+                ShapeTreeMap& local_obstructions);
+  void makeVias(const ShapeTreeMap& global_shapes,
                 const ShapeTreeMap& obstructions);
   void getVias(std::vector<ViaPtr>& vias) const;
   void clearVias() { vias_.clear(); }

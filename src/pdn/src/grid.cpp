@@ -163,17 +163,11 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
   }
 
   // make vias
-  makeVias(all_shapes, obstructions);
+  makeVias(all_shapes, obstructions, local_obstructions);
 
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
       this, all_shapes, local_obstructions, allow_repair_channels_);
-
-  // repair vias that are only partially overlapping straps
-  if (repairVias(all_shapes, local_obstructions)) {
-    // rebuild vias since shapes changed
-    makeVias(all_shapes, obstructions);
-  }
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const
@@ -623,6 +617,19 @@ void Grid::getObstructions(ShapeTreeMap& obstructions) const
     for (const auto& [box, shape] : shapes) {
       obs.insert({shape->getObstructionBox(), shape});
     }
+  }
+}
+
+void Grid::makeVias(const ShapeTreeMap& global_shapes,
+                    const ShapeTreeMap& obstructions,
+                    ShapeTreeMap& local_obstructions)
+{
+  makeVias(global_shapes, obstructions);
+
+  // repair vias that are only partially overlapping straps
+  if (repairVias(global_shapes, local_obstructions)) {
+    // rebuild vias since shapes changed
+    makeVias(global_shapes, obstructions);
   }
 }
 
