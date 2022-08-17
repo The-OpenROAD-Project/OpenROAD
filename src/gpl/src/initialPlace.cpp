@@ -79,20 +79,10 @@ void InitialPlace::reset()
   ipVars_.reset();
 }
 
-#ifdef ENABLE_CIMG_LIB
-static PlotEnv pe;
-#endif
-
 void InitialPlace::doBicgstabPlace()
 {
   ResidualError error;
   bool run_cpu = true;
-
-#ifdef ENABLE_CIMG_LIB
-  pe.setPlacerBase(pb_);
-  pe.setLogger(log_);
-  pe.Init();
-#endif
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
@@ -146,13 +136,6 @@ void InitialPlace::doBicgstabPlace()
                  error_max,
                  pb_->hpwl());
     updateCoordi();
-
-#ifdef ENABLE_CIMG_LIB
-    if (PlotEnv::isPlotEnabled())
-      pe.SaveCellPlotAsJPEG(string("InitPlace ") + to_string(i),
-                            false,
-                            string("ip_") + to_string(i));
-#endif
 
     if (graphics) {
       graphics->cellPlot(true);

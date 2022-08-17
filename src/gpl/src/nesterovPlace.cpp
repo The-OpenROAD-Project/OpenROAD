@@ -43,7 +43,6 @@
 #include <iomanip>
 using namespace std;
 
-#include "plot.h"
 #include "graphics.h"
 
 namespace gpl {
@@ -123,10 +122,6 @@ NesterovPlace::NesterovPlace(
 NesterovPlace::~NesterovPlace() {
   reset();
 }
-
-#ifdef ENABLE_CIMG_LIB
-static PlotEnv pe;
-#endif
 
 void NesterovPlace::init() {
   const int gCellSize = nb_->gCells().size();
@@ -424,14 +419,6 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     return 0;
   }
 
-#ifdef ENABLE_CIMG_LIB  
-  pe.setPlacerBase(pb_);
-  pe.setNesterovBase(nb_);
-  pe.setLogger(log_);
-  pe.Init();
-  plot("Nesterov - BeforeStart", 0);
-#endif
-
   if (graphics_) {
     graphics_->cellPlot(true);
   }
@@ -584,10 +571,6 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     if( iter == 0 || (iter+1) % 10 == 0 ) {
       log_->report("[NesterovSolve] Iter: {} overflow: {:g} HPWL: {}",
           iter+1, sumOverflow_, prevHpwl_);
-
-#ifdef ENABLE_CIMG_LIB
-      plot("Nesterov - Iter: " + std::to_string(iter + 1), iter + 1);
-#endif
     }
 
     if( minSumOverflow > sumOverflow_ ) {
@@ -919,20 +902,5 @@ getSecondNorm(const vector<FloatPoint>& a) {
   }
   return sqrt( norm / (2.0*a.size()) ); 
 }
-
-#ifdef ENABLE_CIMG_LIB
-void
-NesterovPlace::plot(const std::string& title, int iteration)
-{
-  if (PlotEnv::isPlotEnabled()) {
-    std::ostringstream iter_str;
-    iter_str << std::setw(4) << std::setfill('0') << iteration;
-
-    pe.SaveCellPlotAsJPEG(title, true, "cell_" + iter_str.str());
-    pe.SaveBinPlotAsJPEG(title, "bin_" + iter_str.str());
-    pe.SaveArrowPlotAsJPEG(title, "arrow_" + iter_str.str());
-  }
-}
-#endif
 
 }
