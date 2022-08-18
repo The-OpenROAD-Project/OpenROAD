@@ -631,8 +631,7 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
 }
 
 //! Function to create the nodes of the G matrix
-void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
-                               const vector<odb::Rect>& macros)
+void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
 {
   for (auto curWire : power_wires) {
     // For a Via we create the nodes at the top and bottom ends of the via
@@ -654,81 +653,120 @@ void IRSolver::createGmatNodes(const vector<dbSBox*>& power_wires,
       // via cut or enclosure and connections cannot be made through
       // enclosures only.
       const int lb = via_bottom_layer->getRoutingLevel();
-      if (bottom_layer_ != lb) {  // do not set for bottom layers
-        Gmat_->setNode(loc, lb);
-      }
+      Gmat_->setNode(loc, lb);
       const int lt = via_top_layer->getRoutingLevel();
-      if (bottom_layer_ != lt) {  // do not set for bottom layers
-        Gmat_->setNode(loc, lt);
-      }
-      // For a stripe we create nodes at the ends of the stripes and at a fixed
-      // frequency in the lowermost layer.
+      Gmat_->setNode(loc, lt);
+    }
+  }
+}
+
+void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
+                               const vector<odb::Rect>& macros)
+{
+  for (auto curWire : power_wires) {
+    // For a stripe we create nodes at the ends of the stripes and at a fixed
+    // frequency in the lowermost layer.
+    if (curWire->isVia())
+     continue;
+    dbTechLayer* wire_layer = curWire->getTechLayer();
+    const int l = wire_layer->getRoutingLevel();
+    dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
+    if (l == bottom_layer_) {
+      layer_dir = dbTechLayerDir::Value::HORIZONTAL;
+    }
+    int x_loc1, x_loc2, y_loc1, y_loc2;
+    if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+      y_loc1 = (curWire->yMin() + curWire->yMax()) / 2;
+      y_loc2 = y_loc1;
+      x_loc1 = curWire->xMin();
+      x_loc2 = curWire->xMax();
     } else {
-      dbTechLayer* wire_layer = curWire->getTechLayer();
-      const int l = wire_layer->getRoutingLevel();
-      dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
-      if (l == bottom_layer_) {
-        layer_dir = dbTechLayerDir::Value::HORIZONTAL;
-      }
-      int x_loc1, x_loc2, y_loc1, y_loc2;
+      x_loc1 = (curWire->xMin() + curWire->xMax()) / 2;
+      x_loc2 = x_loc1;
+      y_loc1 = curWire->yMin();
+      y_loc2 = curWire->yMax();
+    }
+    // For all layers we create the end nodes
+    Gmat_->setNode({x_loc1, y_loc1}, l);
+    Gmat_->setNode({x_loc2, y_loc2}, l);
+    // Special condition: if the stripe ovelaps a macro ensure a node is
+    // created
+    for (const auto& macro : macros) {
       if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-        y_loc1 = (curWire->yMin() + curWire->yMax()) / 2;
-        y_loc2 = y_loc1;
-        x_loc1 = curWire->xMin();
-        x_loc2 = curWire->xMax();
-      } else {
-        x_loc1 = (curWire->xMin() + curWire->xMax()) / 2;
-        x_loc2 = x_loc1;
-        y_loc1 = curWire->yMin();
-        y_loc2 = curWire->yMax();
-      }
-      // special case for bottom layers we design a dense grid at a fixed
-      // frequency
-      if (l == bottom_layer_) {
-        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-          // quantize the horizontal direction
-          x_loc1 = (x_loc1 / node_density_) * node_density_;
-          x_loc2 = (x_loc2 / node_density_) * node_density_;
-          for (int x_i = x_loc1; x_i <= x_loc2; x_i += node_density_) {
-            Gmat_->setNode({x_i, y_loc1}, l);
-          }
-        } else {
-          // quantize the vertical direction
-          y_loc1 = (y_loc1 / node_density_) * node_density_;
-          y_loc2 = (y_loc2 / node_density_) * node_density_;
-          for (int y_i = y_loc1; y_i <= y_loc2; y_i += node_density_) {
-            Gmat_->setNode({x_loc1, y_i}, l);
+        // y range is withing the marco (min, max)
+        if (y_loc1 >= macro.yMin() && y_loc1 <= macro.yMax()) {
+          // Both x values outside the macro
+          // (Values inside will already have a node at endpoints)
+          if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
+            const int x = (macro.xMin() + macro.xMax()) / 2;
+            Gmat_->setNode({x, y_loc1}, l);
           }
         }
       } else {
-        // For all other layers we just create the end nodes
-        Gmat_->setNode({x_loc1, y_loc1}, l);
-        Gmat_->setNode({x_loc2, y_loc2}, l);
-        // Special condition: if the stripe ovelaps a macro ensure a node is
-        // created
-        for (const auto& macro : macros) {
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            // y range is withing the marco (min, max)
-            if (y_loc1 >= macro.yMin() && y_loc1 <= macro.yMax()) {
-              // Both x values outside the macro
-              // (Values inside will already have a node at endpoints)
-              if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
-                const int x = (macro.xMin() + macro.xMax()) / 2;
-                Gmat_->setNode({x, y_loc1}, l);
-              }
-            }
-          } else {
-            if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
-              if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
-                const int y = (macro.yMin() + macro.yMax()) / 2;
-                Gmat_->setNode({x_loc1, y}, l);
-              }
-            }
+        if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
+          if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
+            const int y = (macro.yMin() + macro.yMax()) / 2;
+            Gmat_->setNode({x_loc1, y}, l);
           }
         }
       }
     }
-  }
+    if (l != bottom_layer_)
+      continue;
+
+    // special case for bottom layers we design a dense grid at a fixed
+    // frequency
+    auto node_map = Gmat_->getNodes(l,layer_dir,x_loc1,x_loc2,y_loc1,y_loc2);
+    pair<pair<int, int>, Node*> node_prev;
+    int v_itr, v_prev, length;
+    int i = 0;
+    for (auto& node_itr : node_map) {
+      v_itr = (node_itr.first).first;
+      if (i == 0) {
+        // Before the first existing node
+        i = 1;
+        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+          v_prev= x_loc1;
+        } else {
+          v_prev= y_loc1;
+        }
+      } else {
+        v_prev = (node_prev.first).first;
+      }
+      length = v_itr - v_prev;
+      if (length > node_density_) {
+        for (int v_i = v_prev+ node_density_; v_i < v_itr;
+               v_i += node_density_) {
+          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+            Gmat_->setNode({v_i, y_loc1}, l);
+          } else {
+            Gmat_->setNode({x_loc1, v_i}, l);
+          }
+        }
+      }
+      node_prev = node_itr;
+    }
+    // from the last node to the end
+    if(i == 1) {
+      int v_loc;
+      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+        v_loc = x_loc2;
+      } else {
+        v_loc = y_loc2;
+      }
+      length = v_loc - v_itr;
+      if (length > node_density_) {
+        for (int v_i = v_itr + node_density_; v_i < v_loc;
+               v_i += node_density_) {
+          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+            Gmat_->setNode({v_i, y_loc1}, l);
+          } else {
+            Gmat_->setNode({x_loc1, v_i}, l);
+          }
+        }
+      }
+    }
+  }// for power_wires
 }
 
 //! Function to create the connections of the G matrix
@@ -922,18 +960,6 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       int x_loc2 = curWire->xMax();
       int y_loc1 = curWire->yMin();
       int y_loc2 = curWire->yMax();
-      // special case for bottom layer: use design a dense grid
-      if (l == bottom_layer_) {
-        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-          // quantize the horizontal direction
-          x_loc1 = (x_loc1 / node_density_) * node_density_;
-          x_loc2 = (x_loc2 / node_density_) * node_density_;
-        } else {
-          // quantize the vertical direction
-          y_loc1 = (y_loc1 / node_density_) * node_density_;
-          y_loc2 = (y_loc2 / node_density_) * node_density_;
-        }
-      }
       Gmat_->generateStripeConductance(wire_layer->getRoutingLevel(),
                                        layer_dir,
                                        x_loc1,
@@ -1065,7 +1091,8 @@ bool IRSolver::createGmat(bool connection_only)
   const vector<dbSBox*> power_wires = findPdnWires(power_net);
 
   // Create all the nodes for the G matrix
-  createGmatNodes(power_wires, macro_boundaries);
+  createGmatViaNodes(power_wires);
+  createGmatWireNodes(power_wires, macro_boundaries);
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(

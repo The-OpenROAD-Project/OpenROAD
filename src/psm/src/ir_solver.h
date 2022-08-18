@@ -121,10 +121,11 @@ class IRSolver
   //! list
   // of wires for all PDN tasks
   std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
-  //! Function to create the nodes of the G matrix
-  void createGmatNodes(const std::vector<odb::dbSBox*>& power_wires,
-                       const std::vector<odb::Rect>& macros);
-
+  //! Function to create the nodes of vias in the G matrix
+  void createGmatViaNodes(const std:: vector<odb::dbSBox*>& power_wires);
+  //! Function to create the nodes of wires in the G matrix
+  void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
+                           const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
 
