@@ -1,4 +1,4 @@
-# check_antennas
+# A minimal LEF file that has been modified to include particular antenna values for testing
 read_lef ant_check.lef
 read_def ant_check.def
 
