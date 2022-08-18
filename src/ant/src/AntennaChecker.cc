@@ -137,7 +137,12 @@ extern int Ant_Init(Tcl_Interp* interp);
 }
 
 AntennaChecker::AntennaChecker() :
-  net_violation_count_(0)
+  net_violation_count_(0),
+  dbu_per_micron_(0),
+  db_(nullptr),
+  block_(nullptr),
+  global_router_(nullptr),
+  logger_(nullptr)
 {
 }
 
