@@ -15,7 +15,7 @@
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vdd.loc.
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (50.000um, 50.000um) and size 20.000um, is not located on an existing power stripe node. Moving to closest node at (68.070um, 53.115um).
-[INFO PSM-0031] Number of PDN nodes on net VDD = 546.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 604.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 [INFO PSM-0006] SPICE file is written at: ./results/gcd_spice_vdd.sp.
