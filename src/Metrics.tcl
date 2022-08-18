@@ -59,8 +59,8 @@ proc report_erc_metrics { args } {
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
-    set setup_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
-    set hold_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
+    set setup_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
+    set hold_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
 
     utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
     utl::metric_int "timing__drv__max_slew" $max_slew_violation
