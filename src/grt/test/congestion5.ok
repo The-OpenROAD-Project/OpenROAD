@@ -35,8 +35,8 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24816          3008          87.88%
-metal3     Horizontal      33840          2806          91.71%
+metal2     Vertical        24816          7332          70.45%
+metal3     Horizontal      33840           644          98.10%
 metal4     Vertical        15792           564          96.43%
 metal5     Horizontal      15792           276          98.25%
 metal6     Vertical        15792           564          96.43%
@@ -48,10 +48,10 @@ metal10    Vertical         2256            47          97.92%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [WARNING GRT-0227] Reached 20 congestion iterations with less than 15% of reduction between iterations.
-[INFO GRT-0197] Via related to pin nodes: 1896
-[INFO GRT-0198] Via related Steiner nodes: 152
+[INFO GRT-0197] Via related to pin nodes: 1008
+[INFO GRT-0198] Via related Steiner nodes: 134
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2771
-[INFO GRT-0112] Final usage 3D: 12594
+[INFO GRT-0111] Final number of vias: 1955
+[INFO GRT-0112] Final usage 3D: 10590
 [ERROR GRT-0118] Routing congestion too high.
 GRT-0118
