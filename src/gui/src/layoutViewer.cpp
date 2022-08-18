@@ -2336,7 +2336,7 @@ void LayoutViewer::drawManufacturingGrid(QPainter* painter,
     }
   }
 
-  painter->setPen(Qt::white);
+  painter->setPen(QPen(Qt::white, 0));
   painter->drawPoints(points);
 }
 
