@@ -1067,6 +1067,9 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
+            new_h_capacity = edge_cap && adjustment != 1 > 0
+                                 ? std::max(new_h_capacity, 1)
+                                 : new_h_capacity;
             fastroute_->addAdjustment(
                 x - 1, y - 1, x, y - 1, layer, new_h_capacity, true);
           }
@@ -1084,6 +1087,9 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
             int new_v_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
+            new_v_capacity = edge_cap > 0 && adjustment != 1
+                                 ? std::max(new_v_capacity, 1)
+                                 : new_v_capacity;
             fastroute_->addAdjustment(
                 x - 1, y - 1, x - 1, y, layer, new_v_capacity, true);
           }
@@ -1396,7 +1402,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
-      guides[net].push_back(std::make_pair(layer->getRoutingLevel(),rect));
+      guides[net].push_back(std::make_pair(layer->getRoutingLevel(), rect));
       boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
@@ -1475,7 +1481,8 @@ void GlobalRouter::updateDbCongestionFromGuides()
   }
 }
 
-void GlobalRouter::saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides)
+void GlobalRouter::saveGuidesFromFile(
+    std::unordered_map<odb::dbNet*, Guides>& guides)
 {
   odb::dbTechLayer* ph_layer_final = nullptr;
 
