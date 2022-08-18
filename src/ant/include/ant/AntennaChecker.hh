@@ -83,7 +83,7 @@ class AntennaChecker
                     bool verbose);
   int antennaViolationCount() const;
 
-  void checkMaxLength(const char* net_name, int layer);
+  void findMaxAllowedLength(const char* net_name, const char* layer);
 
   void findMaxWireLength();
 
@@ -144,7 +144,7 @@ class AntennaChecker
                      vector<dbWireGraph::Node*> &wire_roots,
                      vector<dbWireGraph::Node*> &gate_iterms);
 
-  std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio,
+  std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio, dbNet* net,
                                      bool verbose,
                                      bool report);
   std::pair<bool, bool> checkWireCar(ARinfo AntennaRatio,
@@ -160,7 +160,7 @@ class AntennaChecker
                 // Return values.
                 int &net_violation_count,
                 int &pin_violation_count);
-  void checkGate(dbWireGraph::Node* gate,
+  void checkGate(dbNet* net, dbWireGraph::Node* gate,
                  vector<ARinfo> &CARtable,
                  vector<ARinfo> &VIA_CARtable,
                  bool report,
