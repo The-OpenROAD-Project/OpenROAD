@@ -180,21 +180,6 @@ void AntennaChecker::initAntennaRules()
       const dbTechLayerAntennaRule* antenna_rule
           = tech_layer->getDefaultAntennaRule();
 
-      odb::dbStringProperty* layer_prop = odb::dbStringProperty::find(
-          tech_layer, "LEF57_ANTENNAGATEPLUSDIFF");
-      if (layer_prop != nullptr) {
-        std::string gate_plus_diff_info = layer_prop->getValue();
-        int start = 0;
-        std::string gate_plus_diff = "";
-        for (int i = 0; i < gate_plus_diff_info.size(); i++) {
-          if (gate_plus_diff_info.at(i) == ' ') {
-            gate_plus_diff
-                = gate_plus_diff_info.substr(start, i - start - 1);
-            start = i;
-          }
-        }
-        plus_diff_factor = std::stod(gate_plus_diff);
-      }
       if (antenna_rule->isAreaFactorDiffUseOnly()) {
         diff_metal_factor = antenna_rule->getAreaFactor();
 
@@ -214,6 +199,7 @@ void AntennaChecker::initAntennaRules()
       }
 
       minus_diff_factor = antenna_rule->getAreaMinusDiffFactor();
+      plus_diff_factor = antenna_rule->getGatePlusDiffFactor();
     }
 
     AntennaModel layer_antenna = {tech_layer,
@@ -940,7 +926,6 @@ AntennaChecker::buildViaParTable(const vector<dbWireGraph::Node*> &wire_roots)
         diff_metal_reduce_factor = getPwlFactor(
             antenna_rule->getAreaDiffReduce(), iterm_diff_area, 1.0);
       }
-
       cut_factor = am.cut_factor;
       diff_cut_factor = am.diff_cut_factor;
 

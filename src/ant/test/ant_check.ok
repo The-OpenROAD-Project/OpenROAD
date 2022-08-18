@@ -11,10 +11,10 @@
 Net net50
   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
     met3
-    PAR:   29.70  Ratio:    0.00 (Area)
-    PAR:  159.44* Ratio:   15.15 (S.Area)
-    CAR:   71.24  Ratio:    0.00 (C.Area)
-    CAR:  367.82  Ratio:    0.00 (C.S.Area)
+    PAR:   11.67  Ratio:    0.00 (Area)
+    PAR:   43.13* Ratio:   15.15 (S.Area)
+    CAR:  130.63  Ratio:    0.00 (C.Area)
+    CAR:  251.52  Ratio:    0.00 (C.S.Area)
 
     met2
     PAR:   41.55  Ratio:    0.00 (Area)
@@ -48,10 +48,10 @@ Net net50
 
   output50/A (sky130_fd_sc_ms__buf_1)
     met3
-    PAR:   29.70  Ratio:    0.00 (Area)
-    PAR:  159.44* Ratio:   15.15 (S.Area)
-    CAR:  125.94  Ratio:    0.00 (C.Area)
-    CAR:  641.76  Ratio:    0.00 (C.S.Area)
+    PAR:   11.67  Ratio:    0.00 (Area)
+    PAR:   43.13* Ratio:   15.15 (S.Area)
+    CAR:  185.33  Ratio:    0.00 (C.Area)
+    CAR:  525.46  Ratio:    0.00 (C.S.Area)
 
     met2
     PAR:   41.55  Ratio:    0.00 (Area)
