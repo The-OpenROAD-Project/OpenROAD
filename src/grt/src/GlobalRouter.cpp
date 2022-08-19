@@ -1067,7 +1067,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
-            new_h_capacity = edge_cap && adjustment != 1 > 0
+            new_h_capacity = edge_cap > 0 && adjustment != 1
                                  ? std::max(new_h_capacity, 1)
                                  : new_h_capacity;
             fastroute_->addAdjustment(
