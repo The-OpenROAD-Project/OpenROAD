@@ -941,11 +941,12 @@ ViaGenerator::ViaGenerator(utl::Logger* logger,
 int ViaGenerator::getGeneratorWidth(bool bottom) const
 {
   Enclosure* enc = bottom ? bottom_enclosure_.get() : top_enclosure_.get();
+  const odb::Rect cut = getCut();
 
-  const int core_width = getCutsWidth(core_col_, cut_.dx(), getCutPitchX() - cut_.dx(), enc->getX());
+  const int core_width = getCutsWidth(core_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
 
   if (isCutArray()) {
-    const int end_width = getCutsWidth(end_col_, cut_.dx(), getCutPitchX() - cut_.dx(), enc->getX());
+    const int end_width = getCutsWidth(end_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
     return array_core_y_ * core_width + (array_core_x_ - 1) * array_spacing_x_ + end_width;
   } else {
     return core_width;
@@ -955,11 +956,12 @@ int ViaGenerator::getGeneratorWidth(bool bottom) const
 int ViaGenerator::getGeneratorHeight(bool bottom) const
 {
   Enclosure* enc = bottom ? bottom_enclosure_.get() : top_enclosure_.get();
+  const odb::Rect cut = getCut();
 
-  const int core_height = getCutsWidth(core_row_, cut_.dy(), getCutPitchY() - cut_.dy(), enc->getY());
+  const int core_height = getCutsWidth(core_row_, cut.dy(), getCutPitchY() - cut.dy(), enc->getY());
 
   if (isCutArray()) {
-    const int end_height = getCutsWidth(end_row_, cut_.dy(), getCutPitchY() - cut_.dy(), enc->getY());
+    const int end_height = getCutsWidth(end_row_, cut.dy(), getCutPitchY() - cut.dy(), enc->getY());
     return array_core_y_ * core_height + (array_core_y_ - 1) * array_spacing_y_ + end_height;
   } else {
     return core_height;
