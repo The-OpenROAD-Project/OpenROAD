@@ -2584,7 +2584,13 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
 {
   const sta::Pin* pin = network->dbToSta(iterm);
   sta::LibertyPort* lib_port = network->libertyPort(pin);
-  return lib_port && lib_port->isRegClk();
+  bool connected_to_pad = false;
+  if (lib_port != nullptr) {
+    sta::LibertyCell* lib_cell = lib_port->libertyCell();
+    connected_to_pad = lib_cell != nullptr && lib_cell->isPad();
+  }
+
+  return lib_port && (lib_port->isRegClk() || connected_to_pad);
 }
 
 bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
