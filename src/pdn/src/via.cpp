@@ -182,6 +182,11 @@ void Enclosure::snap(odb::dbTech* tech)
 
 //////////
 
+DbVia::DbVia() :
+    generator_(nullptr)
+{
+}
+
 DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
 {
   std::vector<odb::dbShape> shapes;

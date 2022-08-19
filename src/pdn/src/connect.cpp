@@ -560,10 +560,10 @@ void Connect::makeVia(odb::dbSWire* wire,
 }
 
 DbVia* Connect::generateDbVia(
-    const std::vector<std::unique_ptr<ViaGenerator>>& generators,
+    const std::vector<std::shared_ptr<ViaGenerator>>& generators,
     odb::dbBlock* block) const
 {
-  std::vector<ViaGenerator*> vias;
+  std::vector<std::shared_ptr<ViaGenerator>> vias;
   for (const auto& via : generators) {
     if (hasCutPitch()) {
       via->setCutPitchX(cut_pitch_x_);
@@ -609,7 +609,7 @@ DbVia* Connect::generateDbVia(
                  via->getName());
     }
 
-    vias.push_back(via.get());
+    vias.push_back(via);
   }
 
   debugPrint(grid_->getLogger(),
@@ -624,13 +624,16 @@ DbVia* Connect::generateDbVia(
     return nullptr;
   }
 
-  std::stable_sort(vias.begin(), vias.end(), [](ViaGenerator* lhs, ViaGenerator* rhs) {
-    return lhs->isPreferredOver(rhs);
+  std::stable_sort(vias.begin(), vias.end(), [](const std::shared_ptr<ViaGenerator>& lhs,
+                                                const std::shared_ptr<ViaGenerator>& rhs) {
+    return lhs->isPreferredOver(rhs.get());
   });
 
-  ViaGenerator* best_rule = *vias.begin();
+  std::shared_ptr<ViaGenerator> best_rule = *vias.begin();
+  DbVia* built_via = best_rule->generate(block);
+  built_via->setGenerator(best_rule);
 
-  return best_rule->generate(block);
+  return built_via;
 }
 
 DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
@@ -649,12 +652,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
              lower->getName(),
              upper->getName());
   // look for generate vias
-  std::vector<std::unique_ptr<ViaGenerator>> generate_vias;
+  std::vector<std::shared_ptr<ViaGenerator>> generate_vias;
   for (const auto& lower_rect : lower_rects) {
     for (const auto& upper_rect : upper_rects) {
       for (odb::dbTechViaGenerateRule* db_via : generate_via_rules_) {
-        std::unique_ptr<GenerateViaGenerator> rule
-            = std::make_unique<GenerateViaGenerator>(
+        std::shared_ptr<GenerateViaGenerator> rule
+            = std::make_shared<GenerateViaGenerator>(
                 grid_->getLogger(),
                 db_via,
                 lower_rect,
@@ -692,12 +695,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
 
   // fallback to tech vias if generate is not possible
   // look for generate vias
-  std::vector<std::unique_ptr<ViaGenerator>> tech_vias;
+  std::vector<std::shared_ptr<ViaGenerator>> tech_vias;
   for (const auto& lower_rect : lower_rects) {
     for (const auto& upper_rect : upper_rects) {
       for (odb::dbTechVia* db_via : tech_vias_) {
-        std::unique_ptr<TechViaGenerator> rule
-          = std::make_unique<TechViaGenerator>(grid_->getLogger(),
+        std::shared_ptr<TechViaGenerator> rule
+          = std::make_shared<TechViaGenerator>(grid_->getLogger(),
                                                db_via,
                                                lower_rect,
                                                lower_constraint,

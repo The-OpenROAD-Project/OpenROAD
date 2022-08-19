@@ -71,6 +71,7 @@ namespace bgi = boost::geometry::index;
 class Connect;
 class Shape;
 class Via;
+class ViaGenerator;
 
 using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
 using Box = bg::model::box<Point>;
@@ -135,6 +136,8 @@ class DbVia
     std::set<RectBoxPair> top;
   };
 
+  DbVia();
+
   virtual ~DbVia() {}
 
   virtual ViaLayerShape generate(odb::dbBlock* block,
@@ -150,12 +153,19 @@ class DbVia
 
   virtual ViaReport getViaReport() const = 0;
 
+  void setGenerator(const std::shared_ptr<ViaGenerator>& generator) { generator_ = generator; }
+  bool hasGenerator() const { return generator_ != nullptr; }
+  ViaGenerator* getGenerator() const { return generator_.get(); }
+
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
   void combineLayerShapes(const ViaLayerShape& other,
                           ViaLayerShape& shapes) const;
 
   void addToViaReport(DbVia* via, ViaReport& report) const;
+
+ private:
+  std::shared_ptr<ViaGenerator> generator_;
 };
 
 // Used as the base class for actual vias like TechVias and GenerateVias
