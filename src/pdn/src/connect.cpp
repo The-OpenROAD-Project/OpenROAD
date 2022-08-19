@@ -667,7 +667,7 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                      utl::PDN,
                      "Via",
                      3,
-                     "Generate via rule deamed not valid: {}",
+                     "Generate via rule deemed not valid: {}",
                      rule->getName());
           continue;
         }
@@ -709,7 +709,7 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                      utl::PDN,
                      "Via",
                      3,
-                     "Tech via rule deamed not valid: {}",
+                     "Tech via rule deemed not valid: {}",
                      rule->getName());
           continue;
         }
