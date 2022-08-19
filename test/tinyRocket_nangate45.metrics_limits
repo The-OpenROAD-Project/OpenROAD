@@ -17,7 +17,7 @@
  ,"DRT::tns_max" : "-484.72339999999997"
  ,"DRT::clock_skew" : "0.0855180284126064"
  ,"DRT::max_slew_slack" : "0"
- ,"DRT::max_capacitance_slack" : "0"
+ ,"DRT::max_capacitance_slack" : "-3"
  ,"DRT::max_fanout_slack" : "0"
  ,"DRT::clock_period" : "2.03"
 }
