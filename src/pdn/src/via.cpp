@@ -1272,7 +1272,7 @@ bool ViaGenerator::checkMinEnclosure() const
              1,
              "Bottom layer {} with width {:.4f} has {} rules and enclosures of {:4f} and {:4f}.",
              getBottomLayer()->getName(),
-             getLowerWidth(false) / dbu,
+             getLowerWidth() / dbu,
              bottom_rules.size(),
              bottom_enclosure_->getX() / dbu,
              bottom_enclosure_->getY() / dbu);
@@ -1297,7 +1297,7 @@ bool ViaGenerator::checkMinEnclosure() const
              1,
              "Top layer {} with width {:.4f} has {} rules and enclosures of {:4f} and {:4f}.",
              getTopLayer()->getName(),
-             getUpperWidth(false) / dbu,
+             getUpperWidth() / dbu,
              top_rules.size(),
              top_enclosure_->getX() / dbu,
              top_enclosure_->getY() / dbu);
@@ -1397,29 +1397,35 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
                               bottom_enc,
                               top_enc);
 
-      if (!checkConstraints()) {
-        continue;
-      }
+      odb::Rect save_lower = lower_rect_;
+      odb::Rect save_upper = upper_rect_;
+      lower_rect_ = odb::Rect(0, 0,
+                              getGeneratorWidth(true), getGeneratorHeight(true));
+      upper_rect_ = odb::Rect(0, 0,
+                              getGeneratorWidth(false), getGeneratorHeight(false));
+      if (checkConstraints()) {
+        bool save = best_cuts == 0;
 
-      bool save = best_cuts == 0;
-
-      const int cuts = getTotalCuts();
-      if (best_cuts == cuts) {
-        // if same cut area, pick smaller enclosure
-        if (bottom_enc.isPreferredOver(best_bot_enc, getBottomLayer())) {
-          save = true;
-        } else if (top_enc.isPreferredOver(best_top_enc, getTopLayer())) {
+        const int cuts = getTotalCuts();
+        if (best_cuts == cuts) {
+          // if same cut area, pick smaller enclosure
+          if (bottom_enc.isPreferredOver(best_bot_enc, getBottomLayer())) {
+            save = true;
+          } else if (top_enc.isPreferredOver(best_top_enc, getTopLayer())) {
+            save = true;
+          }
+        } else if (best_cuts < cuts) {
           save = true;
         }
-      } else if (best_cuts < cuts) {
-        save = true;
-      }
 
-      if (save) {
-        best_bot_enc = &bottom_enc;
-        best_top_enc = &top_enc;
-        best_cuts = cuts;
+        if (save) {
+          best_bot_enc = &bottom_enc;
+          best_top_enc = &top_enc;
+          best_cuts = cuts;
+        }
       }
+      lower_rect_ = save_lower;
+      upper_rect_ = save_upper;
     }
   }
 
