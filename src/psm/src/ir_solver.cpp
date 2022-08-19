@@ -725,11 +725,7 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       if (i == 0) {
         // Before the first existing node
         i = 1;
-        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-          v_prev= x_loc1;
-        } else {
-          v_prev= y_loc1;
-        }
+        v_prev= x_loc1; //assumes bottom layer is always horizontal
       } else {
         v_prev = (node_prev.first).first;
       }
@@ -737,11 +733,7 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       if (length > node_density_) {
         for (int v_i = v_prev+ node_density_; v_i < v_itr;
                v_i += node_density_) {
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            Gmat_->setNode({v_i, y_loc1}, l);
-          } else {
-            Gmat_->setNode({x_loc1, v_i}, l);
-          }
+          Gmat_->setNode({v_i, y_loc1}, l); //assumes bottom layer is always horizontal
         }
       }
       node_prev = node_itr;
@@ -749,20 +741,12 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
     // from the last node to the end
     if(i == 1) {
       int v_loc;
-      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-        v_loc = x_loc2;
-      } else {
-        v_loc = y_loc2;
-      }
+      v_loc = x_loc2; //assumes bottom layer is always horizontal
       length = v_loc - v_itr;
       if (length > node_density_) {
         for (int v_i = v_itr + node_density_; v_i < v_loc;
                v_i += node_density_) {
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            Gmat_->setNode({v_i, y_loc1}, l);
-          } else {
-            Gmat_->setNode({x_loc1, v_i}, l);
-          }
+          Gmat_->setNode({v_i, y_loc1}, l); //assumes bottom layer is always horizontal
         }
       }
     }
