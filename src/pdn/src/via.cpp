@@ -59,7 +59,7 @@ Enclosure::Enclosure(int x, int y)
 {
 }
 
-Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut)
+Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut, odb::dbTechLayerDir direction)
   : x_(0),
     y_(0),
     allow_swap_(true)
@@ -71,8 +71,20 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* l
     swap(layer);
     break;
   case odb::dbTechLayerCutEnclosureRule::EOL:
-    x_ = std::max(rule->getFirstOverhang(), rule->getSecondOverhang());
-    y_ = x_;
+    switch (direction) {
+    case odb::dbTechLayerDir::HORIZONTAL:
+      x_ = rule->getFirstOverhang();
+      y_ = rule->getSecondOverhang();
+      break;
+    case odb::dbTechLayerDir::VERTICAL:
+      x_ = rule->getSecondOverhang();
+      y_ = rule->getFirstOverhang();
+      break;
+    case odb::dbTechLayerDir::NONE:
+      x_ = std::max(rule->getFirstOverhang(), rule->getSecondOverhang());
+      y_ = x_;
+      break;
+    }
     allow_swap_ = false;
     break;
   case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
@@ -1322,20 +1334,40 @@ bool ViaGenerator::appliesToLayers(odb::dbTechLayer* lower,
 
 void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
 {
-  auto populate_enc = [this](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
+  auto populate_enc = [this](odb::dbTechLayer* layer,
+                             int width,
+                             odb::dbTechLayerDir direction,
+                             bool above,
+                             std::vector<Enclosure>& encs) {
     for (auto* rule : getCutMinimumEnclosureRules(width, above)) {
-      encs.emplace_back(rule, layer, getCut());
+      encs.emplace_back(rule, layer, getCut(), direction);
     }
   };
 
   populate_enc(getBottomLayer(),
                getLowerWidth(false),
+               getRectDirection(lower_rect_),
                false,
                bottom);
   populate_enc(getTopLayer(),
                getUpperWidth(false),
+               getRectDirection(upper_rect_),
                true,
                top);
+}
+
+odb::dbTechLayerDir ViaGenerator::getRectDirection(const odb::Rect& rect) const
+{
+  const int height = rect.dy();
+  const int width = rect.dx();
+
+  if (width < height) {
+    return odb::dbTechLayerDir::VERTICAL;
+  }
+  if (height < width) {
+    return odb::dbTechLayerDir::HORIZONTAL;
+  }
+  return odb::dbTechLayerDir::NONE;
 }
 
 bool ViaGenerator::build(bool use_bottom_min_enclosure,

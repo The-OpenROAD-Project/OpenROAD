@@ -92,7 +92,10 @@ class Enclosure
  public:
   Enclosure();
   Enclosure(int x, int y);
-  Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut);
+  Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
+            odb::dbTechLayer* layer,
+            const odb::Rect& cut,
+            odb::dbTechLayerDir direction);
   Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer);
 
   int getX() const { return x_; }
@@ -565,6 +568,8 @@ class ViaGenerator
                                bool use_top_min_enclosure,
                                const Enclosure& bottom_min_enclosure,
                                const Enclosure& top_min_enclosure);
+
+  odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
 };
 
 // Class to build a generate via, either as a single group or as an array
