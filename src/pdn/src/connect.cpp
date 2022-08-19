@@ -886,6 +886,9 @@ void Connect::printViaReport() const
 
   ViaReport report;
   for (const auto& [via_index, via] : vias_) {
+    if (via == nullptr) {
+      continue;
+    }
     for (const auto& [via_name, count] : via->getViaReport()) {
       report[via_name] += count;
     }
