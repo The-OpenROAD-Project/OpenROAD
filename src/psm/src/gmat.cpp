@@ -87,7 +87,7 @@ vector<Node*> GMat::getNodes(int layer,
   for (auto x_itr = layer_map.lower_bound(x_min);
        x_itr != layer_map.end() && x_itr->first <= x_max;
        ++x_itr) {
-    map<int, Node*> y_itr_map = x_itr->second;
+    const map<int, Node*>& y_itr_map = x_itr->second;
     for (auto y_map_itr = y_itr_map.lower_bound(y_min);
          y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
          ++y_map_itr)

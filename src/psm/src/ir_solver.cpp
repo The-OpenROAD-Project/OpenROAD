@@ -731,9 +731,14 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       }
       length = v_itr - v_prev;
       if (length > node_density_) {
-        for (int v_i = v_prev+ node_density_; v_i < v_itr;
-               v_i += node_density_) {
-          Gmat_->setNode({v_i, y_loc1}, l); //assumes bottom layer is always horizontal
+        int num_nodes = length / node_density_; //truncated integer will always be>1
+        if(length % node_density_ == 0){
+          num_nodes -=1;
+        }
+        float dist= float(length)/(num_nodes+1); //evenly distribute the length among nodes
+        for(int v_i = 1; v_i <=num_nodes; v_i++){
+          int loc = v_prev + v_i*dist;// ensures that the rounding is distributed though the nodes.
+          Gmat_->setNode({loc, y_loc1}, l); //assumes bottom layer is always horizontal
         }
       }
       node_prev = node_itr;
@@ -744,9 +749,14 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       v_loc = x_loc2; //assumes bottom layer is always horizontal
       length = v_loc - v_itr;
       if (length > node_density_) {
-        for (int v_i = v_itr + node_density_; v_i < v_loc;
-               v_i += node_density_) {
-          Gmat_->setNode({v_i, y_loc1}, l); //assumes bottom layer is always horizontal
+        int num_nodes = length / node_density_; //truncated integer will always be>1
+        if(length % node_density_ == 0){
+          num_nodes -=1;
+        }
+        float dist = float(length)/(num_nodes+1); //evenly distribute the length among nodes
+        for(int v_i = 1; v_i <=num_nodes; v_i++){
+          int loc = v_itr + v_i*dist;// ensures that the rounding is distributed though the nodes.
+          Gmat_->setNode({loc, y_loc1}, l); //assumes bottom layer is always horizontal
         }
       }
     }
