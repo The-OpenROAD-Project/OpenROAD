@@ -1183,10 +1183,12 @@ bool ViaGenerator::checkConstraints() const
 
 bool ViaGenerator::checkMinCuts() const
 {
-  const bool lower = checkMinCuts(getBottomLayer(), getLowerWidth());
-  const bool upper = checkMinCuts(getTopLayer(), getUpperWidth());
+  const bool lower_w = checkMinCuts(getBottomLayer(), getLowerWidth());
+  const bool lower_h = checkMinCuts(getBottomLayer(), getLowerHeight());
+  const bool upper_w = checkMinCuts(getTopLayer(), getUpperWidth());
+  const bool upper_h = checkMinCuts(getTopLayer(), getUpperHeight());
 
-  return lower && upper;
+  return lower_w && lower_h && upper_w && upper_h;
 }
 
 bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
@@ -1825,20 +1827,36 @@ odb::dbTech* ViaGenerator::getTech() const
   return getBottomLayer()->getTech();
 }
 
-int ViaGenerator::getLowerWidth(bool only_real) const
+int ViaGenerator::getRectSize(const odb::Rect& rect, bool min, bool only_real) const
 {
   if (!only_real && isSplitCutArray()) {
     return 0;
   }
-  return lower_rect_.minDXDY();
+  if (min) {
+    return rect.minDXDY();
+  } else {
+    return rect.maxDXDY();
+  }
+}
+
+int ViaGenerator::getLowerWidth(bool only_real) const
+{
+  return getRectSize(lower_rect_, true, only_real);
+}
+
+int ViaGenerator::getLowerHeight(bool only_real) const
+{
+  return getRectSize(lower_rect_, false, only_real);
 }
 
 int ViaGenerator::getUpperWidth(bool only_real) const
 {
-  if (!only_real && isSplitCutArray()) {
-    return 0;
-  }
-  return upper_rect_.minDXDY();
+  return getRectSize(upper_rect_, true, only_real);
+}
+
+int ViaGenerator::getUpperHeight(bool only_real) const
+{
+  return getRectSize(upper_rect_, false, only_real);
 }
 
 DbVia* ViaGenerator::generate(odb::dbBlock* block) const

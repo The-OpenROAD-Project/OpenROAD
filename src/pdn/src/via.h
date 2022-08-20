@@ -524,6 +524,8 @@ class ViaGenerator
 
   int getLowerWidth(bool only_real = true) const;
   int getUpperWidth(bool only_real = true) const;
+  int getLowerHeight(bool only_real = true) const;
+  int getUpperHeight(bool only_real = true) const;
 
   void determineCutSpacing();
 
@@ -580,6 +582,8 @@ class ViaGenerator
                                const Enclosure& top_min_enclosure);
 
   odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
+
+  int getRectSize(const odb::Rect& rect, bool min, bool only_real) const;
 };
 
 // Class to build a generate via, either as a single group or as an array
