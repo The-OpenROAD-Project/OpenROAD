@@ -933,7 +933,9 @@ std::set<odb::dbInst*> Grid::getInstances() const
   for (auto* comp : getGridComponents()) {
     if (comp->type() == GridComponent::PadConnect) {
       auto* pad_connect = dynamic_cast<PadDirectConnectionStraps*>(comp);
-      insts.insert(pad_connect->getITerm()->getInst());
+      if (pad_connect != nullptr) {
+        insts.insert(pad_connect->getITerm()->getInst());
+      }
     }
   }
 
