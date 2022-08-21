@@ -56,7 +56,7 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
                              odb::dbDatabase* db,
                              utl::Logger* logger)
   : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger),
-    unique_diode_index_(1)
+    unique_diode_index_(1), illegal_diode_placement_count_(0)
 {
   block_ = db_->getChip()->getBlock();
 }
