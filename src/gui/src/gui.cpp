@@ -1085,7 +1085,7 @@ int startGui(int& argc,
         // guaranteed to be initialized.
         main_window->init(open_road->getSta());
         // announce design created to ensure GUI gets setup
-        open_road->designCreated();
+        main_window->postReadDb(main_window->getDb());
       });
 
   // Exit the app if someone chooses exit from the menu in the window
