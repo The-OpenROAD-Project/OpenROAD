@@ -731,7 +731,7 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       }
       length = v_itr - v_prev;
       if (length > node_density_) {
-        int num_nodes = length / node_density_; //truncated integer will always be>1
+        int num_nodes = length / node_density_; //truncated integer will always be >= 1
         if(length % node_density_ == 0){
           num_nodes -=1;
         }
