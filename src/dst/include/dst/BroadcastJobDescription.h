@@ -38,7 +38,7 @@ namespace dst {
 class BroadcastJobDescription : public JobDescription
 {
  public:
-  BroadcastJobDescription() {}
+  BroadcastJobDescription() : workers_count_(0) {}
   void setWorkersCount(unsigned short count) { workers_count_ = count; }
   unsigned short getWorkersCount() const { return workers_count_; }
 
