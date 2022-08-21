@@ -122,7 +122,7 @@ class IRSolver
   // of wires for all PDN tasks
   std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of vias in the G matrix
-  void createGmatViaNodes(const std:: vector<odb::dbSBox*>& power_wires);
+  void createGmatViaNodes(const std::vector<odb::dbSBox*>& power_wires);
   //! Function to create the nodes of wires in the G matrix
   void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
                            const std::vector<odb::Rect>& macros);
@@ -137,7 +137,6 @@ class IRSolver
   bool checkConnectivity(bool connection_only = false);
   bool checkValidR(double R);
   bool getResult();
-
 
   float supply_voltage_src;
   //! Worst case voltage at the lowest layer nodes

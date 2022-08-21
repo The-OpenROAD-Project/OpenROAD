@@ -30,6 +30,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include "ir_solver.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -50,7 +52,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "get_power.h"
 #include "get_voltage.h"
 #include "gmat.h"
-#include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
 
@@ -661,13 +662,13 @@ void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
 }
 
 void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
-                               const vector<odb::Rect>& macros)
+                                   const vector<odb::Rect>& macros)
 {
   for (auto curWire : power_wires) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
     if (curWire->isVia())
-     continue;
+      continue;
     dbTechLayer* wire_layer = curWire->getTechLayer();
     const int l = wire_layer->getRoutingLevel();
     dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
@@ -716,7 +717,8 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
 
     // special case for bottom layers we design a dense grid at a fixed
     // frequency
-    auto node_map = Gmat_->getNodes(l,layer_dir,x_loc1,x_loc2,y_loc1,y_loc2);
+    auto node_map
+        = Gmat_->getNodes(l, layer_dir, x_loc1, x_loc2, y_loc1, y_loc2);
     pair<pair<int, int>, Node*> node_prev;
     int v_itr, v_prev, length;
     int i = 0;
@@ -725,42 +727,52 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
       if (i == 0) {
         // Before the first existing node
         i = 1;
-        v_prev= x_loc1; //assumes bottom layer is always horizontal
+        v_prev = x_loc1;  // assumes bottom layer is always horizontal
       } else {
         v_prev = (node_prev.first).first;
       }
       length = v_itr - v_prev;
       if (length > node_density_) {
-        int num_nodes = length / node_density_; //truncated integer will always be >= 1
-        if(length % node_density_ == 0){
-          num_nodes -=1;
+        int num_nodes
+            = length / node_density_;  // truncated integer will always be >= 1
+        if (length % node_density_ == 0) {
+          num_nodes -= 1;
         }
-        float dist= float(length)/(num_nodes+1); //evenly distribute the length among nodes
-        for(int v_i = 1; v_i <=num_nodes; v_i++){
-          int loc = v_prev + v_i*dist;// ensures that the rounding is distributed though the nodes.
-          Gmat_->setNode({loc, y_loc1}, l); //assumes bottom layer is always horizontal
+        float dist
+            = float(length)
+              / (num_nodes + 1);  // evenly distribute the length among nodes
+        for (int v_i = 1; v_i <= num_nodes; v_i++) {
+          int loc = v_prev + v_i * dist;  // ensures that the rounding is
+                                          // distributed though the nodes.
+          Gmat_->setNode({loc, y_loc1},
+                         l);  // assumes bottom layer is always horizontal
         }
       }
       node_prev = node_itr;
     }
     // from the last node to the end
-    if(i == 1) {
+    if (i == 1) {
       int v_loc;
-      v_loc = x_loc2; //assumes bottom layer is always horizontal
+      v_loc = x_loc2;  // assumes bottom layer is always horizontal
       length = v_loc - v_itr;
       if (length > node_density_) {
-        int num_nodes = length / node_density_; //truncated integer will always be>1
-        if(length % node_density_ == 0){
-          num_nodes -=1;
+        int num_nodes
+            = length / node_density_;  // truncated integer will always be>1
+        if (length % node_density_ == 0) {
+          num_nodes -= 1;
         }
-        float dist = float(length)/(num_nodes+1); //evenly distribute the length among nodes
-        for(int v_i = 1; v_i <=num_nodes; v_i++){
-          int loc = v_itr + v_i*dist;// ensures that the rounding is distributed though the nodes.
-          Gmat_->setNode({loc, y_loc1}, l); //assumes bottom layer is always horizontal
+        float dist
+            = float(length)
+              / (num_nodes + 1);  // evenly distribute the length among nodes
+        for (int v_i = 1; v_i <= num_nodes; v_i++) {
+          int loc = v_itr + v_i * dist;  // ensures that the rounding is
+                                         // distributed though the nodes.
+          Gmat_->setNode({loc, y_loc1},
+                         l);  // assumes bottom layer is always horizontal
         }
       }
     }
-  }// for power_wires
+  }  // for power_wires
 }
 
 //! Function to create the connections of the G matrix

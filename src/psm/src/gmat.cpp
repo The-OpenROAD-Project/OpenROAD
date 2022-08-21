@@ -31,10 +31,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "gmat.h"
+
 #include <iostream>
 #include <vector>
 
-#include "gmat.h"
 #include "node.h"
 
 namespace psm {
@@ -99,11 +100,11 @@ vector<Node*> GMat::getNodes(int layer,
 //! Function to return a vector of pointers to the nodes within an area sorted
 // by direction
 map<pair<int, int>, Node*> GMat::getNodes(int layer,
-                    odb::dbTechLayerDir::Value layer_dir,
-                    int x_min,
-                    int x_max,
-                    int y_min,
-                    int y_max)
+                                          odb::dbTechLayerDir::Value layer_dir,
+                                          int x_min,
+                                          int x_max,
+                                          int y_min,
+                                          int y_max)
 {
   NodeMap& layer_map = layer_maps_[layer];
   if (x_min > x_max || y_min > y_max)
@@ -121,10 +122,10 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
          ++y_map_itr) {
       if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
         node_map.insert(make_pair(make_pair(x_itr->first, y_map_itr->first),
-                        y_map_itr->second));
+                                  y_map_itr->second));
       } else {
         node_map.insert(make_pair(make_pair(y_map_itr->first, x_itr->first),
-                        y_map_itr->second));
+                                  y_map_itr->second));
       }
     }
   }
@@ -346,7 +347,7 @@ void GMat::generateStripeConductance(int layer,
                   50,
                   "Creating stripe condunctance with invalid inputs. Min and "
                   "max values for X or Y are interchanged.");
-  auto node_map = getNodes(layer,layer_dir,x_min,x_max,y_min,y_max);
+  auto node_map = getNodes(layer, layer_dir, x_min, x_max, y_min, y_max);
   int i = 0;
   pair<pair<int, int>, Node*> node_prev;
   for (auto& node_itr : node_map) {

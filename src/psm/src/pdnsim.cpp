@@ -30,6 +30,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include "psm/pdnsim.h"
+
 #include <tcl.h>
 
 #include <fstream>
@@ -45,7 +47,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
-#include "psm/pdnsim.h"
 #include "utl/Logger.h"
 
 namespace psm {
