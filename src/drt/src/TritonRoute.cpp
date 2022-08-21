@@ -1005,7 +1005,7 @@ void TritonRoute::reportDRC(const string& file_name,
         std::string violName;
         if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
             && layerType == dbTechLayerType::CUT)
-          violName = "CShort";
+          violName = "Cut Short";
         else
           violName = con->getViolName();
         drcRpt << violName;

@@ -86,58 +86,58 @@ class frConstraint
       case frConstraintTypeEnum::frcShortConstraint:
         return "Short";
       case frConstraintTypeEnum::frcMinWidthConstraint:
-        return "MinWid";
+        return "Min Width";
 
       case frConstraintTypeEnum::frcSpacingConstraint:
-        return "MetSpc";
+        return "Metal Spacing";
 
       case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
-        return "EOLSpc";
+        return "EOL Spacing";
 
       case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
-        return "MetSpc";
+        return "Metal Spacing";
 
       case frConstraintTypeEnum::frcCutSpacingConstraint:
-        return "CutSpc";
+        return "Cut Spacing";
 
       case frConstraintTypeEnum::frcMinStepConstraint:
-        return "MinStp";
+        return "Min Step";
 
       case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
-        return "NSMet";
+        return "NS Metal";
 
       case frConstraintTypeEnum::frcSpacingSamenetConstraint:
-        return "MetSpc";
+        return "Metal Spacing";
 
       case frConstraintTypeEnum::frcOffGridConstraint:
-        return "OffGrid";
+        return "Off Grid";
 
       case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
-        return "MinHole";
+        return "Min Hole";
 
       case frConstraintTypeEnum::frcAreaConstraint:
-        return "MinArea";
+        return "Min Area";
 
       case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
-        return "CornerSpc";
+        return "Corner Spacing";
 
       case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
-        return "CutSpc";
+        return "Cut Spacing";
 
       case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
-        return "RectOnly";
+        return "Rect Only";
 
       case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
         return "RightWayOnGridOnly";
 
       case frConstraintTypeEnum::frcLef58MinStepConstraint:
-        return "MinStp";
+        return "Min Step";
 
       case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
-        return "MetSpcInf";
+        return "MetSpacingInf";
 
       case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
-        return "SpacingEndOfLineParallelEdge";
+        return "SpacingEOLParallelEdge";
 
       case frConstraintTypeEnum::frcSpacingTableConstraint:
         return "SpacingTable";
@@ -167,7 +167,7 @@ class frConstraint
         return "Lef58CutSpacingLayer";
 
       case frConstraintTypeEnum::frcMinimumcutConstraint:
-        return "Minimumcut";
+        return "Minimum Cut";
 
       case frConstraintTypeEnum::frcLef58CornerSpacingConcaveCornerConstraint:
         return "Lef58CornerSpacingConcaveCorner";
@@ -217,9 +217,8 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
         return "Lef58EolKeepOut";
-      default:
-        return "UNKNOWN";
     }
+    return "";
   }
 
  protected:

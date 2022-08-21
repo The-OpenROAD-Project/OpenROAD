@@ -1836,27 +1836,27 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         if (!marker->getConstraint())
           continue;
         auto type = marker->getConstraint()->getViolName();
+        if (relabel.find(type) != relabel.end())
+          type = relabel.at(type);
         violations[type][marker->getLayerNum()]++;
         layers.insert(marker->getLayerNum());
       }
-      std::string line = fmt::format("{:<15}", "Viol/Layer");
+      std::string line = fmt::format("{:>15}", "Viol/Layer");
       for (auto lNum : layers) {
         std::string lName = getTech()->getLayer(lNum)->getName();
         if (lName.size() >= 7) {
           lName = lName.substr(0, 2) + ".." + lName.substr(lName.size() - 2, 2);
         }
-        line += fmt::format("{:<7}", lName);
+        line += fmt::format("{:>7}", lName);
       }
       logger_->report(line);
       for (auto [type, typeViolations] : violations) {
         std::string typeName = type;
-        if (relabel.find(typeName) != relabel.end())
-          typeName = relabel.at(typeName);
         if (typeName.size() >= 15)
           typeName = typeName.substr(0, 12) + "..";
-        line = fmt::format("{:<15}", typeName);
+        line = fmt::format("{:>15}", typeName);
         for (auto lNum : layers) {
-          line += fmt::format("{:<7}", typeViolations[lNum]);
+          line += fmt::format("{:>7}", typeViolations[lNum]);
         }
         logger_->report(line);
       }
