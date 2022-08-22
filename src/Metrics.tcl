@@ -35,19 +35,38 @@
 
 namespace eval sta {
 
-define_cmd_args "report_tns_metric" {}
+define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
 proc report_tns_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_tns_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "max"
+  set metric_name "timing__setup__tns"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__tns"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 18 "both -steup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [total_negative_slack_cmd  $min_max] $sta_report_default_digits]"
 }
 
-
-define_cmd_args "report_worst_slack_metric" {}
+define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
 proc report_worst_slack_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_worst_slack_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "max"
+  set metric_name "timing__setup__ws"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__ws"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 17 "both -steup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [worst_slack_cmd $min_max] $sta_report_default_digits]"
 }
 
 define_cmd_args "report_erc_metrics" {}
@@ -129,7 +148,7 @@ proc report_design_area_metrics {args} {
     set wid [$inst_master getWidth]
     set ht [$inst_master getHeight]
     set inst_area  [expr $wid * $ht]
-    set total_area [expr $total_area + $inst_area] 
+    set total_area [expr $total_area + $inst_area]
     set num_insts [expr $num_insts + 1]
 
     if { [$inst_master isBlock] } {
