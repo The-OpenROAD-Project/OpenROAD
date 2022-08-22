@@ -149,6 +149,9 @@ Resizer::Resizer() :
   max_area_(0.0),
   openroad_(nullptr),
   logger_(nullptr),
+  stt_builder_(nullptr),
+  global_router_(nullptr),
+  incr_groute_(nullptr),
   gui_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
@@ -1261,16 +1264,14 @@ Resizer::findTargetLoad(LibertyCell *cell,
     while (abs(load_cap1 - load_cap2) > max(load_cap1, load_cap2) * tol) {
       if (diff2 < 0.0) {
         load_cap1 = load_cap2;
-        diff1 = diff2;
         load_cap2 *= 2;
         diff2 = gateSlewDiff(cell, arc, model, in_slew, load_cap2, out_slew);
       }
       else {
         double load_cap3 = (load_cap1 + load_cap2) / 2.0;
-        double diff3 = gateSlewDiff(cell, arc, model, in_slew, load_cap3, out_slew);
+        const double diff3 = gateSlewDiff(cell, arc, model, in_slew, load_cap3, out_slew);
         if (diff3 < 0.0) {
           load_cap1 = load_cap3;
-          diff1 = diff3;
         }
         else {
           load_cap2 = load_cap3;
