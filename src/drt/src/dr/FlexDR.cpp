@@ -1841,7 +1841,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         violations[type][marker->getLayerNum()]++;
         layers.insert(marker->getLayerNum());
       }
-      std::string line = fmt::format("{:>15}", "Viol/Layer");
+      std::string line = fmt::format("{:<15}", "Viol/Layer");
       for (auto lNum : layers) {
         std::string lName = getTech()->getLayer(lNum)->getName();
         if (lName.size() >= 7) {
@@ -1854,7 +1854,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         std::string typeName = type;
         if (typeName.size() >= 15)
           typeName = typeName.substr(0, 12) + "..";
-        line = fmt::format("{:>15}", typeName);
+        line = fmt::format("{:<15}", typeName);
         for (auto lNum : layers) {
           line += fmt::format("{:>7}", typeViolations[lNum]);
         }
