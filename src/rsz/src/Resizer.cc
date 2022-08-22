@@ -149,6 +149,9 @@ Resizer::Resizer() :
   max_area_(0.0),
   openroad_(nullptr),
   logger_(nullptr),
+  stt_builder_(nullptr),
+  global_router_(nullptr),
+  incr_groute_(nullptr),
   gui_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
@@ -495,7 +498,7 @@ Resizer::bufferInput(const Pin *top_pin,
                                 parent, pin_loc);
   inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     // Leave input port pin connected to input_net.
@@ -535,8 +538,9 @@ Resizer::bufferOutputs()
         && !vertex->isConstant()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
-        && hasPins(net))
+        && hasPins(net)) {
       bufferOutput(pin, buffer_lowest_drive_);
+    }
   }
   delete port_iter;
   updateParasitics();
@@ -581,13 +585,13 @@ Resizer::bufferOutput(Pin *top_pin,
   string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
   Net *buffer_in = makeUniqueNet();
+  Point pin_loc = db_network_->location(top_pin);
   Instance *buffer = makeBuffer(buffer_cell,
                                 buffer_name.c_str(),
-                                parent,
-                                db_network_->location(top_pin));
+                                parent, pin_loc);
   inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter = network->pinIterator(output_net);
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(output_net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (pin != top_pin) {
@@ -1260,16 +1264,14 @@ Resizer::findTargetLoad(LibertyCell *cell,
     while (abs(load_cap1 - load_cap2) > max(load_cap1, load_cap2) * tol) {
       if (diff2 < 0.0) {
         load_cap1 = load_cap2;
-        diff1 = diff2;
         load_cap2 *= 2;
         diff2 = gateSlewDiff(cell, arc, model, in_slew, load_cap2, out_slew);
       }
       else {
         double load_cap3 = (load_cap1 + load_cap2) / 2.0;
-        double diff3 = gateSlewDiff(cell, arc, model, in_slew, load_cap3, out_slew);
+        const double diff3 = gateSlewDiff(cell, arc, model, in_slew, load_cap3, out_slew);
         if (diff3 < 0.0) {
           load_cap1 = load_cap3;
-          diff1 = diff3;
         }
         else {
           load_cap2 = load_cap3;

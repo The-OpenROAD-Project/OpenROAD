@@ -15,7 +15,7 @@
 Net clk
   clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
     met2
-    PAR:  450.51* Ratio:  400.00 (S.Area)
+    PAR:  451.78* Ratio:  400.00 (S.Area)
 
 
 [INFO ANT-0002] Found 1 net violations.

@@ -166,8 +166,6 @@ void FlexGR::searchRepairMacro(int iter,
     cout << suffix << " optimization iteration for Macro..." << endl;
   }
 
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
-
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -266,8 +264,6 @@ void FlexGR::searchRepair(int iter,
     }
     cout << suffix << " optimization iteration ..." << endl;
   }
-
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);

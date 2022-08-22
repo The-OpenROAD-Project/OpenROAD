@@ -56,7 +56,7 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
                              odb::dbDatabase* db,
                              utl::Logger* logger)
   : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger),
-    unique_diode_index_(1)
+    unique_diode_index_(1), illegal_diode_placement_count_(0)
 {
   block_ = db_->getChip()->getBlock();
 }
@@ -104,39 +104,47 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
 {
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
+    Net* net = grouter_->getNet(db_net);
     odb::dbTech* tech = db_->getTech();
     odb::dbWireEncoder wire_encoder;
     wire_encoder.begin(wire);
-
+    RoutePtPins route_pt_pins = findRoutePtPins(net);
     std::unordered_set<GSegment, GSegmentHash> wire_segments;
     for (GSegment& seg : route) {
       if (std::abs(seg.init_layer - seg.final_layer) > 1) {
         logger_->error(GRT, 68, "Global route segment not valid.");
       }
-
       if (wire_segments.find(seg) == wire_segments.end()) {
         int x1 = seg.init_x;
         int y1 = seg.init_y;
-        int x2 = seg.final_x;
-        int y2 = seg.final_y;
         int l1 = seg.init_layer;
         int l2 = seg.final_layer;
 
-        odb::dbTechLayer* layer = tech->findRoutingLayer(l1);
-
-        if (l1 == l2) {  // Add wire
+        if (seg.isVia()) {
+          int bottom_layer = std::min(l1, l2);
+          odb::dbTechLayer* bottom_tech_layer = tech->findRoutingLayer(bottom_layer);
+          wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
+          wire_encoder.addPoint(x1, y1);
+          int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+          addWireTerms(net, route, x1, y1, bottom_layer, bottom_tech_layer,
+                       jct_id, route_pt_pins, wire_encoder);
+          wire_segments.insert(seg);
+        }
+        else {
+          // Add wire
+          int x2 = seg.final_x;
+          int y2 = seg.final_y;
           if (x1 != x2 || y1 != y2) {
-            wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addPoint(x2, y2);
+            odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
+            wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
+            int jct_id1 = wire_encoder.addPoint(x1, y1);
+            int jct_id2 = wire_encoder.addPoint(x2, y2);
+            addWireTerms(net, route, x1, y1, l1, tech_layer,
+                         jct_id1, route_pt_pins, wire_encoder);
+            addWireTerms(net, route, x2, y2, l1, tech_layer,
+                         jct_id2, route_pt_pins, wire_encoder);
             wire_segments.insert(seg);
           }
-        } else {  // Add via
-          int bottom_layer = std::min(l1, l2);
-          wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-          wire_encoder.addPoint(x1, y1);
-          wire_encoder.addTechVia(default_vias[bottom_layer]);
-          wire_segments.insert(seg);
         }
       }
     }
@@ -150,6 +158,89 @@ odb::dbWire* RepairAntennas::makeNetWire(odb::dbNet* db_net,
     // suppress gcc warning
     return nullptr;
   }
+}
+
+RoutePtPins RepairAntennas::findRoutePtPins(Net* net)
+{
+  RoutePtPins route_pt_pins;
+  for (Pin& pin : net->getPins()) {
+    int top_layer = pin.getTopLayer();
+    odb::Point grid_pt = pin.getOnGridPosition();
+    route_pt_pins[RoutePt(grid_pt.x(), grid_pt.y(), top_layer)].push_back(&pin);
+  }
+  return route_pt_pins;
+}
+    
+void RepairAntennas::addWireTerms(Net *net,
+                                  GRoute& route,
+                                  int grid_x,
+                                  int grid_y,
+                                  int layer,
+                                  odb::dbTechLayer *tech_layer,
+                                  int jct_id,
+                                  RoutePtPins &route_pt_pins,
+                                  odb::dbWireEncoder &wire_encoder)
+{
+  auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, layer));
+  if (itr != route_pt_pins.end()) {
+    for (const Pin* pin : itr->second) {
+      int top_layer = pin->getTopLayer();
+      std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(top_layer);
+      odb::Point grid_pt = pin->getOnGridPosition();
+      // create the local connection only when the global segment
+      // doesn't overlap the pin
+      if (!pinOverlapsGSegment(grid_pt, top_layer, pin_boxes, route)) {
+        odb::Point pin_pt;
+        int min_dist = std::numeric_limits<int>::max();
+        for (const odb::Rect& pin_box : pin_boxes) {
+          odb::Point pos = grouter_->getRectMiddle(pin_box);
+          int dist = odb::Point::manhattanDistance(pos, pin_pt);
+          if (dist < min_dist) {
+            min_dist = dist;
+            pin_pt = pos;
+          }
+        }
+        wire_encoder.newPathVirtualWire(jct_id, tech_layer, odb::dbWireType::ROUTED);
+        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
+      }
+    }
+  }
+}
+
+bool RepairAntennas::pinOverlapsGSegment(const odb::Point& pin_position,
+                                         const int pin_layer,
+                                         const std::vector<odb::Rect>& pin_boxes,
+                                         const GRoute& route)
+{
+
+  // check if pin position on grid overlaps with the pin shape
+  for (const odb::Rect& box : pin_boxes) {
+    if (box.overlaps(pin_position)) {
+      return true;
+    }
+  }
+
+  // check if pin position on grid overlaps with at least one GSegment
+  for (const odb::Rect& box : pin_boxes) {
+    for (const GSegment& seg : route) {
+      if (seg.init_layer == seg.final_layer &&  // ignore vias
+          seg.init_layer == pin_layer) {
+        int x0 = std::min(seg.init_x, seg.final_x);
+        int y0 = std::min(seg.init_y, seg.final_y);
+        int x1 = std::max(seg.init_x, seg.final_x);
+        int y1 = std::max(seg.init_y, seg.final_y);
+        odb::Rect seg_rect(x0, y0, x1, y1);
+
+        if (box.intersects(seg_rect)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 void RepairAntennas::destroyNetWires()

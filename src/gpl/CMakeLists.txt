@@ -35,8 +35,6 @@
 
 include("openroad")
 
-option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
-
 # For Multithread
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
@@ -62,10 +60,10 @@ target_sources(gpl
     src/fftsg.cpp
     src/fftsg2d.cpp
     src/point.cpp
-    src/plot.cpp
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
+    src/solver.cpp
 )
 
 messages(TARGET gpl)
@@ -86,25 +84,32 @@ target_link_libraries(gpl
     grt
 )
 
-# CIMG_USE case
-if( USE_CIMG_LIB )
-  find_package(X11 REQUIRED)
-  find_package(JPEG REQUIRED)
-  if ( X11_FOUND AND JPEG_FOUND )
-    target_link_libraries( gpl
+# Allow users to use GPU or not
+option(GPU "Enable GPU" OFF)
+if (GPU)
+  message(STATUS "GPU is enabled")
+  # find_package(CUDA) should be replaced by "FindCUDAToolkit" for CMAKE verison >= 3.17. 
+  # See https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html. 
+  # find_package(CUDA) or FindCUDA is deprecated since vision 3.10.
+  find_package(CUDA QUIET COMPONENTS Core Widgets)
+  if (CUDA_FOUND)
+    message(STATUS "CUDA is found")
+    enable_language(CUDA)
+    target_sources(gpl PRIVATE src/gpuSolver.cu)
+    target_link_libraries(gpl
       PRIVATE
-        ${X11_LIBRARIES}
-        ${JPEG_LIBRARIES}
-    )
-    target_include_directories( gpl
-      PUBLIC
-        ${X11_INCLUDE_DIR}
-        ${JPEG_INCLUDE_DIR}
+        ${CUDA_LIBRARIES}
+        ${CUDA_CUBLAS_LIBRARIES}
+        ${CUDA_cusparse_LIBRARY}
+        ${CUDA_cusolver_LIBRARY}
     )
     target_compile_definitions( gpl
-      PRIVATE
-        ENABLE_CIMG_LIB
-        cimg_use_jpeg=1
+    PRIVATE
+      ENABLE_GPU
     )
+  else()
+    message(STATUS "CUDA is not found")
   endif()
+else()
+  message(STATUS "GPU is not enabled")
 endif()

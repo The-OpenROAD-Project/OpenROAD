@@ -33,20 +33,23 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "HTreeBuilder.h"
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "HTreeBuilder.h"
 #include "utl/Logger.h"
+
 
 namespace cts {
 
 using utl::CTS;
+using utl::Logger;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -292,6 +295,11 @@ void HTreeBuilder::run()
   if (options_->getPlotSolution()
       || logger_->debugCheck(utl::CTS, "HTree", 2)) {
     plotSolution();
+  }
+
+  if (options_->getGuiDebug()
+      || logger_->debugCheck(utl::CTS, "HTree", 2) ) {
+    treeVisualizer();
   }
 
   createClockSubNets();
@@ -895,6 +903,13 @@ void HTreeBuilder::createSingleBufferClockNet()
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+}
+
+void HTreeBuilder::treeVisualizer()
+{
+  graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
+  if (Graphics::guiActive())
+    graphics_->clockPlot(true);
 }
 
 void HTreeBuilder::plotSolution()

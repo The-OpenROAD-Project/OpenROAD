@@ -78,6 +78,9 @@ RepairDesign::RepairDesign(Resizer *resizer) :
   db_network_(nullptr),
   resizer_(resizer),
   dbu_(0),
+  drvr_pin_(nullptr),
+  max_cap_(0),
+  max_length_(0),
   corner_(nullptr),
   resize_count_(0),
   inserted_buffer_count_(0),
@@ -944,7 +947,9 @@ void
 RepairDesign::subdivideRegion(LoadRegion &region,
                               int max_fanout)
 {
-  if (region.pins_.size() > max_fanout) {
+  if (region.pins_.size() > max_fanout
+      && region.bbox_.dx() > dbu_
+      && region.bbox_.dy() > dbu_) {
     int x_min = region.bbox_.xMin();
     int x_max = region.bbox_.xMax();
     int y_min = region.bbox_.yMin();
@@ -1381,7 +1386,10 @@ FanoutRender::FanoutRender(RepairDesign *repair) :
   repair_(repair),
   pins_(nullptr)
 {
-  gui::Gui::get()->registerRenderer(this);
+  const bool gui_enabled = gui::Gui::enabled();
+  if (gui_enabled) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void

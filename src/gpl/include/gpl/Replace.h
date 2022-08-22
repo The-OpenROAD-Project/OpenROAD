@@ -120,6 +120,7 @@ class Replace
     void setPadLeft(int padding);
     void setPadRight(int padding);
 
+    void setForceCPU(bool force_cpu);
     void setTimingDrivenMode(bool mode);
 
     void setSkipIoMode(bool mode);
@@ -138,8 +139,6 @@ class Replace
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
     void addTimingNetWeightOverflow(int overflow);
-
-    void setPlottingPath(const char* path);
 
     void setDebug(int pause_iterations,
                   int update_iterations,
@@ -165,6 +164,7 @@ class Replace
     int initialPlaceMaxSolverIter_;
     int initialPlaceMaxFanout_;
     float initialPlaceNetWeightScale_;
+    bool forceCPU_;
 
     int nesterovPlaceMaxIter_;
     int binGridCntX_;

@@ -43,6 +43,19 @@ namespace cts {
 
 using utl::CTS;
 
+PostCtsOpt::PostCtsOpt(TreeBuilder* builder,
+                       CtsOptions* options,
+                       TechChar* techChar,
+                       Logger* logger)
+    : clock_(&(builder->getClock())),
+      options_(options),
+      techChar_(techChar),
+      logger_(logger),
+      builder_((HTreeBuilder*) builder)
+{
+  bufDistRatio_ = options_->getBufDistRatio();
+}
+
 void PostCtsOpt::run()
 {
   initSourceSinkDists();
@@ -67,12 +80,12 @@ void PostCtsOpt::initSourceSinkDists()
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
 {
   const ClockInst* driver = subNet.getDriver();
-  Point<int> driverLoc = driver->getLocation();
+  const Point<int> driverLoc = driver->getLocation();
 
   subNet.forEachSink([&](const ClockInst* sink) {
-    Point<int> sinkLoc = sink->getLocation();
-    std::string sinkName = sink->getName();
-    int dist = driverLoc.computeDist(sinkLoc);
+    const Point<int> sinkLoc = sink->getLocation();
+    const std::string sinkName = sink->getName();
+    const int dist = driverLoc.computeDist(sinkLoc);
     avgSourceSinkDist_ += dist;
     sinkDistMap_[sinkName] = dist;
   });
@@ -96,8 +109,8 @@ void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
   ClockInst* driver = subNet.getDriver();
 
   subNet.forEachSink([&](ClockInst* sink) {
-    std::string sinkName = sink->getName();
-    unsigned dist = sinkDistMap_[sinkName];
+    const std::string sinkName = sink->getName();
+    const unsigned dist = sinkDistMap_[sinkName];
     if (dist > 5 * avgSourceSinkDist_) {
       fixLongWire(subNet, driver, sink);
       ++numViolatingSinks_;
@@ -115,22 +128,22 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
 {
   unsigned inputCap = techChar_->getActualMinInputCap();
   unsigned inputSlew = techChar_->getMaxSlew() / 2;
-  int wireSegmentUnit = techChar_->getLengthUnit() * options_->getDbUnits();
-  Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
+  const int wireSegmentUnit = techChar_->getLengthUnit() * options_->getDbUnits();
+  const Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
                           (float) driver->getY() / wireSegmentUnit);
-  Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
+  const Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
                         (float) sink->getY() / wireSegmentUnit);
-  unsigned wireLength = driverLoc.computeDist(sinkLoc);
+  const unsigned wireLength = driverLoc.computeDist(sinkLoc);
   const unsigned slewThreshold = options_->getMaxSlew();
   const unsigned tolerance = 1;
   std::vector<unsigned> segments;
-  unsigned charSegLength = techChar_->getMaxSegmentLength();
-  unsigned numWires = wireLength / charSegLength;
+  const unsigned charSegLength = techChar_->getMaxSegmentLength();
+  const unsigned numWires = wireLength / charSegLength;
 
   if (numWires >= 1) {
     for (int wireCount = 0; wireCount < numWires; ++wireCount) {
       unsigned outCap = 0, outSlew = 0;
-      unsigned key = builder_->computeMinDelaySegment(charSegLength,
+      const unsigned key = builder_->computeMinDelaySegment(charSegLength,
                                                       inputSlew,
                                                       inputCap,
                                                       slewThreshold,
@@ -162,16 +175,15 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
                                    ClockInst* driver,
                                    ClockInst* sink)
 {
-  std::string master = options_->getRootBuffer();
+  const std::string master = options_->getRootBuffer();
 
-  Point<int> bufLoc = computeBufferLocation(driver, sink);
+  const Point<int> bufLoc = computeBufferLocation(driver, sink);
   ClockInst& clkBuffer = clock_->addClockBuffer(
       "clkbuf_opt_" + std::to_string(numInsertedBuffers_),
       master,
       bufLoc.getX(),
       bufLoc.getY());
   builder_->addTreeLevelBuffer(&clkBuffer);
-  ;
 
   net.replaceSink(sink, &clkBuffer);
 
@@ -186,10 +198,10 @@ void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
 Point<int> PostCtsOpt::computeBufferLocation(ClockInst* driver,
                                              ClockInst* sink) const
 {
-  Point<int> driverLoc = driver->getLocation();
-  Point<int> sinkLoc = sink->getLocation();
-  unsigned xDist = driverLoc.computeDistX(sinkLoc);
-  unsigned yDist = driverLoc.computeDistY(sinkLoc);
+  const Point<int> driverLoc = driver->getLocation();
+  const Point<int> sinkLoc = sink->getLocation();
+  const unsigned xDist = driverLoc.computeDistX(sinkLoc);
+  const unsigned yDist = driverLoc.computeDistY(sinkLoc);
 
   double xBufDistRatio = bufDistRatio_;
   if (sinkLoc.getX() < driverLoc.getX()) {
@@ -201,8 +213,8 @@ Point<int> PostCtsOpt::computeBufferLocation(ClockInst* driver,
     yBufDistRatio = -bufDistRatio_;
   }
 
-  Point<int> bufLoc(driverLoc.getX() + xBufDistRatio * xDist,
-                    driverLoc.getY() + yBufDistRatio * yDist);
+  const Point<int> bufLoc(driverLoc.getX() + xBufDistRatio * xDist,
+                          driverLoc.getY() + yBufDistRatio * yDist);
 
   return bufLoc;
 }

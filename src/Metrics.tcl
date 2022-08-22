@@ -35,19 +35,38 @@
 
 namespace eval sta {
 
-define_cmd_args "report_tns_metric" {}
+define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
 proc report_tns_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_tns_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "max"
+  set metric_name "timing__setup__tns"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__tns"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 18 "both -steup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [total_negative_slack_cmd  $min_max] $sta_report_default_digits]"
 }
 
-
-define_cmd_args "report_worst_slack_metric" {}
+define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
 proc report_worst_slack_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_worst_slack_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "max"
+  set metric_name "timing__setup__ws"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__ws"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 17 "both -steup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [worst_slack_cmd $min_max] $sta_report_default_digits]"
 }
 
 define_cmd_args "report_erc_metrics" {}
@@ -59,6 +78,8 @@ proc report_erc_metrics { args } {
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
+    set setup_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
+    set hold_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
 
     utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
     utl::metric_int "timing__drv__max_slew" $max_slew_violation
@@ -66,6 +87,8 @@ proc report_erc_metrics { args } {
     utl::metric_int "timing__drv__max_cap" $max_cap_violation
     utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
     utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
+    utl::metric_int "timing__drv__setup_violation_count" $setup_violation
+    utl::metric_int "timing__drv__hold_violation_count" $hold_violation
 }
 
 
@@ -102,16 +125,20 @@ proc report_design_area_metrics {args} {
   set block [[$db getChip] getBlock]
   set core_bbox [$block getCoreArea]
   set core_area [expr [$core_bbox dx] * [$core_bbox dy]]
-  puts "Core area = $core_area"
 
   set num_ios [llength [$block getBTerms]]
 
   set num_insts 0
   set num_stdcells 0
   set num_macros 0
+  set num_padcells 0
+  set num_cover 0
+
   set total_area 0.0
-  set macro_area 0.0
   set stdcell_area 0.0
+  set macro_area 0.0
+  set padcell_area 0.0
+  set cover_area 0.0
 
   foreach inst [$block getInsts] {
     set inst_master [$inst getMaster]
@@ -121,11 +148,18 @@ proc report_design_area_metrics {args} {
     set wid [$inst_master getWidth]
     set ht [$inst_master getHeight]
     set inst_area  [expr $wid * $ht]
-    set total_area [expr $total_area + $inst_area] 
+    set total_area [expr $total_area + $inst_area]
     set num_insts [expr $num_insts + 1]
-    if { [string match [$inst_master getType] "BLOCK"] } {
+
+    if { [$inst_master isBlock] } {
       set num_macros [expr $num_macros + 1]
       set macro_area [expr $macro_area + $inst_area]
+    } elseif {[$inst_master isCover]} {
+      set num_cover [expr $num_cover + 1]
+      set cover_area [expr $cover_area + $inst_area]
+    } elseif {[$inst_master isPad]} {
+      set num_padcells [expr $num_padcells + 1]
+      set padcell_area [expr $padcell_area + $inst_area]
     } else {
       set num_stdcells [expr $num_stdcells + 1]
       set stdcell_area [expr $stdcell_area + $inst_area]
@@ -136,12 +170,17 @@ proc report_design_area_metrics {args} {
   set total_area [expr $total_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set stdcell_area [expr $stdcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set macro_area [expr $macro_area / [expr $dbu_per_uu * $dbu_per_uu]]
-  set core_util [expr $total_area / $core_area]
+  set padcell_area [expr $padcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
+  set cover_area [expr $cover_area / [expr $dbu_per_uu * $dbu_per_uu]]
+
+  set total_active_area [expr $stdcell_area + $macro_area]
+
+  set core_util [expr $total_active_area / $core_area]
   set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
 
   utl::metric_int "design__io" $num_ios
   utl::metric_int "design__instance__count" $num_insts
-  utl::metric_float "design__instance__area" $total_area
+  utl::metric_float "design__instance__area" $total_active_area
   utl::metric_int "design__instance__count__stdcell" $num_stdcells
   utl::metric_float "design__instance__area__stdcell" $stdcell_area
   utl::metric_int "design__instance__count__macros" $num_macros

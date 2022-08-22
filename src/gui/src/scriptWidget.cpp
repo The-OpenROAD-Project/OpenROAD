@@ -158,7 +158,6 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
     addTclResultToOutput(setup_tcl_result);
   } else {
     post_or_init();
-    Gui::get()->load_design();
   }
 
   input_->init(interp_);

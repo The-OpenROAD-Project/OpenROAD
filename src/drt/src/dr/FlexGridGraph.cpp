@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexGridGraph.h"
-
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
+#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;
@@ -88,47 +87,56 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx z,
                                 const Rect& dieBox)
 {
-    frLayerNum lNum = getLayerNum(z) + 1;
-    if (lNum > getTech()->getTopLayerNum())
-        return false;
-    frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
-    Rect viaBox(via->getLayer1ShapeBox());
-    viaBox.merge(via->getLayer2ShapeBox());
-    viaBox.moveDelta(xCoords_[x], yCoords_[y]);
-    return !dieBox.contains(viaBox);
-}
-bool FlexGridGraph::hasOutOfDieViol(frMIdx x,
-                                    frMIdx y,
-                                    frMIdx z)
-{
-    frLayerNum lNum = getLayerNum(z);
-    if (!getTech()->getLayer(lNum)->isUnidirectional())
-        return false;
-    frViaDef* via = nullptr;
-    Rect testBoxUp;
-    if (lNum + 1 <= getTech()->getTopLayerNum()) {
-        via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-        testBoxUp = via->getLayer1ShapeBox();
-        testBoxUp.merge(via->getLayer2ShapeBox());
-        testBoxUp.moveDelta(xCoords_[x], yCoords_[y]);
-    }
-    Rect testBoxDown;
-    if (lNum - 1 >= getTech()->getBottomLayerNum()) {
-        via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-        testBoxDown = via->getLayer1ShapeBox();
-        testBoxDown.merge(via->getLayer2ShapeBox());
-        testBoxDown.moveDelta(xCoords_[x], yCoords_[y]);
-    }
-    if (getTech()->getLayer(lNum)->isVertical()) {
-        if ((testBoxUp.xMax() > dieBox_.xMax() || testBoxUp.xMin() < dieBox_.xMin()) 
-            && (testBoxDown.xMax() > dieBox_.xMax() || testBoxDown.xMin() < dieBox_.xMin()))
-            return true;
-    }
-    //layer is horizontal
-    if ((testBoxUp.yMax() > dieBox_.yMax() || testBoxUp.yMin() < dieBox_.yMin()) 
-        && (testBoxDown.yMax() > dieBox_.yMax() || testBoxDown.yMin() < dieBox_.yMin()))
-        return true;
+  frLayerNum lNum = getLayerNum(z) + 1;
+  if (lNum > getTech()->getTopLayerNum())
     return false;
+  frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  Rect viaBox(via->getLayer1ShapeBox());
+  viaBox.merge(via->getLayer2ShapeBox());
+  viaBox.moveDelta(xCoords_[x], yCoords_[y]);
+  return !dieBox.contains(viaBox);
+}
+bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
+{
+  const frLayerNum lNum = getLayerNum(z);
+  if (!getTech()->getLayer(lNum)->isUnidirectional()) {
+    return false;
+  }
+  Rect testBoxUp;
+  if (lNum + 1 <= getTech()->getTopLayerNum()) {
+    frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (via) {
+      testBoxUp = via->getLayer1ShapeBox();
+      testBoxUp.merge(via->getLayer2ShapeBox());
+      testBoxUp.moveDelta(xCoords_[x], yCoords_[y]);
+    } else {
+      // artificial value to indicate no via in test below
+      dieBox_.bloat(1, testBoxUp);
+    }
+  }
+  Rect testBoxDown;
+  if (lNum - 1 >= getTech()->getBottomLayerNum()) {
+    frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    if (via) {
+      testBoxDown = via->getLayer1ShapeBox();
+      testBoxDown.merge(via->getLayer2ShapeBox());
+      testBoxDown.moveDelta(xCoords_[x], yCoords_[y]);
+    } else {
+      // artificial value to indicate no via in test below
+      dieBox_.bloat(1, testBoxDown);
+    }
+  }
+  if (getTech()->getLayer(lNum)->isVertical()) {
+    return (testBoxUp.xMax() > dieBox_.xMax()
+            || testBoxUp.xMin() < dieBox_.xMin())
+           && (testBoxDown.xMax() > dieBox_.xMax()
+               || testBoxDown.xMin() < dieBox_.xMin());
+  }
+  // layer is horizontal
+  return (testBoxUp.yMax() > dieBox_.yMax()
+          || testBoxUp.yMin() < dieBox_.yMin())
+         && (testBoxDown.yMax() > dieBox_.yMax()
+             || testBoxDown.yMin() < dieBox_.yMin());
 }
 
 bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
@@ -206,9 +214,9 @@ void FlexGridGraph::initEdges(
         if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) && 
-                    (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || yIt->second != nullptr)) {
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
+                && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                    || yIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               if (yIt->second == nullptr || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
@@ -229,9 +237,9 @@ void FlexGridGraph::initEdges(
         } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) 
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || xIt->second != nullptr)) {
+                    || xIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               if (xIt->second == nullptr || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);

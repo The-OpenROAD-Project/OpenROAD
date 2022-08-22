@@ -523,7 +523,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     606,
                     "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYERNUM);
+                    VIAINPIN_BOTTOMLAYER_NAME);
     }
   }
 
@@ -535,7 +535,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     607,
                     "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYERNUM);
+                    VIAINPIN_TOPLAYER_NAME);
     }
   }
   parser.postProcess();
@@ -725,6 +725,11 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  if(debug_->debugDumpDR)
+  {
+    std::string globals_path = fmt::format("{}/init_globals.bin", debug_->dumpDir);
+    writeGlobals(globals_path);
+  }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_ && !DO_PA) {
     asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
@@ -743,7 +748,7 @@ int TritonRoute::main()
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
-        fmt::format("{}/design.db", debug_->dumpDir).c_str());
+        fmt::format("{}/design.odb", debug_->dumpDir).c_str());
   }
   if (!initGuide()) {
     gr();

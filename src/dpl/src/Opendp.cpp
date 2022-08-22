@@ -89,7 +89,7 @@ int64_t
 Cell::area() const
 {
   dbMaster *master = db_inst_->getMaster();
-  return master->getWidth() * master->getHeight();
+  return int64_t(master->getWidth()) * master->getHeight();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -116,13 +116,25 @@ Group::Group() :
 }
 
 Opendp::Opendp() :
+  logger_(nullptr),
+  db_(nullptr),
   block_(nullptr),
   pad_left_(0),
   pad_right_(0),
+  row_height_(0),
+  site_width_(0),
+  row_count_(0),
+  row_site_count_(0),
+  have_multi_row_cells_(false),
   max_displacement_x_(0),
   max_displacement_y_(0),
   grid_(nullptr),
-  have_fillers_(false)
+  filler_count_(0),
+  have_fillers_(false),
+  hpwl_before_(0),
+  displacement_avg_(0),
+  displacement_sum_(0),
+  displacement_max_(0)
 {
   dummy_cell_.is_placed_ = true;
 }
@@ -524,7 +536,7 @@ Opendp::gridHeight(const Cell *cell) const
 int64_t
 Opendp::paddedArea(const Cell *cell) const
 {
-  return paddedWidth(cell) * cell->height_;
+  return int64_t(paddedWidth(cell)) * cell->height_;
 }
 
 // Callers should probably be using gridPaddedWidth.

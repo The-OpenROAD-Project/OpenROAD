@@ -1127,6 +1127,7 @@ void DbNetDescriptor::highlight(std::any object,
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
   const bool is_supply = net->getSigType().isSupply();
+  const bool is_routed_special = net->isSpecial() && net->getFirstSWire() != nullptr;
   auto should_draw_term = [sink_object](const odb::dbObject* term) -> bool {
     if (sink_object == nullptr) {
       return true;
@@ -1190,7 +1191,7 @@ void DbNetDescriptor::highlight(std::any object,
     while (it.next(shape)) {
       painter.drawRect(shape.getBox());
     }
-  } else if (!is_supply) {
+  } else if (!is_supply && !is_routed_special) {
     std::set<odb::Point> driver_locs;
     std::set<odb::Point> sink_locs;
     for (auto inst_term : net->getITerms()) {

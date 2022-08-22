@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "get_power.h"
+
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
@@ -49,11 +50,13 @@ using std::string;
 using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(
-    sta::dbSta* sta, utl::Logger* logger) {
+vector<pair<odb::dbInst*, double>> PowerInst::executePowerPerInst(
+    sta::dbSta* sta,
+    utl::Logger* logger)
+{
   // STA object create
-  m_sta = sta;
-  m_logger = logger;
+  sta_ = sta;
+  logger_ = logger;
   // environment settings
   string cornerName = "wst";
   // string cornerNameFF="bst";
@@ -64,10 +67,10 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(
   //  // define_corners
   //  _sta->makeCorners(&cornerNameSet);
   //  Corner* corner = _sta->findCorner(cornerName.c_str());
-  Corner* corner = m_sta->cmdCorner();
+  Corner* corner = sta_->cmdCorner();
 
-  vector<pair<string, double>> power_report;
-  dbNetwork* network = m_sta->getDbNetwork();
+  vector<pair<odb::dbInst*, double>> power_report;
+  dbNetwork* network = sta_->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult total_calc;
   total_calc.clear();
@@ -76,19 +79,22 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(
     LibertyCell* cell = network->libertyCell(inst);
     if (cell) {
       PowerResult inst_power;
-      m_sta->power(inst, corner, inst_power);
+      sta_->power(inst, corner, inst_power);
       total_calc.incr(inst_power);
-      power_report.push_back(
-          make_pair(string(network->name(inst)), inst_power.total()));
-      debugPrint(m_logger, utl::PSM, "get power", 2,
-                 "Power of instance {} is {}", network->name(inst),
+      power_report.push_back({network->staToDb(inst), inst_power.total()});
+      debugPrint(logger_,
+                 utl::PSM,
+                 "get power",
+                 2,
+                 "Power of instance {} is {}",
+                 network->name(inst),
                  inst_power.total());
     }
   }
   delete inst_iter;
 
-  debugPrint(m_logger, utl::PSM, "get power", 1, "Total power: {}",
-             total_calc.total());
+  debugPrint(
+      logger_, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
   return power_report;
 }
 }  // namespace psm

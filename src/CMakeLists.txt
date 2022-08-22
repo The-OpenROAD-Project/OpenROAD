@@ -188,6 +188,9 @@ endif()
 
 find_package(spdlog REQUIRED)
 message(STATUS "spdlog: ${spdlog_VERSION}")
+if (${SPDLOG_FMT_EXTERNAL})
+  message(WARNING "spdlog: SPDLOG_FMT_EXTERNAL=${SPDLOG_FMT_EXTERNAL}")
+endif()
 
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)

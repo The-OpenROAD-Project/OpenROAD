@@ -69,6 +69,16 @@ _installCommonDev() {
         echo "Eigen already installed."
     fi
 
+    # CUSP
+    if [[ ! -d /usr/local/include/cusp/ ]]; then
+        cd "${baseDir}"
+        git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
+        cd cusplibrary
+        sudo cp -r ./cusp /usr/local/include/
+    else
+        echo "CUSP already installed."
+    fi
+
     # lemon
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" /usr/local/include/lemon/config.h) ]]; then
         cd "${baseDir}"

@@ -121,6 +121,9 @@ class Grid
 
   // make the vias for the this grid
   void makeVias(const ShapeTreeMap& global_shapes,
+                const ShapeTreeMap& obstructions,
+                ShapeTreeMap& local_obstructions);
+  void makeVias(const ShapeTreeMap& global_shapes,
                 const ShapeTreeMap& obstructions);
   void getVias(std::vector<ViaPtr>& vias) const;
   void clearVias() { vias_.clear(); }
@@ -252,7 +255,8 @@ class InstanceGrid : public Grid
 
   virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
-  void addHalo(const std::array<int, 4>& halos);
+  using Halo = std::array<int, 4>;
+  void addHalo(const Halo& halos);
   void setGridToBoundary(bool value);
 
   virtual const odb::Rect getDomainArea() const override;
@@ -266,7 +270,7 @@ class InstanceGrid : public Grid
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
   virtual bool isReplaceable() const override { return replaceable_; }
 
-  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst);
+  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst, const Halo& halo = {0, 0, 0, 0});
   static ShapeTreeMap getInstancePins(odb::dbInst* inst);
 
  protected:
@@ -277,10 +281,13 @@ class InstanceGrid : public Grid
 
  private:
   odb::dbInst* inst_;
-  std::array<int, 4> halos_;
+  Halo halos_;
   bool grid_to_boundary_;
 
   bool replaceable_;
+
+  odb::Rect applyHalo(const odb::Rect& rect) const;
+  static odb::Rect applyHalo(const odb::Rect& rect, const Halo& halo);
 };
 
 class ExistingGrid : public Grid
