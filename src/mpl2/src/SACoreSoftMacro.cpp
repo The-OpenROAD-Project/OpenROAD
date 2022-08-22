@@ -372,7 +372,7 @@ void SACoreSoftMacro::AlignMacroClusters()
       adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight() * (1 - acc_tolerance_));
     }
   }
-  const float ratio = 0.01;
+  const float ratio = 0.1;
   adjust_h_th_ = std::min(adjust_h_th_, outline_height_ * ratio);
   adjust_v_th_ = std::min(adjust_v_th_, outline_width_  * ratio);
 

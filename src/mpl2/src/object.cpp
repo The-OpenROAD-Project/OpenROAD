@@ -606,6 +606,7 @@ int Cluster::GetCloseCluster(const std::vector<int>& candidate_clusters,
   int closely_cluster = -1;
   int num_closely_clusters = 0;
   for (auto& [cluster_id, num_nets] : connection_map_) {
+    std::cout << "cluster_id : " << cluster_id << " nets :  " <<  num_nets << std::endl;
     if (num_nets > net_threshold &&
         std::find(candidate_clusters.begin(), candidate_clusters.end(), cluster_id) 
         == candidate_clusters.end()) {

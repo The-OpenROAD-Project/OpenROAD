@@ -523,7 +523,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetSignatureNetThreshold(signature_net_threshold);
   rtlmp_engine_->SetHaloWidth(halo_width);
   rtlmp_engine_->SetGlobalFence(fence_lx, fence_ly,
-                                fence_ux, fence_ux);
+                                fence_ux, fence_uy);
   rtlmp_engine_->SetAreaWeight(area_weight);
   rtlmp_engine_->SetOutlineWeight(outline_weight);
   rtlmp_engine_->SetWirelengthWeight(wirelength_weight);

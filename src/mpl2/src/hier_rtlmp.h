@@ -147,7 +147,7 @@ class HierRTLMP {
     float target_dead_space_step_ = 0.05; // step for dead space
     float target_util_step_       = 0.1; // step for utilization
     float num_target_util_        = 10;
-    float num_target_dead_space_  = 10;
+    float num_target_dead_space_  = 20;
 
     float min_ar_ = 0.3; // the aspect ratio range for StdCellCluster (min_ar_, 1 / min_ar_)
     
@@ -180,7 +180,7 @@ class HierRTLMP {
     
     // Fast SA hyperparameter
     float init_prob_         = 0.9;
-    int max_num_step_        = 4000;
+    int max_num_step_        = 5000;
     int num_perturb_per_step_  = 3000;
     // if step < k_, T = init_T_ / (c_ * step_);
     // else T = init_T_ / step

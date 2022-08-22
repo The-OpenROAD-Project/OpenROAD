@@ -270,7 +270,7 @@ void SACoreHardMacro::PrintResults()
               << "pin_y = " << macro.GetPinY() << "  "
               << "orientation = " << macro.GetOrientation()
               << std::endl;
-  FlipMacro();
+  //FlipMacro();
   CalPenalty();
   std::cout << "wirelength_  = " << wirelength_ << std::endl;
   for (auto& macro : macros_)

@@ -189,19 +189,19 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
   std::set<float> x_hanan_point;
   std::set<float> y_hanan_point;
   for (const auto& soft_macro : soft_macros) {
-    x_bound_point.insert( (soft_macro.GetX()));
-    y_bound_point.insert( (soft_macro.GetY()));
-    x_hanan_point.insert( (soft_macro.GetX() + soft_macro.GetWidth() / 2.0));
-    y_hanan_point.insert( (soft_macro.GetY() + soft_macro.GetHeight() / 2.0));
-    x_bound_point.insert( (soft_macro.GetX() + soft_macro.GetWidth()));
-    y_bound_point.insert( (soft_macro.GetY() + soft_macro.GetHeight()));
+    x_bound_point.insert( std::round(soft_macro.GetX()));
+    y_bound_point.insert( std::round(soft_macro.GetY()));
+    x_hanan_point.insert( std::round(soft_macro.GetX() + soft_macro.GetWidth() / 2.0));
+    y_hanan_point.insert( std::round(soft_macro.GetY() + soft_macro.GetHeight() / 2.0));
+    x_bound_point.insert( std::round(soft_macro.GetX() + soft_macro.GetWidth()));
+    y_bound_point.insert( std::round(soft_macro.GetY() + soft_macro.GetHeight()));
   }
   auto it = x_bound_point.begin();
   while (it != x_bound_point.end()) {
     float midpoint = *it;
     it++;
     if (it != x_bound_point.end()) {
-      midpoint =  ((midpoint + *it) / 2.0);
+      midpoint =  std::round((midpoint + *it) / 2.0);
       x_hanan_point.insert(midpoint);
     }
   }
@@ -210,7 +210,7 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
     float midpoint = *it;
     it++;
     if (it != y_bound_point.end()) {
-      midpoint =  ((midpoint + *it) / 2.0);
+      midpoint =  std::round((midpoint + *it) / 2.0);
       y_hanan_point.insert(midpoint);
     }
   }
@@ -245,12 +245,12 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros, // placed soft macros
   int macro_id = 0;
   for (const auto& soft_macro : soft_macros) {
     std::cout << "vertices in macro : " << soft_macro.GetName() << std::endl;
-    const float lx =  (soft_macro.GetX());
-    const float ly =  (soft_macro.GetY());
-    const float ux =  (soft_macro.GetX() + soft_macro.GetWidth());
-    const float uy =  (soft_macro.GetY() + soft_macro.GetHeight());
-    const float cx =  (soft_macro.GetX() + soft_macro.GetWidth() / 2.0);
-    const float cy =  (soft_macro.GetY() + soft_macro.GetHeight() / 2.0);
+    const float lx =  std::round(soft_macro.GetX());
+    const float ly =  std::round(soft_macro.GetY());
+    const float ux =  std::round(soft_macro.GetX() + soft_macro.GetWidth());
+    const float uy =  std::round(soft_macro.GetY() + soft_macro.GetHeight());
+    const float cx =  std::round(soft_macro.GetX() + soft_macro.GetWidth() / 2.0);
+    const float cy =  std::round(soft_macro.GetY() + soft_macro.GetHeight() / 2.0);
     Rect rect(lx, ly, ux, uy);
     // calculate the macro utilization of the soft macro
     float macro_util = soft_macro.GetMacroUtil();  
