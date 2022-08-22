@@ -138,17 +138,17 @@ class IRSolver
   bool getResult();
 
 
-  float supply_voltage_src;
+  float supply_voltage_src{0};
   //! Worst case voltage at the lowest layer nodes
-  double wc_voltage;
+  double wc_voltage{0};
   //! Worst case current at the lowest layer nodes
-  double max_cur;
+  double max_cur{0};
   //! Average current at the lowest layer nodes
-  double avg_cur;
+  double avg_cur{0};
   //! number of resistances
-  int num_res;
+  int num_res{0};
   //! Average voltage at lowest layer nodes
-  double avg_voltage;
+  double avg_voltage{0};
   //! Vector of worstcase voltages in the lowest layers
   std::vector<double> wc_volt_layer;
   //! Pointer to the Db
@@ -183,10 +183,7 @@ class IRSolver
 
   bool result_{false};
   bool connection_{false};
-  //! Direction of the top layer
-  odb::dbTechLayerDir::Value top_layer_dir_;
 
-  odb::dbTechLayerDir::Value bottom_layer_dir_;
   odb::dbSigType power_net_type_;
   std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D
