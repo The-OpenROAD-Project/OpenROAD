@@ -788,7 +788,7 @@ void GlobalRouter::getNetLayerRange(Net* net,
 {
   int port_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
-    if (pin.isPort()) {
+    if (pin.isPort() || pin.isConnectedToPad()) {
       port_min_layer = std::min(port_min_layer, pin.getTopLayer());
     }
   }
