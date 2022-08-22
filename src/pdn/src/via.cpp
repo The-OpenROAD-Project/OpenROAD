@@ -323,7 +323,8 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
                                          odb::dbSWire* wire,
                                          odb::dbWireShapeType type,
                                          int x,
-                                         int y)
+                                         int y,
+                                         utl::Logger* logger)
 {
   ViaLayerShape via_shapes;
 
@@ -468,7 +469,8 @@ DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y)
+                                             int y,
+                                             utl::Logger* logger)
 {
   const std::string via_name = getViaName();
   auto* via = block->findVia(via_name.c_str());
@@ -575,7 +577,8 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
                                           odb::dbSWire* wire,
                                           odb::dbWireShapeType type,
                                           int x,
-                                          int y)
+                                          int y,
+                                          utl::Logger* logger)
 {
   const odb::Rect core_via_rect = core_via_->getViaRect(false, true);
   ViaLayerShape via_shapes;
@@ -601,7 +604,7 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
         }
       }
 
-      auto shapes = via->generate(block, wire, type, array_x, array_y);
+      auto shapes = via->generate(block, wire, type, array_x, array_y, logger);
       combineLayerShapes(shapes, via_shapes);
 
       last_via_rect = via->getViaRect(false, true);
@@ -662,7 +665,8 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y)
+                                             int y,
+                                             utl::Logger* logger)
 {
   TechLayer* horizontal = nullptr;
   TechLayer* vertical = nullptr;
@@ -687,7 +691,7 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
     for (int c = 0; c < cols_; c++) {
       const int col_pos = vertical->snapToGrid(col);
 
-      auto shapes = via_->generate(block, wire, type, col_pos, row_pos);
+      auto shapes = via_->generate(block, wire, type, col_pos, row_pos, logger);
       combineLayerShapes(shapes, via_shapes);
 
       col = col_pos + col_pitch_;
@@ -740,7 +744,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
                                                     odb::dbSWire* wire,
                                                     odb::dbWireShapeType type,
                                                     int x,
-                                                    int y)
+                                                    int y,
+                                                    utl::Logger* logger)
 {
   using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
@@ -779,7 +784,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
       layer_y = layer_upper->snapToGrid(layer_y);
     }
 
-    auto shapes = via->generate(block, wire, type, layer_x, layer_y);
+    auto shapes = via->generate(block, wire, type, layer_x, layer_y, logger);
     if (i == 0) {
       via_shapes.bottom = shapes.bottom;
     }
@@ -839,6 +844,38 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
         const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
+
+        if (via->hasGenerator()) {
+          auto* generator = via->getGenerator();
+          if (!generator->recheckConstraints(patch_rect, true)) {
+            // failed recheck, need to ripup entire stack
+            std::set<odb::dbSBox*> shapes;
+            for (const auto& [rect, box] : via_shapes.bottom) {
+              shapes.insert(box);
+            }
+            for (const auto& [rect, box] : via_shapes.middle) {
+              shapes.insert(box);
+            }
+            for (const auto& [rect, box] : via_shapes.top) {
+              shapes.insert(box);
+            }
+            for (auto* box : shapes) {
+              odb::dbSBox::destroy(box);
+            }
+            const TechLayer tech_layer(*layers_.front());
+            logger->warn(utl::PDN,
+                         227,
+                         "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
+                         layers_.front()->getName(),
+                         layers_.back()->getName(),
+                         tech_layer.dbuToMicron(layer_x),
+                         tech_layer.dbuToMicron(layer_y),
+                         wire->getNet()->getName());
+
+            return {};
+          }
+        }
+
         auto* patch_box = odb::dbSBox::create(wire,
                                               add_to_layer,
                                               patch_rect.xMin(),
@@ -873,11 +910,10 @@ ViaReport DbGenerateStackedVia::getViaReport() const
 
 /////////////
 
-DbGenerateDummyVia::DbGenerateDummyVia(utl::Logger* logger,
-                                       const odb::Rect& shape,
+DbGenerateDummyVia::DbGenerateDummyVia(const odb::Rect& shape,
                                        odb::dbTechLayer* bottom,
                                        odb::dbTechLayer* top)
-    : logger_(logger), shape_(shape), bottom_(bottom), top_(top)
+    : shape_(shape), bottom_(bottom), top_(top)
 {
 }
 
@@ -886,13 +922,14 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
     odb::dbSWire* wire,
     odb::dbWireShapeType /* type */,
     int x,
-    int y)
+    int y,
+    utl::Logger* logger)
 {
   odb::dbTransform xfm({x, y});
 
   odb::Rect via_area = shape_;
   xfm.apply(via_area);
-  logger_->warn(utl::PDN,
+  logger->warn(utl::PDN,
                 110,
                 "No via inserted between {} and {} at {} on {}",
                 bottom_->getName(),
@@ -1132,6 +1169,33 @@ void ViaGenerator::determineCutClass()
       return;
     }
   }
+}
+
+bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
+{
+  odb::Rect saved_rect;
+  if (bottom) {
+    saved_rect = lower_rect_;
+  } else {
+    saved_rect = upper_rect_;
+  }
+
+  const bool pass = checkConstraints();
+
+  if (bottom) {
+    lower_rect_ = saved_rect;
+  } else {
+    upper_rect_ = saved_rect;
+  }
+
+  debugPrint(logger_,
+             utl::PDN,
+             "Via",
+             2,
+             "Recheck: {}",
+             pass);
+
+  return pass;
 }
 
 bool ViaGenerator::checkConstraints() const
@@ -2578,7 +2642,6 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
 
       odb::dbSBox::destroy(via);
     }
-
 
     getLogger()->warn(utl::PDN,
                       195,

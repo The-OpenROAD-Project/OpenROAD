@@ -457,8 +457,8 @@ void Connect::makeVia(odb::dbSWire* wire,
   // check if off grid and don't add one if it is
   if (!TechLayer::checkIfManufacturingGrid(tech, x) ||
       !TechLayer::checkIfManufacturingGrid(tech, y)) {
-    DbGenerateDummyVia dummy_via(grid_->getLogger(), intersection, layer0_, layer1_);
-    dummy_via.generate(wire->getBlock(), wire, type, 0, 0);
+    DbGenerateDummyVia dummy_via(intersection, layer0_, layer1_);
+    dummy_via.generate(wire->getBlock(), wire, type, 0, 0, grid_->getLogger());
     return;
   }
 
@@ -471,7 +471,7 @@ void Connect::makeVia(odb::dbSWire* wire,
   if (via == nullptr) {
     std::vector<ViaLayerRects> stack_rects;
     if (isComplexStackedVia(lower_rect, upper_rect)) {
-      debugPrint(getGrid()->getLogger(),
+      debugPrint(grid_->getLogger(),
           utl::PDN,
           "Via",
           2,
@@ -542,7 +542,7 @@ void Connect::makeVia(odb::dbSWire* wire,
         odb::Rect area = intersection;
         xfm.apply(area);
         stack.push_back(
-            new DbGenerateDummyVia(grid_->getLogger(), area, layer0_, layer1_));
+            new DbGenerateDummyVia(area, layer0_, layer1_));
         break;
       } else {
         stack.push_back(new_via);
@@ -552,7 +552,7 @@ void Connect::makeVia(odb::dbSWire* wire,
     via = std::make_unique<DbGenerateStackedVia>(stack, layer0_, wire->getBlock(), ongrid_);
   }
 
-  shapes = via->generate(wire->getBlock(), wire, type, x, y);
+  shapes = via->generate(wire->getBlock(), wire, type, x, y, grid_->getLogger());
 
   if (skip_caching) {
     via = nullptr;

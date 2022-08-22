@@ -144,7 +144,8 @@ class DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) = 0;
+                                 int y,
+                                 utl::Logger* logger) = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -209,7 +210,8 @@ class DbTechVia : public DbBaseVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
 
@@ -260,7 +262,8 @@ class DbGenerateVia : public DbBaseVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual std::string getName() const override;
   virtual const odb::Rect getViaRect(bool include_enclosure,
@@ -311,7 +314,8 @@ class DbSplitCutVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override;
 
@@ -344,7 +348,8 @@ class DbArrayVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual bool requiresPatch() const override { return true; }
 
@@ -379,7 +384,8 @@ class DbGenerateStackedVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override;
 
@@ -393,8 +399,7 @@ class DbGenerateStackedVia : public DbVia
 class DbGenerateDummyVia : public DbVia
 {
  public:
-  DbGenerateDummyVia(utl::Logger* logger,
-                     const odb::Rect& shape,
+  DbGenerateDummyVia(const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
                      odb::dbTechLayer* top);
   virtual ~DbGenerateDummyVia() {}
@@ -403,12 +408,12 @@ class DbGenerateDummyVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType /* type */,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override { return {}; }
 
  private:
-  utl::Logger* logger_;
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
@@ -486,6 +491,8 @@ class ViaGenerator
 
   int getGeneratorWidth(bool bottom) const;
   int getGeneratorHeight(bool bottom) const;
+
+  bool recheckConstraints(const odb::Rect& rect, bool bottom);
 
  protected:
   int getMaxRows() const { return max_rows_; }
