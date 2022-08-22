@@ -89,6 +89,15 @@ class GMat
                               int x_max,
                               int y_min,
                               int y_max);
+  //! Function to return a vector of pointers to the nodes within an area sorted
+  // by direction
+  std::map<std::pair<int, int>, Node*> getNodes(
+      int layer,
+      odb::dbTechLayerDir::Value layer_dir,
+      int x_min,
+      int x_max,
+      int y_min,
+      int y_max);
   //! Function to create a node
   Node* setNode(const Point& loc, int layer);
   //! Function to insert a node into the matrix

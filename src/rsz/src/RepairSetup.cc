@@ -86,6 +86,8 @@ RepairSetup::RepairSetup(Resizer *resizer) :
   sta_(nullptr),
   db_network_(nullptr),
   resizer_(resizer),
+  corner_(nullptr),
+  drvr_port_(nullptr),
   resize_count_(0),
   inserted_buffer_count_(0),
   rebuffer_net_count_(0),

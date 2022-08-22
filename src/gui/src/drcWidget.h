@@ -88,6 +88,9 @@ class DRCViolation
   void setViewed() { viewed_ = true; }
   void clearViewed() { viewed_ = false; }
 
+  void setIsVisible(bool visible) { visible_ = visible; }
+  bool isVisible() const { return visible_; }
+
   void paint(Painter& painter);
 
  private:
@@ -103,6 +106,7 @@ class DRCViolation
   int file_line_;
 
   bool viewed_;
+  bool visible_;
 };
 
 class DRCDescriptor : public Descriptor
@@ -194,6 +198,9 @@ class DRCWidget : public QDockWidget
   std::unique_ptr<DRCRenderer> renderer_;
 
   std::vector<std::unique_ptr<DRCViolation>> violations_;
+
+  void toggleParent(QStandardItem* child);
+  bool setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent);
 };
 
 }  // namespace gui

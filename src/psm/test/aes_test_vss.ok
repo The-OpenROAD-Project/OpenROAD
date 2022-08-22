@@ -15,11 +15,11 @@
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (544.000um, 12.000um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (544.070um, 33.115um).
 [WARNING PSM-0030] VSRC location at (208.000um, 348.000um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (208.070um, 353.115um).
-[INFO PSM-0031] Number of PDN nodes on net VSS = 26392.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 26606.
 [INFO PSM-0064] Number of voltage sources = 2.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 8.92e-03 V
-Average IR drop  : 6.43e-03 V
-Worstcase IR drop: 8.92e-03 V
+Worstcase voltage: 8.95e-03 V
+Average IR drop  : 6.44e-03 V
+Worstcase IR drop: 8.95e-03 V
 ######################################

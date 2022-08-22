@@ -31,10 +31,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "gmat.h"
+
 #include <iostream>
 #include <vector>
 
-#include "gmat.h"
 #include "node.h"
 
 namespace psm {
@@ -74,14 +75,7 @@ Node* GMat::getNode(NodeIdx node)
   }
 }
 
-//! Function to return a pointer to the node with a index
-/*!
-     \param x x location coordinate
-     \param y y location coordinate
-     \param layer layer number
-     \return Pointer to the node in the matrix
-*/
-
+//! Function to return a vector of nodes in an area
 vector<Node*> GMat::getNodes(int layer,
                              int x_min,
                              int x_max,
@@ -94,7 +88,7 @@ vector<Node*> GMat::getNodes(int layer,
   for (auto x_itr = layer_map.lower_bound(x_min);
        x_itr != layer_map.end() && x_itr->first <= x_max;
        ++x_itr) {
-    map<int, Node*> y_itr_map = x_itr->second;
+    const map<int, Node*>& y_itr_map = x_itr->second;
     for (auto y_map_itr = y_itr_map.lower_bound(y_min);
          y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
          ++y_map_itr)
@@ -103,6 +97,48 @@ vector<Node*> GMat::getNodes(int layer,
   return block_nodes;
 }
 
+//! Function to return a vector of pointers to the nodes within an area sorted
+// by direction
+map<pair<int, int>, Node*> GMat::getNodes(int layer,
+                                          odb::dbTechLayerDir::Value layer_dir,
+                                          int x_min,
+                                          int x_max,
+                                          int y_min,
+                                          int y_max)
+{
+  NodeMap& layer_map = layer_maps_[layer];
+  if (x_min > x_max || y_min > y_max)
+    logger_->warn(utl::PSM,
+                  80,
+                  "Creating stripe condunctance with invalid inputs. Min and "
+                  "max values for X or Y are interchanged.");
+  map<pair<int, int>, Node*> node_map;
+  for (auto x_itr = layer_map.lower_bound(x_min);
+       x_itr != layer_map.end() && x_itr->first <= x_max;
+       ++x_itr) {
+    map<int, Node*> y_itr_map = x_itr->second;
+    for (auto y_map_itr = y_itr_map.lower_bound(y_min);
+         y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
+         ++y_map_itr) {
+      if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
+        node_map.insert(make_pair(make_pair(x_itr->first, y_map_itr->first),
+                                  y_map_itr->second));
+      } else {
+        node_map.insert(make_pair(make_pair(y_map_itr->first, x_itr->first),
+                                  y_map_itr->second));
+      }
+    }
+  }
+  return node_map;
+}
+
+//! Function to return a pointer to the node with a index
+/*!
+     \param x x location coordinate
+     \param y y location coordinate
+     \param layer layer number
+     \return Pointer to the node in the matrix
+*/
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
   const NodeMap& layer_map = layer_maps_[layer];
@@ -306,79 +342,33 @@ void GMat::generateStripeConductance(int layer,
                                      int y_max,
                                      double rho)
 {
-  NodeMap& layer_map = layer_maps_[layer];
   if (x_min > x_max || y_min > y_max)
     logger_->warn(utl::PSM,
                   50,
                   "Creating stripe condunctance with invalid inputs. Min and "
                   "max values for X or Y are interchanged.");
-  if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
-    NodeMap::iterator x_itr;
-    NodeMap::iterator x_prev;
-    // int               y_loc = (y_min + y_max) / 2;
-    int i = 0;
-    for (x_itr = layer_map.lower_bound(x_min);
-         x_itr != layer_map.upper_bound(x_max);
-         ++x_itr) {
-      map<int, Node*>::iterator y_itr = (x_itr->second).lower_bound(y_min);
-      if (y_itr == (x_itr->second).end())
-        continue;
-      else if (y_itr->first < y_min || y_itr->first > y_max)
-        continue;
-      // if ((x_itr->second).find(y_loc) == (x_itr->second).end()) {
-      //  continue;
-      //}
-      if (i == 0) {
-        i = 1;
+  auto node_map = getNodes(layer, layer_dir, x_min, x_max, y_min, y_max);
+  int i = 0;
+  pair<pair<int, int>, Node*> node_prev;
+  for (auto& node_itr : node_map) {
+    if (i == 0) {
+      i = 1;
+    } else {
+      Node* node1 = node_itr.second;
+      Node* node2 = node_prev.second;
+      int width;
+      if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
+        width = y_max - y_min;
       } else {
-        y_itr = (x_itr->second).lower_bound(y_min);
-        Node* node1 = y_itr->second;
-        y_itr = (x_prev->second).lower_bound(y_min);
-        Node* node2 = y_itr->second;
-        // Node* node1 = (x_itr->second).at(y_loc);
-        // Node*  node2  = (x_prev->second).at(y_loc);
-        int width = y_max - y_min;
-        int length = x_itr->first - x_prev->first;
-        double cond = getConductivity(width, length, rho);
-        setConductance(node1, node2, cond);
+        width = x_max - x_min;
       }
-      x_prev = x_itr;
+      int length = (node_itr.first).first - (node_prev.first).first;
+      if (length == 0)
+        length = (node_itr.first).second - (node_prev.first).second;
+      double cond = getConductivity(width, length, rho);
+      setConductance(node1, node2, cond);
     }
-  } else {
-    // int                       x_loc = (x_min + x_max) / 2;
-
-    map<pair<int, int>, Node*> y_map;
-    for (auto x_itr = layer_map.lower_bound(x_min);
-         x_itr != layer_map.end() && x_itr->first <= x_max;
-         ++x_itr) {
-      map<int, Node*> y_itr_map = x_itr->second;
-      map<int, Node*>::iterator y_map_itr;
-      for (y_map_itr = y_itr_map.lower_bound(y_min);
-           y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
-           ++y_map_itr)
-        y_map.insert(make_pair(make_pair(y_map_itr->first, x_itr->first),
-                               y_map_itr->second));
-    }
-
-    // map<int, Node*>           y_map = layer_map.at(x_loc);
-    // map<pair<int,int>, Node*>::iterator y_prev;
-    pair<pair<int, int>, Node*> y_prev;
-    int i = 0;
-    for (auto& y_itr : y_map) {
-      if (i == 0) {
-        i = 1;
-      } else {
-        Node* node1 = y_itr.second;
-        Node* node2 = y_prev.second;
-        int width = x_max - x_min;
-        int length = (y_itr.first).first - (y_prev.first).first;
-        if (length == 0)
-          length = (y_itr.first).second - (y_prev.first).second;
-        double cond = getConductivity(width, length, rho);
-        setConductance(node1, node2, cond);
-      }
-      y_prev = y_itr;
-    }
+    node_prev = node_itr;
   }
 }
 //! Function that gets the locations of nodes to connect RDL vias

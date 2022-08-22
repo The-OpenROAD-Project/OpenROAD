@@ -39,7 +39,7 @@ namespace dst {
 class BalancerJobDescription : public JobDescription
 {
  public:
-  BalancerJobDescription() {}
+  BalancerJobDescription() : worker_port_(0) {}
   void setWorkerIP(const std::string& ip) { worker_ip_ = ip; }
   void setWorkerPort(unsigned short port) { worker_port_ = port; }
   std::string getWorkerIP() const { return worker_ip_; }

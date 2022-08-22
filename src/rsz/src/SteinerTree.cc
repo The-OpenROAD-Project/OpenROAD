@@ -159,7 +159,8 @@ SteinerTree::setTree(stt::Tree tree,
 }
 
 SteinerTree::SteinerTree(const Pin *drvr_pin) :
-  drvr_pin_(drvr_pin)
+  drvr_pin_(drvr_pin),
+  drvr_steiner_pt_(0)
 {
 }
 

@@ -2203,78 +2203,83 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    if (layer->getType() == dbTechLayerType::CUT
-        && cut_maximum_size_[layer] < shape_limit) {
-      continue;
-    }
+    const bool draw_shapes = !(layer->getType() == dbTechLayerType::CUT
+                               && cut_maximum_size_[layer] < shape_limit);
 
-    drawInstanceShapes(layer, painter, insts);
+    if (draw_shapes) {
+      drawInstanceShapes(layer, painter, insts);
+    }
 
     drawObstructions(layer, painter, bounds);
 
-    // Now draw the shapes
-    QColor color = getColor(layer);
-    Qt::BrushStyle brush_pattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brush_pattern));
-    painter->setPen(QPen(color, 0));
-    auto box_iter = search_.searchBoxShapes(layer,
-                                            bounds.xMin(),
-                                            bounds.yMin(),
-                                            bounds.xMax(),
-                                            bounds.yMax(),
-                                            instance_limit);
-
-    for (auto& [box, net] : box_iter) {
-      if (!isNetVisible(net)) {
-        continue;
-      }
-      const auto& ll = box.min_corner();
-      const auto& ur = box.max_corner();
-      painter->drawRect(QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
-    }
-
-    auto polygon_iter = search_.searchPolygonShapes(layer,
-                                                    bounds.xMin(),
-                                                    bounds.yMin(),
-                                                    bounds.xMax(),
-                                                    bounds.yMax(),
-                                                    instance_limit);
-
-    for (auto& [box, poly, net] : polygon_iter) {
-      if (!isNetVisible(net)) {
-        continue;
-      }
-      const int size = poly.outer().size();
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++) {
-        qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
-      }
-      painter->drawPolygon(qpoly);
-    }
-
-    // Now draw the fills
-    if (options_->areFillsVisible()) {
-      QColor color = getColor(layer).lighter(50);
+    if (draw_shapes) {
+      // Now draw the shapes
+      QColor color = getColor(layer);
       Qt::BrushStyle brush_pattern = getPattern(layer);
       painter->setBrush(QBrush(color, brush_pattern));
       painter->setPen(QPen(color, 0));
-      auto iter = search_.searchFills(layer,
-                                      bounds.xMin(),
-                                      bounds.yMin(),
-                                      bounds.xMax(),
-                                      bounds.yMax(),
-                                      shape_limit);
+      auto box_iter = search_.searchBoxShapes(layer,
+                                              bounds.xMin(),
+                                              bounds.yMin(),
+                                              bounds.xMax(),
+                                              bounds.yMax(),
+                                              instance_limit);
 
-      for (auto& i : iter) {
-        const auto& ll = std::get<0>(i).min_corner();
-        const auto& ur = std::get<0>(i).max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+      for (auto& [box, net] : box_iter) {
+        if (!isNetVisible(net)) {
+          continue;
+        }
+        const auto& ll = box.min_corner();
+        const auto& ur = box.max_corner();
+        painter->drawRect(QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+      }
+
+      auto polygon_iter = search_.searchPolygonShapes(layer,
+                                                      bounds.xMin(),
+                                                      bounds.yMin(),
+                                                      bounds.xMax(),
+                                                      bounds.yMax(),
+                                                      instance_limit);
+
+      for (auto& [box, poly, net] : polygon_iter) {
+        if (!isNetVisible(net)) {
+          continue;
+        }
+        const int size = poly.outer().size();
+        QPolygon qpoly(size);
+        for (int i = 0; i < size; i++) {
+          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+        }
+        painter->drawPolygon(qpoly);
+      }
+
+      // Now draw the fills
+      if (options_->areFillsVisible()) {
+        QColor color = getColor(layer).lighter(50);
+        Qt::BrushStyle brush_pattern = getPattern(layer);
+        painter->setBrush(QBrush(color, brush_pattern));
+        painter->setPen(QPen(color, 0));
+        auto iter = search_.searchFills(layer,
+                                        bounds.xMin(),
+                                        bounds.yMin(),
+                                        bounds.xMax(),
+                                        bounds.yMax(),
+                                        shape_limit);
+
+        for (auto& i : iter) {
+          const auto& ll = std::get<0>(i).min_corner();
+          const auto& ur = std::get<0>(i).max_corner();
+          painter->drawRect(
+              QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        }
       }
     }
 
-    drawTracks(layer, painter, bounds);
-    drawRouteGuides(gui_painter, layer);
+    if (draw_shapes) {
+      drawTracks(layer, painter, bounds);
+      drawRouteGuides(gui_painter, layer);
+    }
+
     for (auto* renderer : renderers) {
       gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
