@@ -918,11 +918,6 @@ void SpectrumGenerator::drawLegend(
   painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
 }
 
-void Gui::load_design()
-{
-  main_window->postReadDb(main_window->getDb());
-}
-
 void Gui::fit()
 {
   main_window->fit();
@@ -1089,6 +1084,8 @@ int startGui(int& argc,
         // init remainder of GUI, to be called immediately after OpenRoad is
         // guaranteed to be initialized.
         main_window->init(open_road->getSta());
+        // announce design created to ensure GUI gets setup
+        main_window->postReadDb(main_window->getDb());
       });
 
   // Exit the app if someone chooses exit from the menu in the window
