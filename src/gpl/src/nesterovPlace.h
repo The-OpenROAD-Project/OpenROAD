@@ -67,9 +67,6 @@ class NesterovPlaceVars {
   float referenceHpwl; // refDeltaHpwl
   float routabilityCheckOverflow;
 
-  int routabilityMaxBloatIter;
-  int routabilityMaxInflationIter;
-  
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
   
@@ -88,7 +85,7 @@ class NesterovPlaceVars {
 class NesterovPlace {
 public:
   NesterovPlace();
-  NesterovPlace(NesterovPlaceVars npVars,
+  NesterovPlace(const NesterovPlaceVars& npVars,
       std::shared_ptr<PlacerBase> pb,
       std::shared_ptr<NesterovBase> nb,
       std::shared_ptr<RouteBase> rb,

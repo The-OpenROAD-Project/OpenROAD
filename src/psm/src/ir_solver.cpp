@@ -599,7 +599,6 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
       // Store wires in an easy to access format as we reuse it multiple times
       power_wires.push_back(curWire);
       int l;
-      dbTechLayerDir::Value layer_dir;
       // If the wire is a via get extract the top layer
       // We assume the bottom most layer must have power stripes.
       if (curWire->isVia()) {
@@ -610,20 +609,16 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
           via_layer = curWire->getTechVia()->getTopLayer();
         }
         l = via_layer->getRoutingLevel();
-        layer_dir = via_layer->getDirection();
         // If the wire is a power stripe extract the bottom and bottom layer
       } else {
         dbTechLayer* wire_layer = curWire->getTechLayer();
         l = wire_layer->getRoutingLevel();
-        layer_dir = wire_layer->getDirection();
         if (l < bottom_layer_) {
           bottom_layer_ = l;
-          bottom_layer_dir_ = layer_dir;
         }
       }
       if (l > top_layer_) {
         top_layer_ = l;
-        top_layer_dir_ = layer_dir;
       }
     }
   }
@@ -870,16 +865,10 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                       y);
       }
       // Make a connection between the top and bottom nodes of the via
-      if (node_bot == nullptr || node_top == nullptr) {
-        logger_->error(utl::PSM,
-                       34,
-                       "Unexpected condition. Null pointer received for node.");
+      if (R <= 1e-12) {  // if the resistance was not set.
+        Gmat_->setConductance(node_bot, node_top, 0);
       } else {
-        if (R <= 1e-12) {  // if the resistance was not set.
-          Gmat_->setConductance(node_bot, node_top, 0);
-        } else {
-          Gmat_->setConductance(node_bot, node_top, 1 / R);
-        }
+        Gmat_->setConductance(node_bot, node_top, 1 / R);
       }
       // Create the connections in the bottom enclosure
       const auto bot_layer_dir = via_bottom_layer->getDirection();

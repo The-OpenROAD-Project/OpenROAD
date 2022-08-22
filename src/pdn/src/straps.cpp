@@ -929,7 +929,8 @@ std::vector<PadDirectConnectionStraps*> PadDirectConnectionStraps::getAssociated
   for (const auto& strap : getGrid()->getStraps()) {
     if (strap->type() == GridComponent::PadConnect) {
       PadDirectConnectionStraps* pad_strap = dynamic_cast<PadDirectConnectionStraps*>(strap.get());
-      if (pad_strap->getITerm()->getInst() == inst) {
+      if (pad_strap != nullptr &&
+          pad_strap->getITerm()->getInst() == inst) {
         straps.push_back(pad_strap);
       }
     }
@@ -1777,6 +1778,9 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
     for (const auto& strap : grid->getStraps()) {
       if (strap->type() == GridComponent::RepairChannel) {
         RepairChannelStraps* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
+        if (repair_strap == nullptr) {
+          continue;
+        }
         if (repair_strap->getLayer() == channel.target->getLayer() && channel.area == repair_strap->getArea()) {
           if (!repair_strap->isAtEndOfRepairOptions()) {
             repair_strap->addNets(channel.nets);

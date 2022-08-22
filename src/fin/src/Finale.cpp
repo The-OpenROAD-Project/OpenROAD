@@ -31,15 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "fin/Finale.h"
-
 #include "DensityFill.h"
+#include "fin/Finale.h"
 
 namespace fin {
 
 ////////////////////////////////////////////////////////////////
 
-Finale::Finale() : db_(nullptr), debug_(false)
+Finale::Finale() : db_(nullptr), logger_(nullptr), debug_(false)
 {
 }
 
