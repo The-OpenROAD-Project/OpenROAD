@@ -379,7 +379,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
 
   nv.insert(node);
 
-  for (auto edge_info : edge_vec) {
+  for (const auto& edge_info : edge_vec) {
     dbWireGraph::Edge* edge = edge_info.first;
     dbIoType edge_io_type = edge_info.second;
     if (edge->type() == dbWireGraph::Edge::Type::VIA
@@ -1025,7 +1025,8 @@ AntennaChecker::buildViaCarTable(const vector<PARinfo> &PARtable,
   return VIA_CARtable;
 }
 
-std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* net,
+std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
+                                                   dbNet* net,
                                                    bool report,
                                                    bool verbose)
 {
@@ -1118,7 +1119,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(ARinfo AntennaRatio, dbNet* n
   return {violated, checked};
 }
 
-std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
+std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
                                                    bool par_checked,
                                                    bool report,
                                                    bool verbose)
@@ -1211,7 +1212,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(ARinfo AntennaRatio,
   return {violated, checked};
 }
 
-bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
+bool AntennaChecker::checkViaPar(const ARinfo& AntennaRatio,
                                  bool report,
                                  bool verbose)
 {
@@ -1265,7 +1266,7 @@ bool AntennaChecker::checkViaPar(ARinfo AntennaRatio,
   return violated;
 }
 
-bool AntennaChecker::checkViaCar(ARinfo AntennaRatio,
+bool AntennaChecker::checkViaCar(const ARinfo& AntennaRatio,
                                  bool report,
                                  bool verbose)
 {
@@ -1422,7 +1423,7 @@ void AntennaChecker::checkGate(dbNet* net,
                                unordered_set<dbWireGraph::Node*> &violated_gates)
 {
   bool first_pin_violation = true;
-  for (auto ar : CARtable) {
+  for (const auto& ar : CARtable) {
     if (ar.GateNode == gate) {
       auto wire_PAR_violation = checkWirePar(ar, net, false, verbose);
 
@@ -1454,7 +1455,7 @@ void AntennaChecker::checkGate(dbNet* net,
       }
     }
   }
-  for (auto via_ar : VIA_CARtable) {
+  for (const auto& via_ar : VIA_CARtable) {
     if (via_ar.GateNode == gate) {
       bool VIA_PAR_violation = checkViaPar(via_ar, false, verbose);
       bool VIA_CAR_violation = checkViaCar(via_ar, false, verbose);
@@ -1643,7 +1644,7 @@ AntennaChecker::parMaxWireLength(dbNet* net, int layer)
   return par_wires;
 }
 
-bool AntennaChecker::checkViolation(PARinfo &par_info, dbTechLayer* layer)
+bool AntennaChecker::checkViolation(const PARinfo &par_info, dbTechLayer* layer)
 {
   const double par = par_info.PAR;
   const double psr = par_info.PSR;
