@@ -31,10 +31,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "node.h"
+
 #include <iostream>
 #include <vector>
-
-#include "node.h"
 
 namespace psm {
 
@@ -43,8 +43,7 @@ using std::max;
 using std::pair;
 using std::vector;
 
-Node::Node(const Point& loc, int layer)
-    : layer_(layer), loc_(loc)
+Node::Node(const Point& loc, int layer) : layer_(layer), loc_(loc)
 {
 }
 
