@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "odb.h"
+#include "isotropy.h"
 
 namespace odb {
 

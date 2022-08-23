@@ -34,6 +34,32 @@
 namespace ord {
 
 OpenRoad::OpenRoad()
+    : tcl_interp_(nullptr),
+      logger_(nullptr),
+      db_(nullptr),
+      verilog_network_(nullptr),
+      sta_(nullptr),
+      resizer_(nullptr),
+      ioPlacer_(nullptr),
+      opendp_(nullptr),
+      optdp_(nullptr),
+      finale_(nullptr),
+      macro_placer_(nullptr),
+      macro_placer2_(nullptr),
+      global_router_(nullptr),
+      restructure_(nullptr),
+      tritonCts_(nullptr),
+      tapcell_(nullptr),
+      extractor_(nullptr),
+      detailed_router_(nullptr),
+      antenna_checker_(nullptr),
+      replace_(nullptr),
+      pdnsim_(nullptr),
+      partitionMgr_(nullptr),
+      pdngen_(nullptr),
+      distributer_(nullptr),
+      stt_builder_(nullptr),
+      threads_(0)
 {
 }
 

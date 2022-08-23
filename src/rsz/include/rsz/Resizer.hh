@@ -505,6 +505,8 @@ protected:
                       const Corner *&corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance *inst);
+  bool isDoNotTouch(const Instance *inst);
+  bool isDoNotTouch(const Net *net);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes

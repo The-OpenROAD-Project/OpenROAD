@@ -163,7 +163,7 @@ class Connect
   int getSplitCut(odb::dbTechLayer* layer) const;
 
   DbVia* generateDbVia(
-      const std::vector<std::unique_ptr<ViaGenerator>>& generators,
+      const std::vector<std::shared_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
 
   using ViaLayerRects = std::set<odb::Rect>;

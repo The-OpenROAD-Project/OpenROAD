@@ -201,7 +201,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     // rightway on grid only forbid off track rightway planar access
     // horz layer
     if (lowerLayer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (lowerLayer->getLef58RectOnlyConstraint()) {
+      if (lowerLayer->isUnidirectional()) {
         ap->setAccess(frDirEnum::S, false);
         ap->setAccess(frDirEnum::N, false);
       }
@@ -213,7 +213,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     }
     // vert layer
     if (lowerLayer->getDir() == dbTechLayerDir::VERTICAL) {
-      if (lowerLayer->getLef58RectOnlyConstraint()) {
+      if (lowerLayer->isUnidirectional()) {
         ap->setAccess(frDirEnum::W, false);
         ap->setAccess(frDirEnum::E, false);
       }

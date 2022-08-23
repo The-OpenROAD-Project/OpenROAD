@@ -261,8 +261,7 @@ void design_created()
   if (!check_gui("design_created")) {
     return;
   }
-  auto gui = gui::Gui::get();
-  gui->load_design();
+  ord::OpenRoad::openRoad()->designCreated();
 }
 
 void fit()

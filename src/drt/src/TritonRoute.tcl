@@ -384,6 +384,11 @@ proc detailed_route_set_default_via { args } {
   drt::detailed_route_set_default_via $args
 }
 
+proc detailed_route_set_unidirectional_layer { args } {
+  sta::check_argc_eq1 "detailed_route_set_unidirectional_layer" $args
+  drt::detailed_route_set_unidirectional_layer $args
+}
+
 namespace eval drt {
 
 proc step_dr { args } {

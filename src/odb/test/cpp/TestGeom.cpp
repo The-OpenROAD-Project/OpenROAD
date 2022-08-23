@@ -81,4 +81,59 @@ BOOST_AUTO_TEST_CASE( test_rect_merge )
     BOOST_TEST(rect.dx()==240);
     BOOST_TEST(rect.dy()==240);
 }
+BOOST_AUTO_TEST_CASE( test_isotropy )
+{
+  BOOST_CHECK_NE(low, high);
+  BOOST_CHECK_EQUAL(low.flipped(), high);
+  BOOST_CHECK_EQUAL(high.flipped(), low);
+
+  BOOST_CHECK_NE(horizontal, vertical);
+  BOOST_CHECK_NE(proximal, horizontal);
+  BOOST_CHECK_EQUAL(horizontal.turn_90(), vertical);
+  BOOST_CHECK_EQUAL(vertical.turn_90(), horizontal);
+  BOOST_CHECK_EQUAL(horizontal.getDirection(high), east);
+  BOOST_CHECK_EQUAL(horizontal.getDirection(low), west);
+  BOOST_CHECK_EQUAL(vertical.getDirection(high), north);
+  BOOST_CHECK_EQUAL(vertical.getDirection(low), south);
+
+  BOOST_CHECK_NE(west, east);
+  BOOST_CHECK_NE(west, south);
+  BOOST_CHECK_NE(west, north);
+  BOOST_CHECK_NE(east, south);
+  BOOST_CHECK_NE(east, north);
+  BOOST_CHECK_NE(south, north);
+
+  BOOST_CHECK_EQUAL(north.flipped(), south);
+  BOOST_CHECK_EQUAL(north.left(), west);
+  BOOST_CHECK_EQUAL(north.right(), east);
+  BOOST_TEST(north.is_positive());
+
+  BOOST_CHECK_EQUAL(south.flipped(), north);
+  BOOST_CHECK_EQUAL(south.left(), east);
+  BOOST_CHECK_EQUAL(south.right(), west);
+  BOOST_TEST(south.is_negative());
+
+  BOOST_CHECK_EQUAL(east.flipped(), west);
+  BOOST_CHECK_EQUAL(east.left(), north);
+  BOOST_CHECK_EQUAL(east.right(), south);
+  BOOST_TEST(east.is_positive());
+
+  BOOST_CHECK_EQUAL(west.flipped(), east);
+  BOOST_CHECK_EQUAL(west.left(), south);
+  BOOST_CHECK_EQUAL(west.right(), north);
+  BOOST_TEST(west.is_negative());
+
+  BOOST_CHECK_EQUAL(up.flipped(), down);
+  BOOST_CHECK_EQUAL(down.flipped(), up);
+  BOOST_TEST(up.is_positive());
+  BOOST_TEST(down.is_negative());
+
+  // Make sure they can be used as array indices
+  std::vector<int> test(2);
+  test[low] = 1;
+  test[high] = 2;
+  BOOST_CHECK_EQUAL(test[low], 1);
+  BOOST_CHECK_EQUAL(test[high], 2);
+
+}
 BOOST_AUTO_TEST_SUITE_END()

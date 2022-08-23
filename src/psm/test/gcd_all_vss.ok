@@ -19,7 +19,7 @@
 [WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (50.160um, 51.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (40.070um, 33.115um).
-[INFO PSM-0031] Number of PDN nodes on net VSS = 449.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
@@ -28,24 +28,24 @@
 [INFO PSM-0003] Output current file specified ./results/gcd_em_vss.rpt.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 449.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 5.86e-04 V
-Average IR drop  : 3.64e-04 V
-Worstcase IR drop: 5.86e-04 V
+Worstcase voltage: 5.98e-04 V
+Average IR drop  : 3.70e-04 V
+Worstcase IR drop: 5.98e-04 V
 ######################################
 ########## EM analysis ###############
 Maximum current: 6.62e-05 A
-Average current: 2.14e-06 A
-Number of resistors: 448
+Average current: 1.96e-06 A
+Number of resistors: 506
 ######################################
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
 [INFO PSM-0005] Output spice file is specified as: ./results/gcd_spice_vss.sp.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 449.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0006] SPICE file is written at: ./results/gcd_spice_vss.sp.

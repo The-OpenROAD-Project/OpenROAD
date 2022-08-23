@@ -47,7 +47,6 @@ proc initialize_floorplan { args } {
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
-  ord::ensure_units_initialized
 
   set site_name ""
   if [info exists keys(-site)] {
@@ -89,10 +88,10 @@ proc initialize_floorplan { args } {
       set aspect_ratio 1.0
     }
     ifp::init_floorplan_util $util $aspect_ratio \
-      [ifp::to_dbu $core_sp_bottom] \
-      [ifp::to_dbu $core_sp_top] \
-      [ifp::to_dbu $core_sp_left] \
-      [ifp::to_dbu $core_sp_right] \
+      [ord::microns_to_dbu $core_sp_bottom] \
+      [ord::microns_to_dbu $core_sp_top] \
+      [ord::microns_to_dbu $core_sp_left] \
+      [ord::microns_to_dbu $core_sp_right] \
       $site_name
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
@@ -117,12 +116,12 @@ proc initialize_floorplan { args } {
       sta::check_positive_float "-core_area" $core_ux
       sta::check_positive_float "-core_area" $core_uy
 
-      # convert die/core coordinates to meters.
+      # convert die/core coordinates to dbu.
       ifp::init_floorplan_core \
-	[ifp::to_dbu $die_lx] [ifp::to_dbu $die_ly] \
-	[ifp::to_dbu $die_ux] [ifp::to_dbu $die_uy] \
-	[ifp::to_dbu $core_lx] [ifp::to_dbu $core_ly] \
-	[ifp::to_dbu $core_ux] [ifp::to_dbu $core_uy] \
+	[ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
+	[ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
+	[ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
+	[ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
 	$site_name
     } else {
       utl::error IFP 17 "no -core_area specified."
@@ -144,7 +143,6 @@ proc make_tracks { args } {
     flags {}
 
   sta::check_argc_eq0or1 "initialize_floorplan" $args
-  ord::ensure_units_initialized
 
   set tech [ord::get_db_tech]
 
@@ -235,11 +233,6 @@ proc insert_tiecells { args } {
 }
 
 namespace eval ifp {
-
-proc to_dbu { coord } {
-    set in_meters [sta::distance_ui_sta $coord]
-    return [ord::microns_to_dbu [expr $in_meters * 1e6]]
-}
 
 proc microns_to_mfg_grid { microns } {
   set tech [ord::get_db_tech]

@@ -144,15 +144,16 @@ class AntennaChecker
                      vector<dbWireGraph::Node*> &wire_roots,
                      vector<dbWireGraph::Node*> &gate_iterms);
 
-  std::pair<bool, bool> checkWirePar(ARinfo AntennaRatio, dbNet* net,
+  std::pair<bool, bool> checkWirePar(const ARinfo& AntennaRatio,
+                                     dbNet* net,
                                      bool verbose,
                                      bool report);
-  std::pair<bool, bool> checkWireCar(ARinfo AntennaRatio,
+  std::pair<bool, bool> checkWireCar(const ARinfo& AntennaRatio,
                                      bool par_checked,
                                      bool verbose,
                                      bool report);
-  bool checkViaPar(ARinfo AntennaRatio, bool verbose, bool report);
-  bool checkViaCar(ARinfo AntennaRatio, bool verbose, bool report);
+  bool checkViaPar(const ARinfo& AntennaRatio, bool verbose, bool report);
+  bool checkViaCar(const ARinfo& AntennaRatio, bool verbose, bool report);
 
   void checkNet(dbNet* net,
                 bool report_if_no_violation,
@@ -168,7 +169,7 @@ class AntennaChecker
                  // Return values.
                  bool &violation,
                  std::unordered_set<dbWireGraph::Node*> &violated_gates);
-  bool checkViolation(PARinfo &par_info, dbTechLayer* layer);
+  bool checkViolation(const PARinfo &par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);
 
   void findWireRootIterms(dbWireGraph::Node* node,
