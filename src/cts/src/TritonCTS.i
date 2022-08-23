@@ -102,12 +102,6 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_out_path(const char* path)
-{
-  getTritonCts()->getParms()->setOutputPath(path);
-}
-
-void
 set_slew_inter(double slew)
 {
   getTritonCts()->getParms()->setSlewInter(slew);

@@ -113,8 +113,6 @@ class CtsOptions
   {
     return charWirelengthIterations_;
   }
-  void setOutputPath(const std::string& path) { outputPath_ = path; }
-  std::string getOutputPath() const { return outputPath_; }
   void setCapInter(double cap) { capInter_ = cap; }
   double getCapInter() const { return capInter_; }
   void setSlewInter(double slew) { slewInter_ = slew; }
@@ -205,7 +203,6 @@ class CtsOptions
 
  private:
   std::string blockName_ = "";
-  std::string outputPath_ = "";
   std::string clockNets_ = "";
   std::string rootBuffer_ = "";
   std::string sinkBuffer_ = "";
