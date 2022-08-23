@@ -70,7 +70,6 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-buf_list buflist] \
                                              [-root_buf buf] \
                                              [-clk_nets nets] \
-                                             [-out_path path] \
                                              [-tree_buf buf] \
                                              [-post_cts_disable] \
                                              [-distance_between_buffers] \
@@ -88,7 +87,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
+    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
     flags {-post_cts_disable -sink_clustering_enable -balance_levels}
@@ -191,11 +190,6 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer $sink_buf
   } else {
     cts::set_sink_buffer $root_buf
-  }
-
-  if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {
-    set out_path $keys(-out_path)
-    cts::set_out_path $out_path
   }
 
   if { [ord::get_db_block] == "NULL" } {
