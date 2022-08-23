@@ -140,8 +140,6 @@ class Replace
 
     void addTimingNetWeightOverflow(int overflow);
 
-    void setPlottingPath(const char* path);
-
     void setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,

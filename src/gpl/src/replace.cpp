@@ -41,7 +41,6 @@
 #include "utl/Logger.h"
 #include "rsz/Resizer.hh"
 #include "odb/db.h"
-#include "plot.h"
 #include <iostream>
 
 namespace gpl {
@@ -514,13 +513,6 @@ Replace::setPadRight(int pad) {
 void
 Replace::addTimingNetWeightOverflow(int overflow) {
   timingNetWeightOverflows_.push_back(overflow);
-}
-
-void
-Replace::setPlottingPath(const char* path) {
-#ifdef ENABLE_CIMG_LIB
-  gpl::PlotEnv::setPlotPath(path);
-#endif
 }
 
 }

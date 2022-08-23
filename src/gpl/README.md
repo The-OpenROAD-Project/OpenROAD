@@ -11,7 +11,6 @@ Features:
     (7/14/16/28/45/55/65nm).
 -   Verified deterministic solution generation with various compilers and OS.
 -   Supports Mixed-size placement mode.
--   Supports fast image drawing modes with CImg library.
 
 | <img src="./doc/image/adaptec2.inf.gif" width=350px> | <img src="./doc/image/coyote_movie.gif" width=400px> |
 |:--:|:--:|

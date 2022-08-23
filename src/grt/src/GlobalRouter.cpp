@@ -763,13 +763,8 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
 
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
-    bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-    int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
-                        ? min_layer_for_clock_
-                        : min_routing_layer_;
-    int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
-                        ? max_layer_for_clock_
-                        : max_routing_layer_;
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
 
     int netID = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
@@ -785,6 +780,27 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     return true;
   }
   return false;
+}
+
+void GlobalRouter::getNetLayerRange(Net* net,
+                                    int& min_layer,
+                                    int& max_layer)
+{
+  int port_min_layer = std::numeric_limits<int>::max();
+  for (const Pin& pin : net->getPins()) {
+    if (pin.isPort() || pin.isConnectedToPad()) {
+      port_min_layer = std::min(port_min_layer, pin.getTopLayer());
+    }
+  }
+
+  bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+  min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
+                  ? min_layer_for_clock_
+                  : min_routing_layer_;
+  min_layer = std::min(min_layer, port_min_layer);
+  max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
+                  ? max_layer_for_clock_
+                  : max_routing_layer_;
 }
 
 void GlobalRouter::computeTrackConsumption(
@@ -1396,7 +1412,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
-      guides[net].push_back(std::make_pair(layer->getRoutingLevel(),rect));
+      guides[net].push_back(std::make_pair(layer->getRoutingLevel(), rect));
       boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
@@ -1475,7 +1491,8 @@ void GlobalRouter::updateDbCongestionFromGuides()
   }
 }
 
-void GlobalRouter::saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides)
+void GlobalRouter::saveGuidesFromFile(
+    std::unordered_map<odb::dbNet*, Guides>& guides)
 {
   odb::dbTechLayer* ph_layer_final = nullptr;
 
@@ -2567,7 +2584,13 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
 {
   const sta::Pin* pin = network->dbToSta(iterm);
   sta::LibertyPort* lib_port = network->libertyPort(pin);
-  return lib_port && lib_port->isRegClk();
+  bool connected_to_pad = false;
+  if (lib_port != nullptr) {
+    sta::LibertyCell* lib_cell = lib_port->libertyCell();
+    connected_to_pad = lib_cell != nullptr && lib_cell->isPad();
+  }
+
+  return lib_port && (lib_port->isRegClk() || connected_to_pad);
 }
 
 bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)

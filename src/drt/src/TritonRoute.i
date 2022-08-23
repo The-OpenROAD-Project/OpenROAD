@@ -69,6 +69,12 @@ void detailed_route_set_default_via(const char* viaName)
   router->addUserSelectedVia(viaName);
 }
 
+void detailed_route_set_unidirectional_layer(const char* layerName)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setUnidirectionalLayer(layerName);
+}
+
 void detailed_route_cmd(const char* outputMazeFile,
                         const char* outputDrcFile,
                         const char* outputCmapFile,

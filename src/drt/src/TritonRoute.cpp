@@ -725,9 +725,9 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
-  if(debug_->debugDumpDR)
-  {
-    std::string globals_path = fmt::format("{}/init_globals.bin", debug_->dumpDir);
+  if (debug_->debugDumpDR) {
+    std::string globals_path
+        = fmt::format("{}/init_globals.bin", debug_->dumpDir);
     writeGlobals(globals_path);
   }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
@@ -911,6 +911,20 @@ void TritonRoute::addUserSelectedVia(const std::string& viaName)
   }
 }
 
+void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
+{
+  if (db_->getTech() == nullptr) {
+    logger_->error(DRT, 615, "Load tech before setting unidirectional layers");
+  }
+  auto tech = db_->getTech();
+  auto dbLayer = tech->findLayer(layerName.c_str());
+  if (dbLayer == nullptr) {
+    logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
+  } else {
+    design_->getTech()->setUnidirectionalLayer(dbLayer);
+  }
+}
+
 void TritonRoute::setParams(const ParamStruct& params)
 {
   OUT_MAZE_FILE = params.outputMazeFile;
@@ -1002,151 +1016,13 @@ void TritonRoute::reportDRC(const string& file_name,
       auto con = marker->getConstraint();
       drcRpt << "  violation type: ";
       if (con) {
-        switch (con->typeId()) {
-          case frConstraintTypeEnum::frcShortConstraint: {
-            if (layerType == dbTechLayerType::ROUTING) {
-              drcRpt << "Short";
-            } else if (layerType == dbTechLayerType::CUT) {
-              drcRpt << "CShort";
-            }
-            break;
-          }
-          case frConstraintTypeEnum::frcMinWidthConstraint:
-            drcRpt << "MinWid";
-            break;
-          case frConstraintTypeEnum::frcSpacingConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
-            drcRpt << "EOLSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcCutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcMinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
-            drcRpt << "NSMet";
-            break;
-          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcOffGridConstraint:
-            drcRpt << "OffGrid";
-            break;
-          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
-            drcRpt << "MinHole";
-            break;
-          case frConstraintTypeEnum::frcAreaConstraint:
-            drcRpt << "MinArea";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
-            drcRpt << "CornerSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
-            drcRpt << "RectOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
-            drcRpt << "RightWayOnGridOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58MinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
-            drcRpt << "MetSpcInf";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
-            drcRpt << "SpacingEndOfLineParallelEdge";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableConstraint:
-            drcRpt << "SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
-            drcRpt << "SpacingTableTw";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
-            drcRpt << "Lef58SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
-            drcRpt << "Lef58CutSpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
-            drcRpt << "Lef58CutSpacingTablePrl";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
-            drcRpt << "Lef58CutSpacingTableLayer";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
-            drcRpt << "Lef58CutSpacingParallelWithin";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
-            drcRpt << "Lef58CutSpacingAdjacentCuts";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
-            drcRpt << "Lef58CutSpacingLayer";
-            break;
-          case frConstraintTypeEnum::frcMinimumcutConstraint:
-            drcRpt << "Minimumcut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConcaveCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConcaveCorner";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConvexCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConvexCorner";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing1D";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing2D";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
-            drcRpt << "Lef58SpacingEndOfLine";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithin";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
-            break;
-          case frConstraintTypeEnum::frcLef58CutClassConstraint:
-            drcRpt << "Lef58CutClass";
-            break;
-          case frConstraintTypeEnum::frcRecheckConstraint:
-            drcRpt << "Recheck";
-            break;
-          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
-            drcRpt << "Lef58EolExtension";
-            break;
-          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
-            drcRpt << "Lef58EolKeepOut";
-            break;
-        }
+        std::string violName;
+        if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
+            && layerType == dbTechLayerType::CUT)
+          violName = "Cut Short";
+        else
+          violName = con->getViolName();
+        drcRpt << violName;
       } else {
         drcRpt << "nullptr";
       }
