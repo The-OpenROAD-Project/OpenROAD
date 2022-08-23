@@ -286,6 +286,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   props.push_back({"Description", getInstanceTypeText(getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
   props.push_back({"Source type", inst->getSourceType().getString()});
+  props.push_back({"Dont Touch", inst->isDoNotTouch()});
   if (placed.isPlaced()) {
     int x, y;
     inst->getLocation(x, y);
@@ -378,6 +379,10 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
                   })});
   editors.insert({"Y", makeEditor([this, inst](std::any value) {
                     return setNewLocation(inst, value, false);
+                  })});
+  editors.insert({"Dont Touch", makeEditor([inst](std::any value) {
+                    inst->setDoNotTouch(std::any_cast<bool>(value));
+                    return true;
                   })});
   return editors;
 }
@@ -1282,7 +1287,8 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   Properties props({{"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
                     {"Wire type", net->getWireType().getString()},
-                    {"Special", net->isSpecial()}});
+                    {"Special", net->isSpecial()},
+                    {"Dont Touch", net->isDoNotTouch()}});
   auto gui = Gui::get();
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
@@ -1326,6 +1332,10 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
                         iterm->clearSpecial();
                       }
                     }
+                    return true;
+                  })});
+  editors.insert({"Dont Touch", makeEditor([net](std::any value) {
+                    net->setDoNotTouch(std::any_cast<bool>(value));
                     return true;
                   })});
   return editors;
