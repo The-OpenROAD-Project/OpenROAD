@@ -247,7 +247,7 @@ proc set_dont_use { args } {
 sta::define_cmd_args "unset_dont_use" {lib_cells}
 
 proc unset_dont_use { args } {
-  set_dont_use_cmd "set_dont_use" $args 0
+  set_dont_use_cmd "unset_dont_use" $args 0
 }
 
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
