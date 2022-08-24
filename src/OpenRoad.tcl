@@ -214,27 +214,6 @@ proc thread_count { } {
   return [ord::thread_count]
 }
 
-sta::define_cmd_args "set_dont_touch" { [-unset] objects }
-proc set_dont_touch { args } {
-  sta::parse_key_args "set_dont_touch" args keys {} flags {-unset}
-
-  set donttouch 1
-  if { [info exists flags(-unset)] } {
-    set donttouch 0
-  }
-
-  sta::parse_inst_net_arg $args insts nets
-
-  foreach inst $insts {
-    set inst [sta::sta_to_db_inst $inst]
-    $inst setDoNotTouch $donttouch
-  }
-  foreach net $nets {
-    set net [sta::sta_to_db_net $net]
-    $net setDoNotTouch $donttouch
-  }
-}
-
 ################################################################
 
 namespace eval ord {

@@ -348,7 +348,7 @@ RepairHold::repairEndHold(Vertex *end_vertex,
           ? network_->net(network_->term(path_pin))
           : network_->net(path_pin);
         if (path_vertex->isDriver(network_)
-            && !resizer_->isDoNotTouch(path_net)) {
+            && !resizer_->dontTouch(path_net)) {
           PinSeq load_pins;
           float excluded_cap = 0.0;
           bool loads_have_out_port = false;
