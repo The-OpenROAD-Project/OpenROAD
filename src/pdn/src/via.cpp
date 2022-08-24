@@ -1248,11 +1248,9 @@ bool ViaGenerator::checkConstraints() const
 bool ViaGenerator::checkMinCuts() const
 {
   const bool lower_w = checkMinCuts(getBottomLayer(), getLowerWidth());
-  const bool lower_h = checkMinCuts(getBottomLayer(), getLowerHeight());
   const bool upper_w = checkMinCuts(getTopLayer(), getUpperWidth());
-  const bool upper_h = checkMinCuts(getTopLayer(), getUpperHeight());
 
-  return lower_w && lower_h && upper_w && upper_h;
+  return lower_w && upper_w;
 }
 
 bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
@@ -1443,8 +1441,8 @@ odb::dbTechLayerDir ViaGenerator::getRectDirection(const odb::Rect& rect) const
   return odb::dbTechLayerDir::NONE;
 }
 
-bool ViaGenerator::build(bool use_bottom_min_enclosure,
-                         bool use_top_min_enclosure)
+bool ViaGenerator::build(bool bottom_is_internal_layer,
+                         bool top_is_internal_layer)
 {
   std::vector<Enclosure> bottom_enclosures_list;
   std::vector<Enclosure> top_enclosures_list;
@@ -1453,22 +1451,28 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
   std::set<Enclosure> bottom_enclosures(bottom_enclosures_list.begin(), bottom_enclosures_list.end());
   std::set<Enclosure> top_enclosures(top_enclosures_list.begin(), top_enclosures_list.end());
 
+  auto make_check_rect = [](const odb::Rect& rect, const int width, const int height, bool is_internal) -> odb::Rect {
+    if (is_internal) {
+      return odb::Rect(0, 0, width, height);
+    } else {
+      return rect;
+    }
+  };
+
   int best_cuts = 0;
   const Enclosure* best_bot_enc = nullptr;
   const Enclosure* best_top_enc = nullptr;
   for (auto& bottom_enc : bottom_enclosures) {
     for (auto& top_enc : top_enclosures) {
-      determineRowsAndColumns(use_bottom_min_enclosure,
-                              use_top_min_enclosure,
+      determineRowsAndColumns(bottom_is_internal_layer,
+                              top_is_internal_layer,
                               bottom_enc,
                               top_enc);
 
       odb::Rect save_lower = lower_rect_;
       odb::Rect save_upper = upper_rect_;
-      lower_rect_ = odb::Rect(0, 0,
-                              getGeneratorWidth(true), getGeneratorHeight(true));
-      upper_rect_ = odb::Rect(0, 0,
-                              getGeneratorWidth(false), getGeneratorHeight(false));
+      lower_rect_ = make_check_rect(lower_rect_, getGeneratorWidth(true), getGeneratorHeight(true), bottom_is_internal_layer);
+      upper_rect_ = make_check_rect(upper_rect_, getGeneratorWidth(false), getGeneratorHeight(false), top_is_internal_layer);
       if (checkConstraints()) {
         bool save = best_cuts == 0;
 
@@ -1500,8 +1504,8 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
   }
 
   // rebuild best
-  determineRowsAndColumns(use_bottom_min_enclosure,
-                          use_top_min_enclosure,
+  determineRowsAndColumns(bottom_is_internal_layer,
+                          top_is_internal_layer,
                           *best_bot_enc,
                           *best_top_enc);
 
