@@ -221,21 +221,17 @@ void AntennaChecker::initAntennaRules()
                                   diff_metal_reduce_factor};
     layer_info_[tech_layer] = layer_antenna;
 
-    double wire_width = dbuToMicrons(tech_layer->getWidth());
     uint wire_thickness_dbu = 0;
     tech_layer->getThickness(wire_thickness_dbu);
-    double wire_thickness = dbuToMicrons(wire_thickness_dbu);
 
-    if(tech_layer->getType() == dbTechLayerType::ROUTING && wire_thickness == 0)
+    const dbTechLayerType layerType = tech_layer->getType();
+
+    if(layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0)
     {
       logger_->error(ANT, 13, "No THICKNESS is provided for {}.", tech_layer->getConstName());
     }
-
-    if(tech_layer->getType() == dbTechLayerType::ROUTING && wire_width == 0)
-    {
-      logger_->error(ANT, 14, "No WIDTH is provided for {}.", tech_layer->getConstName());
-    }
   }
+
 }
 
 dbWireGraph::Node* AntennaChecker::findSegmentRoot(dbWireGraph::Node* node,
