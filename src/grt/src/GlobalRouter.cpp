@@ -268,7 +268,10 @@ void GlobalRouter::globalRoute(bool save_guides)
     if (congestion_file_name_ != nullptr) {
       saveCongestion();
     }
-    logger_->error(GRT, 118, "Routing congestion too high.");
+    logger_->error(GRT,
+                   118,
+                   "Routing congestion too high. Check the congestion heatmap "
+                   "in the GUI.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
     logger_->warn(GRT, 115, "Global routing finished with overflow.");
@@ -782,9 +785,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   return false;
 }
 
-void GlobalRouter::getNetLayerRange(Net* net,
-                                    int& min_layer,
-                                    int& max_layer)
+void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
 {
   int port_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
@@ -3880,7 +3881,10 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      logger_->error(GRT, 232, "Routing congestion too high.");
+      logger_->error(GRT,
+                     232,
+                     "Routing congestion too high. Check the congestion "
+                     "heatmap in the GUI.");
     }
   }
 }
