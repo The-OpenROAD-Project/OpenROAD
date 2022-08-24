@@ -275,6 +275,7 @@ class TechChar
   ResultData computeTopologyResults(const SolutionData& solution,
                                     sta::Vertex* outPinVert,
                                     float load,
+                                    float inSlew,
                                     unsigned setupWirelength);
   void updateBufferTopologies(SolutionData& solution);
   std::vector<ResultData> characterizationPostProcess();

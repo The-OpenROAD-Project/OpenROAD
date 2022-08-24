@@ -326,14 +326,15 @@ void TechChar::printCharacterization() const
   logger_->report("maxSlew = {}", maxSlew_);
   logger_->report("wireSegmentUnit = {}", options_->getWireSegmentUnit());
 
-  logger_->report("\nidx length load outSlew power delay inCap inSlew pureWire bufLoc");
+  logger_->report(
+      "\nidx length load outSlew power delay inCap inSlew pureWire bufLoc");
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffer_locations;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
       buffer_locations += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
-    logger_->report("{:6} {} {} {} {:.2e} {:4} {:2} {:2} {} {}",
+    logger_->report("{:6} {:2} {:2} {:2} {:.2e} {:4} {:2} {:2} {} {}",
                     idx,
                     (unsigned) segment.getLength(),
                     (unsigned) segment.getLoad(),
@@ -409,12 +410,14 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  logger_->report("    Key: {} outSlew: {} load: {} length: {} isBuffered: {}",
-                  key,
-                  seg.getOutputSlew(),
-                  seg.getLoad(),
-                  seg.getLength(),
-                  seg.isBuffered());
+  logger_->report(
+      "    Key: {} outSlew: {} load: {} length: {} numBuffers: {} delay: {}",
+      key,
+      seg.getOutputSlew(),
+      seg.getLoad(),
+      seg.getLength(),
+      seg.getNumBuffers(),
+      seg.getDelay());
 }
 
 void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
@@ -843,9 +846,15 @@ TechChar::ResultData TechChar::computeTopologyResults(
     const TechChar::SolutionData& solution,
     sta::Vertex* outPinVert,
     float load,
+    float inSlew,
     unsigned setupWirelength)
 {
   ResultData results;
+  results.wirelength = setupWirelength;
+  results.topology = solution.topologyDescriptor;
+  results.isPureWire = solution.isPureWire;
+  results.load = load;
+  results.inSlew = inSlew;
   // Computations for power, requires the PowerResults class from OpenSTA.
   float totalPower = 0;
   if (!solution.isPureWire) {
@@ -1139,15 +1148,10 @@ void TechChar::create()
 
             // Gets the results (delay, slew, power...) for the pattern.
             ResultData results = computeTopologyResults(
-                solution, outPinVert, load, setupWirelength);
+                solution, outPinVert, load, inputslew, setupWirelength);
 
             // Appends the results to a map, grouping each result by
             // wirelength, load, output slew and input cap.
-            results.wirelength = setupWirelength;
-            results.load = load;
-            results.inSlew = inputslew;
-            results.topology = solution.topologyDescriptor;
-            results.isPureWire = solution.isPureWire;
             CharKey solutionKey;
             solutionKey.wirelength = results.wirelength;
             solutionKey.pinSlew = results.pinSlew;
