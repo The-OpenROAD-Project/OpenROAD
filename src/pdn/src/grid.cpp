@@ -400,23 +400,23 @@ const odb::Rect Grid::getRingArea() const
 void Grid::report() const
 {
   auto* logger = getLogger();
-  logger->info(utl::PDN, 20, "Grid name: {}", getLongName());
-  logger->info(utl::PDN, 21, "Type: {}", typeToString(type()));
+  logger->report("Grid name: {}", getLongName());
+  logger->report("Type: {}", typeToString(type()));
 
   if (!rings_.empty()) {
-    logger->info(utl::PDN, 22, "Rings:");
+    logger->report("Rings:");
     for (const auto& ring : rings_) {
       ring->report();
     }
   }
   if (!straps_.empty()) {
-    logger->info(utl::PDN, 23, "Straps:");
+    logger->report("Straps:");
     for (const auto& strap : straps_) {
       strap->report();
     }
   }
   if (!connect_.empty()) {
-    logger->info(utl::PDN, 24, "Connect:");
+    logger->report("Connect:");
     for (const auto& connect : connect_) {
       connect->report();
     }
@@ -429,7 +429,7 @@ void Grid::report() const
       }
       layers += layer->getName();
     }
-    logger->info(utl::PDN, 25, "Pin layers: {}", layers);
+    logger->report("Pin layers: {}", layers);
   }
   if (!obstruction_layers_.empty()) {
     std::string layers;
@@ -439,7 +439,7 @@ void Grid::report() const
       }
       layers += layer->getName();
     }
-    logger->info(utl::PDN, 26, "Routing obstruction layers: {}", layers);
+    logger->report("Routing obstruction layers: {}", layers);
   }
   if (switched_power_cell_ != nullptr) {
     switched_power_cell_->report();

@@ -13,197 +13,197 @@
 [INFO ODB-0132]     Created 2 special nets and 268 connections.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
 [INFO ODB-0134] Finished DEF file: nangate_bsg_black_parrot/floorplan.def
-[INFO PDN-0010] Voltage domain: Core
-[INFO PDN-0012]   Power net: VDD
-[INFO PDN-0013]   Ground net: VSS
-[INFO PDN-0020] Grid name: Core
-[INFO PDN-0021] Type: Core
-[INFO PDN-0022] Rings:
-[INFO PDN-0030]   Core offset:
-[INFO PDN-0031]     Left: 4.5000
-[INFO PDN-0032]     Bottom: 4.5000
-[INFO PDN-0033]     Right: 4.5000
-[INFO PDN-0034]     Top: 4.5000
-[INFO PDN-0035]   Layer: metal8
-[INFO PDN-0036]     Width: 5.0000
-[INFO PDN-0037]     Spacing: 2.0000
-[INFO PDN-0035]   Layer: metal9
-[INFO PDN-0036]     Width: 5.0000
-[INFO PDN-0037]     Spacing: 2.0000
-[INFO PDN-0023] Straps:
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_pll/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_9/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_8/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_7/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_6/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_5/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_4/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_32/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_31/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_30/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_3/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_29/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_28/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_27/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_26/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_25/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_24/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_23/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_22/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_21/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_20/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_2/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_19/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_18/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_17/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_16/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_15/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_14/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_13/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_12/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_11/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_10/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_1/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vss_0/VSS
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_pll/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_9/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_8/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_7/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_6/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_5/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_4/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_32/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_31/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_30/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_3/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_29/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_28/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_27/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_26/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_25/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_24/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_23/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_22/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_21/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_20/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_2/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_19/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_18/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_17/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_16/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_15/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_14/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_13/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_12/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_11/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_10/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_1/VDD
-[INFO PDN-0080]   Type: Pad connect
-[INFO PDN-0081]     Pin: u_vdd_0/VDD
-[INFO PDN-0040]   Type: Followpin
-[INFO PDN-0041]     Layer: metal1
-[INFO PDN-0042]     Width: 0.1700
-[INFO PDN-0043]     Spacing: 0.0000
-[INFO PDN-0044]     Pitch: 2.8000
-[INFO PDN-0045]     Offset: 0.0000
-[INFO PDN-0046]     Snap to grid: false
-[INFO PDN-0040]   Type: Strap
-[INFO PDN-0041]     Layer: metal4
-[INFO PDN-0042]     Width: 0.4800
-[INFO PDN-0043]     Spacing: 27.5200
-[INFO PDN-0044]     Pitch: 56.0000
-[INFO PDN-0045]     Offset: 2.0000
-[INFO PDN-0046]     Snap to grid: false
-[INFO PDN-0040]   Type: Strap
-[INFO PDN-0041]     Layer: metal7
-[INFO PDN-0042]     Width: 1.4000
-[INFO PDN-0043]     Spacing: 18.6000
-[INFO PDN-0044]     Pitch: 40.0000
-[INFO PDN-0045]     Offset: 2.0000
-[INFO PDN-0046]     Snap to grid: false
-[INFO PDN-0040]   Type: Strap
-[INFO PDN-0041]     Layer: metal8
-[INFO PDN-0042]     Width: 1.4000
-[INFO PDN-0043]     Spacing: 18.6000
-[INFO PDN-0044]     Pitch: 40.0000
-[INFO PDN-0045]     Offset: 2.0000
-[INFO PDN-0046]     Snap to grid: false
-[INFO PDN-0040]   Type: Strap
-[INFO PDN-0041]     Layer: metal9
-[INFO PDN-0042]     Width: 1.4000
-[INFO PDN-0043]     Spacing: 18.6000
-[INFO PDN-0044]     Pitch: 40.0000
-[INFO PDN-0045]     Offset: 2.0000
-[INFO PDN-0046]     Snap to grid: false
-[INFO PDN-0024] Connect:
-[INFO PDN-0070]   Connect layers metal1 -> metal4
-[INFO PDN-0070]   Connect layers metal4 -> metal7
-[INFO PDN-0070]   Connect layers metal7 -> metal8
-[INFO PDN-0070]   Connect layers metal8 -> metal9
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Rings:
+  Core offset:
+    Left: 4.5000
+    Bottom: 4.5000
+    Right: 4.5000
+    Top: 4.5000
+  Layer: metal8
+    Width: 5.0000
+    Spacing: 2.0000
+  Layer: metal9
+    Width: 5.0000
+    Spacing: 2.0000
+Straps:
+  Type: Pad connect
+    Pin: u_vss_pll/VSS
+  Type: Pad connect
+    Pin: u_vss_9/VSS
+  Type: Pad connect
+    Pin: u_vss_8/VSS
+  Type: Pad connect
+    Pin: u_vss_7/VSS
+  Type: Pad connect
+    Pin: u_vss_6/VSS
+  Type: Pad connect
+    Pin: u_vss_5/VSS
+  Type: Pad connect
+    Pin: u_vss_4/VSS
+  Type: Pad connect
+    Pin: u_vss_32/VSS
+  Type: Pad connect
+    Pin: u_vss_31/VSS
+  Type: Pad connect
+    Pin: u_vss_30/VSS
+  Type: Pad connect
+    Pin: u_vss_3/VSS
+  Type: Pad connect
+    Pin: u_vss_29/VSS
+  Type: Pad connect
+    Pin: u_vss_28/VSS
+  Type: Pad connect
+    Pin: u_vss_27/VSS
+  Type: Pad connect
+    Pin: u_vss_26/VSS
+  Type: Pad connect
+    Pin: u_vss_25/VSS
+  Type: Pad connect
+    Pin: u_vss_24/VSS
+  Type: Pad connect
+    Pin: u_vss_23/VSS
+  Type: Pad connect
+    Pin: u_vss_22/VSS
+  Type: Pad connect
+    Pin: u_vss_21/VSS
+  Type: Pad connect
+    Pin: u_vss_20/VSS
+  Type: Pad connect
+    Pin: u_vss_2/VSS
+  Type: Pad connect
+    Pin: u_vss_19/VSS
+  Type: Pad connect
+    Pin: u_vss_18/VSS
+  Type: Pad connect
+    Pin: u_vss_17/VSS
+  Type: Pad connect
+    Pin: u_vss_16/VSS
+  Type: Pad connect
+    Pin: u_vss_15/VSS
+  Type: Pad connect
+    Pin: u_vss_14/VSS
+  Type: Pad connect
+    Pin: u_vss_13/VSS
+  Type: Pad connect
+    Pin: u_vss_12/VSS
+  Type: Pad connect
+    Pin: u_vss_11/VSS
+  Type: Pad connect
+    Pin: u_vss_10/VSS
+  Type: Pad connect
+    Pin: u_vss_1/VSS
+  Type: Pad connect
+    Pin: u_vss_0/VSS
+  Type: Pad connect
+    Pin: u_vdd_pll/VDD
+  Type: Pad connect
+    Pin: u_vdd_9/VDD
+  Type: Pad connect
+    Pin: u_vdd_8/VDD
+  Type: Pad connect
+    Pin: u_vdd_7/VDD
+  Type: Pad connect
+    Pin: u_vdd_6/VDD
+  Type: Pad connect
+    Pin: u_vdd_5/VDD
+  Type: Pad connect
+    Pin: u_vdd_4/VDD
+  Type: Pad connect
+    Pin: u_vdd_32/VDD
+  Type: Pad connect
+    Pin: u_vdd_31/VDD
+  Type: Pad connect
+    Pin: u_vdd_30/VDD
+  Type: Pad connect
+    Pin: u_vdd_3/VDD
+  Type: Pad connect
+    Pin: u_vdd_29/VDD
+  Type: Pad connect
+    Pin: u_vdd_28/VDD
+  Type: Pad connect
+    Pin: u_vdd_27/VDD
+  Type: Pad connect
+    Pin: u_vdd_26/VDD
+  Type: Pad connect
+    Pin: u_vdd_25/VDD
+  Type: Pad connect
+    Pin: u_vdd_24/VDD
+  Type: Pad connect
+    Pin: u_vdd_23/VDD
+  Type: Pad connect
+    Pin: u_vdd_22/VDD
+  Type: Pad connect
+    Pin: u_vdd_21/VDD
+  Type: Pad connect
+    Pin: u_vdd_20/VDD
+  Type: Pad connect
+    Pin: u_vdd_2/VDD
+  Type: Pad connect
+    Pin: u_vdd_19/VDD
+  Type: Pad connect
+    Pin: u_vdd_18/VDD
+  Type: Pad connect
+    Pin: u_vdd_17/VDD
+  Type: Pad connect
+    Pin: u_vdd_16/VDD
+  Type: Pad connect
+    Pin: u_vdd_15/VDD
+  Type: Pad connect
+    Pin: u_vdd_14/VDD
+  Type: Pad connect
+    Pin: u_vdd_13/VDD
+  Type: Pad connect
+    Pin: u_vdd_12/VDD
+  Type: Pad connect
+    Pin: u_vdd_11/VDD
+  Type: Pad connect
+    Pin: u_vdd_10/VDD
+  Type: Pad connect
+    Pin: u_vdd_1/VDD
+  Type: Pad connect
+    Pin: u_vdd_0/VDD
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal4
+    Width: 0.4800
+    Spacing: 27.5200
+    Pitch: 56.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal7
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal8
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal9
+    Width: 1.4000
+    Spacing: 18.6000
+    Pitch: 40.0000
+    Offset: 2.0000
+    Snap to grid: false
+Connect:
+  Connect layers metal1 -> metal4
+  Connect layers metal4 -> metal7
+  Connect layers metal7 -> metal8
+  Connect layers metal8 -> metal9
