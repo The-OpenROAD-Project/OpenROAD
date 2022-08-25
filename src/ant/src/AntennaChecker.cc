@@ -225,7 +225,7 @@ void AntennaChecker::initAntennaRules()
     const dbTechLayerType layerType = tech_layer->getType();
 
     if (layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
-      logger_->error(ANT,
+      logger_->warn(ANT,
                      13,
                      "No THICKNESS is provided for {}.",
                      tech_layer->getConstName());
