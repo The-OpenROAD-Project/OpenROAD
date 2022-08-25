@@ -411,13 +411,21 @@ void TechChar::reportSegment(unsigned key) const
   const WireSegment& seg = getWireSegment(key);
 
   logger_->report(
-      "    Key: {} outSlew: {} load: {} length: {} numBuffers: {} delay: {}",
+      "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} delay: "
+      "{}",
       key,
+      seg.getInputSlew(),
+      seg.getInputCap(),
       seg.getOutputSlew(),
       seg.getLoad(),
       seg.getLength(),
-      seg.getNumBuffers(),
       seg.getDelay());
+
+  for (unsigned idx = 0; idx < seg.getNumBuffers(); ++idx) {
+    logger_->report("      location: {} buffer: {}",
+                    seg.getBufferLocation(idx),
+                    seg.getBufferMaster(idx));
+  }
 }
 
 void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
