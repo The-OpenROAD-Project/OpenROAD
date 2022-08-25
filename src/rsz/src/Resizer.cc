@@ -455,7 +455,7 @@ Resizer::bufferInputs()
     Vertex *vertex = graph_->pinDrvrVertex(pin);
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
-        && !isDoNotTouch(net)
+        && !dontTouch(net)
         && !vertex->isConstant()
         && !sta_->isClock(pin)
         // Hands off special nets.
@@ -535,7 +535,7 @@ Resizer::bufferOutputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isOutput()
         && net
-        && !isDoNotTouch(net)
+        && !dontTouch(net)
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         // DEF does not have tristate output types so we have look at the drivers.
@@ -735,7 +735,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (!network_->isTopLevelPort(drvr_pin)
-      && !isDoNotTouch(inst)
+      && !dontTouch(inst)
       && cell
       && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
@@ -769,20 +769,6 @@ Resizer::isLogicStdCell(const Instance *inst)
 {
   return !db_network_->isTopInstance(inst)
     && db_network_->staToDb(inst)->getMaster()->getType() == odb::dbMasterType::CORE;
-}
-
-bool
-Resizer::isDoNotTouch(const Instance *inst)
-{
-  dbInst *db_inst = db_network_->staToDb(inst);
-  return db_inst->isDoNotTouch();
-}
-
-bool
-Resizer::isDoNotTouch(const Net *net)
-{
-  dbNet *db_net = db_network_->staToDb(net);
-  return db_net->isDoNotTouch();
 }
 
 LibertyCell *
@@ -1159,12 +1145,13 @@ Resizer::overMaxArea()
 }
 
 void
-Resizer::setDontUse(LibertyCellSeq *dont_use)
+Resizer::setDontUse(LibertyCell *cell,
+                    bool dont_use)
 {
-  if (dont_use) {
-    for (LibertyCell *cell : *dont_use)
-      dont_use_.insert(cell);
-  }
+  if (dont_use)
+    dont_use_.insert(cell);
+  else
+    dont_use_.erase(cell);
 }
 
 bool
@@ -1172,6 +1159,36 @@ Resizer::dontUse(LibertyCell *cell)
 {
   return cell->dontUse()
     || dont_use_.hasKey(cell);
+}
+
+void
+Resizer::setDontTouch(const Instance *inst,
+                      bool dont_touch)
+{
+  dbInst *db_inst = db_network_->staToDb(inst);
+  db_inst->setDoNotTouch(dont_touch);
+}
+
+bool
+Resizer::dontTouch(const Instance *inst)
+{
+  dbInst *db_inst = db_network_->staToDb(inst);
+  return db_inst->isDoNotTouch();
+}
+
+void
+Resizer::setDontTouch(const Net *net,
+                      bool dont_touch)
+{
+  dbNet *db_net = db_network_->staToDb(net);
+  db_net->setDoNotTouch(dont_touch);
+}
+
+bool
+Resizer::dontTouch(const Net *net)
+{
+  dbNet *db_net = db_network_->staToDb(net);
+  return db_net->isDoNotTouch();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1410,12 +1427,12 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   int tie_count = 0;
   int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
-    if (!isDoNotTouch(inst)) {
+    if (!dontTouch(inst)) {
       Pin *drvr_pin = network_->findPin(inst, tie_port);
       if (drvr_pin) {
         Net *net = network_->net(drvr_pin);
         if (net
-            && !isDoNotTouch(net)) {
+            && !dontTouch(net)) {
           NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
           while (pin_iter->hasNext()) {
             Pin *load = pin_iter->next();
@@ -2096,7 +2113,7 @@ Resizer::repairClkInverters()
   sta_->ensureLevelized();
   graph_ = sta_->graph();
   for (Instance *inv : findClkInverters()) {
-    if (!isDoNotTouch(inv))
+    if (!dontTouch(inv))
       cloneClkInverter(inv);
   }
 }

@@ -102,13 +102,6 @@ ord::get_die_area
 ord::get_core_area
 ```
 
-To specify specific instances or nets as don't touch, to clear the flag add `-unset`, use:
-
-```
-set_dont_touch objects
-set_dont_touch -unset objects
-```
-
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+openroad+in%3Atitle)
