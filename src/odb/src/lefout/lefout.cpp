@@ -137,30 +137,88 @@ void lefout::writeHeader(dbBlock* db_block)
 
 void lefout::writeObstructions(dbBlock* db_block)
 {
-  std::set<dbTechLayer*> obstruction_layers;
-  getTechLayerObstructions(db_block, obstruction_layers);
+  std::map<dbTechLayer*,std::set<dbObstruction*>> obstructions;
+  getObstructions(db_block, obstructions);
 
   fprintf(_out, "  OBS\n");
-  dbBox* block_bounding_box = db_block->getBBox();
-  for (dbTechLayer* tech_layer : obstruction_layers) {
+
+  for (auto const& pair : obstructions) {
+    dbTechLayer* tech_layer = pair.first;
+    std::set<dbObstruction*> obstructions_per_layer = pair.second;
+
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
-    writeBox("  ", block_bounding_box);
+
+    for (dbObstruction* obs : obstructions_per_layer) {
+      // shrink
+      dbObstruction* shrink_obs = dbObstruction::create(obs->getBlock(),
+                                                        obs->getBBox()->getTechLayer(),
+                                                        obs->getBBox()->xMax() - obs->getBBox()->getTechLayer()->getPitch(),
+                                                        obs->getBBox()->yMax() - obs->getBBox()->getTechLayer()->getPitch(),
+                                                        obs->getBBox()->xMin() + obs->getBBox()->getTechLayer()->getPitch(),
+                                                        obs->getBBox()->yMin() + obs->getBBox()->getTechLayer()->getPitch());
+
+      writeBox("   ", shrink_obs->getBBox());
+    }
   }
+  
   fprintf(_out, "  END\n");
 }
 
-void lefout::getTechLayerObstructions(
+void lefout::insertObstruction(
+  std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
+  dbBlock* block,
+  dbTechLayer* tech_layer,
+  int margin,
+  int xMax,
+  int yMax,
+  int xMin,
+  int yMin) const
+{
+  
+  Rect new_rect(xMax + margin,
+                yMax + margin,
+                xMin - margin,
+                yMin - margin);
+
+  // for on every obs in the relevat tech layer
+  for (auto it = obstructions[tech_layer].cbegin(); it != obstructions[tech_layer].cend();) {
+    dbObstruction* curr_obs = *it;
+    Rect curr_rect = curr_obs->getBBox()->getBox();
+
+    // if the new rect os intersects one of the currents obs, merge them and delete the old obs
+    if (new_rect.overlaps(curr_rect)) {
+        new_rect.merge(curr_rect);
+        obstructions[tech_layer].erase(it++);
+        it = obstructions[tech_layer].cbegin();
+    } else {
+      ++it;
+    }
+    
+  }
+
+  dbObstruction* new_obs = dbObstruction::create(block, 
+                                                 tech_layer,
+                                                 new_rect.xMax(),
+                                                 new_rect.yMax(),
+                                                 new_rect.xMin(),
+                                                 new_rect.yMin());
+
+  obstructions[tech_layer].insert(new_obs);
+}
+
+
+void lefout::getObstructions(
     dbBlock* db_block,
-    std::set<dbTechLayer*>& obstruction_layers) const
+    std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions) const
 {
   for (dbNet* net : db_block->getNets()) {
-    findSWireLayerObstructions(obstruction_layers, net);
-    findWireLayerObstructions(obstruction_layers, net);
+    findSWireLayerObstructions(obstructions, net);
+    findWireLayerObstructions(obstructions, net);
   }
 }
 
 void lefout::findSWireLayerObstructions(
-    std::set<dbTechLayer*>& obstruction_layers,
+    std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
     dbNet* net) const
 {  // Find all layers where an swire exists
   for (dbSWire* swire : net->getSWires()) {
@@ -171,16 +229,25 @@ void lefout::findSWireLayerObstructions(
         // In these cases the metal layer should still be blocked even though
         // we can't find any metal wires on the layer.
         // https://github.com/The-OpenROAD-Project/OpenROAD/pull/725#discussion_r669927312
-        findLayerViaObstructions(obstruction_layers, box);
+        findLayerViaObstructions(obstructions, box, net);
       } else {
-        obstruction_layers.insert(box->getTechLayer());
+        insertObstruction(obstructions,
+                          net->getBlock(),
+                          box->getTechLayer(),
+                          box->getTechLayer()->getPitch(),
+                          box->xMax(),
+                          box->yMax(),
+                          box->xMin(),
+                          box->yMin());
       }
     }
   }
 }
+
 void lefout::findLayerViaObstructions(
-    std::set<dbTechLayer*>& obstruction_layers,
-    dbSBox* box) const
+    std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
+    dbSBox* box,
+    dbNet* net) const
 {
   std::vector<dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
@@ -188,11 +255,19 @@ void lefout::findLayerViaObstructions(
     if (db_shape.isViaBox()) {
       continue;
     }
-    obstruction_layers.insert(db_shape.getTechLayer());
+    insertObstruction(obstructions,
+                      net->getBlock(),
+                      db_shape.getTechLayer(),
+                      db_shape.getTechLayer()->getPitch(),
+                      db_shape.getBox().xMax(),
+                      db_shape.getBox().yMax(),
+                      db_shape.getBox().xMin(),
+                      db_shape.getBox().yMin());
   }
 }
+
 void lefout::findWireLayerObstructions(
-    std::set<dbTechLayer*>& obstruction_layers,
+    std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
     dbNet* net) const
 {
   // Find all metal layers where a wire exists.
@@ -209,7 +284,15 @@ void lefout::findWireLayerObstructions(
     if (shape.isVia()) {
       continue;
     }
-    obstruction_layers.insert(shape.getTechLayer());
+ 
+    insertObstruction(obstructions,
+                      net->getBlock(),
+                      shape.getTechLayer(),
+                      shape.getTechLayer()->getPitch(),
+                      shape.getBox().xMax(),
+                      shape.getBox().yMax(),
+                      shape.getBox().xMin(),
+                      shape.getBox().yMin());
   }
 }
 

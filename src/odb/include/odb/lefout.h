@@ -92,20 +92,29 @@ class lefout
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
   void writeObstructions(dbBlock* db_block);
-  void getTechLayerObstructions(
-      dbBlock* db_block,
-      std::set<dbTechLayer*>& obstruction_layers) const;
+  void insertObstruction(
+      std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
+      dbBlock* block,
+      dbTechLayer* tech_layer,
+      int margin,
+      int xMax,
+      int yMax,
+      int xMin,
+      int yMin) const;
+  void getObstructions(dbBlock* db_block,
+                       std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions) const;
   void writeBox(std::string indent, dbBox* box);
-  void findWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+  void findWireLayerObstructions(std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
                                  dbNet* net) const;
-  void findSWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
+  void findSWireLayerObstructions(std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
                                   dbNet* net) const;
   void writeBlock(dbBlock* db_block);
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
-  void findLayerViaObstructions(std::set<dbTechLayer*>& obstruction_layers,
-                                dbSBox* box) const;
+  void findLayerViaObstructions(std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
+                                dbSBox* box,
+                                dbNet* net) const;
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
