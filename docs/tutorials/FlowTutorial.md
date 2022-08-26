@@ -51,6 +51,9 @@
   - [Clock Tree Synthesis](#Clock-Tree-Synthesis)
     - [Reporting Clock Skews](#Reporting-Clock-Skews)
     - [Reporting CTS Metrics](#Reporting-CTS-Metrics)
+  - [Global Route](#Global-Route)
+  - [Antenna Checker](#Antenna-Checker)
+  - [Detail Route](#Detail-Route)
 
 ## Introduction
 
@@ -225,14 +228,23 @@ stages, respective tools and the corresponding `README.md` for tool commands,
 configuration examples using the Tcl interface and other such details.
 
 -   Synthesis - [Yosys](https://github.com/The-OpenROAD-Project/yosys/blob/master/README.md).
+-   Database - [OpenDB](../../src/odb/README.md).
 -   Floorplanning - [Initialize Floorplan](../../src/ifp/README.md).
+-   Pin Placement - [ioPlacer](../../src/ppl/README.md).
+-   Chip-level Connections - [ICeWall](../../src/pad/README.md).
+-   Macro Placement - [TritonMacroPlacer](../../src/mpl/README.md).
+-   Tapcell insertion - [Tapcell](../../src/tap/README.md).
+-   PDN Analysis - [PDN](../../src/pdn/README.md), [PDNSim](../../src/psm/README.md).
 -   Global Placement - [RePlAce](../../src/gpl/README.md).
--   Clock Tree Synthesis - [TrintonCTS 2.0](../../src/cts/README.md).
+-   Timing Analysis - [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md).
 -   Detailed Placement - [OpenDP](../../src/dpl/README.md).
--   Global Route - [Fast Route](../../src/grt/README.md).
--   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
 -   Timing Optimization using Resizer - [Gate Resizer](../../src/rsz/README.md).
+-   Clock Tree Synthesis - [TrintonCTS](../../src/cts/README.md).
+-   Global Route - [FastRoute](../../src/grt/README.md).
+-   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
 -   Detail Routing - [TritonRoute](../../src/drt/README.md).
+-   Metall Fill - [Metal fill](../../src/fin/README.md).
+-   Parasitics extraction - [OpenRCX](../../src/rcx/README.md).
 -   Layout Generation - [KLayout](https://www.klayout.de/) (Requires v0.27.1).
 
 ### Design Goals
@@ -259,7 +271,7 @@ The runtime will vary based on your configuration.
 Change your current directory to the `flow` directory.
 
 ```
-cd OpenROAD-flow-scripts/flow
+cd flow
 ```
 
 Run the complete flow with:
@@ -274,7 +286,7 @@ significance.
 ### Viewing ORFS Directory Structure And Results
 
 Open a new tab in the terminal and explore the directory structure in
-`OpenROAD-flow-scripts/flow` by typing `ls` command to view its contents:
+`flow` by typing `ls` command to view its contents:
 
 ```
 designs logs Makefile objects platforms reports results scripts test util
@@ -321,22 +333,22 @@ abc.constr klayout.lyt klayout_tech.lef lib
 
 
 -   `results/sky130hd/ibex/base`
-    Results directory which contains `.v/.sdc/.def/.spef` files
+    Results directory which contains `.v/.sdc/.odb/.def/.spef` files
 
 | `results`                   |                         |                    |
 |-----------------------------|-------------------------|--------------------|
-| `1_1_yosys.v`               | `3_1_place_gp.def`      | `5_route.sdc`      |
-| `1_synth.sdc`               | `3_2_place_iop.def`     | `6_1_fill.def`     |
-| `1_synth.v`                 | `3_3_place_resized.def` | `6_1_fill.sdc`     |
-| `2_1_floorplan.def`         | `3_4_place_dp.def`      | `6_1_merged.gds`   |
-| `2_2_floorplan_io.def`      | `3_place.def`           | `6_final.def`      |
-| `2_3_floorplan_tdms.def`    | `3_place.sdc`           | `6_final.gds`      |
-| `2_4_floorplan_macro.def`   | `4_1_cts.def`           | `6_final.sdc`      |
-| `2_5_floorplan_tapcell.def` | `4_2_cts_fillcell.def`  | `6_final.spef`     |
-| `2_6_floorplan_pdn.def`     | `4_cts.def`             | `6_final.v`        |
-| `2_floorplan.def`           | `4_cts.sdc`             | `output_guide.mod` |
+| `1_1_yosys.v`               | `3_1_place_gp.odb`      | `5_route.sdc`      |
+| `1_synth.sdc`               | `3_2_place_iop.odb`     | `6_1_fill.odb`     |
+| `1_synth.v`                 | `3_3_place_resized.odb` | `6_1_fill.sdc`     |
+| `2_1_floorplan.odb`         | `3_4_place_dp.odb`      | `6_1_merged.gds`   |
+| `2_2_floorplan_io.odb`      | `3_place.odb`           | `6_final.odb`      |
+| `2_3_floorplan_tdms.odb`    | `3_place.sdc`           | `6_final.gds`      |
+| `2_4_floorplan_macro.odb`   | `4_1_cts.odb`           | `6_final.sdc`      |
+| `2_5_floorplan_tapcell.odb` | `4_2_cts_fillcell.odb`  | `6_final.spef`     |
+| `2_6_floorplan_pdn.odb`     | `4_cts.odb`             | `6_final.v`        |
+| `2_floorplan.odb`           | `4_cts.sdc`             | `output_guide.mod` |
 | `2_floorplan.sdc`           | `4_cts.v`               | `route.guide`      |
-| `2_floorplan.v`             | `5_route.def`           | `updated_clks.sdc` |
+| `2_floorplan.v`             | `5_route.odb`           | `updated_clks.sdc` |
 
 
 -   `reports/sky130hd/ibex/base`
@@ -431,9 +443,9 @@ report_wns
 Note the worst slack, total negative slack and worst negative slack:
 
 ```
-worst slack -1.35
-tns -95.25
-wns -1.35
+worst slack -0.99
+tns -1.29
+wns -0.99
 ```
 
 Learn more about visualizing and tracing time paths across the design
@@ -469,16 +481,19 @@ Total                  1.48e-02   1.77e-02   6.57e-08   3.25e-02 100.0%
 The GUI allows users to select, control, highlight and navigate the
 design hierarchy and design objects (nets, pins, instances, paths, etc.)
 through detailed visualization and customization options. Find details
-on how to use the GUI [here](../../src/gui/README.md).
+on how to use the GUI [here](../../src/gui/README.md). All the windows
+aside from the layout are docking windows that can be undocked.  Also it
+can be close and reopened from the Windows menu.
 
 In this section, learn how to:
 
 1. Visualize design hierarchy
-2. Load DEF and LEF files for floorplan and layout visualization
+2. Load ODB files for floorplan and layout visualization
 3. Trace the synthesized clock tree to view hierarchy and buffers
 4. Use heat maps to view congestion and observe the effect of placement
 5. View and trace critical timing paths
 6. Set display control options
+7. Zoom to object from inspector
 
 If you have completed the RTL-GDS flow, then proceed to view the final
 GDS file under results directory `./results/sky130hd/ibex/base/`
@@ -500,16 +515,15 @@ make gui_final
 ### Viewing Layout Results
 
 The `make gui_final` command target successively reads and loads the
-technology `.lef`, design `.def` files and the parasitics and invokes the
+technology `.odb` files and the parasitics and invokes the
 GUI in these steps:
 
--   Reads and loads `.lef` files (tech and merged).
--   Reads and loads `.def` files (final design def).
+-   Reads and loads `.odb` files (final design lef and def).
 -   Loads `.spef` (parasitics).
 
 The figure below shows the post-routed DEF for the `ibex` design.
 
-![ibex_final_def](./images/ibex_final_def.png)
+![ibex_final_def](./images/ibex_final_def.webp)
 
 ### Visualizing Design Objects And Connectivity
 
@@ -530,14 +544,14 @@ View the synthesized clock tree for `ibex` design:
 -   In the Dialog Box `Find Object ` search the clock net using a keyword
     as follows:
 
-![cts_find_obect](./images/cts_find_object.png)
+![cts_find_obect](./images/cts_find_object.webp)
 
 Click `Ok` to view the synthesized clock tree of your design.
 
 View clock tree structure below, the user needs to disable the metal
 `Layers` section on LHS as shown below.
 
-![ibex_clock_tree](./images/ibex_clock_tree.png)
+![ibex_clock_tree](./images/ibex_clock_tree.webp)
 
 From the top Toolbar, click on the `Windows` menu to select/hide different
 view options of Scripting, Display control, etc.
@@ -555,12 +569,12 @@ View congestion on all layers between 50-100%:
 In the `Placement density` setup pop-up window, Select `Minimum` -> `50.00%`
 `Maximum` -> `100.00%`
 
-![placement_heat_map](./images/placement_heatmap.png)
+![placement_heat_map](./images/placement_heatmap.webp)
 
 From `Display Control`, select `Heat Maps` -> `Routing Congestion` as
 follows:
 
-![routing_heat_map](./images/routing_heatmap.png)
+![routing_heat_map](./images/routing_heatmap.webp)
 
 From `Display Control`, select `Heat Maps` -> `Power Density` as
 follows:
@@ -573,13 +587,13 @@ Click `Timing` -> `Options` to view and traverse specific timing paths.
 From Toolbar, click on the `Timing` icon, View `Timing Report` window added
 at the right side (RHS) of GUI as shown below.
 
-![Timing report option](./images/ibex_final_def.png)
+![Timing report option](./images/ibex_final_def.webp)
 
 In `Timing Report` Select `Paths` -> `Update`, `Paths` should be integer
 numbers. The number of timing paths should be displayed in the current
 window as follows:
 
-![Clock Path Update](./images/clock_path_update.png)
+![Clock Path Update](./images/clock_path_update.webp)
 
 Select `Setup` or `Hold` tabs and view required arrival times and
 slack for each timing path segment.
@@ -618,7 +632,7 @@ From OpenROAD GUI, Enable the menu options `Windows` -> `DRC Viewer`. A
 `DRC viewer` window is added on the right side (RHS) of the GUI. From
 `DRC Viewer` -> `Load` navigate to `5_route_drc.rpt`
 
-![DRC Report Load](./images/drc_report_load.png)
+![DRC Report Load](./images/drc_report_load.webp)
 
 By selecting DRC violation details, designers can analyze and fix them. Here
 user will learn how a DRC violation can be traced with the `gcd` design. Refer
@@ -1110,6 +1124,9 @@ The macros are placed with 2-micron channel spacing with a core corner
 that has minimum wire length. Try different `-style` options to study
 the effect on macro placement.
 
+Run `global_placement` to align standard cells and macros with updated
+macro spacing.
+
 #### Timing Optimization Using repair_design
 
 The `repair_design` command inserts buffers on nets to repair `max
@@ -1597,3 +1614,173 @@ CTS metrics are as follows for the current design.
 [INFO CTS-0005] Total number of Clock Subnets: 35.
 [INFO CTS-0006] Total number of Sinks: 301.
 ```
+
+### Global Route
+
+#### FastRoute
+FastRoute is an open-source global router originally derived from Iowa
+State University FastRoute4.1.
+
+During global routing tool will analyze available routing resource and
+check for H/V overflow with congestion report. If there is no congestion
+reported means design is ready for detail routing.
+
+Refer to the built-in example [here](../../src/grt/test/gcd.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/grt/test/
+openroad -gui
+```
+
+To run the global routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+source "helpers.tcl"
+read_lef "Nangate45/Nangate45.lef"
+read_def "gcd.def"
+
+set guide_file [make_result_file gcd.guide]
+
+global_route -verbose
+
+write_guides $guide_file
+```
+
+Routing resource and congestion analysis done with below log:
+```
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1           32148          1743            5.42%             0 /  0 /  0
+metal2           24581          1642            6.68%             0 /  0 /  0
+metal3           33028             0            0.00%             0 /  0 /  0
+metal4           15698             0            0.00%             0 /  0 /  0
+metal5           15410             0            0.00%             0 /  0 /  0
+metal6           15698             0            0.00%             0 /  0 /  0
+metal7            4370             0            0.00%             0 /  0 /  0
+metal8            4512             0            0.00%             0 /  0 /  0
+metal9            2162             0            0.00%             0 /  0 /  0
+metal10           2209             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           149816          3385            2.26%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 10306 um
+[INFO GRT-0014] Routed nets: 563
+```
+
+View the resulting global routing in GUI as follows:
+
+![Global Route](./images/global_route_gcd.webp)
+
+### Antenna Checker
+
+This tool checks antenna violations and generates a report to indicate violated nets.
+
+Refer to the built-in example [here](../../src/ant/test/ant_check.tcl).
+
+Launch OpenROAD:
+
+```
+cd ../../src/ant/test/
+openroad
+```
+
+To extract antenna violations, run the following commands:
+
+```
+read_lef ant_check.lef
+read_def ant_check.def
+
+check_antennas -verbose
+puts "violation count = [ant::antenna_violation_count]"
+
+# check if net50 has a violation
+set net "net50"
+puts "Net $net violations: [ant::check_net_violation $net]"
+```
+
+The log as follows:
+
+```
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+violation count = 1
+Net net50 violations: 1
+```
+
+### Detail Route
+
+#### TritonRoute
+TritonRoute is an open-source detailed router for modern industrial designs.
+The router consists of several main building blocks, including pin access 
+analysis, track assignment, initial detailed routing, search and repair, and a DRC engine.
+
+Refer to the built-in example [here](../../src/drt/test/gcd_nangate45.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/drt/test/
+openroad -gui
+```
+
+To run the detail routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+read_lef Nangate45/Nangate45_tech.lef
+read_lef Nangate45/Nangate45_stdcell.lef
+read_def gcd_nangate45_preroute.def
+read_guides gcd_nangate45.route_guide
+set_thread_count [expr [exec getconf _NPROCESSORS_ONLN] / 4]
+detailed_route -output_drc results/gcd_nangate45.output.drc.rpt \
+               -output_maze results/gcd_nangate45.output.maze.log \
+               -verbose 1 
+write_def $def_file
+```
+
+For successful routing, DRT will end with 0 violations. 
+
+Log as follows:
+
+```
+[INFO DRT-0199]   Number of violations = 0.
+[INFO DRT-0267] cpu time = 00:00:00, elapsed time = 00:00:00, memory = 674.22 (MB), peak = 686.08 (MB)
+Total wire length = 5680 um.
+Total wire length on LAYER metal1 = 19 um.
+Total wire length on LAYER metal2 = 2798 um.
+Total wire length on LAYER metal3 = 2614 um.
+Total wire length on LAYER metal4 = 116 um.
+Total wire length on LAYER metal5 = 63 um.
+Total wire length on LAYER metal6 = 36 um.
+Total wire length on LAYER metal7 = 32 um.
+Total wire length on LAYER metal8 = 0 um.
+Total wire length on LAYER metal9 = 0 um.
+Total wire length on LAYER metal10 = 0 um.
+Total number of vias = 2223.
+Up-via summary (total 2223):.
+
+---------------
+ active       0
+ metal1    1151
+ metal2    1037
+ metal3      22
+ metal4       7
+ metal5       4
+ metal6       2
+ metal7       0
+ metal8       0
+ metal9       0
+---------------
+           2223
+
+
+[INFO DRT-0198] Complete detail routing.
+```
+
+View the resulting detail routing in GUI as follows:
+
+![Detail Routing](./images/detail_route_gcd.webp)
