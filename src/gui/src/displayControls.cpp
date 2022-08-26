@@ -463,6 +463,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -1591,6 +1592,11 @@ bool DisplayControls::isManufacturingGridVisible() const
 bool DisplayControls::isModuleView() const
 {
   return isRowVisible(&misc_.module);
+}
+
+bool DisplayControls::isGCellGridVisible() const
+{
+  return isRowVisible(&misc_.gcell_grid);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)
