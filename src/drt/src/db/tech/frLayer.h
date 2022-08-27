@@ -58,6 +58,7 @@ class frLayer
         numMasks(1),
         defaultViaDef(nullptr),
         hasMinStepViol(false),
+        unidirectional(false),
         minSpc(nullptr),
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
@@ -139,6 +140,7 @@ class frLayer
   void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
+  void setUnidirectional(bool in) { unidirectional = in; }
   // getters
   odb::dbTechLayer* getDbLayer() const { return db_layer_; }
   frUInt4 getNumMasks() const { return numMasks; }
@@ -157,7 +159,7 @@ class frLayer
     // layer is treated as unidirectional.
     // RectOnly could allow for a purely wrong-way rect but
     // we ignore that rare case and treat it as unidirectional.
-    return getNumMasks() > 1 || getLef58RectOnlyConstraint();
+    return getNumMasks() > 1 || getLef58RectOnlyConstraint() || unidirectional;
   }
   frSegStyle getDefaultSegStyle() const
   {
@@ -677,6 +679,7 @@ class frLayer
   dbTechLayerDir dir;
   frViaDef* defaultViaDef;
   bool hasMinStepViol;
+  bool unidirectional;
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;
   std::map<std::string, int> name2CutClassIdxMap;

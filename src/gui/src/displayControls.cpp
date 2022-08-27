@@ -455,14 +455,15 @@ DisplayControls::DisplayControls(QWidget* parent)
   region_pattern_ = Qt::SolidPattern;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
-  makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
+  makeLeafItem(misc_.access_points, "Access points", misc, Qt::Unchecked);
   makeLeafItem(
       misc_.regions, "Regions", misc, Qt::Checked, true, region_color_);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
   makeLeafItem(
-      misc_.manufacturing_grid, "Manufacturing Grid", misc, Qt::Unchecked);
+      misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -1591,6 +1592,11 @@ bool DisplayControls::isManufacturingGridVisible() const
 bool DisplayControls::isModuleView() const
 {
   return isRowVisible(&misc_.module);
+}
+
+bool DisplayControls::isGCellGridVisible() const
+{
+  return isRowVisible(&misc_.gcell_grid);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)

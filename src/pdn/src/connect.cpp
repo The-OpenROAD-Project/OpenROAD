@@ -388,11 +388,9 @@ void Connect::report() const
   auto* block = grid_->getBlock();
   const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-  logger->info(utl::PDN,
-               70,
-               "  Connect layers {} -> {}",
-               layer0_->getName(),
-               layer1_->getName());
+  logger->report("  Connect layers {} -> {}",
+                 layer0_->getName(),
+                 layer1_->getName());
   if (!fixed_generate_vias_.empty() || !fixed_tech_vias_.empty()) {
     std::string vias;
     for (auto* via : fixed_generate_vias_) {
@@ -401,41 +399,35 @@ void Connect::report() const
     for (auto* via : fixed_tech_vias_) {
       vias += via->getName() + " ";
     }
-    logger->info(utl::PDN, 71, "    Fixed vias: {}", vias);
+    logger->report("    Fixed vias: {}", vias);
   }
   if (cut_pitch_x_ != 0) {
-    logger->info(utl::PDN,
-                 72,
-                 "    Cut pitch X-direction: {:.4f}",
-                 cut_pitch_x_ / dbu_per_micron);
+    logger->report("    Cut pitch X-direction: {:.4f}",
+                   cut_pitch_x_ / dbu_per_micron);
   }
   if (cut_pitch_y_ != 0) {
-    logger->info(utl::PDN,
-                 73,
-                 "    Cut pitch Y-direction: {:.4f}",
-                 cut_pitch_y_ / dbu_per_micron);
+    logger->report("    Cut pitch Y-direction: {:.4f}",
+                   cut_pitch_y_ / dbu_per_micron);
   }
   if (max_rows_ != 0) {
-    logger->info(utl::PDN, 74, "    Maximum rows: {}", max_rows_);
+    logger->report("    Maximum rows: {}", max_rows_);
   }
   if (max_columns_ != 0) {
-    logger->info(utl::PDN, 75, "    Maximum columns: {}", max_columns_);
+    logger->report("    Maximum columns: {}", max_columns_);
   }
   if (!ongrid_.empty()) {
     std::string layers;
     for (auto* l : ongrid_) {
       layers += l->getName() + " ";
     }
-    logger->info(utl::PDN, 76, "    Ongrid layers: {}", layers);
+    logger->report("    Ongrid layers: {}", layers);
   }
   if (!split_cuts_.empty()) {
-    logger->info(utl::PDN, 77, "    Split cuts:");
+    logger->report("    Split cuts:");
     for (const auto& [layer, pitch] : split_cuts_) {
-      logger->info(utl::PDN,
-                   78,
-                   "      Layer: {} with pitch {:.4f}",
-                   layer->getName(),
-                   pitch / dbu_per_micron);
+      logger->report("      Layer: {} with pitch {:.4f}",
+                     layer->getName(),
+                     pitch / dbu_per_micron);
     }
   }
 }

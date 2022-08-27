@@ -105,8 +105,8 @@ class WireSegment
   uint8_t getOutputSlew() const { return outputSlew_; }
   bool isBuffered() const { return bufferLocations_.size() > 0; }
   unsigned getNumBuffers() const { return bufferLocations_.size(); }
-  std::vector<double>& getBufferLocations() { return bufferLocations_; }
-  std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
+  const std::vector<double>& getBufferLocations() { return bufferLocations_; }
+  const std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
 
   double getBufferLocation(unsigned idx) const
   {
@@ -180,16 +180,13 @@ class TechChar
 
     bool operator<(const CharKey& o) const
     {
-      return load < o.load || (load == o.load && wirelength < o.wirelength)
-             || (load == o.load && wirelength == o.wirelength
-                 && pinSlew < o.pinSlew)
-             || (load == o.load && wirelength == o.wirelength
-                 && pinSlew == o.pinSlew && totalcap < o.totalcap);
+      return std::tie(load, wirelength, pinSlew, totalcap)
+             < std::tie(o.load, o.wirelength, o.pinSlew, o.totalcap);
     }
   };
 
   void create();
-  void compileLut(std::vector<ResultData> lutSols);
+  void compileLut(const std::vector<ResultData>& lutSols);
   void printCharacterization() const;
   void printSolution() const;
 
@@ -273,13 +270,14 @@ class TechChar
   void initCharacterization();
   std::vector<SolutionData> createPatterns(unsigned setupWirelength);
   void createStaInstance();
-  void setParasitics(std::vector<SolutionData> topologiesVector,
+  void setParasitics(const std::vector<SolutionData>& topologiesVector,
                      unsigned setupWirelength);
-  ResultData computeTopologyResults(SolutionData solution,
+  ResultData computeTopologyResults(const SolutionData& solution,
                                     sta::Vertex* outPinVert,
                                     float load,
+                                    float inSlew,
                                     unsigned setupWirelength);
-  SolutionData updateBufferTopologies(SolutionData solution);
+  void updateBufferTopologies(SolutionData& solution);
   std::vector<ResultData> characterizationPostProcess();
   unsigned normalizeCharResults(float value,
                                 float iter,

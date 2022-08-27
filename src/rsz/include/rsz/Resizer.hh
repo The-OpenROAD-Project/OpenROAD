@@ -198,8 +198,15 @@ public:
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
 
-  void setDontUse(LibertyCellSeq *dont_use);  
+  void setDontUse(LibertyCell *cell,
+                  bool dont_use);
   bool dontUse(LibertyCell *cell);
+  void setDontTouch(const Instance *inst,
+                    bool dont_touch);
+  bool dontTouch(const Instance *inst);
+  void setDontTouch(const Net *net,
+                    bool dont_touch);
+  bool dontTouch(const Net *net);
 
   void setMaxUtilization(double max_utilization);
   // Remove all buffers from the netlist.

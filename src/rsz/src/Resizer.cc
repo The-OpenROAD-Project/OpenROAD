@@ -304,16 +304,17 @@ Resizer::removeBuffers()
   search_->arrivalsInvalid();
 
   int remove_count = 0;
-  for (dbInst *inst : block_->getInsts()) {
-    LibertyCell *lib_cell = db_network_->libertyCell(inst);
-    if (lib_cell && lib_cell->isBuffer()) {
-      Instance *buffer = db_network_->dbToSta(inst);
-      // Do not remove buffers connected to input/output ports
-      // because verilog netlists use the net name for the port.
-      if (!bufferBetweenPorts(buffer)) {
-        removeBuffer(buffer);
-        remove_count++;
-      }
+  for (dbInst *db_inst : block_->getInsts()) {
+    LibertyCell *lib_cell = db_network_->libertyCell(db_inst);
+    Instance *buffer = db_network_->dbToSta(db_inst);
+    if (!db_inst->isDoNotTouch()
+        && lib_cell
+        && lib_cell->isBuffer()
+        // Do not remove buffers connected to input/output ports
+        // because verilog netlists use the net name for the port.
+        && !bufferBetweenPorts(buffer)) {
+      removeBuffer(buffer);
+      remove_count++;
     }
   }
   level_drvr_vertices_valid_ = false;
@@ -454,6 +455,7 @@ Resizer::bufferInputs()
     Vertex *vertex = graph_->pinDrvrVertex(pin);
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
+        && !dontTouch(net)
         && !vertex->isConstant()
         && !sta_->isClock(pin)
         // Hands off special nets.
@@ -533,11 +535,12 @@ Resizer::bufferOutputs()
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isOutput()
         && net
+        && !dontTouch(net)
+        // Hands off special nets.
+        && !db_network_->isSpecial(net)
         // DEF does not have tristate output types so we have look at the drivers.
         && !hasTristateDriver(net)
         && !vertex->isConstant()
-        // Hands off special nets.
-        && !db_network_->isSpecial(net)
         && hasPins(net)) {
       bufferOutput(pin, buffer_lowest_drive_);
     }
@@ -732,6 +735,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (!network_->isTopLevelPort(drvr_pin)
+      && !dontTouch(inst)
       && cell
       && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
@@ -1141,12 +1145,13 @@ Resizer::overMaxArea()
 }
 
 void
-Resizer::setDontUse(LibertyCellSeq *dont_use)
+Resizer::setDontUse(LibertyCell *cell,
+                    bool dont_use)
 {
-  if (dont_use) {
-    for (LibertyCell *cell : *dont_use)
-      dont_use_.insert(cell);
-  }
+  if (dont_use)
+    dont_use_.insert(cell);
+  else
+    dont_use_.erase(cell);
 }
 
 bool
@@ -1154,6 +1159,36 @@ Resizer::dontUse(LibertyCell *cell)
 {
   return cell->dontUse()
     || dont_use_.hasKey(cell);
+}
+
+void
+Resizer::setDontTouch(const Instance *inst,
+                      bool dont_touch)
+{
+  dbInst *db_inst = db_network_->staToDb(inst);
+  db_inst->setDoNotTouch(dont_touch);
+}
+
+bool
+Resizer::dontTouch(const Instance *inst)
+{
+  dbInst *db_inst = db_network_->staToDb(inst);
+  return db_inst->isDoNotTouch();
+}
+
+void
+Resizer::setDontTouch(const Net *net,
+                      bool dont_touch)
+{
+  dbNet *db_net = db_network_->staToDb(net);
+  db_net->setDoNotTouch(dont_touch);
+}
+
+bool
+Resizer::dontTouch(const Net *net)
+{
+  dbNet *db_net = db_network_->staToDb(net);
+  return db_net->isDoNotTouch();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1392,54 +1427,57 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   int tie_count = 0;
   int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
-    Pin *drvr_pin = network_->findPin(inst, tie_port);
-    if (drvr_pin) {
-      Net *net = network_->net(drvr_pin);
-      if (net) {
-        NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-        while (pin_iter->hasNext()) {
-          Pin *load = pin_iter->next();
-          if (load != drvr_pin) {
-            // Make tie inst.
-            Point tie_loc = tieLocation(load, separation_dbu);
-            Instance *load_inst = network_->instance(load);
-            const char *inst_name = network_->name(load_inst);
-            string tie_name = makeUniqueInstName(inst_name, true);
-            Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
-                                         top_inst, tie_loc);
+    if (!dontTouch(inst)) {
+      Pin *drvr_pin = network_->findPin(inst, tie_port);
+      if (drvr_pin) {
+        Net *net = network_->net(drvr_pin);
+        if (net
+            && !dontTouch(net)) {
+          NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+          while (pin_iter->hasNext()) {
+            Pin *load = pin_iter->next();
+            if (load != drvr_pin) {
+              // Make tie inst.
+              Point tie_loc = tieLocation(load, separation_dbu);
+              Instance *load_inst = network_->instance(load);
+              const char *inst_name = network_->name(load_inst);
+              string tie_name = makeUniqueInstName(inst_name, true);
+              Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
+                                           top_inst, tie_loc);
 
-            // Put the tie cell instance in the same module with the load
-            // it drives.
-            if (!network_->isTopInstance(load_inst)) {
-              dbInst* load_inst_odb = db_network_->staToDb(load_inst);
-              dbInst* tie_odb = db_network_->staToDb(tie);
-              load_inst_odb->getModule()->addInst(tie_odb);
+              // Put the tie cell instance in the same module with the load
+              // it drives.
+              if (!network_->isTopInstance(load_inst)) {
+                dbInst* load_inst_odb = db_network_->staToDb(load_inst);
+                dbInst* tie_odb = db_network_->staToDb(tie);
+                load_inst_odb->getModule()->addInst(tie_odb);
+              }
+
+              // Make tie output net.
+              Net *load_net = makeUniqueNet();
+
+              // Connect tie inst output.
+              sta_->connectPin(tie, tie_port, load_net);
+
+              // Connect load to tie output net.
+              sta_->disconnectPin(load);
+              Port *load_port = network_->port(load);
+              sta_->connectPin(load_inst, load_port, load_net);
+
+              designAreaIncr(area(db_network_->cell(tie_cell)));
+              tie_count++;
             }
-
-            // Make tie output net.
-            Net *load_net = makeUniqueNet();
-
-            // Connect tie inst output.
-            sta_->connectPin(tie, tie_port, load_net);
-
-            // Connect load to tie output net.
-            sta_->disconnectPin(load);
-            Port *load_port = network_->port(load);
-            sta_->connectPin(load_inst, load_port, load_net);
-
-            designAreaIncr(area(db_network_->cell(tie_cell)));
-            tie_count++;
           }
-        }
-        delete pin_iter;
+          delete pin_iter;
 
-        // Delete inst output net.
-        Pin *tie_pin = network_->findPin(inst, tie_port);
-        Net *tie_net = network_->net(tie_pin);
-        sta_->deleteNet(tie_net);
-        parasitics_invalid_.erase(tie_net);
-        // Delete the tie instance.
-        sta_->deleteInstance(inst);
+          // Delete inst output net.
+          Pin *tie_pin = network_->findPin(inst, tie_port);
+          Net *tie_net = network_->net(tie_pin);
+          sta_->deleteNet(tie_net);
+          parasitics_invalid_.erase(tie_net);
+          // Delete the tie instance.
+          sta_->deleteInstance(inst);
+        }
       }
     }
   }
@@ -2065,6 +2103,8 @@ Resizer::repairClkNets(double max_wire_length)
 
 ////////////////////////////////////////////////////////////////
 
+// Find inverters in the clock network and clone them next to the
+// each register they drive.
 void
 Resizer::repairClkInverters()
 {
@@ -2072,8 +2112,10 @@ Resizer::repairClkInverters()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  for (Instance *inv : findClkInverters())
-    cloneClkInverter(inv);
+  for (Instance *inv : findClkInverters()) {
+    if (!dontTouch(inv))
+      cloneClkInverter(inv);
+  }
 }
 
 InstanceSeq

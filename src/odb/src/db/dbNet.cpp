@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbNet.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -49,11 +47,13 @@
 #include "dbExtControl.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
+#include "dbGuideItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbNet.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
@@ -65,7 +65,6 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
-#include "dbGuideItr.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -2899,11 +2898,16 @@ void dbNet::destroySWires()
 {
   _dbNet* net = (_dbNet*) this;
 
-  dbSet<dbSWire> swires = getSWires();
-  ;
-  dbSet<dbSWire>::iterator sitr;
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(utl::ODB,
+                            363,
+                            "Attempt to destroy the swires of dont_touch net {}",
+                            getName());
+  }
 
-  for (sitr = swires.begin(); sitr != swires.end();)
+  dbSet<dbSWire> swires = getSWires();
+
+  for (auto sitr = swires.begin(); sitr != swires.end();)
     sitr = dbSWire::destroy(sitr);
 
   net->_swires = 0;
@@ -2946,6 +2950,11 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(
+        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->_name);
+  }
 
   dbSet<dbITerm> iterms = net_->getITerms();
   dbSet<dbITerm>::iterator iitr = iterms.begin();
@@ -3087,8 +3096,7 @@ void dbNet::clearGuides()
 {
   auto guides = getGuides();
   dbSet<dbGuide>::iterator itr = guides.begin();
-  while(itr != guides.end())
-  {
+  while (itr != guides.end()) {
     auto curGuide = *itr++;
     dbGuide::destroy(curGuide);
   }

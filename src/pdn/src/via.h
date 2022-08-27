@@ -461,8 +461,8 @@ class ViaGenerator
   virtual bool checkConstraints() const;
 
   // determine the shape of the vias
-  bool build(bool use_bottom_min_enclosure,
-             bool use_top_min_enclosure);
+  bool build(bool bottom_is_internal_layer,
+             bool top_is_internal_layer);
   virtual int getRows() const;
   virtual int getColumns() const;
   virtual int getTotalCuts() const;

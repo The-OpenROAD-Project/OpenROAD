@@ -65,14 +65,14 @@ const std::string PowerCell::getName() const
 
 void PowerCell::report() const
 {
-  logger_->info(utl::PDN, 200, "Switched power cell: {}", master_->getName());
-  logger_->info(utl::PDN, 201, "  Control pin: {}", control_->getName());
+  logger_->report("Switched power cell: {}", master_->getName());
+  logger_->report("  Control pin: {}", control_->getName());
   if (acknowledge_ != nullptr) {
-    logger_->info(utl::PDN, 202, "  Acknowledge pin: {}", acknowledge_->getName());
+    logger_->report("  Acknowledge pin: {}", acknowledge_->getName());
   }
-  logger_->info(utl::PDN, 203, "  Switched power pin: {}", switched_power_->getName());
-  logger_->info(utl::PDN, 204, "  Always on power pin: {}", alwayson_power_->getName());
-  logger_->info(utl::PDN, 205, "  Ground pin: {}", ground_->getName());
+  logger_->report("  Switched power pin: {}", switched_power_->getName());
+  logger_->report("  Always on power pin: {}", alwayson_power_->getName());
+  logger_->report("  Ground pin: {}", ground_->getName());
 }
 
 void PowerCell::populateAlwaysOnPinPositions(int site_width)
@@ -149,9 +149,9 @@ GridSwitchedPower::NetworkType GridSwitchedPower::fromString(const std::string& 
 void GridSwitchedPower::report() const
 {
   auto* logger = grid_->getLogger();
-  logger->info(utl::PDN, 210, "Switched power cell: {}", cell_->getName());
-  logger->info(utl::PDN, 211, "  Control net: {}", control_->getName());
-  logger->info(utl::PDN, 212, "  Network type: {}", toString(network_));
+  logger->report("Switched power cell: {}", cell_->getName());
+  logger->report("  Control net: {}", control_->getName());
+  logger->report("  Network type: {}", toString(network_));
 }
 
 GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const

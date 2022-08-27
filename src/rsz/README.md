@@ -83,12 +83,23 @@ flag.
 
 ```
 set_dont_use lib_cells
+unset_dont_use lib_cells
 ```
 
 The `set_dont_use` command removes library cells from consideration by
 the `resizer`. `lib_cells` is a list of cells returned by `get_lib_cells`
 or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
+
+### Set Don't Touch
+
+```
+set_dont_touch instances_nets
+unset_dont_touch instances_nets
+```
+
+The `set_dont_touch` command prevents the resizer commands from
+modifying instances or nets.
 
 ### Buffer Ports
 
