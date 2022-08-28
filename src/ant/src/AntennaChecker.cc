@@ -205,6 +205,22 @@ void AntennaChecker::initAntennaRules()
 
       minus_diff_factor = antenna_rule->getAreaMinusDiffFactor();
       plus_diff_factor = antenna_rule->getGatePlusDiffFactor();
+
+
+      const double PSR_ratio = antenna_rule->getPSR();
+      const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
+
+      uint wire_thickness_dbu = 0;
+      tech_layer->getThickness(wire_thickness_dbu);
+
+      const dbTechLayerType layerType = tech_layer->getType();
+
+      // If there is a SIDE area antenna rule, then make sure thickness exists.
+      if ((PSR_ratio != 0 || diffPSR.indices.size() != 0)
+          && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
+        logger_->error(
+            ANT, 13, "No THICKNESS is provided for {}.", tech_layer->getConstName());
+      }
     }
 
     AntennaModel layer_antenna = {tech_layer,
@@ -1121,17 +1137,6 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
     const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
     const double diffPSR_PWL_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
 
-    uint wire_thickness_dbu = 0;
-    layer->getThickness(wire_thickness_dbu);
-
-    const dbTechLayerType layerType = layer->getType();
-
-    // If there is a SIDE area antenna rule, then make sure thickness exists.
-    if ((PSR_ratio != 0 || diffPSR_PWL_ratio != 0)
-        && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
-      logger_->error(
-          ANT, 13, "No THICKNESS is provided for {}.", layer->getConstName());
-    }
 
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio) {
@@ -1748,17 +1753,6 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
     const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
     const double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
 
-    uint wire_thickness_dbu = 0;
-    layer->getThickness(wire_thickness_dbu);
-
-    const dbTechLayerType layerType = layer->getType();
-
-    // If there is a SIDE area antenna rule, then make sure thickness exists.
-    if ((PSR_ratio != 0 || diffPSR_ratio != 0)
-        && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
-      logger_->error(
-          ANT, 14, "No THICKNESS is provided for {}.", layer->getConstName());
-    }
 
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio)
