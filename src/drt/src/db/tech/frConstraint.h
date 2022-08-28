@@ -669,26 +669,21 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinConstraint()
-      : hOppositeWidth(false),
-        oppositeWidth(0),
-        eolWithin(0),
-        wrongDirWithin(false),
-        endPrlSpacing(0),
-        endPrl(0),
-        sameMask(false),
+      : rule_(nullptr),
         endToEndConstraint(nullptr),
         parallelEdgeConstraint(nullptr)
   {
   }
 
   // getters
-  bool hasOppositeWidth() const { return hOppositeWidth; }
-  frCoord getOppositeWidth() const { return oppositeWidth; }
-  frCoord getEolWithin() const { return sameMask ? 0 : eolWithin; }
-  frCoord getWrongDirWithin() const { return wrongDirWithin; }
-  frCoord getEndPrlSpacing() const { return endPrlSpacing; }
-  frCoord getEndPrl() const { return endPrl; }
-  bool hasSameMask() const { return sameMask; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool hasOppositeWidth() const { return rule_->isOppositeWidthValid(); }
+  frCoord getOppositeWidth() const { return rule_->getOppositeWidth(); }
+  frCoord getEolWithin() const { return rule_->isSameMaskValid() ? 0 : rule_->getEolWithin(); }
+  frCoord getWrongDirWithin() const { return rule_->isWrongDirWithinValid()? rule_->getWrongDirWithin() : false; }
+  frCoord getEndPrlSpacing() const { return rule_->getEndPrlSpace(); }
+  frCoord getEndPrl() const { return rule_->getEndPrl(); }
+  bool hasSameMask() const { return rule_->isSameMaskValid(); }
   bool hasExceptExactWidth() const
   {
     return false;  // skip for now
@@ -703,7 +698,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasEndPrlSpacing() const
   {
-    return endPrlSpacing;
+    return rule_->isEndPrlSpacingValid();
   }
   bool hasEndToEndConstraint() const
   {
@@ -750,23 +745,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     return encloseCutConstraint;
   }
   // setters
-  void setOppositeWidth(frCoord in)
-  {
-    hOppositeWidth = true;
-    oppositeWidth = in;
-  }
-  void setEolWithin(frCoord in)
-  {
-    eolWithin = in;
-    wrongDirWithin = in;
-  }
-  void setEndPrl(frCoord endPrlSpacingIn, frCoord endPrlIn)
-  {
-    endPrlSpacing = endPrlSpacingIn;
-    endPrl = endPrlIn;
-  }
-  void setWrongDirWithin(frCoord in) { wrongDirWithin = in; }
-  void setSameMask(bool in) { sameMask = in; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   void setEndToEndConstraint(
       const std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>&
           in)
@@ -801,13 +780,13 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     logger->report(
         "\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} "
         "wrongDirWithin {} sameMask {} endPrlSpacing {} endPrl {}",
-        hOppositeWidth,
-        oppositeWidth,
-        eolWithin,
-        wrongDirWithin,
-        sameMask,
-        endPrlSpacing,
-        endPrl);
+        hasOppositeWidth(),
+        getOppositeWidth(),
+        getEolWithin(),
+        getWrongDirWithin(),
+        hasSameMask(),
+        getEndPrlSpacing(),
+        getEndPrl());
     if (endToEndConstraint != nullptr)
       endToEndConstraint->report(logger);
     if (parallelEdgeConstraint != nullptr)
@@ -815,13 +794,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
 
  protected:
-  bool hOppositeWidth;
-  frCoord oppositeWidth;
-  frCoord eolWithin;
-  frCoord wrongDirWithin;
-  frCoord endPrlSpacing;
-  frCoord endPrl;
-  bool sameMask;
+  odb::dbTechLayerSpacingEolRule* rule_;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>
       endToEndConstraint;
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
@@ -837,20 +810,17 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineConstraint()
-      : eolSpace(0),
-        eolWidth(0),
-        exactWidth(false),
-        wrongDirSpacing(false),
-        wrongDirSpace(0),
+      : rule_(nullptr),
         withinConstraint(nullptr)
   {
   }
   // getters
-  frCoord getEolSpace() const { return eolSpace; }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool hasExactWidth() const { return exactWidth; }
-  bool hasWrongDirSpacing() const { return wrongDirSpacing; }
-  frCoord getWrongDirSpace() const { return wrongDirSpace; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getEolSpace() const { return rule_->getEolSpace(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool hasExactWidth() const { return rule_->isExactWidthValid(); }
+  bool hasWrongDirSpacing() const { return rule_->isWrongDirSpacingValid(); }
+  frCoord getWrongDirSpace() const { return rule_->getWrongDirSpace(); }
   bool hasWithinConstraint() const { return (withinConstraint) ? true : false; }
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> getWithinConstraint()
       const
@@ -860,17 +830,7 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool hasToConcaveCornerConstraint() const { return false; }
   bool hasToNotchLengthConstraint() const { return false; }
   // setters
-  void setEol(frCoord eolSpaceIn, frCoord eolWidthIn, bool exactWidthIn = false)
-  {
-    eolSpace = eolSpaceIn;
-    eolWidth = eolWidthIn;
-    exactWidth = exactWidthIn;
-  }
-  void setWrongDirSpace(bool in)
-  {
-    wrongDirSpacing = true;
-    wrongDirSpace = in;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) {rule_ = ruleIn; }
   void setWithinConstraint(
       const std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint>& in)
   {
@@ -886,21 +846,17 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
     logger->report(
         "SPACING eolSpace {} eolWidth {} exactWidth {} wrongDirSpacing {} "
         "wrongDirSpace {} ",
-        eolSpace,
-        eolWidth,
-        exactWidth,
-        wrongDirSpacing,
-        wrongDirSpace);
+        getEolSpace(),
+        getEolWidth(),
+        hasExactWidth(),
+        hasWrongDirSpacing(),
+        getWrongDirSpace());
     if (withinConstraint != nullptr)
       withinConstraint->report(logger);
   }
 
  protected:
-  frCoord eolSpace;
-  frCoord eolWidth;
-  bool exactWidth;
-  bool wrongDirSpacing;
-  frCoord wrongDirSpace;
+  odb::dbTechLayerSpacingEolRule* rule_;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
 };
 
@@ -909,34 +865,21 @@ class frLef58EolKeepOutConstraint : public frConstraint
  public:
   // constructors
   frLef58EolKeepOutConstraint()
-      : backwardExt(0),
-        sideExt(0),
-        forwardExt(0),
-        eolWidth(0),
-        cornerOnly(false),
-        exceptWithin(false),
-        withinLow(0),
-        withinHigh(0)
+      : rule_(nullptr)
   {
   }
   // getters
-  frCoord getBackwardExt() const { return backwardExt; }
-  frCoord getForwardExt() const { return forwardExt; }
-  frCoord getSideExt() const { return sideExt; }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool isCornerOnly() const { return cornerOnly; }
-  bool isExceptWithin() const { return exceptWithin; }
-  frCoord getWithinLow() const { return withinLow; }
-  frCoord getWithinHigh() const { return withinHigh; }
+  odb::dbTechLayerEolKeepOutRule* getDbTechLayerEolKeepOutRule() const { return rule_; }
+  frCoord getBackwardExt() const { return rule_->getBackwardExt(); }
+  frCoord getForwardExt() const { return rule_->getForwardExt(); }
+  frCoord getSideExt() const { return rule_->getSideExt(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool isCornerOnly() const { return rule_->isCornerOnly(); }
+  bool isExceptWithin() const { return rule_->isExceptWithin(); }
+  frCoord getWithinLow() const { return rule_->getWithinLow(); }
+  frCoord getWithinHigh() const { return rule_->getWithinHigh(); }
   // setters
-  void setBackwardExt(frCoord value) { backwardExt = value; }
-  void setForwardExt(frCoord value) { forwardExt = value; }
-  void setSideExt(frCoord value) { sideExt = value; }
-  void setEolWidth(frCoord value) { eolWidth = value; }
-  void setCornerOnly(bool value) { cornerOnly = value; }
-  void setExceptWithin(bool value) { exceptWithin = value; }
-  void setWithinLow(frCoord value) { withinLow = value; }
-  void setWithinHigh(frCoord value) { withinHigh = value; }
+  void setDbTechLayerEolKeepOutRule(odb::dbTechLayerEolKeepOutRule* ruleIn) { rule_ = ruleIn; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -947,24 +890,18 @@ class frLef58EolKeepOutConstraint : public frConstraint
     logger->report(
         "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
         "cornerOnly {} exceptWithin {} withinLow {} withinHigh {}",
-        backwardExt,
-        sideExt,
-        forwardExt,
-        eolWidth,
-        cornerOnly,
-        exceptWithin,
-        withinLow,
-        withinHigh);
+        getBackwardExt(),
+        getSideExt(),
+        getForwardExt(),
+        getEolWidth(),
+        isCornerOnly(),
+        isExceptWithin(),
+        getWithinLow(),
+        getWithinHigh());
   }
 
  private:
-  frCoord backwardExt;
-  frCoord sideExt;
-  frCoord forwardExt;
-  frCoord eolWidth;
-  bool cornerOnly;
-  bool exceptWithin;
-  frCoord withinLow, withinHigh;
+  odb::dbTechLayerEolKeepOutRule* rule_;
 };
 
 class frLef58CornerSpacingSpacingConstraint;
@@ -997,15 +934,13 @@ class frSpacingConstraint : public frConstraint
 class frSpacingSamenetConstraint : public frSpacingConstraint
 {
  public:
-  frSpacingSamenetConstraint() : frSpacingConstraint(), pgonly(false) {}
-  frSpacingSamenetConstraint(frCoord minSpacingIn, bool pgonlyIn)
-      : frSpacingConstraint(minSpacingIn), pgonly(pgonlyIn)
-  {
-  }
+  frSpacingSamenetConstraint(frCoord minSpacingIn, odb::dbTechLayerSpacingRule* ruleIn) : frSpacingConstraint(minSpacingIn), rule_(ruleIn) {}
+
   // getter
-  bool hasPGonly() const { return pgonly; }
+  odb::dbTechLayerSpacingRule* getDbTechLayerSpacingRule() { return rule_; }
+  bool hasPGonly() const { return rule_->getSameNetPgOnly(); }
   // setter
-  void setPGonly(bool in) { pgonly = in; }
+  void setDbTechLayerSpacingRule(odb::dbTechLayerSpacingRule *ruleIn) { rule_ = ruleIn; }
   // check
   frConstraintTypeEnum typeId() const override
   {
@@ -1013,11 +948,11 @@ class frSpacingSamenetConstraint : public frSpacingConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report("Spacing same net pgonly {}", pgonly);
+    logger->report("Spacing same net pgonly {}", hasPGonly());
   }
 
  protected:
-  bool pgonly;
+  odb::dbTechLayerSpacingRule *rule_;
 };
 
 class frSpacingTableInfluenceConstraint : public frConstraint
@@ -1066,26 +1001,61 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
   // constructor
   frSpacingEndOfLineConstraint()
       : frSpacingConstraint(),
-        eolWidth(-1),
-        eolWithin(-1),
-        parSpace(-1),
-        parWithin(-1),
-        isTwoEdges(false)
+        rule_(nullptr)
   {
   }
   // getter
-  frCoord getEolWidth() const { return eolWidth; }
-  frCoord getEolWithin() const { return eolWithin; }
-  frCoord getParSpace() const { return parSpace; }
-  frCoord getParWithin() const { return parWithin; }
-  bool hasParallelEdge() const { return ((parSpace == -1) ? false : true); }
-  bool hasTwoEdges() const { return isTwoEdges; }
+  odb::dbTechLayerSpacingRule* getDbTechLayerSpacingRule() const {return rule_; }
+  frCoord getEolWidth() const
+  { 
+    frUInt4 eolWidth, temp;
+    bool tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(eolWidth, temp, tempB, temp, temp, tempB);
+    return (hasSpacingEndOfLine)? eolWidth : -1 ; 
+  }
+  frCoord getEolWithin() const
+  { 
+    frUInt4 eolWithin, temp;
+    bool tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(temp, eolWithin, tempB, temp, temp, tempB);
+    return (hasSpacingEndOfLine)? eolWithin : -1; 
+  }
+  frCoord getParSpace() const
+  { 
+    frUInt4 parSpace, temp;
+    bool tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(temp, temp, tempB, parSpace, temp, tempB);
+    return (hasSpacingEndOfLine)? parSpace : -1; 
+  }
+  frCoord getParWithin() const
+  { 
+    frUInt4 parWithin, temp;
+    bool tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(temp, temp, tempB, temp, parWithin, tempB);
+    return (hasSpacingEndOfLine)? parWithin : -1; 
+  }
+  bool hasParallelEdge() const
+  { 
+    frUInt4 temp;
+    bool hasSpacingParellelEdge, tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(temp, temp, hasSpacingParellelEdge, temp, temp, tempB);
+    return (hasSpacingEndOfLine)? hasSpacingParellelEdge : false; 
+  }
+  bool hasTwoEdges() const
+  { 
+    frUInt4 temp;
+    bool hasSpacingTwoEdges, tempB;
+    bool hasSpacingEndOfLine = rule_->getEol(temp, temp, tempB, temp, temp, hasSpacingTwoEdges);
+    return (hasSpacingEndOfLine)? hasSpacingTwoEdges : false; 
+  }
+  bool hasEndOfLine() const {
+    frUInt4 temp;
+    bool tempB;
+    return rule_->getEol(temp, temp, tempB, temp, temp, tempB);
+  }
   // setter
-  void setEolWithin(frCoord eolWithinIn) { eolWithin = eolWithinIn; }
-  void setEolWidth(frCoord eolWidthIn) { eolWidth = eolWidthIn; }
-  void setParSpace(frCoord parSpaceIn) { parSpace = parSpaceIn; }
-  void setParWithin(frCoord parWithinIn) { parWithin = parWithinIn; }
-  void setTwoEdges(bool isTwoEdgesIn) { isTwoEdges = isTwoEdgesIn; }
+  void setDbTechLayerSpacingRule(odb::dbTechLayerSpacingRule* ruleIn) { rule_ = ruleIn;}
+
   frConstraintTypeEnum typeId() const override
   {
     return frConstraintTypeEnum::frcSpacingEndOfLineConstraint;
@@ -1095,17 +1065,15 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
     logger->report(
         "Spacing EOL eolWidth {} eolWithin {} "
         "parSpace {} parWithin {} isTwoEdges {}",
-        eolWidth,
-        eolWithin,
-        parSpace,
-        parWithin,
-        isTwoEdges);
+        getEolWidth(),
+        getEolWithin(),
+        getParSpace(),
+        getParWithin(),
+        hasTwoEdges());
   }
 
  protected:
-  frCoord eolWidth, eolWithin;
-  frCoord parSpace, parWithin;
-  bool isTwoEdges;
+  odb::dbTechLayerSpacingRule* rule_;
 };
 
 class frLef58EolExtensionConstraint : public frSpacingConstraint
@@ -1113,16 +1081,15 @@ class frLef58EolExtensionConstraint : public frSpacingConstraint
  public:
   // constructors
   frLef58EolExtensionConstraint(const fr1DLookupTbl<frCoord, frCoord>& tbl)
-      : frSpacingConstraint(), parallelOnly(false), extensionTbl(tbl)
+      : frSpacingConstraint(), rule_(nullptr), extensionTbl(tbl)
   {
   }
   // setters
-
-  void setParallelOnly(bool value) { parallelOnly = value; }
+  void setDbTechLayerEolExtensionRule(odb::dbTechLayerEolExtensionRule *ruleIn) { rule_ = ruleIn; }
 
   // getters
 
-  bool isParallelOnly() const { return parallelOnly; }
+  bool isParallelOnly() const { return rule_->isParallelOnly(); }
 
   fr1DLookupTbl<frCoord, frCoord> getExtensionTable() const
   {
@@ -1140,11 +1107,12 @@ class frLef58EolExtensionConstraint : public frSpacingConstraint
   {
     logger->report("EOLEXTENSIONSPACING spacing {} parallelonly {} ",
                    minSpacing,
-                   parallelOnly);
+                   isParallelOnly());
   }
 
  private:
-  bool parallelOnly;
+  //bool parallelOnly;
+  odb::dbTechLayerEolExtensionRule *rule_;
   fr1DLookupTbl<frCoord, frCoord> extensionTbl;
 };
 
@@ -1342,14 +1310,15 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       const std::map<int, std::pair<frCoord, frCoord>>&
           exceptWithinConstraintIn)
       : frSpacingTableConstraint(parallelRunLengthConstraintIn),
-        exceptWithinConstraint(exceptWithinConstraintIn),
-        wrongDirection(false),
-        sameMask(false),
-        exceptEol(false),
-        eolWidth(0)
+        exceptWithinConstraint(exceptWithinConstraintIn)
+        // wrongDirection(false),
+        // sameMask(false),
+        // exceptEol(false),
+        // eolWidth(0)
   {
   }
   // getter
+  odb::dbTechLayerSpacingTablePrlRule* getDbTechLayerSpacingTablePrlRule() const { return rule_; }
   bool hasExceptWithin(frCoord val) const
   {
     auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
@@ -1361,23 +1330,17 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
     auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
     return exceptWithinConstraint.at(rowIdx);
   }
-  bool isWrongDirection() const { return wrongDirection; }
-  bool isSameMask() const { return sameMask; }
-  bool hasExceptEol() const { return exceptEol; }
-  frUInt4 getEolWidth() const { return eolWidth; }
+  bool isWrongDirection() const { return rule_->isWrongDirection(); }
+  bool isSameMask() const { return rule_->isSameMask(); }
+  bool hasExceptEol() const { return rule_->isExceeptEol(); }
+  frUInt4 getEolWidth() const { return rule_->getEolWidth(); }
   // setters
   void setExceptWithinConstraint(
       std::map<int, std::pair<frCoord, frCoord>>& exceptWithinConstraintIn)
   {
     exceptWithinConstraint = exceptWithinConstraintIn;
   }
-  void setWrongDirection(bool in) { wrongDirection = in; }
-  void setSameMask(bool in) { sameMask = in; }
-  void setEolWidth(frUInt4 in)
-  {
-    exceptEol = true;
-    eolWidth = in;
-  }
+  void setDbTechLayerSpacingTablePrlRule(odb::dbTechLayerSpacingTablePrlRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -1388,10 +1351,10 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   {
     logger->report(
         "SPACINGTABLE wrongDirection {} sameMask {} exceptEol {} eolWidth {} ",
-        wrongDirection,
-        sameMask,
-        exceptEol,
-        eolWidth);
+        isWrongDirection(),
+        isSameMask(),
+        hasExceptEol(),
+        getEolWidth());
     logger->report("\texceptWithinConstraint");
     for (auto& [key, val] : exceptWithinConstraint)
       logger->report("\t{} ({} {})", key, val.first, val.second);
@@ -1399,10 +1362,7 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
 
  protected:
   std::map<frCoord, std::pair<frCoord, frCoord>> exceptWithinConstraint;
-  bool wrongDirection;
-  bool sameMask;
-  bool exceptEol;
-  frUInt4 eolWidth;
+  odb::dbTechLayerSpacingTablePrlRule* rule_;
 };
 
 // ADJACENTCUTS
@@ -1411,52 +1371,70 @@ class frCutSpacingConstraint : public frConstraint
  public:
   // constructor
   frCutSpacingConstraint() {}
-  frCutSpacingConstraint(frCoord cutSpacingIn,
-                         bool centerToCenterIn,
-                         bool sameNetIn,
-                         frString secondLayerNameIn,
-                         bool stackIn,
-                         int adjacentCutsIn,
-                         frCoord cutWithinIn,
-                         bool isExceptSamePGNetIn,
-                         bool isParallelOverlapIn,
-                         frCoord cutAreaIn,
-                         int twoCutsIn = -1)
+  frCutSpacingConstraint(odb::dbTechLayerSpacingRule *ruleIn,
+                         int twoCutsIn = -1) : rule_(ruleIn), twoCuts(-1)
   {
-    cutSpacing = cutSpacingIn;
-    centerToCenter = centerToCenterIn;
-    sameNet = sameNetIn;
-    secondLayerName = secondLayerNameIn;
-    stack = stackIn;
-    adjacentCuts = adjacentCutsIn;
-    cutWithin = cutWithinIn;
-    exceptSamePGNet = isExceptSamePGNetIn;
-    parallelOverlap = isParallelOverlapIn;
-    cutArea = cutAreaIn;
     twoCuts = twoCutsIn;
   }
   // getter
-  bool hasCenterToCenter() const { return centerToCenter; }
-  bool getCenterToCenter() const { return centerToCenter; }
-  bool getSameNet() const { return sameNet; }
-  bool hasSameNet() const { return sameNet; }
+  bool hasCenterToCenter() const { return rule_->getCutCenterToCenter(); }
+  //bool getCenterToCenter() const { return centerToCenter; }
+  //bool getSameNet() const { return rule->getCutSameNet(); }
+  bool hasSameNet() const { return rule_->getCutSameNet(); }
   frCutSpacingConstraint* getSameNetConstraint() { return sameNetConstraint; }
-  bool getStack() const { return stack; }
-  bool hasStack() const { return stack; }
-  bool isLayer() const { return !(secondLayerName.empty()); }
-  const frString& getSecondLayerName() const { return secondLayerName; }
+  //bool getStack() const { return rule_->getCutStacking(); }
+  bool hasStack() const { return rule_->getCutStacking(); }
+  bool isLayer() const
+  { 
+    odb::dbTechLayer* outly;
+    frString secondLayerName = "";
+    if (rule_->getCutLayer4Spacing(outly))
+      secondLayerName = outly->getName();
+    return !(secondLayerName.empty()); 
+  }
+  const frString getSecondLayerName() const
+  { 
+    odb::dbTechLayer* outly;
+    if (rule_->getCutLayer4Spacing(outly))
+      return outly->getName();
+    return ""; 
+  }
   bool hasSecondLayer() const { return (secondLayerNum != -1); }
   frLayerNum getSecondLayerNum() const { return secondLayerNum; }
-  bool isAdjacentCuts() const { return (adjacentCuts != -1); }
-  int getAdjacentCuts() const { return adjacentCuts; }
-  frCoord getCutWithin() const { return cutWithin; }
-  bool hasExceptSamePGNet() const { return exceptSamePGNet; }
-  bool getExceptSamePGNet() const { return exceptSamePGNet; }
-  bool isParallelOverlap() const { return parallelOverlap; }
-  bool getParallelOverlap() const { return parallelOverlap; }
-  bool isArea() const { return !(cutArea == -1); }
-  bool getCutArea() const { return cutArea; }
-  frCoord getCutSpacing() const { return cutSpacing; }
+  bool isAdjacentCuts() const
+  { 
+    frUInt4 within, spacing;
+    bool except_same_pgnet;
+    frUInt4 adjacentCuts;
+    return (rule_->getAdjacentCuts(
+            adjacentCuts, within, spacing, except_same_pgnet))? (adjacentCuts != -1) : false; 
+  }
+  int getAdjacentCuts() const
+  { 
+    frUInt4 within, spacing;
+    bool except_same_pgnet;
+    frUInt4 adjacentCuts;
+    if(rule_->getAdjacentCuts(adjacentCuts, within, spacing, except_same_pgnet))
+      return adjacentCuts; 
+    return 0;
+  }
+  frCoord getCutWithin() const
+  { 
+    frUInt4 within, spacing;
+    bool except_same_pgnet;
+    frUInt4 adjacentCuts;
+    if(rule_->getAdjacentCuts(adjacentCuts, within, spacing, except_same_pgnet))
+      return within; 
+    return -1;
+    //return rule_->getCutWithin(); 
+  }
+  bool hasExceptSamePGNet() const { return rule_->getSameNetPgOnly(); }
+  bool getExceptSamePGNet() const { return rule_->getSameNetPgOnly(); }
+  bool isParallelOverlap() const { return rule_->getCutParallelOverlap(); }
+  bool getParallelOverlap() const { return rule_->getCutParallelOverlap(); }
+  bool isArea() const { return !(rule_->getCutArea() == -1); }
+  bool getCutArea() const { return rule_->getCutArea(); }
+  frCoord getCutSpacing() const { return rule_->getSpacing(); }
   frConstraintTypeEnum typeId() const override
   {
     return frConstraintTypeEnum::frcCutSpacingConstraint;
@@ -1483,18 +1461,9 @@ class frCutSpacingConstraint : public frConstraint
   }
 
  protected:
-  frCoord cutSpacing = -1;
-  bool centerToCenter = false;
-  bool sameNet = false;
+  odb::dbTechLayerSpacingRule *rule_;
   frCutSpacingConstraint* sameNetConstraint = nullptr;
-  bool stack = false;
-  bool exceptSamePGNet = false;
-  bool parallelOverlap = false;
-  frString secondLayerName;
   frLayerNum secondLayerNum = -1;
-  int adjacentCuts = -1;
-  frCoord cutWithin = -1;
-  frCoord cutArea = -1;
   // LEF58 related
   int twoCuts = -1;
 };
@@ -1505,195 +1474,110 @@ class frLef58CutSpacingConstraint : public frConstraint
  public:
   // constructor
   frLef58CutSpacingConstraint()
-      : cutSpacing(-1),
-        sameMask(false),
+      : rule_(nullptr),
         maxXY(false),
-        centerToCenter(false),
-        sameNet(false),
-        sameMetal(false),
-        sameVia(false),
-        secondLayerName(""),
         secondLayerNum(-1),
-        stack(false),
-        orthogonalSpacing(-1),
-        cutClassName(""),
         cutClassIdx(-1),
-        shortEdgeOnly(false),
-        prl(-1),
-        concaveCorner(false),
-        width(-1),
-        enclosure(-1),
-        edgeLength(-1),
-        parLength(-1),
-        parWithin(-1),
-        edgeEnclosure(-1),
-        adjEnclosure(-1),
-        extension(-1),
-        eolWidth(-1),
-        minLength(-1),
-        maskOverlap(false),
-        wrongDirection(false),
-        adjacentCuts(-1),
-        exactAlignedCut(-1),
-        twoCuts(-1),
-        twoCutsSpacing(-1),
-        sameCut(false),
         cutWithin1(-1),
         cutWithin2(-1),
-        exceptSamePGNet(false),
-        exceptAllWithin(-1),
-        above(false),
-        below(false),
-        toAll(false),
-        noPrl(false),
-        sideParallelOverlap(false),
-        parallelOverlap(false),
-        exceptSameNet(false),
-        exceptSameMetal(false),
-        exceptSameMetalOverlap(false),
-        exceptSameVia(false),
-        within(-1),
-        longEdgeOnly(false),
-        exceptTwoEdges(false),
-        numCut(-1),
-        cutArea(-1)
+        exceptAllWithin(-1)
   {
   }
   // getters
   // is == what rules have; has == what derived from values
-  frCoord getCutSpacing() const { return cutSpacing; }
-  bool isSameMask() const { return sameMask; }
+  odb::dbTechLayerCutSpacingRule* getDbTechLayerCutSpacingRule() const { return rule_; }
+  frCoord getCutSpacing() const { return rule_->getCutSpacing(); }
+  bool isSameMask() const { return rule_->isSameMask(); }
   bool isMaxXY() const { return maxXY; }
-  bool isCenterToCenter() const { return centerToCenter; }
-  bool isSameNet() const { return sameNet; }
-  bool isSameMetal() const { return sameMetal; }
-  bool isSameVia() const { return sameVia; }
-  std::string getSecondLayerName() const { return secondLayerName; }
+  bool isCenterToCenter() const { return rule_->isCenterToCenter(); }
+  bool isSameNet() const { return rule_->isSameNet(); }
+  bool isSameMetal() const { return rule_->isSameMetal(); }
+  bool isSameVia() const { return rule_->isSameVia(); }
+  std::string getSecondLayerName() const { return rule_->getSecondLayer()->getName(); }
   bool hasSecondLayer() const
   {
-    return (secondLayerNum != -1 || secondLayerName != std::string(""));
+    return (secondLayerNum != -1 || rule_->getSecondLayer()->getName() != "");
   }
   frLayerNum getSecondLayerNum() const { return secondLayerNum; }
-  bool isStack() const { return stack; }
-  bool hasOrthogonalSpacing() const { return (orthogonalSpacing != -1); }
-  std::string getCutClassName() const { return cutClassName; }
+  bool isStack() const { return rule_->isStack(); }
+  bool hasOrthogonalSpacing() const { return rule_->isOrthogonalSpacingValid(); }
+  int getOrthogonalSpacing() const { return rule_->getOrthogonalSpacing(); }
+  std::string getCutClassName() const { return (rule_->getCutClass() != nullptr)? rule_->getCutClass()->getName(): ""; }
   bool hasCutClass() const
   {
-    return (cutClassIdx != -1 || cutClassName != std::string(""));
+    return (cutClassIdx != -1 || getCutClassName() != "");
   }
   int getCutClassIdx() const { return cutClassIdx; }
-  bool isShortEdgeOnly() const { return shortEdgeOnly; }
-  bool hasPrl() const { return (prl != -1); }
-  frCoord getPrl() const { return prl; }
-  bool isConcaveCorner() const { return concaveCorner; }
-  bool hasWidth() const { return (width != -1); }
-  frCoord getWidth() const { return width; }
-  bool hasEnclosure() const { return (enclosure != -1); }
-  frCoord getEnclosure() const { return enclosure; }
-  bool hasEdgeLength() const { return (edgeLength != -1); }
-  frCoord getEdgeLength() const { return edgeLength; }
-  bool hasParallel() const { return (parLength != -1); }
-  frCoord getParlength() const { return parLength; }
-  frCoord getParWithin() const { return parWithin; }
-  frCoord getEdgeEnclosure() const { return edgeEnclosure; }
-  frCoord getAdjEnclosure() const { return adjEnclosure; }
-  bool hasExtension() const { return (extension != -1); }
-  frCoord getExtension() const { return extension; }
-  bool hasNonEolConvexCorner() const { return (eolWidth != -1); }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool hasMinLength() const { return (minLength != -1); }
-  frCoord getMinLength() const { return minLength; }
-  bool hasAboveWidth() const { return (width != -1); }
-  bool isMaskOverlap() const { return maskOverlap; }
-  bool isWrongDirection() const { return wrongDirection; }
-  bool hasAdjacentCuts() const { return (adjacentCuts != -1); }
-  int getAdjacentCuts() const { return adjacentCuts; }
-  bool hasExactAligned() const { return (exactAlignedCut != -1); }
-  int getExactAligned() const { return exactAlignedCut; }
-  bool hasTwoCuts() const { return (twoCuts != -1); }
-  int getTwoCuts() const { return twoCuts; }
-  bool hasTwoCutsSpacing() const { return (twoCutsSpacing != -1); }
-  frCoord getTwoCutsSpacing() const { return twoCutsSpacing; }
-  bool isSameCut() const { return sameCut; }
+  bool isShortEdgeOnly() const { return rule_->isShortEdgeOnly(); }
+  bool hasPrl() const { return rule_->isPrlValid(); }
+  frCoord getPrl() const { return rule_->getPrl(); }
+  bool isConcaveCorner() const { return rule_->isConcaveCorner(); }
+  bool hasWidth() const { return rule_->isConcaveCornerWidth(); }
+  frCoord getWidth() const { return rule_->getWidth(); }
+  bool hasEnclosure() const { return (rule_->getEnclosure() != -1); }
+  frCoord getEnclosure() const { return rule_->getEnclosure(); }
+  bool hasEdgeLength() const { return (rule_->getEdgeLength() != -1); }
+  frCoord getEdgeLength() const { return rule_->getEdgeLength(); }
+  bool hasParallel() const { return rule_->isConcaveCornerParallel(); }
+  frCoord getParlength() const { return rule_->getParLength(); }
+  frCoord getParWithin() const { return rule_->getParWithin(); }
+  frCoord getEdgeEnclosure() const { return rule_->getEdgeEnclosure(); }
+  frCoord getAdjEnclosure() const { return rule_->getAdjEnclosure(); }
+  bool hasExtension() const { return rule_->isExtensionValid(); }
+  frCoord getExtension() const { return rule_->getExtension(); }
+  bool hasNonEolConvexCorner() const { return rule_->isNonEolConvexCorner(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool hasMinLength() const { return rule_->isMinLengthValid(); }
+  frCoord getMinLength() const { return rule_->getMinLength(); }
+  bool hasAboveWidth() const { return rule_->isAboveWidthValid(); }
+  int getAboveWidth() const { return rule_->getAboveWidth(); }
+  bool hasAboveWidthEnclosure() const { return rule_->isAboveWidthEnclosureValid(); }
+  int getAboveEnclosure() const {return rule_->getAboveEnclosure(); }
+  bool isMaskOverlap() const { return rule_->isMaskOverlap(); }
+  bool isWrongDirection() const { return rule_->isWrongDirection(); }
+  bool hasAdjacentCuts() const { return (rule_->getAdjacentCuts() != -1); }
+  int getAdjacentCuts() const { return rule_->getAdjacentCuts(); }
+  bool hasExactAligned() const { return rule_->isExactAligned(); }
+  int getExactAligned() const { return rule_->getNumCuts(); }
+  bool hasTwoCuts() const { return rule_->isTwoCutsValid(); }
+  int getTwoCuts() const { return rule_->getTwoCuts(); }
+  bool hasTwoCutsSpacing() const { return (rule_->getTwoCuts() != -1); }
+  frCoord getTwoCutsSpacing() const { return rule_->getTwoCuts(); }
+  bool isSameCut() const { return rule_->isSameCut(); }
   // cutWithin2 is always used as upper bound
   bool hasTwoCutWithin() const { return (cutWithin1 != -1); }
-  frCoord getCutWithin() const { return cutWithin2; }
+  frCoord getCutWithin() const { return rule_->getWithin(); }
   frCoord getCutWithin1() const { return cutWithin1; }
   frCoord getCutWithin2() const { return cutWithin2; }
-  bool isExceptSamePGNet() const { return exceptSamePGNet; }
+  bool isExceptSamePGNet() const { return rule_->isExceptSamePgnet(); }
   bool hasExceptAllWithin() const { return (exceptAllWithin != -1); }
   frCoord getExceptAllWithin() const { return exceptAllWithin; }
-  bool isAbove() const { return above; }
-  bool isBelow() const { return below; }
-  bool isToAll() const { return toAll; }
-  bool isNoPrl() const { return noPrl; }
-  bool isSideParallelOverlap() const { return sideParallelOverlap; }
-  bool isParallelOverlap() const { return parallelOverlap; }
-  bool isExceptSameNet() const { return exceptSameNet; }
-  bool isExceptSameMetal() const { return exceptSameMetal; }
-  bool isExceptSameMetalOverlap() const { return exceptSameMetalOverlap; }
-  bool isExceptSameVia() const { return exceptSameVia; }
-  bool hasParallelWithin() const { return (within != -1); }
-  frCoord getWithin() const { return within; }
-  bool isLongEdgeOnly() const { return longEdgeOnly; }
-  bool hasSameMetalSharedEdge() const { return (parWithin != -1); }
-  bool isExceptTwoEdges() const { return exceptTwoEdges; }
-  bool hasExceptSameVia() const { return (numCut != -1); }
-  bool hasArea() const { return (cutArea != -1); }
-  frCoord getCutArea() const { return cutArea; }
+  bool isAbove() const { return rule_->isAbove(); }
+  bool isBelow() const { return rule_->isBelow(); }
+  bool isToAll() const { return rule_->isCutClassToAll(); }
+  bool isNoPrl() const { return rule_->isNoPrl(); }
+  bool isSideParallelOverlap() const { return rule_->isSideParallelOverlap(); }
+  bool isParallelOverlap() const { return false; }
+  bool isExceptSameNet() const { return rule_->isExceptSameNet(); }
+  bool isExceptSameMetal() const { return rule_->isExceptSameMetal(); }
+  bool isExceptSameMetalOverlap() const { return rule_->isExceptSameMetalOverlap(); }
+  bool isExceptSameVia() const { return rule_->isExceptSameVia(); }
+  bool hasParallelWithin() const { return (rule_->getParWithin() != -1); }
+  frCoord getWithin() const { return rule_->getWithin(); }
+  bool isLongEdgeOnly() const { return rule_->isLongEdgeOnly(); }
+  bool hasSameMetalSharedEdge() const { return (rule_->getParWithin()!= -1); }
+  bool isExceptTwoEdges() const { return rule_->isExceptTwoEdges(); }
+  bool hasExceptSameVia() const { return rule_->isExceptSameVia(); }
+  bool hasArea() const { return (rule_->getCutArea() != -1); }
+  frCoord getCutArea() const { return rule_->getCutArea(); }
   // setters
-  void setCutSpacing(frCoord in) { cutSpacing = in; }
-  void setSameMask(bool in) { sameMask = in; }
+  void setDbTechLayerCutSpacingRule(odb::dbTechLayerCutSpacingRule* ruleIn) { rule_ = ruleIn; }
   void setMaxXY(bool in) { maxXY = in; }
-  void setCenterToCenter(bool in) { centerToCenter = in; }
-  void setSameNet(bool in) { sameNet = in; }
-  void setSameMetal(bool in) { sameMetal = in; }
-  void setSameVia(bool in) { sameVia = in; }
-  void setSecondLayerName(const std::string& in) { secondLayerName = in; }
   void setSecondLayerNum(frLayerNum in) { secondLayerNum = in; }
-  void setStack(bool in) { stack = in; }
-  void setOrthogonalSpacing(frCoord in) { orthogonalSpacing = in; }
-  void setCutClassName(const std::string& in) { cutClassName = in; }
   void setCutClassIdx(int in) { cutClassIdx = in; }
-  void setShortEdgeOnly(bool in) { shortEdgeOnly = in; }
-  void setPrl(frCoord in) { prl = in; }
-  void setConcaveCorner(bool in) { concaveCorner = in; }
-  void setWidth(frCoord in) { width = in; }
-  void setEnclosure(frCoord in) { enclosure = in; }
-  void setEdgeLength(frCoord in) { edgeLength = in; }
-  void setParLength(frCoord in) { parLength = in; }
-  void setParWithin(frCoord in) { parWithin = in; }
-  void setEdgeEnclosure(frCoord in) { edgeEnclosure = in; }
-  void setAdjEnclosure(frCoord in) { adjEnclosure = in; }
-  void setExtension(frCoord in) { extension = in; }
-  void setEolWidth(frCoord in) { eolWidth = in; }
-  void setMinLength(frCoord in) { minLength = in; }
-  void setMaskOverlap(bool in) { maskOverlap = in; }
-  void setWrongDirection(bool in) { wrongDirection = in; }
-  void setAdjacentCuts(int in) { adjacentCuts = in; }
-  void setExactAlignedCut(int in) { exactAlignedCut = in; }
-  void setTwoCuts(int in) { twoCuts = in; }
-  void setTwoCutsSpacing(frCoord in) { twoCutsSpacing = in; }
-  void setSameCut(bool in) { sameCut = in; }
-  void setCutWithin(frCoord in) { cutWithin2 = in; }
   void setCutWithin1(frCoord in) { cutWithin1 = in; }
   void setCutWithin2(frCoord in) { cutWithin2 = in; }
-  void setExceptSamePGNet(bool in) { exceptSamePGNet = in; }
   void setExceptAllWithin(frCoord in) { exceptAllWithin = in; }
-  void setAbove(bool in) { above = in; }
-  void setBelow(bool in) { below = in; }
-  void setToAll(bool in) { toAll = in; }
-  void setNoPrl(bool in) { noPrl = in; }
-  void setSideParallelOverlap(bool in) { sideParallelOverlap = in; }
-  void setExceptSameNet(bool in) { exceptSameNet = in; }
-  void setExceptSameMetal(bool in) { exceptSameMetal = in; }
-  void setExceptSameMetalOverlap(bool in) { exceptSameMetalOverlap = in; }
-  void setExceptSameVia(bool in) { exceptSameVia = in; }
-  void setWithin(frCoord in) { within = in; }
-  void setLongEdgeOnly(bool in) { longEdgeOnly = in; }
-  void setExceptTwoEdges(bool in) { exceptTwoEdges = in; }
-  void setNumCut(int in) { numCut = in; }
-  void setCutArea(frCoord in) { cutArea = in; }
 
   // others
   frConstraintTypeEnum typeId() const override
@@ -1716,113 +1600,68 @@ class frLef58CutSpacingConstraint : public frConstraint
         "noPrl {} sideParallelOverlap {} parallelOverlap {} exceptSameNet {} "
         "exceptSameMetal {} exceptSameMetalOverlap {} exceptSameVia {} within "
         "{} longEdgeOnly {} exceptTwoEdges {} numCut {} cutArea {} ",
-        cutSpacing,
-        sameMask,
+        getCutSpacing(),
+        isSameMask(),
         maxXY,
-        centerToCenter,
-        sameNet,
-        sameMetal,
-        sameVia,
-        secondLayerName,
+        isCenterToCenter(),
+        isSameNet(),
+        isSameMetal(),
+        isSameVia(),
+        getSecondLayerName(),
         secondLayerNum,
-        stack,
-        orthogonalSpacing,
-        cutClassName,
+        isStack(),
+        getOrthogonalSpacing(),
+        getCutClassName(),
         cutClassIdx,
-        shortEdgeOnly,
-        prl,
-        concaveCorner,
-        width,
-        enclosure,
-        edgeLength,
-        parLength,
-        parWithin,
-        edgeEnclosure,
-        adjEnclosure,
-        extension,
-        eolWidth,
-        minLength,
-        maskOverlap,
-        wrongDirection,
-        adjacentCuts,
-        exactAlignedCut,
-        twoCuts,
-        twoCutsSpacing,
-        sameCut,
+        isShortEdgeOnly(),
+        getPrl(),
+        isConcaveCorner(),
+        getWidth(),
+        getEnclosure(),
+        getEdgeLength(),
+        getParlength(),
+        getParWithin(),
+        getEdgeEnclosure(),
+        getAdjEnclosure(),
+        getExtension(),
+        getEolWidth(),
+        getMinLength(),
+        isMaskOverlap(),
+        isWrongDirection(),
+        getAdjacentCuts(),
+        getExactAligned(),
+        getTwoCuts(),
+        getTwoCutsSpacing(),
+        isSameCut(),
         cutWithin1,
         cutWithin2,
-        exceptSamePGNet,
+        isExceptSamePGNet(),
         exceptAllWithin,
-        above,
-        below,
-        toAll,
-        noPrl,
-        sideParallelOverlap,
-        parallelOverlap,
-        exceptSameNet,
-        exceptSameMetal,
-        exceptSameMetalOverlap,
-        exceptSameVia,
-        within,
-        longEdgeOnly,
-        exceptTwoEdges,
-        numCut,
-        cutArea);
+        isAbove(),
+        isBelow(),
+        isToAll(),
+        isNoPrl(),
+        isSideParallelOverlap(),
+        isParallelOverlap(),
+        isExceptSameNet(),
+        isExceptSameMetal(),
+        isExceptSameMetalOverlap(),
+        isExceptSameVia(),
+        getWithin(),
+        isLongEdgeOnly(),
+        isExceptTwoEdges(),
+        rule_->getNumCuts(),
+        getCutArea());
   }
 
  protected:
-  frCoord cutSpacing;
-  bool sameMask;
+  odb::dbTechLayerCutSpacingRule* rule_;
   bool maxXY;
-  bool centerToCenter;
-  bool sameNet;
-  bool sameMetal;
-  bool sameVia;
-  std::string secondLayerName;
   frLayerNum secondLayerNum;
-  bool stack;
-  frCoord orthogonalSpacing;
-  std::string cutClassName;
   int cutClassIdx;
-  bool shortEdgeOnly;
-  frCoord prl;
-  bool concaveCorner;
-  frCoord width;
-  frCoord enclosure;
-  frCoord edgeLength;
-  frCoord parLength;
-  frCoord parWithin;
-  frCoord edgeEnclosure;
-  frCoord adjEnclosure;
-  frCoord extension;
-  frCoord eolWidth;
-  frCoord minLength;
-  bool maskOverlap;
-  bool wrongDirection;
-  int adjacentCuts;
-  int exactAlignedCut;
-  int twoCuts;
-  frCoord twoCutsSpacing;
-  bool sameCut;
   frCoord cutWithin1;
   frCoord cutWithin2;
-  bool exceptSamePGNet;
   frCoord exceptAllWithin;
-  bool above;
-  bool below;
-  bool toAll;
-  bool noPrl;
-  bool sideParallelOverlap;
-  bool parallelOverlap;
-  bool exceptSameNet;
-  bool exceptSameMetal;
-  bool exceptSameMetalOverlap;
-  bool exceptSameVia;
-  frCoord within;
-  bool longEdgeOnly;
-  bool exceptTwoEdges;
-  int numCut;
-  frCoord cutArea;
 };
 
 // LEF58_CORNERSPACING (new)
@@ -1832,18 +1671,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
   // constructor
   frLef58CornerSpacingConstraint(
       const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& tblIn)
-      : cornerType(frCornerTypeEnum::UNKNOWN),
-        sameMask(false),
-        within(-1),
-        eolWidth(-1),
-        length(-1),
-        edgeLength(false),
-        includeLShape(false),
-        minLength(-1),
-        exceptNotch(false),
-        notchLength(-1),
-        exceptSameNet(false),
-        exceptSameMetal(false),
+      : rule_(nullptr),
         tbl(tblIn),
         sameXY(false),
         cornerToCorner(false)
@@ -1851,30 +1679,31 @@ class frLef58CornerSpacingConstraint : public frConstraint
   }
 
   // getters
+  odb::dbTechLayerCornerSpacingRule* getDbTechLayerCornerSpacingRule() const { return rule_; }
   frConstraintTypeEnum typeId() const override
   {
     return frConstraintTypeEnum::frcLef58CornerSpacingConstraint;
   }
-  frCornerTypeEnum getCornerType() const { return cornerType; }
-  bool getSameMask() const { return sameMask; }
-  bool hasCornerOnly() const { return (within != -1); }
-  frCoord getWithin() const { return within; }
-  bool hasExceptEol() const { return (eolWidth != -1); }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool hasExceptJogLength() const { return (minLength != -1); }
-  frCoord getLength() const { return length; }
-  bool hasEdgeLength() const { return edgeLength; }
-  bool getEdgeLength() const { return edgeLength; }
-  bool hasIncludeLShape() const { return includeLShape; }
-  bool getIncludeLShape() const { return includeLShape; }
-  frCoord getMinLength() const { return minLength; }
-  bool hasExceptNotch() const { return exceptNotch; }
-  bool getExceptNotch() const { return exceptNotch; }
-  frCoord getNotchLength() const { return notchLength; }
-  bool hasExceptSameNet() const { return exceptSameNet; }
-  bool getExceptSameNet() const { return exceptSameNet; }
-  bool hasExceptSameMetal() const { return exceptSameMetal; }
-  bool getExceptSameMetal() const { return exceptSameMetal; }
+  frCornerTypeEnum getCornerType() const { return (rule_->getType() == odb::dbTechLayerCornerSpacingRule::CornerType::CONVEXCORNER)? frCornerTypeEnum::CONVEX : frCornerTypeEnum::CONCAVE; }
+  bool getSameMask() const { return rule_->isSameMask(); }
+  bool hasCornerOnly() const { return rule_->isCornerOnly(); }
+  frCoord getWithin() const { return rule_->getWithin(); }
+  bool hasExceptEol() const { return rule_->isExceptEol(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool hasExceptJogLength() const { return rule_->isExceptJogLength(); }
+  frCoord getLength() const { return rule_->getJogLength(); }
+  bool hasEdgeLength() const { return rule_->isEdgeLengthValid(); }
+  bool getEdgeLength() const { return rule_->isEdgeLengthValid(); }
+  bool hasIncludeLShape() const { return rule_->isIncludeShape(); }
+  bool getIncludeLShape() const { return rule_->isIncludeShape(); }
+  frCoord getMinLength() const { return (rule_->isMinLengthValid())? rule_->getMinLength() : -1; }
+  bool hasExceptNotch() const { return rule_->isExceptNotch(); }
+  bool getExceptNotch() const { return rule_->isExceptNotch(); }
+  frCoord getNotchLength() const { return rule_->getExceptNotchLength(); }
+  bool hasExceptSameNet() const { return rule_->isExceptSameNet(); }
+  bool getExceptSameNet() const { return rule_->isExceptSameNet(); }
+  bool hasExceptSameMetal() const { return rule_->isExceptSameMetal(); }
+  bool getExceptSameMetal() const { return rule_->isExceptSameMetal(); }
   frCoord find(frCoord width, bool isHorizontal = true) const
   {
     return (isHorizontal ? tbl.find(width).first : tbl.find(width).second);
@@ -1896,18 +1725,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
   bool isCornerToCorner() const { return cornerToCorner; }
 
   // setters
-  void setCornerType(frCornerTypeEnum in) { cornerType = in; }
-  void setSameMask(bool in) { sameMask = in; }
-  void setWithin(frCoord in) { within = in; }
-  void setEolWidth(frCoord in) { eolWidth = in; }
-  void setLength(frCoord in) { length = in; }
-  void setEdgeLength(bool in) { edgeLength = in; }
-  void setIncludeLShape(bool in) { includeLShape = in; }
-  void setMinLength(frCoord in) { minLength = in; }
-  void setExceptNotch(bool in) { exceptNotch = in; }
-  void setExceptNotchLength(frCoord in) { notchLength = in; }
-  void setExceptSameNet(bool in) { exceptSameNet = in; }
-  void setExceptSameMetal(bool in) { exceptSameMetal = in; }
+  void setDbTechLayerCornerSpacingRule(odb::dbTechLayerCornerSpacingRule *ruleIn) { rule_ = ruleIn; }
   void setLookupTbl(
       const fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>& in)
   {
@@ -1921,18 +1739,18 @@ class frLef58CornerSpacingConstraint : public frConstraint
         "CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length "
         "{} edgeLength {} includeLShape {} minLength {} exceptNotch {} "
         "notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} cornerToCorner {}",
-        cornerType,
-        sameMask,
-        within,
-        eolWidth,
-        length,
-        edgeLength,
-        includeLShape,
-        minLength,
-        exceptNotch,
-        notchLength,
-        exceptSameNet,
-        exceptSameMetal,
+        getCornerType(),
+        getSameMask(),
+        getWithin(),
+        getEolWidth(),
+        getLength(),
+        getEdgeLength(),
+        getIncludeLShape(),
+        getMinLength(),
+        getExceptNotch(),
+        getNotchLength(),
+        getExceptSameNet(),
+        getExceptSameMetal(),
         sameXY,
         cornerToCorner);
 
@@ -1949,18 +1767,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
   }
 
  protected:
-  frCornerTypeEnum cornerType;
-  bool sameMask;
-  frCoord within;
-  frCoord eolWidth;
-  frCoord length;
-  bool edgeLength;
-  bool includeLShape;
-  frCoord minLength;
-  bool exceptNotch;
-  frCoord notchLength;
-  bool exceptSameNet;
-  bool exceptSameMetal;
+  odb::dbTechLayerCornerSpacingRule *rule_;
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>>
       tbl;      // horz / vert spacing
   bool sameXY;  // indicate whether horz spacing == vert spacing // for write
@@ -1988,6 +1795,7 @@ class frLef58CornerSpacingSpacingConstraint : public frConstraint
   }
 
  protected:
+  odb::dbObject * rule_;
   frCoord width;
 };
 
@@ -2122,7 +1930,8 @@ class frNonDefaultRule
   friend class frTechObject;
 
  private:
-  string name_;
+  odb::dbTechNonDefaultRule *ndr_;
+  //string name_;
   // each vector position is a metal layer
   vector<frCoord> widths_;
   vector<frCoord> spacings_;
@@ -2133,8 +1942,6 @@ class frNonDefaultRule
   // vias for each layer
   vector<vector<frViaDef*>> vias_;
   vector<vector<frViaRuleGenerate*>> viasRules_;
-
-  bool hardSpacing_ = false;
 
   // See comments in frTechObject's equivalent fields for the meaning
   std::vector<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
@@ -2205,11 +2012,11 @@ class frNonDefaultRule
     viasRules_[z].push_back(via);
   }
 
-  void setHardSpacing(bool isHard) { hardSpacing_ = isHard; }
+  void setDbTechNonDefaultRule(odb::dbTechNonDefaultRule *ndrIn) { ndr_ = ndrIn; }
 
-  void setName(const char* n) { name_ = string(n); }
+  odb::dbTechNonDefaultRule* getDbTechNonDefaultRule() const { return ndr_; }
 
-  string getName() const { return name_; }
+  string getName() const { return ndr_->getName().data(); }
 
   frCoord getWidth(int z) const
   {
@@ -2258,7 +2065,7 @@ class frNonDefaultRule
     return viasRules_[z];
   }
 
-  bool isHardSpacing() const { return hardSpacing_; }
+  bool isHardSpacing() const { return ndr_->getHardSpacing(); }
 };
 }  // namespace fr
 

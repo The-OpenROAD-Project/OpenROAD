@@ -6339,6 +6339,7 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
   uint getCutArea() const;
+  uint getCutWithin() const;
   void writeLef(lefout& writer) const;
 
   void setSameNetPgOnly(bool pgonly);

@@ -316,6 +316,12 @@ uint dbTechLayerSpacingRule::getCutArea() const
   return _lsp->_cut_area;
 }
 
+uint dbTechLayerSpacingRule::getCutWithin() const
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  return _lsp->_length_or_influence;
+}
+
 void dbTechLayerSpacingRule::setCutArea(uint area)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
