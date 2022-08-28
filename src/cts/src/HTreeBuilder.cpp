@@ -973,27 +973,24 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
   bool isLowToHiY = root_.getY() < target_.getY();
 
   double connectionLength = 0.0;
-  for (long int wire = 0; wire < techCharWires_.size(); ++wire) {
-    unsigned techCharWireIdx = techCharWires_[wire];
+  for (unsigned techCharWireIdx : techCharWires_) {
     const WireSegment& wireSegment = techChar_->getWireSegment(techCharWireIdx);
-    unsigned wireSegLen = wireSegment.getLength();
-    if (wireSegment.getNumBuffers() < 1 && sink) {
-      connectionLength += wireSegLen;
-    }
+    const unsigned wireSegLen = wireSegment.getLength();
     for (int buffer = 0; buffer < wireSegment.getNumBuffers(); ++buffer) {
-      double location = wireSegment.getBufferLocation(buffer) * wireSegLen;
-      connectionLength += location;
+      const double location
+          = wireSegment.getBufferLocation(buffer) * wireSegLen;
+      const double locationlLength = connectionLength + location;
 
       double x = std::numeric_limits<double>::max();
       double y = std::numeric_limits<double>::max();
-      if (connectionLength < lengthX) {
+      if (locationlLength < lengthX) {
         y = root_.getY();
-        x = (isLowToHiX) ? (root_.getX() + connectionLength)
-                         : (root_.getX() - connectionLength);
+        x = (isLowToHiX) ? (root_.getX() + locationlLength)
+                         : (root_.getX() - locationlLength);
       } else {
         x = target_.getX();
-        y = (isLowToHiY) ? (root_.getY() + (connectionLength - lengthX))
-                         : (root_.getY() - (connectionLength - lengthX));
+        y = (isLowToHiY) ? (root_.getY() + (locationlLength - lengthX))
+                         : (root_.getY() - (locationlLength - lengthX));
       }
 
       std::string buffMaster = (forceBuffer != "")
@@ -1005,7 +1002,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
           x * techCharDistUnit_,
           y * techCharDistUnit_);
       tree_->addTreeLevelBuffer(&newBuffer);
-      ;
+
       if (sink) {
         drivingSubNet_->replaceSink(sink, &newBuffer);
         drivingSubNet_
@@ -1023,6 +1020,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
 
       ++numBufferLevels_;
     }
+    connectionLength += wireSegLen;
   }
 }
 
@@ -1037,7 +1035,7 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   ClockInst& newBuffer = clock_->addClockBuffer(
       instPrefix_ + "_f", master, x * techCharDistUnit_, y * techCharDistUnit_);
   tree_->addTreeLevelBuffer(&newBuffer);
-  ;
+
   drivingSubNet_->addInst(newBuffer);
   drivingSubNet_ = &clock_->addSubNet(netPrefix_ + "_leaf");
   drivingSubNet_->addInst(newBuffer);
