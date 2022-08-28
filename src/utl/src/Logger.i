@@ -57,6 +57,7 @@ using ord::getLogger;
 
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -151,9 +152,9 @@ void push_metrics_stage(const char *fmt){
   logger->pushMetricsStage(fmt);
 }
 
-const char* pop_metrics_stage(){
+const std::string pop_metrics_stage(){
   Logger* logger = getLogger();
-  return logger->popMetricsStage().c_str();
+  return logger->popMetricsStage();
 }
 
 } // namespace

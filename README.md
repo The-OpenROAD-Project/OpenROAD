@@ -5,7 +5,7 @@
 OpenROAD is an integrated chip physical design tool that takes a
 design from synthesized Verilog to routed layout.
 
-An outline of steps used to build a chip using OpenROAD are shown below.
+An outline of steps used to build a chip using OpenROAD is shown below:
 
 * Initialize floorplan - define the chip size and cell rows
 * Place pins (for designs without pads )
@@ -33,19 +33,19 @@ Documentation is also available [here](https://openroad.readthedocs.io/en/latest
 [OpenROAD](https://theopenroadproject.org/) is the leading
 open-source, foundational application for semiconductor digital design.
 It eliminates the barriers of cost, risk and uncertainty in hardware
-design to foster open access, expertise, rapid innovation and faster
+design to foster open access, expertise, rapid innovation, and faster
 design turnaround. The OpenROAD application enables flexible flow
-control through an API with bindigns in Tcl and Python.
+control through an API with bindings in Tcl and Python.
 
-OpenROAD is a foundational building block in open source digital flows like
-OpenROAD-flow-scripts,
+OpenROAD is a foundational building block in open-source digital flows like
+[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
 [Efabless](https://efabless.com/), Silicon Compiler Systems; as
 well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
 mixed-signal design flows.
 
-OpenROAD users range from hardware designers, industry collaborators,
-enthusiasts, academia and researchers.
+OpenROAD users span hardware designers, industry collaborators,
+enthusiasts, academics, and researchers.
 
 Two main flow controllers are supported by the
 [OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
@@ -57,17 +57,18 @@ project repository:
 -   [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
      Supported by [Efabless](https://efabless.com/)
 
-The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hr
-turnaround from RTL-GDSII for design exploration and physical design
+The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hour
+turnaround from RTL to GDSII for design exploration and physical design
 implementation.
 
 ![rtl2gds.webp](./docs/images/rtl2gds.webp)
 
 ## GUI
 
-The OpenROAD GUI is a powerful visualization, analysis and debugging
-tool with a customizable Tcl interface.Figures show GUI views for various
-flow stages including post-routed timing, placement congestion, CTS.
+The OpenROAD GUI is a powerful visualization, analysis, and debugging
+tool with a customizable Tcl interface. The below figures show GUI views for
+various flow stages including post-routed timing, placement congestion, and
+CTS.
 
 ![ibexGui.webp](./docs/images/ibexGui.webp)
 
@@ -90,7 +91,7 @@ OpenLane supports Skywater130.
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
 
-## Open Source PDKs
+## Open-Source PDKs
 
 -   `Skywater130` - 130nm
 -   `Nangate45` - 45nm
@@ -105,17 +106,17 @@ provided due to NDA restrictions. However, if you are able to access
 these platforms independently, you can create the necessary
 platform-specific files yourself.
 
+-   `GF180` - 180nm
 -   `GF55` - 55nm
 -   `GF12` - 12nm
--   `GF180` - 180nm
 -   `Intel22` - 22nm
 -   `Intel16` - 16nm
 -   `TSMC65` - 65nm
 
 # Tapeouts
 
-OpenROAD was used for full physical implementation in over 240 tapeouts
-in Sky130 through the Google sponsored, Efabless [MPW
+OpenROAD has been used for full physical implementation in over 240 tapeouts
+in Sky130 through the Google-sponsored, Efabless [MPW
 shuttle](https://efabless.com/open_shuttle_program) and
 [ChipIgnite](https://efabless.com/) programs.
 
@@ -132,11 +133,11 @@ designs to the [CI regression
 testing](https://github.com/The-OpenROAD-Project/OpenLane-MPW-CI).
 Examples of designs include Open processor cores, RISC-V based SoCs,
 cryptocurrency miners, robotic app processors, amateur satellite radio
-transceivers, OpenPower based Microwatt etc.
+transceivers, OpenPower-based Microwatt etc.
 
 ## Install dependencies
 
-For a limited number of configurations the following script can be used
+For a limited number of configurations, the following script can be used
 to install dependencies. The script `etc/DependencyInstaller.sh` supports
 Centos7 and Ubuntu 20.04. You need root access to correctly install the
 dependencies with the script.
@@ -173,6 +174,7 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 | `TCL_HEADER`           | Path to `tcl.h`           |
 | `ZLIB_ROOT`            | Path to `zlib`            |
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |
+| `GPU`                  | true, false               |
 
 ### Build by hand
 
@@ -217,6 +219,12 @@ about 1 minute to compile times and improves the runtime by about 11%. If
 you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
 generating a build.
 
+### GPU acceleration
+The default solver for initial placement is single threaded. If you would like 
+to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time. 
+
+Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html 
+
 ## Regression Tests
 
 There are a set of regression tests in `test/`.
@@ -233,7 +241,7 @@ src/<tool>/test/regression
 ```
 
 The flow tests check results such as worst slack against reference values.
-Use `report_flow_metrics [test]...` to see the all of the metrics.
+Use `report_flow_metrics [test]...` to see all of the metrics.
 Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
 
 ``` text
@@ -263,88 +271,32 @@ OpenROAD sources the Tcl command file `~/.openroad` unless the command
 line option `-no_init` is specified.
 
 OpenROAD then sources the command file `cmd_file` if it is specified on
-the command line. Unless the `-exit` command line flag is specified it
-enters and interactive Tcl command interpreter.
+the command line. Unless the `-exit` command line flag is specified, it
+enters an interactive Tcl command interpreter.
 
-Below is a list of the available tools/modules included in the OpenROAD app.
+Below is a list of the available tools/modules included in the OpenROAD app:
 
-### OpenROAD (global commands)
-
-- [OpenROAD](./src/README.md)
-
-### Database
-
-- [OpenDB](./src/odb/README.md)
-
-### Parasitics Extraction
-
-- [OpenRCX](./src/rcx/README.md)
-
-### Synthesis
-
-- [Restructure](./src/rmp/README.md)
-
-### Initialize Floorplan
-
-- [Floorplan](./src/ifp/README.md)
-
-### Pin placement
-
-- [ioPlacer](./src/ppl/README.md)
-
-### Chip level connections
-
-- [ICeWall](./src/pad/README.md)
-
-### Macro Placement
-
-- [TritonMacroPlacer](./src/mpl/README.md)
-
-### Tapcell
-
-- [Tapcell](./src/tap/README.md)
-
-### PDN analysis
-
-- [PDN](./src/pdn/README.md)
-- [PDNSim](./src/psm/README.md)
-
-### Global Placement
-
-- [RePlAce](./src/gpl/README.md)
-
-### Timing Analysis
-
-- [OpenSTA](src/sta/README.md)
-
-### Gate Resizer
-
-- [Resizer](./src/rsz/README.md)
-
-### Detailed Placement
-
-- [OpenDP](./src/dpl/README.md)
-
-### Clock Tree Synthesis
-
-- [TritonCTS 2.0](./src/cts/README.md)
-
-### Global Routing
-
-- [FastRoute](./src/grt/README.md)
-- [Antenna Checker](./src/ant/README.md)
-
-### Detailed Router
-
-- [TritonRoute](./src/drt/README.md)
-
-### Metal Fill
-
-- [Metal Fill](./src/fin/README.md)
-
-### Graphical User Interface
-
-- [GUI](./src/gui/README.md)
+| Tool | Purpose |
+|-|-|
+| [OpenROAD](./src/README.md) | OpenROAD (global commands) |
+| [OpenDB](./src/odb/README.md) | Database |
+| [OpenRCX](./src/rcx/README.md) | Parasitics extraction |
+| [Restructure](./src/rmp/README.md) | Synthesis |
+| [Floorplan](./src/ifp/README.md) | Initialize floorplan |
+| [ioPlacer](./src/ppl/README.md) | Pin placement |
+| [ICeWall](./src/pad/README.md) | Chip-level connections |
+| [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
+| [Tapcell](./src/tap/README.md) | Tapcell insertion | 
+| [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
+| [RePlAce](./src/gpl/README.md) | Global placement |
+| [OpenSTA](src/sta/README.md) | Timing analysis |
+| [Resizer](./src/rsz/README.md) | Gate resizer |
+| [OpenDP](./src/dpl/README.md) | Detailed placement |
+| [TritonCTS 2.0](./src/cts/README.md) | Clock tree synthesis |
+| [FastRoute](./src/grt/README.md), [Antenna Checker](./src/ant/README.md) | Global routing |
+| [TritonRoute](./src/drt/README.md) | Detailed routing |
+| [Metal Fill](./src/fin/README.md) | Metal fill |
+| [GUI](./src/gui/README.md) | Graphical user interface |
 
 ## License
 

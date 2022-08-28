@@ -241,8 +241,43 @@ proc estimate_parasitics { args } {
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
-  sta::check_argc_eq1 "set_dont_use" $args
-  rsz::set_dont_use_cmd [sta::get_lib_cells_arg "-dont_use" [lindex $args 0] utl::warn]
+  set_dont_use_cmd "set_dont_use" $args 1
+}
+
+sta::define_cmd_args "unset_dont_use" {lib_cells}
+
+proc unset_dont_use { args } {
+  set_dont_use_cmd "unset_dont_use" $args 0
+}
+
+proc set_dont_use_cmd { cmd cmd_args dont_use } {
+  sta::check_argc_eq1 $cmd $cmd_args
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] utl::warn] {
+    rsz::set_dont_use $lib_cell $dont_use
+  }
+}
+
+sta::define_cmd_args "set_dont_touch" {nets_instances}
+
+proc set_dont_touch { args } {
+  set_dont_touch_cmd "set_dont_touch" $args 1
+}
+
+sta::define_cmd_args "unset_dont_touch" {nets_instances}
+
+proc unset_dont_touch { args } {
+  set_dont_touch_cmd "unset_dont_touch" $args 0
+}
+
+proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
+  sta::check_argc_eq1 $cmd $cmd_args
+  sta::parse_inst_net_arg [lindex $cmd_args 0] insts nets
+  foreach inst $insts {
+    rsz::set_dont_touch_instance $inst $dont_touch
+  }
+  foreach net $nets {
+    rsz::set_dont_touch_net $net $dont_touch
+  }
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
@@ -427,7 +462,7 @@ proc report_floating_nets { args } {
   set floating_nets [rsz::find_floating_nets]
   set floating_net_count [llength $floating_nets]
   if { $floating_net_count > 0 } {
-    utl::warn RSZ 20 "found $floating_net_count floatiing nets."
+    utl::warn RSZ 20 "found $floating_net_count floating nets."
     if { $verbose } {
       foreach net $floating_nets {
         utl::report " [get_full_name $net]"

@@ -150,7 +150,7 @@ write_db $cts_db
 set_propagated_clock [all_clocks]
 
 # Global routing is fast enough for the flow regressions.
-# It is NOT FAST ENOUGH FOR PRODUCTION USE (this means you, openlane).
+# It is NOT FAST ENOUGH FOR PRODUCTION USE.
 set repair_timing_use_grt_parasitics 0
 if { $repair_timing_use_grt_parasitics } {
   # Global route for parasitics - no guide file requied

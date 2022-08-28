@@ -130,4 +130,68 @@ std::ostream& operator<<(std::ostream& os, const Point& pIn)
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const Orientation2D& ori)
+{
+  if (ori == horizontal) {
+    os << "horizontal";
+  } else {
+    os << "vertical";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Orientation3D& ori)
+{
+  if (ori == horizontal) {
+    os << "horizontal";
+  } else if (ori == vertical) {
+    os << "vertical";
+  } else {
+    os << "proximal";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Direction1D& dir)
+{
+  if (dir == low) {
+    os << "low";
+  } else {
+    os << "high";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Direction2D& dir)
+{
+  if (dir == north) {
+    os << "north";
+  } else if (dir == south) {
+    os << "south";
+  } else if (dir == west) {
+    os << "west";
+  } else {
+    os << "east";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Direction3D& dir)
+{
+  if (dir == north) {
+    os << "north";
+  } else if (dir == south) {
+    os << "south";
+  } else if (dir == west) {
+    os << "west";
+  } else if (dir == east) {
+    os << "east";
+  } else if (dir == up) {
+    os << "up";
+  } else {
+    os << "down";
+  }
+  return os;
+}
+
 }  // namespace odb

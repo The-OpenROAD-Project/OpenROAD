@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbInst.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -49,6 +47,7 @@
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
+#include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbJournal.h"
 #include "dbLib.h"
@@ -295,7 +294,7 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 
   if (_region_prev != rhs._region_prev)
     return false;
-  
+
   if (_module_prev != rhs._module_prev)
     return false;
 
@@ -483,6 +482,14 @@ void dbInst::setOrigin(int x, int y)
   // Do Nothin if same origin, But What if uninitialized and x=y=0
   if (prev_x == x && prev_y == y)
     return;
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        359,
+        "Attempt to change the origin of dont_touch instance {}",
+        getName());
+  }
+
   for (auto callback : block->_callbacks)
     callback->inDbPreMoveInst(this);
 
@@ -531,6 +538,14 @@ void dbInst::getLocation(int& x, int& y) const
   y = bbox->_shape._rect.yMin();
 }
 
+Point dbInst::getLocation() const
+{
+  int x;
+  int y;
+  getLocation(x, y);
+  return {x, y};
+}
+
 void dbInst::setLocation(int x, int y)
 {
   dbMaster* master = getMaster();
@@ -560,6 +575,14 @@ void dbInst::setOrient(dbOrientType orient)
     return;
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        360,
+        "Attempt to change the orientation of dont_touch instance {}",
+        getName());
+  }
   for (auto callback : block->_callbacks)
     callback->inDbPreMoveInst(this);
   uint prev_flags = flagsToUInt(inst);
@@ -592,6 +615,17 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (inst->_flags._status == status) {
+    return;
+  }
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        361,
+        "Attempt to change the placement status of dont_touch instance {}",
+        getName());
+  }
 
   for (auto callback : block->_callbacks) {
     callback->inDbInstPlacementStatusBefore(this, status);
@@ -1305,8 +1339,9 @@ uint dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
-
-dbInst* dbInst::create(dbBlock* block_, dbMaster* master_, const char* name_,
+dbInst* dbInst::create(dbBlock* block_,
+                       dbMaster* master_,
+                       const char* name_,
                        bool physical_only)
 {
   return create(block_, master_, name_, NULL, physical_only);
@@ -1408,6 +1443,13 @@ void dbInst::destroy(dbInst* inst_)
 {
   _dbInst* inst = (_dbInst*) inst_;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(utl::ODB,
+                             362,
+                             "Attempt to destroy dont_touch instance {}",
+                             inst->_name);
+  }
 
   dbRegion* region = inst_->getRegion();
 

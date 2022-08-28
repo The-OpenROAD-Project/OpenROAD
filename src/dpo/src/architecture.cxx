@@ -32,8 +32,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-#include "architecture.h"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -41,6 +39,7 @@
 #include <stack>
 #include <vector>
 
+#include "architecture.h"
 #include "network.h"
 #include "router.h"
 
@@ -103,7 +102,8 @@ void Architecture::clearSpacingTable()
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isSingleHeightCell(const Node* ndi) const
 {
-  const int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
+  const int spanned
+      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
   return spanned == 1;
 }
 
@@ -111,7 +111,8 @@ bool Architecture::isSingleHeightCell(const Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isMultiHeightCell(const Node* ndi) const
 {
-  const int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
+  const int spanned
+      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
   return spanned != 1;
 }
 
@@ -119,7 +120,8 @@ bool Architecture::isMultiHeightCell(const Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellHeightInRows(const Node* ndi) const
 {
-  const int spanned = (int) (ndi->getHeight() / rows_[0]->getHeight() + 0.5);
+  const int spanned
+      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
   return spanned;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,7 +314,7 @@ bool Architecture::powerCompatible(const Node* ndi,
 
   flip = false;
 
-  const int spanned = (int) ((ndi->getHeight() / row->getHeight())
+  const int spanned = (int) ((ndi->getHeight() / (double) row->getHeight())
                              + 0.5);  // Number of spanned rows.
   const int lo = row->getId();
   const int hi = lo + spanned - 1;

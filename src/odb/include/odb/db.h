@@ -512,6 +512,11 @@ class dbBox : public dbObject
   void getViaXY(int& x, int& y);
 
   ///
+  /// Return the placed location of this via.
+  ///
+  Point getViaXY();
+
+  ///
   /// Get the box bounding points.
   ///
   Rect getBox();
@@ -2810,6 +2815,12 @@ class dbInst : public dbObject
   /// of the bounding box of this instance.
   ///
   void getLocation(int& x, int& y) const;
+
+  ///
+  /// This method returns the lower-left corner
+  /// of the bounding box of this instance.
+  ///
+  Point getLocation() const;
 
   ///
   /// This method sets the lower-left corner

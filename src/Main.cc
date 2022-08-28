@@ -385,19 +385,22 @@ ord::tclAppInit(Tcl_Interp *interp)
 static void
 showUsage(const char *prog, const char *init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file\n", prog);
-  printf("  -help              show help and exit\n");
-  printf("  -version           show version and exit\n");
-  printf("  -no_init           do not read %s init file\n", init_filename);
-  printf("  -threads count|max use count threads\n");
-  printf("  -no_splash         do not show the license splash at startup\n");
-  printf("  -exit              exit after reading cmd_file\n");
-  printf("  -gui               start in gui mode\n");
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] ", prog);
+  printf("[-threads count|max] [-log file_name] [-metrics file_name] ");
+  printf("cmd_file\n");
+  printf("  -help                 show help and exit\n");
+  printf("  -version              show version and exit\n");
+  printf("  -no_init              do not read %s init file\n", init_filename);
+  printf("  -threads count|max    use count threads\n");
+  printf("  -no_splash            do not show the license splash at startup\n");
+  printf("  -exit                 exit after reading cmd_file\n");
+  printf("  -gui                  start in gui mode\n");
 #ifdef ENABLE_PYTHON3
-  printf("  -python            start with python interpreter [limited to db operations]\n");
+  printf("  -python               start with python interpreter [limited to db operations]\n");
 #endif
-  printf("  -log <file_name>   write a log in <file_name>\n");
-  printf("  cmd_file           source cmd_file\n");
+  printf("  -log <file_name>      write a log in <file_name>\n");
+  printf("  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
+  printf("  cmd_file              source cmd_file\n");
 }
 
 static void

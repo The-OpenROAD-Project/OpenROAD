@@ -32,70 +32,57 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "initialPlace.h"
+
 #include "placerBase.h"
-#include <iostream>
-
-#include <Eigen/IterativeLinearSolvers>
-
-#include "plot.h"
-#include "graphics.h"
-
-#include "utl/Logger.h"
+#include "solver.h"
 
 namespace gpl {
 using namespace std;
 
-using Eigen::BiCGSTAB;
-using Eigen::IdentityPreconditioner;
-using utl::GPL;
+typedef Eigen::Triplet<float> T;
 
-typedef Eigen::Triplet< float > T;
-
-InitialPlaceVars::InitialPlaceVars() 
+InitialPlaceVars::InitialPlaceVars()
 {
   reset();
 }
 
-void InitialPlaceVars::reset() {
+void InitialPlaceVars::reset()
+{
   maxIter = 20;
   minDiffLength = 1500;
   maxSolverIter = 100;
   maxFanout = 200;
   netWeightScale = 800.0;
   debug = false;
+  forceCPU = false;
 }
 
-InitialPlace::InitialPlace()
-: ipVars_(), pb_(nullptr), log_(nullptr) {} 
-
-InitialPlace::InitialPlace(InitialPlaceVars ipVars, 
-    std::shared_ptr<PlacerBase> pb,
-    utl::Logger* log)
-: ipVars_(ipVars), pb_(pb), log_(log)
+InitialPlace::InitialPlace() : ipVars_(), pb_(nullptr), log_(nullptr)
 {
 }
 
-InitialPlace::~InitialPlace() {
+InitialPlace::InitialPlace(InitialPlaceVars ipVars,
+                           std::shared_ptr<PlacerBase> pb,
+                           utl::Logger* log)
+    : ipVars_(ipVars), pb_(pb), log_(log)
+{
+}
+
+InitialPlace::~InitialPlace()
+{
   reset();
 }
 
-void InitialPlace::reset() {
+void InitialPlace::reset()
+{
   pb_ = nullptr;
   ipVars_.reset();
 }
 
-#ifdef ENABLE_CIMG_LIB
-static PlotEnv pe;
-#endif
-
-void InitialPlace::doBicgstabPlace() {
-  float errorX = 0.0f, errorY = 0.0f;
-
-#ifdef ENABLE_CIMG_LIB
-  pe.setPlacerBase(pb_);
-  pe.setLogger(log_);
-  pe.Init();
-#endif
+void InitialPlace::doBicgstabPlace()
+{
+  ResidualError error;
+  bool run_cpu = true;
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
@@ -106,150 +93,173 @@ void InitialPlace::doBicgstabPlace() {
 
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
-  for(int i=1; i<=ipVars_.maxIter; i++) {
+
+  for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
-
-    // BiCGSTAB solver for initial place
-    BiCGSTAB< SMatrix, IdentityPreconditioner > solver;
-    solver.setMaxIterations(ipVars_.maxSolverIter);
-    solver.compute(placeInstForceMatrixX_);
-    instLocVecX_ = solver.solveWithGuess(fixedInstForceVecX_, instLocVecX_);
-    errorX = solver.error();
-
-    solver.compute(placeInstForceMatrixY_);
-    instLocVecY_ = solver.solveWithGuess(fixedInstForceVecY_, instLocVecY_);
-    errorY = solver.error();
-
+#ifdef ENABLE_GPU
+    if (!ipVars_.forceCPU) {
+      int gpu_count = 0;
+      cudaGetDeviceCount(&gpu_count);
+      if (gpu_count != 0) {
+        run_cpu = false;
+        // CUSOLVER based on sparse matrix and QR decomposition for initial
+        // place
+        error = cudaSparseSolve(iter,
+                                placeInstForceMatrixX_,
+                                fixedInstForceVecX_,
+                                instLocVecX_,
+                                placeInstForceMatrixY_,
+                                fixedInstForceVecY_,
+                                instLocVecY_,
+                                log_);
+      } else
+        log_->warn(GPL, 250, "GPU is not available. CPU solve is being used.");
+    }
+#endif
+    if (run_cpu) {
+      if (ipVars_.forceCPU)
+        log_->warn(GPL, 251, "CPU solver is forced to be used.");
+      error = cpuSparseSolve(ipVars_.maxSolverIter,
+                             iter,
+                             placeInstForceMatrixX_,
+                             fixedInstForceVecX_,
+                             instLocVecX_,
+                             placeInstForceMatrixY_,
+                             fixedInstForceVecY_,
+                             instLocVecY_,
+                             log_);
+    }
+    float error_max = max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
-       i, max(errorX, errorY), pb_->hpwl());
+                 iter,
+                 error_max,
+                 pb_->hpwl());
     updateCoordi();
 
-#ifdef ENABLE_CIMG_LIB
-    if (PlotEnv::isPlotEnabled()) pe.SaveCellPlotAsJPEG(
-        string("InitPlace ") + to_string(i), false,
-        string("ip_") + to_string(i));
-#endif
-
     if (graphics) {
-        graphics->cellPlot(true);
+      graphics->cellPlot(true);
     }
 
-    if( max(errorX, errorY) <= 1e-5 && i >= 5 ) {
+    if (error_max <= 1e-5 && iter >= 5) {
       break;
     }
   }
 }
 
 // starting point of initial place is center.
-void InitialPlace::placeInstsCenter() {
+void InitialPlace::placeInstsCenter()
+{
   const int centerX = pb_->die().coreCx();
   const int centerY = pb_->die().coreCy();
 
-  for(auto& inst: pb_->placeInsts()) {
+  for (auto& inst : pb_->placeInsts()) {
     if (!inst->isLocked()) {
       inst->setCenterLocation(centerX, centerY);
     }
   }
 }
 
-void InitialPlace::setPlaceInstExtId() {
+void InitialPlace::setPlaceInstExtId()
+{
   // reset ExtId for all instances
-  for(auto& inst : pb_->insts()) {
+  for (auto& inst : pb_->insts()) {
     inst->setExtId(INT_MAX);
   }
   // set index only with place-able instances
-  for(auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pb_->placeInsts()) {
     inst->setExtId(&inst - &(pb_->placeInsts()[0]));
   }
 }
 
-void InitialPlace::updatePinInfo() {
+void InitialPlace::updatePinInfo()
+{
   // reset all MinMax attributes
-  for(auto& pin : pb_->pins()) {
+  for (auto& pin : pb_->pins()) {
     pin->unsetMinPinX();
     pin->unsetMinPinY();
     pin->unsetMaxPinX();
     pin->unsetMaxPinY();
   }
 
-  for(auto& net : pb_->nets()) {
-    Pin* pinMinX = nullptr, *pinMinY = nullptr;
-    Pin* pinMaxX = nullptr, *pinMaxY = nullptr;  
+  for (auto& net : pb_->nets()) {
+    Pin *pinMinX = nullptr, *pinMinY = nullptr;
+    Pin *pinMaxX = nullptr, *pinMaxY = nullptr;
     int lx = INT_MAX, ly = INT_MAX;
     int ux = INT_MIN, uy = INT_MIN;
 
     // Mark B2B info on Pin structures
-    for(auto& pin : net->pins()) {
-      if( lx > pin->cx() ) {
-        if( pinMinX ) {
+    for (auto& pin : net->pins()) {
+      if (lx > pin->cx()) {
+        if (pinMinX) {
           pinMinX->unsetMinPinX();
         }
         lx = pin->cx();
-        pinMinX = pin; 
+        pinMinX = pin;
         pinMinX->setMinPinX();
-      } 
-      
-      if( ux < pin->cx() ) {
-        if( pinMaxX ) {
+      }
+
+      if (ux < pin->cx()) {
+        if (pinMaxX) {
           pinMaxX->unsetMaxPinX();
         }
         ux = pin->cx();
-        pinMaxX = pin; 
+        pinMaxX = pin;
         pinMaxX->setMaxPinX();
-      } 
+      }
 
-      if( ly > pin->cy() ) {
-        if( pinMinY ) {
+      if (ly > pin->cy()) {
+        if (pinMinY) {
           pinMinY->unsetMinPinY();
         }
         ly = pin->cy();
-        pinMinY = pin; 
+        pinMinY = pin;
         pinMinY->setMinPinY();
-      } 
-      
-      if( uy < pin->cy() ) {
-        if( pinMaxY ) {
+      }
+
+      if (uy < pin->cy()) {
+        if (pinMaxY) {
           pinMaxY->unsetMaxPinY();
         }
         uy = pin->cy();
-        pinMaxY = pin; 
+        pinMaxY = pin;
         pinMaxY->setMaxPinY();
-      } 
+      }
     }
-  } 
+  }
 }
 
-// solve placeInstForceMatrixX_ * xcg_x_ = xcg_b_ and placeInstForceMatrixY_ * ycg_x_ = ycg_b_ eq.
-void InitialPlace::createSparseMatrix() {
+// solve placeInstForceMatrixX_ * xcg_x_ = xcg_b_ and placeInstForceMatrixY_ *
+// ycg_x_ = ycg_b_ eq.
+void InitialPlace::createSparseMatrix()
+{
   const int placeCnt = pb_->placeInsts().size();
-  instLocVecX_.resize( placeCnt );
-  fixedInstForceVecX_.resize( placeCnt );
-  instLocVecY_.resize( placeCnt );
-  fixedInstForceVecY_.resize( placeCnt );
+  instLocVecX_.resize(placeCnt);
+  fixedInstForceVecX_.resize(placeCnt);
+  instLocVecY_.resize(placeCnt);
+  fixedInstForceVecY_.resize(placeCnt);
 
-  placeInstForceMatrixX_.resize( placeCnt, placeCnt );
-  placeInstForceMatrixY_.resize( placeCnt, placeCnt );
+  placeInstForceMatrixX_.resize(placeCnt, placeCnt);
+  placeInstForceMatrixY_.resize(placeCnt, placeCnt);
 
-
-  // 
+  //
   // listX and listY is a temporary vector that have tuples, (idx1, idx2, val)
   //
   // listX finally becomes placeInstForceMatrixX_
   // listY finally becomes placeInstForceMatrixY_
   //
-  // The triplet vector is recommended usages 
+  // The triplet vector is recommended usages
   // to fill in SparseMatrix from Eigen docs.
   //
 
-  vector< T > listX, listY;
+  vector<T> listX, listY;
   listX.reserve(1000000);
   listY.reserve(1000000);
 
   // initialize vector
-  for(auto& inst : pb_->placeInsts()) {
-    int idx = inst->extId(); 
-    
+  for (auto& inst : pb_->placeInsts()) {
+    int idx = inst->extId();
+
     instLocVecX_(idx) = inst->cx();
     instLocVecY_(idx) = inst->cy();
 
@@ -257,167 +267,162 @@ void InitialPlace::createSparseMatrix() {
   }
 
   // for each net
-  for(auto& net : pb_->nets()) {
-
+  for (auto& net : pb_->nets()) {
     // skip for small nets.
-    if( net->pins().size() <= 1 ) {
+    if (net->pins().size() <= 1) {
       continue;
     }
- 
+
     // escape long time cals on huge fanout.
     //
-    if( net->pins().size() >= ipVars_.maxFanout) { 
+    if (net->pins().size() >= ipVars_.maxFanout) {
       continue;
     }
 
-    float netWeight = ipVars_.netWeightScale 
-      / (net->pins().size() - 1);
-    //cout << "net: " << net.net()->getConstName() << endl;
+    float netWeight = ipVars_.netWeightScale / (net->pins().size() - 1);
+    // cout << "net: " << net.net()->getConstName() << endl;
 
     // foreach two pins in single nets.
     auto& pins = net->pins();
-    for(int pinIdx1 = 1; pinIdx1 < pins.size(); ++pinIdx1) {
+    for (int pinIdx1 = 1; pinIdx1 < pins.size(); ++pinIdx1) {
       Pin* pin1 = pins[pinIdx1];
-      for(int pinIdx2 = 0; pinIdx2 < pinIdx1; ++pinIdx2) {
+      for (int pinIdx2 = 0; pinIdx2 < pinIdx1; ++pinIdx2) {
         Pin* pin2 = pins[pinIdx2];
 
         // no need to fill in when instance is same
-        if( pin1->instance() == pin2->instance() ) {
+        if (pin1->instance() == pin2->instance()) {
           continue;
         }
 
         // B2B modeling on min/maxX pins.
-        if( pin1->isMinPinX() || pin1->isMaxPinX() ||
-            pin2->isMinPinX() || pin2->isMaxPinX() ) {
+        if (pin1->isMinPinX() || pin1->isMaxPinX() || pin2->isMinPinX()
+            || pin2->isMaxPinX()) {
           int diffX = abs(pin1->cx() - pin2->cx());
           float weightX = 0;
-          if( diffX > ipVars_.minDiffLength ) {
+          if (diffX > ipVars_.minDiffLength) {
             weightX = netWeight / diffX;
+          } else {
+            weightX = netWeight / ipVars_.minDiffLength;
           }
-          else {
-            weightX = netWeight 
-              / ipVars_.minDiffLength;
-          }
-          //cout << weightX << endl;
 
           // both pin cames from instance
-          if( pin1->isPlaceInstConnected() 
-              && pin2->isPlaceInstConnected() ) {
+          if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
             const int inst2 = pin2->instance()->extId();
-            //cout << "inst: " << inst1 << " " << inst2 << endl;
+            // cout << "inst: " << inst1 << " " << inst2 << endl;
 
-            listX.push_back( T(inst1, inst1, weightX) );
-            listX.push_back( T(inst2, inst2, weightX) );
+            listX.push_back(T(inst1, inst1, weightX));
+            listX.push_back(T(inst2, inst2, weightX));
 
-            listX.push_back( T(inst1, inst2, -weightX) );
-            listX.push_back( T(inst2, inst1, -weightX) );
+            listX.push_back(T(inst1, inst2, -weightX));
+            listX.push_back(T(inst2, inst1, -weightX));
 
-            //cout << pin1->cx() << " " 
+            // cout << pin1->cx() << " "
             //  << pin1->instance()->cx() << endl;
-            fixedInstForceVecX_(inst1) += 
-              -weightX * (
-              (pin1->cx() - pin1->instance()->cx()) - 
-              (pin2->cx() - pin2->instance()->cx()));
+            fixedInstForceVecX_(inst1)
+                += -weightX
+                   * ((pin1->cx() - pin1->instance()->cx())
+                      - (pin2->cx() - pin2->instance()->cx()));
 
-            fixedInstForceVecX_(inst2) +=
-              -weightX * (
-              (pin2->cx() - pin2->instance()->cx()) -
-              (pin1->cx() - pin1->instance()->cx())); 
+            fixedInstForceVecX_(inst2)
+                += -weightX
+                   * ((pin2->cx() - pin2->instance()->cx())
+                      - (pin1->cx() - pin1->instance()->cx()));
           }
           // pin1 from IO port / pin2 from Instance
-          else if( !pin1->isPlaceInstConnected() 
-              && pin2->isPlaceInstConnected() ) {
+          else if (!pin1->isPlaceInstConnected()
+                   && pin2->isPlaceInstConnected()) {
             const int inst2 = pin2->instance()->extId();
-            //cout << "inst2: " << inst2 << endl;
-            listX.push_back( T(inst2, inst2, weightX) );
-            fixedInstForceVecX_(inst2) += weightX * 
-              ( pin1->cx() - 
-                ( pin2->cx() - pin2->instance()->cx()) );
+            // cout << "inst2: " << inst2 << endl;
+            listX.push_back(T(inst2, inst2, weightX));
+
+            fixedInstForceVecX_(inst2)
+                += weightX
+                   * (pin1->cx() - (pin2->cx() - pin2->instance()->cx()));
           }
           // pin1 from Instance / pin2 from IO port
-          else if( pin1->isPlaceInstConnected() 
-              && !pin2->isPlaceInstConnected() ) {
+          else if (pin1->isPlaceInstConnected()
+                   && !pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
-            //cout << "inst1: " << inst1 << endl;
-            listX.push_back( T(inst1, inst1, weightX) );
-            fixedInstForceVecX_(inst1) += weightX *
-              ( pin2->cx() -
-                ( pin1->cx() - pin1->instance()->cx()) );
+            // cout << "inst1: " << inst1 << endl;
+            listX.push_back(T(inst1, inst1, weightX));
+
+            fixedInstForceVecX_(inst1)
+                += weightX
+                   * (pin2->cx() - (pin1->cx() - pin1->instance()->cx()));
           }
         }
-        
+
         // B2B modeling on min/maxY pins.
-        if( pin1->isMinPinY() || pin1->isMaxPinY() ||
-            pin2->isMinPinY() || pin2->isMaxPinY() ) {
-          
+        if (pin1->isMinPinY() || pin1->isMaxPinY() || pin2->isMinPinY()
+            || pin2->isMaxPinY()) {
           int diffY = abs(pin1->cy() - pin2->cy());
           float weightY = 0;
-          if( diffY > ipVars_.minDiffLength ) {
+          if (diffY > ipVars_.minDiffLength) {
             weightY = netWeight / diffY;
-          }
-          else {
-            weightY = netWeight 
-              / ipVars_.minDiffLength;
+          } else {
+            weightY = netWeight / ipVars_.minDiffLength;
           }
 
           // both pin cames from instance
-          if( pin1->isPlaceInstConnected() 
-              && pin2->isPlaceInstConnected() ) {
+          if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
             const int inst2 = pin2->instance()->extId();
 
-            listY.push_back( T(inst1, inst1, weightY) );
-            listY.push_back( T(inst2, inst2, weightY) );
+            listY.push_back(T(inst1, inst1, weightY));
+            listY.push_back(T(inst2, inst2, weightY));
 
-            listY.push_back( T(inst1, inst2, -weightY) );
-            listY.push_back( T(inst2, inst1, -weightY) );
+            listY.push_back(T(inst1, inst2, -weightY));
+            listY.push_back(T(inst2, inst1, -weightY));
 
-            fixedInstForceVecY_(inst1) += 
-              -weightY * (
-              (pin1->cy() - pin1->instance()->cy()) - 
-              (pin2->cy() - pin2->instance()->cy()));
+            fixedInstForceVecY_(inst1)
+                += -weightY
+                   * ((pin1->cy() - pin1->instance()->cy())
+                      - (pin2->cy() - pin2->instance()->cy()));
 
-            fixedInstForceVecY_(inst2) +=
-              -weightY * (
-              (pin2->cy() - pin2->instance()->cy()) -
-              (pin1->cy() - pin1->instance()->cy())); 
+            fixedInstForceVecY_(inst2)
+                += -weightY
+                   * ((pin2->cy() - pin2->instance()->cy())
+                      - (pin1->cy() - pin1->instance()->cy()));
           }
           // pin1 from IO port / pin2 from Instance
-          else if( !pin1->isPlaceInstConnected() 
-              && pin2->isPlaceInstConnected() ) {
+          else if (!pin1->isPlaceInstConnected()
+                   && pin2->isPlaceInstConnected()) {
             const int inst2 = pin2->instance()->extId();
-            listY.push_back( T(inst2, inst2, weightY) );
-            fixedInstForceVecY_(inst2) += weightY * 
-              ( pin1->cy() - 
-                ( pin2->cy() - pin2->instance()->cy()) );
+            listY.push_back(T(inst2, inst2, weightY));
+
+            fixedInstForceVecY_(inst2)
+                += weightY
+                   * (pin1->cy() - (pin2->cy() - pin2->instance()->cy()));
           }
           // pin1 from Instance / pin2 from IO port
-          else if( pin1->isPlaceInstConnected() 
-              && !pin2->isPlaceInstConnected() ) {
+          else if (pin1->isPlaceInstConnected()
+                   && !pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
-            listY.push_back( T(inst1, inst1, weightY) );
-            fixedInstForceVecY_(inst1) += weightY *
-              ( pin2->cy() -
-                ( pin1->cy() - pin1->instance()->cy()) );
+            listY.push_back(T(inst1, inst1, weightY));
+
+            fixedInstForceVecY_(inst1)
+                += weightY
+                   * (pin2->cy() - (pin1->cy() - pin1->instance()->cy()));
           }
         }
       }
     }
-  } 
+  }
 
   placeInstForceMatrixX_.setFromTriplets(listX.begin(), listX.end());
   placeInstForceMatrixY_.setFromTriplets(listY.begin(), listY.end());
 }
 
-void InitialPlace::updateCoordi() {
-  for(auto& inst : pb_->placeInsts()) {
+void InitialPlace::updateCoordi()
+{
+  for (auto& inst : pb_->placeInsts()) {
     int idx = inst->extId();
     if (!inst->isLocked()) {
-      inst->dbSetCenterLocation( instLocVecX_(idx), instLocVecY_(idx) );
+      inst->dbSetCenterLocation(instLocVecX_(idx), instLocVecY_(idx));
       inst->dbSetPlaced();
     }
   }
 }
 
-}
+}  // namespace gpl
