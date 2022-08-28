@@ -92,7 +92,7 @@ set_max_char_slew(double slew)
 void
 set_wire_segment_distance_unit(unsigned unit)
 {
-  getTritonCts()->getParms()->setWireSegmentUnit(unit);
+  getTritonCts()->getParms()->setWireSegmentUnitMicron(unit);
 }
 
 void

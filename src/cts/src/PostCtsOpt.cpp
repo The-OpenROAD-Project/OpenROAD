@@ -128,11 +128,11 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
 {
   unsigned inputCap = techChar_->getActualMinInputCap();
   unsigned inputSlew = techChar_->getMaxSlew() / 2;
-  const int wireSegmentUnit = techChar_->getLengthUnit() * options_->getDbUnits();
-  const Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
-                          (float) driver->getY() / wireSegmentUnit);
-  const Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
-                        (float) sink->getY() / wireSegmentUnit);
+  const int wireSegmentUnitDbu = techChar_->getLengthUnitMicron() * options_->getDbUnits();
+  const Point<double> driverLoc((float) driver->getX() / wireSegmentUnitDbu,
+                          (float) driver->getY() / wireSegmentUnitDbu);
+  const Point<double> sinkLoc((float) sink->getX() / wireSegmentUnitDbu,
+                        (float) sink->getY() / wireSegmentUnitDbu);
   const unsigned wireLength = driverLoc.computeDist(sinkLoc);
   const unsigned slewThreshold = options_->getMaxSlew();
   const unsigned tolerance = 1;
@@ -166,7 +166,7 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
                          *clock_,
                          net,
                          *techChar_,
-                         wireSegmentUnit,
+                         wireSegmentUnitDbu,
                          builder_);
   bufIndex++;
   builder.build(options_->getRootBuffer(), sink);

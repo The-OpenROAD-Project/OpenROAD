@@ -79,10 +79,9 @@ TechChar::TechChar(CtsOptions* options,
 void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 {
   logger_->info(CTS, 84, "Compiling LUT.");
-  initLengthUnits();
 
-  minSegmentLength_ = toInternalLengthUnit(minSegmentLength_);
-  maxSegmentLength_ = toInternalLengthUnit(maxSegmentLength_);
+  minSegmentLength_ = toWireLengthUnit(minSegmentLength_);
+  maxSegmentLength_ = toWireLengthUnit(maxSegmentLength_);
 
   reportCharacterizationBounds();  // min and max values already set
   checkCharacterizationBounds();
@@ -99,9 +98,9 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
       ++lutLine.pinSlew;
     }
 
-    unsigned length = toInternalLengthUnit(lutLine.wirelength);
+    unsigned lengthInWlu = toWireLengthUnit(lutLine.wirelength);
 
-    WireSegment& segment = createWireSegment(length,
+    WireSegment& segment = createWireSegment(lengthInWlu,
                                              (unsigned) lutLine.load,
                                              (unsigned) lutLine.pinSlew,
                                              lutLine.totalPower,
@@ -148,13 +147,6 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
                 keyToWireSegments_.size());
 
   logger_->info(CTS, 48, "    Actual min input cap: {}.", actualMinInputCap_);
-}
-
-void TechChar::initLengthUnits()
-{
-  charLengthUnit_ = options_->getWireSegmentUnit();
-  lengthUnit_ = LENGTH_UNIT_MICRON;
-  lengthUnitRatio_ = charLengthUnit_ / lengthUnit_;
 }
 
 inline void TechChar::reportCharacterizationBounds() const
@@ -324,7 +316,8 @@ void TechChar::printCharacterization() const
   logger_->report("maxCapacitance = {}", maxCapacitance_);
   logger_->report("minSlew = {}", minSlew_);
   logger_->report("maxSlew = {}", maxSlew_);
-  logger_->report("wireSegmentUnit = {}", options_->getWireSegmentUnit());
+  logger_->report("wireSegmentUnit in Micron = {}", options_->getWireSegmentUnitMicron());
+  logger_->report("wireSegmentUnit in DBU = {}", options_->getWireSegmentUnitDbu());
 
   logger_->report(
       "\nidx length load outSlew power delay inCap inSlew pureWire bufLoc");
@@ -359,7 +352,7 @@ void TechChar::printSolution() const
       for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
         float wirelengthValue = segment.getBufferLocation(idx)
                                 * ((float) (segment.getLength())
-                                   * (float) (options_->getWireSegmentUnit()));
+                                   * (float) (options_->getWireSegmentUnitMicron()));
 
         report += std::to_string((unsigned long) (wirelengthValue));
         report += "," + segment.getBufferMaster(idx);
@@ -369,7 +362,7 @@ void TechChar::printSolution() const
       }
     } else {
       float wirelengthValue = (float) (segment.getLength())
-                              * (float) (options_->getWireSegmentUnit());
+                              * (float) (options_->getWireSegmentUnitMicron());
       report += std::to_string((unsigned long) (wirelengthValue));
     }
 
@@ -551,28 +544,24 @@ void TechChar::initCharacterization()
 
   // Defines the different wirelengths to test and the characterization unit.
   unsigned wirelengthIterations = options_->getCharWirelengthIterations();
-  unsigned maxWirelength = (charBuf_->getHeight() * 10)
-                           * wirelengthIterations;  // Hard-coded limit
-  if (options_->getWireSegmentUnit() == 0) {
-    unsigned charaunit = charBuf_->getHeight() * 10;
-    options_->setWireSegmentUnit(charaunit);
-  } else {
-    // Updates the units to DBU.
-    unsigned segmentDistance = options_->getWireSegmentUnit();
-    options_->setWireSegmentUnit(segmentDistance * dbUnitsPerMicron);
+  if (options_->getWireSegmentUnitDbu() == 0) {
+    unsigned charaunitDbu = charBuf_->getHeight() * 10;
+    options_->setWireSegmentUnitDbu(charaunitDbu);
   }
+  unsigned maxWirelength = options_->getWireSegmentUnitDbu()
+                           * wirelengthIterations;  // Vary max wire length according to wire segment unit passed.
 
   // Required to make sure that the fake entry for minLengthSinkRegion
   // exists (see HTreeBuilder::run())
   if (options_->isFakeLutEntriesEnabled()) {
-    maxWirelength = std::max(maxWirelength, 2 * options_->getWireSegmentUnit());
+    maxWirelength = std::max(maxWirelength, 2 * options_->getWireSegmentUnitDbu());
   }
 
-  for (unsigned wirelengthInter = options_->getWireSegmentUnit();
+  for (unsigned wirelengthInter = options_->getWireSegmentUnitDbu();
        (wirelengthInter <= maxWirelength)
        && (wirelengthInter
-           <= wirelengthIterations * options_->getWireSegmentUnit());
-       wirelengthInter += options_->getWireSegmentUnit()) {
+           <= wirelengthIterations * options_->getWireSegmentUnitDbu());
+       wirelengthInter += options_->getWireSegmentUnitDbu()) {
     wirelengthsToTest_.push_back(wirelengthInter);
   }
 
@@ -584,7 +573,7 @@ void TechChar::initCharacterization()
         "    Check the -wire_unit parameter or the technology files.");
   }
 
-  setLenghthUnit(charBuf_->getHeight() * 10 / 2 / dbUnitsPerMicron);
+  setLengthUnitMicron(options_->getWireSegmentUnitMicron());
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
@@ -666,7 +655,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   //...the number of topologies (combinations of buffers, considering only 1
   // drive) that can exist.
   const unsigned numberOfNodes
-      = setupWirelength / options_->getWireSegmentUnit();
+      = setupWirelength / options_->getWireSegmentUnitDbu();
   unsigned numberOfTopologies = 1 << numberOfNodes;
   std::vector<SolutionData> topologiesVector;
   odb::dbNet* net = nullptr;
@@ -732,7 +721,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         // (as a vector of strings).
         topology.instVector.push_back(bufInstance);
         topology.topologyDescriptor.push_back(
-            std::to_string(nodesWithoutBuf * options_->getWireSegmentUnit()));
+            std::to_string(nodesWithoutBuf * options_->getWireSegmentUnitDbu()));
         topology.topologyDescriptor.push_back(charBuf_->getName());
         nodesWithoutBuf = 0;
         isPureWire = false;
@@ -756,7 +745,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
     if (nodesWithoutBuf != 0) {
       topology.topologyDescriptor.push_back(
-          std::to_string(nodesWithoutBuf * options_->getWireSegmentUnit()));
+          std::to_string(nodesWithoutBuf * options_->getWireSegmentUnitDbu()));
     }
     // Go to the next topology.
     topologiesVector.push_back(topology);
@@ -832,7 +821,7 @@ void TechChar::setParasitics(
         }
       }
       // Sets the Pi and Elmore information.
-      unsigned charUnit = options_->getWireSegmentUnit();
+      unsigned charUnit = options_->getWireSegmentUnitDbu();
       double wire_cap = nodesWithoutBuf * charUnit * capPerDBU_;
       double wire_res = nodesWithoutBuf * charUnit * resPerDBU_;
       openStaChar_->makePiElmore(firstPin,
@@ -1022,7 +1011,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       // Processing and normalizing of the wirelength.
       convertedResult.wirelength
           = normalizeCharResults(solution.wirelength,
-                                 options_->getWireSegmentUnit(),
+                                 options_->getWireSegmentUnitDbu(),
                                  &minResultWirelength,
                                  &maxResultWirelength);
       // Processing and normalizing of delay.
@@ -1195,10 +1184,6 @@ void TechChar::create()
   logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Post-processing of the results.
   std::vector<ResultData> convertedSolutions = characterizationPostProcess();
-  // Changes the segment units back to micron and creates the wire segments.
-  float dbUnitsPerMicron = charBlock_->getDbUnitsPerMicron();
-  float segmentDistance = options_->getWireSegmentUnit();
-  options_->setWireSegmentUnit(segmentDistance / dbUnitsPerMicron);
   compileLut(convertedSolutions);
   if (logger_->debugCheck(CTS, "characterization", 3)) {
     printCharacterization();

@@ -139,7 +139,6 @@ class TechChar
   typedef uint32_t Key;
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
 
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
@@ -222,8 +221,8 @@ class TechChar
   unsigned getMaxSlew() const { return maxSlew_; }
   void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
   unsigned getActualMinInputCap() const { return actualMinInputCap_; }
-  void setLenghthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
-  unsigned getLengthUnit() const { return lengthUnit_; }
+  void setLengthUnitMicron(unsigned length) { options_->setWireSegmentUnitMicron(length); }
+  unsigned getLengthUnitMicron() const { return options_->getWireSegmentUnitMicron(); }
 
   void createFakeEntries(unsigned length, unsigned fakeLength);
 
@@ -239,18 +238,13 @@ class TechChar
   utl::Logger* getLogger() { return options_->getLogger(); }
 
  protected:
-  void initLengthUnits();
   void reportCharacterizationBounds() const;
   void checkCharacterizationBounds() const;
 
-  unsigned toInternalLengthUnit(unsigned length)
+  unsigned toWireLengthUnit(unsigned length)
   {
-    return length * lengthUnitRatio_;
+    return length / getLengthUnitMicron();
   }
-
-  unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
-  unsigned lengthUnitRatio_ = 0;
 
   unsigned minSegmentLength_ = 0;
   unsigned maxSegmentLength_ = 0;

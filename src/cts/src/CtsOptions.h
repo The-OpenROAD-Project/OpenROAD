@@ -69,11 +69,18 @@ class CtsOptions
   std::vector<std::string> getBufferList() const { return bufferList_; }
   void setDbUnits(int units) { dbUnits_ = units; }
   int getDbUnits() const { return dbUnits_; }
-  void setWireSegmentUnit(unsigned wireSegmentUnit)
+  void setWireSegmentUnitDbu(unsigned wireSegmentUnit)
   {
-    wireSegmentUnit_ = wireSegmentUnit;
+    wireSegmentUnitDbu_ = wireSegmentUnit;
+    setWireSegmentUnitMicron(wireSegmentUnit * 1.0 / getDbUnits());
   }
-  unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
+  unsigned getWireSegmentUnitDbu() const { return wireSegmentUnitDbu_; }
+  void setWireSegmentUnitMicron(unsigned wireSegmentUnit)
+  {
+    wireSegmentUnitMicron_ = wireSegmentUnit;
+    setWireSegmentUnitDbu(wireSegmentUnit * getDbUnits());
+  }
+  unsigned getWireSegmentUnitMicron() const { return wireSegmentUnitMicron_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
   void setGuiDebug() { gui_debug_ = true; }
@@ -209,7 +216,8 @@ class CtsOptions
   std::string treeBuffer_ = "";
   std::string metricFile_ = "";
   int dbUnits_ = -1;
-  unsigned wireSegmentUnit_ = 0;
+  unsigned wireSegmentUnitDbu_ = 0;
+  double wireSegmentUnitMicron_ = 0;
   bool plotSolution_ = false;
   bool simpleCts_ = false;
   bool sinkClusteringEnable_ = true;

@@ -157,7 +157,7 @@ void HTreeBuilder::preSinkClustering(
 
 void HTreeBuilder::initSinkRegion()
 {
-  unsigned wireSegmentUnitInMicron = techChar_->getLengthUnit();
+  unsigned wireSegmentUnitInMicron = techChar_->getLengthUnitMicron();
   int dbUnits = options_->getDbUnits();
   wireSegmentUnit_ = wireSegmentUnitInMicron * dbUnits;
 
@@ -356,9 +356,9 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   logger_->info(CTS, 34, "    Segment length (rounded): {}.", segmentLength);
 
   int vertexBufferLength
-      = options_->getVertexBufferDistance() / (techChar_->getLengthUnit() * 2);
+      = options_->getVertexBufferDistance() / (techChar_->getLengthUnitMicron() * 2);
   int remainingLength
-      = options_->getBufferDistance() / (techChar_->getLengthUnit());
+      = options_->getBufferDistance() / (techChar_->getLengthUnitMicron());
   unsigned inputCap = minInputCap_, inputSlew = 1;
   if (level > 1) {
     const LevelTopology& previousLevel = topologyForEachLevel_[level - 2];
@@ -396,7 +396,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
                                          remainingLength);
             remainingLength = remainingLength
                               + options_->getBufferDistance()
-                                    / (techChar_->getLengthUnit());
+                                    / (techChar_->getLengthUnitMicron());
           } else {
             if (remainingLength <= 0) {
               key = computeMinDelaySegment(charSegLength,
@@ -410,7 +410,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
                                            remainingLength);
               remainingLength = remainingLength
                                 + options_->getBufferDistance()
-                                      / (techChar_->getLengthUnit());
+                                      / (techChar_->getLengthUnitMicron());
             } else {
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
