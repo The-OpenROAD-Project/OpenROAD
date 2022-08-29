@@ -992,7 +992,12 @@ void Inspector::update(const Selected& object)
 void Inspector::handleAction(QWidget* action)
 {
   auto callback = actions_[action];
-  auto new_selection = callback();
+  Selected new_selection;
+  try {
+    new_selection = callback();
+  } catch (const std::runtime_error&) {
+    return;
+  }
 
   if (new_selection && new_selection == selection_) {
     return;
