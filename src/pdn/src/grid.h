@@ -90,7 +90,7 @@ class Grid
   void setDomain(VoltageDomain* domain) { domain_ = domain; }
   VoltageDomain* getDomain() const { return domain_; }
 
-  void report() const;
+  virtual void report() const;
   virtual Type type() const = 0;
   static const std::string typeToString(Type type);
 
@@ -248,6 +248,7 @@ class InstanceGrid : public Grid
 
   virtual const std::string getLongName() const override;
 
+  virtual void report() const override;
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }

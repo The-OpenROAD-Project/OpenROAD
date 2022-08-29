@@ -1256,6 +1256,19 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
   return nets;
 }
 
+void InstanceGrid::report() const
+{
+  Grid::report();
+  auto* logger = getLogger();
+
+  const double units = getDomain()->getBlock()->getDbUnitsPerMicron();
+  logger->report("Halo:");
+  logger->report("  Left: {:.4f}", halos_[0] / units);
+  logger->report("  Bottom: {:.4f}", halos_[1] / units);
+  logger->report("  Right: {:.4f}", halos_[2] / units);
+  logger->report("  Top: {:.4f}", halos_[3] / units);
+}
+
 ////////
 
 ExistingGrid::ExistingGrid(PdnGen* pdngen,
