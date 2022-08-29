@@ -3744,8 +3744,16 @@ void GlobalRouter::updateDirtyRoutes()
     updateDirtyNets();
     std::vector<Net*> dirty_nets;
     dirty_nets.reserve(dirty_nets_.size());
+    int netID;
+    bool exists;
     for (odb::dbNet* db_net : dirty_nets_) {
       dirty_nets.push_back(db_net_map_[db_net]);
+      fastroute_->getNetId(db_net, netID, exists);
+      printf("Test net\n");
+      if (exists){
+        printf("Exists:%d\n", netID);
+        fastroute_->clearRoute(netID);
+      }
     }
     initFastRouteIncr(dirty_nets);
 
@@ -3769,8 +3777,9 @@ void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
   fastroute_->clearNets();
   initNets(nets);
-  applyAdjustments(min_routing_layer_, max_routing_layer_);
-  perturbCapacities();
+  fastroute_->initAuxVar();
+  //applyAdjustments(min_routing_layer_, max_routing_layer_);
+  //perturbCapacities();
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)
