@@ -221,8 +221,14 @@ class TechChar
   unsigned getMaxSlew() const { return maxSlew_; }
   void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
   unsigned getActualMinInputCap() const { return actualMinInputCap_; }
-  void setLengthUnitMicron(unsigned length) { options_->setWireSegmentUnitMicron(length); }
-  unsigned getLengthUnitMicron() const { return options_->getWireSegmentUnitMicron(); }
+  void setLengthUnitMicron(unsigned length)
+  {
+    options_->setWireSegmentUnitMicron(length);
+  }
+  unsigned getLengthUnitMicron() const
+  {
+    return options_->getWireSegmentUnitMicron();
+  }
 
   void createFakeEntries(unsigned length, unsigned fakeLength);
 
@@ -240,11 +246,6 @@ class TechChar
  protected:
   void reportCharacterizationBounds() const;
   void checkCharacterizationBounds() const;
-
-  unsigned toWireLengthUnit(unsigned length)
-  {
-    return length / getLengthUnitMicron();
-  }
 
   unsigned minSegmentLength_ = 0;
   unsigned maxSegmentLength_ = 0;
@@ -297,8 +298,8 @@ class TechChar
   double capPerDBU_;  // farads/dbu
   float charMaxSlew_ = 0.0;
   float charMaxCap_ = 0.0;
-  float charSlewInter_ = 5.0e-12;  // Hard-coded interval
-  float charCapInter_ = 5.0e-15;
+  float charSlewInter_ = 0;
+  float charCapInter_ = 0;
   std::set<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;

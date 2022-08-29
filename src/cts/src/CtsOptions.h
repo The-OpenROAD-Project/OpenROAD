@@ -72,13 +72,11 @@ class CtsOptions
   void setWireSegmentUnitDbu(unsigned wireSegmentUnit)
   {
     wireSegmentUnitDbu_ = wireSegmentUnit;
-    setWireSegmentUnitMicron(wireSegmentUnit * 1.0 / getDbUnits());
   }
   unsigned getWireSegmentUnitDbu() const { return wireSegmentUnitDbu_; }
   void setWireSegmentUnitMicron(unsigned wireSegmentUnit)
   {
     wireSegmentUnitMicron_ = wireSegmentUnit;
-    setWireSegmentUnitDbu(wireSegmentUnit * getDbUnits());
   }
   unsigned getWireSegmentUnitMicron() const { return wireSegmentUnitMicron_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
@@ -217,7 +215,7 @@ class CtsOptions
   std::string metricFile_ = "";
   int dbUnits_ = -1;
   unsigned wireSegmentUnitDbu_ = 0;
-  double wireSegmentUnitMicron_ = 0;
+  unsigned wireSegmentUnitMicron_ = 0;
   bool plotSolution_ = false;
   bool simpleCts_ = false;
   bool sinkClusteringEnable_ = true;
