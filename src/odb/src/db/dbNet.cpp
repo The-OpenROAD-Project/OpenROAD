@@ -124,7 +124,6 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._set_io = 0;
   _flags._io = 0;
   _flags._dont_touch = 0;
-  _flags._size_only = 0;
   _flags._fixed_bump = 0;
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
@@ -257,9 +256,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   if (_flags._dont_touch != rhs._flags._dont_touch)
     return false;
 
-  if (_flags._size_only != rhs._flags._size_only)
-    return false;
-
   if (_flags._fixed_bump != rhs._flags._fixed_bump)
     return false;
 
@@ -358,7 +354,6 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_flags._set_io);
   DIFF_FIELD(_flags._io);
   DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._size_only);
   DIFF_FIELD(_flags._fixed_bump);
   DIFF_FIELD(_flags._source);
   DIFF_FIELD(_flags._rc_disconnected);
@@ -446,7 +441,6 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._set_io);
   DIFF_OUT_FIELD(_flags._io);
   DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._size_only);
   DIFF_OUT_FIELD(_flags._fixed_bump);
   DIFF_OUT_FIELD(_flags._source);
   DIFF_OUT_FIELD(_flags._rc_disconnected);
@@ -1729,18 +1723,6 @@ bool dbNet::isIO()
     return setIOflag();
 }
 
-void dbNet::setSizeOnly(bool v)
-{
-  _dbNet* net = (_dbNet*) this;
-  net->_flags._size_only = v;
-}
-
-bool dbNet::isSizeOnly()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._size_only == 1;
-}
-
 void dbNet::setDoNotTouch(bool v)
 {
   _dbNet* net = (_dbNet*) this;
@@ -2897,13 +2879,6 @@ Rect dbNet::getTermBBox()
 void dbNet::destroySWires()
 {
   _dbNet* net = (_dbNet*) this;
-
-  if (net->_flags._dont_touch) {
-    net->getLogger()->error(utl::ODB,
-                            363,
-                            "Attempt to destroy the swires of dont_touch net {}",
-                            getName());
-  }
 
   dbSet<dbSWire> swires = getSWires();
 

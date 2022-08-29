@@ -113,7 +113,6 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._user_flag_3 = 0;
   _flags._physical_only = 0;
   _flags._dont_touch = 0;
-  _flags._dont_size = 0;
   _flags._eco_create = 0;
   _flags._eco_destroy = 0;
   _flags._eco_modify = 0;
@@ -241,9 +240,6 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   if (_flags._physical_only != rhs._flags._physical_only)
     return false;
 
-  if (_flags._dont_size != rhs._flags._dont_size)
-    return false;
-
   if (_flags._dont_touch != rhs._flags._dont_touch)
     return false;
 
@@ -329,7 +325,6 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_flags._user_flag_3);
   DIFF_FIELD(_flags._physical_only);
   DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._dont_size);
   DIFF_FIELD(_flags._source);
   DIFF_FIELD(_x);
   DIFF_FIELD(_y);
@@ -386,7 +381,6 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._user_flag_3);
   DIFF_OUT_FIELD(_flags._physical_only);
   DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._dont_size);
   DIFF_OUT_FIELD(_flags._source);
   DIFF_OUT_FIELD(_x);
   DIFF_OUT_FIELD(_y);
@@ -479,15 +473,14 @@ void dbInst::setOrigin(int x, int y)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   int prev_x = inst->_x;
   int prev_y = inst->_y;
-  // Do Nothin if same origin, But What if uninitialized and x=y=0
   if (prev_x == x && prev_y == y)
     return;
-  if (inst->_flags._dont_touch) {
-    inst->getLogger()->error(
-        utl::ODB,
-        359,
-        "Attempt to change the origin of dont_touch instance {}",
-        getName());
+  if (getPlacementStatus().isFixed()) {
+    inst->getLogger()->error(utl::ODB,
+                             359,
+                             "Attempt to change the origin of {} instance {}",
+                             getPlacementStatus().getString(),
+                             getName());
   }
 
   for (auto callback : block->_callbacks)
@@ -576,11 +569,12 @@ void dbInst::setOrient(dbOrientType orient)
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
 
-  if (inst->_flags._dont_touch) {
+  if (getPlacementStatus().isFixed()) {
     inst->getLogger()->error(
         utl::ODB,
         360,
-        "Attempt to change the orientation of dont_touch instance {}",
+        "Attempt to change the orientation of {} instance {}",
+        getPlacementStatus().getString(),
         getName());
   }
   for (auto callback : block->_callbacks)
@@ -618,13 +612,6 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
 
   if (inst->_flags._status == status) {
     return;
-  }
-  if (inst->_flags._dont_touch) {
-    inst->getLogger()->error(
-        utl::ODB,
-        361,
-        "Attempt to change the placement status of dont_touch instance {}",
-        getName());
   }
 
   for (auto callback : block->_callbacks) {
@@ -863,18 +850,6 @@ bool dbInst::isDoNotTouch()
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_flags._dont_touch == 1;
-}
-
-void dbInst::setDoNotSize(bool v)
-{
-  _dbInst* inst = (_dbInst*) this;
-  inst->_flags._dont_size = v;
-}
-
-bool dbInst::isDoNotSize()
-{
-  _dbInst* inst = (_dbInst*) this;
-  return inst->_flags._dont_size == 1;
 }
 
 dbBlock* dbInst::getBlock()
@@ -1177,17 +1152,17 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   const char* newMasterName = new_master_->getConstName();
   const char* oldMasterName = this->getMaster()->getConstName();
 
-  /*
-  if (strcmp(this->getConstName(), "BW1_BUF440357")==0) {
-      notice(0, "Trying to swapMaster FROM %s TO %s %s\n",
-  new_master_->getConstName(), this->getMaster()->getConstName(),
-          new_master_->getConstName(),
-          this->getConstName());
-  }
-  */
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   dbMaster* old_master_ = getMaster();
+
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        368,
+        "Attempt to change master of dont_touch instance {}",
+        inst->_name);
+  }
 
   if (inst->_hierarchy) {
     getImpl()->getLogger()->warn(utl::ODB,
