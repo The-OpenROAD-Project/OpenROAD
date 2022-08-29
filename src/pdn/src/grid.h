@@ -287,8 +287,15 @@ class InstanceGrid : public Grid
 
   bool replaceable_;
 
-  odb::Rect applyHalo(const odb::Rect& rect) const;
-  static odb::Rect applyHalo(const odb::Rect& rect, const Halo& halo);
+  odb::Rect applyHalo(const odb::Rect& rect,
+                      bool rect_is_min,
+                      bool apply_horizontal,
+                      bool apply_vertical) const;
+  static odb::Rect applyHalo(const odb::Rect& rect,
+                             const Halo& halo,
+                             bool rect_is_min,
+                             bool apply_horizontal,
+                             bool apply_vertical);
 };
 
 class ExistingGrid : public Grid
