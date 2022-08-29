@@ -1095,22 +1095,35 @@ const odb::Rect InstanceGrid::getDomainBoundary() const
 
 const odb::Rect InstanceGrid::getGridArea() const
 {
-  return applyHalo(getDomainArea());
+  return applyHalo(getDomainArea(), false, true, true);
 }
 
-odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect) const
+odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
+                                  bool rect_is_min,
+                                  bool apply_horizontal,
+                                  bool apply_vertical) const
 {
-  return applyHalo(rect, halos_);
+  return applyHalo(rect, halos_, rect_is_min, apply_horizontal, apply_vertical);
 }
 
-odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect, const InstanceGrid::Halo& halo)
+odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
+                                  const InstanceGrid::Halo& halo,
+                                  bool rect_is_min,
+                                  bool apply_horizontal,
+                                  bool apply_vertical)
 {
-  odb::Rect halo_rect(
-    rect.xMin() - halo[0],
-    rect.yMin() - halo[1],
-    rect.xMax() + halo[2],
-    rect.yMax() + halo[3]
-  );
+  odb::Rect halo_rect = rect;
+  if (apply_horizontal) {
+    halo_rect.set_xlo(halo_rect.xMin() - halo[0]);
+    halo_rect.set_xhi(halo_rect.xMax() + halo[2]);
+  }
+  if (apply_vertical) {
+    halo_rect.set_ylo(halo_rect.yMin() - halo[1]);
+    halo_rect.set_yhi(halo_rect.yMax() + halo[3]);
+  }
+  if (rect_is_min) {
+    halo_rect.merge(rect);
+  }
   return halo_rect;
 }
 
@@ -1138,7 +1151,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst, const Inst
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    shape->setObstruction(applyHalo(obs_rect, halo));
+    shape->setObstruction(applyHalo(obs_rect, halo, true, true, true));
     obs[layer].insert({shape->getObstructionBox(), shape});
   }
 
@@ -1148,16 +1161,8 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst, const Inst
     const bool is_vertical = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     for (const auto& [box, pin_shape] : pin_shapes) {
       pin_shape->setShapeType(Shape::BLOCK_OBS);
-      odb::Rect pin_shape_rect = pin_shape->getRect();
-      if (is_horizontal) {
-        pin_shape_rect.set_xlo(pin_shape_rect.xMin() - halo[0]);
-        pin_shape_rect.set_xhi(pin_shape_rect.xMax() + halo[2]);
-      }
-      if (is_vertical) {
-        pin_shape_rect.set_ylo(pin_shape_rect.yMin() - halo[1]);
-        pin_shape_rect.set_yhi(pin_shape_rect.yMax() + halo[3]);
-      }
-      pin_shape->setObstruction(pin_shape_rect);
+      pin_shape->generateObstruction();
+      pin_shape->setObstruction(applyHalo(pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
       obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
     }
   }
@@ -1254,6 +1259,19 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
   }), nets.end());
 
   return nets;
+}
+
+void InstanceGrid::report() const
+{
+  Grid::report();
+  auto* logger = getLogger();
+
+  const double units = getDomain()->getBlock()->getDbUnitsPerMicron();
+  logger->report("Halo:");
+  logger->report("  Left: {:.4f}", halos_[0] / units);
+  logger->report("  Bottom: {:.4f}", halos_[1] / units);
+  logger->report("  Right: {:.4f}", halos_[2] / units);
+  logger->report("  Top: {:.4f}", halos_[3] / units);
 }
 
 ////////
