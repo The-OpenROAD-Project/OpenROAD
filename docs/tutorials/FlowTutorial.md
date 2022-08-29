@@ -30,7 +30,7 @@
   - [DRC Viewer](#DRC-Viewer)
   - [Tcl Command Interface](#Tcl-Command-Interface)
   - [Customizing The GUI](#Customizing-The-GUI)
-- [Manual Usage Of The OpenROAD Flow For Better User Control And Results](#Manual-Usage-Of-The-OpenROAD-Flow-For-Better-User-Control-And-Results)
+- [Understanding and Analyzing OpenROAD Flow Stages and Results](#Understanding-and-Analyzing-OpenROAD-Flow-Stages-and-Results)
   - [Synthesis Explorations](#Synthesis-Explorations)
     - [Area And Timing Optimization](#Area-And-Timing-Optimization)
   - [Floorplanning And Placement](#Floorplanning-And-Placement)
@@ -54,6 +54,7 @@
   - [Global Route](#Global-Route)
   - [Antenna Checker](#Antenna-Checker)
   - [Detail Route](#Detail-Route)
+-[Troubleshooting Problems](#Troubleshooting-Problems)
 
 ## Introduction
 
@@ -243,7 +244,7 @@ configuration examples using the Tcl interface and other such details.
 -   Global Route - [FastRoute](../../src/grt/README.md).
 -   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
 -   Detail Routing - [TritonRoute](../../src/drt/README.md).
--   Metall Fill - [Metal fill](../../src/fin/README.md).
+-   Metall fill - [Metal fill](../../src/fin/README.md).
 -   Parasitics extraction - [OpenRCX](../../src/rcx/README.md).
 -   Layout Generation - [KLayout](https://www.klayout.de/) (Requires v0.27.1).
 
@@ -776,7 +777,7 @@ as follows:
 
 ![sky130 LEF file load](./images/sky130_lef_load.png)
 
-## Manual Usage Of The OpenROAD Flow For Better User Control And Results
+## Understanding and Analyzing OpenROAD Flow Stages and Results
 
 The OpenROAD flow is fully automated and yet the user can usefully intervene
 to explore, analyze and optimize your design flow for good PPA.
@@ -980,6 +981,83 @@ source test_gcd.api.tcl
 View the resulting power plan for `gcd` design:
 
 ![gcd PDN GUI](./images/gcd_pdn_gui.png)
+
+#### IR Drop Analysis
+IR drop is the voltage drop in the metal wires constituting the power
+grid before it reaches the power pins of the standard cells. It becomes
+very important to limit the IR drop as it affects the speed of the cells
+and overall performance of the chip.
+
+PDNSim is an open-source static IR analyzer.
+
+Features:
+
+-   Report worst IR drop.
+-   Report worst current density over all nodes and wire segments in
+    the power distribution network, given a placed and PDN-synthesized design.
+-   Check for floating PDN stripes on the power and ground nets.
+-   Spice netlist writer for power distribution network wire segments.
+
+Refer to the built-in examples [here](../../src/psm/test).
+
+Launch openroad:
+
+```
+cd ../../src/psm/test
+openroad
+```
+
+Run [gcd_test_vdd.tcl](../../src/psm/test/gcd_test_vdd.tcl)
+to generate IR drop report for `gcd` design.
+
+```
+source gcd_test_vdd.tcl
+```
+
+End of the log you will find IR drop report as follows.
+```
+########## IR report #################
+Worstcase voltage: 1.10e+00 V
+Average IR drop  : 1.68e-04 V
+Worstcase IR drop: 2.98e-04 V
+######################################
+```
+
+### Tapcell insertion
+
+Tap cells are placed after the macro placement and power rail creation.
+This stage is called the pre-placement stage. Tap cells are placed in a
+regular interval in each row of placement. The maximum distance between
+the tap cells must be as per the DRC rule of that particular technology library.
+
+The figures below show two examples of tapcell insertion. When only the 
+`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
+is similar to Figure 1. When the remaining masters are give, the tapcell
+placement is similar to Figure 2.
+
+| <img src="../../src/tap/doc/image/tapcell_example1.svg" width=450px> | <img src="../../src/tap/doc/image/tapcell_example2.svg" width=450px> |
+|:--:|:--:|
+| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
+
+Refer to the following built-in example [here](../../src/tap/test/gcd_nangate45.tcl)
+to learn about Tap/endcap cell insertion.
+
+To view this in OpenROAD GUI:
+
+```
+cd ../../src/tap/test/
+openroad -gui
+```
+
+In the `Tcl Commands` section of GUI
+
+```
+source gcd_nangate45.tcl
+```
+
+View the resulting tap cell insertion as follows:
+
+![Tap_Cell_Insertion](./images/tapcell_insertion_view.webp)
 
 ### Placement Area or Timing Optimizations
 
@@ -1450,7 +1528,7 @@ the resizer.
 
 ### Clock Tree Synthesis
 
-TritonCTS 2.0 is available under the OpenROAD app to perform clock tree
+TritonCTS is available under the OpenROAD app to perform clock tree
 synthesis as the `clock_tree_synthesis` flow command. The ORFS
 automatically generates a well-balanced clock tree post-placement. In
 this section, you will learn details about the building and visualize the
@@ -1512,7 +1590,7 @@ The clock tree structure is as follows with unbalanced mode.
 
 ![Unbalanced Clock tree](./images/unbalanced_clock_tree.png)
 
-Use the `clock_tree_synthsis` command to balance this clock tree structure
+Use the `clock_tree_synthesis` command to balance this clock tree structure
 with buffers. See the format as follows.
 
 ```
@@ -1621,9 +1699,11 @@ CTS metrics are as follows for the current design.
 FastRoute is an open-source global router originally derived from Iowa
 State University FastRoute4.1.
 
-During global routing tool will analyze available routing resource and
-check for H/V overflow with congestion report. If there is no congestion
-reported means design is ready for detail routing.
+The global router analyzes available routing resources and automatically
+allocates them to avoid any  H/V  overflow violations for optimal routing.  
+It generates a congestion report for GCells showing total resources, demand, 
+utilization, location and the H/V violation status. If there are no violations 
+reported then the design can proceed to detail routing.
 
 Refer to the built-in example [here](../../src/grt/test/gcd.tcl).
 
@@ -1677,6 +1757,11 @@ View the resulting global routing in GUI as follows:
 
 ### Antenna Checker
 
+Antenna Violation occurs when the antenna ratio exceeds a value specified 
+in a Process Design Kit (PDK). The antenna ratio is the ratio of the gate
+area to the gate oxide area. The amount of charge collection is determined
+by the area/size of the conductor (gate area).
+
 This tool checks antenna violations and generates a report to indicate violated nets.
 
 Refer to the built-in example [here](../../src/ant/test/ant_check.tcl).
@@ -1710,6 +1795,8 @@ The log as follows:
 violation count = 1
 Net net50 violations: 1
 ```
+
+Note: Antenna fixing with ORFS flow work in process.
 
 ### Detail Route
 
@@ -1784,3 +1871,136 @@ Up-via summary (total 2223):.
 View the resulting detail routing in GUI as follows:
 
 ![Detail Routing](./images/detail_route_gcd.webp)
+
+### Metal fill
+
+metal fill is a mandatory step at advanced nodes to ensure manufacturability
+and high yield. It involves filling the empty or white spaces near the
+design with metal polygons to ensure regular planarization of the wafer.
+
+This module inserts floating metal fill shapes to meet metal density
+design rules while obeying DRC constraints. It is driven by a json 
+configuration file.
+
+Command used as follows:
+```
+% density_fill -rules <json_file> [-area <list of lx ly ux uy>]
+```
+If -area is not specified, the core area will be used.
+
+### Parasitics extraction
+
+OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
+It extracts routed designs based on the LEF/DEF layout model.
+
+OpenRCX stores resistance, coupling capacitance and ground (i.e., grounded) capacitance
+on OpenDB objects with direct pointers to the associated wire and via db
+objects. Optionally, OpenRCX can generate a `.spef` file.
+
+Refer to the built-in example [here](../../src/rcx/test/45_gcd.tcl).
+
+Launch OpenROAD tool:
+
+```
+cd ../../src/rcx/test/
+openroad
+```
+
+To run parasitics for gcd design:
+```
+source 45_gcd.tcl
+```
+
+The log as follows:
+```
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: 45_gcd.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1820 components and 4618 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 3640 connections.
+[INFO ODB-0133]     Created 350 nets and 978 connections.
+[INFO ODB-0134] Finished DEF file: 45_gcd.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0008] extracting parasitics of gcd ...
+[INFO RCX-0435] Reading extraction model file 45_patterns.rules ...
+[INFO RCX-0436] RC segment generation gcd (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 2656 rc segments
+[INFO RCX-0439] Coupling Cap extraction gcd ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0043] 1954 wires to be extracted
+[INFO RCX-0442] 48% completion -- 954 wires have been extracted
+[INFO RCX-0442] 100% completion -- 1954 wires have been extracted
+[INFO RCX-0045] Extract 350 nets, 2972 rsegs, 2972 caps, 2876 ccs
+[INFO RCX-0015] Finished extracting gcd.
+[INFO RCX-0016] Writing SPEF ...
+[INFO RCX-0443] 350 nets finished
+[INFO RCX-0017] Finished writing SPEF ...
+```
+
+## Troubleshooting Problems
+
+### Global router debug tools
+The global router has a few useful functionalities to understand
+high congestion issues in the designs. We describe them below.
+
+Congestion heatmap can be used on any design, whether it has 
+congestion or not. Viewing congestion explained [here]().
+If the design has congestion issue, it ends with the error;
+```
+[ERROR GRT-0118] Routing congestion too high.
+```
+
+Refer to the built-in example [here](../../src/grt/test/congestion5.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/grt/test/
+openroad -gui
+```
+
+To run the global routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+source congestion5.tcl
+```
+
+The design fail with routing congestion error as follows:
+![Routing_Congestion](./images/grt_congestion_error.webp)
+
+In the GUI, you can go under `Heat Maps` and mark the
+`Routing Congestion` checkbox to visualize the congestion map.
+![congestion_heatmap](./images/congestion_heatmap_enable.webp)
+
+#### Dump congestion information to a text file
+
+You can create a text file with the congestion information of the 
+GCells for further investigation on the GUI. To do that, add the
+`-congestion_report_file file_name` to the `global_route` command, as shown below:
+```
+global_route -guide_file out.guide -congestion_report_file congest.rpt
+```
+
+#### Visualization of overflowing GCells as markers
+
+With the file created with the command described above, you can see more 
+details about the congested GCell, like the total resources, utilization,
+location, etc. You can load the file following these steps:
+
+-   step 1: In the `DRC Viewer` window, click on `Load` and select the
+    file with the congestion report.
+-   step 2: A summary of the GCells with congestion is shown in the
+    `DRC Viewer` window. Also, the markers are added to the GUI.
+![GCell_marker](./images/gcell_marker.webp)
+-   step 3: For details on the routing resources information, use the `Inspector` window.
+![zoom_options](./images/zoom_options.webp)
+
+By Clicking `zoom_to` options, you can enlarge the view as follows:
+![zoomto_gcell](./images/zoomto_gcell.webp)
