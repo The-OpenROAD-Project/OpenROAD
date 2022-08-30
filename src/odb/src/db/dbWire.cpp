@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWire.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -44,6 +42,7 @@
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
+#include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 namespace odb {
@@ -629,7 +628,7 @@ bool dbWire::getBBox(Rect& bbox)
   bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   dbWireShapeItr itr;
   dbShape s;
-  uint cnt = 0; 
+  uint cnt = 0;
 
   for (itr.begin(this); itr.next(s);) {
     Rect r = s.getBox();
@@ -1807,14 +1806,6 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
 {
   _dbNet* net = (_dbNet*) net_;
 
-  if (net->_flags._dont_touch) {
-    net->getLogger()->error(
-        utl::ODB,
-        365,
-        "Attempt to create the wire for dont_touch net {}",
-        net->_name);
-  }
-
   if (global_wire) {
     if (net->_global_wire != 0)
       return NULL;
@@ -1860,13 +1851,6 @@ void dbWire::destroy(dbWire* wire_)
   _dbWire* wire = (_dbWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   _dbNet* net = (_dbNet*) wire_->getNet();
-  if (net && net->_flags._dont_touch) {
-    net->getLogger()->error(
-        utl::ODB,
-        366,
-        "Attempt to destroy the wire for dont_touch net {}",
-        net->_name);
-  }
   for (auto callback : block->_callbacks)
     callback->inDbWireDestroy(wire_);
   Rect bbox;
