@@ -84,16 +84,15 @@ class PdnGen
 
   void init(dbDatabase* db, Logger* logger);
 
-  void setSpecialITerms();
-  void setSpecialITerms(dbNet* net);
-
   void addGlobalConnect(const char* instPattern,
                         const char* pinPattern,
-                        dbNet* net);
+                        dbNet* net,
+                        bool connect);
   void addGlobalConnect(dbBox* region,
                         const char* instPattern,
                         const char* pinPattern,
-                        dbNet* net);
+                        dbNet* net,
+                        bool connect);
   void clearGlobalConnect();
 
   void globalConnect(dbBlock* block);
