@@ -1514,6 +1514,7 @@ bool ViaGenerator::build(bool bottom_is_internal_layer,
 
 bool ViaGenerator::updateCutSpacing(int rows, int cols)
 {
+  // determine max number of adjacent cuts in array
   // dims bounded by 1 -> 4
   rows = std::max(1, std::min(rows, 4));
   cols = std::max(1, std::min(cols, 4));
@@ -1521,27 +1522,31 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
   const int max_dim = std::max(rows, cols);
   int adj_cuts = 0;
   if (min_dim == 1) {
+    // array is a 1 x N array, therefore adjacent cuts can be 1 or 2
     if (max_dim == 2) {
       adj_cuts = 1;
     } else if (max_dim >= 3) {
       adj_cuts = 2;
     }
   } else if (min_dim == 2) {
+    // array is a 2 x N, therefore adjacent cuts can be 2 or 3
     if (max_dim == 2) {
       adj_cuts = 2;
     } else if (max_dim >= 3) {
       adj_cuts = 3;
     }
   } else if (min_dim == 3) {
+    // array is a 3 x N, therefore any cut in the middle will have 4 adjacent cuts
     // max_dim is 3 or 4
     adj_cuts = 4;
   } else if (min_dim == 4) {
+    // array is a 4 x N, therefore any cut in the middle will have 4 adjacent cuts
     // max_dim is 4
     adj_cuts = 4;
   }
 
   if (adj_cuts < 2) {
-    // nothing to do
+    // nothing to do, rules require atleast 2
     return false;
   }
 
