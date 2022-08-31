@@ -2387,21 +2387,17 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
       auto owner = ptr1->getNet()->getOwner();
       auto ptr1LayerNum = ptr1->getLayerNum();
       auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
-      if (isBlockage(owner)) {
-        frCoord width1 = ptr1->width();
-        updateBlockageWidth(owner, width1);
-        if (width1 > int(ptr1Layer->getWidth()))
-          maxSpcVal = con->getCutWithin();
-      }
+      frCoord width1 = ptr1->width();
+      updateBlockageWidth(owner, width1);
+      if (width1 > int(ptr1Layer->getWidth()))
+        maxSpcVal = con->getCutWithin();
       owner = ptr2->getNet()->getOwner();
       auto ptr2LayerNum = ptr2->getLayerNum();
       auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
-      if (isBlockage(owner)) {
-        frCoord width2 = ptr2->width();
-        updateBlockageWidth(owner, width2);
-        if (width2 > int(ptr2Layer->getWidth()))
-          maxSpcVal = con->getCutWithin();
-      }
+      frCoord width2 = ptr2->width();
+      updateBlockageWidth(owner, width2);
+      if (width2 > int(ptr2Layer->getWidth()))
+        maxSpcVal = con->getCutWithin();
     }
   }
   return maxSpcVal;
