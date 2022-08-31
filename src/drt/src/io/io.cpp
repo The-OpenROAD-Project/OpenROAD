@@ -1864,6 +1864,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
           DRT, 130, "Non-consecutive layers for viarule {}.", rule->getName());
     }
     auto viaRuleGen = make_unique<frViaRuleGenerate>();
+    viaRuleGen->setDbTechViaGenerateRule(rule);
     for (int i = 0; i < count; i++) {
       auto layerRule = rule->getViaLayerRule(i);
       frLayerNum layerNum

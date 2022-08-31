@@ -379,9 +379,9 @@ class frLef58MinStepConstraint : public frConstraint
   bool hasMaxEdges() const { return rule_->isMaxEdgesValid(); }
   int getMaxEdges() const { return rule_->isMaxEdgesValid() ? rule_->getMaxEdges() : -1; }
   bool hasMinAdjacentLength() const { return rule_->isMinAdjLength1Valid(); }
-  frCoord getMinAdjacentLength() const { return  rule_->isMinAdjLength1Valid() ? rule_->getMinAdjLength1() : -1; }
+  frCoord getMinAdjacentLength() const { return rule_->getMinAdjLength1(); }
   bool hasEolWidth() const { return  rule_->isNoBetweenEol(); }
-  frCoord getEolWidth() const { return rule_->isNoBetweenEol() ? rule_->getEolWidth() : -1; }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
 
   // setter
   void setDbTechLayerMinStepRule(odb::dbTechLayerMinStepRule* ruleIn) { rule_ = ruleIn; }
@@ -818,7 +818,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
   bool hasOppositeWidth() const { return rule_->isOppositeWidthValid(); }
   frCoord getOppositeWidth() const { return rule_->getOppositeWidth(); }
-  frCoord getEolWithin() const { return rule_->isSameMaskValid() ? 0 : rule_->getEolWithin(); }
+  frCoord getEolWithin() const { return rule_->getEolWithin(); }
   frCoord getWrongDirWithin() const { return rule_->isWrongDirWithinValid()? rule_->getWrongDirWithin() : false; }
   frCoord getEndPrlSpacing() const { return rule_->getEndPrlSpace(); }
   frCoord getEndPrl() const { return rule_->getEndPrl(); }
@@ -1450,10 +1450,6 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
           exceptWithinConstraintIn)
       : frSpacingTableConstraint(parallelRunLengthConstraintIn),
         exceptWithinConstraint(exceptWithinConstraintIn)
-        // wrongDirection(false),
-        // sameMask(false),
-        // exceptEol(false),
-        // eolWidth(0)
   {
   }
   // getter
@@ -1517,11 +1513,8 @@ class frCutSpacingConstraint : public frConstraint
   }
   // getter
   bool hasCenterToCenter() const { return rule_->getCutCenterToCenter(); }
-  //bool getCenterToCenter() const { return centerToCenter; }
-  //bool getSameNet() const { return rule->getCutSameNet(); }
   bool hasSameNet() const { return rule_->getCutSameNet(); }
   frCutSpacingConstraint* getSameNetConstraint() { return sameNetConstraint; }
-  //bool getStack() const { return rule_->getCutStacking(); }
   bool hasStack() const { return rule_->getCutStacking(); }
   bool isLayer() const
   { 
@@ -1565,7 +1558,6 @@ class frCutSpacingConstraint : public frConstraint
     if(rule_->getAdjacentCuts(adjacentCuts, within, spacing, except_same_pgnet))
       return within; 
     return -1;
-    //return rule_->getCutWithin(); 
   }
   bool hasExceptSamePGNet() const { return rule_->getSameNetPgOnly(); }
   bool getExceptSamePGNet() const { return rule_->getSameNetPgOnly(); }
