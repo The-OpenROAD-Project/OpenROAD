@@ -218,9 +218,9 @@ void AntennaChecker::initAntennaRules()
       // If there is a SIDE area antenna rule, then make sure thickness exists.
       if ((PSR_ratio != 0 || diffPSR.indices.size() != 0)
           && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
-        logger_->error(ANT,
+        logger_->warn(ANT,
                        13,
-                       "No THICKNESS is provided for {}.",
+                       "No THICKNESS is provided for layer {}.  Checks on this layer will not be correct.",
                        tech_layer->getConstName());
       }
     }
