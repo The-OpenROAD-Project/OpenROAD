@@ -1099,4 +1099,31 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
              frConstraintTypeEnum::frcMetalWidthViaConstraint,
              Rect(100, 0, 200, 100));
 }
+
+BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
+  makeCutClass(3, "VA", 110, 110);
+  if (lef58) {
+    makeLef58CutSpacingConstraint_adjacentCut(3, 10, 1, 1, 200);
+    
+    frNet* n1 = makeNet("n1");
+    frNet* n2 = makeNet("n2");
+    frNet* n3 = makeNet("n3");
+    frNet* n4 = makeNet("n4");
+    frViaDef* vd = makeViaDef("v", 3, {0, 0}, {110, 110});
+
+    makeVia(vd, n1, {1000, 1000});
+    makeVia(vd, n2, {1000, 820});
+    makeVia(vd, n3, {820, 1000});
+    makeVia(vd, n4, {890, 700});
+
+    runGC();
+
+    // Test the results
+    auto& markers = worker.getMarkers();
+
+    BOOST_TEST(markers.size() == 3);
+  }
+}
+
+>>>>>>> a6db71559 (drt: add test for ADJACENTCUTS on gcTest)
 BOOST_AUTO_TEST_SUITE_END();
