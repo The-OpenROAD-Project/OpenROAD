@@ -271,6 +271,38 @@ static bool viaInInterior(Rect routeBox, Point origin)
          && routeBox.yMin() < origin.y() && origin.y() < routeBox.yMax();
 }
 
+void FlexDRWorker::initNets_segmentTerms(
+    Point bp,
+    frLayerNum lNum,
+    frNet* net,
+    set<frBlockObject*, frBlockObjectComp>& terms)
+{
+  auto regionQuery = design_->getRegionQuery();
+  frRegionQuery::Objects<frBlockObject> result;
+  Rect query_box(bp.x(), bp.y(), bp.x(), bp.y());
+  regionQuery->query(query_box, lNum, result);
+  for (auto& [bx, rqObj] : result) {
+    switch (rqObj->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj);
+        if (instTerm->getNet() == net) {
+          terms.insert(rqObj);
+        }
+        break;
+      }
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj);
+        if (term->getNet() == net) {
+          terms.insert(rqObj);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+}
+
 // inits nets based on the pins
 void FlexDRWorker::initNets_initDR(
     const frDesign* design,
@@ -313,10 +345,15 @@ void FlexDRWorker::initNets_initDR(
         frSegStyle style = ps->getStyle();
         auto [bp, ep] = ps->getPoints();
         auto& box = getRouteBox();
+        bool onBorder = segOnBorder(box, bp, ep);
         if (box.intersects(bp) && box.intersects(ep)
-            && !(segOnBorder(box, bp, ep)
+            && !(onBorder
                  && (style.getBeginStyle() != frcTruncateEndStyle
                      || style.getEndStyle() != frcTruncateEndStyle))) {
+          if (onBorder) {
+            initNets_segmentTerms(bp, ps->getLayerNum(), net, netTerms[net]);
+            initNets_segmentTerms(ep, ps->getLayerNum(), net, netTerms[net]);
+          }
           vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
         } else {
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
