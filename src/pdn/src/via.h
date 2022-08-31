@@ -591,6 +591,8 @@ class ViaGenerator
   odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
 
   int getRectSize(const odb::Rect& rect, bool min, bool only_real) const;
+
+  bool updateCutSpacing(int rows, int columns);
 };
 
 // Class to build a generate via, either as a single group or as an array

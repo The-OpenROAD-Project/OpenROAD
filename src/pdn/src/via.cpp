@@ -1512,6 +1512,64 @@ bool ViaGenerator::build(bool bottom_is_internal_layer,
   return true;
 }
 
+bool ViaGenerator::updateCutSpacing(int rows, int cols)
+{
+  // dims bounded by 1 -> 4
+  rows = std::max(1, std::min(rows, 4));
+  cols = std::max(1, std::min(cols, 4));
+  const int min_dim = std::min(rows, cols);
+  const int max_dim = std::max(rows, cols);
+  int adj_cuts = 0;
+  if (min_dim == 1) {
+    if (max_dim == 2) {
+      adj_cuts = 1;
+    } else if (max_dim >= 3) {
+      adj_cuts = 2;
+    }
+  } else if (min_dim == 2) {
+    if (max_dim == 2) {
+      adj_cuts = 2;
+    } else if (max_dim >= 3) {
+      adj_cuts = 3;
+    }
+  } else if (min_dim == 3) {
+    // max_dim is 3 or 4
+    adj_cuts = 4;
+  } else if (min_dim == 4) {
+    // max_dim is 4
+    adj_cuts = 4;
+  }
+
+  if (adj_cuts < 2) {
+    // nothing to do
+    return false;
+  }
+
+  auto* layer = getCutLayer();
+
+  bool changed = false;
+  const odb::Rect cut = getCut();
+  for (auto* rule : layer->getV54SpacingRules()) {
+    uint numcuts;
+    uint within;
+    uint spacing;
+    bool except_same_pgnet;
+    if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+      continue;
+    }
+    if (except_same_pgnet) {
+      continue;
+    }
+    if (numcuts <= adj_cuts) {
+      cut_pitch_x_ = cut.dx() + spacing;
+      cut_pitch_y_ = cut.dy() + spacing;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
                                            bool use_top_min_enclosure,
                                            const Enclosure& bottom_min_enclosure,
@@ -1583,6 +1641,23 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
                    top_min_enclosure.getY(),
                    getCutPitchY(),
                    getMaxRows());
+
+    if (updateCutSpacing(rows, cols)) {
+      // cut spcaing changed so need to recompute
+      cols = getCuts(width,
+                     cut_width,
+                     bottom_min_enclosure.getX(),
+                     top_min_enclosure.getX(),
+                     getCutPitchX(),
+                     getMaxColumns());
+
+      rows = getCuts(height,
+                     cut_height,
+                     bottom_min_enclosure.getY(),
+                     top_min_enclosure.getY(),
+                     getCutPitchY(),
+                     getMaxRows());
+    }
   }
 
   debugPrint(logger_,
