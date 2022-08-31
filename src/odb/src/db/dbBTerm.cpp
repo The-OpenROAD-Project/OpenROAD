@@ -667,12 +667,14 @@ void dbBTerm::destroy(dbBTerm* bterm_)
   _dbBTerm* bterm = (_dbBTerm*) bterm_;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
 
-  _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-  if (net->_flags._dont_touch) {
-    net->getLogger()->error(utl::ODB,
-                            374,
-                            "Attempt to destroy bterm on dont_touch net {}",
-                            net->_name);
+  if (bterm->_net) {
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
+    if (net->_flags._dont_touch) {
+      net->getLogger()->error(utl::ODB,
+                              374,
+                              "Attempt to destroy bterm on dont_touch net {}",
+                              net->_name);
+    }
   }
 
   // delete bpins

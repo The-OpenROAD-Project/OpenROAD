@@ -7046,10 +7046,8 @@ class dbTechLayer : public dbObject
 
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
-  /// Return false if rules not encoded in this format.
-  /// Contents of sp_rules are undefined if function returns false.
   ///
-  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
+  dbSet<dbTechLayerSpacingRule> getV54SpacingRules() const;
 
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
@@ -7071,8 +7069,7 @@ class dbTechLayer : public dbObject
   void initV55SpacingTable(uint numrows, uint numcols);
   void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
 
-  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
-  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
+  dbSet<dbTechV55InfluenceEntry> getV55InfluenceRules();
 
   ///
   /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix

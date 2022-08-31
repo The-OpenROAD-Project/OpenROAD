@@ -1617,9 +1617,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
 
   // read spacing rule
-  odb::dbSet<odb::dbTechLayerSpacingRule> sp_rules;
-  layer->getV54SpacingRules(sp_rules);
-  for (auto rule : sp_rules) {
+  for (auto rule : layer->getV54SpacingRules()) {
     frCoord minSpacing = rule->getSpacing();
     frUInt4 _eolWidth = 0, _eolWithin = 0, _parSpace = 0, _parWithin = 0;
     bool hasSpacingParellelEdge = false;
@@ -1684,12 +1682,12 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       tmpLayer->setMinSpacing(rptr);
     }
   }
-  if (!layer->getV55InfluenceEntries().empty()) {
+  if (!layer->getV55InfluenceRules().empty()) {
     frCollection<frCoord> widthTbl;
     frCollection<std::pair<frCoord, frCoord>> valTbl;
-    for (auto entry : layer->getV55InfluenceEntries()) {
+    for (auto rule : layer->getV55InfluenceRules()) {
       frUInt4 width, within, spacing;
-      entry->getV55InfluenceEntry(width, within, spacing);
+      rule->getV55InfluenceEntry(width, within, spacing);
       widthTbl.push_back(width);
       valTbl.push_back({within, spacing});
     }
@@ -1822,9 +1820,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   tech->addUConstraint(std::move(shortConstraint));
 
   // read spacing constraint
-  odb::dbSet<odb::dbTechLayerSpacingRule> spRules;
-  layer->getV54SpacingRules(spRules);
-  for (odb::dbTechLayerSpacingRule* rule : spRules) {
+  for (odb::dbTechLayerSpacingRule* rule : layer->getV54SpacingRules()) {
     std::unique_ptr<frCutSpacingConstraint> cutSpacingConstraint;
     frCoord cutArea = rule->getCutArea();
     frCoord cutSpacing = rule->getSpacing();
