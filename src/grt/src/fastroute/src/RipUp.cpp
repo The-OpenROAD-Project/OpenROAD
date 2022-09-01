@@ -443,6 +443,51 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   return true;
 }
 
+void FastRouteCore::releaseResourcesNet(const int netID)
+{
+  const int edgeCost = nets_[netID]->edgeCost;
+  const TreeEdge* treeedges = sttrees_[netID].edges;
+  const int deg = sttrees_[netID].deg;
+
+  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+
+    const TreeEdge* treeedge = &(treeedges[edgeID]);
+    const std::vector<short>& gridsX = treeedge->route.gridsX;
+    const std::vector<short>& gridsY = treeedge->route.gridsY;
+    const std::vector<short>& gridsL = treeedge->route.gridsL;
+    const int routeLen = treeedge->route.routelen;
+
+    for (int i = 0; i < routeLen; i++) {
+
+      if(gridsL[i] != gridsL[i+1]) continue;
+
+      else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+
+        const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+        if (v_edges_[ymin][gridsX[i]].usage)
+          v_edges_[ymin][gridsX[i]].usage -= edgeCost;
+        if (v_edges_[ymin][gridsX[i]].est_usage)
+          v_edges_[ymin][gridsX[i]].est_usage -=  edgeCost;
+        v_edges_[ymin][gridsX[i]].last_usage -= edgeCost;
+        if (v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage)
+          v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage -= edgeCost;
+
+      } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
+
+        const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+        if (h_edges_[gridsY[i]][xmin].usage)
+          h_edges_[gridsY[i]][xmin].usage -= edgeCost;
+        if (h_edges_[gridsY[i]][xmin].est_usage)
+          h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
+        h_edges_[gridsY[i]][xmin].last_usage -= edgeCost;
+        if (h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage)
+          h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage -= edgeCost;
+
+      } 
+    }
+  }
+}
+
 void FastRouteCore::newRipupNet(const int netID)
 {
   const int edgeCost = nets_[netID]->edgeCost;

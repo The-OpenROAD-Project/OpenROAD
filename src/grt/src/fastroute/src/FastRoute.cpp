@@ -309,6 +309,11 @@ void FastRouteCore::clearRoute(const int netID)
   newRipupNet(netID);
 }
 
+void FastRouteCore::clearAllRoute(const int netID)
+{
+  releaseResourcesNet(netID);
+}
+
 void FastRouteCore::initEdges()
 {
   const float LB = 0.9;
