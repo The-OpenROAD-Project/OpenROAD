@@ -773,7 +773,7 @@ void lefin::layer(lefiLayer* layer)
         cur_rule->setAdjacentCuts(layer->spacingAdjacentCuts(j),
                                   dbdist(layer->spacingAdjacentWithin(j)),
                                   dbdist(layer->spacing(j)),
-                                  layer->hasSpacingSamenetPGonly(j));
+                                  layer->hasSpacingAdjacentExcept(j));
       } else if (layer->hasSpacingEndOfLine(j)) {
         double w = layer->spacingEolWidth(j);
         double wn = layer->spacingEolWithin(j);
