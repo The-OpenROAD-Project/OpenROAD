@@ -35,13 +35,13 @@
 
 sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
                                                        [-max_slew slew] \
-                                                       [-slew_inter slewvalue] \
-                                                       [-cap_inter capvalue] \
+                                                       [-slew_steps slew_steps] \
+                                                       [-cap_steps cap_steps] \
                                                       }
 
 proc configure_cts_characterization { args } {
   sta::parse_key_args "configure_cts_characterization" args \
-    keys {-max_cap -max_slew -slew_inter -cap_inter} flags {}
+    keys {-max_cap -max_slew -slew_steps -cap_steps} flags {}
 
   sta::check_argc_eq0 "configure_cts_characterization" $args
 
@@ -55,14 +55,16 @@ proc configure_cts_characterization { args } {
     cts::set_max_char_slew $max_slew_value
   }
 
-  if { [info exists keys(-slew_inter)] } {
-    set slew $keys(-slew_inter)
-    cts::set_slew_inter $slew
+  if { [info exists keys(-slew_steps)] } {
+    set steps $keys(-slew_steps)
+    sta::check_cardinal "-slew_steps" $steps
+    cts::set_slew_steps $slew
   }
 
-  if { [info exists keys(-cap_inter)] } {
-    set cap $keys(-cap_inter)
-    cts::set_cap_inter $cap
+  if { [info exists keys(-cap_steps)] } {
+    set steps $keys(-cap_steps)
+    sta::check_cardinal "-cap_steps" $steps
+    cts::set_cap_steps $cap
   }
 }
 

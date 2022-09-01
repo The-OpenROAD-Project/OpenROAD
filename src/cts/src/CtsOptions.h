@@ -95,16 +95,6 @@ class CtsOptions
   double getMaxCharSlew() const { return maxCharSlew_; }
   void setMaxCharCap(double cap) { maxCharCap_ = cap; }
   double getMaxCharCap() const { return maxCharCap_; }
-  void setCharLoadIterations(unsigned loadIterations)
-  {
-    charLoadIterations_ = loadIterations;
-  }
-  unsigned getCharLoadIterations() const { return charLoadIterations_; }
-  void setCharSlewIterations(unsigned slewIterations)
-  {
-    charSlewIterations_ = slewIterations;
-  }
-  unsigned getCharSlewIterations() const { return charSlewIterations_; }
   void setCharWirelengthIterations(unsigned wirelengthIterations)
   {
     charWirelengthIterations_ = wirelengthIterations;
@@ -113,10 +103,10 @@ class CtsOptions
   {
     return charWirelengthIterations_;
   }
-  void setCapInter(double cap) { capInter_ = cap; }
-  double getCapInter() const { return capInter_; }
-  void setSlewInter(double slew) { slewInter_ = slew; }
-  double getSlewInter() const { return slewInter_; }
+  void setCapSteps(int steps) { capSteps_ = steps; }
+  int getCapSteps() const { return capSteps_; }
+  void setSlewSteps(int steps) { slewSteps_ = steps; }
+  int getSlewSteps() const { return slewSteps_; }
   void setClockTreeMaxDepth(unsigned depth) { clockTreeMaxDepth_ = depth; }
   unsigned getClockTreeMaxDepth() const { return clockTreeMaxDepth_; }
   void setEnableFakeLutEntries(bool enable) { enableFakeLutEntries_ = enable; }
@@ -226,11 +216,9 @@ class CtsOptions
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
   double sinkBufferInputCap_ = 0;
-  double capInter_ = 0;
-  double slewInter_ = 0;
+  int capSteps_ = 34;
+  int slewSteps_ = 12;
   unsigned charWirelengthIterations_ = 4;
-  unsigned charLoadIterations_ = 34;
-  unsigned charSlewIterations_ = 12;
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;

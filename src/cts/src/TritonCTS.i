@@ -102,15 +102,15 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_slew_inter(double slew)
+set_slew_steps(int steps)
 {
-  getTritonCts()->getParms()->setSlewInter(slew);
+  getTritonCts()->getParms()->setSlewSteps(steps);
 }
 
 void
-set_cap_inter(double cap)
+set_cap_steps(int steps)
 {
-  getTritonCts()->getParms()->setCapInter(cap);
+  getTritonCts()->getParms()->setCapSteps(steps);
 }
 
 void

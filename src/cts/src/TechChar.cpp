@@ -455,14 +455,6 @@ void TechChar::initCharacterization()
 
   getClockLayerResCap(dbUnitsPerMicron);
 
-  // Change intervals if needed
-  if (options_->getSlewInter() != 0) {
-    charSlewInter_ = options_->getSlewInter();
-  }
-  if (options_->getCapInter() != 0) {
-    charCapInter_ = options_->getCapInter();
-  }
-
   // Gets the buffer masters and its in/out pins.
   std::vector<std::string> masterVector = options_->getBufferList();
   if (masterVector.size() < 1) {
@@ -610,7 +602,6 @@ void TechChar::initCharacterization()
       if (!maxSlewExist)
         logger_->error(
             CTS, 107, "No max slew found for cell {}.", bufMasterName);
-      charMaxSlew_ = maxSlew;
 
       output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
       if (!maxCapExist)
@@ -618,7 +609,8 @@ void TechChar::initCharacterization()
       if (!maxCapExist)
         logger_->error(
             CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
-      charMaxCap_ = maxCap;
+      options_->setMaxCharSlew(maxSlew);
+      options_->setMaxCharCap(maxCap);
     }
     if (!libertySinkCell) {
       logger_->error(
@@ -629,23 +621,22 @@ void TechChar::initCharacterization()
       options_->setSinkBufferInputCap(input->capacitance());
     }
   } else {
-    charMaxSlew_ = options_->getMaxCharSlew();
-    charMaxCap_ = options_->getMaxCharCap();
+    maxSlew = options_->getMaxCharSlew();
+    maxCap = options_->getMaxCharCap();
   }
+
+  const unsigned slewSteps = options_->getSlewSteps();
+  const unsigned loadSteps = options_->getCapSteps();
+
+  charSlewStepSize_ = maxSlew / slewSteps;
+  charCapStepSize_ = maxCap / loadSteps;
+
   // Creates the different slews and loads to test.
-  unsigned slewIterations = options_->getCharSlewIterations();
-  unsigned loadIterations = options_->getCharLoadIterations();
-  for (float slewInter = charSlewInter_;
-       (slewInter <= charMaxSlew_)
-       && (slewInter <= slewIterations * charSlewInter_);
-       slewInter += charSlewInter_) {
-    slewsToTest_.push_back(slewInter);
+  for (int step = 1; step <= slewSteps; ++step) {
+    slewsToTest_.push_back(step * charSlewStepSize_);
   }
-  for (float capInter = charCapInter_;
-       ((capInter <= charMaxCap_)
-        && (capInter <= loadIterations * charCapInter_));
-       capInter += charCapInter_) {
-    loadsToTest_.push_back(capInter);
+  for (int step = 1; step <= loadSteps; ++step) {
+    loadsToTest_.push_back(step * charCapStepSize_);
   }
 
   if ((loadsToTest_.size() < 1) || (slewsToTest_.size() < 1)) {
@@ -892,7 +883,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
     float firstPinCap = firstPinLiberty->capacitance();
     incap = firstPinCap + length * capPerDBU_;
   }
-  float totalcap = std::round(incap / charCapInter_) * charCapInter_;
+  float totalcap = std::round(incap / charCapStepSize_) * charCapStepSize_;
   results.totalcap = totalcap;
   // Computations for delay.
   float pinArrival = openStaChar_->vertexArrival(
@@ -904,7 +895,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
   float pinFall = openStaChar_->vertexSlew(
       outPinVert, sta::RiseFall::fall(), sta::MinMax::max());
   float pinSlew
-      = std::round((pinRise + pinFall) / 2 / charSlewInter_) * charSlewInter_;
+      = std::round((pinRise + pinFall) / 2 / charSlewStepSize_) * charSlewStepSize_;
   results.pinSlew = pinSlew;
 
   return results;
@@ -1001,22 +992,22 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   unsigned maxResultSlew = 0;
   std::vector<ResultData> convertedSolutions;
   for (ResultData solution : selectedSolutions) {
-    if (solution.pinSlew <= charMaxSlew_) {
+    if (solution.pinSlew <= options_->getMaxCharSlew()) {
       ResultData convertedResult;
       // Processing and normalizing of output slew.
       convertedResult.pinSlew = normalizeCharResults(
-          solution.pinSlew, charSlewInter_, &minResultSlew, &maxResultSlew);
+          solution.pinSlew, charSlewStepSize_, &minResultSlew, &maxResultSlew);
       // Processing and normalizing of input slew.
       convertedResult.inSlew = normalizeCharResults(
-          solution.inSlew, charSlewInter_, &minResultSlew, &maxResultSlew);
+          solution.inSlew, charSlewStepSize_, &minResultSlew, &maxResultSlew);
       // Processing and normalizing of input cap.
       convertedResult.totalcap = normalizeCharResults(solution.totalcap,
-                                                      charCapInter_,
+                                                      charCapStepSize_,
                                                       &minResultCapacitance,
                                                       &maxResultCapacitance);
       // Processing and normalizing of load.
       convertedResult.load = normalizeCharResults(solution.load,
-                                                  charCapInter_,
+                                                  charCapStepSize_,
                                                   &minResultCapacitance,
                                                   &maxResultCapacitance);
       // Processing and normalizing of the wirelength.
@@ -1027,7 +1018,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
                                  &maxResultWirelength);
       // Processing and normalizing of delay.
       convertedResult.pinArrival
-          = std::ceil(solution.pinArrival / (charSlewInter_ / 5));
+          = std::ceil(solution.pinArrival / (charSlewStepSize_ / 5));
       // Add missing information.
       convertedResult.totalPower = solution.totalPower;
       convertedResult.isPureWire = solution.isPureWire;

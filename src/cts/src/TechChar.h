@@ -233,9 +233,7 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
-  float getCharMaxCap() const { return charMaxCap_; }
   double getCapPerDBU() const { return capPerDBU_; }
-  float getCharMaxSlew() const { return charMaxSlew_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
  protected:
@@ -301,10 +299,8 @@ class TechChar
   std::string charBufOut_ = "";
   double resPerDBU_;  // ohms/dbu
   double capPerDBU_;  // farads/dbu
-  float charMaxSlew_ = 0.0;
-  float charMaxCap_ = 0.0;
-  float charSlewInter_ = 5.0e-12;  // Hard-coded interval
-  float charCapInter_ = 5.0e-15;
+  float charSlewStepSize_ = 0.0;
+  float charCapStepSize_ = 0.0;
   std::set<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;
