@@ -142,6 +142,7 @@ class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
 class dbMetalWidthViaMap;
+class dbTechLayerAreaRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6963,6 +6964,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerMinCutRule> getTechLayerMinCutRules() const;
 
+  dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8864,6 +8867,61 @@ class dbMetalWidthViaMap : public dbObject
   static dbMetalWidthViaMap* getMetalWidthViaMap(dbTech* tech, uint dbid);
 
   // User Code End dbMetalWidthViaMap
+};
+
+class dbTechLayerAreaRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerAreaRuleEnums
+
+  void setTrimLayer(dbTechLayer* trim_layer);
+
+  dbTechLayer* getLayer() const;
+
+  // User Code End dbTechLayerAreaRuleEnums
+
+  void setArea(int area);
+
+  int getArea() const;
+
+  void setExceptMinWitdh(int except_min_witdh);
+
+  int getExceptMinWitdh() const;
+
+  void setExceptEdgeLength(int except_edge_length);
+
+  int getExceptEdgeLength() const;
+
+  void setExceptEdgeLengths(std::pair<int, int> except_edge_lengths);
+
+  std::pair<int, int> getExceptEdgeLengths() const;
+
+  void setExceptMinSize(std::pair<int, int> except_min_size);
+
+  std::pair<int, int> getExceptMinSize() const;
+
+  void setExceptStep(std::pair<int, int> except_step);
+
+  std::pair<int, int> getExceptStep() const;
+
+  void setOverlap(int overlap);
+
+  int getOverlap() const;
+
+  void setMask(int mask);
+
+  int getMask() const;
+
+  void setRectWidth(int rect_width);
+
+  int getRectWidth() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  // User Code Begin dbTechLayerAreaRule
+  // User Code End dbTechLayerAreaRule
 };
 
 class dbModule : public dbObject

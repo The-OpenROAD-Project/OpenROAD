@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
+#include "dbModule.h"
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
-#include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
