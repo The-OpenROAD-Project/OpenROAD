@@ -92,6 +92,7 @@ proc add_global_connection {args} {
   }
   
   set do_connect 1
+  pdn::depricated flags -defer_connection
   if {[info exists flags(-defer_connection)]} {
     set do_connect 0
   }
