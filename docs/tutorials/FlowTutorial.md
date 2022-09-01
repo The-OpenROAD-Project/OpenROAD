@@ -54,7 +54,8 @@
   - [Global Route](#Global-Route)
   - [Antenna Checker](#Antenna-Checker)
   - [Detail Route](#Detail-Route)
--[Troubleshooting Problems](#Troubleshooting-Problems)
+- [Troubleshooting Problems](#Troubleshooting-Problems)
+  - [Global Router Debug](#Gloabl-Router-Debug)
 
 ## Introduction
 
@@ -920,6 +921,48 @@ View the `ibex` design placement density heat map as shown below:
 So from above, GUI understood that change in `CORE_UTILIZATION` from 20
 to 40 and placement density default 0.60 to 0.50 changes standard cell
 placement became widely spread.
+
+### IO Pin Placement
+
+#### ioPlacer
+Place pins on the boundary of the die on the track grid to minimize net
+wirelengths. Pin placement also creates a metal shape for each pin using
+min-area rules.
+
+For designs with unplaced cells, the net wirelength is computed considering
+the center of the die area as the unplaced cells position.
+
+For pin placement using ioPlacer refer to the readme file
+[here](../../src/ppl/README.md).
+
+Refer to the built-in examples [here](../../src/ppl/test).
+
+Launch openroad GUI:
+
+```
+cd ../../src/pad/test/
+openroad -gui
+```
+
+Run [place_pin4.tcl](../../src/ppl/test/place_pin4.tcl) to view
+ioPlacer based pin placement.
+
+From the GUI `Tcl commands` section:
+
+```
+source place_pin4.tcl
+```
+
+View the resulting pin placement in GUI:
+![place_pin](./images/place_pin.webp)
+
+In OpenROAD GUI to enlarge `clk` pin placement, hold mouse right button
+as follows and draw sqaure box in specific location:
+![pin_zoom](./images/pin_zoom_RC.webp)
+
+Now `clk` pin zoom to clear view as follows:
+![pin_zoomed](./images/pin_zoomed.webp)
+
 
 ### Chip Level IO Pad Placement
 
@@ -1950,7 +1993,7 @@ The global router has a few useful functionalities to understand
 high congestion issues in the designs. We describe them below.
 
 Congestion heatmap can be used on any design, whether it has 
-congestion or not. Viewing congestion explained [here]().
+congestion or not. Viewing congestion explained [here](#Using-Heat-Maps).
 If the design has congestion issue, it ends with the error;
 ```
 [ERROR GRT-0118] Routing congestion too high.
