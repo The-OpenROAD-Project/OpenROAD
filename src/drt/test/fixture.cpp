@@ -255,6 +255,7 @@ frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
     rule->setType( odb::dbTechLayerCornerSpacingRule::CornerType::CONCAVECORNER);  
   rptr->setSameXY(true);
   if (eolWidth >= 0) {
+    rule->setExceptEol(true);
     rule->setEolWidth(eolWidth);
   }
   rptr->setDbTechLayerCornerSpacingRule(rule);
