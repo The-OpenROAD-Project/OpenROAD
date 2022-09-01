@@ -37,6 +37,7 @@
     - [Floorplan Initialization Based On Core And Die Area](#Floorplan-Initialization-Based-On-Core-And-Die-Area)
     - [Floorplan Based On Core Utilization](#Floorplan-Based-On-Core-Utilization)
     - [Defining Placement Density](#Defining-Placement-Density)
+  - [IO Pin Placement](#IO-Pin-Placement)
   - [Chip Level IO Pad Placement](#Chip-Level-IO-Pad-Placement)
   - [Power Planning And Analysis](#Power-Planning-And-Analysis)
   - [Placement Area or Timing Optimizations](#Placement-Area-or-Timing-Optimizations)
@@ -54,6 +55,8 @@
   - [Global Route](#Global-Route)
   - [Antenna Checker](#Antenna-Checker)
   - [Detail Route](#Detail-Route)
+  - [Metal fill](#Metal-fill)
+  - [Parasitics extraction](#Parasitics extraction)
 - [Troubleshooting Problems](#Troubleshooting-Problems)
   - [Global Router Debug](#Gloabl-Router-Debug)
 
@@ -954,13 +957,16 @@ source place_pin4.tcl
 ```
 
 View the resulting pin placement in GUI:
+
 ![place_pin](./images/place_pin.webp)
 
 In OpenROAD GUI to enlarge `clk` pin placement, hold mouse right button
 as follows and draw sqaure box in specific location:
+
 ![pin_zoom](./images/pin_zoom_RC.webp)
 
 Now `clk` pin zoom to clear view as follows:
+
 ![pin_zoomed](./images/pin_zoomed.webp)
 
 
