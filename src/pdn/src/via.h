@@ -461,7 +461,9 @@ class ViaGenerator
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  virtual bool checkConstraints() const;
+  virtual bool checkConstraints(bool check_cuts = true,
+                                bool check_min_cut = true,
+                                bool check_enclosure = true) const;
 
   // determine the shape of the vias
   bool build(bool bottom_is_internal_layer,

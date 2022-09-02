@@ -805,6 +805,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
     via_shapes.top = shapes.top;
 
     Polygon90Set patch_shapes;
+    Polygon90Set total_shape;
     odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
       Polygon90Set bottom_of_current;
@@ -847,47 +848,50 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
 
       // find shapes that touch "left-over" shapes from the xor
       patch_shapes = patch_shapes.interact(patch_shapes ^ combine_layer);
+      total_shape = patch_shapes + combine_layer;
     }
 
     if (!patch_shapes.empty()) {
+      if (via->hasGenerator()) {
+        Rectangle complete_shape;
+        extents(complete_shape, total_shape);
+        const odb::Rect patch_shape_rect(xl(complete_shape), yl(complete_shape), xh(complete_shape), yh(complete_shape));
+
+        auto* generator = via->getGenerator();
+        if (!generator->recheckConstraints(patch_shape_rect, true)) {
+          // failed recheck, need to ripup entire stack
+          std::set<odb::dbSBox*> shapes;
+          for (const auto& [rect, box] : via_shapes.bottom) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.middle) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.top) {
+            shapes.insert(box);
+          }
+          for (auto* box : shapes) {
+            odb::dbSBox::destroy(box);
+          }
+          const TechLayer tech_layer(*layers_.front());
+          logger->warn(utl::PDN,
+                       227,
+                       "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
+                       layers_.front()->getName(),
+                       layers_.back()->getName(),
+                       tech_layer.dbuToMicron(layer_x),
+                       tech_layer.dbuToMicron(layer_y),
+                       wire->getNet()->getName());
+
+          return {};
+        }
+      }
+
       std::vector<Rectangle> patches;
       patch_shapes.get_rectangles(patches);
-
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
         const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
-
-        if (via->hasGenerator()) {
-          auto* generator = via->getGenerator();
-          if (!generator->recheckConstraints(patch_rect, true)) {
-            // failed recheck, need to ripup entire stack
-            std::set<odb::dbSBox*> shapes;
-            for (const auto& [rect, box] : via_shapes.bottom) {
-              shapes.insert(box);
-            }
-            for (const auto& [rect, box] : via_shapes.middle) {
-              shapes.insert(box);
-            }
-            for (const auto& [rect, box] : via_shapes.top) {
-              shapes.insert(box);
-            }
-            for (auto* box : shapes) {
-              odb::dbSBox::destroy(box);
-            }
-            const TechLayer tech_layer(*layers_.front());
-            logger->warn(utl::PDN,
-                         227,
-                         "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-                         layers_.front()->getName(),
-                         layers_.back()->getName(),
-                         tech_layer.dbuToMicron(layer_x),
-                         tech_layer.dbuToMicron(layer_y),
-                         wire->getNet()->getName());
-
-            return {};
-          }
-        }
-
         auto* patch_box = odb::dbSBox::create(wire,
                                               add_to_layer,
                                               patch_rect.xMin(),
@@ -1188,11 +1192,13 @@ bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
   odb::Rect saved_rect;
   if (bottom) {
     saved_rect = lower_rect_;
+    lower_rect_ = rect;
   } else {
     saved_rect = upper_rect_;
+    upper_rect_ = rect;
   }
 
-  const bool pass = checkConstraints();
+  const bool pass = checkConstraints(true, true, false);
 
   if (bottom) {
     lower_rect_ = saved_rect;
@@ -1210,9 +1216,11 @@ bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
   return pass;
 }
 
-bool ViaGenerator::checkConstraints() const
+bool ViaGenerator::checkConstraints(bool check_cuts,
+                                    bool check_min_cut,
+                                    bool check_enclosure) const
 {
-  if (getTotalCuts() == 0) {
+  if (check_cuts && getTotalCuts() == 0) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1223,7 +1231,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinCuts()) {
+  if (check_min_cut && !checkMinCuts()) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1234,7 +1242,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinEnclosure()) {
+  if (check_enclosure && !checkMinEnclosure()) {
     const double dbu_microns = getTech()->getLefUnits();
     debugPrint(logger_,
                utl::PDN,
