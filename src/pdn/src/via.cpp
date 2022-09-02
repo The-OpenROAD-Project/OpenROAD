@@ -1944,6 +1944,15 @@ std::vector<odb::dbTechLayerCutEnclosureRule*> ViaGenerator::getCutMinimumEnclos
 
   CutRules* rules = nullptr;
   for (auto& [min_width, width_rules] : rules_map) {
+    debugPrint(logger_,
+               utl::PDN,
+               "ViaEnclosure",
+               3,
+               "Enclosures for minimum width {:.4f} on {} from {}: {}",
+               min_width / static_cast<double>(getBottomLayer()->getTech()->getLefUnits()),
+               getCutLayer()->getName(),
+               above ? "above" : "below",
+               width_rules.size());
     if (min_width <= width) {
       rules = &width_rules;
     }
