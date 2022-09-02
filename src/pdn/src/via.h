@@ -110,6 +110,9 @@ class Enclosure
   bool operator<(const Enclosure& other) const;
   bool operator==(const Enclosure& other) const;
 
+  void copy(const Enclosure* other);
+  void copy(const Enclosure& other);
+
   bool isPreferredOver(const Enclosure* other, odb::dbTechLayer* layer) const;
   bool isPreferredOver(const Enclosure* other, bool minimize_x) const;
 

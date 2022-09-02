@@ -180,6 +180,18 @@ void Enclosure::snap(odb::dbTech* tech)
   y_ = TechLayer::snapToManufacturingGrid(tech, y_);
 }
 
+void Enclosure::copy(const Enclosure* other)
+{
+  x_ = other->x_;
+  y_ = other->y_;
+  allow_swap_ = other->allow_swap_;
+}
+
+void Enclosure::copy(const Enclosure& other)
+{
+  copy(&other);
+}
+
 //////////
 
 DbVia::DbVia() :
