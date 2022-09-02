@@ -910,10 +910,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
 
 /////////////
 
-DbGenerateDummyVia::DbGenerateDummyVia(const odb::Rect& shape,
+DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
+                                       const odb::Rect& shape,
                                        odb::dbTechLayer* bottom,
-                                       odb::dbTechLayer* top)
-    : shape_(shape), bottom_(bottom), top_(top)
+                                       odb::dbTechLayer* top,
+                                       bool add_report)
+    : connect_(connect), add_report_(add_report), shape_(shape), bottom_(bottom), top_(top)
 {
 }
 
@@ -936,6 +938,9 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
                 top_->getName(),
                 Shape::getRectText(via_area, block->getDbUnitsPerMicron()),
                 wire->getNet()->getName());
+  if (add_report_) {
+    connect_->addFailedVia(BUILD, via_area, wire->getNet());
+  }
 
   return {};
 }
@@ -2628,7 +2633,7 @@ bool Via::startsBelow(const ViaPtr& via) const
   return connect_->startsBelow(via->getConnect());
 }
 
-void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const
+void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions)
 {
   odb::dbWireShapeType type = lower_->getType();
 
@@ -2736,6 +2741,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
                       tech_layer.dbuToMicron(x / ripup_vias.size()),
                       tech_layer.dbuToMicron(y / ripup_vias.size()),
                       lower_->getNet()->getName());
+    markFailed(RIPUP);
   }
 }
 
@@ -2781,6 +2787,11 @@ Grid* Via::getGrid() const
 utl::Logger* Via::getLogger() const
 {
   return getGrid()->getLogger();
+}
+
+void Via::markFailed(FailedViaReason reason)
+{
+  connect_->addFailedVia(reason, area_, net_);
 }
 
 }  // namespace pdn

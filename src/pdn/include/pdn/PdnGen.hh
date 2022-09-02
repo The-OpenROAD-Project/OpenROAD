@@ -197,7 +197,7 @@ class PdnGen
                    const std::map<odb::dbTechLayer*, int>& split_cuts,
                    const std::string& dont_use_vias);
 
-  void writeToDb(bool add_pins) const;
+  void writeToDb(bool add_pins, const std::string& report_file = "") const;
   void ripUp(odb::dbNet* net);
 
   void setDebugRenderer(bool on);
