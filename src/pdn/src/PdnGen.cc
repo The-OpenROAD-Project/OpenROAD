@@ -840,7 +840,8 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   if (!report_file.empty()) {
     std::ofstream file(report_file);
-    if (!file.is_open()) {
+    if (!file) {
+      logger_->warn(utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
       return;
     }
 
