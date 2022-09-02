@@ -90,12 +90,14 @@ proc add_global_connection {args} {
     $net setSpecial
     $net setSigType GROUND
   }
-
-  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net
-
-  if {![info exists flags(-defer_connection)]} {
-    global_connect
+  
+  set do_connect 1
+  pdn::depricated flags -defer_connection
+  if {[info exists flags(-defer_connection)]} {
+    set do_connect 0
   }
+
+  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net $do_connect
 }
 
 sta::define_cmd_args "pdngen" {[-skip_trim] \

@@ -63,7 +63,6 @@ struct _dbInstFlags
   uint _user_flag_3 : 1;
   uint _physical_only : 1;
   uint _dont_touch : 1;
-  uint _dont_size : 1;
   dbSourceType::Value _source : 4;
   uint _eco_create : 1;
   uint _eco_destroy : 1;

@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "grt/GlobalRouter.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -58,6 +56,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "heatMap.h"
 #include "odb/db.h"
@@ -2312,12 +2311,10 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
         min_spc_down = layer->findV55Spacing(std::max(layer_width, width_down),
                                              prl_down);
     } else {
-      odb::dbSet<odb::dbTechLayerSpacingRule> rules;
-      layer->getV54SpacingRules(rules);
-      if (rules.size() > 0) {
+      if (!layer->getV54SpacingRules().empty()) {
         min_spc_valid = true;
         int minSpc = 0;
-        for (auto rule : rules)
+        for (auto rule : layer->getV54SpacingRules())
           minSpc = rule->getSpacing();
         if (up_via_valid)
           min_spc_up = minSpc;
@@ -2903,17 +2900,13 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 
     int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
 
-    odb::dbSet<odb::dbTechLayerSpacingRule> eol_rules;
-
     // Check for EOL spacing values and, if the spacing is higher than the one
     // found, use them as the macro extension instead of PARALLELRUNLENGTH
 
-    if (obstruct_layer->getV54SpacingRules(eol_rules)) {
-      for (odb::dbTechLayerSpacingRule* rule : eol_rules) {
-        int spacing = rule->getSpacing();
-        if (spacing > spacing_extension) {
-          spacing_extension = spacing;
-        }
+    for (auto rule : obstruct_layer->getV54SpacingRules()) {
+      int spacing = rule->getSpacing();
+      if (spacing > spacing_extension) {
+        spacing_extension = spacing;
       }
     }
 
