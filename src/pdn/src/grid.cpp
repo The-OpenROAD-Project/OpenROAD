@@ -687,7 +687,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
       if (search_obs.qbegin(bgi::intersects(via->getBox()))
           != search_obs.qend()) {
         remove_vias.insert(via);
-        via->markFailed(FailedViaReason::OBSTRUCTED);
+        via->markFailed(failedViaReason::OBSTRUCTED);
         break;
       }
     }

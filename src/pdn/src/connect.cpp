@@ -551,7 +551,7 @@ void Connect::makeVia(odb::dbSWire* wire,
   }
 
   if (shapes.bottom.empty() && shapes.top.empty()) {
-    addFailedVia(RECHECK, intersection, wire->getNet());
+    addFailedVia(failedViaReason::RECHECK, intersection, wire->getNet());
   }
 }
 
@@ -912,7 +912,7 @@ void Connect::printViaReport() const
   }
 }
 
-void Connect::addFailedVia(FailedViaReason reason, const odb::Rect& rect, odb::dbNet* net)
+void Connect::addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net)
 {
   failed_vias_[reason].insert({net, rect});
 }
@@ -924,19 +924,19 @@ void Connect::writeFailedVias(std::ofstream& file) const
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
     switch (reason) {
-    case OBSTRUCTED:
+    case failedViaReason::OBSTRUCTED:
       reason_str = "Obstructed";
       break;
-    case BUILD:
+    case failedViaReason::BUILD:
       reason_str = "Build";
       break;
-    case RIPUP:
+    case failedViaReason::RIPUP:
       reason_str = "Ripup";
       break;
-    case RECHECK:
+    case failedViaReason::RECHECK:
       reason_str = "Recheck";
       break;
-    case OTHER:
+    case failedViaReason::OTHER:
       reason_str = "Other";
       break;
     }

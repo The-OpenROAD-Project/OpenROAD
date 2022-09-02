@@ -939,7 +939,7 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
                 Shape::getRectText(via_area, block->getDbUnitsPerMicron()),
                 wire->getNet()->getName());
   if (add_report_) {
-    connect_->addFailedVia(BUILD, via_area, wire->getNet());
+    connect_->addFailedVia(failedViaReason::BUILD, via_area, wire->getNet());
   }
 
   return {};
@@ -2741,7 +2741,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
                       tech_layer.dbuToMicron(x / ripup_vias.size()),
                       tech_layer.dbuToMicron(y / ripup_vias.size()),
                       lower_->getNet()->getName());
-    markFailed(RIPUP);
+    markFailed(failedViaReason::RIPUP);
   }
 }
 
@@ -2789,7 +2789,7 @@ utl::Logger* Via::getLogger() const
   return getGrid()->getLogger();
 }
 
-void Via::markFailed(FailedViaReason reason)
+void Via::markFailed(failedViaReason reason)
 {
   connect_->addFailedVia(reason, area_, net_);
 }

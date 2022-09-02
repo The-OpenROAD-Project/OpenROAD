@@ -88,7 +88,7 @@ using ViaReport = std::map<std::string, int>;
 class Grid;
 class TechLayer;
 
-enum FailedViaReason {
+enum class failedViaReason {
   OBSTRUCTED,
   BUILD,
   RIPUP,
@@ -743,7 +743,7 @@ class Via
 
   Via* copy() const;
 
-  void markFailed(FailedViaReason reason);
+  void markFailed(failedViaReason reason);
 
  private:
   odb::dbNet* net_;

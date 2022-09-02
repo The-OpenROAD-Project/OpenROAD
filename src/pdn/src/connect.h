@@ -117,7 +117,7 @@ class Connect
 
   void printViaReport() const;
 
-  void addFailedVia(FailedViaReason reason, const odb::Rect& rect, odb::dbNet* net);
+  void addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net);
   void writeFailedVias(std::ofstream& file) const;
 
  private:
@@ -145,7 +145,7 @@ class Connect
   std::vector<odb::dbTechLayer*> intermediate_layers_;
   std::vector<odb::dbTechLayer*> intermediate_routing_layers_;
 
-  std::map<FailedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>> failed_vias_;
+  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>> failed_vias_;
 
   DbVia* makeSingleLayerVia(odb::dbBlock* block,
                             odb::dbTechLayer* lower,
