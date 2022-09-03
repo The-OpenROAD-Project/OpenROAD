@@ -56,7 +56,7 @@
   - [Antenna Checker](#Antenna-Checker)
   - [Detail Route](#Detail-Route)
   - [Metal fill](#Metal-fill)
-  - [Parasitics extraction](#Parasitics extraction)
+  - [Parasitics extraction](#Parasitics-extraction)
 - [Troubleshooting Problems](#Troubleshooting-Problems)
   - [Global Router Debug](#Gloabl-Router-Debug)
 
@@ -1063,7 +1063,7 @@ to generate IR drop report for `gcd` design.
 source gcd_test_vdd.tcl
 ```
 
-End of the log you will find IR drop report as follows.
+Find the IR drop report at the end of the log as follows:
 ```
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V
@@ -1074,6 +1074,15 @@ Worstcase IR drop: 2.98e-04 V
 
 ### Tapcell insertion
 
+Tap cells are non-functional cells that can have a well tie, substrate
+tie or both. They are typically used when most or all of the standard
+cells in the library contain no substrate or well taps. Tap cells help
+tie the VDD and GND levels and thereby prevent drift and latch-up.
+
+The end cap cell or boundary cell is placed at both the ends of each
+placement row to terminate the row. They protect the standard cell
+gate at the boundary from damage during manufacturing.
+
 Tap cells are placed after the macro placement and power rail creation.
 This stage is called the pre-placement stage. Tap cells are placed in a
 regular interval in each row of placement. The maximum distance between
@@ -1083,6 +1092,9 @@ The figures below show two examples of tapcell insertion. When only the
 `-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
 is similar to Figure 1. When the remaining masters are give, the tapcell
 placement is similar to Figure 2.
+
+Refer to the GUI figures to highlight well tap and end cap cells. The image
+does not differentiate and just shows a bunch of rectangles.
 
 | <img src="../../src/tap/doc/image/tapcell_example1.svg" width=450px> | <img src="../../src/tap/doc/image/tapcell_example2.svg" width=450px> |
 |:--:|:--:|
@@ -1107,6 +1119,42 @@ source gcd_nangate45.tcl
 View the resulting tap cell insertion as follows:
 
 ![Tap_Cell_Insertion](./images/tapcell_insertion_view.webp)
+
+### Tie Cells
+
+The tie cell is a standard cell, designed specially to provide the high
+or low signal to the input (gate terminal) of any logic gate.
+Where ever netlist is having any pin connected to 0 logic or 1 logic
+(like .A(1'b0) or .IN(1'b1), a tie cell gets inserted there.
+
+Refer to the following built-in example [here](../../src/ifp/test/tiecells.tcl)
+to learn about Tie cell insertion.
+
+To check this in OpenROAD tool:
+
+```
+cd ../../src/ifp/test/
+openroad
+source tiecells.tcl
+```
+
+Refer the following verilog code which have tie high/low net.
+[here](../../src/ifp/test/tiecells.v)
+```
+AND2_X1 u2 (.A1(r1q), .A2(1'b0), .ZN(u2z0));
+AND2_X1 u3 (.A1(u1z), .A2(1'b1), .ZN(u2z1));
+```
+With following `insert_tiecells` command:
+```
+insert_tiecells LOGIC0_X1/Z -prefix "TIE_ZERO_"
+insert_tiecells LOGIC1_X1/Z
+```
+During floorplan stage, those nets converted to tiecells as follows
+based on library(This is Nangate45 specific):
+```
+[INFO IFP-0030] Inserted 1 tiecells using LOGIC0_X1/Z.
+[INFO IFP-0030] Inserted 1 tiecells using LOGIC1_X1/Z.
+```
 
 ### Placement Area or Timing Optimizations
 
@@ -1742,6 +1790,37 @@ CTS metrics are as follows for the current design.
 [INFO CTS-0006] Total number of Sinks: 301.
 ```
 
+### Filler Cells
+
+Filler cells fills gaps between detail-placed instances to connect the
+power and ground rails in the rows. Filler cells have no logical 
+connectivity. these cells are provided continuity in the rows for VDD
+and VSS nets and it also contains substrate nwell connection to improve
+substrate biasing.
+
+`filler_masters` is a list of master/macro names to use for
+filling the gaps.
+
+Refer to the following built-in example [here](../../src/dpl/test/fillers1.tcl)
+to learn about filler cell insertion.
+
+To view this in OpenROAD GUI:
+
+```
+cd ../../src/dpl/test/
+openroad -gui
+```
+
+In the `Tcl Commands` section of GUI
+
+```
+source fillers1.tcl
+```
+
+View the resulting fill cell insertion as follows:
+
+![Fill_Cell_Insertion](./images/fillcell_insertion_view.webp)
+
 ### Global Route
 
 #### FastRoute
@@ -1803,49 +1882,6 @@ Total           149816          3385            2.26%             0 /  0 /  0
 View the resulting global routing in GUI as follows:
 
 ![Global Route](./images/global_route_gcd.webp)
-
-### Antenna Checker
-
-Antenna Violation occurs when the antenna ratio exceeds a value specified 
-in a Process Design Kit (PDK). The antenna ratio is the ratio of the gate
-area to the gate oxide area. The amount of charge collection is determined
-by the area/size of the conductor (gate area).
-
-This tool checks antenna violations and generates a report to indicate violated nets.
-
-Refer to the built-in example [here](../../src/ant/test/ant_check.tcl).
-
-Launch OpenROAD:
-
-```
-cd ../../src/ant/test/
-openroad
-```
-
-To extract antenna violations, run the following commands:
-
-```
-read_lef ant_check.lef
-read_def ant_check.def
-
-check_antennas -verbose
-puts "violation count = [ant::antenna_violation_count]"
-
-# check if net50 has a violation
-set net "net50"
-puts "Net $net violations: [ant::check_net_violation $net]"
-```
-
-The log as follows:
-
-```
-[INFO ANT-0002] Found 1 net violations.
-[INFO ANT-0001] Found 2 pin violations.
-violation count = 1
-Net net50 violations: 1
-```
-
-Note: Antenna fixing with ORFS flow work in process.
 
 ### Detail Route
 
@@ -1921,9 +1957,50 @@ View the resulting detail routing in GUI as follows:
 
 ![Detail Routing](./images/detail_route_gcd.webp)
 
+### Antenna Checker
+
+Antenna Violation occurs when the antenna ratio exceeds a value specified 
+in a Process Design Kit (PDK). The antenna ratio is the ratio of the gate
+area to the gate oxide area. The amount of charge collection is determined
+by the area/size of the conductor (gate area).
+
+This tool checks antenna violations and generates a report to indicate violated nets.
+
+Refer to the built-in example [here](../../src/ant/test/ant_check.tcl).
+
+Launch OpenROAD:
+
+```
+cd ../../src/ant/test/
+openroad
+```
+
+To extract antenna violations, run the following commands:
+
+```
+read_lef ant_check.lef
+read_def ant_check.def
+
+check_antennas -verbose
+puts "violation count = [ant::antenna_violation_count]"
+
+# check if net50 has a violation
+set net "net50"
+puts "Net $net violations: [ant::check_net_violation $net]"
+```
+
+The log as follows:
+
+```
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+violation count = 1
+Net net50 violations: 1
+```
+
 ### Metal fill
 
-metal fill is a mandatory step at advanced nodes to ensure manufacturability
+Metal fill is a mandatory step at advanced nodes to ensure manufacturability
 and high yield. It involves filling the empty or white spaces near the
 design with metal polygons to ensure regular planarization of the wafer.
 
@@ -1992,10 +2069,12 @@ The log as follows:
 [INFO RCX-0017] Finished writing SPEF ...
 ```
 
+The `45_gcd.spef` can be read from `results` directory.
+
 ## Troubleshooting Problems
 
 ### Global router debug tools
-The global router has a few useful functionalities to understand
+The global router(FastRoute) has a few useful functionalities to understand
 high congestion issues in the designs. We describe them below.
 
 Congestion heatmap can be used on any design, whether it has 
