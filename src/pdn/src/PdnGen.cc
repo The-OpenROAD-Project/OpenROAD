@@ -129,6 +129,10 @@ void PdnGen::globalConnectRegion(dbBlock* block,
     return;
   }
 
+  if (net->isDoNotTouch()) {
+    return;
+  }
+
   std::vector<dbInst*> insts;
   findInstsInArea(block, region, instPattern, insts);
 
@@ -148,6 +152,10 @@ void PdnGen::globalConnectRegion(dbBlock* block,
 
       for (dbMTerm* mterm : *mterms) {
         auto* iterm = inst->getITerm(mterm);
+        auto* current_net = iterm->getNet();
+        if (current_net != nullptr && current_net->isDoNotTouch()) {
+          continue;
+        }
         iterm->connect(net);
         iterm->setSpecial();
       }
@@ -161,6 +169,9 @@ void PdnGen::findInstsInArea(dbBlock* block,
                              std::vector<dbInst*>& insts)
 {
   for (dbInst* inst : block->getInsts()) {
+    if (inst->isDoNotTouch()) {
+      continue;
+    }
     if (std::regex_match(inst->getName().c_str(), *instPattern)) {
       if (region == nullptr) {
         insts.push_back(inst);

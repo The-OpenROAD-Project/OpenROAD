@@ -62,6 +62,7 @@ record_tests {
   macros_narrow_channel_jog
   macros_different_nets
   macros_grid_through
+  macros_cells_dont_touch
 
   region_temp_sensor
   region_secondary_nets
