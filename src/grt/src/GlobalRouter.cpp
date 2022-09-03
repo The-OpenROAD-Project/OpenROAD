@@ -307,7 +307,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
   if (repair_antennas_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT,
                    244,
-                   "Diode {}/{} ANTENNADIFFSIDEAREARATIO is zero.",
+                   "Diode {}/{} ANTENNADIFFAREA is zero.",
                    diode_mterm->getMaster()->getConstName(),
                    diode_mterm->getConstName());
 
