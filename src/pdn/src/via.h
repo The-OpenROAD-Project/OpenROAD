@@ -118,6 +118,9 @@ class Enclosure
   bool operator<(const Enclosure& other) const;
   bool operator==(const Enclosure& other) const;
 
+  void copy(const Enclosure* other);
+  void copy(const Enclosure& other);
+
   bool isPreferredOver(const Enclosure* other, odb::dbTechLayer* layer) const;
   bool isPreferredOver(const Enclosure* other, bool minimize_x) const;
 
@@ -470,7 +473,9 @@ class ViaGenerator
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  virtual bool checkConstraints() const;
+  virtual bool checkConstraints(bool check_cuts = true,
+                                bool check_min_cut = true,
+                                bool check_enclosure = true) const;
 
   // determine the shape of the vias
   bool build(bool bottom_is_internal_layer,
