@@ -784,7 +784,7 @@ void PdnGen::updateRenderer() const
   }
 }
 
-void PdnGen::writeToDb(bool add_pins) const
+void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
 
@@ -835,6 +835,20 @@ void PdnGen::writeToDb(bool add_pins) const
     for (const auto& grid : domain->getGrids()) {
       grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
+    }
+  }
+
+  if (!report_file.empty()) {
+    std::ofstream file(report_file);
+    if (!file) {
+      logger_->warn(utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
+      return;
+    }
+
+    for (auto* grid : getGrids()) {
+      for (const auto& connect : grid->getConnect()) {
+        connect->writeFailedVias(file);
+      }
     }
   }
 }
