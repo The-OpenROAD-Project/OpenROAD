@@ -282,7 +282,7 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
     case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
       return os << "frcLef58EolKeepOutConstraint";
     case frConstraintTypeEnum::frcLef58MinimumCutConstraint:
-      return os << "frc=Lef58MinimumCutConstraint";
+      return os << "frcLef58MinimumCutConstraint";
   }
   return os << "Bad frConstraintTypeEnum";
 }
