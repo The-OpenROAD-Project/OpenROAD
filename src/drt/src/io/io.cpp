@@ -1786,14 +1786,14 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (rule->isAreaValid()) {
       logger->warn(
           DRT,
-          309,
+          311,
           "LEF58_MINIMUMCUT AREA is not supported. Skipping for layer {}",
           layer->getName());
       continue;
     }
     if (rule->isSameMetalOverlap()) {
       logger->warn(DRT,
-                   310,
+                   312,
                    "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
                    "Skipping for layer {}",
                    layer->getName());
@@ -1801,7 +1801,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     }
     if (rule->isFullyEnclosed()) {
       logger->warn(DRT,
-                   311,
+                   313,
                    "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
                    "for layer {}",
                    layer->getName());
