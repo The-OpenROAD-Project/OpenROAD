@@ -679,8 +679,10 @@ void io::Parser::convertLef58MinCutConstraints()
           continue;
       }
 
-      if (dbRule->isLengthValid())
+      if (dbRule->isLengthValid()) {
+        MTSAFEDIST = std::max(MTSAFEDIST, dbRule->getLengthWithinDist());
         rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
+      }
       rptr->setWidth(dbRule->getWidth());
       if (dbRule->isWithinCutDistValid())
         rptr->setWithin(dbRule->getWithinCutDist());
