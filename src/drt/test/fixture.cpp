@@ -370,6 +370,7 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   rule->setSpacing(200);
   rule->setEol(200, 50,((par_space != -1) && (par_within != -1)) , par_space, par_within, two_edges);
   con->setDbTechLayerSpacingRule(rule);
+  con->setMinSpacing(200);
   layer->addEolSpacing(con.get());
   tech->addUConstraint(std::move(con));
 }
