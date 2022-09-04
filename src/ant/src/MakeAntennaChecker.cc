@@ -51,9 +51,9 @@ ant::AntennaChecker* makeAntennaChecker()
   return new ant::AntennaChecker;
 }
 
-void deleteAntennaChecker(ant::AntennaChecker* antennachecker)
+void deleteAntennaChecker(ant::AntennaChecker* antenna_checker)
 {
-  delete antennachecker;
+  delete antenna_checker;
 }
 
 void initAntennaChecker(OpenRoad* openroad)
@@ -63,6 +63,7 @@ void initAntennaChecker(OpenRoad* openroad)
   Ant_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ant_tcl_inits);
   openroad->getAntennaChecker()->init(openroad->getDb(),
+                                      openroad->getGlobalRouter(),
                                       openroad->getLogger());
 }
 

@@ -78,10 +78,8 @@ void Rings::setOffset(const std::array<int, 4>& offset)
 
 void Rings::setPadOffset(const std::array<int, 4>& offset)
 {
-  odb::Rect die_area;
-  getBlock()->getDieArea(die_area);
-  odb::Rect core;
-  getBlock()->getCoreArea(core);
+  odb::Rect die_area = getBlock()->getDieArea();
+  odb::Rect core = getBlock()->getCoreArea();
 
   odb::Rect pads_inner = die_area;
 
@@ -101,8 +99,7 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
       continue;
     }
 
-    odb::Rect box;
-    inst->getBBox()->getBox(box);
+    odb::Rect box = inst->getBBox()->getBox();
 
     const bool is_ns_with_core
         = box.xMin() >= core.xMin() && box.xMax() <= core.xMax();
@@ -130,7 +127,7 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
                       105,
                       "Unable to determine location of pad offset, using die "
                       "boundary instead.");
-    getBlock()->getDieArea(pads_inner);
+    pads_inner = getBlock()->getDieArea();
   }
 
   int hor_width;
@@ -306,18 +303,16 @@ void Rings::report() const
 
   const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
 
-  logger->info(utl::PDN, 30, "  Core offset:");
-  logger->info(utl::PDN, 31, "    Left: {:.4f}", offset_[0] / dbu_per_micron);
-  logger->info(utl::PDN, 32, "    Bottom: {:.4f}", offset_[1] / dbu_per_micron);
-  logger->info(utl::PDN, 33, "    Right: {:.4f}", offset_[2] / dbu_per_micron);
-  logger->info(utl::PDN, 34, "    Top: {:.4f}", offset_[3] / dbu_per_micron);
+  logger->report("  Core offset:");
+  logger->report("    Left: {:.4f}", offset_[0] / dbu_per_micron);
+  logger->report("    Bottom: {:.4f}", offset_[1] / dbu_per_micron);
+  logger->report("    Right: {:.4f}", offset_[2] / dbu_per_micron);
+  logger->report("    Top: {:.4f}", offset_[3] / dbu_per_micron);
 
   for (const auto& layer : layers_) {
-    logger->info(utl::PDN, 35, "  Layer: {}", layer.layer->getName());
-    logger->info(
-        utl::PDN, 36, "    Width: {:.4f}", layer.width / dbu_per_micron);
-    logger->info(
-        utl::PDN, 37, "    Spacing: {:.4f}", layer.spacing / dbu_per_micron);
+    logger->report("  Layer: {}", layer.layer->getName());
+    logger->report("    Width: {:.4f}", layer.width / dbu_per_micron);
+    logger->report("    Spacing: {:.4f}", layer.spacing / dbu_per_micron);
   }
 }
 

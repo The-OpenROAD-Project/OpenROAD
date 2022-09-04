@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <fstream>
 #include <map>
 #include <set>
 #include <vector>
@@ -116,6 +117,9 @@ class Connect
 
   void printViaReport() const;
 
+  void addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net);
+  void writeFailedVias(std::ofstream& file) const;
+
  private:
   Grid* grid_;
   odb::dbTechLayer* layer0_;
@@ -134,12 +138,14 @@ class Connect
   // map of built vias, where the key is the width and height of the via intersection,
   // and the value points of the associated via stack.
   using ViaIndex = std::pair<int, int>;
-  std::map<ViaIndex, std::unique_ptr<DbVia>> vias_;
+  std::map<ViaIndex, std::unique_ptr<DbGenerateStackedVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
   std::vector<odb::dbTechVia*> tech_vias_;
 
   std::vector<odb::dbTechLayer*> intermediate_layers_;
   std::vector<odb::dbTechLayer*> intermediate_routing_layers_;
+
+  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>> failed_vias_;
 
   DbVia* makeSingleLayerVia(odb::dbBlock* block,
                             odb::dbTechLayer* lower,
@@ -163,7 +169,7 @@ class Connect
   int getSplitCut(odb::dbTechLayer* layer) const;
 
   DbVia* generateDbVia(
-      const std::vector<std::unique_ptr<ViaGenerator>>& generators,
+      const std::vector<std::shared_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
 
   using ViaLayerRects = std::set<odb::Rect>;

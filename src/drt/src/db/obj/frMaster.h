@@ -48,18 +48,18 @@ class frMaster : public frBlockObject
         name_(name),
         masterType_(dbMasterType::NONE){};
   // getters
-  void getBBox(Rect& boxIn) const
+  Rect getBBox() const
   {
+    Rect box;
     if (boundaries_.size()) {
-      boundaries_.begin()->getBBox(boxIn);
+      box = boundaries_.begin()->getBBox();
     }
-    frCoord llx = boxIn.xMin();
-    frCoord lly = boxIn.yMin();
-    frCoord urx = boxIn.xMax();
-    frCoord ury = boxIn.yMax();
-    Rect tmpBox;
+    frCoord llx = box.xMin();
+    frCoord lly = box.yMin();
+    frCoord urx = box.xMax();
+    frCoord ury = box.yMax();
     for (auto& boundary : boundaries_) {
-      boundary.getBBox(tmpBox);
+      Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
       urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -68,7 +68,7 @@ class frMaster : public frBlockObject
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
-          fig->getBBox(tmpBox);
+          Rect tmpBox = fig->getBBox();
           llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
           lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
           urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
@@ -76,9 +76,9 @@ class frMaster : public frBlockObject
         }
       }
     }
-    boxIn.init(llx, lly, urx, ury);
+    return Rect(llx, lly, urx, ury);
   }
-  void getDieBox(Rect& boxIn) const { boxIn = dieBox_; }
+  Rect getDieBox() const { return dieBox_; }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -103,24 +103,22 @@ class frMaster : public frBlockObject
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
   {
-    in->setOrderId(terms_.size());
+    in->setIndexInOwner(terms_.size());
     in->setMaster(this);
     terms_.push_back(std::move(in));
   }
-  const Rect& getDieBox() const { return dieBox_; }
   void setBoundaries(const std::vector<frBoundary> in)
   {
     boundaries_ = in;
     if (!boundaries_.empty()) {
-      boundaries_.begin()->getBBox(dieBox_);
+      dieBox_ = boundaries_.begin()->getBBox();
     }
     frCoord llx = dieBox_.xMin();
     frCoord lly = dieBox_.yMin();
     frCoord urx = dieBox_.xMax();
     frCoord ury = dieBox_.yMax();
-    Rect tmpBox;
     for (auto& boundary : boundaries_) {
-      boundary.getBBox(tmpBox);
+      Rect tmpBox = boundary.getBBox();
       llx = std::min(llx, tmpBox.xMin());
       lly = std::min(lly, tmpBox.yMin());
       urx = std::max(urx, tmpBox.xMax());
@@ -150,26 +148,8 @@ class frMaster : public frBlockObject
   frString name_;
   dbMasterType masterType_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  frMaster() = default;  // for serialization
-
-  friend class boost::serialization::access;
   friend class io::Parser;
 };
-
-template <class Archive>
-void frMaster::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & masterType_;
-  (ar) & terms_;
-  (ar) & blockages_;
-  (ar) & boundaries_;
-  (ar) & dieBox_;
-}
 }  // namespace fr
 
 #endif

@@ -90,24 +90,27 @@ proc add_global_connection {args} {
     $net setSpecial
     $net setSigType GROUND
   }
-
-  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net
-
-  if {![info exists flags(-defer_connection)]} {
-    global_connect
+  
+  set do_connect 1
+  pdn::depricated flags -defer_connection
+  if {[info exists flags(-defer_connection)]} {
+    set do_connect 0
   }
+
+  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net $do_connect
 }
 
 sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-dont_add_pins] \
                                [-reset] \
                                [-ripup] \
-                               [-report_only]
+                               [-report_only] \
+                               [-failed_via_report file]
 }
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
-    keys {} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
+    keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
 
   sta::check_argc_eq0or1  "pdngen" $args
 
@@ -145,9 +148,14 @@ proc pdngen { args } {
     set trim [expr [info exists flags(-skip_trim)] == 0]
     set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
 
+    set failed_via_report ""
+    if {[info exists keys(-failed_via_report)]} {
+      set failed_via_report $keys(-failed_via_report)
+    }
+
     pdn::check_setup
     pdn::build_grids $trim
-    pdn::write_to_db $add_pins
+    pdn::write_to_db $add_pins $failed_via_report
     pdn::reset_shapes
   }
 }
@@ -707,6 +715,43 @@ proc add_pdn_connect {args} {
                     $dont_use
 }
 
+sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
+                                         -all
+}
+proc repair_pdn_vias { args } {
+  sta::parse_key_args "repair_pdn_vias" args \
+    keys {-net} \
+    flags {-all}
+
+  sta::check_argc_eq0 "repair_pdn_vias" $args
+  pdn::check_design_state "repair_pdn_vias"
+
+  if {[info exists keys(-net)] && [info exists flags(-all)]} {
+    utl::error PDN 1191 "Cannot use both -net and -all arguments."
+  }
+  if {![info exists keys(-net)] && ![info exists flags(-all)]} {
+    utl::error PDN 1192 "Must use either -net or -all arguments."
+  }
+
+  set nets []
+  if {[info exists keys(-net)]} {
+    set net [[ord::get_db_block] findNet $keys(-net)]
+    if {$net == "NULL"} {
+      utl::error PDN 1190 "Unable to find net: $keys(-net)"
+    }
+    lappend nets $net
+  }
+  if {[info exists flags(-all)]} {
+    foreach net [[ord::get_db_block] getNets] {
+      if {[$net getSigType] == "POWER" || [$net getSigType] == "GROUND"} {
+        lappend nets $net
+      }
+    }
+  }
+
+  pdn::repair_pdn_vias $nets
+}
+
 # conversion utility
 sta::define_hidden_cmd_args  "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {
@@ -722,6 +767,18 @@ proc convert_pdn_config { args } {
 }
 
 namespace eval pdn {
+
+  proc name_cmp { obj1 obj2 } {
+    set name1 [$obj1 getName]
+    set name2 [$obj2 getName]
+    if { $name1 < $name2 } {
+      return -1
+    } elseif { $name1 == $name2 } {
+      return 0
+    } else {
+      return 1
+    }
+  }
 
   proc check_design_state { args } {
     if {[ord::get_db_block] == "NULL"} {
@@ -936,7 +993,7 @@ namespace eval pdn {
         }
       }
 
-      set insts [lsort -unique $insts]
+      set insts [lsort -unique -command name_cmp $insts]
       foreach inst $insts {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
@@ -957,7 +1014,7 @@ namespace eval pdn {
         }
       }
 
-      set cells [lsort -unique $cells]
+      set cells [lsort -unique -command name_cmp $cells]
       foreach cell $cells {
         foreach inst [[ord::get_db_block] getInsts] {
           # inst must match cells

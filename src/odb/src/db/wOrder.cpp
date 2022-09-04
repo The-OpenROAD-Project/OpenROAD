@@ -52,15 +52,14 @@ static tmg_conn* _conn = NULL;
 
 void orderWires(dbBlock* block,
                 bool force,
+                bool verbose,
                 int cutLength,
-                int maxLength,
-                bool quiet)
+                int maxLength)
 {
   bool no_patch = true;
   if (_conn == NULL)
     _conn = new tmg_conn();
   _conn->resetSplitCnt();
-  bool verbose = false;
   bool no_convert = false;
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
@@ -73,12 +72,12 @@ void orderWires(dbBlock* block,
     if (!force && net->isWireOrdered())
       continue;
     _conn->analyzeNet(
-        net, force, verbose, quiet, no_convert, cutLength, maxLength, no_patch);
+        net, force, verbose, no_convert, cutLength, maxLength, no_patch);
   }
-  if (_conn->_swireNetCnt)
+  if (_conn->_swireNetCnt && verbose)
     notice(0, "Set dont_touch on %d swire nets.\n", _conn->_swireNetCnt);
   int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0)
+  if (splitcnt != 0 && verbose)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
 }
 
@@ -86,7 +85,6 @@ void orderWires(dbBlock* block,
                 const char* net_name_or_id,
                 bool force,
                 bool verbose,
-                bool quiet,
                 int cutLength,
                 int maxLength)
 {
@@ -95,7 +93,7 @@ void orderWires(dbBlock* block,
     _conn = new tmg_conn();
   _conn->set_gv(verbose);
   if (!net_name_or_id || !net_name_or_id[0]) {
-    orderWires(block, force, cutLength, maxLength, quiet);
+    orderWires(block, force, cutLength, maxLength, verbose);
     return;
   }
   bool no_convert = false;
@@ -105,16 +103,17 @@ void orderWires(dbBlock* block,
     notice(0, "net not found\n");
     return;
   }
-  if (net->getSigType() == dbSigType::POWER
-      || net->getSigType() == dbSigType::GROUND) {
+  if ((net->getSigType() == dbSigType::POWER
+       || net->getSigType() == dbSigType::GROUND)
+      && verbose) {
     notice(0, "skipping power net\n");
     return;
   }
   _conn->resetSplitCnt();
-  _conn->analyzeNet(
-      net, force, verbose, false, no_convert, cutLength, maxLength, no_patch);
+  _conn->analyzeNet(net, force, verbose, no_convert,
+                    cutLength, maxLength, no_patch);
   int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0)
+  if (splitcnt != 0 && verbose)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
 }
 
@@ -125,13 +124,14 @@ void orderWires(dbNet* net, bool force, bool verbose)
   bool no_convert = false;
   if (net->getSigType() == dbSigType::POWER
       || net->getSigType() == dbSigType::GROUND) {
-    notice(0, "skipping power net\n");
+    if (verbose)
+      notice(0, "skipping power net\n");
     return;
   }
   _conn->resetSplitCnt();
   _conn->analyzeNet(net, force, verbose, false, no_convert);
   int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0)
+  if (splitcnt != 0 && verbose)
     notice(0, "Split top of %d T shapes.\n", splitcnt);
 }
 

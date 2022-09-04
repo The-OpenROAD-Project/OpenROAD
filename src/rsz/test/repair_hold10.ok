@@ -13,15 +13,15 @@
 [INFO ODB-0134] Finished DEF file: repair_hold10.def
 worst slack -3.23
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 8 hold buffers.
+[INFO RSZ-0032] Inserted 6 hold buffers.
 worst slack 0.21
 Placement Analysis
 ---------------------------------
-total displacement         15.7 u
+total displacement         14.0 u
 average displacement        0.7 u
 max displacement            5.1 u
-original HPWL            6890.9 u
-legalized HPWL           6886.7 u
+original HPWL            6888.6 u
+legalized HPWL           6886.8 u
 delta HPWL                    0 %
 
 worst slack 0.22

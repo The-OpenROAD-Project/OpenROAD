@@ -35,7 +35,9 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
-
+namespace odb {
+class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -47,7 +49,8 @@ class frLayer
   friend class io::Parser;
   // constructor
   frLayer()
-      : type(dbTechLayerType::IMPLANT),
+      : db_layer_(nullptr),
+        type(dbTechLayerType::IMPLANT),
         layerNum(0),
         pitch(0),
         width(0),
@@ -55,6 +58,7 @@ class frLayer
         numMasks(1),
         defaultViaDef(nullptr),
         hasMinStepViol(false),
+        unidirectional(false),
         minSpc(nullptr),
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
@@ -89,7 +93,8 @@ class frLayer
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
-      : type(dbTechLayerType::IMPLANT),
+      : db_layer_(nullptr),
+        type(dbTechLayerType::IMPLANT),
         layerNum(layerNumIn),
         name(nameIn),
         pitch(0),
@@ -124,6 +129,7 @@ class frLayer
   {
   }
   // setters
+  void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
   void setNumMasks(frUInt4 numMasksIn) { numMasks = numMasksIn; }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setName(const frString& nameIn) { name = nameIn; }
@@ -132,14 +138,13 @@ class frLayer
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
   void setDir(dbTechLayerDir dirIn) { dir = dirIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
-  void addConstraint(const std::shared_ptr<frConstraint>& consIn)
-  {
-    constraints.push_back(consIn);
-  }
+  void addConstraint(frConstraint* consIn) { constraints.push_back(consIn); }
   void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
+  void setUnidirectional(bool in) { unidirectional = in; }
   // getters
+  odb::dbTechLayer* getDbLayer() const { return db_layer_; }
   frUInt4 getNumMasks() const { return numMasks; }
   frLayerNum getLayerNum() const { return layerNum; }
   void getName(frString& nameIn) const { nameIn = name; }
@@ -156,7 +161,7 @@ class frLayer
     // layer is treated as unidirectional.
     // RectOnly could allow for a purely wrong-way rect but
     // we ignore that rare case and treat it as unidirectional.
-    return getNumMasks() > 1 || getLef58RectOnlyConstraint();
+    return getNumMasks() > 1 || getLef58RectOnlyConstraint() || unidirectional;
   }
   frSegStyle getDefaultSegStyle() const
   {
@@ -169,14 +174,6 @@ class frLayer
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
-  frCollection<std::shared_ptr<frConstraint>> getConstraints() const
-  {
-    frCollection<std::shared_ptr<frConstraint>> constraintsOut;
-    for (auto constraint : constraints) {
-      constraintsOut.push_back(constraint.lock());
-    }
-    return constraintsOut;
-  }
   dbTechLayerType getType() const { return type; }
 
   // cut class (new)
@@ -687,6 +684,7 @@ class frLayer
   void printAllConstraints(utl::Logger* logger);
 
  protected:
+  odb::dbTechLayer* db_layer_;
   dbTechLayerType type;
   frLayerNum layerNum;
   frString name;
@@ -697,10 +695,11 @@ class frLayer
   dbTechLayerDir dir;
   frViaDef* defaultViaDef;
   bool hasMinStepViol;
+  bool unidirectional;
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;
   std::map<std::string, int> name2CutClassIdxMap;
-  frCollection<std::weak_ptr<frConstraint>> constraints;
+  frCollection<frConstraint*> constraints;
 
   frCollection<frLef58SpacingEndOfLineConstraint*>
       lef58SpacingEndOfLineConstraints;
@@ -751,52 +750,6 @@ class frLayer
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
   drEolSpacingConstraint drEolCon;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & type;
-    (ar) & layerNum;
-    (ar) & name;
-    (ar) & pitch;
-    (ar) & width;
-    (ar) & minWidth;
-    (ar) & numMasks;
-    (ar) & dir;
-    (ar) & defaultViaDef;
-    (ar) & hasMinStepViol;
-    (ar) & viaDefs;
-    (ar) & cutClasses;
-    (ar) & name2CutClassIdxMap;
-    (ar) & constraints;
-    (ar) & lef58SpacingEndOfLineConstraints;
-    (ar) & minSpc;
-    (ar) & spacingSamenet;
-    (ar) & spacingInfluence;
-    (ar) & eols;
-    (ar) & cutConstraints;
-    (ar) & cutSpacingSamenetConstraints;
-    (ar) & interLayerCutSpacingConstraints;
-    (ar) & interLayerCutSpacingSamenetConstraints;
-    (ar) & interLayerCutSpacingConstraintsMap;
-    (ar) & interLayerCutSpacingSamenetConstraintsMap;
-    (ar) & lef58CutSpacingConstraints;
-    (ar) & lef58CutSpacingSamenetConstraints;
-    (ar) & recheckConstraint;
-    (ar) & shortConstraint;
-    (ar) & offGridConstraint;
-    (ar) & minEnclosedAreaConstraints;
-    (ar) & nonSufficientMetalConstraint;
-    (ar) & areaConstraint;
-    (ar) & minStepConstraint;
-    (ar) & lef58MinStepConstraints;
-    (ar) & minWidthConstraint;
-    (ar) & minimumcutConstraints;
-    (ar) & lef58RectOnlyConstraint;
-    (ar) & lef58RightWayOnGridOnlyConstraint;
-    (ar) & lef58CornerSpacingConstraints;
-    (ar) & drEolCon;
-  }
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

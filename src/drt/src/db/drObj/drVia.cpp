@@ -30,6 +30,7 @@
 
 #include "db/drObj/drNet.h"
 #include "db/obj/frVia.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -37,8 +38,43 @@ using namespace fr;
 drVia::drVia(const frVia& in)
     : viaDef_(in.getViaDef()), owner_(nullptr), beginMazeIdx_(), endMazeIdx_()
 {
-  in.getOrigin(origin_);
+  origin_ = in.getOrigin();
   setTapered(in.isTapered());
   setBottomConnected(in.isBottomConnected());
   setTopConnected(in.isTopConnected());
 }
+
+template <class Archive>
+void drVia::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<drRef>(*this);
+  (ar) & origin_;
+  (ar) & owner_;
+  (ar) & beginMazeIdx_;
+  (ar) & endMazeIdx_;
+  serializeViaDef(ar, viaDef_);
+  bool tmp;
+  if (is_loading(ar)) {
+    (ar) & tmp;
+    tapered_ = tmp;
+    (ar) & tmp;
+    bottomConnected_ = tmp;
+    (ar) & tmp;
+    topConnected_ = tmp;
+
+  } else {
+    tmp = tapered_;
+    (ar) & tmp;
+    tmp = bottomConnected_;
+    (ar) & tmp;
+    tmp = topConnected_;
+    (ar) & tmp;
+  }
+}
+
+// Explicit instantiations
+template void drVia::serialize<frIArchive>(frIArchive& ar,
+                                           const unsigned int file_version);
+
+template void drVia::serialize<frOArchive>(frOArchive& ar,
+                                           const unsigned int file_version);

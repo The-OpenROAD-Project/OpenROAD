@@ -33,20 +33,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "HTreeBuilder.h"
-
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 
 #include "Clustering.h"
+#include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "utl/Logger.h"
 
 namespace cts {
 
 using utl::CTS;
+using utl::Logger;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -292,6 +293,10 @@ void HTreeBuilder::run()
   if (options_->getPlotSolution()
       || logger_->debugCheck(utl::CTS, "HTree", 2)) {
     plotSolution();
+  }
+
+  if (options_->getGuiDebug() || logger_->debugCheck(utl::CTS, "HTree", 2)) {
+    treeVisualizer();
   }
 
   createClockSubNets();
@@ -725,9 +730,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 {
   CKMeans::Clustering clusteringEngine(
       sinks, rootLocation.getX(), rootLocation.getY(), logger_);
-  clusteringEngine.setPlotFileName("plot_" + std::to_string(level) + "_"
-                                   + std::to_string(branchPtIdx1) + "_"
-                                   + std::to_string(branchPtIdx2));
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
@@ -742,7 +744,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   const unsigned cap
       = (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
-      1, means.size(), cap, 0, means, 5, options_->getClusteringPower());
+      1, means.size(), cap, 5, options_->getClusteringPower(), means);
   if (((int) options_->getNumStaticLayers() - (int) level) < 0) {
     branchPt1 = Point<double>(means[0].first, means[0].second);
     branchPt2 = Point<double>(means[1].first, means[1].second);
@@ -895,6 +897,13 @@ void HTreeBuilder::createSingleBufferClockNet()
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+}
+
+void HTreeBuilder::treeVisualizer()
+{
+  graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
+  if (Graphics::guiActive())
+    graphics_->clockPlot(true);
 }
 
 void HTreeBuilder::plotSolution()

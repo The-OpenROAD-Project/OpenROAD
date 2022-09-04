@@ -65,14 +65,14 @@ const std::string PowerCell::getName() const
 
 void PowerCell::report() const
 {
-  logger_->info(utl::PDN, 200, "Switched power cell: {}", master_->getName());
-  logger_->info(utl::PDN, 201, "  Control pin: {}", control_->getName());
+  logger_->report("Switched power cell: {}", master_->getName());
+  logger_->report("  Control pin: {}", control_->getName());
   if (acknowledge_ != nullptr) {
-    logger_->info(utl::PDN, 202, "  Acknowledge pin: {}", acknowledge_->getName());
+    logger_->report("  Acknowledge pin: {}", acknowledge_->getName());
   }
-  logger_->info(utl::PDN, 203, "  Switched power pin: {}", switched_power_->getName());
-  logger_->info(utl::PDN, 204, "  Always on power pin: {}", alwayson_power_->getName());
-  logger_->info(utl::PDN, 205, "  Ground pin: {}", ground_->getName());
+  logger_->report("  Switched power pin: {}", switched_power_->getName());
+  logger_->report("  Always on power pin: {}", alwayson_power_->getName());
+  logger_->report("  Ground pin: {}", ground_->getName());
 }
 
 void PowerCell::populateAlwaysOnPinPositions(int site_width)
@@ -81,8 +81,7 @@ void PowerCell::populateAlwaysOnPinPositions(int site_width)
 
   for (auto* pin : alwayson_power_->getMPins()) {
     for (auto* box : pin->getGeometry()) {
-      odb::Rect bbox;
-      box->getBox(bbox);
+      odb::Rect bbox = box->getBox();
 
       const auto pin_pos = getRectAsSiteWidths(bbox, site_width, 0);
       alwayson_power_positions_.insert(pin_pos.begin(), pin_pos.end());
@@ -150,9 +149,9 @@ GridSwitchedPower::NetworkType GridSwitchedPower::fromString(const std::string& 
 void GridSwitchedPower::report() const
 {
   auto* logger = grid_->getLogger();
-  logger->info(utl::PDN, 210, "Switched power cell: {}", cell_->getName());
-  logger->info(utl::PDN, 211, "  Control net: {}", control_->getName());
-  logger->info(utl::PDN, 212, "  Network type: {}", toString(network_));
+  logger->report("Switched power cell: {}", cell_->getName());
+  logger->report("  Control net: {}", control_->getName());
+  logger->report("  Network type: {}", toString(network_));
 }
 
 GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
@@ -163,8 +162,7 @@ GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
       continue;
     }
 
-    odb::Rect bbox;
-    inst->getBBox()->getBox(bbox);
+    odb::Rect bbox = inst->getBBox()->getBox();
 
     exisiting_insts.insert({Shape::rectToBox(bbox), inst});
   }
@@ -192,8 +190,7 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
 {
   RowTree row_search;
   for (auto* row : grid_->getDomain()->getRows()) {
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
 
     row_search.insert({Shape::rectToBox(bbox), row});
   }
@@ -205,15 +202,13 @@ std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(odb::dbInst* inst, cons
 {
   std::set<odb::dbRow*> rows;
 
-  odb::Rect box;
-  inst->getBBox()->getBox(box);
+  odb::Rect box = inst->getBBox()->getBox();
 
   for (auto itr = row_search.qbegin(bgi::intersects(Shape::rectToBox(box)));
        itr != row_search.qend();
        itr++) {
     auto* row = itr->second;
-    odb::Rect row_box;
-    row->getBBox(row_box);
+    odb::Rect row_box = row->getBBox();
 
     const auto overlap = row_box.intersect(box);
     if (overlap.minDXDY() != 0) {
@@ -234,8 +229,7 @@ void GridSwitchedPower::build()
     return;
   }
 
-  odb::Rect core_area;
-  grid_->getBlock()->getCoreArea(core_area);
+  odb::Rect core_area = grid_->getBlock()->getCoreArea();
 
   auto* target = getLowestStrap();
   if (target == nullptr) {
@@ -262,8 +256,7 @@ void GridSwitchedPower::build()
 
     debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 2, "Adding power switches in row: {}", row->getName());
 
-    odb::Rect bbox;
-    row->getBBox(bbox);
+    odb::Rect bbox = row->getBBox();
     std::vector<odb::Rect> straps;
     for (auto itr = targets.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
          itr != targets.qend();
@@ -298,7 +291,6 @@ void GridSwitchedPower::build()
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
-      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
       const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
@@ -325,6 +317,10 @@ void GridSwitchedPower::build()
   updateControlNetwork();
 
   checkAndFixOverlappingInsts(exisiting_insts);
+
+  for (const auto& [inst, inst_info] : insts_) {
+    inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
 }
 
 void GridSwitchedPower::updateControlNetwork()
@@ -487,7 +483,11 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
     }
 
     inst->setLocation(pws_new_loc, y);
+    // Allow us to move fixed tapcells
+    auto prev_status = overlapping->getPlacementStatus();
+    overlapping->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     overlapping->setLocation(other_new_loc, overlap_y);
+    overlapping->setPlacementStatus(prev_status);
     debugPrint(grid_->getLogger(),
                utl::PDN,
                "PowerSwitch",
@@ -503,11 +503,8 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
 
 bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const
 {
-  odb::Rect inst0_bbox;
-  inst0->getBBox()->getBox(inst0_bbox);
-
-  odb::Rect inst1_bbox;
-  inst1->getBBox()->getBox(inst1_bbox);
+  odb::Rect inst0_bbox = inst0->getBBox()->getBox();
+  odb::Rect inst1_bbox = inst1->getBBox()->getBox();
 
   const odb::Rect overlap = inst0_bbox.intersect(inst1_bbox);
   if (overlap.isInverted()) {
@@ -518,8 +515,7 @@ bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* in
 
 odb::dbInst* GridSwitchedPower::checkOverlappingInst(odb::dbInst* cell, const InstTree& insts) const
 {
-  odb::Rect bbox;
-  cell->getBBox()->getBox(bbox);
+  odb::Rect bbox = cell->getBBox()->getBox();
 
   for (auto itr = insts.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
        itr != insts.qend();

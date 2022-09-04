@@ -30,45 +30,46 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "utl/Logger.h"
 #include "gui/heatMap.h"
-#include "heatMapSetup.h"
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
+
+#include "heatMapSetup.h"
+#include "utl/Logger.h"
 
 namespace gui {
 
 HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
                                      const std::string& name,
                                      const std::string& short_name,
-                                     const std::string& settings_group) :
-    name_(name),
-    short_name_(short_name),
-    settings_group_(settings_group),
-    destroy_map_(true),
-    use_dbu_(false),
-    populated_(false),
-    colors_correct_(false),
-    issue_redraw_(true),
-    block_(nullptr),
-    logger_(logger),
-    grid_x_size_(10.0),
-    grid_y_size_(10.0),
-    display_range_min_(0.0),
-    display_range_max_(100.0),
-    draw_below_min_display_range_(false),
-    draw_above_max_display_range_(true),
-    color_alpha_(150),
-    log_scale_(false),
-    reverse_log_(false),
-    show_numbers_(false),
-    show_legend_(false),
-    map_(),
-    renderer_(std::make_unique<HeatMapRenderer>(*this)),
-    setup_(nullptr),
-    color_generator_(SpectrumGenerator(100.0))
+                                     const std::string& settings_group)
+    : name_(name),
+      short_name_(short_name),
+      settings_group_(settings_group),
+      destroy_map_(true),
+      use_dbu_(false),
+      populated_(false),
+      colors_correct_(false),
+      issue_redraw_(true),
+      block_(nullptr),
+      logger_(logger),
+      grid_x_size_(10.0),
+      grid_y_size_(10.0),
+      display_range_min_(0.0),
+      display_range_max_(100.0),
+      draw_below_min_display_range_(false),
+      draw_above_max_display_range_(true),
+      color_alpha_(150),
+      log_scale_(false),
+      reverse_log_(false),
+      show_numbers_(false),
+      show_legend_(false),
+      map_(),
+      renderer_(std::make_unique<HeatMapRenderer>(*this)),
+      setup_(nullptr),
+      color_generator_(SpectrumGenerator(100.0))
 {
   // ensure color map is initialized
   updateMapColors();
@@ -130,7 +131,8 @@ void HeatMapDataSource::redraw()
 
 void HeatMapDataSource::setColorAlpha(int alpha)
 {
-  color_alpha_ = boundValue<int>(alpha, getColorAlphaMinimum(), getColorAlphaMaximum());
+  color_alpha_
+      = boundValue<int>(alpha, getColorAlphaMinimum(), getColorAlphaMaximum());
   updateMapColors();
 
   redraw();
@@ -142,8 +144,10 @@ void HeatMapDataSource::setDisplayRange(double min, double max)
     std::swap(min, max);
   }
 
-  display_range_min_ = boundValue<double>(min, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
-  display_range_max_ = boundValue<double>(max, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
+  display_range_min_ = boundValue<double>(
+      min, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
+  display_range_max_ = boundValue<double>(
+      max, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
 
   updateMapColors();
 
@@ -168,11 +172,13 @@ void HeatMapDataSource::setGridSizes(double x, double y)
 {
   bool changed = false;
   if (grid_x_size_ != x) {
-    grid_x_size_ = boundValue<double>(x, getGridSizeMinimumValue(), getGridSizeMaximumValue());
+    grid_x_size_ = boundValue<double>(
+        x, getGridSizeMinimumValue(), getGridSizeMaximumValue());
     changed = true;
   }
   if (grid_y_size_ != y) {
-    grid_y_size_ = boundValue<double>(y, getGridSizeMinimumValue(), getGridSizeMaximumValue());
+    grid_y_size_ = boundValue<double>(
+        y, getGridSizeMinimumValue(), getGridSizeMaximumValue());
     changed = true;
   }
 
@@ -213,20 +219,27 @@ void HeatMapDataSource::setShowLegend(bool legend)
 
 const Painter::Color HeatMapDataSource::getColor(double value) const
 {
-  auto find_val = std::find_if(color_lower_bounds_.begin(), color_lower_bounds_.end(), [value](const double other) {
-    return other >= value;
-  });
-  const double color_index = std::distance(color_lower_bounds_.begin(), find_val);
-  return color_generator_.getColor(100.0 * color_index / color_generator_.getColorCount(), color_alpha_);
+  auto find_val
+      = std::find_if(color_lower_bounds_.begin(),
+                     color_lower_bounds_.end(),
+                     [value](const double other) { return other >= value; });
+  const double color_index
+      = std::distance(color_lower_bounds_.begin(), find_val);
+  return color_generator_.getColor(
+      100.0 * color_index / color_generator_.getColorCount(), color_alpha_);
 }
 
 void HeatMapDataSource::showSetup()
 {
   if (setup_ == nullptr) {
-    setup_ = new HeatMapSetup(*this, QString::fromStdString(name_), use_dbu_, block_->getDbUnitsPerMicron());
+    setup_ = new HeatMapSetup(*this,
+                              QString::fromStdString(name_),
+                              use_dbu_,
+                              block_->getDbUnitsPerMicron());
 
     QObject::connect(setup_, &QDialog::finished, &QObject::deleteLater);
-    QObject::connect(setup_, &QObject::destroyed, [this]() { setup_ = nullptr; });
+    QObject::connect(
+        setup_, &QObject::destroyed, [this]() { setup_ = nullptr; });
 
     setup_->show();
   } else {
@@ -234,7 +247,8 @@ void HeatMapDataSource::showSetup()
   }
 }
 
-const std::string HeatMapDataSource::formatValue(double value, bool legend) const
+const std::string HeatMapDataSource::formatValue(double value,
+                                                 bool legend) const
 {
   QString text;
   text.setNum(value, 'f', 2);
@@ -244,35 +258,37 @@ const std::string HeatMapDataSource::formatValue(double value, bool legend) cons
   return text.toStdString();
 }
 
-void HeatMapDataSource::addBooleanSetting(const std::string& name,
-                                          const std::string& label,
-                                          const std::function<bool(void)>& getter,
-                                          const std::function<void(bool)>& setter)
+void HeatMapDataSource::addBooleanSetting(
+    const std::string& name,
+    const std::string& label,
+    const std::function<bool(void)>& getter,
+    const std::function<void(bool)>& setter)
 {
   settings_.push_back(MapSettingBoolean{name, label, getter, setter});
 }
 
-void HeatMapDataSource::addMultipleChoiceSetting(const std::string& name,
-                                                 const std::string& label,
-                                                 const std::function<std::vector<std::string>(void)>& choices,
-                                                 const std::function<std::string(void)>& getter,
-                                                 const std::function<void(std::string)>& setter)
+void HeatMapDataSource::addMultipleChoiceSetting(
+    const std::string& name,
+    const std::string& label,
+    const std::function<std::vector<std::string>(void)>& choices,
+    const std::function<std::string(void)>& getter,
+    const std::function<void(std::string)>& setter)
 {
-  settings_.push_back(MapSettingMultiChoice{name, label, choices, getter, setter});
+  settings_.push_back(
+      MapSettingMultiChoice{name, label, choices, getter, setter});
 }
 
 const Renderer::Settings HeatMapDataSource::getSettings() const
 {
-  Renderer::Settings settings{
-    {"DisplayMin", display_range_min_},
-    {"DisplayMax", display_range_max_},
-    {"GridX", grid_x_size_},
-    {"GridY", grid_y_size_},
-    {"Alpha", color_alpha_},
-    {"LogScale", log_scale_},
-    {"ReverseLog", reverse_log_},
-    {"ShowNumbers", show_numbers_},
-    {"ShowLegend", show_legend_}};
+  Renderer::Settings settings{{"DisplayMin", display_range_min_},
+                              {"DisplayMax", display_range_max_},
+                              {"GridX", grid_x_size_},
+                              {"GridY", grid_y_size_},
+                              {"Alpha", color_alpha_},
+                              {"LogScale", log_scale_},
+                              {"ReverseLog", reverse_log_},
+                              {"ShowNumbers", show_numbers_},
+                              {"ShowLegend", show_legend_}};
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
@@ -321,7 +337,8 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 
 void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 {
-  Box query(Point(region.xMin(), region.yMin()), Point(region.xMax(), region.yMax()));
+  Box query(Point(region.xMin(), region.yMin()),
+            Point(region.xMax(), region.yMax()));
   for (auto it = map_.qbegin(bgi::intersects(query)); it != map_.qend(); it++) {
     auto* map_pt = it->second.get();
     odb::Rect intersection;
@@ -331,7 +348,12 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
     const double value_area = region.area();
     const double region_area = map_pt->rect.area();
 
-    combineMapData(map_pt->has_value, map_pt->value, value, value_area, intersect_area, region_area);
+    combineMapData(map_pt->has_value,
+                   map_pt->value,
+                   value,
+                   value_area,
+                   intersect_area,
+                   region_area);
     map_pt->has_value = true;
 
     markColorsInvalid();
@@ -347,8 +369,7 @@ void HeatMapDataSource::setupMap()
   const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
   const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
 
-  odb::Rect bounds;
-  getBlock()->getBBox()->getBox(bounds);
+  odb::Rect bounds = getBlock()->getBBox()->getBox();
 
   const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
   const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
@@ -436,7 +457,8 @@ void HeatMapDataSource::updateMapColors()
 
     if (reverse_log_) {
       for (size_t i = 0; i < color_lower_bounds_.size(); i++) {
-        color_lower_bounds_[i] = display_range_max_ - color_lower_bounds_[i] + display_range_min_;
+        color_lower_bounds_[i]
+            = display_range_max_ - color_lower_bounds_[i] + display_range_min_;
       }
     } else {
       std::reverse(color_lower_bounds_.begin(), color_lower_bounds_.end());
@@ -469,14 +491,16 @@ double HeatMapDataSource::getRealRangeMaximumValue() const
   return color_lower_bounds_[color_lower_bounds_.size() - 1];
 }
 
-const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
+const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues()
+    const
 {
   const int color_count = color_generator_.getColorCount();
   const int count = 6;
   std::vector<std::pair<int, double>> values;
   const double index_incr = static_cast<double>(color_count) / (count - 1);
   const double linear_start = getRealRangeMinimumValue();
-  const double linear_step = (getRealRangeMaximumValue() - linear_start) / (count - 1);
+  const double linear_step
+      = (getRealRangeMaximumValue() - linear_start) / (count - 1);
   for (int i = 0; i < count; i++) {
     int idx = std::round(i * index_incr);
     if (idx > color_count) {
@@ -495,7 +519,10 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() c
 void HeatMapDataSource::onShow()
 {
   if (!isPopulated()) {
-    logger_->warn(utl::GUI, 66, "Heat map \"{}\" has not been populated with data.", getName());
+    logger_->warn(utl::GUI,
+                  66,
+                  "Heat map \"{}\" has not been populated with data.",
+                  getName());
   }
 }
 
@@ -510,21 +537,20 @@ void HeatMapDataSource::onHide()
 
 ///////////
 
-HeatMapRenderer::HeatMapRenderer(HeatMapDataSource& datasource) :
-    datasource_(datasource),
-    first_paint_(true)
+HeatMapRenderer::HeatMapRenderer(HeatMapDataSource& datasource)
+    : datasource_(datasource), first_paint_(true)
 {
   addDisplayControl(datasource_.getName(),
                     false,
                     [this]() { datasource_.showSetup(); },
-                    {""}); // mutually exclusive to all
+                    {""});  // mutually exclusive to all
 }
 
 void HeatMapRenderer::drawObjects(Painter& painter)
 {
   if (!checkDisplayControl(datasource_.getName())) {
     if (!first_paint_) {
-      first_paint_ = true; // reset check
+      first_paint_ = true;  // reset check
       // first time so announce onHide
       datasource_.onHide();
     }
@@ -553,7 +579,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   const odb::Rect& bounds = painter.getBounds();
 
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
-    if (!map_pt->has_value) { // value not set so nothing to draw
+    if (!map_pt->has_value) {  // value not set so nothing to draw
       continue;
     }
     if (!show_mins && map_pt->value < min_value) {
@@ -576,10 +602,11 @@ void HeatMapRenderer::drawObjects(Painter& painter)
         const double text_rect_margin = 0.8;
 
         const std::string text = datasource_.formatValue(map_pt->value, false);
-        const odb::Rect text_bound = painter.stringBoundaries(x, y, text_anchor, text);
+        const odb::Rect text_bound
+            = painter.stringBoundaries(x, y, text_anchor, text);
         bool draw = true;
-        if (text_bound.dx() >= text_rect_margin * map_pt->rect.dx() ||
-            text_bound.dy() >= text_rect_margin * map_pt->rect.dy()) {
+        if (text_bound.dx() >= text_rect_margin * map_pt->rect.dx()
+            || text_bound.dy() >= text_rect_margin * map_pt->rect.dy()) {
           // don't draw if text will be too small
           draw = false;
         }
@@ -595,8 +622,10 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   // legend
   if (datasource_.getShowLegend()) {
     std::vector<std::pair<int, std::string>> legend;
-    for (const auto& [color_index, color_value] : datasource_.getLegendValues()) {
-      legend.push_back({color_index, datasource_.formatValue(color_value, true)});
+    for (const auto& [color_index, color_value] :
+         datasource_.getLegendValues()) {
+      legend.push_back(
+          {color_index, datasource_.formatValue(color_value, true)});
     }
 
     datasource_.getColorGenerator().drawLegend(painter, legend);
@@ -631,17 +660,18 @@ void HeatMapRenderer::setSettings(const Settings& settings)
 
 //////////
 
-RealValueHeatMapDataSource::RealValueHeatMapDataSource(utl::Logger* logger,
-                                                       const std::string& unit_suffix,
-                                                       const std::string& name,
-                                                       const std::string& short_name,
-                                                       const std::string& settings_group) :
-    HeatMapDataSource(logger, name, short_name, settings_group),
-    unit_suffix_(unit_suffix),
-    units_(unit_suffix_),
-    min_(0.0),
-    max_(0.0),
-    scale_(1.0)
+RealValueHeatMapDataSource::RealValueHeatMapDataSource(
+    utl::Logger* logger,
+    const std::string& unit_suffix,
+    const std::string& name,
+    const std::string& short_name,
+    const std::string& settings_group)
+    : HeatMapDataSource(logger, name, short_name, settings_group),
+      unit_suffix_(unit_suffix),
+      units_(unit_suffix_),
+      min_(0.0),
+      max_(0.0),
+      scale_(1.0)
 {
 }
 
@@ -667,7 +697,8 @@ double RealValueHeatMapDataSource::roundData(double value) const
   return std::round(new_value * precision) / precision;
 }
 
-void RealValueHeatMapDataSource::determineMinMax(const HeatMapDataSource::Map& map)
+void RealValueHeatMapDataSource::determineMinMax(
+    const HeatMapDataSource::Map& map)
 {
   min_ = std::numeric_limits<double>::max();
   max_ = std::numeric_limits<double>::min();
@@ -688,7 +719,7 @@ void RealValueHeatMapDataSource::determineUnits()
     units_ = "m";
     scale_ = 1e3;
   } else if (range > 1e-6) {
-    units_ = "\u03BC"; // micro
+    units_ = "\u03BC";  // micro
     scale_ = 1e6;
   } else if (range > 1e-9) {
     units_ = "n";
@@ -704,7 +735,8 @@ void RealValueHeatMapDataSource::determineUnits()
   units_ += unit_suffix_;
 }
 
-const std::string RealValueHeatMapDataSource::formatValue(double value, bool legend) const
+const std::string RealValueHeatMapDataSource::formatValue(double value,
+                                                          bool legend) const
 {
   int digits = legend ? 3 : 2;
 
@@ -725,7 +757,7 @@ double RealValueHeatMapDataSource::getValueRange() const
 {
   double range = max_ - min_;
   if (range == 0.0) {
-    range = 1.0; // dummy numbers until drops has been populated
+    range = 1.0;  // dummy numbers until drops has been populated
   }
   return range;
 }

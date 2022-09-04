@@ -42,7 +42,7 @@ class frInstBlockage : public frBlockObject
  public:
   // constructors
   frInstBlockage(frInst* inst, frBlockage* blockage)
-      : inst_(inst), blockage_(blockage)
+      : inst_(inst), blockage_(blockage), index_in_owner_(0)
   {
   }
   // getters
@@ -51,22 +51,13 @@ class frInstBlockage : public frBlockObject
   // setters
   // others
   frBlockObjectEnum typeId() const override { return frcInstBlockage; }
+  void setIndexeInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
   frInst* inst_;
   frBlockage* blockage_;
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & inst_;
-    (ar) & blockage_;
-  }
-
-  frInstBlockage() = default;  // for serialization
-
-  friend class boost::serialization::access;
+  int index_in_owner_;
 };
 }  // namespace fr
 

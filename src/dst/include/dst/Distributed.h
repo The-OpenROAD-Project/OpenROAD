@@ -30,11 +30,10 @@
 
 #include <tcl.h>
 
+#include <boost/asio.hpp>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/asio.hpp>
 
 namespace utl {
 class Logger;
@@ -47,20 +46,27 @@ namespace dst {
 using socket = asio::basic_stream_socket<tcp>;
 class JobMessage;
 class JobCallBack;
+class Worker;
 
 class Distributed
 {
  public:
-  Distributed();
+  Distributed(utl::Logger* logger = nullptr);
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runWorker(const char* ip, unsigned short port);
-  void runLoadBalancer(const char* ip, unsigned short port);
+  void runWorker(const char* ip, unsigned short port, bool interactive);
+  void runLoadBalancer(const char* ip,
+                       unsigned short port,
+                       const char* workers_domain);
   void addWorkerAddress(const char* address, unsigned short port);
   bool sendJob(JobMessage& msg,
                const char* ip,
                unsigned short port,
                JobMessage& result);
+  bool sendJobMultiResult(JobMessage& msg,
+                          const char* ip,
+                          unsigned short port,
+                          JobMessage& result);
   bool sendResult(JobMessage& result, socket& sock);
   void addCallBack(JobCallBack* cb);
   const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
@@ -76,7 +82,8 @@ class Distributed
     }
   };
   utl::Logger* logger_;
-  std::vector<EndPoint> workers_;
+  std::vector<EndPoint> end_points_;
   std::vector<JobCallBack*> callbacks_;
+  std::vector<std::unique_ptr<Worker>> workers_;
 };
 }  // namespace dst

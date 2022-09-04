@@ -39,6 +39,10 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+#include <set>
+namespace odb {
+  class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -87,6 +91,11 @@ class frTechObject
   {
     return viaRuleGenerates;
   }
+  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
+  {
+    return unidirectional_layers_.find(dbLayer)
+           != unidirectional_layers_.end();
+  }
 
   // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
@@ -100,6 +109,7 @@ class frTechObject
   }
   void addVia(std::unique_ptr<frViaDef> in)
   {
+    in->setId(vias.size());
     if (name2via.find(in->getName()) != name2via.end()) {
       std::cout << "Error: duplicated via definition for " << in->getName()
                 << "\n";
@@ -119,13 +129,25 @@ class frTechObject
     name2viaRuleGenerate[in->getName()] = in.get();
     viaRuleGenerates.push_back(std::move(in));
   }
-  void addConstraint(const std::shared_ptr<frConstraint>& constraintIn)
-  {
-    constraints.push_back(constraintIn);
-  }
   void addUConstraint(std::unique_ptr<frConstraint> in)
   {
+    in->setId(uConstraints.size());
+    auto type = in->typeId();
+    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
+        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+      hasCornerSpacingConstraint_ = true;
+    }
     uConstraints.push_back(std::move(in));
+  }
+  frConstraint* getConstraint(int idx)
+  {
+    if (idx < uConstraints.size())
+      return uConstraints[idx].get();
+    return nullptr;
+  }
+  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
+  {
+    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -249,6 +271,7 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
+  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -276,7 +299,6 @@ class frTechObject
   std::map<frString, frViaRuleGenerate*> name2viaRuleGenerate;
   std::vector<std::unique_ptr<frViaRuleGenerate>> viaRuleGenerates;
 
-  frCollection<std::shared_ptr<frConstraint>> constraints;
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
@@ -333,6 +355,9 @@ class frTechObject
   // for up via
   ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
+  bool hasCornerSpacingConstraint_ = false;
+  // unidirectional layers
+  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
@@ -377,31 +402,6 @@ class frTechObject
     return included;
   }
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & dbUnit;
-    (ar) & manufacturingGrid;
-    (ar) & layers;
-    (ar) & name2layer;
-    (ar) & name2via;
-    (ar) & vias;
-    (ar) & layer2Name2CutClass;
-    (ar) & layerCutClass;
-    (ar) & name2viaRuleGenerate;
-    (ar) & viaRuleGenerates;
-    (ar) & constraints;
-    (ar) & uConstraints;
-    (ar) & nonDefaultRules;
-    (ar) & via2ViaForbiddenLen;
-    (ar) & viaForbiddenTurnLen;
-    (ar) & viaForbiddenPlanarLen;
-    (ar) & line2LineForbiddenLen;
-    (ar) & viaForbiddenThrough;
-    (ar) & hasVia2viaMinStep_;
-  }
-
-  friend class boost::serialization::access;
   friend class FlexRP;
 };
 }  // namespace fr

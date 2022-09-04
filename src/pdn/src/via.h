@@ -71,6 +71,7 @@ namespace bgi = boost::geometry::index;
 class Connect;
 class Shape;
 class Via;
+class ViaGenerator;
 
 using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
 using Box = bg::model::box<Point>;
@@ -87,12 +88,23 @@ using ViaReport = std::map<std::string, int>;
 class Grid;
 class TechLayer;
 
+enum class failedViaReason {
+  OBSTRUCTED,
+  BUILD,
+  RIPUP,
+  RECHECK,
+  OTHER
+};
+
 class Enclosure
 {
  public:
   Enclosure();
   Enclosure(int x, int y);
-  Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut);
+  Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
+            odb::dbTechLayer* layer,
+            const odb::Rect& cut,
+            odb::dbTechLayerDir direction);
   Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer);
 
   int getX() const { return x_; }
@@ -105,6 +117,9 @@ class Enclosure
 
   bool operator<(const Enclosure& other) const;
   bool operator==(const Enclosure& other) const;
+
+  void copy(const Enclosure* other);
+  void copy(const Enclosure& other);
 
   bool isPreferredOver(const Enclosure* other, odb::dbTechLayer* layer) const;
   bool isPreferredOver(const Enclosure* other, bool minimize_x) const;
@@ -126,9 +141,13 @@ class DbVia
  public:
   struct ViaLayerShape
   {
-    std::set<odb::Rect> bottom;
-    std::set<odb::Rect> top;
+    using RectBoxPair = std::pair<odb::Rect, odb::dbSBox*>;
+    std::set<RectBoxPair> bottom;
+    std::set<RectBoxPair> middle;
+    std::set<RectBoxPair> top;
   };
+
+  DbVia();
 
   virtual ~DbVia() {}
 
@@ -136,7 +155,8 @@ class DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) = 0;
+                                 int y,
+                                 utl::Logger* logger) = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -145,12 +165,19 @@ class DbVia
 
   virtual ViaReport getViaReport() const = 0;
 
+  void setGenerator(const std::shared_ptr<ViaGenerator>& generator) { generator_ = generator; }
+  bool hasGenerator() const { return generator_ != nullptr; }
+  ViaGenerator* getGenerator() const { return generator_.get(); }
+
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
   void combineLayerShapes(const ViaLayerShape& other,
                           ViaLayerShape& shapes) const;
 
   void addToViaReport(DbVia* via, ViaReport& report) const;
+
+ private:
+  std::shared_ptr<ViaGenerator> generator_;
 };
 
 // Used as the base class for actual vias like TechVias and GenerateVias
@@ -160,7 +187,8 @@ class DbBaseVia : public DbVia
   DbBaseVia();
 
   virtual std::string getName() const = 0;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const = 0;
 
@@ -193,12 +221,14 @@ class DbTechVia : public DbBaseVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
@@ -243,10 +273,12 @@ class DbGenerateVia : public DbBaseVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual std::string getName() const override;
-  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+  virtual const odb::Rect getViaRect(bool include_enclosure,
+                                     bool include_via_shape,
                                      bool include_bottom = true,
                                      bool include_top = true) const override;
 
@@ -293,7 +325,8 @@ class DbSplitCutVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override;
 
@@ -326,7 +359,8 @@ class DbArrayVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual bool requiresPatch() const override { return true; }
 
@@ -361,7 +395,8 @@ class DbGenerateStackedVia : public DbVia
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType type,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override;
 
@@ -375,22 +410,25 @@ class DbGenerateStackedVia : public DbVia
 class DbGenerateDummyVia : public DbVia
 {
  public:
-  DbGenerateDummyVia(utl::Logger* logger,
+  DbGenerateDummyVia(Connect* connect,
                      const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
-                     odb::dbTechLayer* top);
+                     odb::dbTechLayer* top,
+                     bool add_report);
   virtual ~DbGenerateDummyVia() {}
 
   virtual ViaLayerShape generate(odb::dbBlock* block,
                                  odb::dbSWire* wire,
                                  odb::dbWireShapeType /* type */,
                                  int x,
-                                 int y) override;
+                                 int y,
+                                 utl::Logger* logger) override;
 
   virtual ViaReport getViaReport() const override { return {}; }
 
  private:
-  utl::Logger* logger_;
+  Connect* connect_;
+  bool add_report_;
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
@@ -403,6 +441,7 @@ class ViaGenerator
   struct Constraint {
     bool must_fit_x;
     bool must_fit_y;
+    bool intersection_only;
   };
 
   ViaGenerator(utl::Logger* logger,
@@ -434,11 +473,13 @@ class ViaGenerator
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  virtual bool checkConstraints() const;
+  virtual bool checkConstraints(bool check_cuts = true,
+                                bool check_min_cut = true,
+                                bool check_enclosure = true) const;
 
   // determine the shape of the vias
-  bool build(bool use_bottom_min_enclosure,
-             bool use_top_min_enclosure);
+  bool build(bool bottom_is_internal_layer,
+             bool top_is_internal_layer);
   virtual int getRows() const;
   virtual int getColumns() const;
   virtual int getTotalCuts() const;
@@ -467,6 +508,8 @@ class ViaGenerator
 
   int getGeneratorWidth(bool bottom) const;
   int getGeneratorHeight(bool bottom) const;
+
+  bool recheckConstraints(const odb::Rect& rect, bool bottom);
 
  protected:
   int getMaxRows() const { return max_rows_; }
@@ -503,9 +546,10 @@ class ViaGenerator
   const Constraint& getLowerConstraint() const { return lower_constraint_; }
   const Constraint& getUpperConstraint() const { return upper_constraint_; }
 
- protected:
   int getLowerWidth(bool only_real = true) const;
   int getUpperWidth(bool only_real = true) const;
+  int getLowerHeight(bool only_real = true) const;
+  int getUpperHeight(bool only_real = true) const;
 
   void determineCutSpacing();
 
@@ -560,6 +604,12 @@ class ViaGenerator
                                bool use_top_min_enclosure,
                                const Enclosure& bottom_min_enclosure,
                                const Enclosure& top_min_enclosure);
+
+  odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
+
+  int getRectSize(const odb::Rect& rect, bool min, bool only_real) const;
+
+  bool updateCutSpacing(int rows, int columns);
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -639,6 +689,8 @@ class TechViaGenerator : public ViaGenerator
                                  int cols,
                                  int col_pitch) const override;
 
+  static std::set<odb::Rect> getViaObstructionRects(utl::Logger* logger, odb::dbTechVia* via, int x, int y);
+
  protected:
   virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
 
@@ -688,13 +740,15 @@ class Via
 
   Connect* getConnect() const { return connect_; }
 
-  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const;
+  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions);
 
   Grid* getGrid() const;
 
   const std::string getDisplayText() const;
 
   Via* copy() const;
+
+  void markFailed(failedViaReason reason);
 
  private:
   odb::dbNet* net_;

@@ -43,12 +43,15 @@
 #include "CtsOptions.h"
 #include "TechChar.h"
 #include "Util.h"
+#include "Graphics.h"
 
 namespace utl {
 class Logger;
 }  // namespace utl
 
 namespace cts {
+
+class Graphics;
 
 using utl::Logger;
 
@@ -83,6 +86,7 @@ class SinkClustering
   }
 
   double getWireLength(std::vector<Point<double>> points);
+  int getScaleFactor() const { return scaleFactor_; }
 
  private:
   void normalizePoints(float maxDiameter = 10);
@@ -91,6 +95,8 @@ class SinkClustering
   void writePlotFile();
   void findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
+  void clusteringVisualizer(const std::vector<Point<double>>& points,
+                            unsigned groupSize);
 
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
@@ -99,14 +105,8 @@ class SinkClustering
                        double cost,
                        double capCost,
                        unsigned sizeLimit);
-  bool isOne(double pos) const
-  {
-    return (1 - pos) < std::numeric_limits<double>::epsilon();
-  }
-  bool isZero(double pos) const
-  {
-    return pos < std::numeric_limits<double>::epsilon();
-  }
+  static bool isOne(double pos);
+  static bool isZero(double pos);
 
   CtsOptions* options_;
   Logger* logger_;
@@ -122,6 +122,7 @@ class SinkClustering
   bool useMaxCapLimit_;
   int scaleFactor_;
   static constexpr double max_cap__factor_ = 10;
+  std::unique_ptr<Graphics> graphics_;
 };
 
 }  // namespace cts

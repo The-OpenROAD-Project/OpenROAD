@@ -28,6 +28,8 @@
 #pragma once
 
 #include <boost/fusion/container.hpp>
+#include <boost/optional/optional.hpp>
+#include <boost/spirit/include/support_unused.hpp>
 #include <map>
 #include <string>
 #include <vector>
@@ -108,7 +110,7 @@ class lefTechLayerCutSpacingParser
 {
  public:
   odb::dbTechLayerCutSpacingRule* curRule;
-  bool parse(std::string, 
+  bool parse(std::string,
              dbTechLayer*,
              lefin*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
@@ -178,8 +180,12 @@ class lefTechLayerEolKeepOutRuleParser
 class ArraySpacingParser
 {
  public:
-  ArraySpacingParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  ArraySpacingParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  {
+  }
   bool parse(std::string);
+
  private:
   void setCutClass(std::string name);
   void setArraySpacing(boost::fusion::vector<int, double>& params);
@@ -194,8 +200,12 @@ class ArraySpacingParser
 class WidthTableParser
 {
  public:
-  WidthTableParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  WidthTableParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  {
+  }
   bool parse(std::string);
+
  private:
   void addWidth(double width);
   dbTechLayer* layer_;
@@ -206,8 +216,12 @@ class WidthTableParser
 class MinCutParser
 {
  public:
-  MinCutParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  MinCutParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  {
+  }
   void parse(std::string);
+
  private:
   bool parseSubRule(std::string);
   void addCutClass(boost::fusion::vector<std::string, int>&);
@@ -220,6 +234,39 @@ class MinCutParser
   dbTechLayer* layer_;
   lefin* lefin_;
   dbTechLayerMinCutRule* rule_;
+};
+
+class MetalWidthViaMapParser
+{
+ public:
+  MetalWidthViaMapParser(
+      dbTech* tech,
+      lefin* lefin,
+      std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
+      : tech_(tech),
+        lefin_(lefin),
+        cut_class_(false),
+        incomplete_props_(incomplete_props),
+        via_map(nullptr)
+  {
+  }
+  void parse(std::string);
+
+ private:
+  bool parseSubRule(std::string);
+  void addEntry(boost::fusion::vector<std::string,
+                                      double,
+                                      double,
+                                      boost::optional<double>,
+                                      boost::optional<double>,
+                                      std::string>&);
+  void setCutClass();
+  void setPGVia();
+  dbTech* tech_;
+  lefin* lefin_;
+  bool cut_class_;
+  std::vector<std::pair<dbObject*, std::string>>& incomplete_props_;
+  dbMetalWidthViaMap* via_map;
 };
 
 }  // namespace odb

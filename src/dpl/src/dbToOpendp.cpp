@@ -69,7 +69,8 @@ void
 Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = block_->getCoreArea();
+  have_fillers_ = false;
 
   importClear();
   examineRows();
@@ -146,6 +147,7 @@ Opendp::makeCells()
       cell.x_ = bbox.xMin();
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
+      // Cell is already placed if it is FIXED.
       cell.is_placed_ = isFixed(&cell);
 
       Master &master = db_master_map_[db_master];
@@ -155,6 +157,8 @@ Opendp::makeCells()
         have_multi_row_cells_ = true;
       }
     }
+    if (isFiller(db_inst))
+      have_fillers_ = true;
   }
 }
 
@@ -196,29 +200,24 @@ swapWidthHeight(dbOrientType orient)
   return false;
 }
 
-// OpenDB represents groups as regions with the parent pointing to
-// the region.
-// DEF GROUP => dbRegion with instances, no boundary, parent->region
-// DEF REGION => dbRegion no instances, boundary, parent = null
 void
 Opendp::makeGroups()
 {
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
-  auto db_regions = block_->getRegions();
-  groups_.reserve(block_->getRegions().size());
-  for (auto db_region : db_regions) {
-    dbRegion *parent = db_region->getParent();
+  auto db_groups = block_->getGroups();
+  groups_.reserve(db_groups.size());
+  for (auto db_group : db_groups) {
+    dbRegion *parent = db_group->getRegion();
     if (parent) {
       groups_.emplace_back(Group());
       struct Group &group = groups_.back();
-      string group_name = db_region->getName();
+      string group_name = db_group->getName();
       group.name = group_name;
       group.boundary.mergeInit();
-      auto boundaries = db_region->getParent()->getBoundaries();
+      auto boundaries = parent->getBoundaries();
       for (dbBox *boundary : boundaries) {
-        Rect box;
-        boundary->getBox(box);
+        Rect box = boundary->getBox();
         box = box.intersect(core_);
         // offset region to core origin
         box.moveDelta(-core_.xMin(), -core_.yMin());
@@ -227,7 +226,7 @@ Opendp::makeGroups()
         group.boundary.merge(box);
       }
 
-      for (auto db_inst : db_region->getRegionInsts()) {
+      for (auto db_inst : db_group->getInsts()) {
         Cell *cell = db_inst_map_[db_inst];
         group.cells_.push_back(cell);
         cell->group_ = &group;

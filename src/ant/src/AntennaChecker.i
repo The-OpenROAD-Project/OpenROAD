@@ -54,46 +54,30 @@ odb::dbDatabase *getDb();
 namespace ant {
 
 int
-check_antennas(char* report_filename, bool report_violating_nets)
+check_antennas(const char *net_name, bool verbose)
 {
-  return getAntennaChecker()->checkAntennas(report_filename, report_violating_nets);
+  return getAntennaChecker()->checkAntennas(net_name, verbose);
 }
 
-void
-check_max_length(const char *net_name,
-                 int layer)
+int
+antenna_violation_count()
 {
-  AntennaChecker *checker = getAntennaChecker();
-  checker->checkMaxLength(net_name, layer);
+  return getAntennaChecker()->antennaViolationCount();
 }
 
-void
-load_antenna_rules()
-{
-  getAntennaChecker()->loadAntennaRules();
-}
-
-// check if an input net is violated, return 1 if the net is violated
-//   - -net_name: set the net name for checking
+// check a net for antenna violations
 bool
 check_net_violation(char* net_name)
 { 
   odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
   if (net) {
-    auto vios = getAntennaChecker()->getNetAntennaViolations(net);
+    auto vios = getAntennaChecker()->getAntennaViolations(net, nullptr);
     return !vios.empty();
   }
   else
     return false;
 }
 
-// Prints the longest wire in the design
-void
-find_max_wire_length()
-{
-  getAntennaChecker()->findMaxWireLength();
-}
-
-}
+} // namespace
 
 %} // inline

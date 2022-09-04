@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Clustering.h"
-
 #include <float.h>
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
@@ -54,30 +52,36 @@
 #include <string>
 #include <vector>
 
+#include "Clustering.h"
 #include "utl/Logger.h"
 
-#define CPLEX_CLUSTERING
+namespace cts::CKMeans {
 
-namespace CKMeans {
 using namespace lemon;
 using utl::CTS;
 
-Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
-                       float xBranch,
-                       float yBranch,
-                       Logger* logger)
+struct Sink
 {
-  for (long int i = 0; i < sinks.size(); ++i) {
-    flops_.push_back(Flop(sinks[i].first, sinks[i].second, i));
-    flops_.back().dists.resize(1);
-    flops_.back().match_idx.resize(1);
-    flops_.back().silhs.resize(1);
+  Sink(const float x, const float y, unsigned idx)
+      : x(x), y(y), sink_idx(idx){};
+
+  // location
+  float x, y;
+  int cluster_idx;
+  unsigned sink_idx;  // index in sinks_
+};
+
+Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
+                       const float xBranch,
+                       const float yBranch,
+                       Logger* logger)
+    : logger_(logger), segment_length_(0.0), branching_point_(xBranch, yBranch)
+{
+  sinks_.reserve(sinks.size());
+  for (size_t i = 0; i < sinks.size(); ++i) {
+    sinks_.emplace_back(sinks[i].first, sinks[i].second, i);
   }
   srand(56);
-
-  segmentLength_ = 0.0;
-  branchingPoint_ = {xBranch, yBranch};
-  logger_ = logger;
 }
 
 Clustering::~Clustering()
@@ -85,141 +89,100 @@ Clustering::~Clustering()
 }
 
 /*** Capacitated K means **************************************************/
-void Clustering::iterKmeans(unsigned ITER,
-                            unsigned N,
-                            unsigned CAP,
-                            unsigned IDX,
-                            std::vector<std::pair<float, float>>& _means,
-                            unsigned MAX,
-                            unsigned power)
+void Clustering::iterKmeans(const unsigned iter,
+                            const unsigned n,
+                            const unsigned cap,
+                            const unsigned max,
+                            const unsigned power,
+                            std::vector<std::pair<float, float>>& means)
 {
-  std::vector<std::pair<float, float>> sol;
-  sol.resize(flops_.size());
+  const unsigned midIdx = means.size() / 2 - 1;
+  segment_length_ = std::abs(means[midIdx].first - means[midIdx + 1].first)
+                    + std::abs(means[midIdx].second - means[midIdx + 1].second);
 
-  unsigned midIdx = _means.size() / 2 - 1;
-  segmentLength_
-      = std::abs(_means[midIdx].first - _means[midIdx + 1].first)
-        + std::abs(_means[midIdx].second - _means[midIdx + 1].second);
-
+  std::vector<int> solution(sinks_.size());
   float max_silh = -1;
-  for (long int i = 0; i < ITER; ++i) {
-    std::vector<std::pair<float, float>> means = _means;
-    float silh = Kmeans(N, CAP, IDX, means, MAX, power);
+  auto tmp_means = means;
+  for (unsigned i = 0; i < iter; ++i) {
+    const float silh = Kmeans(n, cap, max, power, tmp_means);
     if (silh > max_silh) {
       max_silh = silh;
-      for (long int j = 0; j < flops_.size(); ++j)
-        sol[j] = flops_[j].match_idx[IDX];
-      _means.resize(means.size());
-      for (long int j = 0; j < means.size(); ++j)
-        _means[j] = means[j];
+      for (size_t j = 0; j < sinks_.size(); ++j) {
+        solution[j] = sinks_[j].cluster_idx;
+      }
+      means = tmp_means;
     }
   }
 
-  for (long int i = 0; i < flops_.size(); ++i)
-    flops_[i].match_idx[IDX] = sol[i];
-
-  // print clustering solution
-  if (test_layout_ == 1) {
-    std::ofstream outFile;
-    for (long int i = 0; i < _means.size(); ++i) {
-      outFile << "TRAY " << i << " " << _means[i].first << " "
-              << _means[i].second << std::endl;
-    }
-    outFile.close();
+  for (size_t i = 0; i < sinks_.size(); ++i) {
+    sinks_[i].cluster_idx = solution[i];
   }
 
-  fixSegmentLengths(_means);
+  fixSegmentLengths(means);
 }
 
-void Clustering::fixSegmentLengths(std::vector<std::pair<float, float>>& _means)
+void Clustering::fixSegmentLengths(std::vector<std::pair<float, float>>& means)
 {
   // First, fix the middle positions
-  unsigned midIdx = _means.size() / 2 - 1;
+  const unsigned midIdx = means.size() / 2 - 1;
 
-  const bool overwriteBranchingPoint = false;
-
-  if (overwriteBranchingPoint) {
-    float minX = std::min(_means[midIdx].first, _means[midIdx + 1].first);
-    float minY = std::min(_means[midIdx].second, _means[midIdx + 1].second);
-    float maxX = std::max(_means[midIdx].first, _means[midIdx + 1].first);
-    float maxY = std::max(_means[midIdx].second, _means[midIdx + 1].second);
-    branchingPoint_ = std::make_pair(minX + (maxX - minX) / 2.0,
-                                     minY + (maxY - minY) / 2.0);
-  }
-
-  fixSegment(branchingPoint_, _means[midIdx], segmentLength_ / 2.0);
-  fixSegment(branchingPoint_, _means[midIdx + 1], segmentLength_ / 2.0);
+  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx]);
+  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx + 1]);
 
   // Fix lower branch
-  for (long int i = midIdx; i > 0; --i) {
-    fixSegment(_means[i], _means[i - 1], segmentLength_);
+  for (unsigned i = midIdx; i > 0; --i) {
+    fixSegment(means[i], segment_length_, means[i - 1]);
   }
 
   // Fix upper branch
-  for (long int i = midIdx + 1; i < _means.size() - 1; ++i) {
-    fixSegment(_means[i], _means[i + 1], segmentLength_);
+  for (size_t i = midIdx + 1; i < means.size() - 1; ++i) {
+    fixSegment(means[i], segment_length_, means[i + 1]);
   }
 }
 
 void Clustering::fixSegment(const std::pair<float, float>& fixedPoint,
-                            std::pair<float, float>& movablePoint,
-                            float targetDist)
+                            const float targetDist,
+                            std::pair<float, float>& movablePoint)
 {
-  float actualDist = calcDist(fixedPoint, movablePoint);
-  float ratio = targetDist / actualDist;
+  const float actualDist = calcDist(fixedPoint, movablePoint);
+  const float ratio = targetDist / actualDist;
 
-  float dx = (fixedPoint.first - movablePoint.first) * ratio;
-  float dy = (fixedPoint.second - movablePoint.second) * ratio;
+  const float dx = (movablePoint.first - fixedPoint.first) * ratio;
+  const float dy = (movablePoint.second - fixedPoint.second) * ratio;
 
-  movablePoint.first = fixedPoint.first - dx;
-  movablePoint.second = fixedPoint.second - dy;
+  movablePoint.first = fixedPoint.first + dx;
+  movablePoint.second = fixedPoint.second + dy;
 }
 
-float Clustering::Kmeans(unsigned N,
-                         unsigned CAP,
-                         unsigned IDX,
-                         std::vector<std::pair<float, float>>& means,
-                         unsigned MAX,
-                         unsigned power)
+float Clustering::Kmeans(const unsigned n,
+                         const unsigned cap,
+                         const unsigned max,
+                         const unsigned power,
+                         std::vector<std::pair<float, float>>& means)
 {
-  std::vector<std::vector<Flop*>> clusters;
-
-  for (long int i = 0; i < flops_.size(); ++i) {
-    flops_[i].dists[IDX] = 0;
-    for (long int j = 0; j < N; ++j) {
-      flops_[i].dists[IDX] += calcDist(
-          std::make_pair(means[j].first, means[j].second), &flops_[i]);
-    }
+  // initialize matching indexes for sinks
+  for (auto& sink : sinks_) {
+    sink.cluster_idx = -1;
   }
 
-  // initialize matching indexes for flops
-  for (long int i = 0; i < flops_.size(); ++i) {
-    Flop* f = &flops_[i];
-    f->match_idx[IDX] = std::make_pair(-1, -1);
-  }
-
+  std::vector<std::vector<Sink*>> clusters;
   bool stop = false;
   // Kmeans optimization
   unsigned iter = 1;
   while (!stop) {
     fixSegmentLengths(means);
 
-    // flop to slot matching based on min-cost flow
-    if (iter == 1)
-      minCostFlow(means, CAP, IDX, 5200, power);
-    else if (iter == 2)
-      minCostFlow(means, CAP, IDX, 5200, power);
-    else if (iter > 2)
-      minCostFlow(means, CAP, IDX, 5200, power);
+    // sink to cluster matching based on min-cost flow
+    minCostFlow(means, cap, 5200, power);
 
     // collect results
     clusters.clear();
-    clusters.resize(N);
-    for (long int i = 0; i < flops_.size(); ++i) {
-      Flop* f = &flops_[i];
+    clusters.resize(n);
+    for (size_t i = 0; i < sinks_.size(); ++i) {
+      Sink* sink = &sinks_[i];
       int position = 0;
-      if (f->match_idx[IDX].first >= 0 && f->match_idx[IDX].first < N) {
-        position = f->match_idx[IDX].first;
+      if (sink->cluster_idx >= 0 && sink->cluster_idx < n) {
+        position = sink->cluster_idx;
       } else {
         // Added to check wrong assignment
 
@@ -227,25 +190,25 @@ float Clustering::Kmeans(unsigned N,
         int minimumDistClusterIndex = -1;
 
         // Initialize minimumDist and minimumDistClusterIndex with a cluster
-        // with size < CAP
-        for (long int j = 0; j < means.size(); ++j) {
-          if (clusters[j].size() < CAP) {
-            minimumDist
-                = calcDist(std::make_pair(means[j].first, means[j].second), f);
+        // with size < cap
+        for (size_t j = 0; j < means.size(); ++j) {
+          if (clusters[j].size() < cap) {
+            minimumDist = calcDist(
+                std::make_pair(means[j].first, means[j].second), sink);
             minimumDistClusterIndex = j;
             break;
           }
         }
 
         if (minimumDistClusterIndex == -1) {
-          // No cluster with size < CAP
+          // No cluster with size < cap
           minimumDistClusterIndex = 0;
         } else {
-          // Nearest Cluster with size < CAP
-          for (long int j = 0; j < means.size(); ++j) {
-            if (clusters[j].size() < CAP) {
-              float currentDist = calcDist(
-                  std::make_pair(means[j].first, means[j].second), f);
+          // Nearest Cluster with size < cap
+          for (size_t j = 0; j < means.size(); ++j) {
+            if (clusters[j].size() < cap) {
+              const float currentDist = calcDist(
+                  std::make_pair(means[j].first, means[j].second), sink);
               if (currentDist < minimumDist) {
                 minimumDist = currentDist;
                 minimumDistClusterIndex = j;
@@ -256,20 +219,20 @@ float Clustering::Kmeans(unsigned N,
 
         position = minimumDistClusterIndex;
       }
-      clusters[position].push_back(f);
+      clusters[position].push_back(sink);
     }
 
     float delta = 0;
 
     // use weighted center
-    for (long int i = 0; i < N; ++i) {
+    for (unsigned i = 0; i < n; ++i) {
       float sum_x = 0, sum_y = 0;
-      for (long int j = 0; j < clusters[i].size(); ++j) {
+      for (size_t j = 0; j < clusters[i].size(); ++j) {
         sum_x += clusters[i][j]->x;
         sum_y += clusters[i][j]->y;
       }
-      float pre_x = means[i].first;
-      float pre_y = means[i].second;
+      const float pre_x = means[i].first;
+      const float pre_y = means[i].second;
 
       if (clusters[i].size() > 0) {
         means[i] = std::make_pair(sum_x / clusters[i].size(),
@@ -280,112 +243,100 @@ float Clustering::Kmeans(unsigned N,
 
     clusters_ = clusters;
 
-    if (test_layout_ == 1 || test_iter_ == 1) {
-      calcSilh(means, CAP, IDX);
-    }
-
-    if (iter > MAX || delta < 0.5)
+    if (iter > max || delta < 0.5) {
       stop = true;
+    }
 
     ++iter;
   }
 
-  float silh = calcSilh(means, CAP, IDX);
-
-  return silh;
+  return calcSilh(means);
 }
 
-float Clustering::calcSilh(const std::vector<std::pair<float, float>>& means,
-                           unsigned CAP,
-                           unsigned IDX)
+float Clustering::calcSilh(
+    const std::vector<std::pair<float, float>>& means) const
 {
   float sum_silh = 0;
-  for (long int i = 0; i < flops_.size(); ++i) {
-    Flop* f = &flops_[i];
+  for (size_t i = 0; i < sinks_.size(); ++i) {
+    const Sink* sink = &sinks_[i];
     float in_d = 0, out_d = FLT_MAX;
-    for (long int j = 0; j < means.size(); ++j) {
-      float _x = means[j].first;
-      float _y = means[j].second;
-      if (f->match_idx[IDX].first == j) {
+    for (size_t j = 0; j < means.size(); ++j) {
+      const float x = means[j].first;
+      const float y = means[j].second;
+      if (sink->cluster_idx == j) {
         // within the cluster
-        in_d = calcDist(std::make_pair(_x, _y), f);
+        in_d = calcDist({x, y}, sink);
       } else {
         // outside of the cluster
-        float d = calcDist(std::make_pair(_x, _y), f);
-        if (d < out_d) {
-          out_d = d;
-        }
+        const float d = calcDist({x, y}, sink);
+        out_d = std::min(d, out_d);
       }
     }
-    float temp = std::max(out_d, in_d);
+    const float temp = std::max(out_d, in_d);
     if (temp == 0) {
       if (out_d == 0)
-        f->silhs[IDX] = -1;
+        sum_silh += -1;
       if (in_d == 0)
-        f->silhs[IDX] = 1;
+        sum_silh += 1;
     } else {
-      f->silhs[IDX] = (out_d - in_d) / temp;
+      sum_silh += (out_d - in_d) / temp;
     }
-    sum_silh += f->silhs[IDX];
   }
-  return sum_silh / flops_.size();
+  return sum_silh / sinks_.size();
 }
 
 /*** Min-Cost Flow ********************************************************/
 void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
-                             unsigned CAP,
-                             unsigned IDX,
-                             float DIST,
-                             unsigned power)
+                             const unsigned cap,
+                             const float dist,
+                             const unsigned power)
 {
-  int remaining = flops_.size() % means.size();
+  // Builds src -> [sink nodes] -> [cluster nodes] - > target
+  ListDigraph graph;
 
-  ListDigraph g;
+  // source and target
+  ListDigraph::Node src = graph.addNode();
+  ListDigraph::Node target = graph.addNode();
+
   // collection of nodes in the flow
-  std::vector<ListDigraph::Node> f_nodes, c_nodes;
-  // collection of edges in the flow
-  std::vector<ListDigraph::Arc> i_edges, d_edges, /*g_edges,*/ o_edges;
-
-  // source and sink
-  ListDigraph::Node s = g.addNode();
-  ListDigraph::Node t = g.addNode();
+  std::vector<ListDigraph::Node> sink_nodes, cluster_nodes;
 
   // add nodes / edges to graph
-  // nodes for flops
-  for (long int i = 0; i < flops_.size(); ++i) {
-    ListDigraph::Node v = g.addNode();
-    f_nodes.push_back(v);
+  // nodes for sinks
+  for (size_t i = 0; i < sinks_.size(); ++i) {
+    sink_nodes.push_back(graph.addNode());
   }
   // nodes for clusters
-  for (long int i = 0; i < means.size(); ++i) {
-    ListDigraph::Node v = g.addNode();
-    c_nodes.push_back(v);
+  for (size_t i = 0; i < means.size(); ++i) {
+    cluster_nodes.push_back(graph.addNode());
   }
-  // edges between source and flops
-  for (long int i = 0; i < flops_.size(); ++i) {
-    ListDigraph::Arc e = g.addArc(s, f_nodes[i]);
-    i_edges.push_back(e);
-  }
-  // edges between flops and slots
-  std::vector<float> costs;
-  for (long int i = 0; i < flops_.size(); ++i) {
-    for (long int j = 0; j < means.size(); ++j) {
-      float _x = means[j].first;
-      float _y = means[j].second;
 
-      float d = calcDist(std::make_pair(_x, _y), &flops_[i]);
-      if (d <= DIST && std::pow(d, power) < std::numeric_limits<int>::max()) {
+  // collection of edges in the flow
+  std::vector<ListDigraph::Arc> src_sink_edges, sink_cluster_edges,
+      cluster_sink_edges;
+
+  // edges between source and sinks
+  for (auto& sink : sink_nodes) {
+    src_sink_edges.push_back(graph.addArc(src, sink));
+  }
+  // edges between sinks and clusters
+  std::vector<float> costs;
+  for (size_t i = 0; i < sinks_.size(); ++i) {
+    for (size_t j = 0; j < means.size(); ++j) {
+      float d = calcDist(means[j], &sinks_[i]);
+      if (d <= dist) {
         d = std::pow(d, power);
-        ListDigraph::Arc e = g.addArc(f_nodes[i], c_nodes[j]);
-        d_edges.push_back(e);
-        costs.push_back(d);
+        if (d < std::numeric_limits<int>::max()) {
+          ListDigraph::Arc e = graph.addArc(sink_nodes[i], cluster_nodes[j]);
+          sink_cluster_edges.push_back(e);
+          costs.push_back(d);
+        }
       }
     }
   }
-  // edges between clusters and sink
-  for (long int i = 0; i < means.size(); ++i) {
-    ListDigraph::Arc e = g.addArc(c_nodes[i], t);
-    o_edges.push_back(e);
+  // edges between clusters and target
+  for (auto& cluster : cluster_nodes) {
+    cluster_sink_edges.push_back(graph.addArc(cluster, target));
   }
 
   debugPrint(logger_,
@@ -393,154 +344,104 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
              "tritoncts",
              1,
              "Graph has {} nodes and {} edges",
-             countNodes(g),
-             countArcs(g));
+             countNodes(graph),
+             countArcs(graph));
 
   // formulate min-cost flow
-  NetworkSimplex<ListDigraph, int, int> flow(g);
-  ListDigraph::ArcMap<int> f_cost(g), f_cap(g), f_sol(g);
-  ListDigraph::NodeMap<std::pair<int, std::pair<int, int>>> node_map(g);
-  for (long int i = 0; i < i_edges.size(); ++i) {
-    f_cap[i_edges[i]] = 1;
+  ListDigraph::ArcMap<int> edge_cost(graph), edge_capacity(graph);
+  for (auto& edge : src_sink_edges) {
+    edge_capacity[edge] = 1;
   }
-  for (long int i = 0; i < d_edges.size(); ++i) {
-    f_cap[d_edges[i]] = 1;
-    f_cost[d_edges[i]] = costs[i];
+  for (size_t i = 0; i < sink_cluster_edges.size(); ++i) {
+    edge_capacity[sink_cluster_edges[i]] = 1;
+    edge_cost[sink_cluster_edges[i]] = costs[i];
   }
 
-  for (long int i = 0; i < o_edges.size(); ++i) {
+  const int remaining = sinks_.size() % means.size();
+
+  for (size_t i = 0; i < cluster_sink_edges.size(); ++i) {
     if (i < remaining) {
-      f_cap[o_edges[i]] = CAP + 1;
+      edge_capacity[cluster_sink_edges[i]] = cap + 1;
     } else {
-      f_cap[o_edges[i]] = CAP;
+      edge_capacity[cluster_sink_edges[i]] = cap;
     }
   }
 
-  for (long int i = 0; i < f_nodes.size(); ++i)
-    node_map[f_nodes[i]] = std::make_pair(i, std::make_pair(-1, -1));
-
-  for (long int i = 0; i < c_nodes.size(); ++i)
-    node_map[c_nodes[i]] = std::make_pair(-1, std::make_pair(i, 0));
-
-  node_map[s] = std::make_pair(-2, std::make_pair(-2, -2));
-  node_map[t] = std::make_pair(-2, std::make_pair(-2, -2));
-
-  for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
+  for (ListDigraph::ArcIt it(graph); it != INVALID; ++it) {
     debugPrint(logger_,
                CTS,
                "tritoncts",
                2,
                "{}-{}",
-               g.id(g.source(it)),
-               g.id(g.target(it)));
-    debugPrint(logger_, CTS, "tritoncts", 2, " cost = ", f_cost[it]);
-    debugPrint(logger_, CTS, "tritoncts", 2, " cap = ", f_cap[it]);
+               graph.id(graph.source(it)),
+               graph.id(graph.target(it)));
+    debugPrint(logger_, CTS, "tritoncts", 2, " cost = ", edge_cost[it]);
+    debugPrint(logger_, CTS, "tritoncts", 2, " cap = ", edge_capacity[it]);
   }
 
-  flow.costMap(f_cost);
-  flow.upperMap(f_cap);
-  flow.stSupply(s, t, means.size() * CAP + remaining);
+  NetworkSimplex<ListDigraph, int, int> flow(graph);
+  flow.costMap(edge_cost);
+  flow.upperMap(edge_capacity);
+  flow.stSupply(src, target, means.size() * cap + remaining);
   flow.run();
-  flow.flowMap(f_sol);
+  ListDigraph::ArcMap<int> solution(graph);
+  flow.flowMap(solution);
 
-  for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
-    if (f_sol[it] != 0) {
-      if (node_map[g.source(it)].second.first == -1
-          && node_map[g.target(it)].first == -1) {
-        debugPrint(logger_,
-                   CTS,
-                   "tritoncts",
-                   3,
-                   "Flow from: flop_",
-                   node_map[g.source(it)].first);
-        debugPrint(logger_,
-                   CTS,
-                   "tritoncts",
-                   3,
-                   " to cluster_",
-                   node_map[g.target(it)].second.first);
-        debugPrint(logger_,
-                   CTS,
-                   "tritoncts",
-                   3,
-                   " slot_",
-                   node_map[g.target(it)].second.second);
-        debugPrint(logger_, CTS, "tritoncts", 3, " flow = ", f_sol[it]);
+  ListDigraph::NodeMap<std::pair<int, int>> node_map(graph);
+  for (size_t i = 0; i < sink_nodes.size(); ++i)
+    node_map[sink_nodes[i]] = {i, -1};
 
-        flops_[node_map[g.source(it)].first].match_idx[IDX]
-            = node_map[g.target(it)].second;
-      }
+  for (size_t i = 0; i < cluster_nodes.size(); ++i)
+    node_map[cluster_nodes[i]] = {-1, i};
+
+  node_map[src] = {-2, -2};
+  node_map[target] = {-2, -2};
+
+  for (ListDigraph::ArcIt it(graph); it != INVALID; ++it) {
+    if (solution[it] == 0) {
+      continue;
+    }
+    if (node_map[graph.source(it)].second == -1
+        && node_map[graph.target(it)].first == -1) {
+      debugPrint(logger_,
+                 CTS,
+                 "tritoncts",
+                 3,
+                 "Flow from: sink_{}  to cluster_{} flow = {}",
+                 node_map[graph.source(it)].first,
+                 node_map[graph.target(it)].second,
+                 solution[it]);
+
+      sinks_[node_map[graph.source(it)].first].cluster_idx
+          = node_map[graph.target(it)].second;
     }
   }
 }
 
-void Clustering::plotClusters(
-    const std::vector<std::vector<Flop*>>& clusters,
-    const std::vector<std::pair<float, float>>& means,
-    const std::vector<std::pair<float, float>>& pre_means,
-    int iter) const
-{
-  std::ofstream fout;
-  std::stringstream sol_ss;
-  sol_ss << plotFile_ << "__" << iter << ".py";
-  fout.open(sol_ss.str());
-  fout << "#! /home/kshan/anaconda2/bin/python" << std::endl << std::endl;
-  fout << "import numpy as np" << std::endl;
-  fout << "import matplotlib.pyplot as plt" << std::endl;
-  fout << "import matplotlib.path as mpath" << std::endl;
-  fout << "import matplotlib.lines as mlines" << std::endl;
-  fout << "import matplotlib.patches as mpatches" << std::endl;
-  fout << "from matplotlib.collections import PatchCollection" << std::endl;
-
-  fout << std::endl;
-  fout << "fig, ax = plt.subplots()" << std::endl;
-  fout << "patches = []" << std::endl;
-
-  std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
-  for (size_t i = 0; i < clusters.size(); i++) {
-    logger_->report("clusters ", i);
-    for (size_t j = 0; j < clusters[i].size(); j++) {
-      fout << "plt.scatter(" << clusters[i][j]->x << ", " << clusters[i][j]->y
-           << ", color=\'" << colors[i % colors.size()] << "\')\n";
-
-      if (clusters[i][j]->x < means[i].first) {
-        fout << "plt.plot([" << clusters[i][j]->x << ", " << means[i].first
-             << "], [" << clusters[i][j]->y << ", " << means[i].second
-             << "], color = '" << colors[i % colors.size()] << "')\n";
-      } else {
-        fout << "plt.plot([" << means[i].first << ", " << clusters[i][j]->x
-             << "], [" << means[i].second << ", " << clusters[i][j]->y
-             << "], color = '" << colors[i % colors.size()] << "')\n";
-      }
-    }
-  }
-
-  for (size_t i = 0; i < means.size(); i++) {
-    fout << "plt.scatter(" << means[i].first << ", " << means[i].second
-         << ", color=\'k\')\n";
-  }
-
-  for (size_t i = 0; i < pre_means.size(); i++) {
-    fout << "plt.scatter(" << pre_means[i].first << ", " << pre_means[i].second
-         << ", color=\'g\')\n";
-  }
-
-  fout << "plt.scatter(" << branchingPoint_.first << ", "
-       << branchingPoint_.second << ", color=\'y\')\n";
-  fout << "plt.show()";
-  fout.close();
-};
-
-void Clustering::getClusters(std::vector<std::vector<unsigned>>& newClusters)
+void Clustering::getClusters(
+    std::vector<std::vector<unsigned>>& newClusters) const
 {
   newClusters.clear();
   newClusters.resize(clusters_.size());
-  for (long int i = 0; i < clusters_.size(); ++i) {
+  for (size_t i = 0; i < clusters_.size(); ++i) {
     newClusters[i].resize(clusters_[i].size());
     for (unsigned j = 0; j < clusters_[i].size(); ++j) {
-      newClusters[i][j] = clusters_[i][j]->sinkIdx;
+      newClusters[i][j] = clusters_[i][j]->sink_idx;
     }
   }
 }
 
-}  // namespace CKMeans
+/* static */
+float Clustering::calcDist(const std::pair<float, float>& loc, const Sink* sink)
+{
+  return calcDist(loc, {sink->x, sink->y});
+}
+
+/* static */
+float Clustering::calcDist(const std::pair<float, float>& loc1,
+                           const std::pair<float, float>& loc2)
+{
+  return fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second);
+}
+
+}  // namespace cts::CKMeans

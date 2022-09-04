@@ -42,16 +42,16 @@ class RoutePt
  public:
   RoutePt() = default;
   RoutePt(int x, int y, int layer);
-  int x() const { return _x; };
-  int y() const { return _y; };
-  int layer() const { return _layer; };
+  int x() const { return x_; };
+  int y() const { return y_; };
+  int layer() const { return layer_; };
 
   friend bool operator<(const RoutePt& p1, const RoutePt& p2);
 
  private:
-  int _x;
-  int _y;
-  int _layer;
+  int x_;
+  int y_;
+  int layer_;
 };
 
 bool operator<(const RoutePt& p1, const RoutePt& p2);

@@ -30,16 +30,20 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef __IRSOLVER_Power__
-#define __IRSOLVER_Power__
+#pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace sta {
 class dbSta;
 }  // namespace sta
+
+namespace odb {
+class dbInst;
+}  // namespace odb
 
 namespace psm {
 //!  Calculates the power per instance using OpenSTA
@@ -47,17 +51,18 @@ namespace psm {
   Uses OpenSTA to report total power per instance and
   use it for IR drop estimation.
 */
-class PowerInst {
- private:
-  //! Instance to OpenSTA object.
-  sta::dbSta* m_sta;
-  utl::Logger* m_logger;
-
+class PowerInst
+{
  public:
   //! Function for power per instance calculation
-  std::vector<std::pair<std::string, double>> executePowerPerInst(
-      sta::dbSta* sta, utl::Logger* logger);
+  std::vector<std::pair<odb::dbInst*, double>> executePowerPerInst(
+      sta::dbSta* sta,
+      utl::Logger* logger);
+
+ private:
+  //! Instance to OpenSTA object.
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
 };
-// power namespace end
+
 }  // namespace psm
-#endif

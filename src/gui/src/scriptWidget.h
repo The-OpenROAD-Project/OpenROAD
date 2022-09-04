@@ -35,17 +35,17 @@
 #include <tcl.h>
 
 #include <QDockWidget>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QStringList>
-#include <QPlainTextEdit>
 
 #include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
-} // namespace odb
+}  // namespace odb
 
 namespace gui {
 
@@ -91,11 +91,11 @@ class ScriptWidget : public QDockWidget
   void addToOutput(const QString& text, const QColor& color);
 
  public slots:
- // Triggered when the user hits return in the line edit
- void executeCommand(const QString& command, bool echo = true);
+  // Triggered when the user hits return in the line edit
+  void executeCommand(const QString& command, bool echo = true);
 
- // Use to execute a command silently, ie. without echo or return.
- void executeSilentCommand(const QString& command);
+  // Use to execute a command silently, ie. without echo or return.
+  void executeSilentCommand(const QString& command);
 
  private slots:
   void outputChanged();
@@ -127,9 +127,9 @@ class ScriptWidget : public QDockWidget
   void addLogToOutput(const QString& text, const QColor& color);
 
   static int tclExitHandler(ClientData instance_data,
-                            Tcl_Interp *interp,
+                            Tcl_Interp* interp,
                             int argc,
-                            const char **argv);
+                            const char** argv);
 
   QPlainTextEdit* output_;
   TclCmdInputWidget* input_;
@@ -153,10 +153,10 @@ class ScriptWidget : public QDockWidget
   // maximum number of character to display in a log line
   const int max_output_line_length_ = 1000;
 
-  const QColor cmd_msg_        = Qt::black;
-  const QColor tcl_error_msg_  = Qt::red;
-  const QColor tcl_ok_msg_     = Qt::blue;
-  const QColor buffer_msg_     = QColor(0x30, 0x30, 0x30);
+  const QColor cmd_msg_ = Qt::black;
+  const QColor tcl_error_msg_ = Qt::red;
+  const QColor tcl_ok_msg_ = Qt::blue;
+  const QColor buffer_msg_ = QColor(0x30, 0x30, 0x30);
 };
 
 }  // namespace gui

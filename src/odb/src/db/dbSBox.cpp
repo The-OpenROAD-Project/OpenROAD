@@ -320,4 +320,17 @@ dbSBox* dbSBox::getSBox(dbBlock* block_, uint dbid_)
   return (dbSBox*) block->_sbox_tbl->getPtr(dbid_);
 }
 
+void dbSBox::destroy(dbSBox* box_)
+{
+  _dbSWire* wire = (_dbSWire*) box_->getSWire();
+  _dbBlock* block = (_dbBlock*) wire->getOwner();
+  _dbSBox* box = (_dbSBox*)box_;
+
+  wire->removeSBox(box);
+
+  block->remove_rect(box->_shape._rect);
+  dbProperty::destroyProperties(box);
+  block->_sbox_tbl->destroy(box);
+}
+
 }  // namespace odb

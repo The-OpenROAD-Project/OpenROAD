@@ -90,8 +90,8 @@ global_placement -routability_driven -density $global_place_density \
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 # checkpoint
-set global_place_def [make_result_file ${design}_${platform}_global_place.def]
-write_def $global_place_def
+set global_place_db [make_result_file ${design}_${platform}_global_place.db]
+write_db $global_place_db
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
@@ -141,8 +141,8 @@ repair_clock_nets
 detailed_placement
 
 # checkpoint
-set cts_def [make_result_file ${design}_${platform}_cts.def]
-write_def $cts_def
+set cts_db [make_result_file ${design}_${platform}_cts.db]
+write_db $cts_db
 
 ################################################################
 # Setup/hold timing repair
@@ -150,7 +150,7 @@ write_def $cts_def
 set_propagated_clock [all_clocks]
 
 # Global routing is fast enough for the flow regressions.
-# It is NOT FAST ENOUGH FOR PRODUCTION USE (this means you, openlane).
+# It is NOT FAST ENOUGH FOR PRODUCTION USE.
 set repair_timing_use_grt_parasitics 0
 if { $repair_timing_use_grt_parasitics } {
   # Global route for parasitics - no guide file requied
@@ -183,39 +183,51 @@ utl::metric "DPL::design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
 check_placement -verbose
 
+# checkpoint
+set grt_db [make_result_file ${design}_${platform}_grt.db]
+write_db $grt_db
+
 ################################################################
 # Global routing
 
-pin_access
+pin_access -bottom_routing_layer $min_routing_layer \
+           -top_routing_layer $max_routing_layer
+
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
   -congestion_iterations 100
-
-set antenna_report [make_result_file ${design}_${platform}_ant.log]
-set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_report]
-
-utl::metric "GRT::ANT::errors" $antenna_errors
-
-if { $antenna_errors > 0 } {
-  utl::error FLW 1 "found $antenna_errors antenna violations"
-}
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
 ################################################################
+# Antenna repair
+
+check_antennas
+utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
+#repair_antennas
+
+################################################################
 # Detailed routing
 
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
-detailed_route -guide $route_guide \
-               -output_guide [make_result_file "${design}_${platform}_output_guide.mod"] \
-               -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
+detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \
+               -save_guide_updates \
+               -bottom_routing_layer $min_routing_layer \
+               -top_routing_layer $max_routing_layer \
                -verbose 0
 
+write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
+
+check_antennas
+utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
+
+set routed_db [make_result_file ${design}_${platform}_route.db]
+write_db $routed_db
 
 set routed_def [make_result_file ${design}_${platform}_route.def]
 write_def $routed_def

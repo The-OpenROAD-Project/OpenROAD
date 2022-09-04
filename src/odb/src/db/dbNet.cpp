@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbNet.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -48,11 +46,14 @@
 #include "dbDiff.hpp"
 #include "dbExtControl.h"
 #include "dbGroup.h"
+#include "dbGuide.h"
+#include "dbGuideItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbNet.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
@@ -76,7 +77,7 @@ static void set_symmetric_diff(dbDiff& diff,
                                std::vector<_dbITerm*>& lhs,
                                std::vector<_dbITerm*>& rhs);
 
-_dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
+_dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : _flags(n._flags),
       _name(NULL),
       _next_entry(n._next_entry),
@@ -88,6 +89,7 @@ _dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
       _cap_nodes(n._cap_nodes),
       _r_segs(n._r_segs),
       _non_default_rule(n._non_default_rule),
+      guides_(n.guides_),
       _groups(n._groups),
       _weight(n._weight),
       _xtalk(n._xtalk),
@@ -102,7 +104,7 @@ _dbNet::_dbNet(_dbDatabase*, const _dbNet& n)
   _drivingIterm = -1;
 }
 
-_dbNet::_dbNet(_dbDatabase*)
+_dbNet::_dbNet(_dbDatabase* db)
 {
   _flags._sig_type = dbSigType::SIGNAL;
   _flags._wire_type = dbWireType::ROUTED;
@@ -122,7 +124,6 @@ _dbNet::_dbNet(_dbDatabase*)
   _flags._set_io = 0;
   _flags._io = 0;
   _flags._dont_touch = 0;
-  _flags._size_only = 0;
   _flags._fixed_bump = 0;
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
@@ -164,6 +165,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
   stream << net._ccAdjustFactor;
   stream << net._ccAdjustOrder;
   stream << net._groups;
+  stream << net.guides_;
   return stream;
 }
 
@@ -188,6 +190,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._ccAdjustFactor;
   stream >> net._ccAdjustOrder;
   stream >> net._groups;
+  stream >> net.guides_;
 
   return stream;
 }
@@ -251,9 +254,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
     return false;
 
   if (_flags._dont_touch != rhs._flags._dont_touch)
-    return false;
-
-  if (_flags._size_only != rhs._flags._size_only)
     return false;
 
   if (_flags._fixed_bump != rhs._flags._fixed_bump)
@@ -321,6 +321,9 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   if (_groups != rhs._groups)
     return false;
 
+  if (guides_ != rhs.guides_)
+    return false;
+
   return true;
 }
 
@@ -351,7 +354,6 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_flags._set_io);
   DIFF_FIELD(_flags._io);
   DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._size_only);
   DIFF_FIELD(_flags._fixed_bump);
   DIFF_FIELD(_flags._source);
   DIFF_FIELD(_flags._rc_disconnected);
@@ -411,6 +413,7 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_ccAdjustFactor);
   DIFF_FIELD(_ccAdjustOrder);
   DIFF_VECTOR(_groups);
+  DIFF_FIELD(guides_);
   DIFF_END
 }
 
@@ -438,7 +441,6 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._set_io);
   DIFF_OUT_FIELD(_flags._io);
   DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._size_only);
   DIFF_OUT_FIELD(_flags._fixed_bump);
   DIFF_OUT_FIELD(_flags._source);
   DIFF_OUT_FIELD(_flags._rc_disconnected);
@@ -488,6 +490,7 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_ccAdjustFactor);
   DIFF_OUT_FIELD(_ccAdjustOrder);
   DIFF_OUT_VECTOR(_groups);
+  DIFF_OUT_FIELD(guides_);
   DIFF_END
 }
 
@@ -1720,18 +1723,6 @@ bool dbNet::isIO()
     return setIOflag();
 }
 
-void dbNet::setSizeOnly(bool v)
-{
-  _dbNet* net = (_dbNet*) this;
-  net->_flags._size_only = v;
-}
-
-bool dbNet::isSizeOnly()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._size_only == 1;
-}
-
 void dbNet::setDoNotTouch(bool v)
 {
   _dbNet* net = (_dbNet*) this;
@@ -2848,23 +2839,21 @@ uint dbNet::getTermCount()
   return itc + btc;
 }
 
-Rect
-dbNet::getTermBBox()
+Rect dbNet::getTermBBox()
 {
   Rect net_box;
   net_box.mergeInit();
 
-  for (dbITerm *iterm : getITerms()) {
+  for (dbITerm* iterm : getITerms()) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
       Rect iterm_rect(x, y, x, y);
       net_box.merge(iterm_rect);
-    }
-    else {
+    } else {
       // This clause is sort of worthless because getAvgXY prints
       // a warning when it fails.
-      dbInst *inst = iterm->getInst();
-      dbBox *inst_box = inst->getBBox();
+      dbInst* inst = iterm->getInst();
+      dbBox* inst_box = inst->getBBox();
       int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
       int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
       Rect inst_center(center_x, center_y, center_x, center_y);
@@ -2872,8 +2861,8 @@ dbNet::getTermBBox()
     }
   }
 
-  for (dbBTerm *bterm : getBTerms()) {
-    for (dbBPin *bpin : bterm->getBPins()) {
+  for (dbBTerm* bterm : getBTerms()) {
+    for (dbBPin* bpin : bterm->getBPins()) {
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
         Rect pin_bbox = bpin->getBBox();
@@ -2892,10 +2881,8 @@ void dbNet::destroySWires()
   _dbNet* net = (_dbNet*) this;
 
   dbSet<dbSWire> swires = getSWires();
-  ;
-  dbSet<dbSWire>::iterator sitr;
 
-  for (sitr = swires.begin(); sitr != swires.end();)
+  for (auto sitr = swires.begin(); sitr != swires.end();)
     sitr = dbSWire::destroy(sitr);
 
   net->_swires = 0;
@@ -2938,6 +2925,11 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(
+        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->_name);
+  }
 
   dbSet<dbITerm> iterms = net_->getITerms();
   dbSet<dbITerm>::iterator iitr = iterms.begin();
@@ -3066,6 +3058,23 @@ uint dbNet::setLevelAtFanout(uint level,
     cnt++;
   }
   return cnt;
+}
+
+dbSet<dbGuide> dbNet::getGuides() const
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+  return dbSet<dbGuide>(net, block->_guide_itr);
+}
+
+void dbNet::clearGuides()
+{
+  auto guides = getGuides();
+  dbSet<dbGuide>::iterator itr = guides.begin();
+  while (itr != guides.end()) {
+    auto curGuide = *itr++;
+    dbGuide::destroy(curGuide);
+  }
 }
 
 #if 0

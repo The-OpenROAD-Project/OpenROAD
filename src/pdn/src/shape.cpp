@@ -51,6 +51,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       rect_(rect),
       type_(type),
       shape_type_(SHAPE),
+      allow_non_preferred_change_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -64,6 +65,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       rect_(rect),
       type_(odb::dbWireShapeType::NONE),
       shape_type_(shape_type),
+      allow_non_preferred_change_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
@@ -85,6 +87,7 @@ Shape* Shape::copy() const
   shape->obs_ = obs_;
   shape->iterm_connections_ = iterm_connections_;
   shape->bterm_connections_ = bterm_connections_;
+  shape->allow_non_preferred_change_ = allow_non_preferred_change_;
   return shape;
 }
 
@@ -353,8 +356,7 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
       if (box->getTechLayer() != layer_) {
         continue;
       }
-      odb::Rect box_rect;
-      box->getBox(box_rect);
+      odb::Rect box_rect = box->getBox();
       if (box_rect == rect) {
         // pin already exists
         return;
@@ -383,8 +385,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
         continue;
       }
 
-      odb::Rect rect;
-      box->getBox(rect);
+      odb::Rect rect = box->getBox();
 
       ShapePtr shape
           = std::make_shared<Shape>(layer, net, rect, box->getWireShapeType());
@@ -583,8 +584,7 @@ void FollowPinShape::updateTermConnections()
   const odb::Rect& rect = getRect();
   std::set<odb::dbRow*> remove_rows;
   for (auto* row : rows_) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
     if (!rect.intersects(row_rect)) {
       remove_rows.insert(row);
     }
@@ -611,8 +611,7 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 
   // merge with rows to ensure proper overlap
   for (auto* row : rows_) {
-    odb::Rect row_rect;
-    row->getBBox(row_rect);
+    odb::Rect row_rect = row->getBBox();
     if (is_horizontal) {
       min_shape.set_xlo(std::min(min_shape.xMin(), row_rect.xMin()));
       min_shape.set_xhi(std::max(min_shape.xMax(), row_rect.xMax()));

@@ -77,92 +77,35 @@ class drVia : public drRef
   drVia(const frVia& in);
   // getters
   frViaDef* getViaDef() const { return viaDef_; }
-  void getLayer1BBox(Rect& boxIn) const
+  Rect getLayer1BBox() const
   {
-    auto& figs = viaDef_->getLayer1Figs();
-    bool isFirst = true;
     Rect box;
-    frCoord xl = 0;
-    frCoord yl = 0;
-    frCoord xh = 0;
-    frCoord yh = 0;
-    for (auto& fig : figs) {
-      fig->getBBox(box);
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
+    box.mergeInit();
+    for (auto& fig : viaDef_->getLayer1Figs()) {
+      box.merge(fig->getBBox());
     }
-    boxIn.init(xl, yl, xh, yh);
-    dbTransform xform;
-    xform.setOffset(origin_);
-    xform.apply(boxIn);
+    dbTransform(origin_).apply(box);
+    return box;
   }
-  void getCutBBox(Rect& boxIn) const
+  Rect getCutBBox() const
   {
-    auto& figs = viaDef_->getCutFigs();
-    bool isFirst = true;
     Rect box;
-    frCoord xl = 0;
-    frCoord yl = 0;
-    frCoord xh = 0;
-    frCoord yh = 0;
-    for (auto& fig : figs) {
-      fig->getBBox(box);
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
+    box.mergeInit();
+    for (auto& fig : viaDef_->getCutFigs()) {
+      box.merge(fig->getBBox());
     }
-    boxIn.init(xl, yl, xh, yh);
-    dbTransform xform;
-    xform.setOffset(origin_);
-    xform.apply(boxIn);
+    dbTransform(origin_).apply(box);
+    return box;
   }
-  void getLayer2BBox(Rect& boxIn) const
+  Rect getLayer2BBox() const
   {
-    auto& figs = viaDef_->getLayer2Figs();
-    bool isFirst = true;
     Rect box;
-    frCoord xl = 0;
-    frCoord yl = 0;
-    frCoord xh = 0;
-    frCoord yh = 0;
-    for (auto& fig : figs) {
-      fig->getBBox(box);
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
+    box.mergeInit();
+    for (auto& fig : viaDef_->getLayer2Figs()) {
+      box.merge(fig->getBBox());
     }
-    boxIn.init(xl, yl, xh, yh);
-    dbTransform xform;
-    xform.setOffset(origin_);
-    xform.apply(boxIn);
+    dbTransform(origin_).apply(box);
+    return box;
   }
   // setters
   void setViaDef(frViaDef* in) { viaDef_ = in; }
@@ -180,12 +123,9 @@ class drVia : public drRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
+  Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  void getTransform(dbTransform& xformIn) const override
-  {
-    xformIn.setOffset(origin_);
-  }
+  dbTransform getTransform() const override { return origin_; }
   void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
@@ -228,19 +168,18 @@ class drVia : public drRef
    * overlaps
    */
 
-  void getBBox(Rect& boxIn) const override
+  Rect getBBox() const override
   {
     auto& layer1Figs = viaDef_->getLayer1Figs();
     auto& layer2Figs = viaDef_->getLayer2Figs();
     auto& cutFigs = viaDef_->getCutFigs();
     bool isFirst = true;
-    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
     frCoord yh = 0;
     for (auto& fig : layer1Figs) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -255,7 +194,7 @@ class drVia : public drRef
       }
     }
     for (auto& fig : layer2Figs) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -270,7 +209,7 @@ class drVia : public drRef
       }
     }
     for (auto& fig : cutFigs) {
-      fig->getBBox(box);
+      Rect box = fig->getBBox();
       if (isFirst) {
         xl = box.xMin();
         yl = box.yMin();
@@ -284,18 +223,17 @@ class drVia : public drRef
         yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.init(xl, yl, xh, yh);
+    Rect box(xl, yl, xh, yh);
     dbTransform xform;
     xform.setOffset(origin_);
-    // cout <<"origin " <<origin.x() <<" " <<origin.y() <<endl;
-    xform.apply(boxIn);
+    xform.apply(box);
+    return box;
   }
 
   bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }
-  void getMazeIdx(FlexMazeIdx& bi, FlexMazeIdx& ei) const
+  std::pair<FlexMazeIdx, FlexMazeIdx> getMazeIdx() const
   {
-    bi.set(beginMazeIdx_);
-    ei.set(endMazeIdx_);
+    return {beginMazeIdx_, endMazeIdx_};
   }
   void setMazeIdx(const FlexMazeIdx& bi, const FlexMazeIdx& ei)
   {
@@ -306,8 +244,6 @@ class drVia : public drRef
   void setTapered(bool t) { tapered_ = t; }
 
   bool isTapered() const { return tapered_; }
-
-  const Point& getOrigin() const { return origin_; }
 
   bool isBottomConnected() const { return bottomConnected_; }
   bool isTopConnected() const { return topConnected_; }
@@ -325,31 +261,7 @@ class drVia : public drRef
   bool topConnected_ : 1;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<drRef>(*this);
-    (ar) & origin_;
-    (ar) & viaDef_;
-    (ar) & owner_;
-    (ar) & beginMazeIdx_;
-    (ar) & endMazeIdx_;
-    bool tmp;
-    if (is_loading(ar)) {
-      (ar) & tmp;
-      tapered_ = tmp;
-      (ar) & tmp;
-      bottomConnected_ = tmp;
-      (ar) & tmp;
-      topConnected_ = tmp;
-    } else {
-      tmp = tapered_;
-      (ar) & tmp;
-      tmp = bottomConnected_;
-      (ar) & tmp;
-      tmp = topConnected_;
-      (ar) & tmp;
-    }
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };

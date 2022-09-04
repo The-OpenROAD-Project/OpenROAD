@@ -32,20 +32,20 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include "odb/dbWireGraph.h"
-
 #include <map>
 #include <set>
 #include <vector>
 
+#include "gui/gui.h"
+#include "odb/dbWireGraph.h"
+
 namespace odb {
 class dbMaster;
-} // namespace odb
+}  // namespace odb
 
 namespace sta {
 class dbSta;
-} // namespace sta
+}  // namespace sta
 
 namespace gui {
 
@@ -55,7 +55,8 @@ namespace gui {
 class DbInstDescriptor : public Descriptor
 {
  public:
-  enum Type {
+  enum Type
+  {
     BLOCK,
     PAD,
     PAD_INPUT,
@@ -107,7 +108,8 @@ class DbInstDescriptor : public Descriptor
   std::string getInstanceTypeText(Type type) const;
 
  private:
-  void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;
+  void makeMasterOptions(odb::dbMaster* master,
+                         std::vector<EditorOption>& options) const;
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
   bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
@@ -135,7 +137,9 @@ class DbMasterDescriptor : public Descriptor
 
   bool getAllObjects(SelectionSet& objects) const override;
 
-  static void getMasterEquivalent(sta::dbSta* sta, odb::dbMaster* master, std::set<odb::dbMaster*>& masters);
+  static void getMasterEquivalent(sta::dbSta* sta,
+                                  odb::dbMaster* master,
+                                  std::set<odb::dbMaster*>& masters);
 
  private:
   void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
@@ -149,7 +153,8 @@ class DbNetDescriptor : public Descriptor
  public:
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  const std::set<odb::dbNet*>& focus_nets);
+                  const std::set<odb::dbNet*>& focus_nets,
+                  const std::set<odb::dbNet*>& guide_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -179,7 +184,9 @@ class DbNetDescriptor : public Descriptor
   using NodeMap = std::map<const Node*, NodeList>;
   using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
 
-  void drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const;
+  void drawPathSegment(odb::dbNet* net,
+                       const odb::dbObject* sink,
+                       Painter& painter) const;
   void findSourcesAndSinksInGraph(odb::dbNet* net,
                                   const odb::dbObject* sink,
                                   odb::dbWireGraph* graph,
@@ -197,6 +204,7 @@ class DbNetDescriptor : public Descriptor
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
   const std::set<odb::dbNet*>& focus_nets_;
+  const std::set<odb::dbNet*>& guide_nets_;
 
   static const int max_iterms_ = 10000;
 };
@@ -423,6 +431,54 @@ class DbModuleDescriptor : public Descriptor
   odb::dbDatabase* db_;
 
   void getModules(odb::dbModule* module, SelectionSet& objects) const;
+};
+
+class DbTechViaDescriptor : public Descriptor
+{
+ public:
+  DbTechViaDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbGenerateViaDescriptor : public Descriptor
+{
+ public:
+  DbGenerateViaDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
 };
 
 };  // namespace gui

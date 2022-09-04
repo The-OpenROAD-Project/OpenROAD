@@ -42,11 +42,16 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "distributed/RoutingJobDescription.h"
+#include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "io/io.h"
+#include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -63,47 +68,49 @@ enum class SerializationType
   WRITE
 };
 
-static bool serialize_worker(SerializationType type,
-                             FlexDRWorker* worker,
-                             const std::string& name)
+void serializeWorker(FlexDRWorker* worker, std::string& workerStr)
 {
-  if (type == SerializationType::READ) {
-    std::ifstream file(name);
-    if (!file.good())
-      return false;
-    InputArchive ar(file);
-    register_types(ar);
-    ar >> *worker;
-    file.close();
-  } else {
-    std::ofstream file(name);
-    if (!file.good())
-      return false;
-    OutputArchive ar(file);
-    register_types(ar);
-    ar << *worker;
-    file.close();
-  }
-  return true;
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
+  frOArchive ar(stream);
+  registerTypes(ar);
+  ar << *worker;
+  workerStr = stream.str();
 }
 
-static bool writeGlobals(const std::string& name)
+void deserializeWorker(FlexDRWorker* worker,
+                       frDesign* design,
+                       const std::string& workerStr)
 {
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  OutputArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
-  file.close();
-  return true;
+  std::stringstream stream(
+      workerStr,
+      std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frIArchive ar(stream);
+  ar.setDesign(design);
+  registerTypes(ar);
+  ar >> *worker;
 }
 
-FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn),
+void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+{
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
+  frOArchive ar(stream);
+  registerTypes(ar);
+  ar << viaData;
+  serializedStr = stream.str();
+}
+
+FlexDR::FlexDR(triton_route::TritonRoute* router,
+               frDesign* designIn,
+               Logger* loggerIn,
+               odb::dbDatabase* dbIn)
+    : router_(router),
+      design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
       dist_on_(false),
+      dist_port_(0),
       increaseClipsize_(false),
       clipSizeInc_(0),
       iter_(0)
@@ -123,23 +130,31 @@ void FlexDR::setDebug(frDebugSettings* settings)
             : nullptr;
 }
 
-// Used when reloaded a serialized worker.  init() will already have
-// been run. We don't support end() in this case as it is intended for
-// debugging route_queue().  The gc worker will have beeen reloaded
-// from the serialization.
 std::string FlexDRWorker::reloadedMain()
 {
+  init(design_);
+  debugPrint(logger_,
+             utl::DRT,
+             "autotuner",
+             1,
+             "Init number of markers {}",
+             getInitNumMarkers());
   route_queue();
   setGCWorker(nullptr);
   cleanup();
-  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.out",
-                                 dist_dir_,
-                                 getDRIter(),
-                                 getGCellBox().xMin(),
-                                 getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
-  return name;
-  // reply with file path
+  std::string workerStr;
+  serializeWorker(this, workerStr);
+  return workerStr;
+}
+
+void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
+                      const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << updates;
+  file.close();
 }
 
 int FlexDRWorker::main(frDesign* design)
@@ -155,8 +170,37 @@ int FlexDRWorker::main(frDesign* design)
                     routeBox_.xMax() * micronPerDBU,
                     routeBox_.yMax() * micronPerDBU);
   }
-
-  init(design);
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
+  }
+  if (debugSettings_->debugDumpDR
+      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
+      && debugSettings_->iter == getDRIter()) {
+    serializeUpdates(design_->getUpdates(),
+                     fmt::format("{}/updates.bin", debugSettings_->dumpDir));
+    design_->clearUpdates();
+    std::string viaDataStr;
+    serializeViaData(*via_data_, viaDataStr);
+    ofstream viaDataFile(
+        fmt::format("{}/viadata.bin", debugSettings_->dumpDir).c_str());
+    viaDataFile << viaDataStr;
+    std::string workerStr;
+    serializeWorker(this, workerStr);
+    ofstream workerFile(
+        fmt::format("{}/worker.bin", debugSettings_->dumpDir).c_str());
+    workerFile << workerStr;
+    workerFile.close();
+    std::ofstream file(
+        fmt::format("{}/worker_globals.bin", debugSettings_->dumpDir).c_str());
+    frOArchive ar(file);
+    registerTypes(ar);
+    serializeGlobals(ar);
+    file.close();
+  }
+  if (!skipRouting_) {
+    init(design);
+  }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
     route_queue();
@@ -193,122 +237,8 @@ int FlexDRWorker::main(frDesign* design)
 
   return 0;
 }
-/**
- * Finds an equivalent object from the current design to obj. This is
- * because obj is a copy of the actual object that resides in design and
- * it is assumed that it has a different memory allocation.
- *
- * @param[in] obj pointer to the serialized object. Should be a copy of an
- * object in design.
- * @param[in] design pointer to frDesign.
- * @returns pointer to the equivalent frBlockObject in design. Returns nullptr
- * if no equivalent object was found or if the object is of an unexpected type.
- */
-inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
-{
-  switch (obj->typeId()) {
-    case frcNet: {
-      frNet* srNet = (static_cast<frNet*>(obj));
-      auto net = design->getTopBlock()->findNet(srNet->getName());
-      return net;
-    }
-    case frcInstTerm: {
-      frInstTerm* srTerm = (static_cast<frInstTerm*>(obj));
-      auto srInst = srTerm->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& term : inst->getInstTerms())
-        if (term->getId() == srTerm->getId())
-          return term.get();
-      return nullptr;
-    }
-    case frcBTerm: {
-      auto bTerm = static_cast<frBTerm*>(obj);
-      return design->getTopBlock()->getTerm(bTerm->getName());
-    }
-    case frcInstBlockage: {
-      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
-      auto srInst = srBlkg->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& blkg : inst->getInstBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-      return nullptr;
-    }
-    case frcBlockage: {
-      frBlockage* srBlkg = (static_cast<frBlockage*>(obj));
-      for (auto& blkg : design->getTopBlock()->getBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-    }
-    default:
-      return nullptr;
-  }
-}
-void FlexDRWorker::updateDesign(frDesign* design)
-{
-  design_ = design;
-  for (auto& drNet_ : nets_) {
-    auto frNet_ = design->getTopBlock()->findNet(drNet_->getFrNet()->getName());
-    if (frNet_ != nullptr) {
-      if (drNet_->getFrNet()->isModified())
-        frNet_->setModified(true);
-      drNet_->setFrNet(frNet_);
-    } else {
-      logger_->error(DRT,
-                     501,
-                     "No matching net in design for net {}",
-                     drNet_->getFrNet()->getName());
-    }
-  }
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
-  for (auto [net, value] : boundaryPin_) {
-    auto frNet_ = design->getTopBlock()->findNet(net->getName());
-    if (frNet_ != nullptr) {
-      bp[frNet_] = value;
-    } else {
-      logger_->error(
-          DRT, 502, "No matching net in design for net {}", net->getName());
-    }
-  }
-  setBoundaryPins(bp);
-  std::vector<frMarker>& markers = getBestMarkers();
-  for (auto& marker : markers) {
-    std::set<frBlockObject*> newSrcs;
-    for (auto src : marker.getSrcs()) {
-      if (src != nullptr) {
-        auto newSrc = getEquivalentObject(src, design);
-        if (newSrc == nullptr)
-          logger_->error(DRT, 503, "Fail in mapping serialized marker src");
-        newSrcs.insert(newSrc);
-      } else
-        newSrcs.insert(nullptr);
-    }
-    marker.setSrcs(newSrcs);
-    for (auto& [obj, value] : marker.getVictims()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(DRT, 504, "Fail in mapping serialized marker victim");
-        obj = newObj;
-      }
-    }
-    for (auto& [obj, value] : marker.getAggressors()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(
-              DRT, 505, "Fail in mapping serialized marker aggressor");
-        obj = newObj;
-      }
-    }
-  }
-}
 
-void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
+void FlexDRWorker::distributedMain(frDesign* design)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -318,32 +248,10 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-
-  init(design);
-  if (skipRouting_)
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
     return;
-  // Save the worker in its fully initialized state
-  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.in",
-                                 dist_dir_,
-                                 getDRIter(),
-                                 getGCellBox().xMin(),
-                                 getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
-  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
-  std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
-  msg.setJobDescription(std::move(desc));
-  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (ok) {
-    auto desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-    ok = serialize_worker(SerializationType::READ, this, desc->getWorkerPath());
-    if (!ok)
-      logger_->error(DRT, 511, "Deserialization failed");
-    std::remove(name.c_str());
-    std::remove(desc->getWorkerPath().c_str());
-    updateDesign(design);
-  } else {
-    logger_->error(utl::DRT, 500, "Sending worker {} failed", name);
   }
 }
 
@@ -356,8 +264,7 @@ void FlexDR::initFromTA()
         if (connFig->typeId() == frcPathSeg) {
           unique_ptr<frShape> ps = make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
-          Point bp, ep;
-          static_cast<frPathSeg*>(ps.get())->getPoints(bp, ep);
+          auto [bp, ep] = static_cast<frPathSeg*>(ps.get())->getPoints();
           if (ep.x() - bp.x() + ep.y() - bp.y() == 1) {
             ;  // skip TA dummy segment
           } else {
@@ -374,8 +281,6 @@ void FlexDR::initFromTA()
 void FlexDR::initGCell2BoundaryPin()
 {
   // initiailize size
-  Rect dieBox;
-  getDesign()->getTopBlock()->getDieBox(dieBox);
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -391,18 +296,16 @@ void FlexDR::initGCell2BoundaryPin()
       for (auto& connFig : guide->getRoutes()) {
         if (connFig->typeId() == frcPathSeg) {
           auto ps = static_cast<frPathSeg*>(connFig.get());
-          frLayerNum layerNum;
-          Point bp, ep;
-          ps->getPoints(bp, ep);
-          layerNum = ps->getLayerNum();
+          auto [bp, ep] = ps->getPoints();
+          frLayerNum layerNum = ps->getLayerNum();
           // skip TA dummy segment
           if (ep.x() - bp.x() + ep.y() - bp.y() == 1
               || ep.x() - bp.x() + ep.y() - bp.y() == 0) {
             continue;
           }
-          Point idx1, idx2;
-          getDesign()->getTopBlock()->getGCellIdx(bp, idx1);
-          getDesign()->getTopBlock()->getGCellIdx(ep, idx2);
+          Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
+          Point idx2 = design_->getTopBlock()->getGCellIdx(ep);
+
           // update gcell2BoundaryPin
           // horizontal
           if (bp.y() == ep.y()) {
@@ -410,8 +313,8 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              Rect gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               bool hasLeftBound = true;
@@ -442,8 +345,8 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              Rect gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               bool hasBottomBound = true;
@@ -494,29 +397,29 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     isVia1Above = true;
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  via1.getCutBBox(cutBox1);
+  Rect cutBox1 = via1.getCutBBox();
   int width1 = viaBox1.minDXDY();
   int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
     isVia2Above = true;
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  via2.getCutBBox(cutBox2);
+  Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
   int length2 = viaBox2.maxDXDY();
 
@@ -601,28 +504,26 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     isVia1Above = true;
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  via1.getCutBBox(cutBox1);
   int width1 = viaBox1.minDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
     isVia2Above = true;
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  via2.getCutBBox(cutBox2);
   int width2 = viaBox2.minDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
@@ -693,9 +594,9 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   frVia via1(viaDef1);
   Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   auto width1 = viaBox1.minDXDY();
   bool isVia1Fat = isH ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
@@ -706,9 +607,9 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   frVia via2(viaDef2);
   Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
   auto width2 = viaBox2.minDXDY();
   bool isVia2Fat = isH ? (viaBox2.yMax() - viaBox2.yMin() > defaultWidth)
@@ -748,10 +649,10 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   }
 
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     lNum = lNum + 2;
   } else {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     lNum = lNum - 2;
   }
   width1 = viaBox1.minDXDY();
@@ -883,29 +784,29 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     isVia1Above = true;
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  via1.getCutBBox(cutBox1);
+  Rect cutBox1 = via1.getCutBBox();
   int width1 = viaBox1.minDXDY();
   int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
     isVia2Above = true;
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  via2.getCutBBox(cutBox2);
+  Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
   int length2 = viaBox2.maxDXDY();
 
@@ -994,9 +895,9 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   frVia via1(viaDef1);
   Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   auto width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
@@ -1008,9 +909,9 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   frVia via2(viaDef2);
   Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
   auto width2 = viaBox2.minDXDY();
   bool isVia2Fat = isCurrDirX
@@ -1051,10 +952,10 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   }
 
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
     lNum = lNum + 2;
   } else {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
     lNum = lNum - 2;
   }
   width1 = viaBox1.minDXDY();
@@ -1098,22 +999,22 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   frVia via1(viaDef1);
-  Rect viaBox1, cutBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
-  via1.getCutBBox(cutBox1);
+  Rect cutBox1 = via1.getCutBBox();
 
   frVia via2(viaDef2);
-  Rect viaBox2, cutBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
-    via2.getLayer1BBox(viaBox2);
+    viaBox2 = via2.getLayer1BBox();
   } else {
-    via2.getLayer2BBox(viaBox2);
+    viaBox2 = via2.getLayer2BBox();
   }
-  via2.getCutBBox(cutBox2);
+  Rect cutBox2 = via2.getCutBBox();
   auto boxLength = isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
                               : (cutBox1.xMax() - cutBox1.xMin());
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
@@ -1431,10 +1332,8 @@ void FlexDR::init_halfViaEncArea()
         && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
       frVia via(viaDef);
-      Rect layer1Box;
-      Rect layer2Box;
-      via.getLayer1BBox(layer1Box);
-      via.getLayer2BBox(layer2Box);
+      Rect layer1Box = via.getLayer1BBox();
+      Rect layer2Box = via.getLayer2BBox();
       auto layer1HalfArea = layer1Box.minDXDY() * layer1Box.maxDXDY() / 2;
       auto layer2HalfArea = layer2Box.minDXDY() * layer2Box.maxDXDY() / 2;
       halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
@@ -1461,9 +1360,9 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
   frVia via1(viaDef);
   Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   int width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
@@ -1518,9 +1417,9 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
   frVia via1(viaDef);
   Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
-    via1.getLayer1BBox(viaBox1);
+    viaBox1 = via1.getLayer1BBox();
   } else {
-    via1.getLayer2BBox(viaBox1);
+    viaBox1 = via1.getLayer2BBox();
   }
   bool isVia1Fat = isCurrDirX
                        ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
@@ -1687,18 +1586,13 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (iter > END_ITERATION) {
-    return;
-  }
   if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
     return;
   }
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      if (iter != 0)
-        std::remove(globals_path_.c_str());
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      writeGlobals(globals_path_);
+      router_->writeGlobals(globals_path_.c_str());
     }
   }
   frTime t;
@@ -1718,8 +1612,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (graphics_) {
     graphics_->startIter(iter);
   }
-  Rect dieBox;
-  getDesign()->getTopBlock()->getDieBox(dieBox);
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -1741,12 +1633,11 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
       auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
-      Rect routeBox1;
-      getDesign()->getTopBlock()->getGCellBox(Point(i, j), routeBox1);
-      Rect routeBox2;
+      Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
       const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = min((int) ygp.getCount(), j + size - 1);
-      getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
+      Rect routeBox2
+          = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
                     routeBox1.yMin(),
                     routeBox2.xMax(),
@@ -1761,6 +1652,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
+      worker->setDebugSettings(router_->getDebugSettings());
       if (dist_on_)
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
@@ -1779,7 +1671,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
-          || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+          || (!dist_on_
+              && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
         workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
       }
       workers[batchIdx].back().push_back(std::move(worker));
@@ -1791,7 +1684,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
 
   omp_set_num_threads(MAX_THREADS);
-
+  int version = 0;
   increaseClipsize_ = false;
   numWorkUnits_ = 0;
   // parallel execution
@@ -1803,47 +1696,89 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        // multi thread
-        ThreadException exception;
+        if (dist_on_) {
+          router_->dist_pool_.join();
+          if (version++ == 0 && !design_->hasUpdates()) {
+            std::string serializedViaData;
+            serializeViaData(via_data_, serializedViaData);
+            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
+          } else
+            router_->sendDesignUpdates(globals_path_);
+        }
+        {
+          ProfileTask task("DIST: PROCESS_BATCH");
+          // multi thread
+          ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          try {
-            if (dist_on_)
-              workersInBatch[i]->distributedMain(getDesign(),
-                                                 globals_path_.c_str());
-            else
-              workersInBatch[i]->main(getDesign());
+          for (int i = 0; i < (int) workersInBatch.size(); i++) {
+            try {
+              if (dist_on_)
+                workersInBatch[i]->distributedMain(getDesign());
+              else
+                workersInBatch[i]->main(getDesign());
 #pragma omp critical
-            {
-              cnt++;
-              if (VERBOSE > 0) {
-                if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                    && prev_perc < 90) {
-                  if (prev_perc == 0 && t.isExceed(0)) {
-                    isExceed = true;
-                  }
-                  prev_perc += 10;
-                  if (isExceed) {
-                    logger_->report(
-                        "    Completing {}% with {} violations.",
-                        prev_perc,
-                        getDesign()->getTopBlock()->getNumMarkers());
-                    logger_->report("    {}.", t);
+              {
+                cnt++;
+                if (VERBOSE > 0) {
+                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                      && prev_perc < 90) {
+                    if (prev_perc == 0 && t.isExceed(0)) {
+                      isExceed = true;
+                    }
+                    prev_perc += 10;
+                    if (isExceed) {
+                      logger_->report(
+                          "    Completing {}% with {} violations.",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report("    {}.", t);
+                    }
                   }
                 }
               }
+            } catch (...) {
+              exception.capture();
             }
-          } catch (...) {
-            exception.capture();
+          }
+          exception.rethrow();
+          if (dist_on_) {
+            int j = 0;
+            std::vector<std::vector<std::pair<int, FlexDRWorker*>>>
+                distWorkerBatches(router_->getCloudSize());
+            for (int i = 0; i < workersInBatch.size(); i++) {
+              auto worker = workersInBatch.at(i).get();
+              if (!worker->isSkipRouting()) {
+                distWorkerBatches[j].push_back({i, worker});
+                j = (j + 1) % router_->getCloudSize();
+              }
+            }
+            {
+              ProfileTask task("DIST: SERIALIZE+SEND");
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < distWorkerBatches.size(); i++)
+                sendWorkers(distWorkerBatches.at(i), workersInBatch);
+            }
+            logger_->report("    Received Batches:{}.", t);
+            std::vector<std::pair<int, std::string>> workers;
+            router_->getWorkerResults(workers);
+            {
+              ProfileTask task("DIST: DESERIALIZING_BATCH");
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < workers.size(); i++) {
+                deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
+                                  design_,
+                                  workers.at(i).second);
+              }
+            }
+            logger_->report("    Deserialized Batches:{}.", t);
           }
         }
-        exception.rethrow();
       }
       {
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if(workersInBatch[i]->end(getDesign()))
+          if (workersInBatch[i]->end(getDesign()))
             numWorkUnits_ += 1;
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
@@ -1870,33 +1805,77 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
   }
-  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  FlexDRConnectivityChecker checker(
+      getDesign(),
+      logger_,
+      db_,
+      graphics_.get(),
+      dist_on_ || router_->getDebugSettings()->debugDumpDR);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
-        utl::DRT,
-        "workers",
-        1,
-        "Number of work units = {}.",
-        numWorkUnits_);
+             utl::DRT,
+             "workers",
+             1,
+             "Number of work units = {}.",
+             numWorkUnits_);
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
                   "  Number of violations = {}.",
                   getDesign()->getTopBlock()->getNumMarkers());
+    if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
+      // report violations
+      std::map<std::string, std::map<frLayerNum, uint>> violations;
+      std::set<frLayerNum> layers;
+      const std::map<std::string, std::string> relabel
+          = {{"Lef58SpacingEndOfLine", "EOL"},
+             {"Lef58CutSpacingTable", "CutSpcTbl"},
+             {"Lef58EolKeepOut", "eolKeepOut"}};
+      for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+        if (!marker->getConstraint())
+          continue;
+        auto type = marker->getConstraint()->getViolName();
+        if (relabel.find(type) != relabel.end())
+          type = relabel.at(type);
+        violations[type][marker->getLayerNum()]++;
+        layers.insert(marker->getLayerNum());
+      }
+      std::string line = fmt::format("{:<15}", "Viol/Layer");
+      for (auto lNum : layers) {
+        std::string lName = getTech()->getLayer(lNum)->getName();
+        if (lName.size() >= 7) {
+          lName = lName.substr(0, 2) + ".." + lName.substr(lName.size() - 2, 2);
+        }
+        line += fmt::format("{:>7}", lName);
+      }
+      logger_->report(line);
+      for (auto [type, typeViolations] : violations) {
+        std::string typeName = type;
+        if (typeName.size() >= 15)
+          typeName = typeName.substr(0, 12) + "..";
+        line = fmt::format("{:<15}", typeName);
+        for (auto lNum : layers) {
+          line += fmt::format("{:>7}", typeViolations[lNum]);
+        }
+        logger_->report(line);
+      }
+    }
     t.print(logger_);
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "autotuner", 1)) {
-    reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  if (logger_->debugCheck(DRT, "autotuner", 1)
+      || logger_->debugCheck(DRT, "report", 1)) {
+    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+                       design_->getTopBlock()->getMarkers());
   }
 }
 
 void FlexDR::end(bool done)
 {
   if (done && DRC_RPT_FILE != string("")) {
-    reportDRC(DRC_RPT_FILE);
+    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
@@ -1906,12 +1885,11 @@ void FlexDR::end(bool done)
   vector<ULL> wlen(getTech()->getLayers().size(), 0);
   vector<ULL> sCut(getTech()->getLayers().size(), 0);
   vector<ULL> mCut(getTech()->getLayers().size(), 0);
-  Point bp, ep;
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto obj = static_cast<frPathSeg*>(shape.get());
-        obj->getPoints(bp, ep);
+        auto [bp, ep] = obj->getPoints();
         auto lNum = obj->getLayerNum();
         frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
         wlen[lNum] += psLen;
@@ -1932,14 +1910,24 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("drt::wire length::total",
+    logger_->metric("route__drc_errors",
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric("route__wirelength",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-    logger_->metric("drt::vias::total", totSCut + totMCut);
+    logger_->metric("route__vias", totSCut + totMCut);
+    logger_->metric("route__vias__singlecut", totSCut);
+    logger_->metric("route__vias__multicut", totMCut);
+  } else {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_),
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_),
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
   }
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
@@ -2035,239 +2023,6 @@ void FlexDR::end(bool done)
   }
 }
 
-void FlexDR::reportDRC(const string& file_name)
-{
-  double dbu = getTech()->getDBUPerUU();
-
-  if (file_name == string("")) {
-    if (VERBOSE > 0) {
-      logger_->warn(
-          DRT,
-          290,
-          "Waring: no DRC report specified, skipped writing DRC report");
-    }
-    return;
-  }
-
-  ofstream drcRpt(file_name.c_str());
-  if (drcRpt.is_open()) {
-    for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
-      auto con = marker->getConstraint();
-      drcRpt << "  violation type: ";
-      if (con) {
-        switch (con->typeId()) {
-          case frConstraintTypeEnum::frcShortConstraint: {
-            if (getTech()->getLayer(marker->getLayerNum())->getType()
-                == dbTechLayerType::ROUTING) {
-              drcRpt << "Short";
-            } else if (getTech()->getLayer(marker->getLayerNum())->getType()
-                       == dbTechLayerType::CUT) {
-              drcRpt << "CShort";
-            }
-            break;
-          }
-          case frConstraintTypeEnum::frcMinWidthConstraint:
-            drcRpt << "MinWid";
-            break;
-          case frConstraintTypeEnum::frcSpacingConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
-            drcRpt << "EOLSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcCutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcMinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
-            drcRpt << "NSMet";
-            break;
-          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcOffGridConstraint:
-            drcRpt << "OffGrid";
-            break;
-          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
-            drcRpt << "MinHole";
-            break;
-          case frConstraintTypeEnum::frcAreaConstraint:
-            drcRpt << "MinArea";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
-            drcRpt << "CornerSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
-            drcRpt << "RectOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
-            drcRpt << "RightWayOnGridOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58MinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
-            drcRpt << "MetSpcInf";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
-            drcRpt << "SpacingEndOfLineParallelEdge";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableConstraint:
-            drcRpt << "SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
-            drcRpt << "SpacingTableTw";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
-            drcRpt << "Lef58SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
-            drcRpt << "Lef58CutSpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
-            drcRpt << "Lef58CutSpacingTablePrl";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
-            drcRpt << "Lef58CutSpacingTableLayer";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
-            drcRpt << "Lef58CutSpacingParallelWithin";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
-            drcRpt << "Lef58CutSpacingAdjacentCuts";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
-            drcRpt << "Lef58CutSpacingLayer";
-            break;
-          case frConstraintTypeEnum::frcMinimumcutConstraint:
-            drcRpt << "Minimumcut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConcaveCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConcaveCorner";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConvexCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConvexCorner";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing1D";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing2D";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
-            drcRpt << "Lef58SpacingEndOfLine";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithin";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
-            break;
-          case frConstraintTypeEnum::frcLef58CutClassConstraint:
-            drcRpt << "Lef58CutClass";
-            break;
-          case frConstraintTypeEnum::frcRecheckConstraint:
-            drcRpt << "Recheck";
-            break;
-          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
-            drcRpt << "Lef58EolExtension";
-            break;
-          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
-            drcRpt << "Lef58EolKeepOut";
-            break;
-          case frConstraintTypeEnum::frcLef58MinimumCutConstraint:
-            drcRpt << "Lef58MinimumCut";
-            break;
-        }
-      } else {
-        drcRpt << "nullptr";
-      }
-      drcRpt << endl;
-      // get source(s) of violation
-      // format: type:name/identifier
-      drcRpt << "    srcs: ";
-      for (auto src : marker->getSrcs()) {
-        if (src) {
-          switch (src->typeId()) {
-            case frcNet:
-              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
-              break;
-            case frcInstTerm: {
-              frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << "iterm:" << instTerm->getInst()->getName() << "/"
-                     << instTerm->getTerm()->getName() << " ";
-              break;
-            }
-            case frcBTerm: {
-              frBTerm* bterm = (static_cast<frBTerm*>(src));
-              drcRpt << "bterm:" << bterm->getName() << " ";
-              break;
-            }
-            case frcInstBlockage: {
-              frInstBlockage* instBlockage
-                  = (static_cast<frInstBlockage*>(src));
-              drcRpt << "inst:" << instBlockage->getInst()->getName() << " ";
-              break;
-            }
-            case frcBlockage: {
-              drcRpt << "obstruction: ";
-              break;
-            }
-            default:
-              logger_->error(DRT,
-                             291,
-                             "Unexpected source type in marker: {}",
-                             src->typeId());
-          }
-        }
-      }
-      drcRpt << "\n";
-      // get violation bbox
-      Rect bbox;
-      marker->getBBox(bbox);
-      drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
-             << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
-             << bbox.yMax() / dbu << " ) on Layer ";
-      if (getTech()->getLayer(marker->getLayerNum())->getType()
-              == dbTechLayerType::CUT
-          && marker->getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
-        drcRpt << getTech()->getLayer(marker->getLayerNum() - 1)->getName()
-               << "\n";
-      } else {
-        drcRpt << getTech()->getLayer(marker->getLayerNum())->getName() << "\n";
-      }
-    }
-  } else {
-    cout << "Error: Fail to open DRC report file\n";
-  }
-}
-
 static std::vector<FlexDR::SearchRepairArgs> strategy()
 {
   const fr::frUInt4 shapeCost = ROUTESHAPECOST;
@@ -2334,9 +2089,9 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
           /* 59 */ {7, -1, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 60 */ {7, -2, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
           /* 61 */ {7, -3, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 56 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 62 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 63 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
+          /* 62 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 63 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 64 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
@@ -2368,33 +2123,28 @@ void FlexDR::reportGuideCoverage()
         numLayers),
         guideSetByLayerNum(numLayers);
     for (const auto& shape : net->getShapes()) {
-      odb::Rect rect;
-      shape->getBBox(rect);
+      odb::Rect rect = shape->getBBox();
       addRectToPolySet(routeSetByLayerNum[shape->getLayerNum()], rect);
     }
     for (const auto& pwire : net->getPatchWires()) {
-      odb::Rect rect;
-      pwire->getBBox(rect);
+      odb::Rect rect = pwire->getBBox();
       addRectToPolySet(routeSetByLayerNum[pwire->getLayerNum()], rect);
     }
     for (const auto& via : net->getVias()) {
       {
-        odb::Rect rect;
-        via->getLayer1BBox(rect);
+        odb::Rect rect = via->getLayer1BBox();
         addRectToPolySet(routeSetByLayerNum[via->getViaDef()->getLayer1Num()],
                          rect);
       }
       {
-        odb::Rect rect;
-        via->getLayer2BBox(rect);
+        odb::Rect rect = via->getLayer2BBox();
         addRectToPolySet(routeSetByLayerNum[via->getViaDef()->getLayer2Num()],
                          rect);
       }
     }
 
     for (const auto& shape : net->getOrigGuides()) {
-      odb::Rect rect;
-      shape.getBBox(rect);
+      odb::Rect rect = shape.getBBox();
       addRectToPolySet(guideSetByLayerNum[shape.getLayerNum()], rect);
     }
 
@@ -2409,7 +2159,7 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if(routingArea == 0.0)
+        if (routingArea == 0.0)
           coveredPercentage = -1.0;
         else
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
@@ -2461,7 +2211,7 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  if(totalArea == 0)
+  if (totalArea == 0)
     file << "NA";
   else {
     auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
@@ -2511,6 +2261,15 @@ int FlexDR::main()
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
     }
+    if (iter_ > END_ITERATION) {
+      break;
+    }
+    if (logger_->debugCheck(DRT, "snapshot", 1)) {
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_);
+      ord::OpenRoad::openRoad()->writeDb(
+          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
+    }
   }
 
   end(/* done */ true);
@@ -2523,12 +2282,137 @@ int FlexDR::main()
   return 0;
 }
 
-std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
+void FlexDR::sendWorkers(
+    const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
+    std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+{
+  if (remote_batch.empty())
+    return;
+  std::vector<std::pair<int, std::string>> workers;
+  {
+    ProfileTask task("DIST: SERIALIZE_BATCH");
+    for (auto& [idx, worker] : remote_batch) {
+      std::string workerStr;
+      serializeWorker(worker, workerStr);
+      workers.push_back({idx, workerStr});
+    }
+  }
+  std::string remote_ip = dist_ip_;
+  unsigned short remote_port = dist_port_;
+  if (router_->getCloudSize() > 1) {
+    dst::JobMessage msg(dst::JobMessage::BALANCER),
+        result(dst::JobMessage::NONE);
+    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    if (!ok) {
+      logger_->error(utl::DRT, 7461, "Balancer failed");
+    } else {
+      dst::BalancerJobDescription* desc
+          = static_cast<dst::BalancerJobDescription*>(
+              result.getJobDescription());
+      remote_ip = desc->getWorkerIP();
+      remote_port = desc->getWorkerPort();
+    }
+  }
+  {
+    dst::JobMessage msg(dst::JobMessage::ROUTING),
+        result(dst::JobMessage::NONE);
+    std::unique_ptr<dst::JobDescription> desc
+        = std::make_unique<RoutingJobDescription>();
+    RoutingJobDescription* rjd
+        = static_cast<RoutingJobDescription*>(desc.get());
+    rjd->setWorkers(workers);
+    rjd->setSharedDir(dist_dir_);
+    rjd->setSendEvery(20);
+    msg.setJobDescription(std::move(desc));
+    ProfileTask task("DIST: SENDJOB");
+    bool ok = dist_->sendJobMultiResult(
+        msg, remote_ip.c_str(), remote_port, result);
+    if (!ok) {
+      logger_->error(utl::DRT, 500, "Sending worker {} failed");
+    }
+    for (const auto& one_desc : result.getAllJobDescriptions()) {
+      RoutingJobDescription* result_desc
+          = static_cast<RoutingJobDescription*>(one_desc.get());
+      router_->addWorkerResults(result_desc->getWorkers());
+    }
+  }
+}
+
+template <class Archive>
+void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
+{
+  // // We always serialize before calling main on the work unit so various
+  // // fields are empty and don't need to be serialized.  I skip these to
+  // // save having to write lots of serializers that will never be called.
+  // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+  //     || !rq_.isEmpty() || gcWorker_) {
+  //   logger_->error(DRT, 999, "Can't serialize used worker");
+  // }
+
+  // The logger_, graphics_ and debugSettings_ are handled by the caller to
+  // use the current ones.
+  if (is_loading(ar)) {
+    frDesign* design = ar.getDesign();
+    design_ = design;
+  }
+  (ar) & routeBox_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & gcellBox_;
+  (ar) & drIter_;
+  (ar) & mazeEndIter_;
+  (ar) & followGuide_;
+  (ar) & needRecheck_;
+  (ar) & skipRouting_;
+  (ar) & ripupMode_;
+  (ar) & workerDRCCost_;
+  (ar) & workerMarkerCost_;
+  (ar) & pinCnt_;
+  (ar) & initNumMarkers_;
+  (ar) & apSVia_;
+  (ar) & planarHistoryMarkers_;
+  (ar) & viaHistoryMarkers_;
+  (ar) & historyMarkers_;
+  (ar) & nets_;
+  (ar) & gridGraph_;
+  (ar) & markers_;
+  (ar) & bestMarkers_;
+  (ar) & isCongested_;
+  if (is_loading(ar)) {
+    // boundaryPin_
+    int sz;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      std::set<std::pair<Point, frLayerNum>> val;
+      (ar) & val;
+      boundaryPin_[(frNet*) obj] = val;
+    }
+    // owner2nets_
+    for (auto& net : nets_) {
+      owner2nets_[net->getFrNet()].push_back(net.get());
+    }
+    dist_on_ = true;
+  } else {
+    // boundaryPin_
+    int sz = boundaryPin_.size();
+    (ar) & sz;
+    for (auto& [net, value] : boundaryPin_) {
+      frBlockObject* obj = (frBlockObject*) net;
+      serializeBlockObject(ar, obj);
+      (ar) & value;
+    }
+  }
+}
+
+std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
                                                  utl::Logger* logger,
+                                                 fr::frDesign* design,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
-  serialize_worker(SerializationType::READ, worker.get(), file_name);
+  deserializeWorker(worker.get(), design, workerStr);
 
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.
@@ -2537,3 +2421,12 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
 
   return worker;
 }
+
+// Explicit instantiations
+template void FlexDRWorker::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void FlexDRWorker::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

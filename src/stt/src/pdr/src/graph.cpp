@@ -235,7 +235,7 @@ int Graph::IdentLoc(int pIdx, int cIdx)
 static void make_unique(vector<Node>& vec)
 {
   for (int a = 0; a < vec.size(); a++) {
-    for (int b = 0; b < vec.size(); b++)
+    for (int b = 1; b < vec.size() - 1; b++) {
       if (a != b) {
         if ((vec[a].x == vec[b].x) && (vec[a].y == vec[b].y)) {
           swap(vec[b], vec.back());
@@ -243,6 +243,7 @@ static void make_unique(vector<Node>& vec)
           b--;
         }
       }
+    }
   }
 }
 

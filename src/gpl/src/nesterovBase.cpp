@@ -371,7 +371,8 @@ GPin::GPin(Pin* pin)
   offsetCy_ = pin->offsetCy();
 }
 
-GPin::GPin(const std::vector<Pin*> & pins) {
+GPin::GPin(const std::vector<Pin*> & pins)
+  : GPin() {
   pins_ = pins;
 }
 
@@ -539,7 +540,8 @@ Bin::setElectroPhi(float phi) {
 // BinGrid
 
 BinGrid::BinGrid()
-  : lx_(0), ly_(0), ux_(0), uy_(0),
+  : log_(nullptr),
+  lx_(0), ly_(0), ux_(0), uy_(0),
   binCntX_(0), binCntY_(0),
   binSizeX_(0), binSizeY_(0),
   targetDensity_(0), 

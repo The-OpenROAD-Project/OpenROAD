@@ -22,7 +22,7 @@
 [WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
 [WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
 [WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
 [INFO ODB-0222] Reading LEF file: ./Nangate45/fake_macros.lef
 [INFO ODB-0225]     Created 2 library cells
@@ -42,10 +42,10 @@ Running Partition Design...
 [INFO PAR-0490] Number of hops:  1
 [INFO PAR-0490] Number of hops:  2
 [INFO PAR-0490] Number of hops:  3
+[INFO PAR-0413] Ignore keepin as it is outside floorplan bbox
 [INFO PAR-0403] Number of Clusters created: 17
 Start RTL-MP
 [INFO MPL-0009] RTL-MP param: min_aspect_ratio: 0.5.
-[INFO MPL-0009] RTL-MP param: dead_space: 0.1.
 [INFO MPL-0009] RTL-MP param: learning_rate: 0.0.
 [INFO MPL-0009] RTL-MP param: shrink_factor: 0.997.
 [INFO MPL-0009] RTL-MP param: shrink_freq: 0.1.

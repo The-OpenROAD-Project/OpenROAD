@@ -30,11 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include <algorithm>
 #include <queue>
 
@@ -222,14 +217,14 @@ void FastRouteCore::routeLAll(bool firstTime)
 {
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         estimateOneSeg(&seglist_[j]);
       }
     }
     // L route
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         // no need to reroute the H or V segs
@@ -239,7 +234,7 @@ void FastRouteCore::routeLAll(bool firstTime)
       }
     }
   } else {  // previous is L-route
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
            j++) {
         // no need to reroute the H or V segs
@@ -400,11 +395,11 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
-    for (int i = 0; i < num_valid_nets_; i++) {
+    for (int i = 0; i < netCount(); i++) {
       newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }
@@ -843,8 +838,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 // first
 void FastRouteCore::newrouteZAll(int threshold)
 {
-  int i;
-  for (i = 0; i < num_valid_nets_; i++) {
+  for (int i = 0; i < netCount(); i++) {
     newrouteZ(i, threshold);  // ripup previous route and do Z-routing
   }
 }
@@ -1061,10 +1055,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
-  int netID, edgeID;
-
-  for (netID = 0; netID < num_valid_nets_; netID++) {
-    for (edgeID = 0; edgeID < sttrees_[netID].deg * 2 - 3; edgeID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
+    for (int edgeID = 0; edgeID < sttrees_[netID].deg * 2 - 3; edgeID++) {
       routeMonotonic(
           netID,
           edgeID,
@@ -1246,14 +1238,14 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 
 void FastRouteCore::spiralRouteAll()
 {
-  int netID, d, k, edgeID, nodeID, deg, numpoints, n1, n2;
+  int d, k, edgeID, nodeID, deg, numpoints, n1, n2;
   int na;
   bool redundant;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
   std::queue<int> edgeQueue;
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1299,7 +1291,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
@@ -1324,7 +1316,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     newRipupNet(netID);
 
     treeedges = sttrees_[netID].edges;
@@ -1378,7 +1370,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1680,7 +1672,6 @@ void FastRouteCore::routeLVEnew(int netID,
 
 void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 {
-  int netID, edgeID, numEdges, i, forange;
   debugPrint(logger_,
              GRT,
              "patternRouting",
@@ -1691,8 +1682,8 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 
   h_cost_table_.resize(10 * h_capacity_);
 
-  forange = 10 * h_capacity_;
-  for (i = 0; i < forange; i++) {
+  int forange = 10 * h_capacity_;
+  for (int i = 0; i < forange; i++) {
     h_cost_table_[i]
         = costheight_ / (exp((float) (h_capacity_ - i) * logis_cof) + 1) + 1;
   }
@@ -1700,9 +1691,9 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d1(boost::extents[y_range_][x_range_]);
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
-  for (netID = 0; netID < num_valid_nets_; netID++) {
-    numEdges = 2 * sttrees_[netID].deg - 3;
-    for (edgeID = 0; edgeID < numEdges; edgeID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
+    int numEdges = 2 * sttrees_[netID].deg - 3;
+    for (int edgeID = 0; edgeID < numEdges; edgeID++) {
       routeLVEnew(netID,
                   edgeID,
                   d1,

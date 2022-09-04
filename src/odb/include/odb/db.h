@@ -140,6 +140,8 @@ class dbTechLayerEolExtensionRule;
 class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
+class dbGuide;
+class dbMetalWidthViaMap;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -510,9 +512,14 @@ class dbBox : public dbObject
   void getViaXY(int& x, int& y);
 
   ///
+  /// Return the placed location of this via.
+  ///
+  Point getViaXY();
+
+  ///
   /// Get the box bounding points.
   ///
-  void getBox(Rect& rect);
+  Rect getBox();
 
   ///
   /// Get the translated boxes of this via
@@ -752,6 +759,11 @@ class dbSBox : public dbBox
   /// This function translates any dbBox whichs is part of a block
   ///
   static dbSBox* getSBox(dbBlock* block, uint oid);
+
+  ///
+  /// Destroy a SBox.
+  ///
+  static void destroy(dbSBox* box);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -990,6 +1002,11 @@ class dbBlock : public dbObject
   // void dbBlock::writeDb(char *filename, int allNode=0);
   void writeDb(char* filename, int allNode = 0);
 
+  //
+  // Utility to write guides file
+  //
+  void writeGuides(const char* filename) const;
+
   ///
   /// Find a specific via of this block.
   /// Returns NULL if the object was not found.
@@ -1195,13 +1212,13 @@ class dbBlock : public dbObject
   ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
-  void getDieArea(Rect& rect);
+  Rect getDieArea();
 
   ///
   /// Get the core area. This computes the bbox of the rows
   /// and is O(#rows) in runtime.
   ///
-  void getCoreArea(Rect& rect);
+  Rect getCoreArea();
 
   void setPtFile(FILE* ptf);
   FILE* getPtFile();
@@ -2089,17 +2106,12 @@ class dbNet : public dbObject
   bool isSpef();
 
   ///
-  /// Set/Reset the size-only flag
-  ///
-  void setSizeOnly(bool v);
-
-  ///
-  /// Returns true if the size-only flag is set.
-  ///
-  bool isSizeOnly();
-
-  ///
   /// Set/Reset the don't-touch flag
+  ///
+  /// Setting this implies:
+  /// - The net can't be destroyed
+  /// - The net can't have any bterm or iterms connected or disconnected
+  /// - The net CAN be routed or unrouted (wire or swire)
   ///
   void setDoNotTouch(bool v);
 
@@ -2639,6 +2651,10 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
+
+  dbSet<dbGuide> getGuides() const;
+
+  void clearGuides();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2796,6 +2812,12 @@ class dbInst : public dbObject
   void getLocation(int& x, int& y) const;
 
   ///
+  /// This method returns the lower-left corner
+  /// of the bounding box of this instance.
+  ///
+  Point getLocation() const;
+
+  ///
   /// This method sets the lower-left corner
   /// of the bounding box of this instance.
   ///
@@ -2923,22 +2945,20 @@ class dbInst : public dbObject
   ///
   /// Set/Reset the don't-touch flag
   ///
+  /// Setting this implies:
+  /// - The instance can't be destroyed
+  /// - The instance can't be resized (ie swapMaster)
+  /// - The associated iterms can't be connected or disconnected
+  /// - The parent module can't be changed
+  /// - The instance CAN be moved, have its orientation changed, or be
+  ///   placed or unplaced
+  ///
   void setDoNotTouch(bool v);
 
   ///
   /// Returns true if the don't-touch flag is set.
   ///
   bool isDoNotTouch();
-
-  ///
-  /// Set/Reset the don't-size flag
-  ///
-  void setDoNotSize(bool v);
-
-  ///
-  /// Returns true if the don't-size flag is set.
-  ///
-  bool isDoNotSize();
 
   ///
   /// Get the block of this instance.
@@ -4846,7 +4866,7 @@ class dbRow : public dbObject
   ///
   /// Get the bounding box of this row
   ///
-  void getBBox(Rect& bbox);
+  Rect getBBox();
 
   ///
   /// Create a new row.
@@ -4992,21 +5012,19 @@ class dbRegion : public dbObject
   void removeInst(dbInst* inst);
 
   ///
-  /// Get the parent of this region. Returns null of this region has no parent.
+  /// Remove this group from the region
   ///
-  dbRegion* getParent();
+  void removeGroup(dbGroup* group);
 
   ///
-  /// Get the children of this region.
+  /// Add group to this region.
   ///
-  dbSet<dbRegion> getChildren();
+  void addGroup(dbGroup* group);
 
   ///
-  /// Add child region to this region.
+  /// Get the groups of this region.
   ///
-  /// This method will do nothing if this child already has a parent.
-  ///
-  void addChild(dbRegion* region);
+  dbSet<dbGroup> getGroups();
 
   ///
   /// Get the block of this region
@@ -5018,12 +5036,6 @@ class dbRegion : public dbObject
   /// exists in the block.
   ///
   static dbRegion* create(dbBlock* block, const char* name);
-
-  ///
-  /// Create a new region. The region will become a child region of parent.
-  /// Returns NULL if a region with this name already exists in the block.
-  ///
-  static dbRegion* create(dbRegion* parent, const char* name);
 
   ///
   /// Destroy a region.
@@ -5866,6 +5878,11 @@ class dbTech : public dbObject
   ///
   ///
   dbSet<dbTechViaGenerateRule> getViaGenerateRules();
+
+  ///
+  ///
+  ///
+  dbSet<dbMetalWidthViaMap> getMetalWidthViaMap();
 
   ///
   ///
@@ -7029,10 +7046,8 @@ class dbTechLayer : public dbObject
 
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
-  /// Return false if rules not encoded in this format.
-  /// Contents of sp_rules are undefined if function returns false.
   ///
-  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
+  dbSet<dbTechLayerSpacingRule> getV54SpacingRules() const;
 
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
@@ -7054,8 +7069,7 @@ class dbTechLayer : public dbObject
   void initV55SpacingTable(uint numrows, uint numcols);
   void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
 
-  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
-  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
+  dbSet<dbTechV55InfluenceEntry> getV55InfluenceRules();
 
   ///
   /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix
@@ -7718,6 +7732,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setExceptSameMetal(bool except_same_metal);
 
   bool isExceptSameMetal() const;
+
+  void setCornerToCorner(bool corner_to_corner);
+
+  bool isCornerToCorner() const;
 
   // User Code Begin dbTechLayerCornerSpacingRule
   void setType(CornerType _type);
@@ -8777,6 +8795,77 @@ class dbTechLayerMinCutRule : public dbObject
   // User Code End dbTechLayerMinCutRule
 };
 
+class dbGuide : public dbObject
+{
+ public:
+  // User Code Begin dbGuideEnums
+  // User Code End dbGuideEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbGuide
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbGuide* getGuide(dbBlock* block, uint dbid);
+
+  static void destroy(dbGuide* guide);
+
+  // User Code End dbGuide
+};
+
+class dbMetalWidthViaMap : public dbObject
+{
+ public:
+  // User Code Begin dbMetalWidthViaMapEnums
+  // User Code End dbMetalWidthViaMapEnums
+  void setViaCutClass(bool via_cut_class);
+
+  bool isViaCutClass() const;
+
+  void setCutLayer(dbTechLayer* cut_layer);
+
+  void setBelowLayerWidthLow(int below_layer_width_low);
+
+  int getBelowLayerWidthLow() const;
+
+  void setBelowLayerWidthHigh(int below_layer_width_high);
+
+  int getBelowLayerWidthHigh() const;
+
+  void setAboveLayerWidthLow(int above_layer_width_low);
+
+  int getAboveLayerWidthLow() const;
+
+  void setAboveLayerWidthHigh(int above_layer_width_high);
+
+  int getAboveLayerWidthHigh() const;
+
+  void setViaName(std::string via_name);
+
+  std::string getViaName() const;
+
+  void setPgVia(bool pg_via);
+
+  bool isPgVia() const;
+
+  // User Code Begin dbMetalWidthViaMap
+
+  dbTechLayer* getCutLayer() const;
+
+  static dbMetalWidthViaMap* create(dbTech* tech);
+
+  static void destroy(dbMetalWidthViaMap* via_map);
+
+  static dbMetalWidthViaMap* getMetalWidthViaMap(dbTech* tech, uint dbid);
+
+  // User Code End dbMetalWidthViaMap
+};
+
 class dbModule : public dbObject
 {
  public:
@@ -8847,21 +8936,15 @@ class dbGroup : public dbObject
 
   const char* getName() const;
 
-  Rect getBox() const;
-
-  void setParentGroup(dbGroup* parent_group);
-
   dbGroup* getParentGroup() const;
+
+  dbRegion* getRegion() const;
 
   // User Code Begin dbGroup
 
   void setType(dbGroupType type);
 
   dbGroupType getType() const;
-
-  void setBox(Rect _box);
-
-  bool hasBox();
 
   void addModInst(dbModInst* modinst);
 
@@ -8893,12 +8976,7 @@ class dbGroup : public dbObject
 
   static dbGroup* create(dbBlock* block, const char* name);
 
-  static dbGroup* create(dbBlock* block,
-                         const char* name,
-                         int x1,
-                         int y1,
-                         int x2,
-                         int y2);
+  static dbGroup* create(dbRegion* parent, const char* name);
 
   static dbGroup* create(dbGroup* parent, const char* name);
 

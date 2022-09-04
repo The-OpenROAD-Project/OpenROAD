@@ -37,6 +37,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
+    [-force_cpu]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -57,7 +58,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
-    [-verbose_level level]\
 }
 
 proc global_placement { args } {
@@ -74,8 +74,7 @@ proc global_placement { args } {
       -routability_max_inflation_ratio \
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
-      -pad_left -pad_right \
-      -verbose_level} \
+      -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
       -timing_driven \
@@ -83,7 +82,8 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental}
+      -incremental\
+      -force_cpu}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -92,7 +92,10 @@ proc global_placement { args } {
     set initial_place_max_iter $keys(-initial_place_max_iter)
     sta::check_positive_integer "-initial_place_max_iter" $initial_place_max_iter
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
-  } 
+  }
+
+  set force_cpu [info exists flags(-force_cpu)]
+  gpl::set_force_cpu $force_cpu
 
   set skip_io [info exists flags(-skip_io)]
   gpl::set_skip_io_mode_cmd $skip_io
@@ -157,6 +160,9 @@ proc global_placement { args } {
     set uniform_mode 1
   } else {
     sta::check_positive_float "-density" $target_density
+    if {$target_density > 1.0} {
+      utl::error GPL 135 "Target density must be in \[0, 1\]."
+    }
     gpl::set_density_cmd $target_density
   } 
     
@@ -269,13 +275,6 @@ proc global_placement { args } {
     gpl::set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
 
-  if { [info exists keys(-verbose_level)] } {
-    set verbose_level $keys(-verbose_level)
-    sta::check_positive_integer "-verbose_level" $verbose_level
-    gpl::set_verbose_level_cmd $verbose_level
-  } 
-
-
   # temp code. 
   if { [info exists keys(-pad_left)] } {
     set pad_left $keys(-pad_left)
@@ -331,15 +330,6 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial
 }
 
-proc global_placement_plot { args } {
-  sta::parse_key_args "global_placement_plot" args \
-    keys {} \
-    flags {}
-  
-  gpl::set_plot_path_cmd $args
-}
-
-
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right }
@@ -348,7 +338,6 @@ proc get_global_placement_uniform_density { args } {
   gpl::set_initial_place_max_iter_cmd 0
   gpl::set_routability_driven_mode 0
   gpl::set_timing_driven_mode 0
-  gpl::set_verbose_level 0
 
   
   # pad setting

@@ -227,16 +227,23 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
     if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
-      dbRegion* domain_region = dbRegion::create(block_, group->getName());
+      dbRegion* domain_region = group->getRegion();
+      int domain_xMin = std::numeric_limits<int>::max();
+      int domain_yMin = std::numeric_limits<int>::max();
+      int domain_xMax = std::numeric_limits<int>::min();
+      int domain_yMax = std::numeric_limits<int>::min();
+      for(auto boundary : domain_region->getBoundaries())
+      {
+        domain_xMin = std::min(domain_xMin, boundary->xMin());
+        domain_yMin = std::min(domain_yMin, boundary->yMin());
+        domain_xMax = std::max(domain_xMax, boundary->xMax());
+        domain_yMax = std::max(domain_yMax, boundary->yMax());
+      }
+      // snap inward to site grid
+      domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
+      domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
 
       string domain_name = group->getName();
-      Rect domain_rect = group->getBox();
-      int domain_xMin = domain_rect.xMin();
-      int domain_yMin = domain_rect.yMin();
-      int domain_xMax = domain_rect.xMax();
-      int domain_yMax = domain_rect.yMax();
-      dbBox::create(
-          domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
       dbSet<dbRow> rows = block_->getRows();
       int total_row_count = rows.size();
@@ -245,8 +252,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
-        Rect row_bbox;
-        row->getBBox(row_bbox);
+        Rect row_bbox = row->getBBox();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
 
@@ -291,7 +297,9 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
           // the multiple of site_dx.
           int rcr_dx_site_number = (power_domain_y_space * site_dy) / site_dx;
           int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
-
+          // snap to the site grid rightward
+          rcr_xMin = odb::makeSiteLoc(rcr_xMin, site_dx, false, 0);
+          
           // in case there is at least one valid site width on the right, create
           // right core rows
           if (rcr_xMin + site_dx < core_ux) {
@@ -469,8 +477,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   v.check_non_negative("y_offset", y_offset, 41);
   v.check_positive("y_pitch", y_pitch, 42);
 
-  Rect die_area;
-  block_->getDieArea(die_area);
+  Rect die_area = block_->getDieArea();
   auto grid = block_->findTrackGrid(layer);
   if (!grid) {
     grid = dbTrackGrid::create(block_, layer);

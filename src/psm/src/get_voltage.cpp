@@ -31,50 +31,47 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "get_voltage.h"
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "get_voltage.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 namespace psm {
-std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
+std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta,
+                                                          utl::Logger* logger)
+{
   std::pair<double, double> supply_voltage;
-  sta::LibertyLibrary* default_library;
-  _sta = sta;
-  sta::dbNetwork* network = _sta->getDbNetwork();
-  sta::Corner* corner = _sta->cmdCorner();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Corner* corner = sta->cmdCorner();
   sta::MinMax* mm = sta::MinMax::max();
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(mm);
-  float power_voltage_;
-  float gnd_voltage_;
-  default_library = network->defaultLibertyLibrary();
+  float power_voltage;
+  float gnd_voltage;
+  sta::LibertyLibrary* default_library = network->defaultLibertyLibrary();
+  if (!default_library) {
+    logger->error(
+        utl::PSM,
+        79,
+        "Can't determine the supply voltage as no Liberty is loaded.");
+  }
 
   const sta::Pvt* pvt = dcalc_ap->operatingConditions();
   if (pvt == nullptr)
     pvt = default_library->defaultOperatingConditions();
-  if (pvt)
-    power_voltage_ = pvt->voltage();
-  else
-    power_voltage_ = 0.0;
-  gnd_voltage_ = 0.0;
-  // default_library_->supplyVoltage(power_name_, power_voltage_, exists);
-  // if (!exists) {
-  //  DcalcAnalysisPt *dcalc_ap = path_->dcalcAnalysisPt(this);
-  //  const OperatingConditions *op_cond = dcalc_ap->operatingConditions();
-  //  if (op_cond == nullptr)
-  //    op_cond =
-  //    network->defaultLibertyLibrary()->defaultOperatingConditions();
-  //  power_voltage_ = op_cond->voltage();
-  //}
-  // default_library_->supplyVoltage(gnd_name_, gnd_voltage_, exists);
-  // if (!exists)
-  //  gnd_voltage_ = 0.0;
-  supply_voltage.first = power_voltage_;
-  supply_voltage.second = gnd_voltage_;
+  if (pvt) {
+    power_voltage = pvt->voltage();
+  } else {
+    power_voltage = 0.0;
+  }
+  gnd_voltage = 0.0;
+
+  supply_voltage.first = power_voltage;
+  supply_voltage.second = gnd_voltage;
   return supply_voltage;
 }
 }  // namespace psm

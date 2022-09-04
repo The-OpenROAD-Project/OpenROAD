@@ -41,14 +41,13 @@ class dbNet;
 
 void orderWires(dbBlock* b,
                 bool force,
+                bool verbose = false,
                 int cutLength = 0,
-                int maxLength = 0,
-                bool quiet = false);
+                int maxLength = 0);
 void orderWires(dbBlock* b,
                 const char* net_name_or_id,
                 bool force,
                 bool verbose = false,
-                bool quiet = false,
                 int cutLength = 0,
                 int maxLength = 0);
 void orderWires(dbNet* net, bool force, bool verbose = false);

@@ -84,9 +84,8 @@ def gen_files(work_dir, ispd_year, design, drv):
             set_thread_count {threads}
             read_lef {bench_dir}/{design}/{design}.input.lef
             read_def {bench_dir}/{design}/{design}.input.def
-            detailed_route -guide {bench_dir}/{design}/{design}.input.guide \\
-                           -output_guide {design_dir}/{design}.output.guide.mod \\
-                           -output_maze {design_dir}/{design}.output.maze.log \\
+            read_guides {bench_dir}/{design}/{design}.input.guide 
+            detailed_route -output_maze {design_dir}/{design}.output.maze.log \\
                            -output_drc {design_dir}/{design}.output.drc.rpt \\
                            -verbose {verbose}
             write_def {design_dir}/{design}.output.def
@@ -153,7 +152,7 @@ design_list_ispd19 = [
     ("ispd19_test7", 0),
     ("ispd19_test8", 0),
     ("ispd19_test9", 0),
-    ("ispd19_test10", 21),
+    ("ispd19_test10", 20),
 ]
 
 os.makedirs(args.workspace, exist_ok=True)

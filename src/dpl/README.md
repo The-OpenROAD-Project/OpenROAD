@@ -18,6 +18,7 @@ set_placement_padding -global|-instances insts|-masters masters
 detailed_placement [-max_displacement disp|{disp_x disp_y}]
 check_placement [-verbose]
 filler_placement [-prefix prefix] filler_masters
+remove_fillers
 optimize_mirroring
 ```
 
@@ -30,9 +31,6 @@ names, or an instance object returned by the SDC `get_cells` command. To
 specify padding for all instances of a common master, use the `-filter`
 "ref_name == <name>" option to `get_cells`.
 
-The `set_power_net` command is used to set the power and ground special
-net names. The defaults are `VDD` and `VSS`.
-
 The `-max_displacement` argument to `detailed_placement` specifies how
 far an instance can be moved when finding a site where it can be placed. The default values are
 `{500 100}` sites. The x/y displacement arguments are in microns.
@@ -40,15 +38,15 @@ far an instance can be moved when finding a site where it can be placed. The def
 The `check_placement` command checks the placement legality. It returns
 `0` if the placement is legal.
 
+The `optimize_mirroring` command mirrors instances about the Y axis in
+a weak attempt to reduce total wirelength (HPWL).
+
 The `filler_placement` command fills gaps between detail-placed instances
 to connect the power and ground rails in the rows. `filler_masters` is a
 list of master/macro names to use for filling the gaps. Wildcard matching
 is supported, so `FILL*` will match, e.g., `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2
 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.  To specify a different naming prefix
 from `FILLER_` use `-prefix <new prefix>`.
-
-The `optimize_mirroring` command mirrors instances about the Y axis in
-a weak attempt to reduce total wirelength (HPWL).
 
 ## Example scripts
 

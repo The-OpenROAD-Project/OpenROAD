@@ -350,6 +350,7 @@ To disable snapping for the ruler when adding, hold the ``Ctrl`` key, and to all
 gui::add_ruler x0 y0 x1 y1
 gui::add_ruler x0 y0 x1 y1 label
 gui::add_ruler x0 y0 x1 y1 label name
+gui::add_ruler x0 y0 x1 y1 label name euclidian
 ```
 
 Returns: name of the newly created ruler.
@@ -359,6 +360,7 @@ Options description:
 - ``x1, y1`` second end point of the ruler in microns.
 - ``label`` text label for the ruler.
 - ``name`` name of the ruler.
+- ``euclidian`` ``1`` for euclidian ruler, and ``0`` for regular ruler.
 
 To remove a single ruler:
 

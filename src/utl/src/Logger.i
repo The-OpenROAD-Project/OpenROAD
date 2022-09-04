@@ -57,6 +57,7 @@ using ord::getLogger;
 
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -118,6 +119,42 @@ metric(const char *metric,
 {
   Logger *logger = getLogger();
   logger->metric(metric, value);
+}
+
+void
+metric_integer(const char *metric,
+       const int value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void
+metric_float(const char *metric,
+       const float value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void set_metrics_stage(const char *fmt) {
+  Logger* logger = getLogger();
+  logger->setMetricsStage(fmt);
+}
+
+void clear_metrics_stage() {
+  Logger* logger = getLogger();
+  logger->clearMetricsStage();
+}
+
+void push_metrics_stage(const char *fmt){
+  Logger* logger = getLogger();
+  logger->pushMetricsStage(fmt);
+}
+
+const std::string pop_metrics_stage(){
+  Logger* logger = getLogger();
+  return logger->popMetricsStage();
 }
 
 } // namespace

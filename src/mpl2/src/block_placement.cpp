@@ -31,8 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "block_placement.h"
-
 #include <float.h>
 
 #include <algorithm>
@@ -46,6 +44,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "block_placement.h"
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
@@ -83,6 +82,7 @@ Block::Block(const std::string& name,
              float area,
              int num_macro,
              const std::vector<std::pair<float, float>>& aspect_ratio)
+    : generator_(nullptr)
 {
   name_ = name;
   area_ = area;
@@ -287,6 +287,7 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
     float shrink_factor,
     float shrink_freq,
     unsigned seed)
+    : init_T_(0)
 {
   outline_width_ = outline_width;
   outline_height_ = outline_height;
@@ -1627,35 +1628,35 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   for (int i = 0; i < num_seed; i++)
     seed_list[i] = (unsigned) rand_generator();
 
-  SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
-                                                          outline_height,
-                                                          blocks,
-                                                          nets,
-                                                          regions,
-                                                          locations,
-                                                          terminal_position,
-                                                          0.99,
-                                                          alpha,
-                                                          beta,
-                                                          gamma,
-                                                          boundary_weight,
-                                                          macro_blockage_weight,
-                                                          location_weight,
-                                                          notch_weight,
-                                                          resize_prob,
-                                                          pos_swap_prob,
-                                                          neg_swap_prob,
-                                                          double_swap_prob,
-                                                          init_prob,
-                                                          rej_ratio,
-                                                          max_num_step,
-                                                          k,
-                                                          c,
-                                                          perturb_per_step,
-                                                          learning_rate,
-                                                          shrink_factor,
-                                                          shrink_freq,
-                                                          seed_list[seed_id++]);
+  auto sa = std::make_unique<SimulatedAnnealingCore>(outline_width,
+                                                     outline_height,
+                                                     blocks,
+                                                     nets,
+                                                     regions,
+                                                     locations,
+                                                     terminal_position,
+                                                     0.99,
+                                                     alpha,
+                                                     beta,
+                                                     gamma,
+                                                     boundary_weight,
+                                                     macro_blockage_weight,
+                                                     location_weight,
+                                                     notch_weight,
+                                                     resize_prob,
+                                                     pos_swap_prob,
+                                                     neg_swap_prob,
+                                                     double_swap_prob,
+                                                     init_prob,
+                                                     rej_ratio,
+                                                     max_num_step,
+                                                     k,
+                                                     c,
+                                                     perturb_per_step,
+                                                     learning_rate,
+                                                     shrink_factor,
+                                                     shrink_freq,
+                                                     seed_list[seed_id++]);
 
   sa->Initialize();
   logger->info(MPL, 2002, "Block placement finish initialization.");

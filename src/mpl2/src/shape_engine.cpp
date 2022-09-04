@@ -217,10 +217,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   if (flag)
@@ -231,10 +231,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -252,7 +252,7 @@ void SimulatedAnnealingCore::Perturb()
   pre_height_ = height_;
   pre_area_ = area_;
 
-  float op = (distribution_) (generator_);
+  float op = (distribution_)(generator_);
   if (op <= pos_swap_prob_) {
     action_id_ = 0;
     SingleSwap(true);
@@ -366,12 +366,9 @@ void SimulatedAnnealingCore::FastSA()
 {
   int step = 1;
 
-  float area = area_;
   float blockage = CalculateBlockage();
-  float pre_cost = NormCost(area, blockage);
-  float cost = pre_cost;
-  float delta_cost = 0.0;
-  float best_cost = cost;
+  float pre_cost = NormCost(area_, blockage);
+  float best_cost = pre_cost;
 
   float rej_num = 0.0;
   float T = init_T_;
@@ -381,21 +378,17 @@ void SimulatedAnnealingCore::FastSA()
     rej_num = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
       Perturb();
-      area = area_;
       blockage = CalculateBlockage();
-      cost = NormCost(area, blockage);
+      const float cost = NormCost(area_, blockage);
 
-      delta_cost = cost - pre_cost;
-      float num = distribution_(generator_);
-      float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / T) : 1;
+      const float delta_cost = cost - pre_cost;
+      const float num = distribution_(generator_);
+      const float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / T) : 1;
 
       if (delta_cost <= 0 || num <= prob) {
         pre_cost = cost;
-        if (best_cost > cost) {
-          best_cost = cost;
-        }
+        best_cost = std::min(best_cost, cost);
       } else {
-        cost = pre_cost;
         rej_num += 1.0;
         Restore();
       }

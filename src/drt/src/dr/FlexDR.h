@@ -29,6 +29,8 @@
 #ifndef _FR_FLEXDR_H_
 #define _FR_FLEXDR_H_
 
+#include <triton_route/TritonRoute.h>
+
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/export.hpp>
 #include <deque>
@@ -113,7 +115,10 @@ class FlexDR
   };
 
   // constructors
-  FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
+  FlexDR(triton_route::TritonRoute* router,
+         frDesign* designIn,
+         Logger* loggerIn,
+         odb::dbDatabase* dbIn);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -134,18 +139,24 @@ class FlexDR
   FlexDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
   void setDistributed(dst::Distributed* dist,
-                      const std::string& ip,
-                      unsigned short port,
+                      const std::string& remote_ip,
+                      unsigned short remote_port,
                       const std::string& dir)
   {
     dist_on_ = true;
     dist_ = dist;
-    dist_ip_ = ip;
-    dist_port_ = port;
+    dist_ip_ = remote_ip;
+    dist_port_ = remote_port;
     dist_dir_ = dir;
   }
+  void sendWorkers(
+      const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
+      std::vector<std::unique_ptr<FlexDRWorker>>& batch);
+
   void reportGuideCoverage();
+
  private:
+  triton_route::TritonRoute* router_;
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
@@ -213,9 +224,6 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-
-  // utility
-  void reportDRC(const std::string& file_name);
 };
 
 class FlexDRWorker;
@@ -239,12 +247,6 @@ class FlexDRWorkerRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
-  FlexDRWorkerRegionQuery() : FlexDRWorkerRegionQuery(nullptr) {}
-  // We will have to use explicit instantiation because the impl is private
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 
 class FlexDRMinAreaVio
@@ -288,7 +290,7 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(const FlexDRViaData* via_data, frDesign* design, Logger* logger)
+  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger)
       : design_(design),
         logger_(logger),
         graphics_(nullptr),
@@ -308,7 +310,6 @@ class FlexDRWorker
         pinCnt_(0),
         initNumMarkers_(0),
         apSVia_(),
-        fixedObjs_(),
         planarHistoryMarkers_(),
         viaHistoryMarkers_(),
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
@@ -318,7 +319,10 @@ class FlexDRWorker
         markers_(),
         rq_(this),
         gcWorker_(nullptr),
-        isCongested_(false)
+        dist_port_(0),
+        dist_on_(false),
+        isCongested_(false),
+        save_updates_(false)
   {
   }
   FlexDRWorker()
@@ -327,12 +331,19 @@ class FlexDRWorker
         graphics_(nullptr),
         debugSettings_(nullptr),
         via_data_(nullptr),
-        rq_(nullptr),
+        boundaryPin_(),
+        rq_(this),
         gcWorker_(nullptr),
-        isCongested_(false)
+        dist_on_(false),
+        isCongested_(false),
+        save_updates_(false)
   {
   }
   // setters
+  void setDebugSettings(frDebugSettings* settings)
+  {
+    debugSettings_ = settings;
+  }
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
@@ -361,13 +372,13 @@ class FlexDRWorker
     workerDRCCost_ = drcCostIn;
     workerMarkerCost_ = markerCostIn;
   }
+  void setMarkerCost(frUInt4 markerCostIn) { workerMarkerCost_ = markerCostIn; }
+  void setDrcCost(frUInt4 drcCostIn) { workerDRCCost_ = drcCostIn; }
   void setMarkers(std::vector<frMarker>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& marker : in) {
-      marker.getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker.getBBox())) {
         markers_.push_back(marker);
       }
     }
@@ -375,11 +386,9 @@ class FlexDRWorker
   void setMarkers(const std::vector<std::unique_ptr<frMarker>>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& uMarker : in) {
       auto& marker = *uMarker;
-      marker.getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker.getBBox())) {
         markers_.push_back(marker);
       }
     }
@@ -387,10 +396,8 @@ class FlexDRWorker
   void setMarkers(std::vector<frMarker*>& in)
   {
     markers_.clear();
-    Rect box;
     for (auto& marker : in) {
-      marker->getBBox(box);
-      if (getDrcBox().intersects(box)) {
+      if (getDrcBox().intersects(marker->getBBox())) {
         markers_.push_back(*marker);
       }
     }
@@ -398,17 +405,14 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in)
-  {
-    gcWorker_ = unique_ptr<FlexGCWorker>(in);
-  }
+  void setGCWorker(unique_ptr<FlexGCWorker> in) { gcWorker_ = std::move(in); }
 
   void setGraphics(FlexDRGraphics* in)
   {
     graphics_ = in;
     gridGraph_.setGraphics(in);
   }
-
+  void setViaData(FlexDRViaData* viaData) { via_data_ = viaData; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
@@ -437,6 +441,7 @@ class FlexDRWorker
     }
   }
   frDesign* getDesign() { return design_; }
+  void setDesign(frDesign* design) { design_ = design; }
   const std::vector<frMarker>& getMarkers() const { return markers_; }
   std::vector<frMarker>& getMarkers() { return markers_; }
   const std::vector<frMarker>& getBestMarkers() const { return bestMarkers_; }
@@ -451,7 +456,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
-  void distributedMain(frDesign* design, const char* globals_path);
+  void distributedMain(frDesign* design);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   bool end(frDesign* design);
@@ -461,17 +466,19 @@ class FlexDRWorker
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
+                                            fr::frDesign* design,
                                             FlexDRGraphics* graphics);
 
   // distributed
   void setDistributed(dst::Distributed* dist,
-                      const std::string& ip,
-                      unsigned short port,
+                      const std::string& remote_ip,
+                      unsigned short remote_port,
                       const std::string& dir)
   {
+    dist_on_ = true;
     dist_ = dist;
-    dist_ip_ = ip;
-    dist_port_ = port;
+    dist_ip_ = remote_ip;
+    dist_port_ = remote_port;
     dist_dir_ = dir;
   }
 
@@ -479,6 +486,7 @@ class FlexDRWorker
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
+  bool isSkipRouting() const { return skipRouting_; }
 
   enum ModCostType
   {
@@ -503,7 +511,7 @@ class FlexDRWorker
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
   frDebugSettings* debugSettings_;
-  const FlexDRViaData* via_data_;
+  FlexDRViaData* via_data_;
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
@@ -522,7 +530,6 @@ class FlexDRWorker
   int pinCnt_;
   int initNumMarkers_;
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
-  std::vector<frBlockObject*> fixedObjs_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
   std::vector<std::set<FlexMazeIdx>> historyMarkers_;
@@ -546,7 +553,9 @@ class FlexDRWorker
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
+  bool dist_on_;
   bool isCongested_;
+  bool save_updates_;
 
   // init
   void init(const frDesign* design);
@@ -585,6 +594,10 @@ class FlexDRWorker
                              std::map<frNet*,
                                       std::vector<std::unique_ptr<drConnFig>>,
                                       frBlockObjectComp>& netExtObjs);
+  void initNets_segmentTerms(Point bp,
+                             frLayerNum lNum,
+                             frNet* net,
+                             set<frBlockObject*, frBlockObjectComp>& terms);
   void initNets_initDR(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -739,7 +752,6 @@ class FlexDRWorker
   void initMazeCost_boundary_helper(drNet* net, bool isAddPathCost);
 
   // DRC
-  void initFixedObjs(const frDesign* design);
   void initMarkers(const frDesign* design);
 
   // route_queue
@@ -851,12 +863,6 @@ class FlexDRWorker
                             frMIdx z,
                             ModCostType type,
                             bool isUpperVia);
-
-  void modMinimumcutCost(const Rect& box,
-                         frMIdx z,
-                         ModCostType type,
-                         bool isUpperVia);
-  
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
                               ModCostType type);
@@ -865,6 +871,9 @@ class FlexDRWorker
 
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);
+
+  bool mazeIterInit_sortRerouteQueue(int mazeIter,
+                                     std::vector<RouteQueueEntry>& rerouteNets);
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
@@ -1010,82 +1019,12 @@ class FlexDRWorker
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
+  // helper functions
+  frCoord snapCoordToManufacturingGrid(const frCoord coord,
+                                       const int lowerLeftCoord);
+
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // // We always serialize before calling main on the work unit so various
-    // // fields are empty and don't need to be serialized.  I skip these to
-    // // save having to write lots of serializers that will never be called.
-    // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
-    //     || !rq_.isEmpty() || gcWorker_) {
-    //   logger_->error(DRT, 999, "Can't serialize used worker");
-    // }
-
-    // The logger_, graphics_ and debugSettings_ are handled by the caller to
-    // use the current ones.
-    (ar) & design_;
-    (ar) & via_data_;
-    (ar) & routeBox_;
-    (ar) & extBox_;
-    (ar) & drcBox_;
-    (ar) & gcellBox_;
-    (ar) & drIter_;
-    (ar) & mazeEndIter_;
-    (ar) & followGuide_;
-    (ar) & needRecheck_;
-    (ar) & skipRouting_;
-    (ar) & ripupMode_;
-    (ar) & workerDRCCost_;
-    (ar) & workerMarkerCost_;
-    (ar) & boundaryPin_;
-    (ar) & pinCnt_;
-    (ar) & initNumMarkers_;
-    (ar) & apSVia_;
-    (ar) & fixedObjs_;
-    (ar) & planarHistoryMarkers_;
-    (ar) & viaHistoryMarkers_;
-    (ar) & historyMarkers_;
-    (ar) & nets_;
-    (ar) & owner2nets_;
-    (ar) & gridGraph_;
-    (ar) & markers_;
-    (ar) & bestMarkers_;
-    (ar) & rq_;
-    (ar) & gcWorker_;
-    (ar) & isCongested_;
-  }
-  friend class boost::serialization::access;
-};
-
-class RoutingJobDescription : public dst::JobDescription
-{
- public:
-  RoutingJobDescription(std::string pathIn,
-                        std::string globals = "",
-                        std::string dirIn = "")
-      : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
-  {
-  }
-  void setWorkerPath(const std::string& path) { path_ = path; }
-  void setGlobalsPath(const std::string& path) { globals_path_ = path; }
-  void setSharedDir(const std::string& path) { shared_dir_ = path; }
-  const std::string& getWorkerPath() const { return path_; }
-  const std::string& getGlobalsPath() const { return globals_path_; }
-  const std::string& getSharedDir() const { return shared_dir_; }
-
- private:
-  std::string path_;
-  std::string globals_path_;
-  std::string shared_dir_;
-  RoutingJobDescription() {}
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & path_;
-    (ar) & globals_path_;
-    (ar) & shared_dir_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;
 };
 }  // namespace fr

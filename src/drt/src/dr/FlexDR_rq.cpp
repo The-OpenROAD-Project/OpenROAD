@@ -28,7 +28,6 @@
 
 #include "dr/FlexDR.h"
 #include "frRTree.h"
-#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -49,14 +48,6 @@ struct FlexDRWorkerRegionQuery::Impl
       std::vector<std::vector<rq_box_value_t<drConnFig*>>>& allShapes);
 
  private:
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & drWorker;
-    (ar) & shapes_;
-  }
-
-  friend class boost::serialization::access;
 };
 
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
@@ -75,22 +66,20 @@ void FlexDRWorkerRegionQuery::cleanup()
 
 void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
 {
-  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
-    obj->getBBox(frb);
+    Rect frb = obj->getBBox();
     impl_->shapes_.at(obj->getLayerNum()).insert(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     dbTransform xform;
-    Point origin;
-    via->getOrigin(origin);
+    Point origin = via->getOrigin();
     xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .insert(make_pair(frb, via));
@@ -101,7 +90,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .insert(make_pair(frb, via));
@@ -112,7 +101,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .insert(make_pair(frb, via));
@@ -129,22 +118,20 @@ void FlexDRWorkerRegionQuery::Impl::add(
     drConnFig* connFig,
     vector<vector<rq_box_value_t<drConnFig*>>>& allShapes)
 {
-  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
-    obj->getBBox(frb);
+    Rect frb = obj->getBBox();
     allShapes.at(obj->getLayerNum()).push_back(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     dbTransform xform;
-    Point origin;
-    via->getOrigin(origin);
+    Point origin = via->getOrigin();
     xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer1Num())
             .push_back(make_pair(frb, via));
@@ -155,7 +142,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer2Num())
             .push_back(make_pair(frb, via));
@@ -166,7 +153,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getCutLayerNum())
             .push_back(make_pair(frb, via));
@@ -181,22 +168,20 @@ void FlexDRWorkerRegionQuery::Impl::add(
 
 void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
 {
-  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
-    obj->getBBox(frb);
+    Rect frb = obj->getBBox();
     impl_->shapes_.at(obj->getLayerNum()).remove(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     dbTransform xform;
-    Point origin;
-    via->getOrigin(origin);
+    Point origin = via->getOrigin();
     xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .remove(make_pair(frb, via));
@@ -207,7 +192,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getLayer2Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .remove(make_pair(frb, via));
@@ -218,7 +203,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
     for (auto& uShape : via->getViaDef()->getCutFigs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
-        shape->getBBox(frb);
+        Rect frb = shape->getBBox();
         xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .remove(make_pair(frb, via));
@@ -277,18 +262,3 @@ bool FlexDRWorkerRegionQuery::isEmpty() const
 {
   return impl_->shapes_.empty();
 }
-
-template <class Archive>
-void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & impl_;
-}
-
-// Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
-    const unsigned int file_version);
-
-template void FlexDRWorkerRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
-    const unsigned int file_version);

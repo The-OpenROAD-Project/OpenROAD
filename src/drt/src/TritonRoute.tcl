@@ -34,8 +34,6 @@
 #############################################################################
 
 sta::define_cmd_args "detailed_route" {
-    [-guide filename]
-    [-output_guide filename]
     [-output_maze filename]
     [-output_drc filename]
     [-output_cmap filename]
@@ -52,22 +50,23 @@ sta::define_cmd_args "detailed_route" {
     [-verbose level]
     [-param filename]
     [-distributed]
-    [-remote_host host]
-    [-remote_port port]
+    [-remote_host rhost]
+    [-remote_port rport]
     [-shared_volume vol]
+    [-cloud_size sz]
     [-clean_patches]
     [-no_pin_access]
     [-min_access_points count]
+    [-save_guide_updates]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-param -guide -output_guide -output_maze -output_drc -output_cmap -output_guide_coverage \
+    keys {-param -output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
-      -min_access_points } \
-    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr}
+      -top_routing_layer -verbose -remote_host -remote_port -shared_volume -cloud_size -min_access_points} \
+    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -76,6 +75,7 @@ proc detailed_route { args } {
   # single_step_dr is not a user option but is intended for algorithm
   # development.  It is not listed in the help string intentionally.
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
+  set save_guide_updates  [expr [info exists flags(-save_guide_updates)]]
   if { [info exists keys(-param)] } {
     if { [array size keys] > 1 } {
       utl::error DRT 251 "-param cannot be used with other arguments"
@@ -83,16 +83,6 @@ proc detailed_route { args } {
       drt::detailed_route_cmd $keys(-param)
     }
   } else {
-    if { [info exists keys(-guide)] } {
-      set guide $keys(-guide)
-    } else {
-      set guide ""
-    }
-    if { [info exists keys(-output_guide)] } {
-      set output_guide $keys(-output_guide)
-    } else {
-      set output_guide ""
-    }
     if { [info exists keys(-output_maze)] } {
       set output_maze $keys(-output_maze)
     } else {
@@ -167,12 +157,12 @@ proc detailed_route { args } {
     }
     if { [info exists flags(-distributed)] } {
       if { [info exists keys(-remote_host)] } {
-        set host $keys(-remote_host)
+        set rhost $keys(-remote_host)
       } else {
         utl::error DRT 506 "-remote_host is required for distributed routing."
       }
       if { [info exists keys(-remote_port)] } {
-        set port $keys(-remote_port)
+        set rport $keys(-remote_port)
       } else {
         utl::error DRT 507 "-remote_port is required for distributed routing."
       }
@@ -181,7 +171,12 @@ proc detailed_route { args } {
       } else {
         utl::error DRT 508 "-shared_volume is required for distributed routing."
       }
-      drt::detailed_route_distributed $host $port $vol
+      if { [info exists keys(-cloud_size)] } {
+        set cloudsz $keys(-cloud_size)
+      } else {
+        utl::error DRT 516 "-cloud_size is required for distributed routing."
+      }
+      drt::detailed_route_distributed $rhost $rport $vol $cloudsz
     }
     if { [info exists keys(-min_access_points)] } {
       sta::check_cardinal "-min_access_points" $keys(-min_access_points)
@@ -189,11 +184,11 @@ proc detailed_route { args } {
     } else {
       set min_access_points -1
     }
-    drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
-      $output_cmap $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
+    drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
+      $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $no_pin_access $single_step_dr $min_access_points
+      $clean_patches $no_pin_access $single_step_dr $min_access_points $save_guide_updates
   }
 }
 
@@ -212,13 +207,14 @@ sta::define_cmd_args "detailed_route_debug" {
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
+    [-dump_dir dir]
     [-pa_edge]
     [-pa_commit]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net -worker -iter -pin} \
+      keys {-net -worker -iter -pin -dump_dir} \
       flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
@@ -242,7 +238,15 @@ proc detailed_route_debug { args } {
   } else {
     set pin_name ""
   }
-
+  if { $dump_dr } {
+    if { [info exists keys(-dump_dir)] } {
+      set dump_dir $keys(-dump_dir)
+    } else {
+      utl::error DRT 2008 "-dump_dir is required for debugging with -dump_dr."
+    }
+  } else {
+    set dump_dir ""
+  }
   set worker_x -1
   set worker_y -1
   if [info exists keys(-worker)] {
@@ -262,7 +266,7 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit
+      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit $dump_dir
 }
 sta::define_cmd_args "pin_access" {
     [-db_process_node name]
@@ -306,14 +310,83 @@ proc pin_access { args } {
   }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }
+
+sta::define_cmd_args "detailed_route_run_worker" {
+    [-dump_dir dir]
+    [-drc_rpt drc]
+}
+
 proc detailed_route_run_worker { args } {
-  sta::check_argc_eq1 "detailed_route_run_worker" $args
-  drt::run_worker_cmd $args
+  sta::parse_key_args "detailed_route_run_worker" args \
+      keys {-dump_dir -drc_rpt} \
+      flags {}
+  sta::check_argc_eq0 "detailed_route_run_worker" $args
+  if { [info exists keys(-dump_dir)] } {
+    set dump_dir $keys(-dump_dir)
+  } else {
+    utl::error DRT 517 "-dump_dir is required for detailed_route_run_worker command"
+  }
+
+  if { [info exists keys(-drc_rpt)] } {
+    set drc_rpt $keys(-drc_rpt)
+  } else {
+    utl::error DRT 518 "-drc_rpt is required for detailed_route_run_worker command"
+  }
+  drt::run_worker_cmd  $dump_dir $drc_rpt
+}
+
+sta::define_cmd_args "detailed_route_worker_debug" {
+    [-maze_end_iter iter]
+    [-drc_cost d_cost]
+    [-marker_cost m_cost]
+    [-ripup_mode mode]
+    [-follow_guide f_guide]
+}
+
+proc detailed_route_worker_debug { args } {
+  sta::parse_key_args "detailed_route_worker_debug" args \
+      keys {-maze_end_iter -drc_cost -marker_cost -ripup_mode -follow_guide} \
+      flags {}
+  if [info exists keys(-maze_end_iter)] {
+    set maze_end_iter $keys(-maze_end_iter)
+  } else {
+    set maze_end_iter -1
+  }
+
+  if [info exists keys(-drc_cost)] {
+    set drc_cost $keys(-drc_cost)
+  } else {
+    set drc_cost -1
+  }
+
+  if [info exists keys(-marker_cost)] {
+    set marker_cost $keys(-marker_cost)
+  } else {
+    set marker_cost -1
+  }
+
+  if [info exists keys(-ripup_mode)] {
+    set ripup_mode $keys(-ripup_mode)
+  } else {
+    set ripup_mode -1
+  }
+
+  if [info exists keys(-follow_guide)] {
+    set follow_guide $keys(-follow_guide)
+  } else {
+    set follow_guide -1
+  }
+  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $ripup_mode $follow_guide
 }
 
 proc detailed_route_set_default_via { args } {
   sta::check_argc_eq1 "detailed_route_set_default_via" $args
   drt::detailed_route_set_default_via $args
+}
+
+proc detailed_route_set_unidirectional_layer { args } {
+  sta::check_argc_eq1 "detailed_route_set_unidirectional_layer" $args
+  drt::detailed_route_set_unidirectional_layer $args
 }
 
 namespace eval drt {
@@ -325,6 +398,31 @@ proc step_dr { args } {
   }
 
   drt::detailed_route_step_drt {*}$args
+}
+
+sta::define_cmd_args "check_drc" {
+    [-box box]
+    [-output_file filename]
+}
+proc check_drc { args } {
+  sta::parse_key_args "check_drc" args \
+      keys { -box -output_file } \
+      flags {}
+  sta::check_argc_eq0 "check_drc" $args
+  set box { 0 0 0 0 }
+  if [info exists keys(-box)] {
+    set box $keys(-box)
+    if { [llength $box] != 4 } {
+      utl::error DRT 612 "-box is a list of 4 coordinates."
+    }    
+  }
+  lassign $box x1 y1 x2 y2
+   if { [info exists keys(-output_file)] } {
+    set output_file $keys(-output_file)
+  } else {
+    utl::error DRT 613 "-output_file is required for check_drc command"
+  }
+  drt::check_drc $output_file $x1 $y1 $x2 $y2
 }
 
 }

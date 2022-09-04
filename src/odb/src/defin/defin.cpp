@@ -99,9 +99,6 @@ void defin::useBlockName(const char* name)
 
 dbChip* defin::createChip(std::vector<dbLib*>& libs, const char* def_file)
 {
-  if (libs.size() == 0)
-    return NULL;
-
   return _reader->createChip(libs, def_file);
 }
 
@@ -109,9 +106,6 @@ dbBlock* defin::createBlock(dbBlock* parent,
                             std::vector<dbLib*>& libs,
                             const char* def_file)
 {
-  if (libs.size() == 0)
-    return NULL;
-
   return _reader->createBlock(parent, libs, def_file);
 }
 

@@ -101,33 +101,50 @@ set_global_routing_random [-seed seed]
                           [-perturbation_amount value]
 ```
 
-The `set_global_routing_random` command enables randomization of global routing
-results. The randomized global routing shuffles the order of the nets and randomly
-subtracts or adds to the capacities of a random set of edges.  The `-seed`
-option sets the random seed and is required to enable the randomization mode. The
-`-capacities_perturbation_percentage` option sets the percentage of edges
-whose capacities are perturbed. By default, the edge capacities are perturbed by
-adding or subtracting 1 (track) from the original capacity.  The `-perturbation_amount`
-option sets the perturbation value of the edge capacities. This option
-will only have meaning and effect when `-capacities_perturbation_percentage` is used.
-The random seed must be different from 0 to enable randomization of the global routing.
+The `set_global_routing_random` command enables randomization of
+global routing results. The randomized global routing shuffles the
+order of the nets and randomly subtracts or adds to the capacities of
+a random set of edges.  The `-seed` option sets the random seed.  A
+non-zero seed enables randomization. The
+`-capacities_perturbation_percentage` option sets the percentage of
+edges whose capacities are perturbed. By default, the edge capacities
+are perturbed by adding or subtracting 1 (track) from the original
+capacity.  The `-perturbation_amount` option sets the perturbation
+value of the edge capacities. This option is only meaningful when
+`-capacities_perturbation_percentage` is used.
 
-Example: `set_global_routing_random -seed 42 -capacities_perturbation_percentage 50 -perturbation_amount 2`
+Example:
+`set_global_routing_random -seed 42 \
+  -capacities_perturbation_percentage 50 \
+  -perturbation_amount 2`
 
 ```
-repair_antennas diodeCellName/diodePinName [-iterations iterations]
+repair_antennas [diode_cell] [-iterations iterations]
 ```
 
-The repair_antenna command evaluates the global routing results to find
-antenna violations, and repairs the violations by inserting diodes. The
-input for this command is the diode cell and its pin names, and a prescribed
-number of
-iterations. By default, the command runs only one iteration to repair
-antennas.  It uses the  `antennachecker` tool to identify any nets with antenna
-violations and, for each such net, the exact number of diodes necessary to fix the
-antenna violation.
+The repair_antenna command checks the global routing for antenna
+violations and repairs the violations by inserting diodes near the
+gates of the violating nets.  By default the command runs only one
+iteration to repair antennas. Filler instances added by the
+`filler_placement` command should NOT be in the database when
+`repair_antennas` is called.
 
-Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`
+See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
+Fixing Process Antenna Violations" for a description of antenna
+violations.
+
+Example: `repair_antennas`
+
+If no diode_cell argument is specified the LEF cell with
+class CORE ANTENNACELL will be used.
+If any repairs are made the filler instances are remove and must be
+placed with the `filler_placement` command.
+
+If the LEF technology layer ANTENNADIFFSIDEAREARATIO properties are constant
+instead of PWL, inserting diodes does not improve the antenna ratios and no
+diodes are inserted. The following error message will be reported:
+
+[WARNING GRT-0243] Unable to repair antennas on net with diodes.
 
 ```
 write_guides file_name

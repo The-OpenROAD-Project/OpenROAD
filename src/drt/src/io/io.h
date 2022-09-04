@@ -59,8 +59,9 @@ class Parser
 {
  public:
   // constructors
-  Parser(frDesign* designIn, Logger* loggerIn)
-      : design(designIn),
+  Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
+      : db(dbIn),
+        design(designIn),
         tech(design->getTech()),
         logger(loggerIn),
         tmpBlock(nullptr),
@@ -77,10 +78,10 @@ class Parser
   {
   }
   // others
-  void readDb(odb::dbDatabase* db);
-  void readGuide();
+  void readDb();
+  bool readGuide();
   void postProcess();
-  void postProcessGuide(odb::dbDatabase* db);
+  void postProcessGuide();
   void initDefaultVias();
   void initRPin();
   std::map<frMaster*,
@@ -130,6 +131,7 @@ class Parser
   void createNDR(odb::dbTechNonDefaultRule* ndr);
   void convertLef58MinCutConstraints();
 
+  odb::dbDatabase* db;
   frDesign* design;
   frTechObject* tech;
   Logger* logger;
@@ -257,7 +259,7 @@ class Parser
   void initRPin_rq();
 
   // write guide
-  void writeGuideFile();
+  void saveGuidesUpdates();
 
   // misc
   void addFakeNets();

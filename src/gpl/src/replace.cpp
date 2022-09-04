@@ -41,7 +41,6 @@
 #include "utl/Logger.h"
 #include "rsz/Resizer.hh"
 #include "odb/db.h"
-#include "plot.h"
 #include <iostream>
 
 namespace gpl {
@@ -62,6 +61,7 @@ Replace::Replace()
   initialPlaceMaxSolverIter_(100),
   initialPlaceMaxFanout_(200),
   initialPlaceNetWeightScale_(800),
+  forceCPU_(false),
   nesterovPlaceMaxIter_(5000),
   binGridCntX_(0), binGridCntY_(0), 
   overflow_(0.1), density_(1.0),
@@ -85,7 +85,6 @@ Replace::Replace()
   uniformTargetDensityMode_(false),
   skipIoMode_(false),
   padLeft_(0), padRight_(0),
-  verbose_(0),
   gui_debug_(false),
   gui_debug_pause_iterations_(10),
   gui_debug_update_iterations_(10),
@@ -120,6 +119,7 @@ void Replace::reset() {
   initialPlaceMaxSolverIter_ = 100;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
+  forceCPU_ = false;
 
   nesterovPlaceMaxIter_ = 5000;
   binGridCntX_ = binGridCntY_ = 0;
@@ -147,7 +147,6 @@ void Replace::reset() {
   skipIoMode_ = false;
 
   padLeft_ = padRight_ = 0;
-  verbose_ = 0;
 
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
@@ -231,9 +230,6 @@ void Replace::doIncrementalPlace()
 
 void Replace::doInitialPlace()
 {
-
-  log_->setDebugLevel(GPL, "replace", verbose_);
-
   if (pb_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -250,6 +246,7 @@ void Replace::doInitialPlace()
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.debug = gui_debug_initial_;
+  ipVars.forceCPU = forceCPU_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
@@ -257,8 +254,6 @@ void Replace::doInitialPlace()
 }
 
 void Replace::initNesterovPlace() {
-  log_->setDebugLevel(GPL, "replace", verbose_);
-
   if( !pb_ ) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -431,11 +426,6 @@ Replace::setReferenceHpwl(float refHpwl) {
 }
 
 void
-Replace::setVerboseLevel(int verbose) {
-  verbose_ = verbose;
-}
-
-void
 Replace::setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
@@ -450,6 +440,11 @@ Replace::setDebug(int pause_iterations,
 void
 Replace::setSkipIoMode(bool mode) {
   skipIoMode_ = mode;
+}
+
+void
+Replace::setForceCPU(bool force_cpu) {
+  forceCPU_ = force_cpu;
 }
 
 void
@@ -518,13 +513,6 @@ Replace::setPadRight(int pad) {
 void
 Replace::addTimingNetWeightOverflow(int overflow) {
   timingNetWeightOverflows_.push_back(overflow);
-}
-
-void
-Replace::setPlottingPath(const char* path) {
-#ifdef ENABLE_CIMG_LIB
-  gpl::PlotEnv::setPlotPath(path);
-#endif
 }
 
 }

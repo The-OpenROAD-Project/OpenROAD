@@ -233,7 +233,11 @@ class AutoClusterMgr
                        unsigned int timing_weight,
                        bool std_cell_timing_flag,
                        const char* report_directory,
-                       const char* file_name);
+                       const char* file_name,
+                       float keepin_lx,
+                       float keepin_ly,
+                       float keepin_ux,
+                       float keepin_uy);
 
  private:
   ord::dbNetwork* network_ = nullptr;
@@ -263,6 +267,12 @@ class AutoClusterMgr
   std::vector<float> T_pin_;
   std::vector<float> L_pin_;
   std::vector<float> R_pin_;
+
+  // This is for Pads
+  void PrintPadPos(odb::dbModule* module, std::ostream& out);
+  void PrintIOPadNet(std::ostream& out);
+  std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
+  std::map<odb::dbInst*, odb::dbBTerm*> pad_io_map_;
 
   // Map all the BTerms to an IORegion
   std::map<const odb::dbBTerm*, IORegion> bterm_map_;

@@ -115,12 +115,12 @@ class Replace
     void setReferenceHpwl(float deltaHpwl);
 
     void setIncrementalPlaceMode(bool mode);
-    void setVerboseLevel(int verbose);
     
     // temp funcs; OpenDB should have these values. 
     void setPadLeft(int padding);
     void setPadRight(int padding);
 
+    void setForceCPU(bool force_cpu);
     void setTimingDrivenMode(bool mode);
 
     void setSkipIoMode(bool mode);
@@ -139,8 +139,6 @@ class Replace
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
     void addTimingNetWeightOverflow(int overflow);
-
-    void setPlottingPath(const char* path);
 
     void setDebug(int pause_iterations,
                   int update_iterations,
@@ -166,6 +164,7 @@ class Replace
     int initialPlaceMaxSolverIter_;
     int initialPlaceMaxFanout_;
     float initialPlaceNetWeightScale_;
+    bool forceCPU_;
 
     int nesterovPlaceMaxIter_;
     int binGridCntX_;
@@ -201,7 +200,6 @@ class Replace
     int padLeft_;
     int padRight_;
 
-    int verbose_;
     bool gui_debug_;
     int gui_debug_pause_iterations_;
     int gui_debug_update_iterations_;

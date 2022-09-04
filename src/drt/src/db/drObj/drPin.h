@@ -60,20 +60,20 @@ class drPin : public drBlockObject
   }
   drNet* getNet() const { return net_; }
   bool isInstPin() { return hasFrTerm() && term_->typeId() == frcInstTerm; }
-  void getAPBbox(FlexMazeIdx& l, FlexMazeIdx& h)
+  std::pair<FlexMazeIdx, FlexMazeIdx> getAPBbox()
   {
-    FlexMazeIdx mi;
-    l.set(std::numeric_limits<frMIdx>::max(),
-          std::numeric_limits<frMIdx>::max(),
-          std::numeric_limits<frMIdx>::max());
-    h.set(std::numeric_limits<frMIdx>::min(),
-          std::numeric_limits<frMIdx>::min(),
-          std::numeric_limits<frMIdx>::min());
+    FlexMazeIdx l(std::numeric_limits<frMIdx>::max(),
+                  std::numeric_limits<frMIdx>::max(),
+                  std::numeric_limits<frMIdx>::max());
+    FlexMazeIdx h(std::numeric_limits<frMIdx>::min(),
+                  std::numeric_limits<frMIdx>::min(),
+                  std::numeric_limits<frMIdx>::min());
     for (auto& ap : getAccessPatterns()) {
-      ap->getMazeIdx(mi);
+      FlexMazeIdx mi = ap->getMazeIdx();
       l.set(min(l.x(), mi.x()), min(l.y(), mi.y()), min(l.z(), mi.z()));
       h.set(max(h.x(), mi.x()), max(h.y(), mi.y()), max(h.z(), mi.z()));
     }
+    return {l, h};
   }
   // others
   frBlockObjectEnum typeId() const override { return drcPin; }
@@ -93,14 +93,7 @@ class drPin : public drBlockObject
   drNet* net_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<drBlockObject>(*this);
-    (ar) & term_;
-    (ar) & accessPatterns_;
-    (ar) & net_;
-  }
-
+  void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;
 };
 }  // namespace fr

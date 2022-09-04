@@ -29,15 +29,52 @@
 #include "db/obj/frVia.h"
 
 #include "db/drObj/drVia.h"
+#include "serialization.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
 
-frVia::frVia(const drVia& in) : owner_(nullptr)
+frVia::frVia(const drVia& in) : owner_(nullptr), index_in_owner_(0)
 {
-  in.getOrigin(origin_);
+  origin_ = in.getOrigin();
   viaDef_ = in.getViaDef();
   setTapered(in.isTapered());
   setBottomConnected(in.isBottomConnected());
   setTopConnected(in.isTopConnected());
 }
+
+template <class Archive>
+void frVia::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frRef>(*this);
+  (ar) & origin_;
+  bool tmp = false;
+  if (is_loading(ar)) {
+    (ar) & tmp;
+    tapered_ = tmp;
+    (ar) & tmp;
+    bottomConnected_ = tmp;
+    (ar) & tmp;
+    topConnected_ = tmp;
+  } else {
+    tmp = tapered_;
+    (ar) & tmp;
+    tmp = bottomConnected_;
+    (ar) & tmp;
+    tmp = topConnected_;
+    (ar) & tmp;
+  }
+  (ar) & index_in_owner_;
+  serializeViaDef(ar, viaDef_);
+  serializeBlockObject(ar, owner_);
+}
+
+
+template void frVia::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void frVia::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

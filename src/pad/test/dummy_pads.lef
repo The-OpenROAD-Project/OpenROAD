@@ -40,6 +40,10 @@ MACRO DUMMY_BUMP
         RECT 0.0 0.0 45.0 45.0 ;
     END
   END PAD
+  OBS
+    LAYER metal10 ;
+    RECT 15.0 15.0 30.0 30.0 ;
+  END
 END DUMMY_BUMP
 
 MACRO PADCELL_SIG_V
@@ -1700,6 +1704,75 @@ MACRO PAD_FILL5_V
   END SNS
 END PAD_FILL5_V
 
+MACRO PAD_FILL5_VR
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 119.0 0.100 120.0 ;
+      LAYER metal4 ;
+      RECT  4.90 119.0  5.00 120.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 99.0 0.100 100.0 ;
+      LAYER metal4 ;
+      RECT  4.90 99.0  5.00 100.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 79.0 0.100 80.0 ;
+      LAYER metal4 ;
+      RECT  4.90 79.0  5.00 80.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 59.0 0.100 60.0 ;
+      LAYER metal4 ;
+      RECT  4.90 59.0  5.00 60.0 ;
+    END
+  END DVSS
+  PIN RETN
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  0.000  40.000  0.100 40.100 ;
+      LAYER metal4 ;
+        RECT  4.900  40.000  5.000 40.100 ;
+    END
+  END RETN
+  PIN SNS
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  0.000  50.000  0.100 50.100 ;
+      LAYER metal4 ;
+        RECT  4.900  50.000  5.000 50.100 ;
+    END
+  END SNS
+END PAD_FILL5_VR
+
 MACRO PAD_FILL1_H
   CLASS PAD SPACER ;
   ORIGIN 0 0 ;
@@ -1770,6 +1843,77 @@ MACRO PAD_FILL1_H
     END
   END SNS
 END PAD_FILL1_H
+
+MACRO PAD_FILL5_HR
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 140 BY 5 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 119.0 0.000 120.0 0.100 ;
+      LAYER metal4 ;
+      RECT 119.0 4.900 120.0 5.000 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 99.0 0.000 100.0 0.100 ;
+      LAYER metal4 ;
+      RECT 99.0 4.900 100.0 5.000 ;
+    END
+  END VSS
+  PIN DVDD
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 79.0 0.000 80.0 0.100 ;
+      LAYER metal4 ;
+      RECT 79.0 4.900 80.0 5.000 ;
+    END
+  END DVDD
+  PIN DVSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 59.0 0.000 60.0 0.100 ;
+      LAYER metal4 ;
+      RECT 59.0 4.900 60.0 5.000 ;
+    END
+  END DVSS
+  PIN RETN
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  40.000 0.000 40.10 0.100 ;
+      LAYER metal4 ;
+        RECT  40.000 4.900 40.10 5.000 ;
+    END
+  END RETN
+  PIN SNS
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  50.000 0.000  50.10 0.100 ;
+      LAYER metal4 ;
+        RECT  50.000 4.900  50.10 5.000 ;
+    END
+  END SNS
+END PAD_FILL5_HR
 
 MACRO PAD_FILL5_H
   CLASS PAD SPACER ;

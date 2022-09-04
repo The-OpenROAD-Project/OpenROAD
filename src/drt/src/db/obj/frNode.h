@@ -134,7 +134,6 @@ class frNode : public frBlockObject
   // getters
   bool hasNet() { return (net != nullptr); }
   frNet* getNet() { return net; }
-  void getLoc(Point& in) { in = loc; }
   Point getLoc() { return loc; }
   frLayerNum getLayerNum() { return layerNum; }
   frBlockObject* getConnFig() { return connFig; }
@@ -161,22 +160,6 @@ class frNode : public frBlockObject
 
   frListIter<std::unique_ptr<frNode>> iter;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & net;
-    (ar) & loc;
-    (ar) & layerNum;
-    (ar) & connFig;
-    (ar) & pin;
-    (ar) & type;
-    (ar) & parent;
-    (ar) & children;
-    // iter is handled by the owner
-  }
-
-  friend class boost::serialization::access;
   friend class grNode;
 };
 }  // namespace fr

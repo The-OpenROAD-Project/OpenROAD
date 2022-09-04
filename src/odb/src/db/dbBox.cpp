@@ -509,17 +509,17 @@ dbVia* dbBox::getBlockVia()
   return (dbVia*) box->getBlockVia();
 }
 
-void dbBox::getBox(Rect& rect)
+Rect dbBox::getBox()
 {
   _dbBox* box = (_dbBox*) this;
   if (box->isOct()) {
     Oct oct = box->_shape._oct;
-    rect = Rect(oct.xMin(),
+    return Rect(oct.xMin(),
                 oct.yMin(),
                 oct.xMax(),
                 oct.yMax());
-  } else
-    rect = box->_shape._rect;
+  } 
+  return box->_shape._rect;
 }
 
 void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
@@ -557,8 +557,7 @@ void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
 
 int dbBox::getDir()
 {
-  Rect rect;
-  getBox(rect);
+  Rect rect = getBox();
   return rect.getDir();
 }
 
@@ -614,6 +613,14 @@ void dbBox::getViaXY(int& x, int& y)
   _dbBox* box = (_dbBox*) this;
   ZASSERT(box->_flags._is_tech_via || box->_flags._is_block_via);
   box->getViaXY(x, y);
+}
+
+Point dbBox::getViaXY()
+{
+  int x;
+  int y;
+  getViaXY(x, y);
+  return {x, y};
 }
 
 dbObject* dbBox::getBoxOwner()

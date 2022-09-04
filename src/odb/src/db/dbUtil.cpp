@@ -356,13 +356,6 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
     success = 1;
   }
   dbBox* origBox = origInst->getBBox();
-  dbBox* b0 = origInst->getBBox();
-  Rect r0;
-  b0->getBox(r0);
-
-  dbBox* b1 = ecoInst->getBBox();
-  Rect r1;
-  b1->getBox(r1);
 
   // worst case : a box was moved to its original space
   // if (r0!=r1) { // different bboxes

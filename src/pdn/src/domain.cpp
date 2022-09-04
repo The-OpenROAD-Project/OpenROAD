@@ -142,8 +142,7 @@ const odb::Rect VoltageDomain::getDomainArea() const
   if (hasRegion()) {
     return getRegionBoundary(region_);
   } else {
-    odb::Rect core;
-    block_->getCoreArea(core);
+    odb::Rect core = block_->getCoreArea();
     return core;
   }
 }
@@ -155,11 +154,7 @@ int VoltageDomain::getRegionRectCount(odb::dbRegion* region) const
   }
 
   auto boundaries = region->getBoundaries();
-  if (boundaries.empty()) {
-    return getRegionRectCount(region->getParent());
-  } else {
-    return boundaries.size();
-  }
+  return boundaries.size();
 }
 
 const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
@@ -170,12 +165,10 @@ const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
 
   auto boundaries = region->getBoundaries();
   if (!boundaries.empty()) {
-    odb::Rect box_rect;
-    boundaries.begin()->getBox(box_rect);
+    odb::Rect box_rect = boundaries.begin()->getBox();
     return box_rect;
   }
-
-  return getRegionBoundary(region->getParent());
+  return {};
 }
 
 const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
@@ -185,8 +178,7 @@ const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
   const odb::Rect region = getRegionBoundary(region_);
 
   for (auto* row : block_->getRows()) {
-    odb::Rect row_bbox;
-    row->getBBox(row_bbox);
+    odb::Rect row_bbox = row->getBBox();
 
     if (row_bbox.overlaps(region)) {
       rows.push_back(row);
@@ -225,17 +217,17 @@ const std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 
 void VoltageDomain::report() const
 {
-  logger_->info(utl::PDN, 10, "Voltage domain: {}", name_);
+  logger_->report("Voltage domain: {}", name_);
 
   if (region_ != nullptr) {
-    logger_->info(utl::PDN, 11, "  Floorplan region: {}", region_->getName());
+    logger_->report("  Floorplan region: {}", region_->getName());
   }
 
-  logger_->info(utl::PDN, 12, "  Power net: {}", power_->getName());
-  logger_->info(utl::PDN, 13, "  Ground net: {}", ground_->getName());
+  logger_->report("  Power net: {}", power_->getName());
+  logger_->report("  Ground net: {}", ground_->getName());
 
   if (switched_power_ != nullptr) {
-    logger_->info(utl::PDN, 14, "  Switched power net: {}", switched_power_->getName());
+    logger_->report("  Switched power net: {}", switched_power_->getName());
   }
 
   if (!secondary_.empty()) {
@@ -243,7 +235,7 @@ void VoltageDomain::report() const
     for (auto* net : secondary_) {
       nets += net->getName() + " ";
     }
-    logger_->info(utl::PDN, 15, "  Secondary nets: {}", nets);
+    logger_->report("  Secondary nets: {}", nets);
   }
 
   for (const auto& grid : grids_) {

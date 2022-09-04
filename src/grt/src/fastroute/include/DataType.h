@@ -82,8 +82,11 @@ struct Segment  // A Segment is a 2-pin connection
 
 struct FrNet  // A Net is a set of connected MazePoints
 {
+  int numPins() { return pinX.size(); }  // number of pins in the net
+  int layerEdgeCost(int layer);
+  ~FrNet();
+
   odb::dbNet* db_net;
-  int numPins;  // number of pins in the net
   int deg;  // net degree (number of MazePoints connecting by the net, pins in
             // same MazePoints count only 1)
   std::vector<int> pinX;  // array of X coordinates of pins
@@ -94,7 +97,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   int edgeCost;
   int minLayer;
   int maxLayer;
-  std::vector<int> edge_cost_per_layer;
+  // edge_cost_per_layer is null if there is no ndr for this net.
+  std::vector<int> *edge_cost_per_layer;
 };
 
 const char* netName(FrNet* net);

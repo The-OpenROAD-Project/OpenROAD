@@ -146,7 +146,7 @@ class grNet : public grBlockObject
   bool isModified() const { return modified; }
   int getNumOverConGCells() const { return numOverConGCells; }
   int getNumPinsIn() const { return numPinsIn; }
-  void getPinBox(Rect& in) { in = pinBox; }
+  Rect getPinBox() { return pinBox; }
   bool isRipup() const { return ripup; }
   int getNumReroutes() const { return numReroutes; }
   bool isInQueue() const { return inQueue; }

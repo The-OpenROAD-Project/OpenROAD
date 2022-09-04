@@ -30,16 +30,21 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "psm/pdnsim.h"
 #include "heatMap.h"
+
+#include "psm/pdnsim.h"
 
 namespace psm {
 
-IRDropDataSource::IRDropDataSource(PDNSim* psm, utl::Logger* logger) :
-    gui::RealValueHeatMapDataSource(logger, "V", "IR Drop", "IRDrop", "IRDrop"),
-    psm_(psm),
-    tech_(nullptr),
-    layer_(nullptr)
+IRDropDataSource::IRDropDataSource(PDNSim* psm, utl::Logger* logger)
+    : gui::RealValueHeatMapDataSource(logger,
+                                      "V",
+                                      "IR Drop",
+                                      "IRDrop",
+                                      "IRDrop"),
+      psm_(psm),
+      tech_(nullptr),
+      layer_(nullptr)
 {
   addMultipleChoiceSetting(
       "Layer",
@@ -87,7 +92,8 @@ double IRDropDataSource::getGridSizeMinimumValue() const
     const double resolution = psm_->getMinimumResolution();
     double resolution_um = resolution / block->getDbUnitsPerMicron();
     if (resolution_um > getGridSizeMaximumValue()) {
-      resolution_um = gui::RealValueHeatMapDataSource::getGridSizeMinimumValue();
+      resolution_um
+          = gui::RealValueHeatMapDataSource::getGridSizeMinimumValue();
     }
     return resolution_um;
   } catch (const std::runtime_error& /* e */) {

@@ -239,10 +239,10 @@ void SimulatedAnnealingCore::PackFloorplan()
 
 void SimulatedAnnealingCore::SingleSwap(bool flag)
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   if (flag)
@@ -253,10 +253,10 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+  int index1 = (int) (floor((distribution_)(generator_) *macros_.size()));
+  int index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *macros_.size()));
+    index2 = (int) (floor((distribution_)(generator_) *macros_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
@@ -337,10 +337,10 @@ void SimulatedAnnealingCore::Perturb()
   pre_wirelength_ = wirelength_;
   pre_outline_penalty_ = outline_penalty_;
 
-  float op = (distribution_) (generator_);
+  float op = (distribution_)(generator_);
   if (op <= flip_prob_) {
     action_id_ = 1;
-    float prob = (distribution_) (generator_);
+    float prob = (distribution_)(generator_);
     if (prob <= 0.5)
       flip_flag_ = true;
     else
@@ -495,7 +495,6 @@ void SimulatedAnnealingCore::FastSA()
   float pre_cost = NormCost(area_, wirelength_, outline_penalty_);
   float cost = pre_cost;
   float delta_cost = 0.0;
-  float best_cost = cost;
   float T = init_T_;
 
   while (step <= max_num_step_) {
@@ -511,18 +510,19 @@ void SimulatedAnnealingCore::FastSA()
 
       if (delta_cost <= 0 || num <= prob) {
         pre_cost = cost;
-        if (cost < best_cost)
-          best_cost = cost;
-      } else
+      } else {
         Restore();
+      }
     }
     step++;
+
     if (step == max_num_step_) {
       flip_prob_ = 1.0;  // force the agent to focus on flipping only
       perturb_per_step_ = perturb_per_step_ * 10;
     }
     T = T * cooling_rate_;
   }
+
   PackFloorplan();
 }
 
@@ -571,13 +571,13 @@ bool PinAlignmentSingleCluster(
   int max_num_step = 3000;
   int k = 5;
   float c = 100.0;
-  float alpha = 0.3;
-  float beta = 0.4;
+  float alpha = 0.5;
+  float beta = 0.2;
   float gamma = 0.3;
-  float flip_prob = 0.2;
-  float pos_swap_prob = 0.3;
-  float neg_swap_prob = 0.3;
-  float double_swap_prob = 0.2;
+  float flip_prob = 0.1;
+  float pos_swap_prob = 0.4;
+  float neg_swap_prob = 0.4;
+  float double_swap_prob = 0.1;
 
   string name = cluster->GetName();
   for (int j = 0; j < name.size(); j++)
@@ -599,7 +599,7 @@ bool PinAlignmentSingleCluster(
   const string macro_file
       = string(report_directory) + string("/") + name + string(".txt.block");
   ParseMacroFile(macros, halo_width, macro_file);
-  const int perturb_per_step = 5 * macros.size();
+  const int perturb_per_step = 10 * macros.size();
   std::mt19937 rand_generator(seed);
   vector<int> seed_list;
   for (int j = 0; j < num_thread; j++)
@@ -693,6 +693,8 @@ bool PinAlignment(const vector<Cluster*>& clusters,
                   unsigned seed)
 {
   logger->info(MPL, 3001, "Starting pin alignment.");
+
+  num_run = 1;
 
   unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;

@@ -89,8 +89,7 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     }
     auto obj = static_cast<frPathSeg*>(connFig);
     const auto [bp, ep] = obj->getPoints();
-    frSegStyle style;
-    obj->getStyle(style);
+    frSegStyle style = obj->getStyle();
     auto lNum = obj->getLayerNum();
     if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, bp, lNum, pin2epMap, true);
@@ -420,20 +419,28 @@ void FlexDRConnectivityChecker::finish(
       if (netRouteObjs[i]->typeId() == frcPathSeg) {
         auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[i]);
         // negative rule
-        Rect bbox;
-        victimPathSeg->getBBox(bbox);
-        addMarker(net, victimPathSeg->getLayerNum(), bbox);
-
+        addMarker(net, victimPathSeg->getLayerNum(), victimPathSeg->getBBox());
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(victimPathSeg->getNet());
+          update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(static_cast<frShape*>(netRouteObjs[i]));
         net->removeShape(static_cast<frShape*>(netRouteObjs[i]));
       } else if (netRouteObjs[i]->typeId() == frcVia) {
         auto victimVia = static_cast<frVia*>(netRouteObjs[i]);
         // negative rule
-        Rect bbox;
-        victimVia->getLayer1BBox(bbox);
+        Rect bbox = victimVia->getLayer1BBox();
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(via->getNet());
+          update.setIndexInOwner(via->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(via);
         net->removeVia(via);
       } else {
@@ -547,22 +554,46 @@ void FlexDRConnectivityChecker::finish(
     auto ps2 = uPs2.get();
     addedPS.push_back(ps2);
     unique_ptr<frShape> uShape(std::move(uPs2));
+    if (save_updates_) {
+      drUpdate update(drUpdate::ADD_SHAPE_NET_ONLY);
+      update.setNet(ps2->getNet());
+      update.setPathSeg(*ps2);
+      design_->addUpdate(update);
+    }
     net->addShape(std::move(uShape));
     // manipulate ps1
+    if (save_updates_) {
+      drUpdate update(drUpdate::REMOVE_FROM_RQ);
+      update.setNet(ps1->getNet());
+      update.setIndexInOwner(ps1->getIndexInOwner());
+      design_->addUpdate(update);
+    }
     regionQuery->removeDRObj(ps1);
-    frSegStyle ps1Style;
-    ps1->getStyle(ps1Style);
+    frSegStyle ps1Style = ps1->getStyle();
     ps1Style.setEndStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps1->setStyle(ps1Style);
     ps1->setPoints(bp1, splitPt);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(ps1->getNet());
+      update.setIndexInOwner(ps1->getIndexInOwner());
+      update.setPathSeg(*ps1);
+      design_->addUpdate(update);
+    }
     regionQuery->addDRObj(ps1);
 
     // manipulate ps2
-    frSegStyle ps2Style;
-    ps2->getStyle(ps2Style);
+    frSegStyle ps2Style = ps2->getStyle();
     ps2Style.setBeginStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps2->setStyle(ps2Style);
     ps2->setPoints(splitPt, ep1);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(ps2->getNet());
+      update.setIndexInOwner(ps2->getIndexInOwner());
+      update.setPathSeg(*ps2);
+      design_->addUpdate(update);
+    }
     regionQuery->addDRObj(ps2);
   }
 
@@ -586,12 +617,22 @@ void FlexDRConnectivityChecker::finish(
     // shrink segment
     if (bp < minPt || maxPt < ep) {
       // negative rule
-      Rect bbox;
-      ps->getBBox(bbox);
-      addMarker(net, ps->getLayerNum(), bbox);
-
+      addMarker(net, ps->getLayerNum(), ps->getBBox());
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_RQ);
+        update.setNet(ps->getNet());
+        update.setIndexInOwner(ps->getIndexInOwner());
+        design_->addUpdate(update);
+      }
       regionQuery->removeDRObj(ps);
       ps->setPoints(minPt, maxPt);
+      if (save_updates_) {
+        drUpdate update(drUpdate::UPDATE_SHAPE);
+        update.setNet(ps->getNet());
+        update.setIndexInOwner(ps->getIndexInOwner());
+        update.setPathSeg(*ps);
+        design_->addUpdate(update);
+      }
       regionQuery->addDRObj(ps);
     }
   }
@@ -632,10 +673,13 @@ void FlexDRConnectivityChecker::finish(
     lNum = obj->getLayerNum();
     if (validPoints.find(make_pair(origin, lNum)) == validPoints.end()) {
       // negative rule
-      Rect bbox;
-      obj->getBBox(bbox);
-      addMarker(net, obj->getLayerNum(), bbox);
-
+      addMarker(net, obj->getLayerNum(), obj->getBBox());
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(obj->getNet());
+        update.setIndexInOwner(obj->getIndexInOwner());
+        design_->addUpdate(update);
+      }
       regionQuery->removeDRObj(obj);
       net->removePatchWire(obj);
     }
@@ -995,6 +1039,12 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
   int cnt = 0;
   for (auto& newSegSpan : newSegSpans) {
     auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
+    if (save_updates_) {
+      drUpdate update(drUpdate::REMOVE_FROM_RQ);
+      update.setNet(victimPathSeg->getNet());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+      design_->addUpdate(update);
+    }
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
     Point bp, ep;
@@ -1014,6 +1064,12 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
       if (curr->high() <= newSegSpan.hi) {
         end_style = curr->getEndStyle();
         end_ext = curr->getEndExt();
+        if (save_updates_) {
+          drUpdate update(drUpdate::REMOVE_FROM_NET);
+          update.setNet(curr->getNet());
+          update.setIndexInOwner(curr->getIndexInOwner());
+          design_->addUpdate(update);
+        }
         regionQuery->removeDRObj(curr);  // deallocates curr
         net->removeShape(curr);
         netRouteObjs[victims[cnt]] = nullptr;
@@ -1023,6 +1079,13 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
+    if (save_updates_) {
+      drUpdate update(drUpdate::UPDATE_SHAPE);
+      update.setNet(victimPathSeg->getNet());
+      update.setIndexInOwner(victimPathSeg->getIndexInOwner());
+      update.setPathSeg(*victimPathSeg);
+      design_->addUpdate(update);
+    }
   }
 }
 
@@ -1038,6 +1101,11 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
   marker->addSrc(net);
   marker->addVictim(net, make_tuple(lNum, bbox, false));
   marker->addAggressor(net, make_tuple(lNum, bbox, false));
+  if (save_updates_) {
+    drUpdate update(drUpdate::ADD_SHAPE);
+    update.setMarker(*marker.get());
+    design_->addUpdate(update);
+  }
   regionQuery->addMarker(marker.get());
   design_->getTopBlock()->addMarker(std::move(marker));
 }
@@ -1235,7 +1303,12 @@ void FlexDRConnectivityChecker::check(int iter)
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(frDesign* design,
                                                      Logger* logger,
                                                      odb::dbDatabase* db,
-                                                     FlexDRGraphics* graphics)
-    : design_(design), logger_(logger), db_(db), graphics_(graphics)
+                                                     FlexDRGraphics* graphics,
+                                                     bool save_updates)
+    : design_(design),
+      logger_(logger),
+      db_(db),
+      graphics_(graphics),
+      save_updates_(save_updates)
 {
 }

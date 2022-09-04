@@ -1,7 +1,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: gcd.def
 [INFO ODB-0128] Design: gcd
@@ -48,10 +48,10 @@ metal10    Vertical         2256            47          97.92%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [WARNING GRT-0227] Reached 20 congestion iterations with less than 15% of reduction between iterations.
-[INFO GRT-0197] Via related to pin nodes: 1884
-[INFO GRT-0198] Via related Steiner nodes: 149
+[INFO GRT-0197] Via related to pin nodes: 1896
+[INFO GRT-0198] Via related Steiner nodes: 152
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2738
-[INFO GRT-0112] Final usage 3D: 12438
-[ERROR GRT-0118] Routing congestion too high.
+[INFO GRT-0111] Final number of vias: 2771
+[INFO GRT-0112] Final usage 3D: 12594
+[ERROR GRT-0118] Routing congestion too high. Check the congestion heatmap in the GUI.
 GRT-0118

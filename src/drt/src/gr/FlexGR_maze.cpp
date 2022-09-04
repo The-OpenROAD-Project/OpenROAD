@@ -172,8 +172,7 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
   for (auto& uptr : net->getRouteConnFigs()) {
     if (uptr->typeId() == grcPathSeg) {
       auto cptr = static_cast<grPathSeg*>(uptr.get());
-      Point bp, ep;
-      cptr->getPoints(bp, ep);
+      auto [bp, ep] = cptr->getPoints();
       frLayerNum lNum = cptr->getLayerNum();
       FlexMazeIdx bi, ei;
       gridGraph_.getMazeIdx(bp, lNum, bi);
@@ -240,8 +239,7 @@ void FlexGRWorker::mazeNetInit_addHistCost(grNet* net)
   for (auto& uptr : net->getRouteConnFigs()) {
     if (uptr->typeId() == grcPathSeg) {
       auto cptr = static_cast<grPathSeg*>(uptr.get());
-      Point bp, ep;
-      cptr->getPoints(bp, ep);
+      auto [bp, ep] = cptr->getPoints();
       frLayerNum lNum = cptr->getLayerNum();
       FlexMazeIdx bi, ei;
       gridGraph_.getMazeIdx(bp, lNum, bi);
@@ -279,8 +277,7 @@ void FlexGRWorker::mazeNetInit_decayHistCost(grNet* net)
   for (auto& uptr : net->getRouteConnFigs()) {
     if (uptr->typeId() == grcPathSeg) {
       auto cptr = static_cast<grPathSeg*>(uptr.get());
-      Point bp, ep;
-      cptr->getPoints(bp, ep);
+      auto [bp, ep] = cptr->getPoints();
       frLayerNum lNum = cptr->getLayerNum();
       FlexMazeIdx bi, ei;
       gridGraph_.getMazeIdx(bp, lNum, bi);
@@ -327,9 +324,8 @@ void FlexGRWorker::mazeNetInit_removeNetObjs(grNet* net)
 void FlexGRWorker::modCong_pathSeg(grPathSeg* pathSeg, bool isAdd)
 {
   FlexMazeIdx bi, ei;
-  Point bp, ep;
   frLayerNum lNum = pathSeg->getLayerNum();
-  pathSeg->getPoints(bp, ep);
+  auto [bp, ep] = pathSeg->getPoints();
   gridGraph_.getMazeIdx(bp, lNum, bi);
   gridGraph_.getMazeIdx(ep, lNum, ei);
 
@@ -979,8 +975,7 @@ grNode* FlexGRWorker::routeNet_postAstarWritePath_splitPathSeg(
 
   auto net = pathSeg->getGrNet();
   auto lNum = pathSeg->getLayerNum();
-  Point bp, ep;
-  pathSeg->getPoints(bp, ep);
+  auto [bp, ep] = pathSeg->getPoints();
   Point childLoc = child->getLoc();
   bool isChildBP = (childLoc == bp);
 

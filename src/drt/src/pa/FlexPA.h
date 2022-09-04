@@ -130,6 +130,11 @@ class FlexPA
   // prep
   void prep();
   void prepPoint();
+  void getViasFromMetalWidthMap(
+      const Point& pt,
+      const frLayerNum layerNum,
+      const gtl::polygon_90_set_data<frCoord>& polyset,
+      vector<pair<int, frViaDef*>>& viaDefs);
   template <typename T>
   int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
   template <typename T>
@@ -317,7 +322,7 @@ class FlexPA
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);
   int getFlatEdgeIdx(int prevIdx1, int prevIdx2, int currIdx2, int idx2Dim);
 
-  bool genPatterns_gc(frBlockObject* targetObj,
+  bool genPatterns_gc(std::set<frBlockObject*> targetObjs,
                       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
                       const PatternType patternType,
                       std::set<frBlockObject*>* owners = nullptr);

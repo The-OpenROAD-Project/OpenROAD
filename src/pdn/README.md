@@ -376,7 +376,8 @@ pdngen [-skip_trim] \
        [-dont_add_pins] \
        [-reset] \
        [-ripup] \
-       [-report_only]
+       [-report_only] \
+       [-failed_via_report file]
 ```
 
 ##### Options
@@ -388,6 +389,23 @@ pdngen [-skip_trim] \
 | `-reset` | Reset the grid and domain specifications |
 | `-ripup` | Ripup the existing power grid, as specified by the voltage domains |
 | `-report_only` | Print the current specifications |
+| `-failed_via_report` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
+
+### Repairing power grid vias after detailed routing
+
+To remove vias which generate DRC violations after detailed placement and routing use `repair_pdn_vias`.
+
+```
+repair_pdn_vias [-all] \
+                [-net net_name]
+```
+
+##### Options
+
+| Name | Description |
+| ----- | ----- |
+| `-all` | Repair vias on all supply nets |
+| `-net` | Repair only vias on the specified net |
 
 ### Converting former PDNGEN configuration file to tcl commands
 

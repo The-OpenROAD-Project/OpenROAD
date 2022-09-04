@@ -15,6 +15,30 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
+
+BOOST_AUTO_TEST_CASE(lef58_class)
+{
+  utl::Logger* logger = new utl::Logger();
+  dbDatabase* db1 = dbDatabase::create();
+  db1->setLogger(logger);
+  lefin lefParser(db1, logger, false);
+
+  const char* libname = "gscl45nm.lef";
+  std::string path
+      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  lefParser.createTechAndLib(libname, path.c_str());
+
+  odb::dbLib* dbLib = db1->findLib(libname);
+
+  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  lefParser.updateLib(dbLib, path.c_str());
+
+  odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
+  BOOST_CHECK(endcap);
+
+  BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+}
+
 BOOST_AUTO_TEST_CASE(test_default)
 {
   utl::Logger* logger = new utl::Logger();
@@ -94,7 +118,8 @@ BOOST_AUTO_TEST_CASE(test_default)
       = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
   BOOST_TEST(corner_rule->getType()
              == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
-  BOOST_TEST(corner_rule->isExceptEol() == true);
+  BOOST_TEST(corner_rule->isExceptEol());
+  BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
   vector<pair<int, int>> spacing;
   vector<int> corner_width;
@@ -270,6 +295,18 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
   layer = dbTech->findLayer("metal2");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::TSVMETAL);
+
+  auto viaMaps = dbTech->getMetalWidthViaMap();
+  BOOST_TEST(viaMaps.size() == 1);
+  auto viaMap = (dbMetalWidthViaMap*)(*viaMaps.begin());
+  BOOST_TEST(viaMap->getCutLayer()->getName() == "via1");
+  BOOST_TEST(!viaMap->isPgVia());
+  BOOST_TEST(!viaMap->isViaCutClass());
+  BOOST_TEST(viaMap->getBelowLayerWidthLow() == viaMap->getBelowLayerWidthHigh());
+  BOOST_TEST(viaMap->getBelowLayerWidthHigh() == 0.5 * distFactor);
+  BOOST_TEST(viaMap->getAboveLayerWidthLow() == viaMap->getAboveLayerWidthHigh());
+  BOOST_TEST(viaMap->getAboveLayerWidthHigh() == 0.8 * distFactor);
+  BOOST_TEST(viaMap->getViaName() == "M2_M1_via");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -30,13 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "defout_impl.h"
+
 #include <stdio.h>
 
 #include <limits>
 #include <set>
 #include <string>
 
-#include "defout_impl.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbWireCodec.h"
@@ -189,8 +190,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   writePropertyDefinitions(block);
 
-  Rect r;
-  block->getDieArea(r);
+  Rect r = block->getDieArea();
 
   int x1 = defdist(r.xMin());
   int y1 = defdist(r.yMin());
@@ -784,37 +784,24 @@ void defout_impl::writeRegions(dbBlock* block)
 
 void defout_impl::writeGroups(dbBlock* block)
 {
-  dbSet<dbRegion> regions = block->getRegions();
-
+  auto groups = block->getGroups();
   uint cnt = 0;
-  dbSet<dbRegion>::iterator itr;
-
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
-    dbSet<dbBox> boxes = region->getBoundaries();
-
-    if (boxes.empty())
-      ++cnt;
+  for(auto group : groups)
+  {
+    if(!group->getInsts().empty())
+      cnt++;
   }
-
   if (cnt == 0)
     return;
-
   fprintf(_out, "GROUPS %u ;\n", cnt);
 
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    dbRegion* region = *itr;
-
-    dbSet<dbBox> boxes = region->getBoundaries();
-
-    if (!boxes.empty())
+  for (auto group : groups) {
+    if(group->getInsts().empty())
       continue;
-
-    std::string name = region->getName();
+    std::string name = group->getName();
     fprintf(_out, "    - %s", name.c_str());
 
-    dbSet<dbInst> insts = region->getRegionInsts();
+    dbSet<dbInst> insts = group->getInsts();
     dbSet<dbInst>::iterator iitr;
     cnt = 0;
 
@@ -829,7 +816,7 @@ void defout_impl::writeGroups(dbBlock* block)
       fprintf(_out, " %s", name.c_str());
     }
 
-    dbRegion* parent = region->getParent();
+    dbRegion* parent = group->getRegion();
 
     // The semantic is: if the parent region has boundaries then it is a DEF
     // region.
@@ -842,9 +829,9 @@ void defout_impl::writeGroups(dbBlock* block)
       }
     }
 
-    if (hasProperties(region, GROUP)) {
+    if (hasProperties(group, GROUP)) {
       fprintf(_out, " + PROPERTY ");
-      writeProperties(region);
+      writeProperties(group);
     }
 
     fprintf(_out, " ;\n");
@@ -1090,10 +1077,8 @@ void defout_impl::writeBlockages(dbBlock* block)
                 return layer_a->getNumber() < layer_b->getNumber();
               }
 
-              Rect rect_a;
-              bbox_a->getBox(rect_a);
-              Rect rect_b;
-              bbox_b->getBox(rect_b);
+              Rect rect_a = bbox_a->getBox();
+              Rect rect_b = bbox_b->getBox();
               return rect_a < rect_b;
             });
   for (dbObstruction* obs : sorted_obs) {
@@ -1152,17 +1137,14 @@ void defout_impl::writeBlockages(dbBlock* block)
     fprintf(_out, " RECT ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
   }
 
-  std::vector<dbBlockage*> sorted_blockages(blockages.begin(),
-                                            blockages.end());
+  std::vector<dbBlockage*> sorted_blockages(blockages.begin(), blockages.end());
   std::sort(sorted_blockages.begin(),
             sorted_blockages.end(),
             [](dbBlockage* a, dbBlockage* b) {
               dbBox* bbox_a = a->getBBox();
               dbBox* bbox_b = b->getBBox();
-              Rect rect_a;
-              bbox_a->getBox(rect_a);
-              Rect rect_b;
-              bbox_b->getBox(rect_b);
+              Rect rect_a = bbox_a->getBox();
+              Rect rect_b = bbox_b->getBox();
               return rect_a < rect_b;
             });
 

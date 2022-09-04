@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWire.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -44,6 +42,7 @@
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
+#include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 namespace odb {
@@ -629,11 +628,10 @@ bool dbWire::getBBox(Rect& bbox)
   bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   dbWireShapeItr itr;
   dbShape s;
-  Rect r;
   uint cnt = 0;
 
   for (itr.begin(this); itr.next(s);) {
-    s.getBox(r);
+    Rect r = s.getBox();
     bbox.merge(r);
     ++cnt;
   }
@@ -673,8 +671,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + pnt._x;
       int ymin = b.yMin() + pnt._y;
       int xmax = b.xMax() + pnt._x;
@@ -700,8 +697,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
-      Rect b;
-      box->getBox(b);
+      Rect b = box->getBox();
       int xmin = b.xMin() + pnt._x;
       int ymin = b.yMin() + pnt._y;
       int xmax = b.xMax() + pnt._x;
@@ -1441,8 +1437,7 @@ inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
   pnt._x = 0;
   pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, idx, false, pnt);
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + pnt._x;
   int ymin = b.yMin() + pnt._y;
   int xmax = b.xMax() + pnt._x;
@@ -1468,8 +1463,7 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
   pnt._x = 0;
   pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, idx, false, pnt);
-  Rect b;
-  box->getBox(b);
+  Rect b = box->getBox();
   int xmin = b.xMin() + pnt._x;
   int ymin = b.yMin() + pnt._y;
   int xmax = b.xMax() + pnt._x;

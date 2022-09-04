@@ -47,11 +47,11 @@ class frInstTerm : public frBlockObject
  public:
   // constructors
   frInstTerm(frInst* inst, frMTerm* term)
-      : inst_(inst), term_(term), net_(nullptr), ap_()
+      : inst_(inst), term_(term), net_(nullptr), ap_(), index_in_owner_(0)
   {
   }
   frInstTerm(const frInstTerm& in)
-      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_()
+      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_(), index_in_owner_(0)
   {
   }
   // getters
@@ -72,37 +72,17 @@ class frInstTerm : public frBlockObject
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes, bool updatedTransform = false);
-  Rect getBBox();
+  Rect getBBox(bool updatedTransform);
+  void setIndexInOwner(int in) { index_in_owner_ = in; }
+  int getIndexInOwner() const { return index_in_owner_; }
 
  private:
   frInst* inst_;
   frMTerm* term_;
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
+  int index_in_owner_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & inst_;
-    (ar) & term_;
-    (ar) & net_;
-    (ar) & ap_;
-    if(fr::is_loading(ar)) {
-      if (inst_) {
-        std::unique_ptr<frInstTerm> ptr(this);
-        inst_->addInstTerm(std::move(ptr));
-      }
-
-      if (net_) {
-        net_->addInstTerm(this);
-      }
-    }
-  }
-
-  frInstTerm() = default;  // for serialization
-
-  friend class boost::serialization::access;
 };
 
 }  // namespace fr

@@ -66,6 +66,12 @@ set_sink_clustering(bool enable)
 }
 
 void
+set_plot_option(bool plot)
+{
+  getTritonCts()->getParms()->setPlotSolution(plot);
+}
+
+void
 set_sink_clustering_levels(unsigned levels)
 {
   getTritonCts()->getParms()->setSinkClusteringLevels(levels);
@@ -96,12 +102,6 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_out_path(const char* path)
-{
-  getTritonCts()->getParms()->setOutputPath(path);
-}
-
-void
 set_slew_inter(double slew)
 {
   getTritonCts()->getParms()->setSlewInter(slew);
@@ -117,6 +117,12 @@ void
 set_metric_output(const char* file)
 {
   getTritonCts()->getParms()->setMetricsFile(file);
+}
+
+void
+set_debug_cmd()
+{
+  getTritonCts()->getParms()->setGuiDebug();
 }
 
 void

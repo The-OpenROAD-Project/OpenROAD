@@ -75,8 +75,7 @@ enum GraphType : uint8_t
 {
   CLIQUE,
   HYBRID,
-  STAR,
-  HYPERGRAPH
+  STAR
 };
 
 class PartOptions
@@ -153,11 +152,6 @@ class PartOptions
   unsigned getFinalPartitions() { return finalPartitions_; }
   void setForceGraph(bool force) { forceGraph_ = force; }
   bool getForceGraph() { return forceGraph_; }
-  void setClusteringScheme(const std::string& scheme)
-  {
-    clusteringScheme_ = scheme;
-  }
-  std::string getClusteringScheme() { return clusteringScheme_; }
 
  private:
   unsigned numStarts_ = 1;
@@ -168,7 +162,7 @@ class PartOptions
   bool termProp_ = false;
   double cutHopRatio_ = 1.0;
   std::string tool_ = "chaco";
-  GraphType graphModel_ = HYPERGRAPH;
+  GraphType graphModel_ = HYBRID;
   std::string evaluationFunction_ = "hyperedges";
   unsigned cliqueThreshold_ = 50;
   unsigned weightModel_ = 1;
@@ -183,7 +177,6 @@ class PartOptions
   std::vector<int> archTopology_;
   std::set<int> seeds_;
   std::vector<int> partitionsToTest_;
-  std::string clusteringScheme_ = "scheme1";
   std::mt19937 seedGenerator_ = std::mt19937();
 };
 
@@ -281,7 +274,6 @@ class PartitionMgr
             Logger* logger);
   void runPartitioning();
   void runClustering();
-  void run3PClustering();
   void evaluatePartitioning();
   unsigned getCurrentBestId() const { return bestId_; }
   void setCurrentBestId(unsigned id) { bestId_ = id; }
@@ -309,7 +301,8 @@ class PartitionMgr
   void writeClusteringToDb(unsigned clusteringId);
   void dumpClusIdToFile(std::string name) const;
   void reportNetlistPartitions(unsigned partitionId);
-  unsigned readPartitioningFile(const std::string& filename, const std::string& instance_map_file);
+  unsigned readPartitioningFile(const std::string& filename,
+                                const std::string& instance_map_file);
   void reportGraph();
 
   void writePartitionVerilog(const char* path,
@@ -327,7 +320,11 @@ class PartitionMgr
                        unsigned int timing_weight,
                        bool std_cell_timing_flag_,
                        const char* report_directory,
-                       const char* file_name);
+                       const char* file_name,
+                       float keepin_lx,
+                       float keepin_ly,
+                       float keepin_ux,
+                       float keepin_uy);
 
  private:
   sta::Instance* buildPartitionedInstance(

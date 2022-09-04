@@ -31,6 +31,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "LoadBalancer.h"
 #include "Worker.h"
@@ -53,7 +54,7 @@ extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);
 }
 
-Distributed::Distributed() : logger_(nullptr)
+Distributed::Distributed(utl::Logger* logger) : logger_(logger)
 {
 }
 
@@ -72,24 +73,34 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-void Distributed::runWorker(const char* ip, unsigned short port)
+void Distributed::runWorker(const char* ip,
+                            unsigned short port,
+                            bool interactive)
 {
   try {
-    asio::io_service io_service;
-    Worker worker(io_service, this, logger_, ip, port);
-    io_service.run();
+    auto uWorker = std::make_unique<Worker>(this, logger_, ip, port);
+    auto worker = uWorker.get();
+    workers_.push_back(std::move(uWorker));
+    if (interactive) {
+      boost::thread t(boost::bind(&Worker::run, worker));
+      t.detach();
+    } else
+      worker->run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
 }
 
-void Distributed::runLoadBalancer(const char* ip, unsigned short port)
+void Distributed::runLoadBalancer(const char* ip,
+                                  unsigned short port,
+                                  const char* workers_domain)
 {
   try {
     asio::io_service io_service;
-    LoadBalancer balancer(io_service, logger_, ip, port);
-    for (auto worker : workers_)
-      balancer.addWorker(worker.ip, worker.port, 10);
+    LoadBalancer balancer(this, io_service, logger_, ip, workers_domain, port);
+    if (std::strcmp(workers_domain, "") == 0)
+      for (auto worker : end_points_)
+        balancer.addWorker(worker.ip, worker.port);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
@@ -98,14 +109,15 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
 
 void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
-  workers_.push_back(EndPoint(address, port));
+  end_points_.push_back(EndPoint(address, port));
 }
-//TODO: exponential backoff
+// TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
 {
   int tries = 0;
   while (tries++ < MAX_TRIES) {
     boost::system::error_code error;
+    sock.wait(asio::ip::tcp::socket::wait_write);
     write(sock, asio::buffer(msg), error);
     if (!error) {
       errorMsg.clear();
@@ -120,13 +132,19 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
 {
   boost::system::error_code error;
   asio::streambuf receive_buffer;
+  sock.wait(asio::ip::tcp::socket::wait_read);
   asio::read(sock, receive_buffer, asio::transfer_all(), error);
   if (error && error != asio::error::eof) {
     dataStr = error.message();
     return false;
   } else {
-    const char* data = asio::buffer_cast<const char*>(receive_buffer.data());
-    dataStr = data;
+    auto bufs = receive_buffer.data();
+    auto offset = asio::buffers_begin(bufs) + receive_buffer.size();
+    std::string result = "";
+    if (offset <= asio::buffers_end(bufs))
+      result = std::string(asio::buffers_begin(bufs), offset);
+
+    dataStr = result;
     if (dataStr == "")
       return false;
     return true;
@@ -137,6 +155,62 @@ bool Distributed::sendJob(JobMessage& msg,
                           const char* ip,
                           unsigned short port,
                           JobMessage& result)
+{
+  int tries = 0;
+  std::string msgStr;
+  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+    logger_->warn(utl::DST, 112, "Serializing JobMessage failed");
+    return false;
+  }
+  std::string resultStr;
+  while (tries++ < MAX_TRIES) {
+    asio::io_service io_service;
+    dst::socket sock(io_service);
+    try {
+      sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
+    } catch (const boost::system::system_error& ex) {
+      logger_->warn(utl::DST,
+                    113,
+                    "Trial {}, socket connection failed with message \"{}\"",
+                    tries,
+                    ex.what());
+      continue;
+    }
+    bool ok = sendMsg(sock, msgStr, resultStr);
+    if (!ok)
+      continue;
+    ok = readMsg(sock, resultStr);
+    if (!ok)
+      continue;
+    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr))
+      continue;
+    if (sock.is_open())
+      sock.close();
+    return true;
+  }
+  if (resultStr == "")
+    resultStr = "MAX_TRIES reached";
+  logger_->warn(
+      utl::DST, 114, "Sending job failed with message \"{}\"", resultStr);
+  return false;
+}
+
+inline bool getNextMsg(std::string& haystack,
+                       const std::string& needle,
+                       std::string& result)
+{
+  std::size_t found = haystack.find(needle);
+  if (found != std::string::npos) {
+    result = haystack.substr(0, found + needle.size());
+    haystack.erase(0, found + needle.size());
+    return true;
+  }
+  return false;
+}
+bool Distributed::sendJobMultiResult(JobMessage& msg,
+                                     const char* ip,
+                                     unsigned short port,
+                                     JobMessage& result)
 {
   int tries = 0;
   std::string msgStr;
@@ -157,14 +231,24 @@ bool Distributed::sendJob(JobMessage& msg,
                     ex.what());
       return false;
     }
+    boost::asio::ip::tcp::no_delay option(true);
+    sock.set_option(option);
     bool ok = sendMsg(sock, msgStr, resultStr);
     if (!ok)
       continue;
     ok = readMsg(sock, resultStr);
     if (!ok)
       continue;
-    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr))
-      continue;
+    std::string split;
+    while (getNextMsg(resultStr, JobMessage::EOP, split)) {
+      JobMessage tmp;
+      if (!JobMessage::serializeMsg(JobMessage::READ, tmp, split)) {
+        logger_->error(utl::DST, 9999, "Problem in deserialize {}", split);
+      } else {
+        result.addJobDescription(std::move(tmp.getJobDescriptionRef()));
+      }
+    }
+    result.setJobType(JobMessage::SUCCESS);
     if (sock.is_open())
       sock.close();
     return true;

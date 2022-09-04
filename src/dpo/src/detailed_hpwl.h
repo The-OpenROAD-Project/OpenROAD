@@ -39,12 +39,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <deque>
 #include <vector>
-#include "architecture.h"
+
 #include "detailed_objective.h"
-#include "network.h"
-#include "router.h"
 
 namespace dpo {
 
@@ -62,19 +59,22 @@ class DetailedMgr;
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
 
-class DetailedHPWL : public DetailedObjective {
+class DetailedHPWL : public DetailedObjective
+{
   // For WL objective.
  public:
   DetailedHPWL(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedHPWL();
 
   void init();
-  double curr();
-  double delta(int n, std::vector<Node*>& nodes, 
-               std::vector<int>& curLeft, std::vector<int>& curBottom, 
+  double curr() override;
+  double delta(int n,
+               std::vector<Node*>& nodes,
+               std::vector<int>& curLeft,
+               std::vector<int>& curBottom,
                std::vector<unsigned>& curOri,
-               std::vector<int>& newLeft, std::vector<int>& newBottom,
-               std::vector<unsigned>& newOri);
+               std::vector<int>& newLeft,
+               std::vector<int>& newBottom,
+               std::vector<unsigned>& newOri) override;
 
   void getCandidates(std::vector<Node*>& candidates);
 
@@ -82,23 +82,27 @@ class DetailedHPWL : public DetailedObjective {
   void init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr);
   double delta(Node* ndi, double new_x, double new_y);
   double delta(Node* ndi, Node* ndj);
-  double delta(Node* ndi, double target_xi, double target_yi, Node* ndj,
-               double target_xj, double target_yj);
+  double delta(Node* ndi,
+               double target_xi,
+               double target_yi,
+               Node* ndj,
+               double target_xj,
+               double target_yj);
 
   ////////////////////////////////////////////////////////////////////////////////
 
- protected:
-  Architecture* m_arch;
-  Network* m_network;
-  RoutingParams* m_rt;
+ private:
+  Architecture* arch_;
+  Network* network_;
+  RoutingParams* rt_;
 
-  DetailedMgr* m_mgrPtr;
-  DetailedOrient* m_orientPtr;
+  DetailedMgr* mgrPtr_;
+  DetailedOrient* orientPtr_;
 
   // Other.
-  int m_skipNetsLargerThanThis;
-  int m_traversal;
-  std::vector<int> m_edgeMask;
+  int skipNetsLargerThanThis_;
+  int traversal_;
+  std::vector<int> edgeMask_;
 };
 
 }  // namespace dpo

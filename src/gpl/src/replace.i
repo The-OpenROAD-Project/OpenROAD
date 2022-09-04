@@ -144,19 +144,20 @@ replace_incremental_place_cmd()
   replace->doIncrementalPlace();
 }
 
-void
-set_verbose_level_cmd(int verbose)
-{
-  Replace* replace = getReplace();
-  replace->setVerboseLevel(verbose);
-}
 
 void
-set_timing_driven_mode(bool timing_driven)
+set_force_cpu(bool force_cpu)
+{
+  Replace* replace = getReplace();
+  replace->setForceCPU(force_cpu);
+}
+
+void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
   replace->setTimingDrivenMode(timing_driven);
 }
+
 
 void
 set_routability_driven_mode(bool routability_driven)
@@ -269,13 +270,6 @@ set_debug_cmd(int pause_iterations,
   Replace* replace = getReplace();
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
                     initial);
-}
-
-void
-set_plot_path_cmd(const char* path) 
-{
-  Replace* replace = getReplace();
-  replace->setPlottingPath(path);
 }
 
 %} // inline

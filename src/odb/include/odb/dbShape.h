@@ -201,6 +201,11 @@ class dbShape
   void getViaXY(int& x, int& y) const;
 
   ///
+  /// Return the placed location of this via.
+  ///
+  Point getViaXY() const;
+
+  ///
   /// Returns true if this object is a via
   ///
   bool isVia() const;
@@ -236,7 +241,7 @@ class dbShape
   ///
   /// Get the box bounding points.
   ///
-  void getBox(Rect& rect) const;
+  Rect getBox() const;
 
   ///
   /// Get the width (xMax-xMin) of the box.
@@ -585,14 +590,16 @@ inline dbTechLayer* dbShape::getTechLayer() const
   return (dbTechLayer*) _layer;
 }
 
-inline void dbShape::getBox(Rect& rect) const
+inline Rect dbShape::getBox() const
 {
-  rect = _rect;
+  return _rect;
 }
+
 inline uint dbShape::getDX() const
 {
   return _rect.dx();
 }
+
 inline uint dbShape::getDY() const
 {
   return _rect.dy();

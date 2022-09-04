@@ -55,19 +55,11 @@ class PostCtsOpt
   PostCtsOpt(TreeBuilder* builder,
              CtsOptions* options,
              TechChar* techChar,
-             Logger* logger)
-      : clock_(&(builder->getClock())),
-        options_(options),
-        techChar_(techChar),
-        logger_(logger),
-        builder_((HTreeBuilder*) builder)
-  {
-    bufDistRatio_ = options_->getBufDistRatio();
-  }
+             Logger* logger);
 
   void run();
 
- protected:
+ private:
   void initSourceSinkDists();
   void computeNetSourceSinkDists(const Clock::SubNet& subNet);
   void fixSourceSinkDists();

@@ -30,11 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include <algorithm>
 
 #include "DataType.h"
@@ -873,7 +868,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
-  const int endIND = num_valid_nets_ * 0.9;
+  const int endIND = netCount() * 0.9;
 
   multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
   multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
@@ -881,8 +876,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
     FrNet* net = nets_[netID];
-
-    const std::vector<int>& edge_cost_per_layer = net->edge_cost_per_layer;
 
     int enlarge = expand;
     const int deg = sttrees_[netID].deg;
@@ -1596,12 +1589,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
-                += edge_cost_per_layer[gridsL[i]];
+              += net->layerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
-                += edge_cost_per_layer[gridsL[i]];
+              += net->layerEdgeCost(gridsL[i]);
           }
         }
       }

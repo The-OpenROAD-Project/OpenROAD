@@ -77,21 +77,9 @@ using utl::PDN;
 namespace pdn {
 
 void
-set_special_net_iterms() {
+add_global_connect(const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setSpecialITerms();
-}
-
-void
-set_special_net_iterms(odb::dbNet* net) {
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setSpecialITerms(net);
-}
-
-void
-add_global_connect(const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->addGlobalConnect(inst_pattern, pin_pattern, net);
+  pdngen->addGlobalConnect(inst_pattern, pin_pattern, net, connect);
 }
 
 void
@@ -101,7 +89,7 @@ clear_global_connect() {
 }
 
 void
-add_global_connect(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
+add_global_connect(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
   PdnGen* pdngen = ord::getPdnGen();
   
   odb::dbRegion* region = block->findRegion(region_name);
@@ -110,8 +98,9 @@ add_global_connect(odb::dbBlock* block, const char* region_name, const char* ins
     return;
   }
   
-  for (dbBox* regionBox : region->getBoundaries())
-    pdngen->addGlobalConnect(regionBox, inst_pattern, pin_pattern, net);
+  for (dbBox* regionBox : region->getBoundaries()) {
+    pdngen->addGlobalConnect(regionBox, inst_pattern, pin_pattern, net, connect);
+  }
 }
 
 void
@@ -356,10 +345,10 @@ void debug_renderer_update()
   pdngen->rendererRedraw();
 }
 
-void write_to_db(bool add_pins)
+void write_to_db(bool add_pins, const char* report_file)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->writeToDb(add_pins);
+  pdngen->writeToDb(add_pins, report_file);
 }
 
 void rip_up(odb::dbNet* net = nullptr)
@@ -421,6 +410,13 @@ pdn::PowerCell* find_switched_power_cell(const char* name)
   return pdngen->findSwitchedPowerCell(name);
 }
 
+void repair_pdn_vias(const std::vector<odb::dbNet*>& nets)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  std::set<odb::dbNet*> net_set(nets.begin(), nets.end());
+  pdngen->repairVias(net_set);
+}
+
 // used for building debugging grids and should not be used.
 void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, int start, int stop, const char* direction)
 {
@@ -428,7 +424,7 @@ void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int w
   odb::Rect strap(start, start, stop, stop);
   if (start == stop) {
     auto* block = swire->getBlock();
-    block->getCoreArea(strap);
+    strap = block->getCoreArea();
   }
   if (strcmp(direction, "HORIZONTAL") == 0) {
     strap.set_ylo(offset);

@@ -1,0 +1,42 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: pad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  pad.lef
+[INFO ODB-0127] Reading DEF file: repair_wire11.def
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 2 components and 10 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 2 nets and 3 connections.
+[INFO ODB-0134] Finished DEF file: repair_wire11.def
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
+[INFO IFP-0001] Added 270 rows of 1999 sites.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+pad1/DATA                               0.20    0.88   -0.68 (VIOLATED)
+u1/Z                                    0.20    0.23   -0.03 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u1/Z                                   60.65  149.17  -88.52 (VIOLATED)
+
+[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+[INFO RSZ-0039] Resized 2 instances.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+pad1/DATA                               0.20    0.27   -0.07 (VIOLATED)
+
+pad1 (2000000 2000000) outside of core (20140 22400 779760 778400)

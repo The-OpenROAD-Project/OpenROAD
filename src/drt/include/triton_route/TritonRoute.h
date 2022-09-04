@@ -31,15 +31,25 @@
 
 #include <tcl.h>
 
+#include <boost/asio/thread_pool.hpp>
+#include <list>
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <vector>
 
+#include "odb/geom.h"
 namespace fr {
 class frDesign;
 class DesignCallBack;
+class FlexDR;
+class FlexDRWorker;
+class drUpdate;
 struct frDebugSettings;
 class FlexDR;
+struct FlexDRViaData;
+class frMarker;
 }  // namespace fr
 
 namespace odb {
@@ -62,8 +72,6 @@ namespace triton_route {
 
 struct ParamStruct
 {
-  std::string guideFile;
-  std::string outputGuideFile;
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::string outputCmapFile;
@@ -82,6 +90,7 @@ struct ParamStruct
   bool doPa = false;
   bool singleStepDR = false;
   int minAccessPoints = -1;
+  bool saveGuideUpdates = false;
 };
 
 class TritonRoute
@@ -112,7 +121,7 @@ class TritonRoute
   int getNumDRVs() const;
 
   void setDebugDR(bool on = true);
-  void setDebugDumpDR(bool on = true);
+  void setDebugDumpDR(bool on, const std::string& dumpDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
@@ -120,9 +129,16 @@ class TritonRoute
   void setDebugWorker(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDebugWorkerParams(int mazeEndIter,
+                            int drcCost,
+                            int markerCost,
+                            int ripupMode,
+                            int followGuide);
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
+  void setCloudSize(unsigned int cloud_sz) { cloud_sz_ = cloud_sz; }
+  unsigned int getCloudSize() const { return cloud_sz_; }
   void setDebugPaEdge(bool on = true);
   void setDebugPaCommit(bool on = true);
   void reportConstraints();
@@ -130,10 +146,31 @@ class TritonRoute
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
+  void setUnidirectionalLayer(const std::string& layerName);
+  fr::frDebugSettings* getDebugSettings() const { return debug_.get(); }
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
-  std::string runDRWorker(const char* file_name);
+  std::string runDRWorker(const std::string& workerStr,
+                          fr::FlexDRViaData* viaData);
+  void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
+  void resetDb(const char* file_name);
+  void updateDesign(const std::vector<std::string>& updates);
+  void updateDesign(const std::string& updates);
+  void addWorkerResults(
+      const std::vector<std::pair<int, std::string>>& results);
+  bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
+  int getWorkerResultsSize();
+  void sendDesignDist();
+  bool writeGlobals(const std::string& name);
+  void sendDesignUpdates(const std::string& globals_path);
+  void sendGlobalsUpdates(const std::string& globals_path,
+                          const std::string& serializedViaData);
+  void setGuideFile(const std::string& guide_path);
+  void reportDRC(const std::string& file_name,
+                 const std::list<std::unique_ptr<fr::frMarker>>& markers,
+                 odb::Rect bbox = odb::Rect(0, 0, 0, 0));
+  void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -141,7 +178,7 @@ class TritonRoute
   std::unique_ptr<fr::DesignCallBack> db_callback_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-  std::unique_ptr<fr::FlexDR> dr_; // kept for single stepping
+  std::unique_ptr<fr::FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;
@@ -150,13 +187,20 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
+  std::vector<std::pair<int, std::string>> workers_results_;
+  std::mutex results_mutex_;
+  int results_sz_;
+  unsigned int cloud_sz_;
+  boost::asio::thread_pool dist_pool_;
 
   void initDesign();
-  void initGuide();
+  bool initGuide();
   void prep();
   void gr();
   void ta();
   void dr();
+  void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
+  friend class fr::FlexDR;
 };
 }  // namespace triton_route
 #endif

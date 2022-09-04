@@ -55,10 +55,12 @@ class FlexGCWorker
   bool setTargetNet(frBlockObject* in);
   gcNet* getTargetNet();
   void resetTargetNet();
-  void setTargetObj(frBlockObject* in);
+  void addTargetObj(frBlockObject* in);
+  void setTargetObjs(const std::set<frBlockObject*>& targetObjs);
   void setIgnoreDB();
   void setIgnoreMinArea();
   void setIgnoreLongSideEOL();
+  void setIgnoreCornerSpacing();
   void setEnableSurgicalFix(bool in);
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
@@ -82,12 +84,6 @@ class FlexGCWorker
   class Impl;
   std::unique_ptr<Impl> impl_;
 
-  FlexGCWorker(); // for serialization
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -39,281 +39,265 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
-#include <iostream>
 #include <unordered_map>
 #include <vector>
-#include "architecture.h"
-#include "orientation.h"
-#include "rectangle.h"
-#include "symmetry.h"
+#include <string>
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-class Node;
-class Edge;
 class Pin;
-class Network;
-class Architecture;
-
-const unsigned NodeType_UNKNOWN = 0x00000000;
-const unsigned NodeType_CELL = 0x00000001;
-const unsigned NodeType_TERMINAL = 0x00000002;
-const unsigned NodeType_TERMINAL_NI = 0x00000004;
-const unsigned NodeType_MACROCELL = 0x00000008;
-const unsigned NodeType_FILLER = 0x00000010;
-const unsigned NodeType_SHAPE = 0x00000020;
-
-const unsigned NodeAttributes_EMPTY = 0x00000000;
-
-const unsigned NodeFixed_NOT_FIXED = 0x00000000;
-const unsigned NodeFixed_FIXED_X = 0x00000001;
-const unsigned NodeFixed_FIXED_Y = 0x00000002;
-const unsigned NodeFixed_FIXED_XY = 0x00000003;  // FIXED_X and FIXED_Y.
 
 const int EDGETYPE_DEFAULT = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class Node {
+class Node
+{
  public:
+  enum Type
+  {
+    UNKNOWN,
+    CELL,
+    TERMINAL,
+    TERMINAL_NI,
+    MACROCELL,
+    FILLER,
+    SHAPE
+  };
+
+  enum Fixity
+  {
+    NOT_FIXED,
+    FIXED_X,
+    FIXED_Y,
+    FIXED_XY,
+  };
+
   Node();
-  virtual ~Node();
 
-  int getId() const { return m_id; }
-  void setId(int id) { m_id = id; }
+  int getArea() const { return w_ * h_; }
+  unsigned getAvailOrient() const { return availOrient_; }
+  int getBottom() const { return bottom_; }
+  int getBottomPower() const { return powerBot_; }
+  int getTopPower() const { return powerTop_; }
+  unsigned getCurrOrient() const { return currentOrient_; }
+  Fixity getFixed() const { return fixed_; }
+  int getHeight() const { return h_; }
+  int getId() const { return id_; }
+  int getLeft() const { return left_; }
+  double getOrigBottom() const { return origBottom_; }
+  double getOrigLeft() const { return origLeft_; }
+  int getRegionId() const { return regionId_; }
+  int getRight() const { return left_ + w_; }
+  int getTop() const { return bottom_ + h_; }
+  Type getType() const { return type_; }
+  int getWidth() const { return w_; }
 
-  void setHeight(int h) { m_h = h; }
-  int getHeight() const { return m_h; }
+  void setAvailOrient(unsigned avail) { availOrient_ = avail; }
+  void setBottom(int bottom) { bottom_ = bottom; }
+  void setBottomPower(int bot) { powerBot_ = bot; }
+  void setTopPower(int top) { powerTop_ = top; }
+  void setCurrOrient(unsigned orient) { currentOrient_ = orient; }
+  void setFixed(Fixity fixed) { fixed_ = fixed; }
+  void setHeight(int h) { h_ = h; }
+  void setId(int id) { id_ = id; }
+  void setLeft(int left) { left_ = left; }
+  void setOrigBottom(double bottom) { origBottom_ = bottom; }
+  void setOrigLeft(double left) { origLeft_ = left; }
+  void setRegionId(int id) { regionId_ = id; }
+  void setType(Type type) { type_ = type; }
+  void setWidth(int w) { w_ = w; }
 
-  void setWidth(int w) { m_w = w; }
-  int getWidth() const { return m_w; }
-
-  int getArea() const { return m_w * m_h; }
-
-  void setLeft(int left) { m_left = left; }
-  int getLeft() const { return m_left; }
-  int getRight() const { return m_left + m_w; }
-
-  void setBottom(int bottom) { m_bottom = bottom; }
-  int getBottom() const { return m_bottom; }
-  int getTop() const { return m_bottom + m_h; }
-
-  void setOrigLeft(double left) { m_origLeft = left; }
-  double getOrigLeft() const { return m_origLeft; }
-  void setOrigBottom(double bottom) { m_origBottom = bottom; }
-  double getOrigBottom() const { return m_origBottom; }
-
-  void setFixed(unsigned fixed) { m_fixed = fixed; }
-  unsigned getFixed() const { return m_fixed; }
-
-  void setType(unsigned type) { m_type = type; }
-  unsigned getType() const { return m_type; }
-
-  void setRegionId(int id) { m_regionId = id; }
-  int getRegionId() const { return m_regionId; }
-
-  void setCurrOrient(unsigned orient) { m_currentOrient = orient; }
-  unsigned getCurrOrient() const { return m_currentOrient; }
-  void setAvailOrient(unsigned avail) { m_availOrient = avail; }
-  unsigned getAvailOrient() const { return m_availOrient; }
   bool adjustCurrOrient(unsigned newOrient);
 
-  void setAttributes(unsigned attributes) { m_attributes = attributes; }
-  unsigned getAttributes() const { return m_attributes; }
-  void addAttribute(unsigned attribute) { m_attributes |= attribute; }
-  void remAttribute(unsigned attribute) { m_attributes &= ~attribute; }
+  bool isTerminal() const { return (type_ == TERMINAL); }
+  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
+  bool isFiller() const { return (type_ == FILLER); }
+  bool isShape() const { return (type_ == SHAPE); }
+  bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
-  bool isTerminal() const { return (m_type == NodeType_TERMINAL); }
-  bool isTerminalNI() const { return (m_type == NodeType_TERMINAL_NI); }
-  bool isFiller() const { return (m_type == NodeType_FILLER); }
-  bool isShape() const { return (m_type == NodeType_SHAPE); }
-  bool isFixed() const { return (m_fixed != NodeFixed_NOT_FIXED); }
+  int getLeftEdgeType() const { return etl_; }
+  int getRightEdgeType() const { return etr_; }
 
-  void setLeftEdgeType(int etl) { m_etl = etl; }
-  int getLeftEdgeType() const { return m_etl; }
+  void setLeftEdgeType(int etl) { etl_ = etl; }
+  void setRightEdgeType(int etr) { etr_ = etr; }
+  void swapEdgeTypes() { std::swap<int>(etl_, etr_); }
 
-  void setRightEdgeType(int etr) { m_etr = etr; }
-  int getRightEdgeType() const { return m_etr; }
+  int getNumPins() const { return (int) pins_.size(); }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  void swapEdgeTypes() { std::swap<int>(m_etl, m_etr); }
+  bool isDefinedByShapes() const { return isDefinedByShapes_; }
 
-  void setBottomPower(int bot) { m_powerBot = bot; }
-  int getBottomPower() const { return m_powerBot; }
-
-  void setTopPower(int top) { m_powerTop = top; }
-  int getTopPower() const { return m_powerTop; }
-
-  int getNumPins() const { return (int)m_pins.size(); }
-  const std::vector<Pin*>& getPins() { return m_pins; }
-
-  void setIsDefinedByShapes(bool val = false) { m_isDefinedByShapes = val; }
-  bool isDefinedByShapes() const { return m_isDefinedByShapes; }
-
- protected:
+ private:
   // Id.
-  int m_id;
+  int id_;
   // Current position; bottom corner.
-  int m_left;
-  int m_bottom;
+  int left_;
+  int bottom_;
   // Original position.  Stored as double still.
-  double m_origLeft;
-  double m_origBottom;
+  double origLeft_;
+  double origBottom_;
   // Width and height.
-  int m_w;
-  int m_h;
+  int w_;
+  int h_;
   // Type.
-  unsigned m_type;
+  Type type_;
   // Fixed or not fixed.
-  unsigned m_fixed;
-  // Place for attributes.
-  unsigned m_attributes;
+  Fixity fixed_;
   // For edge types and spacing tables.
-  int m_etl;
-  int m_etr;
+  int etl_;
+  int etr_;
   // For power.
-  int m_powerTop;
-  int m_powerBot;
+  int powerTop_;
+  int powerBot_;
   // Regions.
-  int m_regionId;
+  int regionId_;
   // Orientations.
-  unsigned m_currentOrient;
-  unsigned m_availOrient;
+  unsigned currentOrient_;
+  unsigned availOrient_;
   // Pins.
-  std::vector<Pin*> m_pins;
+  std::vector<Pin*> pins_;
   // Shapes.  Legacy from bookshelf in which
   // some fixed macros are not rectangles
   // and are defined by sub-rectanges (shapes).
-  bool m_isDefinedByShapes;
+  bool isDefinedByShapes_;
 
   friend class Network;
 };
 
-class Edge {
+class Edge
+{
  public:
-  Edge();
-  virtual ~Edge();
+  int getId() const { return id_; }
+  void setId(int id) { id_ = id; }
 
-  int getId() const { return m_id; }
-  void setId(int id) { m_id = id; }
+  void setNdr(int ndr) { ndr_ = ndr; }
+  int getNdr() const { return ndr_; }
 
-  void setNdr(int ndr) { m_ndr = ndr; }
-  int getNdr() const { return m_ndr; }
+  int getNumPins() const { return (int) pins_.size(); }
+  const std::vector<Pin*>& getPins() const { return pins_; }
 
-  int getNumPins() const { return (int)m_pins.size(); }
-  const std::vector<Pin*>& getPins() { return m_pins; }
-
- protected:
+ private:
   // Id.
-  int m_id;
+  int id_ = 0;
   // Refer to routing rule stored elsewhere.
-  int m_ndr;
+  int ndr_ = 0;
   // Pins.
-  std::vector<Pin*> m_pins;
+  std::vector<Pin*> pins_;
 
   friend class Network;
 };
 
-class Pin {
+class Pin
+{
  public:
-  enum Direction { Dir_IN, Dir_OUT, Dir_INOUT, Dir_UNKNOWN };
+  enum Direction
+  {
+    Dir_IN,
+    Dir_OUT,
+    Dir_INOUT,
+    Dir_UNKNOWN
+  };
 
- public:
   Pin();
-  virtual ~Pin();
 
-  void setDirection(int dir) { m_dir = dir; }
-  int getDirection() const { return m_dir; }
+  void setDirection(int dir) { dir_ = dir; }
+  int getDirection() const { return dir_; }
 
-  Node* getNode() const { return m_node; }
-  Edge* getEdge() const { return m_edge; }
+  Node* getNode() const { return node_; }
+  Edge* getEdge() const { return edge_; }
 
-  void setOffsetX(double offsetX) { m_offsetX = offsetX; }
-  double getOffsetX() const { return m_offsetX; }
+  void setOffsetX(double offsetX) { offsetX_ = offsetX; }
+  double getOffsetX() const { return offsetX_; }
 
-  void setOffsetY(double offsetY) { m_offsetY = offsetY; }
-  double getOffsetY() const { return m_offsetY; }
+  void setOffsetY(double offsetY) { offsetY_ = offsetY; }
+  double getOffsetY() const { return offsetY_; }
 
-  void setPinLayer(int layer) { m_pinLayer = layer; }
-  int getPinLayer() const { return m_pinLayer; }
+  void setPinLayer(int layer) { pinLayer_ = layer; }
+  int getPinLayer() const { return pinLayer_; }
 
-  void setPinWidth(double width) { m_pinWidth = width; }
-  double getPinWidth() const { return m_pinWidth; }
+  void setPinWidth(double width) { pinWidth_ = width; }
+  double getPinWidth() const { return pinWidth_; }
 
-  void setPinHeight(double height) { m_pinHeight = height; }
-  double getPinHeight() const { return m_pinHeight; }
+  void setPinHeight(double height) { pinHeight_ = height; }
+  double getPinHeight() const { return pinHeight_; }
 
- protected:
+ private:
   // Pin width and height.
-  double m_pinWidth;
-  double m_pinHeight;
+  double pinWidth_;
+  double pinHeight_;
   // Direction.
-  int m_dir;
+  int dir_;
   // Layer.
-  int m_pinLayer;
+  int pinLayer_;
   // Node and edge for pin.
-  Node* m_node;
-  Edge* m_edge;
+  Node* node_;
+  Edge* edge_;
   // Offsets from cell center.
-  double m_offsetX;
-  double m_offsetY;
+  double offsetX_;
+  double offsetY_;
 
   friend class Network;
 };
 
-class Network {
+class Network
+{
  public:
-  struct comparePinsByNodeId {
-    bool operator()(const Pin* a, const Pin* b) {
+  struct comparePinsByNodeId
+  {
+    bool operator()(const Pin* a, const Pin* b)
+    {
       return a->getNode()->getId() < b->getNode()->getId();
     }
   };
 
-  class comparePinsByEdgeId {
+  class comparePinsByEdgeId
+  {
    public:
-    comparePinsByEdgeId() : m_nw(0) {}
-    comparePinsByEdgeId(Network* nw) : m_nw(nw) {}
-    bool operator()(const Pin* a, const Pin* b) {
+    comparePinsByEdgeId() : nw_(nullptr) {}
+    comparePinsByEdgeId(Network* nw) : nw_(nw) {}
+    bool operator()(const Pin* a, const Pin* b)
+    {
       return a->getEdge()->getId() < b->getEdge()->getId();
     }
-    Network* m_nw;
+    Network* nw_;
   };
 
-  class comparePinsByOffset {
+  class comparePinsByOffset
+  {
    public:
-    comparePinsByOffset() : m_nw(0) {}
-    comparePinsByOffset(Network* nw) : m_nw(nw) {}
-    bool operator()(const Pin* a, const Pin* b) {
+    comparePinsByOffset() : nw_(nullptr) {}
+    comparePinsByOffset(Network* nw) : nw_(nw) {}
+    bool operator()(const Pin* a, const Pin* b)
+    {
       if (a->getOffsetX() == b->getOffsetX()) {
         return a->getOffsetY() < b->getOffsetY();
       }
       return a->getOffsetX() < b->getOffsetX();
     }
-    Network* m_nw;
+    Network* nw_;
   };
 
  public:
- public:
-  Network();
-  virtual ~Network();
+  ~Network();
 
-  int getNumNodes() const { return (int)m_nodes.size(); }
-  Node* getNode(int i) { return m_nodes[i]; }
-  void setNodeName(int i, std::string& name) { m_nodeNames[i] = name; }
-  void setNodeName(int i, const char* name) { m_nodeNames[i] = name; }
-  std::string& getNodeName(int i) { return m_nodeNames[i]; }
+  int getNumNodes() const { return (int) nodes_.size(); }
+  Node* getNode(int i) { return nodes_[i]; }
+  void setNodeName(int i, const std::string& name) { nodeNames_[i] = name; }
+  void setNodeName(int i, const char* name) { nodeNames_[i] = name; }
+  const std::string& getNodeName(int i) const { return nodeNames_.at(i); }
 
-  int getNumEdges() const { return (int)m_edges.size(); }
-  Edge* getEdge(int i) { return m_edges[i]; }
-  void setEdgeName(int i, std::string& name) { m_edgeNames[i] = name; }
-  void setEdgeName(int i, const char* name) { m_edgeNames[i] = name; }
-  std::string& getEdgeName(int i) { return m_edgeNames[i]; }
+  int getNumEdges() const { return (int) edges_.size(); }
+  Edge* getEdge(int i) const { return edges_[i]; }
+  void setEdgeName(int i, std::string& name) { edgeNames_[i] = name; }
+  void setEdgeName(int i, const char* name) { edgeNames_[i] = name; }
+  const std::string& getEdgeName(int i) const { return edgeNames_.at(i); }
 
-  int getNumPins() const { return (int)m_pins.size(); }
+  int getNumPins() const { return (int) pins_.size(); }
 
   // For creating and adding pins.
   Pin* createAndAddPin(Node* nd, Edge* ed);
@@ -321,24 +305,26 @@ class Network {
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
   Node* createAndAddShapeNode(
-      int left, int bottom, int width,
+      int left,
+      int bottom,
+      int width,
       int height);  // Extras for non-rectangular shapes.
-  Node* createAndAddFillerNode(
-      int left, int bottom, int width,
-      int height);  // Extras to block space.
+  Node* createAndAddFillerNode(int left,
+                               int bottom,
+                               int width,
+                               int height);  // Extras to block space.
 
   // For creating and adding edges.
   Edge* createAndAddEdge();
 
- protected:
+ private:
   Pin* createAndAddPin();
 
- protected:
-  std::vector<Edge*> m_edges;  // The edges in the netlist...
-  std::unordered_map<int, std::string> m_edgeNames;  // Names of edges...
-  std::vector<Node*> m_nodes;  // The nodes in the netlist...
-  std::unordered_map<int, std::string> m_nodeNames;  // Names of nodes...
-  std::vector<Pin*> m_pins;  // The pins in the network...
+  std::vector<Edge*> edges_;  // The edges in the netlist...
+  std::unordered_map<int, std::string> edgeNames_;  // Names of edges...
+  std::vector<Node*> nodes_;  // The nodes in the netlist...
+  std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
+  std::vector<Pin*> pins_;  // The pins in the network...
 };
 
 }  // namespace dpo

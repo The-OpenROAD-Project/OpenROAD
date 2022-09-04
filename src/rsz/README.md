@@ -22,7 +22,7 @@ nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
 Use `-layer` or `-resistance` and `-capacitance`.  If `-layer` is used,
 the LEF technology resistance and area/edge capacitance values for the
-layer are used for a minimum-width wire on the layer.  The resistance and
+layer are used for a default width wire on the layer.  The resistance and
 capacitance values are per length of wire, not per square or per square micron.
 The units for `-resistance` and `-capacitance` are from the first Liberty
 file read, resistance_unit/distance_unit (typically kohms/micron) and
@@ -44,7 +44,7 @@ set_layer_rc [-layer layer]
 ```
 
 For layers the resistance and capacitance units are the same as `set_wire_rc`
-(per length of minimum-width wire). `layer` must be the name of a routing
+(per length of default width wire). `layer` must be the name of a routing
 layer.
 
 Via resistance can also be set with the `set_layer_rc` command, using the
@@ -83,12 +83,23 @@ flag.
 
 ```
 set_dont_use lib_cells
+unset_dont_use lib_cells
 ```
 
 The `set_dont_use` command removes library cells from consideration by
 the `resizer`. `lib_cells` is a list of cells returned by `get_lib_cells`
 or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
+
+### Set Don't Touch
+
+```
+set_dont_touch instances_nets
+unset_dont_touch instances_nets
+```
+
+The `set_dont_touch` command prevents the resizer commands from
+modifying instances or nets.
 
 ### Buffer Ports
 
@@ -151,7 +162,8 @@ typically microns).
 ```
 repair_timing [-setup]
               [-hold]
-              [-slack_margin slack_margin]
+              [-setup_margin setup_margin]
+              [-hold_margin hold_margin]
               [-allow_setup_violations]
               [-max_utilization util]
               [-max_buffer_percent buffer_percent]
@@ -162,13 +174,13 @@ should be run after clock tree synthesis with propagated clocks.
 Setup repair is done before hold repair so that hold repair does not
 cause setup checks to fail. While repairing hold violations buffers
 are not inserted that will cause setup violations unless
-'-allow_setup_violations' is specified.  Use `-slack_margin` to add
-additional slack margin. To specify different slack margins use
-separate `repair_timing` commands for setup and hold. Use
-`-max_buffer_percent` to specify a maximum number of buffers to insert
+'-allow_setup_violations' is specified.
+Use `-setup_margin/-hold_margin` to add
+additional slack margin.
+
+Use`-max_buffer_percent` to specify a maximum number of buffers to insert
 to repair hold violations as a percentage of the number of instances
 in the design. The default value for `buffer_percent` is 20, for 20%.
-
 
 ### Repair Clock Nets
 

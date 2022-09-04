@@ -31,9 +31,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <vector>
-#include <iostream>
 #include "node.h"
+
+#include <iostream>
+#include <vector>
 
 namespace psm {
 
@@ -42,125 +43,123 @@ using std::max;
 using std::pair;
 using std::vector;
 
+Node::Node(const Point& loc, int layer) : layer_(layer), loc_(loc)
+{
+}
+
 //! Get the layer number of the node
 /*
  * \return Layer number of the node
  * */
-int Node::GetLayerNum() { return m_layer; }
-
-//! Set the layer number of the node
-/*
- \param t_layer Layer number
-*/
-void Node::SetLayerNum(int t_layer) { m_layer = t_layer; }
+int Node::getLayerNum() const
+{
+  return layer_;
+}
 
 //! Get the location of the node
 /*
  * \return NodeLoc which is x and y index
  * */
-NodeLoc Node::GetLoc() { return m_loc; }
-
-//! Set the location of the node using x and y coordinates
-/*
- * \param t_x x index
- * \param t_y y index
- * */
-void Node::SetLoc(int t_x, int t_y) { m_loc = make_pair(t_x, t_y); }
-
-//! Set the location of the node using x,y and layer information
-/*
- * \param t_x x index
- * \param t_y y index
- * \param t_l Layer number
- * */
-void Node::SetLoc(int t_x, int t_y, int t_l) {
-  SetLayerNum(t_l);
-  SetLoc(t_x, t_y);
+Point Node::getLoc() const
+{
+  return loc_;
 }
 
 //! Get location of the node in G matrix
 /*
  * \return Location in G matrix
  */
-NodeIdx Node::GetGLoc() { return m_node_loc; }
+NodeIdx Node::getGLoc() const
+{
+  return node_loc_;
+}
 
 //! Set location of the node in G matrix
 /*
  * \param t_loc Location in the G matrix
  */
-void Node::SetGLoc(NodeIdx t_loc) { m_node_loc = t_loc; }
-
-//! Function to print node details
-void Node::Print(utl::Logger* logger) {
-  logger->report("Node: {}", m_node_loc);
-  logger->report("  Location: Layer {}, x {}, y {}", m_layer, m_loc.first,
-                 m_loc.second);
-  logger->report("  Bounding box: x {}, y {} ", m_bBox.first, m_bBox.second);
-  logger->report("  Current: {:5.4e}A", m_current_src);
-  logger->report("  Voltage: {:5.4e}V", m_voltage);
-  logger->report("  Has connection: {}", m_connected ? "true" : "false");
-  logger->report("  Has instances:  {}", m_has_instances ? "true" : "false");
+void Node::setGLoc(NodeIdx t_loc)
+{
+  node_loc_ = t_loc;
 }
 
-//! Function to set the bounding box of the stripe
-void Node::SetBbox(int t_dX, int t_dY) { m_bBox = make_pair(t_dX, t_dY); }
-
-//! Function to get the bounding box of the stripe
-BBox Node::GetBbox() { return m_bBox; }
-
-//! Function to update the stripe
-/*
- * \param t_dX Change in the x value
- * \param t_dY Change in the y value
- * \return nothing
- */
-void Node::UpdateMaxBbox(int t_dX, int t_dY) {
-  BBox nodeBbox = m_bBox;
-  int DX = max(nodeBbox.first, t_dX);
-  int DY = max(nodeBbox.second, t_dY);
-  SetBbox(DX, DY);
+//! Function to print node details
+void Node::print(utl::Logger* logger) const
+{
+  logger->report("Node: {}", node_loc_);
+  logger->report(
+      "  Location: Layer {}, x {}, y {}", layer_, loc_.getX(), loc_.getY());
+  logger->report("  Current: {:5.4e}A", current_src_);
+  logger->report("  Voltage: {:5.4e}V", voltage_);
+  logger->report("  Has connection: {}", connected_ ? "true" : "false");
+  logger->report("  Has instances:  {}", hasInstances() ? "true" : "false");
 }
 
 //! Function to set the current value at a particular node
 /*
  * \param t_current Current magnitude
  */
-void Node::SetCurrent(double t_current) { m_current_src = t_current; }
+void Node::setCurrent(double t_current)
+{
+  current_src_ = t_current;
+}
 
 //! Function to get the value of current at a node
-double Node::GetCurrent() { return m_current_src; }
+double Node::getCurrent() const
+{
+  return current_src_;
+}
 
 //! Function to add the current source
 /*
  * \param t_current Value of current source
  */
-void Node::AddCurrentSrc(double t_current) {
-  double node_cur = GetCurrent();
-  SetCurrent(node_cur + t_current);
+void Node::addCurrentSrc(double t_current)
+{
+  double node_cur = getCurrent();
+  setCurrent(node_cur + t_current);
 }
 
 //! Function to set the value of the voltage source
 /*
  * \param t_voltage Voltage source magnitude
  * */
-void Node::SetVoltage(double t_voltage) { m_voltage = t_voltage; }
+void Node::setVoltage(double t_voltage)
+{
+  voltage_ = t_voltage;
+}
 
 //! Function to get the value of the voltage source
 /*
  * \return Voltage value at the node
  */
-double Node::GetVoltage() { return m_voltage; }
+double Node::getVoltage() const
+{
+  return voltage_;
+}
 
-bool Node::GetConnected() { return m_connected; }
+bool Node::getConnected() const
+{
+  return connected_;
+}
 
-void Node::SetConnected() { m_connected = true; }
+void Node::setConnected()
+{
+  connected_ = true;
+}
 
-bool Node::HasInstances() { return m_has_instances; }
+bool Node::hasInstances() const
+{
+  return !connected_instances_.empty();
+}
 
-vector<dbInst*> Node::GetInstances() { return m_connected_instances; }
+const vector<dbInst*>& Node::getInstances() const
+{
+  return connected_instances_;
+}
 
-void Node::AddInstance(dbInst* inst) {
-  m_has_instances = true;
-  m_connected_instances.push_back(inst);
+void Node::addInstance(dbInst* inst)
+{
+  connected_instances_.push_back(inst);
 }
 }  // namespace psm

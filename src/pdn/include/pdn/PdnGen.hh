@@ -84,16 +84,15 @@ class PdnGen
 
   void init(dbDatabase* db, Logger* logger);
 
-  void setSpecialITerms();
-  void setSpecialITerms(dbNet* net);
-
   void addGlobalConnect(const char* instPattern,
                         const char* pinPattern,
-                        dbNet* net);
+                        dbNet* net,
+                        bool connect);
   void addGlobalConnect(dbBox* region,
                         const char* instPattern,
                         const char* pinPattern,
-                        dbNet* net);
+                        dbNet* net,
+                        bool connect);
   void clearGlobalConnect();
 
   void globalConnect(dbBlock* block);
@@ -198,7 +197,7 @@ class PdnGen
                    const std::map<odb::dbTechLayer*, int>& split_cuts,
                    const std::string& dont_use_vias);
 
-  void writeToDb(bool add_pins) const;
+  void writeToDb(bool add_pins, const std::string& report_file = "") const;
   void ripUp(odb::dbNet* net);
 
   void setDebugRenderer(bool on);
@@ -207,6 +206,8 @@ class PdnGen
   void filterVias(const std::string& filter);
 
   void checkSetup() const;
+
+  void repairVias(const std::set<odb::dbNet*>& nets);
 
  private:
   using regexPairs
@@ -237,6 +238,8 @@ class PdnGen
 
   VoltageDomain* getCoreDomain() const;
   void ensureCoreDomain();
+
+  void updateRenderer() const;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

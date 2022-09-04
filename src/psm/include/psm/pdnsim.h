@@ -31,18 +31,17 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __PDNSim_HEADER__
-#define __PDNSim_HEADER__
+#pragma once
 
-#include <string>
 #include <map>
 #include <memory>
+#include <string>
 
 namespace odb {
 class dbDatabase;
 class Point;
 class dbTechLayer;
-}
+}  // namespace odb
 
 namespace sta {
 class dbSta;
@@ -70,39 +69,40 @@ class PDNSim
   void import_vsrc_cfg(std::string vsrc);
   void import_out_file(std::string out_file);
   void import_em_out_file(std::string em_out_file);
-  void import_enable_em(int enable_em);
+  void import_enable_em(bool enable_em);
   void import_spice_out_file(std::string out_file);
   void set_power_net(std::string net);
   void set_bump_pitch_x(float bump_pitch);
   void set_bump_pitch_y(float bump_pitch);
   void set_node_density(float node_density);
+  void set_node_density_factor(int node_density_factor);
   void set_pdnsim_net_voltage(std::string net, float voltage);
-  int  analyze_power_grid();
+  void analyze_power_grid();
   void write_pg_spice();
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
-  int  getMinimumResolution();
-  int check_connectivity();
+  int getMinimumResolution();
+  bool check_connectivity();
   void setDebugGui();
-  
+
  private:
-  odb::dbDatabase*             _db;
-  sta::dbSta*                  _sta;
-  utl::Logger*                 _logger;
-  std::string                  _vsrc_loc;
-  std::string                  _out_file;
-  std::string                  _em_out_file;
-  int                          _enable_em;
-  int                          _bump_pitch_x;
-  int                          _bump_pitch_y;
-  std::string                  _spice_out_file;
-  std::string                  _power_net;
-  std::map<std::string, float> _net_voltage_map;
-  IRDropByLayer                _ir_drop;
-  float                        _node_density;
-  std::unique_ptr<DebugGui>    _debug_gui;
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
+  std::string vsrc_loc_;
+  std::string out_file_;
+  std::string em_out_file_;
+  bool enable_em_;
+  int bump_pitch_x_;
+  int bump_pitch_y_;
+  std::string spice_out_file_;
+  std::string power_net_;
+  std::map<std::string, float> net_voltage_map_;
+  IRDropByLayer ir_drop_;
+  float node_density_;
+  int node_density_factor_;
+  float min_resolution_;
+  std::unique_ptr<DebugGui> debug_gui_;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
 }  // namespace psm
-
-#endif

@@ -14,3 +14,5 @@
 [INFO ODB-0134] Finished DEF file: gcd_sky130.def
 [ERROR GRT-0045] Run global_route before repair_antennas.
 GRT-0045
+[ERROR GRT-0069] Diode cell sky130_fd_sc_hs__diode_ not found.
+GRT-0069

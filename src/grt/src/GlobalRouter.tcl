@@ -58,7 +58,7 @@ proc set_global_routing_layer_adjustment { args } {
       grt::add_layer_adjustment $layer_idx $adj
     }
   } else {
-    utl::error GRT 44 "Command set_global_routing_layer_adjustment takes two arguments: layer adj."
+    utl::error GRT 44 "set_global_routing_layer_adjustment requires layer and adj arguments."
   }
 }
 
@@ -163,7 +163,7 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-  keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+    keys { -seed -capacities_perturbation_percentage -perturbation_amount }
 
   sta::check_argc_eq0 "set_global_routing_random" $args
 
@@ -171,23 +171,28 @@ proc set_global_routing_random { args } {
     set seed $keys(-seed)
     sta::check_integer "set_global_routing_random" $seed
     grt::set_seed $seed
+  } else {
+    utl::error GRT 242 "-seed argument is required."
   }
 
+  set percentage 0.0
   if { [info exists keys(-capacities_perturbation_percentage)] } {
     set percentage $keys(-capacities_perturbation_percentage)
     sta::check_percent "set_global_routing_random" $percentage
-    grt::set_capacities_perturbation_percentage $percentage
   }
+  grt::set_capacities_perturbation_percentage $percentage
 
+  set perturbation 1
   if { [info exists keys(-perturbation_amount)] } {
     set perturbation $keys(-perturbation_amount)
     sta::check_positive_integer "set_global_routing_random" $perturbation
-    grt::set_perturbation_amount $perturbation
   }
+  grt::set_perturbation_amount $perturbation
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
+                                  [-congestion_report_file file_name] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
@@ -197,7 +202,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -congestion_iterations \
+    keys {-guide_file -congestion_iterations -congestion_report_file \
           -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow -verbose}
@@ -234,6 +239,11 @@ proc global_route { args } {
     grt::set_overflow_iterations 50
   }
 
+  if { [info exists keys(-congestion_report_file) ] } {
+    set file_name $keys(-congestion_report_file)
+    grt::set_congestion_report_file $file_name
+  }
+
   if { [info exists keys(-overflow_iterations)] } {
     utl::war GRT 147 "Argument -overflow_iterations is deprecated. Use -congestion_iterations."
     set iterations $keys(-overflow_iterations)
@@ -248,40 +258,56 @@ proc global_route { args } {
   set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
   grt::set_allow_congestion $allow_congestion
 
-  grt::clear
-  grt::run
+  grt::global_route
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
-    grt::write_guides $out_file
+    write_guides $out_file
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port \
+sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
                                          [-iterations iterations]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
                  keys {-iterations}
   if { [grt::have_routes] } {
-    sta::check_argc_eq1 "repair_antennas" $args
-    set lib_port [lindex $args 0]
-    if { ![sta::is_object $lib_port] } {
-      set lib_port [sta::get_lib_pins [lindex $args 0]]
+    if { [llength $args] == 0 } {
+      # repairAntennas locates diode
+      set diode_mterm "NULL"
+    } elseif { [llength $args] == 1 } {
+      set db [ord::get_db]
+      set diode_cell [lindex $args 0]
+
+      set diode_master [$db findMaster $diode_cell]
+      if { $diode_master == "NULL" } {
+        utl::error GRT 69 "Diode cell $diode_cell not found."
+      }
+      
+      set diode_mterms [$diode_master getMTerms]
+      set non_pg_count 0
+      foreach mterm $diode_mterms {
+        if { [$mterm getSigType] != "POWER" && [$mterm getSigType] != "GROUND" } {
+          set diode_mterm $mterm
+          incr non_pg_count
+        }
+      }
+
+      if { $non_pg_count > 1 } {
+        utl::error GRT 73 "Diode cell has more than one non power/ground port."
+      }
+    } else {
+      utl::error GRT 245 "Too arguments to repair_antennas."
     }
 
+    set iterations 1
     if { [info exists keys(-iterations)] } {
       set iterations $keys(-iterations)
-      sta::check_positive_integer "-repair_antennas_iterations" $iterations
-    } else {
-      set iterations 1
+      sta::check_positive_integer "-iterations" $iterations
     }
 
-    if { $lib_port != "" } {
-      grt::repair_antennas $lib_port $iterations
-    } else {
-      utl::error GRT 69 "Diode not found."
-    }
+    grt::repair_antennas $diode_mterm $iterations
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
@@ -292,13 +318,6 @@ sta::define_cmd_args "read_guides" { file_name }
 proc read_guides { args } {
   set file_name $args
   grt::read_guides $file_name
-}
-
-sta::define_cmd_args "write_guides" { file_name }
-
-proc write_guides { args } {
-  set file_name $args
-  grt::write_guides $file_name
 }
 
 sta::define_cmd_args "draw_route_guides" { net_names \
@@ -315,14 +334,12 @@ proc draw_route_guides { args } {
     utl::error GRT 223 "Missing dbBlock."
   }
 
-  if {[llength $net_names] > 0} {
-    foreach net [get_nets $net_names] {
-      if { $net != "NULL" } {
-        grt::highlight_net_route [sta::sta_to_db_net $net] [info exists flags(-show_pin_locations)]
-      }
+  grt::clear_route_guides
+  set show_pins [info exists flags(-show_pin_locations)]
+  foreach net [get_nets $net_names] {
+    if { $net != "NULL" } {
+      grt::highlight_net_route [sta::sta_to_db_net $net] $show_pins
     }
-  } else {
-    grt::erase_routes
   }
 }
 
@@ -398,7 +415,7 @@ proc report_wire_length { args } {
       }
     }
   } else {
-    utl::errpr GRT 237 "-net is required."
+    utl::error GRT 238 "-net is required."
   }
 }
 

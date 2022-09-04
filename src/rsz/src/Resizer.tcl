@@ -241,8 +241,43 @@ proc estimate_parasitics { args } {
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
-  sta::check_argc_eq1 "set_dont_use" $args
-  rsz::set_dont_use_cmd [sta::get_lib_cells_arg "-dont_use" [lindex $args 0] utl::warn]
+  set_dont_use_cmd "set_dont_use" $args 1
+}
+
+sta::define_cmd_args "unset_dont_use" {lib_cells}
+
+proc unset_dont_use { args } {
+  set_dont_use_cmd "unset_dont_use" $args 0
+}
+
+proc set_dont_use_cmd { cmd cmd_args dont_use } {
+  sta::check_argc_eq1 $cmd $cmd_args
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] utl::warn] {
+    rsz::set_dont_use $lib_cell $dont_use
+  }
+}
+
+sta::define_cmd_args "set_dont_touch" {nets_instances}
+
+proc set_dont_touch { args } {
+  set_dont_touch_cmd "set_dont_touch" $args 1
+}
+
+sta::define_cmd_args "unset_dont_touch" {nets_instances}
+
+proc unset_dont_touch { args } {
+  set_dont_touch_cmd "unset_dont_touch" $args 0
+}
+
+proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
+  sta::check_argc_eq1 $cmd $cmd_args
+  sta::parse_inst_net_arg [lindex $cmd_args 0] insts nets
+  foreach inst $insts {
+    rsz::set_dont_touch_instance $inst $dont_touch
+  }
+  foreach net $nets {
+    rsz::set_dont_touch_net $net $dont_touch
+  }
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
@@ -252,10 +287,6 @@ proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
     keys {-buffer_cell -max_utilization} \
     flags {-inputs -outputs}
-  
-  if { [info exists keys(-buffer_cell)] } {
-    utl::warn RSZ 15 "-buffer_cell is deprecated."
-  }
   
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
@@ -356,20 +387,17 @@ proc repair_tie_fanout { args } {
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
-                                        [-slack_margin slack_margin]\
+                                        [-setup_margin setup_margin]\
+                                        [-hold_margin hold_margin]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-allow_setup_violations]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-slack_margin -libraries -max_utilization
-      -max_buffer_percent -max_passes} \
+    keys {-setup_margin -hold_margin -slack_margin \
+            -libraries -max_utilization -max_buffer_percent -max_passes} \
     flags {-setup -hold -allow_setup_violations}
-  
-  if { [info exists keys(-libraries)] } {
-    utl::warn RSZ 63 "-libraries is deprecated."
-  }
   
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -378,7 +406,20 @@ proc repair_timing { args } {
     set hold 1
   }
   
-  set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  if { [info exists keys(-slack_margin)] } {
+    utl::warn RSZ 76 "-slack_margin is deprecated. Use -setup_margin/-hold_margin"
+    if { !$setup && $hold } {
+      set setup_margin 0.0
+      set hold_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+    } else {
+      set setup_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+      set hold_margin 0.0
+    }
+  } else {
+    set setup_margin [rsz::parse_time_margin_arg "-setup_margin" keys]
+    set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
+  }
+
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
@@ -396,11 +437,11 @@ proc repair_timing { args } {
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   if { $setup } {
-    rsz::repair_setup $slack_margin $max_passes
+    rsz::repair_setup $setup_margin $max_passes
   }
   if { $hold } {
-    rsz::repair_hold $slack_margin $allow_setup_violations \
-      $max_buffer_percent $max_passes
+    rsz::repair_hold $setup_margin $hold_margin \
+      $allow_setup_violations $max_buffer_percent $max_passes
   }
 }
 
@@ -423,7 +464,7 @@ proc report_floating_nets { args } {
   set floating_nets [rsz::find_floating_nets]
   set floating_net_count [llength $floating_nets]
   if { $floating_net_count > 0 } {
-    utl::warn RSZ 20 "found $floating_net_count floatiing nets."
+    utl::warn RSZ 20 "found $floating_net_count floating nets."
     if { $verbose } {
       foreach net $floating_nets {
         utl::report " [get_full_name $net]"

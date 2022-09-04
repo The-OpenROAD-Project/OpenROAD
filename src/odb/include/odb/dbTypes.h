@@ -389,7 +389,19 @@ class dbMasterType
     ENDCAP_TOPLEFT,    /** */
     ENDCAP_TOPRIGHT,   /** */
     ENDCAP_BOTTOMLEFT, /** */
-    ENDCAP_BOTTOMRIGHT /** */
+    ENDCAP_BOTTOMRIGHT, /** */
+    ENDCAP_LEF58_BOTTOMEDGE, /** */
+    ENDCAP_LEF58_TOPEDGE, /** */
+    ENDCAP_LEF58_LEFTEDGE, /** */
+    ENDCAP_LEF58_RIGHTEDGE, /** */
+    ENDCAP_LEF58_RIGHTBOTTOMEDGE, /** */
+    ENDCAP_LEF58_LEFTBOTTOMEDGE, /** */
+    ENDCAP_LEF58_RIGHTTOPEDGE, /** */
+    ENDCAP_LEF58_LEFTTOPEDGE, /** */
+    ENDCAP_LEF58_RIGHTBOTTOMCORNER, /** */
+    ENDCAP_LEF58_LEFTBOTTOMCORNER, /** */
+    ENDCAP_LEF58_RIGHTTOPCORNER, /** */
+    ENDCAP_LEF58_LEFTTOPCORNER, /** */
   };
 
   ///
@@ -492,17 +504,17 @@ class dbTechLayerType
   ///
   /// Create a dbTechLayerType instance with an explicit value.
   ///
-  dbTechLayerType(Value value);
+  dbTechLayerType(Value value) { _value = value; }
 
   ///
   /// Create a dbTechLayerType instance with value = "none".
   ///
-  dbTechLayerType();
+  dbTechLayerType() { _value = ROUTING; }
 
   ///
   /// Copy constructor.
   ///
-  dbTechLayerType(const dbTechLayerType& value);
+  dbTechLayerType(const dbTechLayerType& value) { _value = value._value; }
 
   ///
   /// Returns the layer-value.
@@ -546,17 +558,17 @@ class dbTechLayerDir
   ///
   /// Create a dbTechLayerDir instance with an explicit direction.
   ///
-  dbTechLayerDir(Value value);
+  dbTechLayerDir(Value value) { _value = value; }
 
   ///
   /// Create a dbTechLayerDir instance with direction = "none".
   ///
-  dbTechLayerDir();
+  dbTechLayerDir() { _value = NONE; }
 
   ///
   /// Copy constructor.
   ///
-  dbTechLayerDir(const dbTechLayerDir& value);
+  dbTechLayerDir(const dbTechLayerDir& value) { _value = value._value; }
 
   ///
   /// Returns the layer-direction.

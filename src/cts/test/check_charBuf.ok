@@ -1,7 +1,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: 16sinks.def
 [INFO ODB-0128] Design: test_16_sinks
@@ -37,7 +37,7 @@ TritonCTS forced slew degradation on these wires.
     Sinks per sub-region: 8
     Sub-region size: 1.3571 X 0.6786
 [INFO CTS-0034]     Segment length (rounded): 1.
-    Key: 14532 outSlew: 2 load: 1 length: 1 isBuffered: false
+    Key: 14532 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 1 delay: 2
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 16.
 [INFO CTS-0036]  Average source sink dist: 17902.50 dbu.

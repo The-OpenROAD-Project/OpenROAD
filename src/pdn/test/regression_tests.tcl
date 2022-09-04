@@ -28,6 +28,7 @@ record_tests {
   core_grid_split_cuts
   core_grid_with_rings_with_straps_rings_over_core
   core_grid_with_routing_obstructions
+  core_grid_adjacentcuts
 
   core_grid_obstruction
 
@@ -45,6 +46,8 @@ record_tests {
   core_grid_offset_strap
   core_grid_with_rings_with_limit_straps
 
+  core_grid_failed_via_report
+
   macros
   macros_with_halo
   macros_cells
@@ -58,6 +61,8 @@ record_tests {
   macros_cells_no_grid
   macros_narrow_channel_jog
   macros_different_nets
+  macros_grid_through
+  macros_cells_dont_touch
 
   region_temp_sensor
   region_secondary_nets
@@ -68,6 +73,7 @@ record_tests {
   pads_black_parrot_no_connect
   pads_black_parrot_limit_connect
   pads_black_parrot_flipchip
+  pads_black_parrot_flipchip_connect_overpads
   pads_black_parrot_max_width
 
   asap7_vias
@@ -81,6 +87,7 @@ record_tests {
   asap7_vias_dont_use
   asap7_taper
   asap7_offcenter_via
+  asap7_no_via_generate_v1_snapped
 
   existing
 
@@ -89,4 +96,6 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
+  
+  repair_vias
 }
