@@ -375,7 +375,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
     remainingLength = previousLevel.getRemainingLength();
   }
 
-  const unsigned SLEW_THRESHOLD = options_->getMaxSlew();
+  const unsigned SLEW_THRESHOLD = techChar_->getMaxSlew(); // The normalized value of the slew of the characterization buffer (max slew)
   const unsigned INIT_TOLERANCE = 1;
   unsigned length = 0;
   for (int charSegLength = techChar_->getMaxSegmentLength(); charSegLength >= 1;
