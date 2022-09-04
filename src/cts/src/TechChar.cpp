@@ -313,7 +313,7 @@ void TechChar::printCharacterization() const
   logger_->report("minSlew = {}", minSlew_);
   logger_->report("maxSlew = {}", maxSlew_);
   logger_->report("wireSegmentUnit in Micron = {}",
-                  options_->getWireSegmentUnitMicron());
+                  options_->getWireSegmentUnitDbu() / options_->getDbUnits());
   logger_->report("wireSegmentUnit in DBU = {}",
                   options_->getWireSegmentUnitDbu());
 
@@ -348,10 +348,10 @@ void TechChar::printSolution() const
 
     if (segment.isBuffered()) {
       for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-        float wirelengthValue
-            = segment.getBufferLocation(idx)
-              * ((float) (segment.getLength())
-                 * (float) (options_->getWireSegmentUnitMicron()));
+        float wirelengthValue = segment.getBufferLocation(idx)
+                                * ((float) (segment.getLength())
+                                   * (float) (options_->getWireSegmentUnitDbu()
+                                              / options_->getDbUnits()));
 
         report += std::to_string((unsigned long) (wirelengthValue));
         report += "," + segment.getBufferMaster(idx);
@@ -361,7 +361,8 @@ void TechChar::printSolution() const
       }
     } else {
       float wirelengthValue = (float) (segment.getLength())
-                              * (float) (options_->getWireSegmentUnitMicron());
+                              * (float) (options_->getWireSegmentUnitDbu()
+                                         / options_->getDbUnits());
       report += std::to_string((unsigned long) (wirelengthValue));
     }
 
@@ -444,16 +445,8 @@ void TechChar::initCharacterization()
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
   float dbUnitsPerMicron = block->getDbUnitsPerMicron();
-
+  options_->setDbUnits(dbUnitsPerMicron);
   getClockLayerResCap(dbUnitsPerMicron);
-
-  // Change intervals if needed
-  if (options_->getSlewInter() != 0) {
-    charSlewInter_ = options_->getSlewInter();
-  }
-  if (options_->getCapInter() != 0) {
-    charCapInter_ = options_->getCapInter();
-  }
 
   // Gets the buffer masters and its in/out pins.
   std::vector<std::string> masterVector = options_->getBufferList();
@@ -543,12 +536,13 @@ void TechChar::initCharacterization()
 
   // Defines the different wirelengths to test and the characterization unit.
   unsigned wirelengthIterations = options_->getCharWirelengthIterations();
-  if (options_->getWireSegmentUnitMicron() == 0) {
+  if (options_->getWireSegmentUnitDbu() == 0) {
     unsigned charaunitDbu = charBuf_->getHeight() * 10;
     options_->setWireSegmentUnitDbu(charaunitDbu);
-    options_->setWireSegmentUnitMicron(charaunitDbu / dbUnitsPerMicron);
   } else {
-    options_->setWireSegmentUnitDbu(options_->getWireSegmentUnitMicron()
+    // user has passed the segment unit in Micron, so we need to convert
+    // it to DBU to keep correctness and uniformity.
+    options_->setWireSegmentUnitDbu(options_->getWireSegmentUnitDbu()
                                     * dbUnitsPerMicron);
   }
   unsigned maxWirelength
@@ -578,8 +572,6 @@ void TechChar::initCharacterization()
         "Error generating the wirelengths to test.\n"
         "    Check the -wire_unit parameter or the technology files.");
   }
-
-  setLengthUnitMicron(options_->getWireSegmentUnitMicron());
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
@@ -630,10 +622,8 @@ void TechChar::initCharacterization()
   // Creates the different slews and loads to test.
   unsigned slewIterations = options_->getCharSlewIterations();
   unsigned loadIterations = options_->getCharLoadIterations();
-  if (charSlewInter_ == 0)
-    charSlewInter_ = charMaxSlew_ / slewIterations;
-  if (charCapInter_ == 0)
-    charCapInter_ = charMaxCap_ / slewIterations;
+  charSlewInter_ = charMaxSlew_ / slewIterations;
+  charCapInter_ = charMaxCap_ / slewIterations;
   for (float slewInter = charSlewInter_;
        (slewInter <= charMaxSlew_)
        && (slewInter <= slewIterations * charSlewInter_);

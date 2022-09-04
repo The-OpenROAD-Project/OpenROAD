@@ -39,15 +39,15 @@
 #include <limits>
 
 #include "CtsOptions.h"
-#include "TreeBuilder.h"
 #include "Graphics.h"
+#include "TreeBuilder.h"
 
 namespace utl {
 class Logger;
 }  // namespace utl
 
 namespace cts {
-  
+
 class SegmentBuilder
 {
  public:
@@ -182,7 +182,7 @@ class HTreeBuilder : public TreeBuilder
     std::vector<std::vector<Point<double>>> branchSinkLocs_;
   };
 
-  public:
+ public:
   HTreeBuilder(CtsOptions* options,
                Clock& net,
                TreeBuilder* parent,
@@ -193,17 +193,14 @@ class HTreeBuilder : public TreeBuilder
 
   void plotSolution();
 
-  std::vector<LevelTopology> getTopologyVector() const {
+  std::vector<LevelTopology> getTopologyVector() const
+  {
     return topologyForEachLevel_;
   }
 
-  Box<double> getSinkRegion() const {
-    return sinkRegion_;
-  }
+  Box<double> getSinkRegion() const { return sinkRegion_; }
 
-  int getWireSegmentUnit() const {
-    return wireSegmentUnit_;
-  }
+  int getWireSegmentUnit() const { return wireSegmentUnitDbu_; }
 
   unsigned computeMinDelaySegment(unsigned length,
                                   unsigned inputSlew,
@@ -301,7 +298,7 @@ class HTreeBuilder : public TreeBuilder
   std::vector<std::pair<float, float>> topLevelSinksClustered_;
   std::unique_ptr<Graphics> graphics_;
 
-  int wireSegmentUnit_ = 0;
+  int wireSegmentUnitDbu_ = 0;
   unsigned minInputCap_ = 0;
   unsigned numMaxLeafSinks_ = 0;
   unsigned minLengthSinkRegion_ = 0;

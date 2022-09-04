@@ -221,14 +221,6 @@ class TechChar
   unsigned getMaxSlew() const { return maxSlew_; }
   void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
   unsigned getActualMinInputCap() const { return actualMinInputCap_; }
-  void setLengthUnitMicron(unsigned length)
-  {
-    options_->setWireSegmentUnitMicron(length);
-  }
-  unsigned getLengthUnitMicron() const
-  {
-    return options_->getWireSegmentUnitMicron();
-  }
 
   void createFakeEntries(unsigned length, unsigned fakeLength);
 

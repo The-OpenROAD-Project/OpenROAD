@@ -92,7 +92,7 @@ set_max_char_slew(double slew)
 void
 set_wire_segment_distance_unit(unsigned unit)
 {
-  getTritonCts()->getParms()->setWireSegmentUnitMicron(unit);
+  getTritonCts()->getParms()->setWireSegmentUnitDbu(unit);
 }
 
 void
@@ -102,15 +102,15 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_slew_inter(double slew)
+set_slew_intervals_count(int slewIntervals)
 {
-  getTritonCts()->getParms()->setSlewInter(slew);
+  getTritonCts()->getParms()->setCharSlewIterations(slewIntervals);
 }
 
 void
-set_cap_inter(double cap)
+set_cap_intervals_count(int capIntervals)
 {
-  getTritonCts()->getParms()->setCapInter(cap);
+  getTritonCts()->getParms()->setCharLoadIterations(capIntervals);
 }
 
 void
