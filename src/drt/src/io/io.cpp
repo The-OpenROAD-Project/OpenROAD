@@ -1045,7 +1045,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
     auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
     rptr->setDbTechLayerCornerSpacingRule(rule);
-    if (rptr->getCornerType() ==frCornerTypeEnum::CONVEX && rule->isCornerToCorner()) {
+    if (rptr->getCornerType() == frCornerTypeEnum::CONVEX && rule->isCornerToCorner() && !rptr->hasCornerOnly()) {
         rptr->setCornerToCorner(true);
     }
     rptr->setSameXY(hasSameXY);
@@ -1121,8 +1121,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       len->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isEncloseCutValid()) {
-      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          rule->getEncloseDist(), rule->getCutToMetalSpace());
+      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
       within->setEncloseCutConstraint(enc);
       enc->setDbTechLayerSpacingEolRule(rule);
     }
@@ -1202,7 +1201,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         auto con = make_unique<frLef58CutSpacingConstraint>();
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
-          // con->setCutClassName(className);
           auto cutClassIdx = tmpLayer->getCutClassIdx(className);
           if (cutClassIdx != -1)
             con->setCutClassIdx(cutClassIdx);

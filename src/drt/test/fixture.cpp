@@ -310,7 +310,10 @@ void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
   auto rule = odb::dbTechLayerMinStepRule::create(layer->getDbLayer());
   //auto rule = std::make_unique<odb::dbTechLayerMinStepRule>();
   rule->setMinStepLength(50);
+  rule->setMaxEdgesValid(true);
+  rule->setMinAdjLength1Valid(true);
   rule->setMaxEdges(1);
+  rule->setNoBetweenEol(true);
   rule->setEolWidth(200);
   con->setDbTechLayerMinStepRule(rule);
   //con->getDbTechLayerMinStepRule()->setEolWidth(200);
@@ -355,7 +358,22 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   // con->setEolWidth(200);
   // con->setEolWithin(50);
 
-  if (par_space != -1) {
+  // if (par_space != -1) {
+  //   if (par_within == -1) {
+  //     throw std::invalid_argument("Must give par_within with par_space");
+  //   }
+  //   // con->setParSpace(par_space);
+  //   // con->setParWithin(par_within);
+  //   // con->setTwoEdges(two_edges);
+  // }
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerSpacingRule::create(layer->getDbLayer());
+  con->setMinSpacing(200);
+  //bool hasSpacingParellelEdge = (par_space != -1) && (par_within != -1);
+  //logger->report("hasSpacingParellelEdge {}", hasSpacingParellelEdge);
+    if (par_space != -1) {
     if (par_within == -1) {
       throw std::invalid_argument("Must give par_within with par_space");
     }
@@ -363,14 +381,14 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
     // con->setParWithin(par_within);
     // con->setTwoEdges(two_edges);
   }
-
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
-  auto rule = odb::dbTechLayerSpacingRule::create(layer->getDbLayer());
-  rule->setSpacing(200);
-  rule->setEol(200, 50,((par_space != -1) && (par_within != -1)) , par_space, par_within, two_edges);
+  if(par_space == 0) {
+    par_space = -1;
+  }
+  if(par_within == 0) {
+    par_within = -1;
+  }
+  rule->setEol(200, 50, ((par_space != -1) && (par_within != -1)), par_space, par_within, two_edges);
   con->setDbTechLayerSpacingRule(rule);
-  con->setMinSpacing(200);
   layer->addEolSpacing(con.get());
   tech->addUConstraint(std::move(con));
 }
@@ -499,6 +517,7 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   con->setDbTechLayerSpacingEolRule(rule);
   auto withinRule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
   withinRule->setEolWithin(within);
+  withinRule->setEndPrlSpacingValid(true);
   withinRule->setEndPrl(end_prl);
   withinRule->setEndPrlSpace(end_prl_spacing);
   withinCon->setDbTechLayerSpacingEolRule(withinRule);
@@ -541,7 +560,7 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
   //create and set rule TODO resolved
   //minMax->setLength(max, min_max_length, two_sides);
   con->getDbTechLayerSpacingEolRule()->setMaxLengthValid(max);
-  con->getDbTechLayerSpacingEolRule()->setMaxLengthValid(!max);
+  con->getDbTechLayerSpacingEolRule()->setMinLengthValid(!max);
   if(max){
     con->getDbTechLayerSpacingEolRule()->setMaxLength(min_max_length);
   } else {
@@ -563,14 +582,17 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
     bool allCuts)
 {
   auto cutEnc
-      = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          encloseDist, cutToMetalSpacing);
+      = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
   con->getWithinConstraint()->setEncloseCutConstraint(cutEnc);
   //create rule and set it TODO resolved
   con->getDbTechLayerSpacingEolRule()->setAboveValid(above);
+  con->getDbTechLayerSpacingEolRule()->setEncloseDist(encloseDist);
+  con->getDbTechLayerSpacingEolRule()->setCutToMetalSpace(cutToMetalSpacing);
   con->getDbTechLayerSpacingEolRule()->setBelowValid(below);
   con->getDbTechLayerSpacingEolRule()->setAllCutsValid(allCuts);
   cutEnc->setDbTechLayerSpacingEolRule(con->getDbTechLayerSpacingEolRule());
+  //logger->report("above {} vs {} below {} vs {} allcuts {} vs {}", above, cutEnc->isAboveOnly(), below, cutEnc->isBelowOnly(), allCuts, cutEnc->isAllCuts();
+  //logger->report("enclosedist {} vs {} cuttometal {} vs {}", encloseDist, cutEnc->getEncloseDist(), cutToMetalSpacing, cutEnc->getCutToMetalSpace());
   // cutEnc->setAbove(above);
   // cutEnc->setBelow(below);
   // cutEnc->setAllCuts(allCuts);
@@ -587,6 +609,7 @@ void Fixture::makeCutClass(frLayerNum layer_num,
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   auto rule = odb::dbTechLayerCutClassRule::create(layer->getDbLayer(), name.c_str());
+  rule->setLengthValid(true);
   rule->setWidth(width);
   rule->setLength(height);
   cutClass->setDbTechLayerCutClassRule(rule);
