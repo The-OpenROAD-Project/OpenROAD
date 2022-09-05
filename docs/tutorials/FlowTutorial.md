@@ -880,51 +880,6 @@ View the resulting core utilization of 30 created following floorplan:
 
 ![Relative Floorplan](./images/core_util.png)
 
-#### Defining Placement Density
-
-To learn on placement density strategies for `ibex` design, go to
-`OpenROAD-flow-scripts/flow`. Type:
-
-```
-openroad -gui
-```
-
-Enter the following commands in the `Tcl Commands` section of GUI
-
-```
-read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
-read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
-read_def ./results/sky130hd/ibex/base/3_place.def
-```
-![ibex placement density 60](./images/ibex_pl_60.png)
-
-Change `CORE_UTILIZATION` and `PLACE_DENSITY` for the `ibex` design
-`config.mk` as follows.
-
-View `ibex` design `config.mk`
-[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/sky130hd/ibex/config.mk).
-
-```
-export CORE_UTILIZATION = 40
-export CORE_ASPECT_RATIO = 1
-export CORE_MARGIN = 2
-export PLACE_DENSITY = 0.50
-```
-
-Re-run the `ibex` design with the below command:
-
-```
-make DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
-```
-
-View the `ibex` design placement density heat map as shown below:
-
-![ibex placement density 50](./images/ibex_pl_50.png)
-
-So from above, GUI understood that change in `CORE_UTILIZATION` from 20
-to 40 and placement density default 0.60 to 0.50 changes standard cell
-placement became widely spread.
-
 ### IO Pin Placement
 
 #### ioPlacer
@@ -1301,6 +1256,51 @@ the effect on macro placement.
 
 Run `global_placement` to align standard cells and macros with updated
 macro spacing.
+
+#### Defining Placement Density
+
+To learn on placement density strategies for `ibex` design, go to
+`OpenROAD-flow-scripts/flow`. Type:
+
+```
+openroad -gui
+```
+
+Enter the following commands in the `Tcl Commands` section of GUI
+
+```
+read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
+read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
+read_def ./results/sky130hd/ibex/base/3_place.def
+```
+![ibex placement density 60](./images/ibex_pl_60.png)
+
+Change `CORE_UTILIZATION` and `PLACE_DENSITY` for the `ibex` design
+`config.mk` as follows.
+
+View `ibex` design `config.mk`
+[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/sky130hd/ibex/config.mk).
+
+```
+export CORE_UTILIZATION = 40
+export CORE_ASPECT_RATIO = 1
+export CORE_MARGIN = 2
+export PLACE_DENSITY = 0.50
+```
+
+Re-run the `ibex` design with the below command:
+
+```
+make DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
+```
+
+View the `ibex` design placement density heat map as shown below:
+
+![ibex placement density 50](./images/ibex_pl_50.png)
+
+So from above, GUI understood that change in `CORE_UTILIZATION` from 20
+to 40 and placement density default 0.60 to 0.50 changes standard cell
+placement became widely spread.
 
 #### Timing Optimization Using repair_design
 
@@ -1807,19 +1807,37 @@ to learn about filler cell insertion.
 To view this in OpenROAD GUI:
 
 ```
-cd ../../src/dpl/test/
+cd ../../src/grt/test/
 openroad -gui
 ```
 
-In the `Tcl Commands` section of GUI
+In the `Tcl Commands` section of GUI,run following commands:
 
 ```
-source fillers1.tcl
+source "helpers.tcl"
+read_lef "Nangate45/Nangate45.lef"
+read_def "gcd.def"
+```
+
+Before filler insertion, gcd design view:
+
+![Without_Fill_Cell_Insertion](./images/wo_fillcell_insertion.webp)
+
+Run following commands for filler cell insertion:
+```
+set filler_master [list FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8 FILLCELL_X16]
+filler_placement $filler_master
 ```
 
 View the resulting fill cell insertion as follows:
 
-![Fill_Cell_Insertion](./images/fillcell_insertion_view.webp)
+![Fill_Cell_Insertion](./images/fillcell_insertion.webp)
+
+Zoomed view of filler cells:
+
+![Zoom_Fill_Cell_Insertion](./images/fillcell_insertion_zoom.webp)
+
+Filler cells can be removed with `remove_fillers` command.
 
 ### Global Route
 
@@ -2073,9 +2091,13 @@ The `45_gcd.spef` can be read from `results` directory.
 
 ## Troubleshooting Problems
 
+This section shows you how to troubleshoot commonly occurring problems
+with the flow or any of the underlying application tools.
+
 ### Global router debug tools
+
 The global router(FastRoute) has a few useful functionalities to understand
-high congestion issues in the designs. We describe them below.
+high congestion issues in the designs.
 
 Congestion heatmap can be used on any design, whether it has 
 congestion or not. Viewing congestion explained [here](#Using-Heat-Maps).
