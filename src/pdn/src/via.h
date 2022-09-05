@@ -88,6 +88,14 @@ using ViaReport = std::map<std::string, int>;
 class Grid;
 class TechLayer;
 
+enum class failedViaReason {
+  OBSTRUCTED,
+  BUILD,
+  RIPUP,
+  RECHECK,
+  OTHER
+};
+
 class Enclosure
 {
  public:
@@ -109,6 +117,9 @@ class Enclosure
 
   bool operator<(const Enclosure& other) const;
   bool operator==(const Enclosure& other) const;
+
+  void copy(const Enclosure* other);
+  void copy(const Enclosure& other);
 
   bool isPreferredOver(const Enclosure* other, odb::dbTechLayer* layer) const;
   bool isPreferredOver(const Enclosure* other, bool minimize_x) const;
@@ -399,9 +410,11 @@ class DbGenerateStackedVia : public DbVia
 class DbGenerateDummyVia : public DbVia
 {
  public:
-  DbGenerateDummyVia(const odb::Rect& shape,
+  DbGenerateDummyVia(Connect* connect,
+                     const odb::Rect& shape,
                      odb::dbTechLayer* bottom,
-                     odb::dbTechLayer* top);
+                     odb::dbTechLayer* top,
+                     bool add_report);
   virtual ~DbGenerateDummyVia() {}
 
   virtual ViaLayerShape generate(odb::dbBlock* block,
@@ -414,6 +427,8 @@ class DbGenerateDummyVia : public DbVia
   virtual ViaReport getViaReport() const override { return {}; }
 
  private:
+  Connect* connect_;
+  bool add_report_;
   const odb::Rect shape_;
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* top_;
@@ -458,7 +473,9 @@ class ViaGenerator
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  virtual bool checkConstraints() const;
+  virtual bool checkConstraints(bool check_cuts = true,
+                                bool check_min_cut = true,
+                                bool check_enclosure = true) const;
 
   // determine the shape of the vias
   bool build(bool bottom_is_internal_layer,
@@ -591,6 +608,8 @@ class ViaGenerator
   odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
 
   int getRectSize(const odb::Rect& rect, bool min, bool only_real) const;
+
+  bool updateCutSpacing(int rows, int columns);
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -721,13 +740,15 @@ class Via
 
   Connect* getConnect() const { return connect_; }
 
-  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const;
+  void writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions);
 
   Grid* getGrid() const;
 
   const std::string getDisplayText() const;
 
   Via* copy() const;
+
+  void markFailed(failedViaReason reason);
 
  private:
   odb::dbNet* net_;

@@ -238,6 +238,8 @@ class DisplayControls : public QDockWidget,
 
   bool isModuleView() const override;
 
+  bool isGCellGridVisible() const override;
+
   // API from dbNetworkObserver
   virtual void postReadLiberty() override;
   virtual void postReadDb() override;
@@ -365,6 +367,7 @@ class DisplayControls : public QDockWidget,
     ModelRow selected;
     ModelRow module;
     ModelRow manufacturing_grid;
+    ModelRow gcell_grid;
   };
 
   struct InstanceShapeModels

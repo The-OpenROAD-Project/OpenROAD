@@ -592,7 +592,6 @@ void dbFlatten::copyAttrs(dbInst* dst_, dbInst* src_)
   dst->_flags._user_flag_3 = src->_flags._user_flag_3;
   dst->_flags._physical_only = src->_flags._physical_only;
   dst->_flags._dont_touch = src->_flags._dont_touch;
-  dst->_flags._dont_size = src->_flags._dont_size;
   dst->_flags._source = src->_flags._source;
   dst->_weight = src->_weight;
 }
@@ -620,7 +619,6 @@ void dbFlatten::copyAttrs(dbNet* dst_, dbNet* src_)
   dst->_flags._set_io = src->_flags._set_io;
   dst->_flags._io = src->_flags._io;
   dst->_flags._dont_touch = src->_flags._dont_touch;
-  dst->_flags._size_only = src->_flags._size_only;
   dst->_flags._fixed_bump = src->_flags._fixed_bump;
   dst->_flags._source = src->_flags._source;
   dst->_flags._rc_disconnected = src->_flags._rc_disconnected;
