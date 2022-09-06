@@ -468,7 +468,8 @@ void FastRouteCore::releaseResourcesNet(const int netID)
           v_edges_[ymin][gridsX[i]].usage -= edgeCost;
         if (v_edges_[ymin][gridsX[i]].est_usage)
           v_edges_[ymin][gridsX[i]].est_usage -=  edgeCost;
-        v_edges_[ymin][gridsX[i]].last_usage -= edgeCost;
+        if (v_edges_[ymin][gridsX[i]].last_usage)
+          v_edges_[ymin][gridsX[i]].last_usage -= edgeCost;
         if (v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage)
           v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage -= edgeCost;
 
@@ -479,7 +480,8 @@ void FastRouteCore::releaseResourcesNet(const int netID)
           h_edges_[gridsY[i]][xmin].usage -= edgeCost;
         if (h_edges_[gridsY[i]][xmin].est_usage)
           h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
-        h_edges_[gridsY[i]][xmin].last_usage -= edgeCost;
+        if (h_edges_[gridsY[i]][xmin].last_usage)
+          h_edges_[gridsY[i]][xmin].last_usage -= edgeCost;
         if (h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage)
           h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage -= edgeCost;
 

@@ -484,70 +484,6 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
-void GlobalRouter::removeDirtyNetsRouting()
-{
-  for (odb::dbNet* db_net : dirty_nets_) {
-    auto iter = routes_.find(db_net);
-    if (iter == routes_.end()) {
-      continue;
-    }
-    GRoute& net_route = iter->second;
-    for (GSegment& segment : net_route) {
-      if (!(segment.init_layer != segment.final_layer || (segment.isVia()))) {
-        odb::Point init_on_grid = grid_->getPositionOnGrid(
-            odb::Point(segment.init_x, segment.init_y));
-        odb::Point final_on_grid = grid_->getPositionOnGrid(
-            odb::Point(segment.final_x, segment.final_y));
-
-        if (init_on_grid.y() == final_on_grid.y()) {
-          int min_x = (init_on_grid.x() <= final_on_grid.x())
-                          ? init_on_grid.x()
-                          : final_on_grid.x();
-          int max_x = (init_on_grid.x() > final_on_grid.x())
-                          ? init_on_grid.x()
-                          : final_on_grid.x();
-
-          min_x = (min_x - (grid_->getTileSize() / 2)) / grid_->getTileSize();
-          max_x = (max_x - (grid_->getTileSize() / 2)) / grid_->getTileSize();
-          int y = (init_on_grid.y() - (grid_->getTileSize() / 2))
-                  / grid_->getTileSize();
-
-          for (int x = min_x; x < max_x; x++) {
-            int new_cap = fastroute_->getEdgeCurrentResource(
-                              x, y, x + 1, y, segment.init_layer)
-                          + 1;
-            fastroute_->addAdjustment(
-                x, y, x + 1, y, segment.init_layer, new_cap, false);
-          }
-        } else if (init_on_grid.x() == final_on_grid.x()) {
-          int min_y = (init_on_grid.y() <= final_on_grid.y())
-                          ? init_on_grid.y()
-                          : final_on_grid.y();
-          int max_y = (init_on_grid.y() > final_on_grid.y())
-                          ? init_on_grid.y()
-                          : final_on_grid.y();
-
-          min_y = (min_y - (grid_->getTileSize() / 2)) / grid_->getTileSize();
-          max_y = (max_y - (grid_->getTileSize() / 2)) / grid_->getTileSize();
-          int x = (init_on_grid.x() - (grid_->getTileSize() / 2))
-                  / grid_->getTileSize();
-
-          for (int y = min_y; y < max_y; y++) {
-            int new_cap = fastroute_->getEdgeCurrentResource(
-                              x, y, x, y + 1, segment.init_layer)
-                          + 1;
-            fastroute_->addAdjustment(
-                x, y, x, y + 1, segment.init_layer, new_cap, false);
-          }
-        } else {
-          logger_->error(
-              GRT, 70, "Invalid segment for net {}.", db_net->getConstName());
-        }
-      }
-    }
-  }
-}
-
 void GlobalRouter::updateDirtyNets()
 {
   initRoutingLayers();
@@ -3755,8 +3691,6 @@ void GlobalRouter::updateDirtyRoutes()
     }
     initFastRouteIncr(dirty_nets);
 
-    removeDirtyNetsRouting();
-
     NetRouteMap new_route
         = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
@@ -3776,8 +3710,6 @@ void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
   fastroute_->clearNets();
   initNets(nets);
   fastroute_->initAuxVar();
-  //applyAdjustments(min_routing_layer_, max_routing_layer_);
-  //perturbCapacities();
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)
