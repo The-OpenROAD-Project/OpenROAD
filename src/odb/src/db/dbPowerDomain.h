@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbModInst;
 class _dbPowerSwitch;
 class _dbIsolation;
 // User Code Begin Classes
@@ -62,7 +61,7 @@ class _dbPowerDomain : public _dbObject
 
   char* _name;
   dbId<_dbPowerDomain> _next_entry;
-  dbVector<dbId<_dbModInst>> _elements;
+  dbVector<std::string> _elements;
   dbId<_dbPowerSwitch> _power_switch;
   dbId<_dbIsolation> _isolation;
 

@@ -90,6 +90,7 @@ class _dbTechLayerRule;
 class _dbTechNonDefaultRule;
 class _dbModule;
 class _dbPowerDomain;
+class _dbLogicPort;
 class _dbPowerSwitch;
 class _dbIsolation;
 class _dbModInst;
@@ -183,6 +184,7 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbModule> _module_hash;
   dbHashTable<_dbModInst> _modinst_hash;
   dbHashTable<_dbPowerDomain> _powerdomain_hash;
+  dbHashTable<_dbLogicPort> _logicport_hash;
   dbHashTable<_dbPowerSwitch> _powerswitch_hash;
   dbHashTable<_dbIsolation> _isolation_hash;
   dbHashTable<_dbGroup> _group_hash;
@@ -221,6 +223,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbModule>* _module_tbl;
   dbTable<_dbPowerDomain>* _powerdomain_tbl;
+  dbTable<_dbLogicPort>* _logicport_tbl;
   dbTable<_dbPowerSwitch>* _powerswitch_tbl;
   dbTable<_dbIsolation>* _isolation_tbl;
   dbTable<_dbModInst>* _modinst_tbl;

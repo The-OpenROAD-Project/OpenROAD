@@ -35,18 +35,31 @@
 
 #include "odb/upf.h"
 
+#include <tcl.h>
+
 #include "utl/Logger.h"
 
 namespace odb {
 
 bool upf::create_power_domain(utl::Logger* logger,
                               dbBlock* block,
+                              const char* name)
+{
+  return dbPowerDomain::create(block, name) != nullptr;
+}
+
+bool upf::update_power_domain(utl::Logger* logger,
+                              dbBlock* block,
                               const char* name,
                               const char* elements)
 {
-  dbModInst* inst = block->findModInst(elements);
-  std::vector<dbModInst*> els{inst};
-  return dbPowerDomain::create(block, name, els) != nullptr;
+  dbPowerDomain* pd = block->findPowerDomain(name);
+  if(pd != nullptr) {
+    pd->addElement(elements);
+  } else {
+    return false;
+  }
+  return true;
 }
 
 bool upf::create_logic_port(utl::Logger* logger,
@@ -54,8 +67,7 @@ bool upf::create_logic_port(utl::Logger* logger,
                             const char* name,
                             const char* direction)
 {
-  // TODO: determine what structure will hold this information
-  return true;
+  return dbLogicPort::create(block, name, direction) != nullptr;
 }
 
 bool upf::create_power_switch(utl::Logger* logger,
@@ -63,32 +75,85 @@ bool upf::create_power_switch(utl::Logger* logger,
                               const char* name,
                               const char* power_domain,
                               const char* out_port,
-                              const char* in_port,
-                              const char* control_port)
+                              const char* in_port)
 {
     
-    dbPowerDomain* pd = block->findPowerDomain(power_domain);
-    if(pd == nullptr) return false;
-    dbPowerSwitch* ps =  dbPowerSwitch::create(block, name);
-    if(ps == nullptr) return false;
-    ps->setInSupplyPort(std::string(in_port));
-    ps->setOutSupplyPort(std::string(out_port));
-    ps->setPowerDomain(pd);
-    ps->setControlPort(std::string(control_port));
+  dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  if(pd == nullptr) return false;
+  dbPowerSwitch* ps = dbPowerSwitch::create(block, name);
+  if (ps == nullptr) return false;
+  ps->setInSupplyPort(in_port);
+  ps->setOutSupplyPort(out_port);
+  ps->setPowerDomain(pd);
+  pd->setPowerSwitch(ps);
+  return true;
+}
 
-    return true;
+bool upf::update_power_switch_control(utl::Logger* logger,
+                                      dbBlock* block,
+                                      const char* name,
+                                      const char* control_port)
+{
+  dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if(ps == nullptr) return false;
+  ps->addControlPort(control_port);
+  return true;
+}
+
+bool upf::update_power_switch_on(utl::Logger* logger,
+                                 dbBlock* block,
+                                 const char* name,
+                                 const char* on_state)
+{
+  dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if(ps == nullptr) return false;
+  ps->addOnState(on_state);
+  return true;
 }
 
 bool upf::set_isolation(utl::Logger* logger,
                         dbBlock* block,
                         const char* name,
                         const char* power_domain,
+                        bool update,
                         const char* applies_to,
                         const char* clamp_value,
                         const char* signal,
                         const char* sense,
                         const char* location)
 {
+  dbIsolation* iso = block->findIsolation(name);
+  if(iso == nullptr && update) return false;
+  if(iso == nullptr) {
+    iso = dbIsolation::create(block, name);
+  }
+
+  dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  if(pd != nullptr) {
+    iso->setPowerDomain(pd);
+    pd->setIsolation(iso);
+  }
+
+  if(strlen(applies_to) > 0) {
+    iso->setAppliesTo(applies_to);
+  }
+
+  if(strlen(clamp_value) > 0) {
+    iso->setClampValue(clamp_value);
+  }
+
+  if(strlen(signal) > 0) {
+    iso->setIsolationSignal(signal);
+  }
+
+  if(strlen(sense) > 0) {
+    iso->setIsolationSense(sense);
+  }
+
+  if(strlen(location) > 0) {
+    iso->setLocation(location);
+  }
+
   return true;
 }
 

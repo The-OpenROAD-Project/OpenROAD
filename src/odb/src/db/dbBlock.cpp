@@ -86,6 +86,7 @@
 #include "dbModuleInstItr.h"
 #include "dbModuleModInstItr.h"
 #include "dbPowerDomain.h"
+#include "dbLogicPort.h"
 #include "dbPowerSwitch.h"
 #include "dbIsolation.h"
 #include "dbNameCache.h"
@@ -195,6 +196,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
+
+  _logicport_tbl= new dbTable<_dbLogicPort>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLogicPortObj);
 
   _powerswitch_tbl = new dbTable<_dbPowerSwitch>( 
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerSwitchObj);
@@ -312,6 +316,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
+  _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
   _group_hash.setTable(_group_tbl);
@@ -396,6 +401,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _modinst_hash(block._modinst_hash),
       _powerswitch_hash(block._powerswitch_hash),
       _powerdomain_hash(block._powerdomain_hash),
+      _logicport_hash(block._logicport_hash),
       _isolation_hash(block._isolation_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
@@ -428,6 +434,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _modinst_tbl = new dbTable<_dbModInst>(db, this, *block._modinst_tbl);
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(db, this, *block._powerdomain_tbl);
+  
+  _logicport_tbl = new dbTable<_dbLogicPort>(db, this, *block._logicport_tbl);
 
   _powerswitch_tbl = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
@@ -502,6 +510,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
+  _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
 
@@ -573,6 +582,7 @@ _dbBlock::~_dbBlock()
   delete _module_tbl;
   delete _modinst_tbl;
   delete _powerdomain_tbl;
+  delete _logicport_tbl;
   delete _powerswitch_tbl;
   delete _isolation_tbl;
   delete _group_tbl;
@@ -736,6 +746,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbPowerDomainObj:
       return _powerdomain_tbl;
 
+    case dbLogicPortObj:
+      return _logicport_tbl;
+
     case dbPowerSwitchObj:
       return _powerswitch_tbl;
 
@@ -865,6 +878,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._module_hash;
   stream << block._modinst_hash;
   stream << block._powerdomain_hash;
+  stream << block._logicport_hash;
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
   stream << block._group_hash;
@@ -891,6 +905,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
   stream << *block._powerdomain_tbl;
+  stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
   stream << *block._isolation_tbl;
   stream << *block._group_tbl;
@@ -966,6 +981,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._module_hash;
   stream >> block._modinst_hash;
   stream >> block._powerdomain_hash;
+  stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
   stream >> block._group_hash;
@@ -986,6 +1002,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
   stream >> *block._powerdomain_tbl;
+  stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
   stream >> *block._group_tbl;
@@ -1140,6 +1157,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_powerdomain_hash != rhs._powerdomain_hash)
     return false;
 
+  if (_logicport_hash != rhs._logicport_hash)
+    return false;
+  
   if (_powerswitch_hash != rhs._powerswitch_hash)
     return false;
 
@@ -1198,6 +1218,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
 
   if (*_powerdomain_tbl != *rhs._powerdomain_tbl)
+    return false;
+  
+  if (*_logicport_tbl != *rhs._logicport_tbl)
     return false;
 
   if (*_powerswitch_tbl != *rhs._powerswitch_tbl)
@@ -1321,6 +1344,7 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_module_hash);
     DIFF_HASH_TABLE(_modinst_hash);
     DIFF_HASH_TABLE(_powerdomain_hash);
+    DIFF_HASH_TABLE(_logicport_hash);
     DIFF_HASH_TABLE(_powerswitch_hash);
     DIFF_HASH_TABLE(_isolation_hash);
     DIFF_HASH_TABLE(_group_hash);
@@ -1343,6 +1367,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_module_tbl);
   DIFF_TABLE(_modinst_tbl);
   DIFF_TABLE(_powerdomain_tbl);
+  DIFF_TABLE(_logicport_tbl);
   DIFF_TABLE(_powerswitch_tbl);
   DIFF_TABLE(_isolation_tbl);
   DIFF_TABLE(_group_tbl);
@@ -1412,6 +1437,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_module_hash);
     DIFF_OUT_HASH_TABLE(_modinst_hash);
     DIFF_OUT_HASH_TABLE(_powerdomain_hash);
+    DIFF_OUT_HASH_TABLE(_logicport_hash);
     DIFF_OUT_HASH_TABLE(_powerswitch_hash);
     DIFF_OUT_HASH_TABLE(_isolation_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
@@ -1434,6 +1460,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_module_tbl);
   DIFF_OUT_TABLE(_modinst_tbl);
   DIFF_OUT_TABLE(_powerdomain_tbl);
+  DIFF_OUT_TABLE(_logicport_tbl);
   DIFF_OUT_TABLE(_powerswitch_tbl);
   DIFF_OUT_TABLE(_isolation_tbl);
   DIFF_OUT_TABLE(_group_tbl);
@@ -1677,6 +1704,12 @@ dbSet<dbPowerDomain> dbBlock::getPowerDomains()
   return dbSet<dbPowerDomain>(block, block->_powerdomain_tbl);
 }
 
+dbSet<dbLogicPort> dbBlock::getLogicPorts()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLogicPort>(block, block->_logicport_tbl);
+}
+
 dbSet<dbPowerSwitch> dbBlock::getPowerSwitches()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1726,6 +1759,11 @@ dbPowerDomain* dbBlock::findPowerDomain(const char* name)
   return (dbPowerDomain*) block->_powerdomain_hash.find(name);
 }
 
+dbLogicPort* dbBlock::findLogicPort(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLogicPort*) block->_logicport_hash.find(name);
+}
 
 dbPowerSwitch* dbBlock::findPowerSwitch(const char* name)
 {

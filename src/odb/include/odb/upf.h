@@ -40,6 +40,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
 #include "db.h"
 #include "odb.h"
@@ -49,31 +50,47 @@ namespace odb {
 class upf
 {
  public:
-
   static bool create_power_domain(utl::Logger* logger,
                                   dbBlock* block,
+                                  const char* name);
+
+  static bool update_power_domain(utl::Logger* logger,
+                                  dbBlock* block,
                                   const char* name,
-                                  const char* elements);
+                                  const char* element);
+
   static bool create_logic_port(utl::Logger* logger,
                                 dbBlock* block,
                                 const char* name,
                                 const char* direction);
+
   static bool create_power_switch(utl::Logger* logger,
                                   dbBlock* block,
                                   const char* name,
                                   const char* power_domain,
                                   const char* out_port,
-                                  const char* in_port,
-                                  const char* control_port);
+                                  const char* in_port);
+
+  static bool update_power_switch_control(utl::Logger* logger,
+                                          dbBlock* block,
+                                          const char* name,
+                                          const char* control_port);
+
+  static bool update_power_switch_on(utl::Logger* logger,
+                                     dbBlock* block,
+                                     const char* name,
+                                     const char* on_state);
+
   static bool set_isolation(utl::Logger* logger,
                             dbBlock* block,
                             const char* name,
                             const char* power_domain,
+                            bool update,
                             const char* applies_to,
                             const char* clamp_value,
                             const char* signal,
                             const char* sense,
-                            const char* location)
+                            const char* location);
 };
 
 }  // namespace odb

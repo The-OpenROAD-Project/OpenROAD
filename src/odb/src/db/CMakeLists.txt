@@ -116,6 +116,7 @@ add_library(db
     dbAccessPoint.cpp
     dbGlobalConnect.cpp
     dbPowerDomain.cpp
+    dbLogicPort.cpp
     dbPowerSwitch.cpp
     dbIsolation.cpp
     dbModuleInstItr.cpp
@@ -146,6 +147,7 @@ target_link_libraries(db
         defout
         tm
         zutil
+        upf
         utl
         ${TCL_LIBRARY}
 )

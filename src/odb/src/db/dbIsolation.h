@@ -45,18 +45,11 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbNet;
 class _dbMaster;
 class _dbPowerDomain;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbIsolationFlags
-{
-  dbSigType::Value _clamp_value : 4;
-  dbSigType::Value _isolation_sense : 4;
-  uint spare_bits_ : 24;
-};
 // User Code Begin Structs
 // User Code End Structs
 
@@ -66,12 +59,13 @@ class _dbIsolation : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbIsolationFlags flags_;
   char* _name;
   dbId<_dbIsolation> _next_entry;
-  std::string _applies_to;
-  dbId<_dbNet> _isolation_signal;
-  std::string _location;
+  char* _applies_to;
+  char* _clamp_value;
+  char* _isolation_signal;
+  char* _isolation_sense;
+  char* _location;
   dbVector<dbId<_dbMaster>> _isolation_cells;
   dbId<_dbPowerDomain> _power_domain;
 

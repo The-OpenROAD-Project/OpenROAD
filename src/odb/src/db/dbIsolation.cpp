@@ -60,7 +60,13 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
   if (_applies_to != rhs._applies_to)
     return false;
 
+  if (_clamp_value != rhs._clamp_value)
+    return false;
+
   if (_isolation_signal != rhs._isolation_signal)
+    return false;
+
+  if (_isolation_sense != rhs._isolation_sense)
     return false;
 
   if (_location != rhs._location)
@@ -88,7 +94,9 @@ void _dbIsolation::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_applies_to);
+  DIFF_FIELD(_clamp_value);
   DIFF_FIELD(_isolation_signal);
+  DIFF_FIELD(_isolation_sense);
   DIFF_FIELD(_location);
   DIFF_FIELD(_power_domain);
   // User Code Begin Differences
@@ -101,7 +109,9 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_applies_to);
+  DIFF_OUT_FIELD(_clamp_value);
   DIFF_OUT_FIELD(_isolation_signal);
+  DIFF_OUT_FIELD(_isolation_sense);
   DIFF_OUT_FIELD(_location);
   DIFF_OUT_FIELD(_power_domain);
 
@@ -111,18 +121,17 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
 }
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
 {
-  flags_.spare_bits_ = r.flags_.spare_bits_;
   _name = r._name;
   _next_entry = r._next_entry;
   _applies_to = r._applies_to;
+  _clamp_value = r._clamp_value;
   _isolation_signal = r._isolation_signal;
+  _isolation_sense = r._isolation_sense;
   _location = r._location;
   _power_domain = r._power_domain;
   // User Code Begin CopyConstructor
@@ -131,12 +140,12 @@ _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
   stream >> obj._name;
   stream >> obj._next_entry;
   stream >> obj._applies_to;
+  stream >> obj._clamp_value;
   stream >> obj._isolation_signal;
+  stream >> obj._isolation_sense;
   stream >> obj._location;
   stream >> obj._isolation_cells;
   stream >> obj._power_domain;
@@ -146,12 +155,12 @@ dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
   stream << obj._name;
   stream << obj._next_entry;
   stream << obj._applies_to;
+  stream << obj._clamp_value;
   stream << obj._isolation_signal;
+  stream << obj._isolation_sense;
   stream << obj._location;
   stream << obj._isolation_cells;
   stream << obj._power_domain;
@@ -183,43 +192,31 @@ const char* dbIsolation::getName() const
   return obj->_name;
 }
 
-void dbIsolation::setAppliesTo(std::string applies_to)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-
-  obj->_applies_to = applies_to;
-}
-
-std::string dbIsolation::getAppliesTo() const
+const char* dbIsolation::getAppliesTo() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_applies_to;
 }
 
-void dbIsolation::setIsolationSignal(dbNet* isolation_signal)
+const char* dbIsolation::getClampValue() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-
-  obj->_isolation_signal = isolation_signal->getImpl()->getOID();
+  return obj->_clamp_value;
 }
 
-dbNet* dbIsolation::getIsolationSignal() const
+const char* dbIsolation::getIsolationSignal() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  if (obj->_isolation_signal == 0)
-    return NULL;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbNet*) par->_net_tbl->getPtr(obj->_isolation_signal);
+  return obj->_isolation_signal;
 }
 
-void dbIsolation::setLocation(std::string location)
+const char* dbIsolation::getIsolationSense() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-
-  obj->_location = location;
+  return obj->_isolation_sense;
 }
 
-std::string dbIsolation::getLocation() const
+const char* dbIsolation::getLocation() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_location;
@@ -241,34 +238,6 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }
 
-void dbIsolation::setClampValue(dbSigType::Value clamp_value)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-
-  obj->flags_._clamp_value = clamp_value;
-}
-
-dbSigType::Value dbIsolation::getClampValue() const
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-
-  return obj->flags_._clamp_value;
-}
-
-void dbIsolation::setIsolationSense(dbSigType::Value isolation_sense)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-
-  obj->flags_._isolation_sense = isolation_sense;
-}
-
-dbSigType::Value dbIsolation::getIsolationSense() const
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-
-  return obj->flags_._isolation_sense;
-}
-
 // User Code Begin dbIsolationPublicMethods
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
@@ -285,6 +254,31 @@ dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 void dbIsolation::destroy(dbIsolation* iso)
 {
   // TODO
+}
+
+void dbIsolation::setAppliesTo(const char* applies_to){
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_applies_to = strdup(applies_to);
+}
+
+void dbIsolation::setClampValue(const char* clamp_value){
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_clamp_value = strdup(clamp_value);
+}
+
+void dbIsolation::setIsolationSignal(const char* isolation_signal){
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_isolation_signal = strdup(isolation_signal);  
+}
+
+void dbIsolation::setIsolationSense(const char* isolation_sense){
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_isolation_sense = strdup(isolation_sense);
+}
+
+void dbIsolation::setLocation(const char* location){
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_location = strdup(location);
 }
 // User Code End dbIsolationPublicMethods
 }  // namespace odb

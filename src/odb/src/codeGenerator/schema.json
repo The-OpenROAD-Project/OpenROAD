@@ -166,9 +166,8 @@
         },
         {
           "name":"_elements",
-          "type":"dbVector<dbId<_dbModInst>>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
+          "type":"dbVector<std::string>",
+          "flags":["no-set","no-get"]  
         },
         {
           "name":"_power_switch",
@@ -181,6 +180,32 @@
           "type":"dbId<_dbIsolation>",
           "flags":[],
           "parent":"dbBlock"
+        }
+      ],
+      "constructors":[],
+      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+      "h_includes": [
+        "dbVector.h"
+      ]
+    },
+    {
+      "name":"dbLogicPort",
+      "type":"dbObject",
+      "fields":[
+        {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set"]
+        },
+        {
+          "name":"_next_entry",
+          "type":"dbId<_dbLogicPort>",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name":"direction",
+          "type":"char *",
+          "flags":["no-set"]  
         }
       ],
       "constructors":[],
@@ -205,18 +230,23 @@
         },
         {
           "name":"_in_supply_port",
-          "type":"std::string",
-          "flags":[]
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_out_supply_port",
-          "type":"std::string",
-          "flags":[]
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_control_port",
-          "type":"std::string",
-          "flags":[]
+          "type":"dbVector<std::string>",
+          "flags":["no-set", "no-get"]
+        },
+        {
+          "name":"_on_state",
+          "type":"dbVector<std::string>",
+          "flags":["no-set", "no-get"]
         },
         {
           "name":"_control_net",
@@ -232,7 +262,11 @@
         }
       ],
       "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h"]
+      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h"],
+      "h_includes": [
+        "dbVector.h",
+        "dbSet.h"
+      ]
     },
     {
       "name":"dbIsolation",
@@ -250,31 +284,28 @@
         },
         {
           "name":"_applies_to",
-          "type":"std::string",
-          "flags":[]
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_clamp_value",
-          "type":"dbSigType::Value",
-          "flags":[],
-          "bits": 4
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_isolation_signal",
-          "type":"dbId<_dbNet>",
-          "flags":[],
-          "parent":"dbBlock"
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_isolation_sense",
-          "type":"dbSigType::Value",
-          "flags":[],
-          "bits": 4
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name":"_location",
-          "type":"std::string",
-          "flags":[]
+          "type":"char *",
+          "flags":["no-set"]
         },
         {
           "name": "_isolation_cells", 

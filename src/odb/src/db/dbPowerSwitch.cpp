@@ -62,9 +62,6 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
   if (_out_supply_port != rhs._out_supply_port)
     return false;
 
-  if (_control_port != rhs._control_port)
-    return false;
-
   if (_control_net != rhs._control_net)
     return false;
 
@@ -91,7 +88,6 @@ void _dbPowerSwitch::differences(dbDiff& diff,
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_in_supply_port);
   DIFF_FIELD(_out_supply_port);
-  DIFF_FIELD(_control_port);
   DIFF_FIELD(_control_net);
   DIFF_FIELD(_power_domain);
   // User Code Begin Differences
@@ -105,7 +101,6 @@ void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_in_supply_port);
   DIFF_OUT_FIELD(_out_supply_port);
-  DIFF_OUT_FIELD(_control_port);
   DIFF_OUT_FIELD(_control_net);
   DIFF_OUT_FIELD(_power_domain);
 
@@ -124,7 +119,6 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
   _next_entry = r._next_entry;
   _in_supply_port = r._in_supply_port;
   _out_supply_port = r._out_supply_port;
-  _control_port = r._control_port;
   _control_net = r._control_net;
   _power_domain = r._power_domain;
   // User Code Begin CopyConstructor
@@ -138,6 +132,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._in_supply_port;
   stream >> obj._out_supply_port;
   stream >> obj._control_port;
+  stream >> obj._on_state;
   stream >> obj._control_net;
   stream >> obj._power_domain;
   // User Code Begin >>
@@ -151,6 +146,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._in_supply_port;
   stream << obj._out_supply_port;
   stream << obj._control_port;
+  stream << obj._on_state;
   stream << obj._control_net;
   stream << obj._power_domain;
   // User Code Begin <<
@@ -181,43 +177,16 @@ const char* dbPowerSwitch::getName() const
   return obj->_name;
 }
 
-void dbPowerSwitch::setInSupplyPort(std::string in_supply_port)
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-
-  obj->_in_supply_port = in_supply_port;
-}
-
-std::string dbPowerSwitch::getInSupplyPort() const
+const char* dbPowerSwitch::getInSupplyPort() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_in_supply_port;
 }
 
-void dbPowerSwitch::setOutSupplyPort(std::string out_supply_port)
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-
-  obj->_out_supply_port = out_supply_port;
-}
-
-std::string dbPowerSwitch::getOutSupplyPort() const
+const char* dbPowerSwitch::getOutSupplyPort() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_out_supply_port;
-}
-
-void dbPowerSwitch::setControlPort(std::string control_port)
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-
-  obj->_control_port = control_port;
-}
-
-std::string dbPowerSwitch::getControlPort() const
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return obj->_control_port;
 }
 
 void dbPowerSwitch::setControlNet(dbNet* control_net)
@@ -268,6 +237,41 @@ dbPowerSwitch* dbPowerSwitch::create(dbBlock* block, const char* name)
 void dbPowerSwitch::destroy(dbPowerSwitch* ps)
 {
   // TODO
+}
+
+void dbPowerSwitch::setInSupplyPort(const char* in_port)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_in_supply_port = strdup(in_port);
+}
+
+void dbPowerSwitch::setOutSupplyPort(const char* out_port)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_out_supply_port = strdup(out_port);
+}
+
+void dbPowerSwitch::addControlPort(const char* control_port)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_control_port.push_back(std::string(control_port));
+}
+
+void dbPowerSwitch::addOnState(const char* on_state)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_on_state.push_back(std::string(on_state));
+}
+
+std::vector<std::string> dbPowerSwitch::getControlPorts()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_control_port;
+}
+std::vector<std::string> dbPowerSwitch::getOnStates()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_on_state;
 }
 // User Code End dbPowerSwitchPublicMethods
 }  // namespace odb

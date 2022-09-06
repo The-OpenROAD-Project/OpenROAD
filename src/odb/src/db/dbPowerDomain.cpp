@@ -194,7 +194,8 @@ dbIsolation* dbPowerDomain::getIsolation() const
 }
 
 // User Code Begin dbPowerDomainPublicMethods
-dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name, std::vector<dbModInst*> modules)
+dbPowerDomain* dbPowerDomain::create(dbBlock* block,
+                                     const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
   if (_block->_powerdomain_hash.hasMember(name))
@@ -203,11 +204,6 @@ dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name, std::vect
   pd->_name = strdup(name);
   ZALLOCATED(pd->_name);
 
-  pd->_elements.resize(modules.size());
-  for(int i = 0; i < modules.size(); i++){
-    pd->_elements.push_back(modules.at(i)->getImpl()->getOID());
-  }
-  
   _block->_powerdomain_hash.insert(pd);
   return (dbPowerDomain*) pd;
 }
@@ -215,6 +211,16 @@ dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name, std::vect
 void dbPowerDomain::destroy(dbPowerDomain* pd)
 {
   // TODO
+}
+
+void dbPowerDomain::addElement(const char* element){
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_elements.push_back(std::string(element));
+}
+
+std::vector<std::string> dbPowerDomain::getElements(){
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  return obj->_elements; 
 }
 
 // User Code End dbPowerDomainPublicMethods

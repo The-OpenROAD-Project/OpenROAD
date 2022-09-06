@@ -150,6 +150,7 @@ class dbGCellGrid;
 class dbAccessPoint;
 class dbGlobalConnect;
 class dbPowerDomain;
+class dbLogicPort;
 class dbPowerSwitch;
 class dbIsolation;
 // Generator Code End ClassDeclarations
@@ -897,17 +898,22 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
 
   ///
-  /// Get the modules of this block.
+  /// Get the Power Domains of this block.
   ///
   dbSet<dbPowerDomain> getPowerDomains();
 
   ///
-  /// Get the modules of this block.
+  /// Get the Logic Ports of this block.
+  ///
+  dbSet<dbLogicPort> getLogicPorts();
+
+  ///
+  /// Get the Power Switches of this block.
   ///
   dbSet<dbPowerSwitch> getPowerSwitches();
 
   ///
-  /// Get the modules of this block.
+  /// Get the Isolations of this block.
   ///
   dbSet<dbIsolation> getIsolations();
 
@@ -964,6 +970,12 @@ class dbBlock : public dbObject
   /// Returns NULL if the object was not found.
   ///
   dbPowerDomain* findPowerDomain(const char* name);
+
+  ///
+  /// Find a specific LogicPort in this block.
+  /// Returns NULL if the object was not found.
+  ///
+  dbLogicPort* findLogicPort(const char* name);
 
   ///
   /// Find a specific PowerSwitch in this block.
@@ -9385,9 +9397,30 @@ class dbPowerDomain : public dbObject
   dbIsolation* getIsolation() const;
 
   // User Code Begin dbPowerDomain
-  static dbPowerDomain* create(dbBlock* block, const char* name, std::vector<dbModInst*> modules);
+  static dbPowerDomain* create(dbBlock* block,
+                               const char* name);
   static void destroy(dbPowerDomain* pd);
+
+  void addElement(const char* element);
+  std::vector<std::string> getElements();
   // User Code End dbPowerDomain
+};
+
+class dbLogicPort : public dbObject
+{
+ public:
+  // User Code Begin dbLogicPortEnums
+  // User Code End dbLogicPortEnums
+  const char* getName() const;
+
+  const char* getDirection() const;
+
+  // User Code Begin dbLogicPort
+  static dbLogicPort* create(dbBlock* block,
+                             const char* name,
+                             const char* direction);
+  static void destroy(dbLogicPort* lp);
+  // User Code End dbLogicPort
 };
 
 class dbPowerSwitch : public dbObject
@@ -9397,17 +9430,9 @@ class dbPowerSwitch : public dbObject
   // User Code End dbPowerSwitchEnums
   const char* getName() const;
 
-  void setInSupplyPort(std::string in_supply_port);
+  const char* getInSupplyPort() const;
 
-  std::string getInSupplyPort() const;
-
-  void setOutSupplyPort(std::string out_supply_port);
-
-  std::string getOutSupplyPort() const;
-
-  void setControlPort(std::string control_port);
-
-  std::string getControlPort() const;
+  const char* getOutSupplyPort() const;
 
   void setControlNet(dbNet* control_net);
 
@@ -9420,6 +9445,12 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
+  void setInSupplyPort(const char* in_port);
+  void setOutSupplyPort(const char* out_port);
+  void addControlPort(const char* control_port);
+  void addOnState(const char* on_state);
+  std::vector<std::string> getControlPorts();
+  std::vector<std::string> getOnStates();
   // User Code End dbPowerSwitch
 };
 
@@ -9428,36 +9459,35 @@ class dbIsolation : public dbObject
  public:
   // User Code Begin dbIsolationEnums
   // User Code End dbIsolationEnums
-
   const char* getName() const;
 
-  void setAppliesTo(std::string applies_to);
+  const char* getAppliesTo() const;
 
-  std::string getAppliesTo() const;
+  const char* getClampValue() const;
 
-  void setIsolationSignal(dbNet* isolation_signal);
+  const char* getIsolationSignal() const;
 
-  dbNet* getIsolationSignal() const;
+  const char* getIsolationSense() const;
 
-  void setLocation(std::string location);
-
-  std::string getLocation() const;
+  const char* getLocation() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
   dbPowerDomain* getPowerDomain() const;
 
-  void setClampValue(dbSigType::Value clamp_value);
-
-  dbSigType::Value getClampValue() const;
-
-  void setIsolationSense(dbSigType::Value isolation_sense);
-
-  dbSigType::Value getIsolationSense() const;
-
   // User Code Begin dbIsolation
   static dbIsolation* create(dbBlock* block, const char* name);
   static void destroy(dbIsolation* iso);
+
+  void setAppliesTo(const char* applies_to);
+  
+  void setClampValue(const char* clamp_value);
+
+  void setIsolationSignal(const char* isolation_signal);
+  
+  void setIsolationSense(const char* isolation_sense);
+  
+  void setLocation(const char* location);
   // User Code End dbIsolation
 };
 

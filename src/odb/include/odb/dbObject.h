@@ -114,6 +114,7 @@ enum dbObjectType
   dbAccessPointObj,
   dbGlobalConnectObj,
   dbPowerDomainObj,
+  dbLogicPortObj,
   dbPowerSwitchObj,
   dbIsolationObj,
   // Generator Code End DbObjectType

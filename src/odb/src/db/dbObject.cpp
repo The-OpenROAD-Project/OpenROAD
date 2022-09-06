@@ -739,6 +739,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbAccessPoint",
                                  "dbGlobalConnect",
                                  "dbPowerDomain",
+                                 "dbLogicPort",
                                  "dbPowerSwitch",
                                  "dbIsolation",
                                  // Generator Code End ObjectNames

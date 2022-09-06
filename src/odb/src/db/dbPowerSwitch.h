@@ -34,8 +34,9 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbSet.h"
+#include "dbVector.h"
 #include "odb.h"
-
 // User Code Begin Includes
 // User Code End Includes
 
@@ -61,9 +62,10 @@ class _dbPowerSwitch : public _dbObject
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;
-  std::string _in_supply_port;
-  std::string _out_supply_port;
-  std::string _control_port;
+  char* _in_supply_port;
+  char* _out_supply_port;
+  dbVector<std::string> _control_port;
+  dbVector<std::string> _on_state;
   dbId<_dbNet> _control_net;
   dbId<_dbPowerDomain> _power_domain;
 
