@@ -33,17 +33,18 @@
 - [Understanding and Analyzing OpenROAD Flow Stages and Results](#Understanding-and-Analyzing-OpenROAD-Flow-Stages-and-Results)
   - [Synthesis Explorations](#Synthesis-Explorations)
     - [Area And Timing Optimization](#Area-And-Timing-Optimization)
-  - [Floorplanning And Placement](#Floorplanning-And-Placement)
+  - [Floorplanning](#Floorplanning)
     - [Floorplan Initialization Based On Core And Die Area](#Floorplan-Initialization-Based-On-Core-And-Die-Area)
     - [Floorplan Based On Core Utilization](#Floorplan-Based-On-Core-Utilization)
-    - [Defining Placement Density](#Defining-Placement-Density)
   - [IO Pin Placement](#IO-Pin-Placement)
   - [Chip Level IO Pad Placement](#Chip-Level-IO-Pad-Placement)
   - [Power Planning And Analysis](#Power-Planning-And-Analysis)
-  - [Placement Area or Timing Optimizations](#Placement-Area-or-Timing-Optimizations)
+  - [Macro/Cell Placement](#Macro-Cell-Placement)
     - [Macro Placement](#Macro-Placement)
       - [Macro Placement With Halo Spacing](#Macro-Placement-With-Halo-Spacing)
       - [Macro placement With Channel Spacing](#Macro-Placement-With-Channel-Spacing)
+    - [Defining Placement Density](#Defining-Placement-Density)
+  - [Timing Optimizations](#Timing-Optimizations)
     - [Timing Optimization Using repair_design](#Timing-Optimization-Using-repair_design)
     - [Timing Optimization Using repair_timing](#Timing-Optimization-Using-repair_timing)
     - [Timing Optimization Based On Multiple Corners](#Timing-Optimization-Based-On-Multiple-Corners)
@@ -52,11 +53,12 @@
   - [Clock Tree Synthesis](#Clock-Tree-Synthesis)
     - [Reporting Clock Skews](#Reporting-Clock-Skews)
     - [Reporting CTS Metrics](#Reporting-CTS-Metrics)
-  - [Global Route](#Global-Route)
+  - [Filler Cells](#Filler-Cells)
+  - [Global Routing](#Global-Routing)
   - [Antenna Checker](#Antenna-Checker)
-  - [Detail Route](#Detail-Route)
-  - [Metal fill](#Metal-fill)
-  - [Parasitics extraction](#Parasitics-extraction)
+  - [Detail Routing](#Detail-Routing)
+  - [Metal Fill](#Metal-Fill)
+  - [Parasitics Extraction](#Parasitics-Extraction)
 - [Troubleshooting Problems](#Troubleshooting-Problems)
   - [Global Router Debug](#Gloabl-Router-Debug)
 
@@ -1111,7 +1113,7 @@ based on library(This is Nangate45 specific):
 [INFO IFP-0030] Inserted 1 tiecells using LOGIC1_X1/Z.
 ```
 
-### Placement Area or Timing Optimizations
+### Macro/Cell Placement
 
 #### Macro Placement
 
@@ -1301,6 +1303,8 @@ View the `ibex` design placement density heat map as shown below:
 So from above, GUI understood that change in `CORE_UTILIZATION` from 20
 to 40 and placement density default 0.60 to 0.50 changes standard cell
 placement became widely spread.
+
+### Timing Optimization
 
 #### Timing Optimization Using repair_design
 
@@ -1819,7 +1823,7 @@ read_lef "Nangate45/Nangate45.lef"
 read_def "gcd.def"
 ```
 
-Before filler insertion, gcd design view:
+Loaded DEF view without filler insertion:
 
 ![Without_Fill_Cell_Insertion](./images/wo_fillcell_insertion.webp)
 
@@ -1837,9 +1841,9 @@ Zoomed view of filler cells:
 
 ![Zoom_Fill_Cell_Insertion](./images/fillcell_insertion_zoom.webp)
 
-Filler cells can be removed with `remove_fillers` command.
+Filler cells removed with `remove_fillers` command.
 
-### Global Route
+### Global Routing
 
 #### FastRoute
 FastRoute is an open-source global router originally derived from Iowa
@@ -1901,7 +1905,7 @@ View the resulting global routing in GUI as follows:
 
 ![Global Route](./images/global_route_gcd.webp)
 
-### Detail Route
+### Detail Routing
 
 #### TritonRoute
 TritonRoute is an open-source detailed router for modern industrial designs.
@@ -2016,7 +2020,7 @@ violation count = 1
 Net net50 violations: 1
 ```
 
-### Metal fill
+### Metal Fill
 
 Metal fill is a mandatory step at advanced nodes to ensure manufacturability
 and high yield. It involves filling the empty or white spaces near the
@@ -2032,7 +2036,7 @@ Command used as follows:
 ```
 If -area is not specified, the core area will be used.
 
-### Parasitics extraction
+### Parasitics Extraction
 
 OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
 It extracts routed designs based on the LEF/DEF layout model.
@@ -2087,7 +2091,7 @@ The log as follows:
 [INFO RCX-0017] Finished writing SPEF ...
 ```
 
-The `45_gcd.spef` can be read from `results` directory.
+`45_gcd.spef` viewed in `results` directory.
 
 ## Troubleshooting Problems
 
