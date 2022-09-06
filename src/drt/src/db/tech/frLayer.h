@@ -153,8 +153,9 @@ class frLayer {
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
   dbTechLayerDir getDir() const {
-    return (fakeCut || fakeMasterslice) ? dbTechLayerDir::NONE
-                                        : db_layer_->getDirection();
+    if (fakeCut || fakeMasterslice)
+      return dbTechLayerDir::NONE;
+    return db_layer_->getDirection();
   }
   bool isVertical() {
     return (fakeCut || fakeMasterslice) ? false : db_layer_->getDirection() ==
