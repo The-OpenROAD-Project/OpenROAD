@@ -1954,6 +1954,21 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   if (layer->getType() == odb::dbTechLayerType::ROUTING) {
     props.push_back({"Routing layer", layer->getRoutingLevel()});
   }
+  if (layer->hasXYPitch()) {
+    if (layer->getPitchX() != 0) {
+      props.push_back(
+        {"Pitch X", Property::convert_dbu(layer->getPitchX(), true)});
+    }
+    if (layer->getPitchY() != 0) {
+      props.push_back(
+        {"Pitch Y", Property::convert_dbu(layer->getPitchY(), true)});
+    }
+  } else {
+    if (layer->getPitch() != 0) {
+      props.push_back(
+        {"Pitch", Property::convert_dbu(layer->getPitch(), true)});
+    }
+  }
   if (layer->getWidth() != 0) {
     props.push_back(
         {"Default width", Property::convert_dbu(layer->getWidth(), true)});
