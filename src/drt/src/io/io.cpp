@@ -2269,9 +2269,10 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   auto _tech = db->getTech();
   if (_tech == nullptr)
     logger->error(DRT, 136, "Load design first.");
-  tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
+  tech->setTechObject(_tech);
+  //tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
   USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
-  tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
+  //tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
   setLayers(_tech);
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());

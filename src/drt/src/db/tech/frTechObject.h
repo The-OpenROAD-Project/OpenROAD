@@ -39,6 +39,10 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+#include <set>
+namespace odb {
+  class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -48,10 +52,12 @@ class frTechObject
 {
  public:
   // constructors
-  frTechObject() : dbUnit(0), manufacturingGrid(0) {}
+  // frTechObject() : dbUnit(0), manufacturingGrid(0) {}
+  frTechObject() : db_tech_(nullptr) {}
   // getters
-  frUInt4 getDBUPerUU() const { return dbUnit; }
-  frUInt4 getManufacturingGrid() const { return manufacturingGrid; }
+  odb::dbTech* getDbTech() const { return db_tech_; }
+  frUInt4 getDBUPerUU() const { return db_tech_->getDbUnitsPerMicron(); }
+  frUInt4 getManufacturingGrid() const { return db_tech_->getManufacturingGrid(); }
   frLayer* getLayer(const frString& name) const
   {
     if (name2layer.find(name) == name2layer.end()) {
@@ -87,10 +93,16 @@ class frTechObject
   {
     return viaRuleGenerates;
   }
+  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
+  {
+    return unidirectional_layers_.find(dbLayer)
+           != unidirectional_layers_.end();
+  }
 
   // setters
-  void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
-  void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
+  void setTechObject(odb::dbTech* dbTechIn) { db_tech_ = dbTechIn; }
+  // void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
+  // void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
   void addLayer(std::unique_ptr<frLayer> in)
   {
     name2layer[in->getName()] = in.get();
@@ -135,6 +147,10 @@ class frTechObject
     if (idx < uConstraints.size())
       return uConstraints[idx].get();
     return nullptr;
+  }
+  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
+  {
+    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -271,8 +287,9 @@ class frTechObject
   }
 
  private:
-  frUInt4 dbUnit;
-  frUInt4 manufacturingGrid;
+  // frUInt4 dbUnit;
+  // frUInt4 manufacturingGrid;
+  odb::dbTech* db_tech_;
 
   std::map<frString, frLayer*> name2layer;
   std::vector<std::unique_ptr<frLayer>> layers;
@@ -343,6 +360,8 @@ class frTechObject
   ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
+  // unidirectional layers
+  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
