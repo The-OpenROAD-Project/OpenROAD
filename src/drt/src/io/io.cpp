@@ -1473,21 +1473,23 @@ void io::Parser::addDefaultMasterSliceLayer()
 {
   unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
+  if (masterSliceLayer == nullptr)
+  { 
+    tmpMSLayer->setFakeMasterslice(true);
+  } else {
+    tmpMSLayer->setDbLayer(masterSliceLayer);
+  }
   tmpMSLayer->setLayerNum(readLayerCnt++);
-  tmpMSLayer->setName(masterSliceLayerName);
   tech->addLayer(std::move(uMSLayer));
-  tmpMSLayer->setType(dbTechLayerType::MASTERSLICE);
 }
 
 void io::Parser::addDefaultCutLayer()
 {
-  std::string viaLayerName("FR_VIA");
   unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
   auto tmpCutLayer = uCutLayer.get();
+  tmpCutLayer->setFakeCut(true);
   tmpCutLayer->setLayerNum(readLayerCnt++);
-  tmpCutLayer->setName(viaLayerName);
   tech->addLayer(std::move(uCutLayer));
-  tmpCutLayer->setType(dbTechLayerType::CUT);
 }
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
@@ -1502,7 +1504,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
-  tmpLayer->setName(layer->getName());
   tech->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
@@ -1519,14 +1520,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech->addUConstraint(std::move(minWidthConstraint));
 
-  tmpLayer->setType(dbTechLayerType::ROUTING);
-  if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
-    tmpLayer->setDir(dbTechLayerDir::HORIZONTAL);
-  else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
-    tmpLayer->setDir(dbTechLayerDir::VERTICAL);
-
-  tmpLayer->setPitch(layer->getPitch());
-  tmpLayer->setNumMasks(layer->getNumMasks());
 
   // Add off grid rule for every layer
   auto recheckConstraint = make_unique<frRecheckConstraint>();
@@ -1810,8 +1803,6 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
-  tmpLayer->setName(layer->getName());
-  tmpLayer->setType(dbTechLayerType::CUT);
   tech->addLayer(std::move(uLayer));
 
   auto shortConstraint = make_unique<frShortConstraint>();
@@ -1880,12 +1871,13 @@ void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
-    masterSliceLayerName = string(layer->getName());
+    masterSliceLayer = layer;
+
 }
 
 void io::Parser::setLayers(odb::dbTech* tech)
 {
-  masterSliceLayerName = "FR_MASTERSLICE";
+  masterSliceLayer = nullptr;
   for (auto layer : tech->getLayers()) {
     switch (layer->getType().getValue()) {
       case odb::dbTechLayerType::ROUTING:
