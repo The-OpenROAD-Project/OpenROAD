@@ -39,7 +39,7 @@
   - [IO Pin Placement](#IO-Pin-Placement)
   - [Chip Level IO Pad Placement](#Chip-Level-IO-Pad-Placement)
   - [Power Planning And Analysis](#Power-Planning-And-Analysis)
-  - [Macro/Cell Placement](#Macro-Cell-Placement)
+  - [Macro or Cell Placement](#Macro-or-Cell-Placement)
     - [Macro Placement](#Macro-Placement)
       - [Macro Placement With Halo Spacing](#Macro-Placement-With-Halo-Spacing)
       - [Macro placement With Channel Spacing](#Macro-Placement-With-Channel-Spacing)
@@ -250,8 +250,8 @@ configuration examples using the Tcl interface and other such details.
 -   Global Route - [FastRoute](../../src/grt/README.md).
 -   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
 -   Detail Routing - [TritonRoute](../../src/drt/README.md).
--   Metall fill - [Metal fill](../../src/fin/README.md).
--   Parasitics extraction - [OpenRCX](../../src/rcx/README.md).
+-   Metall Fill - [Metal Fill](../../src/fin/README.md).
+-   Parasitics Extraction - [OpenRCX](../../src/rcx/README.md).
 -   Layout Generation - [KLayout](https://www.klayout.de/) (Requires v0.27.1).
 
 ### Design Goals
@@ -643,7 +643,7 @@ From OpenROAD GUI, Enable the menu options `Windows` -> `DRC Viewer`. A
 
 By selecting DRC violation details, designers can analyze and fix them. Here
 user will learn how a DRC violation can be traced with the `gcd` design. Refer
-to the following openroad test case for more details.
+to the following OpenROAD test case for more details.
 
 ```
 cd ./flow/tutorials/scripts/drt/
@@ -830,7 +830,7 @@ floorplanning to verify the final impact. First, relax the `.sdc` constraint
 and re-run to see area impact. Otherwise, the repair design command will
 increase the area to meet timing regardless of the netlist produced earlier.
 
-### Floorplanning And Placement
+### Floorplanning
 
 This section describes ORFS floorplanning and placement functions using
 the GUI.
@@ -1113,7 +1113,7 @@ based on library(This is Nangate45 specific):
 [INFO IFP-0030] Inserted 1 tiecells using LOGIC1_X1/Z.
 ```
 
-### Macro/Cell Placement
+### Macro or Cell Placement
 
 #### Macro Placement
 
@@ -1304,7 +1304,7 @@ So from above, GUI understood that change in `CORE_UTILIZATION` from 20
 to 40 and placement density default 0.60 to 0.50 changes standard cell
 placement became widely spread.
 
-### Timing Optimization
+### Timing Optimizations
 
 #### Timing Optimization Using repair_design
 
@@ -1798,7 +1798,7 @@ CTS metrics are as follows for the current design.
 
 Filler cells fills gaps between detail-placed instances to connect the
 power and ground rails in the rows. Filler cells have no logical 
-connectivity. these cells are provided continuity in the rows for VDD
+connectivity. These cells are provided continuity in the rows for VDD
 and VSS nets and it also contains substrate nwell connection to improve
 substrate biasing.
 
@@ -2035,6 +2035,26 @@ Command used as follows:
 % density_fill -rules <json_file> [-area <list of lx ly ux uy>]
 ```
 If -area is not specified, the core area will be used.
+
+To run metal fill post route, run following:
+```
+cd flow/tutorials/scripts/metal_fill
+openroad -gui
+source "helpers.tcl"
+read_lef ../../../platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
+read_lef ../../../platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
+read_def ./5_route.def
+```
+Before metal fill layout as follows:
+![Detail Routing](./images/detail_route_gcd.webp)
+
+Run below command for metall fill inserstion
+```
+density_fill -rules ../../../platforms/sky130hd/fill.json
+```
+
+Post metal fill insertion layout as follows:
+![Metal Fill](metal_fill_view.webp)
 
 ### Parasitics Extraction
 
