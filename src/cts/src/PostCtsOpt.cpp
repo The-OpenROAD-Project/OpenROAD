@@ -134,7 +134,7 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
   const Point<double> sinkLoc((float) sink->getX() / wireSegmentUnitDbu,
                               (float) sink->getY() / wireSegmentUnitDbu);
   const unsigned wireLength = driverLoc.computeDist(sinkLoc);
-  const unsigned slewThreshold = options_->getMaxSlew();
+  const unsigned slewThreshold = techChar_->getMaxSlew();
   const unsigned tolerance = 1;
   std::vector<unsigned> segments;
   const unsigned charSegLength = techChar_->getMaxSegmentLength();

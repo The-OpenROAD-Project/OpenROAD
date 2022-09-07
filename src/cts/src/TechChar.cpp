@@ -444,7 +444,7 @@ void TechChar::initCharacterization()
 {
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
-  float dbUnitsPerMicron = block->getDbUnitsPerMicron();
+  int dbUnitsPerMicron = block->getDbUnitsPerMicron();
   options_->setDbUnits(dbUnitsPerMicron);
   getClockLayerResCap(dbUnitsPerMicron);
 
@@ -537,13 +537,8 @@ void TechChar::initCharacterization()
   // Defines the different wirelengths to test and the characterization unit.
   unsigned wirelengthIterations = options_->getCharWirelengthIterations();
   if (options_->getWireSegmentUnitDbu() == 0) {
-    unsigned charaunitDbu = charBuf_->getHeight() * 10;
-    options_->setWireSegmentUnitDbu(charaunitDbu);
-  } else {
-    // user has passed the segment unit in Micron, so we need to convert
-    // it to DBU to keep correctness and uniformity.
-    options_->setWireSegmentUnitDbu(options_->getWireSegmentUnitDbu()
-                                    * dbUnitsPerMicron);
+    unsigned wireSegmentUnitDbu = charBuf_->getHeight() * 10;
+    options_->setWireSegmentUnitDbu(wireSegmentUnitDbu);
   }
   unsigned maxWirelength
       = options_->getWireSegmentUnitDbu()

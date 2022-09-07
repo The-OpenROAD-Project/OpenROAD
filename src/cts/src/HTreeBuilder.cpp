@@ -161,13 +161,6 @@ void HTreeBuilder::initSinkRegion()
   float dbUnits = options_->getDbUnits();
   wireSegmentUnitDbu_ = options_->getWireSegmentUnitDbu();
 
-  // BufferDistance and VertexBufferDistance are passed by the user in Microns
-  // and the default value is in Microns; therefore, we convert it here to DBU
-  // for uniformity.
-  options_->setBufferDistance(options_->getBufferDistance() * dbUnits);
-  options_->setVertexBufferDistance(options_->getVertexBufferDistance()
-                                    * dbUnits);
-
   logger_->info(CTS,
                 20,
                 " Wire segment unit: {}  dbu ({} um).",

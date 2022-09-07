@@ -13,15 +13,15 @@
 [INFO ODB-0133]     Created 2 nets and 41 connections.
 [INFO ODB-0134] Finished DEF file: max_cap.def
 [INFO CTS-0049] Characterization buffer is: sky130_fd_sc_hs__clkbuf_1.
-[INFO CTS-0039] Number of created patterns = 10440.
+[INFO CTS-0039] Number of created patterns = 3960.
 [INFO CTS-0084] Compiling LUT.
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           35          1           198         
-[WARNING CTS-0043] 1392 wires are pure wire and no slew degradation.
+1           4           1           13          1           12          
+[WARNING CTS-0043] 528 wires are pure wire and no slew degradation.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 10380.
-[INFO CTS-0047]     Number of keys in characterization LUT: 1725.
-[INFO CTS-0048]     Actual min input cap: 2.
+[INFO CTS-0046]     Number of wire segments: 3960.
+[INFO CTS-0047]     Number of keys in characterization LUT: 532.
+[INFO CTS-0048]     Actual min input cap: 1.
 [INFO CTS-0007] Net "clk1" found for clock "clk1".
 [INFO CTS-0010]  Clock net "clk1" has 20 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
@@ -29,45 +29,44 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0027] Generating H-Tree topology for net clk1.
 [INFO CTS-0028]  Total number of sinks: 20.
 [INFO CTS-0030]  Number of static layers: 0.
-[INFO CTS-0020]  Wire segment unit: 16000  dbu (16 um).
+[INFO CTS-0020]  Wire segment unit: 33300  dbu (33.3 um).
 [INFO CTS-0023]  Original sink region: [(315, 1540), (600315, 801540)].
-[INFO CTS-0024]  Normalized sink region: [(0.0196875, 0.09625), (37.5197, 50.0962)].
-[INFO CTS-0025]     Width:  37.5000.
-[INFO CTS-0026]     Height: 50.0000.
+[INFO CTS-0024]  Normalized sink region: [(0.00945946, 0.0462462), (18.0275, 24.0703)].
+[INFO CTS-0025]     Width:  18.0180.
+[INFO CTS-0026]     Height: 24.0240.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 10
-    Sub-region size: 37.5000 X 25.0000
-[INFO CTS-0034]     Segment length (rounded): 12.
-    Key: 336 inSlew: 1 inCap: 3 outSlew: 26 load: 1 length: 8 delay: 133
-      location: 0.5 buffer: sky130_fd_sc_hs__clkbuf_1
-    Key: 54 inSlew: 12 inCap: 3 outSlew: 8 load: 1 length: 4 delay: 88
-      location: 1.0 buffer: sky130_fd_sc_hs__clkbuf_1
+    Sub-region size: 18.0180 X 12.0120
+[INFO CTS-0034]     Segment length (rounded): 6.
+    Key: 325 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 4 delay: 10
+      location: 0.75 buffer: sky130_fd_sc_hs__clkbuf_1
+    Key: 48 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 2 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
-[INFO CTS-0036]  Average source sink dist: 363200.30 dbu.
+[INFO CTS-0036]  Average source sink dist: 380060.30 dbu.
 [INFO CTS-0037]  Number of outlier sinks: 0.
-[INFO CTS-0018]     Created 5 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
-[INFO CTS-0015]     Created 5 clock nets.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk1"
 [INFO CTS-0099]  Sinks 20
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 1195.38 um
-[INFO CTS-0102]  Path depth 3 - 3
+[INFO CTS-0101]  Average sink wire length 1182.99 um
+[INFO CTS-0102]  Path depth 2 - 2
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r11/CLK                                 1.00    2.98   -1.98 (VIOLATED)
-r8/CLK                                  1.00    2.98   -1.98 (VIOLATED)
+r11/CLK                                 1.00    3.04   -2.04 (VIOLATED)
+r8/CLK                                  1.00    3.04   -2.04 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-clkbuf_1_0_1_clk1/X                     0.15    0.45   -0.30 (VIOLATED)
+clkbuf_1_0_0_clk1/X                     0.15    0.46   -0.31 (VIOLATED)
 

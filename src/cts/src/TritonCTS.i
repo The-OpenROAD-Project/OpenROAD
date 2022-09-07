@@ -43,10 +43,13 @@ namespace ord {
 // Defined in OpenRoad.i
 cts::TritonCTS *
 getTritonCts();
+odb::dbDatabase *
+getDb();
 }
 
 using namespace cts;
 using ord::getTritonCts;
+using ord::getDb;
 %}
 
 %include "../../Exception.i"
@@ -92,7 +95,7 @@ set_max_char_slew(double slew)
 void
 set_wire_segment_distance_unit(unsigned unit)
 {
-  getTritonCts()->getParms()->setWireSegmentUnitDbu(unit);
+  getTritonCts()->getParms()->setWireSegmentUnitDbu(unit * getDb()->getChip()->getBlock()->getDbUnitsPerMicron());
 }
 
 void
@@ -102,13 +105,13 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_slew_intervals_count(int slewIntervals)
+set_slew_interval_count(int slewIntervals)
 {
   getTritonCts()->getParms()->setCharSlewIterations(slewIntervals);
 }
 
 void
-set_cap_intervals_count(int capIntervals)
+set_cap_interval_count(int capIntervals)
 {
   getTritonCts()->getParms()->setCharLoadIterations(capIntervals);
 }
@@ -141,14 +144,14 @@ void
 set_distance_between_buffers(double distance)
 {
   getTritonCts()->getParms()->setSimpleSegmentsEnabled(true);
-  getTritonCts()->getParms()->setBufferDistance(distance);
+  getTritonCts()->getParms()->setBufferDistance(distance * getDb()->getChip()->getBlock()->getDbUnitsPerMicron());
 }
 
 void
 set_branching_point_buffers_distance(double distance)
 {
   getTritonCts()->getParms()->setVertexBuffersEnabled(true);
-  getTritonCts()->getParms()->setVertexBufferDistance(distance);
+  getTritonCts()->getParms()->setVertexBufferDistance(distance * getDb()->getChip()->getBlock()->getDbUnitsPerMicron());
 }
 
 void

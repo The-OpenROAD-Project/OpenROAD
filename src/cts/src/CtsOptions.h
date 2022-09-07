@@ -67,8 +67,8 @@ class CtsOptions
     bufferList_ = buffers;
   }
   std::vector<std::string> getBufferList() const { return bufferList_; }
-  void setDbUnits(float units) { dbUnits_ = units; }
-  float getDbUnits() const { return dbUnits_; }
+  void setDbUnits(int units) { dbUnits_ = units; }
+  int getDbUnits() const { return dbUnits_; }
   void setWireSegmentUnitDbu(unsigned wireSegmentUnit)
   {
     wireSegmentUnitDbu_ = wireSegmentUnit;
@@ -89,8 +89,6 @@ class CtsOptions
   bool getSinkClusteringUseMaxCap() const { return sinkClusteringUseMaxCap_; }
   void setNumMaxLeafSinks(unsigned numSinks) { numMaxLeafSinks_ = numSinks; }
   unsigned getNumMaxLeafSinks() const { return numMaxLeafSinks_; }
-  void setMaxSlew(unsigned slew) { maxSlew_ = slew; }
-  unsigned getMaxSlew() const { return maxSlew_; }
   void setMaxCharSlew(double slew) { maxCharSlew_ = slew; }
   double getMaxCharSlew() const { return maxCharSlew_; }
   void setMaxCharCap(double cap) { maxCharCap_ = cap; }
@@ -208,7 +206,7 @@ class CtsOptions
   std::string sinkBuffer_ = "";
   std::string treeBuffer_ = "";
   std::string metricFile_ = "";
-  float dbUnits_ = -1;
+  int dbUnits_ = -1;
   unsigned wireSegmentUnitDbu_ = 0;
   bool plotSolution_ = false;
   bool simpleCts_ = false;
@@ -217,12 +215,11 @@ class CtsOptions
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   bool gui_debug_ = false;
-  double vertexBufDistance_ = 240;
-  double bufDistance_ = 100;
+  double vertexBufDistance_ = 0; // in DBU 
+  double bufDistance_ = 0; // in DBU
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;
-  unsigned maxSlew_ = 4;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
   double sinkBufferInputCap_ = 0;

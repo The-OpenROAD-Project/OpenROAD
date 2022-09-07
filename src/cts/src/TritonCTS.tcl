@@ -35,13 +35,13 @@
 
 sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
                                                        [-max_slew slew] \
-                                                       [-slew_intervals_count slewIntervals] \
-                                                       [-cap_intervals_count capIntervals] \
+                                                       [-slew_interval_count slewIntervals] \
+                                                       [-cap_interval_count capIntervals] \
                                                       }
 
 proc configure_cts_characterization { args } {
   sta::parse_key_args "configure_cts_characterization" args \
-    keys {-max_cap -max_slew -slew_intervals_count -cap_intervals_count} flags {}
+    keys {-max_cap -max_slew -slew_interval_count -cap_interval_count} flags {}
 
   sta::check_argc_eq0 "configure_cts_characterization" $args
 
@@ -55,14 +55,14 @@ proc configure_cts_characterization { args } {
     cts::set_max_char_slew $max_slew_value
   }
 
-  if { [info exists keys(-slew_intervals_count)] } {
-    set slewIntervals $keys(-slew_intervals_count)
-    cts::set_slew_intervals_count $slewIntervals
+  if { [info exists keys(-slew_interval_count)] } {
+    set slewIntervals $keys(-slew_interval_count)
+    cts::set_slew_interval_count $slewIntervals
   }
 
-  if { [info exists keys(-cap_intervals_count)] } {
-    set capIntervals $keys(-cap_intervals_count)
-    cts::set_cap_intervals_count $capIntervals
+  if { [info exists keys(-cap_interval_count)] } {
+    set capIntervals $keys(-cap_interval_count)
+    cts::set_cap_interval_count $capIntervals
   }
 }
 

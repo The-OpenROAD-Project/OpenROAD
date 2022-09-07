@@ -10,14 +10,14 @@
 [INFO ODB-0133]     Created 1 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: no_sinks.def
 [INFO CTS-0049] Characterization buffer is: CLKBUF_X3.
-[INFO CTS-0039] Number of created patterns = 2376.
+[INFO CTS-0039] Number of created patterns = 3960.
 [INFO CTS-0084] Compiling LUT.
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           4           1           34          1           26          
-[WARNING CTS-0043] 792 wires are pure wire and no slew degradation.
+1           4           1           12          1           11          
+[WARNING CTS-0043] 528 wires are pure wire and no slew degradation.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 2376.
-[INFO CTS-0047]     Number of keys in characterization LUT: 832.
+[INFO CTS-0046]     Number of wire segments: 3960.
+[INFO CTS-0047]     Number of keys in characterization LUT: 488.
 [INFO CTS-0048]     Actual min input cap: 1.
 [INFO CTS-0001] Running TritonCTS with user-specified clock roots: clk.
 [INFO CTS-0095] Net "clk" found.
