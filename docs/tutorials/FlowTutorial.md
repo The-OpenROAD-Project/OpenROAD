@@ -2054,7 +2054,7 @@ density_fill -rules ../../../platforms/sky130hd/fill.json
 ```
 
 Post metal fill insertion layout as follows:
-![Metal Fill](metal_fill_view.webp)
+![Metal Fill](./images/metal_fill_view.webp)
 
 ### Parasitics Extraction
 
