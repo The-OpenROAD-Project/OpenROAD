@@ -382,20 +382,18 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
                                                    ndr_)) {
       isForbiddenVia2Via = true;
       // check both x and y
-    } else if (currVLengthX > 0 && currVLengthY > 0
-               && (getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                    !(currGrid.isPrevViaUp()),
-                                                    !isCurrViaUp,
-                                                    false,
-                                                    currVLengthY,
-                                                    ndr_)
-                   && getTech()->isVia2ViaForbiddenLen(
-                       gridZ,
-                       !(currGrid.isPrevViaUp()),
-                       !isCurrViaUp,
-                       true,
-                       currVLengthX,
-                       ndr_))) {
+    } else if (getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                !(currGrid.isPrevViaUp()),
+                                                !isCurrViaUp,
+                                                false,
+                                                currVLengthY,
+                                                ndr_)
+               && getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                   !(currGrid.isPrevViaUp()),
+                                                   !isCurrViaUp,
+                                                   true,
+                                                   currVLengthX,
+                                                   ndr_)) {
       isForbiddenVia2Via = true;
     }
 

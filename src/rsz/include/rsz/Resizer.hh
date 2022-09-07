@@ -597,7 +597,8 @@ protected:
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
-  InstanceSet inserted_buffers_;
+  InstanceSeq inserted_buffers_;
+  InstanceSet inserted_buffer_set_;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
