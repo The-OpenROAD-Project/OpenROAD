@@ -70,7 +70,8 @@ DRCViolation::DRCViolation(const std::string& name,
       layer_(layer),
       comment_(comment),
       file_line_(file_line),
-      viewed_(false)
+      viewed_(false),
+      visible_(true)
 {
   computeBBox();
 }
@@ -305,17 +306,68 @@ void DRCWidget::selectionChanged(const QItemSelection& selected,
   emit clicked(indexes.first());
 }
 
+void DRCWidget::toggleParent(QStandardItem* child)
+{
+  QStandardItem* parent = child->parent();
+  std::vector<bool> states;
+  for (int r = 0; r < parent->rowCount(); r++) {
+    auto* pchild = parent->child(r, 0);
+    states.push_back(pchild->checkState() == Qt::Checked);
+  }
+
+  const bool all_on = std::all_of(states.begin(), states.end(), [](bool v){return v;});
+  const bool any_on = std::any_of(states.begin(), states.end(), [](bool v){return v;});
+
+  if (all_on) {
+    parent->setCheckState(Qt::Checked);
+  } else if (any_on) {
+    parent->setCheckState(Qt::PartiallyChecked);
+  } else {
+    parent->setCheckState(Qt::Unchecked);
+  }
+}
+
+bool DRCWidget::setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent)
+{
+  QVariant data = item->data();
+  if (data.isValid()) {
+    auto violation = data.value<DRCViolation*>();
+    if (item->isCheckable() && violation->isVisible() != visible) {
+      item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+      violation->setIsVisible(visible);
+      renderer_->redraw();
+      if (announce_parent) {
+        toggleParent(item);
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void DRCWidget::clicked(const QModelIndex& index)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
   if (data.isValid()) {
     auto violation = data.value<DRCViolation*>();
-    if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
+    const bool is_visible = item->checkState() == Qt::Checked;
+    if (setVisibleDRC(item, is_visible, true)) {
+      // do nothing, since its handled in function
+    } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
       violation->clearViewed();
     } else {
       Selected t = Gui::get()->makeSelected(violation);
       emit selectDRC(t);
+    }
+  } else {
+    if (item->hasChildren()) {
+      const bool state = item->checkState() == Qt::Checked;
+      for (int r = 0; r < item->rowCount(); r++) {
+        auto* child = item->child(r, 0);
+        setVisibleDRC(child, state, false);
+      }
     }
   }
 }
@@ -367,6 +419,8 @@ void DRCWidget::updateModel()
 
   for (const auto& [type, violation_list] : violation_by_type) {
     QStandardItem* type_group = makeItem(QString::fromStdString(type));
+    type_group->setCheckable(true);
+    type_group->setCheckState(Qt::Checked);
 
     int violation_idx = 1;
     for (const auto& violation : violation_list) {
@@ -377,6 +431,8 @@ void DRCWidget::updateModel()
       QStandardItem* violation_index
           = makeItem(QString::number(violation_idx++));
       violation_index->setData(QVariant::fromValue(violation));
+      violation_index->setCheckable(true);
+      violation_index->setCheckState(violation->isVisible() ? Qt::Checked : Qt::Unchecked);
 
       type_group->appendRow({violation_index, violation_item});
     }
@@ -437,6 +493,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
   std::regex violation_type("\\s*violation type: (.*)");
   std::regex srcs("\\s*srcs: (.*)");
+  std::regex congestion_line("\\s*congestion information: (.*)");
   std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
   std::regex bbox_corners(
       "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
@@ -483,6 +540,15 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     line_number++;
     std::getline(report, line);
+    std::string congestion_information = "";
+
+    // congestion information (optional)
+    if (std::regex_match(line, base_match, congestion_line)) {
+      congestion_information = base_match[1].str();
+      line_number++;
+      std::getline(report, line);
+    }
+
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
       logger_->error(
@@ -495,7 +561,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     std::string bbox = base_match[1].str();
     odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr) {
+    if (layer == nullptr && base_match[2].str() != "-") {
       logger_->warn(utl::GUI,
                     40,
                     "Unable to find tech layer (line: {}): {}",
@@ -641,6 +707,8 @@ void DRCWidget::loadTRReport(const QString& filename)
     }
     name += ", Sources: " + sources;
 
+    comment += congestion_information;
+
     std::vector<DRCViolation::DRCShape> shapes({rect});
     violations_.push_back(std::make_unique<DRCViolation>(
         name, type, srcs_list, shapes, layer, comment, violation_line_number));
@@ -720,6 +788,9 @@ void DRCRenderer::drawObjects(Painter& painter)
   painter.setPen(pen_color, true, 0);
   painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
   for (const auto& violation : violations_) {
+    if (!violation->isVisible()) {
+      continue;
+    }
     const odb::Rect& box = violation->getBBox();
     if (std::max(box.dx(), box.dy()) < min_box) {
       // box is too small to be useful, so draw X instead
@@ -742,6 +813,9 @@ SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,
 
   SelectionSet selections;
   for (const auto& violation : violations_) {
+    if (!violation->isVisible()) {
+      continue;
+    }
     if (violation->getBBox().intersects(region)) {
       selections.insert(gui->makeSelected(violation.get()));
     }

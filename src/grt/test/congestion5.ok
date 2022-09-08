@@ -53,5 +53,5 @@ metal10    Vertical         2256            47          97.92%
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 2771
 [INFO GRT-0112] Final usage 3D: 12594
-[ERROR GRT-0118] Routing congestion too high.
+[ERROR GRT-0118] Routing congestion too high. Check the congestion heatmap in the GUI.
 GRT-0118

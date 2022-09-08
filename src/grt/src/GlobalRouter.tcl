@@ -192,6 +192,7 @@ proc set_global_routing_random { args } {
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
+                                  [-congestion_report_file file_name] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
@@ -201,7 +202,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -congestion_iterations \
+    keys {-guide_file -congestion_iterations -congestion_report_file \
           -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow -verbose}
@@ -238,6 +239,11 @@ proc global_route { args } {
     grt::set_overflow_iterations 50
   }
 
+  if { [info exists keys(-congestion_report_file) ] } {
+    set file_name $keys(-congestion_report_file)
+    grt::set_congestion_report_file $file_name
+  }
+
   if { [info exists keys(-overflow_iterations)] } {
     utl::war GRT 147 "Argument -overflow_iterations is deprecated. Use -congestion_iterations."
     set iterations $keys(-overflow_iterations)
@@ -271,12 +277,26 @@ proc repair_antennas { args } {
       # repairAntennas locates diode
       set diode_mterm "NULL"
     } elseif { [llength $args] == 1 } {
-      set diode_port_name [lindex $args 0]
-      set diode_port [sta::get_lib_pins -quiet $diode_port_name]
-      if { $diode_port == "" } {
-        utl::error GRT 69 "Diode $diode_port_name not found."
+      set db [ord::get_db]
+      set diode_cell [lindex $args 0]
+
+      set diode_master [$db findMaster $diode_cell]
+      if { $diode_master == "NULL" } {
+        utl::error GRT 69 "Diode cell $diode_cell not found."
       }
-      set diode_mterm [sta::sta_to_db_mterm $diode_port]
+      
+      set diode_mterms [$diode_master getMTerms]
+      set non_pg_count 0
+      foreach mterm $diode_mterms {
+        if { [$mterm getSigType] != "POWER" && [$mterm getSigType] != "GROUND" } {
+          set diode_mterm $mterm
+          incr non_pg_count
+        }
+      }
+
+      if { $non_pg_count > 1 } {
+        utl::error GRT 73 "Diode cell has more than one non power/ground port."
+      }
     } else {
       utl::error GRT 245 "Too arguments to repair_antennas."
     }

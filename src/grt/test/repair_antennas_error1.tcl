@@ -12,5 +12,5 @@ puts $error
 global_route
 
 # port name not found
-catch {repair_antennas sky130_fd_sc_hs__diode_2/xxx} error
+catch {repair_antennas sky130_fd_sc_hs__diode_} error
 puts $error

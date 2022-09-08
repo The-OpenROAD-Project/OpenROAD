@@ -217,17 +217,17 @@ const std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 
 void VoltageDomain::report() const
 {
-  logger_->info(utl::PDN, 10, "Voltage domain: {}", name_);
+  logger_->report("Voltage domain: {}", name_);
 
   if (region_ != nullptr) {
-    logger_->info(utl::PDN, 11, "  Floorplan region: {}", region_->getName());
+    logger_->report("  Floorplan region: {}", region_->getName());
   }
 
-  logger_->info(utl::PDN, 12, "  Power net: {}", power_->getName());
-  logger_->info(utl::PDN, 13, "  Ground net: {}", ground_->getName());
+  logger_->report("  Power net: {}", power_->getName());
+  logger_->report("  Ground net: {}", ground_->getName());
 
   if (switched_power_ != nullptr) {
-    logger_->info(utl::PDN, 14, "  Switched power net: {}", switched_power_->getName());
+    logger_->report("  Switched power net: {}", switched_power_->getName());
   }
 
   if (!secondary_.empty()) {
@@ -235,7 +235,7 @@ void VoltageDomain::report() const
     for (auto* net : secondary_) {
       nets += net->getName() + " ";
     }
-    logger_->info(utl::PDN, 15, "  Secondary nets: {}", nets);
+    logger_->report("  Secondary nets: {}", nets);
   }
 
   for (const auto& grid : grids_) {

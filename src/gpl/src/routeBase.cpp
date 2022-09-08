@@ -110,7 +110,8 @@ void Tile::setInflatedRatio(float ratio)
 }
 
 TileGrid::TileGrid()
-    : lx_(0),
+    : log_(nullptr),
+      lx_(0),
       ly_(0),
       tileCntX_(0),
       tileCntY_(0),

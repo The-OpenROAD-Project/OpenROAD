@@ -37,7 +37,7 @@
 
 namespace grt {
 
-Net::Net(odb::dbNet* net) : net_(net)
+Net::Net(odb::dbNet* net, bool has_wires) : net_(net), has_wires_(has_wires)
 {
 }
 

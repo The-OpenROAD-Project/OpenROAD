@@ -773,7 +773,7 @@ void lefin::layer(lefiLayer* layer)
         cur_rule->setAdjacentCuts(layer->spacingAdjacentCuts(j),
                                   dbdist(layer->spacingAdjacentWithin(j)),
                                   dbdist(layer->spacing(j)),
-                                  layer->hasSpacingSamenetPGonly(j));
+                                  layer->hasSpacingAdjacentExcept(j));
       } else if (layer->hasSpacingEndOfLine(j)) {
         double w = layer->spacingEolWidth(j);
         double wn = layer->spacingEolWithin(j);
@@ -899,18 +899,12 @@ void lefin::layer(lefiLayer* layer)
                               : l->createDefaultAntennaRule();
       cur_model = layer->antennaModel(j);
       if (cur_model->hasAntennaAreaFactor()) {
-        if (cur_model->hasAntennaAreaFactorDUO())
-          cur_ant_rule->setAreaFactor(-1.0, cur_model->antennaAreaFactor());
-        else
-          cur_ant_rule->setAreaFactor(cur_model->antennaAreaFactor());
+          cur_ant_rule->setAreaFactor(cur_model->antennaAreaFactor(), cur_model->hasAntennaAreaFactorDUO());
       }
 
       if (cur_model->hasAntennaSideAreaFactor()) {
-        if (cur_model->hasAntennaSideAreaFactorDUO())
-          cur_ant_rule->setSideAreaFactor(-1.0,
-                                          cur_model->antennaSideAreaFactor());
-        else
-          cur_ant_rule->setSideAreaFactor(cur_model->antennaSideAreaFactor());
+          cur_ant_rule->setSideAreaFactor(cur_model->antennaSideAreaFactor(),
+                                          cur_model->hasAntennaSideAreaFactorDUO());
       }
 
       if (cur_model->hasAntennaAreaRatio()) {

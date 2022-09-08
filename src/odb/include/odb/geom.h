@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "odb.h"
+#include "isotropy.h"
 
 namespace odb {
 
@@ -67,11 +68,13 @@ class Point
   bool operator<(const Point& p) const;
   bool operator>=(const Point& p) const;
 
+  int get(Orientation2D orient) const;
   int getX() const;
   int getY() const;
   void setX(int x);
   void setY(int y);
   void set(int x, int y);
+  void set(Orientation2D orient, int value);
 
   void rotate90();
   void rotate180();
@@ -354,11 +357,14 @@ class Rect
   Point ur() const;
   Point lr() const;
 
-  // Returns the lower point (lower-left)
-  Point low() const;
+  // Returns the low coordinate in the orientation
+  int low(Orientation2D orient) const;
 
-  // Returns the upper point (upper-right)
-  Point high() const;
+  // Returns the high coordinate in the orientation
+  int high(Orientation2D orient) const;
+
+  int get(Orientation2D orient, Direction1D dir) const;
+  void set(Orientation2D orient, Direction1D dir, int value);
 
   // A point intersects any part of this rectangle.
   bool intersects(const Point& p) const;
@@ -452,6 +458,11 @@ inline bool Point::operator!=(const Point& p) const
   return (_x != p._x) || (_y != p._y);
 }
 
+inline int Point::get(Orientation2D orient) const
+{
+  return orient == horizontal ? _x : _y;
+}
+
 inline int Point::getX() const
 {
   return _x;
@@ -476,6 +487,15 @@ inline void Point::set(int x, int y)
 {
   _x = x;
   _y = y;
+}
+
+inline void Point::set(Orientation2D orient, int value)
+{
+  if (orient == horizontal) {
+    _x = value;
+  } else {
+    _y = value;
+  }
 }
 
 inline void Point::rotate90()
@@ -752,13 +772,33 @@ inline Point Rect::lr() const
 {
   return Point(_xhi, _ylo);
 }
-inline Point Rect::low() const
+inline void Rect::set(Orientation2D orient, Direction1D dir, int value)
 {
-  return Point(_xlo, _ylo);
+  if (dir == odb::low) {
+    if (orient == horizontal) {
+      set_xlo(value);
+    } else {
+      set_ylo(value);
+    }
+  } else {
+    if (orient == horizontal) {
+      set_xhi(value);
+    } else {
+      set_yhi(value);
+    }
+  }
 }
-inline Point Rect::high() const
+inline int Rect::get(Orientation2D orient, Direction1D dir) const
 {
-  return Point(_xhi, _yhi);
+  return dir == odb::low ? low(orient) : high(orient);
+}
+inline int Rect::low(Orientation2D orient) const
+{
+  return orient == horizontal ? _xlo : _ylo;
+}
+inline int Rect::high(Orientation2D orient) const
+{
+  return orient == horizontal ? _xhi : _yhi;
 }
 
 inline bool Rect::intersects(const Point& p) const

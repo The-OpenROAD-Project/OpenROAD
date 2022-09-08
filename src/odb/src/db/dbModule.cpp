@@ -31,13 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbModule.h"
-
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
@@ -205,6 +204,14 @@ void dbModule::addInst(dbInst* inst)
     return;  // already in this module
   }
 
+  if (_inst->_flags._dont_touch) {
+    _inst->getLogger()->error(
+        utl::ODB,
+        367,
+        "Attempt to change the module of dont_touch instance {}",
+        _inst->_name);
+  }
+
   if (_inst->_module != 0) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
     ((_dbModule*) mod)->removeInst(inst);
@@ -231,6 +238,15 @@ void _dbModule::removeInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   if (_inst->_module != getOID())
     return;
+
+  if (_inst->_flags._dont_touch) {
+    _inst->getLogger()->error(
+        utl::ODB,
+        371,
+        "Attempt to remove dont_touch instance {} from parent module",
+        _inst->_name);
+  }
+
   _dbBlock* block = (_dbBlock*) getOwner();
   uint id = _inst->getOID();
 

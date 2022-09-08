@@ -94,6 +94,8 @@ class Options
   virtual bool isManufacturingGridVisible() const = 0;
 
   virtual bool isModuleView() const = 0;
+
+  virtual bool isGCellGridVisible() const = 0;
 };
 
 }  // namespace gui

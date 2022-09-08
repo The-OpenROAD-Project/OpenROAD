@@ -5,6 +5,7 @@ record_tests {
   buffer_ports5
   buffer_ports6
   buffer_ports7
+  buffer_ports8
   fanin_fanout1
   make_parasitics1
   make_parasitics2
@@ -29,6 +30,8 @@ record_tests {
   repair_design1
   repair_design2
   repair_design3
+  repair_design4
+  repair_design5
   repair_fanout1
   repair_fanout2
   repair_fanout3

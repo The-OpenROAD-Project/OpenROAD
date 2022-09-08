@@ -59,7 +59,7 @@ Enclosure::Enclosure(int x, int y)
 {
 }
 
-Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut)
+Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut, odb::dbTechLayerDir direction)
   : x_(0),
     y_(0),
     allow_swap_(true)
@@ -71,8 +71,20 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* l
     swap(layer);
     break;
   case odb::dbTechLayerCutEnclosureRule::EOL:
-    x_ = std::max(rule->getFirstOverhang(), rule->getSecondOverhang());
-    y_ = x_;
+    switch (direction) {
+    case odb::dbTechLayerDir::HORIZONTAL:
+      x_ = rule->getFirstOverhang();
+      y_ = rule->getSecondOverhang();
+      break;
+    case odb::dbTechLayerDir::VERTICAL:
+      x_ = rule->getSecondOverhang();
+      y_ = rule->getFirstOverhang();
+      break;
+    case odb::dbTechLayerDir::NONE:
+      x_ = std::max(rule->getFirstOverhang(), rule->getSecondOverhang());
+      y_ = x_;
+      break;
+    }
     allow_swap_ = false;
     break;
   case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
@@ -168,7 +180,24 @@ void Enclosure::snap(odb::dbTech* tech)
   y_ = TechLayer::snapToManufacturingGrid(tech, y_);
 }
 
+void Enclosure::copy(const Enclosure* other)
+{
+  x_ = other->x_;
+  y_ = other->y_;
+  allow_swap_ = other->allow_swap_;
+}
+
+void Enclosure::copy(const Enclosure& other)
+{
+  copy(&other);
+}
+
 //////////
+
+DbVia::DbVia() :
+    generator_(nullptr)
+{
+}
 
 DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
 {
@@ -306,7 +335,8 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
                                          odb::dbSWire* wire,
                                          odb::dbWireShapeType type,
                                          int x,
-                                         int y)
+                                         int y,
+                                         utl::Logger* logger)
 {
   ViaLayerShape via_shapes;
 
@@ -451,7 +481,8 @@ DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y)
+                                             int y,
+                                             utl::Logger* logger)
 {
   const std::string via_name = getViaName();
   auto* via = block->findVia(via_name.c_str());
@@ -558,7 +589,8 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
                                           odb::dbSWire* wire,
                                           odb::dbWireShapeType type,
                                           int x,
-                                          int y)
+                                          int y,
+                                          utl::Logger* logger)
 {
   const odb::Rect core_via_rect = core_via_->getViaRect(false, true);
   ViaLayerShape via_shapes;
@@ -584,7 +616,7 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
         }
       }
 
-      auto shapes = via->generate(block, wire, type, array_x, array_y);
+      auto shapes = via->generate(block, wire, type, array_x, array_y, logger);
       combineLayerShapes(shapes, via_shapes);
 
       last_via_rect = via->getViaRect(false, true);
@@ -645,7 +677,8 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y)
+                                             int y,
+                                             utl::Logger* logger)
 {
   TechLayer* horizontal = nullptr;
   TechLayer* vertical = nullptr;
@@ -670,7 +703,7 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
     for (int c = 0; c < cols_; c++) {
       const int col_pos = vertical->snapToGrid(col);
 
-      auto shapes = via_->generate(block, wire, type, col_pos, row_pos);
+      auto shapes = via_->generate(block, wire, type, col_pos, row_pos, logger);
       combineLayerShapes(shapes, via_shapes);
 
       col = col_pos + col_pitch_;
@@ -723,7 +756,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
                                                     odb::dbSWire* wire,
                                                     odb::dbWireShapeType type,
                                                     int x,
-                                                    int y)
+                                                    int y,
+                                                    utl::Logger* logger)
 {
   using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
@@ -762,7 +796,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
       layer_y = layer_upper->snapToGrid(layer_y);
     }
 
-    auto shapes = via->generate(block, wire, type, layer_x, layer_y);
+    auto shapes = via->generate(block, wire, type, layer_x, layer_y, logger);
     if (i == 0) {
       via_shapes.bottom = shapes.bottom;
     }
@@ -771,6 +805,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
     via_shapes.top = shapes.top;
 
     Polygon90Set patch_shapes;
+    Polygon90Set total_shape;
     odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
       Polygon90Set bottom_of_current;
@@ -813,12 +848,47 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
 
       // find shapes that touch "left-over" shapes from the xor
       patch_shapes = patch_shapes.interact(patch_shapes ^ combine_layer);
+      total_shape = patch_shapes + combine_layer;
     }
 
     if (!patch_shapes.empty()) {
+      if (via->hasGenerator()) {
+        Rectangle complete_shape;
+        extents(complete_shape, total_shape);
+        const odb::Rect patch_shape_rect(xl(complete_shape), yl(complete_shape), xh(complete_shape), yh(complete_shape));
+
+        auto* generator = via->getGenerator();
+        if (!generator->recheckConstraints(patch_shape_rect, true)) {
+          // failed recheck, need to ripup entire stack
+          std::set<odb::dbSBox*> shapes;
+          for (const auto& [rect, box] : via_shapes.bottom) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.middle) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.top) {
+            shapes.insert(box);
+          }
+          for (auto* box : shapes) {
+            odb::dbSBox::destroy(box);
+          }
+          const TechLayer tech_layer(*layers_.front());
+          logger->warn(utl::PDN,
+                       227,
+                       "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
+                       layers_.front()->getName(),
+                       layers_.back()->getName(),
+                       tech_layer.dbuToMicron(layer_x),
+                       tech_layer.dbuToMicron(layer_y),
+                       wire->getNet()->getName());
+
+          return {};
+        }
+      }
+
       std::vector<Rectangle> patches;
       patch_shapes.get_rectangles(patches);
-
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
         const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
@@ -856,11 +926,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
 
 /////////////
 
-DbGenerateDummyVia::DbGenerateDummyVia(utl::Logger* logger,
+DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
                                        const odb::Rect& shape,
                                        odb::dbTechLayer* bottom,
-                                       odb::dbTechLayer* top)
-    : logger_(logger), shape_(shape), bottom_(bottom), top_(top)
+                                       odb::dbTechLayer* top,
+                                       bool add_report)
+    : connect_(connect), add_report_(add_report), shape_(shape), bottom_(bottom), top_(top)
 {
 }
 
@@ -869,19 +940,23 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
     odb::dbSWire* wire,
     odb::dbWireShapeType /* type */,
     int x,
-    int y)
+    int y,
+    utl::Logger* logger)
 {
   odb::dbTransform xfm({x, y});
 
   odb::Rect via_area = shape_;
   xfm.apply(via_area);
-  logger_->warn(utl::PDN,
+  logger->warn(utl::PDN,
                 110,
                 "No via inserted between {} and {} at {} on {}",
                 bottom_->getName(),
                 top_->getName(),
                 Shape::getRectText(via_area, block->getDbUnitsPerMicron()),
                 wire->getNet()->getName());
+  if (add_report_) {
+    connect_->addFailedVia(failedViaReason::BUILD, via_area, wire->getNet());
+  }
 
   return {};
 }
@@ -924,11 +999,12 @@ ViaGenerator::ViaGenerator(utl::Logger* logger,
 int ViaGenerator::getGeneratorWidth(bool bottom) const
 {
   Enclosure* enc = bottom ? bottom_enclosure_.get() : top_enclosure_.get();
+  const odb::Rect cut = getCut();
 
-  const int core_width = getCutsWidth(core_col_, cut_.dx(), getCutPitchX() - cut_.dx(), enc->getX());
+  const int core_width = getCutsWidth(core_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
 
   if (isCutArray()) {
-    const int end_width = getCutsWidth(end_col_, cut_.dx(), getCutPitchX() - cut_.dx(), enc->getX());
+    const int end_width = getCutsWidth(end_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
     return array_core_y_ * core_width + (array_core_x_ - 1) * array_spacing_x_ + end_width;
   } else {
     return core_width;
@@ -938,11 +1014,12 @@ int ViaGenerator::getGeneratorWidth(bool bottom) const
 int ViaGenerator::getGeneratorHeight(bool bottom) const
 {
   Enclosure* enc = bottom ? bottom_enclosure_.get() : top_enclosure_.get();
+  const odb::Rect cut = getCut();
 
-  const int core_height = getCutsWidth(core_row_, cut_.dy(), getCutPitchY() - cut_.dy(), enc->getY());
+  const int core_height = getCutsWidth(core_row_, cut.dy(), getCutPitchY() - cut.dy(), enc->getY());
 
   if (isCutArray()) {
-    const int end_height = getCutsWidth(end_row_, cut_.dy(), getCutPitchY() - cut_.dy(), enc->getY());
+    const int end_height = getCutsWidth(end_row_, cut.dy(), getCutPitchY() - cut.dy(), enc->getY());
     return array_core_y_ * core_height + (array_core_y_ - 1) * array_spacing_y_ + end_height;
   } else {
     return core_height;
@@ -1115,9 +1192,40 @@ void ViaGenerator::determineCutClass()
   }
 }
 
-bool ViaGenerator::checkConstraints() const
+bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
 {
-  if (getTotalCuts() == 0) {
+  odb::Rect saved_rect;
+  if (bottom) {
+    saved_rect = lower_rect_;
+    lower_rect_ = rect;
+  } else {
+    saved_rect = upper_rect_;
+    upper_rect_ = rect;
+  }
+
+  const bool pass = checkConstraints(true, true, false);
+
+  if (bottom) {
+    lower_rect_ = saved_rect;
+  } else {
+    upper_rect_ = saved_rect;
+  }
+
+  debugPrint(logger_,
+             utl::PDN,
+             "Via",
+             2,
+             "Recheck: {}",
+             pass);
+
+  return pass;
+}
+
+bool ViaGenerator::checkConstraints(bool check_cuts,
+                                    bool check_min_cut,
+                                    bool check_enclosure) const
+{
+  if (check_cuts && getTotalCuts() == 0) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1128,7 +1236,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinCuts()) {
+  if (check_min_cut && !checkMinCuts()) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1139,7 +1247,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinEnclosure()) {
+  if (check_enclosure && !checkMinEnclosure()) {
     const double dbu_microns = getTech()->getLefUnits();
     debugPrint(logger_,
                utl::PDN,
@@ -1164,10 +1272,10 @@ bool ViaGenerator::checkConstraints() const
 
 bool ViaGenerator::checkMinCuts() const
 {
-  const bool lower = checkMinCuts(getBottomLayer(), getLowerWidth());
-  const bool upper = checkMinCuts(getTopLayer(), getUpperWidth());
+  const bool lower_w = checkMinCuts(getBottomLayer(), getLowerWidth());
+  const bool upper_w = checkMinCuts(getTopLayer(), getUpperWidth());
 
-  return lower && upper;
+  return lower_w && upper_w;
 }
 
 bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
@@ -1253,7 +1361,7 @@ bool ViaGenerator::checkMinEnclosure() const
              1,
              "Bottom layer {} with width {:.4f} has {} rules and enclosures of {:4f} and {:4f}.",
              getBottomLayer()->getName(),
-             getLowerWidth(false) / dbu,
+             getLowerWidth() / dbu,
              bottom_rules.size(),
              bottom_enclosure_->getX() / dbu,
              bottom_enclosure_->getY() / dbu);
@@ -1278,7 +1386,7 @@ bool ViaGenerator::checkMinEnclosure() const
              1,
              "Top layer {} with width {:.4f} has {} rules and enclosures of {:4f} and {:4f}.",
              getTopLayer()->getName(),
-             getUpperWidth(false) / dbu,
+             getUpperWidth() / dbu,
              top_rules.size(),
              top_enclosure_->getX() / dbu,
              top_enclosure_->getY() / dbu);
@@ -1322,24 +1430,44 @@ bool ViaGenerator::appliesToLayers(odb::dbTechLayer* lower,
 
 void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
 {
-  auto populate_enc = [this](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
+  auto populate_enc = [this](odb::dbTechLayer* layer,
+                             int width,
+                             odb::dbTechLayerDir direction,
+                             bool above,
+                             std::vector<Enclosure>& encs) {
     for (auto* rule : getCutMinimumEnclosureRules(width, above)) {
-      encs.emplace_back(rule, layer, getCut());
+      encs.emplace_back(rule, layer, getCut(), direction);
     }
   };
 
   populate_enc(getBottomLayer(),
                getLowerWidth(false),
+               getRectDirection(lower_rect_),
                false,
                bottom);
   populate_enc(getTopLayer(),
                getUpperWidth(false),
+               getRectDirection(upper_rect_),
                true,
                top);
 }
 
-bool ViaGenerator::build(bool use_bottom_min_enclosure,
-                         bool use_top_min_enclosure)
+odb::dbTechLayerDir ViaGenerator::getRectDirection(const odb::Rect& rect) const
+{
+  const int height = rect.dy();
+  const int width = rect.dx();
+
+  if (width < height) {
+    return odb::dbTechLayerDir::VERTICAL;
+  }
+  if (height < width) {
+    return odb::dbTechLayerDir::HORIZONTAL;
+  }
+  return odb::dbTechLayerDir::NONE;
+}
+
+bool ViaGenerator::build(bool bottom_is_internal_layer,
+                         bool top_is_internal_layer)
 {
   std::vector<Enclosure> bottom_enclosures_list;
   std::vector<Enclosure> top_enclosures_list;
@@ -1348,39 +1476,51 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
   std::set<Enclosure> bottom_enclosures(bottom_enclosures_list.begin(), bottom_enclosures_list.end());
   std::set<Enclosure> top_enclosures(top_enclosures_list.begin(), top_enclosures_list.end());
 
+  auto make_check_rect = [](const odb::Rect& rect, const int width, const int height, bool is_internal) -> odb::Rect {
+    if (is_internal) {
+      return odb::Rect(0, 0, width, height);
+    } else {
+      return rect;
+    }
+  };
+
   int best_cuts = 0;
   const Enclosure* best_bot_enc = nullptr;
   const Enclosure* best_top_enc = nullptr;
   for (auto& bottom_enc : bottom_enclosures) {
     for (auto& top_enc : top_enclosures) {
-      determineRowsAndColumns(use_bottom_min_enclosure,
-                              use_top_min_enclosure,
+      determineRowsAndColumns(bottom_is_internal_layer,
+                              top_is_internal_layer,
                               bottom_enc,
                               top_enc);
 
-      if (!checkConstraints()) {
-        continue;
-      }
+      odb::Rect save_lower = lower_rect_;
+      odb::Rect save_upper = upper_rect_;
+      lower_rect_ = make_check_rect(lower_rect_, getGeneratorWidth(true), getGeneratorHeight(true), bottom_is_internal_layer);
+      upper_rect_ = make_check_rect(upper_rect_, getGeneratorWidth(false), getGeneratorHeight(false), top_is_internal_layer);
+      if (checkConstraints()) {
+        bool save = best_cuts == 0;
 
-      bool save = best_cuts == 0;
-
-      const int cuts = getTotalCuts();
-      if (best_cuts == cuts) {
-        // if same cut area, pick smaller enclosure
-        if (bottom_enc.isPreferredOver(best_bot_enc, getBottomLayer())) {
-          save = true;
-        } else if (top_enc.isPreferredOver(best_top_enc, getTopLayer())) {
+        const int cuts = getTotalCuts();
+        if (best_cuts == cuts) {
+          // if same cut area, pick smaller enclosure
+          if (bottom_enc.isPreferredOver(best_bot_enc, getBottomLayer())) {
+            save = true;
+          } else if (top_enc.isPreferredOver(best_top_enc, getTopLayer())) {
+            save = true;
+          }
+        } else if (best_cuts < cuts) {
           save = true;
         }
-      } else if (best_cuts < cuts) {
-        save = true;
-      }
 
-      if (save) {
-        best_bot_enc = &bottom_enc;
-        best_top_enc = &top_enc;
-        best_cuts = cuts;
+        if (save) {
+          best_bot_enc = &bottom_enc;
+          best_top_enc = &top_enc;
+          best_cuts = cuts;
+        }
       }
+      lower_rect_ = save_lower;
+      upper_rect_ = save_upper;
     }
   }
 
@@ -1389,12 +1529,75 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
   }
 
   // rebuild best
-  determineRowsAndColumns(use_bottom_min_enclosure,
-                          use_top_min_enclosure,
+  determineRowsAndColumns(bottom_is_internal_layer,
+                          top_is_internal_layer,
                           *best_bot_enc,
                           *best_top_enc);
 
   return true;
+}
+
+bool ViaGenerator::updateCutSpacing(int rows, int cols)
+{
+  // determine max number of adjacent cuts in array
+  // dims bounded by 1 -> 4
+  rows = std::max(1, std::min(rows, 4));
+  cols = std::max(1, std::min(cols, 4));
+  const int min_dim = std::min(rows, cols);
+  const int max_dim = std::max(rows, cols);
+  int adj_cuts = 0;
+  if (min_dim == 1) {
+    // array is a 1 x N array, therefore adjacent cuts can be 1 or 2
+    if (max_dim == 2) {
+      adj_cuts = 1;
+    } else if (max_dim >= 3) {
+      adj_cuts = 2;
+    }
+  } else if (min_dim == 2) {
+    // array is a 2 x N, therefore adjacent cuts can be 2 or 3
+    if (max_dim == 2) {
+      adj_cuts = 2;
+    } else if (max_dim >= 3) {
+      adj_cuts = 3;
+    }
+  } else if (min_dim == 3) {
+    // array is a 3 x N, therefore any cut in the middle will have 4 adjacent cuts
+    // max_dim is 3 or 4
+    adj_cuts = 4;
+  } else if (min_dim == 4) {
+    // array is a 4 x N, therefore any cut in the middle will have 4 adjacent cuts
+    // max_dim is 4
+    adj_cuts = 4;
+  }
+
+  if (adj_cuts < 2) {
+    // nothing to do, rules require atleast 2
+    return false;
+  }
+
+  auto* layer = getCutLayer();
+
+  bool changed = false;
+  const odb::Rect cut = getCut();
+  for (auto* rule : layer->getV54SpacingRules()) {
+    uint numcuts;
+    uint within;
+    uint spacing;
+    bool except_same_pgnet;
+    if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+      continue;
+    }
+    if (except_same_pgnet) {
+      continue;
+    }
+    if (numcuts <= adj_cuts) {
+      cut_pitch_x_ = cut.dx() + spacing;
+      cut_pitch_y_ = cut.dy() + spacing;
+      changed = true;
+    }
+  }
+
+  return changed;
 }
 
 void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
@@ -1468,6 +1671,23 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
                    top_min_enclosure.getY(),
                    getCutPitchY(),
                    getMaxRows());
+
+    if (updateCutSpacing(rows, cols)) {
+      // cut spcaing changed so need to recompute
+      cols = getCuts(width,
+                     cut_width,
+                     bottom_min_enclosure.getX(),
+                     top_min_enclosure.getX(),
+                     getCutPitchX(),
+                     getMaxColumns());
+
+      rows = getCuts(height,
+                     cut_height,
+                     bottom_min_enclosure.getY(),
+                     top_min_enclosure.getY(),
+                     getCutPitchY(),
+                     getMaxRows());
+    }
   }
 
   debugPrint(logger_,
@@ -1737,6 +1957,15 @@ std::vector<odb::dbTechLayerCutEnclosureRule*> ViaGenerator::getCutMinimumEnclos
 
   CutRules* rules = nullptr;
   for (auto& [min_width, width_rules] : rules_map) {
+    debugPrint(logger_,
+               utl::PDN,
+               "ViaEnclosure",
+               3,
+               "Enclosures for minimum width {:.4f} on {} from {}: {}",
+               min_width / static_cast<double>(getBottomLayer()->getTech()->getLefUnits()),
+               getCutLayer()->getName(),
+               above ? "above" : "below",
+               width_rules.size());
     if (min_width <= width) {
       rules = &width_rules;
     }
@@ -1780,20 +2009,36 @@ odb::dbTech* ViaGenerator::getTech() const
   return getBottomLayer()->getTech();
 }
 
-int ViaGenerator::getLowerWidth(bool only_real) const
+int ViaGenerator::getRectSize(const odb::Rect& rect, bool min, bool only_real) const
 {
   if (!only_real && isSplitCutArray()) {
     return 0;
   }
-  return lower_rect_.minDXDY();
+  if (min) {
+    return rect.minDXDY();
+  } else {
+    return rect.maxDXDY();
+  }
+}
+
+int ViaGenerator::getLowerWidth(bool only_real) const
+{
+  return getRectSize(lower_rect_, true, only_real);
+}
+
+int ViaGenerator::getLowerHeight(bool only_real) const
+{
+  return getRectSize(lower_rect_, false, only_real);
 }
 
 int ViaGenerator::getUpperWidth(bool only_real) const
 {
-  if (!only_real && isSplitCutArray()) {
-    return 0;
-  }
-  return upper_rect_.minDXDY();
+  return getRectSize(upper_rect_, true, only_real);
+}
+
+int ViaGenerator::getUpperHeight(bool only_real) const
+{
+  return getRectSize(upper_rect_, false, only_real);
 }
 
 DbVia* ViaGenerator::generate(odb::dbBlock* block) const
@@ -2417,7 +2662,7 @@ bool Via::startsBelow(const ViaPtr& via) const
   return connect_->startsBelow(via->getConnect());
 }
 
-void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const
+void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions)
 {
   odb::dbWireShapeType type = lower_->getType();
 
@@ -2516,7 +2761,6 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
       odb::dbSBox::destroy(via);
     }
 
-
     getLogger()->warn(utl::PDN,
                       195,
                       "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
@@ -2526,6 +2770,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
                       tech_layer.dbuToMicron(x / ripup_vias.size()),
                       tech_layer.dbuToMicron(y / ripup_vias.size()),
                       lower_->getNet()->getName());
+    markFailed(failedViaReason::RIPUP);
   }
 }
 
@@ -2571,6 +2816,11 @@ Grid* Via::getGrid() const
 utl::Logger* Via::getLogger() const
 {
   return getGrid()->getLogger();
+}
+
+void Via::markFailed(failedViaReason reason)
+{
+  connect_->addFailedVia(reason, area_, net_);
 }
 
 }  // namespace pdn

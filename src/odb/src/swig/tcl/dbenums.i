@@ -1,3 +1,4 @@
+%include "../../../../Exception.i"
 
 %typemap(out) odb::dbOrientType, dbOrientType {
 	Tcl_Obj *obj = nullptr;

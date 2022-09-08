@@ -76,6 +76,8 @@ class CtsOptions
   unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
+  void setGuiDebug() { gui_debug_ = true; }
+  bool getGuiDebug() const { return gui_debug_; }
   void setSimpleCts(bool enable) { simpleCts_ = enable; }
   bool getSimpleCts() const { return simpleCts_; }
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
@@ -111,8 +113,6 @@ class CtsOptions
   {
     return charWirelengthIterations_;
   }
-  void setOutputPath(const std::string& path) { outputPath_ = path; }
-  std::string getOutputPath() const { return outputPath_; }
   void setCapInter(double cap) { capInter_ = cap; }
   double getCapInter() const { return capInter_; }
   void setSlewInter(double slew) { slewInter_ = slew; }
@@ -203,7 +203,6 @@ class CtsOptions
 
  private:
   std::string blockName_ = "";
-  std::string outputPath_ = "";
   std::string clockNets_ = "";
   std::string rootBuffer_ = "";
   std::string sinkBuffer_ = "";
@@ -217,6 +216,7 @@ class CtsOptions
   bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
+  bool gui_debug_ = false;
   double vertexBufDistance_ = 240;
   double bufDistance_ = 100;
   double clusteringCapacity_ = 0.6;

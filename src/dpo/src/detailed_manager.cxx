@@ -36,8 +36,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include "detailed_manager.h"
-
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -48,6 +46,7 @@
 #include <utility>
 
 #include "architecture.h"
+#include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
 #include "router.h"
@@ -2648,40 +2647,38 @@ bool DetailedMgr::tryMove1(Node* ndi,
       return false;
     }
     return true;
-  } else if (ndl != nullptr && ndr != nullptr) {
-    // In between two cells.
-    DetailedSeg* segPtr = segments_[sj];
+  }
+  // (ndl != nullptr && ndr != nullptr)
+  // In between two cells.
+  DetailedSeg* segPtr = segments_[sj];
 
-    // Reject if not enough space.
-    int required = ndi->getWidth() + arch_->getCellSpacing(ndl, ndi)
-                   + arch_->getCellSpacing(ndi, ndr)
-                   - arch_->getCellSpacing(ndl, ndr);
-    if (required + segPtr->getUtil() > segPtr->getWidth()) {
-      return false;
-    }
-
-    int lx = ndl->getRight() + arch_->getCellSpacing(ndl, ndi);
-    int rx = ndr->getLeft() - arch_->getCellSpacing(ndi, ndr);
-    if (!alignPos(ndi, xj, lx, rx)) {
-      return false;
-    }
-
-    // Build the move list.
-    if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
-      return false;
-    }
-    // Shift cells right if required.
-    if (!shiftRightHelper(ndi, xj, sj, ndr)) {
-      return false;
-    }
-    // Shift cells left if necessary.
-    if (!shiftLeftHelper(ndi, xj, sj, ndl)) {
-      return false;
-    }
-    return true;
+  // Reject if not enough space.
+  int required = ndi->getWidth() + arch_->getCellSpacing(ndl, ndi)
+                 + arch_->getCellSpacing(ndi, ndr)
+                 - arch_->getCellSpacing(ndl, ndr);
+  if (required + segPtr->getUtil() > segPtr->getWidth()) {
+    return false;
   }
 
-  return false;
+  int lx = ndl->getRight() + arch_->getCellSpacing(ndl, ndi);
+  int rx = ndr->getLeft() - arch_->getCellSpacing(ndi, ndr);
+  if (!alignPos(ndi, xj, lx, rx)) {
+    return false;
+  }
+
+  // Build the move list.
+  if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
+    return false;
+  }
+  // Shift cells right if required.
+  if (!shiftRightHelper(ndi, xj, sj, ndr)) {
+    return false;
+  }
+  // Shift cells left if necessary.
+  if (!shiftLeftHelper(ndi, xj, sj, ndl)) {
+    return false;
+  }
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

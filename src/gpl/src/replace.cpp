@@ -41,7 +41,6 @@
 #include "utl/Logger.h"
 #include "rsz/Resizer.hh"
 #include "odb/db.h"
-#include "plot.h"
 #include <iostream>
 
 namespace gpl {
@@ -62,6 +61,7 @@ Replace::Replace()
   initialPlaceMaxSolverIter_(100),
   initialPlaceMaxFanout_(200),
   initialPlaceNetWeightScale_(800),
+  forceCPU_(false),
   nesterovPlaceMaxIter_(5000),
   binGridCntX_(0), binGridCntY_(0), 
   overflow_(0.1), density_(1.0),
@@ -119,6 +119,7 @@ void Replace::reset() {
   initialPlaceMaxSolverIter_ = 100;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
+  forceCPU_ = false;
 
   nesterovPlaceMaxIter_ = 5000;
   binGridCntX_ = binGridCntY_ = 0;
@@ -245,13 +246,14 @@ void Replace::doInitialPlace()
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.debug = gui_debug_initial_;
+  ipVars.forceCPU = forceCPU_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
 
-void Replace::initNesterovPlace() {
+bool Replace::initNesterovPlace() {
   if( !pb_ ) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -260,7 +262,12 @@ void Replace::initNesterovPlace() {
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
-  
+
+  if (pb_->placeInsts().size() == 0) {
+    log_->warn(GPL, 136, "No placeable instances - skipping placement.");
+    return false;
+  }
+
   if( !nb_ ) {
     NesterovBaseVars nbVars;
     nbVars.targetDensity = density_;
@@ -322,10 +329,13 @@ void Replace::initNesterovPlace() {
     std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
     np_ = std::move(np);
   }
+  return true;
 }
 
 int Replace::doNesterovPlace(int start_iter) {
-  initNesterovPlace();
+  if (!initNesterovPlace()) {
+    return 0;
+  }
   if (timingDrivenMode_)
     rs_->resizeSlackPreamble();
   return np_->doNesterovPlace(start_iter);
@@ -441,6 +451,11 @@ Replace::setSkipIoMode(bool mode) {
 }
 
 void
+Replace::setForceCPU(bool force_cpu) {
+  forceCPU_ = force_cpu;
+}
+
+void
 Replace::setTimingDrivenMode(bool mode) {
   timingDrivenMode_ = mode;
 }
@@ -506,13 +521,6 @@ Replace::setPadRight(int pad) {
 void
 Replace::addTimingNetWeightOverflow(int overflow) {
   timingNetWeightOverflows_.push_back(overflow);
-}
-
-void
-Replace::setPlottingPath(const char* path) {
-#ifdef ENABLE_CIMG_LIB
-  gpl::PlotEnv::setPlotPath(path);
-#endif
 }
 
 }

@@ -112,6 +112,11 @@ set_overflow_iterations(int iterations)
   getGlobalRouter()->setOverflowIterations(iterations);
 }
 
+void set_congestion_report_file (const char * file_name)
+{
+  getGlobalRouter()->setCongestionReportFile(file_name);
+}
+
 void
 set_grid_origin(int x, int y)
 {

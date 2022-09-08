@@ -11,7 +11,6 @@ Features:
     (7/14/16/28/45/55/65nm).
 -   Verified deterministic solution generation with various compilers and OS.
 -   Supports Mixed-size placement mode.
--   Supports fast image drawing modes with CImg library.
 
 | <img src="./doc/image/adaptec2.inf.gif" width=350px> | <img src="./doc/image/coyote_movie.gif" width=400px> |
 |:--:|:--:|
@@ -49,6 +48,7 @@ global_placement
     [-pad_left pad_left]
     [-pad_right pad_right]
     [-verbose_level level]
+    [-force_cpu]
 ```
 
 ### Tuning Parameters
@@ -67,6 +67,7 @@ global_placement
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
 - `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
+- `-force_cpu`: Force to use the CPU solver even if the GPU is available.
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and

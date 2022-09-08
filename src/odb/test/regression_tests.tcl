@@ -1,4 +1,5 @@
 record_tests {
+  dont_touch
   import_package
   read_lef
   read_db

@@ -715,23 +715,17 @@ void lefout::writeLayer(dbTechLayer* layer)
             lefdist(layer->getProtrusionLength()),
             lefdist(layer->getProtrusionFromWidth()));
 
-  dbSet<dbTechLayerSpacingRule> v54_rules;
-  dbSet<dbTechLayerSpacingRule>::iterator ritr;
-
-  std::vector<dbTechV55InfluenceEntry*> inf_rules;
-  std::vector<dbTechV55InfluenceEntry*>::const_iterator infitr;
-
-  if (layer->getV54SpacingRules(v54_rules)) {
-    for (ritr = v54_rules.begin(); ritr != v54_rules.end(); ++ritr)
-      (*ritr)->writeLef(*this);
+  for (auto rule : layer->getV54SpacingRules()) {
+    rule->writeLef(*this);
   }
 
   if (layer->hasV55SpacingRules()) {
     layer->printV55SpacingRules(*this);
-    if (layer->getV55InfluenceRules(inf_rules)) {
+    auto inf_rules = layer->getV55InfluenceRules();
+    if (!inf_rules.empty()) {
       fprintf(_out, "SPACINGTABLE INFLUENCE");
-      for (infitr = inf_rules.begin(); infitr != inf_rules.end(); ++infitr)
-        (*infitr)->writeLef(*this);
+      for (auto rule : inf_rules)
+        rule->writeLef(*this);
       fprintf(_out, " ;\n");
     }
   }
