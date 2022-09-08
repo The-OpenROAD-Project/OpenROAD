@@ -459,32 +459,32 @@ void FastRouteCore::releaseResourcesNet(const int netID)
 
     for (int i = 0; i < routeLen; i++) {
 
-      if(gridsL[i] != gridsL[i+1]) continue;
+      if(gridsL[i] != gridsL[i + 1])
+        continue;
 
       else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
 
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (v_edges_[ymin][gridsX[i]].usage)
+        if (v_edges_[ymin][gridsX[i]].usage >= edgeCost)
           v_edges_[ymin][gridsX[i]].usage -= edgeCost;
-        if (v_edges_[ymin][gridsX[i]].est_usage)
+        if (v_edges_[ymin][gridsX[i]].est_usage >= edgeCost)
           v_edges_[ymin][gridsX[i]].est_usage -=  edgeCost;
-        if (v_edges_[ymin][gridsX[i]].last_usage)
+        if (v_edges_[ymin][gridsX[i]].last_usage >= edgeCost)
           v_edges_[ymin][gridsX[i]].last_usage -= edgeCost;
-        if (v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage)
+        if (v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage >= edgeCost)
           v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage -= edgeCost;
 
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
 
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (h_edges_[gridsY[i]][xmin].usage)
+        if (h_edges_[gridsY[i]][xmin].usage >= edgeCost)
           h_edges_[gridsY[i]][xmin].usage -= edgeCost;
-        if (h_edges_[gridsY[i]][xmin].est_usage)
+        if (h_edges_[gridsY[i]][xmin].est_usage >= edgeCost)
           h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
-        if (h_edges_[gridsY[i]][xmin].last_usage)
+        if (h_edges_[gridsY[i]][xmin].last_usage >= edgeCost)
           h_edges_[gridsY[i]][xmin].last_usage -= edgeCost;
-        if (h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage)
+        if (h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage >= edgeCost)
           h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage -= edgeCost;
-
       } 
     }
   }

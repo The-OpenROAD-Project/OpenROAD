@@ -3685,7 +3685,7 @@ void GlobalRouter::updateDirtyRoutes()
     for (odb::dbNet* db_net : dirty_nets_) {
       dirty_nets.push_back(db_net_map_[db_net]);
       fastroute_->getNetId(db_net, netID, exists);
-      if (exists){
+      if (exists) {
         fastroute_->clearAllRoute(netID);
       }
     }
