@@ -324,6 +324,13 @@ bool dbTechLayerAreaRule::isExceptRectangle() const
 
 // User Code Begin dbTechLayerAreaRulePublicMethods.
 
+dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* _layer)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
+  _dbTechLayerAreaRule* newrule = layer->area_rules_tbl_->create();
+  return ((dbTechLayerAreaRule*) newrule);
+}
+
 void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
@@ -334,8 +341,15 @@ void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
 dbTechLayer* dbTechLayerAreaRule::getLayer() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  auto tech = getDb()->getTech();
+  odb::dbTech* tech = getDb()->getTech();
   return odb::dbTechLayer::getTechLayer(tech, obj->trim_layer_);
+}
+
+void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->area_rules_tbl_->destroy((_dbTechLayerAreaRule*) rule);
 }
 
 // User Code End dbTechLayerAreaRulePublicMethods

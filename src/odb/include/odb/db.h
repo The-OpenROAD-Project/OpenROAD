@@ -8874,9 +8874,13 @@ class dbTechLayerAreaRule : public dbObject
  public:
   // User Code Begin dbTechLayerAreaRuleEnums
 
+  static dbTechLayerAreaRule* create(dbTechLayer* _layer);
+
   void setTrimLayer(dbTechLayer* trim_layer);
 
   dbTechLayer* getLayer() const;
+
+  static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRuleEnums
 
