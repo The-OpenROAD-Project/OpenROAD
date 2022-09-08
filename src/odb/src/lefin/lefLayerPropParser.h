@@ -176,6 +176,38 @@ class lefTechLayerEolKeepOutRuleParser
                 odb::dbTechLayerEolKeepOutRule* rule,
                 odb::dbTechLayer* layer);
 };
+class lefTechLayerAreaRuleParser
+{
+ public:
+  lefTechLayerAreaRuleParser(lefin*);
+  void parse(std::string,
+             odb::dbTechLayer*,
+             std::vector<std::pair<odb::dbObject*, std::string>>&);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(
+      std::string,
+      odb::dbTechLayer* layer,
+      std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
+  void setInt(double val,
+              odb::dbTechLayerAreaRule* rule,
+              void (odb::dbTechLayerAreaRule::*func)(int));
+  void setNumber(double val,
+                 odb::dbTechLayerAreaRule* rule,
+                 void (odb::dbTechLayerAreaRule::*func)(int));
+  void setExceptEdgeLengths(const boost::fusion::vector<double, double>& params,
+                            odb::dbTechLayerAreaRule* rule);
+  void setExceptMinSize(const boost::fusion::vector<double, double>& params,
+                        odb::dbTechLayerAreaRule* rule);
+  void setExceptStep(const boost::fusion::vector<double, double>& params,
+                     odb::dbTechLayerAreaRule* rule);
+  void setTrimLayer(
+      std::string val,
+      odb::dbTechLayerAreaRule* rule,
+      odb::dbTechLayer* layer,
+      std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
+};
 
 class ArraySpacingParser
 {
