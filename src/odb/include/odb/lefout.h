@@ -91,16 +91,19 @@ class lefout
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
-  void writeObstructions(dbBlock* db_block);
+  void writeObstructions(dbBlock* db_block, int bloat);
   void insertObstruction(
       std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
       dbBlock* block,
       dbTechLayer* tech_layer,
-      int margin,
       int xMax,
       int yMax,
       int xMin,
       int yMin) const;
+  void mergeObstructions(
+      dbBlock* block,
+      int bloat,
+      std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions) const;
   void getObstructions(dbBlock* db_block,
                        std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions) const;
   void writeBox(std::string indent, dbBox* box);
@@ -108,7 +111,7 @@ class lefout
                                  dbNet* net) const;
   void findSWireLayerObstructions(std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
                                   dbNet* net) const;
-  void writeBlock(dbBlock* db_block);
+  void writeBlock(dbBlock* db_block, int bloat);
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
@@ -143,7 +146,7 @@ class lefout
   bool writeTech(dbTech* tech, const char* lef_file);
   bool writeLib(dbLib* lib, const char* lef_file);
   bool writeTechAndLib(dbLib* lib, const char* lef_file);
-  bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
+  bool writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat);
 
   FILE* out() { return _out; }
 };

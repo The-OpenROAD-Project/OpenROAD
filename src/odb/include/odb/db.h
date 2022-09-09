@@ -982,8 +982,8 @@ class dbBlock : public dbObject
   //
   // Utility to save_lef
   //
-  // void dbBlock::saveLef(char *filename);
-  void saveLef(char* filename);
+  // void dbBlock::saveLef(char *filename, int bloat);
+  void saveLef(char* filename, int bloat);
 
   //
   // Utility to save_def

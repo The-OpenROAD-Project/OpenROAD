@@ -36,6 +36,8 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <boost/polygon/polygon.hpp>
+#include <iostream>
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -135,10 +137,11 @@ void lefout::writeHeader(dbBlock* db_block)
   writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
 }
 
-void lefout::writeObstructions(dbBlock* db_block)
+void lefout::writeObstructions(dbBlock* db_block, int bloat)
 {
   std::map<dbTechLayer*,std::set<dbObstruction*>> obstructions;
   getObstructions(db_block, obstructions);
+  mergeObstructions(db_block, bloat, obstructions);
 
   fprintf(_out, "  OBS\n");
 
@@ -147,65 +150,78 @@ void lefout::writeObstructions(dbBlock* db_block)
     std::set<dbObstruction*> obstructions_per_layer = pair.second;
 
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
-
     for (dbObstruction* obs : obstructions_per_layer) {
-      // shrink
-      dbObstruction* shrink_obs = dbObstruction::create(obs->getBlock(),
-                                                        obs->getBBox()->getTechLayer(),
-                                                        obs->getBBox()->xMax() - obs->getBBox()->getTechLayer()->getPitch(),
-                                                        obs->getBBox()->yMax() - obs->getBBox()->getTechLayer()->getPitch(),
-                                                        obs->getBBox()->xMin() + obs->getBBox()->getTechLayer()->getPitch(),
-                                                        obs->getBBox()->yMin() + obs->getBBox()->getTechLayer()->getPitch());
-
-      writeBox("   ", shrink_obs->getBBox());
+      writeBox("   ", obs->getBBox());
     }
   }
   
   fprintf(_out, "  END\n");
 }
 
+void lefout::mergeObstructions(
+  dbBlock* block,
+  int bloat,
+  std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions) const
+{
+  using namespace boost::polygon::operators;
+
+  for ( const auto &pair : obstructions ) {
+    dbTechLayer* tech_layer = pair.first;
+    std::set<dbObstruction*> obstructions_per_layer = pair.second;
+
+    int pitch = tech_layer->getPitch();
+
+    // Compose all the rects in the layer to merged polygon with bloat
+    boost::polygon::polygon_90_set_data<int> polySet;
+    for (dbObstruction* obs : obstructions_per_layer) {
+      Rect rect = obs->getBBox()->getBox();
+      boost::polygon::polygon_90_set_data<int> poly;
+      poly = boost::polygon::rectangle_data<int>{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+      polySet += poly.bloat(bloat*pitch,bloat*pitch,bloat*pitch,bloat*pitch);
+    }
+    polySet.shrink2(bloat*pitch,bloat*pitch,bloat*pitch,bloat*pitch);
+  
+    // Decompose the polygon set to rectanges in non-preferred direction
+    std::vector<boost::polygon::rectangle_data<int>> rects;
+    if (strcasecmp(tech_layer->getDirection().getString(),"HORIZONTAL")) {
+      polySet.get_rectangles(rects, boost::polygon::VERTICAL); 
+    } else if (strcasecmp(tech_layer->getDirection().getString(),"VERTICAL")) {
+      polySet.get_rectangles(rects, boost::polygon::HORIZONTAL); 
+    } else if (strcasecmp(tech_layer->getDirection().getString(),"NONE")) {
+      polySet.get_rectangles(rects); 
+    }
+
+    // Add the new rects to the obstructions map
+    obstructions.erase(tech_layer); 
+    for (const auto& rect : rects) {
+      dbObstruction* new_obs = dbObstruction::create(block, 
+                                                     tech_layer,
+                                                     boost::polygon::xh(rect),
+                                                     boost::polygon::yh(rect),
+                                                     boost::polygon::xl(rect),
+                                                     boost::polygon::yl(rect));
+      obstructions[tech_layer].insert(new_obs);
+    }
+  }
+}
+
 void lefout::insertObstruction(
   std::map<dbTechLayer*,std::set<dbObstruction*>>& obstructions,
   dbBlock* block,
   dbTechLayer* tech_layer,
-  int margin,
   int xMax,
   int yMax,
   int xMin,
   int yMin) const
 {
-  
-  Rect new_rect(xMax + margin,
-                yMax + margin,
-                xMin - margin,
-                yMin - margin);
-
-  // for on every obs in the relevat tech layer
-  for (auto it = obstructions[tech_layer].cbegin(); it != obstructions[tech_layer].cend();) {
-    dbObstruction* curr_obs = *it;
-    Rect curr_rect = curr_obs->getBBox()->getBox();
-
-    // if the new rect os intersects one of the currents obs, merge them and delete the old obs
-    if (new_rect.overlaps(curr_rect)) {
-        new_rect.merge(curr_rect);
-        obstructions[tech_layer].erase(it++);
-        it = obstructions[tech_layer].cbegin();
-    } else {
-      ++it;
-    }
-    
-  }
-
   dbObstruction* new_obs = dbObstruction::create(block, 
                                                  tech_layer,
-                                                 new_rect.xMax(),
-                                                 new_rect.yMax(),
-                                                 new_rect.xMin(),
-                                                 new_rect.yMin());
-
+                                                 xMax,
+                                                 yMax,
+                                                 xMin,
+                                                 yMin);
   obstructions[tech_layer].insert(new_obs);
 }
-
 
 void lefout::getObstructions(
     dbBlock* db_block,
@@ -234,7 +250,6 @@ void lefout::findSWireLayerObstructions(
         insertObstruction(obstructions,
                           net->getBlock(),
                           box->getTechLayer(),
-                          box->getTechLayer()->getPitch(),
                           box->xMax(),
                           box->yMax(),
                           box->xMin(),
@@ -258,7 +273,6 @@ void lefout::findLayerViaObstructions(
     insertObstruction(obstructions,
                       net->getBlock(),
                       db_shape.getTechLayer(),
-                      db_shape.getTechLayer()->getPitch(),
                       db_shape.getBox().xMax(),
                       db_shape.getBox().yMax(),
                       db_shape.getBox().xMin(),
@@ -288,7 +302,6 @@ void lefout::findWireLayerObstructions(
     insertObstruction(obstructions,
                       net->getBlock(),
                       shape.getTechLayer(),
-                      shape.getTechLayer()->getPitch(),
                       shape.getBox().xMax(),
                       shape.getBox().yMax(),
                       shape.getBox().xMin(),
@@ -351,7 +364,7 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fprintf(_out, "NAMESCASESENSITIVE %s ;\n", on_off_type.getString());
 }
 
-void lefout::writeBlock(dbBlock* db_block)
+void lefout::writeBlock(dbBlock* db_block, int bloat)
 {
   dbBox* bounding_box = db_block->getBBox();
   double origin_x = lefdist(bounding_box->xMin());
@@ -365,7 +378,7 @@ void lefout::writeBlock(dbBlock* db_block)
   fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
   fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
   writePins(db_block);
-  writeObstructions(db_block);
+  writeObstructions(db_block, bloat);
   fprintf(_out, "END %s\n", db_block->getName().c_str());
 }
 
@@ -1293,7 +1306,7 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   return true;
 }
 
-bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
+bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat)
 {
   _out = fopen(lef_file, "w");
   if (_out == nullptr) {
@@ -1304,8 +1317,8 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
 
-  writeHeader(db_block);
-  writeBlock(db_block);
+  writeHeader(db_block);  
+  writeBlock(db_block, bloat);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);
 
