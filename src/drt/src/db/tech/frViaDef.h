@@ -36,6 +36,7 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace fr {
 class frLef58CutClass
@@ -43,38 +44,30 @@ class frLef58CutClass
  public:
   // constructors
   frLef58CutClass()
-      : name(""), viaWidth(0), viaLength(0), numCut(1)
+      : rule_(nullptr)
   {
   }
   // getters
-  void getName(std::string& in) const { in = name; }
-  std::string getName() const { return name; }
-  frCoord getViaWidth() const { return viaWidth; }
-  bool hasViaLength() const { return (viaLength == viaWidth) ? false : true; }
-  frCoord getViaLength() const { return viaLength; }
-  frUInt4 getNumCut() const { return numCut; }
+  odb::dbTechLayerCutClassRule* getDbTechLayerCutClassRule() const { return rule_; }
+  void getName(std::string& in) const { in = rule_->getName(); }
+  std::string getName() const { return rule_->getName(); }
+  frCoord getViaWidth() const { return rule_->getWidth(); }
+  bool hasViaLength() const { return rule_->isLengthValid(); }
+  frCoord getViaLength() const { return (rule_->isLengthValid())? rule_->getLength(): rule_->getWidth(); }
+  frUInt4 getNumCut() const { return (rule_->isCutsValid())? rule_->getNumCuts() : 1; }
   // setters
-  void setName(frString& in) { name = in; }
-  void setViaWidth(frCoord in) { viaWidth = in; }
-  void setViaLength(frCoord in) { viaLength = in; }
-  void setNumCut(frUInt4 in) { numCut = in; }
+  void setDbTechLayerCutClassRule(odb::dbTechLayerCutClassRule* ruleIn) { rule_ = ruleIn; }
   void report(utl::Logger* logger)
   {
     logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}",
-                   name,
-                   viaWidth,
-                   viaLength,
-                   numCut);
+                   getName(),
+                   getViaWidth(),
+                   getViaLength(),
+                   getNumCut());
   }
 
  private:
-  std::string name;
-  frCoord viaWidth;
-  frCoord viaLength;
-  frUInt4 numCut;  // this value is not equal to #multi cuts, only used for
-                   // calculating resistance, currently ignored in rule checking
-                   // process
-
+  odb::dbTechLayerCutClassRule *rule_;
 };
 
 class frViaDef

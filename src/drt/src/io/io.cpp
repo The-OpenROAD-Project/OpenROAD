@@ -1266,19 +1266,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
 {
   for (auto rule : layer->getTechLayerCutClassRules()) {
     auto cutClass = make_unique<frLef58CutClass>();
-    string name = rule->getName();
-    cutClass->setName(name);
-    cutClass->setViaWidth(rule->getWidth());
-    if (rule->isLengthValid()) {
-      cutClass->setViaLength(rule->getLength());
-    } else {
-      cutClass->setViaLength(rule->getWidth());
-    }
-    if (rule->isCutsValid()) {
-      cutClass->setNumCut(rule->getNumCuts());
-    } else {
-      cutClass->setNumCut(1);
-    }
+    cutClass->setDbTechLayerCutClassRule(rule);
     tech->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
   }
   for (auto rule : layer->getTechLayerCutSpacingRules()) {

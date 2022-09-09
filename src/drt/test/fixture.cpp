@@ -499,9 +499,13 @@ void Fixture::makeCutClass(frLayerNum layer_num,
                            frCoord height)
 {
   auto cutClass = make_unique<frLef58CutClass>();
-  cutClass->setName(name);
-  cutClass->setViaWidth(width);
-  cutClass->setViaLength(height);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerCutClassRule::create(layer->getDbLayer(), name.c_str());
+  rule->setLengthValid(true);
+  rule->setWidth(width);
+  rule->setLength(height);
+  cutClass->setDbTechLayerCutClassRule(rule);
   design->getTech()->addCutClass(layer_num, std::move(cutClass));
 }
 
