@@ -66,6 +66,7 @@ class Parser
         logger(loggerIn),
         tmpBlock(nullptr),
         readLayerCnt(0),
+        masterSliceLayer(nullptr),
         tmpGuides(),
         tmpGRPins(),
         trackOffsetMap(),
