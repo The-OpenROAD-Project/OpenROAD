@@ -151,7 +151,7 @@ void lefout::writeObstructions(dbBlock* db_block, int bloat)
 
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
     for (dbObstruction* obs : obstructions_per_layer) {
-      writeBox("   ", obs->getBBox());
+      writeBox("  ", obs->getBBox());
     }
   }
   
