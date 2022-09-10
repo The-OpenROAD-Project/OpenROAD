@@ -3237,10 +3237,10 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 // Utility to save_lef
 //
 
-void dbBlock::saveLef(char* filename, int bloat)
+void dbBlock::saveLef(char* filename, int bloat_factor)
 {
   lefout writer(getImpl()->getLogger());
-  writer.writeAbstractLef(this, filename, bloat);
+  writer.writeAbstractLef(this, filename, bloat_factor);
 }
 
 //

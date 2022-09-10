@@ -111,19 +111,20 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
-sta::define_cmd_args "write_abstract_lef" {[-bloat amount] filename}
+sta::define_cmd_args "write_abstract_lef" {[-bloat_factor amount] filename}
 
 proc write_abstract_lef { args } {
-  sta::parse_key_args "write_abstract_lef" args keys {-bloat} flags {}
+  sta::parse_key_args "write_abstract_lef" args keys {-bloat_factor} flags {}
 
-  set bloat 2
-  if { [info exists keys(-bloat)] } {
-    set bloat $keys(-bloat)
+  set bloat_factor 0
+  if { [info exists keys(-bloat_factor)] } { 
+    set bloat_factor $keys(-bloat_factor)
+    sta::check_positive_float "bloat_factor" $bloat_factor
   }
 
   sta::check_argc_eq1 "write_abstract_lef" $args
   set filename [file nativename [lindex $args 0]]
-  [ord::get_db_block] saveLef $filename $bloat
+  [ord::get_db_block] saveLef $filename $bloat_factor
 }
 
 sta::define_cmd_args "write_cdl" {[-include_fillers]
