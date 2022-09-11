@@ -153,6 +153,20 @@ bool Node::hasInstances() const
   return !connected_instances_.empty();
 }
 
+void Node::setEnclosure(NodeEnclosure encl)
+{
+  has_enclosure_ = true;
+  encl_ = encl;
+}
+NodeEnclosure Node::getEnclosure() const
+{
+  if(has_enclosure_){
+    return encl_;
+  } else {
+    return NodeEnclosure{0,0,0,0};
+  }
+}
+
 const vector<dbInst*>& Node::getInstances() const
 {
   return connected_instances_;
