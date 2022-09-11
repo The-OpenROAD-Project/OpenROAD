@@ -1235,11 +1235,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
     auto con = make_unique<frLef58MinStepConstraint>();
-    con->setMinStepLength(rule->getMinStepLength());
-    con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
-    con->setMinAdjacentLength(
-        rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
-    con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
+    con->setDbTechLayerMinStepRule(rule);
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
@@ -1561,16 +1557,17 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       default:
         break;
     }
-    if (layer->hasMinStepMaxLength())
-      rptr->setMaxLength(layer->getMinStepMaxLength());
+    rptr->setDbTechLayer(layer);
+    // if (layer->hasMinStepMaxLength())
+      //rptr->setMaxLength(layer->getMinStepMaxLength());
     if (layer->hasMinStepMaxEdges()) {
-      rptr->setMaxEdges(layer->getMinStepMaxEdges());
+      //rptr->setMaxEdges(layer->getMinStepMaxEdges());
       rptr->setInsideCorner(true);
       rptr->setOutsideCorner(true);
       rptr->setStep(true);
       rptr->setMinstepType(frMinstepTypeEnum::UNKNOWN);
     }
-    rptr->setMinStepLength(layer->getMinStep());
+    //rptr->setMinStepLength(layer->getMinStep());
     tech->addUConstraint(std::move(uCon));
     tmpLayer->setMinStepConstraint(rptr);
   }

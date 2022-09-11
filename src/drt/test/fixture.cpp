@@ -271,10 +271,14 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   auto con = std::make_unique<frMinStepConstraint>();
 
   con->setMinstepType(frMinstepTypeEnum::STEP);
-  con->setMinStepLength(50);
+  //create layer and set it TODO resolved
+  //con->setMinStepLength(50);
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
+  auto db_layer = layer->getDbLayer();
+  db_layer->setMinStep(50);
+  con->setDbTechLayer(db_layer);
   layer->setMinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }
@@ -283,12 +287,18 @@ void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
-  con->setMinStepLength(50);
-  con->setMaxEdges(1);
-  con->setEolWidth(200);
-
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerMinStepRule::create(layer->getDbLayer());
+
+  rule->setMinStepLength(50);
+  rule->setMaxEdgesValid(true);
+  rule->setMinAdjLength1Valid(true);
+  rule->setMaxEdges(1);
+  rule->setNoBetweenEol(true);
+  rule->setEolWidth(200);
+  con->setDbTechLayerMinStepRule(rule);
+
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }

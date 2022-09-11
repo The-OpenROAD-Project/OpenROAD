@@ -357,13 +357,11 @@ class frLef58MinStepConstraint : public frConstraint
  public:
   // constructor
   frLef58MinStepConstraint()
-      : minStepLength(-1),
+      : rule_(nullptr),
         insideCorner(false),
         outsideCorner(false),
         step(false),
         maxLength(-1),
-        maxEdges(-1),
-        minAdjLength(-1),
         convexCorner(false),
         exceptWithin(-1),
         concaveCorner(false),
@@ -372,24 +370,21 @@ class frLef58MinStepConstraint : public frConstraint
         minAdjLength2(-1),
         minBetweenLength(-1),
         exceptSameCorners(false),
-        eolWidth(-1),
         concaveCorners(false)
   {
   }
   // getter
-  frCoord getMinStepLength() const { return minStepLength; }
-  bool hasMaxEdges() const { return (maxEdges != -1); }
-  int getMaxEdges() const { return maxEdges; }
-  bool hasMinAdjacentLength() const { return (minAdjLength != -1); }
-  frCoord getMinAdjacentLength() const { return minAdjLength; }
-  bool hasEolWidth() const { return (eolWidth != -1); }
-  frCoord getEolWidth() const { return eolWidth; }
+  odb::dbTechLayerMinStepRule* getDbTechLayerMinStepRule() const { return rule_; }
+  frCoord getMinStepLength() const { return rule_->getMinStepLength(); }
+  bool hasMaxEdges() const { return rule_->isMaxEdgesValid(); }
+  int getMaxEdges() const { return rule_->isMaxEdgesValid() ? rule_->getMaxEdges() : -1; }
+  bool hasMinAdjacentLength() const { return rule_->isMinAdjLength1Valid(); }
+  frCoord getMinAdjacentLength() const { return  rule_->isMinAdjLength1Valid() ? rule_->getMinAdjLength1() : -1; }
+  bool hasEolWidth() const { return  rule_->isNoBetweenEol(); }
+  frCoord getEolWidth() const { return rule_->isNoBetweenEol()? rule_->getEolWidth() : -1; }
 
   // setter
-  void setMinStepLength(frCoord in) { minStepLength = in; }
-  void setMaxEdges(int in) { maxEdges = in; }
-  void setMinAdjacentLength(frCoord in) { minAdjLength = in; }
-  void setEolWidth(frCoord in) { eolWidth = in; }
+  void setDbTechLayerMinStepRule(odb::dbTechLayerMinStepRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -403,13 +398,13 @@ class frLef58MinStepConstraint : public frConstraint
         "{} concaveCorner {} threeConcaveCorners {} width {} minAdjLength2 {} "
         "minBetweenLength {} exceptSameCorners {} eolWidth {} concaveCorners "
         "{} ",
-        minStepLength,
+        getMinStepLength(),
         insideCorner,
         outsideCorner,
         step,
         maxLength,
-        maxEdges,
-        minAdjLength,
+        getMaxEdges(),
+        getMinAdjacentLength(),
         convexCorner,
         exceptWithin,
         concaveCorner,
@@ -418,18 +413,16 @@ class frLef58MinStepConstraint : public frConstraint
         minAdjLength2,
         minBetweenLength,
         exceptSameCorners,
-        eolWidth,
+        getEolWidth(),
         concaveCorners);
   }
 
  protected:
-  frCoord minStepLength;
+  odb::dbTechLayerMinStepRule* rule_;
   bool insideCorner;
   bool outsideCorner;
   bool step;
   frCoord maxLength;
-  int maxEdges;
-  frCoord minAdjLength;
   bool convexCorner;
   frCoord exceptWithin;
   bool concaveCorner;
@@ -438,7 +431,6 @@ class frLef58MinStepConstraint : public frConstraint
   frCoord minAdjLength2;
   frCoord minBetweenLength;
   bool exceptSameCorners;
-  frCoord eolWidth;
   bool concaveCorners;
 };
 
@@ -448,19 +440,17 @@ class frMinStepConstraint : public frConstraint
  public:
   // constructor
   frMinStepConstraint()
-      : minStepLength(-1),
+      : layer_(nullptr),
         minstepType(frMinstepTypeEnum::UNKNOWN),
-        maxLength(-1),
         insideCorner(false),
         outsideCorner(true),
-        step(false),
-        maxEdges(-1)
+        step(false)
   {
   }
   // getter
-  frCoord getMinStepLength() const { return minStepLength; }
-  bool hasMaxLength() const { return (maxLength != -1); }
-  frCoord getMaxLength() const { return maxLength; }
+  frCoord getMinStepLength() const { return layer_->getMinStep(); }
+  bool hasMaxLength() const { return layer_->hasMinStepMaxLength(); }
+  frCoord getMaxLength() const { return (layer_->hasMinStepMaxLength())? layer_->getMinStepMaxLength() : -1; }
   bool hasMinstepType() const
   {
     return minstepType != frMinstepTypeEnum::UNKNOWN;
@@ -469,16 +459,14 @@ class frMinStepConstraint : public frConstraint
   bool hasInsideCorner() const { return insideCorner; }
   bool hasOutsideCorner() const { return outsideCorner; }
   bool hasStep() const { return step; }
-  bool hasMaxEdges() const { return (maxEdges != -1); }
-  int getMaxEdges() const { return maxEdges; }
+  bool hasMaxEdges() const { return layer_->hasMinStepMaxEdges(); }
+  int getMaxEdges() const { return (layer_->hasMinStepMaxEdges())? layer_->getMinStepMaxEdges() : -1; }
   // setter
+  void setDbTechLayer(odb::dbTechLayer* layerIn) { layer_ = layerIn; }
   void setMinstepType(frMinstepTypeEnum in) { minstepType = in; }
   void setInsideCorner(bool in) { insideCorner = in; }
   void setOutsideCorner(bool in) { outsideCorner = in; }
   void setStep(bool in) { step = in; }
-  void setMinStepLength(frCoord in) { minStepLength = in; }
-  void setMaxLength(frCoord in) { maxLength = in; }
-  void setMaxEdges(int in) { maxEdges = in; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -490,23 +478,21 @@ class frMinStepConstraint : public frConstraint
     logger->report(
         "Min step length min {} type {} max {} "
         "insideCorner {} outsideCorner {} step {} maxEdges {}",
-        minStepLength,
+        getMinStepLength(),
         int(minstepType),
-        maxLength,
+        getMaxLength(),
         insideCorner,
         outsideCorner,
         step,
-        maxEdges);
+        getMaxEdges());
   }
 
  protected:
-  frCoord minStepLength;
+  odb::dbTechLayer *layer_;
   frMinstepTypeEnum minstepType;
-  frCoord maxLength;
   bool insideCorner;
   bool outsideCorner;
   bool step;
-  int maxEdges;
 };
 
 // minimumcut
