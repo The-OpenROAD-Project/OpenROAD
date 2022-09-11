@@ -446,13 +446,18 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
 {
   auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
   auto con = uCon.get();
-  con->setEol(space, width);
+  // con->setEol(space, width);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
+  rule->setEolWidth(width);
+  rule->setEolSpace(space);
+  con->setDbTechLayerSpacingEolRule(rule);
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
   withinCon->setEolWithin(within);
   withinCon->setEndPrl(end_prl_spacing, end_prl);
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
+
   layer->addLef58SpacingEndOfLineConstraint(con);
   tech->addUConstraint(std::move(uCon));
   return con;
@@ -497,12 +502,16 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
     bool allCuts)
 {
   auto cutEnc
-      = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          encloseDist, cutToMetalSpacing);
+      = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
+      
   con->getWithinConstraint()->setEncloseCutConstraint(cutEnc);
-  cutEnc->setAbove(above);
-  cutEnc->setBelow(below);
-  cutEnc->setAllCuts(allCuts);
+  con->getDbTechLayerSpacingEolRule()->setAboveValid(above);
+  con->getDbTechLayerSpacingEolRule()->setEncloseDist(encloseDist);
+  con->getDbTechLayerSpacingEolRule()->setCutToMetalSpace(cutToMetalSpacing);
+  con->getDbTechLayerSpacingEolRule()->setBelowValid(below);
+  con->getDbTechLayerSpacingEolRule()->setAllCutsValid(allCuts);
+  cutEnc->setDbTechLayerSpacingEolRule(con->getDbTechLayerSpacingEolRule());
+
   return cutEnc;
 }
 

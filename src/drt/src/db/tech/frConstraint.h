@@ -500,37 +500,53 @@ class frMinimumcutConstraint : public frConstraint
 {
  public:
   frMinimumcutConstraint()
-      : numCuts(-1),
-        width(-1),
-        cutDistance(-1),
-        connection(frMinimumcutConnectionEnum::UNKNOWN),
-        length(-1),
-        distance(-1)
+      : rule_(nullptr)
   {
   }
   // getters
-  int getNumCuts() const { return numCuts; }
-  frCoord getWidth() const { return width; }
-  bool hasWithin() const { return !(cutDistance == -1); }
-  frCoord getCutDistance() const { return cutDistance; }
+  odb::dbTechMinCutRule* getDbTechMinCutRule() const { return rule_; }
+  int getNumCuts() const
+  { 
+    frUInt4 numCuts, temp;
+    return (rule_->getMinimumCuts(numCuts, temp))? numCuts : -1; 
+  }
+  frCoord getWidth() const
+  { 
+    frUInt4 width, temp;
+    return (rule_->getMinimumCuts(temp, width))? width : -1; 
+  }
+  bool hasWithin() const
+  { 
+    frUInt4 within;
+    return rule_->getCutDistance(within); 
+  }
+  frCoord getCutDistance() const
+  { 
+    frUInt4 within;
+    return (rule_->getCutDistance(within))? within : -1; 
+  }
   bool hasConnection() const
   {
-    return !(connection == frMinimumcutConnectionEnum::UNKNOWN);
+    return !(getConnection() == frMinimumcutConnectionEnum::UNKNOWN);
   }
-  frMinimumcutConnectionEnum getConnection() const { return connection; }
-  bool hasLength() const { return !(length == -1); }
-  frCoord getLength() const { return length; }
-  frCoord getDistance() const { return distance; }
+  frMinimumcutConnectionEnum getConnection() const { return (rule_->isAboveOnly())? frMinimumcutConnectionEnum::FROMABOVE : (rule_->isBelowOnly())? frMinimumcutConnectionEnum::FROMBELOW : frMinimumcutConnectionEnum::UNKNOWN; }
+  bool hasLength() const
+  { 
+    frUInt4 length, temp;
+    return rule_->getLengthForCuts(length, temp);
+  }
+  frCoord getLength() const
+  { 
+    frUInt4 length, temp;
+    return (rule_->getLengthForCuts(length, temp))? length : -1;
+  }
+  frCoord getDistance() const
+  { 
+    frUInt4 distance, temp;
+    return (rule_->getLengthForCuts(temp, distance))? distance : -1;
+  }
   // setters
-  void setNumCuts(int in) { numCuts = in; }
-  void setWidth(frCoord in) { width = in; }
-  void setWithin(frCoord in) { cutDistance = in; }
-  void setConnection(frMinimumcutConnectionEnum in) { connection = in; }
-  void setLength(frCoord in1, frCoord in2)
-  {
-    length = in1;
-    distance = in2;
-  }
+  void setDbTechMinCutRule(odb::dbTechMinCutRule* ruleIn) { rule_ = ruleIn; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -541,21 +557,16 @@ class frMinimumcutConstraint : public frConstraint
     logger->report(
         "Min cut numCuts {} width {} cutDistance {} "
         "connection {} length {} distance {}",
-        numCuts,
-        width,
-        cutDistance,
-        connection,
-        length,
-        distance);
+        getNumCuts(),
+        getWidth(),
+        getCutDistance(),
+        getConnection(),
+        getLength(),
+        getDistance());
   }
 
  protected:
-  int numCuts;
-  frCoord width;
-  frCoord cutDistance;
-  frMinimumcutConnectionEnum connection;
-  frCoord length;
-  frCoord distance;
+  odb::dbTechMinCutRule* rule_;
 };
 
 // minArea
@@ -611,28 +622,20 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
 {
  public:
   // constructors
-  frLef58SpacingEndOfLineWithinEncloseCutConstraint(frCoord encloseDistIn,
-                                                    frCoord cutToMetalSpaceIn)
-      : below(false),
-        above(false),
-        encloseDist(encloseDistIn),
-        cutToMetalSpace(cutToMetalSpaceIn),
-        allCuts(false)
+  frLef58SpacingEndOfLineWithinEncloseCutConstraint()
+      : rule_(nullptr)
   {
   }
   // setters
-  void setBelow(bool value) { below = value; }
-  void setAbove(bool value) { above = value; }
-  void setAllCuts(bool value) { allCuts = value; }
-  void setEncloseDist(frCoord value) { encloseDist = value; }
-  void setCutToMetalSpace(frCoord value) { cutToMetalSpace = value; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   // getters
-  bool isAboveOnly() const { return above; }
-  bool isBelowOnly() const { return below; }
-  bool isAboveAndBelow() const { return !(above ^ below); }
-  bool isAllCuts() const { return allCuts; }
-  frCoord getEncloseDist() const { return encloseDist; }
-  frCoord getCutToMetalSpace() const { return cutToMetalSpace; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool isAboveOnly() const { return rule_->isAboveValid(); }
+  bool isBelowOnly() const { return rule_->isBelowValid(); }
+  bool isAboveAndBelow() const { return !(rule_->isAboveValid() ^ rule_->isBelowValid()); }
+  bool isAllCuts() const { return rule_->isAllCutsValid(); }
+  frCoord getEncloseDist() const { return rule_->getEncloseDist(); }
+  frCoord getCutToMetalSpace() const { return rule_->getCutToMetalSpace(); }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -644,19 +647,15 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
     logger->report(
         "\t\tSPACING_WITHIN_ENCLOSECUT below {} above {} encloseDist "
         "{} cutToMetalSpace {} allCuts {}",
-        below,
-        above,
-        encloseDist,
-        cutToMetalSpace,
-        allCuts);
+        isBelowOnly(),
+        isAboveOnly(),
+        getEncloseDist(),
+        getCutToMetalSpace(),
+        isAllCuts());
   }
 
  private:
-  bool below;
-  bool above;
-  frCoord encloseDist;
-  frCoord cutToMetalSpace;
-  bool allCuts;
+  odb::dbTechLayerSpacingEolRule* rule_;
 };
 
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
@@ -1047,20 +1046,17 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineConstraint()
-      : eolSpace(0),
-        eolWidth(0),
-        exactWidth(false),
-        wrongDirSpacing(false),
-        wrongDirSpace(0),
+      : rule_(nullptr),
         withinConstraint(nullptr)
   {
   }
   // getters
-  frCoord getEolSpace() const { return eolSpace; }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool hasExactWidth() const { return exactWidth; }
-  bool hasWrongDirSpacing() const { return wrongDirSpacing; }
-  frCoord getWrongDirSpace() const { return wrongDirSpace; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getEolSpace() const { return rule_->getEolSpace(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool hasExactWidth() const { return rule_->isExactWidthValid(); }
+  bool hasWrongDirSpacing() const { return rule_->isWrongDirSpacingValid(); }
+  frCoord getWrongDirSpace() const { return rule_->isWrongDirSpacingValid()? rule_->getWrongDirSpace() : 0; }
   bool hasWithinConstraint() const { return (withinConstraint) ? true : false; }
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> getWithinConstraint()
       const
@@ -1070,17 +1066,7 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool hasToConcaveCornerConstraint() const { return false; }
   bool hasToNotchLengthConstraint() const { return false; }
   // setters
-  void setEol(frCoord eolSpaceIn, frCoord eolWidthIn, bool exactWidthIn = false)
-  {
-    eolSpace = eolSpaceIn;
-    eolWidth = eolWidthIn;
-    exactWidth = exactWidthIn;
-  }
-  void setWrongDirSpace(bool in)
-  {
-    wrongDirSpacing = true;
-    wrongDirSpace = in;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) {rule_ = ruleIn; }
   void setWithinConstraint(
       const std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint>& in)
   {
@@ -1096,21 +1082,17 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
     logger->report(
         "SPACING eolSpace {} eolWidth {} exactWidth {} wrongDirSpacing {} "
         "wrongDirSpace {} ",
-        eolSpace,
-        eolWidth,
-        exactWidth,
-        wrongDirSpacing,
-        wrongDirSpace);
+        getEolSpace(),
+        getEolWidth(),
+        hasExactWidth(),
+        hasWrongDirSpacing(),
+        getWrongDirSpace());
     if (withinConstraint != nullptr)
       withinConstraint->report(logger);
   }
 
  protected:
-  frCoord eolSpace;
-  frCoord eolWidth;
-  bool exactWidth;
-  bool wrongDirSpacing;
-  frCoord wrongDirSpace;
+  odb::dbTechLayerSpacingEolRule* rule_;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
 };
 

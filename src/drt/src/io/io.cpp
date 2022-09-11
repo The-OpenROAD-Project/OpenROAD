@@ -1131,12 +1131,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       continue;
     }
     auto con = make_unique<frLef58SpacingEndOfLineConstraint>();
-    con->setEol(
-        rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
-    if (rule->isWrongDirSpacingValid()) {
-      con->setWrongDirSpace(rule->getWrongDirSpace());
-    }
-
+    con->setDbTechLayerSpacingEolRule(rule);
+    
     auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
     con->setWithinConstraint(within);
     if (rule->isOppositeWidthValid()) {
@@ -1207,12 +1203,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
     }
     if (rule->isEncloseCutValid()) {
-      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          rule->getEncloseDist(), rule->getCutToMetalSpace());
+      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
       within->setEncloseCutConstraint(enc);
-      enc->setAbove(rule->isAboveValid());
-      enc->setBelow(rule->isBelowValid());
-      enc->setAllCuts(rule->isAllCutsValid());
+      enc->setDbTechLayerSpacingEolRule(rule);
     }
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech->addUConstraint(std::move(con));
@@ -1739,21 +1732,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
 
   for (auto rule : layer->getMinCutRules()) {
-    frUInt4 numCuts, width, within, length, distance;
+    frUInt4 numCuts, width;
     if (!rule->getMinimumCuts(numCuts, width))
       continue;
     unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
-    rptr->setNumCuts(numCuts);
-    rptr->setWidth(width);
-    if (rule->getCutDistance(within))
-      rptr->setWithin(within);
-    if (rule->isAboveOnly())
-      rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
-    if (rule->isBelowOnly())
-      rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
-    if (rule->getLengthForCuts(length, distance))
-      rptr->setLength(length, distance);
+    rptr->setDbTechMinCutRule(rule);
+    // if (rule->isAboveOnly())
+    //   rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
+    // if (rule->isBelowOnly())
+    //   rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
