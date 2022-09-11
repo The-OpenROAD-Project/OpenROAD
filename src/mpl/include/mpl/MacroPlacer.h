@@ -155,10 +155,10 @@ class MacroPlacer
   size_t macroCount() { return macros_.size(); }
 
  private:
-  void findMacros();
+  bool findMacros();
   bool isMissingLiberty();
 
-  void init();
+  bool init();
   // Update Macro Location from Partition info
   void updateMacroLocations(Partition& part);
   void updateDbInstLocations();
