@@ -1588,11 +1588,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           "minEnclosedArea constraint with width is not supported, skipped.");
       continue;
     }
-    frUInt4 _minEnclosedArea;
-    rule->getEnclosure(_minEnclosedArea);
-    frCoord minEnclosedArea = _minEnclosedArea;
     auto minEnclosedAreaConstraint
-        = make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
+        = make_unique<frMinEnclosedAreaConstraint>();
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
     tech->addUConstraint(std::move(minEnclosedAreaConstraint));
   }

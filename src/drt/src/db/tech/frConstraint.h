@@ -315,13 +315,27 @@ class frMinEnclosedAreaConstraint : public frConstraint
 {
  public:
   // constructor
-  frMinEnclosedAreaConstraint(frCoord areaIn) : area(areaIn), width(-1) {}
+  frMinEnclosedAreaConstraint() : rule_(nullptr) {}
   // getter
-  frCoord getArea() const { return area; }
-  bool hasWidth() const { return (width != -1); }
-  frCoord getWidth() const { return width; }
+  odb::dbTechMinEncRule* getDbTechMinEncRule() const { return rule_; }
+  frCoord getArea() const 
+  { 
+    frUInt4 _minEnclosedArea;
+    rule_->getEnclosure(_minEnclosedArea);
+    return _minEnclosedArea;
+  }
+  bool hasWidth() const 
+  { 
+    frUInt4 width;
+    return rule_->getEnclosureWidth(width);
+  }
+  frCoord getWidth() const
+  { 
+    frUInt4 width;
+    return (rule_->getEnclosureWidth(width))? width : -1; 
+  }
   // setter
-  void setWidth(frCoord widthIn) { width = widthIn; }
+  void setDbTechMinEncRule(odb::dbTechMinEncRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -330,11 +344,11 @@ class frMinEnclosedAreaConstraint : public frConstraint
 
   void report(utl::Logger* logger) const override
   {
-    logger->report("Min enclosed area {} width {}", area, width);
+    logger->report("Min enclosed area {} width {}", getArea(), getWidth());
   }
 
  protected:
-  frCoord area, width;
+  odb::dbTechMinEncRule* rule_;
 };
 
 // LEF58_MINSTEP (currently only implement GF14 related API)

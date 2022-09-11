@@ -305,10 +305,13 @@ void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
 
 void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
 {
-  auto con = std::make_unique<frMinEnclosedAreaConstraint>(200 * 200);
+  auto con = std::make_unique<frMinEnclosedAreaConstraint>();
 
   frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
+  frLayer* layer = tech->getLayer(layer_num); 
+  auto rule = odb::dbTechMinEncRule::create(layer->getDbLayer());
+  rule->setEnclosure(200*200);
+  con->setDbTechMinEncRule(rule);
   layer->addMinEnclosedAreaConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }
