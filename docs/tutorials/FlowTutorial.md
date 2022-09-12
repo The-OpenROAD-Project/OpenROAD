@@ -53,14 +53,14 @@
   - [Clock Tree Synthesis](#Clock-Tree-Synthesis)
     - [Reporting Clock Skews](#Reporting-Clock-Skews)
     - [Reporting CTS Metrics](#Reporting-CTS-Metrics)
-  - [Filler Cells](#Filler-Cells)
+  - [Adding Filler Cells](#Adding-Filler-Cells)
   - [Global Routing](#Global-Routing)
   - [Antenna Checker](#Antenna-Checker)
   - [Detail Routing](#Detail-Routing)
   - [Metal Fill](#Metal-Fill)
   - [Parasitics Extraction](#Parasitics-Extraction)
 - [Troubleshooting Problems](#Troubleshooting-Problems)
-  - [Global Router Debug](#Gloabl-Router-Debug)
+  - [Debugging Problems in Global Routing](#Debugging-Problems-in-Gloabl-Routing)
 
 ## Introduction
 
@@ -247,7 +247,7 @@ configuration examples using the Tcl interface and other such details.
 -   Detailed Placement - [OpenDP](../../src/dpl/README.md).
 -   Timing Optimization using Resizer - [Gate Resizer](../../src/rsz/README.md).
 -   Clock Tree Synthesis - [TrintonCTS](../../src/cts/README.md).
--   Global Route - [FastRoute](../../src/grt/README.md).
+-   Global Routing - [FastRoute](../../src/grt/README.md).
 -   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
 -   Detail Routing - [TritonRoute](../../src/drt/README.md).
 -   Metall Fill - [Metal Fill](../../src/fin/README.md).
@@ -256,8 +256,10 @@ configuration examples using the Tcl interface and other such details.
 
 ### Design Goals
 
-Run the `ibex` design in ORFS automated flow from RTL-to-GDS using `sky130hd`
-for the given design goals below:
+Run the `ibex` design in ORFS automated flow from RTL-to-GDS using `sky130hd`.
+`ibex` design details available 
+[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/src/ibex/README.md)
+and the design goals below:
 
 -   Area
 
@@ -1794,7 +1796,7 @@ CTS metrics are as follows for the current design.
 [INFO CTS-0006] Total number of Sinks: 301.
 ```
 
-### Filler Cells
+### Adding Filler Cells
 
 Filler cells fills gaps between detail-placed instances to connect the
 power and ground rails in the rows. Filler cells have no logical 
@@ -1933,7 +1935,7 @@ set_thread_count [expr [exec getconf _NPROCESSORS_ONLN] / 4]
 detailed_route -output_drc results/gcd_nangate45.output.drc.rpt \
                -output_maze results/gcd_nangate45.output.maze.log \
                -verbose 1 
-write_def $def_file
+write_db gcd_nangate45.odb
 ```
 
 For successful routing, DRT will end with 0 violations. 
@@ -2118,9 +2120,9 @@ The log as follows:
 This section shows you how to troubleshoot commonly occurring problems
 with the flow or any of the underlying application tools.
 
-### Global router debug tools
+### Debugging Problems in Global routing
 
-The global router(FastRoute) has a few useful functionalities to understand
+The global router has a few useful functionalities to understand
 high congestion issues in the designs.
 
 Congestion heatmap can be used on any design, whether it has 
