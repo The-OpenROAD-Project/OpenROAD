@@ -1097,11 +1097,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
             rowName, rowVals, colName, colVals, tblVals);
     unique_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
         = make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals);
-    spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
-    spacingTableConstraint->setSameMask(rule->isSameMask());
-    if (rule->isExceeptEol()) {
-      spacingTableConstraint->setEolWidth(rule->getEolWidth());
-    }
+    spacingTableConstraint->setDbTechLayerSpacingTablePrlRule(rule);
     tmpLayer->addConstraint(spacingTableConstraint.get());
     tech->addUConstraint(std::move(spacingTableConstraint));
   }
@@ -1132,75 +1128,27 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     }
     auto con = make_unique<frLef58SpacingEndOfLineConstraint>();
     con->setDbTechLayerSpacingEolRule(rule);
-    
+
     auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
     con->setWithinConstraint(within);
-    if (rule->isOppositeWidthValid()) {
-      within->setOppositeWidth(rule->getOppositeWidth());
-    }
-    if (rule->isEndPrlSpacingValid()) {
-      within->setEndPrl(rule->getEndPrlSpace(), rule->getEndPrl());
-    }
-    within->setEolWithin(rule->getEolWithin());
-    if (rule->isWrongDirWithinValid()) {
-      within->setWrongDirWithin(rule->getWrongDirWithin());
-    }
-    if (rule->isSameMaskValid()) {
-      within->setSameMask(rule->isSameMaskValid());
-    }
+    within->setDbTechLayerSpacingEolRule(rule);
     if (rule->isEndToEndValid()) {
       auto endToEnd
           = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
       within->setEndToEndConstraint(endToEnd);
-      endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
-      endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
-      if (rule->isExtensionValid()) {
-        if (rule->isWrongDirExtensionValid()) {
-          endToEnd->setExtension(rule->getExtension(),
-                                 rule->getWrongDirExtension());
-        } else {
-          endToEnd->setExtension(rule->getExtension());
-        }
-      }
-      if (rule->isOtherEndWidthValid()) {
-        endToEnd->setOtherEndWidth(rule->getOtherEndWidth());
-      }
+      endToEnd->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isParallelEdgeValid()) {
       auto parallelEdge
           = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
       within->setParallelEdgeConstraint(parallelEdge);
-      if (rule->isSubtractEolWidthValid()) {
-        parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
-      }
-      parallelEdge->setPar(rule->getParSpace(), rule->getParWithin());
-      if (rule->isParPrlValid()) {
-        parallelEdge->setPrl(rule->getParPrl());
-      }
-      if (rule->isParMinLengthValid()) {
-        parallelEdge->setMinLength(rule->getParMinLength());
-      }
-      if (rule->isTwoEdgesValid()) {
-        parallelEdge->setTwoEdges(rule->isTwoEdgesValid());
-      }
-      if (rule->isSameMetalValid()) {
-        parallelEdge->setSameMetal(rule->isSameMetalValid());
-      }
-      if (rule->isNonEolCornerOnlyValid()) {
-        parallelEdge->setNonEolCornerOnly(rule->isNonEolCornerOnlyValid());
-      }
-      if (rule->isParallelSameMaskValid()) {
-        parallelEdge->setParallelSameMask(rule->isParallelSameMaskValid());
-      }
+      parallelEdge->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
       auto len
           = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
       within->setMaxMinLengthConstraint(len);
-      if (rule->isMinLengthValid())
-        len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
-      else
-        len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
+      len->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isEncloseCutValid()) {
       auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();

@@ -659,8 +659,9 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   auto endToEnd
       = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
   con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
-  endToEnd->setEndToEndSpace(300);
-  con->getWithinConstraint()->setSameMask(true);
+  con->getWithinConstraint()->getDbTechLayerSpacingEolRule()->setEndToEndSpace(300);
+  con->getWithinConstraint()->getDbTechLayerSpacingEolRule()->setSameMaskValid(true);
+  endToEnd->setDbTechLayerSpacingEolRule(con->getWithinConstraint()->getDbTechLayerSpacingEolRule());
 
   frNet* n1 = makeNet("n1");
 

@@ -444,19 +444,26 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
     frCoord end_prl_spacing,
     frCoord end_prl)
 {
-  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
-  auto con = uCon.get();
-  // con->setEol(space, width);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
+
+  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
+  auto con = uCon.get();
+
   auto rule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
   rule->setEolWidth(width);
   rule->setEolSpace(space);
   con->setDbTechLayerSpacingEolRule(rule);
+  
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
-  withinCon->setEolWithin(within);
-  withinCon->setEndPrl(end_prl_spacing, end_prl);
+  
+  auto withinRule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
+  withinRule->setEolWithin(within);
+  withinRule->setEndPrlSpacingValid(true);
+  withinRule->setEndPrl(end_prl);
+  withinRule->setEndPrlSpace(end_prl_spacing);
+  withinCon->setDbTechLayerSpacingEolRule(withinRule);
 
   layer->addLef58SpacingEndOfLineConstraint(con);
   tech->addUConstraint(std::move(uCon));
@@ -473,8 +480,12 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
   auto parallelEdge
       = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
   con->getWithinConstraint()->setParallelEdgeConstraint(parallelEdge);
-  parallelEdge->setPar(par_space, par_within);
-  parallelEdge->setTwoEdges(two_edges);
+
+  con->getDbTechLayerSpacingEolRule()->setParSpace(par_space);
+  con->getDbTechLayerSpacingEolRule()->setParWithin(par_within);
+  con->getDbTechLayerSpacingEolRule()->setTwoEdgesValid(two_edges);
+  parallelEdge->setDbTechLayerSpacingEolRule(con->getDbTechLayerSpacingEolRule());
+
   return parallelEdge;
 }
 
@@ -488,7 +499,17 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
   auto minMax
       = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
   con->getWithinConstraint()->setMaxMinLengthConstraint(minMax);
-  minMax->setLength(max, min_max_length, two_sides);
+
+  con->getDbTechLayerSpacingEolRule()->setMaxLengthValid(max);
+  con->getDbTechLayerSpacingEolRule()->setMinLengthValid(!max);
+  if(max){
+    con->getDbTechLayerSpacingEolRule()->setMaxLength(min_max_length);
+  } else {
+    con->getDbTechLayerSpacingEolRule()->setMinLength(min_max_length);
+  }
+  con->getDbTechLayerSpacingEolRule()->setTwoEdgesValid(two_sides);
+
+  minMax->setDbTechLayerSpacingEolRule(con->getDbTechLayerSpacingEolRule());
   return minMax;
 }
 

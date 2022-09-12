@@ -663,51 +663,24 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinEndToEndConstraint()
-      : endToEndSpace(0),
-        cutSpace(false),
-        oneCutSpace(0),
-        twoCutSpace(0),
-        hExtension(false),
-        extension(0),
-        wrongDirExtension(false),
-        hOtherEndWidth(false),
-        otherEndWidth(0)
+      : rule_(nullptr),
+         cutSpace(false)
   {
   }
   // getters
-  frCoord getEndToEndSpace() const { return endToEndSpace; }
-  frCoord getOneCutSpace() const { return oneCutSpace; }
-  frCoord getTwoCutSpace() const { return twoCutSpace; }
-  bool hasExtension() const { return hExtension; }
-  frCoord getExtension() const { return extension; }
-  frCoord getWrongDirExtension() const { return wrongDirExtension; }
-  bool hasOtherEndWidth() const { return hOtherEndWidth; }
-  frCoord getOtherEndWidth() const { return otherEndWidth; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getEndToEndSpace() const { return rule_->getEndToEndSpace(); }
+  frCoord getOneCutSpace() const { return rule_->getOneCutSpace(); }
+  frCoord getTwoCutSpace() const { return rule_->getTwoCutSpace(); }
+  bool hasExtension() const { return rule_->isExtensionValid(); }
+  frCoord getExtension() const { return (rule_->isExtensionValid())? rule_->getExtension() : 0; }
+  frCoord getWrongDirExtension() const { return (rule_->isWrongDirExtensionValid())? rule_->getWrongDirExtension() : 0; }
+  bool hasOtherEndWidth() const { return rule_->isOtherEndWidthValid(); }
+  frCoord getOtherEndWidth() const { return (rule_->isOtherEndWidthValid())? rule_->getOtherEndWidth() : 0; }
 
   // setters
-  void setEndToEndSpace(frCoord in) { endToEndSpace = in; }
-  void setCutSpace(frCoord one, frCoord two)
-  {
-    oneCutSpace = one;
-    twoCutSpace = two;
-  }
-  void setExtension(frCoord extensionIn)
-  {
-    hExtension = true;
-    extension = extensionIn;
-    wrongDirExtension = extensionIn;
-  }
-  void setExtension(frCoord extensionIn, frCoord wrongDirExtensionIn)
-  {
-    hExtension = true;
-    extension = extensionIn;
-    wrongDirExtension = wrongDirExtensionIn;
-  }
-  void setOtherEndWidth(frCoord in)
-  {
-    hOtherEndWidth = true;
-    otherEndWidth = in;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
+
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -720,27 +693,20 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
         "\t\tSPACING_WITHIN_ENDTOEND endToEndSpace {} cutSpace {} oneCutSpace "
         "{} twoCutSpace {} hExtension {} extension {} wrongDirExtension {} "
         "hOtherEndWidth {} otherEndWidth {} ",
-        endToEndSpace,
+        getEndToEndSpace(),
         cutSpace,
-        oneCutSpace,
-        twoCutSpace,
-        hExtension,
-        extension,
-        wrongDirExtension,
-        hOtherEndWidth,
-        otherEndWidth);
+        getOneCutSpace(),
+        getTwoCutSpace(),
+        hasExtension(),
+        getExtension(),
+        getWrongDirExtension(),
+        hasOtherEndWidth(),
+        getOtherEndWidth());
   }
 
  protected:
-  frCoord endToEndSpace;
+  odb::dbTechLayerSpacingEolRule* rule_;
   bool cutSpace;
-  frCoord oneCutSpace;
-  frCoord twoCutSpace;
-  bool hExtension;
-  frCoord extension;
-  frCoord wrongDirExtension;
-  bool hOtherEndWidth;
-  frCoord otherEndWidth;
 };
 
 class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
@@ -748,52 +714,24 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinParallelEdgeConstraint()
-      : subtractEolWidth(false),
-        parSpace(0),
-        parWithin(0),
-        hPrl(false),
-        prl(0),
-        hMinLength(false),
-        minLength(0),
-        twoEdges(false),
-        sameMetal(false),
-        nonEolCornerOnly(false),
-        parallelSameMask(false)
+      : rule_(nullptr)
   {
   }
   // getters
-  bool hasSubtractEolWidth() const { return subtractEolWidth; }
-  frCoord getParSpace() const { return parSpace; }
-  frCoord getParWithin() const { return parWithin; }
-  bool hasPrl() const { return hPrl; }
-  frCoord getPrl() const { return prl; }
-  bool hasMinLength() const { return hMinLength; }
-  frCoord getMinLength() const { return minLength; }
-  bool hasTwoEdges() const { return twoEdges; }
-  bool hasSameMetal() const { return sameMetal; }
-  bool hasNonEolCornerOnly() const { return nonEolCornerOnly; }
-  bool hasParallelSameMask() const { return parallelSameMask; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool hasSubtractEolWidth() const { return rule_->isSubtractEolWidthValid(); }
+  frCoord getParSpace() const { return rule_->getParSpace(); }
+  frCoord getParWithin() const { return rule_->getParWithin(); }
+  bool hasPrl() const { return rule_->isParPrlValid(); }
+  frCoord getPrl() const { return (rule_->isParPrlValid())? rule_->getParPrl() : 0; }
+  bool hasMinLength() const { return rule_->isParMinLengthValid(); }
+  frCoord getMinLength() const { return (rule_->isParMinLengthValid())? rule_->getParMinLength() : 0; }
+  bool hasTwoEdges() const { return rule_->isTwoEdgesValid(); }
+  bool hasSameMetal() const { return rule_->isSameMetalValid(); }
+  bool hasNonEolCornerOnly() const { return rule_->isNonEolCornerOnlyValid(); }
+  bool hasParallelSameMask() const { return rule_->isParallelSameMaskValid(); }
   // setters
-  void setSubtractEolWidth(bool in) { subtractEolWidth = in; }
-  void setPar(frCoord parSpaceIn, frCoord parWithinIn)
-  {
-    parSpace = parSpaceIn;
-    parWithin = parWithinIn;
-  }
-  void setPrl(frCoord in)
-  {
-    hPrl = true;
-    prl = in;
-  }
-  void setMinLength(frCoord in)
-  {
-    hMinLength = true;
-    minLength = in;
-  }
-  void setTwoEdges(bool in) { twoEdges = in; }
-  void setSameMetal(bool in) { sameMetal = in; }
-  void setNonEolCornerOnly(bool in) { nonEolCornerOnly = in; }
-  void setParallelSameMask(bool in) { parallelSameMask = in; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn;}
 
   // others
   frConstraintTypeEnum typeId() const override
@@ -807,31 +745,21 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
         "\t\tSPACING_WITHIN_PARALLELEDGE subtractEolWidth {} parSpace {} "
         "parWithin {} hPrl {} prl {} hMinLength {} minLength {} twoEdges {} "
         "sameMetal {} nonEolCornerOnly {} parallelSameMask {} ",
-        subtractEolWidth,
-        parSpace,
-        parWithin,
-        hPrl,
-        prl,
-        hMinLength,
-        minLength,
-        twoEdges,
-        sameMetal,
-        nonEolCornerOnly,
-        parallelSameMask);
+        hasSubtractEolWidth(),
+        getParSpace(),
+        getParWithin(),
+        hasPrl(),
+        getPrl(),
+        hasMinLength(),
+        getMinLength(),
+        hasTwoEdges(),
+        hasSameMetal(),
+        hasNonEolCornerOnly(),
+        hasParallelSameMask());
   }
 
  protected:
-  bool subtractEolWidth;
-  frCoord parSpace;
-  frCoord parWithin;
-  bool hPrl;
-  frCoord prl;
-  bool hMinLength;
-  frCoord minLength;
-  bool twoEdges;
-  bool sameMetal;
-  bool nonEolCornerOnly;
-  bool parallelSameMask;
+  odb::dbTechLayerSpacingEolRule *rule_;
 };
 
 class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
@@ -839,22 +767,18 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinMaxMinLengthConstraint()
-      : maxLength(false), length(0), twoSides(false)
+      : rule_(nullptr)
   {
   }
 
   // getters
-  frCoord getLength() const { return length; }
-  bool isMaxLength() const { return maxLength; }
-  bool isTwoSides() const { return twoSides; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  frCoord getLength() const { return rule_->isMinLengthValid()? rule_->getMinLength() : rule_->getMaxLength(); }
+  bool isMaxLength() const { return rule_->isMaxLengthValid(); }
+  bool isTwoSides() const { return rule_->isTwoEdgesValid(); }
 
   // setters
-  void setLength(bool maxLengthIn, frCoord lengthIn, bool twoSidesIn = false)
-  {
-    maxLength = maxLengthIn;
-    length = lengthIn;
-    twoSides = twoSidesIn;
-  }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -865,15 +789,13 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
   {
     logger->report(
         "\t\tSPACING_WITHIN_MAXMIN maxLength {} length {} twoSides {} ",
-        maxLength,
-        length,
-        twoSides);
+        isMaxLength(),
+        getLength(),
+        isTwoSides());
   }
 
  protected:
-  bool maxLength;
-  frCoord length;
-  bool twoSides;
+  odb::dbTechLayerSpacingEolRule* rule_;
 };
 
 class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
@@ -881,26 +803,21 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
  public:
   // constructors
   frLef58SpacingEndOfLineWithinConstraint()
-      : hOppositeWidth(false),
-        oppositeWidth(0),
-        eolWithin(0),
-        wrongDirWithin(false),
-        endPrlSpacing(0),
-        endPrl(0),
-        sameMask(false),
+      : rule_(nullptr),
         endToEndConstraint(nullptr),
         parallelEdgeConstraint(nullptr)
   {
   }
 
   // getters
-  bool hasOppositeWidth() const { return hOppositeWidth; }
-  frCoord getOppositeWidth() const { return oppositeWidth; }
-  frCoord getEolWithin() const { return sameMask ? 0 : eolWithin; }
-  frCoord getWrongDirWithin() const { return wrongDirWithin; }
-  frCoord getEndPrlSpacing() const { return endPrlSpacing; }
-  frCoord getEndPrl() const { return endPrl; }
-  bool hasSameMask() const { return sameMask; }
+  odb::dbTechLayerSpacingEolRule* getDbTechLayerSpacingEolRule() const { return rule_; }
+  bool hasOppositeWidth() const { return rule_->isOppositeWidthValid(); }
+  frCoord getOppositeWidth() const { return rule_->isOppositeWidthValid()? rule_->getOppositeWidth() : 0; }
+  frCoord getEolWithin() const { return rule_->getEolWithin(); }
+  frCoord getWrongDirWithin() const { return rule_->isWrongDirWithinValid()? rule_->getWrongDirWithin() : 0; }
+  frCoord getEndPrlSpacing() const { return rule_->isEndPrlSpacingValid()? rule_->getEndPrlSpace() : 0; }
+  frCoord getEndPrl() const { return rule_->isEndPrlSpacingValid()? rule_->getEndPrl() : 0; }
+  bool hasSameMask() const { return rule_->isSameMaskValid(); }
   bool hasExceptExactWidth() const
   {
     return false;  // skip for now
@@ -913,7 +830,10 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   {
     return false;  // skip for now
   }
-  bool hasEndPrlSpacing() const { return endPrlSpacing; }
+  bool hasEndPrlSpacing() const
+  {
+    return rule_->isEndPrlSpacingValid();
+  }
   bool hasEndToEndConstraint() const
   {
     return (endToEndConstraint) ? true : false;
@@ -959,23 +879,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     return encloseCutConstraint;
   }
   // setters
-  void setOppositeWidth(frCoord in)
-  {
-    hOppositeWidth = true;
-    oppositeWidth = in;
-  }
-  void setEolWithin(frCoord in)
-  {
-    eolWithin = in;
-    wrongDirWithin = in;
-  }
-  void setEndPrl(frCoord endPrlSpacingIn, frCoord endPrlIn)
-  {
-    endPrlSpacing = endPrlSpacingIn;
-    endPrl = endPrlIn;
-  }
-  void setWrongDirWithin(frCoord in) { wrongDirWithin = in; }
-  void setSameMask(bool in) { sameMask = in; }
+  void setDbTechLayerSpacingEolRule(odb::dbTechLayerSpacingEolRule* ruleIn) { rule_ = ruleIn; }
   void setEndToEndConstraint(
       const std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>&
           in)
@@ -1010,13 +914,13 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
     logger->report(
         "\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} "
         "wrongDirWithin {} sameMask {} endPrlSpacing {} endPrl {}",
-        hOppositeWidth,
-        oppositeWidth,
-        eolWithin,
-        wrongDirWithin,
-        sameMask,
-        endPrlSpacing,
-        endPrl);
+        hasOppositeWidth(),
+        getOppositeWidth(),
+        getEolWithin(),
+        getWrongDirWithin(),
+        hasSameMask(),
+        getEndPrlSpacing(),
+        getEndPrl());
     if (endToEndConstraint != nullptr)
       endToEndConstraint->report(logger);
     if (parallelEdgeConstraint != nullptr)
@@ -1024,13 +928,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
 
  protected:
-  bool hOppositeWidth;
-  frCoord oppositeWidth;
-  frCoord eolWithin;
-  frCoord wrongDirWithin;
-  frCoord endPrlSpacing;
-  frCoord endPrl;
-  bool sameMask;
+  odb::dbTechLayerSpacingEolRule* rule_;
   std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>
       endToEndConstraint;
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
@@ -1534,14 +1432,11 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       const std::map<int, std::pair<frCoord, frCoord>>&
           exceptWithinConstraintIn)
       : frSpacingTableConstraint(parallelRunLengthConstraintIn),
-        exceptWithinConstraint(exceptWithinConstraintIn),
-        wrongDirection(false),
-        sameMask(false),
-        exceptEol(false),
-        eolWidth(0)
+        exceptWithinConstraint(exceptWithinConstraintIn)
   {
   }
   // getter
+  odb::dbTechLayerSpacingTablePrlRule* getDbTechLayerSpacingTablePrlRule() const { return rule_; }
   bool hasExceptWithin(frCoord val) const
   {
     auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
@@ -1553,23 +1448,17 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
     auto rowIdx = getParallelRunLengthConstraint()->getRowIdx(val);
     return exceptWithinConstraint.at(rowIdx);
   }
-  bool isWrongDirection() const { return wrongDirection; }
-  bool isSameMask() const { return sameMask; }
-  bool hasExceptEol() const { return exceptEol; }
-  frUInt4 getEolWidth() const { return eolWidth; }
+  bool isWrongDirection() const { return rule_->isWrongDirection(); }
+  bool isSameMask() const { return rule_->isSameMask(); }
+  bool hasExceptEol() const { return rule_->isExceeptEol(); }
+  frUInt4 getEolWidth() const { return rule_->getEolWidth(); }
   // setters
   void setExceptWithinConstraint(
       std::map<int, std::pair<frCoord, frCoord>>& exceptWithinConstraintIn)
   {
     exceptWithinConstraint = exceptWithinConstraintIn;
   }
-  void setWrongDirection(bool in) { wrongDirection = in; }
-  void setSameMask(bool in) { sameMask = in; }
-  void setEolWidth(frUInt4 in)
-  {
-    exceptEol = true;
-    eolWidth = in;
-  }
+  void setDbTechLayerSpacingTablePrlRule(odb::dbTechLayerSpacingTablePrlRule* ruleIn) { rule_ = ruleIn; }
 
   frConstraintTypeEnum typeId() const override
   {
@@ -1580,10 +1469,10 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   {
     logger->report(
         "SPACINGTABLE wrongDirection {} sameMask {} exceptEol {} eolWidth {} ",
-        wrongDirection,
-        sameMask,
-        exceptEol,
-        eolWidth);
+        isWrongDirection(),
+        isSameMask(),
+        hasExceptEol(),
+        getEolWidth());
     logger->report("\texceptWithinConstraint");
     for (auto& [key, val] : exceptWithinConstraint)
       logger->report("\t{} ({} {})", key, val.first, val.second);
@@ -1591,10 +1480,7 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
 
  protected:
   std::map<frCoord, std::pair<frCoord, frCoord>> exceptWithinConstraint;
-  bool wrongDirection;
-  bool sameMask;
-  bool exceptEol;
-  frUInt4 eolWidth;
+  odb::dbTechLayerSpacingTablePrlRule* rule_;
 };
 
 // ADJACENTCUTS
