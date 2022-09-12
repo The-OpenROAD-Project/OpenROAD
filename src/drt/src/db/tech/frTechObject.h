@@ -32,6 +32,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -39,17 +40,15 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
-#include <set>
 namespace odb {
-  class dbTechLayer;
+class dbTechLayer;
 }
 namespace fr {
 namespace io {
 class Parser;
 }
 
-class frTechObject
-{
+class frTechObject {
  public:
   // constructors
   // frTechObject() : dbUnit(0), manufacturingGrid(0) {}
@@ -57,9 +56,10 @@ class frTechObject
   // getters
   odb::dbTech* getDbTech() const { return db_tech_; }
   frUInt4 getDBUPerUU() const { return db_tech_->getDbUnitsPerMicron(); }
-  frUInt4 getManufacturingGrid() const { return db_tech_->getManufacturingGrid(); }
-  frLayer* getLayer(const frString& name) const
-  {
+  frUInt4 getManufacturingGrid() const {
+    return db_tech_->getManufacturingGrid();
+  }
+  frLayer* getLayer(const frString& name) const {
     if (name2layer.find(name) == name2layer.end()) {
       // std::cout <<"Error: cannot find layer" <<std::endl;
       // exit(1);
@@ -68,8 +68,7 @@ class frTechObject
       return name2layer.at(name);
     }
   }
-  frLayer* getLayer(frLayerNum in) const
-  {
+  frLayer* getLayer(frLayerNum in) const {
     if ((int) in < 0 || in >= (int) layers.size()) {
       std::cout << "Error: cannot find layer" << std::endl;
       exit(1);
@@ -78,40 +77,33 @@ class frTechObject
     }
   }
   frLayerNum getBottomLayerNum() const { return 0; }
-  frLayerNum getTopLayerNum() const
-  {
-    return (frLayerNum) ((int) layers.size() - 1);
+  frLayerNum getTopLayerNum() const {
+    return (frLayerNum)((int) layers.size() - 1);
   }
-  const std::vector<std::unique_ptr<frLayer>>& getLayers() const
-  {
+  const std::vector<std::unique_ptr<frLayer>>& getLayers() const {
     return layers;
   }
 
   const std::vector<std::unique_ptr<frViaDef>>& getVias() const { return vias; }
   const std::vector<std::unique_ptr<frViaRuleGenerate>>& getViaRuleGenerates()
-      const
-  {
+      const {
     return viaRuleGenerates;
   }
-  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
-  {
-    return unidirectional_layers_.find(dbLayer)
-           != unidirectional_layers_.end();
+  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const {
+    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
 
   // setters
   void setTechObject(odb::dbTech* dbTechIn) { db_tech_ = dbTechIn; }
   // void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
   // void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
-  void addLayer(std::unique_ptr<frLayer> in)
-  {
+  void addLayer(std::unique_ptr<frLayer> in) {
     name2layer[in->getName()] = in.get();
     layers.push_back(std::move(in));
     layer2Name2CutClass.push_back(std::map<std::string, frLef58CutClass*>());
     layerCutClass.push_back(std::vector<std::unique_ptr<frLef58CutClass>>());
   }
-  void addVia(std::unique_ptr<frViaDef> in)
-  {
+  void addVia(std::unique_ptr<frViaDef> in) {
     in->setId(vias.size());
     if (name2via.find(in->getName()) != name2via.end()) {
       std::cout << "Error: duplicated via definition for " << in->getName()
@@ -120,36 +112,31 @@ class frTechObject
     name2via[in->getName()] = in.get();
     vias.push_back(std::move(in));
   }
-  void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in)
-  {
+  void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in) {
     auto rptr = in.get();
     layer2Name2CutClass[lNum][in->getName()] = rptr;
     layerCutClass[lNum].push_back(std::move(in));
     layers[lNum]->addCutClass(rptr);
   }
-  void addViaRuleGenerate(std::unique_ptr<frViaRuleGenerate> in)
-  {
+  void addViaRuleGenerate(std::unique_ptr<frViaRuleGenerate> in) {
     name2viaRuleGenerate[in->getName()] = in.get();
     viaRuleGenerates.push_back(std::move(in));
   }
-  void addUConstraint(std::unique_ptr<frConstraint> in)
-  {
+  void addUConstraint(std::unique_ptr<frConstraint> in) {
     in->setId(uConstraints.size());
     auto type = in->typeId();
-    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
-        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+    if (type == frConstraintTypeEnum::frcMinStepConstraint
+        || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
       hasCornerSpacingConstraint_ = true;
     }
     uConstraints.push_back(std::move(in));
   }
-  frConstraint* getConstraint(int idx)
-  {
+  frConstraint* getConstraint(int idx) {
     if (idx < uConstraints.size())
       return uConstraints[idx].get();
     return nullptr;
   }
-  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
-  {
+  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer) {
     unidirectional_layers_.insert(dbLayer);
   }
 
@@ -159,21 +146,18 @@ class frTechObject
                              bool isCurrDown,
                              bool isCurrDirX,
                              frCoord len,
-                             frNonDefaultRule* ndr = nullptr)
-  {
+                             frNonDefaultRule* ndr = nullptr) {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    return isIncluded(
-        (ndr ? ndr->via2ViaForbiddenLen
-             : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-        len);
+    return isIncluded((ndr ? ndr->via2ViaForbiddenLen
+                           : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
+                      len);
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
                              bool isDown,
                              bool isCurrDirX,
                              frCoord len,
-                             frNonDefaultRule* ndr = nullptr)
-  {
+                             frNonDefaultRule* ndr = nullptr) {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
     return isIncluded((ndr ? ndr->viaForbiddenTurnLen
                            : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx],
@@ -183,38 +167,32 @@ class frTechObject
   bool isLine2LineForbiddenLen(int tableLayerIdx,
                                bool isZShape,
                                bool isCurrDirX,
-                               frCoord len)
-  {
+                               frCoord len) {
     int tableEntryIdx = getTableEntryIdx(!isZShape, !isCurrDirX);
     return isIncluded(line2LineForbiddenLen[tableLayerIdx][tableEntryIdx], len);
   }
 
-  bool isViaForbiddenThrough(int tableLayerIdx, bool isDown, bool isCurrDirX)
-  {
+  bool isViaForbiddenThrough(int tableLayerIdx, bool isDown, bool isCurrDirX) {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
     return viaForbiddenThrough[tableLayerIdx][tableEntryIdx];
   }
 
   frViaDef* getVia(frString name) const { return name2via.at(name); }
 
-  frViaRuleGenerate* getViaRule(frString name) const
-  {
+  frViaRuleGenerate* getViaRule(frString name) const {
     return name2viaRuleGenerate.at(name);
   }
 
-  void addNDR(std::unique_ptr<frNonDefaultRule> n)
-  {
+  void addNDR(std::unique_ptr<frNonDefaultRule> n) {
     nonDefaultRules.push_back(std::move(n));
   }
 
   const std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules()
-      const
-  {
+      const {
     return nonDefaultRules;
   }
 
-  frNonDefaultRule* getNondefaultRule(string name)
-  {
+  frNonDefaultRule* getNondefaultRule(string name) {
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
       if (nd->getName() == name)
         return nd.get();
@@ -222,8 +200,7 @@ class frTechObject
     return nullptr;
   }
 
-  frCoord getMaxNondefaultSpacing(int z)
-  {
+  frCoord getMaxNondefaultSpacing(int z) {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
       if (nd->getSpacing(z) > spc)
@@ -232,8 +209,7 @@ class frTechObject
     return spc;
   }
 
-  frCoord getMaxNondefaultWidth(int z)
-  {
+  frCoord getMaxNondefaultWidth(int z) {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
       if (nd->getWidth(z) > spc)
@@ -245,8 +221,7 @@ class frTechObject
   bool hasNondefaultRules() { return !nonDefaultRules.empty(); }
 
   // debug
-  void printAllConstraints(utl::Logger* logger)
-  {
+  void printAllConstraints(utl::Logger* logger) {
     logger->report("Reporting layer properties.");
     for (auto& layer : layers) {
       auto type = layer->getType();
@@ -258,8 +233,7 @@ class frTechObject
     }
   }
 
-  void printDefaultVias(Logger* logger)
-  {
+  void printDefaultVias(Logger* logger) {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
       if (layer->getType() == dbTechLayerType::CUT
@@ -274,15 +248,15 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
+  bool hasCornerSpacingConstraint() const {
+    return hasCornerSpacingConstraint_;
+  }
 
-  bool isHorizontalLayer(frLayerNum l)
-  {
+  bool isHorizontalLayer(frLayerNum l) {
     return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
   }
 
-  bool isVerticalLayer(frLayerNum l)
-  {
+  bool isVerticalLayer(frLayerNum l) {
     return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
   }
 
@@ -306,7 +280,7 @@ class frTechObject
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
-  template<typename T>
+  template <typename T>
   using ByLayer = std::vector<T>;
 
   // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
@@ -364,8 +338,7 @@ class frTechObject
   std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   // forbidden length table related utilities
-  int getTableEntryIdx(bool in1, bool in2)
-  {
+  int getTableEntryIdx(bool in1, bool in2) {
     int retIdx = 0;
     if (in1) {
       retIdx += 1;
@@ -377,8 +350,7 @@ class frTechObject
     return retIdx;
   }
 
-  int getTableEntryIdx(bool in1, bool in2, bool in3)
-  {
+  int getTableEntryIdx(bool in1, bool in2, bool in3) {
     int retIdx = 0;
     if (in1) {
       retIdx += 1;
@@ -394,8 +366,7 @@ class frTechObject
     return retIdx;
   }
 
-  bool isIncluded(const ForbiddenRanges& intervals, const frCoord len)
-  {
+  bool isIncluded(const ForbiddenRanges& intervals, const frCoord len) {
     bool included = false;
     for (auto& interval : intervals) {
       if (interval.first <= len && interval.second >= len) {
