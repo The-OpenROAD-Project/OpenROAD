@@ -999,34 +999,21 @@ class frLef58EolKeepOutConstraint : public frConstraint
  public:
   // constructors
   frLef58EolKeepOutConstraint()
-      : backwardExt(0),
-        sideExt(0),
-        forwardExt(0),
-        eolWidth(0),
-        cornerOnly(false),
-        exceptWithin(false),
-        withinLow(0),
-        withinHigh(0)
+      : rule_(nullptr)
   {
   }
   // getters
-  frCoord getBackwardExt() const { return backwardExt; }
-  frCoord getForwardExt() const { return forwardExt; }
-  frCoord getSideExt() const { return sideExt; }
-  frCoord getEolWidth() const { return eolWidth; }
-  bool isCornerOnly() const { return cornerOnly; }
-  bool isExceptWithin() const { return exceptWithin; }
-  frCoord getWithinLow() const { return withinLow; }
-  frCoord getWithinHigh() const { return withinHigh; }
+  odb::dbTechLayerEolKeepOutRule* getDbTechLayerEolKeepOutRule() const { return rule_; }
+  frCoord getBackwardExt() const { return rule_->getBackwardExt(); }
+  frCoord getForwardExt() const { return rule_->getForwardExt(); }
+  frCoord getSideExt() const { return rule_->getSideExt(); }
+  frCoord getEolWidth() const { return rule_->getEolWidth(); }
+  bool isCornerOnly() const { return rule_->isCornerOnly(); }
+  bool isExceptWithin() const { return rule_->isExceptWithin(); }
+  frCoord getWithinLow() const { return rule_->getWithinLow(); }
+  frCoord getWithinHigh() const { return rule_->getWithinHigh(); }
   // setters
-  void setBackwardExt(frCoord value) { backwardExt = value; }
-  void setForwardExt(frCoord value) { forwardExt = value; }
-  void setSideExt(frCoord value) { sideExt = value; }
-  void setEolWidth(frCoord value) { eolWidth = value; }
-  void setCornerOnly(bool value) { cornerOnly = value; }
-  void setExceptWithin(bool value) { exceptWithin = value; }
-  void setWithinLow(frCoord value) { withinLow = value; }
-  void setWithinHigh(frCoord value) { withinHigh = value; }
+  void setDbTechLayerEolKeepOutRule(odb::dbTechLayerEolKeepOutRule* ruleIn) { rule_ = ruleIn; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -1037,24 +1024,18 @@ class frLef58EolKeepOutConstraint : public frConstraint
     logger->report(
         "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
         "cornerOnly {} exceptWithin {} withinLow {} withinHigh {}",
-        backwardExt,
-        sideExt,
-        forwardExt,
-        eolWidth,
-        cornerOnly,
-        exceptWithin,
-        withinLow,
-        withinHigh);
+        getBackwardExt(),
+        getSideExt(),
+        getForwardExt(),
+        getEolWidth(),
+        isCornerOnly(),
+        isExceptWithin(),
+        getWithinLow(),
+        getWithinHigh());
   }
 
  private:
-  frCoord backwardExt;
-  frCoord sideExt;
-  frCoord forwardExt;
-  frCoord eolWidth;
-  bool cornerOnly;
-  bool exceptWithin;
-  frCoord withinLow, withinHigh;
+  odb::dbTechLayerEolKeepOutRule* rule_;
 };
 
 class frLef58CornerSpacingSpacingConstraint;

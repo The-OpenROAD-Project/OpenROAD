@@ -422,18 +422,24 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
+  
   auto con = std::make_unique<frLef58EolKeepOutConstraint>();
   auto rptr = con.get();
-  rptr->setEolWidth(width);
-  rptr->setForwardExt(forward);
-  rptr->setBackwardExt(backward);
-  rptr->setSideExt(side);
-  rptr->setCornerOnly(cornerOnly);
-  rptr->setExceptWithin(exceptWithin);
-  rptr->setWithinLow(withinLow);
-  rptr->setWithinHigh(withinHigh);
+  auto rule = odb::dbTechLayerEolKeepOutRule::create(layer->getDbLayer());
+
+  rule->setEolWidth(width);
+  rule->setForwardExt(forward);
+  rule->setBackwardExt(backward);
+  rule->setSideExt(side);
+  rule->setCornerOnly(cornerOnly);
+  rule->setExceptWithin(exceptWithin);
+  rule->setWithinLow(withinLow);
+  rule->setWithinHigh(withinHigh);
+  rptr->setDbTechLayerEolKeepOutRule(rule);
+
   layer->addLef58EolKeepOutConstraint(rptr);
   tech->addUConstraint(std::move(con));
+
 }
 
 frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(

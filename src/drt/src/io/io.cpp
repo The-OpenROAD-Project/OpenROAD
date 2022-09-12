@@ -1697,14 +1697,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
     unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
     auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
-    rptr->setEolWidth(rule->getEolWidth());
-    rptr->setBackwardExt(rule->getBackwardExt());
-    rptr->setForwardExt(rule->getForwardExt());
-    rptr->setSideExt(rule->getSideExt());
-    rptr->setCornerOnly(rule->isCornerOnly());
-    rptr->setExceptWithin(rule->isExceptWithin());
-    rptr->setWithinLow(rule->getWithinLow());
-    rptr->setWithinHigh(rule->getWithinHigh());
+    rptr->setDbTechLayerEolKeepOutRule(rule);
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }
