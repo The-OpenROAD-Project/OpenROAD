@@ -147,9 +147,11 @@ int MacroPlacer::getSolutionCount()
   return solution_count_;
 }
 
-void MacroPlacer::init()
+bool MacroPlacer::init()
 {
-  findMacros();
+  if (!findMacros()) {
+    return false;
+  }
 
   // Connection driven will be disabled if some instances are missing liberty
   // cells.
@@ -164,6 +166,7 @@ void MacroPlacer::init()
                   "Some instances do not have Liberty models. TritonMP will "
                   "place macros without connection information.");
   }
+  return true;
 }
 
 bool MacroPlacer::isMissingLiberty()
@@ -197,7 +200,9 @@ void MacroPlacer::reportEdgePinCounts()
 // Use parquefp on all the macros in the lower left corner.
 void MacroPlacer::placeMacrosCornerMinWL()
 {
-  init();
+  if (!init()) {
+    return;
+  }
 
   double wl = getWeightedWL();
   logger_->info(MPL, 67, "Initial weighted wire length {:g}.", wl);
@@ -266,7 +271,9 @@ void MacroPlacer::setDbInstLocations(Partition& partition)
 // wire lengths of connections between the macros to force them to the corners.
 void MacroPlacer::placeMacrosCornerMaxWl()
 {
-  init();
+  if (!init()) {
+    return;
+  }
 
   double wl = getWeightedWL();
   logger_->info(MPL, 69, "Initial weighted wire length {:g}.", wl);
@@ -780,7 +787,7 @@ double MacroPlacer::paddedHeight(const Macro& macro)
   return macro.h + spacings.getSpacingY() * 2;
 }
 
-void MacroPlacer::findMacros()
+bool MacroPlacer::findMacros()
 {
   dbBlock* block = db_->getChip()->getBlock();
   const int dbu = db_->getTech()->getDbUnitsPerMicron();
@@ -811,11 +818,13 @@ void MacroPlacer::findMacros()
   }
 
   if (macros_.empty()) {
-    logger_->error(MPL, 4, "No macros found.");
+    logger_->warn(MPL, 4, "No macros found.");
+    return false;
   }
 
   logger_->info(MPL, 5, "Found {} macros.", macros_.size());
   logger_->metric("floorplan__design__instance__count__macros", macros_.size());
+  return true;
 }
 
 static bool isWithIn(int val, int min, int max)

@@ -799,10 +799,6 @@ bool dbMaster::isCoreAutoPlaceable()
     case dbMasterType::ENDCAP:
     case dbMasterType::ENDCAP_PRE:
     case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
     case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
     case dbMasterType::ENDCAP_LEF58_TOPEDGE:
     case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
@@ -817,6 +813,10 @@ bool dbMaster::isCoreAutoPlaceable()
     case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
       return true;
       // These classes are completely ignored by the placer.
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
     case dbMasterType::COVER:
     case dbMasterType::COVER_BUMP:
     case dbMasterType::RING:
