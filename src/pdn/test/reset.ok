@@ -11,21 +11,21 @@
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
 [INFO ODB-0134] Finished DEF file: nangate_gcd/floorplan.def
-[INFO PDN-0010] Voltage domain: Core
-[INFO PDN-0012]   Power net: VDD
-[INFO PDN-0013]   Ground net: VSS
-[INFO PDN-0020] Grid name: Core
-[INFO PDN-0021] Type: Core
-[INFO PDN-0023] Straps:
-[INFO PDN-0040]   Type: Followpin
-[INFO PDN-0041]     Layer: metal1
-[INFO PDN-0042]     Width: 0.1700
-[INFO PDN-0043]     Spacing: 0.0000
-[INFO PDN-0044]     Pitch: 2.8000
-[INFO PDN-0045]     Offset: 0.0000
-[INFO PDN-0046]     Snap to grid: false
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
 [INFO PDN-0101] Using VDD as power net for Core domain.
 [INFO PDN-0102] Using VSS as ground net for Core domain.
-[INFO PDN-0010] Voltage domain: Core
-[INFO PDN-0012]   Power net: VDD
-[INFO PDN-0013]   Ground net: VSS
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS

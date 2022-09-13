@@ -31,14 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbTechLayer.h"
-
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbTechLayer.h"
 #include "dbTechLayerArraySpacingRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
@@ -915,12 +914,12 @@ uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = std::lower_bound(_two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
-  if(pos != _two_widths_sp_idx.begin())
+  auto pos = std::lower_bound(
+      _two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
+  if (pos != _two_widths_sp_idx.begin())
     --pos;
   int idx = std::max(0, (int) std::distance(_two_widths_sp_idx.begin(), pos));
-  for(; idx >= 0; idx--)
-  {
+  for (; idx >= 0; idx--) {
     if (prl >= _two_widths_sp_prl[idx])
       return idx;
   }
@@ -1260,7 +1259,6 @@ void dbTechLayer::setWireExtension(uint ext)
 int dbTechLayer::getSpacing(int w, int l)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  dbSet<dbTechLayerSpacingRule> v54rules;
 
   bool found_spacing = false;
   uint spacing = MAX_INT;
@@ -1270,22 +1268,16 @@ int dbTechLayer::getSpacing(int w, int l)
   uint width = (uint) w;
   uint length = (uint) l;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
-    dbTechLayerSpacingRule* cur_rule;
+  for (auto cur_rule : getV54SpacingRules()) {
     uint rmin, rmax;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      cur_rule = *ritr;
-      if (cur_rule->getRange(rmin, rmax)) {
-        if ((width >= rmin) && (width <= rmax)) {
-          spacing = MIN(spacing, cur_rule->getSpacing());
-          found_spacing = true;
-        }
-        if (width > rmax) {
-          found_over_spacing = true;
-          over_spacing = MIN(over_spacing, cur_rule->getSpacing());
-        }
+    if (cur_rule->getRange(rmin, rmax)) {
+      if ((width >= rmin) && (width <= rmax)) {
+        spacing = MIN(spacing, cur_rule->getSpacing());
+        found_spacing = true;
+      }
+      if (width > rmax) {
+        found_over_spacing = true;
+        over_spacing = MIN(over_spacing, cur_rule->getSpacing());
       }
     }
   }
@@ -1324,16 +1316,12 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
   owidth = getWidth();
   olength = owidth;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
+  for (auto rule : getV54SpacingRules()) {
     uint rmin, rmax;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      if ((*ritr)->getRange(rmin, rmax)) {
-        if (rmin > (uint) owidth) {
-          owidth = rmin;
-          olength = rmin;
-        }
+    if (rule->getRange(rmin, rmax)) {
+      if (rmin > (uint) owidth) {
+        owidth = rmin;
+        olength = rmin;
       }
     }
   }
@@ -1355,17 +1343,12 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   owidth = getWidth();
   olength = owidth;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
+  for (auto rule : getV54SpacingRules()) {
     uint rmin, rmax;
-    bool range_found = false;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      if ((*ritr)->getRange(rmin, rmax)) {
-        if ((rmin < (uint) owidth) || !range_found) {
-          owidth = rmin;
-          olength = rmin;
-        }
+    if (rule->getRange(rmin, rmax)) {
+      if (rmin < (uint) owidth) {
+        owidth = rmin;
+        olength = rmin;
       }
     }
   }
@@ -1376,13 +1359,10 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   }
 }
 
-bool dbTechLayer::getV54SpacingRules(
-    dbSet<dbTechLayerSpacingRule>& sp_rules) const
+dbSet<dbTechLayerSpacingRule> dbTechLayer::getV54SpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  sp_rules = dbSet<dbTechLayerSpacingRule>(layer, layer->_spacing_rules_tbl);
-  return true;
+  return dbSet<dbTechLayerSpacingRule>(layer, layer->_spacing_rules_tbl);
 }
 
 bool dbTechLayer::hasV55SpacingRules() const
@@ -1500,23 +1480,6 @@ void dbTechLayer::addV55SpacingTableEntry(uint inrow, uint incol, uint spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_v55sp_spacing(inrow, incol) = spacing;
-}
-
-bool dbTechLayer::getV55InfluenceRules(
-    std::vector<dbTechV55InfluenceEntry*>& inf_tbl)
-{
-  inf_tbl.clear();
-  dbSet<dbTechV55InfluenceEntry> entries = getV55InfluenceEntries();
-
-  if (entries.size() == 0)
-    return false;
-
-  dbSet<dbTechV55InfluenceEntry>::iterator itr;
-
-  for (itr = entries.begin(); itr != entries.end(); ++itr)
-    inf_tbl.push_back(*itr);
-
-  return true;
 }
 
 bool dbTechLayer::hasTwoWidthsSpacingRules() const
@@ -1667,12 +1630,10 @@ dbSet<dbTechMinEncRule> dbTechLayer::getMinEncRules()
   return rules;
 }
 
-dbSet<dbTechV55InfluenceEntry> dbTechLayer::getV55InfluenceEntries()
+dbSet<dbTechV55InfluenceEntry> dbTechLayer::getV55InfluenceRules()
 {
-  dbSet<dbTechV55InfluenceEntry> rules;
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  rules = dbSet<dbTechV55InfluenceEntry>(layer, layer->_v55inf_tbl);
-  return rules;
+  return dbSet<dbTechV55InfluenceEntry>(layer, layer->_v55inf_tbl);
 }
 
 bool dbTechLayer::getMinEnclosureRules(

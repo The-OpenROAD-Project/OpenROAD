@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "grt/GlobalRouter.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -58,6 +56,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "heatMap.h"
 #include "odb/db.h"
@@ -268,7 +267,10 @@ void GlobalRouter::globalRoute(bool save_guides)
     if (congestion_file_name_ != nullptr) {
       saveCongestion();
     }
-    logger_->error(GRT, 118, "Routing congestion too high.");
+    logger_->error(GRT,
+                   118,
+                   "Routing congestion too high. Check the congestion heatmap "
+                   "in the GUI.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
     logger_->warn(GRT, 115, "Global routing finished with overflow.");
@@ -304,7 +306,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
   if (repair_antennas_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT,
                    244,
-                   "Diode {}/{} ANTENNADIFFSIDEAREARATIO is zero.",
+                   "Diode {}/{} ANTENNADIFFAREA is zero.",
                    diode_mterm->getMaster()->getConstName(),
                    diode_mterm->getConstName());
 
@@ -763,13 +765,8 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
 
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
-    bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-    int min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
-                        ? min_layer_for_clock_
-                        : min_routing_layer_;
-    int max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
-                        ? max_layer_for_clock_
-                        : max_routing_layer_;
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
 
     int netID = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
@@ -785,6 +782,25 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     return true;
   }
   return false;
+}
+
+void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
+{
+  int port_min_layer = std::numeric_limits<int>::max();
+  for (const Pin& pin : net->getPins()) {
+    if (pin.isPort() || pin.isConnectedToPad()) {
+      port_min_layer = std::min(port_min_layer, pin.getTopLayer());
+    }
+  }
+
+  bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+  min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
+                  ? min_layer_for_clock_
+                  : min_routing_layer_;
+  min_layer = std::min(min_layer, port_min_layer);
+  max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
+                  ? max_layer_for_clock_
+                  : max_routing_layer_;
 }
 
 void GlobalRouter::computeTrackConsumption(
@@ -2301,12 +2317,10 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
         min_spc_down = layer->findV55Spacing(std::max(layer_width, width_down),
                                              prl_down);
     } else {
-      odb::dbSet<odb::dbTechLayerSpacingRule> rules;
-      layer->getV54SpacingRules(rules);
-      if (rules.size() > 0) {
+      if (!layer->getV54SpacingRules().empty()) {
         min_spc_valid = true;
         int minSpc = 0;
-        for (auto rule : rules)
+        for (auto rule : layer->getV54SpacingRules())
           minSpc = rule->getSpacing();
         if (up_via_valid)
           min_spc_up = minSpc;
@@ -2574,7 +2588,13 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
 {
   const sta::Pin* pin = network->dbToSta(iterm);
   sta::LibertyPort* lib_port = network->libertyPort(pin);
-  return lib_port && lib_port->isRegClk();
+  bool connected_to_pad = false;
+  if (lib_port != nullptr) {
+    sta::LibertyCell* lib_cell = lib_port->libertyCell();
+    connected_to_pad = lib_cell != nullptr && lib_cell->isPad();
+  }
+
+  return lib_port && (lib_port->isRegClk() || connected_to_pad);
 }
 
 bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
@@ -2886,17 +2906,13 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 
     int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
 
-    odb::dbSet<odb::dbTechLayerSpacingRule> eol_rules;
-
     // Check for EOL spacing values and, if the spacing is higher than the one
     // found, use them as the macro extension instead of PARALLELRUNLENGTH
 
-    if (obstruct_layer->getV54SpacingRules(eol_rules)) {
-      for (odb::dbTechLayerSpacingRule* rule : eol_rules) {
-        int spacing = rule->getSpacing();
-        if (spacing > spacing_extension) {
-          spacing_extension = spacing;
-        }
+    for (auto rule : obstruct_layer->getV54SpacingRules()) {
+      int spacing = rule->getSpacing();
+      if (spacing > spacing_extension) {
+        spacing_extension = spacing;
       }
     }
 
@@ -3864,7 +3880,10 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      logger_->error(GRT, 232, "Routing congestion too high.");
+      logger_->error(GRT,
+                     232,
+                     "Routing congestion too high. Check the congestion "
+                     "heatmap in the GUI.");
     }
   }
 }

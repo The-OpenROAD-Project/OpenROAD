@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbITerm.h"
-
 #include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -43,6 +41,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHier.h"
+#include "dbITerm.h"
 #include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbJournal.h"
@@ -463,6 +462,22 @@ void dbITerm::connect(dbNet* net_)
   if (iterm->_net == net->getOID())
     return;
 
+  _dbInst* inst = iterm->getInst();
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        369,
+        "Attempt to connect iterm of dont_touch instance {}",
+        inst->_name);
+  }
+
+  if (net->_flags._dont_touch) {
+    inst->getLogger()->error(utl::ODB,
+                             373,
+                             "Attempt to connect iterm to dont_touch net {}",
+                             net->_name);
+  }
+
   if (iterm->_net != 0)
     disconnect();
 
@@ -509,8 +524,25 @@ void dbITerm::disconnect()
   if (iterm->_net == 0)
     return;
 
+  _dbInst* inst = iterm->getInst();
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        370,
+        "Attempt to disconnect iterm of dont_touch instance {}",
+        inst->_name);
+  }
+
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
+
+  if (net->_flags._dont_touch) {
+    inst->getLogger()->error(utl::ODB,
+                             372,
+                             "Attempt to disconnect iterm of dont_touch net {}",
+                             net->_name);
+  }
+
   for (auto callback : block->_callbacks)
     callback->inDbITermPreDisconnect(this);
   if (block->_journal) {
@@ -677,8 +709,7 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
     _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
     _ap->iterms_.push_back(iterm->getOID());
-  }
-  else
+  } else
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
 }
 
@@ -688,12 +719,10 @@ std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
   auto mterm = getMTerm();
   uint pin_access_idx = getInst()->getPinAccessIdx();
   std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
-  for(auto mpin : mterm->getMPins())
-  {
+  for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
-    if(pin->aps_.size() > pin_access_idx) {
-      for(auto id : pin->aps_[pin_access_idx])
-      {
+    if (pin->aps_.size() > pin_access_idx) {
+      for (auto id : pin->aps_[pin_access_idx]) {
         aps[mpin].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
       }
     }

@@ -262,7 +262,7 @@ RepairSetup::repairSetup(PathRef &path,
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
           && !tristate_drvr
-          && !resizer_->isDoNotTouch(net)) {
+          && !resizer_->dontTouch(net)) {
         int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
@@ -277,7 +277,7 @@ RepairSetup::repairSetup(PathRef &path,
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
-          && !resizer_->isDoNotTouch(net)) {
+          && !resizer_->dontTouch(net)) {
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         changed = true;
         break;
@@ -300,7 +300,7 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-  if (!resizer_->isDoNotTouch(drvr)) {
+  if (!resizer_->dontTouch(drvr)) {
     float prev_drive;
     if (drvr_index >= 2) {
       int prev_drvr_index = drvr_index - 2;
@@ -322,7 +322,7 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  upsize->name());
-      if (!resizer_->isDoNotTouch(drvr)
+      if (!resizer_->dontTouch(drvr)
           && resizer_->replaceCell(drvr, upsize, true)) {
         resize_count_++;
         return true;

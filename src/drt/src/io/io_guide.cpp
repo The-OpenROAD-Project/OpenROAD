@@ -98,13 +98,13 @@ void io::Parser::patchGuides(frNet* net,
       break;
     }
     default:
-      logger->error(DRT, 1007, "PatchGuides invoked with non-term object.");
+      logger_->error(DRT, 1007, "PatchGuides invoked with non-term object.");
   }
-  logger->info(DRT,
-               1000,
-               "Pin {} not in any guide. Attempting to patch guides to cover "
-               "(at least part of) the pin.",
-               name);
+  logger_->info(DRT,
+                1000,
+                "Pin {} not in any guide. Attempting to patch guides to cover "
+                "(at least part of) the pin.",
+                name);
   pinBBox.init(
       pinBBox.xMin() + 1,
       pinBBox.yMin() + 1,
@@ -112,8 +112,8 @@ void io::Parser::patchGuides(frNet* net,
       pinBBox.yMax()
           - 1);  // pins tangent to gcell arent considered as part of them
   // set pinBBox to gCell coords
-  Point llGcell = design->getTopBlock()->getGCellIdx(pinBBox.ll());
-  Point urGcell = design->getTopBlock()->getGCellIdx(pinBBox.ur());
+  Point llGcell = design_->getTopBlock()->getGCellIdx(pinBBox.ll());
+  Point urGcell = design_->getTopBlock()->getGCellIdx(pinBBox.ur());
 
   // finds the gCell with higher pinShape overlapping area (approximate)
   frArea bestArea = 0, area = 0;
@@ -123,9 +123,10 @@ void io::Parser::patchGuides(frNet* net,
     for (int y = llGcell.y(); y <= urGcell.y(); y++) {
       Rect intersection;
       Point gCell(x, y);
-      Rect gCellBox = design->getTopBlock()->getGCellBox(gCell);
-      for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
-        if (design->getTech()->getLayer(z)->type != dbTechLayerType::ROUTING)
+      Rect gCellBox = design_->getTopBlock()->getGCellBox(gCell);
+      for (int z = 0; z < (int) design_->getTech()->getLayers().size(); z++) {
+        if (design_->getTech()->getLayer(z)->getType()
+            != dbTechLayerType::ROUTING)
           continue;
         area = 0;
         for (auto& pinRect : pinShapes) {
@@ -140,20 +141,20 @@ void io::Parser::patchGuides(frNet* net,
         }
       }
       // finds guides in the neighboring gCells
-      getGuide(x - 1, y, candidateGuides, guides, design);
-      getGuide(x + 1, y, candidateGuides, guides, design);
-      getGuide(x, y - 1, candidateGuides, guides, design);
-      getGuide(x, y + 1, candidateGuides, guides, design);
+      getGuide(x - 1, y, candidateGuides, guides, design_);
+      getGuide(x + 1, y, candidateGuides, guides, design_);
+      getGuide(x, y - 1, candidateGuides, guides, design_);
+      getGuide(x, y + 1, candidateGuides, guides, design_);
     }
   }
   if (candidateGuides.empty()) {
-    logger->warn(DRT, 1001, "No guide in the pin neighborhood");
+    logger_->warn(DRT, 1001, "No guide in the pin neighborhood");
     return;
   }
   // get the guide that is closer to the gCell
   int closerGuideIdx = -1;
   int dist = 0, closerDist = std::numeric_limits<int>().max();
-  Point center = design->getTopBlock()->getGCellCenter(bestPinLocIdx);
+  Point center = design_->getTopBlock()->getGCellCenter(bestPinLocIdx);
   Point3D bestPinLocCoords(center.x(), center.y(), 0);
   for (auto& guideIdx : candidateGuides) {
     dist = distL1(guides[guideIdx].getBBox(), bestPinLocCoords);
@@ -172,8 +173,8 @@ void io::Parser::patchGuides(frNet* net,
   Point3D guidePt;
   getClosestPoint(guides[closerGuideIdx], bestPinLocCoords, guidePt);
   const Rect& guideBox = guides[closerGuideIdx].getBBox();
-  frCoord gCellX = design->getTopBlock()->getGCellSizeHorizontal();
-  frCoord gCellY = design->getTopBlock()->getGCellSizeVertical();
+  frCoord gCellX = design_->getTopBlock()->getGCellSizeHorizontal();
+  frCoord gCellY = design_->getTopBlock()->getGCellSizeVertical();
   if (guidePt.x() == guideBox.xMin()
       || std::abs(guideBox.xMin() - guidePt.x())
              <= std::abs(guideBox.xMax() - guidePt.x()))
@@ -193,7 +194,7 @@ void io::Parser::patchGuides(frNet* net,
 
   // connect bestPinLoc to guidePt by creating "patch" guides
   // first, try to extend closerGuide
-  if (design->isHorizontalLayer(guidePt.z())) {
+  if (design_->isHorizontalLayer(guidePt.z())) {
     if (guidePt.x() != bestPinLocCoords.x()) {
       if (bestPinLocCoords.x() < guideBox.xMin())
         guides[closerGuideIdx].setLeft(bestPinLocCoords.x() - gCellX / 2);
@@ -201,7 +202,7 @@ void io::Parser::patchGuides(frNet* net,
         guides[closerGuideIdx].setRight(bestPinLocCoords.x() + gCellX / 2);
       guidePt.setX(bestPinLocCoords.x());
     }
-  } else if (design->isVerticalLayer(guidePt.z())) {
+  } else if (design_->isVerticalLayer(guidePt.z())) {
     if (guidePt.y() != bestPinLocCoords.y()) {
       if (bestPinLocCoords.y() < guideBox.yMin())
         guides[closerGuideIdx].setBottom(bestPinLocCoords.y() - gCellY / 2);
@@ -210,7 +211,7 @@ void io::Parser::patchGuides(frNet* net,
       guidePt.setY(bestPinLocCoords.y());
     }
   } else
-    logger->error(DRT, 1002, "Layer is not horizontal or vertical");
+    logger_->error(DRT, 1002, "Layer is not horizontal or vertical");
 
   if (guidePt == bestPinLocCoords)
     return;
@@ -267,9 +268,8 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
       break;
     }
     default:
-      logger->error(DRT,
-                    1008,
-                    "checkPinForGuideEnclosure invoked with non-term object.");
+      logger_->error(
+          DRT, 1008, "checkPinForGuideEnclosure invoked with non-term object.");
   }
   for (auto& pinRect : pinShapes) {
     int i = 0;
@@ -290,22 +290,22 @@ void io::Parser::genGuides_merge(
 {
   for (auto& rect : rects) {
     if (rect.getLayerNum() > TOP_ROUTING_LAYER)
-      logger->error(DRT,
-                    3000,
-                    "Guide in layer {} which is above max routing layer {}",
-                    rect.getLayerNum(),
-                    TOP_ROUTING_LAYER);
+      logger_->error(DRT,
+                     3000,
+                     "Guide in layer {} which is above max routing layer {}",
+                     rect.getLayerNum(),
+                     TOP_ROUTING_LAYER);
     Rect box = rect.getBBox();
     Point pt(box.ll());
-    Point idx = design->getTopBlock()->getGCellIdx(pt);
+    Point idx = design_->getTopBlock()->getGCellIdx(pt);
     frCoord x1 = idx.x();
     frCoord y1 = idx.y();
     pt.set(box.xMax() - 1, box.yMax() - 1);
-    idx = design->getTopBlock()->getGCellIdx(pt);
+    idx = design_->getTopBlock()->getGCellIdx(pt);
     frCoord x2 = idx.x();
     frCoord y2 = idx.y();
     auto layerNum = rect.getLayerNum();
-    if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
       for (auto i = y1; i <= y2; i++) {
         intvs[layerNum][i].insert(
             boost::icl::interval<frCoord>::closed(x1, x2));
@@ -366,7 +366,7 @@ void io::Parser::genGuides_merge(
               touchGuides.push_back(
                   make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum - 2));
             } else {
-              logger->error(
+              logger_->error(
                   DRT, 228, "genGuides_merge cannot find touching layer.");
             }
           }
@@ -394,11 +394,11 @@ void io::Parser::genGuides_split(
   rects.clear();
   // layerNum->trackIdx->beginIdx->set of obj
   vector<map<frCoord, map<frCoord, set<frBlockObject*, frBlockObjectComp>>>>
-      pin_helper(design->getTech()->getLayers().size());
+      pin_helper(design_->getTech()->getLayers().size());
   for (auto& [pr, objS] : gCell2PinMap) {
     auto& point = pr.first;
     auto& lNum = pr.second;
-    if (design->getTech()->getLayer(lNum)->getDir()
+    if (design_->getTech()->getLayer(lNum)->getDir()
         == dbTechLayerDir::HORIZONTAL) {
       pin_helper[lNum][point.y()][point.x()] = objS;
     } else {
@@ -407,7 +407,7 @@ void io::Parser::genGuides_split(
   }
 
   for (int layerNum = 0; layerNum < (int) intvs.size(); layerNum++) {
-    auto dir = design->getTech()->getLayer(layerNum)->getDir();
+    auto dir = design_->getTech()->getLayer(layerNum)->getDir();
     for (auto& [trackIdx, curr_intvs] : intvs[layerNum]) {
       // split by lower/upper seg
       for (auto it = curr_intvs.begin(); it != curr_intvs.end(); it++) {
@@ -494,10 +494,10 @@ void io::Parser::genGuides_split(
           }
           // add rect
           if (lineIdx.empty()) {
-            logger->error(DRT,
-                          229,
-                          "genGuides_split lineIdx is empty on {}.",
-                          design->getTech()->getLayer(layerNum)->getName());
+            logger_->error(DRT,
+                           229,
+                           "genGuides_split lineIdx is empty on {}.",
+                           design_->getTech()->getLayer(layerNum)->getName());
           } else if (lineIdx.size() == 1) {
             auto x = *(lineIdx.begin());
             frRect tmpRect;
@@ -543,14 +543,14 @@ void io::Parser::genGuides_gCell2TermMap(
       if (fig->typeId() == frcRect) {
         auto shape = static_cast<frRect*>(fig);
         auto lNum = shape->getLayerNum();
-        auto layer = design->getTech()->getLayer(lNum);
+        auto layer = design_->getTech()->getLayer(lNum);
         Rect box = shape->getBBox();
         Point pt(box.xMin() + 1, box.yMin() + 1);
-        Point idx = design->getTopBlock()->getGCellIdx(pt);
+        Point idx = design_->getTopBlock()->getGCellIdx(pt);
         frCoord x1 = idx.x();
         frCoord y1 = idx.y();
         pt.set(box.ur().x() - 1, box.ur().y() - 1);
-        idx = design->getTopBlock()->getGCellIdx(pt);
+        idx = design_->getTopBlock()->getGCellIdx(pt);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();
         // ispd18_test4 and ispd18_test5 have zero overlap guide
@@ -558,8 +558,8 @@ void io::Parser::genGuides_gCell2TermMap(
         // initDR requirements
         bool condition2 = false;  // upper right corner has zero-length
                                   // overlapped with gcell
-        Point tmpIdx = design->getTopBlock()->getGCellIdx(box.ll());
-        Rect gcellBox = design->getTopBlock()->getGCellBox(tmpIdx);
+        Point tmpIdx = design_->getTopBlock()->getGCellIdx(box.ll());
+        Rect gcellBox = design_->getTopBlock()->getGCellBox(tmpIdx);
         if (box.ll() == gcellBox.ll()) {
           condition2 = true;
         }
@@ -581,11 +581,11 @@ void io::Parser::genGuides_gCell2TermMap(
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()
                                     : term->getName();
-                logger->warn(DRT,
-                             230,
-                             "genGuides_gCell2TermMap avoid condition2, may "
-                             "result in guide open: {}.",
-                             name);
+                logger_->warn(DRT,
+                              230,
+                              "genGuides_gCell2TermMap avoid condition2, may "
+                              "result in guide open: {}.",
+                              name);
               }
             } else if (condition3
                        && ((x == tmpIdx.x() - 1
@@ -597,11 +597,11 @@ void io::Parser::genGuides_gCell2TermMap(
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()
                                     : term->getName();
-                logger->warn(DRT,
-                             231,
-                             "genGuides_gCell2TermMap avoid condition3, may "
-                             "result in guide open: {}.",
-                             name);
+                logger_->warn(DRT,
+                              231,
+                              "genGuides_gCell2TermMap avoid condition3, may "
+                              "result in guide open: {}.",
+                              name);
               }
             } else {
               gCell2PinMap[make_pair(Point(x, y), lNum)].insert(origTerm);
@@ -609,7 +609,7 @@ void io::Parser::genGuides_gCell2TermMap(
           }
         }
       } else {
-        logger->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig.");
+        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig.");
       }
     }
   }
@@ -689,7 +689,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
       auto bNum = prefAp->getLayerNum();
       shiftXform.apply(bp);
 
-      Point idx = design->getTopBlock()->getGCellIdx(bp);
+      Point idx = design_->getTopBlock()->getGCellIdx(bp);
       gCell2PinMap[make_pair(idx, bNum)].insert(
           static_cast<frBlockObject*>(instTerm));
       succesPinCnt++;
@@ -728,7 +728,7 @@ bool io::Parser::genGuides_gCell2APTermMap(
     Point bp = prefAp->getPoint();
     const auto bNum = prefAp->getLayerNum();
 
-    Point idx = design->getTopBlock()->getGCellIdx(bp);
+    Point idx = design_->getTopBlock()->getGCellIdx(bp);
     gCell2PinMap[{idx, bNum}].insert(term);
     succesPinCnt++;
   }
@@ -787,7 +787,11 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
 }
 
 template <typename T>
-void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm, frInst* inst, dbTransform& shiftXform, vector<frRect>& rects)
+void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term,
+                                                T* trueTerm,
+                                                frInst* inst,
+                                                dbTransform& shiftXform,
+                                                vector<frRect>& rects)
 {
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
@@ -815,12 +819,15 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm
       auto bNum = prefAp->getLayerNum();
       shiftXform.apply(bp);
 
-      Point idx = design->getTopBlock()->getGCellIdx(bp);
-      Rect llBox = design->getTopBlock()->getGCellBox(Point(idx.x() - 1, idx.y() - 1));
-      Rect urBox = design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1));
+      Point idx = design_->getTopBlock()->getGCellIdx(bp);
+      Rect llBox = design_->getTopBlock()->getGCellBox(
+          Point(idx.x() - 1, idx.y() - 1));
+      Rect urBox = design_->getTopBlock()->getGCellBox(
+          Point(idx.x() + 1, idx.y() + 1));
       Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
       frLayerNum beginLayerNum = bNum;
-      frLayerNum endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
+      frLayerNum endLayerNum
+          = min(bNum + 4, design_->getTech()->getTopLayerNum());
 
       for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
         for (int xIdx = -1; xIdx <= 1; xIdx++) {
@@ -842,7 +849,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
   net->clearGuides();
 
   genGuides_pinEnclosure(net, rects);
-  int size = (int) tech->getLayers().size();
+  int size = (int) tech_->getLayers().size();
   if (TOP_ROUTING_LAYER < std::numeric_limits<int>().max()
       && TOP_ROUTING_LAYER >= 0)
     size = min(size, TOP_ROUTING_LAYER + 1);
@@ -870,30 +877,30 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
     // filter pin2GCellMap with aps
 
     if (pin2GCellMap.empty()) {
-      logger->warn(DRT, 214, "genGuides empty pin2GCellMap.");
+      logger_->warn(DRT, 214, "genGuides empty pin2GCellMap.");
       debugPrint(
-          logger, DRT, "io", 1, "gcell2pin.size() = {}", gCell2PinMap.size());
+          logger_, DRT, "io", 1, "gcell2pin.size() = {}", gCell2PinMap.size());
     }
     for (auto& [obj, locS] : pin2GCellMap) {
       if (locS.empty()) {
-        switch(obj->typeId()) {
+        switch (obj->typeId()) {
           case frcInstTerm: {
             auto ptr = static_cast<frInstTerm*>(obj);
-            logger->warn(DRT,
-                         215,
-                         "Pin {}/{} not covered by guide.",
-                         ptr->getInst()->getName(),
-                         ptr->getTerm()->getName());
+            logger_->warn(DRT,
+                          215,
+                          "Pin {}/{} not covered by guide.",
+                          ptr->getInst()->getName(),
+                          ptr->getTerm()->getName());
             break;
           }
           case frcBTerm: {
             auto ptr = static_cast<frBTerm*>(obj);
-            logger->warn(
+            logger_->warn(
                 DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
             break;
           }
           default: {
-            logger->warn(DRT, 217, "genGuides unknown type.");
+            logger_->warn(DRT, 217, "genGuides unknown type.");
             break;
           }
         }
@@ -930,10 +937,10 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
                 net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
             break;
           } else {
-            logger->error(DRT, 218, "Guide is not connected to design.");
+            logger_->error(DRT, 218, "Guide is not connected to design.");
           }
         } else {
-          logger->error(DRT, 219, "Guide is not connected to design.");
+          logger_->error(DRT, 219, "Guide is not connected to design.");
         }
       } else {
         retry = true;
@@ -978,7 +985,7 @@ void io::Parser::genGuides_final(
                  != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
-        logger->warn(DRT, 220, "genGuides_final error 1.");
+        logger_->warn(DRT, 220, "genGuides_final error 1.");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
@@ -996,14 +1003,14 @@ void io::Parser::genGuides_final(
                  != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
-        logger->warn(DRT, 221, "genGuides_final error 2.");
+        logger_->warn(DRT, 221, "genGuides_final error 2.");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     }
   }
   for (auto& guides : pinIdx2GCellUpdated) {
     if (guides.empty()) {
-      logger->warn(DRT, 222, "genGuides_final pin not in any guide.");
+      logger_->warn(DRT, 222, "genGuides_final pin not in any guide.");
     }
   }
 
@@ -1012,8 +1019,8 @@ void io::Parser::genGuides_final(
   for (int i = 0; i < nCnt - gCnt; i++) {
     auto obj = pin2ptr[i];
     for (auto& [pt, lNum] : pinIdx2GCellUpdated[i]) {
-      Point absPt = design->getTopBlock()->getGCellCenter(pt);
-      tmpGRPins.push_back(make_pair(obj, absPt));
+      Point absPt = design_->getTopBlock()->getGCellCenter(pt);
+      tmpGRPins_.push_back(make_pair(obj, absPt));
       updatedNodeMap[make_pair(pt, lNum)].insert(i + gCnt);
     }
   }
@@ -1049,13 +1056,13 @@ void io::Parser::genGuides_final(
           }
         }
       } else {
-        logger->error(DRT,
-                      223,
-                      "Pin dangling id {} ({},{}) {}.",
-                      idx,
-                      pt.x(),
-                      pt.y(),
-                      lNum);
+        logger_->error(DRT,
+                       223,
+                       "Pin dangling id {} ({},{}) {}.",
+                       idx,
+                       pt.x(),
+                       pt.y(),
+                       lNum);
       }
     }
   }
@@ -1068,8 +1075,8 @@ void io::Parser::genGuides_final(
     auto& rect = rects[i];
     Rect box = rect.getBBox();
     auto guide = make_unique<frGuide>();
-    Point begin = design->getTopBlock()->getGCellCenter(box.ll());
-    Point end = design->getTopBlock()->getGCellCenter(box.ur());
+    Point begin = design_->getTopBlock()->getGCellCenter(box.ll());
+    Point end = design_->getTopBlock()->getGCellCenter(box.ur());
     guide->setPoints(begin, end);
     guide->setBeginLayerNum(rect.getLayerNum());
     guide->setEndLayerNum(rect.getLayerNum());
@@ -1254,21 +1261,21 @@ bool io::Parser::genGuides_astar(
   // true error when allowing feedthrough
   if (pinVisited != nCnt - gCnt
       && (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) && retry) {
-    logger->warn(DRT,
-                 224,
-                 "{} {} pin not visited, number of guides = {}.",
-                 net->getName(),
-                 nCnt - gCnt - pinVisited,
-                 gCnt);
+    logger_->warn(DRT,
+                  224,
+                  "{} {} pin not visited, number of guides = {}.",
+                  net->getName(),
+                  nCnt - gCnt - pinVisited,
+                  gCnt);
   }
   // fallback to feedthrough in next iter
   if (pinVisited != nCnt - gCnt && !ALLOW_PIN_AS_FEEDTHROUGH
       && !forceFeedThrough && retry) {
-    logger->warn(DRT,
-                 225,
-                 "{} {} pin not visited, fall back to feedthrough mode.",
-                 net->getName(),
-                 nCnt - gCnt - pinVisited);
+    logger_->warn(DRT,
+                  225,
+                  "{} {} pin not visited, fall back to feedthrough mode.",
+                  net->getName(),
+                  nCnt - gCnt - pinVisited);
   }
   if (pinVisited == nCnt - gCnt) {
     return true;

@@ -388,11 +388,9 @@ void Connect::report() const
   auto* block = grid_->getBlock();
   const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-  logger->info(utl::PDN,
-               70,
-               "  Connect layers {} -> {}",
-               layer0_->getName(),
-               layer1_->getName());
+  logger->report("  Connect layers {} -> {}",
+                 layer0_->getName(),
+                 layer1_->getName());
   if (!fixed_generate_vias_.empty() || !fixed_tech_vias_.empty()) {
     std::string vias;
     for (auto* via : fixed_generate_vias_) {
@@ -401,41 +399,35 @@ void Connect::report() const
     for (auto* via : fixed_tech_vias_) {
       vias += via->getName() + " ";
     }
-    logger->info(utl::PDN, 71, "    Fixed vias: {}", vias);
+    logger->report("    Fixed vias: {}", vias);
   }
   if (cut_pitch_x_ != 0) {
-    logger->info(utl::PDN,
-                 72,
-                 "    Cut pitch X-direction: {:.4f}",
-                 cut_pitch_x_ / dbu_per_micron);
+    logger->report("    Cut pitch X-direction: {:.4f}",
+                   cut_pitch_x_ / dbu_per_micron);
   }
   if (cut_pitch_y_ != 0) {
-    logger->info(utl::PDN,
-                 73,
-                 "    Cut pitch Y-direction: {:.4f}",
-                 cut_pitch_y_ / dbu_per_micron);
+    logger->report("    Cut pitch Y-direction: {:.4f}",
+                   cut_pitch_y_ / dbu_per_micron);
   }
   if (max_rows_ != 0) {
-    logger->info(utl::PDN, 74, "    Maximum rows: {}", max_rows_);
+    logger->report("    Maximum rows: {}", max_rows_);
   }
   if (max_columns_ != 0) {
-    logger->info(utl::PDN, 75, "    Maximum columns: {}", max_columns_);
+    logger->report("    Maximum columns: {}", max_columns_);
   }
   if (!ongrid_.empty()) {
     std::string layers;
     for (auto* l : ongrid_) {
       layers += l->getName() + " ";
     }
-    logger->info(utl::PDN, 76, "    Ongrid layers: {}", layers);
+    logger->report("    Ongrid layers: {}", layers);
   }
   if (!split_cuts_.empty()) {
-    logger->info(utl::PDN, 77, "    Split cuts:");
+    logger->report("    Split cuts:");
     for (const auto& [layer, pitch] : split_cuts_) {
-      logger->info(utl::PDN,
-                   78,
-                   "      Layer: {} with pitch {:.4f}",
-                   layer->getName(),
-                   pitch / dbu_per_micron);
+      logger->report("      Layer: {} with pitch {:.4f}",
+                     layer->getName(),
+                     pitch / dbu_per_micron);
     }
   }
 }
@@ -457,7 +449,7 @@ void Connect::makeVia(odb::dbSWire* wire,
   // check if off grid and don't add one if it is
   if (!TechLayer::checkIfManufacturingGrid(tech, x) ||
       !TechLayer::checkIfManufacturingGrid(tech, y)) {
-    DbGenerateDummyVia dummy_via(intersection, layer0_, layer1_);
+    DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
     dummy_via.generate(wire->getBlock(), wire, type, 0, 0, grid_->getLogger());
     return;
   }
@@ -542,7 +534,7 @@ void Connect::makeVia(odb::dbSWire* wire,
         odb::Rect area = intersection;
         xfm.apply(area);
         stack.push_back(
-            new DbGenerateDummyVia(area, layer0_, layer1_));
+            new DbGenerateDummyVia(this, area, layer0_, layer1_, false));
         break;
       } else {
         stack.push_back(new_via);
@@ -556,6 +548,10 @@ void Connect::makeVia(odb::dbSWire* wire,
 
   if (skip_caching) {
     via = nullptr;
+  }
+
+  if (shapes.bottom.empty() && shapes.top.empty()) {
+    addFailedVia(failedViaReason::RECHECK, intersection, wire->getNet());
   }
 }
 
@@ -852,6 +848,7 @@ int Connect::getSplitCut(odb::dbTechLayer* layer) const
 void Connect::clearShapes()
 {
   vias_.clear();
+  failed_vias_.clear();
 }
 
 void Connect::filterVias(const std::string& filter)
@@ -912,6 +909,45 @@ void Connect::printViaReport() const
                "Via \"{}\": {}",
                via_name,
                count);
+  }
+}
+
+void Connect::addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net)
+{
+  failed_vias_[reason].insert({net, rect});
+}
+
+void Connect::writeFailedVias(std::ofstream& file) const
+{
+  const double dbumicrons = layer0_->getTech()->getLefUnits();
+
+  for (const auto& [reason, shapes] : failed_vias_) {
+    std::string reason_str;
+    switch (reason) {
+    case failedViaReason::OBSTRUCTED:
+      reason_str = "Obstructed";
+      break;
+    case failedViaReason::BUILD:
+      reason_str = "Build";
+      break;
+    case failedViaReason::RIPUP:
+      reason_str = "Ripup";
+      break;
+    case failedViaReason::RECHECK:
+      reason_str = "Recheck";
+      break;
+    case failedViaReason::OTHER:
+      reason_str = "Other";
+      break;
+    }
+    reason_str += " - " + grid_->getLongName();
+    reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
+
+    for (const auto& [net, shape] : shapes) {
+      file << "violation type: " << reason_str << std::endl;
+      file << "\tsrcs: net:" << net->getName() << std::endl;
+      file << "\tbbox = " << Shape::getRectText(shape, dbumicrons) << " on Layer -" << std::endl;
+    }
   }
 }
 

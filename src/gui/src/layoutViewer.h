@@ -295,6 +295,7 @@ class LayoutViewer : public QWidget
                         const odb::Rect& bounds);
   void drawRows(QPainter* painter, const odb::Rect& bounds);
   void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
+  void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawPinMarkers(Painter& painter, const odb::Rect& bounds);

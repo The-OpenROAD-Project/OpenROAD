@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbInst.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -49,6 +47,7 @@
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
+#include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbJournal.h"
 #include "dbLib.h"
@@ -114,7 +113,6 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._user_flag_3 = 0;
   _flags._physical_only = 0;
   _flags._dont_touch = 0;
-  _flags._dont_size = 0;
   _flags._eco_create = 0;
   _flags._eco_destroy = 0;
   _flags._eco_modify = 0;
@@ -242,9 +240,6 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   if (_flags._physical_only != rhs._flags._physical_only)
     return false;
 
-  if (_flags._dont_size != rhs._flags._dont_size)
-    return false;
-
   if (_flags._dont_touch != rhs._flags._dont_touch)
     return false;
 
@@ -295,7 +290,7 @@ bool _dbInst::operator==(const _dbInst& rhs) const
 
   if (_region_prev != rhs._region_prev)
     return false;
-  
+
   if (_module_prev != rhs._module_prev)
     return false;
 
@@ -330,7 +325,6 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_flags._user_flag_3);
   DIFF_FIELD(_flags._physical_only);
   DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._dont_size);
   DIFF_FIELD(_flags._source);
   DIFF_FIELD(_x);
   DIFF_FIELD(_y);
@@ -387,7 +381,6 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._user_flag_3);
   DIFF_OUT_FIELD(_flags._physical_only);
   DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._dont_size);
   DIFF_OUT_FIELD(_flags._source);
   DIFF_OUT_FIELD(_x);
   DIFF_OUT_FIELD(_y);
@@ -480,9 +473,16 @@ void dbInst::setOrigin(int x, int y)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   int prev_x = inst->_x;
   int prev_y = inst->_y;
-  // Do Nothin if same origin, But What if uninitialized and x=y=0
   if (prev_x == x && prev_y == y)
     return;
+  if (getPlacementStatus().isFixed()) {
+    inst->getLogger()->error(utl::ODB,
+                             359,
+                             "Attempt to change the origin of {} instance {}",
+                             getPlacementStatus().getString(),
+                             getName());
+  }
+
   for (auto callback : block->_callbacks)
     callback->inDbPreMoveInst(this);
 
@@ -568,6 +568,15 @@ void dbInst::setOrient(dbOrientType orient)
     return;
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (getPlacementStatus().isFixed()) {
+    inst->getLogger()->error(
+        utl::ODB,
+        360,
+        "Attempt to change the orientation of {} instance {}",
+        getPlacementStatus().getString(),
+        getName());
+  }
   for (auto callback : block->_callbacks)
     callback->inDbPreMoveInst(this);
   uint prev_flags = flagsToUInt(inst);
@@ -600,6 +609,10 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (inst->_flags._status == status) {
+    return;
+  }
 
   for (auto callback : block->_callbacks) {
     callback->inDbInstPlacementStatusBefore(this, status);
@@ -837,18 +850,6 @@ bool dbInst::isDoNotTouch()
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->_flags._dont_touch == 1;
-}
-
-void dbInst::setDoNotSize(bool v)
-{
-  _dbInst* inst = (_dbInst*) this;
-  inst->_flags._dont_size = v;
-}
-
-bool dbInst::isDoNotSize()
-{
-  _dbInst* inst = (_dbInst*) this;
-  return inst->_flags._dont_size == 1;
 }
 
 dbBlock* dbInst::getBlock()
@@ -1151,17 +1152,17 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   const char* newMasterName = new_master_->getConstName();
   const char* oldMasterName = this->getMaster()->getConstName();
 
-  /*
-  if (strcmp(this->getConstName(), "BW1_BUF440357")==0) {
-      notice(0, "Trying to swapMaster FROM %s TO %s %s\n",
-  new_master_->getConstName(), this->getMaster()->getConstName(),
-          new_master_->getConstName(),
-          this->getConstName());
-  }
-  */
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   dbMaster* old_master_ = getMaster();
+
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        368,
+        "Attempt to change master of dont_touch instance {}",
+        inst->_name);
+  }
 
   if (inst->_hierarchy) {
     getImpl()->getLogger()->warn(utl::ODB,
@@ -1313,8 +1314,9 @@ uint dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
-
-dbInst* dbInst::create(dbBlock* block_, dbMaster* master_, const char* name_,
+dbInst* dbInst::create(dbBlock* block_,
+                       dbMaster* master_,
+                       const char* name_,
                        bool physical_only)
 {
   return create(block_, master_, name_, NULL, physical_only);
@@ -1416,6 +1418,13 @@ void dbInst::destroy(dbInst* inst_)
 {
   _dbInst* inst = (_dbInst*) inst_;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(utl::ODB,
+                             362,
+                             "Attempt to destroy dont_touch instance {}",
+                             inst->_name);
+  }
 
   dbRegion* region = inst_->getRegion();
 

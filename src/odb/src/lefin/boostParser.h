@@ -53,6 +53,7 @@ using namespace boost::placeholders;
 using ascii::char_;
 using boost::fusion::at_c;
 using boost::spirit::ascii::alpha;
+using ascii::blank;
 using boost::spirit::ascii::space_type;
 using boost::spirit::ascii::string;
 using boost::spirit::qi::lit;

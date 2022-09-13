@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dpo/Optdp.h"
-
 #include <odb/db.h>
 
 #include <boost/format.hpp>
@@ -42,6 +40,7 @@
 #include <map>
 
 #include "dpl/Opendp.h"
+#include "dpo/Optdp.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 #include "utl/Logger.h"
 
@@ -219,7 +218,7 @@ void Optdp::updateDbInstLocations()
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbInst> insts = block->getInsts();
   for (dbInst* inst : insts) {
-    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+    if (!inst->getMaster()->isCoreAutoPlaceable() || inst->isFixed()) {
       continue;
     }
 
@@ -456,14 +455,11 @@ void Optdp::createNetwork()
 
   // Return instances to a north orientation.  This makes
   // importing easier as I think it ensures all the pins,
-  // etc. will be where I expect them to be.  Record the
-  // original orientation to I can correct fixed objects.
-  std::unordered_map<dbInst*, dbOrientType> origOrient;
+  // etc. will be where I expect them to be.
   for (dbInst* inst : insts) {
-    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+    if (!inst->getMaster()->isCoreAutoPlaceable() || inst->isFixed()) {
       continue;
     }
-    origOrient[inst] = inst->getOrient();
     inst->setLocationOrient(dbOrientType::R0);  // Preserve lower-left.
   }
 
@@ -681,30 +677,6 @@ void Optdp::createNetwork()
                    "Unexpected total pin count.  Expected {:d}, but got {:d}",
                    nPins,
                    p);
-  }
-
-  // Return the orientation of fixed objects to their proper
-  // values since I will never reorient a fixed object.
-  for (dbInst* inst : insts) {
-    if (!inst->getMaster()->isCoreAutoPlaceable()) {
-      continue;
-    }
-    if (inst->isFixed()) {
-      dbOrientType orient = origOrient[inst];
-      if (inst->getOrient() != orient) {
-        // I messed around with this, so I should restore it.
-        inst->setLocationOrient(orient);
-
-        // Reorient the cell in my network too.
-        it_n = instMap_.find(inst);
-        if (instMap_.end() != it_n) {
-          n = it_n->second->getId();
-          if (network_->getNode(n)->getId() == n) {
-            network_->getNode(n)->adjustCurrOrient(dbToDpoOrient(orient));
-          }
-        }
-      }
-    }
   }
 
   logger_->info(DPO,

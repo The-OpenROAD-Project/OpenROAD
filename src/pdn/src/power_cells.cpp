@@ -65,14 +65,14 @@ const std::string PowerCell::getName() const
 
 void PowerCell::report() const
 {
-  logger_->info(utl::PDN, 200, "Switched power cell: {}", master_->getName());
-  logger_->info(utl::PDN, 201, "  Control pin: {}", control_->getName());
+  logger_->report("Switched power cell: {}", master_->getName());
+  logger_->report("  Control pin: {}", control_->getName());
   if (acknowledge_ != nullptr) {
-    logger_->info(utl::PDN, 202, "  Acknowledge pin: {}", acknowledge_->getName());
+    logger_->report("  Acknowledge pin: {}", acknowledge_->getName());
   }
-  logger_->info(utl::PDN, 203, "  Switched power pin: {}", switched_power_->getName());
-  logger_->info(utl::PDN, 204, "  Always on power pin: {}", alwayson_power_->getName());
-  logger_->info(utl::PDN, 205, "  Ground pin: {}", ground_->getName());
+  logger_->report("  Switched power pin: {}", switched_power_->getName());
+  logger_->report("  Always on power pin: {}", alwayson_power_->getName());
+  logger_->report("  Ground pin: {}", ground_->getName());
 }
 
 void PowerCell::populateAlwaysOnPinPositions(int site_width)
@@ -149,9 +149,9 @@ GridSwitchedPower::NetworkType GridSwitchedPower::fromString(const std::string& 
 void GridSwitchedPower::report() const
 {
   auto* logger = grid_->getLogger();
-  logger->info(utl::PDN, 210, "Switched power cell: {}", cell_->getName());
-  logger->info(utl::PDN, 211, "  Control net: {}", control_->getName());
-  logger->info(utl::PDN, 212, "  Network type: {}", toString(network_));
+  logger->report("Switched power cell: {}", cell_->getName());
+  logger->report("  Control net: {}", control_->getName());
+  logger->report("  Network type: {}", toString(network_));
 }
 
 GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
@@ -291,7 +291,6 @@ void GridSwitchedPower::build()
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
-      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
       const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
@@ -318,6 +317,10 @@ void GridSwitchedPower::build()
   updateControlNetwork();
 
   checkAndFixOverlappingInsts(exisiting_insts);
+
+  for (const auto& [inst, inst_info] : insts_) {
+    inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
 }
 
 void GridSwitchedPower::updateControlNetwork()
@@ -480,7 +483,11 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
     }
 
     inst->setLocation(pws_new_loc, y);
+    // Allow us to move fixed tapcells
+    auto prev_status = overlapping->getPlacementStatus();
+    overlapping->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     overlapping->setLocation(other_new_loc, overlap_y);
+    overlapping->setPlacementStatus(prev_status);
     debugPrint(grid_->getLogger(),
                utl::PDN,
                "PowerSwitch",
