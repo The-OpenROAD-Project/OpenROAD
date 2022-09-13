@@ -273,7 +273,33 @@ DRCWidget::DRCWidget(QWidget* parent)
       SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
 
+  view_->setMouseTracking(true);
+  connect(view_,
+          SIGNAL(entered(const QModelIndex&)),
+          this,
+          SLOT(focusIndex(const QModelIndex&)));
+
+  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
+  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
+
   Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
+}
+
+void DRCWidget::focusIndex(const QModelIndex& focus_index)
+{
+  defocus();
+
+  QStandardItem* item = model_->itemFromIndex(focus_index);
+  QVariant data = item->data();
+  if (data.isValid()) {
+    DRCViolation* violation = data.value<DRCViolation*>();
+    emit focus(Gui::get()->makeSelected(violation));
+  }
+}
+
+void DRCWidget::defocus()
+{
+  emit focus(Selected());
 }
 
 void DRCWidget::setLogger(utl::Logger* logger)
