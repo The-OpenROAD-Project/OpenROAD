@@ -1419,6 +1419,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer) {
     }
     auto minEnclosedAreaConstraint = make_unique<frMinEnclosedAreaConstraint>();
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
+    minEnclosedAreaConstraint->setDbTechMinEncRule(rule);
     tech->addUConstraint(std::move(minEnclosedAreaConstraint));
   }
 

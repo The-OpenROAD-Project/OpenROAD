@@ -298,9 +298,9 @@ class frMinEnclosedAreaConstraint : public frConstraint {
   // getter
   odb::dbTechMinEncRule* getDbTechMinEncRule() const { return rule_; }
   frCoord getArea() const {
-    frUInt4 _minEnclosedArea;
-    rule_->getEnclosure(_minEnclosedArea);
-    return _minEnclosedArea;
+    frUInt4 minEnclosedArea;
+    rule_->getEnclosure(minEnclosedArea);
+    return minEnclosedArea;
   }
   bool hasWidth() const {
     frUInt4 width;
