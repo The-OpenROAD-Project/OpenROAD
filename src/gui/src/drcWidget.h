@@ -47,6 +47,8 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 
+#include "inspector.h"
+
 namespace utl {
 class Logger;
 }
@@ -193,7 +195,7 @@ class DRCWidget : public QDockWidget
 
   utl::Logger* logger_;
 
-  QTreeView* view_;
+  ObjectTree* view_;
   DRCItemModel* model_;
 
   odb::dbBlock* block_;

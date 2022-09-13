@@ -109,15 +109,24 @@ void DRCViolation::computeBBox()
 
 void DRCViolation::paint(Painter& painter)
 {
-  for (const auto& shape : shapes_) {
-    if (auto s = std::get_if<DRCLine>(&shape)) {
-      const odb::Point& p1 = (*s).first;
-      const odb::Point& p2 = (*s).second;
-      painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
-    } else if (auto s = std::get_if<DRCRect>(&shape)) {
-      painter.drawRect(*s);
-    } else if (auto s = std::get_if<DRCPoly>(&shape)) {
-      painter.drawPolygon(*s);
+  const int min_box = 20.0 / painter.getPixelsPerDBU();
+
+  const odb::Rect& box = getBBox();
+  if (box.maxDXDY() < min_box) {
+    // box is too small to be useful, so draw X instead
+    odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
+    painter.drawX(center.x(), center.y(), min_box);
+  } else {
+    for (const auto& shape : shapes_) {
+      if (auto s = std::get_if<DRCLine>(&shape)) {
+        const odb::Point& p1 = (*s).first;
+        const odb::Point& p2 = (*s).second;
+        painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
+      } else if (auto s = std::get_if<DRCRect>(&shape)) {
+        painter.drawRect(*s);
+      } else if (auto s = std::get_if<DRCPoly>(&shape)) {
+        painter.drawPolygon(*s);
+      }
     }
   }
 }
@@ -239,7 +248,7 @@ QVariant DRCItemModel::data(const QModelIndex& index, int role) const
 DRCWidget::DRCWidget(QWidget* parent)
     : QDockWidget("DRC Viewer", parent),
       logger_(nullptr),
-      view_(new QTreeView(this)),
+      view_(new ObjectTree(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
       load_(new QPushButton("Load...", this)),
@@ -806,7 +815,6 @@ DRCRenderer::DRCRenderer(
 
 void DRCRenderer::drawObjects(Painter& painter)
 {
-  int min_box = 20.0 / painter.getPixelsPerDBU();
   Painter::Color pen_color = Painter::white;
   Painter::Color brush_color = pen_color;
   brush_color.a = 50;
@@ -817,14 +825,7 @@ void DRCRenderer::drawObjects(Painter& painter)
     if (!violation->isVisible()) {
       continue;
     }
-    const odb::Rect& box = violation->getBBox();
-    if (std::max(box.dx(), box.dy()) < min_box) {
-      // box is too small to be useful, so draw X instead
-      odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-      painter.drawX(center.x(), center.y(), min_box);
-    } else {
-      violation->paint(painter);
-    }
+    violation->paint(painter);
   }
 }
 
