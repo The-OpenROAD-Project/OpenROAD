@@ -2043,12 +2043,10 @@ To run metal fill post route, run following:
 cd flow/tutorials/scripts/metal_fill
 openroad -gui
 source "helpers.tcl"
-read_lef ../../../platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
-read_lef ../../../platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
-read_def ./5_route.def
+read_db ./5_route.odb
 ```
 Before metal fill layout as follows:
-![Detail Routing](./images/detail_route_gcd.webp)
+![Detail Routing](./images/sky130_gcd_route.webp)
 
 Run below command for metall fill inserstion
 ```
@@ -2120,7 +2118,7 @@ The log as follows:
 This section shows you how to troubleshoot commonly occurring problems
 with the flow or any of the underlying application tools.
 
-### Debugging Problems in Global routing
+### Debugging Problems in Global Routing
 
 The global router has a few useful functionalities to understand
 high congestion issues in the designs.
