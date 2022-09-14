@@ -52,7 +52,8 @@ class _dbTechLayer;
 struct dbTechLayerAreaRuleFlags
 {
   bool except_rectangle_ : 1;
-  uint spare_bits_ : 31;
+  uint overlap_ : 2;
+  uint spare_bits_ : 29;
 };
 // User Code Begin Structs
 // User Code End Structs
@@ -71,7 +72,6 @@ class _dbTechLayerAreaRule : public _dbObject
   std::pair<int, int> except_min_size_;
   std::pair<int, int> except_step_;
   dbId<_dbTechLayer> trim_layer_;
-  int overlap_;
   int mask_;
   int rect_width_;
 

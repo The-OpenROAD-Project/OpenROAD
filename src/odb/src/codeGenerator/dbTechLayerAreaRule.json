@@ -47,8 +47,9 @@
       ]
     },
     {
-      "type": "int",
-      "name": "overlap_"
+      "type": "uint",
+      "name": "overlap_",
+      "bits": 2
     },
     {
       "type": "int",

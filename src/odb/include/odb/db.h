@@ -8899,10 +8899,6 @@ class dbTechLayerAreaRule : public dbObject
 
   std::pair<int, int> getExceptStep() const;
 
-  void setOverlap(int overlap);
-
-  int getOverlap() const;
-
   void setMask(int mask);
 
   int getMask() const;
@@ -8914,6 +8910,10 @@ class dbTechLayerAreaRule : public dbObject
   void setExceptRectangle(bool except_rectangle);
 
   bool isExceptRectangle() const;
+
+  void setOverlap(uint overlap);
+
+  uint getOverlap() const;
 
   // User Code Begin dbTechLayerAreaRule
 
