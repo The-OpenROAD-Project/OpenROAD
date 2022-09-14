@@ -69,14 +69,6 @@ void lefTechLayerAreaRuleParser::setInt(
   (rule->*func)(lefin_->dbdist(val));
 }
 
-void lefTechLayerAreaRuleParser::setNumber(
-    double val,
-    odb::dbTechLayerAreaRule* rule,
-    void (odb::dbTechLayerAreaRule::*func)(int))
-{
-  (rule->*func)(val);
-}
-
 void lefTechLayerAreaRuleParser::setExceptEdgeLengths(
     const boost::fusion::vector<double, double>& params,
     odb::dbTechLayerAreaRule* rule)
@@ -154,11 +146,9 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                  layer,
                                  boost::ref(incomplete_props))])
          >> lit("OVERLAP")
-         >> double_[boost::bind(&lefTechLayerAreaRuleParser::setNumber,
-                                this,
-                                _1,
+         >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap,
                                 rule,
-                                &odb::dbTechLayerAreaRule::setOverlap)]);
+                                _1)]);
 
   qi::rule<std::string::iterator, space_type> AREA
       = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
@@ -167,11 +157,9 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                             rule,
                                             &odb::dbTechLayerAreaRule::setArea)]
          >> -(lit("MASK")
-              >> double_[boost::bind(&lefTechLayerAreaRuleParser::setNumber,
-                                     this,
-                                     _1,
+              >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask,
                                      rule,
-                                     &odb::dbTechLayerAreaRule::setMask)])
+                                     _1)])
          >> -(lit("EXCEPTMINWIDTH") >> double_[boost::bind(
                   &lefTechLayerAreaRuleParser::setInt,
                   this,
