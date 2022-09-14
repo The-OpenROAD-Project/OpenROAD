@@ -8888,9 +8888,9 @@ class dbTechLayerAreaRule : public dbObject
 
   int getArea() const;
 
-  void setExceptMinWitdh(int except_min_witdh);
+  void setExceptMinWidth(int except_min_width);
 
-  int getExceptMinWitdh() const;
+  int getExceptMinWidth() const;
 
   void setExceptEdgeLength(int except_edge_length);
 

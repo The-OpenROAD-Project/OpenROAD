@@ -177,7 +177,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                   this,
                   _1,
                   rule,
-                  &odb::dbTechLayerAreaRule::setExceptMinWitdh)])
+                  &odb::dbTechLayerAreaRule::setExceptMinWidth)])
          >> -EXCEPTEDGELENGTH >> -EXCEPTMINSIZE >> -EXCEPTSTEP
          >> -(lit("RECTWIDTH")
               >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,

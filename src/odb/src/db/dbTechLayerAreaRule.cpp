@@ -53,7 +53,7 @@ bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
   if (area != rhs.area)
     return false;
 
-  if (except_min_witdh != rhs.except_min_witdh)
+  if (except_min_width != rhs.except_min_width)
     return false;
 
   if (except_edge_length != rhs.except_edge_length)
@@ -89,7 +89,7 @@ void _dbTechLayerAreaRule::differences(dbDiff& diff,
 
   DIFF_FIELD(flags_.except_rectangle);
   DIFF_FIELD(area);
-  DIFF_FIELD(except_min_witdh);
+  DIFF_FIELD(except_min_width);
   DIFF_FIELD(except_edge_length);
   DIFF_FIELD(trim_layer_);
   DIFF_FIELD(overlap);
@@ -104,7 +104,7 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.except_rectangle);
   DIFF_OUT_FIELD(area);
-  DIFF_OUT_FIELD(except_min_witdh);
+  DIFF_OUT_FIELD(except_min_width);
   DIFF_OUT_FIELD(except_edge_length);
   DIFF_OUT_FIELD(trim_layer_);
   DIFF_OUT_FIELD(overlap);
@@ -128,7 +128,7 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
   flags_.except_rectangle = r.flags_.except_rectangle;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   area = r.area;
-  except_min_witdh = r.except_min_witdh;
+  except_min_width = r.except_min_width;
   except_edge_length = r.except_edge_length;
   trim_layer_ = r.trim_layer_;
   overlap = r.overlap;
@@ -143,7 +143,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> obj.area;
-  stream >> obj.except_min_witdh;
+  stream >> obj.except_min_width;
   stream >> obj.except_edge_length;
   stream >> obj.except_edge_lengths;
   stream >> obj.except_min_size;
@@ -161,7 +161,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
   stream << obj.area;
-  stream << obj.except_min_witdh;
+  stream << obj.except_min_width;
   stream << obj.except_edge_length;
   stream << obj.except_edge_lengths;
   stream << obj.except_min_size;
@@ -203,17 +203,17 @@ int dbTechLayerAreaRule::getArea() const
   return obj->area;
 }
 
-void dbTechLayerAreaRule::setExceptMinWitdh(int except_min_witdh)
+void dbTechLayerAreaRule::setExceptMinWidth(int except_min_width)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_min_witdh = except_min_witdh;
+  obj->except_min_width = except_min_width;
 }
 
-int dbTechLayerAreaRule::getExceptMinWitdh() const
+int dbTechLayerAreaRule::getExceptMinWidth() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_min_witdh;
+  return obj->except_min_width;
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLength(int except_edge_length)
@@ -322,7 +322,7 @@ bool dbTechLayerAreaRule::isExceptRectangle() const
   return obj->flags_.except_rectangle;
 }
 
-// User Code Begin dbTechLayerAreaRulePublicMethods.
+// User Code Begin dbTechLayerAreaRulePublicMethods
 
 dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* _layer)
 {

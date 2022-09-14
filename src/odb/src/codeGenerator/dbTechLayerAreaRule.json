@@ -8,7 +8,7 @@
     },
     {
       "type": "int",
-      "name": "except_min_witdh"
+      "name": "except_min_width"
     },
     {
       "type": "int",

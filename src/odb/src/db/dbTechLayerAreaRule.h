@@ -65,7 +65,7 @@ class _dbTechLayerAreaRule : public _dbObject
 
   dbTechLayerAreaRuleFlags flags_;
   int area;
-  int except_min_witdh;
+  int except_min_width;
   int except_edge_length;
   std::pair<int, int> except_edge_lengths;
   std::pair<int, int> except_min_size;
