@@ -1004,13 +1004,25 @@ NesterovBase::reset() {
 void
 NesterovBase::init() {
   
+  // Set a fixed seed
+  srand(42);
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea(); 
 
   // gCellStor init
   gCellStor_.reserve(pb_->placeInsts().size());
+
+  int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
+
   for(auto& inst: pb_->placeInsts()) {
+
+    // For any cell, add a random noise between -1 and 1 microns to each of its x and y components.
+    // This is added to make it very unlikely that identical cells connected in parallel do not start at the 
+    // exact same position and consequently shadow each other throughout the entire placement process
+    inst->setLocation(inst->lx() + rand() % (2 * dbu_per_micron) - 1 * dbu_per_micron, inst->ly() +  rand() % (2 * dbu_per_micron) - 1000);
+
+    
     gCellStor_.push_back(GCell(inst));
   }
 
