@@ -8921,7 +8921,7 @@ class dbTechLayerAreaRule : public dbObject
 
   void setTrimLayer(dbTechLayer* trim_layer);
 
-  dbTechLayer* getLayer() const;
+  dbTechLayer* getTrimLayer() const;
 
   static void destroy(dbTechLayerAreaRule* rule);
 

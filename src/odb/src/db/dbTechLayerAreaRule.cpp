@@ -338,7 +338,7 @@ void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
   obj->trim_layer_ = trim_layer->getImpl()->getOID();
 }
 
-dbTechLayer* dbTechLayerAreaRule::getLayer() const
+dbTechLayer* dbTechLayerAreaRule::getTrimLayer() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
   odb::dbTech* tech = getDb()->getTech();
