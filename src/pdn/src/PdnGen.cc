@@ -78,31 +78,6 @@ void PdnGen::init(dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void PdnGen::setSpecialITerms()
-{
-  if (global_connect_ == nullptr) {
-    logger_->warn(PDN, 49, "Global connections not set up.");
-    return;
-  }
-
-  std::set<dbNet*> global_nets = std::set<dbNet*>();
-  for (auto& [box, net_regex_pairs] : *global_connect_) {
-    for (auto& [net, regex_pairs] : *net_regex_pairs) {
-      global_nets.insert(net);
-    }
-  }
-
-  for (dbNet* net : global_nets)
-    setSpecialITerms(net);
-}
-
-void PdnGen::setSpecialITerms(dbNet* net)
-{
-  for (dbITerm* iterm : net->getITerms()) {
-    iterm->setSpecial();
-  }
-}
-
 void PdnGen::globalConnect(dbBlock* block,
                            std::shared_ptr<regex>& instPattern,
                            std::shared_ptr<regex>& pinPattern,
@@ -130,8 +105,6 @@ void PdnGen::globalConnect(dbBlock* block)
       continue;
     globalConnectRegion(block, region, net_regex_pairs);
   }
-
-  setSpecialITerms();
 }
 
 void PdnGen::globalConnectRegion(dbBlock* block,
@@ -156,6 +129,10 @@ void PdnGen::globalConnectRegion(dbBlock* block,
     return;
   }
 
+  if (net->isDoNotTouch()) {
+    return;
+  }
+
   std::vector<dbInst*> insts;
   findInstsInArea(block, region, instPattern, insts);
 
@@ -174,7 +151,13 @@ void PdnGen::globalConnectRegion(dbBlock* block,
       std::vector<dbMTerm*>* mterms = &masterpin->second;
 
       for (dbMTerm* mterm : *mterms) {
-        inst->getITerm(mterm)->connect(net);
+        auto* iterm = inst->getITerm(mterm);
+        auto* current_net = iterm->getNet();
+        if (current_net != nullptr && current_net->isDoNotTouch()) {
+          continue;
+        }
+        iterm->connect(net);
+        iterm->setSpecial();
       }
     }
   }
@@ -186,6 +169,9 @@ void PdnGen::findInstsInArea(dbBlock* block,
                              std::vector<dbInst*>& insts)
 {
   for (dbInst* inst : block->getInsts()) {
+    if (inst->isDoNotTouch()) {
+      continue;
+    }
     if (std::regex_match(inst->getName().c_str(), *instPattern)) {
       if (region == nullptr) {
         insts.push_back(inst);
@@ -223,15 +209,17 @@ void PdnGen::buildMasterPinMatchingMap(
 
 void PdnGen::addGlobalConnect(const char* instPattern,
                               const char* pinPattern,
-                              dbNet* net)
+                              dbNet* net,
+                              bool connect)
 {
-  addGlobalConnect(nullptr, instPattern, pinPattern, net);
+  addGlobalConnect(nullptr, instPattern, pinPattern, net, connect);
 }
 
 void PdnGen::addGlobalConnect(dbBox* region,
                               const char* instPattern,
                               const char* pinPattern,
-                              dbNet* net)
+                              dbNet* net,
+                              bool connect)
 {
   if (net == nullptr) {
     logger_->warn(PDN, 61, "Unable to add invalid net.");
@@ -253,9 +241,13 @@ void PdnGen::addGlobalConnect(dbBox* region,
     netRegexes->emplace(net, std::make_shared<regexPairs>());
   }
 
-  netRegexes->at(net)->push_back(
-      std::make_pair(std::make_shared<regex>(instPattern),
-                     std::make_shared<regex>(pinPattern)));
+  auto pair = std::make_pair(std::make_shared<regex>(instPattern),
+                             std::make_shared<regex>(pinPattern));
+  netRegexes->at(net)->push_back(pair);
+
+  if (connect) {
+    globalConnectRegion(net->getBlock(), region, pair.first, pair.second, net);
+  }
 }
 
 void PdnGen::clearGlobalConnect()
@@ -803,7 +795,7 @@ void PdnGen::updateRenderer() const
   }
 }
 
-void PdnGen::writeToDb(bool add_pins) const
+void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
 
@@ -854,6 +846,20 @@ void PdnGen::writeToDb(bool add_pins) const
     for (const auto& grid : domain->getGrids()) {
       grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
+    }
+  }
+
+  if (!report_file.empty()) {
+    std::ofstream file(report_file);
+    if (!file) {
+      logger_->warn(utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
+      return;
+    }
+
+    for (auto* grid : getGrids()) {
+      for (const auto& connect : grid->getConnect()) {
+        connect->writeFailedVias(file);
+      }
     }
   }
 }

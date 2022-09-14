@@ -493,7 +493,7 @@ LayoutViewer::LayoutViewer(
       snap_edge_showing_(false),
       snap_edge_(),
       inspector_selection_(Selected()),
-      inspector_focus_(Selected()),
+      focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
       repaint_requested_(true),
@@ -1774,14 +1774,14 @@ void LayoutViewer::selection(const Selected& selection)
     // stop animation
     selectionAnimation(Selected());
   }
-  inspector_focus_ = Selected();  // reset focus
+  focus_ = Selected();  // reset focus
   update();
 }
 
 void LayoutViewer::selectionFocus(const Selected& focus)
 {
-  inspector_focus_ = focus;
-  selectionAnimation(inspector_focus_);
+  focus_ = focus;
+  selectionAnimation(focus_);
   update();
 }
 
@@ -1859,12 +1859,12 @@ void LayoutViewer::drawSelected(Painter& painter)
         painter, Painter::highlight, pen_width, brush);
   }
 
-  if (inspector_focus_) {
-    inspector_focus_.highlight(painter,
-                               Painter::highlight,
-                               1,
-                               Painter::highlight,
-                               Painter::Brush::DIAGONAL);
+  if (focus_) {
+    focus_.highlight(painter,
+                     Painter::highlight,
+                     1,
+                     Painter::highlight,
+                     Painter::Brush::DIAGONAL);
   }
 }
 
@@ -2302,10 +2302,50 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     drawPinMarkers(gui_painter, bounds);
   }
 
+  drawGCellGrid(painter, bounds);
+
   for (auto* renderer : renderers) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawGCellGrid(QPainter* painter,
+                                 const odb::Rect& bounds)
+{
+  if (!options_->isGCellGridVisible()) {
+    return;
+  }
+
+  odb::dbGCellGrid* grid = block_->getGCellGrid();
+
+  if (grid == nullptr) {
+    return;
+  }
+
+  const odb::Rect draw_bounds = bounds.intersect(block_->getDieArea());
+
+  std::vector<int> x_grid, y_grid;
+  grid->getGridX(x_grid);
+  grid->getGridY(y_grid);
+
+  painter->setPen(QPen(Qt::white, 0));
+
+  for (const auto& x : x_grid) {
+    if (x < draw_bounds.xMin() || draw_bounds.xMax() < x) {
+      continue;
+    }
+
+    painter->drawLine(x, draw_bounds.yMin(), x, draw_bounds.yMax());
+  }
+
+  for (const auto& y : y_grid) {
+    if (y < draw_bounds.yMin() || draw_bounds.yMax() < y) {
+      continue;
+    }
+
+    painter->drawLine(draw_bounds.xMin(), y, draw_bounds.xMax(), y);
   }
 }
 

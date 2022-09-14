@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <fstream>
 #include <map>
 #include <set>
 #include <vector>
@@ -116,6 +117,9 @@ class Connect
 
   void printViaReport() const;
 
+  void addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net);
+  void writeFailedVias(std::ofstream& file) const;
+
  private:
   Grid* grid_;
   odb::dbTechLayer* layer0_;
@@ -140,6 +144,8 @@ class Connect
 
   std::vector<odb::dbTechLayer*> intermediate_layers_;
   std::vector<odb::dbTechLayer*> intermediate_routing_layers_;
+
+  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>> failed_vias_;
 
   DbVia* makeSingleLayerVia(odb::dbBlock* block,
                             odb::dbTechLayer* lower,

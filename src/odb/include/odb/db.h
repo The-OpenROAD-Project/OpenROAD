@@ -2106,17 +2106,12 @@ class dbNet : public dbObject
   bool isSpef();
 
   ///
-  /// Set/Reset the size-only flag
-  ///
-  void setSizeOnly(bool v);
-
-  ///
-  /// Returns true if the size-only flag is set.
-  ///
-  bool isSizeOnly();
-
-  ///
   /// Set/Reset the don't-touch flag
+  ///
+  /// Setting this implies:
+  /// - The net can't be destroyed
+  /// - The net can't have any bterm or iterms connected or disconnected
+  /// - The net CAN be routed or unrouted (wire or swire)
   ///
   void setDoNotTouch(bool v);
 
@@ -2950,22 +2945,20 @@ class dbInst : public dbObject
   ///
   /// Set/Reset the don't-touch flag
   ///
+  /// Setting this implies:
+  /// - The instance can't be destroyed
+  /// - The instance can't be resized (ie swapMaster)
+  /// - The associated iterms can't be connected or disconnected
+  /// - The parent module can't be changed
+  /// - The instance CAN be moved, have its orientation changed, or be
+  ///   placed or unplaced
+  ///
   void setDoNotTouch(bool v);
 
   ///
   /// Returns true if the don't-touch flag is set.
   ///
   bool isDoNotTouch();
-
-  ///
-  /// Set/Reset the don't-size flag
-  ///
-  void setDoNotSize(bool v);
-
-  ///
-  /// Returns true if the don't-size flag is set.
-  ///
-  bool isDoNotSize();
 
   ///
   /// Get the block of this instance.
@@ -7053,10 +7046,8 @@ class dbTechLayer : public dbObject
 
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
-  /// Return false if rules not encoded in this format.
-  /// Contents of sp_rules are undefined if function returns false.
   ///
-  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
+  dbSet<dbTechLayerSpacingRule> getV54SpacingRules() const;
 
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
@@ -7078,8 +7069,7 @@ class dbTechLayer : public dbObject
   void initV55SpacingTable(uint numrows, uint numcols);
   void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
 
-  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
-  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
+  dbSet<dbTechV55InfluenceEntry> getV55InfluenceRules();
 
   ///
   /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix

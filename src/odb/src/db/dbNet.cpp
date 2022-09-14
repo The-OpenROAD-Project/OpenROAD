@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbNet.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -49,11 +47,13 @@
 #include "dbExtControl.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
+#include "dbGuideItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbNet.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
@@ -65,7 +65,6 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
-#include "dbGuideItr.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -125,7 +124,6 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._set_io = 0;
   _flags._io = 0;
   _flags._dont_touch = 0;
-  _flags._size_only = 0;
   _flags._fixed_bump = 0;
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
@@ -258,9 +256,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   if (_flags._dont_touch != rhs._flags._dont_touch)
     return false;
 
-  if (_flags._size_only != rhs._flags._size_only)
-    return false;
-
   if (_flags._fixed_bump != rhs._flags._fixed_bump)
     return false;
 
@@ -359,7 +354,6 @@ void _dbNet::differences(dbDiff& diff,
   DIFF_FIELD(_flags._set_io);
   DIFF_FIELD(_flags._io);
   DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._size_only);
   DIFF_FIELD(_flags._fixed_bump);
   DIFF_FIELD(_flags._source);
   DIFF_FIELD(_flags._rc_disconnected);
@@ -447,7 +441,6 @@ void _dbNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._set_io);
   DIFF_OUT_FIELD(_flags._io);
   DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._size_only);
   DIFF_OUT_FIELD(_flags._fixed_bump);
   DIFF_OUT_FIELD(_flags._source);
   DIFF_OUT_FIELD(_flags._rc_disconnected);
@@ -1730,18 +1723,6 @@ bool dbNet::isIO()
     return setIOflag();
 }
 
-void dbNet::setSizeOnly(bool v)
-{
-  _dbNet* net = (_dbNet*) this;
-  net->_flags._size_only = v;
-}
-
-bool dbNet::isSizeOnly()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._size_only == 1;
-}
-
 void dbNet::setDoNotTouch(bool v)
 {
   _dbNet* net = (_dbNet*) this;
@@ -2900,10 +2881,8 @@ void dbNet::destroySWires()
   _dbNet* net = (_dbNet*) this;
 
   dbSet<dbSWire> swires = getSWires();
-  ;
-  dbSet<dbSWire>::iterator sitr;
 
-  for (sitr = swires.begin(); sitr != swires.end();)
+  for (auto sitr = swires.begin(); sitr != swires.end();)
     sitr = dbSWire::destroy(sitr);
 
   net->_swires = 0;
@@ -2946,6 +2925,11 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(
+        utl::ODB, 364, "Attempt to destroy dont_touch net {}", net->_name);
+  }
 
   dbSet<dbITerm> iterms = net_->getITerms();
   dbSet<dbITerm>::iterator iitr = iterms.begin();
@@ -3087,8 +3071,7 @@ void dbNet::clearGuides()
 {
   auto guides = getGuides();
   dbSet<dbGuide>::iterator itr = guides.begin();
-  while(itr != guides.end())
-  {
+  while (itr != guides.end()) {
     auto curGuide = *itr++;
     dbGuide::destroy(curGuide);
   }

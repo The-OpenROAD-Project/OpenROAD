@@ -90,24 +90,27 @@ proc add_global_connection {args} {
     $net setSpecial
     $net setSigType GROUND
   }
-
-  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net
-
-  if {![info exists flags(-defer_connection)]} {
-    global_connect
+  
+  set do_connect 1
+  pdn::depricated flags -defer_connection
+  if {[info exists flags(-defer_connection)]} {
+    set do_connect 0
   }
+
+  pdn::add_global_connect $keys(-inst_pattern) $keys(-pin_pattern) $net $do_connect
 }
 
 sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-dont_add_pins] \
                                [-reset] \
                                [-ripup] \
-                               [-report_only]
+                               [-report_only] \
+                               [-failed_via_report file]
 }
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
-    keys {} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
+    keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
 
   sta::check_argc_eq0or1  "pdngen" $args
 
@@ -145,9 +148,14 @@ proc pdngen { args } {
     set trim [expr [info exists flags(-skip_trim)] == 0]
     set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
 
+    set failed_via_report ""
+    if {[info exists keys(-failed_via_report)]} {
+      set failed_via_report $keys(-failed_via_report)
+    }
+
     pdn::check_setup
     pdn::build_grids $trim
-    pdn::write_to_db $add_pins
+    pdn::write_to_db $add_pins $failed_via_report
     pdn::reset_shapes
   }
 }
