@@ -8924,7 +8924,7 @@ class dbTechLayerAreaRule : public dbObject
   dbTechLayer* getLayer() const;
 
   static void destroy(dbTechLayerAreaRule* rule);
-  
+
   // User Code End dbTechLayerAreaRule
 };
 

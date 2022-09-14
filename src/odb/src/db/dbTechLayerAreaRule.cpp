@@ -47,28 +47,28 @@ template class dbTable<_dbTechLayerAreaRule>;
 
 bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 {
-  if (flags_.except_rectangle != rhs.flags_.except_rectangle)
+  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_)
     return false;
 
-  if (area != rhs.area)
+  if (area_ != rhs.area_)
     return false;
 
-  if (except_min_width != rhs.except_min_width)
+  if (except_min_width_ != rhs.except_min_width_)
     return false;
 
-  if (except_edge_length != rhs.except_edge_length)
+  if (except_edge_length_ != rhs.except_edge_length_)
     return false;
 
   if (trim_layer_ != rhs.trim_layer_)
     return false;
 
-  if (overlap != rhs.overlap)
+  if (overlap_ != rhs.overlap_)
     return false;
 
-  if (mask != rhs.mask)
+  if (mask_ != rhs.mask_)
     return false;
 
-  if (rect_width != rhs.rect_width)
+  if (rect_width_ != rhs.rect_width_)
     return false;
 
   // User Code Begin ==
@@ -87,14 +87,14 @@ void _dbTechLayerAreaRule::differences(dbDiff& diff,
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(flags_.except_rectangle);
-  DIFF_FIELD(area);
-  DIFF_FIELD(except_min_width);
-  DIFF_FIELD(except_edge_length);
+  DIFF_FIELD(flags_.except_rectangle_);
+  DIFF_FIELD(area_);
+  DIFF_FIELD(except_min_width_);
+  DIFF_FIELD(except_edge_length_);
   DIFF_FIELD(trim_layer_);
-  DIFF_FIELD(overlap);
-  DIFF_FIELD(mask);
-  DIFF_FIELD(rect_width);
+  DIFF_FIELD(overlap_);
+  DIFF_FIELD(mask_);
+  DIFF_FIELD(rect_width_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -102,14 +102,14 @@ void _dbTechLayerAreaRule::differences(dbDiff& diff,
 void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.except_rectangle);
-  DIFF_OUT_FIELD(area);
-  DIFF_OUT_FIELD(except_min_width);
-  DIFF_OUT_FIELD(except_edge_length);
+  DIFF_OUT_FIELD(flags_.except_rectangle_);
+  DIFF_OUT_FIELD(area_);
+  DIFF_OUT_FIELD(except_min_width_);
+  DIFF_OUT_FIELD(except_edge_length_);
   DIFF_OUT_FIELD(trim_layer_);
-  DIFF_OUT_FIELD(overlap);
-  DIFF_OUT_FIELD(mask);
-  DIFF_OUT_FIELD(rect_width);
+  DIFF_OUT_FIELD(overlap_);
+  DIFF_OUT_FIELD(mask_);
+  DIFF_OUT_FIELD(rect_width_);
 
   // User Code Begin Out
   // User Code End Out
@@ -125,15 +125,15 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
                                            const _dbTechLayerAreaRule& r)
 {
-  flags_.except_rectangle = r.flags_.except_rectangle;
+  flags_.except_rectangle_ = r.flags_.except_rectangle_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
-  area = r.area;
-  except_min_width = r.except_min_width;
-  except_edge_length = r.except_edge_length;
+  area_ = r.area_;
+  except_min_width_ = r.except_min_width_;
+  except_edge_length_ = r.except_edge_length_;
   trim_layer_ = r.trim_layer_;
-  overlap = r.overlap;
-  mask = r.mask;
-  rect_width = r.rect_width;
+  overlap_ = r.overlap_;
+  mask_ = r.mask_;
+  rect_width_ = r.rect_width_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -142,16 +142,16 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
-  stream >> obj.area;
-  stream >> obj.except_min_width;
-  stream >> obj.except_edge_length;
-  stream >> obj.except_edge_lengths;
-  stream >> obj.except_min_size;
-  stream >> obj.except_step;
+  stream >> obj.area_;
+  stream >> obj.except_min_width_;
+  stream >> obj.except_edge_length_;
+  stream >> obj.except_edge_lengths_;
+  stream >> obj.except_min_size_;
+  stream >> obj.except_step_;
   stream >> obj.trim_layer_;
-  stream >> obj.overlap;
-  stream >> obj.mask;
-  stream >> obj.rect_width;
+  stream >> obj.overlap_;
+  stream >> obj.mask_;
+  stream >> obj.rect_width_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -160,16 +160,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
-  stream << obj.area;
-  stream << obj.except_min_width;
-  stream << obj.except_edge_length;
-  stream << obj.except_edge_lengths;
-  stream << obj.except_min_size;
-  stream << obj.except_step;
+  stream << obj.area_;
+  stream << obj.except_min_width_;
+  stream << obj.except_edge_length_;
+  stream << obj.except_edge_lengths_;
+  stream << obj.except_min_size_;
+  stream << obj.except_step_;
   stream << obj.trim_layer_;
-  stream << obj.overlap;
-  stream << obj.mask;
-  stream << obj.rect_width;
+  stream << obj.overlap_;
+  stream << obj.mask_;
+  stream << obj.rect_width_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -194,39 +194,39 @@ void dbTechLayerAreaRule::setArea(int area)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->area = area;
+  obj->area_ = area;
 }
 
 int dbTechLayerAreaRule::getArea() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->area;
+  return obj->area_;
 }
 
 void dbTechLayerAreaRule::setExceptMinWidth(int except_min_width)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_min_width = except_min_width;
+  obj->except_min_width_ = except_min_width;
 }
 
 int dbTechLayerAreaRule::getExceptMinWidth() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_min_width;
+  return obj->except_min_width_;
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLength(int except_edge_length)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_edge_length = except_edge_length;
+  obj->except_edge_length_ = except_edge_length;
 }
 
 int dbTechLayerAreaRule::getExceptEdgeLength() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_edge_length;
+  return obj->except_edge_length_;
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLengths(
@@ -234,92 +234,92 @@ void dbTechLayerAreaRule::setExceptEdgeLengths(
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_edge_lengths = except_edge_lengths;
+  obj->except_edge_lengths_ = except_edge_lengths;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptEdgeLengths() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_edge_lengths;
+  return obj->except_edge_lengths_;
 }
 
 void dbTechLayerAreaRule::setExceptMinSize(std::pair<int, int> except_min_size)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_min_size = except_min_size;
+  obj->except_min_size_ = except_min_size;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptMinSize() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_min_size;
+  return obj->except_min_size_;
 }
 
 void dbTechLayerAreaRule::setExceptStep(std::pair<int, int> except_step)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->except_step = except_step;
+  obj->except_step_ = except_step;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptStep() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->except_step;
+  return obj->except_step_;
 }
 
 void dbTechLayerAreaRule::setOverlap(int overlap)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->overlap = overlap;
+  obj->overlap_ = overlap;
 }
 
 int dbTechLayerAreaRule::getOverlap() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->overlap;
+  return obj->overlap_;
 }
 
 void dbTechLayerAreaRule::setMask(int mask)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->mask = mask;
+  obj->mask_ = mask;
 }
 
 int dbTechLayerAreaRule::getMask() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->mask;
+  return obj->mask_;
 }
 
 void dbTechLayerAreaRule::setRectWidth(int rect_width)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->rect_width = rect_width;
+  obj->rect_width_ = rect_width;
 }
 
 int dbTechLayerAreaRule::getRectWidth() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
-  return obj->rect_width;
+  return obj->rect_width_;
 }
 
 void dbTechLayerAreaRule::setExceptRectangle(bool except_rectangle)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  obj->flags_.except_rectangle = except_rectangle;
+  obj->flags_.except_rectangle_ = except_rectangle;
 }
 
 bool dbTechLayerAreaRule::isExceptRectangle() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
-  return obj->flags_.except_rectangle;
+  return obj->flags_.except_rectangle_;
 }
 
 // User Code Begin dbTechLayerAreaRulePublicMethods
