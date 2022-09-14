@@ -119,7 +119,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
   _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerAreaRule* rule = odb::dbTechLayerAreaRule::create(layer);
 
-  qi::rule<std::string::iterator, space_type> EXCEPTEDGELENGTH
+  qi::rule<std::string::iterator, space_type> EXCEPT_EDGE_LENGTH
       = ((lit("EXCEPTEDGELENGTH") >> double_ >> double_)[boost::bind(
              &lefTechLayerAreaRuleParser::setExceptEdgeLengths, this, _1, rule)]
          | lit("EXCEPTEDGELENGTH") >> double_[boost::bind(
@@ -129,11 +129,11 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                rule,
                &dbTechLayerAreaRule::setExceptEdgeLength)]);
 
-  qi::rule<std::string::iterator, space_type> EXCEPTMINSIZE
+  qi::rule<std::string::iterator, space_type> EXCEPT_MIN_SIZE
       = (lit("EXCEPTMINSIZE") >> double_ >> double_)[boost::bind(
           &lefTechLayerAreaRuleParser::setExceptMinSize, this, _1, rule)];
 
-  qi::rule<std::string::iterator, space_type> EXCEPTSTEP
+  qi::rule<std::string::iterator, space_type> EXCEPT_STEP
       = (lit("EXCEPTSTEP") >> double_ >> double_)[boost::bind(
           &lefTechLayerAreaRuleParser::setExceptStep, this, _1, rule)];
 
@@ -166,7 +166,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                   _1,
                   rule,
                   &odb::dbTechLayerAreaRule::setExceptMinWidth)])
-         >> -EXCEPTEDGELENGTH >> -EXCEPTMINSIZE >> -EXCEPTSTEP
+         >> -EXCEPT_EDGE_LENGTH >> -EXCEPT_MIN_SIZE >> -EXCEPT_STEP
          >> -(lit("RECTWIDTH")
               >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
                                      this,
