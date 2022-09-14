@@ -60,7 +60,7 @@
   - [Metal Fill](#Metal-Fill)
   - [Parasitics Extraction](#Parasitics-Extraction)
 - [Troubleshooting Problems](#Troubleshooting-Problems)
-  - [Debugging Problems in Global Routing](#Debugging-Problems-in-Gloabl-Routing)
+  - [Debugging Problems in Global Routing](#Debugging-Problems-in-Global-Routing)
 
 ## Introduction
 
@@ -234,32 +234,33 @@ From the OpenROAD-flow-scripts directory, users can access individual flow
 stages, respective tools and the corresponding `README.md` for tool commands,
 configuration examples using the Tcl interface and other such details.
 
--   Synthesis - [Yosys](https://github.com/The-OpenROAD-Project/yosys/blob/master/README.md).
--   Database - [OpenDB](../../src/odb/README.md).
--   Floorplanning - [Initialize Floorplan](../../src/ifp/README.md).
--   Pin Placement - [ioPlacer](../../src/ppl/README.md).
--   Chip-level Connections - [ICeWall](../../src/pad/README.md).
--   Macro Placement - [TritonMacroPlacer](../../src/mpl/README.md).
--   Tapcell insertion - [Tapcell](../../src/tap/README.md).
--   PDN Analysis - [PDN](../../src/pdn/README.md), [PDNSim](../../src/psm/README.md).
--   Global Placement - [RePlAce](../../src/gpl/README.md).
--   Timing Analysis - [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md).
--   Detailed Placement - [OpenDP](../../src/dpl/README.md).
--   Timing Optimization using Resizer - [Gate Resizer](../../src/rsz/README.md).
--   Clock Tree Synthesis - [TrintonCTS](../../src/cts/README.md).
--   Global Routing - [FastRoute](../../src/grt/README.md).
--   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
--   Detail Routing - [TritonRoute](../../src/drt/README.md).
--   Metall Fill - [Metal Fill](../../src/fin/README.md).
--   Parasitics Extraction - [OpenRCX](../../src/rcx/README.md).
--   Layout Generation - [KLayout](https://www.klayout.de/) (Requires v0.27.1).
+-   [Synthesis](https://github.com/The-OpenROAD-Project/yosys/blob/master/README.md)
+-   [Database](../../src/odb/README.md)
+-   [Floorplanning](../../src/ifp/README.md)
+-   [Pin Placement](../../src/ppl/README.md)
+-   [Chip-level Connections](../../src/pad/README.md)
+-   [Macro Placement](../../src/mpl/README.md)
+-   [Tapcell insertion](../../src/tap/README.md)
+-   [PDN Analysis](../../src/pdn/README.md)
+-   [IR Drop Analysis](../../src/psm/README.md)
+-   [Global Placement](../../src/gpl/README.md)
+-   [Timing Analysis](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md)
+-   [Detailed Placement](../../src/dpl/README.md)
+-   [Timing Optimization using Resizer](../../src/rsz/README.md)
+-   [Clock Tree Synthesis](../../src/cts/README.md)
+-   [Global Routing](../../src/grt/README.md)
+-   [Antenna Rule Checker](../../src/ant/README.md)
+-   [Detail Routing](../../src/drt/README.md)
+-   [Metall Fill](../../src/fin/README.md)
+-   [Parasitics Extraction](../../src/rcx/README.md)
+-   [Layout Generation](https://www.klayout.de/)
 
 ### Design Goals
 
 Run the `ibex` design in ORFS automated flow from RTL-to-GDS using `sky130hd`.
-`ibex` design details available 
+Find `ibex` design details  
 [here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/src/ibex/README.md)
-and the design goals below:
+and the design goals are:
 
 -   Area
 
@@ -753,7 +754,7 @@ openroad -gui
 
 ![Default GUI](./images/default_gui.png)
 
-Check `load_lef.tcl`:
+To view `load_lef.tcl`, run the command:
 
 ```
 less ./flow/tutorials/scripts/gui/load_lef.tcl
@@ -886,7 +887,6 @@ View the resulting core utilization of 30 created following floorplan:
 
 ### IO Pin Placement
 
-#### ioPlacer
 Place pins on the boundary of the die on the track grid to minimize net
 wirelengths. Pin placement also creates a metal shape for each pin using
 min-area rules.
@@ -894,8 +894,7 @@ min-area rules.
 For designs with unplaced cells, the net wirelength is computed considering
 the center of the die area as the unplaced cells position.
 
-For pin placement using ioPlacer refer to the readme file
-[here](../../src/ppl/README.md).
+Find pin placement document [here](../../src/ppl/README.md).
 
 Refer to the built-in examples [here](../../src/ppl/test).
 
@@ -906,8 +905,8 @@ cd ../../src/pad/test/
 openroad -gui
 ```
 
-Run [place_pin4.tcl](../../src/ppl/test/place_pin4.tcl) to view
-ioPlacer based pin placement.
+Run [place_pin4.tcl](../../src/ppl/test/place_pin4.tcl) script to view
+pin placement.
 
 From the GUI `Tcl commands` section:
 
@@ -950,8 +949,8 @@ cd ../../src/pad/test/
 openroad -gui
 ```
 
-Run [coyote_tc_sky130.tcl](../../src/pad/test/coyote_tc_sky130.tcl) to view
-ICeWall based IO pad placement.
+Run [coyote_tc_sky130.tcl](../../src/pad/test/coyote_tc_sky130.tcl) script
+to view IO pad placement.
 
 From the GUI `Tcl commands` section:
 
@@ -968,8 +967,7 @@ View the resulting IO pad ring in GUI:
 In this section, you will use the design `gcd` to create a
 power grid and run power analysis.
 
-Pdngen is used for power planning. Refer to the following `README.md`
-[here](../../src/pdn/README.md).
+Pdngen is used for power planning. Find the document [here](../../src/pdn/README.md).
 
 Refer to the built-in examples [here](../../src/pdn/test).
 
@@ -1631,10 +1629,9 @@ the resizer.
 
 ### Clock Tree Synthesis
 
-TritonCTS is available under the OpenROAD app to perform clock tree
-synthesis as the `clock_tree_synthesis` flow command. The ORFS
-automatically generates a well-balanced clock tree post-placement. In
-this section, you will learn details about the building and visualize the
+To perform clock tree synthesis `clock_tree_synthesis` flow command used.
+The ORFS automatically generates a well-balanced clock tree post-placement.
+In this section, you will learn details about the building and visualize the
 clock tree.
 
 Refer to the built-in example [here](../../src/cts/test/simple_test.tcl).
@@ -1847,10 +1844,6 @@ Filler cells removed with `remove_fillers` command.
 
 ### Global Routing
 
-#### FastRoute
-FastRoute is an open-source global router originally derived from Iowa
-State University FastRoute4.1.
-
 The global router analyzes available routing resources and automatically
 allocates them to avoid any  H/V  overflow violations for optimal routing.  
 It generates a congestion report for GCells showing total resources, demand, 
@@ -1909,7 +1902,6 @@ View the resulting global routing in GUI as follows:
 
 ### Detail Routing
 
-#### TritonRoute
 TritonRoute is an open-source detailed router for modern industrial designs.
 The router consists of several main building blocks, including pin access 
 analysis, track assignment, initial detailed routing, search and repair, and a DRC engine.
@@ -2038,23 +2030,27 @@ Command used as follows:
 ```
 If -area is not specified, the core area will be used.
 
-To run metal fill post route, run following:
+To run metal fill post route, run the following:
 ```
 cd flow/tutorials/scripts/metal_fill
 openroad -gui
 source "helpers.tcl"
 read_db ./5_route.odb
 ```
-Before metal fill layout as follows:
+Layout before adding metal fill is as follows:
 ![Detail Routing](./images/sky130_gcd_route.webp)
 
-Run below command for metall fill inserstion
+To add metal fill, run the command:
 ```
 density_fill -rules ../../../platforms/sky130hd/fill.json
 ```
 
-Post metal fill insertion layout as follows:
+Layout after adding metal fill insertion is as follows:
 ![Metal Fill](./images/metal_fill_view.webp)
+
+Metal fill  view circled with `pink` color.
+![Metal Fill Zoomed](./images/metal_fill_view_zoom.webp)
+
 
 ### Parasitics Extraction
 
