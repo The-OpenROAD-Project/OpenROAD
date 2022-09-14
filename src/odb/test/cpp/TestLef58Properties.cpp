@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     if (cnt == 3) {
       BOOST_TEST(subRule->getArea() == 0.101 * distFactor);
-      BOOST_TEST(subRule->getLayer()->getName() == "metal1");
+      BOOST_TEST(subRule->getTrimLayer()->getName() == "metal1");
       BOOST_TEST(subRule->getOverlap() == 1);
     }
     if (cnt == 4) {
