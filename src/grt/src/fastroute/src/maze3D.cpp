@@ -868,7 +868,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
-  const int endIND = netCount() * 0.9;
+  const int endIND = tree_order_pv_.size() * 0.9;
 
   multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
   multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
@@ -876,6 +876,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
     FrNet* net = nets_[netID];
+
+    if (net->is_routed)
+      continue;
 
     int enlarge = expand;
     const int deg = sttrees_[netID].deg;

@@ -456,6 +456,8 @@ void FastRouteCore::releaseResourcesNet(const int netID)
     const std::vector<short>& gridsY = treeedge->route.gridsY;
     const std::vector<short>& gridsL = treeedge->route.gridsL;
     const int routeLen = treeedge->route.routelen;
+    Edge* edge;
+    Edge3D* edge_3D;
 
     for (int i = 0; i < routeLen; i++) {
 
@@ -465,26 +467,30 @@ void FastRouteCore::releaseResourcesNet(const int netID)
       else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
 
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (v_edges_[ymin][gridsX[i]].usage >= edgeCost)
-          v_edges_[ymin][gridsX[i]].usage -= edgeCost;
-        if (v_edges_[ymin][gridsX[i]].est_usage >= edgeCost)
-          v_edges_[ymin][gridsX[i]].est_usage -=  edgeCost;
-        if (v_edges_[ymin][gridsX[i]].last_usage >= edgeCost)
-          v_edges_[ymin][gridsX[i]].last_usage -= edgeCost;
-        if (v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage >= edgeCost)
-          v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage -= edgeCost;
+        edge = &v_edges_[ymin][gridsX[i]];
+        edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
+        if (edge->usage >= edgeCost)
+          edge->usage -= edgeCost;
+        if (edge->est_usage >= edgeCost)
+          edge->est_usage -=  edgeCost;
+        if (edge->last_usage >= edgeCost)
+          edge->last_usage -= edgeCost;
+        if (edge_3D->usage >= edgeCost)
+          edge_3D->usage -= edgeCost;
 
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
 
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (h_edges_[gridsY[i]][xmin].usage >= edgeCost)
-          h_edges_[gridsY[i]][xmin].usage -= edgeCost;
-        if (h_edges_[gridsY[i]][xmin].est_usage >= edgeCost)
-          h_edges_[gridsY[i]][xmin].est_usage -= edgeCost;
-        if (h_edges_[gridsY[i]][xmin].last_usage >= edgeCost)
-          h_edges_[gridsY[i]][xmin].last_usage -= edgeCost;
-        if (h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage >= edgeCost)
-          h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage -= edgeCost;
+        edge = &h_edges_[gridsY[i]][xmin];
+        edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
+        if (edge->usage >= edgeCost)
+          edge->usage -= edgeCost;
+        if (edge->est_usage >= edgeCost)
+          edge->est_usage -= edgeCost;
+        if (edge->last_usage >= edgeCost)
+          edge->last_usage -= edgeCost;
+        if (edge_3D->usage >= edgeCost)
+          edge_3D->usage -= edgeCost;
       } 
     }
   }
