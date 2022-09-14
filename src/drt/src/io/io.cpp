@@ -50,7 +50,7 @@ io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
       logger_(loggerIn),
       tmpBlock_(nullptr),
       readLayerCnt_(0),
-      masterSliceLayer(nullptr),
+      masterSliceLayer_(nullptr),
       tmpGuides_(),
       tmpGRPins_(),
       trackOffsetMap_(),
