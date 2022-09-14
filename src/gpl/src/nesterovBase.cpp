@@ -1020,7 +1020,10 @@ NesterovBase::init() {
     // For any cell, add a random noise between -1 and 1 microns to each of its x and y components.
     // This is added to make it very unlikely that identical cells connected in parallel do not start at the 
     // exact same position and consequently shadow each other throughout the entire placement process
-    inst->setLocation(inst->lx() + rand() % (2 * dbu_per_micron) - 1 * dbu_per_micron, inst->ly() +  rand() % (2 * dbu_per_micron) - 1000);
+
+    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
     
     gCellStor_.push_back(GCell(inst));
