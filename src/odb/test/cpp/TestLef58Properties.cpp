@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     if (cnt == 2) {
       BOOST_TEST(subRule->getArea() == 1.01 * distFactor);
-      BOOST_TEST(subRule->getExceptMinWitdh() == 0.09 * distFactor);
+      BOOST_TEST(subRule->getExceptMinWidth() == 0.09 * distFactor);
       BOOST_TEST(subRule->getExceptMinSize().first == 0.1 * distFactor);
       BOOST_TEST(subRule->getExceptMinSize().second == 0.3 * distFactor);
       BOOST_TEST(subRule->getExceptStep().first == 0.01 * distFactor);
