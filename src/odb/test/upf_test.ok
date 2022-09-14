@@ -3,7 +3,7 @@
 [INFO ODB-0224]     Created 25 technology vias
 [INFO ODB-0226] Finished LEF file:  data/sky130hd/sky130_fd_sc_hd.tlef
 [INFO ODB-0222] Reading LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef
-[INFO ODB-0225]     Created 441 library cells
+[INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  data/sky130hd/sky130_fd_sc_hd_merged.lef
 Power Domains List:
 PowerDomain: PD_TOP, Elements: .

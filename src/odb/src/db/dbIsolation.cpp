@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -192,31 +192,31 @@ const char* dbIsolation::getName() const
   return obj->_name;
 }
 
-const char* dbIsolation::getAppliesTo() const
+std::string dbIsolation::getAppliesTo() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_applies_to;
 }
 
-const char* dbIsolation::getClampValue() const
+std::string dbIsolation::getClampValue() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_clamp_value;
 }
 
-const char* dbIsolation::getIsolationSignal() const
+std::string dbIsolation::getIsolationSignal() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_isolation_signal;
 }
 
-const char* dbIsolation::getIsolationSense() const
+std::string dbIsolation::getIsolationSense() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_isolation_sense;
 }
 
-const char* dbIsolation::getLocation() const
+std::string dbIsolation::getLocation() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->_location;
@@ -247,6 +247,7 @@ dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
   _dbIsolation* iso = _block->_isolation_tbl->create();
   iso->_name = strdup(name);
   ZALLOCATED(iso->_name);
+
   _block->_isolation_hash.insert(iso);
   return (dbIsolation*) iso;
 }
@@ -256,29 +257,34 @@ void dbIsolation::destroy(dbIsolation* iso)
   // TODO
 }
 
-void dbIsolation::setAppliesTo(const char* applies_to){
+void dbIsolation::setAppliesTo(const std::string& applies_to)
+{
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_applies_to = strdup(applies_to);
+  obj->_applies_to = applies_to;
 }
 
-void dbIsolation::setClampValue(const char* clamp_value){
+void dbIsolation::setClampValue(const std::string& clamp_value)
+{
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_clamp_value = strdup(clamp_value);
+  obj->_clamp_value = clamp_value;
 }
 
-void dbIsolation::setIsolationSignal(const char* isolation_signal){
+void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
+{
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_isolation_signal = strdup(isolation_signal);  
+  obj->_isolation_signal = isolation_signal;
 }
 
-void dbIsolation::setIsolationSense(const char* isolation_sense){
+void dbIsolation::setIsolationSense(const std::string& isolation_sense)
+{
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_isolation_sense = strdup(isolation_sense);
+  obj->_isolation_sense = isolation_sense;
 }
 
-void dbIsolation::setLocation(const char* location){
+void dbIsolation::setLocation(const std::string& location)
+{
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_location = strdup(location);
+  obj->_location = location;
 }
 // User Code End dbIsolationPublicMethods
 }  // namespace odb

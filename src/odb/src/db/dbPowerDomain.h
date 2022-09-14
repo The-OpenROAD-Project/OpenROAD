@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -62,8 +62,8 @@ class _dbPowerDomain : public _dbObject
   char* _name;
   dbId<_dbPowerDomain> _next_entry;
   dbVector<std::string> _elements;
-  dbId<_dbPowerSwitch> _power_switch;
-  dbId<_dbIsolation> _isolation;
+  dbVector<dbId<_dbPowerSwitch>> _power_switch;
+  dbVector<dbId<_dbIsolation>> _isolation;
 
   // User Code Begin Fields
   // User Code End Fields

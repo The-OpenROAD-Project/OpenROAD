@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, The Regents of the University of California
+## Copyright (c) 2022, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 include("openroad")
 
 swig_lib(NAME      upf
-         NAMESPACE odb
+         NAMESPACE upf
          I_FILE    upf.i
          SCRIPTS   upf.tcl
 )

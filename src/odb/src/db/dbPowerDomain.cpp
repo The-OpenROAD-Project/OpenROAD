@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -58,12 +58,6 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   if (_next_entry != rhs._next_entry)
     return false;
 
-  if (_power_switch != rhs._power_switch)
-    return false;
-
-  if (_isolation != rhs._isolation)
-    return false;
-
   // User Code Begin ==
   // User Code End ==
   return true;
@@ -82,8 +76,6 @@ void _dbPowerDomain::differences(dbDiff& diff,
 
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_power_switch);
-  DIFF_FIELD(_isolation);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -93,8 +85,6 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_power_switch);
-  DIFF_OUT_FIELD(_isolation);
 
   // User Code Begin Out
   // User Code End Out
@@ -109,8 +99,6 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
 {
   _name = r._name;
   _next_entry = r._next_entry;
-  _power_switch = r._power_switch;
-  _isolation = r._isolation;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -161,41 +149,8 @@ const char* dbPowerDomain::getName() const
   return obj->_name;
 }
 
-void dbPowerDomain::setPowerSwitch(dbPowerSwitch* power_switch)
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-
-  obj->_power_switch = power_switch->getImpl()->getOID();
-}
-
-dbPowerSwitch* dbPowerDomain::getPowerSwitch() const
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  if (obj->_power_switch == 0)
-    return NULL;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerSwitch*) par->_powerswitch_tbl->getPtr(obj->_power_switch);
-}
-
-void dbPowerDomain::setIsolation(dbIsolation* isolation)
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-
-  obj->_isolation = isolation->getImpl()->getOID();
-}
-
-dbIsolation* dbPowerDomain::getIsolation() const
-{
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  if (obj->_isolation == 0)
-    return NULL;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbIsolation*) par->_isolation_tbl->getPtr(obj->_isolation);
-}
-
 // User Code Begin dbPowerDomainPublicMethods
-dbPowerDomain* dbPowerDomain::create(dbBlock* block,
-                                     const char* name)
+dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
   if (_block->_powerdomain_hash.hasMember(name))
@@ -213,14 +168,55 @@ void dbPowerDomain::destroy(dbPowerDomain* pd)
   // TODO
 }
 
-void dbPowerDomain::addElement(const char* element){
+void dbPowerDomain::addElement(const std::string& element)
+{
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  obj->_elements.push_back(std::string(element));
+  obj->_elements.push_back(element);
 }
 
-std::vector<std::string> dbPowerDomain::getElements(){
+std::vector<std::string> dbPowerDomain::getElements()
+{
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  return obj->_elements; 
+  return obj->_elements;
+}
+
+void dbPowerDomain::addPowerSwitch(dbPowerSwitch* ps)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_power_switch.push_back(ps->getImpl()->getOID());
+}
+void dbPowerDomain::addIsolation(dbIsolation* iso)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_isolation.push_back(iso->getImpl()->getOID());
+}
+
+std::vector<dbPowerSwitch*> dbPowerDomain::getPowerSwitches()
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  std::vector<dbPowerSwitch*> switches;
+
+  for (auto ps : obj->_power_switch) {
+    switches.push_back((dbPowerSwitch*) par->_powerswitch_tbl->getPtr(ps));
+  }
+
+  return switches;
+}
+
+std::vector<dbIsolation*> dbPowerDomain::getIsolations()
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  std::vector<dbIsolation*> isolations;
+
+  for (auto iso : obj->_isolation) {
+    isolations.push_back((dbIsolation*) par->_isolation_tbl->getPtr(iso));
+  }
+
+  return isolations;
 }
 
 // User Code End dbPowerDomainPublicMethods

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -61,11 +61,11 @@ class _dbIsolation : public _dbObject
 
   char* _name;
   dbId<_dbIsolation> _next_entry;
-  char* _applies_to;
-  char* _clamp_value;
-  char* _isolation_signal;
-  char* _isolation_sense;
-  char* _location;
+  std::string _applies_to;
+  std::string _clamp_value;
+  std::string _isolation_signal;
+  std::string _isolation_sense;
+  std::string _location;
   dbVector<dbId<_dbMaster>> _isolation_cells;
   dbId<_dbPowerDomain> _power_domain;
 

@@ -171,14 +171,14 @@
         },
         {
           "name":"_power_switch",
-          "type":"dbId<_dbPowerSwitch>",
-          "flags":[],
+          "type":"dbVector<dbId<_dbPowerSwitch>>",
+          "flags":["no-set","no-get"],
           "parent":"dbBlock"
         },
         {
           "name":"_isolation",
-          "type":"dbId<_dbIsolation>",
-          "flags":[],
+          "type":"dbVector<dbId<_dbIsolation>>",
+          "flags":["no-set","no-get"],
           "parent":"dbBlock"
         }
       ],
@@ -204,7 +204,7 @@
         },
         {
           "name":"direction",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]  
         }
       ],
@@ -230,12 +230,12 @@
         },
         {
           "name":"_in_supply_port",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
           "name":"_out_supply_port",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
@@ -284,27 +284,27 @@
         },
         {
           "name":"_applies_to",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
           "name":"_clamp_value",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
           "name":"_isolation_signal",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
           "name":"_isolation_sense",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {
           "name":"_location",
-          "type":"char *",
+          "type":"std::string",
           "flags":["no-set"]
         },
         {

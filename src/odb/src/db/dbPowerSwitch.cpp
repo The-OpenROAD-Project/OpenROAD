@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -177,13 +177,13 @@ const char* dbPowerSwitch::getName() const
   return obj->_name;
 }
 
-const char* dbPowerSwitch::getInSupplyPort() const
+std::string dbPowerSwitch::getInSupplyPort() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_in_supply_port;
 }
 
-const char* dbPowerSwitch::getOutSupplyPort() const
+std::string dbPowerSwitch::getOutSupplyPort() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_out_supply_port;
@@ -230,6 +230,7 @@ dbPowerSwitch* dbPowerSwitch::create(dbBlock* block, const char* name)
   _dbPowerSwitch* ps = _block->_powerswitch_tbl->create();
   ps->_name = strdup(name);
   ZALLOCATED(ps->_name);
+
   _block->_powerswitch_hash.insert(ps);
   return (dbPowerSwitch*) ps;
 }
@@ -239,28 +240,28 @@ void dbPowerSwitch::destroy(dbPowerSwitch* ps)
   // TODO
 }
 
-void dbPowerSwitch::setInSupplyPort(const char* in_port)
+void dbPowerSwitch::setInSupplyPort(const std::string& in_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_in_supply_port = strdup(in_port);
+  obj->_in_supply_port = in_port;
 }
 
-void dbPowerSwitch::setOutSupplyPort(const char* out_port)
+void dbPowerSwitch::setOutSupplyPort(const std::string& out_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_out_supply_port = strdup(out_port);
+  obj->_out_supply_port = out_port;
 }
 
-void dbPowerSwitch::addControlPort(const char* control_port)
+void dbPowerSwitch::addControlPort(const std::string& control_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_control_port.push_back(std::string(control_port));
+  obj->_control_port.push_back(control_port);
 }
 
-void dbPowerSwitch::addOnState(const char* on_state)
+void dbPowerSwitch::addOnState(const std::string& on_state)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_on_state.push_back(std::string(on_state));
+  obj->_on_state.push_back(on_state);
 }
 
 std::vector<std::string> dbPowerSwitch::getControlPorts()

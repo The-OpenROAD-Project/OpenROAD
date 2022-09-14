@@ -23,11 +23,17 @@ puts "Power Domain Info:"
 set pds {PD_AES_1 PD_AES_2}
 foreach pd $pds {
     set pd_inst [$block findPowerDomain $pd]
-    set ps [$pd_inst getPowerSwitch]
-    set iso [$pd_inst getIsolation]  
+    set pswitches [$pd_inst getPowerSwitches]
+    set isolations [$pd_inst getIsolations]  
     puts "PowerDomain: $pd"
-    puts "PowerSwitch: [$ps getName], OutSupply: [$ps getOutSupplyPort], InSupply: [$ps getInSupplyPort], ControlPorts: {[$ps getControlPorts]}, On States {[$ps getOnStates]}"  
-    puts "Isolation: [$iso getName], AppliesTo: [$iso getAppliesTo], Clamp: [$iso getClampValue], Signal: [$iso getIsolationSignal], Sense: [$iso getIsolationSense], Location: [$iso getLocation]"
+
+    foreach switch $pswitches {
+        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}"  
+    }
+
+    foreach iso $isolations {
+        puts "Isolation: [$iso getName], AppliesTo: [$iso getAppliesTo], Clamp: [$iso getClampValue], Signal: [$iso getIsolationSignal], Sense: [$iso getIsolationSense], Location: [$iso getLocation]"
+    }
 
 }
 

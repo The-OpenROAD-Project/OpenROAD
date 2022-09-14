@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -62,8 +62,8 @@ class _dbPowerSwitch : public _dbObject
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;
-  char* _in_supply_port;
-  char* _out_supply_port;
+  std::string _in_supply_port;
+  std::string _out_supply_port;
   dbVector<std::string> _control_port;
   dbVector<std::string> _on_state;
   dbId<_dbNet> _control_net;

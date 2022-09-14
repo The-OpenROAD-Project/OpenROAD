@@ -9388,21 +9388,19 @@ class dbPowerDomain : public dbObject
   // User Code End dbPowerDomainEnums
   const char* getName() const;
 
-  void setPowerSwitch(dbPowerSwitch* power_switch);
-
-  dbPowerSwitch* getPowerSwitch() const;
-
-  void setIsolation(dbIsolation* isolation);
-
-  dbIsolation* getIsolation() const;
-
   // User Code Begin dbPowerDomain
-  static dbPowerDomain* create(dbBlock* block,
-                               const char* name);
+  static dbPowerDomain* create(dbBlock* block, const char* name);
   static void destroy(dbPowerDomain* pd);
 
-  void addElement(const char* element);
+  void addElement(const std::string& element);
   std::vector<std::string> getElements();
+
+  void addPowerSwitch(dbPowerSwitch* ps);
+  void addIsolation(dbIsolation* iso);
+
+  std::vector<dbPowerSwitch*> getPowerSwitches();
+  std::vector<dbIsolation*> getIsolations();
+
   // User Code End dbPowerDomain
 };
 
@@ -9413,12 +9411,12 @@ class dbLogicPort : public dbObject
   // User Code End dbLogicPortEnums
   const char* getName() const;
 
-  const char* getDirection() const;
+  std::string getDirection() const;
 
   // User Code Begin dbLogicPort
   static dbLogicPort* create(dbBlock* block,
                              const char* name,
-                             const char* direction);
+                             const std::string& direction);
   static void destroy(dbLogicPort* lp);
   // User Code End dbLogicPort
 };
@@ -9430,9 +9428,9 @@ class dbPowerSwitch : public dbObject
   // User Code End dbPowerSwitchEnums
   const char* getName() const;
 
-  const char* getInSupplyPort() const;
+  std::string getInSupplyPort() const;
 
-  const char* getOutSupplyPort() const;
+  std::string getOutSupplyPort() const;
 
   void setControlNet(dbNet* control_net);
 
@@ -9445,10 +9443,10 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
-  void setInSupplyPort(const char* in_port);
-  void setOutSupplyPort(const char* out_port);
-  void addControlPort(const char* control_port);
-  void addOnState(const char* on_state);
+  void setInSupplyPort(const std::string& in_port);
+  void setOutSupplyPort(const std::string& out_port);
+  void addControlPort(const std::string& control_port);
+  void addOnState(const std::string& on_state);
   std::vector<std::string> getControlPorts();
   std::vector<std::string> getOnStates();
   // User Code End dbPowerSwitch
@@ -9461,15 +9459,15 @@ class dbIsolation : public dbObject
   // User Code End dbIsolationEnums
   const char* getName() const;
 
-  const char* getAppliesTo() const;
+  std::string getAppliesTo() const;
 
-  const char* getClampValue() const;
+  std::string getClampValue() const;
 
-  const char* getIsolationSignal() const;
+  std::string getIsolationSignal() const;
 
-  const char* getIsolationSense() const;
+  std::string getIsolationSense() const;
 
-  const char* getLocation() const;
+  std::string getLocation() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -9479,15 +9477,15 @@ class dbIsolation : public dbObject
   static dbIsolation* create(dbBlock* block, const char* name);
   static void destroy(dbIsolation* iso);
 
-  void setAppliesTo(const char* applies_to);
-  
-  void setClampValue(const char* clamp_value);
+  void setAppliesTo(const std::string& applies_to);
 
-  void setIsolationSignal(const char* isolation_signal);
-  
-  void setIsolationSense(const char* isolation_sense);
-  
-  void setLocation(const char* location);
+  void setClampValue(const std::string& clamp_value);
+
+  void setIsolationSignal(const std::string& isolation_signal);
+
+  void setIsolationSense(const std::string& isolation_sense);
+
+  void setLocation(const std::string& location);
   // User Code End dbIsolation
 };
 

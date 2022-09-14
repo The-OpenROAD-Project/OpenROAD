@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -45,44 +45,41 @@
 #include "db.h"
 #include "odb.h"
 
-namespace odb {
+namespace upf {
 
-class upf
-{
- public:
-  static bool create_power_domain(utl::Logger* logger,
-                                  dbBlock* block,
+  bool create_power_domain(utl::Logger* logger,
+                                  odb::dbBlock* block,
                                   const char* name);
 
-  static bool update_power_domain(utl::Logger* logger,
-                                  dbBlock* block,
+  bool update_power_domain(utl::Logger* logger,
+                                  odb::dbBlock* block,
                                   const char* name,
                                   const char* element);
 
-  static bool create_logic_port(utl::Logger* logger,
-                                dbBlock* block,
+  bool create_logic_port(utl::Logger* logger,
+                                odb::dbBlock* block,
                                 const char* name,
                                 const char* direction);
 
-  static bool create_power_switch(utl::Logger* logger,
-                                  dbBlock* block,
+  bool create_power_switch(utl::Logger* logger,
+                                  odb::dbBlock* block,
                                   const char* name,
                                   const char* power_domain,
                                   const char* out_port,
                                   const char* in_port);
 
-  static bool update_power_switch_control(utl::Logger* logger,
-                                          dbBlock* block,
+  bool update_power_switch_control(utl::Logger* logger,
+                                          odb::dbBlock* block,
                                           const char* name,
                                           const char* control_port);
 
-  static bool update_power_switch_on(utl::Logger* logger,
-                                     dbBlock* block,
+  bool update_power_switch_on(utl::Logger* logger,
+                                     odb::dbBlock* block,
                                      const char* name,
                                      const char* on_state);
 
-  static bool set_isolation(utl::Logger* logger,
-                            dbBlock* block,
+  bool set_isolation(utl::Logger* logger,
+                            odb::dbBlock* block,
                             const char* name,
                             const char* power_domain,
                             bool update,
@@ -91,6 +88,6 @@ class upf
                             const char* signal,
                             const char* sense,
                             const char* location);
-};
 
-}  // namespace odb
+
+}  // namespace upf

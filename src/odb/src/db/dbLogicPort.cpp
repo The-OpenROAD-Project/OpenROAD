@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -151,7 +151,7 @@ const char* dbLogicPort::getName() const
   return obj->_name;
 }
 
-const char* dbLogicPort::getDirection() const
+std::string dbLogicPort::getDirection() const
 {
   _dbLogicPort* obj = (_dbLogicPort*) this;
   return obj->direction;
@@ -161,7 +161,7 @@ const char* dbLogicPort::getDirection() const
 
 dbLogicPort* dbLogicPort::create(dbBlock* block,
                                  const char* name,
-                                 const char* direction)
+                                 const std::string& direction)
 {
   _dbBlock* _block = (_dbBlock*) block;
   if (_block->_logicport_hash.hasMember(name))
@@ -170,7 +170,7 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
   lp->_name = strdup(name);
   ZALLOCATED(lp->_name);
 
-  lp->direction = strdup(direction);
+  lp->direction = direction;
 
   _block->_logicport_hash.insert(lp);
   return (dbLogicPort*) lp;

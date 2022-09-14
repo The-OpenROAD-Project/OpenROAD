@@ -1,6 +1,6 @@
 ############################################################################
 ##
-## Copyright (c) 2019, The Regents of the University of California
+## Copyright (c) 2022, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -42,10 +42,12 @@ proc read_upf { args } {
 
 }
 
-sta::define_cmd_args "create_power_domain" { name [-elements elements] }
+sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
     sta::parse_key_args "create_power_domain" args \
         keys {-elements} flags {}
+
+    sta::check_argc_eq1 "create_power_domain" $args
 
     set domain_name [lindex $args 0]
     set elements {}
@@ -54,18 +56,20 @@ proc create_power_domain { args } {
         set elements $keys(-elements)
     }
 
-    odb::create_power_domain_cmd $domain_name
+    upf::create_power_domain_cmd $domain_name
     foreach {el} $elements {
-        odb::update_power_domain_cmd $domain_name $el
+        upf::update_power_domain_cmd $domain_name $el
     }
 
 }
 
 
-sta::define_cmd_args "create_logic_port" { port_name [-direction direction] }
+sta::define_cmd_args "create_logic_port" { [-direction direction] port_name }
 proc create_logic_port { args } {
     sta::parse_key_args "create_logic_port" args \
         keys {-direction} flags {}
+
+    sta::check_argc_eq1 "create_logic_port" $args
 
     set port_name [lindex $args 0]
     set direction ""
@@ -74,20 +78,22 @@ proc create_logic_port { args } {
         set direction $keys(-direction)
     }
 
-    odb::create_logic_port_cmd $port_name $direction
+    upf::create_logic_port_cmd $port_name $direction
 }
 
 sta::define_cmd_args "create_power_switch" { \
-    name \
     [-domain domain] \
     [-output_supply_port output_supply_port] \
     [-input_supply_port input_supply_port] \
     [-control_port control_port] \
-    [-on_state on_state]
+    [-on_state on_state] \
+    name 
 }
 proc create_power_switch { args } {
     sta::parse_key_args "create_power_switch" args \
         keys {-domain -output_supply_port -input_supply_port -control_port -on_state} flags {}
+
+    sta::check_argc_eq1 "create_power_switch" $args
 
     set name [lindex $args 0]
     set domain ""
@@ -116,32 +122,34 @@ proc create_power_switch { args } {
         set on_state $keys(-on_state)
     }
 
-    odb::create_power_switch_cmd $name $domain $output_supply_port $input_supply_port
+    upf::create_power_switch_cmd $name $domain $output_supply_port $input_supply_port
 
     foreach {control} $control_port {
-        odb::update_power_switch_control_cmd $name $control
+        upf::update_power_switch_control_cmd $name $control
     }
 
     foreach {on} $on_state {
-        odb::update_power_switch_on_cmd $name $on
+        upf::update_power_switch_on_cmd $name $on
     }
 
 
 }
 
 sta::define_cmd_args "set_isolation" { \
-    name \
     [-domain domain] \
     [-applies_to applies_to] \
     [-clamp_value clamp_value] \
     [-isolation_signal isolation_signal] \
     [-isolation_sense isolation_sense] \
     [-location location] \
-    [-update]
+    [-update] \
+    name 
 }
 proc set_isolation { args } {
     sta::parse_key_args "set_isolation" args \
         keys {-domain -applies_to -clamp_value -isolation_signal -isolation_sense -location} flags {-update}
+
+    sta::check_argc_eq1 "set_isolation" $args
 
     set name [lindex $args 0]
     set domain ""
@@ -180,7 +188,7 @@ proc set_isolation { args } {
         set update 1
     }
 
-    odb::set_isolation_cmd $name $domain $update $applies_to $clamp_value $isolation_signal $isolation_sense $location
+    upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value $isolation_signal $isolation_sense $location
 
 }
 

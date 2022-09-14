@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -39,122 +39,182 @@
 
 #include "utl/Logger.h"
 
-namespace odb {
+namespace upf {
 
-bool upf::create_power_domain(utl::Logger* logger,
-                              dbBlock* block,
-                              const char* name)
+bool create_power_domain(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name)
 {
-  return dbPowerDomain::create(block, name) != nullptr;
+  if (odb::dbPowerDomain::create(block, name) == nullptr) {
+    logger->warn(utl::ODB, 10001, "Creation of '%s' power domain failed", name);
+    return false;
+  }
+
+  return true;
 }
 
-bool upf::update_power_domain(utl::Logger* logger,
-                              dbBlock* block,
-                              const char* name,
-                              const char* elements)
+bool update_power_domain(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name,
+                         const char* elements)
 {
-  dbPowerDomain* pd = block->findPowerDomain(name);
-  if(pd != nullptr) {
-    pd->addElement(elements);
+  odb::dbPowerDomain* pd = block->findPowerDomain(name);
+  if (pd != nullptr) {
+    pd->addElement(std::string(elements));
   } else {
+    logger->warn(
+        utl::ODB,
+        10002,
+        "Couldn't retrieve power domain '%s' while adding element '%s'",
+        name,
+        elements);
     return false;
   }
   return true;
 }
 
-bool upf::create_logic_port(utl::Logger* logger,
-                            dbBlock* block,
-                            const char* name,
-                            const char* direction)
+bool create_logic_port(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const char* name,
+                       const char* direction)
 {
-  return dbLogicPort::create(block, name, direction) != nullptr;
+  if (odb::dbLogicPort::create(block, name, std::string(direction))
+      == nullptr) {
+    logger->warn(utl::ODB, 10003, "Creation of '%s' logic port failed", name);
+    return false;
+  }
+  return true;
 }
 
-bool upf::create_power_switch(utl::Logger* logger,
-                              dbBlock* block,
-                              const char* name,
-                              const char* power_domain,
-                              const char* out_port,
-                              const char* in_port)
+bool create_power_switch(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name,
+                         const char* power_domain,
+                         const char* out_port,
+                         const char* in_port)
 {
-    
-  dbPowerDomain* pd = block->findPowerDomain(power_domain);
-  if(pd == nullptr) return false;
-  dbPowerSwitch* ps = dbPowerSwitch::create(block, name);
-  if (ps == nullptr) return false;
-  ps->setInSupplyPort(in_port);
-  ps->setOutSupplyPort(out_port);
+  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  if (pd == nullptr) {
+    logger->warn(
+        utl::ODB,
+        10004,
+        "Couldn't retrieve power domain '%s' while creating power switch '%s'",
+        power_domain,
+        name);
+    return false;
+  }
+
+  odb::dbPowerSwitch* ps = odb::dbPowerSwitch::create(block, name);
+  if (ps == nullptr) {
+    logger->warn(utl::ODB, 10005, "Creation of '%s' power switch failed", name);
+    return false;
+  }
+
+  ps->setInSupplyPort(std::string(in_port));
+  ps->setOutSupplyPort(std::string(out_port));
   ps->setPowerDomain(pd);
-  pd->setPowerSwitch(ps);
+  pd->addPowerSwitch(ps);
   return true;
 }
 
-bool upf::update_power_switch_control(utl::Logger* logger,
-                                      dbBlock* block,
-                                      const char* name,
-                                      const char* control_port)
-{
-  dbPowerSwitch* ps = block->findPowerSwitch(name);
-  if(ps == nullptr) return false;
-  ps->addControlPort(control_port);
-  return true;
-}
-
-bool upf::update_power_switch_on(utl::Logger* logger,
-                                 dbBlock* block,
+bool update_power_switch_control(utl::Logger* logger,
+                                 odb::dbBlock* block,
                                  const char* name,
-                                 const char* on_state)
+                                 const char* control_port)
 {
-  dbPowerSwitch* ps = block->findPowerSwitch(name);
-  if(ps == nullptr) return false;
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::ODB,
+        10006,
+        "Couldn't retrieve power switch '%s' while adding control port '%s'",
+        name,
+        control_port);
+    return false;
+  }
+
+  ps->addControlPort(std::string(control_port));
+  return true;
+}
+
+bool update_power_switch_on(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* name,
+                            const char* on_state)
+{
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::ODB,
+        10007,
+        "Couldn't retrieve power switch '%s' while adding on state '%s'",
+        name,
+        on_state);
+    return false;
+  }
   ps->addOnState(on_state);
   return true;
 }
 
-bool upf::set_isolation(utl::Logger* logger,
-                        dbBlock* block,
-                        const char* name,
-                        const char* power_domain,
-                        bool update,
-                        const char* applies_to,
-                        const char* clamp_value,
-                        const char* signal,
-                        const char* sense,
-                        const char* location)
+bool set_isolation(utl::Logger* logger,
+                   odb::dbBlock* block,
+                   const char* name,
+                   const char* power_domain,
+                   bool update,
+                   const char* applies_to,
+                   const char* clamp_value,
+                   const char* signal,
+                   const char* sense,
+                   const char* location)
 {
-  dbIsolation* iso = block->findIsolation(name);
-  if(iso == nullptr && update) return false;
-  if(iso == nullptr) {
-    iso = dbIsolation::create(block, name);
+  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  if (pd == nullptr) {
+    logger->warn(utl::ODB,
+                 10008,
+                 "Couldn't retrieve power domain '%s' while creating/updating "
+                 "isolation '%s'",
+                 power_domain,
+                 name);
+    return false;
   }
 
-  dbPowerDomain* pd = block->findPowerDomain(power_domain);
-  if(pd != nullptr) {
+  odb::dbIsolation* iso = block->findIsolation(name);
+  if (iso == nullptr && update) {
+    logger->warn(
+        utl::ODB, 10009, "Couldn't update a non existing isolation %s", name);
+    return false;
+  }
+
+  if (iso == nullptr) {
+    iso = odb::dbIsolation::create(block, name);
+  }
+
+  if (!update) {
     iso->setPowerDomain(pd);
-    pd->setIsolation(iso);
+    pd->addIsolation(iso);
   }
 
-  if(strlen(applies_to) > 0) {
+  if (strlen(applies_to) > 0) {
     iso->setAppliesTo(applies_to);
   }
 
-  if(strlen(clamp_value) > 0) {
+  if (strlen(clamp_value) > 0) {
     iso->setClampValue(clamp_value);
   }
 
-  if(strlen(signal) > 0) {
+  if (strlen(signal) > 0) {
     iso->setIsolationSignal(signal);
   }
 
-  if(strlen(sense) > 0) {
+  if (strlen(sense) > 0) {
     iso->setIsolationSense(sense);
   }
 
-  if(strlen(location) > 0) {
+  if (strlen(location) > 0) {
     iso->setLocation(location);
   }
 
   return true;
 }
 
-}  // namespace odb
+}  // namespace upf
