@@ -654,7 +654,8 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 }
 
 // Check for a basic end-of-line (EOL) spacing violation.
-BOOST_AUTO_TEST_CASE(eol_endtoend) {
+BOOST_AUTO_TEST_CASE(eol_endtoend)
+{
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
   auto endToEnd

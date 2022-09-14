@@ -39,29 +39,35 @@
 #include "utl/Logger.h"
 
 namespace fr {
-class frLef58CutClass {
+class frLef58CutClass
+{
  public:
   // constructors
   frLef58CutClass() : rule_(nullptr) {}
   // getters
-  odb::dbTechLayerCutClassRule* getDbTechLayerCutClassRule() const {
+  odb::dbTechLayerCutClassRule* getDbTechLayerCutClassRule() const
+  {
     return rule_;
   }
   void getName(std::string& in) const { in = rule_->getName(); }
   std::string getName() const { return rule_->getName(); }
   frCoord getViaWidth() const { return rule_->getWidth(); }
   bool hasViaLength() const { return rule_->isLengthValid(); }
-  frCoord getViaLength() const {
+  frCoord getViaLength() const
+  {
     return (rule_->isLengthValid()) ? rule_->getLength() : rule_->getWidth();
   }
-  frUInt4 getNumCut() const {
+  frUInt4 getNumCut() const
+  {
     return (rule_->isCutsValid()) ? rule_->getNumCuts() : 1;
   }
   // setters
-  void setDbTechLayerCutClassRule(odb::dbTechLayerCutClassRule* ruleIn) {
+  void setDbTechLayerCutClassRule(odb::dbTechLayerCutClassRule* ruleIn)
+  {
     rule_ = ruleIn;
   }
-  void report(utl::Logger* logger) {
+  void report(utl::Logger* logger)
+  {
     logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}",
                    getName(),
                    getViaWidth(),
@@ -73,7 +79,8 @@ class frLef58CutClass {
   odb::dbTechLayerCutClassRule* rule_;
 };
 
-class frViaDef {
+class frViaDef
+{
  public:
   // constructors
   frViaDef()
@@ -88,7 +95,9 @@ class frViaDef {
         addedByRouter(false),
         layer1ShapeBox(),
         layer2ShapeBox(),
-        cutShapeBox() {}
+        cutShapeBox()
+  {
+  }
   frViaDef(const std::string& nameIn)
       : id_(0),
         name(nameIn),
@@ -101,11 +110,14 @@ class frViaDef {
         addedByRouter(false),
         layer1ShapeBox(),
         layer2ShapeBox(),
-        cutShapeBox() {}
+        cutShapeBox()
+  {
+  }
   // getters
   void getName(std::string& nameIn) const { nameIn = name; }
   std::string getName() const { return name; }
-  frLayerNum getLayer1Num() const {
+  frLayerNum getLayer1Num() const
+  {
     if (layer1Figs.size()) {
       return (layer1Figs.at(0))->getLayerNum();
     } else {
@@ -113,7 +125,8 @@ class frViaDef {
       exit(1);
     }
   }
-  frLayerNum getLayer2Num() const {
+  frLayerNum getLayer2Num() const
+  {
     if (layer2Figs.size()) {
       return (layer2Figs.at(0))->getLayerNum();
     } else {
@@ -121,7 +134,8 @@ class frViaDef {
       exit(1);
     }
   }
-  frLayerNum getCutLayerNum() const {
+  frLayerNum getCutLayerNum() const
+  {
     if (cutFigs.size()) {
       return (cutFigs.at(0))->getLayerNum();
     } else {
@@ -129,13 +143,16 @@ class frViaDef {
       exit(1);
     }
   }
-  const std::vector<std::unique_ptr<frShape>>& getLayer1Figs() const {
+  const std::vector<std::unique_ptr<frShape>>& getLayer1Figs() const
+  {
     return layer1Figs;
   }
-  const std::vector<std::unique_ptr<frShape>>& getLayer2Figs() const {
+  const std::vector<std::unique_ptr<frShape>>& getLayer2Figs() const
+  {
     return layer2Figs;
   }
-  const std::vector<std::unique_ptr<frShape>>& getCutFigs() const {
+  const std::vector<std::unique_ptr<frShape>>& getCutFigs() const
+  {
     return cutFigs;
   }
   bool getDefault() const { return isDefault; }
@@ -146,17 +163,20 @@ class frViaDef {
   bool isAddedByRouter() const { return addedByRouter; }
   bool isMultiCut() const { return (cutFigs.size() > 1) ? true : false; }
   // setters
-  void addLayer1Fig(std::unique_ptr<frShape> figIn) {
+  void addLayer1Fig(std::unique_ptr<frShape> figIn)
+  {
     Rect box = figIn->getBBox();
     layer1ShapeBox.merge(box);
     layer1Figs.push_back(std::move(figIn));
   }
-  void addLayer2Fig(std::unique_ptr<frShape> figIn) {
+  void addLayer2Fig(std::unique_ptr<frShape> figIn)
+  {
     Rect box = figIn->getBBox();
     layer2ShapeBox.merge(box);
     layer2Figs.push_back(std::move(figIn));
   }
-  void addCutFig(std::unique_ptr<frShape> figIn) {
+  void addCutFig(std::unique_ptr<frShape> figIn)
+  {
     Rect box = figIn->getBBox();
     cutShapeBox.merge(box);
     cutFigs.push_back(std::move(figIn));
@@ -168,7 +188,8 @@ class frViaDef {
   const Rect& getLayer1ShapeBox() { return layer1ShapeBox; }
   const Rect& getLayer2ShapeBox() { return layer2ShapeBox; }
   const Rect& getCutShapeBox() { return cutShapeBox; }
-  const Rect& getShapeBox(frLayerNum lNum) {
+  const Rect& getShapeBox(frLayerNum lNum)
+  {
     if (lNum == getLayer1Num())
       return layer1ShapeBox;
     if (lNum == getLayer2Num())

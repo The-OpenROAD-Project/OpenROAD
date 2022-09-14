@@ -35,7 +35,8 @@
 #include "odb/db.h"
 
 namespace fr {
-class frViaRuleGenerate {
+class frViaRuleGenerate
+{
  public:
   // constructors
   frViaRuleGenerate()
@@ -46,7 +47,9 @@ class frViaRuleGenerate {
         topEnc(),
         botLayerNum(0),
         cutLayerNum(0),
-        topLayerNum(0) {}
+        topLayerNum(0)
+  {
+  }
   // getters
   odb::dbTechViaGenerateRule* getDbTechViaGenerateRule() const { return rule_; }
   const frString getName() const { return rule_->getName(); }
@@ -59,7 +62,8 @@ class frViaRuleGenerate {
   frLayerNum getLayer2Num() const { return topLayerNum; }
   frLayerNum getCutLayerNum() const { return cutLayerNum; }
   // setters
-  void setDbTechViaGenerateRule(odb::dbTechViaGenerateRule* ruleIn) {
+  void setDbTechViaGenerateRule(odb::dbTechViaGenerateRule* ruleIn)
+  {
     rule_ = ruleIn;
   }
   void setLayer1Enc(const Point& in) { botEnc = in; }

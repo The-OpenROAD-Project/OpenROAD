@@ -39,14 +39,16 @@ Fixture::Fixture()
       numBlockages(0),
       numTerms(0),
       numMasters(0),
-      numInsts(0) {
+      numInsts(0)
+{
   makeDesign();
 }
 
 void Fixture::addLayer(frTechObject* tech,
                        const char* name,
                        dbTechLayerType type,
-                       dbTechLayerDir dir) {
+                       dbTechLayerDir dir)
+{
   auto layer = std::make_unique<frLayer>();
   layer->setLayerNum(tech->getTopLayerNum() + 1);
   layer->setDbLayer(odb::dbTechLayer::create(db_tech, name, type));
@@ -78,7 +80,8 @@ void Fixture::addLayer(frTechObject* tech,
   tech->addLayer(std::move(layer));
 }
 
-void Fixture::setupTech(frTechObject* tech) {
+void Fixture::setupTech(frTechObject* tech)
+{
   auto db = odb::dbDatabase::create();
   db_tech = odb::dbTech::create(db);
   db_tech->setDbUnitsPerMicron(1000);
@@ -94,7 +97,8 @@ frMaster* Fixture::makeMacro(const char* name,
                              frCoord originX,
                              frCoord originY,
                              frCoord sizeX,
-                             frCoord sizeY) {
+                             frCoord sizeY)
+{
   auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
   frBoundary bound;
@@ -119,7 +123,8 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
                                   frCoord xh,
                                   frCoord yh,
                                   frLayerNum lNum,
-                                  frCoord designRuleWidth) {
+                                  frCoord designRuleWidth)
+{
   int id = master->getBlockages().size();
   auto blkIn = make_unique<frBlockage>();
   blkIn->setId(id);
@@ -145,7 +150,8 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
                               frCoord yl,
                               frCoord xh,
                               frCoord yh,
-                              frLayerNum lNum) {
+                              frLayerNum lNum)
+{
   int id = master->getTerms().size();
   unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(name);
   auto term = uTerm.get();
@@ -170,7 +176,8 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
 frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
                           frCoord x,
-                          frCoord y) {
+                          frCoord y)
+{
   auto uInst = make_unique<frInst>(name, master);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
@@ -196,7 +203,8 @@ frInst* Fixture::makeInst(const char* name,
   return tmpInst;
 }
 
-void Fixture::makeDesign() {
+void Fixture::makeDesign()
+{
   setupTech(design->getTech());
 
   auto block = std::make_unique<frBlock>("test");
@@ -219,7 +227,8 @@ void Fixture::makeDesign() {
 frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
     frLayerNum layer_num,
     frCoord eolWidth,
-    frCornerTypeEnum type) {
+    frCornerTypeEnum type)
+{
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
@@ -245,7 +254,8 @@ frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
   return rptr;
 }
 
-void Fixture::makeSpacingConstraint(frLayerNum layer_num) {
+void Fixture::makeSpacingConstraint(frLayerNum layer_num)
+{
   fr2DLookupTbl<frCoord, frCoord, frCoord> tbl("WIDTH",
                                                {0, 200},
                                                "PARALLELRUNLENGTH",
@@ -259,7 +269,8 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num) {
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStepConstraint(frLayerNum layer_num) {
+void Fixture::makeMinStepConstraint(frLayerNum layer_num)
+{
   auto con = std::make_unique<frMinStepConstraint>();
 
   con->setMinstepType(frMinstepTypeEnum::STEP);
@@ -273,7 +284,8 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num) {
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStep58Constraint(frLayerNum layer_num) {
+void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
+{
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
   frTechObject* tech = design->getTech();
@@ -292,7 +304,8 @@ void Fixture::makeMinStep58Constraint(frLayerNum layer_num) {
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeRectOnlyConstraint(frLayerNum layer_num) {
+void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
+{
   auto con = std::make_unique<frLef58RectOnlyConstraint>();
 
   frTechObject* tech = design->getTech();
@@ -301,7 +314,8 @@ void Fixture::makeRectOnlyConstraint(frLayerNum layer_num) {
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num) {
+void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
+{
   auto con = std::make_unique<frMinEnclosedAreaConstraint>();
 
   frTechObject* tech = design->getTech();
@@ -316,7 +330,8 @@ void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num) {
 void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
                                              frCoord par_space,
                                              frCoord par_within,
-                                             bool two_edges) {
+                                             bool two_edges)
+{
   auto con = std::make_unique<frSpacingEndOfLineConstraint>();
 
   frTechObject* tech = design->getTech();
@@ -349,7 +364,8 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
 frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
     frLayerNum layer_num,
     std::vector<frCoord> widthTbl,
-    std::vector<std::pair<frCoord, frCoord>> valTbl) {
+    std::vector<std::pair<frCoord, frCoord>> valTbl)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
@@ -367,7 +383,8 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
     frCoord spacing,
     std::vector<frCoord> eol,
     std::vector<frCoord> ext,
-    bool parallelOnly) {
+    bool parallelOnly)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
@@ -389,7 +406,8 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
     std::vector<frCoord> widthTbl,
     std::vector<frCoord> prlTbl,
-    std::vector<std::vector<frCoord>> spacingTbl) {
+    std::vector<std::vector<frCoord>> spacingTbl)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   frCollection<frSpacingTableTwRowType> rows;
@@ -413,7 +431,8 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
                                             frCoord forward,
                                             frCoord side,
                                             frCoord backward,
-                                            frCoord width) {
+                                            frCoord width)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
 
@@ -441,7 +460,8 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
     frCoord width,
     frCoord within,
     frCoord end_prl_spacing,
-    frCoord end_prl) {
+    frCoord end_prl)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
 
@@ -473,7 +493,8 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord par_space,
     fr::frCoord par_within,
-    bool two_edges) {
+    bool two_edges)
+{
   auto parallelEdge
       = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
   con->getWithinConstraint()->setParallelEdgeConstraint(parallelEdge);
@@ -492,7 +513,8 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord min_max_length,
     bool max,
-    bool two_sides) {
+    bool two_sides)
+{
   auto minMax
       = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
   con->getWithinConstraint()->setMaxMinLengthConstraint(minMax);
@@ -517,7 +539,8 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
     frCoord cutToMetalSpacing,
     bool above,
     bool below,
-    bool allCuts) {
+    bool allCuts)
+{
   auto cutEnc
       = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
 
@@ -535,7 +558,8 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
 void Fixture::makeCutClass(frLayerNum layer_num,
                            std::string name,
                            frCoord width,
-                           frCoord height) {
+                           frCoord height)
+{
   auto cutClass = make_unique<frLef58CutClass>();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -548,9 +572,9 @@ void Fixture::makeCutClass(frLayerNum layer_num,
   design->getTech()->addCutClass(layer_num, std::move(cutClass));
 }
 
-void Fixture::makeLef58CutSpcTbl(
-    frLayerNum layer_num,
-    odb::dbTechLayerCutSpacingTableDefRule* dbRule) {
+void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
+                                 odb::dbTechLayerCutSpacingTableDefRule* dbRule)
+{
   auto con = make_unique<frLef58CutSpacingTableConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   if (dbRule->isLayerValid()) {
@@ -573,7 +597,8 @@ void Fixture::makeLef58CutSpcTbl(
   design->getTech()->addUConstraint(std::move(con));
 }
 
-frNet* Fixture::makeNet(const char* name) {
+frNet* Fixture::makeNet(const char* name)
+{
   frBlock* block = design->getTopBlock();
   auto net_p = std::make_unique<frNet>(name);
   frNet* net = net_p.get();
@@ -584,7 +609,8 @@ frNet* Fixture::makeNet(const char* name) {
 frViaDef* Fixture::makeViaDef(const char* name,
                               frLayerNum layer_num,
                               const Point& ll,
-                              const Point& ur) {
+                              const Point& ur)
+{
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
   for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
@@ -609,7 +635,8 @@ frViaDef* Fixture::makeViaDef(const char* name,
   return via;
 }
 
-frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin) {
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
+{
   auto via_p = make_unique<frVia>(viaDef);
   via_p->setOrigin(origin);
   via_p->addToNet(net);
@@ -624,7 +651,8 @@ void Fixture::makePathseg(frNet* net,
                           const Point& end,
                           frUInt4 width,
                           frEndStyleEnum begin_style,
-                          frEndStyleEnum end_style) {
+                          frEndStyleEnum end_style)
+{
   auto ps = std::make_unique<frPathSeg>();
   ps->setPoints(begin, end);
   ps->setLayerNum(layer_num);
@@ -645,7 +673,8 @@ void Fixture::makePathseg(frNet* net,
   net->addShape(std::move(ps));
 }
 
-void Fixture::initRegionQuery() {
+void Fixture::initRegionQuery()
+{
   frRegionQuery* query = design->getRegionQuery();
   query->init();
   query->initDRObj();

@@ -78,7 +78,8 @@ void io::Parser::setDieArea(odb::dbBlock* block)
   tmpBlock_->setBoundaries(bounds);
 }
 
-void io::Parser::setTracks(odb::dbBlock* block) {
+void io::Parser::setTracks(odb::dbBlock* block)
+{
   auto tracks = block->getTrackGrids();
   for (auto track : tracks) {
     if (tech_->name2layer.find(track->getTechLayer()->getName())
@@ -120,7 +121,8 @@ void io::Parser::setTracks(odb::dbBlock* block) {
   }
 }
 
-void io::Parser::setInsts(odb::dbBlock* block) {
+void io::Parser::setInsts(odb::dbBlock* block)
+{
   for (auto inst : block->getInsts()) {
     if (design_->name2master_.find(inst->getMaster()->getName())
         == design_->name2master_.end())
@@ -162,7 +164,8 @@ void io::Parser::setInsts(odb::dbBlock* block) {
   }
 }
 
-void io::Parser::setObstructions(odb::dbBlock* block) {
+void io::Parser::setObstructions(odb::dbBlock* block)
+{
   for (auto blockage : block->getObstructions()) {
     string layerName = blockage->getBBox()->getTechLayer()->getName();
     if (tech_->name2layer.find(layerName) == tech_->name2layer.end()) {
@@ -194,7 +197,8 @@ void io::Parser::setObstructions(odb::dbBlock* block) {
   }
 }
 
-void io::Parser::setVias(odb::dbBlock* block) {
+void io::Parser::setVias(odb::dbBlock* block)
+{
   for (auto via : block->getVias()) {
     if (via->getViaGenerateRule() != nullptr && via->hasParams()) {
       odb::dbViaParams params;
@@ -390,7 +394,8 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
     fnd->addViaRule(design_->getTech()->getViaRule(via->getName()), z);
   }
 }
-void io::Parser::setNDRs(odb::dbDatabase* db) {
+void io::Parser::setNDRs(odb::dbDatabase* db)
+{
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
     createNDR(ndr);
   }
@@ -410,7 +415,8 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginY,
                                frCoord& endX,
                                frCoord& endY,
-                               frCoord& width) {
+                               frCoord& width)
+{
   int x1 = box->xMin();
   int y1 = box->yMin();
   int x2 = box->xMax();
@@ -488,7 +494,8 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
   width = w;
 }
 
-void io::Parser::setNets(odb::dbBlock* block) {
+void io::Parser::setNets(odb::dbBlock* block)
+{
   for (auto net : block->getNets()) {
     bool is_special = net->isSpecial();
     if (!is_special && net->getSigType().isSupply()) {
@@ -822,7 +829,8 @@ void io::Parser::setNets(odb::dbBlock* block) {
 
 void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
                          frAccessPoint* ap,
-                         frTechObject* tech) {
+                         frTechObject* tech)
+{
   ap->setPoint(db_ap->getPoint());
   if (db_ap->hasAccess(odb::dbDirection::NORTH))
     ap->setAccess(frDirEnum::N, true);
@@ -870,7 +878,8 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
   }
 }
 
-void io::Parser::setBTerms(odb::dbBlock* block) {
+void io::Parser::setBTerms(odb::dbBlock* block)
+{
   for (auto term : block->getBTerms()) {
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
@@ -935,7 +944,8 @@ void io::Parser::setBTerms(odb::dbBlock* block) {
   }
 }
 
-void io::Parser::setAccessPoints(odb::dbDatabase* db) {
+void io::Parser::setAccessPoints(odb::dbDatabase* db)
+{
   std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
   for (auto& master : design_->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
@@ -1000,7 +1010,8 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db) {
   }
 }
 
-void io::Parser::readDesign(odb::dbDatabase* db) {
+void io::Parser::readDesign(odb::dbDatabase* db)
+{
   ProfileTask profile("IO:readDesign");
   if (db->getChip() == nullptr)
     logger_->error(DRT, 116, "Load design first.");
@@ -1023,7 +1034,8 @@ void io::Parser::readDesign(odb::dbDatabase* db) {
   addFakeNets();
 }
 
-void io::Parser::addFakeNets() {
+void io::Parser::addFakeNets()
+{
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
   vssFakeNet->setType(dbSigType::GROUND);
@@ -1037,7 +1049,8 @@ void io::Parser::addFakeNets() {
 }
 
 void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
-                                           frLayer* tmpLayer) {
+                                           frLayer* tmpLayer)
+{
   for (auto rule : layer->getTechLayerCornerSpacingRules()) {
     std::string widthName("WIDTH");
     std::vector<frCoord> widths;
@@ -1181,7 +1194,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
-                                       frLayer* tmpLayer) {
+                                       frLayer* tmpLayer)
+{
   for (auto rule : layer->getTechLayerCutClassRules()) {
     auto cutClass = make_unique<frLef58CutClass>();
     cutClass->setDbTechLayerCutClassRule(rule);
@@ -1314,7 +1328,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   }
 }
 
-void io::Parser::addDefaultMasterSliceLayer() {
+void io::Parser::addDefaultMasterSliceLayer()
+{
   unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
   if (masterSliceLayer_ == nullptr) {
@@ -1326,7 +1341,8 @@ void io::Parser::addDefaultMasterSliceLayer() {
   tech_->addLayer(std::move(uMSLayer));
 }
 
-void io::Parser::addDefaultCutLayer() {
+void io::Parser::addDefaultCutLayer()
+{
   unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
   auto tmpCutLayer = uCutLayer.get();
   tmpCutLayer->setFakeCut(true);
@@ -1334,7 +1350,8 @@ void io::Parser::addDefaultCutLayer() {
   tech_->addLayer(std::move(uCutLayer));
 }
 
-void io::Parser::addRoutingLayer(odb::dbTechLayer* layer) {
+void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
+{
   if (layer->getRoutingLevel() == 0)
     return;
   if (readLayerCnt_ == 0) {
@@ -1360,7 +1377,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer) {
       = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech_->addUConstraint(std::move(minWidthConstraint));
-  
+
   // Add off grid rule for every layer
   auto recheckConstraint = make_unique<frRecheckConstraint>();
   tmpLayer->setRecheckConstraint(recheckConstraint.get());
@@ -1604,7 +1621,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer) {
   }
 }
 
-void io::Parser::addCutLayer(odb::dbTechLayer* layer) {
+void io::Parser::addCutLayer(odb::dbTechLayer* layer)
+{
   if (layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP)
     return;
   if (readLayerCnt_ == 0)
@@ -1630,10 +1648,10 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer) {
         && cutSpacingConstraint->getCutWithin()
                < cutSpacingConstraint->getCutSpacing()) {
       logger_->warn(DRT,
-                   147,
-                   "cutWithin is smaller than cutSpacing for ADJACENTCUTS on "
-                   "layer {}, please check your rule definition.",
-                   layer->getName());
+                    147,
+                    "cutWithin is smaller than cutSpacing for ADJACENTCUTS on "
+                    "layer {}, please check your rule definition.",
+                    layer->getName());
     }
 
     tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
@@ -1644,7 +1662,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer) {
   setCutLayerProperties(layer, tmpLayer);
 }
 
-void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer) {
+void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
+{
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL
       && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
@@ -2089,7 +2108,8 @@ void io::Parser::readDb()
   }
 }
 
-bool io::Parser::readGuide() {
+bool io::Parser::readGuide()
+{
   ProfileTask profile("IO:readGuide");
   int numGuides = 0;
   auto block = db_->getChip()->getBlock();
@@ -2143,7 +2163,8 @@ bool io::Parser::readGuide() {
   return !tmpGuides_.empty();
 }
 
-void io::Writer::fillConnFigs_net(frNet* net, bool isTA) {
+void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
+{
   auto netName = net->getName();
   if (isTA) {
     for (auto& uGuide : net->getGuides()) {
@@ -2187,8 +2208,8 @@ void io::Writer::splitVia_helper(
     frCoord trackLoc,
     frCoord x,
     frCoord y,
-    vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>>&
-        mergedPathSegs) {
+    vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>>& mergedPathSegs)
+{
   if (layerNum >= 0 && layerNum < (int) (getTech()->getLayers().size())
       && mergedPathSegs.at(layerNum).at(isH).find(trackLoc)
              != mergedPathSegs.at(layerNum).at(isH).end()) {
@@ -2218,7 +2239,8 @@ void io::Writer::splitVia_helper(
 }
 
 // merge pathseg, delete redundant via
-void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs) {
+void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
+{
   // if (VERBOSE > 0) {
   //   cout <<endl << "merge and split." <<endl;
   // }
@@ -2612,7 +2634,8 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
                          frAccessPoint* ap,
                          odb::dbTech* db_tech,
                          frTechObject* tech,
-                         odb::dbBlock* block) {
+                         odb::dbBlock* block)
+{
   db_ap->setPoint(ap->getPoint());
   if (ap->hasAccess(frDirEnum::N))
     db_ap->setAccess(true, odb::dbDirection::NORTH);
