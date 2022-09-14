@@ -210,6 +210,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(focus(const Selected&)),
           viewer_,
           SLOT(selectionFocus(const Selected&)));
+  connect(drc_viewer_,
+          SIGNAL(focus(const Selected&)),
+          viewer_,
+          SLOT(selectionFocus(const Selected&)));
   connect(
       this, SIGNAL(highlightChanged()), inspector_, SLOT(highlightChanged()));
   connect(viewer_,

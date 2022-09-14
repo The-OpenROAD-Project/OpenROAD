@@ -493,7 +493,7 @@ LayoutViewer::LayoutViewer(
       snap_edge_showing_(false),
       snap_edge_(),
       inspector_selection_(Selected()),
-      inspector_focus_(Selected()),
+      focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
       repaint_requested_(true),
@@ -1774,14 +1774,14 @@ void LayoutViewer::selection(const Selected& selection)
     // stop animation
     selectionAnimation(Selected());
   }
-  inspector_focus_ = Selected();  // reset focus
+  focus_ = Selected();  // reset focus
   update();
 }
 
 void LayoutViewer::selectionFocus(const Selected& focus)
 {
-  inspector_focus_ = focus;
-  selectionAnimation(inspector_focus_);
+  focus_ = focus;
+  selectionAnimation(focus_);
   update();
 }
 
@@ -1859,12 +1859,12 @@ void LayoutViewer::drawSelected(Painter& painter)
         painter, Painter::highlight, pen_width, brush);
   }
 
-  if (inspector_focus_) {
-    inspector_focus_.highlight(painter,
-                               Painter::highlight,
-                               1,
-                               Painter::highlight,
-                               Painter::Brush::DIAGONAL);
+  if (focus_) {
+    focus_.highlight(painter,
+                     Painter::highlight,
+                     1,
+                     Painter::highlight,
+                     Painter::Brush::DIAGONAL);
   }
 }
 

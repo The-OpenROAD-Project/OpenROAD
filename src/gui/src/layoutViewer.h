@@ -393,7 +393,7 @@ class LayoutViewer : public QWidget
 
   // keeps track of inspector selection and focus items
   Selected inspector_selection_;
-  Selected inspector_focus_;
+  Selected focus_;
   // Timer used to handle blinking objects in the layout
   struct AnimatedSelected
   {
