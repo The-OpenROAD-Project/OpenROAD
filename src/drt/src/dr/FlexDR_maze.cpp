@@ -2596,7 +2596,8 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   currPathSeg->setLayerNum(currLayerNum);
   currPathSeg->addToNet(net);
   FlexMazeIdx start(startX, startY, z), end(endX, endY, z);
-  auto currStyle = getTech()->getLayer(currLayerNum)->getDefaultSegStyle();
+  auto layer = getTech()->getLayer(currLayerNum);
+  auto currStyle = layer->getDefaultSegStyle();
   if (realApMazeIdx.find(start) != realApMazeIdx.end()) {
     if (!addApPathSegs(start, net))
       currStyle.setBeginStyle(frcTruncateEndStyle, 0);
@@ -2615,6 +2616,18 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
     else
       setNDRStyle(net,
                   currStyle,
+                  startX,
+                  endX,
+                  startY,
+                  endY,
+                  z,
+                  i - 1 >= 0 ? &points[i - 1] : nullptr,
+                  i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
+  } else { 
+    if (layer->isHorizontal() == vertical)
+      currStyle.setWidth(layer->getWrongDirWidth());
+    else
+      editStyleExt(currStyle,
                   startX,
                   endX,
                   startY,
@@ -2784,6 +2797,36 @@ void FlexDRWorker::setNDRStyle(drNet* net,
     if (hasEndExt)
       currStyle.setEndStyle(
           es, max((int) currStyle.getEndExt(), (int) ndr->getWireExtension(z)));
+  }
+}
+
+void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
+                               frMIdx startX,
+                               frMIdx endX,
+                               frMIdx startY,
+                               frMIdx endY,
+                               frMIdx z,
+                               FlexMazeIdx* prev,
+                               FlexMazeIdx* next)
+{
+  auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
+  if (layer->getWrongDirWidth() >= layer->getWidth())
+    return;
+  bool vertical = startX == endX;
+  bool nextVertical = next && endX == next->x();
+  bool prevVertical = prev && startX == prev->x();
+  if (layer->isHorizontal() == vertical)
+    return;
+  frEndStyle es(frEndStyleEnum::frcVariableEndStyle);
+  if (next && next->z() == z && vertical != nextVertical)
+  {
+    currStyle.setEndStyle(
+      es, layer->getWrongDirWidth()/2);
+  }
+  if (prev && prev->z() == z && vertical != prevVertical)
+  {
+    currStyle.setBeginStyle(
+      es, layer->getWrongDirWidth()/2);
   }
 }
 

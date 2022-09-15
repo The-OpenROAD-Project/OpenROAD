@@ -53,6 +53,7 @@ class frLayer {
         fakeMasterslice(false),
         layerNum(0),
         width(0),
+        wrongDirWidth(0),
         minWidth(0),
         defaultViaDef(nullptr),
         hasMinStepViol(false),
@@ -94,6 +95,7 @@ class frLayer {
         fakeMasterslice(false),
         layerNum(layerNumIn),
         width(0),
+        wrongDirWidth(0),
         minWidth(-1),
         defaultViaDef(nullptr),
         minSpc(nullptr),
@@ -127,6 +129,7 @@ class frLayer {
   }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setWidth(frUInt4 widthIn) { width = widthIn; }
+  void setWrongDirWidth(frUInt4 widthIn) { wrongDirWidth = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
   void addConstraint(frConstraint* consIn) { constraints.push_back(consIn); }
@@ -153,6 +156,7 @@ class frLayer {
     return (fakeCut || fakeMasterslice) ? 0 : db_layer_->getPitch();
   }
   frUInt4 getWidth() const { return width; }
+  frUInt4 getWrongDirWidth() const { return wrongDirWidth; }
   frUInt4 getMinWidth() const { return minWidth; }
   dbTechLayerDir getDir() const {
     if (fakeCut || fakeMasterslice)
@@ -629,6 +633,7 @@ class frLayer {
   bool fakeMasterslice;
   frLayerNum layerNum;
   frUInt4 width;
+  frUInt4 wrongDirWidth;
   frUInt4 minWidth;
   frViaDef* defaultViaDef;
   bool hasMinStepViol;

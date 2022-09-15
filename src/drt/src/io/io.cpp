@@ -1528,6 +1528,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tech_->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
+  tmpLayer->setWrongDirWidth(layer->getWidth());
   if (layer->getMinWidth() > layer->getWidth())
     logger_->warn(
         DRT,
@@ -1535,6 +1536,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         "Layer {} minWidth is larger than width. Using width as minWidth.",
         layer->getName());
   tmpLayer->setMinWidth(std::min(layer->getMinWidth(), layer->getWidth()));
+  for(auto rule : layer->getTechLayerWidthTableRules())
+    if(rule->isWrongDirection())
+      tmpLayer->setWrongDirWidth(*rule->getWidthTable().begin());
   // add minWidth constraint
   auto minWidthConstraint
       = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
