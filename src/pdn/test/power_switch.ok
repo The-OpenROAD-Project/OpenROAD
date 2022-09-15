@@ -12,7 +12,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1160 components and 3368 component-terminals.
 [INFO ODB-0133]     Created 324 nets and 1048 connections.
-[INFO ODB-0134] Finished DEF file: sky130_power_switch/floorplan.def
 Switched power cell: POWER_SWITCH
   Control pin: SLEEP
   Acknowledge pin: SLEEP_OUT

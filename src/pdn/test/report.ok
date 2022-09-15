@@ -11,7 +11,6 @@
 [INFO ODB-0131]     Created 1514 components and 1480 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 268 connections.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
-[INFO ODB-0134] Finished DEF file: nangate_bsg_black_parrot/floorplan.def
 Voltage domain: Core
   Power net: VDD
   Ground net: VSS
