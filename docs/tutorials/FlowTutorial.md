@@ -528,7 +528,7 @@ The `make gui_final` command target successively reads and loads the
 technology `.odb` files and the parasitics and invokes the
 GUI in these steps:
 
--   Reads and loads `.odb` files (final design lef and def).
+-   Reads and loads `.odb` files.
 -   Loads `.spef` (parasitics).
 
 The figure below shows the post-routed DEF for the `ibex` design.
