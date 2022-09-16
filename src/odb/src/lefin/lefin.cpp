@@ -667,7 +667,7 @@ void lefin::layer(lefiLayer* layer)
         eolkoutParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_WIDTHTABLE")) {
         WidthTableParser parser(l, this);
-        valid = parser.parse(layer->propValue(iii));
+        parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
         MinCutParser parser(l, this);
         parser.parse(layer->propValue(iii));
