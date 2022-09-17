@@ -155,16 +155,11 @@ bool Node::hasInstances() const
 
 void Node::setEnclosure(NodeEnclosure encl)
 {
-  has_enclosure_ = true;
   encl_ = encl;
 }
 NodeEnclosure Node::getEnclosure() const
 {
-  if(has_enclosure_){
-    return encl_;
-  } else {
-    return NodeEnclosure{0,0,0,0};
-  }
+  return encl_;
 }
 
 const vector<dbInst*>& Node::getInstances() const

@@ -100,7 +100,6 @@ class Node
   double voltage_{0.0};
   bool connected_{false};
   NodeEnclosure encl_{0,0,0,0};
-  bool has_enclosure_{false};
   std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm
