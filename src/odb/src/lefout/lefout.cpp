@@ -37,6 +37,8 @@
 
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
+#include <iostream>
+using namespace boost::polygon::operators;
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -97,14 +99,28 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
   }
 }
 
-
-template <typename typeBox>
-void lefout::writeBox(std::string indent, typeBox* box)
+void lefout::writeBox(std::string indent, dbBox* box)
 {
   int x1 = box->xMin();
   int y1 = box->yMin();
   int x2 = box->xMax();
   int y2 = box->yMax();
+
+  fprintf(_out,
+          "%s  RECT  %g %g %g %g ;\n",
+          indent.c_str(),
+          lefdist(x1),
+          lefdist(y1),
+          lefdist(x2),
+          lefdist(y2));
+}
+
+void lefout::writeRect(std::string indent, boost::polygon::rectangle_data<int> rect)
+{
+  int x1 = boost::polygon::xl(rect);
+  int y1 = boost::polygon::yl(rect);
+  int x2 = boost::polygon::xh(rect);
+  int y2 = boost::polygon::yh(rect);
 
   fprintf(_out,
           "%s  RECT  %g %g %g %g ;\n",
@@ -140,80 +156,97 @@ void lefout::writeHeader(dbBlock* db_block)
 
 void lefout::writeObstructions(dbBlock* db_block, int bloat_factor)
 {
-  std::map<dbTechLayer*,std::set<Rect*>> obstructions;
-  getObstructions(db_block, obstructions);
-  mergeObstructions(bloat_factor, obstructions);
+  std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>> obstructions;
+  getObstructions(db_block, obstructions, bloat_factor);
 
   fprintf(_out, "  OBS\n");
 
-  for (const auto& [tech_layer, rects_per_layer] : obstructions ) {
+  for (const auto& [tech_layer, polySet] : obstructions ) {
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
-    for (Rect* rect : rects_per_layer) {
-      writeBox("  ", rect);
+
+    int bloat = bloat_factor*tech_layer->getPitch();
+    boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
+    shrink_poly.shrink2(bloat, bloat, bloat, bloat);
+    
+    // Decompose the polygon set to rectanges in non-preferred direction
+    std::vector<boost::polygon::rectangle_data<int>> rects;
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL); 
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      shrink_poly.get_rectangles(rects, boost::polygon::HORIZONTAL); 
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
+      shrink_poly.get_rectangles(rects); 
+    }
+
+    for (const auto& rect : rects) {
+      writeRect("   ",rect);
     }
   }
   
   fprintf(_out, "  END\n");
 }
 
-void lefout::mergeObstructions(
-  int bloat_factor,
-  std::map<dbTechLayer*,std::set<Rect*>>& obstructions) const
+void lefout::getObstructions(
+    dbBlock* db_block,
+    std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+    int bloat_factor) const
 {
-  using namespace boost::polygon::operators;
 
-  for (const auto& [tech_layer, rects_per_layer] : obstructions ) {
-    int bloat = bloat_factor*tech_layer->getPitch();
+  findInstsObstructions(obstructions, db_block, bloat_factor);
 
-    // Compose all the rects in the layer to merged polygon with bloat
-    boost::polygon::polygon_90_set_data<int> polySet;
-    for (Rect* curr_rect : rects_per_layer) {
-      boost::polygon::polygon_90_set_data<int> poly;
-      poly = boost::polygon::rectangle_data<int>{curr_rect->xMin(),
-                                                 curr_rect->yMin(),
-                                                 curr_rect->xMax(),
-                                                 curr_rect->yMax()};
-      polySet += poly.bloat(bloat, bloat, bloat, bloat);
-    }
-    polySet.shrink2(bloat, bloat, bloat, bloat);
-  
-    // Decompose the polygon set to rectanges in non-preferred direction
-    std::vector<boost::polygon::rectangle_data<int>> rects;
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      polySet.get_rectangles(rects, boost::polygon::VERTICAL); 
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      polySet.get_rectangles(rects, boost::polygon::HORIZONTAL); 
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
-      polySet.get_rectangles(rects); 
-    }
-
-    if (rects.empty()) {continue;}
-
-    // Add the new rects to the obstructions map
-    obstructions.erase(tech_layer); 
-    for (const auto& new_rect : rects) {
-      Rect* obs_rect = new Rect(boost::polygon::xl(new_rect),
-                                boost::polygon::yl(new_rect),
-                                boost::polygon::xh(new_rect),
-                                boost::polygon::yh(new_rect));
-      obstructions[tech_layer].insert(obs_rect);
-    }
+  for (dbNet* net : db_block->getNets()) {
+    findSWireLayerObstructions(obstructions, net, bloat_factor);
+    findWireLayerObstructions(obstructions, net, bloat_factor);
   }
 }
 
-void lefout::getObstructions(
+void lefout::findInstsObstructions(
+    std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
     dbBlock* db_block,
-    std::map<dbTechLayer*, std::set<Rect*>>& obstructions) const
-{
-  for (dbNet* net : db_block->getNets()) {
-    findSWireLayerObstructions(obstructions, net);
-    findWireLayerObstructions(obstructions, net);
+    int bloat_factor) const
+{  // Find all insts obsturctions and Iterms
+  
+  auto insts = db_block->getInsts();
+  for (dbSet<dbInst>::iterator insts_itr = insts.begin(); insts_itr != insts.end(); ++insts_itr) {
+    dbInst* inst = *insts_itr;
+    dbSet<dbObstruction> inst_obs = inst->getBlock()->getObstructions();
+    
+    // Add insts obstructions
+    for (dbSet<dbObstruction>::iterator obs_itr = inst_obs.begin(); obs_itr != inst_obs.end(); ++obs_itr) {
+      dbObstruction* obs = *obs_itr;
+      int bloat = bloat_factor * obs->getBBox()->getTechLayer()->getPitch();
+      boost::polygon::polygon_90_set_data<int> poly;
+      poly = boost::polygon::rectangle_data<int>{obs->getBBox()->xMax(),
+                                                 obs->getBBox()->yMax(),
+                                                 obs->getBBox()->xMin(),
+                                                 obs->getBBox()->yMin()};
+      std::cout << inst->getName() << std::endl ;
+      obstructions[obs->getBBox()->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+    }
+
+    // Add inst Iterms to obstructions 
+    dbSet<dbITerm> iterms = inst->getITerms();
+    for (dbSet<dbITerm>::iterator iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
+      dbITerm* iterm = *iterm_itr;
+      dbITermShapeItr iterm_shape_itr;
+      dbShape shape;
+      for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
+        int bloat = bloat_factor * shape.getTechLayer()->getPitch();
+        boost::polygon::polygon_90_set_data<int> poly;
+        poly = boost::polygon::rectangle_data<int>{shape.xMax(),
+                                                   shape.yMax(),
+                                                   shape.xMin(),
+                                                   shape.yMin()};
+        obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+      }
+    }
   }
 }
 
 void lefout::findSWireLayerObstructions(
-    std::map<dbTechLayer*, std::set<Rect*>>& obstructions,
-    dbNet* net) const
+    std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+    dbNet* net,
+    int bloat_factor) const
 {  // Find all layers where an swire exists
   for (dbSWire* swire : net->getSWires()) {
     for (dbSBox* box : swire->getWires()) {
@@ -223,18 +256,21 @@ void lefout::findSWireLayerObstructions(
         // In these cases the metal layer should still be blocked even though
         // we can't find any metal wires on the layer.
         // https://github.com/The-OpenROAD-Project/OpenROAD/pull/725#discussion_r669927312
-        findLayerViaObstructions(obstructions, box);
+        findLayerViaObstructions(obstructions, box, bloat_factor);
       } else {
-        Rect* rect = new Rect(box->xMax(), box->yMax(), box->xMax(), box->yMax());
-        obstructions[box->getTechLayer()].insert(rect);
+        int bloat = bloat_factor*box->getTechLayer()->getPitch();
+        boost::polygon::polygon_90_set_data<int> poly;
+        poly = boost::polygon::rectangle_data<int>{box->xMax(), box->yMax(), box->xMin(), box->yMin()};
+        obstructions[box->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
       }
     }
   }
 }
 
 void lefout::findLayerViaObstructions(
-    std::map<dbTechLayer*, std::set<Rect*>>& obstructions,
-    dbSBox* box) const
+    std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+    dbSBox* box,
+    int bloat_factor) const
 {
   std::vector<dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
@@ -242,17 +278,20 @@ void lefout::findLayerViaObstructions(
     if (db_shape.isViaBox()) {
       continue;
     }
-    Rect* rect = new Rect(db_shape.getBox().xMax(),
-                          db_shape.getBox().yMax(),
-                          db_shape.getBox().xMin(), 
-                          db_shape.getBox().yMin());
-    obstructions[db_shape.getTechLayer()].insert(rect);
+    int bloat = bloat_factor*db_shape.getTechLayer()->getPitch();
+    boost::polygon::polygon_90_set_data<int> poly;
+    poly = boost::polygon::rectangle_data<int>{db_shape.getBox().xMax(),
+                                               db_shape.getBox().yMax(),
+                                               db_shape.getBox().xMin(), 
+                                               db_shape.getBox().yMin()};
+    obstructions[db_shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
   }
 }
 
 void lefout::findWireLayerObstructions(
-    std::map<dbTechLayer*, std::set<Rect*>>& obstructions,
-    dbNet* net) const
+    std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+    dbNet* net,
+    int bloat_factor) const
 {
   // Find all metal layers where a wire exists.
   dbWire* wire = net->getWire();
@@ -268,11 +307,13 @@ void lefout::findWireLayerObstructions(
     if (shape.isVia()) {
       continue;
     }
-    Rect* rect = new Rect(shape.getBox().xMax(),
-                     shape.getBox().yMax(),
-                     shape.getBox().xMin(), 
-                     shape.getBox().yMin());
-    obstructions[shape.getTechLayer()].insert(rect);
+    int bloat = bloat_factor*shape.getTechLayer()->getPitch();
+    boost::polygon::polygon_90_set_data<int> poly;
+    poly = boost::polygon::rectangle_data<int>{shape.getBox().xMax(),
+                                               shape.getBox().yMax(),
+                                               shape.getBox().xMin(), 
+                                               shape.getBox().yMin()};
+    obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
   }
 }
 
