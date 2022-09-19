@@ -2326,6 +2326,31 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
   bool checkMask;
 };
 
+class frLef58AreaConstraint : public frConstraint
+{
+   public:
+  // constructor
+  frLef58CutSpacingTableConstraint(
+      odb::dbTechLayerAreaRule* dbRule)
+      : db_rule_(dbRule)
+  {
+  }
+  // getter
+  odb::dbTechLayerAreaRule* getODBRule() const
+  {
+    return db_rule_;
+  }
+
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58AreaConstraint;
+  }
+
+ private:
+  odb::dbTechLayerAreaRule* db_rule_;
+}
+
 using namespace std;
 class frNonDefaultRule
 {
