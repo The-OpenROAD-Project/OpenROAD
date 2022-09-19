@@ -178,7 +178,7 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
   const odb::Point& grid_pt = pin.getOnGridPosition();
   // Use the route layer above the pin layer if there is a via
   // to the pin.
-  int layer = pin.getTopLayer() + 1;
+  int layer = pin.getConnectionLayer() + 1;
   RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode* grid_node = node_map_[grid_route];
   
@@ -306,7 +306,7 @@ MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net)
     // Mimic MakeWireParasitics::makeParasiticsToPin functionality.
     Net* net = grouter_->getNet(db_net);
     for (Pin& pin : net->getPins()) {
-      int layer = pin.getTopLayer() + 1;
+      int layer = pin.getConnectionLayer() + 1;
       const odb::Point& grid_pt = pin.getOnGridPosition();
       const odb::Point& pt = pin.getPosition();
       RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);

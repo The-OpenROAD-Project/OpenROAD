@@ -46,50 +46,47 @@ namespace grt {
 
 class Net;
 
-enum class PinOrientation
+// For iterm pins this is the edge on a macro/pad cell that the pin lies on.
+// For bterm pins this is the edge on block that the pin lies on.
+// It is none for standard cells.
+enum class PinEdge
 {
   north,
   south,
   east,
   west,
-  invalid
+  none
 };
 
 class Pin
 {
  public:
-  Pin() = default;
   Pin(odb::dbITerm* iterm,
       const odb::Point& position,
-      const std::vector<int>& layers,
-      const PinOrientation orientation,
-      const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
-      bool connected_to_pad);
+      const std::vector<odb::dbTechLayer*>& layers,
+      const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>&
+          boxes_per_layer,
+      bool connected_to_pad_or_macro);
   Pin(odb::dbBTerm* bterm,
       const odb::Point& position,
-      const std::vector<int>& layers,
-      const PinOrientation orientation,
-      const std::map<int, std::vector<odb::Rect>>& boxes_per_layer,
-      bool connected_to_pad);
+      const std::vector<odb::dbTechLayer*>& layers,
+      const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>&
+          boxes_per_layer,
+      const odb::Point& die_center);
 
   odb::dbITerm* getITerm() const;
   odb::dbBTerm* getBTerm() const;
   std::string getName() const;
   const odb::Point& getPosition() const { return position_; }
-  const std::vector<int>& getLayers() const { return layers_; }
   int getNumLayers() const { return layers_.size(); }
-  int getTopLayer() const { return layers_.back(); }
-  PinOrientation getOrientation() const { return orientation_; }
-  void setOrientation(PinOrientation orientation)
-  {
-    orientation_ = orientation;
-  }
+  int getConnectionLayer() const;
+  PinEdge getEdge() const { return edge_; }
   const std::map<int, std::vector<odb::Rect>>& getBoxes() const
   {
     return boxes_per_layer_;
   }
   bool isPort() const { return is_port_; }
-  bool isConnectedToPad() const { return connected_to_pad_; }
+  bool isConnectedToPadOrMacro() const { return connected_to_pad_or_macro_; }
   const odb::Point& getOnGridPosition() const { return on_grid_position_; }
   void setOnGridPosition(odb::Point on_grid_pos)
   {
@@ -98,6 +95,10 @@ class Pin
   bool isDriver();
 
  private:
+  void determineEdge(const odb::Rect& bounds,
+                     const odb::Point& pin_position,
+                     const std::vector<odb::dbTechLayer*>& layers);
+
   union
   {
     odb::dbITerm* iterm_;
@@ -106,10 +107,11 @@ class Pin
   odb::Point position_;
   odb::Point on_grid_position_;
   std::vector<int> layers_;
-  PinOrientation orientation_;
+  int connection_layer_;
+  PinEdge edge_;
   std::map<int, std::vector<odb::Rect>> boxes_per_layer_;
   bool is_port_;
-  bool connected_to_pad_;
+  bool connected_to_pad_or_macro_;
 };
 
 }  // namespace grt
