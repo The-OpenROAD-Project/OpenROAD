@@ -233,10 +233,11 @@ class WidthTableParser
       : layer_(layer), lefin_(lefin), rule_(nullptr)
   {
   }
-  bool parse(std::string);
+  void parse(std::string);
 
  private:
   void addWidth(double width);
+  bool parseSubRule(std::string s);
   dbTechLayer* layer_;
   lefin* lefin_;
   dbTechLayerWidthTableRule* rule_;
