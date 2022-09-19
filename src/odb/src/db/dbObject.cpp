@@ -358,6 +358,14 @@ void dbObject::getDbName(char name[max_name_length]) const
         id = impl->getOID();
         break;
 
+      case dbLogicPortObj:
+      case dbPowerDomainObj:
+      case dbPowerSwitchObj:
+      case dbIsolationObj:
+        *cptr++ = 'w';
+        id = impl->getOID();
+        break;
+
       case dbNameObj:
         getImpl()->getLogger()->critical(
             utl::ODB, 296, "dbNameObj not expected in getDbName");
@@ -667,6 +675,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
       case 'j':
       case 'h':
       case 'J':
+      case 'w':
         // SKIP
         break;
 
