@@ -392,17 +392,17 @@ RepairHold::repairEndHold(Vertex *end_vertex,
             resizer_->bufferDelays(buffer_cell, load_cap, dcalc_ap,
                                    buffer_delays, buffer_slews);
             // setup_slack > -hold_slack
-            if (slacks[rise_index_][max_index_] - setup_margin
-                > -(slacks[rise_index_][min_index_] - hold_margin)
-                && slacks[fall_index_][max_index_] - setup_margin
-                > -(slacks[fall_index_][min_index_] - hold_margin)
-                // enough slack to insert the buffer
-                // setup_slack > buffer_delay
-                && (allow_setup_violations
-                    || ((slacks[rise_index_][max_index_] - setup_margin)
-                        > buffer_delays[rise_index_]
-                        && (slacks[fall_index_][max_index_] - setup_margin)
-                        > buffer_delays[fall_index_]))) {
+            if (allow_setup_violations
+                || (slacks[rise_index_][max_index_] - setup_margin
+                    > -(slacks[rise_index_][min_index_] - hold_margin)
+                    && slacks[fall_index_][max_index_] - setup_margin
+                    > -(slacks[fall_index_][min_index_] - hold_margin)
+                    // enough slack to insert the buffer
+                    // setup_slack > buffer_delay
+                    && (slacks[rise_index_][max_index_] - setup_margin)
+                    > buffer_delays[rise_index_]
+                    && (slacks[fall_index_][max_index_] - setup_margin)
+                    > buffer_delays[fall_index_])) {
               Vertex *path_load = expanded.path(i + 1)->vertex(sta_);
               Point path_load_loc = db_network_->location(path_load->pin());
               Point drvr_loc = db_network_->location(path_vertex->pin());
