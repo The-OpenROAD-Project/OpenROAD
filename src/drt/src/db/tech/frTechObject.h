@@ -82,7 +82,7 @@ class frTechObject
   frLayerNum getBottomLayerNum() const { return 0; }
   frLayerNum getTopLayerNum() const
   {
-    return (frLayerNum)((int) layers.size() - 1);
+    return (frLayerNum) ((int) layers.size() - 1);
   }
   const std::vector<std::unique_ptr<frLayer>>& getLayers() const
   {
