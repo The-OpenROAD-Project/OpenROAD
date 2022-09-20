@@ -4457,14 +4457,17 @@ namespace eval ICeWall {
     lappend insts_created $inst
     # debug "Inst ll: $inst"
     dict set pad_ring corner_ll $inst
-    set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ll]
     set corner_origin [list $edge_left_offset $edge_bottom_offset]
-    set location [transform_point {*}$cell_offset [list 0 0] $corner_orient]
-    set place_at [list [expr [lindex $corner_origin 0] - [lindex $location 0]] [expr [lindex $corner_origin 1] - [lindex $location 1]]]
-    # debug "LL: place - $corner_origin, offset - $cell_offset, location - $location, orient - [get_library_cell_orientation [$corner getName] ll]"
-    $inst setOrigin {*}$place_at
+    $inst setOrigin 0 0 
     $inst setOrient $corner_orient
+    set xMin [[$inst getBBox] xMin]
+    set yMin [[$inst getBBox] yMin]
+    set xMax [[$inst getBBox] xMax]
+    set yMax [[$inst getBBox] yMax]
+    set place_at [list [expr [lindex $corner_origin 0] - $xMin] [expr [lindex $corner_origin 1] - $yMin]]
+    # debug "LL: place - $corner_origin, location - $place_at, orient - [get_library_cell_orientation [$corner getName] ll]"
+    $inst setOrigin {*}$place_at
     $inst setPlacementStatus "FIRM"
 
     set corner [get_cell corner lr]
@@ -4472,14 +4475,17 @@ namespace eval ICeWall {
     lappend insts_created $inst
     # debug "Inst lr: $inst"
     dict set pad_ring corner_lr $inst
-    set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] lr]
     set corner_origin [list [expr ($chip_width - $edge_right_offset)] $edge_bottom_offset]
-    set location [transform_point {*}$cell_offset [list 0 0] $corner_orient]
-    set place_at [list [expr [lindex $corner_origin 0] - [lindex $location 0]] [expr [lindex $corner_origin 1] - [lindex $location 1]]]
-    # debug "LR: place - $corner_origin, offset - $cell_offset, location - $location, orient - [get_library_cell_orientation [$corner getName] lr]"
-    $inst setOrigin {*}$place_at
+    $inst setOrigin 0 0 
     $inst setOrient $corner_orient
+    set xMin [[$inst getBBox] xMin]
+    set yMin [[$inst getBBox] yMin]
+    set xMax [[$inst getBBox] xMax]
+    set yMax [[$inst getBBox] yMax]
+    set place_at [list [expr [lindex $corner_origin 0] - $xMax] [expr [lindex $corner_origin 1] - $yMin]]
+    # debug "LR: place - $corner_origin, location - $place_at, orient - [get_library_cell_orientation [$corner getName] lr]"
+    $inst setOrigin {*}$place_at
     $inst setPlacementStatus "FIRM"
 
     set corner [get_cell corner ur]
@@ -4487,12 +4493,16 @@ namespace eval ICeWall {
     lappend insts_created $inst
     # debug "Inst ur: $inst"
     dict set pad_ring corner_ur $inst
-    set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ur]
     set corner_origin [list [expr ($chip_width - $edge_right_offset)] [expr ($chip_height - $edge_top_offset)]]
-    set location [transform_point {*}$cell_offset [list 0 0] $corner_orient]
-    set place_at [list [expr [lindex $corner_origin 0] - [lindex $location 0]] [expr [lindex $corner_origin 1] - [lindex $location 1]]]
-    # debug "UR: place - $corner_origin, offset - $cell_offset, location - $location, orient - [get_library_cell_orientation [$corner getName] ur]"
+    $inst setOrigin 0 0 
+    $inst setOrient $corner_orient
+    set xMin [[$inst getBBox] xMin]
+    set yMin [[$inst getBBox] yMin]
+    set xMax [[$inst getBBox] xMax]
+    set yMax [[$inst getBBox] yMax]
+    set place_at [list [expr [lindex $corner_origin 0] - $xMax] [expr [lindex $corner_origin 1] - $yMax]]
+    # debug "UR: place - $corner_origin, location - $place_at, orient - [get_library_cell_orientation [$corner getName] ur]"
     $inst setOrigin {*}$place_at
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
@@ -4502,12 +4512,16 @@ namespace eval ICeWall {
     lappend insts_created $inst
     # debug "Inst ul: $inst"
     dict set pad_ring corner_ul $inst
-    set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ul]
     set corner_origin [list $edge_left_offset [expr ($chip_height - $edge_top_offset)]]
-    set location [transform_point {*}$cell_offset [list 0 0] $corner_orient]
-    set place_at [list [expr [lindex $corner_origin 0] - [lindex $location 0]] [expr [lindex $corner_origin 1] - [lindex $location 1]]]
-    # debug "UL: place - $corner_origin, offset - $cell_offset, location - $location, orient - [get_library_cell_orientation [$corner getName] ul]"
+    $inst setOrigin 0 0 
+    $inst setOrient $corner_orient
+    set xMin [[$inst getBBox] xMin]
+    set yMin [[$inst getBBox] yMin]
+    set xMax [[$inst getBBox] xMax]
+    set yMax [[$inst getBBox] yMax]
+    set place_at [list [expr [lindex $corner_origin 0] - $xMin] [expr [lindex $corner_origin 1] - $yMax]]
+    # debug "UL: place - $corner_origin, location - $place_at, orient - [get_library_cell_orientation [$corner getName] ul]"
     $inst setOrigin {*}$place_at
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
