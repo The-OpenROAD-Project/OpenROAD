@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: fence02.def
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
-[INFO ODB-0134] Finished DEF file: fence02.def
 Placement Analysis
 ---------------------------------
 total displacement          9.6 u

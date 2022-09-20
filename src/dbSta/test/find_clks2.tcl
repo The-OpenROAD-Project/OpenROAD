@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # findClkNets(clock)
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib

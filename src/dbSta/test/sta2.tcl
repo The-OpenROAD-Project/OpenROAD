@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # read_verilog, sdf
 read_liberty example1_slow.lib
 read_lef example1.lef

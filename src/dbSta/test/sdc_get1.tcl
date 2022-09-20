@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # sdc get_*
 read_lef example1.lef
 read_def example1.def

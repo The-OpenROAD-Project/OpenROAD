@@ -16,6 +16,7 @@ TAGS
 .~lock.*#
 .DS_Store
 Makefile
+__pycache__
 
 include/ord/Version.hh
 

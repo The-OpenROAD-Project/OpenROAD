@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # set_layer_rc
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

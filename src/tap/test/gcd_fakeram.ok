@@ -6,11 +6,9 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: gcd_fakeram.def
 [INFO ODB-0128] Design: gcd_mem1
 [INFO ODB-0130]     Created 61 pins.
 [INFO ODB-0131]     Created 1 components and 32 component-terminals.
-[INFO ODB-0134] Finished DEF file: gcd_fakeram.def
 [INFO ODB-0303] The initial 30 rows (6960 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
 [INFO TAP-0004] Inserted 60 endcaps.
 [INFO TAP-0005] Inserted 19 tapcells.

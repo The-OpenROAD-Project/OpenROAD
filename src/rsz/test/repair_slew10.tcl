@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design max slew, wire RC -> load slew violation, wire under max length
 # BUF_X1 cell with max_transition on input
 read_liberty repair_slew10.lib

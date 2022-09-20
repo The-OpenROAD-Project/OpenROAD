@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design impossibly small liberty input pin max_transition (ala fakeram)
 # in1--u1---------u2-out1
 read_liberty sky130hd/sky130hd_tt.lib

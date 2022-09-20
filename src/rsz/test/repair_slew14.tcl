@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design max load slew with long wire to output
 # in1--u1--------------------------out1
 #          500  |--u2              2000

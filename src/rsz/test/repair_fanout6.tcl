@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # fanout 8000 max_fanout 20 stress test
 # modified to use large default max_transition, max_capacitance
 read_liberty repair_fanout6.lib

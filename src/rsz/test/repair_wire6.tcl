@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design log wire to output port
 # in1--u1--u2---------out1
 #             1500u

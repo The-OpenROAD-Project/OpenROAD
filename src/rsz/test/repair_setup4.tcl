@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_timing -setup 2 corners
 define_corners fast slow
 read_liberty -corner slow Nangate45/Nangate45_slow.lib

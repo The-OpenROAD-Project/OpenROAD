@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design long wire from input port
 # in1-----------u1--u2--out1
 #       1500u

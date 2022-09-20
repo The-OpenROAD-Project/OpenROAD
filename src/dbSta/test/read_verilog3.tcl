@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # read_verilog 16b bus with lef/liberty
 read_lef bus1.lef
 read_liberty bus1.lib

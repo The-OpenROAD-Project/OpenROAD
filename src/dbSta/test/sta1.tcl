@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # lef/def reg1
 read_lef example1.lef
 read_def example1.def
