@@ -20,7 +20,7 @@ original HPWL            2531.1 u
 legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
-worst slack -0.39
+worst slack -0.38
 [INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

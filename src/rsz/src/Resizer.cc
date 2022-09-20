@@ -2295,7 +2295,8 @@ Resizer::journalMakeBuffer(Instance *buffer)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
              network_->pathName(buffer));
-  inserted_buffers_.insert(buffer);
+  inserted_buffers_.push_back(buffer);
+  inserted_buffer_set_.insert(buffer);
 }
 
 void
@@ -2304,7 +2305,7 @@ Resizer::journalRestore(int &resize_count,
 {
   for (auto inst_cell : resized_inst_map_) {
     Instance *inst = inst_cell.first;
-    if (!inserted_buffers_.hasKey(inst)) {
+    if (!inserted_buffer_set_.hasKey(inst)) {
       LibertyCell *lib_cell = inst_cell.second;
       debugPrint(logger_, RSZ, "journal", 1, "journal restore {} ({})",
                  network_->pathName(inst),
@@ -2313,12 +2314,15 @@ Resizer::journalRestore(int &resize_count,
       resize_count--;
     }
   }
-  for (Instance *buffer : inserted_buffers_) {
+  while (!inserted_buffers_.empty()) {
+  Instance *buffer = inserted_buffers_.back();
     debugPrint(logger_, RSZ, "journal", 1, "journal remove {}",
                network_->pathName(buffer));
     removeBuffer(buffer);
+    inserted_buffers_.pop_back();
     inserted_buffer_count--;
   }
+  inserted_buffer_set_.clear();
 }
 
 ////////////////////////////////////////////////////////////////

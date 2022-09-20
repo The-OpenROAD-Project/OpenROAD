@@ -23,7 +23,7 @@
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 5.98e-04 V
-Average IR drop  : 3.70e-04 V
-Worstcase IR drop: 5.98e-04 V
+Worstcase voltage: 7.10e-04 V
+Average IR drop  : 4.48e-04 V
+Worstcase IR drop: 7.10e-04 V
 ######################################

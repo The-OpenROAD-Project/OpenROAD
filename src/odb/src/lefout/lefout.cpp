@@ -30,15 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/lefout.h"
-
-#include "odb/dbShape.h"
 #include <stdio.h>
 
 #include <algorithm>
 
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/lefout.h"
 
 using namespace odb;
 
@@ -132,7 +131,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
-  writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
+  writeUnits(/*database_units = */ db_block->getDbUnitsPerMicron());
 }
 
 void lefout::writeObstructions(dbBlock* db_block)
@@ -715,23 +714,17 @@ void lefout::writeLayer(dbTechLayer* layer)
             lefdist(layer->getProtrusionLength()),
             lefdist(layer->getProtrusionFromWidth()));
 
-  dbSet<dbTechLayerSpacingRule> v54_rules;
-  dbSet<dbTechLayerSpacingRule>::iterator ritr;
-
-  std::vector<dbTechV55InfluenceEntry*> inf_rules;
-  std::vector<dbTechV55InfluenceEntry*>::const_iterator infitr;
-
-  if (layer->getV54SpacingRules(v54_rules)) {
-    for (ritr = v54_rules.begin(); ritr != v54_rules.end(); ++ritr)
-      (*ritr)->writeLef(*this);
+  for (auto rule : layer->getV54SpacingRules()) {
+    rule->writeLef(*this);
   }
 
   if (layer->hasV55SpacingRules()) {
     layer->printV55SpacingRules(*this);
-    if (layer->getV55InfluenceRules(inf_rules)) {
+    auto inf_rules = layer->getV55InfluenceRules();
+    if (!inf_rules.empty()) {
       fprintf(_out, "SPACINGTABLE INFLUENCE");
-      for (infitr = inf_rules.begin(); infitr != inf_rules.end(); ++infitr)
-        (*infitr)->writeLef(*this);
+      for (auto rule : inf_rules)
+        rule->writeLef(*this);
       fprintf(_out, " ;\n");
     }
   }
@@ -755,8 +748,13 @@ void lefout::writeLayer(dbTechLayer* layer)
   if (layer->getDirection() != dbTechLayerDir::NONE)
     fprintf(_out, "    DIRECTION %s ;\n", layer->getDirection().getString());
 
-  if (layer->getResistance() != 0.0)
-    fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", layer->getResistance());
+  if (layer->getResistance() != 0.0) {
+    if (layer->getType() == dbTechLayerType::CUT) {
+      fprintf(_out, "    RESISTANCE %g ;\n", layer->getResistance());
+    } else {
+      fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", layer->getResistance());
+    }
+  }
 
   if (layer->getCapacitance() != 0.0)
     fprintf(_out, "    CAPACITANCE CPERSQDIST %g ;\n", layer->getCapacitance());

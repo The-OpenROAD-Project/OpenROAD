@@ -291,7 +291,6 @@ void GridSwitchedPower::build()
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
-      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
       const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
@@ -318,6 +317,10 @@ void GridSwitchedPower::build()
   updateControlNetwork();
 
   checkAndFixOverlappingInsts(exisiting_insts);
+
+  for (const auto& [inst, inst_info] : insts_) {
+    inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
 }
 
 void GridSwitchedPower::updateControlNetwork()
@@ -480,7 +483,11 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
     }
 
     inst->setLocation(pws_new_loc, y);
+    // Allow us to move fixed tapcells
+    auto prev_status = overlapping->getPlacementStatus();
+    overlapping->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     overlapping->setLocation(other_new_loc, overlap_y);
+    overlapping->setPlacementStatus(prev_status);
     debugPrint(grid_->getLogger(),
                utl::PDN,
                "PowerSwitch",

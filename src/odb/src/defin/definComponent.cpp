@@ -185,15 +185,16 @@ void definComponent::placement(int status, int x, int y, int orient)
   if (_cur_inst == NULL)
     return;
 
+  dbPlacementStatus placement_status;
   switch (status) {
     case DEFI_COMPONENT_FIXED:
-      _cur_inst->setPlacementStatus(dbPlacementStatus::FIRM);
+      placement_status = dbPlacementStatus::FIRM;
       break;
     case DEFI_COMPONENT_COVER:
-      _cur_inst->setPlacementStatus(dbPlacementStatus::COVER);
+      placement_status = dbPlacementStatus::COVER;
       break;
     case DEFI_COMPONENT_PLACED:
-      _cur_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+      placement_status = dbPlacementStatus::PLACED;
       break;
     case DEFI_COMPONENT_UNPLACED:
       _cur_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
@@ -235,6 +236,7 @@ void definComponent::placement(int status, int x, int y, int orient)
   dbTransform t(_cur_inst->getOrient());
   t.apply(bbox);
   _cur_inst->setOrigin(dbdist(x) - bbox.xMin(), dbdist(y) - bbox.yMin());
+  _cur_inst->setPlacementStatus(placement_status);
 }
 
 void definComponent::halo(int left, int bottom, int right, int top)

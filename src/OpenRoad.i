@@ -325,6 +325,13 @@ write_def_cmd(const char *filename,
   ord->writeDef(filename, version);
 }
 
+void
+write_lef_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeLef(filename);
+}
+
 
 void 
 write_cdl_cmd(const char *outFilename,

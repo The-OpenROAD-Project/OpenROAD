@@ -773,7 +773,7 @@ proc global_connections {args} {
       set inst_pattern {.*}
     }
 
-    pdngen::add_global_connect $net $inst_pattern [dict get $connect pin_name]
+    pdngen::add_global_connect $net $inst_pattern [dict get $connect pin_name] true
   }
 }
 
@@ -4483,9 +4483,9 @@ proc get_global_connect_list_default {voltage_domain is_region} {
       set net [$block findNet $sub_net]
       foreach term [get_valid_mterms $sub_net] {
         if {$is_region} {
-          pdn::add_global_connect $block $voltage_domain ".*" $term $net
+          pdn::add_global_connect $block $voltage_domain ".*" $term $net true
         } else {
-          pdn::add_global_connect ".*" $term $net
+          pdn::add_global_connect ".*" $term $net true
         }
       }
     }
@@ -4519,7 +4519,7 @@ proc export_opendb_global_connection {} {
   foreach net_name [get_all_pg_nets] {
     set net [$block findNet $net_name]
     foreach pattern [get_global_connect_list $net_name] {
-      pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
+      pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net true
     }
   }
 
@@ -4533,7 +4533,7 @@ proc export_opendb_global_connection {} {
         set net [$block findNet $net_name]
         # loop over all patterns
         foreach pattern [get_global_connect_list $net_name] {
-          pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
+          pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net true
         }
       }
     }

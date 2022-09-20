@@ -35,6 +35,23 @@
 
 namespace eval sta {
 
+define_cmd_args "report_clock_skew_metric" {[-setup]|[-hold]}
+proc report_clock_skew_metric { args } {
+  global sta_report_default_digits
+  parse_key_args "report_clock_skew_metric" args keys {} flags {-setup -hold}
+
+  set min_max "-setup"
+  set metric_name "clock__skew__setup"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "-hold"
+    set metric_name "clock__skew__hold"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 19 "both -setup and -hold specified."
+  }
+
+  utl::metric_float $metric_name [worst_clock_skew $min_max]
+}
+
 define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
 proc report_tns_metric { args } {
   global sta_report_default_digits
@@ -46,7 +63,7 @@ proc report_tns_metric { args } {
     set min_max "min"
     set metric_name "timing__hold__tns"
   } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
-    utl::error ORD 18 "both -steup and -hold specified."
+    utl::error ORD 18 "both -setup and -hold specified."
   }
 
   utl::metric_float $metric_name "[format_time [total_negative_slack_cmd  $min_max] $sta_report_default_digits]"
