@@ -351,6 +351,7 @@ RepairHold::repairEndHold(Vertex *end_vertex,
             && !resizer_->dontTouch(path_net)) {
           PinSeq load_pins;
           Slacks slacks;
+          mergeInit(slacks);
           float excluded_cap = 0.0;
           bool loads_have_out_port = false;
           VertexOutEdgeIterator edge_iter(path_vertex, graph_);
@@ -431,6 +432,15 @@ RepairHold::repairEndHold(Vertex *end_vertex,
       }
     }
   }
+}
+
+void
+RepairHold::mergeInit(Slacks &slacks)
+{
+  slacks[rise_index_][min_index_] = INF;
+  slacks[fall_index_][min_index_] = INF;
+  slacks[rise_index_][max_index_] = -INF;
+  slacks[fall_index_][max_index_] = -INF;
 }
 
 void

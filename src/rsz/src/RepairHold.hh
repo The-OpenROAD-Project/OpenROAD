@@ -119,6 +119,7 @@ private:
                      LibertyCell *buffer_cell,
                      Point loc);
   bool checkMaxSlewCap(const Pin *drvr_pin);
+  void mergeInit(Slacks &slacks);
   void mergeInto(Slacks &slacks,
                  Slacks &result);
 
