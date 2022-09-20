@@ -14,7 +14,7 @@
 worst slack -0.97
 worst slack -0.74
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
-[WARNING RSZ-0066] Unable to repair all hold violations.
+[INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: in1 (input port clocked by clk)
 Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -26,20 +26,22 @@ Path Type: min
    0.00    0.00   clock network delay (propagated)
   -1.00   -1.00 ^ input external delay
    0.00   -1.00 ^ in1 (in)
-   0.00   -1.00 ^ r1/D (sky130_fd_sc_hd__dfxbp_1)
-          -1.00   data arrival time
+   0.53   -0.47 ^ hold2/X (sky130_fd_sc_hd__dlygate4sd3_1)
+   0.56    0.09 ^ hold1/X (sky130_fd_sc_hd__dlygate4sd3_1)
+   0.00    0.09 ^ r1/D (sky130_fd_sc_hd__dfxbp_1)
+           0.09   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
    0.00    0.00   clock reconvergence pessimism
            0.00 ^ r1/CLK (sky130_fd_sc_hd__dfxbp_1)
-  -0.03   -0.03   library hold time
-          -0.03   data required time
+  -0.05   -0.04   library hold time
+          -0.04   data required time
 ---------------------------------------------------------
-          -0.03   data required time
-           1.00   data arrival time
+          -0.04   data required time
+          -0.09   data arrival time
 ---------------------------------------------------------
-          -0.97   slack (VIOLATED)
+           0.14   slack (MET)
 
 
 Startpoint: in1 (input port clocked by clk)
