@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2022, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@ class IFPError(Exception):
     def __init__(self, msg):
         print(msg)
 
+# To be removed once we have UPF support
 def create_voltage_domain(domain_name, area):
     # which flavor of error reporting should be used here?
     if len(area) != 4:
@@ -67,9 +68,6 @@ def create_voltage_domain(domain_name, area):
 
 
 def insert_tiecells(floorplan, args, prefix=None):
-    if prefix == None:
-        prefix = "TIEOFF_"
-
     tie_pin_split = args.split("/")
     port = tie_pin_split[-1]
     tie_cell = "/".join(tie_pin_split[0:-1])
@@ -89,4 +87,7 @@ def insert_tiecells(floorplan, args, prefix=None):
     if mterm == None:
         raise IFPError(f"IFP 32 Unable to find master pin: {args}")
 
-    floorplan.insertTiecells(mterm, prefix)
+    if prefix:
+        floorplan.insertTiecells(mterm, prefix)
+    else:
+        floorplan.insertTiecells(mterm)

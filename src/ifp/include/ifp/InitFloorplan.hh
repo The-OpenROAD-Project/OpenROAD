@@ -81,7 +81,8 @@ class InitFloorplan
                      const odb::Rect& core,
                      const std::string& site_name);
 
-  void insertTiecells(odb::dbMTerm* tie_term, const std::string& prefix);
+  void insertTiecells(odb::dbMTerm* tie_term,
+                      const std::string& prefix = "TIEOFF_");
 
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
