@@ -350,6 +350,7 @@ RepairHold::repairEndHold(Vertex *end_vertex,
         if (path_vertex->isDriver(network_)
             && !resizer_->dontTouch(path_net)) {
           PinSeq load_pins;
+          Slacks slacks;
           float excluded_cap = 0.0;
           bool loads_have_out_port = false;
           VertexOutEdgeIterator edge_iter(path_vertex, graph_);
@@ -362,6 +363,9 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               Pin *load_pin = fanout->pin();
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
+                Slacks fanout_slacks;
+                sta_->vertexSlacks(fanout, fanout_slacks);
+                mergeInto(fanout_slacks, slacks);
                 if (network_->direction(load_pin)->isAnyOutput()
                     && network_->isTopLevelPort(load_pin))
                   loads_have_out_port = true;
@@ -374,8 +378,6 @@ RepairHold::repairEndHold(Vertex *end_vertex,
             }
           }
           if (!load_pins.empty()) {
-            Slack slacks[RiseFall::index_count][MinMax::index_count];
-            sta_->vertexSlacks(path_vertex, slacks);
             debugPrint(logger_, RSZ,
                        "repair_hold", 3, " {} hold_slack={}/{} setup_slack={}/{} fanouts={}",
                        path_vertex->name(network_),
@@ -429,6 +431,20 @@ RepairHold::repairEndHold(Vertex *end_vertex,
       }
     }
   }
+}
+
+void
+RepairHold::mergeInto(Slacks &slacks,
+                      Slacks &result)
+{
+  result[rise_index_][min_index_] = min(result[rise_index_][min_index_],
+                                        slacks[rise_index_][min_index_]);
+  result[fall_index_][min_index_] = min(result[fall_index_][min_index_],
+                                        slacks[fall_index_][min_index_]);
+  result[rise_index_][max_index_] = max(result[rise_index_][max_index_],
+                                        slacks[rise_index_][max_index_]);
+  result[fall_index_][max_index_] = max(result[fall_index_][max_index_],
+                                        slacks[fall_index_][max_index_]);
 }
 
 void
