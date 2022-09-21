@@ -1649,12 +1649,135 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
   }
 }
 
-void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area) {
+void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
+{
+  if (ignoreMinArea_ || !targetNet_) {
+    return;
+  }
+
+  auto poly = pin->getPolygon();
+  auto layer_idx = poly->getLayerNum();
+  auto layer = getTech()->getLayer(layer_idx);
+
+  if (!layer->hasLef58AreaConstraint()) {
+    return;
+  }
+
+  auto constraints = layer->getLef58AreaConstraints();
+
+  auto sort_cmp =
+      [this](const frLef58AreaConstraint* a, const frLef58AreaConstraint* b) {
+        auto a_rule = a->getODBRule();
+        auto b_rule = b->getODBRule();
+
+        return a_rule->getRectWidth() < b_rule->getRectWidth();
+      }
+
+  // sort constraints to ensure the smallest rect width will have
+  // preference above other rect width statements
+  std::sort(constraints.begin(), constraints.end(), sort_cmp);
+
+  bool check_rect_width = true;
+
+  for (auto con : constraints) {
+    odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
+    auto min_area = db_rule->getArea();
+    auto curr_area = gtl::area(*poly);
+
+    if (curr_area >= min_area) {
+      continue;
+    }
+
+    gtl::rectangle_data<frCoord> bbox;
+    gtl::extents(bbox, *pin->getPolygon());
+    Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
+    if (!drWorker_->getDrcBox().contains(bbox2))
+      continue;
+    for (auto& edges : pin->getPolygonEdges()) {
+      for (auto& edge : edges) {
+        if (edge->isFixed())
+          continue;
+      }
+    }
+
+    // add patch only when the poly is not a rect
+    if (checkMetalShape_lef58Area_exceptRectangle(poly, db_rule)) {
+      checkMetalShape_addPatch(pin, min_area);
+    }
+
+    // add patch only if poly is rect and its width is less than or equal to
+    // rectWidth value on constraint
+    if (check_rect_width
+        && checkMetalShape_lef58Area_rectWidth(
+            poly, db_rule, check_rect_width)) {
+      checkMetalShape_addPatch(pin, min_area);
+    }
+  }
+}
+
+bool FlexGCWorker::Impl::checkMetalShape_lef58Area_exceptRectangle(
+    gcPolygon* poly,
+    odb::dbTechLayerAreaRule* db_rule)
+{
+  if (db_rule->isExceptRectangle()) {
+    vector<gtl::rectangle_data<frCoord>> rects;
+    gtl::polygon_90_set_data<frCoord> polySet;
+    {
+      using namespace boost::polygon::operators;
+      polySet += *poly;
+    }
+    gtl::get_max_rectangles(rects, polySet);
+    // rect only is true
+    if (rects.size() == 1) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
+    gcPolygon* poly,
+    odb::dbTechLayerAreaRule* db_rule,
+    bool& check_rect_width)
+{
+  if (db_rule->getRectWidth() > 0) {
+    vector<gtl::rectangle_data<frCoord>> rects;
+    gtl::polygon_90_set_data<frCoord> polySet;
+    {
+      using namespace boost::polygon::operators;
+      polySet += *poly;
+    }
+    gtl::get_max_rectangles(rects, polySet);
+    if (rects.size() == 1) {
+      int min_width = db_rule->getRectWidth();
+      auto rect = rects.back();
+      auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
+      auto yLen = gtl::delta(rect, gtl::VERTICAL);
+      // Horizontal rect
+      bool apply_rect_width_area = false;
+      if (xLen > yLen) {
+        apply_rect_width_area = yLen <= min_width;
+      } else {
+        apply_rect_width_area = xLen <= min_width;
+      }
+      check_rect_width = !apply_rect_width_area;
+      return apply_rect_width_area;
+    } else {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
+{
   auto poly = pin->getPolygon();
   auto layer_idx = poly->getLayerNum();
   auto curr_area = gtl::area(*poly);
 
-  //fix min area by adding patches
+  // fix min area by adding patches
   frCoord gapArea = min_area - curr_area;
   bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layer_idx);
   gcSegment* chosenEdg = nullptr;
