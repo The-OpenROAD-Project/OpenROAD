@@ -482,6 +482,7 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
+  void checkMetalShape_addPatch(gcPin* pin, int min_area);
 
   // surgical fix
   void patchMetalShape();

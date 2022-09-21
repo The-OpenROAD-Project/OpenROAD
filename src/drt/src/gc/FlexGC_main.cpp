@@ -1302,51 +1302,8 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
           return;
     }
   }
-    //fix min area by adding patches
-  frCoord gapArea = reqArea - actArea;
-  bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layerNum);
-  gcSegment* chosenEdg = nullptr;
-  // traverse polygon edges, searching for the best edge to amend a patch
-  for (auto& edges : pin->getPolygonEdges()) {
-    for (auto& e : edges) {
-      if (e->isVertical() != prefDirIsVert && (!chosenEdg || 
-            bestSuitable(e.get(), chosenEdg) == e.get()))
-        chosenEdg = e.get();
-    }
-  }
-  frCoord length = ceil((float)gapArea / chosenEdg->length() / getTech()->getManufacturingGrid())
-                        * getTech()->getManufacturingGrid();
-  Rect patchBx;
-  Point offset; //the lower left corner of the patch box
-  if (prefDirIsVert) {
-        patchBx.set_xlo(-chosenEdg->length() / 2);
-        patchBx.set_xhi(chosenEdg->length() / 2);
-        patchBx.set_yhi(length);
-        offset.x() = (chosenEdg->low().x() + chosenEdg->high().x()) / 2;
-        if (chosenEdg->getOuterDir() == frDirEnum::N) {
-            offset.y() = chosenEdg->low().y();
-        } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
-            offset.y() = chosenEdg->low().y() - length;
-        } else logger_->error(DRT, 4500, "Edge outer dir should be either North or South");
-  } else {
-        patchBx.set_xhi(length);
-        patchBx.set_ylo(-chosenEdg->length() / 2);
-        patchBx.set_yhi(chosenEdg->length() / 2);
-        offset.y() = (chosenEdg->low().y() + chosenEdg->high().y()) / 2;
-        if (chosenEdg->getOuterDir() == frDirEnum::E) {
-            offset.x() = chosenEdg->low().x();
-        } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
-            offset.x() = chosenEdg->low().x() - length;
-        } else 
-            logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
-  }
-  auto patch = make_unique<drPatchWire>();
-  patch->setLayerNum(layerNum);
-  patch->setOrigin(offset);
-  patch->setOffsetBox(patchBx);
-  Rect shiftedPatch = patchBx;
-  shiftedPatch.moveTo(offset.x(), offset.y());
-  pwires_.push_back(std::move(patch));
+
+  checkMetalShape_addPatch(pin, min_area);
 }
 
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
@@ -1690,6 +1647,58 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
       }
     }
   }
+}
+
+void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area) {
+  auto poly = pin->getPolygon();
+  auto layer_idx = poly->getLayerNum();
+  auto curr_area = gtl::area(*poly);
+
+  //fix min area by adding patches
+  frCoord gapArea = min_area - curr_area;
+  bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layer_idx);
+  gcSegment* chosenEdg = nullptr;
+  // traverse polygon edges, searching for the best edge to amend a patch
+  for (auto& edges : pin->getPolygonEdges()) {
+    for (auto& e : edges) {
+      if (e->isVertical() != prefDirIsVert && (!chosenEdg || 
+            bestSuitable(e.get(), chosenEdg) == e.get()))
+        chosenEdg = e.get();
+    }
+  }
+  frCoord length = ceil((float)gapArea / chosenEdg->length() / getTech()->getManufacturingGrid())
+                        * getTech()->getManufacturingGrid();
+  Rect patchBx;
+  Point offset; //the lower left corner of the patch box
+  if (prefDirIsVert) {
+        patchBx.set_xlo(-chosenEdg->length() / 2);
+        patchBx.set_xhi(chosenEdg->length() / 2);
+        patchBx.set_yhi(length);
+        offset.x() = (chosenEdg->low().x() + chosenEdg->high().x()) / 2;
+        if (chosenEdg->getOuterDir() == frDirEnum::N) {
+            offset.y() = chosenEdg->low().y();
+        } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
+            offset.y() = chosenEdg->low().y() - length;
+        } else logger_->error(DRT, 4500, "Edge outer dir should be either North or South");
+  } else {
+        patchBx.set_xhi(length);
+        patchBx.set_ylo(-chosenEdg->length() / 2);
+        patchBx.set_yhi(chosenEdg->length() / 2);
+        offset.y() = (chosenEdg->low().y() + chosenEdg->high().y()) / 2;
+        if (chosenEdg->getOuterDir() == frDirEnum::E) {
+            offset.x() = chosenEdg->low().x();
+        } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
+            offset.x() = chosenEdg->low().x() - length;
+        } else 
+            logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
+  }
+  auto patch = make_unique<drPatchWire>();
+  patch->setLayerNum(layer_idx);
+  patch->setOrigin(offset);
+  patch->setOffsetBox(patchBx);
+  Rect shiftedPatch = patchBx;
+  shiftedPatch.moveTo(offset.x(), offset.y());
+  pwires_.push_back(std::move(patch));
 }
 
 void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
