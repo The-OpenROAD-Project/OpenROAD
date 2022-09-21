@@ -1303,7 +1303,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
     }
   }
 
-  checkMetalShape_addPatch(pin, min_area);
+  checkMetalShape_addPatch(pin, reqArea);
 }
 
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
@@ -1671,7 +1671,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
         auto b_rule = b->getODBRule();
 
         return a_rule->getRectWidth() < b_rule->getRectWidth();
-      }
+      };
 
   // sort constraints to ensure the smallest rect width will have
   // preference above other rect width statements
