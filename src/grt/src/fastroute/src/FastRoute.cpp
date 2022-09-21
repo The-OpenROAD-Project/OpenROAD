@@ -276,7 +276,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   if (exists) {
     net = nets_[netID];
    
-    clearAllRoute(netID);
+    clearNetRoute(netID);
 
     net->pinX.clear();
     net->pinY.clear();
@@ -325,10 +325,10 @@ void FastRouteCore::clearRoute(const int netID)
   newRipupNet(netID);
 }
 
-void FastRouteCore::clearAllRoute(const int netID)
+void FastRouteCore::clearNetRoute(const int netID)
 {
   // clear used resources for the net route
-  releaseResourcesNet(netID);
+  releaseNetResources(netID);
 
   // clear stree
   delete[] sttrees_[netID].nodes;
