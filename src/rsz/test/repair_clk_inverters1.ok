@@ -10,8 +10,8 @@
 [INFO ODB-0133]     Created 8 nets and 16 connections.
 Net clk1
  Pin capacitance: 3.96-4.35
- Wire capacitance: 0.00
- Total capacitance: 3.96-4.35
+ Wire capacitance: 1.15-1.15
+ Total capacitance: 5.10-5.50
  Number of drivers: 1
  Number of loads: 3
  Number of pins: 4
@@ -26,8 +26,8 @@ Load pins
 
 Net net1
  Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
+ Wire capacitance: 0.31
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -40,8 +40,8 @@ Load pins
 
 Net net2
  Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
+ Wire capacitance: 0.31
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
