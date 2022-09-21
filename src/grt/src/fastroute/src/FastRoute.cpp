@@ -333,9 +333,6 @@ void FastRouteCore::clearAllRoute(const int netID)
   // clear stree
   delete[] sttrees_[netID].nodes;
   delete[] sttrees_[netID].edges; 
-
-  // set flag to reroute net
-  nets_[netID]->is_routed = false;  
 }
 
 void FastRouteCore::initEdges()

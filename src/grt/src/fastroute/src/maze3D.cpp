@@ -1591,11 +1591,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
+            v_edges_[min_y][gridsX[i]].usage += net->edgeCost;
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
               += net->layerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
+            h_edges_[gridsY[i]][min_x].usage += net->edgeCost;
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
               += net->layerEdgeCost(gridsL[i]);
           }

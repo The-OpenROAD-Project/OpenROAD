@@ -464,13 +464,15 @@ void FastRouteCore::convertToMazeroute()
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      h_edges_[i][j].usage = h_edges_[i][j].est_usage;
+      // Add to keep the usage values of the last incremental routing performed
+      h_edges_[i][j].usage += h_edges_[i][j].est_usage;
     }
   }
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].usage = v_edges_[i][j].est_usage;
+      // Add to keep the usage values of the last incremental routing performed
+      v_edges_[i][j].usage += v_edges_[i][j].est_usage;
     }
   }
 
