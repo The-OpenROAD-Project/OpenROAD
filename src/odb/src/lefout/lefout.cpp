@@ -32,17 +32,16 @@
 
 #include "odb/lefout.h"
 
-#include "odb/dbShape.h"
 #include <stdio.h>
 
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
-#include <iostream>
-using namespace boost::polygon::operators;
 
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 
+using namespace boost::polygon::operators;
 using namespace odb;
 
 void lefout::writeVersion(const char* version)
@@ -154,33 +153,38 @@ void lefout::writeHeader(dbBlock* db_block)
   writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
 }
 
-void lefout::writeObstructions(dbBlock* db_block, int bloat_factor)
+void lefout::writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers)
 {
   std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>> obstructions;
   getObstructions(db_block, obstructions, bloat_factor);
 
   fprintf(_out, "  OBS\n");
-
+  dbBox* block_bounding_box = db_block->getBBox();
   for (const auto& [tech_layer, polySet] : obstructions ) {
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
 
-    int bloat = bloat_factor*tech_layer->getPitch();
-    boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
-    shrink_poly.shrink2(bloat, bloat, bloat, bloat);
-    
-    // Decompose the polygon set to rectanges in non-preferred direction
-    std::vector<boost::polygon::rectangle_data<int>> rects;
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL); 
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      shrink_poly.get_rectangles(rects, boost::polygon::HORIZONTAL); 
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
-      shrink_poly.get_rectangles(rects); 
-    }
+    if (bloat_occupied_layers) {
+	writeBox("   ", block_bounding_box);	
+    } else {
+    	int bloat = bloat_factor*tech_layer->getPitch();
+    	boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
+    	shrink_poly.shrink2(bloat, bloat, bloat, bloat);
+    	
+    	// Decompose the polygon set to rectanges in non-preferred direction
+    	std::vector<boost::polygon::rectangle_data<int>> rects;
+    	if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    	  shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL); 
+    	} else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    	  shrink_poly.get_rectangles(rects, boost::polygon::HORIZONTAL); 
+    	} else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
+    	  shrink_poly.get_rectangles(rects); 
+    	}
 
-    for (const auto& rect : rects) {
-      writeRect("   ",rect);
-    }
+    	for (const auto& rect : rects) {
+    	  writeRect("   ",rect);
+    	}
+     }
+	
   }
   
   fprintf(_out, "  END\n");
@@ -225,20 +229,21 @@ void lefout::findInstsObstructions(
     }
 
     // Add inst Iterms to obstructions 
-    dbSet<dbITerm> iterms = inst->getITerms();
-    for (dbSet<dbITerm>::iterator iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-      dbITerm* iterm = *iterm_itr;
+    odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
+    odb::dbSet<odb::dbITerm>::iterator iterm_itr;
+    for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
+      odb::dbITerm* iterm = *iterm_itr;
+      odb::dbShape shape;
       dbITermShapeItr iterm_shape_itr;
-      dbShape shape;
-      for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
-        int bloat = bloat_factor * shape.getTechLayer()->getPitch();
-        boost::polygon::polygon_90_set_data<int> poly;
-        poly = boost::polygon::rectangle_data<int>{shape.xMax(),
-                                                   shape.yMax(),
-                                                   shape.xMin(),
-                                                   shape.yMin()};
-        obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
-      }
+      //for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
+      //  int bloat = bloat_factor * shape.getTechLayer()->getPitch();
+      //  boost::polygon::polygon_90_set_data<int> poly;
+      //  poly = boost::polygon::rectangle_data<int>{shape.xMax(),
+      //                                             shape.yMax(),
+      //                                             shape.xMin(),
+      //                                             shape.yMin()};
+      //  obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+      //}
     }
   }
 }
@@ -372,7 +377,7 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fprintf(_out, "NAMESCASESENSITIVE %s ;\n", on_off_type.getString());
 }
 
-void lefout::writeBlock(dbBlock* db_block, int bloat_factor)
+void lefout::writeBlock(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers)
 {
   dbBox* bounding_box = db_block->getBBox();
   double origin_x = lefdist(bounding_box->xMin());
@@ -386,7 +391,7 @@ void lefout::writeBlock(dbBlock* db_block, int bloat_factor)
   fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
   fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
   writePins(db_block);
-  writeObstructions(db_block, bloat_factor);
+  writeObstructions(db_block, bloat_factor, bloat_occupied_layers);
   fprintf(_out, "END %s\n", db_block->getName().c_str());
 }
 
@@ -1314,7 +1319,7 @@ bool lefout::writeTechAndLib(dbLib* lib, const char* lef_file)
   return true;
 }
 
-bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat_factor)
+bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat_factor, bool bloat_occupied_layers)
 {
   _out = fopen(lef_file, "w");
   if (_out == nullptr) {
@@ -1326,7 +1331,7 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat
   _area_factor = _dist_factor * _dist_factor;
 
   writeHeader(db_block);  
-  writeBlock(db_block, bloat_factor);
+  writeBlock(db_block, bloat_factor, bloat_occupied_layers);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);
 

@@ -982,8 +982,8 @@ class dbBlock : public dbObject
   //
   // Utility to save_lef
   //
-  // void dbBlock::saveLef(char *filename, int bloat);
-  void saveLef(char* filename, int bloat_factor);
+  // void dbBlock::saveLef(char *filename, int bloat, bool bloat_occupied_layers);
+  void saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers);
 
   //
   // Utility to save_def

@@ -92,7 +92,7 @@ class lefout
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
-  void writeObstructions(dbBlock* db_block, int bloat_factor);
+  void writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers);
   void getObstructions(dbBlock* db_block,
                        std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
                        int bloat_factor) const;
@@ -110,7 +110,7 @@ class lefout
   void findLayerViaObstructions(std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
                                 dbSBox* box,
                                 int bloat_factor) const;
-  void writeBlock(dbBlock* db_block, int bloat_factor);
+  void writeBlock(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers);
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
@@ -142,7 +142,7 @@ class lefout
   bool writeTech(dbTech* tech, const char* lef_file);
   bool writeLib(dbLib* lib, const char* lef_file);
   bool writeTechAndLib(dbLib* lib, const char* lef_file);
-  bool writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat_factor);
+  bool writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat_factor, bool bloat_occupied_layers);
 
   FILE* out() { return _out; }
 };
