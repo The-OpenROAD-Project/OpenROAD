@@ -502,11 +502,12 @@ proc define_layer_range { layers } {
   grt::set_min_layer $min_layer
   grt::set_max_layer $max_layer
 
+  set tech [ord::get_db_tech]
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    if { !([ord::db_layer_has_hor_tracks $layer] && \
-         [ord::db_layer_has_ver_tracks $layer]) } {
-      set tech [ord::get_db_tech]
-      set layer_name [[$tech findRoutingLayer $layer] getName]
+    set db_layer [$tech findRoutingLayer $layer]
+    if { !([ord::db_layer_has_hor_tracks $db_layer] && \
+         [ord::db_layer_has_ver_tracks $db_layer]) } {
+      set layer_name [$db_layer getName]
       utl::error GRT 57 "Missing track structure for layer $layer_name."
     }
   }
