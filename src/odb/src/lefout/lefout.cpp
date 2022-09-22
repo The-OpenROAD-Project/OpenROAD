@@ -235,15 +235,15 @@ void lefout::findInstsObstructions(
       odb::dbITerm* iterm = *iterm_itr;
       odb::dbShape shape;
       dbITermShapeItr iterm_shape_itr;
-      //for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
-      //  int bloat = bloat_factor * shape.getTechLayer()->getPitch();
-      //  boost::polygon::polygon_90_set_data<int> poly;
-      //  poly = boost::polygon::rectangle_data<int>{shape.xMax(),
-      //                                             shape.yMax(),
-      //                                             shape.xMin(),
-      //                                             shape.yMin()};
-      //  obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
-      //}
+      for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
+        int bloat = bloat_factor * shape.getTechLayer()->getPitch();
+        boost::polygon::polygon_90_set_data<int> poly;
+        poly = boost::polygon::rectangle_data<int>{shape.xMax(),
+                                                   shape.yMax(),
+                                                   shape.xMin(),
+                                                   shape.yMin()};
+        obstructions[shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+      }
     }
   }
 }
