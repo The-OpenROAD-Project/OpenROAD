@@ -31,8 +31,6 @@ jobs:
           submodules: 'recursive'
       - name: Build OpenROAD
         run: |
-          export PATH="/usr/local/opt/bison/bin:$PATH"
-          export PATH="/usr/local/opt/flex/bin:$PATH"
           export PATH="/usr/local/opt/tcl-tk/bin:$PATH"
           export PKG_CONFIG_PATH="/usr/local/opt/tcl-tk/lib/pkgconfig"
           export MY_QT_PATH=$(find /usr/local/Cellar/qt@5/ -type d -iwholename "*cmake/Qt5")
