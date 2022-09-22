@@ -1066,9 +1066,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
         widthName, widths, spacings);
     unique_ptr<frConstraint> uCon
-        = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+        = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl, rule);
     auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
-    rptr->setDbTechLayerCornerSpacingRule(rule);
     if (rptr->getCornerType() == frCornerTypeEnum::CONVEX
         && rule->isCornerToCorner() && !rptr->hasCornerOnly()) {
       rptr->setCornerToCorner(true);
@@ -1121,35 +1120,31 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    auto con = make_unique<frLef58SpacingEndOfLineConstraint>();
-    con->setDbTechLayerSpacingEolRule(rule);
+    auto con = make_unique<frLef58SpacingEndOfLineConstraint>(rule);
 
-    auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+    auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>(rule);
     con->setWithinConstraint(within);
-    within->setDbTechLayerSpacingEolRule(rule);
     if (rule->isEndToEndValid()) {
       auto endToEnd
-          = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+          = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>(rule);
       within->setEndToEndConstraint(endToEnd);
-      endToEnd->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isParallelEdgeValid()) {
       auto parallelEdge
-          = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+          = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>(
+              rule);
       within->setParallelEdgeConstraint(parallelEdge);
-      parallelEdge->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
       auto len
-          = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+          = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>(
+              rule);
       within->setMaxMinLengthConstraint(len);
-      len->setDbTechLayerSpacingEolRule(rule);
     }
     if (rule->isEncloseCutValid()) {
-      auto enc
-          = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>();
+      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
+          rule);
       within->setEncloseCutConstraint(enc);
-      enc->setDbTechLayerSpacingEolRule(rule);
     }
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech_->addUConstraint(std::move(con));
@@ -1171,8 +1166,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
-    auto con = make_unique<frLef58MinStepConstraint>();
-    con->setDbTechLayerMinStepRule(rule);
+    auto con = make_unique<frLef58MinStepConstraint>(rule);
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
@@ -1186,9 +1180,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       extTbl.push_back(ext);
     }
     auto con = make_unique<frLef58EolExtensionConstraint>(
-        fr1DLookupTbl<frCoord, frCoord>("WIDTH", widthTbl, extTbl, false));
+        fr1DLookupTbl<frCoord, frCoord>("WIDTH", widthTbl, extTbl, false),
+        rule);
     con->setMinSpacing(rule->getSpacing());
-    con->setDbTechLayerEolExtensionRule(rule);
     tmpLayer->addLef58EolExtConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
@@ -1205,8 +1199,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingRules()) {
     switch (rule->getType()) {
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS: {
-        auto con = make_unique<frLef58CutSpacingConstraint>();
-        con->setDbTechLayerCutSpacingRule(rule);
+        auto con = make_unique<frLef58CutSpacingConstraint>(rule);
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
           auto cutClassIdx = tmpLayer->getCutClassIdx(className);
@@ -1222,7 +1215,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER: {
         if (rule->getSecondLayer() == nullptr)
           continue;
-        auto con = make_unique<frLef58CutSpacingConstraint>();
+        auto con = make_unique<frLef58CutSpacingConstraint>(rule);
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
           auto cutClassIdx = tmpLayer->getCutClassIdx(className);
@@ -1411,7 +1404,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
 
   if (layer->hasMinStep()) {
-    unique_ptr<frConstraint> uCon = make_unique<frMinStepConstraint>();
+    unique_ptr<frConstraint> uCon = make_unique<frMinStepConstraint>(layer);
     auto rptr = static_cast<frMinStepConstraint*>(uCon.get());
     rptr->setInsideCorner(layer->getMinStepType()
                           == odb::dbTechLayerMinStepType::INSIDE_CORNER);
@@ -1431,11 +1424,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       default:
         break;
     }
-    rptr->setDbTechLayer(layer);
-    // if (layer->hasMinStepMaxLength())
-    // rptr->setMaxLength(layer->getMinStepMaxLength());
     if (layer->hasMinStepMaxEdges()) {
-      // rptr->setMaxEdges(layer->getMinStepMaxEdges());
       rptr->setInsideCorner(true);
       rptr->setOutsideCorner(true);
       rptr->setStep(true);
@@ -1458,9 +1447,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           "minEnclosedArea constraint with width is not supported, skipped.");
       continue;
     }
-    auto minEnclosedAreaConstraint = make_unique<frMinEnclosedAreaConstraint>();
+    auto minEnclosedAreaConstraint
+        = make_unique<frMinEnclosedAreaConstraint>(rule);
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
-    minEnclosedAreaConstraint->setDbTechMinEncRule(rule);
     tech_->addUConstraint(std::move(minEnclosedAreaConstraint));
   }
 
@@ -1486,9 +1475,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       logger_->warn(DRT, 143, "SpacingEndOfNotchWidth unsupported.");
     } else if (hasSpacingEndOfLine) {
       unique_ptr<frConstraint> uCon
-          = make_unique<frSpacingEndOfLineConstraint>();
+          = make_unique<frSpacingEndOfLineConstraint>(rule);
       auto rptr = static_cast<frSpacingEndOfLineConstraint*>(uCon.get());
-      rptr->setDbTechLayerSpacingRule(rule);
       rptr->setMinSpacing(minSpacing);
       tech_->addUConstraint(std::move(uCon));
       tmpLayer->addEolSpacing(rptr);
@@ -1606,17 +1594,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     frUInt4 numCuts, width;
     if (!rule->getMinimumCuts(numCuts, width))
       continue;
-    unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
+    unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>(rule);
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
-    rptr->setDbTechMinCutRule(rule);
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
 
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
-    unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58EolKeepOutConstraint>(rule);
     auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
-    rptr->setDbTechLayerEolKeepOutRule(rule);
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }
