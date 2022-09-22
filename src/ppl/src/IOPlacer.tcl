@@ -49,9 +49,9 @@ proc define_pin_shape_pattern { args } {
 
   if [info exists keys(-layer)] {
     set layer_name $keys(-layer)
-    set layer_idx [ppl::parse_layer_name $layer_name]
+    set layer [ppl::parse_layer_name $layer_name]
 
-    if { $layer_idx == 0 } {
+    if { $layer == 0 } {
       utl::error PPL 52 "Routing layer not found for name $layer_name."
     }
   } else {
@@ -82,6 +82,7 @@ proc define_pin_shape_pattern { args } {
     } else {
       utl::error PPL 63 "-region is not a list of 4 values {llx lly urx ury}."
     }
+    odb::Rect region $llx $lly $urx $ury
   } else {
     utl::error PPL 55 "-region is required."
   }
@@ -109,7 +110,7 @@ proc define_pin_shape_pattern { args } {
     set keepout [[[ord::get_db_tech] findLayer $keys(-layer)] getSpacing $max_dim]
   }
 
-  ppl::create_pin_shape_pattern $layer_idx $x_step $y_step $llx $lly $urx $ury $width $height $keepout
+  ppl::create_pin_shape_pattern $layer $x_step $y_step region $width $height $keepout
 }
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
@@ -205,11 +206,11 @@ proc set_pin_length { args } {
   sta::check_argc_eq0 "set_pin_length" $args
 
   if [info exists keys(-hor_length)] {
-    ppl::set_hor_length $keys(-hor_length)
+    ppl::set_hor_length [ord::microns_to_dbu $keys(-hor_length)]
   }
 
   if [info exists keys(-ver_length)] {
-    ppl::set_ver_length $keys(-ver_length)
+    ppl::set_ver_length [ord::microns_to_dbu $keys(-ver_length)]
   }
 }
 
@@ -224,11 +225,11 @@ proc set_pin_length_extension { args } {
   sta::check_argc_eq0 "set_pin_length_extension" $args
 
   if [info exists keys(-hor_extension)] {
-    ppl::set_hor_length_extend $keys(-hor_extension)
+    ppl::set_hor_length_extend [ord::microns_to_dbu $keys(-hor_extension)]
   }
 
   if [info exists keys(-ver_extension)] {
-    ppl::set_ver_length_extend $keys(-ver_extension)
+    ppl::set_ver_length_extend [ord::microns_to_dbu $keys(-ver_extension)]
   }
 }
 
@@ -308,9 +309,9 @@ proc place_pin { args } {
     utl::error PPL 71 "Command place_pin should receive only one pin name."
   }
 
-  set layer_idx [ppl::parse_layer_name $layer]
+  set layer [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer_idx $x $y $width $height [info exists flags(-force_to_die_boundary)]
+  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
@@ -418,12 +419,11 @@ proc place_pins { args } {
       utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer_name."
     }
 
-    set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
-    if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
+    if { [$hor_layer getDirection] != "HORIZONTAL" } {
       utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
     }
 
-    set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
+    set hor_track_grid [$dbBlock findTrackGrid $hor_layer]
 
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
 
@@ -437,12 +437,11 @@ proc place_pins { args } {
       utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer_name."
     }
 
-    set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
-    if { [$v_tech_layer getDirection] != "VERTICAL" } {
+    if { [$ver_layer getDirection] != "VERTICAL" } {
       utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
     }
 
-    set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]
+    set ver_track_grid [$dbBlock findTrackGrid $ver_layer]
 
     set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
 
@@ -601,9 +600,7 @@ proc parse_layer_name { layer_name } {
   if { $tech_layer == "NULL" } {
     utl::error PPL 51 "Layer $layer_name not found."
   }
-  set layer_idx [$tech_layer getRoutingLevel]
-
-  return $layer_idx
+  return $tech_layer
 }
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
@@ -615,7 +612,7 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set tech [ord::get_db_tech]
   set top_layer [ppl::get_top_layer]
-  set top_layer_name [[$tech findRoutingLayer $top_layer] getConstName]
+  set top_layer_name [$top_layer getConstName]
   utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
   set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury

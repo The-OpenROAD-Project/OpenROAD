@@ -463,17 +463,15 @@ db_has_rows()
 }
 
 bool
-db_layer_has_tracks(unsigned layerId, bool hor)
+db_layer_has_tracks(odb::dbTechLayer* layer, bool hor)
 {
-  dbDatabase *db = OpenRoad::openRoad()->getDb();
-  dbBlock *block = db->getChip()->getBlock();
-  dbTech *tech = db->getTech();
-  
-  dbTechLayer *layer = tech->findRoutingLayer(layerId);
   if (!layer) {
     return false;
   }
     
+  dbDatabase *db = OpenRoad::openRoad()->getDb();
+  dbBlock *block = db->getChip()->getBlock();
+
   dbTrackGrid *trackGrid = block->findTrackGrid(layer);
   if (!trackGrid) {
     return false;
@@ -487,15 +485,15 @@ db_layer_has_tracks(unsigned layerId, bool hor)
 }
 
 bool
-db_layer_has_hor_tracks(unsigned layerId)
+db_layer_has_hor_tracks(odb::dbTechLayer* layer)
 {
-  return db_layer_has_tracks(layerId, true);
+  return db_layer_has_tracks(layer, true);
 }
 
 bool
-db_layer_has_ver_tracks(unsigned layerId)
+db_layer_has_ver_tracks(odb::dbTechLayer* layer)
 {
-  return db_layer_has_tracks(layerId, false);
+  return db_layer_has_tracks(layer, false);
 }
 
 sta::Sta *
