@@ -109,14 +109,16 @@ proc report_erc_metrics { args } {
 }
 
 
-define_cmd_args "report_power_design_metric" {}
-proc report_power_design_metric { corner digits } {
+define_cmd_args "report_power_metric" {[-corner corner_name]}
+proc report_power_metric { args } {
+  parse_key_args "report_power_metric" args keys {-corner} flags {}
+  set corner [sta::parse_corner keys]
   set power_result [design_power $corner]
   set totals        [lrange $power_result  0  3]
   lassign $totals design_internal design_switching design_leakage design_total
 
   utl::metric_float "power__internal__total" $design_internal
-  utl::metric_float "power__switchng__total" $design_switching
+  utl::metric_float "power__switching__total" $design_switching
   utl::metric_float "power__leakage__total" $design_leakage
   utl::metric_float "power__total" $design_total
 }

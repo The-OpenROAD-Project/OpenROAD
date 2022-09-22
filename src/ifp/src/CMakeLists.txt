@@ -60,6 +60,21 @@ target_link_libraries(ifp
     utl
 )
 
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          ifp_py
+           NAMESPACE     ifp
+           LANGUAGE      python
+           I_FILE        InitFloorplan-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src/ifp/include
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ifp_py.py
+  )
+
+  target_include_directories(ifp_py
+    PUBLIC
+      ../include
+  )
+endif()
+
 messages(
   TARGET ifp
   OUTPUT_DIR ..

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # optimize_mirroring
 read_lef Nangate45/Nangate45.lef
 read_def gcd_replace.def

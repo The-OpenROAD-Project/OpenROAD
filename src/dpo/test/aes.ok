@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: aes.def
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 391 pins.
 [INFO ODB-0131]     Created 21340 components and 108388 component-terminals.
 [INFO ODB-0133]     Created 19675 nets and 65708 connections.
-[INFO ODB-0134] Finished DEF file: aes.def
 Detailed placement improvement.
 Importing netlist into detailed improver.
 [INFO DPO-0100] Creating network with 21340 cells, 391 terminals, 19675 edges and 66099 pins.

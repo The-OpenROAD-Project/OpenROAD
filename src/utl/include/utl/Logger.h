@@ -204,6 +204,8 @@ class Logger
       return (it != groups.end() && level <= it->second);
   }
 
+  void suppressMessage(ToolId tool, int id);
+
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
