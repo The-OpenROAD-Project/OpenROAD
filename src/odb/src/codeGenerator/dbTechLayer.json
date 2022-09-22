@@ -129,6 +129,10 @@
         "no-set",
         "no-get"
       ]
+    },
+    {
+      "type": "uint",
+      "name": "wrong_way_width_"
     }
   ],
   "constructors": [],

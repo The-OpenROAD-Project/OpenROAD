@@ -168,6 +168,11 @@ nextOpCode:
         _has_prev_ext = has_cur_ext;
         goto nextOpCode;
       }
+      auto dw = _dw;
+      if(_layer->getDirection() == dbTechLayerDir::VERTICAL)
+      {
+        dw = _layer->getWrongWayWidth() / 2;
+      }
 
       shape.setSegment(_prev_x,
                        _prev_y,
@@ -177,6 +182,7 @@ nextOpCode:
                        cur_y,
                        cur_ext,
                        has_cur_ext,
+                       dw,
                        _dw,
                        _layer);
       _prev_x = cur_x;
@@ -201,7 +207,12 @@ nextOpCode:
         cur_ext = 0;
         has_cur_ext = false;
       }
+      auto dw = _dw;
 
+      if(_layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+      {
+        dw = _layer->getWrongWayWidth() / 2;
+      }
       shape.setSegment(_prev_x,
                        _prev_y,
                        _prev_ext,
@@ -210,6 +221,7 @@ nextOpCode:
                        cur_y,
                        cur_ext,
                        has_cur_ext,
+                       dw,
                        _dw,
                        _layer);
       _prev_x = cur_x;
@@ -245,6 +257,7 @@ nextOpCode:
                          _prev_y,
                          0,
                          false,
+                         _dw,
                          _dw,
                          _layer);
         _has_prev_ext = false;

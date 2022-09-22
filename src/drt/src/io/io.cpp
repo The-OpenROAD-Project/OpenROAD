@@ -1528,7 +1528,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tech_->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
-  tmpLayer->setWrongDirWidth(layer->getWidth());
   if (layer->getMinWidth() > layer->getWidth())
     logger_->warn(
         DRT,
@@ -1536,9 +1535,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         "Layer {} minWidth is larger than width. Using width as minWidth.",
         layer->getName());
   tmpLayer->setMinWidth(std::min(layer->getMinWidth(), layer->getWidth()));
-  for(auto rule : layer->getTechLayerWidthTableRules())
-    if(rule->isWrongDirection())
-      tmpLayer->setWrongDirWidth(*rule->getWidthTable().begin());
   // add minWidth constraint
   auto minWidthConstraint
       = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
@@ -2787,23 +2783,29 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
             auto [begin, end] = pathSeg->getPoints();
             frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y());
+              if(segStyle.getBeginExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(begin.x(), begin.y(), segStyle.getBeginExt(), 0);
+              else
+                _wire_encoder.addPoint(begin.x(), begin.y());
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y(), 0);
+              _wire_encoder.addPoint(begin.x(), begin.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
               _wire_encoder.addPoint(
-                  begin.x(), begin.y(), segStyle.getBeginExt());
+                  begin.x(), begin.y(), segStyle.getBeginExt(), 0);
             }
             if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y());
+              if(segStyle.getEndExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
+              else
+                _wire_encoder.addPoint(end.x(), end.y());
             } else if (segStyle.getEndStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), 0);
+              _wire_encoder.addPoint(end.x(), end.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt());
+              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
             }
             break;
           }

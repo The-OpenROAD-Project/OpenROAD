@@ -238,6 +238,7 @@ nextOpCode:
                          0,
                          false,
                          _dw,
+                         _dw,
                          s.layer);
       getTerms(s);
 
@@ -277,6 +278,7 @@ nextOpCode:
                          cur_y,
                          cur_ext,
                          true,
+                         _dw,
                          _dw,
                          s.layer);
       getTerms(s);

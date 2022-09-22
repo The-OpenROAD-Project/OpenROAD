@@ -668,6 +668,13 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_WIDTHTABLE")) {
         WidthTableParser parser(l, this);
         valid = parser.parse(layer->propValue(iii));
+        if(valid)
+        {
+          //update wrong way width
+          for(auto rule : l->getTechLayerWidthTableRules())
+            if(rule->isWrongDirection())
+              l->setWrongWayWidth(*rule->getWidthTable().begin());
+        }
       } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
         MinCutParser parser(l, this);
         parser.parse(layer->propValue(iii));

@@ -6930,6 +6930,10 @@ class dbTechLayer : public dbObject
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums
 
+  void setWrongWayWidth(uint wrong_way_width);
+
+  uint getWrongWayWidth() const;
+
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;

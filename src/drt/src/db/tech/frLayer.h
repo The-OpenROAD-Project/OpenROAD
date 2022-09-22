@@ -129,7 +129,6 @@ class frLayer {
   }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
   void setWidth(frUInt4 widthIn) { width = widthIn; }
-  void setWrongDirWidth(frUInt4 widthIn) { wrongDirWidth = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth = minWidthIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef = in; }
   void addConstraint(frConstraint* consIn) { constraints.push_back(consIn); }
@@ -156,7 +155,7 @@ class frLayer {
     return (fakeCut || fakeMasterslice) ? 0 : db_layer_->getPitch();
   }
   frUInt4 getWidth() const { return width; }
-  frUInt4 getWrongDirWidth() const { return wrongDirWidth; }
+  frUInt4 getWrongDirWidth() const { return db_layer_->getWrongWayWidth(); }
   frUInt4 getMinWidth() const { return minWidth; }
   dbTechLayerDir getDir() const {
     if (fakeCut || fakeMasterslice)

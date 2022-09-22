@@ -2817,16 +2817,13 @@ void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
   bool prevVertical = prev && startX == prev->x();
   if (layer->isHorizontal() == vertical)
     return;
-  frEndStyle es(frEndStyleEnum::frcVariableEndStyle);
-  if (next && next->z() == z && vertical != nextVertical)
+  if (next && next->z() == z && vertical != nextVertical && currStyle.getEndStyle() == frcExtendEndStyle )
   {
-    currStyle.setEndStyle(
-      es, layer->getWrongDirWidth()/2);
+    currStyle.setEndExt(layer->getWrongDirWidth()/2);
   }
-  if (prev && prev->z() == z && vertical != prevVertical)
+  if (prev && prev->z() == z && vertical != prevVertical && currStyle.getBeginStyle() == frcExtendEndStyle)
   {
-    currStyle.setBeginStyle(
-      es, layer->getWrongDirWidth()/2);
+    currStyle.setBeginExt(layer->getWrongDirWidth()/2);
   }
 }
 

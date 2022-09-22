@@ -102,6 +102,7 @@ class _dbTechLayer : public _dbObject
   // User Code End Enums
 
   dbTechLayerFlags flags_;
+  uint wrong_way_width_;
 
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
