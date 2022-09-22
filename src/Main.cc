@@ -259,16 +259,23 @@ int main(int argc, char* argv[])
     }
 
     bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    if (cmd_argc > 2 || (cmd_argc > 1 && cmd_argv[1][0] == '-')) {
+    if (cmd_argc > 1 && cmd_argv[1][0] == '-') {
       showUsage(cmd_argv[0], init_filename);
-    } else if (cmd_argc == 2) {
+    } else {
       char* cmd_filename = cmd_argv[1];
       FILE* cmd_file = fopen(cmd_filename, "r");
-      if (cmd_file) {
-        wchar_t* arg = Py_DecodeLocale(cmd_filename, nullptr);
-        PySys_SetArgv(1, &arg);
-        PyMem_RawFree(arg);
+      if (cmd_file == nullptr) {
+        logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
+      } else {
+        std::vector<wchar_t*> args;
+        for(int i = 1; i < cmd_argc; i++) {
+          args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
+        }
+        PySys_SetArgv(cmd_argc-1, args.data());
         int result = PyRun_SimpleFile(cmd_file, cmd_filename);
+        for (wchar_t* arg: args)  {
+          PyMem_RawFree(arg);
+        }
         fclose(cmd_file);
         if (exit_after_cmd_file) {
           int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -278,13 +285,7 @@ int main(int argc, char* argv[])
     }
 
     std::vector<wchar_t*> args;
-    size_t sz = strlen(cmd_argv[0]);
-    args.push_back(new wchar_t[sz + 1]);
-    args[0][sz] = '\0';
-    for (size_t j = 0; j < sz; j++) {
-      args[0][j] = (wchar_t) cmd_argv[0][j];
-    }
-
+    args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     return Py_Main(1, args.data());
   } else {
     // Python wants to install its own SIGINT handler to print KeyboardInterrupt
