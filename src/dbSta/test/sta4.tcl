@@ -1,5 +1,5 @@
-source "helpers.tcl"
 # delay calc example with parasitics
+source "helpers.tcl"
 read_lef example1.lef
 read_liberty example1_slow.lib
 read_def example1.def

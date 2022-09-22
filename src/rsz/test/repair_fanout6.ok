@@ -22,9 +22,9 @@ Fanout     Cap    Slew   Delay    Time   Description
                   0.00    0.00    0.00   clock clk (rise edge)
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ source/CLK (sky130_fd_sc_hd__dfxtp_4)
-                  6.05    3.72    3.72 ^ source/Q (sky130_fd_sc_hd__dfxtp_4)
+                  6.05    3.73    3.73 ^ source/Q (sky130_fd_sc_hd__dfxtp_4)
      7    2.85                           net (net)
-                 14.00    6.29   10.01 ^ fanout321/A (sky130_fd_sc_hd__buf_4)
+                 14.00    6.28   10.01 ^ fanout321/A (sky130_fd_sc_hd__buf_4)
                   0.30    1.32   11.33 ^ fanout321/X (sky130_fd_sc_hd__buf_4)
     13    0.06                           net321 (net)
                   0.30    0.00   11.33 ^ fanout320/A (sky130_fd_sc_hd__clkbuf_4)
@@ -36,8 +36,8 @@ Fanout     Cap    Slew   Delay    Time   Description
                   0.18    0.00   11.87 ^ fanout318/A (sky130_fd_sc_hd__buf_4)
                   0.16    0.24   12.11 ^ fanout318/X (sky130_fd_sc_hd__buf_4)
     20    0.06                           net318 (net)
-                  0.16    0.00   12.12 ^ sink735/D (sky130_fd_sc_hd__dfxtp_1)
-                                 12.12   data arrival time
+                  0.16    0.00   12.11 ^ sink735/D (sky130_fd_sc_hd__dfxtp_1)
+                                 12.11   data arrival time
 
                   0.00    5.00    5.00   clock clk (rise edge)
                           0.00    5.00   clock network delay (ideal)
@@ -47,7 +47,7 @@ Fanout     Cap    Slew   Delay    Time   Description
                                   4.91   data required time
 -----------------------------------------------------------------------------
                                   4.91   data required time
-                                -12.12   data arrival time
+                                -12.11   data arrival time
 -----------------------------------------------------------------------------
                                  -7.20   slack (VIOLATED)
 
@@ -85,7 +85,7 @@ Fanout     Cap    Slew   Delay    Time   Description
                   0.20    0.02    7.07 v fanout167/A (sky130_fd_sc_hd__buf_12)
                   0.05    0.22    7.29 v fanout167/X (sky130_fd_sc_hd__buf_12)
     10    0.07                           net167 (net)
-                  0.05    0.00    7.30 v fanout161/A (sky130_fd_sc_hd__buf_2)
+                  0.05    0.00    7.29 v fanout161/A (sky130_fd_sc_hd__buf_2)
                   0.09    0.19    7.48 v fanout161/X (sky130_fd_sc_hd__buf_2)
     10    0.04                           net161 (net)
                   0.09    0.00    7.48 v fanout160/A (sky130_fd_sc_hd__buf_4)
