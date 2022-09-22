@@ -1,5 +1,5 @@
-source "helpers.tcl"
 # read_lef before read_liberty
+source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def reg2.def
