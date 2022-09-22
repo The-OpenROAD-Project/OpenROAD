@@ -3,13 +3,11 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  ./nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./medium03.def
 [INFO ODB-0128] Design: jpeg_encoder
 [INFO ODB-0130]     Created 47 pins.
 [INFO ODB-0131]     Created 98627 components and 480395 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 197254 connections.
 [INFO ODB-0133]     Created 98214 nets and 283141 connections.
-[INFO ODB-0134] Finished DEF file: ./medium03.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 20140 19600
