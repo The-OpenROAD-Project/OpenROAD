@@ -110,6 +110,34 @@ else()
   message(WARNING "Compiler ${CMAKE_CXX_COMPILER_ID} is not officially supported.")
 endif()
 
+# BEGIN: Stackoverflow Code
+#   FROM: https://stackoverflow.com/a/59567896
+#   LICENSE: CC BY-SA 4.0
+if (CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+    execute_process(
+        COMMAND brew --prefix bison
+        RESULT_VARIABLE BREW_BISON
+        OUTPUT_VARIABLE BREW_BISON_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (BREW_BISON EQUAL 0 AND EXISTS "${BREW_BISON_PREFIX}")
+        message(STATUS "Found Bison keg installed by Homebrew at ${BREW_BISON_PREFIX}")
+        set(BISON_EXECUTABLE "${BREW_BISON_PREFIX}/bin/bison")
+    endif()
+
+    execute_process(
+        COMMAND brew --prefix flex
+        RESULT_VARIABLE BREW_FLEX
+        OUTPUT_VARIABLE BREW_FLEX_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (BREW_FLEX EQUAL 0 AND EXISTS "${BREW_FLEX_PREFIX}")
+        message(STATUS "Found Flex keg installed by Homebrew at ${BREW_FLEX_PREFIX}")
+        set(FLEX_EXECUTABLE "${BREW_FLEX_PREFIX}/bin/flex")
+    endif()
+endif()
+# END: Stackoverflow Code
+
 message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
