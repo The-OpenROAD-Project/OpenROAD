@@ -1,5 +1,5 @@
-source "helpers.tcl"
 # read_verilog, sdf
+source "helpers.tcl"
 read_liberty example1_slow.lib
 read_lef example1.lef
 read_verilog example1.v
