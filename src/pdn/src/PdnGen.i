@@ -76,37 +76,6 @@ using utl::PDN;
 
 namespace pdn {
 
-void
-add_global_connect(const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
-  net->getBlock()->addGlobalConnect(nullptr, inst_pattern, pin_pattern, net, connect);
-}
-
-void
-clear_global_connect(odb::dbBlock* block) {
-  block->clearGlobalConnect();
-}
-
-void
-report_global_connect(odb::dbBlock* block) {
-  block->reportGlobalConnect();
-}
-
-void
-add_global_connect(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
-  odb::dbRegion* region = block->findRegion(region_name);
-  if (region == nullptr) {
-    ord::getLogger()->error(PDN, 53, "Region {} not found.", region_name);
-    return;
-  }
-  
-  block->addGlobalConnect(region, inst_pattern, pin_pattern, net, connect);
-}
-
-void
-global_connect(odb::dbBlock* block) {
-  block->globalConnect();
-}
-
 void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
