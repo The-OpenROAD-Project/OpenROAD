@@ -180,6 +180,18 @@ void Enclosure::snap(odb::dbTech* tech)
   y_ = TechLayer::snapToManufacturingGrid(tech, y_);
 }
 
+void Enclosure::copy(const Enclosure* other)
+{
+  x_ = other->x_;
+  y_ = other->y_;
+  allow_swap_ = other->allow_swap_;
+}
+
+void Enclosure::copy(const Enclosure& other)
+{
+  copy(&other);
+}
+
 //////////
 
 DbVia::DbVia() :
@@ -793,6 +805,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
     via_shapes.top = shapes.top;
 
     Polygon90Set patch_shapes;
+    Polygon90Set total_shape;
     odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
       Polygon90Set bottom_of_current;
@@ -835,47 +848,50 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
 
       // find shapes that touch "left-over" shapes from the xor
       patch_shapes = patch_shapes.interact(patch_shapes ^ combine_layer);
+      total_shape = patch_shapes + combine_layer;
     }
 
     if (!patch_shapes.empty()) {
+      if (via->hasGenerator()) {
+        Rectangle complete_shape;
+        extents(complete_shape, total_shape);
+        const odb::Rect patch_shape_rect(xl(complete_shape), yl(complete_shape), xh(complete_shape), yh(complete_shape));
+
+        auto* generator = via->getGenerator();
+        if (!generator->recheckConstraints(patch_shape_rect, true)) {
+          // failed recheck, need to ripup entire stack
+          std::set<odb::dbSBox*> shapes;
+          for (const auto& [rect, box] : via_shapes.bottom) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.middle) {
+            shapes.insert(box);
+          }
+          for (const auto& [rect, box] : via_shapes.top) {
+            shapes.insert(box);
+          }
+          for (auto* box : shapes) {
+            odb::dbSBox::destroy(box);
+          }
+          const TechLayer tech_layer(*layers_.front());
+          logger->warn(utl::PDN,
+                       227,
+                       "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
+                       layers_.front()->getName(),
+                       layers_.back()->getName(),
+                       tech_layer.dbuToMicron(layer_x),
+                       tech_layer.dbuToMicron(layer_y),
+                       wire->getNet()->getName());
+
+          return {};
+        }
+      }
+
       std::vector<Rectangle> patches;
       patch_shapes.get_rectangles(patches);
-
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
         const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
-
-        if (via->hasGenerator()) {
-          auto* generator = via->getGenerator();
-          if (!generator->recheckConstraints(patch_rect, true)) {
-            // failed recheck, need to ripup entire stack
-            std::set<odb::dbSBox*> shapes;
-            for (const auto& [rect, box] : via_shapes.bottom) {
-              shapes.insert(box);
-            }
-            for (const auto& [rect, box] : via_shapes.middle) {
-              shapes.insert(box);
-            }
-            for (const auto& [rect, box] : via_shapes.top) {
-              shapes.insert(box);
-            }
-            for (auto* box : shapes) {
-              odb::dbSBox::destroy(box);
-            }
-            const TechLayer tech_layer(*layers_.front());
-            logger->warn(utl::PDN,
-                         227,
-                         "Removing between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-                         layers_.front()->getName(),
-                         layers_.back()->getName(),
-                         tech_layer.dbuToMicron(layer_x),
-                         tech_layer.dbuToMicron(layer_y),
-                         wire->getNet()->getName());
-
-            return {};
-          }
-        }
-
         auto* patch_box = odb::dbSBox::create(wire,
                                               add_to_layer,
                                               patch_rect.xMin(),
@@ -910,10 +926,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
 
 /////////////
 
-DbGenerateDummyVia::DbGenerateDummyVia(const odb::Rect& shape,
+DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
+                                       const odb::Rect& shape,
                                        odb::dbTechLayer* bottom,
-                                       odb::dbTechLayer* top)
-    : shape_(shape), bottom_(bottom), top_(top)
+                                       odb::dbTechLayer* top,
+                                       bool add_report)
+    : connect_(connect), add_report_(add_report), shape_(shape), bottom_(bottom), top_(top)
 {
 }
 
@@ -936,6 +954,9 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
                 top_->getName(),
                 Shape::getRectText(via_area, block->getDbUnitsPerMicron()),
                 wire->getNet()->getName());
+  if (add_report_) {
+    connect_->addFailedVia(failedViaReason::BUILD, via_area, wire->getNet());
+  }
 
   return {};
 }
@@ -1176,11 +1197,13 @@ bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
   odb::Rect saved_rect;
   if (bottom) {
     saved_rect = lower_rect_;
+    lower_rect_ = rect;
   } else {
     saved_rect = upper_rect_;
+    upper_rect_ = rect;
   }
 
-  const bool pass = checkConstraints();
+  const bool pass = checkConstraints(true, true, false);
 
   if (bottom) {
     lower_rect_ = saved_rect;
@@ -1198,9 +1221,11 @@ bool ViaGenerator::recheckConstraints(const odb::Rect& rect, bool bottom)
   return pass;
 }
 
-bool ViaGenerator::checkConstraints() const
+bool ViaGenerator::checkConstraints(bool check_cuts,
+                                    bool check_min_cut,
+                                    bool check_enclosure) const
 {
-  if (getTotalCuts() == 0) {
+  if (check_cuts && getTotalCuts() == 0) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1211,7 +1236,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinCuts()) {
+  if (check_min_cut && !checkMinCuts()) {
     debugPrint(logger_,
                utl::PDN,
                "Via",
@@ -1222,7 +1247,7 @@ bool ViaGenerator::checkConstraints() const
     return false;
   }
 
-  if (!checkMinEnclosure()) {
+  if (check_enclosure && !checkMinEnclosure()) {
     const double dbu_microns = getTech()->getLefUnits();
     debugPrint(logger_,
                utl::PDN,
@@ -1932,6 +1957,15 @@ std::vector<odb::dbTechLayerCutEnclosureRule*> ViaGenerator::getCutMinimumEnclos
 
   CutRules* rules = nullptr;
   for (auto& [min_width, width_rules] : rules_map) {
+    debugPrint(logger_,
+               utl::PDN,
+               "ViaEnclosure",
+               3,
+               "Enclosures for minimum width {:.4f} on {} from {}: {}",
+               min_width / static_cast<double>(getBottomLayer()->getTech()->getLefUnits()),
+               getCutLayer()->getName(),
+               above ? "above" : "below",
+               width_rules.size());
     if (min_width <= width) {
       rules = &width_rules;
     }
@@ -2628,7 +2662,7 @@ bool Via::startsBelow(const ViaPtr& via) const
   return connect_->startsBelow(via->getConnect());
 }
 
-void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions) const
+void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap& obstructions)
 {
   odb::dbWireShapeType type = lower_->getType();
 
@@ -2736,6 +2770,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block, const ShapeTreeMap&
                       tech_layer.dbuToMicron(x / ripup_vias.size()),
                       tech_layer.dbuToMicron(y / ripup_vias.size()),
                       lower_->getNet()->getName());
+    markFailed(failedViaReason::RIPUP);
   }
 }
 
@@ -2781,6 +2816,11 @@ Grid* Via::getGrid() const
 utl::Logger* Via::getLogger() const
 {
   return getGrid()->getLogger();
+}
+
+void Via::markFailed(failedViaReason reason)
+{
+  connect_->addFailedVia(reason, area_, net_);
 }
 
 }  // namespace pdn

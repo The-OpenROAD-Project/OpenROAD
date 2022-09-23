@@ -61,7 +61,7 @@ class HungarianMatching
 {
  public:
   HungarianMatching(Section& section,
-                    Netlist& netlist,
+                    Netlist* netlist,
                     std::vector<Slot>& slots,
                     Logger* logger);
   virtual ~HungarianMatching() = default;
@@ -74,7 +74,7 @@ class HungarianMatching
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
   HungarianAlgorithm hungarian_solver_;
-  Netlist& netlist_;
+  Netlist* netlist_;
   const std::vector<int>& pin_indices_;
   const std::vector<std::vector<int>>& pin_groups_;
   std::vector<Slot>& slots_;

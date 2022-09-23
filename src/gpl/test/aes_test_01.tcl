@@ -1,3 +1,4 @@
+source "helpers.tcl"
 set design aes_cipher_top
 set lib_dir library/nangate45/
 set design_dir design/nangate45/${design}

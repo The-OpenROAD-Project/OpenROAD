@@ -60,6 +60,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -snap_layer snap_layer \
                                         }
 proc rtl_macro_placer { args } {
+<<<<<<< HEAD
     sta::parse_key_args "rtl_macro_placer" args keys { 
         -max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
@@ -120,6 +121,95 @@ proc rtl_macro_placer { args } {
                                       $min_ar \
                                       $snap_layer \
                                       ]} {
+=======
+    sta::parse_key_args "rtl_macro_placer" args keys { -config_file -report_directory
+       -area_weight -wirelength_weight -outline_weight
+       -boundary_weight -macro_blockage_weight -location_weight -notch_weight -dead_space
+       -macro_halo -report_file -macro_blockage_file -prefer_location_file } flag {  }
+
+    if { ![info exists keys(-report_directory)] } {
+        utl::error MPL 2 "Missing mandatory -report_directory for RTLMP"
+    }
+
+#
+#  Default values for the weights
+#
+    set area_wt 0.01
+    set wirelength_wt 88.7
+    set outline_wt 74.71
+    set boundary_wt 225.0
+    set macro_blockage_wt 50.0
+    set location_wt 100.0
+    set notch_wt 212.0
+    set dead_space 0.05
+
+    set macro_halo 10.0
+    set report_directory "rtl_mp"
+    set report_file "partition.txt"
+    set config_file "" 
+    set macro_blockage_file "macro_blockage.txt"
+    set prefer_location_file "location.txt"
+
+    if { [info exists keys(-report_file)] } {
+        set report_file $keys(-report_file)
+    }
+
+    if { [info exists keys(-area_weight)] } {
+        set area_wt $keys(-area_weight)
+    }
+
+    if { [info exists keys(-wirelength_weight)] } {
+        set wirelength_wt $keys(-wirelength_weight)
+    }
+
+    if { [info exists keys(-outline_weight)] } {
+        set outline_wt $keys(-outline_weight)
+    }
+
+    if { [info exists keys(-boundary_weight)] } {
+        set boundary_wt $keys(-boundary_weight)
+    }
+
+    if { [info exists keys(-macro_blockage_weight)] } {
+        set macro_blockage_wt $keys(-macro_blockage_weight)
+    }
+
+    if { [info exists keys(-location_weight)] } {
+        set location_wt $keys(-location_weight)
+    }
+
+    if { [info exists keys(-notch_weight)] } {
+        set notch_wt $keys(-notch_weight)
+    }
+
+    if { [info exists keys(-dead_space)] } {
+        set dead_space $keys(-dead_space)
+    }
+
+    if { [info exists keys(-macro_halo)] } {
+        set macro_halo $keys(-macro_halo)
+    }
+
+    if { [info exists keys(-report_directory)] } {
+        set report_directory $keys(-report_directory)
+    }
+
+    if { [info exists keys(-config_file)] } {
+        set config_file $keys(-config_file)
+    }
+
+    if { [info exists keys(-macro_blockage_file)] } {
+        set macro_blockage_file $keys(-macro_blockage_file)
+    }
+
+    if { [info exists keys(-prefer_location_file)] } {
+        set prefer_location_file $keys(-prefer_location_file)
+    }
+
+    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $area_wt $wirelength_wt \
+                    $outline_wt $boundary_wt $macro_blockage_wt $location_wt $notch_wt $dead_space $macro_halo\
+                    $report_file $macro_blockage_file $prefer_location_file]} {
+>>>>>>> origin/master
         return false
     }
 

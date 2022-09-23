@@ -8,11 +8,9 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: boundary_macros.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 5 components and 160 component-terminals.
-[INFO ODB-0134] Finished DEF file: boundary_macros.def
 [INFO ODB-0303] The initial 57 rows (24054 sites) were cut with 5 shapes for a total of 13 rows (577 sites).
 [INFO TAP-0004] Inserted 26 endcaps.
 [INFO TAP-0006] Inserted 89 top/bottom cells.

@@ -581,20 +581,46 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore(const std:
 
   std::vector<odb::dbBox*> pins;
 
-  for (const auto& [layer, layer_pins] : getPinsByLayer()) {
-    // check if layer should be used
-    if (!layers.empty()
-        && std::find(layers.begin(), layers.end(), layer) == layers.end()) {
-      continue;
-    }
-    // only add pins that would yield correct routing directions
-    if (is_horizontal) {
-      if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
-        continue;
+  auto pins_by_layer = getPinsByLayer();
+  if (!layers.empty()) {
+    // remove unspecified layers
+    for (auto itr = pins_by_layer.begin(); itr != pins_by_layer.end();) {
+      auto layer = itr->first;
+      if (std::find(layers.begin(), layers.end(), layer) == layers.end()) {
+        // remove layer
+        itr = pins_by_layer.erase(itr);
+      } else {
+        itr++;
       }
-    } else {
-      if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
-        continue;
+    }
+  }
+
+  // check for pin directions
+  bool has_horizontal_pins = false;
+  bool has_vertical_pins = false;
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      has_horizontal_pins = true;
+    }
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      has_vertical_pins = true;
+    }
+  }
+
+  const bool has_multiple_directions = has_horizontal_pins && has_vertical_pins;
+
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (has_multiple_directions) {
+      // only add pins that would yield correct routing directions,
+      // otherwise keep non-preferred directions too
+      if (is_horizontal) {
+        if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
+          continue;
+        }
+      } else {
+        if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
+          continue;
+        }
       }
     }
     pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());

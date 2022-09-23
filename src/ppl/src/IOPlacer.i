@@ -35,7 +35,6 @@
 
 %{
 #include "ppl/IOPlacer.h"
-#include "Parameters.h"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
@@ -54,8 +53,8 @@ using std::set;
 template <class TYPE>
 vector<TYPE> *
 tclListStdSeq(Tcl_Obj *const source,
-	      swig_type_info *swig_type,
-	      Tcl_Interp *interp)
+              swig_type_info *swig_type,
+              Tcl_Interp *interp)
 {
   int argc;
   Tcl_Obj **argv;
@@ -168,41 +167,41 @@ add_top_layer_constraint(PinList *pin_list,
                          int x1, int y1,
                          int x2, int y2)
 {
-  getIOPlacer()->addTopLayerConstraint(pin_list, x1, y1, x2, y2);
+  getIOPlacer()->addTopLayerConstraint(pin_list, odb::Rect(x1, y1, x2, y2));
 }
 
 void
-set_hor_length(float length)
+set_hor_length(int length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);
 }
 
 void
-set_ver_length_extend(float length)
+set_ver_length_extend(int length)
 {
   getIOPlacer()->getParameters()->setVerticalLengthExtend(length);
 }
 
 void
-set_hor_length_extend(float length)
+set_hor_length_extend(int length)
 {
   getIOPlacer()->getParameters()->setHorizontalLengthExtend(length);
 }
 
 void
-set_ver_length(float length)
+set_ver_length(int length)
 {
   getIOPlacer()->getParameters()->setVerticalLength(length);
 }
 
 void
-add_hor_layer(int layer)
+add_hor_layer(odb::dbTechLayer* layer)
 {
   getIOPlacer()->addHorLayer(layer);
 }
 
 void
-add_ver_layer(int layer)
+add_ver_layer(odb::dbTechLayer* layer)
 {
   getIOPlacer()->addVerLayer(layer);
 }
@@ -228,7 +227,7 @@ set_report_hpwl(bool report)
 int
 compute_io_nets_hpwl()
 {
-  return getIOPlacer()->returnIONetsHPWL();
+  return getIOPlacer()->computeIONetsHPWL();
 }
 
 void
@@ -268,21 +267,22 @@ set_min_distance_in_tracks(bool in_tracks)
 }
 
 void
-create_pin_shape_pattern(int layer, int x_step, int y_step,
-                         int llx, int lly, int urx, int ury,
-                         int width, int height, int keepout)
+create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
+                         const odb::Rect& region,
+                         int pin_width, int pin_height, int keepout)
 {
-  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, llx, lly, urx, ury, width, height, keepout);
+  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, region,
+                                       pin_width, pin_height, keepout);
 }
 
-int
+odb::dbTechLayer*
 get_top_layer()
 {
   return getIOPlacer()->getTopLayer();
 }
 
 void
-place_pin(odb::dbBTerm* bterm, int layer,
+place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
           bool force_to_die_bound)
 {

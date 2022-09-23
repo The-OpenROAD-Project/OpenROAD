@@ -6,11 +6,9 @@
 [INFO ODB-0222] Reading LEF file: fill3.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  fill3.lef
-[INFO ODB-0127] Reading DEF file: fillers6.def
 [INFO ODB-0128] Design: single_cell
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 2 components and 8 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 4 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO ODB-0134] Finished DEF file: fillers6.def
 [ERROR DPL-0002] could not fill gap of size 1 at 4940,2800 dbu between B1 and B2

@@ -5,12 +5,10 @@
 [INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
-[INFO ODB-0127] Reading DEF file: repair_fanout6.def
 [INFO ODB-0128] Design: test
 [INFO ODB-0130]     Created 8002 pins.
 [INFO ODB-0131]     Created 8001 components and 40005 component-terminals.
 [INFO ODB-0133]     Created 8003 nets and 24003 connections.
-[INFO ODB-0134] Finished DEF file: repair_fanout6.def
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 508 buffers in 1 nets.
 [INFO RSZ-0039] Resized 509 instances.

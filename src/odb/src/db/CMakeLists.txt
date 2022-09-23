@@ -108,6 +108,7 @@ add_library(odb
     dbTechLayerMinCutRule.cpp
     dbGuide.cpp
     dbMetalWidthViaMap.cpp
+    dbTechLayerAreaRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp

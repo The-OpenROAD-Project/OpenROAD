@@ -46,6 +46,8 @@ record_tests {
   core_grid_offset_strap
   core_grid_with_rings_with_limit_straps
 
+  core_grid_failed_via_report
+
   macros
   macros_with_halo
   macros_cells
@@ -60,6 +62,7 @@ record_tests {
   macros_narrow_channel_jog
   macros_different_nets
   macros_grid_through
+  macros_cells_dont_touch
 
   region_temp_sensor
   region_secondary_nets

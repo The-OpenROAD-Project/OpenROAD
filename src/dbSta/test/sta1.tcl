@@ -1,4 +1,5 @@
 # lef/def reg1
+source "helpers.tcl"
 read_lef example1.lef
 read_def example1.def
 read_liberty example1_slow.lib

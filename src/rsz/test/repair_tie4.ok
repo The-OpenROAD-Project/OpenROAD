@@ -3,11 +3,9 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./results/repair_tie4.def
 [INFO ODB-0128] Design: top
 [INFO ODB-0131]     Created 11 components and 43 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 11 connections.
-[INFO ODB-0134] Finished DEF file: ./results/repair_tie4.def
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0042] Inserted 10 tie LOGIC1_X1 instances.
 10.1 10.6

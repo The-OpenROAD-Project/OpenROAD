@@ -345,10 +345,10 @@ void debug_renderer_update()
   pdngen->rendererRedraw();
 }
 
-void write_to_db(bool add_pins)
+void write_to_db(bool add_pins, const char* report_file)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->writeToDb(add_pins);
+  pdngen->writeToDb(add_pins, report_file);
 }
 
 void rip_up(odb::dbNet* net = nullptr)
