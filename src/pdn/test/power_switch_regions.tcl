@@ -9,15 +9,16 @@ read_lef sky130_power_switch/power_switch.lef
 
 read_def sky130_power_switch/floorplan_regions.def
 
-add_global_connection -net VDD -power -pin_pattern "^VDDG$"
+add_global_connection -net VDD -pin_pattern "^VDDG$" -power
 add_global_connection -net VDD -pin_pattern VPWR
+add_global_connection -net VDD -pin_pattern VPB
 add_global_connection -net VSS -pin_pattern VGND -ground
 add_global_connection -net VSS -pin_pattern VNB
 
-add_global_connection -net VDD -inst_pattern {temp_analog_1.*} -pin_pattern VPWR
-add_global_connection -net VDD -inst_pattern {temp_analog_1.*} -pin_pattern VPB
-add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPWR -power
-add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPB
+add_global_connection -net VDD -inst_pattern {temp_analog_1.*} -pin_pattern VPWR -region TEMP_ANALOG
+add_global_connection -net VDD -inst_pattern {temp_analog_1.*} -pin_pattern VPB -region TEMP_ANALOG
+add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPWR -power -region TEMP_ANALOG
+add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPB -region TEMP_ANALOG
 
 define_power_switch_cell -name POWER_SWITCH -control SLEEP -acknowledge SLEEP_OUT -power_switchable VPWR -power VDDG -ground VGND
 
