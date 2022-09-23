@@ -30,8 +30,18 @@
 
 sta::define_cmd_args "global_connect" {}
 
-proc global_connect {args} {
+proc global_connect {} {
   pdn::global_connect [ord::get_db_block]
+}
+
+sta::define_cmd_args "clear_global_connect" {}
+proc clear_global_connect {} {
+  pdn::clear_global_connect [ord::get_db_block]
+}
+
+sta::define_cmd_args "report_global_connect" {}
+proc report_global_connect {} {
+  pdn::report_global_connect [ord::get_db_block]
 }
 
 sta::define_cmd_args "add_global_connection" {-net <net_name> \

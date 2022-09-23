@@ -55,6 +55,22 @@ The `global_connect` command is used to connect power and ground pins on design 
 global_connect
 ```
 
+#### Clear global connection rules
+
+The `clear_global_connect` command is used remove all defined global connection rules.
+
+```
+clear_global_connect
+```
+
+#### Report global connection rules
+
+The `report_global_connect` command is used print out the currently defined global connection rules.
+
+```
+report_global_connect
+```
+
 ### Define Power Switch Cell
 
 Define a power switch cell that will be inserted into a power grid 
