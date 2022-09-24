@@ -143,7 +143,8 @@ class Replace
     void setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
-                  bool initial);
+                  bool initial,
+                  odb::dbInst* inst = nullptr);
 
   private:
     odb::dbDatabase* db_;
@@ -205,6 +206,7 @@ class Replace
     int gui_debug_update_iterations_;
     int gui_debug_draw_bins_;
     int gui_debug_initial_;
+    odb::dbInst* gui_debug_inst_;
 };
 }
 

@@ -309,7 +309,7 @@ proc global_placement { args } {
 namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-      keys {-pause -update} \
+      keys {-pause -update -inst} \
       flags {-draw_bins -initial}
 
   set pause 10
@@ -324,10 +324,15 @@ proc global_placement_debug { args } {
     sta::check_positive_integer "-update" $update
   }
 
+  set inst ""
+  if { [info exists keys(-inst)] } {
+    set inst $keys(-inst)
+  }
+
   set draw_bins [info exists flags(-draw_bins)]
   set initial [info exists flags(-initial)]
 
-  gpl::set_debug_cmd $pause $update $draw_bins $initial
+  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst
 }
 
 proc get_global_placement_uniform_density { args } {

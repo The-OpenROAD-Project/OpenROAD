@@ -89,7 +89,9 @@ Replace::Replace()
   gui_debug_pause_iterations_(10),
   gui_debug_update_iterations_(10),
   gui_debug_draw_bins_(false),
-  gui_debug_initial_(false) {
+  gui_debug_initial_(false),
+  gui_debug_inst_(nullptr)
+{
 };
 
 Replace::~Replace() {
@@ -325,6 +327,7 @@ bool Replace::initNesterovPlace() {
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
     npVars.debug_update_iterations = gui_debug_update_iterations_;
     npVars.debug_draw_bins = gui_debug_draw_bins_;
+    npVars.debug_inst = gui_debug_inst_;
 
     std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
     np_ = std::move(np);
@@ -437,12 +440,14 @@ void
 Replace::setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
-                  bool initial) {
+                  bool initial,
+                  odb::dbInst* inst) {
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
   gui_debug_update_iterations_ = update_iterations;
   gui_debug_draw_bins_ = draw_bins;
   gui_debug_initial_ = initial;
+  gui_debug_inst_ = inst;
 }
 
 void
