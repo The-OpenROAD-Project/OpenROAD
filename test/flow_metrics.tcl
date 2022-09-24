@@ -449,7 +449,7 @@ proc save_flow_metric_limits_main {} {
       set tests [expand_tests $argv]
     }
     foreach test $tests {
-      save_metric_limits $test
+      save_metric_limits $test [result_lang $test]
     }
   }
 }
