@@ -1,6 +1,7 @@
 %{
 #include "ord/OpenRoad.hh"
 #include "gpl/Replace.h"
+#include "odb/db.h"
 
 namespace ord {
 OpenRoad*
@@ -265,11 +266,17 @@ void
 set_debug_cmd(int pause_iterations,
               int update_iterations,
               bool draw_bins,
-              bool initial)
+              bool initial,
+              const char* inst_name)
 {
   Replace* replace = getReplace();
+  odb::dbInst* inst = nullptr;
+  if (inst_name) {
+    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+    inst = block->findInst(inst_name);
+  }
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial);
+                    initial, inst);
 }
 
 %} // inline

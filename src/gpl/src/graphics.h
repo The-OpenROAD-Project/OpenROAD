@@ -29,7 +29,8 @@ class Graphics : public gui::Renderer
            NesterovPlace* np,
            std::shared_ptr<PlacerBase> pb,
            std::shared_ptr<NesterovBase> nb,
-           bool draw_bins);
+           bool draw_bins,
+           odb::dbInst* inst);
 
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
