@@ -3,17 +3,15 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: repair_clk_inverters1.def
 [INFO ODB-0128] Design: reg1
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 6 components and 31 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 12 connections.
 [INFO ODB-0133]     Created 8 nets and 16 connections.
-[INFO ODB-0134] Finished DEF file: repair_clk_inverters1.def
 Net clk1
  Pin capacitance: 3.96-4.35
- Wire capacitance: 0.00
- Total capacitance: 3.96-4.35
+ Wire capacitance: 1.15-1.15
+ Total capacitance: 5.10-5.50
  Number of drivers: 1
  Number of loads: 3
  Number of pins: 4
@@ -28,8 +26,8 @@ Load pins
 
 Net net1
  Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
+ Wire capacitance: 0.31
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -42,8 +40,8 @@ Load pins
 
 Net net2
  Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
+ Wire capacitance: 0.31
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2

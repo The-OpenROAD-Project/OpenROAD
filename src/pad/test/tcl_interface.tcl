@@ -96,7 +96,7 @@ define_pad_cell \
 define_pad_cell \
   -name PAD_CORNER \
   -corner \
-  -orient {ll R0 lr R90 ur R180 ul R270} \
+  -orient {ll R180 lr R270 ur R0 ul R90} \
   -physical_only
 
 define_pad_cell \

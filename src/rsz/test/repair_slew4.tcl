@@ -1,4 +1,5 @@
 # repair_design load max_slew << driver max_slew, no cap violation
+source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty repair_slew4.lib
 read_lef Nangate45/Nangate45.lef

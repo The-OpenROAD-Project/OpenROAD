@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # write_hi_fanout def
 
 set header {VERSION 5.8 ; 

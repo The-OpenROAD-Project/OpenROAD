@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: est_rc2.def
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 7 components and 35 component-terminals.
 [INFO ODB-0133]     Created 10 nets and 18 connections.
-[INFO ODB-0134] Finished DEF file: est_rc2.def
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%

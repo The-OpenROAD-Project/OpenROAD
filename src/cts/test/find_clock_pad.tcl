@@ -1,3 +1,4 @@
+source "helpers.tcl"
 #Unit test to find clocks from pads. Also checks if the number of clocks found by TritonCTS is correct.
 
 #This unit test was created with the help of James Cherry. The script this test is based on can be found in dbSta/test.

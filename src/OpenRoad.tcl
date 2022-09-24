@@ -111,6 +111,16 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
+sta::define_cmd_args "write_lef" {filename}
+
+proc write_lef { args } {
+  sta::parse_key_args "write_lef" args keys {} flags {}
+
+  sta::check_argc_eq1 "write_lef" $args
+  set filename [file nativename [lindex $args 0]]
+  ord::write_lef_cmd $filename
+}
+
 sta::define_cmd_args "write_abstract_lef" {filename}
 
 proc write_abstract_lef { args } {
@@ -199,6 +209,14 @@ proc set_debug_level {args} {
   lassign $args tool group level
   sta::check_integer "set_debug_level" $level
   ord::set_debug_level $tool $group $level
+}
+
+sta::define_cmd_args "suppress_message" { tool id }
+proc suppress_message {args} {
+  sta::check_argc_eq2 "suppress_message" $args
+  lassign $args tool id
+  sta::check_integer "suppress_message_level" $id
+  utl::suppress_message $tool $id
 }
 
 sta::define_cmd_args "python" { args }

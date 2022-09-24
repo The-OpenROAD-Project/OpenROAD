@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # design without routing tracks
 read_lef Nangate45/Nangate45.lef
 read_lib Nangate45/Nangate45_typ.lib

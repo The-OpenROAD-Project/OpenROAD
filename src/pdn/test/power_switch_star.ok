@@ -8,11 +8,9 @@
 [INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
-[INFO ODB-0127] Reading DEF file: sky130_power_switch/floorplan.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1160 components and 3368 component-terminals.
 [INFO ODB-0133]     Created 324 nets and 1048 connections.
-[INFO ODB-0134] Finished DEF file: sky130_power_switch/floorplan.def
 [INFO PDN-0001] Inserting grid: Core
 No differences found.
