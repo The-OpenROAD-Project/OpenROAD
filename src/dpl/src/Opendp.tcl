@@ -157,7 +157,7 @@ namespace eval dpl {
 # min_displacement is the smallest displacement to draw
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
-  sta::parse_key_args "global_placement_debug" args \
+  sta::parse_key_args "detailed_placement_debug" args \
       keys {-instance -min_displacement} \
       flags {-displacement}
 

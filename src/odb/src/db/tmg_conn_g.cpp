@@ -1353,7 +1353,7 @@ void tmg_conn::copyWireIdToVisitedShorts(int j)
   int wire_id = _ptV[j]._dbwire_id;
   tmg_rcpt* x0 = &_ptV[j];
   tmg_rcpt* x;
-  for (x = x0->_sring; x != x0; x = x->_sring) {
+  for (x = x0->_sring; x && x != x0; x = x->_sring) {
     if (x->_dbwire_id < 0 && _graph->_ptV[x - &_ptV[0]].visited) {
       x->_dbwire_id = wire_id;
     }

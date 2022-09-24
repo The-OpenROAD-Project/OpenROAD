@@ -47,8 +47,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr {
-namespace io {
+namespace fr::io {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
 typedef std::
@@ -59,24 +58,8 @@ class Parser
 {
  public:
   // constructors
-  Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
-      : db(dbIn),
-        design(designIn),
-        tech(design->getTech()),
-        logger(loggerIn),
-        tmpBlock(nullptr),
-        readLayerCnt(0),
-        tmpGuides(),
-        tmpGRPins(),
-        trackOffsetMap(),
-        prefTrackPatterns(),
-        numMasters(0),
-        numInsts(0),
-        numTerms(0),
-        numNets(0),
-        numBlockages(0)
-  {
-  }
+  Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn);
+
   // others
   void readDb();
   bool readGuide();
@@ -84,18 +67,10 @@ class Parser
   void postProcessGuide();
   void initDefaultVias();
   void initRPin();
-  std::map<frMaster*,
-           std::map<dbOrientType,
-                    std::map<std::vector<frCoord>,
-                             std::set<frInst*, frBlockObjectComp>>>,
-           frBlockObjectComp>&
-  getTrackOffsetMap()
-  {
-    return trackOffsetMap;
-  }
+  auto& getTrackOffsetMap() { return trackOffsetMap_; }
   std::vector<frTrackPattern*>& getPrefTrackPatterns()
   {
-    return prefTrackPatterns;
+    return prefTrackPatterns_;
   }
 
  private:
@@ -130,29 +105,6 @@ class Parser
   void setNDRs(odb::dbDatabase* db);
   void createNDR(odb::dbTechNonDefaultRule* ndr);
 
-  odb::dbDatabase* db;
-  frDesign* design;
-  frTechObject* tech;
-  Logger* logger;
-  std::unique_ptr<frBlock> tmpBlock;
-  // temporary variables
-  int readLayerCnt;
-  std::string masterSliceLayerName;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins;
-  std::map<frMaster*,
-           std::map<dbOrientType,
-                    std::map<std::vector<frCoord>,
-                             std::set<frInst*, frBlockObjectComp>>>,
-           frBlockObjectComp>
-      trackOffsetMap;
-  std::vector<frTrackPattern*> prefTrackPatterns;
-  int numMasters;
-  int numInsts;
-  int numTerms;      // including instterm and term
-  int numNets;       // including snet and net
-  int numBlockages;  // including instBlockage and blockage
-
   // postProcess functions
   void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
@@ -165,7 +117,6 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
-  void initDefaultVias_N16(const std::string& in);
   void initDefaultVias_GF14(const std::string& in);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
@@ -262,29 +213,46 @@ class Parser
 
   // misc
   void addFakeNets();
+
+  odb::dbDatabase* db_;
+  frDesign* design_;
+  frTechObject* tech_;
+  Logger* logger_;
+  std::unique_ptr<frBlock> tmpBlock_;
+  // temporary variables
+  int readLayerCnt_;
+  odb::dbTechLayer* masterSliceLayer_;
+  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides_;
+  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
+  std::map<frMaster*,
+           std::map<dbOrientType,
+                    std::map<std::vector<frCoord>,
+                             std::set<frInst*, frBlockObjectComp>>>,
+           frBlockObjectComp>
+      trackOffsetMap_;
+  std::vector<frTrackPattern*> prefTrackPatterns_;
+  int numMasters_;
+  int numInsts_;
+  int numTerms_;      // including instterm and term
+  int numNets_;       // including snet and net
+  int numBlockages_;  // including instBlockage and blockage
 };
+
 class Writer
 {
  public:
   // constructors
   Writer(frDesign* designIn, Logger* loggerIn)
-      : tech(designIn->getTech()), design(designIn), logger(loggerIn)
+      : tech_(designIn->getTech()), design_(designIn), logger_(loggerIn)
   {
   }
   // getters
-  frTechObject* getTech() const { return tech; }
-  frDesign* getDesign() const { return design; }
+  frTechObject* getTech() const { return tech_; }
+  frDesign* getDesign() const { return design_; }
   // others
   void updateDb(odb::dbDatabase* db, bool pin_access = false);
-  std::map<frString, std::list<std::shared_ptr<frConnFig>>>
-      connFigs;  // all connFigs ready to def
-  std::vector<frViaDef*> viaDefs;
 
  private:
-  frTechObject* tech;
-  frDesign* design;
-  Logger* logger;
-
   void fillViaDefs();
   void fillConnFigs(bool isTA);
   void fillConnFigs_net(frNet* net, bool isTA);
@@ -298,11 +266,18 @@ class Writer
       std::vector<std::vector<
           std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>&
           mergedPathSegs);
-  void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
-  void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
-  void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech);
+  void updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech);
+  void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
+  void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
+
+  frTechObject* tech_;
+  frDesign* design_;
+  Logger* logger_;
+  std::map<frString, std::list<std::shared_ptr<frConnFig>>>
+      connFigs_;  // all connFigs ready to def
+  std::vector<frViaDef*> viaDefs_;
 };
-}  // namespace io
-}  // namespace fr
+
+}  // namespace fr::io
 
 #endif

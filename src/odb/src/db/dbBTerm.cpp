@@ -30,11 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbBTerm.h"
-
 #include "db.h"
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
+#include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
 #include "dbBox.h"
@@ -407,6 +406,13 @@ void dbBTerm::connect(dbNet* net_)
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(utl::ODB,
+                            377,
+                            "Attempt to connect bterm to dont_touch net {}",
+                            net->_name);
+  }
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -432,6 +438,15 @@ void dbBTerm::disconnect()
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_net) {
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
+    if (net->_flags._dont_touch) {
+      net->getLogger()->error(
+          utl::ODB,
+          375,
+          "Attempt to disconnect bterm of dont_touch net {}",
+          net->_name);
+    }
 
     if (block->_journal) {
       debugPrint(block->getImpl()->getLogger(),
@@ -599,6 +614,13 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   if (block->_bterm_hash.hasMember(name))
     return NULL;
 
+  if (net->_flags._dont_touch) {
+    net->getLogger()->error(utl::ODB,
+                            376,
+                            "Attempt to create bterm on dont_touch net {}",
+                            net->_name);
+  }
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -644,6 +666,16 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 {
   _dbBTerm* bterm = (_dbBTerm*) bterm_;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+  if (bterm->_net) {
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
+    if (net->_flags._dont_touch) {
+      net->getLogger()->error(utl::ODB,
+                              374,
+                              "Attempt to destroy bterm on dont_touch net {}",
+                              net->_name);
+    }
+  }
 
   // delete bpins
   dbSet<dbBPin> bpins = bterm_->getBPins();

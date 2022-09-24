@@ -188,7 +188,7 @@ class deltaDebugger:
         # that is more than the original buggy code or a 
         # buggy cut.
         if(error_string != None):
-            self.timeout = end_time - start_time
+            self.timeout = max(120, 1.2 * (end_time - start_time))
             print(f"Timeout updated to approx {ceil(self.timeout/60.0)} minutes!")
 
         print(f"Error Code found: {error_string}")

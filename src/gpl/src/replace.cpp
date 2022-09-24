@@ -253,7 +253,7 @@ void Replace::doInitialPlace()
   ip_->doBicgstabPlace();
 }
 
-void Replace::initNesterovPlace() {
+bool Replace::initNesterovPlace() {
   if( !pb_ ) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -262,7 +262,12 @@ void Replace::initNesterovPlace() {
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
-  
+
+  if (pb_->placeInsts().size() == 0) {
+    log_->warn(GPL, 136, "No placeable instances - skipping placement.");
+    return false;
+  }
+
   if( !nb_ ) {
     NesterovBaseVars nbVars;
     nbVars.targetDensity = density_;
@@ -324,10 +329,13 @@ void Replace::initNesterovPlace() {
     std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
     np_ = std::move(np);
   }
+  return true;
 }
 
 int Replace::doNesterovPlace(int start_iter) {
-  initNesterovPlace();
+  if (!initNesterovPlace()) {
+    return 0;
+  }
   if (timingDrivenMode_)
     rs_->resizeSlackPreamble();
   return np_->doNesterovPlace(start_iter);

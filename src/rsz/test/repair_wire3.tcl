@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_design missing wire rc
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

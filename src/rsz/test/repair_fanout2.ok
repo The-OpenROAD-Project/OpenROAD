@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: repair_fanout2.def
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 15 components and 105 component-terminals.
 [INFO ODB-0132]     Created 3 special nets and 45 connections.
-[INFO ODB-0134] Finished DEF file: repair_fanout2.def
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 Net RESET
 Driver pins

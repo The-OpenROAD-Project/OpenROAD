@@ -42,7 +42,6 @@ namespace ppl {
 class Parameters
 {
  public:
-  Parameters() = default;
   void setReportHPWL(bool report) { report_hpwl_ = report; }
   bool getReportHPWL() const { return report_hpwl_; }
 
@@ -52,26 +51,26 @@ class Parameters
   void setSlotsFactor(float factor) { slots_factor_ = factor; }
   float getSlotsFactor() const { return slots_factor_; }
 
-  void setHorizontalLengthExtend(float length)
+  void setHorizontalLengthExtend(int length)
   {
     horizontal_length_extend_ = length;
   }
-  float getHorizontalLengthExtend() const { return horizontal_length_extend_; }
+  int getHorizontalLengthExtend() const { return horizontal_length_extend_; }
 
-  void setVerticalLengthExtend(float length)
+  void setVerticalLengthExtend(int length)
   {
     vertical_length_extend_ = length;
   }
-  float getVerticalLengthExtend() const { return vertical_length_extend_; }
+  int getVerticalLengthExtend() const { return vertical_length_extend_; }
 
-  void setHorizontalLength(float length) { horizontal_length_ = length; }
-  float getHorizontalLength() const { return horizontal_length_; }
+  void setHorizontalLength(int length) { horizontal_length_ = length; }
+  int getHorizontalLength() const { return horizontal_length_; }
 
-  void setVerticalLength(float length) { vertical_length_ = length; }
-  float getVerticalLength() const { return vertical_length_; }
+  void setVerticalLength(int length) { vertical_length_ = length; }
+  int getVerticalLength() const { return vertical_length_; }
 
-  void setRandSeed(double seed) { rand_seed_ = seed; }
-  double getRandSeed() const { return rand_seed_; }
+  void setRandSeed(unsigned int seed) { rand_seed_ = seed; }
+  unsigned int getRandSeed() const { return rand_seed_; }
 
   void setHorizontalThicknessMultiplier(float length)
   {
@@ -110,11 +109,11 @@ class Parameters
   float slots_factor_ = -1;
   float horizontal_thickness_multiplier_ = 1;
   float vertical_thickness_multiplier_ = 1;
-  float horizontal_length_extend_ = -1;
-  float vertical_length_extend_ = -1;
-  float horizontal_length_ = -1;
-  float vertical_length_ = -1;
-  double rand_seed_ = 42.0;
+  int horizontal_length_extend_ = -1;
+  int vertical_length_extend_ = -1;
+  int horizontal_length_ = -1;
+  int vertical_length_ = -1;
+  unsigned int rand_seed_ = 42;
   int corner_avoidance_ = 0;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;

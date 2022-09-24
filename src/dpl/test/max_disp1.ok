@@ -8,12 +8,10 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_1024x32.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_1024x32.lef
-[INFO ODB-0127] Reading DEF file: max_disp1.def
 [INFO ODB-0128] Design: test_RAM
 [INFO ODB-0130]     Created 65 pins.
 [INFO ODB-0131]     Created 1768 components and 3775 component-terminals.
 [INFO ODB-0133]     Created 130 nets and 195 connections.
-[INFO ODB-0134] Finished DEF file: max_disp1.def
 Placement Analysis
 ---------------------------------
 total displacement       3442.7 u

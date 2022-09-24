@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -41,10 +40,9 @@
 #include <memory>
 
 #include "Clustering.h"
-#include "SinkClustering.h"
 #include "HTreeBuilder.h"
+#include "SinkClustering.h"
 #include "utl/Logger.h"
-
 
 namespace cts {
 
@@ -297,8 +295,7 @@ void HTreeBuilder::run()
     plotSolution();
   }
 
-  if (options_->getGuiDebug()
-      || logger_->debugCheck(utl::CTS, "HTree", 2) ) {
+  if (options_->getGuiDebug() || logger_->debugCheck(utl::CTS, "HTree", 2)) {
     treeVisualizer();
   }
 
@@ -733,9 +730,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 {
   CKMeans::Clustering clusteringEngine(
       sinks, rootLocation.getX(), rootLocation.getY(), logger_);
-  clusteringEngine.setPlotFileName("plot_" + std::to_string(level) + "_"
-                                   + std::to_string(branchPtIdx1) + "_"
-                                   + std::to_string(branchPtIdx2));
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
@@ -750,7 +744,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   const unsigned cap
       = (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
-      1, means.size(), cap, 0, means, 5, options_->getClusteringPower());
+      1, means.size(), cap, 5, options_->getClusteringPower(), means);
   if (((int) options_->getNumStaticLayers() - (int) level) < 0) {
     branchPt1 = Point<double>(means[0].first, means[0].second);
     branchPt2 = Point<double>(means[1].first, means[1].second);

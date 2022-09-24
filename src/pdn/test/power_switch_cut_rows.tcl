@@ -7,12 +7,11 @@ read_lef sky130_power_switch/power_switch.lef
 
 read_def sky130_power_switch/floorplan_cut_rows.def
 
-add_global_connection -defer_connection -net VDD -power -pin_pattern "^VDDG$"
-add_global_connection -defer_connection -net VDD_SW -power -pin_pattern "^VPB$"
-add_global_connection -defer_connection -net VDD_SW -pin_pattern "^VPWR$"
-add_global_connection -defer_connection -net VSS -power -pin_pattern "^VGND$"
-add_global_connection -defer_connection -net VSS -power -pin_pattern "^VNB$"
-global_connect
+add_global_connection -net VDD -power -pin_pattern "^VDDG$"
+add_global_connection -net VDD_SW -power -pin_pattern "^VPB$"
+add_global_connection -net VDD_SW -pin_pattern "^VPWR$"
+add_global_connection -net VSS -power -pin_pattern "^VGND$"
+add_global_connection -net VSS -power -pin_pattern "^VNB$"
 
 set_voltage_domain -power VDD -ground VSS -switched_power VDD_SW
 define_power_switch_cell -name POWER_SWITCH -control SLEEP -acknowledge SLEEP_OUT -power_switchable VPWR -power VDDG -ground VGND

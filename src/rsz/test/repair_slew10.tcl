@@ -1,5 +1,6 @@
 # repair_design max slew, wire RC -> load slew violation, wire under max length
 # BUF_X1 cell with max_transition on input
+source "helpers.tcl"
 read_liberty repair_slew10.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_slew10.def

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 read_lef  Nangate45.lef
 read_def aes.def
 read_liberty NangateOpenCellLibrary_typical.lib

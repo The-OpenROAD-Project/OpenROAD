@@ -356,7 +356,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   makeLeafItem(pad_instances_.input, "Input", pad_parent, Qt::Checked, true);
   makeLeafItem(pad_instances_.output, "Output", pad_parent, Qt::Checked, true);
-  makeLeafItem(pad_instances_.input, "Inout", pad_parent, Qt::Checked, true);
+  makeLeafItem(pad_instances_.inout, "Inout", pad_parent, Qt::Checked, true);
   makeLeafItem(pad_instances_.power, "Power", pad_parent, Qt::Checked, true);
   makeLeafItem(pad_instances_.spacer, "Spacer", pad_parent, Qt::Checked, true);
   makeLeafItem(pad_instances_.areaio, "Area IO", pad_parent, Qt::Checked, true);

@@ -1,3 +1,4 @@
+# 
 source "helpers.tcl"
 read_lef liberty1.lef
 read_liberty liberty1.lib

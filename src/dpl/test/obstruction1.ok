@@ -6,10 +6,8 @@
 [INFO ODB-0222] Reading LEF file: obstruction1.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  obstruction1.lef
-[INFO ODB-0127] Reading DEF file: obstruction1.def
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0131]     Created 121 components and 621 component-terminals.
-[INFO ODB-0134] Finished DEF file: obstruction1.def
 Placement Analysis
 ---------------------------------
 total displacement         47.3 u

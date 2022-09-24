@@ -8,12 +8,10 @@
 [INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
-[INFO ODB-0127] Reading DEF file: sky130_power_switch/floorplan_cut_rows.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1151 components and 3350 component-terminals.
 [INFO ODB-0133]     Created 324 nets and 1048 connections.
-[INFO ODB-0134] Finished DEF file: sky130_power_switch/floorplan_cut_rows.def
 [INFO PDN-0001] Inserting grid: Core
 [WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_0) at (28.9800, 155.0400), due to lack of available rows.
 [WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_1) at (56.1200, 155.0400), due to lack of available rows.

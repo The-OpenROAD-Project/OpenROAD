@@ -86,7 +86,7 @@ class Replace
     void doIncrementalPlace();
     void doInitialPlace();
 
-    void initNesterovPlace();
+    bool initNesterovPlace();
     int doNesterovPlace(int start_iter = 0);
 
     // Initial Place param settings

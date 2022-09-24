@@ -724,7 +724,7 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
   for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
     auto beginCoord = it->lower();
     auto endCoord = it->upper();
-    forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
+    forbiddenRanges.push_back(make_pair(beginCoord, endCoord));
   }
   if (ndr)
     ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;

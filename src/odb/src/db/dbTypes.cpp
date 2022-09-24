@@ -1088,21 +1088,6 @@ dbTechLayerType::dbTechLayerType(const char* value)
     _value = NONE;
 }
 
-dbTechLayerType::dbTechLayerType(Value value)
-{
-  _value = value;
-}
-
-dbTechLayerType::dbTechLayerType()
-{
-  _value = ROUTING;
-}
-
-dbTechLayerType::dbTechLayerType(const dbTechLayerType& value)
-{
-  _value = value._value;
-}
-
 const char* dbTechLayerType::getString() const
 {
   const char* value = "";
@@ -1149,21 +1134,6 @@ dbTechLayerDir::dbTechLayerDir(const char* value)
 
   else
     _value = NONE;
-}
-
-dbTechLayerDir::dbTechLayerDir(Value value)
-{
-  _value = value;
-}
-
-dbTechLayerDir::dbTechLayerDir()
-{
-  _value = NONE;
-}
-
-dbTechLayerDir::dbTechLayerDir(const dbTechLayerDir& value)
-{
-  _value = value._value;
 }
 
 const char* dbTechLayerDir::getString() const

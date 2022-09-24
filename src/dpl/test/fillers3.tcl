@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # filler_placement list arg
 read_lef Nangate45/Nangate45.lef
 read_def simple01.def
