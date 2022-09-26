@@ -262,6 +262,13 @@ add_timing_net_reweight_overflow_cmd(int overflow)
 }
 
 void
+set_timing_driven_net_weight_max_cmd(float max)
+{
+  Replace* replace = getReplace();
+  return replace->setTimingNetWeightMax(max);
+}
+
+void
 set_debug_cmd(int pause_iterations,
               int update_iterations,
               bool draw_bins,
