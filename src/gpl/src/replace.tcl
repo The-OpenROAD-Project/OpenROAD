@@ -36,8 +36,11 @@ sta::define_cmd_args "global_placement" {\
   [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
+    [-disable_timing_driven]\
+    [-disable_routability_driven]\
     [-incremental]\
     [-force_cpu]\
+    [-skip_io]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -56,6 +59,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
+    [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
 }
