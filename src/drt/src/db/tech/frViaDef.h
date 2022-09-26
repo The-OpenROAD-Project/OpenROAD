@@ -29,12 +29,13 @@
 #ifndef _FR_VIADEF_H_
 #define _FR_VIADEF_H_
 
+#include <iostream>
 #include <memory>
 #include <vector>
-#include <iostream>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace fr {
@@ -42,39 +43,40 @@ class frLef58CutClass
 {
  public:
   // constructors
-  frLef58CutClass()
-      : name(""), viaWidth(0), viaLength(0), numCut(1)
-  {
-  }
+  frLef58CutClass() : rule_(nullptr) {}
   // getters
-  void getName(std::string& in) const { in = name; }
-  std::string getName() const { return name; }
-  frCoord getViaWidth() const { return viaWidth; }
-  bool hasViaLength() const { return (viaLength == viaWidth) ? false : true; }
-  frCoord getViaLength() const { return viaLength; }
-  frUInt4 getNumCut() const { return numCut; }
+  odb::dbTechLayerCutClassRule* getDbTechLayerCutClassRule() const
+  {
+    return rule_;
+  }
+  void getName(std::string& in) const { in = rule_->getName(); }
+  std::string getName() const { return rule_->getName(); }
+  frCoord getViaWidth() const { return rule_->getWidth(); }
+  bool hasViaLength() const { return rule_->isLengthValid(); }
+  frCoord getViaLength() const
+  {
+    return (rule_->isLengthValid()) ? rule_->getLength() : rule_->getWidth();
+  }
+  frUInt4 getNumCut() const
+  {
+    return (rule_->isCutsValid()) ? rule_->getNumCuts() : 1;
+  }
   // setters
-  void setName(frString& in) { name = in; }
-  void setViaWidth(frCoord in) { viaWidth = in; }
-  void setViaLength(frCoord in) { viaLength = in; }
-  void setNumCut(frUInt4 in) { numCut = in; }
+  void setDbTechLayerCutClassRule(odb::dbTechLayerCutClassRule* ruleIn)
+  {
+    rule_ = ruleIn;
+  }
   void report(utl::Logger* logger)
   {
     logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}",
-                   name,
-                   viaWidth,
-                   viaLength,
-                   numCut);
+                   getName(),
+                   getViaWidth(),
+                   getViaLength(),
+                   getNumCut());
   }
 
  private:
-  std::string name;
-  frCoord viaWidth;
-  frCoord viaLength;
-  frUInt4 numCut;  // this value is not equal to #multi cuts, only used for
-                   // calculating resistance, currently ignored in rule checking
-                   // process
-
+  odb::dbTechLayerCutClassRule* rule_;
 };
 
 class frViaDef
@@ -186,12 +188,14 @@ class frViaDef
   const Rect& getLayer1ShapeBox() { return layer1ShapeBox; }
   const Rect& getLayer2ShapeBox() { return layer2ShapeBox; }
   const Rect& getCutShapeBox() { return cutShapeBox; }
-  const Rect& getShapeBox(frLayerNum lNum) { 
+  const Rect& getShapeBox(frLayerNum lNum)
+  {
     if (lNum == getLayer1Num())
-      return layer1ShapeBox; 
+      return layer1ShapeBox;
     if (lNum == getLayer2Num())
-      return layer2ShapeBox; 
-    throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
+      return layer2ShapeBox;
+    throw std::invalid_argument("Error: via does not have shape on layer "
+                                + std::to_string(lNum));
   }
   void setId(int in) { id_ = in; }
   int getId() const { return id_; }

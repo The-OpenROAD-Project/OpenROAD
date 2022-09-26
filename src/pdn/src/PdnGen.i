@@ -76,65 +76,6 @@ using utl::PDN;
 
 namespace pdn {
 
-void
-add_global_connect(const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->addGlobalConnect(inst_pattern, pin_pattern, net, connect);
-}
-
-void
-clear_global_connect() {
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->clearGlobalConnect();
-}
-
-void
-add_global_connect(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net, bool connect) {
-  PdnGen* pdngen = ord::getPdnGen();
-  
-  odb::dbRegion* region = block->findRegion(region_name);
-  if (region == nullptr) {
-    ord::getLogger()->error(PDN, 53, "Region {} not found.", region_name);
-    return;
-  }
-  
-  for (dbBox* regionBox : region->getBoundaries()) {
-    pdngen->addGlobalConnect(regionBox, inst_pattern, pin_pattern, net, connect);
-  }
-}
-
-void
-global_connect(odb::dbBlock* block) {
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->globalConnect(block);
-}
-
-void
-global_connect(odb::dbBlock* block, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
-  PdnGen* pdngen = ord::getPdnGen();
-  
-  std::shared_ptr<regex> instReg = std::make_shared<regex>(inst_pattern);
-  std::shared_ptr<regex> pinReg = std::make_shared<regex>(pin_pattern);
-  
-  pdngen->globalConnect(block, instReg, pinReg, net);
-}
-
-void
-global_connect_region(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
-  PdnGen* pdngen = ord::getPdnGen();
-
-  odb::dbRegion* region = block->findRegion(region_name);
-  if (region == nullptr) {
-    ord::getLogger()->error(PDN, 54, "Region {} not found.", region_name);
-    return;
-  }
-  std::shared_ptr<regex> instReg = std::make_shared<regex>(inst_pattern);
-  std::shared_ptr<regex> pinReg = std::make_shared<regex>(pin_pattern);
-  
-  for (dbBox* regionBox : region->getBoundaries())
-    pdngen->globalConnectRegion(block, regionBox, instReg, pinReg, net);
-}
-
 void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {
   PdnGen* pdngen = ord::getPdnGen();

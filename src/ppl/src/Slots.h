@@ -43,9 +43,67 @@
 #include <vector>
 
 #include "Netlist.h"
+#include "ppl/IOPlacer.h"
 
 namespace ppl {
-enum class Edge;
+
+class Interval
+{
+ public:
+  Interval(Edge edge, int begin, int end, int layer = -1)
+      : edge_(edge), begin_(begin), end_(end), layer_(layer)
+  {
+  }
+  Edge getEdge() const { return edge_; }
+  int getBegin() const { return begin_; }
+  int getEnd() const { return end_; }
+  int getLayer() const { return layer_; }
+
+ private:
+  Edge edge_;
+  int begin_;
+  int end_;
+  int layer_;
+};
+
+struct TopLayerGrid
+{
+  int layer = -1;
+  int x_step = -1;
+  int y_step = -1;
+  Rect region;
+  int pin_width = -1;
+  int pin_height = -1;
+  int keepout = -1;
+
+  int llx() { return region.xMin(); }
+  int lly() { return region.yMin(); }
+  int urx() { return region.xMax(); }
+  int ury() { return region.yMax(); }
+};
+
+struct Constraint
+{
+  Constraint() = default;
+  Constraint(PinList pins, Direction dir, Interval interv)
+      : pin_list(pins), direction(dir), interval(interv)
+  {
+    box = odb::Rect(-1, -1, -1, -1);
+    pins_per_slots = 0;
+  }
+  Constraint(PinList pins, Direction dir, odb::Rect b)
+      : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
+  {
+    pins_per_slots = 0;
+  }
+
+  PinList pin_list;
+  Direction direction;
+  Interval interval;
+  odb::Rect box;
+  std::vector<Section> sections;
+  float pins_per_slots;
+};
 
 // Slot: an on-track position in the die boundary where a pin
 // can be placed
