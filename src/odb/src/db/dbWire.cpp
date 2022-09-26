@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbWire.h"
+
 #include <algorithm>
 
 #include "db.h"
@@ -42,7 +44,6 @@
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
-#include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 namespace odb {
@@ -1225,14 +1226,15 @@ state_machine_update : {
   if (default_width) {
     dw = layer->getWidth() >> 1;
     default_ext = dw;
-    if(prev[0] != cur[0] || prev[1] != cur[1])
-    {
-      if(prev[0] != cur[0] && layer->getDirection() == dbTechLayerDir::VERTICAL)
+    if (prev[0] != cur[0] || prev[1] != cur[1]) {
+      if (prev[0] != cur[0]
+          && layer->getDirection() == dbTechLayerDir::VERTICAL)
         dw = layer->getWrongWayWidth() >> 1;
-      else if (prev[1] != cur[1] && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+      else if (prev[1] != cur[1]
+               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
         dw = layer->getWrongWayWidth() >> 1;
     }
-    
+
   } else {
     dw = width >> 1;
     default_ext = dw;
@@ -1388,14 +1390,15 @@ state_machine_update : {
   if (default_width) {
     dw = layer->getWidth() >> 1;
     default_ext = dw;
-    if(prev[0] != cur[0] || prev[1] != cur[1])
-    {
-      if(prev[0] != cur[0] && layer->getDirection() == dbTechLayerDir::VERTICAL)
+    if (prev[0] != cur[0] || prev[1] != cur[1]) {
+      if (prev[0] != cur[0]
+          && layer->getDirection() == dbTechLayerDir::VERTICAL)
         dw = layer->getWrongWayWidth() >> 1;
-      else if (prev[1] != cur[1] && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+      else if (prev[1] != cur[1]
+               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
         dw = layer->getWrongWayWidth() >> 1;
     }
-    
+
   } else {
     dw = width >> 1;
     default_ext = dw;

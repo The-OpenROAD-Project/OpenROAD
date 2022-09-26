@@ -927,13 +927,13 @@ class FlexDRWorker
                    FlexMazeIdx* prev,
                    FlexMazeIdx* next);
   void editStyleExt(frSegStyle& currStyle,
-                   frMIdx startX,
-                   frMIdx endX,
-                   frMIdx startY,
-                   frMIdx endY,
-                   frMIdx z,
-                   FlexMazeIdx* prev,
-                   FlexMazeIdx* next);
+                    frMIdx startX,
+                    frMIdx endX,
+                    frMIdx startY,
+                    frMIdx endY,
+                    frMIdx z,
+                    FlexMazeIdx* prev,
+                    FlexMazeIdx* next);
   bool isInsideTaperBox(frMIdx x,
                         frMIdx y,
                         frMIdx startZ,

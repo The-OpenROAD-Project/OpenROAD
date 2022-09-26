@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +37,6 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
-#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -2784,8 +2785,9 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
             auto [begin, end] = pathSeg->getPoints();
             frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
-              if(segStyle.getBeginExt() != layer->getWidth() / 2)
-                _wire_encoder.addPoint(begin.x(), begin.y(), segStyle.getBeginExt(), 0);
+              if (segStyle.getBeginExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    begin.x(), begin.y(), segStyle.getBeginExt(), 0);
               else
                 _wire_encoder.addPoint(begin.x(), begin.y());
             } else if (segStyle.getBeginStyle()
@@ -2797,8 +2799,9 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
                   begin.x(), begin.y(), segStyle.getBeginExt(), 0);
             }
             if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
-              if(segStyle.getEndExt() != layer->getWidth() / 2)
-                _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
+              if (segStyle.getEndExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    end.x(), end.y(), segStyle.getEndExt(), 0);
               else
                 _wire_encoder.addPoint(end.x(), end.y());
             } else if (segStyle.getEndStyle()

@@ -1441,7 +1441,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     // new
 
     // assumes enclosure for via is always rectangle
-    Rect box = obj->getLayer1BBox();  
+    Rect box = obj->getLayer1BBox();
     ndr = connFig->getNet()->getFrNet()->getNondefaultRule();
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
@@ -1801,11 +1801,11 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->main();
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
-	drNet* currNet = net;
+        drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
-	  if (!net)
-		net = currNet;
+          if (!net)
+            net = currNet;
           auto tmpPWire = make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
@@ -1813,7 +1813,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           Rect box = pwire->getOffsetBox();
           tmpPWire->setOffsetBox(box);
           tmpPWire->addToNet(net);
-	  pwire->addToNet(net);
+          pwire->addToNet(net);
 
           unique_ptr<drConnFig> tmp(std::move(tmpPWire));
           auto& workerRegionQuery = getWorkerRegionQuery();
@@ -2623,18 +2623,18 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
                   z,
                   i - 1 >= 0 ? &points[i - 1] : nullptr,
                   i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
-  } else { 
+  } else {
     if (layer->isHorizontal() == vertical)
       currStyle.setWidth(layer->getWrongDirWidth());
     else
       editStyleExt(currStyle,
-                  startX,
-                  endX,
-                  startY,
-                  endY,
-                  z,
-                  i - 1 >= 0 ? &points[i - 1] : nullptr,
-                  i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
+                   startX,
+                   endX,
+                   startY,
+                   endY,
+                   z,
+                   i - 1 >= 0 ? &points[i - 1] : nullptr,
+                   i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
   }
   currPathSeg->setStyle(currStyle);
   currPathSeg->setMazeIdx(start, end);
@@ -2801,13 +2801,13 @@ void FlexDRWorker::setNDRStyle(drNet* net,
 }
 
 void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
-                               frMIdx startX,
-                               frMIdx endX,
-                               frMIdx startY,
-                               frMIdx endY,
-                               frMIdx z,
-                               FlexMazeIdx* prev,
-                               FlexMazeIdx* next)
+                                frMIdx startX,
+                                frMIdx endX,
+                                frMIdx startY,
+                                frMIdx endY,
+                                frMIdx z,
+                                FlexMazeIdx* prev,
+                                FlexMazeIdx* next)
 {
   auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
   if (layer->getWrongDirWidth() >= layer->getWidth())
@@ -2817,13 +2817,13 @@ void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
   bool prevVertical = prev && startX == prev->x();
   if (layer->isHorizontal() == vertical)
     return;
-  if (next && next->z() == z && vertical != nextVertical && currStyle.getEndStyle() == frcExtendEndStyle )
-  {
-    currStyle.setEndExt(layer->getWrongDirWidth()/2);
+  if (next && next->z() == z && vertical != nextVertical
+      && currStyle.getEndStyle() == frcExtendEndStyle) {
+    currStyle.setEndExt(layer->getWrongDirWidth() / 2);
   }
-  if (prev && prev->z() == z && vertical != prevVertical && currStyle.getBeginStyle() == frcExtendEndStyle)
-  {
-    currStyle.setBeginExt(layer->getWrongDirWidth()/2);
+  if (prev && prev->z() == z && vertical != prevVertical
+      && currStyle.getBeginStyle() == frcExtendEndStyle) {
+    currStyle.setBeginExt(layer->getWrongDirWidth() / 2);
   }
 }
 

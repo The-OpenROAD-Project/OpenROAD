@@ -840,12 +840,12 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(ep, bp);
     style.setEndStyle(frcTruncateEndStyle, 0);
-    if(layer->getDir()==dbTechLayerDir::VERTICAL)
+    if (layer->getDir() == dbTechLayerDir::VERTICAL)
       style.setWidth(layer->getWrongDirWidth());
   } else {
     ps->setPoints(bp, ep);
     style.setBeginStyle(frcTruncateEndStyle, 0);
-    if(layer->getDir()==dbTechLayerDir::HORIZONTAL)
+    if (layer->getDir() == dbTechLayerDir::HORIZONTAL)
       style.setWidth(layer->getWrongDirWidth());
   }
   ps->setLayerNum(ap->getLayerNum());
