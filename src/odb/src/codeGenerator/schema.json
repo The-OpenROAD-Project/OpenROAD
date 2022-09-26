@@ -146,6 +146,9 @@
     },
     {
       "src":"dbAccessPoint.json"
+    },
+    {
+      "src":"dbGlobalConnect.json"
     }
   ],
   "iterators":[
