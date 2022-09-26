@@ -1756,13 +1756,8 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
       auto rect = rects.back();
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
-      // Horizontal rect
       bool apply_rect_width_area = false;
-      if (xLen > yLen) {
-        apply_rect_width_area = yLen <= min_width;
-      } else {
-        apply_rect_width_area = xLen <= min_width;
-      }
+      apply_rect_witdh_area = std::min(xLen, yLen) <= min_witdh;
       check_rect_width = !apply_rect_width_area;
       return apply_rect_width_area;
     } else {
