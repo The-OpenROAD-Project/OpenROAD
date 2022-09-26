@@ -1555,6 +1555,23 @@ void FastRouteCore::setDebugRectilinearSTree(bool rectiliniarSTree)
 {
   debug_->rectilinearSTree_ = rectiliniarSTree;
 }
+void FastRouteCore::setSttInputFilename(const char* file_name)
+{
+  debug_->saveSttInput_ = true;
+  debug_->sttInputFileName_ = file_name;
+}
+bool FastRouteCore::hasSaveSttInput()
+{
+  return debug_->saveSttInput_;
+}
+const char* FastRouteCore::getSttInputFileName()
+{
+  return debug_->sttInputFileName_;
+}
+const odb::dbNet* FastRouteCore::getDebugNet()
+{
+  return debug_->net_;
+}
 
 void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)
 {

@@ -216,6 +216,11 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugTree3D(tree3D);
 }
 
+void set_global_route_debug_stt_input_filename(const char* file_name)
+{
+  getGlobalRouter()->setSttInputFilename(file_name);
+}
+
 void create_wl_report_file(const char* file_name, bool verbose)
 {
   getGlobalRouter()->createWLReportFile(file_name, verbose);

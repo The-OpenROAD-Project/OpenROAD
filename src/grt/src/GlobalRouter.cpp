@@ -779,9 +779,24 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     for (RoutePt& pin_pos : pins_on_grid) {
       fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
+    // Save stt input on debug file
+    if (fastroute_->hasSaveSttInput() && net->getDbNet() == fastroute_->getDebugNet()) {
+      saveSttInputFile(net);
+    }
     return true;
   }
   return false;
+}
+
+void GlobalRouter::saveSttInputFile(Net* net){
+  const char* file_name = fastroute_->getSttInputFileName();
+  printf("Saving on :%s\n", file_name);
+  remove(file_name);
+  std::ofstream out(file_name);
+  out << "NetName" << " " << "alpha" << "\n";
+  for (Pin& pin: net->getPins()){
+    out << "PinName" << " " << "X" << " " << "Y" << "\n";
+  }
 }
 
 void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
@@ -3577,6 +3592,10 @@ void GlobalRouter::setDebugTree2D(bool tree2D)
 void GlobalRouter::setDebugTree3D(bool tree3D)
 {
   fastroute_->setDebugTree3D(tree3D);
+}
+void GlobalRouter::setSttInputFilename(const char* file_name)
+{
+  fastroute_->setSttInputFilename(file_name);
 }
 
 // For rsz::makeBufferedNetGlobalRoute so Pin/Net classes do not have to be

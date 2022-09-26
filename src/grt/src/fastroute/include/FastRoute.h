@@ -81,13 +81,17 @@ struct DebugSetting
   bool tree2D_;
   bool tree3D_;
   bool isOn_;
+  bool saveSttInput_;
+  const char* sttInputFileName_;
   DebugSetting()
       : net_(nullptr),
         steinerTree_(false),
         rectilinearSTree_(false),
         tree2D_(false),
         tree3D_(false),
-        isOn_(false)
+        isOn_(false),
+        saveSttInput_(false),
+        sttInputFileName_(nullptr)
   {
   }
 };
@@ -204,6 +208,10 @@ class FastRouteCore
   void setDebugRectilinearSTree(bool rectiliniarSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setSttInputFilename(const char* file_name);
+  const char* getSttInputFileName();
+  const odb::dbNet* getDebugNet();
+  bool hasSaveSttInput();
 
  private:
   NetRouteMap getRoutes();
