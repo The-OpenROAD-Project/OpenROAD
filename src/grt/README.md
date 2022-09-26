@@ -8,6 +8,7 @@ FastRoute is an open-source global router originally derived from Iowa State Uni
 global_route [-guide_file out_file]
              [-verbose verbose]
              [-congestion_iterations iterations]
+             [-congestion_report_file file_name]
              [-grid_origin {x y}]
              [-allow_congestion]
 
@@ -19,6 +20,9 @@ Options description:
     `route.guide`)
 -   `congestion_iterations`: Set the number of iterations made to remove the
     overflow of the routing (e.g., `-congestion_iterations 50`)
+-   `congestion_report_file`: Set the file name to save congestion report. The 
+    file generated can be read by DRC viewer in the gui (e.g., -congestion_report_file 
+    `report_file.rpt`)
 -   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
     example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
     x-, y- direction.
