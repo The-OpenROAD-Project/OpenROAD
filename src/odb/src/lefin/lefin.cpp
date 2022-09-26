@@ -667,17 +667,16 @@ void lefin::layer(lefiLayer* layer)
         eolkoutParser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_WIDTHTABLE")) {
         WidthTableParser parser(l, this);
-        valid = parser.parse(layer->propValue(iii));
-        if(valid)
-        {
-          //update wrong way width
-          for(auto rule : l->getTechLayerWidthTableRules())
-            if(rule->isWrongDirection())
-              l->setWrongWayWidth(*rule->getWidthTable().begin());
-        }
+        //update wrong way width
+        for(auto rule : l->getTechLayerWidthTableRules())
+          if(rule->isWrongDirection())
+            l->setWrongWayWidth(*rule->getWidthTable().begin());
       } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
         MinCutParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+        lefTechLayerAreaRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l, _incomplete_props);
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
@@ -906,12 +905,14 @@ void lefin::layer(lefiLayer* layer)
                               : l->createDefaultAntennaRule();
       cur_model = layer->antennaModel(j);
       if (cur_model->hasAntennaAreaFactor()) {
-          cur_ant_rule->setAreaFactor(cur_model->antennaAreaFactor(), cur_model->hasAntennaAreaFactorDUO());
+        cur_ant_rule->setAreaFactor(cur_model->antennaAreaFactor(),
+                                    cur_model->hasAntennaAreaFactorDUO());
       }
 
       if (cur_model->hasAntennaSideAreaFactor()) {
-          cur_ant_rule->setSideAreaFactor(cur_model->antennaSideAreaFactor(),
-                                          cur_model->hasAntennaSideAreaFactorDUO());
+        cur_ant_rule->setSideAreaFactor(
+            cur_model->antennaSideAreaFactor(),
+            cur_model->hasAntennaSideAreaFactorDUO());
       }
 
       if (cur_model->hasAntennaAreaRatio()) {
@@ -2106,6 +2107,20 @@ bool lefin::readLef(const char* lef_file)
                         "referencing undefined layer {}",
                         name);
           odb::dbMetalWidthViaMap::destroy(metalWidthViaMap);
+        }
+        break;
+      }
+      case odb::dbTechLayerAreaRuleObj: {
+        odb::dbTechLayerAreaRule* areaRule = (odb::dbTechLayerAreaRule*) obj;
+        if (layer != nullptr) {
+          areaRule->setTrimLayer(layer);
+        } else {
+          _logger->warn(
+              utl::ODB,
+              361,
+              "dropping LEF58_AREA for referencing undefined layer {}",
+              name);
+          odb::dbTechLayerAreaRule::destroy(areaRule);
         }
         break;
       }

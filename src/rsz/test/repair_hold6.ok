@@ -5,12 +5,10 @@
 [INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
 [INFO ODB-0225]     Created 390 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0127] Reading DEF file: repair_hold4.def
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 15 components and 98 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 30 connections.
-[INFO ODB-0134] Finished DEF file: repair_hold4.def
  (clk ^) r -0.14:2.03 f -0.05:2.01
  (clk ^) r -0.07:1.96 f 0.02:1.93
  (clk ^) r 0.05:1.85 f 0.16:1.79

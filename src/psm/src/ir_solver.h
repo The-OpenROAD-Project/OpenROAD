@@ -128,7 +128,8 @@ class IRSolver
                            const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
-
+  NodeEnclosure getViaEnclosure(int layer,
+                                odb::dbSet<odb::dbBox> via_boxes);
   //! Function to create the nodes for the c4 bumps
   int createC4Nodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix

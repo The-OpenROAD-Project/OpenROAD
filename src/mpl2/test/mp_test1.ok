@@ -28,11 +28,9 @@
 [INFO ODB-0225]     Created 2 library cells
 [INFO ODB-0226] Finished LEF file:  ./Nangate45/fake_macros.lef
 [WARNING STA-0160] ./Nangate45/fake_macros.lib line 32, default_max_transition is 0.0.
-[INFO ODB-0127] Reading DEF file: ./testcases/mp_test1_fp.def
 [INFO ODB-0128] Design: mp_test1
 [INFO ODB-0252]     Updated 8 pins.
 [INFO ODB-0253]     Updated 10 components.
-[INFO ODB-0134] Finished DEF file: ./testcases/mp_test1_fp.def
 Running Partition Design...
 [INFO PAR-0402] Traversed logical hierarchy
 	Number of std cell instances: 0

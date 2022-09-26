@@ -52,6 +52,9 @@
       "src":"dbMetalWidthViaMap.json"
     },
     {
+      "src":"dbTechLayerAreaRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -292,6 +295,12 @@
       "second":"dbTechLayerMinCutRule",
       "type":"1_n",
       "tbl_name":"min_cuts_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerAreaRule",
+      "type":"1_n",
+      "tbl_name":"area_rules_tbl_"
     }
   ]
 }

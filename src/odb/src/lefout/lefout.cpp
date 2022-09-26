@@ -30,15 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/lefout.h"
-
-#include "odb/dbShape.h"
 #include <stdio.h>
 
 #include <algorithm>
 
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/lefout.h"
 
 using namespace odb;
 
@@ -132,7 +131,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
-  writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
+  writeUnits(/*database_units = */ db_block->getDbUnitsPerMicron());
 }
 
 void lefout::writeObstructions(dbBlock* db_block)
@@ -749,8 +748,13 @@ void lefout::writeLayer(dbTechLayer* layer)
   if (layer->getDirection() != dbTechLayerDir::NONE)
     fprintf(_out, "    DIRECTION %s ;\n", layer->getDirection().getString());
 
-  if (layer->getResistance() != 0.0)
-    fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", layer->getResistance());
+  if (layer->getResistance() != 0.0) {
+    if (layer->getType() == dbTechLayerType::CUT) {
+      fprintf(_out, "    RESISTANCE %g ;\n", layer->getResistance());
+    } else {
+      fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", layer->getResistance());
+    }
+  }
 
   if (layer->getCapacitance() != 0.0)
     fprintf(_out, "    CAPACITANCE CPERSQDIST %g ;\n", layer->getCapacitance());

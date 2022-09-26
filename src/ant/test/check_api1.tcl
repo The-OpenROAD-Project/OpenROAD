@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # check_antennas tcl api commands
 read_lef merged_spacing.lef
 read_def sw130_random.def

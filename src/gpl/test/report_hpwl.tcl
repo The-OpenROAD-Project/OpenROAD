@@ -1,3 +1,4 @@
+source "helpers.tcl"
 set db [::ord::get_db]
 set block [[$db getChip] getBlock]
 

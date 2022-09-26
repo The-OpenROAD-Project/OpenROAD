@@ -107,7 +107,7 @@ proc rtl_macro_placer { args } {
     }
 
     if { [info exists keys(-dead_space)] } {
-        set notch_wt $keys(-dead_space)
+        set dead_space $keys(-dead_space)
     }
 
     if { [info exists keys(-macro_halo)] } {

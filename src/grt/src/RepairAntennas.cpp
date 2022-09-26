@@ -164,9 +164,9 @@ RoutePtPins RepairAntennas::findRoutePtPins(Net* net)
 {
   RoutePtPins route_pt_pins;
   for (Pin& pin : net->getPins()) {
-    int top_layer = pin.getTopLayer();
+    int conn_layer = pin.getConnectionLayer();
     odb::Point grid_pt = pin.getOnGridPosition();
-    route_pt_pins[RoutePt(grid_pt.x(), grid_pt.y(), top_layer)].push_back(&pin);
+    route_pt_pins[RoutePt(grid_pt.x(), grid_pt.y(), conn_layer)].push_back(&pin);
   }
   return route_pt_pins;
 }
@@ -184,12 +184,12 @@ void RepairAntennas::addWireTerms(Net *net,
   auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, layer));
   if (itr != route_pt_pins.end()) {
     for (const Pin* pin : itr->second) {
-      int top_layer = pin->getTopLayer();
-      std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(top_layer);
+      int conn_layer = pin->getConnectionLayer();
+      std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(conn_layer);
       odb::Point grid_pt = pin->getOnGridPosition();
       // create the local connection only when the global segment
       // doesn't overlap the pin
-      if (!pinOverlapsGSegment(grid_pt, top_layer, pin_boxes, route)) {
+      if (!pinOverlapsGSegment(grid_pt, conn_layer, pin_boxes, route)) {
         odb::Point pin_pt;
         int min_dist = std::numeric_limits<int>::max();
         for (const odb::Rect& pin_box : pin_boxes) {

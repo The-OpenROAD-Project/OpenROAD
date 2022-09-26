@@ -157,6 +157,12 @@ const std::string pop_metrics_stage(){
   return logger->popMetricsStage();
 }
 
+void suppress_message(utl::ToolId tool, int id)
+{
+  Logger* logger = getLogger();
+  logger->suppressMessage(tool, id);
+}
+
 } // namespace
 
 %} // inline
