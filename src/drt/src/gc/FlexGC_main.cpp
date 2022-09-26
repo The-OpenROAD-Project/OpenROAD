@@ -1864,6 +1864,9 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
 
   // min hole
   checkMetalShape_minEnclosedArea(pin);
+
+  // lef58 area
+  checkMetalShape_lef58Area(pin);
 }
 
 void FlexGCWorker::Impl::checkMetalShape()
