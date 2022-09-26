@@ -1557,14 +1557,13 @@ void FastRouteCore::setDebugRectilinearSTree(bool rectiliniarSTree)
 }
 void FastRouteCore::setSttInputFilename(const char* file_name)
 {
-  debug_->saveSttInput_ = true;
-  debug_->sttInputFileName_ = file_name;
+  debug_->sttInputFileName_ = std::string(file_name);
 }
 bool FastRouteCore::hasSaveSttInput()
 {
-  return debug_->saveSttInput_;
+  return (debug_->sttInputFileName_ != "");
 }
-const char* FastRouteCore::getSttInputFileName()
+std::string FastRouteCore::getSttInputFileName()
 {
   return debug_->sttInputFileName_;
 }

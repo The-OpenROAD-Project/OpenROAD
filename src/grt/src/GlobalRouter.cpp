@@ -788,15 +788,17 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   return false;
 }
 
-void GlobalRouter::saveSttInputFile(Net* net){
-  const char* file_name = fastroute_->getSttInputFileName();
-  printf("Saving on :%s\n", file_name);
+void GlobalRouter::saveSttInputFile(Net* net) {
+  const char* file_name = fastroute_->getSttInputFileName().c_str();
+  const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
   remove(file_name);
   std::ofstream out(file_name);
-  out << "NetName" << " " << "alpha" << "\n";
-  for (Pin& pin: net->getPins()){
-    out << "PinName" << " " << "X" << " " << "Y" << "\n";
+  out << "Net " << net->getName() << " " << net_alpha << "\n";
+  for (Pin& pin : net->getPins()) {
+    odb::Point position = pin.getOnGridPosition(); // Pin position on grid
+    out << pin.getName() << " " << position.getX() << " " << position.getY() << "\n";
   }
+  out.close();
 }
 
 void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
