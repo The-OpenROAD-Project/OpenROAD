@@ -1730,10 +1730,12 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_exceptRectangle(
     // rect only is true
     if (rects.size() == 1) {
       return false;
+    } else {
+      return true;
     }
   }
 
-  return true;
+  return false;
 }
 
 bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
