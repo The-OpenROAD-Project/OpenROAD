@@ -64,6 +64,8 @@ class TimingBase {
     void clearTimingNetWeightOverflow();
     size_t getTimingNetWeightOverflowSize() const;
 
+    void setTimingNetWeightMax(float overflow);
+
     // updateNetWeight.
     // True: successfully reweighted gnets
     // False: no slacks found

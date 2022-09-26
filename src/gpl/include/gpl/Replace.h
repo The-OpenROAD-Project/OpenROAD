@@ -139,6 +139,7 @@ class Replace
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
     void addTimingNetWeightOverflow(int overflow);
+    void setTimingNetWeightMax(float max);
 
     void setDebug(int pause_iterations,
                   int update_iterations,
@@ -189,6 +190,8 @@ class Replace
 
     int routabilityMaxBloatIter_;
     int routabilityMaxInflationIter_;
+
+    float timingNetWeightMax_;
 
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
