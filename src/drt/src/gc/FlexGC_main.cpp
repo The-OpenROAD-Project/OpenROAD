@@ -1672,7 +1672,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
   auto constraints = layer->getLef58AreaConstraints();
 
   auto sort_cmp
-      = [this](const frLef58AreaConstraint* a, const frLef58AreaConstraint* b) {
+      = [](const frLef58AreaConstraint* a, const frLef58AreaConstraint* b) {
           auto a_rule = a->getODBRule();
           auto b_rule = b->getODBRule();
 
@@ -1763,7 +1763,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
       bool apply_rect_width_area = false;
-      apply_rect_witdh_area = std::min(xLen, yLen) <= min_witdh;
+      apply_rect_width_area = std::min(xLen, yLen) <= min_width;
       check_rect_width = !apply_rect_width_area;
       return apply_rect_width_area;
     } else {
