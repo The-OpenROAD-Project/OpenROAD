@@ -81,18 +81,22 @@ struct DebugSetting
   bool tree2D_;
   bool tree3D_;
   bool isOn_;
+  std::string sttInputFileName_;
   DebugSetting()
       : net_(nullptr),
         steinerTree_(false),
         rectilinearSTree_(false),
         tree2D_(false),
         tree3D_(false),
-        isOn_(false)
+        isOn_(false),
+        sttInputFileName_("")
   {
   }
 };
 
 using stt::Tree;
+
+typedef std::pair<int, int> TileCongestion;
 
 class FastRouteCore
 {
@@ -127,6 +131,7 @@ class FastRouteCore
   void clearPins(int netID);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearRoute(const int netID);
+  void clearNetRoute(const int netID);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -163,6 +168,9 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
+  void getCongestionGrid(
+      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
+      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
@@ -199,6 +207,10 @@ class FastRouteCore
   void setDebugRectilinearSTree(bool rectiliniarSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setSttInputFilename(const char* file_name);
+  std::string getSttInputFileName();
+  const odb::dbNet* getDebugNet();
+  bool hasSaveSttInput();
 
  private:
   NetRouteMap getRoutes();
@@ -419,6 +431,7 @@ class FastRouteCore
                      const int netID);
   bool newRipup3DType3(const int netID, const int edgeID);
   void newRipupNet(const int netID);
+  void releaseNetResources(const int netID);
 
   // utility functions
   void printEdge(const int netID, const int edgeID);

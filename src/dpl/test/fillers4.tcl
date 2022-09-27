@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # filler_placement size 2 3 4 8
 read_lef Nangate45/Nangate45.lef
 read_lef fill3.lef

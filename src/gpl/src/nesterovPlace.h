@@ -43,6 +43,10 @@ namespace utl {
 class Logger;
 }
 
+namespace odb {
+class dbInst;
+}
+
 namespace gpl 
 {
 
@@ -67,19 +71,18 @@ class NesterovPlaceVars {
   float referenceHpwl; // refDeltaHpwl
   float routabilityCheckOverflow;
 
-  int routabilityMaxBloatIter;
-  int routabilityMaxInflationIter;
-  
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
-
+  
+  bool forceCPU;
   bool timingDrivenMode;
   bool routabilityDrivenMode;
   bool debug;
   int debug_pause_iterations;
   int debug_update_iterations;
   bool debug_draw_bins;
-
+  odb::dbInst* debug_inst;
+  
   NesterovPlaceVars();
   void reset();
 };
@@ -87,7 +90,7 @@ class NesterovPlaceVars {
 class NesterovPlace {
 public:
   NesterovPlace();
-  NesterovPlace(NesterovPlaceVars npVars,
+  NesterovPlace(const NesterovPlaceVars& npVars,
       std::shared_ptr<PlacerBase> pb,
       std::shared_ptr<NesterovBase> nb,
       std::shared_ptr<RouteBase> rb,
@@ -126,9 +129,6 @@ public:
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
 private:
-#ifdef ENABLE_CIMG_LIB
-  void plot(const std::string& title, int iteration);
-#endif
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
   utl::Logger* log_;

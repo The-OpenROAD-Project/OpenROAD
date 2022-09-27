@@ -868,7 +868,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
-  const int endIND = netCount() * 0.9;
+  const int endIND = tree_order_pv_.size() * 0.9;
 
   multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
   multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
@@ -876,6 +876,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
     FrNet* net = nets_[netID];
+
+    if (net->is_routed)
+      continue;
 
     int enlarge = expand;
     const int deg = sttrees_[netID].deg;
@@ -1588,11 +1591,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
+            v_edges_[min_y][gridsX[i]].usage += net->edgeCost;
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
               += net->layerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
+            h_edges_[gridsY[i]][min_x].usage += net->edgeCost;
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
               += net->layerEdgeCost(gridsL[i]);
           }

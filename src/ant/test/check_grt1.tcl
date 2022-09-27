@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # repair_antennas global route
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"

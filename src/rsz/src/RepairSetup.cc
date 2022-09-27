@@ -86,6 +86,8 @@ RepairSetup::RepairSetup(Resizer *resizer) :
   sta_(nullptr),
   db_network_(nullptr),
   resizer_(resizer),
+  corner_(nullptr),
+  drvr_port_(nullptr),
   resize_count_(0),
   inserted_buffer_count_(0),
   rebuffer_net_count_(0),
@@ -240,6 +242,7 @@ RepairSetup::repairSetup(PathRef &path,
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       const Pin *drvr_pin = drvr_vertex->pin();
+      const Net *net = network_->net(drvr_pin);
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
       LibertyCell *drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       int fanout = this->fanout(drvr_vertex);
@@ -258,7 +261,8 @@ RepairSetup::repairSetup(PathRef &path,
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
-          && !tristate_drvr) { 
+          && !tristate_drvr
+          && !resizer_->dontTouch(net)) {
         int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
@@ -272,7 +276,8 @@ RepairSetup::repairSetup(PathRef &path,
 
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
-          && !tristate_drvr) {
+          && !tristate_drvr
+          && !resizer_->dontTouch(net)) {
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         changed = true;
         break;
@@ -288,38 +293,40 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
                         PathExpanded *expanded)
 {
   Pin *drvr_pin = drvr_path->pin(this);
+  Instance *drvr = network_->instance(drvr_pin);
   const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   int in_index = drvr_index - 1;
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-
-  float prev_drive;
-  if (drvr_index >= 2) {
-    int prev_drvr_index = drvr_index - 2;
-    PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
-    Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
-    prev_drive = 0.0;
-    LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-    if (prev_drvr_port) {
-      prev_drive = prev_drvr_port->driveResistance();
+  if (!resizer_->dontTouch(drvr)) {
+    float prev_drive;
+    if (drvr_index >= 2) {
+      int prev_drvr_index = drvr_index - 2;
+      PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
+      Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+      prev_drive = 0.0;
+      LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+      if (prev_drvr_port) {
+        prev_drive = prev_drvr_port->driveResistance();
+      }
     }
-  }
-  else
-    prev_drive = 0.0;
-  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-  LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                   prev_drive, dcalc_ap);
-  if (upsize) {
-    Instance *drvr = network_->instance(drvr_pin);
-    debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
-               network_->pathName(drvr_pin),
-               drvr_port->libertyCell()->name(),
-               upsize->name());
-    if (resizer_->replaceCell(drvr, upsize, true)) {
-      resize_count_++;
-      return true;
+    else
+      prev_drive = 0.0;
+    LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+    LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
+                                     prev_drive, dcalc_ap);
+    if (upsize) {
+      debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name(),
+                 upsize->name());
+      if (!resizer_->dontTouch(drvr)
+          && resizer_->replaceCell(drvr, upsize, true)) {
+        resize_count_++;
+        return true;
+      }
     }
   }
   return false;

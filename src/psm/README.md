@@ -30,6 +30,7 @@ analyze_power_grid -vsrc <voltage_source_location_file> \
                    [-dy]
                    [-em_outfile <filename>]
                    [-node_density <node_pitch>]
+                   [-node_density_factor <factor>]
 write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
@@ -40,8 +41,9 @@ Options description:
 - ``enable_em``: (optional) is the flag to report current per power grid segment.
 - ``outfile``: (optional) filename specified per-instance voltage written into file.
 - ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists.
-- ``voltage``: Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
-- ``node_pitch``: This value can be specfied by the user in um to determine the pitch of the PDN nodes in M1 layer.
+- ``voltage``: (optional) Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
+- ``node_density``: (optional)  This value can be specfied by the user in um to determine the node density on the std. cell rails. Cannot be used together with node_density_factor.
+- ``node_density_factor``: (optional) Integer value factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with node_density. Default value is 5.
 
 ## Example scripts
 

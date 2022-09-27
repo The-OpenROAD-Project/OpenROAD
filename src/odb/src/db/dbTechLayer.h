@@ -64,6 +64,7 @@ class _dbTechLayerArraySpacingRule;
 class _dbTechLayerEolKeepOutRule;
 class _dbTechLayerWidthTableRule;
 class _dbTechLayerMinCutRule;
+class _dbTechLayerAreaRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -131,6 +132,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerWidthTableRule>* width_table_rules_tbl_;
 
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
+
+  dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
 
   // User Code Begin Fields
 

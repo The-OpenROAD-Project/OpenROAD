@@ -195,6 +195,7 @@ class Fixture
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
+  odb::dbTech* db_tech;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

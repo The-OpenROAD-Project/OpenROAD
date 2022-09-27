@@ -86,7 +86,7 @@ class Replace
     void doIncrementalPlace();
     void doInitialPlace();
 
-    void initNesterovPlace();
+    bool initNesterovPlace();
     int doNesterovPlace(int start_iter = 0);
 
     // Initial Place param settings
@@ -120,6 +120,7 @@ class Replace
     void setPadLeft(int padding);
     void setPadRight(int padding);
 
+    void setForceCPU(bool force_cpu);
     void setTimingDrivenMode(bool mode);
 
     void setSkipIoMode(bool mode);
@@ -138,13 +139,13 @@ class Replace
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
     void addTimingNetWeightOverflow(int overflow);
-
-    void setPlottingPath(const char* path);
+    void setTimingNetWeightMax(float max);
 
     void setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
-                  bool initial);
+                  bool initial,
+                  odb::dbInst* inst = nullptr);
 
   private:
     odb::dbDatabase* db_;
@@ -165,6 +166,7 @@ class Replace
     int initialPlaceMaxSolverIter_;
     int initialPlaceMaxFanout_;
     float initialPlaceNetWeightScale_;
+    bool forceCPU_;
 
     int nesterovPlaceMaxIter_;
     int binGridCntX_;
@@ -189,6 +191,8 @@ class Replace
     int routabilityMaxBloatIter_;
     int routabilityMaxInflationIter_;
 
+    float timingNetWeightMax_;
+
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
     bool uniformTargetDensityMode_;
@@ -205,6 +209,7 @@ class Replace
     int gui_debug_update_iterations_;
     int gui_debug_draw_bins_;
     int gui_debug_initial_;
+    odb::dbInst* gui_debug_inst_;
 };
 }
 

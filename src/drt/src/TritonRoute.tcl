@@ -384,6 +384,11 @@ proc detailed_route_set_default_via { args } {
   drt::detailed_route_set_default_via $args
 }
 
+proc detailed_route_set_unidirectional_layer { args } {
+  sta::check_argc_eq1 "detailed_route_set_unidirectional_layer" $args
+  drt::detailed_route_set_unidirectional_layer $args
+}
+
 namespace eval drt {
 
 proc step_dr { args } {
@@ -393,6 +398,31 @@ proc step_dr { args } {
   }
 
   drt::detailed_route_step_drt {*}$args
+}
+
+sta::define_cmd_args "check_drc" {
+    [-box box]
+    [-output_file filename]
+}
+proc check_drc { args } {
+  sta::parse_key_args "check_drc" args \
+      keys { -box -output_file } \
+      flags {}
+  sta::check_argc_eq0 "check_drc" $args
+  set box { 0 0 0 0 }
+  if [info exists keys(-box)] {
+    set box $keys(-box)
+    if { [llength $box] != 4 } {
+      utl::error DRT 612 "-box is a list of 4 coordinates."
+    }    
+  }
+  lassign $box x1 y1 x2 y2
+   if { [info exists keys(-output_file)] } {
+    set output_file $keys(-output_file)
+  } else {
+    utl::error DRT 613 "-output_file is required for check_drc command"
+  }
+  drt::check_drc $output_file $x1 $y1 $x2 $y2
 }
 
 }

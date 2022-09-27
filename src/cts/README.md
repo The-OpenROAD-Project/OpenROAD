@@ -44,7 +44,6 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
                      [-root_buf <root_buf>] \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] \
-                     [-out_path <lut_path>] \
                      [-post_cts_disable] \
                      [-distance_between_buffers] \
                      [-branching_point_buffers_distance] \
@@ -67,9 +66,6 @@ Argument description:
     the height of `-root_buffer`.
 -   `-clk_nets` is a string containing the names of the clock roots. If
     this parameter is omitted, TritonCTS looks for the clock roots automatically.
--   `-out_path` is the output path (full) that the `lut.txt` and `sol_list.txt`
-    files will be saved. This is used to load an existing characterization,
-    without creating one from scratch.
 -   `-post_cts_disable` is a flag that, when specified, disables the
     post-processing operation for outlier sinks (buffer insertion on 10% of
     the way between source and sink).

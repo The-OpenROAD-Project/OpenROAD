@@ -201,7 +201,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     // rightway on grid only forbid off track rightway planar access
     // horz layer
     if (lowerLayer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (lowerLayer->getLef58RectOnlyConstraint()) {
+      if (lowerLayer->isUnidirectional()) {
         ap->setAccess(frDirEnum::S, false);
         ap->setAccess(frDirEnum::N, false);
       }
@@ -213,7 +213,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     }
     // vert layer
     if (lowerLayer->getDir() == dbTechLayerDir::VERTICAL) {
-      if (lowerLayer->getLef58RectOnlyConstraint()) {
+      if (lowerLayer->isUnidirectional()) {
         ap->setAccess(frDirEnum::W, false);
         ap->setAccess(frDirEnum::E, false);
       }
@@ -860,9 +860,9 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
-    gcWorker.setTargetObj(instTerm->getInst());
+    gcWorker.addTargetObj(instTerm->getInst());
   } else {
-    gcWorker.setTargetObj(pin->getTerm());
+    gcWorker.addTargetObj(pin->getTerm());
   }
   gcWorker.initPA0(getDesign());
   frBlockObject* owner;
@@ -1091,12 +1091,12 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   if (instTerm) {
     if (!instTerm->getNet() || !instTerm->getNet()->getNondefaultRule()
         || AUTO_TAPER_NDR_NETS)
-      gcWorker.setTargetObj(instTerm->getInst());
+      gcWorker.addTargetObj(instTerm->getInst());
   } else {
     if (!pin->getTerm()->getNet()
         || !pin->getTerm()->getNet()->getNondefaultRule()
         || AUTO_TAPER_NDR_NETS)
-      gcWorker.setTargetObj(pin->getTerm());
+      gcWorker.addTargetObj(pin->getTerm());
   }
 
   gcWorker.initPA0(getDesign());
@@ -1916,7 +1916,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
   addAccessPatternObj(prevInst, prevPinAccessPattern, objs, tempVias, true);
   addAccessPatternObj(currInst, currPinAccessPattern, objs, tempVias, false);
 
-  hasVio = !genPatterns_gc(nullptr, objs, Edge);
+  hasVio = !genPatterns_gc({prevInst, currInst}, objs, Edge);
   if (!hasVio) {
     int prevNodeCost = nodes[prevNodeIdx].getNodeCost();
     int currNodeCost = nodes[currNodeIdx].getNodeCost();
@@ -2243,7 +2243,7 @@ void FlexPA::genPatterns_reset(
 }
 
 // objs must hold at least 1 obj
-bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
+bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
                             vector<pair<frConnFig*, frBlockObject*>>& objs,
                             const PatternType patternType,
                             std::set<frBlockObject*>* owners)
@@ -2277,8 +2277,9 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
 
-  gcWorker.setTargetObj(targetObj);
-  gcWorker.setIgnoreDB();
+  gcWorker.setTargetObjs(targetObjs);
+  if(targetObjs.empty())
+    gcWorker.setIgnoreDB();
   // cout <<flush;
   gcWorker.initPA0(getDesign());
   for (auto& [connFig, owner] : objs) {
@@ -2410,7 +2411,7 @@ int FlexPA::getEdgeCost(
       }
     }
 
-    hasVio = !genPatterns_gc(targetObj, objs, Edge);
+    hasVio = !genPatterns_gc({targetObj}, objs, Edge);
     vioEdges[edgeIdx] = hasVio;
 
     // look back for GN14
@@ -2438,7 +2439,7 @@ int FlexPA::getEdgeCost(
             }
           }
 
-          hasVio = !genPatterns_gc(targetObj, objs, Edge);
+          hasVio = !genPatterns_gc({targetObj}, objs, Edge);
         }
       }
     }
@@ -2587,7 +2588,7 @@ bool FlexPA::genPatterns_commit(
 
     set<frBlockObject*> owners;
     if (targetObj != nullptr
-        && genPatterns_gc(targetObj, objs, Commit, &owners)) {
+        && genPatterns_gc({targetObj}, objs, Commit, &owners)) {
       pinAccessPattern->updateCost();
       // cout <<"commit ap:";
       // for (auto &ap: pinAccessPattern->getPattern()) {

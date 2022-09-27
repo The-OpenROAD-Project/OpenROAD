@@ -312,12 +312,30 @@ set_max_utilization(double max_utilization)
 }
 
 void
-set_dont_use_cmd(LibertyCellSeq *dont_use)
+set_dont_use(LibertyCell *lib_cell,
+             bool dont_use)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setDontUse(dont_use);
-  delete dont_use;
+  resizer->setDontUse(lib_cell, dont_use);
+}
+
+void
+set_dont_touch_instance(Instance *inst,
+                        bool dont_touch)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setDontTouch(inst, dont_touch);
+}
+
+void
+set_dont_touch_net(Net *net,
+                   bool dont_touch)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setDontTouch(net, dont_touch);
 }
 
 void

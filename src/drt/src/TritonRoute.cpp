@@ -245,7 +245,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
              worker->getBestNumMarkers(),
              updated);
   if (updated)
-    reportDRC(drcRpt, worker.get());
+    reportDRC(
+        drcRpt, design_->getTopBlock()->getMarkers(), worker->getDrcBox());
 }
 
 void TritonRoute::updateGlobals(const char* file_name)
@@ -522,7 +523,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     606,
                     "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYERNUM);
+                    VIAINPIN_BOTTOMLAYER_NAME);
     }
   }
 
@@ -534,7 +535,7 @@ void TritonRoute::initDesign()
       logger_->warn(utl::DRT,
                     607,
                     "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYERNUM);
+                    VIAINPIN_TOPLAYER_NAME);
     }
   }
   parser.postProcess();
@@ -724,6 +725,11 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  if (debug_->debugDumpDR) {
+    std::string globals_path
+        = fmt::format("{}/init_globals.bin", debug_->dumpDir);
+    writeGlobals(globals_path);
+  }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_ && !DO_PA) {
     asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
@@ -742,7 +748,7 @@ int TritonRoute::main()
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(
-        fmt::format("{}/design.db", debug_->dumpDir).c_str());
+        fmt::format("{}/design.odb", debug_->dumpDir).c_str());
   }
   if (!initGuide()) {
     gr();
@@ -776,6 +782,26 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
   pa.main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, true);
+}
+
+void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
+{
+  initDesign();
+  Rect box(x1, y1, x2, y2);
+  if (box.area() == 0) {
+    box = design_->getTopBlock()->getBBox();
+  }
+  auto gcWorker = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
+  gcWorker->setDrcBox(box);
+  gcWorker->setExtBox(box);
+  gcWorker->init(design_.get());
+  gcWorker->main();
+  logger_->info(
+      utl::DRT, 614, "Found {} violations", gcWorker->getMarkers().size());
+  frList<std::unique_ptr<frMarker>> markers;
+  for (auto& marker : gcWorker->getMarkers())
+    markers.push_back(std::make_unique<frMarker>(*marker));
+  reportDRC(filename, markers, box);
 }
 
 void TritonRoute::readParams(const string& fileName)
@@ -885,6 +911,20 @@ void TritonRoute::addUserSelectedVia(const std::string& viaName)
   }
 }
 
+void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
+{
+  if (db_->getTech() == nullptr) {
+    logger_->error(DRT, 615, "Load tech before setting unidirectional layers");
+  }
+  auto tech = db_->getTech();
+  auto dbLayer = tech->findLayer(layerName.c_str());
+  if (dbLayer == nullptr) {
+    logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
+  } else {
+    design_->getTech()->setUnidirectionalLayer(dbLayer);
+  }
+}
+
 void TritonRoute::setParams(const ParamStruct& params)
 {
   OUT_MAZE_FILE = params.outputMazeFile;
@@ -947,7 +987,9 @@ int TritonRoute::getWorkerResultsSize()
   return results_sz_;
 }
 
-void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
+void TritonRoute::reportDRC(const string& file_name,
+                            const frList<std::unique_ptr<frMarker>>& markers,
+                            Rect drcBox)
 {
   double dbu = getDesign()->getTech()->getDBUPerUU();
 
@@ -960,166 +1002,27 @@ void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
     }
     return;
   }
-
   ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
-    for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    for (const auto& marker : markers) {
       // get violation bbox
       Rect bbox = marker->getBBox();
-      if (worker != nullptr && !worker->getDrcBox().intersects(bbox))
+      if (drcBox != Rect() && !drcBox.intersects(bbox))
         continue;
       auto tech = getDesign()->getTech();
       auto layer = tech->getLayer(marker->getLayerNum());
       auto layerType = layer->getType();
-      
+
       auto con = marker->getConstraint();
       drcRpt << "  violation type: ";
       if (con) {
-        switch (con->typeId()) {
-          case frConstraintTypeEnum::frcShortConstraint: {
-            if (layerType == dbTechLayerType::ROUTING) {
-              drcRpt << "Short";
-            } else if (layerType == dbTechLayerType::CUT) {
-              drcRpt << "CShort";
-            }
-            break;
-          }
-          case frConstraintTypeEnum::frcMinWidthConstraint:
-            drcRpt << "MinWid";
-            break;
-          case frConstraintTypeEnum::frcSpacingConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
-            drcRpt << "EOLSpc";
-            break;
-          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcCutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcMinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
-            drcRpt << "NSMet";
-            break;
-          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
-            drcRpt << "MetSpc";
-            break;
-          case frConstraintTypeEnum::frcOffGridConstraint:
-            drcRpt << "OffGrid";
-            break;
-          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
-            drcRpt << "MinHole";
-            break;
-          case frConstraintTypeEnum::frcAreaConstraint:
-            drcRpt << "MinArea";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
-            drcRpt << "CornerSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
-            drcRpt << "CutSpc";
-            break;
-          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
-            drcRpt << "RectOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
-            drcRpt << "RightWayOnGridOnly";
-            break;
-          case frConstraintTypeEnum::frcLef58MinStepConstraint:
-            drcRpt << "MinStp";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
-            drcRpt << "MetSpcInf";
-            break;
-          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
-            drcRpt << "SpacingEndOfLineParallelEdge";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableConstraint:
-            drcRpt << "SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
-            drcRpt << "SpacingTableTw";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
-            drcRpt << "Lef58SpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
-            drcRpt << "Lef58CutSpacingTable";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
-            drcRpt << "Lef58CutSpacingTablePrl";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
-            drcRpt << "Lef58CutSpacingTableLayer";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
-            drcRpt << "Lef58CutSpacingParallelWithin";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
-            drcRpt << "Lef58CutSpacingAdjacentCuts";
-            break;
-          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
-            drcRpt << "Lef58CutSpacingLayer";
-            break;
-          case frConstraintTypeEnum::frcMinimumcutConstraint:
-            drcRpt << "Minimumcut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConcaveCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConcaveCorner";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58CornerSpacingConvexCornerConstraint:
-            drcRpt << "Lef58CornerSpacingConvexCorner";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing1D";
-            break;
-          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
-            drcRpt << "Lef58CornerSpacingSpacing2D";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
-            drcRpt << "Lef58SpacingEndOfLine";
-            break;
-          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithin";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
-            break;
-          case frConstraintTypeEnum::
-              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
-            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
-            break;
-          case frConstraintTypeEnum::frcLef58CutClassConstraint:
-            drcRpt << "Lef58CutClass";
-            break;
-          case frConstraintTypeEnum::frcRecheckConstraint:
-            drcRpt << "Recheck";
-            break;
-          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
-            drcRpt << "Lef58EolExtension";
-            break;
-          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
-            drcRpt << "Lef58EolKeepOut";
-            break;
-        }
+        std::string violName;
+        if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
+            && layerType == dbTechLayerType::CUT)
+          violName = "Cut Short";
+        else
+          violName = con->getViolName();
+        drcRpt << violName;
       } else {
         drcRpt << "nullptr";
       }

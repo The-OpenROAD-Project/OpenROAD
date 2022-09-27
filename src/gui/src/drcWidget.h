@@ -47,6 +47,8 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 
+#include "inspector.h"
+
 namespace utl {
 class Logger;
 }
@@ -88,6 +90,9 @@ class DRCViolation
   void setViewed() { viewed_ = true; }
   void clearViewed() { viewed_ = false; }
 
+  void setIsVisible(bool visible) { visible_ = visible; }
+  bool isVisible() const { return visible_; }
+
   void paint(Painter& painter);
 
  private:
@@ -103,6 +108,7 @@ class DRCViolation
   int file_line_;
 
   bool viewed_;
+  bool visible_;
 };
 
 class DRCDescriptor : public Descriptor
@@ -161,6 +167,7 @@ class DRCWidget : public QDockWidget
 
  signals:
   void selectDRC(const Selected& selected);
+  void focus(const Selected& selected);
 
  public slots:
   void loadReport(const QString& filename);
@@ -173,6 +180,10 @@ class DRCWidget : public QDockWidget
   void selectionChanged(const QItemSelection& selected,
                         const QItemSelection& deselected);
 
+ private slots:
+  void focusIndex(const QModelIndex& index);
+  void defocus();
+
  protected:
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
@@ -184,7 +195,7 @@ class DRCWidget : public QDockWidget
 
   utl::Logger* logger_;
 
-  QTreeView* view_;
+  ObjectTree* view_;
   DRCItemModel* model_;
 
   odb::dbBlock* block_;
@@ -194,6 +205,9 @@ class DRCWidget : public QDockWidget
   std::unique_ptr<DRCRenderer> renderer_;
 
   std::vector<std::unique_ptr<DRCViolation>> violations_;
+
+  void toggleParent(QStandardItem* child);
+  bool setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent);
 };
 
 }  // namespace gui

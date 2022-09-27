@@ -322,7 +322,7 @@ class FlexPA
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);
   int getFlatEdgeIdx(int prevIdx1, int prevIdx2, int currIdx2, int idx2Dim);
 
-  bool genPatterns_gc(frBlockObject* targetObj,
+  bool genPatterns_gc(std::set<frBlockObject*> targetObjs,
                       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
                       const PatternType patternType,
                       std::set<frBlockObject*>* owners = nullptr);

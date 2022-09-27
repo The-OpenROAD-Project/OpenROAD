@@ -69,6 +69,12 @@ void detailed_route_set_default_via(const char* viaName)
   router->addUserSelectedVia(viaName);
 }
 
+void detailed_route_set_unidirectional_layer(const char* layerName)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setUnidirectionalLayer(layerName);
+}
+
 void detailed_route_cmd(const char* outputMazeFile,
                         const char* outputDrcFile,
                         const char* outputCmapFile,
@@ -187,9 +193,11 @@ void
 run_worker_cmd(const char* dump_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->resetDb(fmt::format("{}/design.db", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/init_globals.bin", dump_dir).c_str());
+  router->resetDb(fmt::format("{}/design.odb", dump_dir).c_str());
   router->updateGlobals(fmt::format("{}/globals.bin", dump_dir).c_str());
   router->updateDesign(fmt::format("{}/updates.bin", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/worker_globals.bin", dump_dir).c_str());
   
   router->debugSingleWorker(dump_dir, drc_rpt);
 }
@@ -213,4 +221,9 @@ void step_end()
   router->endFR();
 }
 
+void check_drc(const char* drc_file, int x1, int y1, int x2, int y2)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->checkDRC(drc_file, x1, y1, x2, y2);
+}
 %} // inline

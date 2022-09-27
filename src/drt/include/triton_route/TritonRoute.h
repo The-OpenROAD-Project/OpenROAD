@@ -32,12 +32,14 @@
 #include <tcl.h>
 
 #include <boost/asio/thread_pool.hpp>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
 #include <vector>
 
+#include "odb/geom.h"
 namespace fr {
 class frDesign;
 class DesignCallBack;
@@ -47,6 +49,7 @@ class drUpdate;
 struct frDebugSettings;
 class FlexDR;
 struct FlexDRViaData;
+class frMarker;
 }  // namespace fr
 
 namespace odb {
@@ -126,7 +129,11 @@ class TritonRoute
   void setDebugWorker(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
-  void setDebugWorkerParams(int mazeEndIter, int drcCost, int markerCost, int ripupMode, int followGuide);
+  void setDebugWorkerParams(int mazeEndIter,
+                            int drcCost,
+                            int markerCost,
+                            int ripupMode,
+                            int followGuide);
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
@@ -139,10 +146,12 @@ class TritonRoute
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
+  void setUnidirectionalLayer(const std::string& layerName);
   fr::frDebugSettings* getDebugSettings() const { return debug_.get(); }
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
-  std::string runDRWorker(const std::string& workerStr, fr::FlexDRViaData* viaData);
+  std::string runDRWorker(const std::string& workerStr,
+                          fr::FlexDRViaData* viaData);
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
@@ -155,9 +164,13 @@ class TritonRoute
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
   void sendDesignUpdates(const std::string& globals_path);
-  void sendGlobalsUpdates(const std::string& globals_path, const std::string& serializedViaData);
+  void sendGlobalsUpdates(const std::string& globals_path,
+                          const std::string& serializedViaData);
   void setGuideFile(const std::string& guide_path);
-  void reportDRC(const std::string& file_name, fr::FlexDRWorker* worker = nullptr);
+  void reportDRC(const std::string& file_name,
+                 const std::list<std::unique_ptr<fr::frMarker>>& markers,
+                 odb::Rect bbox = odb::Rect(0, 0, 0, 0));
+  void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -165,7 +178,7 @@ class TritonRoute
   std::unique_ptr<fr::DesignCallBack> db_callback_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-  std::unique_ptr<fr::FlexDR> dr_; // kept for single stepping
+  std::unique_ptr<fr::FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;

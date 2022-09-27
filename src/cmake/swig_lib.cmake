@@ -66,6 +66,8 @@ function(swig_lib)
                PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY USE_SWIG_DEPENDENCIES TRUE)
+  set_property(SOURCE ${ARG_I_FILE}
+               PROPERTY USE_TARGET_INCLUDE_DIRECTORIES true)
 
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}
@@ -74,7 +76,7 @@ function(swig_lib)
   )
 
   # Disable problematic compiler warnings on generated files.
-  # At this point the only the swig generated sources are present.
+  # At this point only the swig generated sources are present.
   get_target_property(GEN_SRCS ${ARG_NAME} SOURCES)
 
   foreach(GEN_SRC ${GEN_SRCS})

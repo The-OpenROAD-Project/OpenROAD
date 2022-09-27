@@ -1,0 +1,20 @@
+[INFO ODB-0222] Reading LEF file: data/gscl45nm.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 14 technology vias
+[INFO ODB-0225]     Created 33 library cells
+[INFO ODB-0226] Finished LEF file:  data/gscl45nm.lef
+[INFO ODB-0127] Reading DEF file: data/design.def
+[INFO ODB-0128] Design: counter
+[INFO ODB-0130]     Created 12 pins.
+[INFO ODB-0131]     Created 12 components and 60 component-terminals.
+[INFO ODB-0133]     Created 24 nets and 45 connections.
+[INFO ODB-0134] Finished DEF file: data/design.def
+[ERROR ODB-0364] Attempt to destroy dont_touch net inp0
+[ERROR ODB-0374] Attempt to destroy bterm on dont_touch net inp0
+[ERROR ODB-0376] Attempt to create bterm on dont_touch net inp0
+[ERROR ODB-0373] Attempt to connect iterm to dont_touch net inp0
+[ERROR ODB-0372] Attempt to disconnect iterm of dont_touch net inp0
+[ERROR ODB-0362] Attempt to destroy dont_touch instance _g2_
+[ERROR ODB-0370] Attempt to disconnect iterm of dont_touch instance _g2_
+[ERROR ODB-0368] Attempt to change master of dont_touch instance _g2_
+pass

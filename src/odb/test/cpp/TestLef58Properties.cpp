@@ -15,6 +15,30 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
+
+BOOST_AUTO_TEST_CASE(lef58_class)
+{
+  utl::Logger* logger = new utl::Logger();
+  dbDatabase* db1 = dbDatabase::create();
+  db1->setLogger(logger);
+  lefin lefParser(db1, logger, false);
+
+  const char* libname = "gscl45nm.lef";
+  std::string path
+      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  lefParser.createTechAndLib(libname, path.c_str());
+
+  odb::dbLib* dbLib = db1->findLib(libname);
+
+  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  lefParser.updateLib(dbLib, path.c_str());
+
+  odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
+  BOOST_CHECK(endcap);
+
+  BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+}
+
 BOOST_AUTO_TEST_CASE(test_default)
 {
   utl::Logger* logger = new utl::Logger();
@@ -283,6 +307,45 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(viaMap->getAboveLayerWidthLow() == viaMap->getAboveLayerWidthHigh());
   BOOST_TEST(viaMap->getAboveLayerWidthHigh() == 0.8 * distFactor);
   BOOST_TEST(viaMap->getViaName() == "M2_M1_via");
+
+  layer = dbTech->findLayer("metal2");
+  auto areaRules = layer->getTechLayerAreaRules();
+  BOOST_TEST(areaRules.size() == 6);
+  int cnt = 0;
+  for (odb::dbTechLayerAreaRule* subRule : areaRules) {
+    if (cnt == 0) {
+      BOOST_TEST(subRule->getArea() == 0.044 * distFactor);
+      BOOST_TEST(subRule->getMask() == 2);
+    }
+    if (cnt == 1) {
+      BOOST_TEST(subRule->getArea() == 0.34 * distFactor);
+      BOOST_TEST(subRule->getRectWidth() == 0.12 * distFactor);
+    }
+    if (cnt == 2) {
+      BOOST_TEST(subRule->getArea() == 1.01 * distFactor);
+      BOOST_TEST(subRule->getExceptMinWidth() == 0.09 * distFactor);
+      BOOST_TEST(subRule->getExceptMinSize().first == 0.1 * distFactor);
+      BOOST_TEST(subRule->getExceptMinSize().second == 0.3 * distFactor);
+      BOOST_TEST(subRule->getExceptStep().first == 0.01 * distFactor);
+      BOOST_TEST(subRule->getExceptStep().second == 0.02 * distFactor);
+      BOOST_TEST(subRule->getExceptEdgeLength() == 0.8 * distFactor);
+    }
+    if (cnt == 3) {
+      BOOST_TEST(subRule->getArea() == 0.101 * distFactor);
+      BOOST_TEST(subRule->getTrimLayer()->getName() == "metal1");
+      BOOST_TEST(subRule->getOverlap() == 1);
+    }
+    if (cnt == 4) {
+      BOOST_TEST(subRule->getArea() == 2.34 * distFactor);
+      BOOST_TEST(subRule->isExceptRectangle() == true);
+    }
+    if (cnt == 5) {
+      BOOST_TEST(subRule->getArea() == 0.78 * distFactor);
+      BOOST_TEST(subRule->getExceptEdgeLengths().first == 0.3 * distFactor);
+      BOOST_TEST(subRule->getExceptEdgeLengths().second == 0.7 * distFactor);
+    }
+    cnt++;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -36,28 +36,33 @@
 #pragma once
 
 #include <memory>
+#include <set>
+#include <vector>
 
-#include "Core.h"
-#include "HungarianMatching.h"
-#include "Netlist.h"
-#include "Parameters.h"
-#include "Slots.h"
-
-namespace ord {
-class OpenRoad;
-}
+#include "odb/geom.h"
+#include "ppl/Parameters.h"
 
 namespace utl {
 class Logger;
 }
 
 namespace odb {
+class dbBTerm;
+class dbBlock;
 class dbDatabase;
 class dbTech;
-class dbBlock;
+class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
+class Constraint;
+class Core;
+class Interval;
+class IOPin;
+class Netlist;
+class Section;
+class Slot;
+struct TopLayerGrid;
 
 using odb::Point;
 using odb::Rect;
@@ -77,154 +82,57 @@ enum class Edge
   invalid
 };
 
-struct Interval
+enum class Direction
 {
-  Edge edge;
-  int begin;
-  int end;
-  int layer;
-  Interval() = default;
-  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e), layer(-1) {}
-  Interval(Edge edg, int b, int e, int l)
-      : edge(edg), begin(b), end(e), layer(l)
-  {
-  }
-  Edge getEdge() { return edge; }
-  int getBegin() { return begin; }
-  int getEnd() { return end; }
-  int getLayer() { return layer; }
-};
-
-struct Constraint
-{
-  PinList pin_list;
-  Direction direction;
-  Interval interval;
-  odb::Rect box;
-  std::vector<Section> sections;
-  float pins_per_slots;
-  Constraint() = default;
-  Constraint(PinList pins, Direction dir, Interval interv)
-      : pin_list(pins), direction(dir), interval(interv)
-  {
-    box = odb::Rect(-1, -1, -1, -1);
-    pins_per_slots = 0;
-  }
-  Constraint(PinList pins, Direction dir, odb::Rect b)
-      : pin_list(pins), direction(dir), box(b)
-  {
-    interval = Interval(Edge::invalid, -1, -1);
-    pins_per_slots = 0;
-  }
-};
-
-struct TopLayerGrid
-{
-  int layer;
-  int x_step;
-  int y_step;
-  int llx;
-  int lly;
-  int urx;
-  int ury;
-  int width;
-  int height;
-  int keepout;
-  TopLayerGrid() = default;
-  TopLayerGrid(int l,
-               int x_s,
-               int y_s,
-               int x_l,
-               int y_l,
-               int x_u,
-               int y_u,
-               int w,
-               int h,
-               int k)
-      : layer(l),
-        x_step(x_s),
-        y_step(y_s),
-        llx(x_l),
-        lly(y_l),
-        urx(x_u),
-        ury(y_u),
-        width(w),
-        height(h),
-        keepout(k)
-  {
-  }
+  input,
+  output,
+  inout,
+  feedthru,
+  invalid
 };
 
 class IOPlacer
 {
  public:
+  IOPlacer();
+  ~IOPlacer();
   void init(odb::dbDatabase* db, Logger* logger);
   void clear();
-  void clearConstraints() { constraints_.clear(); };
+  void clearConstraints();
   void run(bool random_mode);
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
-  int returnIONetsHPWL();
+  int computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addNamesConstraint(PinList* pins, Edge edge, int begin, int end);
-  void excludeInterval(Interval interval);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
                               int begin,
                               int end);
-  void addTopLayerConstraint(PinList* pins, int x1, int y1, int x2, int y2);
-  void addHorLayer(int layer) { hor_layers_.insert(layer); }
-  void addVerLayer(int layer) { ver_layers_.insert(layer); }
-  Edge getEdge(std::string edge);
-  Direction getDirection(std::string direction);
+  void addTopLayerConstraint(PinList* pins, const odb::Rect& region);
+  void addHorLayer(odb::dbTechLayer* layer);
+  void addVerLayer(odb::dbTechLayer* layer);
   void addPinGroup(PinGroup* group);
-  void addTopLayerPinPattern(int layer,
+  void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
-                             int llx,
-                             int lly,
-                             int urx,
-                             int ury,
-                             int width,
-                             int height,
+                             const Rect& region,
+                             int pin_width,
+                             int pin_height,
                              int keepout);
-  int getTopLayer() { return top_grid_.layer; }
+  odb::dbTechLayer* getTopLayer() const;
   void placePin(odb::dbBTerm* bterm,
-                int layer,
+                odb::dbTechLayer* layer,
                 int x,
                 int y,
                 int width,
                 int height,
                 bool force_to_die_bound);
 
+  static Direction getDirection(const std::string& direction);
+  static Edge getEdge(const std::string& edge);
+
  private:
-  Netlist netlist_;
-  Core core_;
-  std::vector<IOPin> assignment_;
-
-  int slots_per_section_;
-  float slots_increase_factor_;
-
-  std::vector<Interval> excluded_intervals_;
-  std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
-
-  Logger* logger_;
-  std::unique_ptr<Parameters> parms_;
-  Netlist netlist_io_pins_;
-  std::vector<Slot> slots_;
-  std::vector<Slot> top_layer_slots_;
-  std::vector<Section> sections_;
-  std::vector<IOPin> zero_sink_ios_;
-  std::set<int> hor_layers_;
-  std::set<int> ver_layers_;
-  TopLayerGrid top_grid_;
-
-  // db variables
-  odb::dbDatabase* db_;
-  odb::dbTech* tech_;
-  odb::dbBlock* block_;
-
   void createTopLayerPinPattern();
   void initNetlistAndCore(std::set<int> hor_layer_idx,
                           std::set<int> ver_layer_idx);
@@ -265,10 +173,11 @@ class IOPlacer
                            std::vector<Section>& sections);
   std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
-                                         Netlist& netlist);
-  int returnIONetsHPWL(Netlist&);
+                                         Netlist* netlist);
+  int computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();
+  void excludeInterval(Interval interval);
 
   void updateOrientation(IOPin& pin);
   void updatePinArea(IOPin& pin);
@@ -293,6 +202,33 @@ class IOPlacer
   void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();
+  odb::dbBlock* getBlock() const;
+  odb::dbTech* getTech() const;
+
+  std::unique_ptr<Netlist> netlist_;
+  std::unique_ptr<Core> core_;
+  std::vector<IOPin> assignment_;
+
+  int slots_per_section_;
+  float slots_increase_factor_;
+
+  std::vector<Interval> excluded_intervals_;
+  std::vector<Constraint> constraints_;
+  std::vector<PinGroup> pin_groups_;
+
+  Logger* logger_;
+  std::unique_ptr<Parameters> parms_;
+  std::unique_ptr<Netlist> netlist_io_pins_;
+  std::vector<Slot> slots_;
+  std::vector<Slot> top_layer_slots_;
+  std::vector<Section> sections_;
+  std::vector<IOPin> zero_sink_ios_;
+  std::set<int> hor_layers_;
+  std::set<int> ver_layers_;
+  std::unique_ptr<TopLayerGrid> top_grid_;
+
+  // db variables
+  odb::dbDatabase* db_;
 };
 
 }  // namespace ppl

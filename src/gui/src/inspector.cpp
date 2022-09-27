@@ -328,7 +328,12 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     value_valid = true;
   }
   if (value_valid && value != old_value) {
-    accepted = callback(callback_value);
+    try {
+      accepted = callback(callback_value);
+    } catch (const std::runtime_error&) {
+      // failed due to an error thrown by openroad
+      accepted = false;
+    }
   }
 
   QString edit_save = old_value;  // default to set to old value
@@ -987,7 +992,12 @@ void Inspector::update(const Selected& object)
 void Inspector::handleAction(QWidget* action)
 {
   auto callback = actions_[action];
-  auto new_selection = callback();
+  Selected new_selection;
+  try {
+    new_selection = callback();
+  } catch (const std::runtime_error&) {
+    return;
+  }
 
   if (new_selection && new_selection == selection_) {
     return;

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # sky130hs liberty cap axis != max_capacitance -> max cap violations
 read_lef sky130hs/sky130hs.tlef
 read_lef sky130hs/sky130hs_std_cell.lef

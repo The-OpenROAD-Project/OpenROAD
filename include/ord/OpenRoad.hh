@@ -199,6 +199,8 @@ public:
                bool floorplan_init,
                bool incremental);
   
+  void writeLef(const char* filename);
+
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);
@@ -214,6 +216,10 @@ public:
 		    bool include_pwr_gnd,
 		    std::vector<sta::LibertyCell*> *remove_cells);
   void linkDesign(const char *top_cell_name);
+
+  // Used if a design is created programmatically rather than loaded
+  // to notify the tools (eg dbSta, gui).
+  void designCreated();
 
   void readDb(const char *filename);
   void writeDb(const char *filename);

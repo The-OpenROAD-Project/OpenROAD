@@ -130,7 +130,7 @@ class FlexGCWorker::Impl
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
   void initPA0(const frDesign* design);
   void initPA1();
-
+  void initNetsFromDesign(const frDesign* design);
   // update
   void updateGCWorker();
 
@@ -167,7 +167,7 @@ class FlexGCWorker::Impl
   frLayerNum maxLayerNum_;
 
   // for pin prep
-  frBlockObject* targetObj_;
+  std::set<frBlockObject*> targetObjs_;
   bool ignoreDB_;
   bool ignoreMinArea_;
   bool ignoreLongSideEOL_;
@@ -184,7 +184,8 @@ class FlexGCWorker::Impl
                frBlockObject* obj,
                bool isFixed);
   gcNet* initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
-  void initDesign(const frDesign* design);
+  gcNet* initRouteObj(frBlockObject* obj, gcNet* currNet = nullptr);
+  void initDesign(const frDesign* design, bool skipDR = false);
   bool initDesign_skipObj(frBlockObject* obj);
   void initDRWorker();
   void initNets();

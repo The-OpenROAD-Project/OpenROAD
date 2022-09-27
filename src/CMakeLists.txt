@@ -31,6 +31,8 @@ set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
+  Design.cc
+  Tech.cc
   OpenRoad.cc
   Main.cc
   )
@@ -188,6 +190,9 @@ endif()
 
 find_package(spdlog REQUIRED)
 message(STATUS "spdlog: ${spdlog_VERSION}")
+if (${SPDLOG_FMT_EXTERNAL})
+  message(WARNING "spdlog: SPDLOG_FMT_EXTERNAL=${SPDLOG_FMT_EXTERNAL}")
+endif()
 
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -321,10 +326,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
   swig_lib(NAME      openroad_swig_py
-		   NAMESPACE ord
-		   LANGUAGE  python
-		   I_FILE    OpenRoad-py.i
-		   SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           NAMESPACE ord
+           LANGUAGE  python
+           I_FILE    OpenRoad-py.i
+           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
   )
 
   target_link_libraries(openroad_swig_py
@@ -336,6 +341,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(openroad
     openroad_swig_py
     odbpy
+    ifp_py
   )
 else()
   message(STATUS "Python3 disabled")

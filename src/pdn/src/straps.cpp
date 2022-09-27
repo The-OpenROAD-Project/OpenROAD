@@ -300,15 +300,15 @@ void Straps::report() const
 
   const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-  logger->info(utl::PDN, 40, "  Type: {}", typeToString(type()));
-  logger->info(utl::PDN, 41, "    Layer: {}", layer_->getName());
-  logger->info(utl::PDN, 42, "    Width: {:.4f}", width_ / dbu_per_micron);
-  logger->info(utl::PDN, 43, "    Spacing: {:.4f}", spacing_ / dbu_per_micron);
-  logger->info(utl::PDN, 44, "    Pitch: {:.4f}", pitch_ / dbu_per_micron);
-  logger->info(utl::PDN, 45, "    Offset: {:.4f}", offset_ / dbu_per_micron);
-  logger->info(utl::PDN, 46, "    Snap to grid: {}", snap_);
+  logger->report("  Type: {}", typeToString(type()));
+  logger->report("    Layer: {}", layer_->getName());
+  logger->report("    Width: {:.4f}", width_ / dbu_per_micron);
+  logger->report("    Spacing: {:.4f}", spacing_ / dbu_per_micron);
+  logger->report("    Pitch: {:.4f}", pitch_ / dbu_per_micron);
+  logger->report("    Offset: {:.4f}", offset_ / dbu_per_micron);
+  logger->report("    Snap to grid: {}", snap_);
   if (number_of_straps_ > 0) {
-      logger->info(utl::PDN, 47, "    Number of strap sets: {}", number_of_straps_);
+      logger->report("    Number of strap sets: {}", number_of_straps_);
   }
 }
 
@@ -581,20 +581,46 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore(const std:
 
   std::vector<odb::dbBox*> pins;
 
-  for (const auto& [layer, layer_pins] : getPinsByLayer()) {
-    // check if layer should be used
-    if (!layers.empty()
-        && std::find(layers.begin(), layers.end(), layer) == layers.end()) {
-      continue;
-    }
-    // only add pins that would yield correct routing directions
-    if (is_horizontal) {
-      if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
-        continue;
+  auto pins_by_layer = getPinsByLayer();
+  if (!layers.empty()) {
+    // remove unspecified layers
+    for (auto itr = pins_by_layer.begin(); itr != pins_by_layer.end();) {
+      auto layer = itr->first;
+      if (std::find(layers.begin(), layers.end(), layer) == layers.end()) {
+        // remove layer
+        itr = pins_by_layer.erase(itr);
+      } else {
+        itr++;
       }
-    } else {
-      if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
-        continue;
+    }
+  }
+
+  // check for pin directions
+  bool has_horizontal_pins = false;
+  bool has_vertical_pins = false;
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      has_horizontal_pins = true;
+    }
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      has_vertical_pins = true;
+    }
+  }
+
+  const bool has_multiple_directions = has_horizontal_pins && has_vertical_pins;
+
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (has_multiple_directions) {
+      // only add pins that would yield correct routing directions,
+      // otherwise keep non-preferred directions too
+      if (is_horizontal) {
+        if (layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
+          continue;
+        }
+      } else {
+        if (layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
+          continue;
+        }
       }
     }
     pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
@@ -717,8 +743,8 @@ void PadDirectConnectionStraps::report() const
 {
   auto* logger = getLogger();
 
-  logger->info(utl::PDN, 80, "  Type: {}", typeToString(type()));
-  logger->info(utl::PDN, 81, "    Pin: {}", getName());
+  logger->report("  Type: {}", typeToString(type()));
+  logger->report("    Pin: {}", getName());
 }
 
 std::string PadDirectConnectionStraps::getName() const
@@ -929,7 +955,8 @@ std::vector<PadDirectConnectionStraps*> PadDirectConnectionStraps::getAssociated
   for (const auto& strap : getGrid()->getStraps()) {
     if (strap->type() == GridComponent::PadConnect) {
       PadDirectConnectionStraps* pad_strap = dynamic_cast<PadDirectConnectionStraps*>(strap.get());
-      if (pad_strap->getITerm()->getInst() == inst) {
+      if (pad_strap != nullptr &&
+          pad_strap->getITerm()->getInst() == inst) {
         straps.push_back(pad_strap);
       }
     }
@@ -1511,11 +1538,9 @@ void RepairChannelStraps::report() const
   auto* block = getGrid()->getBlock();
   auto* logger = getLogger();
 
-  logger->info(utl::PDN,
-               82,
-               "    Repair area: {}",
-               Shape::getRectText(area_, block->getDbUnitsPerMicron()));
-  logger->info(utl::PDN, 83, "    Nets: {}", getNetString());
+  logger->report("    Repair area: {}",
+                 Shape::getRectText(area_, block->getDbUnitsPerMicron()));
+  logger->report("    Nets: {}", getNetString());
 }
 
 Straps* RepairChannelStraps::getTargetStrap(Grid* grid, odb::dbTechLayer* layer)
@@ -1777,6 +1802,9 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
     for (const auto& strap : grid->getStraps()) {
       if (strap->type() == GridComponent::RepairChannel) {
         RepairChannelStraps* repair_strap = dynamic_cast<RepairChannelStraps*>(strap.get());
+        if (repair_strap == nullptr) {
+          continue;
+        }
         if (repair_strap->getLayer() == channel.target->getLayer() && channel.area == repair_strap->getArea()) {
           if (!repair_strap->isAtEndOfRepairOptions()) {
             repair_strap->addNets(channel.nets);

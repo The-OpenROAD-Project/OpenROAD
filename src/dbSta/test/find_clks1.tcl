@@ -1,4 +1,5 @@
 # findClkNets from input port thru pad
+source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef pad.lef
 read_liberty Nangate45/Nangate45_typ.lib

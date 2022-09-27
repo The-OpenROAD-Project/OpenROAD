@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # floorplan corner missing rows requires -max_displacement to pull in pin buffers
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef

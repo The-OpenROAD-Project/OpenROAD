@@ -6,12 +6,10 @@
 [INFO ODB-0222] Reading LEF file: nangate_bsg_black_parrot/dummy_pads_short.lef
 [INFO ODB-0225]     Created 22 library cells
 [INFO ODB-0226] Finished LEF file:  nangate_bsg_black_parrot/dummy_pads_short.lef
-[INFO ODB-0127] Reading DEF file: nangate_bsg_black_parrot/floorplan_flipchip_short.def
 [INFO ODB-0128] Design: soc_bsg_black_parrot
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 1400 components and 5671 component-terminals.
 [INFO ODB-0132]     Created 139 special nets and 4915 connections.
 [INFO ODB-0133]     Created 219 nets and 267 connections.
-[INFO ODB-0134] Finished DEF file: nangate_bsg_black_parrot/floorplan_flipchip_short.def
 [INFO PDN-0001] Inserting grid: Core
 No differences found.

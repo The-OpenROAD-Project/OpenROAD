@@ -112,6 +112,11 @@ set_overflow_iterations(int iterations)
   getGlobalRouter()->setOverflowIterations(iterations);
 }
 
+void set_congestion_report_file (const char * file_name)
+{
+  getGlobalRouter()->setCongestionReportFile(file_name);
+}
+
 void
 set_grid_origin(int x, int y)
 {
@@ -209,6 +214,11 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
+}
+
+void set_global_route_debug_stt_input_filename(const char* file_name)
+{
+  getGlobalRouter()->setSttInputFilename(file_name);
 }
 
 void create_wl_report_file(const char* file_name, bool verbose)

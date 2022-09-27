@@ -67,17 +67,21 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using Polygon
       = bg::model::polygon<Point, false>;  // counterclockwise(clockwise=false)
   template <typename T>
-  using Value = std::tuple<Box, Polygon, T>;
+  using BoxValue = std::tuple<Box, T>;
+  template <typename T>
+  using PolygonValue = std::tuple<Box, Polygon, T>;
 
   template <typename T>
-  using Rtree = bgi::rtree<Value<T>, bgi::quadratic<16>>;
+  using RtreeBox = bgi::rtree<BoxValue<T>, bgi::quadratic<16>>;
+  template <typename T>
+  using RtreePolygon = bgi::rtree<PolygonValue<T>, bgi::quadratic<16>>;
 
   // This is an iterator range for return values
-  template <typename T>
+  template <typename Tree>
   class Range
   {
    public:
-    using Iterator = typename Rtree<T>::const_query_iterator;
+    using Iterator = typename Tree::const_query_iterator;
 
     Range() = default;
     Range(const Iterator& begin, const Iterator& end) : begin_(begin), end_(end)
@@ -91,27 +95,36 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     Iterator begin_;
     Iterator end_;
   };
-  using InstRange = Range<odb::dbInst*>;
-  using ShapeRange = Range<odb::dbNet*>;
-  using FillRange = Range<odb::dbFill*>;
-  using ObstructionRange = Range<odb::dbObstruction*>;
-  using BlockageRange = Range<odb::dbBlockage*>;
-  using RowRange = Range<odb::dbRow*>;
+  using InstRange = Range<RtreeBox<odb::dbInst*>>;
+  using BoxRange = Range<RtreeBox<odb::dbNet*>>;
+  using PolygonRange = Range<RtreePolygon<odb::dbNet*>>;
+  using FillRange = Range<RtreeBox<odb::dbFill*>>;
+  using ObstructionRange = Range<RtreeBox<odb::dbObstruction*>>;
+  using BlockageRange = Range<RtreeBox<odb::dbBlockage*>>;
+  using RowRange = Range<RtreeBox<odb::dbRow*>>;
 
-  Search();
   ~Search();
 
   // Build the structure for the given block.
   void setBlock(odb::dbBlock* block);
 
-  // Find all shapes in the given bounds on the given layer which
+  // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
-  ShapeRange searchShapes(odb::dbTechLayer* layer,
-                          int x_lo,
-                          int y_lo,
-                          int x_hi,
-                          int y_hi,
-                          int min_size = 0);
+  BoxRange searchBoxShapes(odb::dbTechLayer* layer,
+                           int x_lo,
+                           int y_lo,
+                           int x_hi,
+                           int y_hi,
+                           int min_size = 0);
+
+  // Find all polgyon shapes in the given bounds on the given layer which
+  // are at least min_size in either dimension.
+  PolygonRange searchPolygonShapes(odb::dbTechLayer* layer,
+                                   int x_lo,
+                                   int y_lo,
+                                   int x_hi,
+                                   int y_hi,
+                                   int min_size = 0);
 
   // Find all fills in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -210,21 +223,22 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   void announceModified(bool& flag);
 
-  odb::dbBlock* block_;
+  odb::dbBlock* block_{nullptr};
 
   // The net is used for filter shapes by net type
-  std::map<odb::dbTechLayer*, Rtree<odb::dbNet*>> shapes_;
-  bool shapes_init_;
-  std::map<odb::dbTechLayer*, Rtree<odb::dbFill*>> fills_;
-  bool fills_init_;
-  Rtree<odb::dbInst*> insts_;
-  bool insts_init_;
-  Rtree<odb::dbBlockage*> blockages_;
-  bool blockages_init_;
-  std::map<odb::dbTechLayer*, Rtree<odb::dbObstruction*>> obstructions_;
-  bool obstructions_init_;
-  Rtree<odb::dbRow*> rows_;
-  bool rows_init_;
+  std::map<odb::dbTechLayer*, RtreeBox<odb::dbNet*>> box_shapes_;
+  std::map<odb::dbTechLayer*, RtreePolygon<odb::dbNet*>> polygon_shapes_;
+  bool shapes_init_{false};
+  std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;
+  bool fills_init_{false};
+  RtreeBox<odb::dbInst*> insts_;
+  bool insts_init_{false};
+  RtreeBox<odb::dbBlockage*> blockages_;
+  bool blockages_init_{false};
+  std::map<odb::dbTechLayer*, RtreeBox<odb::dbObstruction*>> obstructions_;
+  bool obstructions_init_{false};
+  RtreeBox<odb::dbRow*> rows_;
+  bool rows_init_{false};
 };
 
 }  // namespace gui

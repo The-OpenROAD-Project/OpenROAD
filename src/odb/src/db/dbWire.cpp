@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWire.h"
-
 #include <algorithm>
 
 #include "db.h"
@@ -44,6 +42,7 @@
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
+#include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 namespace odb {
@@ -629,7 +628,7 @@ bool dbWire::getBBox(Rect& bbox)
   bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   dbWireShapeItr itr;
   dbShape s;
-  uint cnt = 0; 
+  uint cnt = 0;
 
   for (itr.begin(this); itr.next(s);) {
     Rect r = s.getBox();

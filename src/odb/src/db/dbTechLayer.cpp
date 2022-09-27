@@ -39,6 +39,7 @@
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbTechLayerAreaRule.h"
 #include "dbTechLayerArraySpacingRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
@@ -152,6 +153,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
 
   if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
+    return false;
+
+  if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
     return false;
 
   // User Code Begin ==
@@ -328,6 +332,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(eol_keep_out_rules_tbl_);
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
+  DIFF_TABLE(area_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -403,6 +408,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
+  DIFF_OUT_TABLE(area_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -524,6 +530,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerMinCutRuleObj);
+  area_rules_tbl_ = new dbTable<_dbTechLayerAreaRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerAreaRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -636,6 +647,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r.width_table_rules_tbl_);
   min_cuts_rules_tbl_
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
+  area_rules_tbl_
+      = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -713,6 +726,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_keep_out_rules_tbl_;
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
+  stream >> *obj.area_rules_tbl_;
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -774,6 +788,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.eol_keep_out_rules_tbl_;
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
+  stream << *obj.area_rules_tbl_;
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
@@ -848,6 +863,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return width_table_rules_tbl_;
     case dbTechLayerMinCutRuleObj:
       return min_cuts_rules_tbl_;
+    case dbTechLayerAreaRuleObj:
+      return area_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -882,6 +899,7 @@ _dbTechLayer::~_dbTechLayer()
   delete eol_keep_out_rules_tbl_;
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
+  delete area_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -915,12 +933,12 @@ uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = std::lower_bound(_two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
-  if(pos != _two_widths_sp_idx.begin())
+  auto pos = std::lower_bound(
+      _two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
+  if (pos != _two_widths_sp_idx.begin())
     --pos;
   int idx = std::max(0, (int) std::distance(_two_widths_sp_idx.begin(), pos));
-  for(; idx >= 0; idx--)
-  {
+  for (; idx >= 0; idx--) {
     if (prl >= _two_widths_sp_prl[idx])
       return idx;
   }
@@ -1038,6 +1056,12 @@ dbSet<dbTechLayerMinCutRule> dbTechLayer::getTechLayerMinCutRules() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerMinCutRule>(obj, obj->min_cuts_rules_tbl_);
+}
+
+dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -1260,7 +1284,6 @@ void dbTechLayer::setWireExtension(uint ext)
 int dbTechLayer::getSpacing(int w, int l)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  dbSet<dbTechLayerSpacingRule> v54rules;
 
   bool found_spacing = false;
   uint spacing = MAX_INT;
@@ -1270,22 +1293,16 @@ int dbTechLayer::getSpacing(int w, int l)
   uint width = (uint) w;
   uint length = (uint) l;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
-    dbTechLayerSpacingRule* cur_rule;
+  for (auto cur_rule : getV54SpacingRules()) {
     uint rmin, rmax;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      cur_rule = *ritr;
-      if (cur_rule->getRange(rmin, rmax)) {
-        if ((width >= rmin) && (width <= rmax)) {
-          spacing = MIN(spacing, cur_rule->getSpacing());
-          found_spacing = true;
-        }
-        if (width > rmax) {
-          found_over_spacing = true;
-          over_spacing = MIN(over_spacing, cur_rule->getSpacing());
-        }
+    if (cur_rule->getRange(rmin, rmax)) {
+      if ((width >= rmin) && (width <= rmax)) {
+        spacing = MIN(spacing, cur_rule->getSpacing());
+        found_spacing = true;
+      }
+      if (width > rmax) {
+        found_over_spacing = true;
+        over_spacing = MIN(over_spacing, cur_rule->getSpacing());
       }
     }
   }
@@ -1324,16 +1341,12 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
   owidth = getWidth();
   olength = owidth;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
+  for (auto rule : getV54SpacingRules()) {
     uint rmin, rmax;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      if ((*ritr)->getRange(rmin, rmax)) {
-        if (rmin > (uint) owidth) {
-          owidth = rmin;
-          olength = rmin;
-        }
+    if (rule->getRange(rmin, rmax)) {
+      if (rmin > (uint) owidth) {
+        owidth = rmin;
+        olength = rmin;
       }
     }
   }
@@ -1355,17 +1368,12 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   owidth = getWidth();
   olength = owidth;
 
-  if (getV54SpacingRules(v54rules)) {
-    dbSet<dbTechLayerSpacingRule>::iterator ritr;
+  for (auto rule : getV54SpacingRules()) {
     uint rmin, rmax;
-    bool range_found = false;
-
-    for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
-      if ((*ritr)->getRange(rmin, rmax)) {
-        if ((rmin < (uint) owidth) || !range_found) {
-          owidth = rmin;
-          olength = rmin;
-        }
+    if (rule->getRange(rmin, rmax)) {
+      if (rmin < (uint) owidth) {
+        owidth = rmin;
+        olength = rmin;
       }
     }
   }
@@ -1376,13 +1384,10 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   }
 }
 
-bool dbTechLayer::getV54SpacingRules(
-    dbSet<dbTechLayerSpacingRule>& sp_rules) const
+dbSet<dbTechLayerSpacingRule> dbTechLayer::getV54SpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  sp_rules = dbSet<dbTechLayerSpacingRule>(layer, layer->_spacing_rules_tbl);
-  return true;
+  return dbSet<dbTechLayerSpacingRule>(layer, layer->_spacing_rules_tbl);
 }
 
 bool dbTechLayer::hasV55SpacingRules() const
@@ -1500,23 +1505,6 @@ void dbTechLayer::addV55SpacingTableEntry(uint inrow, uint incol, uint spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_v55sp_spacing(inrow, incol) = spacing;
-}
-
-bool dbTechLayer::getV55InfluenceRules(
-    std::vector<dbTechV55InfluenceEntry*>& inf_tbl)
-{
-  inf_tbl.clear();
-  dbSet<dbTechV55InfluenceEntry> entries = getV55InfluenceEntries();
-
-  if (entries.size() == 0)
-    return false;
-
-  dbSet<dbTechV55InfluenceEntry>::iterator itr;
-
-  for (itr = entries.begin(); itr != entries.end(); ++itr)
-    inf_tbl.push_back(*itr);
-
-  return true;
 }
 
 bool dbTechLayer::hasTwoWidthsSpacingRules() const
@@ -1667,12 +1655,10 @@ dbSet<dbTechMinEncRule> dbTechLayer::getMinEncRules()
   return rules;
 }
 
-dbSet<dbTechV55InfluenceEntry> dbTechLayer::getV55InfluenceEntries()
+dbSet<dbTechV55InfluenceEntry> dbTechLayer::getV55InfluenceRules()
 {
-  dbSet<dbTechV55InfluenceEntry> rules;
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  rules = dbSet<dbTechV55InfluenceEntry>(layer, layer->_v55inf_tbl);
-  return rules;
+  return dbSet<dbTechV55InfluenceEntry>(layer, layer->_v55inf_tbl);
 }
 
 bool dbTechLayer::getMinEnclosureRules(

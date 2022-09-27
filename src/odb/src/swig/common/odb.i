@@ -69,6 +69,14 @@ using namespace odb;
 %ignore odb::dbTechLayerAntennaRule::getDiffCSR() const;
 %ignore odb::dbTechLayerAntennaRule::getAreaDiffReduce() const;
 
+// Swig can't handle non-assignable types
+%ignore odb::Point::get(Orientation2D orient) const;
+%ignore odb::Rect::low(Orientation2D orient) const;
+%ignore odb::Rect::high(Orientation2D orient) const;
+%ignore odb::Rect::get(Orientation2D orient, Direction1D dir) const;
+%ignore odb::Rect::set(Orientation2D orient, Direction1D dir, int value);
+%ignore odb::Point::set(Orientation2D orient, int value);
+
 %include "dbenums.i"
 %include "parserenums.i"
 %include "dbtypes.i"

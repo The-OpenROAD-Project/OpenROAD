@@ -46,11 +46,11 @@
 #include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
-#include "io/io.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "io/io.h"
 #include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
@@ -79,8 +79,8 @@ void serializeWorker(FlexDRWorker* worker, std::string& workerStr)
 }
 
 void deserializeWorker(FlexDRWorker* worker,
-                               frDesign* design,
-                               const std::string& workerStr)
+                       frDesign* design,
+                       const std::string& workerStr)
 {
   std::stringstream stream(
       workerStr,
@@ -148,7 +148,7 @@ std::string FlexDRWorker::reloadedMain()
 }
 
 void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
-                             const std::string& file_name)
+                      const std::string& file_name)
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
@@ -192,7 +192,7 @@ int FlexDRWorker::main(frDesign* design)
     workerFile << workerStr;
     workerFile.close();
     std::ofstream file(
-        fmt::format("{}/globals.bin", debugSettings_->dumpDir).c_str());
+        fmt::format("{}/worker_globals.bin", debugSettings_->dumpDir).c_str());
     frOArchive ar(file);
     registerTypes(ar);
     serializeGlobals(ar);
@@ -281,7 +281,6 @@ void FlexDR::initFromTA()
 void FlexDR::initGCell2BoundaryPin()
 {
   // initiailize size
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -306,7 +305,7 @@ void FlexDR::initGCell2BoundaryPin()
           }
           Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
           Point idx2 = design_->getTopBlock()->getGCellIdx(ep);
-          
+
           // update gcell2BoundaryPin
           // horizontal
           if (bp.y() == ep.y()) {
@@ -314,7 +313,8 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               bool hasLeftBound = true;
@@ -345,7 +345,8 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+              Rect gcellBox
+                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               bool hasBottomBound = true;
@@ -511,7 +512,6 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     viaBox1 = via1.getLayer2BBox();
     isVia1Above = false;
   }
-  Rect cutBox1 = via1.getCutBBox();
   int width1 = viaBox1.minDXDY();
 
   bool isVia2Above = false;
@@ -524,7 +524,6 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     viaBox2 = via2.getLayer2BBox();
     isVia2Above = false;
   }
-  Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
@@ -1613,7 +1612,6 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (graphics_) {
     graphics_->startIter(iter);
   }
-  Rect dieBox = getDesign()->getTopBlock()->getDieBox();
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -1638,7 +1636,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
       const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
+      Rect routeBox2
+          = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
                     routeBox1.yMin(),
                     routeBox2.xMax(),
@@ -1718,24 +1717,25 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
               else
                 workersInBatch[i]->main(getDesign());
 #pragma omp critical
-                {
-                  cnt++;
-                  if (VERBOSE > 0) {
-                    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                        && prev_perc < 90) {
-                      if (prev_perc == 0 && t.isExceed(0)) {
-                        isExceed = true;
-                      }
-                      prev_perc += 10;
-                      if (isExceed) {
-                        logger_->report("    Completing {}% with {} violations.",
-                                        prev_perc,
-                                        getDesign()->getTopBlock()->getNumMarkers());
-                        logger_->report("    {}.", t);
-                      }
+              {
+                cnt++;
+                if (VERBOSE > 0) {
+                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                      && prev_perc < 90) {
+                    if (prev_perc == 0 && t.isExceed(0)) {
+                      isExceed = true;
+                    }
+                    prev_perc += 10;
+                    if (isExceed) {
+                      logger_->report(
+                          "    Completing {}% with {} violations.",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report("    {}.", t);
                     }
                   }
                 }
+              }
             } catch (...) {
               exception.capture();
             }
@@ -1766,8 +1766,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 #pragma omp parallel for schedule(dynamic)
               for (int i = 0; i < workers.size(); i++) {
                 deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
-                                   design_,
-                                   workers.at(i).second);
+                                  design_,
+                                  workers.at(i).second);
               }
             }
             logger_->report("    Deserialized Batches:{}.", t);
@@ -1778,7 +1778,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if(workersInBatch[i]->end(getDesign()))
+          if (workersInBatch[i]->end(getDesign()))
             numWorkUnits_ += 1;
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
@@ -1814,30 +1814,68 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
-        utl::DRT,
-        "workers",
-        1,
-        "Number of work units = {}.",
-        numWorkUnits_);
+             utl::DRT,
+             "workers",
+             1,
+             "Number of work units = {}.",
+             numWorkUnits_);
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
                   "  Number of violations = {}.",
                   getDesign()->getTopBlock()->getNumMarkers());
+    if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
+      // report violations
+      std::map<std::string, std::map<frLayerNum, uint>> violations;
+      std::set<frLayerNum> layers;
+      const std::map<std::string, std::string> relabel
+          = {{"Lef58SpacingEndOfLine", "EOL"},
+             {"Lef58CutSpacingTable", "CutSpcTbl"},
+             {"Lef58EolKeepOut", "eolKeepOut"}};
+      for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+        if (!marker->getConstraint())
+          continue;
+        auto type = marker->getConstraint()->getViolName();
+        if (relabel.find(type) != relabel.end())
+          type = relabel.at(type);
+        violations[type][marker->getLayerNum()]++;
+        layers.insert(marker->getLayerNum());
+      }
+      std::string line = fmt::format("{:<15}", "Viol/Layer");
+      for (auto lNum : layers) {
+        std::string lName = getTech()->getLayer(lNum)->getName();
+        if (lName.size() >= 7) {
+          lName = lName.substr(0, 2) + ".." + lName.substr(lName.size() - 2, 2);
+        }
+        line += fmt::format("{:>7}", lName);
+      }
+      logger_->report(line);
+      for (auto [type, typeViolations] : violations) {
+        std::string typeName = type;
+        if (typeName.size() >= 15)
+          typeName = typeName.substr(0, 12) + "..";
+        line = fmt::format("{:<15}", typeName);
+        for (auto lNum : layers) {
+          line += fmt::format("{:>7}", typeViolations[lNum]);
+        }
+        logger_->report(line);
+      }
+    }
     t.print(logger_);
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "autotuner", 1) ||
-      logger_->debugCheck(DRT, "report", 1)) {
-    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  if (logger_->debugCheck(DRT, "autotuner", 1)
+      || logger_->debugCheck(DRT, "report", 1)) {
+    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+                       design_->getTopBlock()->getMarkers());
   }
 }
 
 void FlexDR::end(bool done)
 {
   if (done && DRC_RPT_FILE != string("")) {
-    router_->reportDRC(DRC_RPT_FILE);
+    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
@@ -1872,17 +1910,19 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
-    logger_->metric("route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("route__drc_errors",
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric("route__wirelength",
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     logger_->metric("route__vias", totSCut + totMCut);
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
+  } else {
+    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_),
+                    getDesign()->getTopBlock()->getNumMarkers());
+    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_),
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
   }
-  else {
-    logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_), getDesign()->getTopBlock()->getNumMarkers());
-    logger_->metric(fmt::format("route__wirelength__iter:{}", iter_), totWlen / getDesign()->getTopBlock()->getDBUPerUU());
-  }
-
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
@@ -2119,7 +2159,7 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if(routingArea == 0.0)
+        if (routingArea == 0.0)
           coveredPercentage = -1.0;
         else
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
@@ -2171,7 +2211,7 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  if(totalArea == 0)
+  if (totalArea == 0)
     file << "NA";
   else {
     auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;

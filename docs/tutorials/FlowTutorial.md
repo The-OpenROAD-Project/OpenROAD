@@ -30,19 +30,21 @@
   - [DRC Viewer](#DRC-Viewer)
   - [Tcl Command Interface](#Tcl-Command-Interface)
   - [Customizing The GUI](#Customizing-The-GUI)
-- [Manual Usage Of The OpenROAD Flow For Better User Control And Results](#Manual-Usage-Of-The-OpenROAD-Flow-For-Better-User-Control-And-Results)
+- [Understanding and Analyzing OpenROAD Flow Stages and Results](#Understanding-and-Analyzing-OpenROAD-Flow-Stages-and-Results)
   - [Synthesis Explorations](#Synthesis-Explorations)
     - [Area And Timing Optimization](#Area-And-Timing-Optimization)
-  - [Floorplanning And Placement](#Floorplanning-And-Placement)
+  - [Floorplanning](#Floorplanning)
     - [Floorplan Initialization Based On Core And Die Area](#Floorplan-Initialization-Based-On-Core-And-Die-Area)
     - [Floorplan Based On Core Utilization](#Floorplan-Based-On-Core-Utilization)
-    - [Defining Placement Density](#Defining-Placement-Density)
+  - [IO Pin Placement](#IO-Pin-Placement)
   - [Chip Level IO Pad Placement](#Chip-Level-IO-Pad-Placement)
   - [Power Planning And Analysis](#Power-Planning-And-Analysis)
-  - [Placement Area or Timing Optimizations](#Placement-Area-or-Timing-Optimizations)
+  - [Macro or Cell Placement](#Macro-or-Cell-Placement)
     - [Macro Placement](#Macro-Placement)
       - [Macro Placement With Halo Spacing](#Macro-Placement-With-Halo-Spacing)
       - [Macro placement With Channel Spacing](#Macro-Placement-With-Channel-Spacing)
+    - [Defining Placement Density](#Defining-Placement-Density)
+  - [Timing Optimizations](#Timing-Optimizations)
     - [Timing Optimization Using repair_design](#Timing-Optimization-Using-repair_design)
     - [Timing Optimization Using repair_timing](#Timing-Optimization-Using-repair_timing)
     - [Timing Optimization Based On Multiple Corners](#Timing-Optimization-Based-On-Multiple-Corners)
@@ -51,6 +53,14 @@
   - [Clock Tree Synthesis](#Clock-Tree-Synthesis)
     - [Reporting Clock Skews](#Reporting-Clock-Skews)
     - [Reporting CTS Metrics](#Reporting-CTS-Metrics)
+  - [Adding Filler Cells](#Adding-Filler-Cells)
+  - [Global Routing](#Global-Routing)
+  - [Antenna Checker](#Antenna-Checker)
+  - [Detail Routing](#Detail-Routing)
+  - [Metal Fill](#Metal-Fill)
+  - [Parasitics Extraction](#Parasitics-Extraction)
+- [Troubleshooting Problems](#Troubleshooting-Problems)
+  - [Debugging Problems in Global Routing](#Debugging-Problems-in-Global-Routing)
 
 ## Introduction
 
@@ -224,21 +234,33 @@ From the OpenROAD-flow-scripts directory, users can access individual flow
 stages, respective tools and the corresponding `README.md` for tool commands,
 configuration examples using the Tcl interface and other such details.
 
--   Synthesis - [Yosys](https://github.com/The-OpenROAD-Project/yosys/blob/master/README.md).
--   Floorplanning - [Initialize Floorplan](../../src/ifp/README.md).
--   Global Placement - [RePlAce](../../src/gpl/README.md).
--   Clock Tree Synthesis - [TrintonCTS 2.0](../../src/cts/README.md).
--   Detailed Placement - [OpenDP](../../src/dpl/README.md).
--   Global Route - [Fast Route](../../src/grt/README.md).
--   Antenna Rule Checker - [Antenna Rule Checker](../../src/ant/README.md).
--   Timing Optimization using Resizer - [Gate Resizer](../../src/rsz/README.md).
--   Detail Routing - [TritonRoute](../../src/drt/README.md).
--   Layout Generation - [KLayout](https://www.klayout.de/) (Requires v0.27.1).
+-   [Synthesis](https://github.com/The-OpenROAD-Project/yosys/blob/master/README.md)
+-   [Database](../../src/odb/README.md)
+-   [Floorplanning](../../src/ifp/README.md)
+-   [Pin Placement](../../src/ppl/README.md)
+-   [Chip-level Connections](../../src/pad/README.md)
+-   [Macro Placement](../../src/mpl/README.md)
+-   [Tapcell insertion](../../src/tap/README.md)
+-   [PDN Analysis](../../src/pdn/README.md)
+-   [IR Drop Analysis](../../src/psm/README.md)
+-   [Global Placement](../../src/gpl/README.md)
+-   [Timing Analysis](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md)
+-   [Detailed Placement](../../src/dpl/README.md)
+-   [Timing Optimization using Resizer](../../src/rsz/README.md)
+-   [Clock Tree Synthesis](../../src/cts/README.md)
+-   [Global Routing](../../src/grt/README.md)
+-   [Antenna Rule Checker](../../src/ant/README.md)
+-   [Detail Routing](../../src/drt/README.md)
+-   [Metall Fill](../../src/fin/README.md)
+-   [Parasitics Extraction](../../src/rcx/README.md)
+-   [Layout Generation](https://www.klayout.de/)
 
 ### Design Goals
 
-Run the `ibex` design in ORFS automated flow from RTL-to-GDS using `sky130hd`
-for the given design goals below:
+Run the `ibex` design in ORFS automated flow from RTL-to-GDS using `sky130hd`.
+Find `ibex` design details  
+[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/src/ibex/README.md)
+and the design goals are:
 
 -   Area
 
@@ -259,7 +281,7 @@ The runtime will vary based on your configuration.
 Change your current directory to the `flow` directory.
 
 ```
-cd OpenROAD-flow-scripts/flow
+cd flow
 ```
 
 Run the complete flow with:
@@ -274,7 +296,7 @@ significance.
 ### Viewing ORFS Directory Structure And Results
 
 Open a new tab in the terminal and explore the directory structure in
-`OpenROAD-flow-scripts/flow` by typing `ls` command to view its contents:
+`flow` by typing `ls` command to view its contents:
 
 ```
 designs logs Makefile objects platforms reports results scripts test util
@@ -321,22 +343,22 @@ abc.constr klayout.lyt klayout_tech.lef lib
 
 
 -   `results/sky130hd/ibex/base`
-    Results directory which contains `.v/.sdc/.def/.spef` files
+    Results directory which contains `.v/.sdc/.odb/.def/.spef` files
 
 | `results`                   |                         |                    |
 |-----------------------------|-------------------------|--------------------|
-| `1_1_yosys.v`               | `3_1_place_gp.def`      | `5_route.sdc`      |
-| `1_synth.sdc`               | `3_2_place_iop.def`     | `6_1_fill.def`     |
-| `1_synth.v`                 | `3_3_place_resized.def` | `6_1_fill.sdc`     |
-| `2_1_floorplan.def`         | `3_4_place_dp.def`      | `6_1_merged.gds`   |
-| `2_2_floorplan_io.def`      | `3_place.def`           | `6_final.def`      |
-| `2_3_floorplan_tdms.def`    | `3_place.sdc`           | `6_final.gds`      |
-| `2_4_floorplan_macro.def`   | `4_1_cts.def`           | `6_final.sdc`      |
-| `2_5_floorplan_tapcell.def` | `4_2_cts_fillcell.def`  | `6_final.spef`     |
-| `2_6_floorplan_pdn.def`     | `4_cts.def`             | `6_final.v`        |
-| `2_floorplan.def`           | `4_cts.sdc`             | `output_guide.mod` |
+| `1_1_yosys.v`               | `3_1_place_gp.odb`      | `5_route.sdc`      |
+| `1_synth.sdc`               | `3_2_place_iop.odb`     | `6_1_fill.odb`     |
+| `1_synth.v`                 | `3_3_place_resized.odb` | `6_1_fill.sdc`     |
+| `2_1_floorplan.odb`         | `3_4_place_dp.odb`      | `6_1_merged.gds`   |
+| `2_2_floorplan_io.odb`      | `3_place.odb`           | `6_final.odb`      |
+| `2_3_floorplan_tdms.odb`    | `3_place.sdc`           | `6_final.gds`      |
+| `2_4_floorplan_macro.odb`   | `4_1_cts.odb`           | `6_final.sdc`      |
+| `2_5_floorplan_tapcell.odb` | `4_2_cts_fillcell.odb`  | `6_final.spef`     |
+| `2_6_floorplan_pdn.odb`     | `4_cts.odb`             | `6_final.v`        |
+| `2_floorplan.odb`           | `4_cts.sdc`             | `output_guide.mod` |
 | `2_floorplan.sdc`           | `4_cts.v`               | `route.guide`      |
-| `2_floorplan.v`             | `5_route.def`           | `updated_clks.sdc` |
+| `2_floorplan.v`             | `5_route.odb`           | `updated_clks.sdc` |
 
 
 -   `reports/sky130hd/ibex/base`
@@ -431,9 +453,9 @@ report_wns
 Note the worst slack, total negative slack and worst negative slack:
 
 ```
-worst slack -1.35
-tns -95.25
-wns -1.35
+worst slack -0.99
+tns -1.29
+wns -0.99
 ```
 
 Learn more about visualizing and tracing time paths across the design
@@ -469,16 +491,19 @@ Total                  1.48e-02   1.77e-02   6.57e-08   3.25e-02 100.0%
 The GUI allows users to select, control, highlight and navigate the
 design hierarchy and design objects (nets, pins, instances, paths, etc.)
 through detailed visualization and customization options. Find details
-on how to use the GUI [here](../../src/gui/README.md).
+on how to use the GUI [here](../../src/gui/README.md). All the windows
+aside from the layout are docking windows that can be undocked.  Also it
+can be close and reopened from the Windows menu.
 
 In this section, learn how to:
 
 1. Visualize design hierarchy
-2. Load DEF and LEF files for floorplan and layout visualization
+2. Load ODB files for floorplan and layout visualization
 3. Trace the synthesized clock tree to view hierarchy and buffers
 4. Use heat maps to view congestion and observe the effect of placement
 5. View and trace critical timing paths
 6. Set display control options
+7. Zoom to object from inspector
 
 If you have completed the RTL-GDS flow, then proceed to view the final
 GDS file under results directory `./results/sky130hd/ibex/base/`
@@ -500,16 +525,15 @@ make gui_final
 ### Viewing Layout Results
 
 The `make gui_final` command target successively reads and loads the
-technology `.lef`, design `.def` files and the parasitics and invokes the
+technology `.odb` files and the parasitics and invokes the
 GUI in these steps:
 
--   Reads and loads `.lef` files (tech and merged).
--   Reads and loads `.def` files (final design def).
+-   Reads and loads `.odb` files.
 -   Loads `.spef` (parasitics).
 
 The figure below shows the post-routed DEF for the `ibex` design.
 
-![ibex_final_def](./images/ibex_final_def.png)
+![ibex_final_def](./images/ibex_final_def.webp)
 
 ### Visualizing Design Objects And Connectivity
 
@@ -530,14 +554,14 @@ View the synthesized clock tree for `ibex` design:
 -   In the Dialog Box `Find Object ` search the clock net using a keyword
     as follows:
 
-![cts_find_obect](./images/cts_find_object.png)
+![cts_find_obect](./images/cts_find_object.webp)
 
 Click `Ok` to view the synthesized clock tree of your design.
 
 View clock tree structure below, the user needs to disable the metal
 `Layers` section on LHS as shown below.
 
-![ibex_clock_tree](./images/ibex_clock_tree.png)
+![ibex_clock_tree](./images/ibex_clock_tree.webp)
 
 From the top Toolbar, click on the `Windows` menu to select/hide different
 view options of Scripting, Display control, etc.
@@ -555,12 +579,12 @@ View congestion on all layers between 50-100%:
 In the `Placement density` setup pop-up window, Select `Minimum` -> `50.00%`
 `Maximum` -> `100.00%`
 
-![placement_heat_map](./images/placement_heatmap.png)
+![placement_heat_map](./images/placement_heatmap.webp)
 
 From `Display Control`, select `Heat Maps` -> `Routing Congestion` as
 follows:
 
-![routing_heat_map](./images/routing_heatmap.png)
+![routing_heat_map](./images/routing_heatmap.webp)
 
 From `Display Control`, select `Heat Maps` -> `Power Density` as
 follows:
@@ -573,13 +597,13 @@ Click `Timing` -> `Options` to view and traverse specific timing paths.
 From Toolbar, click on the `Timing` icon, View `Timing Report` window added
 at the right side (RHS) of GUI as shown below.
 
-![Timing report option](./images/ibex_final_def.png)
+![Timing report option](./images/ibex_final_def.webp)
 
 In `Timing Report` Select `Paths` -> `Update`, `Paths` should be integer
 numbers. The number of timing paths should be displayed in the current
 window as follows:
 
-![Clock Path Update](./images/clock_path_update.png)
+![Clock Path Update](./images/clock_path_update.webp)
 
 Select `Setup` or `Hold` tabs and view required arrival times and
 slack for each timing path segment.
@@ -618,11 +642,11 @@ From OpenROAD GUI, Enable the menu options `Windows` -> `DRC Viewer`. A
 `DRC viewer` window is added on the right side (RHS) of the GUI. From
 `DRC Viewer` -> `Load` navigate to `5_route_drc.rpt`
 
-![DRC Report Load](./images/drc_report_load.png)
+![DRC Report Load](./images/drc_report_load.webp)
 
 By selecting DRC violation details, designers can analyze and fix them. Here
 user will learn how a DRC violation can be traced with the `gcd` design. Refer
-to the following openroad test case for more details.
+to the following OpenROAD test case for more details.
 
 ```
 cd ./flow/tutorials/scripts/drt/
@@ -730,7 +754,7 @@ openroad -gui
 
 ![Default GUI](./images/default_gui.png)
 
-Check `load_lef.tcl`:
+To view `load_lef.tcl`, run the command:
 
 ```
 less ./flow/tutorials/scripts/gui/load_lef.tcl
@@ -762,7 +786,7 @@ as follows:
 
 ![sky130 LEF file load](./images/sky130_lef_load.png)
 
-## Manual Usage Of The OpenROAD Flow For Better User Control And Results
+## Understanding and Analyzing OpenROAD Flow Stages and Results
 
 The OpenROAD flow is fully automated and yet the user can usefully intervene
 to explore, analyze and optimize your design flow for good PPA.
@@ -809,7 +833,7 @@ floorplanning to verify the final impact. First, relax the `.sdc` constraint
 and re-run to see area impact. Otherwise, the repair design command will
 increase the area to meet timing regardless of the netlist produced earlier.
 
-### Floorplanning And Placement
+### Floorplanning
 
 This section describes ORFS floorplanning and placement functions using
 the GUI.
@@ -861,50 +885,48 @@ View the resulting core utilization of 30 created following floorplan:
 
 ![Relative Floorplan](./images/core_util.png)
 
-#### Defining Placement Density
+### IO Pin Placement
 
-To learn on placement density strategies for `ibex` design, go to
-`OpenROAD-flow-scripts/flow`. Type:
+Place pins on the boundary of the die on the track grid to minimize net
+wirelengths. Pin placement also creates a metal shape for each pin using
+min-area rules.
+
+For designs with unplaced cells, the net wirelength is computed considering
+the center of the die area as the unplaced cells position.
+
+Find pin placement document [here](../../src/ppl/README.md).
+
+Refer to the built-in examples [here](../../src/ppl/test).
+
+Launch openroad GUI:
 
 ```
+cd ../../src/pad/test/
 openroad -gui
 ```
 
-Enter the following commands in the `Tcl Commands` section of GUI
+Run [place_pin4.tcl](../../src/ppl/test/place_pin4.tcl) script to view
+pin placement.
+
+From the GUI `Tcl commands` section:
 
 ```
-read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
-read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
-read_def ./results/sky130hd/ibex/base/3_place.def
-```
-![ibex placement density 60](./images/ibex_pl_60.png)
-
-Change `CORE_UTILIZATION` and `PLACE_DENSITY` for the `ibex` design
-`config.mk` as follows.
-
-View `ibex` design `config.mk`
-[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/sky130hd/ibex/config.mk).
-
-```
-export CORE_UTILIZATION = 40
-export CORE_ASPECT_RATIO = 1
-export CORE_MARGIN = 2
-export PLACE_DENSITY = 0.50
+source place_pin4.tcl
 ```
 
-Re-run the `ibex` design with the below command:
+View the resulting pin placement in GUI:
 
-```
-make DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
-```
+![place_pin](./images/place_pin.webp)
 
-View the `ibex` design placement density heat map as shown below:
+In OpenROAD GUI to enlarge `clk` pin placement, hold mouse right button
+as follows and draw sqaure box in specific location:
 
-![ibex placement density 50](./images/ibex_pl_50.png)
+![pin_zoom](./images/pin_zoom_RC.webp)
 
-So from above, GUI understood that change in `CORE_UTILIZATION` from 20
-to 40 and placement density default 0.60 to 0.50 changes standard cell
-placement became widely spread.
+Now `clk` pin zoom to clear view as follows:
+
+![pin_zoomed](./images/pin_zoomed.webp)
+
 
 ### Chip Level IO Pad Placement
 
@@ -927,8 +949,8 @@ cd ../../src/pad/test/
 openroad -gui
 ```
 
-Run [coyote_tc_sky130.tcl](../../src/pad/test/coyote_tc_sky130.tcl) to view
-ICeWall based IO pad placement.
+Run [coyote_tc_sky130.tcl](../../src/pad/test/coyote_tc_sky130.tcl) script
+to view IO pad placement.
 
 From the GUI `Tcl commands` section:
 
@@ -945,8 +967,7 @@ View the resulting IO pad ring in GUI:
 In this section, you will use the design `gcd` to create a
 power grid and run power analysis.
 
-Pdngen is used for power planning. Refer to the following `README.md`
-[here](../../src/pdn/README.md).
+Pdngen is used for power planning. Find the document [here](../../src/pdn/README.md).
 
 Refer to the built-in examples [here](../../src/pdn/test).
 
@@ -967,7 +988,132 @@ View the resulting power plan for `gcd` design:
 
 ![gcd PDN GUI](./images/gcd_pdn_gui.png)
 
-### Placement Area or Timing Optimizations
+#### IR Drop Analysis
+IR drop is the voltage drop in the metal wires constituting the power
+grid before it reaches the power pins of the standard cells. It becomes
+very important to limit the IR drop as it affects the speed of the cells
+and overall performance of the chip.
+
+PDNSim is an open-source static IR analyzer.
+
+Features:
+
+-   Report worst IR drop.
+-   Report worst current density over all nodes and wire segments in
+    the power distribution network, given a placed and PDN-synthesized design.
+-   Check for floating PDN stripes on the power and ground nets.
+-   Spice netlist writer for power distribution network wire segments.
+
+Refer to the built-in examples [here](../../src/psm/test).
+
+Launch openroad:
+
+```
+cd ../../src/psm/test
+openroad
+```
+
+Run [gcd_test_vdd.tcl](../../src/psm/test/gcd_test_vdd.tcl)
+to generate IR drop report for `gcd` design.
+
+```
+source gcd_test_vdd.tcl
+```
+
+Find the IR drop report at the end of the log as follows:
+```
+########## IR report #################
+Worstcase voltage: 1.10e+00 V
+Average IR drop  : 1.68e-04 V
+Worstcase IR drop: 2.98e-04 V
+######################################
+```
+
+### Tapcell insertion
+
+Tap cells are non-functional cells that can have a well tie, substrate
+tie or both. They are typically used when most or all of the standard
+cells in the library contain no substrate or well taps. Tap cells help
+tie the VDD and GND levels and thereby prevent drift and latch-up.
+
+The end cap cell or boundary cell is placed at both the ends of each
+placement row to terminate the row. They protect the standard cell
+gate at the boundary from damage during manufacturing.
+
+Tap cells are placed after the macro placement and power rail creation.
+This stage is called the pre-placement stage. Tap cells are placed in a
+regular interval in each row of placement. The maximum distance between
+the tap cells must be as per the DRC rule of that particular technology library.
+
+The figures below show two examples of tapcell insertion. When only the 
+`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
+is similar to Figure 1. When the remaining masters are give, the tapcell
+placement is similar to Figure 2.
+
+Refer to the GUI figures to highlight well tap and end cap cells. The image
+does not differentiate and just shows a bunch of rectangles.
+
+| <img src="../../src/tap/doc/image/tapcell_example1.svg" width=450px> | <img src="../../src/tap/doc/image/tapcell_example2.svg" width=450px> |
+|:--:|:--:|
+| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
+
+Refer to the following built-in example [here](../../src/tap/test/gcd_nangate45.tcl)
+to learn about Tap/endcap cell insertion.
+
+To view this in OpenROAD GUI:
+
+```
+cd ../../src/tap/test/
+openroad -gui
+```
+
+In the `Tcl Commands` section of GUI
+
+```
+source gcd_nangate45.tcl
+```
+
+View the resulting tap cell insertion as follows:
+
+![Tap_Cell_Insertion](./images/tapcell_insertion_view.webp)
+
+### Tie Cells
+
+The tie cell is a standard cell, designed specially to provide the high
+or low signal to the input (gate terminal) of any logic gate.
+Where ever netlist is having any pin connected to 0 logic or 1 logic
+(like .A(1'b0) or .IN(1'b1), a tie cell gets inserted there.
+
+Refer to the following built-in example [here](../../src/ifp/test/tiecells.tcl)
+to learn about Tie cell insertion.
+
+To check this in OpenROAD tool:
+
+```
+cd ../../src/ifp/test/
+openroad
+source tiecells.tcl
+```
+
+Refer the following verilog code which have tie high/low net.
+[here](../../src/ifp/test/tiecells.v)
+```
+AND2_X1 u2 (.A1(r1q), .A2(1'b0), .ZN(u2z0));
+AND2_X1 u3 (.A1(u1z), .A2(1'b1), .ZN(u2z1));
+```
+With following `insert_tiecells` command:
+```
+insert_tiecells LOGIC0_X1/Z -prefix "TIE_ZERO_"
+insert_tiecells LOGIC1_X1/Z
+```
+During floorplan stage, those nets converted to tiecells as follows
+based on library(This is Nangate45 specific):
+```
+[INFO IFP-0030] Inserted 1 tiecells using LOGIC0_X1/Z.
+[INFO IFP-0030] Inserted 1 tiecells using LOGIC1_X1/Z.
+```
+
+### Macro or Cell Placement
 
 #### Macro Placement
 
@@ -1109,6 +1255,56 @@ View the resulting macro placement with channel spacing as shown below:
 The macros are placed with 2-micron channel spacing with a core corner
 that has minimum wire length. Try different `-style` options to study
 the effect on macro placement.
+
+Run `global_placement` to align standard cells and macros with updated
+macro spacing.
+
+#### Defining Placement Density
+
+To learn on placement density strategies for `ibex` design, go to
+`OpenROAD-flow-scripts/flow`. Type:
+
+```
+openroad -gui
+```
+
+Enter the following commands in the `Tcl Commands` section of GUI
+
+```
+read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd.tlef
+read_lef ./platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
+read_def ./results/sky130hd/ibex/base/3_place.def
+```
+![ibex placement density 60](./images/ibex_pl_60.png)
+
+Change `CORE_UTILIZATION` and `PLACE_DENSITY` for the `ibex` design
+`config.mk` as follows.
+
+View `ibex` design `config.mk`
+[here](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/sky130hd/ibex/config.mk).
+
+```
+export CORE_UTILIZATION = 40
+export CORE_ASPECT_RATIO = 1
+export CORE_MARGIN = 2
+export PLACE_DENSITY = 0.50
+```
+
+Re-run the `ibex` design with the below command:
+
+```
+make DESIGN_CONFIG=./designs/sky130hd/ibex/config.mk
+```
+
+View the `ibex` design placement density heat map as shown below:
+
+![ibex placement density 50](./images/ibex_pl_50.png)
+
+So from above, GUI understood that change in `CORE_UTILIZATION` from 20
+to 40 and placement density default 0.60 to 0.50 changes standard cell
+placement became widely spread.
+
+### Timing Optimizations
 
 #### Timing Optimization Using repair_design
 
@@ -1433,10 +1629,9 @@ the resizer.
 
 ### Clock Tree Synthesis
 
-TritonCTS 2.0 is available under the OpenROAD app to perform clock tree
-synthesis as the `clock_tree_synthesis` flow command. The ORFS
-automatically generates a well-balanced clock tree post-placement. In
-this section, you will learn details about the building and visualize the
+To perform clock tree synthesis `clock_tree_synthesis` flow command used.
+The ORFS automatically generates a well-balanced clock tree post-placement.
+In this section, you will learn details about the building and visualize the
 clock tree.
 
 Refer to the built-in example [here](../../src/cts/test/simple_test.tcl).
@@ -1495,7 +1690,7 @@ The clock tree structure is as follows with unbalanced mode.
 
 ![Unbalanced Clock tree](./images/unbalanced_clock_tree.png)
 
-Use the `clock_tree_synthsis` command to balance this clock tree structure
+Use the `clock_tree_synthesis` command to balance this clock tree structure
 with buffers. See the format as follows.
 
 ```
@@ -1597,3 +1792,385 @@ CTS metrics are as follows for the current design.
 [INFO CTS-0005] Total number of Clock Subnets: 35.
 [INFO CTS-0006] Total number of Sinks: 301.
 ```
+
+### Adding Filler Cells
+
+Filler cells fills gaps between detail-placed instances to connect the
+power and ground rails in the rows. Filler cells have no logical 
+connectivity. These cells are provided continuity in the rows for VDD
+and VSS nets and it also contains substrate nwell connection to improve
+substrate biasing.
+
+`filler_masters` is a list of master/macro names to use for
+filling the gaps.
+
+Refer to the following built-in example [here](../../src/dpl/test/fillers1.tcl)
+to learn about filler cell insertion.
+
+To view this in OpenROAD GUI:
+
+```
+cd ../../src/grt/test/
+openroad -gui
+```
+
+In the `Tcl Commands` section of GUI,run following commands:
+
+```
+source "helpers.tcl"
+read_lef "Nangate45/Nangate45.lef"
+read_def "gcd.def"
+```
+
+Loaded DEF view without filler insertion:
+
+![Without_Fill_Cell_Insertion](./images/wo_fillcell_insertion.webp)
+
+Run following commands for filler cell insertion:
+```
+set filler_master [list FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8 FILLCELL_X16]
+filler_placement $filler_master
+```
+
+View the resulting fill cell insertion as follows:
+
+![Fill_Cell_Insertion](./images/fillcell_insertion.webp)
+
+Zoomed view of filler cells:
+
+![Zoom_Fill_Cell_Insertion](./images/fillcell_insertion_zoom.webp)
+
+Filler cells removed with `remove_fillers` command.
+
+### Global Routing
+
+The global router analyzes available routing resources and automatically
+allocates them to avoid any  H/V  overflow violations for optimal routing.  
+It generates a congestion report for GCells showing total resources, demand, 
+utilization, location and the H/V violation status. If there are no violations 
+reported then the design can proceed to detail routing.
+
+Refer to the built-in example [here](../../src/grt/test/gcd.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/grt/test/
+openroad -gui
+```
+
+To run the global routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+source "helpers.tcl"
+read_lef "Nangate45/Nangate45.lef"
+read_def "gcd.def"
+
+set guide_file [make_result_file gcd.guide]
+
+global_route -verbose
+
+write_guides $guide_file
+```
+
+Routing resource and congestion analysis done with below log:
+```
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1           32148          1743            5.42%             0 /  0 /  0
+metal2           24581          1642            6.68%             0 /  0 /  0
+metal3           33028             0            0.00%             0 /  0 /  0
+metal4           15698             0            0.00%             0 /  0 /  0
+metal5           15410             0            0.00%             0 /  0 /  0
+metal6           15698             0            0.00%             0 /  0 /  0
+metal7            4370             0            0.00%             0 /  0 /  0
+metal8            4512             0            0.00%             0 /  0 /  0
+metal9            2162             0            0.00%             0 /  0 /  0
+metal10           2209             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total           149816          3385            2.26%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 10306 um
+[INFO GRT-0014] Routed nets: 563
+```
+
+View the resulting global routing in GUI as follows:
+
+![Global Route](./images/global_route_gcd.webp)
+
+### Detail Routing
+
+TritonRoute is an open-source detailed router for modern industrial designs.
+The router consists of several main building blocks, including pin access 
+analysis, track assignment, initial detailed routing, search and repair, and a DRC engine.
+
+Refer to the built-in example [here](../../src/drt/test/gcd_nangate45.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/drt/test/
+openroad -gui
+```
+
+To run the detail routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+read_lef Nangate45/Nangate45_tech.lef
+read_lef Nangate45/Nangate45_stdcell.lef
+read_def gcd_nangate45_preroute.def
+read_guides gcd_nangate45.route_guide
+set_thread_count [expr [exec getconf _NPROCESSORS_ONLN] / 4]
+detailed_route -output_drc results/gcd_nangate45.output.drc.rpt \
+               -output_maze results/gcd_nangate45.output.maze.log \
+               -verbose 1 
+write_db gcd_nangate45.odb
+```
+
+For successful routing, DRT will end with 0 violations. 
+
+Log as follows:
+
+```
+[INFO DRT-0199]   Number of violations = 0.
+[INFO DRT-0267] cpu time = 00:00:00, elapsed time = 00:00:00, memory = 674.22 (MB), peak = 686.08 (MB)
+Total wire length = 5680 um.
+Total wire length on LAYER metal1 = 19 um.
+Total wire length on LAYER metal2 = 2798 um.
+Total wire length on LAYER metal3 = 2614 um.
+Total wire length on LAYER metal4 = 116 um.
+Total wire length on LAYER metal5 = 63 um.
+Total wire length on LAYER metal6 = 36 um.
+Total wire length on LAYER metal7 = 32 um.
+Total wire length on LAYER metal8 = 0 um.
+Total wire length on LAYER metal9 = 0 um.
+Total wire length on LAYER metal10 = 0 um.
+Total number of vias = 2223.
+Up-via summary (total 2223):.
+
+---------------
+ active       0
+ metal1    1151
+ metal2    1037
+ metal3      22
+ metal4       7
+ metal5       4
+ metal6       2
+ metal7       0
+ metal8       0
+ metal9       0
+---------------
+           2223
+
+
+[INFO DRT-0198] Complete detail routing.
+```
+
+View the resulting detail routing in GUI as follows:
+
+![Detail Routing](./images/detail_route_gcd.webp)
+
+### Antenna Checker
+
+Antenna Violation occurs when the antenna ratio exceeds a value specified 
+in a Process Design Kit (PDK). The antenna ratio is the ratio of the gate
+area to the gate oxide area. The amount of charge collection is determined
+by the area/size of the conductor (gate area).
+
+This tool checks antenna violations and generates a report to indicate violated nets.
+
+Refer to the built-in example [here](../../src/ant/test/ant_check.tcl).
+
+Launch OpenROAD:
+
+```
+cd ../../src/ant/test/
+openroad
+```
+
+To extract antenna violations, run the following commands:
+
+```
+read_lef ant_check.lef
+read_def ant_check.def
+
+check_antennas -verbose
+puts "violation count = [ant::antenna_violation_count]"
+
+# check if net50 has a violation
+set net "net50"
+puts "Net $net violations: [ant::check_net_violation $net]"
+```
+
+The log as follows:
+
+```
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+violation count = 1
+Net net50 violations: 1
+```
+
+### Metal Fill
+
+Metal fill is a mandatory step at advanced nodes to ensure manufacturability
+and high yield. It involves filling the empty or white spaces near the
+design with metal polygons to ensure regular planarization of the wafer.
+
+This module inserts floating metal fill shapes to meet metal density
+design rules while obeying DRC constraints. It is driven by a json 
+configuration file.
+
+Command used as follows:
+```
+% density_fill -rules <json_file> [-area <list of lx ly ux uy>]
+```
+If -area is not specified, the core area will be used.
+
+To run metal fill post route, run the following:
+```
+cd flow/tutorials/scripts/metal_fill
+openroad -gui
+source "helpers.tcl"
+read_db ./5_route.odb
+```
+Layout before adding metal fill is as follows:
+![Detail Routing](./images/sky130_gcd_route.webp)
+
+To add metal fill, run the command:
+```
+density_fill -rules ../../../platforms/sky130hd/fill.json
+```
+
+Layout after adding metal fill insertion is as follows:
+![Metal Fill](./images/metal_fill_view.webp)
+
+Metal fill  view circled with `pink` color.
+![Metal Fill Zoomed](./images/metal_fill_view_zoom.webp)
+
+
+### Parasitics Extraction
+
+OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
+It extracts routed designs based on the LEF/DEF layout model.
+
+OpenRCX stores resistance, coupling capacitance and ground (i.e., grounded) capacitance
+on OpenDB objects with direct pointers to the associated wire and via db
+objects. Optionally, OpenRCX can generate a `.spef` file.
+
+Refer to the built-in example [here](../../src/rcx/test/45_gcd.tcl).
+
+Launch OpenROAD tool:
+
+```
+cd ../../src/rcx/test/
+openroad
+```
+
+To run parasitics for gcd design:
+```
+source 45_gcd.tcl
+```
+
+The log as follows:
+```
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: 45_gcd.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1820 components and 4618 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 3640 connections.
+[INFO ODB-0133]     Created 350 nets and 978 connections.
+[INFO ODB-0134] Finished DEF file: 45_gcd.def
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0008] extracting parasitics of gcd ...
+[INFO RCX-0435] Reading extraction model file 45_patterns.rules ...
+[INFO RCX-0436] RC segment generation gcd (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 2656 rc segments
+[INFO RCX-0439] Coupling Cap extraction gcd ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0043] 1954 wires to be extracted
+[INFO RCX-0442] 48% completion -- 954 wires have been extracted
+[INFO RCX-0442] 100% completion -- 1954 wires have been extracted
+[INFO RCX-0045] Extract 350 nets, 2972 rsegs, 2972 caps, 2876 ccs
+[INFO RCX-0015] Finished extracting gcd.
+[INFO RCX-0016] Writing SPEF ...
+[INFO RCX-0443] 350 nets finished
+[INFO RCX-0017] Finished writing SPEF ...
+```
+
+`45_gcd.spef` viewed in `results` directory.
+
+## Troubleshooting Problems
+
+This section shows you how to troubleshoot commonly occurring problems
+with the flow or any of the underlying application tools.
+
+### Debugging Problems in Global Routing
+
+The global router has a few useful functionalities to understand
+high congestion issues in the designs.
+
+Congestion heatmap can be used on any design, whether it has 
+congestion or not. Viewing congestion explained [here](#Using-Heat-Maps).
+If the design has congestion issue, it ends with the error;
+```
+[ERROR GRT-0118] Routing congestion too high.
+```
+
+Refer to the built-in example [here](../../src/grt/test/congestion5.tcl).
+
+Launch OpenROAD GUI:
+
+```
+cd ../../src/grt/test/
+openroad -gui
+```
+
+To run the global routing, run the following commands in `Tcl Commands` of
+GUI:
+
+```
+source congestion5.tcl
+```
+
+The design fail with routing congestion error as follows:
+![Routing_Congestion](./images/grt_congestion_error.webp)
+
+In the GUI, you can go under `Heat Maps` and mark the
+`Routing Congestion` checkbox to visualize the congestion map.
+![congestion_heatmap](./images/congestion_heatmap_enable.webp)
+
+#### Dump congestion information to a text file
+
+You can create a text file with the congestion information of the 
+GCells for further investigation on the GUI. To do that, add the
+`-congestion_report_file file_name` to the `global_route` command, as shown below:
+```
+global_route -guide_file out.guide -congestion_report_file congest.rpt
+```
+
+#### Visualization of overflowing GCells as markers
+
+With the file created with the command described above, you can see more 
+details about the congested GCell, like the total resources, utilization,
+location, etc. You can load the file following these steps:
+
+-   step 1: In the `DRC Viewer` window, click on `Load` and select the
+    file with the congestion report.
+-   step 2: A summary of the GCells with congestion is shown in the
+    `DRC Viewer` window. Also, the markers are added to the GUI.
+![GCell_marker](./images/gcell_marker.webp)
+-   step 3: For details on the routing resources information, use the `Inspector` window.
+![zoom_options](./images/zoom_options.webp)
+
+By Clicking `zoom_to` options, you can enlarge the view as follows:
+![zoomto_gcell](./images/zoomto_gcell.webp)
