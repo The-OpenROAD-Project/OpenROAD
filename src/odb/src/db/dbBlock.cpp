@@ -413,7 +413,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
 
-  global_connect_tbl_ = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
+  global_connect_tbl_
+      = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
 
   _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
 
@@ -1936,7 +1937,7 @@ Rect dbBlock::getCoreArea()
       rect.merge(row->getBBox());
     }
     return rect;
-  } 
+  }
   // Default to die area if there aren't any rows.
   return getDieArea();
 }
@@ -2448,7 +2449,7 @@ dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimeter_)
 {
   _dbChip* chip = (_dbChip*) chip_;
 
-  if (chip->_top != 0)
+  if (chip->_top.isValid())
     return NULL;
 
   _dbBlock* top = chip->_block_tbl->create();
@@ -3834,16 +3835,20 @@ void dbBlock::addGlobalConnect(dbRegion* region,
   }
 
   if (net->isDoNotTouch()) {
-    logger->warn(utl::ODB, 382, "{} is marked do not touch, which will cause the global connect rule to be ignored.", net->getName());
+    logger->warn(utl::ODB,
+                 382,
+                 "{} is marked do not touch, which will cause the global "
+                 "connect rule to be ignored.",
+                 net->getName());
   }
 
-  dbGlobalConnect* gc = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
+  dbGlobalConnect* gc
+      = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (do_connect) {
     globalConnect(gc);
   }
 }
-
 
 void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 {
@@ -3863,7 +3868,7 @@ void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
   for (dbGlobalConnect* connect : connects) {
-    _dbGlobalConnect* gc = (_dbGlobalConnect*)connect;
+    _dbGlobalConnect* gc = (_dbGlobalConnect*) connect;
     if (gc->region_ != 0) {
       region_rules.push_back(gc);
     } else {
@@ -3882,9 +3887,13 @@ void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(), insts.end(), [&](dbInst* inst) {
-      return remove_insts.find(inst) != remove_insts.end();
-    }), insts.end());
+    insts.erase(std::remove_if(insts.begin(),
+                               insts.end(),
+                               [&](dbInst* inst) {
+                                 return remove_insts.find(inst)
+                                        != remove_insts.end();
+                               }),
+                insts.end());
 
     inst_map[inst_pattern] = insts;
     donottouchinsts.insert(remove_insts.begin(), remove_insts.end());
@@ -3892,7 +3901,11 @@ void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 
   if (!donottouchinsts.empty()) {
     for (dbInst* inst : donottouchinsts) {
-      logger->warn(utl::ODB, 383, "{} is marked do not touch and will be skipped in global connections.", inst->getName());
+      logger->warn(utl::ODB,
+                   383,
+                   "{} is marked do not touch and will be skipped in global "
+                   "connections.",
+                   inst->getName());
     }
   }
 

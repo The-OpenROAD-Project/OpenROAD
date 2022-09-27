@@ -64,22 +64,6 @@ io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
 {
 }
 
-void io::Parser::setDieArea(odb::dbBlock* block)
-{
-  vector<frBoundary> bounds;
-  frBoundary bound;
-  vector<Point> points;
-  odb::Rect box = block->getDieArea();
-  points.push_back(Point(box.xMin(), box.yMin()));
-  points.push_back(Point(box.xMax(), box.yMax()));
-  points.push_back(Point(box.xMax(), box.yMin()));
-  points.push_back(Point(box.xMin(), box.yMax()));
-  bound.setPoints(points);
-  bounds.push_back(bound);
-  tmpBlock_->setDBUPerUU(block->getDbUnitsPerMicron());
-  tmpBlock_->setBoundaries(bounds);
-}
-
 void io::Parser::setTracks(odb::dbBlock* block)
 {
   auto tracks = block->getTrackGrids();
@@ -134,15 +118,11 @@ void io::Parser::setInsts(odb::dbBlock* block)
         != tmpBlock_->name2inst_.end())
       logger_->error(DRT, 96, "Same cell name: {}.", inst->getName());
     frMaster* master = design_->name2master_.at(inst->getMaster()->getName());
-    auto uInst = make_unique<frInst>(inst->getName(), master);
+    auto uInst = make_unique<frInst>(master, inst);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts_);
     numInsts_++;
 
-    int x, y;
-    inst->getLocation(x, y);
-    tmpInst->setOrigin(Point(x, y));
-    tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
@@ -508,15 +488,15 @@ void io::Parser::setNets(odb::dbBlock* block)
                      net->getName(),
                      net->getSigType().getString());
     }
-    unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
+    unique_ptr<frNet> uNetIn = make_unique<frNet>(net);
     auto netIn = uNetIn.get();
-    if (net->getNonDefaultRule())
-      uNetIn->updateNondefaultRule(design_->getTech()->getNondefaultRule(
-          net->getNonDefaultRule()->getName()));
+    if (net->getNonDefaultRule()) {
+      uNetIn->setTechObj(design_->getTech());
+      uNetIn->updateAbsPriority();
+    }
+
     if (net->getSigType() == dbSigType::CLOCK)
-      uNetIn->updateIsClock(true);
-    if (is_special)
-      uNetIn->setIsSpecial(true);
+      uNetIn->updateAbsPriority();
     netIn->setId(numNets_);
     numNets_++;
     for (auto term : net->getBTerms()) {
@@ -821,7 +801,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
       }
     }
-    netIn->setType(net->getSigType());
+    // netIn->setType(net->getSigType());
     if (is_special)
       tmpBlock_->addSNet(std::move(uNetIn));
     else
@@ -1020,10 +1000,9 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   odb::dbBlock* block = db->getChip()->getBlock();
   if (block == nullptr)
     logger_->error(DRT, 117, "Load design first.");
-  tmpBlock_ = make_unique<frBlock>(string(block->getName()));
+  tmpBlock_ = make_unique<frBlock>(block);
   tmpBlock_->trackPatterns_.clear();
   tmpBlock_->trackPatterns_.resize(tech_->layers.size());
-  setDieArea(block);
   setTracks(block);
   setInsts(block);
   setObstructions(block);
@@ -1039,14 +1018,12 @@ void io::Parser::readDesign(odb::dbDatabase* db)
 void io::Parser::addFakeNets()
 {
   // add VSS fake net
-  auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
-  vssFakeNet->setType(dbSigType::GROUND);
-  vssFakeNet->setIsFake(true);
+  auto vssFakeNet = make_unique<frNet>();
+  vssFakeNet->setIsFakeVSS(true);
   design_->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
-  auto vddFakeNet = make_unique<frNet>(string("frFakeVDD"));
-  vddFakeNet->setType(dbSigType::POWER);
-  vddFakeNet->setIsFake(true);
+  auto vddFakeNet = make_unique<frNet>();
+  vddFakeNet->setIsFakeVDD(true);
   design_->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
 

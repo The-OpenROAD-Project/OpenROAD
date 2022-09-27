@@ -196,6 +196,8 @@ class Fixture
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;
+  odb::dbBlock* db_block;
+  odb::dbDatabase* db;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

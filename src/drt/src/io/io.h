@@ -79,7 +79,6 @@ class Parser
   void setMacros(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
-  void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
   void setObstructions(odb::dbBlock*);

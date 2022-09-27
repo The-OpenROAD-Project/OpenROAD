@@ -37,6 +37,7 @@
 #include "db/obj/frRPin.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
 #include "global.h"
 
@@ -50,9 +51,10 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet(const frString& in)
+  frNet()
       : frBlockObject(),
-        name_(in),
+        db_net_(nullptr),
+        tech_Obj_(nullptr),
         instTerms_(),
         bterms_(),
         shapes_(),
@@ -66,17 +68,50 @@ class frNet : public frBlockObject
         firstNonRPinNode_(nullptr),
         rpins_(),
         guides_(),
-        type_(dbSigType::SIGNAL),
         modified_(false),
-        isFakeNet_(false),
-        ndr_(nullptr),
-        absPriorityLvl(0),
-        isClock_(false),
-        isSpecial_(false)
+        isFakeVSSNet_(false),
+        isFakeVDDNet_(false),
+        absPriorityLvl(0)
+  {
+  }
+  frNet(odb::dbNet* dbNetIn)
+      : frBlockObject(),
+        db_net_(dbNetIn),
+        tech_Obj_(nullptr),
+        instTerms_(),
+        bterms_(),
+        shapes_(),
+        vias_(),
+        pwires_(),
+        grShapes_(),
+        grVias_(),
+        nodes_(),
+        root_(nullptr),
+        rootGCellNode_(nullptr),
+        firstNonRPinNode_(nullptr),
+        rpins_(),
+        guides_(),
+        modified_(false),
+        isFakeVSSNet_(false),
+        isFakeVDDNet_(false),
+        absPriorityLvl(0)
   {
   }
   // getters
-  const frString& getName() const { return name_; }
+  const frString getName() const
+  {
+    frString name;
+    if (isFakeVSSNet_)
+      name = "frFakeVSS";
+    else if (isFakeVDDNet_)
+      name = "frFakeVDD";
+    else
+      name = db_net_->getName();
+
+    return name;
+  }
+  odb::dbNet* getDbNet() const { return db_net_; }
+  frTechObject* getTechObj() const { return tech_Obj_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
   const std::vector<frBTerm*>& getBTerms() const { return bterms_; }
   const std::list<std::unique_ptr<frShape>>& getShapes() const
@@ -97,7 +132,7 @@ class frNet : public frBlockObject
   const std::list<std::unique_ptr<grVia>>& getGRVias() const { return grVias_; }
   std::list<std::unique_ptr<frNode>>& getNodes() { return nodes_; }
   const std::list<std::unique_ptr<frNode>>& getNodes() const { return nodes_; }
-  frNode* getRoot() { return root_; }
+  frNode* getRoot() { return getNodes().front().get(); }
   frNode* getRootGCellNode() { return rootGCellNode_; }
   frNode* getFirstNonRPinNode() { return firstNonRPinNode_; }
   std::vector<std::unique_ptr<frRPin>>& getRPins() { return rpins_; }
@@ -110,9 +145,15 @@ class frNet : public frBlockObject
     return guides_;
   }
   bool isModified() const { return modified_; }
-  bool isFake() const { return isFakeNet_; }
-  frNonDefaultRule* getNondefaultRule() const { return ndr_; }
+  bool isFake() const { return (isFakeVSSNet_ || isFakeVDDNet_); }
+  frNonDefaultRule* getNondefaultRule() const
+  {
+    return (db_net_->getNonDefaultRule()) ? tech_Obj_->getNondefaultRule(
+               db_net_->getNonDefaultRule()->getName())
+                                          : nullptr;
+  }
   // setters
+  void setTechObj(frTechObject* techObjIn) { tech_Obj_ = techObjIn; }
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
   {
@@ -124,7 +165,6 @@ class frNet : public frBlockObject
     }
   }
   void addBTerm(frBTerm* in) { bterms_.push_back(in); }
-  void setName(const frString& stringIn) { name_ = stringIn; }
   void addShape(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
@@ -178,7 +218,6 @@ class frNet : public frBlockObject
     nodes_.push_back(std::move(in));
     rptr->setIter(--nodes_.end());
   }
-  void setRoot(frNode* in) { root_ = in; }
   void setRootGCellNode(frNode* in) { rootGCellNode_ = in; }
   void setFirstNonRPinNode(frNode* in) { firstNonRPinNode_ = in; }
   void addRPin(std::unique_ptr<frRPin>& in)
@@ -203,25 +242,22 @@ class frNet : public frBlockObject
   void clearGRVias() { grVias_.clear(); }
   void removeNode(frNode* in) { nodes_.erase(in->getIter()); }
   void setModified(bool in) { modified_ = in; }
-  void setIsFake(bool in) { isFakeNet_ = in; }
+  void setIsFakeVSS(bool in) { isFakeVSSNet_ = in; }
+  void setIsFakeVDD(bool in) { isFakeVDDNet_ = in; }
   // others
-  dbSigType getType() const { return type_; }
-  void setType(dbSigType in) { type_ = in; }
+  dbSigType getType() const
+  {
+    if (isFakeVSSNet_)
+      return dbSigType::GROUND;
+    if (isFakeVDDNet_)
+      return dbSigType::POWER;
+    return db_net_->getSigType();
+  }
   virtual frBlockObjectEnum typeId() const override { return frcNet; }
-  void updateNondefaultRule(frNonDefaultRule* n)
-  {
-    ndr_ = n;
-    updateAbsPriority();
-  }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
-  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }
+  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }  // refactor
   int getAbsPriorityLvl() const { return absPriorityLvl; }
-  bool isClock() const { return isClock_; }
-  void updateIsClock(bool ic)
-  {
-    isClock_ = ic;
-    updateAbsPriority();
-  }
+  bool isClock() const { return (db_net_->getSigType() == dbSigType::CLOCK); }
   void updateAbsPriority()
   {
     int max = absPriorityLvl;
@@ -231,8 +267,11 @@ class frNet : public frBlockObject
       max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
     absPriorityLvl = max;
   }
-  bool isSpecial() const { return isSpecial_; }
-  void setIsSpecial(bool s) { isSpecial_ = s; }
+  bool isSpecial() const
+  {
+    return db_net_->isSpecial();
+    ;
+  }
   frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
   void setOrigGuides(const std::vector<frRect>& guides)
   {
@@ -241,7 +280,8 @@ class frNet : public frBlockObject
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
 
  protected:
-  frString name_;
+  odb::dbNet* db_net_;
+  frTechObject* tech_Obj_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frBTerm*> bterms_;
   // dr
@@ -261,14 +301,11 @@ class frNet : public frBlockObject
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
-  dbSigType type_;
   bool modified_;
-  bool isFakeNet_;  // indicate floating PG nets
-  frNonDefaultRule* ndr_;
+  bool isFakeVSSNet_;  // indicate floating PG nets
+  bool isFakeVDDNet_;
   int absPriorityLvl;  // absolute priority level: will be checked in net
                        // ordering before other criteria
-  bool isClock_;
-  bool isSpecial_;
 
   std::vector<frPinFig*> all_pinfigs_;
 };

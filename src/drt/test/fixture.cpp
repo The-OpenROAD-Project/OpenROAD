@@ -40,7 +40,10 @@ Fixture::Fixture()
       numBlockages(0),
       numTerms(0),
       numMasters(0),
-      numInsts(0)
+      numInsts(0),
+      db_tech(nullptr),
+      db_block(nullptr),
+      db(nullptr)
 {
   makeDesign();
 }
@@ -83,8 +86,10 @@ void Fixture::addLayer(frTechObject* tech,
 
 void Fixture::setupTech(frTechObject* tech)
 {
-  auto db = odb::dbDatabase::create();
+  // auto db = odb::dbDatabase::create();
   db_tech = odb::dbTech::create(db);
+  db->getTech()->setDbUnitsPerMicron(1000);
+  db->getTech()->setManufacturingGrid(10);
   db_tech->setDbUnitsPerMicron(1000);
   db_tech->setManufacturingGrid(10);
   tech->setTechObject(db_tech);
@@ -179,11 +184,16 @@ frInst* Fixture::makeInst(const char* name,
                           frCoord x,
                           frCoord y)
 {
-  auto uInst = make_unique<frInst>(name, master);
+  auto db_lib = odb::dbLib::create(db, "");
+  auto db_master = odb::dbMaster::create(db_lib, master->getName().c_str());
+  db_master->setFrozen();
+  auto inst = odb::dbInst::create(db_block, db_master, name);
+  inst->setOrient(dbOrientType::R0);
+  inst->setLocation(x, y);
+  auto uInst = make_unique<frInst>(master, inst);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
-  tmpInst->setOrigin(Point(x, y));
-  tmpInst->setOrient(dbOrientType::R0);
+
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();
     unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
@@ -206,19 +216,20 @@ frInst* Fixture::makeInst(const char* name,
 
 void Fixture::makeDesign()
 {
+  db = odb::dbDatabase::create();
   setupTech(design->getTech());
 
-  auto block = std::make_unique<frBlock>("test");
+  odb::dbChip* chip = odb::dbChip::create(db);
+  db_block = odb::dbBlock::create(chip, "test");
+  auto block = std::make_unique<frBlock>(db_block);
 
   // GC assumes these fake nets exist
-  auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
-  vssFakeNet->setType(dbSigType::GROUND);
-  vssFakeNet->setIsFake(true);
+  auto vssFakeNet = std::make_unique<frNet>();
+  vssFakeNet->setIsFakeVSS(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
-  auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
-  vddFakeNet->setType(dbSigType::POWER);
-  vddFakeNet->setIsFake(true);
+  auto vddFakeNet = std::make_unique<frNet>();
+  vddFakeNet->setIsFakeVDD(true);
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));
@@ -588,7 +599,8 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();
-  auto net_p = std::make_unique<frNet>(name);
+  auto db_net = odb::dbNet::create(block->getDbBlock(), name);
+  auto net_p = std::make_unique<frNet>(db_net);
   frNet* net = net_p.get();
   block->addNet(std::move(net_p));
   return net;

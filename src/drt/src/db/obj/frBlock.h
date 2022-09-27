@@ -32,13 +32,13 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frBTerm.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
 
@@ -51,23 +51,23 @@ class frBlock : public frBlockObject
 {
  public:
   // constructors
-  frBlock(const frString& name)
-      : frBlockObject(),
-        name_(name),
-        dbUnit_(0){};
+  frBlock(odb::dbBlock* dbBlockIn) : frBlockObject(), db_block_(dbBlockIn){};
+
   // getters
-  frUInt4 getDBUPerUU() const { return dbUnit_; }
+  frUInt4 getDBUPerUU() const { return db_block_->getDbUnitsPerMicron(); }
+  odb::dbBlock* getDbBlock() const { return db_block_; }
   Rect getBBox() const
   {
     Rect box;
-    if (boundaries_.size()) {
-      box = boundaries_.begin()->getBBox();
+    auto boundaries = getBoundaries();
+    if (boundaries.size()) {
+      box = boundaries.begin()->getBBox();
     }
     frCoord llx = box.xMin();
     frCoord lly = box.yMin();
     frCoord urx = box.xMax();
     frCoord ury = box.yMax();
-    for (auto& boundary : boundaries_) {
+    for (auto& boundary : boundaries) {
       Rect tmpBox = boundary.getBBox();
       llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
       lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
@@ -94,7 +94,20 @@ class frBlock : public frBlockObject
     }
     return Rect(llx, lly, urx, ury);
   }
-  const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
+  const std::vector<frBoundary> getBoundaries() const
+  {
+    vector<frBoundary> bounds;
+    frBoundary bound;
+    vector<Point> points;
+    odb::Rect box = db_block_->getDieArea();
+    points.push_back(Point(box.xMin(), box.yMin()));
+    points.push_back(Point(box.xMax(), box.yMax()));
+    points.push_back(Point(box.xMax(), box.yMin()));
+    points.push_back(Point(box.xMin(), box.yMax()));
+    bound.setPoints(points);
+    bounds.push_back(bound);
+    return bounds;
+  }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
     return blockages_;
@@ -113,7 +126,7 @@ class frBlock : public frBlockObject
     }
     return sol;
   }
-  const frString& getName() const { return name_; }
+  const frString getName() const { return db_block_->getName(); }
   const std::vector<std::unique_ptr<frInst>>& getInsts() const
   {
     return insts_;
@@ -158,14 +171,14 @@ class frBlock : public frBlockObject
     }
     return sol;
   }
-  //isHorizontal means vertical tracks
-  std::vector<frTrackPattern*> getTrackPatterns(frCoord layerNum, 
+  // isHorizontal means vertical tracks
+  std::vector<frTrackPattern*> getTrackPatterns(frCoord layerNum,
                                                 bool isHorizontal) const
   {
     std::vector<frTrackPattern*> tps;
     for (auto& t : trackPatterns_.at(layerNum)) {
-        if (t->isHorizontal() == isHorizontal)
-            tps.push_back(t.get());
+      if (t->isHorizontal() == isHorizontal)
+        tps.push_back(t.get());
     }
     return tps;
   }
@@ -296,9 +309,29 @@ class frBlock : public frBlockObject
   int getNumMarkers() const { return markers_.size(); }
   frNet* getFakeVSSNet() { return fakeSNets_[0].get(); }
   frNet* getFakeVDDNet() { return fakeSNets_[1].get(); }
+  const Rect getDieBox() const
+  {
+    auto boundaries = getBoundaries();
+    Rect dieBox;
+    if (boundaries.size()) {
+      dieBox = boundaries.begin()->getBBox();
+    }
+    frCoord llx = dieBox.xMin();
+    frCoord lly = dieBox.yMin();
+    frCoord urx = dieBox.xMax();
+    frCoord ury = dieBox.yMax();
+    for (auto& boundary : boundaries) {
+      Rect tmpBox = boundary.getBBox();
+      llx = std::min(llx, tmpBox.xMin());
+      lly = std::min(lly, tmpBox.yMin());
+      urx = std::max(urx, tmpBox.xMax());
+      ury = std::max(ury, tmpBox.yMax());
+    }
+    dieBox.init(llx, lly, urx, ury);
+    return dieBox;
+  }
 
   // setters
-  void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frBTerm> in)
   {
     in->setIndexInOwner(terms_.size());
@@ -330,7 +363,7 @@ class frBlock : public frBlockObject
                                 }),
                  insts_.end());
     int id = 0;
-    for(const auto& inst : insts_)
+    for (const auto& inst : insts_)
       inst->setId(id++);
   }
   void addNet(std::unique_ptr<frNet> in)
@@ -344,26 +377,6 @@ class frBlock : public frBlockObject
     in->setId(snets_.size());
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
-  }
-  const Rect& getDieBox() const { return dieBox_; }
-  void setBoundaries(const std::vector<frBoundary> in)
-  {
-    boundaries_ = in;
-    if (boundaries_.size()) {
-      dieBox_ = boundaries_.begin()->getBBox();
-    }
-    frCoord llx = dieBox_.xMin();
-    frCoord lly = dieBox_.yMin();
-    frCoord urx = dieBox_.xMax();
-    frCoord ury = dieBox_.yMax();
-    for (auto& boundary : boundaries_) {
-      Rect tmpBox = boundary.getBBox();
-      llx = std::min(llx, tmpBox.xMin());
-      lly = std::min(lly, tmpBox.yMin());
-      urx = std::max(urx, tmpBox.xMax());
-      ury = std::max(ury, tmpBox.yMax());
-    }
-    dieBox_.init(llx, lly, urx, ury);
   }
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
@@ -399,8 +412,7 @@ class frBlock : public frBlockObject
   ~frBlock() {}
 
  private:
-  frString name_;
-  frUInt4 dbUnit_;
+  odb::dbBlock* db_block_;
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;
@@ -416,7 +428,6 @@ class frBlock : public frBlockObject
 
   std::vector<std::unique_ptr<frBlockage>> blockages_;
 
-  std::vector<frBoundary> boundaries_;
   std::vector<std::vector<std::unique_ptr<frTrackPattern>>> trackPatterns_;
   std::vector<frGCellPattern> gCellPatterns_;
 
@@ -425,7 +436,6 @@ class frBlock : public frBlockObject
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
-  Rect dieBox_;
 
   friend class io::Parser;
 };
