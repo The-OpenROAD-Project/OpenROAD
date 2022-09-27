@@ -131,6 +131,7 @@ class FastRouteCore
   void clearPins(int netID);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearRoute(const int netID);
+  void clearNetRoute(const int netID);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -430,6 +431,7 @@ class FastRouteCore
                      const int netID);
   bool newRipup3DType3(const int netID, const int edgeID);
   void newRipupNet(const int netID);
+  void releaseNetResources(const int netID);
 
   // utility functions
   void printEdge(const int netID, const int edgeID);
