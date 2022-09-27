@@ -781,10 +781,10 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
 }
 
 void GlobalRouter::saveSttInputFile(Net* net) {
-  const char* file_name = fastroute_->getSttInputFileName().c_str();
+  std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-  remove(file_name);
-  std::ofstream out(file_name);
+  remove(file_name.c_str());
+  std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
     odb::Point position = pin.getOnGridPosition(); // Pin position on grid
