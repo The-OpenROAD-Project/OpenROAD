@@ -1515,7 +1515,6 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   }
 
   if (net->getNodes().size() == 1) {
-    // net->setRoot(net->getNodes().front().get());
     return;
   }
 
@@ -1564,7 +1563,6 @@ void FlexGR::initGR_genTopology_net(frNet* net)
     }
   }
 
-  // net->setRoot(nodes[0]);
   // populate pin2RPins
   for (auto& rpin : net->getRPins()) {
     if (rpin->getFrTerm()) {
