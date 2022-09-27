@@ -164,7 +164,7 @@ void lefout::writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_o
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers) {
-	writeBox("   ", block_bounding_box);	
+	    writeBox("   ", block_bounding_box);	
     } else {
     	int bloat = bloat_factor*tech_layer->getPitch();
     	boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
@@ -184,9 +184,7 @@ void lefout::writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_o
     	  writeRect("   ",rect);
     	}
      }
-	
   }
-  
   fprintf(_out, "  END\n");
 }
 
@@ -229,11 +227,11 @@ void lefout::findInstsObstructions(
     }
 
     // Add inst Iterms to obstructions 
-    odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-    odb::dbSet<odb::dbITerm>::iterator iterm_itr;
+    dbSet<dbITerm> iterms = inst->getITerms();
+    dbSet<dbITerm>::iterator iterm_itr;
     for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-      odb::dbITerm* iterm = *iterm_itr;
-      odb::dbShape shape;
+      dbITerm* iterm = *iterm_itr;
+      dbShape shape;
       dbITermShapeItr iterm_shape_itr;
       for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
         int bloat = bloat_factor * shape.getTechLayer()->getPitch();
