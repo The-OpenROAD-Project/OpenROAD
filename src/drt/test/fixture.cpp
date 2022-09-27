@@ -105,18 +105,14 @@ frMaster* Fixture::makeMacro(const char* name,
                              frCoord sizeX,
                              frCoord sizeY)
 {
-  auto block = make_unique<frMaster>(name);
-  vector<frBoundary> bounds;
-  frBoundary bound;
-  vector<Point> points;
-  points.push_back(Point(originX, originY));
-  points.push_back(Point(sizeX, originY));
-  points.push_back(Point(sizeX, sizeY));
-  points.push_back(Point(originX, sizeY));
-  bound.setPoints(points);
-  bounds.push_back(bound);
-  block->setBoundaries(bounds);
-  block->setMasterType(dbMasterType::CORE);
+  auto db_lib = odb::dbLib::create(db, "test");
+  auto db_master = odb::dbMaster::create(db_lib, name);
+  db_master->setType(dbMasterType::CORE);
+  db_master->setOrigin(originX, originY);
+  db_master->setWidth(sizeX);
+  db_master->setHeight(sizeY);
+  db_master->setFrozen();
+  auto block = make_unique<frMaster>(db_master);
   block->setId(++numMasters);
   auto blkPtr = block.get();
   design->addMaster(std::move(block));
@@ -132,9 +128,13 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
                                   frCoord designRuleWidth)
 {
   int id = master->getBlockages().size();
-  auto blkIn = make_unique<frBlockage>();
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(lNum);
+  auto obs = odb::dbBox::create(
+      master->getDbMaster(), layer->getDbLayer(), xl, yl, xh, yh);
+  obs->setDesignRuleWidth(designRuleWidth);
+  auto blkIn = make_unique<frBlockage>(obs);
   blkIn->setId(id);
-  blkIn->setDesignRuleWidth(designRuleWidth);
   auto pinIn = make_unique<frBPin>();
   pinIn->setId(0);
   // pinFig

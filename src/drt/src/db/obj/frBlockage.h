@@ -33,19 +33,22 @@
 
 #include "db/obj/frBPin.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
 
 namespace fr {
 class frBlockage : public frBlockObject
 {
  public:
   // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1), index_in_owner_(0) {}
+  frBlockage(odb::dbBox* obs)
+      : frBlockObject(), pin_(nullptr), obs_(obs), index_in_owner_(0)
+  {
+  }
   // getters
   frBPin* getPin() const { return pin_.get(); }
-  frCoord getDesignRuleWidth() const { return design_rule_width_; }
+  frCoord getDesignRuleWidth() const { return obs_->getDesignRuleWidth(); }
   // setters
   void setPin(std::unique_ptr<frBPin> in) { pin_ = std::move(in); }
-  void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
   // others
   frBlockObjectEnum typeId() const override { return frcBlockage; }
   void setIndexInOwner(int in) { index_in_owner_ = in; }
@@ -53,9 +56,8 @@ class frBlockage : public frBlockObject
 
  private:
   std::unique_ptr<frBPin> pin_;
-  frCoord design_rule_width_;
+  odb::dbBox* obs_;
   int index_in_owner_;
-
 };
 }  // namespace fr
 

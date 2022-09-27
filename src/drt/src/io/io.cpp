@@ -156,7 +156,7 @@ void io::Parser::setObstructions(odb::dbBlock* block)
       continue;
     }
     frLayerNum layerNum = tech_->name2layer[layerName]->getLayerNum();
-    auto blkIn = make_unique<frBlockage>();
+    auto blkIn = make_unique<frBlockage>(blockage->getBBox());
     blkIn->setId(numBlockages_);
     numBlockages_++;
     auto pinIn = make_unique<frBPin>();
@@ -1667,23 +1667,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       for (auto& tree : pin_shapes) {
         tree.clear();
       }
-      auto tmpMaster = make_unique<frMaster>(master->getName());
-      frCoord originX;
-      frCoord originY;
-      master->getOrigin(originX, originY);
-      frCoord sizeX = master->getWidth();
-      frCoord sizeY = master->getHeight();
-      vector<frBoundary> bounds;
-      frBoundary bound;
-      vector<Point> points;
-      points.push_back(Point(originX, originY));
-      points.push_back(Point(sizeX, originY));
-      points.push_back(Point(sizeX, sizeY));
-      points.push_back(Point(originX, sizeY));
-      bound.setPoints(points);
-      bounds.push_back(bound);
-      tmpMaster->setBoundaries(bounds);
-      tmpMaster->setMasterType(master->getType());
+      auto tmpMaster = make_unique<frMaster>(master);
 
       for (auto _term : master->getMTerms()) {
         unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(_term->getName());
@@ -1787,9 +1771,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             }
           }
         }
-        auto blkIn = make_unique<frBlockage>();
+        auto blkIn = make_unique<frBlockage>(obs);
         blkIn->setId(numBlockages_);
-        blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages_++;
         auto pinIn = make_unique<frBPin>();
         pinIn->setId(0);

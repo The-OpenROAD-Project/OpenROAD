@@ -51,6 +51,7 @@ class frInst : public frRef
   {
   }
   // getters
+  odb::dbInst* getDbInst() const { return inst_; }
   const frString getName() const { return inst_->getName(); }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
@@ -148,12 +149,10 @@ class frInst : public frRef
   frInstTerm* getInstTerm(const std::string& name);
 
  private:
-  // frString name_;
   fr::frMaster* master_;
   odb::dbInst* inst_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
-  // dbTransform xform_;
   int pinAccessIdx_;
   bool toBeDeleted_;
 };
