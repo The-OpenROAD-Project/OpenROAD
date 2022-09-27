@@ -1091,8 +1091,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
             rowName, rowVals, colName, colVals, tblVals);
     unique_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
-        = make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals);
-    spacingTableConstraint->setDbTechLayerSpacingTablePrlRule(rule);
+        = make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals, rule);
     tmpLayer->addConstraint(spacingTableConstraint.get());
     tech_->addUConstraint(std::move(spacingTableConstraint));
   }
