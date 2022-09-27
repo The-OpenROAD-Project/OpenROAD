@@ -242,6 +242,8 @@ void GridSwitchedPower::build()
   odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
   odb::dbNet* ground = grid_->getDomain()->getGround();
 
+  odb::dbRegion* region = grid_->getDomain()->getRegion();
+
   const ShapeTree targets = buildStrapTargetList(target);
   const RowTree row_search = buildRowTree();
 
@@ -285,6 +287,10 @@ void GridSwitchedPower::build()
                                     cell_->getMaster()->getName(),
                                     inst->getMaster()->getName());
         }
+      }
+
+      if (region != nullptr) {
+        region->addInst(inst);
       }
 
       debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 3, "Adding switch {}", new_name);

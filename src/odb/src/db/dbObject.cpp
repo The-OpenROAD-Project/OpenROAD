@@ -197,6 +197,11 @@ void dbObject::getDbName(char name[max_name_length]) const
         id = impl->getOID();
         break;
 
+      case dbGlobalConnectObj:
+        *cptr++ = 'j';
+        id = impl->getOID();
+        break;
+
       // Lib Objects
       case dbLibObj:
         *cptr++ = 'L';
@@ -659,6 +664,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         oid = getOid(name);
         obj = dbMetalWidthViaMap::getMetalWidthViaMap((dbTech*) obj, oid);
         break;
+      case 'j':
       case 'h':
       case 'J':
         // SKIP
@@ -731,6 +737,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbGroup",
                                  "dbGCellGrid",
                                  "dbAccessPoint",
+                                 "dbGlobalConnect",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects

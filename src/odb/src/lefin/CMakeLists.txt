@@ -36,6 +36,7 @@ set_target_properties(lefin
 
 target_link_libraries(lefin
     PUBLIC
+        db
         zutil
         lef
         lefzlib
