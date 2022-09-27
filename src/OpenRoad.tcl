@@ -124,7 +124,7 @@ proc write_abstract_lef { args } {
 
   set bloat_occupied_layers [info exists flags(-bloat_occupied_layers)]
   if { [info exists keys(-bloat_factor)] && $bloat_occupied_layers } {
-    utl::error ORD 17 "Options -bloat and -bloat_occupied_layers are both set. At most one should be used."
+    utl::error ORD 1050 "Options -bloat and -bloat_occupied_layers are both set. At most one should be used."
   }
   
   sta::check_argc_eq1 "write_abstract_lef" $args
