@@ -654,6 +654,10 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
   for (int i = 0; i < netCount(); i++) {
     FrNet* net = nets_[i];
+
+    if (net->is_routed)
+      continue;
+
     float coeffV = 1.36;
 
     bool cong;
