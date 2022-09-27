@@ -29,6 +29,22 @@ add_subdirectory(src/zutil)
 add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
 add_subdirectory(test/cpp)
+
+add_library(odb INTERFACE)
+target_link_libraries(odb
+  INTERFACE
+    db
+    cdl
+    defin
+    defout
+    lefin
+    lefout
+    tm
+    zutil
+    utl
+    ${TCL_LIBRARY}
+)
+
 ############################################################################
 ################################# SWIG #####################################
 ############################################################################
