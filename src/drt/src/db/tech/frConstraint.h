@@ -1717,7 +1717,7 @@ class frLef58CutSpacingConstraint : public frConstraint
   }
   bool hasSecondLayer() const
   {
-    return (secondLayerNum != -1 || rule_->getSecondLayer()->getName() != "");
+    return (secondLayerNum != -1 || rule_->getSecondLayer() != nullptr);
   }
   frLayerNum getSecondLayerNum() const { return secondLayerNum; }
   bool isStack() const { return rule_->isStack(); }
