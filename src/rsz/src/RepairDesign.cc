@@ -78,6 +78,9 @@ RepairDesign::RepairDesign(Resizer *resizer) :
   db_network_(nullptr),
   resizer_(resizer),
   dbu_(0),
+  drvr_pin_(nullptr),
+  max_cap_(0),
+  max_length_(0),
   corner_(nullptr),
   resize_count_(0),
   inserted_buffer_count_(0),
@@ -171,6 +174,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
+        && !resizer_->dontTouch(net)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
@@ -1383,7 +1387,10 @@ FanoutRender::FanoutRender(RepairDesign *repair) :
   repair_(repair),
   pins_(nullptr)
 {
-  gui::Gui::get()->registerRenderer(this);
+  const bool gui_enabled = gui::Gui::enabled();
+  if (gui_enabled) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void

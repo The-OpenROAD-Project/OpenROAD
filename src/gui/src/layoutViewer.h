@@ -295,6 +295,7 @@ class LayoutViewer : public QWidget
                         const odb::Rect& bounds);
   void drawRows(QPainter* painter, const odb::Rect& bounds);
   void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
+  void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawPinMarkers(Painter& painter, const odb::Rect& bounds);
@@ -392,7 +393,7 @@ class LayoutViewer : public QWidget
 
   // keeps track of inspector selection and focus items
   Selected inspector_selection_;
-  Selected inspector_focus_;
+  Selected focus_;
   // Timer used to handle blinking objects in the layout
   struct AnimatedSelected
   {

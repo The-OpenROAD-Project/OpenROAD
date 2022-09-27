@@ -41,147 +41,92 @@ void FlexDRWorker::initNetObjs_pathSeg(
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netRouteObjs,
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
 {
-  auto gridBBox = getRouteBox();
+  const auto [begin, end] = pathSeg->getPoints();
+  if (begin.x() != end.x() && begin.y() != end.y()) {
+    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
+  }
+
+  const auto gridBBox = getRouteBox();
   auto net = pathSeg->getNet();
   nets.insert(net);
-  // split seg
-  auto [begin, end] = pathSeg->getPoints();
-  //  vertical seg
-  if (begin.x() == end.x()) {
-    //  may cross routeBBox
-    if (gridBBox.xMin() <= begin.x() && begin.x() <= gridBBox.xMax()) {
-      //  bottom seg to ext
-      if (begin.y() < gridBBox.yMin()) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(begin,
-                            Point(end.x(), min(end.y(), gridBBox.yMin())));
-        if (end.y() < gridBBox.yMin()) {
-          netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
-        } else {
-          // change boundary style to ext if pathSeg does not end exactly at
-          // boundary
-          frSegStyle style = pathSeg->getStyle();
-          if (end.y() != gridBBox.yMin()) {
-            style
-                .setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-          }
-          uPathSeg->setStyle(style);
 
-          netRouteObjs[net].push_back(std::move(uPathSeg));
-        }
-      }
-      // middle seg to route
-      if (!(begin.y() >= gridBBox.yMax() || end.y() <= gridBBox.yMin())) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(Point(begin.x(), max(begin.y(), gridBBox.yMin())),
-                            Point(end.x(), min(end.y(), gridBBox.yMax())));
-        // change boundary style to ext if it does not end within at boundary
-        frSegStyle style = pathSeg->getStyle();
-        if (begin.y() < gridBBox.yMin()) {
-          style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-        }
-        if (end.y() > gridBBox.yMax()) {
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-        }
-        uPathSeg->setStyle(style);
+  const auto along = begin.x() == end.x() ? odb::vertical : odb::horizontal;
+  const auto ortho = along.turn_90();
 
-        netRouteObjs[net].push_back(std::move(uPathSeg));
-      }
-      // top seg to ext
-      if (end.y() > gridBBox.yMax()) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(Point(begin.x(), max(begin.y(), gridBBox.yMax())),
-                            end);
-        if (begin.y() > gridBBox.yMax()) {
-          netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
-        } else {
-          // change boundary style to ext if pathSeg does not end exactly at
-          // boundary
-          frSegStyle style = pathSeg->getStyle();
-          if (begin.y() != gridBBox.yMax()) {
-            style
-                .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-          }
-          uPathSeg->setStyle(style);
+  if (begin.get(ortho) < gridBBox.low(ortho)
+      || gridBBox.high(ortho) < begin.get(ortho)) {
+    // does not cross the routeBBox
+    auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
+    netExtObjs[net].push_back(std::move(uPathSeg));
+    return;
+  }
 
-          netRouteObjs[net].push_back(std::move(uPathSeg));
-        }
-      }
-      // cannot cross routeBBox
+  const int begin_coord = begin.get(along);
+  const int end_coord = end.get(along);
+  const int box_min = gridBBox.low(along);
+  const int box_max = gridBBox.high(along);
+
+  // split seg below box_min
+  if (begin_coord < box_min) {
+    auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
+    Point new_end(end);
+    new_end.set(along, min(end_coord, box_min));
+    uPathSeg->setPoints(begin, new_end);
+    if (end_coord < box_min) {
+      netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
     } else {
-      auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-      netExtObjs[net].push_back(std::move(uPathSeg));
+      // change boundary style to ext if pathSeg does not end exactly at
+      // boundary
+      frSegStyle style = pathSeg->getStyle();
+      if (end_coord != box_min) {
+        style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt());
+      }
+      uPathSeg->setStyle(style);
+
+      netRouteObjs[net].push_back(std::move(uPathSeg));
     }
-    // horizontal seg
-  } else if (begin.y() == end.y()) {
-    //  may cross routeBBox
-    if (gridBBox.yMin() <= begin.y() && begin.y() <= gridBBox.yMax()) {
-      //  left seg to ext
-      if (begin.x() < gridBBox.xMin()) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(begin,
-                            Point(min(end.x(), gridBBox.xMin()), end.y()));
-        if (end.x() < gridBBox.xMin()) {
-          netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
-        } else {
-          // change boundary style to ext if pathSeg does not end exactly at
-          // boundary
-          frSegStyle style = pathSeg->getStyle();
-          if (end.x() != gridBBox.xMin()) {
-            style
-                .setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-          }
-          uPathSeg->setStyle(style);
+  }
 
-          netRouteObjs[net].push_back(std::move(uPathSeg));  // touching bounds
-        }
-      }
-      // middle seg to route
-      if (!(begin.x() >= gridBBox.xMax() || end.x() <= gridBBox.xMin())) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(Point(max(begin.x(), gridBBox.xMin()), begin.y()),
-                            Point(min(end.x(), gridBBox.xMax()), end.y()));
-        // change boundary style to ext if it does not end within at boundary
-        frSegStyle style = pathSeg->getStyle();
-        if (begin.x() < gridBBox.xMin()) {
-          style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-        }
-        if (end.x() > gridBBox.xMax()) {
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-        }
-        uPathSeg->setStyle(style);
+  // split seg in box_min to box_max
+  if (begin_coord < box_max && end_coord > box_min) {
+    auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
+    Point new_begin(begin);
+    new_begin.set(along, max(begin_coord, box_min));
+    Point new_end(end);
+    new_end.set(along, min(end_coord, box_max));
+    uPathSeg->setPoints(new_begin, new_end);
+    // change boundary style to ext if it does not end within at boundary
+    frSegStyle style = pathSeg->getStyle();
+    if (begin_coord < box_min) {
+      style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt());
+    }
+    if (end_coord > box_max) {
+      style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt());
+    }
+    uPathSeg->setStyle(style);
 
-        netRouteObjs[net].push_back(std::move(uPathSeg));
-      }
-      // right seg to ext
-      if (end.x() > gridBBox.xMax()) {
-        auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-        uPathSeg->setPoints(Point(max(begin.x(), gridBBox.xMax()), begin.y()),
-                            end);
-        if (begin.x() > gridBBox.xMax()) {
-          netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
-        } else {
-          // change boundary style to ext if pathSeg does not end exactly at
-          // boundary
-          frSegStyle style = pathSeg->getStyle();
-          if (begin.x() != gridBBox.xMax()) {
-            style
-                .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
-          }
-          uPathSeg->setStyle(style);
+    netRouteObjs[net].push_back(std::move(uPathSeg));
+  }
 
-          netRouteObjs[net].push_back(std::move(uPathSeg));  // touching bounds
-        }
-      }
-      // cannot cross routeBBox
+  // split seg above box_max
+  if (end_coord > box_max) {
+    auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
+    Point new_begin(begin);
+    new_begin.set(along, max(begin_coord, box_max));
+    uPathSeg->setPoints(new_begin, end);
+    if (begin_coord > box_max) {
+      netExtObjs[net].push_back(std::move(uPathSeg));  // pure ext
     } else {
-      auto uPathSeg = make_unique<drPathSeg>(*pathSeg);
-      netExtObjs[net].push_back(std::move(uPathSeg));
+      // change boundary style to ext if pathSeg does not end exactly at
+      // boundary
+      frSegStyle style = pathSeg->getStyle();
+      if (begin_coord != box_max) {
+        style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt());
+      }
+      uPathSeg->setStyle(style);
+
+      netRouteObjs[net].push_back(std::move(uPathSeg));
     }
-  } else {
-    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
   }
 }
 
@@ -326,6 +271,38 @@ static bool viaInInterior(Rect routeBox, Point origin)
          && routeBox.yMin() < origin.y() && origin.y() < routeBox.yMax();
 }
 
+void FlexDRWorker::initNets_segmentTerms(
+    Point bp,
+    frLayerNum lNum,
+    frNet* net,
+    set<frBlockObject*, frBlockObjectComp>& terms)
+{
+  auto regionQuery = design_->getRegionQuery();
+  frRegionQuery::Objects<frBlockObject> result;
+  Rect query_box(bp.x(), bp.y(), bp.x(), bp.y());
+  regionQuery->query(query_box, lNum, result);
+  for (auto& [bx, rqObj] : result) {
+    switch (rqObj->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj);
+        if (instTerm->getNet() == net) {
+          terms.insert(rqObj);
+        }
+        break;
+      }
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj);
+        if (term->getNet() == net) {
+          terms.insert(rqObj);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+}
+
 // inits nets based on the pins
 void FlexDRWorker::initNets_initDR(
     const frDesign* design,
@@ -368,10 +345,15 @@ void FlexDRWorker::initNets_initDR(
         frSegStyle style = ps->getStyle();
         auto [bp, ep] = ps->getPoints();
         auto& box = getRouteBox();
+        bool onBorder = segOnBorder(box, bp, ep);
         if (box.intersects(bp) && box.intersects(ep)
-            && !(segOnBorder(box, bp, ep)
+            && !(onBorder
                  && (style.getBeginStyle() != frcTruncateEndStyle
                      || style.getEndStyle() != frcTruncateEndStyle))) {
+          if (onBorder) {
+            initNets_segmentTerms(bp, ps->getLayerNum(), net, netTerms[net]);
+            initNets_segmentTerms(ep, ps->getLayerNum(), net, netTerms[net]);
+          }
           vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
         } else {
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
@@ -453,7 +435,7 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
     auto connFig = uPtr.get();
     if (connFig->typeId() == drcPathSeg) {
       auto obj = static_cast<drPathSeg*>(connFig);
-      auto [bp, ep]= obj->getPoints();
+      auto [bp, ep] = obj->getPoints();
       auto lNum = obj->getLayerNum();
       frSegStyle style = obj->getStyle();
       if (enableOutput)
@@ -3409,7 +3391,8 @@ void FlexDRWorker::init(const frDesign* design)
   initNets(design);
   initGridGraph(design);
   initMazeIdx();
-  std::unique_ptr<FlexGCWorker> gcWorker = make_unique<FlexGCWorker>(design->getTech(), logger_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker
+      = make_unique<FlexGCWorker>(design->getTech(), logger_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);
@@ -3418,7 +3401,8 @@ void FlexDRWorker::init(const frDesign* design)
   initMazeCost(design);
 }
 
-frCoord FlexDRWorker::snapCoordToManufacturingGrid(const frCoord coord, const int lowerLeftCoord)
+frCoord FlexDRWorker::snapCoordToManufacturingGrid(const frCoord coord,
+                                                   const int lowerLeftCoord)
 {
   frCoord manuGrid = getTech()->getManufacturingGrid();
   frCoord onGridCoord = coord;

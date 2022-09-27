@@ -35,19 +35,55 @@
 
 namespace eval sta {
 
-define_cmd_args "report_tns_metric" {}
-proc report_tns_metric { args } {
+define_cmd_args "report_clock_skew_metric" {[-setup]|[-hold]}
+proc report_clock_skew_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_clock_skew_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "-setup"
+  set metric_name "clock__skew__setup"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "-hold"
+    set metric_name "clock__skew__hold"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 19 "both -setup and -hold specified."
+  }
+
+  utl::metric_float $metric_name [worst_clock_skew $min_max]
 }
 
+define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
+proc report_tns_metric { args } {
+  global sta_report_default_digits
+  parse_key_args "report_tns_metric" args keys {} flags {-setup -hold}
 
-define_cmd_args "report_worst_slack_metric" {}
+  set min_max "max"
+  set metric_name "timing__setup__tns"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__tns"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 18 "both -setup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [total_negative_slack_cmd  $min_max] $sta_report_default_digits]"
+}
+
+define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
 proc report_worst_slack_metric { args } {
   global sta_report_default_digits
+  parse_key_args "report_worst_slack_metric" args keys {} flags {-setup -hold}
 
-  utl::metric_float "timing__setup__ws" "[format_time [worst_slack_cmd "max"] $sta_report_default_digits]"
+  set min_max "max"
+  set metric_name "timing__setup__ws"
+  if { ![info exists flags(-setup)] && [info exists flags(-hold)] } {
+    set min_max "min"
+    set metric_name "timing__hold__ws"
+  } elseif { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error ORD 17 "both -steup and -hold specified."
+  }
+
+  utl::metric_float $metric_name "[format_time [worst_slack_cmd $min_max] $sta_report_default_digits]"
 }
 
 define_cmd_args "report_erc_metrics" {}
@@ -59,8 +95,8 @@ proc report_erc_metrics { args } {
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
-    set setup_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
-    set hold_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
+    set setup_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
+    set hold_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
 
     utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
     utl::metric_int "timing__drv__max_slew" $max_slew_violation
@@ -73,14 +109,16 @@ proc report_erc_metrics { args } {
 }
 
 
-define_cmd_args "report_power_design_metric" {}
-proc report_power_design_metric { corner digits } {
+define_cmd_args "report_power_metric" {[-corner corner_name]}
+proc report_power_metric { args } {
+  parse_key_args "report_power_metric" args keys {-corner} flags {}
+  set corner [sta::parse_corner keys]
   set power_result [design_power $corner]
   set totals        [lrange $power_result  0  3]
   lassign $totals design_internal design_switching design_leakage design_total
 
   utl::metric_float "power__internal__total" $design_internal
-  utl::metric_float "power__switchng__total" $design_switching
+  utl::metric_float "power__switching__total" $design_switching
   utl::metric_float "power__leakage__total" $design_leakage
   utl::metric_float "power__total" $design_total
 }
@@ -129,7 +167,7 @@ proc report_design_area_metrics {args} {
     set wid [$inst_master getWidth]
     set ht [$inst_master getHeight]
     set inst_area  [expr $wid * $ht]
-    set total_area [expr $total_area + $inst_area] 
+    set total_area [expr $total_area + $inst_area]
     set num_insts [expr $num_insts + 1]
 
     if { [$inst_master isBlock] } {

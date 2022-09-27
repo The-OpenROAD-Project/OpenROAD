@@ -1,6 +1,7 @@
 %{
 #include "ord/OpenRoad.hh"
 #include "gpl/Replace.h"
+#include "odb/db.h"
 
 namespace ord {
 OpenRoad*
@@ -144,12 +145,20 @@ replace_incremental_place_cmd()
   replace->doIncrementalPlace();
 }
 
+
 void
-set_timing_driven_mode(bool timing_driven)
+set_force_cpu(bool force_cpu)
+{
+  Replace* replace = getReplace();
+  replace->setForceCPU(force_cpu);
+}
+
+void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
   replace->setTimingDrivenMode(timing_driven);
 }
+
 
 void
 set_routability_driven_mode(bool routability_driven)
@@ -254,21 +263,27 @@ add_timing_net_reweight_overflow_cmd(int overflow)
 }
 
 void
-set_debug_cmd(int pause_iterations,
-              int update_iterations,
-              bool draw_bins,
-              bool initial)
+set_timing_driven_net_weight_max_cmd(float max)
 {
   Replace* replace = getReplace();
-  replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial);
+  return replace->setTimingNetWeightMax(max);
 }
 
 void
-set_plot_path_cmd(const char* path) 
+set_debug_cmd(int pause_iterations,
+              int update_iterations,
+              bool draw_bins,
+              bool initial,
+              const char* inst_name)
 {
   Replace* replace = getReplace();
-  replace->setPlottingPath(path);
+  odb::dbInst* inst = nullptr;
+  if (inst_name) {
+    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+    inst = block->findInst(inst_name);
+  }
+  replace->setDebug(pause_iterations, update_iterations, draw_bins,
+                    initial, inst);
 }
 
 %} // inline

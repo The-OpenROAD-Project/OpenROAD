@@ -596,11 +596,9 @@ start_units: K_UNITS
           CHKERR();
         }
       }
-      if (lefData->versionNum < 5.6) {
-        if (lefData->hasSite) {//SITE is defined before UNIT and is illegal in pre 5.6
-          lefError(1713, "SITE statement was defined before UNITS.\nRefer the LEF Language Reference manual for the order of LEF statements.");
-          CHKERR();
-        }
+      if (lefData->hasSite) {
+        lefError(1713, "SITE statement was defined before UNITS.\nRefer the LEF Language Reference manual for the order of LEF statements.");
+        CHKERR();
       }
     }
 

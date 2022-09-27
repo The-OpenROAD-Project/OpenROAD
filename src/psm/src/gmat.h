@@ -89,6 +89,15 @@ class GMat
                               int x_max,
                               int y_min,
                               int y_max);
+  //! Function to return a vector of pointers to the nodes within an area sorted
+  // by direction
+  std::map<std::pair<int, int>, Node*> getNodes(
+      int layer,
+      odb::dbTechLayerDir::Value layer_dir,
+      int x_min,
+      int x_max,
+      int y_min,
+      int y_max);
   //! Function to create a node
   Node* setNode(const Point& loc, int layer);
   //! Function to insert a node into the matrix
@@ -138,7 +147,7 @@ class GMat
   //! matrix
   void updateConductance(NodeIdx row, NodeIdx col, double cond);
   //! Function to find the nearest node to a particular location
-  Node* nearestYNode(NodeMap::iterator x_itr, int y);
+  Node* nearestYNode(NodeMap::const_iterator x_itr, int y);
   //! Function to find conductivity of a stripe based on width,length, and pitch
   double getConductivity(double width, double length, double rho);
 

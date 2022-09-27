@@ -235,7 +235,9 @@ void FlexGR::initGCell()
     xgp.setStartCoord(startCoordX);
     frCoord GCELLGRIDX = pitch * 15;
     xgp.setSpacing(GCELLGRIDX);
-    xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
+    if (GCELLGRIDX != 0) {
+      xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
+    }
     // set ygp
     ygp.setHorizontal(true);
     frCoord startCoordY

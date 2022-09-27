@@ -77,7 +77,6 @@ struct _dbNetFlags
   uint _set_io : 1;
   uint _io : 1;
   uint _dont_touch : 1;
-  uint _size_only : 1;
   uint _fixed_bump : 1;
   dbSourceType::Value _source : 4;
   uint _rc_disconnected : 1;

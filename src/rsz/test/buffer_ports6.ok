@@ -3,9 +3,7 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: buffer_ports6.def
 [INFO ODB-0128] Design: buffer_ports6
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 1 components and 7 component-terminals.
 [INFO ODB-0132]     Created 4 special nets and 4 connections.
-[INFO ODB-0134] Finished DEF file: buffer_ports6.def

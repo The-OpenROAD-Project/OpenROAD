@@ -3,11 +3,9 @@
 [INFO ODB-0224]     Created 22 technology vias
 [INFO ODB-0225]     Created 16 library cells
 [INFO ODB-0226] Finished LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
-[INFO ODB-0127] Reading DEF file: testcase/ispd18_sample/ispd18_sample.input.def
 [INFO ODB-0128] Design: ispd18_sample
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
-[INFO ODB-0134] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
 [WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
 [WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.
 [WARNING DRT-0145] New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.

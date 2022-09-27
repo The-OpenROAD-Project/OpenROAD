@@ -3,13 +3,11 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: 45_gcd.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1820 components and 4618 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 3640 connections.
 [INFO ODB-0133]     Created 350 nets and 978 connections.
-[INFO ODB-0134] Finished DEF file: 45_gcd.def
 [INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of gcd ...

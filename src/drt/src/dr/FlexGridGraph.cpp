@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexGridGraph.h"
-
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
+#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;
@@ -88,47 +87,56 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx z,
                                 const Rect& dieBox)
 {
-    frLayerNum lNum = getLayerNum(z) + 1;
-    if (lNum > getTech()->getTopLayerNum())
-        return false;
-    frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
-    Rect viaBox(via->getLayer1ShapeBox());
-    viaBox.merge(via->getLayer2ShapeBox());
-    viaBox.moveDelta(xCoords_[x], yCoords_[y]);
-    return !dieBox.contains(viaBox);
-}
-bool FlexGridGraph::hasOutOfDieViol(frMIdx x,
-                                    frMIdx y,
-                                    frMIdx z)
-{
-    frLayerNum lNum = getLayerNum(z);
-    if (!getTech()->getLayer(lNum)->isUnidirectional())
-        return false;
-    frViaDef* via = nullptr;
-    Rect testBoxUp;
-    if (lNum + 1 <= getTech()->getTopLayerNum()) {
-        via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-        testBoxUp = via->getLayer1ShapeBox();
-        testBoxUp.merge(via->getLayer2ShapeBox());
-        testBoxUp.moveDelta(xCoords_[x], yCoords_[y]);
-    }
-    Rect testBoxDown;
-    if (lNum - 1 >= getTech()->getBottomLayerNum()) {
-        via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-        testBoxDown = via->getLayer1ShapeBox();
-        testBoxDown.merge(via->getLayer2ShapeBox());
-        testBoxDown.moveDelta(xCoords_[x], yCoords_[y]);
-    }
-    if (getTech()->getLayer(lNum)->isVertical()) {
-        if ((testBoxUp.xMax() > dieBox_.xMax() || testBoxUp.xMin() < dieBox_.xMin()) 
-            && (testBoxDown.xMax() > dieBox_.xMax() || testBoxDown.xMin() < dieBox_.xMin()))
-            return true;
-    }
-    //layer is horizontal
-    if ((testBoxUp.yMax() > dieBox_.yMax() || testBoxUp.yMin() < dieBox_.yMin()) 
-        && (testBoxDown.yMax() > dieBox_.yMax() || testBoxDown.yMin() < dieBox_.yMin()))
-        return true;
+  frLayerNum lNum = getLayerNum(z) + 1;
+  if (lNum > getTech()->getTopLayerNum())
     return false;
+  frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  Rect viaBox(via->getLayer1ShapeBox());
+  viaBox.merge(via->getLayer2ShapeBox());
+  viaBox.moveDelta(xCoords_[x], yCoords_[y]);
+  return !dieBox.contains(viaBox);
+}
+bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
+{
+  const frLayerNum lNum = getLayerNum(z);
+  if (!getTech()->getLayer(lNum)->isUnidirectional()) {
+    return false;
+  }
+  Rect testBoxUp;
+  if (lNum + 1 <= getTech()->getTopLayerNum()) {
+    frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (via) {
+      testBoxUp = via->getLayer1ShapeBox();
+      testBoxUp.merge(via->getLayer2ShapeBox());
+      testBoxUp.moveDelta(xCoords_[x], yCoords_[y]);
+    } else {
+      // artificial value to indicate no via in test below
+      dieBox_.bloat(1, testBoxUp);
+    }
+  }
+  Rect testBoxDown;
+  if (lNum - 1 >= getTech()->getBottomLayerNum()) {
+    frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    if (via) {
+      testBoxDown = via->getLayer1ShapeBox();
+      testBoxDown.merge(via->getLayer2ShapeBox());
+      testBoxDown.moveDelta(xCoords_[x], yCoords_[y]);
+    } else {
+      // artificial value to indicate no via in test below
+      dieBox_.bloat(1, testBoxDown);
+    }
+  }
+  if (getTech()->getLayer(lNum)->isVertical()) {
+    return (testBoxUp.xMax() > dieBox_.xMax()
+            || testBoxUp.xMin() < dieBox_.xMin())
+           && (testBoxDown.xMax() > dieBox_.xMax()
+               || testBoxDown.xMin() < dieBox_.xMin());
+  }
+  // layer is horizontal
+  return (testBoxUp.yMax() > dieBox_.yMax()
+          || testBoxUp.yMin() < dieBox_.yMin())
+         && (testBoxDown.yMax() > dieBox_.yMax()
+             || testBoxDown.yMin() < dieBox_.yMin());
 }
 
 bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
@@ -206,9 +214,9 @@ void FlexGridGraph::initEdges(
         if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) && 
-                    (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || yIt->second != nullptr)) {
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
+                && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                    || yIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               if (yIt->second == nullptr || isWorkerBorder(yIdx, false)) {
                 setGridCostE(xIdx, yIdx, zIdx);
@@ -229,9 +237,9 @@ void FlexGridGraph::initEdges(
         } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx)) 
+            if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                || xIt->second != nullptr)) {
+                    || xIt->second != nullptr)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               if (xIt->second == nullptr || isWorkerBorder(xIdx, true)) {
                 setGridCostN(xIdx, yIdx, zIdx);
@@ -293,33 +301,47 @@ void FlexGridGraph::initEdges(
       for (int zIdx = startZ; zIdx >= 0 && zIdx < (int) zCoords_.size() - 1;
            zIdx += inc, nextLNum += inc * 2) {
         addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-        auto& xSubMap = xMap[apPt.x()];
-        auto xTrack = xSubMap.find(nextLNum);
-        if (xTrack != xSubMap.end() && xTrack->second != nullptr)
-          break;
-        auto& ySubMap = yMap[apPt.y()];
-        auto yTrack = ySubMap.find(nextLNum);
-        if (yTrack != ySubMap.end() && yTrack->second != nullptr)
-          break;
-        // didnt find default track, then create tracks if possible
-        bool restrictedRouting
-            = getTech()->getLayer(nextLNum)->isUnidirectional()
+        frLayer* nextLayer = getTech()->getLayer(nextLNum);
+        const bool restrictedRouting
+            = nextLayer->isUnidirectional()
               || nextLNum < BOTTOM_ROUTING_LAYER
               || nextLNum > TOP_ROUTING_LAYER;
+        if (!restrictedRouting || nextLayer->isVertical()) {
+          auto& xSubMap = xMap[apPt.x()];
+          auto xTrack = xSubMap.find(nextLNum);
+          if (xTrack != xSubMap.end() && xTrack->second != nullptr)
+            break;
+        }
+        if (!restrictedRouting || nextLayer->isHorizontal()) {
+          auto& ySubMap = yMap[apPt.y()];
+          auto yTrack = ySubMap.find(nextLNum);
+          if (yTrack != ySubMap.end() && yTrack->second != nullptr)
+            break;
+        }
+        // didnt find default track, then create tracks if possible
         if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
           dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
           xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence
           yMap[apPt.y()][nextLNum] = nullptr;
           frMIdx nextZ = up ? zIdx + 1 : zIdx;
+          // This is a value to make sure the edges we are adding will
+          // reach a track on the layer of interest.  It is simpler to
+          // be conservative than trying to figure out how many edges
+          // to add to hit it precisely.  I intend to obviate the need
+          // for this whole approach next.  Note that addEdge checks
+          // for bounds so I don't.
+          const int max_offset = 20;
           if (prefDir == dbTechLayerDir::HORIZONTAL) {
-            addEdge(xIdx, yIdx, nextZ, frDirEnum::N, bbox, initDR);
-            if (yIdx - 1 >= 0)
-              addEdge(xIdx, yIdx - 1, nextZ, frDirEnum::N, bbox, initDR);
+            for (int offset = 0; offset < max_offset; ++offset) {
+              addEdge(xIdx, yIdx + offset, nextZ, frDirEnum::N, bbox, initDR);
+              addEdge(xIdx, yIdx - offset, nextZ, frDirEnum::S, bbox, initDR);
+            }
           } else {
-            addEdge(xIdx, yIdx, nextZ, frDirEnum::E, bbox, initDR);
-            if (xIdx - 1 >= 0)
-              addEdge(xIdx - 1, yIdx, nextZ, frDirEnum::E, bbox, initDR);
+            for (int offset = 0; offset < max_offset; ++offset) {
+              addEdge(xIdx + offset, yIdx, nextZ, frDirEnum::E, bbox, initDR);
+              addEdge(xIdx - offset, yIdx, nextZ, frDirEnum::W, bbox, initDR);
+            }
           }
           break;
         }

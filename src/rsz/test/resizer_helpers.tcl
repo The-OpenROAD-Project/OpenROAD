@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # Make sure instances are inside the core.
 proc check_in_core {} {
   set core [ord::get_db_core]

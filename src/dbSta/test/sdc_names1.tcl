@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # hierarchical names
 read_lef liberty1.lef
 read_def hier1.def

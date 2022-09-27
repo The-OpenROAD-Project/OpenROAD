@@ -14,6 +14,7 @@ add_library(lefin
     lefTechLayerTypeParser.cpp
     lefTechLayerEolExtensionParser.cpp
     lefTechLayerEolKeepOutRuleParser.cpp
+    lefTechLayerAreaRuleParser.cpp
     lefMacroClassParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
@@ -35,6 +36,7 @@ set_target_properties(lefin
 
 target_link_libraries(lefin
     PUBLIC
+        db
         zutil
         lef
         lefzlib

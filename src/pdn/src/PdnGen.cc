@@ -53,7 +53,6 @@
 
 namespace pdn {
 
-using utl::IFP;
 using utl::Logger;
 
 using odb::dbBlock;
@@ -64,11 +63,9 @@ using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;
 
-using std::regex;
-
 using utl::PDN;
 
-PdnGen::PdnGen() : db_(nullptr), logger_(nullptr), global_connect_(nullptr)
+PdnGen::PdnGen() : db_(nullptr), logger_(nullptr)
 {
 }
 
@@ -76,191 +73,6 @@ void PdnGen::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
-}
-
-void PdnGen::setSpecialITerms()
-{
-  if (global_connect_ == nullptr) {
-    logger_->warn(PDN, 49, "Global connections not set up.");
-    return;
-  }
-
-  std::set<dbNet*> global_nets = std::set<dbNet*>();
-  for (auto& [box, net_regex_pairs] : *global_connect_) {
-    for (auto& [net, regex_pairs] : *net_regex_pairs) {
-      global_nets.insert(net);
-    }
-  }
-
-  for (dbNet* net : global_nets)
-    setSpecialITerms(net);
-}
-
-void PdnGen::setSpecialITerms(dbNet* net)
-{
-  for (dbITerm* iterm : net->getITerms()) {
-    iterm->setSpecial();
-  }
-}
-
-void PdnGen::globalConnect(dbBlock* block,
-                           std::shared_ptr<regex>& instPattern,
-                           std::shared_ptr<regex>& pinPattern,
-                           dbNet* net)
-{
-  dbBox* bbox = nullptr;
-  globalConnectRegion(block, bbox, instPattern, pinPattern, net);
-}
-
-void PdnGen::globalConnect(dbBlock* block)
-{
-  if (global_connect_ == nullptr) {
-    logger_->warn(PDN, 50, "Global connections not set up.");
-    return;
-  }
-
-  // Do non-regions first
-  if (global_connect_->find(nullptr) != global_connect_->end()) {
-    globalConnectRegion(block, nullptr, global_connect_->at(nullptr));
-  }
-
-  // Do regions
-  for (auto& [region, net_regex_pairs] : *global_connect_) {
-    if (region == nullptr)
-      continue;
-    globalConnectRegion(block, region, net_regex_pairs);
-  }
-
-  setSpecialITerms();
-}
-
-void PdnGen::globalConnectRegion(dbBlock* block,
-                                 dbBox* region,
-                                 std::shared_ptr<netRegexPairs> global_connect)
-{
-  for (auto& [net, regex_pairs] : *global_connect) {
-    for (auto& [inst_regex, pin_regex] : *regex_pairs) {
-      globalConnectRegion(block, region, inst_regex, pin_regex, net);
-    }
-  }
-}
-
-void PdnGen::globalConnectRegion(dbBlock* block,
-                                 dbBox* region,
-                                 std::shared_ptr<regex>& instPattern,
-                                 std::shared_ptr<regex>& pinPattern,
-                                 dbNet* net)
-{
-  if (net == nullptr) {
-    logger_->warn(PDN, 60, "Unable to add invalid net.");
-    return;
-  }
-
-  std::vector<dbInst*> insts;
-  findInstsInArea(block, region, instPattern, insts);
-
-  if (insts.empty()) {
-    return;
-  }
-
-  std::map<dbMaster*, std::vector<dbMTerm*>> masterpins;
-  buildMasterPinMatchingMap(block, pinPattern, masterpins);
-
-  for (dbInst* inst : insts) {
-    dbMaster* master = inst->getMaster();
-
-    auto masterpin = masterpins.find(master);
-    if (masterpin != masterpins.end()) {
-      std::vector<dbMTerm*>* mterms = &masterpin->second;
-
-      for (dbMTerm* mterm : *mterms) {
-        inst->getITerm(mterm)->connect(net);
-      }
-    }
-  }
-}
-
-void PdnGen::findInstsInArea(dbBlock* block,
-                             dbBox* region,
-                             std::shared_ptr<regex>& instPattern,
-                             std::vector<dbInst*>& insts)
-{
-  for (dbInst* inst : block->getInsts()) {
-    if (std::regex_match(inst->getName().c_str(), *instPattern)) {
-      if (region == nullptr) {
-        insts.push_back(inst);
-      } else {
-        dbBox* box = inst->getBBox();
-
-        if (region->yMin() <= box->yMin() && region->xMin() <= box->xMin()
-            && region->xMax() >= box->xMax() && region->yMax() >= box->yMax()) {
-          insts.push_back(inst);
-        }
-      }
-    }
-  }
-}
-
-void PdnGen::buildMasterPinMatchingMap(
-    dbBlock* block,
-    std::shared_ptr<regex>& pinPattern,
-    std::map<dbMaster*, std::vector<dbMTerm*>>& masterpins)
-{
-  std::vector<dbMaster*> masters;
-  block->getMasters(masters);
-
-  for (dbMaster* master : masters) {
-    masterpins.emplace(master, std::vector<dbMTerm*>());
-
-    std::vector<dbMTerm*>* mastermterms = &masterpins.at(master);
-    for (dbMTerm* mterm : master->getMTerms()) {
-      if (std::regex_match(mterm->getName().c_str(), *pinPattern)) {
-        mastermterms->push_back(mterm);
-      }
-    }
-  }
-}
-
-void PdnGen::addGlobalConnect(const char* instPattern,
-                              const char* pinPattern,
-                              dbNet* net)
-{
-  addGlobalConnect(nullptr, instPattern, pinPattern, net);
-}
-
-void PdnGen::addGlobalConnect(dbBox* region,
-                              const char* instPattern,
-                              const char* pinPattern,
-                              dbNet* net)
-{
-  if (net == nullptr) {
-    logger_->warn(PDN, 61, "Unable to add invalid net.");
-    return;
-  }
-
-  if (global_connect_ == nullptr) {
-    global_connect_ = std::make_unique<regionNetRegexPairs>();
-  }
-
-  // check if region is present in map, add if not
-  if (global_connect_->find(region) == global_connect_->end()) {
-    global_connect_->emplace(region, std::make_shared<netRegexPairs>());
-  }
-
-  std::shared_ptr<netRegexPairs> netRegexes = global_connect_->at(region);
-  // check if net is present in region mapping
-  if (netRegexes->find(net) == netRegexes->end()) {
-    netRegexes->emplace(net, std::make_shared<regexPairs>());
-  }
-
-  netRegexes->at(net)->push_back(
-      std::make_pair(std::make_shared<regex>(instPattern),
-                     std::make_shared<regex>(pinPattern)));
-}
-
-void PdnGen::clearGlobalConnect()
-{
-  global_connect_ = nullptr;
 }
 
 void PdnGen::reset()
@@ -803,7 +615,7 @@ void PdnGen::updateRenderer() const
   }
 }
 
-void PdnGen::writeToDb(bool add_pins) const
+void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
 
@@ -854,6 +666,20 @@ void PdnGen::writeToDb(bool add_pins) const
     for (const auto& grid : domain->getGrids()) {
       grid->writeToDb(net_map, add_pins, obstructions);
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
+    }
+  }
+
+  if (!report_file.empty()) {
+    std::ofstream file(report_file);
+    if (!file) {
+      logger_->warn(utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
+      return;
+    }
+
+    for (auto* grid : getGrids()) {
+      for (const auto& connect : grid->getConnect()) {
+        connect->writeFailedVias(file);
+      }
     }
   }
 }

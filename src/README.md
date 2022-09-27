@@ -88,6 +88,67 @@ read reg1.db
 write_abstract_lef reg1_abstract.lef
 ```
 
+### Global Connections
+
+#### Add global connections
+
+The `add_global_connection` command is used to specify how to connect power and ground pins on design instances to the appropriate supplies.
+
+```
+add_global_connection -net net_name \
+                      [-inst_pattern inst_regular_expression] \
+                      -pin_pattern pin_regular_expression \
+                      (-power|-ground) \
+                      [-reigon region_name]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Specifies the name of the net in the design to which connections are to be added |
+| `-inst_pattern` | Optional specifies a regular expression to select a set of instances from the design. (Default: .\*) |
+| `-pin_pattern` | Species a regular expression to select pins on the selected instances to connect to the specified net |
+| `-power` | Specifies that the net it a power net |
+| `-ground` | Specifies that the net is a ground net |
+| `-region` | Specifies the name of the region for this rule |
+
+##### Examples
+```
+# Stdcell power/ground pins
+add_global_connection -net VDD -pin_pattern {^VDD$} -power
+add_global_connection -net VSS -pin_pattern {^VSS$} -ground
+
+# SRAM power ground pins
+add_global_connection -net VDD -pin_pattern {^VDDPE$}
+add_global_connection -net VDD -pin_pattern {^VDDCE$}
+add_global_connection -net VSS -pin_pattern {^VSSE$}
+```
+
+#### Perform global connections
+
+The `global_connect` command is used to connect power and ground pins on design instances to the appropriate supplies.
+
+```
+global_connect
+```
+
+#### Clear global connection rules
+
+The `clear_global_connect` command is used remove all defined global connection rules.
+
+```
+clear_global_connect
+```
+
+#### Report global connection rules
+
+The `report_global_connect` command is used print out the currently defined global connection rules.
+
+```
+report_global_connect
+```
+
 ### Limitations of the Abstract LEF Writer
 
 Currently the writer will place an obstruction over the entire block area on any

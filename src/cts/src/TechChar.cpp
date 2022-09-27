@@ -33,14 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TechChar.h"
-
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 
+#include "TechChar.h"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
@@ -77,7 +76,7 @@ TechChar::TechChar(CtsOptions* options,
 {
 }
 
-void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
+void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 {
   logger_->info(CTS, 84, "Compiling LUT.");
   initLengthUnits();
@@ -319,45 +318,39 @@ void TechChar::reportSegments(uint8_t length,
 
 void TechChar::printCharacterization() const
 {
-  debugPrint(logger_,
-             CTS,
-             "characterization",
-             3,
-             "{} {} {} {} {} {} {}",
-             minSegmentLength_,
-             maxSegmentLength_,
-             minCapacitance_,
-             maxCapacitance_,
-             minSlew_,
-             maxSlew_,
-             options_->getWireSegmentUnit());
+  logger_->report("minSegmentLength = {}", minSegmentLength_);
+  logger_->report("maxSegmentLength = {}", maxSegmentLength_);
+  logger_->report("minCapacitance = {}", minCapacitance_);
+  logger_->report("maxCapacitance = {}", maxCapacitance_);
+  logger_->report("minSlew = {}", minSlew_);
+  logger_->report("maxSlew = {}", maxSlew_);
+  logger_->report("wireSegmentUnit = {}", options_->getWireSegmentUnit());
 
+  logger_->report(
+      "\nidx length load outSlew power delay inCap inSlew pureWire bufLoc");
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffer_locations;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
       buffer_locations += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
-    debugPrint(logger_,
-               CTS,
-               "characterization",
-               3,
-               "{} {} {} {} {} {} {} {} {} {}",
-               idx,
-               (unsigned) segment.getLength(),
-               (unsigned) segment.getLoad(),
-               (unsigned) segment.getOutputSlew(),
-               segment.getPower(),
-               segment.getDelay(),
-               (unsigned) segment.getInputCap(),
-               (unsigned) segment.getInputSlew(),
-               !segment.isBuffered(),
-               buffer_locations);
+    logger_->report("{:6} {:2} {:2} {:2} {:.2e} {:4} {:2} {:2} {} {}",
+                    idx,
+                    (unsigned) segment.getLength(),
+                    (unsigned) segment.getLoad(),
+                    (unsigned) segment.getOutputSlew(),
+                    segment.getPower(),
+                    segment.getDelay(),
+                    (unsigned) segment.getInputCap(),
+                    (unsigned) segment.getInputSlew(),
+                    !segment.isBuffered(),
+                    buffer_locations);
   });
 }
 
 void TechChar::printSolution() const
 {
+  logger_->report("idx <length,buffer>*");
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string report;
     report += std::to_string(idx) + " ";
@@ -380,7 +373,7 @@ void TechChar::printSolution() const
       report += std::to_string((unsigned long) (wirelengthValue));
     }
 
-    debugPrint(logger_, CTS, "characterization", 3, "{}", report);
+    logger_->report("{}", report);
   });
 }
 
@@ -417,12 +410,22 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  logger_->report("    Key: {} outSlew: {} load: {} length: {} isBuffered: {}",
-                  key,
-                  seg.getOutputSlew(),
-                  seg.getLoad(),
-                  seg.getLength(),
-                  seg.isBuffered());
+  logger_->report(
+      "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} delay: "
+      "{}",
+      key,
+      seg.getInputSlew(),
+      seg.getInputCap(),
+      seg.getOutputSlew(),
+      seg.getLoad(),
+      seg.getLength(),
+      seg.getDelay());
+
+  for (unsigned idx = 0; idx < seg.getNumBuffers(); ++idx) {
+    logger_->report("      location: {} buffer: {}",
+                    seg.getBufferLocation(idx),
+                    seg.getBufferMaster(idx));
+  }
 }
 
 void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
@@ -519,26 +522,24 @@ void TechChar::initCharacterization()
       = db_->findMaster(options_->getSinkBuffer().c_str());
 
   for (odb::dbMTerm* masterTerminal : charBuf_->getMTerms()) {
-    if (masterTerminal->getIoType() == odb::dbIoType::INPUT &&
-        (masterTerminal->getSigType() == odb::dbSigType::SIGNAL ||
-         masterTerminal->getSigType() == odb::dbSigType::CLOCK)) {
+    if (masterTerminal->getIoType() == odb::dbIoType::INPUT
+        && (masterTerminal->getSigType() == odb::dbSigType::SIGNAL
+            || masterTerminal->getSigType() == odb::dbSigType::CLOCK)) {
       charBufIn_ = masterTerminal->getName();
-    } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT &&
-               masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
+    } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT
+               && masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
       charBufOut_ = masterTerminal->getName();
     }
   }
 
   if (charBufIn_.empty()) {
     logger_->error(
-        CTS, 534,
-        "Could not find buffer input port for {}.", bufMasterName);
+        CTS, 534, "Could not find buffer input port for {}.", bufMasterName);
   }
 
   if (charBufOut_.empty()) {
     logger_->error(
-        CTS, 541,
-        "Could not find buffer output port for {}.", bufMasterName);
+        CTS, 541, "Could not find buffer output port for {}.", bufMasterName);
   }
   // Creates the new characterization block. (Wiresegments are created here
   // instead of the main block)
@@ -704,7 +705,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         // Buffer, need to create the instance and a new net.
         nodesWithoutBuf++;
         // Creates a new buffer instance.
-        std::string bufName = "buf_" + std::to_string(setupWirelength)
+        std::string bufName = "buf_" + std::to_string(setupWirelength) + "_"
                               + solutionCounter.to_string() + "_"
                               + std::to_string(wireCounter);
         odb::dbInst* bufInstance
@@ -720,7 +721,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
         // Creates a new net.
         wireCounter++;
-        std::string netName = "net_" + std::to_string(setupWirelength)
+        std::string netName = "net_" + std::to_string(setupWirelength) + "_"
                               + solutionCounter.to_string() + "_"
                               + std::to_string(wireCounter);
         net = odb::dbNet::create(charBlock_, netName.c_str());
@@ -777,7 +778,7 @@ void TechChar::createStaInstance()
 }
 
 void TechChar::setParasitics(
-    std::vector<TechChar::SolutionData> topologiesVector,
+    const std::vector<TechChar::SolutionData>& topologiesVector,
     unsigned setupWirelength)
 {
   // For each topology...
@@ -850,12 +851,18 @@ void TechChar::setParasitics(
 }
 
 TechChar::ResultData TechChar::computeTopologyResults(
-    TechChar::SolutionData solution,
+    const TechChar::SolutionData& solution,
     sta::Vertex* outPinVert,
     float load,
+    float inSlew,
     unsigned setupWirelength)
 {
   ResultData results;
+  results.wirelength = setupWirelength;
+  results.topology = solution.topologyDescriptor;
+  results.isPureWire = solution.isPureWire;
+  results.load = load;
+  results.inSlew = inSlew;
   // Computations for power, requires the PowerResults class from OpenSTA.
   float totalPower = 0;
   if (!solution.isPureWire) {
@@ -903,8 +910,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
   return results;
 }
 
-TechChar::SolutionData TechChar::updateBufferTopologies(
-    TechChar::SolutionData solution)
+void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 {
   unsigned index = 0;
   // Change the buffer topology by increasing the size of the buffers.
@@ -970,7 +976,6 @@ TechChar::SolutionData TechChar::updateBufferTopologies(
       done = true;
     }
   }
-  return solution;
 }
 
 std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
@@ -1151,15 +1156,10 @@ void TechChar::create()
 
             // Gets the results (delay, slew, power...) for the pattern.
             ResultData results = computeTopologyResults(
-                solution, outPinVert, load, setupWirelength);
+                solution, outPinVert, load, inputslew, setupWirelength);
 
             // Appends the results to a map, grouping each result by
             // wirelength, load, output slew and input cap.
-            results.wirelength = setupWirelength;
-            results.load = load;
-            results.inSlew = inputslew;
-            results.topology = solution.topologyDescriptor;
-            results.isPureWire = solution.isPureWire;
             CharKey solutionKey;
             solutionKey.wirelength = results.wirelength;
             solutionKey.pinSlew = results.pinSlew;
@@ -1183,7 +1183,7 @@ void TechChar::create()
         }
         // If the solution is not a pure-wire, update the buffer topologies.
         if (!solution.isPureWire) {
-          solution = updateBufferTopologies(solution);
+          updateBufferTopologies(solution);
         }
         // For pure-wire solution buffersUpdate == 1, so it only runs once.
         buffersUpdate--;
@@ -1200,8 +1200,7 @@ void TechChar::create()
   float segmentDistance = options_->getWireSegmentUnit();
   options_->setWireSegmentUnit(segmentDistance / dbUnitsPerMicron);
   compileLut(convertedSolutions);
-  // Saves the characterization file if needed.
-  if (options_->getOutputPath().length() > 0) {
+  if (logger_->debugCheck(CTS, "characterization", 3)) {
     printCharacterization();
     printSolution();
   }

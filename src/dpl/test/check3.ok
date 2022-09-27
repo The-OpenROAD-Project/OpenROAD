@@ -3,10 +3,8 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: check3.def
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
-[INFO ODB-0134] Finished DEF file: check3.def
 [WARNING DPL-0005] Overlap check failed (1).
  _284_ overlaps _285_
 [ERROR DPL-0033] detailed placement checks failed.

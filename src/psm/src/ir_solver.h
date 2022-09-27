@@ -121,13 +121,15 @@ class IRSolver
   //! list
   // of wires for all PDN tasks
   std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
-  //! Function to create the nodes of the G matrix
-  void createGmatNodes(const std::vector<odb::dbSBox*>& power_wires,
-                       const std::vector<odb::Rect>& macros);
-
+  //! Function to create the nodes of vias in the G matrix
+  void createGmatViaNodes(const std::vector<odb::dbSBox*>& power_wires);
+  //! Function to create the nodes of wires in the G matrix
+  void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
+                           const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
-
+  NodeEnclosure getViaEnclosure(int layer,
+                                odb::dbSet<odb::dbBox> via_boxes);
   //! Function to create the nodes for the c4 bumps
   int createC4Nodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
@@ -137,18 +139,17 @@ class IRSolver
   bool checkValidR(double R);
   bool getResult();
 
-
-  float supply_voltage_src;
+  float supply_voltage_src{0};
   //! Worst case voltage at the lowest layer nodes
-  double wc_voltage;
+  double wc_voltage{0};
   //! Worst case current at the lowest layer nodes
-  double max_cur;
+  double max_cur{0};
   //! Average current at the lowest layer nodes
-  double avg_cur;
+  double avg_cur{0};
   //! number of resistances
-  int num_res;
+  int num_res{0};
   //! Average voltage at lowest layer nodes
-  double avg_voltage;
+  double avg_voltage{0};
   //! Vector of worstcase voltages in the lowest layers
   std::vector<double> wc_volt_layer;
   //! Pointer to the Db
@@ -183,10 +184,7 @@ class IRSolver
 
   bool result_{false};
   bool connection_{false};
-  //! Direction of the top layer
-  odb::dbTechLayerDir::Value top_layer_dir_;
 
-  odb::dbTechLayerDir::Value bottom_layer_dir_;
   odb::dbSigType power_net_type_;
   std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D

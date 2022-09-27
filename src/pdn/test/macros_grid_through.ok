@@ -1,0 +1,12 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130_pll/pll.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130_pll/pll.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 1 components and 2 component-terminals.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: Macro - PLL
+No differences found.

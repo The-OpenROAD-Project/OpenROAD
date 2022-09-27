@@ -138,11 +138,11 @@ define_metric "DRT::clock_period" "" "" 0 "%5.2f" "<=" {$value}
 
 # Used by regression.tcl to check pass/fail metrics test.
 # Returns "pass" or failing metric comparison string.
-proc check_test_metrics { test } {
+proc check_test_metrics { test lang } {
   # Don't require json until it is really needed.
   package require json
 
-  set metrics_file [test_metrics_result_file $test]
+  set metrics_file [test_metrics_result_file $test $lang]
   set metrics_limits_file [test_metrics_limits_file $test]
   if { ![file exists $metrics_file] } {
     return "missing metrics file"
@@ -202,7 +202,7 @@ proc fail { msg } {
 ################################################################
 
 proc report_flow_metrics_main {} {
-  global argc argv test_groups
+  global argc argv test_groups test_langs
   if { $argc == 0 } {
     set tests $test_groups(flow)
   } else {
@@ -211,7 +211,7 @@ proc report_flow_metrics_main {} {
 
   report_metrics_header
   foreach test $tests {
-    report_test_metrics $test
+    report_test_metrics $test $test_langs($test)
   }
 }
 
@@ -247,11 +247,11 @@ proc report_metrics_header {} {
   puts ""
 }
 
-proc report_test_metrics { test } {
+proc report_test_metrics { test $lang } {
   # Don't require json until it is really needed.
   package require json
 
-  set metrics_result_file [test_metrics_result_file $test]
+  set metrics_result_file [test_metrics_result_file $test $lang]
   if { [file exists $metrics_result_file] } {
     set stream [open $metrics_result_file r]
     set json_string [read $stream]
@@ -337,7 +337,7 @@ proc report_test_metric_limits { test } {
 ################################################################
 
 proc compare_flow_metrics_main {} {
-  global argc argv test_groups
+  global argc argv test_groups test_langs
   if { $argv == "help" || $argv == "-help" } {
     puts {Usage: save_flow_metrics [test1]...}
   } else {
@@ -355,17 +355,17 @@ proc compare_flow_metrics_main {} {
 
     report_metrics_header
     foreach test $tests {
-      compare_test_metrics $test $relative
+      compare_test_metrics $test $relative $test_langs($test)
     }
   }
 }
 
-proc compare_test_metrics { test relative } {
+proc compare_test_metrics { test relative lang } {
   # Don't require json until it is really needed.
   package require json
 
   set metrics_file [test_metrics_file $test]
-  set result_file [test_metrics_result_file $test]
+  set result_file [test_metrics_result_file $test $lang]
   if { [file exists $metrics_file] \
          && [file exists $result_file] } {
     set metrics_stream [open $metrics_file r]
@@ -428,7 +428,8 @@ proc save_metrics { test } {
   if { [lsearch [group_tests "all"] $test] == -1 } {
     puts "Error: test $test not found."
   } else {
-    set metrics_result_file [test_metrics_result_file $test]
+    set metrics_result_file [test_metrics_result_file $test \
+                                 [result_lang $test]]
     set metrics_file [test_metrics_file $test]
     file copy -force $metrics_result_file $metrics_file
   }
@@ -448,16 +449,17 @@ proc save_flow_metric_limits_main {} {
       set tests [expand_tests $argv]
     }
     foreach test $tests {
-      save_metric_limits $test
+      save_metric_limits $test [result_lang $test]
     }
   }
 }
 
-proc save_metric_limits { test } {
+proc save_metric_limits { test lang } {
+  global test_langs
   # Don't require json until it is really needed.
   package require json
 
-  set metrics_file [test_metrics_result_file $test]
+  set metrics_file [test_metrics_result_file $test $test_langs($test)]
   set metrics_limits [test_metrics_limits_file $test]
   if { ! [file exists $metrics_file] } {
     puts "Error: metrics file $metrics_file not found."
@@ -512,9 +514,9 @@ proc test_metrics_file { test } {
   return [file join $test_dir "$test.metrics"]
 }
 
-proc test_metrics_result_file { test } {
+proc test_metrics_result_file { test lang } {
   global test_dir
-  return [file join $test_dir "results" "$test.metrics"]
+  return [file join $test_dir "results" "$test-$lang.metrics"]
 }
 
 proc test_metrics_limits_file { test } {

@@ -106,11 +106,13 @@ enum dbObjectType
   dbTechLayerMinCutRuleObj,
   dbGuideObj,
   dbMetalWidthViaMapObj,
+  dbTechLayerAreaRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,
   dbGCellGridObj,
   dbAccessPointObj,
+  dbGlobalConnectObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

@@ -682,11 +682,6 @@ class Gui
 
   const std::set<Renderer*>& renderers() { return renderers_; }
 
-  // The GUI listening for callbacks on read_def or read_db but
-  // if the design is created by direct opendb calls then this
-  // will trigger the GUI to load it.
-  void load_design();
-
   void fit();
 
   // Called to hide the gui and return to tcl command line

@@ -2,11 +2,9 @@
 [INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
 [INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
 [INFO ODB-0130]     Created 141104 pins.
 [INFO ODB-0133]     Created 70552 nets and 0 connections.
-[INFO ODB-0134] Finished DEF file: generate_pattern.defok
 [INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of blk ...

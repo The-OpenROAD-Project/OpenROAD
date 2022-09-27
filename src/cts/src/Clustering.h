@@ -41,86 +41,56 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
-namespace CKMeans {
+namespace cts::CKMeans {
 
 using utl::Logger;
 
-struct Flop
-{
-  // location
-  float x, y;
-  unsigned x_idx, y_idx;
-  std::vector<float> dists;
-  unsigned idx;
-  std::vector<std::pair<int, int>> match_idx;
-  std::vector<float> silhs;
-  unsigned sinkIdx;
-  Flop(const float x, const float y, unsigned idx)
-      : x(x), y(y), x_idx(0), y_idx(0), idx(0), sinkIdx(idx){};
-};
+struct Sink;
 
 class Clustering
 {
-  Logger* logger_;
-  std::vector<Flop> flops_;
-  std::vector<std::vector<Flop*>> clusters_;
-
-  static const int test_layout_ = 1;
-  static const int test_iter_ = 1;
-  std::string plotFile_;
-
-  float segmentLength_;
-  std::pair<float, float> branchingPoint_;
-
  public:
-  Clustering(const std::vector<std::pair<float, float>>&,
-             float,
-             float,
-             Logger*);
+  Clustering(const std::vector<std::pair<float, float>>& sinks,
+             const float xBranch,
+             const float yBranch,
+             Logger* logger);
   ~Clustering();
-  float Kmeans(unsigned,
-               unsigned,
-               unsigned,
-               std::vector<std::pair<float, float>>&,
-               unsigned,
-               unsigned);
-  void iterKmeans(unsigned,
-                  unsigned,
-                  unsigned,
-                  unsigned,
-                  std::vector<std::pair<float, float>>&,
-                  unsigned MAX = 15,
-                  unsigned power = 4);
-  float calcSilh(const std::vector<std::pair<float, float>>&,
-                 unsigned,
-                 unsigned);
-  void minCostFlow(const std::vector<std::pair<float, float>>&,
-                   unsigned,
-                   unsigned,
-                   float,
-                   unsigned);
-  void setPlotFileName(const std::string fileName) { plotFile_ = fileName; }
-  void getClusters(std::vector<std::vector<unsigned>>&);
-  void fixSegmentLengths(std::vector<std::pair<float, float>>&);
+
+  void iterKmeans(const unsigned iter,
+                  const unsigned n,
+                  const unsigned cap,
+                  const unsigned max,
+                  const unsigned power,
+                  std::vector<std::pair<float, float>>& means);
+
+  void getClusters(std::vector<std::vector<unsigned>>& newClusters) const;
+
+ private:
+  float Kmeans(const unsigned n,
+               const unsigned cap,
+               const unsigned max,
+               const unsigned power,
+               std::vector<std::pair<float, float>>& means);
+  float calcSilh(const std::vector<std::pair<float, float>>& means) const;
+  void minCostFlow(const std::vector<std::pair<float, float>>& means,
+                   const unsigned cap,
+                   const float dist,
+                   const unsigned power);
+  void fixSegmentLengths(std::vector<std::pair<float, float>>& means);
   void fixSegment(const std::pair<float, float>& fixedPoint,
-                  std::pair<float, float>& movablePoint,
-                  float targetDist);
+                  const float targetDist,
+                  std::pair<float, float>& movablePoint);
 
-  inline float calcDist(const std::pair<float, float>& loc, Flop* f) const
-  {
-    return (fabs(loc.first - f->x) + fabs(loc.second - f->y));
-  }
+  static float calcDist(const std::pair<float, float>& loc, const Sink* sink);
+  static float calcDist(const std::pair<float, float>& loc1,
+                        const std::pair<float, float>& loc2);
 
-  inline float calcDist(const std::pair<float, float>& loc1,
-                        std::pair<float, float>& loc2) const
-  {
-    return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
-  }
+  Logger* logger_;
+  std::vector<Sink> sinks_;
+  std::vector<std::vector<Sink*>> clusters_;
 
-  void plotClusters(const std::vector<std::vector<Flop*>>&,
-                    const std::vector<std::pair<float, float>>&,
-                    const std::vector<std::pair<float, float>>&,
-                    int) const;
+  float segment_length_;
+  std::pair<float, float> branching_point_;
 };
 
-}  // namespace CKMeans
+}  // namespace cts::CKMeans

@@ -32,6 +32,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -39,6 +40,9 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+namespace odb {
+class dbTechLayer;
+}
 namespace fr {
 namespace io {
 class Parser;
@@ -48,10 +52,14 @@ class frTechObject
 {
  public:
   // constructors
-  frTechObject() : dbUnit(0), manufacturingGrid(0) {}
+  frTechObject() : db_tech_(nullptr) {}
   // getters
-  frUInt4 getDBUPerUU() const { return dbUnit; }
-  frUInt4 getManufacturingGrid() const { return manufacturingGrid; }
+  odb::dbTech* getDbTech() const { return db_tech_; }
+  frUInt4 getDBUPerUU() const { return db_tech_->getDbUnitsPerMicron(); }
+  frUInt4 getManufacturingGrid() const
+  {
+    return db_tech_->getManufacturingGrid();
+  }
   frLayer* getLayer(const frString& name) const
   {
     if (name2layer.find(name) == name2layer.end()) {
@@ -87,10 +95,13 @@ class frTechObject
   {
     return viaRuleGenerates;
   }
+  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
+  {
+    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
+  }
 
   // setters
-  void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
-  void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
+  void setTechObject(odb::dbTech* dbTechIn) { db_tech_ = dbTechIn; }
   void addLayer(std::unique_ptr<frLayer> in)
   {
     name2layer[in->getName()] = in.get();
@@ -124,8 +135,8 @@ class frTechObject
   {
     in->setId(uConstraints.size());
     auto type = in->typeId();
-    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
-        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+    if (type == frConstraintTypeEnum::frcMinStepConstraint
+        || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
       hasCornerSpacingConstraint_ = true;
     }
     uConstraints.push_back(std::move(in));
@@ -135,6 +146,10 @@ class frTechObject
     if (idx < uConstraints.size())
       return uConstraints[idx].get();
     return nullptr;
+  }
+  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
+  {
+    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -146,10 +161,9 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    return isIncluded(
-        (ndr ? ndr->via2ViaForbiddenLen
-             : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-        len);
+    return isIncluded((ndr ? ndr->via2ViaForbiddenLen
+                           : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
+                      len);
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
@@ -258,7 +272,10 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
+  bool hasCornerSpacingConstraint() const
+  {
+    return hasCornerSpacingConstraint_;
+  }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -271,8 +288,7 @@ class frTechObject
   }
 
  private:
-  frUInt4 dbUnit;
-  frUInt4 manufacturingGrid;
+  odb::dbTech* db_tech_;
 
   std::map<frString, frLayer*> name2layer;
   std::vector<std::unique_ptr<frLayer>> layers;
@@ -289,7 +305,7 @@ class frTechObject
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
-  template<typename T>
+  template <typename T>
   using ByLayer = std::vector<T>;
 
   // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
@@ -343,6 +359,8 @@ class frTechObject
   ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
+  // unidirectional layers
+  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
