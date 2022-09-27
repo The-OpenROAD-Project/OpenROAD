@@ -35,6 +35,8 @@
 
 %include <std_string.i>
 
+%module openroad
+
 %{
 
 #include "odb/db.h"

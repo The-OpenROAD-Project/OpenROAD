@@ -30,12 +30,16 @@ set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
-set(OPENROAD_SOURCE
+set(OPENROAD_LIB_SRCS
   Design.cc
   Tech.cc
   OpenRoad.cc
+)
+
+set(OPENROAD_SOURCE
+  ${OPENROAD_LIB_SRCS}
   Main.cc
-  )
+)
 
 if(USE_SYSTEM_BOOST)
   set(Boost_USE_STATIC_LIBS OFF)
@@ -259,7 +263,7 @@ target_include_directories(openroad
     ../include
 )
 
-target_link_libraries(openroad
+set(OPENROAD_TOOL_LIBS
   ifp
   openroad_swig
   gpl
@@ -291,6 +295,24 @@ target_link_libraries(openroad
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_library(libopenroad
+  ${OPENROAD_LIB_SRCS}
+  OpenRoad-py.cc
+)
+
+target_link_libraries(libopenroad
+  ${OPENROAD_TOOL_LIBS}
+)
+
+target_link_libraries(openroad
+  ${OPENROAD_TOOL_LIBS}
+)
+
+target_include_directories(libopenroad
+  PUBLIC
+    ../include
 )
 
 # tclReadline
@@ -338,6 +360,25 @@ if (Python3_FOUND AND BUILD_PYTHON)
       odb
       OpenSTA
   )
+
+  swig_lib(NAME openroad_pypi
+      NAMESPACE ord
+      LANGUAGE  python
+      I_FILE    OpenRoad-py.i
+      MODULE_NAME openroad
+      SHARED_LIBRARY
+  )
+
+  set_target_properties(openroad_pypi PROPERTIES OUTPUT_NAME "openroad")
+
+  target_link_libraries(openroad_pypi
+  PRIVATE
+    dbSta
+    odb
+    OpenSTA
+    libopenroad
+  )
+
   target_link_libraries(openroad
     openroad_swig_py
     odbpy

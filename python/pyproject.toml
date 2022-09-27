@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openroad"
+version = "0.0.1"
+authors = [
+    { name = "Matt Liberty", email = "mailiberty@openroad.tools"}
+]
+description = "A production ready opensource physical design EDA toolkit"
+readme = "README.md"
+license = {file="LICENSE"}
+requires-python = ">=3.7.8"
+classifiers = [
+]
+
+[project.urls]
+"Homepage" = "https://github.com"

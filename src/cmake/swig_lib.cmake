@@ -13,8 +13,8 @@
 function(swig_lib)
 
   # Parse args
-  set(options "")
-  set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER)
+  set(options SHARED_LIBRARY)
+  set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER MODULE_NAME)
   set(multiValueArgs SWIG_INCLUDES SCRIPTS)
   
   cmake_parse_arguments(
@@ -62,16 +62,29 @@ function(swig_lib)
                                         -Werror
                                         -w317,325,378,401,402,467,472,503,509)
 
-  set_property(SOURCE ${ARG_I_FILE}
-               PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
+  if (DEFINED ARG_MODULE_NAME)
+    set_property(SOURCE ${ARG_I_FILE}
+                 PROPERTY SWIG_MODULE_NAME ${ARG_MODULE_NAME})
+  else()
+    set_property(SOURCE ${ARG_I_FILE}
+                 PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
+  endif()
+  
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY USE_SWIG_DEPENDENCIES TRUE)
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY USE_TARGET_INCLUDE_DIRECTORIES true)
 
+
+  if (ARG_SHARED_LIBRARY)
+    set(COMPILE_MODE MODULE)
+  else ()
+    set(COMPILE_MODE STATIC)
+  endif()
+
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}
-    TYPE     STATIC
+    TYPE     ${COMPILE_MODE}
     SOURCES  ${ARG_I_FILE}
   )
 
