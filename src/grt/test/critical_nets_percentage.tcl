@@ -18,7 +18,7 @@ set guide_file [make_result_file critical_nets_percentage.guide]
 set_routing_layers -signal met1-met5 -clock met3-met5
 set_global_routing_layer_adjustment met1-met5 0.8
 
-global_route -critical_nets_percentage 0.3 -verbose
+global_route -critical_nets_percentage 30 -verbose
 
 write_guides $guide_file
 

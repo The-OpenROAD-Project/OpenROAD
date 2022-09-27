@@ -255,6 +255,7 @@ proc global_route { args } {
   if { [info exists keys(-critical_nets_percentage)] } {
     set percentage $keys(-critical_nets_percentage)
     sta::check_percent "-critical_nets_percentage" $percentage
+    puts "percent: $percentage"
     grt::set_critical_nets_percentage $percentage
   }
 

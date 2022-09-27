@@ -137,7 +137,7 @@ set_clock_layer_range(int minLayer, int maxLayer)
 }
 
 void
-set_critical_nets_percentage(float criticalNetsPercentage)
+set_critical_nets_percentage(int criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
 }

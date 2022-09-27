@@ -1231,8 +1231,8 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage) {
-  critical_nets_percentage_ = critical_nets_percentage;
+void GlobalRouter::setCriticalNetsPercentage(int critical_nets_percentage) {
+  critical_nets_percentage_ = (float)critical_nets_percentage/100;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
