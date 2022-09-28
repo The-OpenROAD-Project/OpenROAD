@@ -30,7 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <map>
 #include <numeric>
+#include <set>
 #include <string>
 
 #include "db.h"
@@ -180,6 +182,22 @@ void cutRows(dbBlock* block,
           return sum + row->getSiteCount();
         });
 
+  std::map<dbRow*, std::set<dbInst*>> placed_row_insts;
+  for (dbInst* inst : block->getInsts()) {
+    if (!inst->isFixed()) {
+      continue;
+    }
+    if (inst->getMaster()->isCoreAutoPlaceable() && !inst->getMaster()->isBlock()) {
+      const Rect inst_bbox = inst->getBBox()->getBox();
+      for (dbRow* row : block->getRows()) {
+        const Rect row_bbox = row->getBBox();
+        if (row_bbox.contains(inst_bbox)) {
+          placed_row_insts[row].insert(inst);
+        }
+      }
+    }
+  }
+
   // Gather rows needing to be cut up front
   for (dbRow* row : block->getRows()) {
     std::vector<dbBox*> row_blockages;
@@ -190,7 +208,11 @@ void cutRows(dbBlock* block,
     }
     // Cut row around macros
     if (!row_blockages.empty()) {
-      cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
+      if (placed_row_insts.find(row) != placed_row_insts.end()) {
+        logger->warn(utl::ODB, 385, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row].size());
+      } else {
+        cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
+      }
     }
   }
 

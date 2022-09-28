@@ -11,4 +11,5 @@ record_tests {
   no_endcap
   symmetry
   cut_rows
+  cut_rows_with_endcaps
 }
