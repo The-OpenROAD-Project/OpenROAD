@@ -1,4 +1,5 @@
 # buffer chain with set_max_delay
+source "helpers.tcl"
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef

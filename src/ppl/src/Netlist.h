@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "ppl/IOPlacer.h"
 
 namespace ppl {
 
@@ -59,15 +60,6 @@ enum class Orientation
   south,
   east,
   west
-};
-
-enum class Direction
-{
-  input,
-  output,
-  inout,
-  feedthru,
-  invalid
 };
 
 class InstancePin

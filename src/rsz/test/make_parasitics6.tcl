@@ -1,4 +1,5 @@
 # 2 corners with set_layer_rc
+source "helpers.tcl"
 define_corners ss ff
 read_liberty -corner ss Nangate45/Nangate45_slow.lib
 read_liberty -corner ff Nangate45/Nangate45_fast.lib

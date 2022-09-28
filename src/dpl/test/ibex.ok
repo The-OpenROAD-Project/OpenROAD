@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: ibex_core_replace.def
 [INFO ODB-0128] Design: ibex_core
 [INFO ODB-0130]     Created 231 pins.
 [INFO ODB-0131]     Created 34184 components and 173049 component-terminals.
 [INFO ODB-0133]     Created 33171 nets and 104681 connections.
-[INFO ODB-0134] Finished DEF file: ibex_core_replace.def
 Placement Analysis
 ---------------------------------
 total displacement      23906.6 u

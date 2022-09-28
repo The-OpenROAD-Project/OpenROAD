@@ -1,4 +1,5 @@
 # min/max delay calc
+source "helpers.tcl"
 read_lef example1.lef
 read_liberty -min example1_fast.lib
 read_liberty -max example1_slow.lib

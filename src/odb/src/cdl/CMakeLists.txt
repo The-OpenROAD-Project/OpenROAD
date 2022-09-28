@@ -15,6 +15,7 @@ set_target_properties(cdl
 )
 
 target_link_libraries(cdl
-    PUBLIC
-        utl
+  PUBLIC
+    db
+    utl
 )

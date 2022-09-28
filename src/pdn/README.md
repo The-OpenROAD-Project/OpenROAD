@@ -8,53 +8,6 @@ be defined over the stdcell area, and over areas occupied by macros.
 
 ## Commands
 
-### Global Connections
-
-#### Add global connections
-
-The `add_global_connection` command is used to specify how to connect power and ground pins on design instances to the appropriate supplies.
-
-```
-add_global_connection -net net_name \
-                      [-inst_pattern inst_regular_expression] \
-                      -pin_pattern pin_regular_expression \
-                      (-power|-ground) \
-                      [-defer_connection]
-```
-
-##### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-net` | Specifies the name of the net in the design to which connections are to be added |
-| `-inst_pattern` | Optional specifies a regular expression to select a set of instances from the design. (Default: .\*) |
-| `-pin_pattern` | Species a regular expression to select pins on the selected instances to connect to the specified net |
-| `-power` | Specifies that the net it a power net |
-| `-ground` | Specifies that the net is a ground net |
-| `-defer_connection` | Only add the connection, but wait to perform the connections when `global_connect` is run |
-
-##### Examples
-```
-# Stdcell power/ground pins
-add_global_connection -net VDD -pin_pattern {^VDD$} -power
-add_global_connection -net VSS -pin_pattern {^VSS$} -ground
-
-# RAM power ground pins
-add_global_connection -net VDD -pin_pattern {^VDDPE$}
-add_global_connection -net VDD -pin_pattern {^VDDCE$}
-add_global_connection -net VSS -pin_pattern {^VSSE$}
-
-```
-
-
-#### Perform global connections
-
-The `global_connect` command is used to connect power and ground pins on design instances to the appropriate supplies.
-
-```
-global_connect
-```
-
 ### Define Power Switch Cell
 
 Define a power switch cell that will be inserted into a power grid 

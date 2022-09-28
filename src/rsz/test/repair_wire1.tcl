@@ -1,6 +1,7 @@
 # repair_design 1 wire
 # in1--u1--u2--------u3-out1
 #             2000u
+source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire1.def

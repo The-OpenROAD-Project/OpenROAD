@@ -5,11 +5,9 @@
 [INFO ODB-0222] Reading LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef
 [INFO ODB-0225]     Created 212 library cells
 [INFO ODB-0226] Finished LEF file:  asap7_vias/asap7sc7p5t_27_R_1x.lef
-[INFO ODB-0127] Reading DEF file: asap7_vias/floorplan.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 406 components and 1816 component-terminals.
 [INFO ODB-0133]     Created 361 nets and 1004 connections.
-[INFO ODB-0134] Finished DEF file: asap7_vias/floorplan.def
 [ERROR PDN-0185] Insufficient width (14.04 um) to add straps on layer M8 in grid "Core" with total strap width 6.0 um and offset 10.0 um.
 PDN-0185

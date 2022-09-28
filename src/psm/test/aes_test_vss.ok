@@ -3,13 +3,11 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45.lef
-[INFO ODB-0127] Reading DEF file: aes.def
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 388 pins.
 [INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 39670 connections.
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
-[INFO ODB-0134] Finished DEF file: aes.def
 [INFO PSM-0001] Reading voltage source file: Vsrc_aes_vss.loc.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_aes_vss.loc.
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
@@ -19,7 +17,7 @@
 [INFO PSM-0064] Number of voltage sources = 2.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 3.19e-02 V
-Average IR drop  : 2.00e-02 V
-Worstcase IR drop: 3.19e-02 V
+Worstcase voltage: 8.95e-03 V
+Average IR drop  : 6.44e-03 V
+Worstcase IR drop: 8.95e-03 V
 ######################################

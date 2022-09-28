@@ -134,12 +134,10 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/
 [INFO ODB-0222] Reading LEF file: caravel_sky130/lef/sky130_fd_io__top_xres4v2.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  caravel_sky130/lef/sky130_fd_io__top_xres4v2.lef
-[INFO ODB-0127] Reading DEF file: caravel_sky130/chip_io.def
 [INFO ODB-0128] Design: chip_io
 [INFO ODB-0130]     Created 722 pins.
 [INFO ODB-0131]     Created 818 components and 11059 component-terminals.
 [INFO ODB-0133]     Created 767 nets and 1080 connections.
-[INFO ODB-0134] Finished DEF file: caravel_sky130/chip_io.def
 Loading library data
 Extracting footprint
 [WARNING PAD-0046] No power nets found in design.

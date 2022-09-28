@@ -2,13 +2,11 @@
 [INFO ODB-0223]     Created 2 technology layers
 [INFO ODB-0225]     Created 6 library cells
 [INFO ODB-0226] Finished LEF file:  example1.lef
-[INFO ODB-0127] Reading DEF file: example1.def
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 5 components and 24 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 10 nets and 14 connections.
-[INFO ODB-0134] Finished DEF file: example1.def
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk1)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk1)
 Path Group: clk1
@@ -109,22 +107,22 @@ Path Type: max
    0.0000    0.0000   clock clk1 (rise edge)
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ r2/CK (DFF_X1)
-   0.0772    0.0772 v r2/Q (DFF_X1)
-   0.0233    0.1006 v u1/Z (BUF_X1)
-   0.0273    0.1278 v u2/ZN (AND2_X1)
-   0.0000    0.1278 v r3/D (DFF_X1)
-             0.1278   data arrival time
+   0.0779    0.0779 v r2/Q (DFF_X1)
+   0.0242    0.1020 v u1/Z (BUF_X1)
+   0.0281    0.1302 v u2/ZN (AND2_X1)
+   0.0000    0.1302 v r3/D (DFF_X1)
+             0.1302   data arrival time
 
   10.0000   10.0000   clock clk1 (rise edge)
    0.0000   10.0000   clock network delay (ideal)
    0.0000   10.0000   clock reconvergence pessimism
             10.0000 ^ r3/CK (DFF_X1)
-  -0.0390    9.9610   library setup time
-             9.9610   data required time
+  -0.0391    9.9609   library setup time
+             9.9609   data required time
 -------------------------------------------------------------
-             9.9610   data required time
-            -0.1278   data arrival time
+             9.9609   data required time
+            -0.1302   data arrival time
 -------------------------------------------------------------
-             9.8332   slack (MET)
+             9.8307   slack (MET)
 
 

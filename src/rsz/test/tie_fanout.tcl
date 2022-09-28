@@ -1,3 +1,4 @@
+source "helpers.tcl"
 proc write_tie_hi_fanout_def { filename tie_port load_port fanout } {
   set stream [open $filename "w"]
 

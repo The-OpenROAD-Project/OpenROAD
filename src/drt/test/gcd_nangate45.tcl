@@ -1,3 +1,4 @@
+source "helpers.tcl"
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def gcd_nangate45_preroute.def
