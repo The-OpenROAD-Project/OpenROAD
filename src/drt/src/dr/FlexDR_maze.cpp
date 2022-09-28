@@ -2623,15 +2623,15 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
                   z,
                   i - 1 >= 0 ? &points[i - 1] : nullptr,
                   i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
-  } else if (layer->isVertical() != segIsVertical) { // wrong way segment
+  } else if (layer->isVertical() != segIsVertical) {  // wrong way segment
     currStyle.setWidth(layer->getWrongDirWidth());
   } else {
     editStyleExt(currStyle,
-                  startX,
-                  endX,
-                  z,
-                  i - 1 >= 0 ? &points[i - 1] : nullptr,
-                  i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
+                 startX,
+                 endX,
+                 z,
+                 i - 1 >= 0 ? &points[i - 1] : nullptr,
+                 i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
   }
   currPathSeg->setStyle(currStyle);
   currPathSeg->setMazeIdx(start, end);
