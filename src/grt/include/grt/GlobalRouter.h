@@ -152,7 +152,7 @@ class GlobalRouter
   int getMaxRoutingLayer() const { return max_routing_layer_; }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
-  void setCriticalNetsPercentage(int critical_nets_percentage);
+  void setCriticalNetsPercentage(float critical_nets_percentage);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
