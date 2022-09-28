@@ -540,18 +540,22 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
     int adjacent_cuts,
     int two_cuts,
     frCoord within) {
-  auto uCon = make_unique<frLef58CutSpacingConstraint>();
-  auto con = uCon.get();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  con->setLayer(layer);
-  con->setCutSpacing(spacing);
-  con->setAdjacentCuts(adjacent_cuts);
+  auto rule = odb::dbTechLayerCutSpacingRule::create(layer->getDbLayer());
+  rule->setCutSpacing(spacing);
+  rule->setAdjacentCuts(adjacent_cuts);
   // con->setTwoCuts(two_cuts);
-  con->setWithin(within);
-  con->setCutWithin(within);
-  con->setCenterToCenter(true);
+  rule->setWithin(within);
+  rule->setCenterToCenter(true);
+
+  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto con = uCon.get();
   con->setCutClassIdx(0);
+  con->setCutSpacing(rule->getCutSpacing());
+  con->setAdjacentCuts(rule->getAdjacentCuts());
+  con->setCutWithin(rule->getWithin());
+  con->setCenterToCenter(rule->isCenterToCenter());
   layer->addLef58CutSpacingConstraint(con);
   tech->addUConstraint(std::move(uCon));
   return con;

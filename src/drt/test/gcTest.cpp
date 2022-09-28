@@ -1101,10 +1101,13 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
 }
 
 BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "VA", 110, 110);
   if (lef58) {
     makeLef58CutSpacingConstraint_adjacentCut(3, 10, 1, 1, 200);
-    
     frNet* n1 = makeNet("n1");
     frNet* n2 = makeNet("n2");
     frNet* n3 = makeNet("n3");
@@ -1125,5 +1128,4 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
   }
 }
 
->>>>>>> a6db71559 (drt: add test for ADJACENTCUTS on gcTest)
 BOOST_AUTO_TEST_SUITE_END();
