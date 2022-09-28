@@ -929,8 +929,6 @@ class FlexDRWorker
   void editStyleExt(frSegStyle& currStyle,
                     frMIdx startX,
                     frMIdx endX,
-                    frMIdx startY,
-                    frMIdx endY,
                     frMIdx z,
                     FlexMazeIdx* prev,
                     FlexMazeIdx* next);

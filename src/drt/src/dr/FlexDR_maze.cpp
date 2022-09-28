@@ -2581,7 +2581,7 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
                                   frMIdx z,
                                   const set<FlexMazeIdx>& realApMazeIdx,
                                   drNet* net,
-                                  bool vertical,
+                                  bool segIsVertical,
                                   bool taper,
                                   int i,
                                   vector<FlexMazeIdx>& points,
@@ -2623,18 +2623,15 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
                   z,
                   i - 1 >= 0 ? &points[i - 1] : nullptr,
                   i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
+  } else if (layer->isVertical() != segIsVertical) { // wrong way segment
+    currStyle.setWidth(layer->getWrongDirWidth());
   } else {
-    if (layer->isHorizontal() == vertical)
-      currStyle.setWidth(layer->getWrongDirWidth());
-    else
-      editStyleExt(currStyle,
-                   startX,
-                   endX,
-                   startY,
-                   endY,
-                   z,
-                   i - 1 >= 0 ? &points[i - 1] : nullptr,
-                   i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
+    editStyleExt(currStyle,
+                  startX,
+                  endX,
+                  z,
+                  i - 1 >= 0 ? &points[i - 1] : nullptr,
+                  i + 2 < (int) points.size() ? &points[i + 2] : nullptr);
   }
   currPathSeg->setStyle(currStyle);
   currPathSeg->setMazeIdx(start, end);
@@ -2644,11 +2641,11 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
 
   // quick drc cnt
   bool prevHasCost = false;
-  int endI = vertical ? endY : endX;
-  for (int i = (vertical ? startY : startX); i < endI; i++) {
-    if ((vertical
+  int endI = segIsVertical ? endY : endX;
+  for (int i = (segIsVertical ? startY : startX); i < endI; i++) {
+    if ((segIsVertical
          && gridGraph_.hasRouteShapeCostAdj(startX, i, z, frDirEnum::E))
-        || (!vertical
+        || (!segIsVertical
             && gridGraph_.hasRouteShapeCostAdj(i, startY, z, frDirEnum::N))) {
       if (!prevHasCost) {
         net->addMarker();
@@ -2800,11 +2797,20 @@ void FlexDRWorker::setNDRStyle(drNet* net,
   }
 }
 
+inline bool segmentIsOrthogonal(FlexMazeIdx* idx,
+                                frMIdx z,
+                                frMIdx x,
+                                bool isVertical)
+{
+  if (idx == nullptr)
+    return false;
+  bool seg_is_vertical = idx->x() == x;
+  return idx->z() == z && (isVertical != seg_is_vertical);
+}
+
 void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
                                 frMIdx startX,
                                 frMIdx endX,
-                                frMIdx startY,
-                                frMIdx endY,
                                 frMIdx z,
                                 FlexMazeIdx* prev,
                                 FlexMazeIdx* next)
@@ -2812,16 +2818,14 @@ void FlexDRWorker::editStyleExt(frSegStyle& currStyle,
   auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
   if (layer->getWrongDirWidth() >= layer->getWidth())
     return;
-  bool vertical = startX == endX;
-  bool nextVertical = next && endX == next->x();
-  bool prevVertical = prev && startX == prev->x();
-  if (layer->isHorizontal() == vertical)
+  bool is_vertical = startX == endX;
+  if (layer->isVertical() != is_vertical)
     return;
-  if (next && next->z() == z && vertical != nextVertical
+  if (segmentIsOrthogonal(next, z, endX, is_vertical)
       && currStyle.getEndStyle() == frcExtendEndStyle) {
     currStyle.setEndExt(layer->getWrongDirWidth() / 2);
   }
-  if (prev && prev->z() == z && vertical != prevVertical
+  if (segmentIsOrthogonal(prev, z, startX, is_vertical)
       && currStyle.getBeginStyle() == frcExtendEndStyle) {
     currStyle.setBeginExt(layer->getWrongDirWidth() / 2);
   }
