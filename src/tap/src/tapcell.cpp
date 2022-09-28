@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "tap/tapcell.h"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -41,7 +43,6 @@
 #include "odb/util.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "tap/tapcell.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
