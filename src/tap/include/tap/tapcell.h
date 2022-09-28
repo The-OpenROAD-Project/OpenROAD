@@ -58,6 +58,33 @@ enum LocationType
   None,
 };
 
+struct Options
+{
+  odb::dbMaster* endcap_master = nullptr;
+  odb::dbMaster* tapcell_master = nullptr;
+  int dist = -1;    // default = 2um
+  int halo_x = -1;  // default = 2um
+  int halo_y = -1;  // default = 2um
+  std::string cnrcap_nwin_master;
+  std::string cnrcap_nwout_master;
+  std::string tap_nwintie_master;
+  std::string tap_nwin2_master;
+  std::string tap_nwin3_master;
+  std::string tap_nwouttie_master;
+  std::string tap_nwout2_master;
+  std::string tap_nwout3_master;
+  std::string incnrcap_nwin_master;
+  std::string incnrcap_nwout_master;
+
+  bool addBoundaryCells() const
+  {
+    return !tap_nwintie_master.empty() && !tap_nwin2_master.empty()
+           && !tap_nwin3_master.empty() && !tap_nwouttie_master.empty()
+           && !tap_nwout2_master.empty() && !tap_nwout3_master.empty()
+           && !incnrcap_nwin_master.empty() && !incnrcap_nwout_master.empty();
+  }
+};
+
 class Tapcell
 {
  public:
@@ -67,22 +94,7 @@ class Tapcell
   void setTapPrefix(const std::string& tap_prefix);
   void setEndcapPrefix(const std::string& endcap_prefix);
   void clear();
-  void run(odb::dbMaster* endcap_master,
-           int halo_x,
-           int halo_y,
-           const std::string& cnrcap_nwin_master,
-           const std::string& cnrcap_nwout_master,
-           bool add_boundary_cell,
-           const std::string& tap_nwintie_master,
-           const std::string& tap_nwin2_master,
-           const std::string& tap_nwin3_master,
-           const std::string& tap_nwouttie_master,
-           const std::string& tap_nwout2_master,
-           const std::string& tap_nwout3_master,
-           const std::string& incnrcap_nwin_master,
-           const std::string& incnrcap_nwout_master,
-           odb::dbMaster* tapcell_master,
-           int dist);
+  void run(const Options& options);
   void reset();
   int removeCells(const std::string& prefix);
 
