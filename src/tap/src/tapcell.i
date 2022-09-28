@@ -111,11 +111,6 @@
     return getTapcell()->removeCells(prefix);
   }
 
-  std::vector<odb::dbBox*> find_blockages() {
-    return getTapcell()->findBlockages();
-  }
-
-
   }  // namespace tap
 
   %}

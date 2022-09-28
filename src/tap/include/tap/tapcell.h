@@ -85,7 +85,6 @@ class Tapcell
            int dist);
   void reset();
   int removeCells(const std::string& prefix);
-  std::vector<odb::dbBox*> findBlockages();
 
  private:
   struct FilledSites
@@ -107,6 +106,8 @@ class Tapcell
   std::vector<FilledSites> filled_sites_;
   std::string tap_prefix_;
   std::string endcap_prefix_;
+
+  std::vector<odb::dbBox*> findBlockages();
   const std::pair<int, int> getMinMaxX(
       const std::vector<std::vector<odb::dbRow*>>& rows);
   RowFills findRowFills();
