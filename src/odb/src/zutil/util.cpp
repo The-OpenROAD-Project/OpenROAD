@@ -208,7 +208,7 @@ void cutRows(dbBlock* block,
     // Cut row around macros
     if (!row_blockages.empty()) {
       if (placed_row_insts.find(row) != placed_row_insts.end()) {
-        logger->warn(utl::ODB, 385, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row]);
+        logger->warn(utl::ODB, 386, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row]);
       } else {
         cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
       }
