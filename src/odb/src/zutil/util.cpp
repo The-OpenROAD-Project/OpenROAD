@@ -32,7 +32,6 @@
 
 #include <map>
 #include <numeric>
-#include <set>
 #include <string>
 
 #include "db.h"
@@ -182,7 +181,7 @@ void cutRows(dbBlock* block,
           return sum + row->getSiteCount();
         });
 
-  std::map<dbRow*, std::set<dbInst*>> placed_row_insts;
+  std::map<dbRow*, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
     if (!inst->isFixed()) {
       continue;
@@ -192,7 +191,7 @@ void cutRows(dbBlock* block,
       for (dbRow* row : block->getRows()) {
         const Rect row_bbox = row->getBBox();
         if (row_bbox.contains(inst_bbox)) {
-          placed_row_insts[row].insert(inst);
+          placed_row_insts[row]++;
         }
       }
     }
@@ -209,7 +208,7 @@ void cutRows(dbBlock* block,
     // Cut row around macros
     if (!row_blockages.empty()) {
       if (placed_row_insts.find(row) != placed_row_insts.end()) {
-        logger->warn(utl::ODB, 385, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row].size());
+        logger->warn(utl::ODB, 385, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row]);
       } else {
         cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
       }
