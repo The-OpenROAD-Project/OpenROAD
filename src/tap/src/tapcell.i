@@ -99,6 +99,15 @@
     getTapcell()->run(options);
   }
 
+  void cut_rows(odb::dbMaster* endcap_master, int halo_x, int halo_y)
+  {
+    Options options;
+    options.endcap_master = endcap_master;
+    options.halo_x = halo_x;
+    options.halo_y = halo_y;
+    getTapcell()->cutRows(options);
+  }
+
   void clear()
   {
     getTapcell()->clear();
