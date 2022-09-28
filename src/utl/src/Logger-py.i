@@ -33,11 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+%module utl_py
+
 %{
 
 #include "utl/Logger.h"
 #include "utl/LoggerAPI.h"
-    
+
 namespace ord {
 // Defined in OpenRoad.i
 utl::Logger *
@@ -48,15 +50,16 @@ using utl::ToolId;
 using utl::Logger;
 using ord::getLogger;
 
+using namespace utl;
+
 %}
 
-%typemap(in) utl::ToolId {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = utl::Logger::findToolId(arg);
-}
+// These are the Tool definitions
+%include "utl/ToolId.h"
 
-// Catch exceptions in inline functions.
-%include "../../Exception.i"
+// this maps ToolId to unsigned long
+%include typemaps.i
+%apply unsigned long { ToolId };
 
+%include "../../Exception-py.i"
 %include "utl/LoggerAPI.h"

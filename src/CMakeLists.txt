@@ -342,6 +342,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     openroad_swig_py
     odbpy
     ifp_py
+    utl_py
   )
 else()
   message(STATUS "Python3 disabled")

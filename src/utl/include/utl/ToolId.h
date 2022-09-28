@@ -33,30 +33,46 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
+namespace utl {
 
-#include "utl/Logger.h"
-#include "utl/LoggerAPI.h"
-    
-namespace ord {
-// Defined in OpenRoad.i
-utl::Logger *
-getLogger();
-}
+#define FOREACH_TOOL(X) \
+    X(ANT) \
+    X(CTS) \
+    X(DPL) \
+    X(DPO) \
+    X(DRT) \
+    X(DST) \
+    X(FIN) \
+    X(FLW) \
+    X(GPL) \
+    X(GRT) \
+    X(GUI) \
+    X(PAD) \
+    X(IFP) \
+    X(MPL) \
+    X(ODB) \
+    X(ORD) \
+    X(PAR) \
+    X(PDN) \
+    X(PDR) \
+    X(PPL) \
+    X(PSM) \
+    X(PSN) \
+    X(RCX) \
+    X(RMP) \
+    X(RSZ) \
+    X(STA) \
+    X(STT) \
+    X(TAP) \
+    X(UKN) \
 
-using utl::ToolId;
-using utl::Logger;
-using ord::getLogger;
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
 
-%}
+enum ToolId
+{
+ FOREACH_TOOL(GENERATE_ENUM)
+ SIZE // the number of tools, do not put anything after this
+};
 
-%typemap(in) utl::ToolId {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = utl::Logger::findToolId(arg);
-}
-
-// Catch exceptions in inline functions.
-%include "../../Exception.i"
-
-%include "utl/LoggerAPI.h"
+} // namespace

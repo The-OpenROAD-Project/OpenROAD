@@ -52,48 +52,9 @@
 #include "spdlog/fmt/fmt.h"
 
 #include "Metrics.h"
+#include "ToolId.h"
 
 namespace utl {
-
-#define FOREACH_TOOL(X) \
-    X(ANT) \
-    X(CTS) \
-    X(DPL) \
-    X(DPO) \
-    X(DRT) \
-    X(DST) \
-    X(FIN) \
-    X(FLW) \
-    X(GPL) \
-    X(GRT) \
-    X(GUI) \
-    X(PAD) \
-    X(IFP) \
-    X(MPL) \
-    X(ODB) \
-    X(ORD) \
-    X(PAR) \
-    X(PDN) \
-    X(PDR) \
-    X(PPL) \
-    X(PSM) \
-    X(PSN) \
-    X(RCX) \
-    X(RMP) \
-    X(RSZ) \
-    X(STA) \
-    X(STT) \
-    X(TAP) \
-    X(UKN) \
-
-#define GENERATE_ENUM(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-
-enum ToolId
-{
- FOREACH_TOOL(GENERATE_ENUM)
- SIZE // the number of tools, do not put anything after this
-};
 
 class Logger
 {
@@ -147,7 +108,9 @@ class Logger
     }
 
   template <typename... Args>
+#ifndef SWIGPYTHON
     __attribute__((noreturn))
+#endif
     inline void error(ToolId tool,
                       int id,
                       const std::string& message,
@@ -162,7 +125,9 @@ class Logger
     }
 
   template <typename... Args>
+#ifndef SWIGPYTHON
     __attribute__((noreturn))
+#endif
     void critical(ToolId tool,
                   int id,
                   const std::string& message,
@@ -175,6 +140,7 @@ class Logger
   // For logging to the metrics file.  This is a much more restricted
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
+#ifndef SWIGPYTHON
   template <typename T,
             typename = std::enable_if_t<std::is_arithmetic<T>::value>>
   inline void metric(const std::string_view metric,
@@ -184,6 +150,7 @@ class Logger
     oss << std::fixed << std::setprecision(4) << value;
     log_metric(std::string(metric), oss.str());
   }
+#endif
 
   inline void metric(const std::string_view metric,
                      const std::string& value)

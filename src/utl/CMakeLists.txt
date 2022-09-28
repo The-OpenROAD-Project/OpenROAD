@@ -20,9 +20,29 @@ swig_lib(NAME      utl
          I_FILE    src/Logger.i
 )
 
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          utl_py
+           NAMESPACE     utl
+           LANGUAGE      python
+           I_FILE        src/Logger-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/utl
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/utl_py.py
+  )
+
+  target_include_directories(utl_py
+    PUBLIC
+      include
+      ../odb/include
+      ../sta/include
+      ../grt/include
+      /usr/include/tcl8.6/
+  )
+endif()
+
 target_sources(utl
   PRIVATE
     src/Logger.cpp
+    src/LoggerAPI.cpp
     src/MakeLogger.cpp
     src/Metrics.cpp
 )
