@@ -96,17 +96,29 @@ void Tapcell::clear()
   reset();
 }
 
-void Tapcell::run(const Options& options)
+int Tapcell::defaultDistance() const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  return 2 * block->getDbUnitsPerMicron();
+}
+
+void Tapcell::cutRows(const Options& options)
 {
   vector<odb::dbBox*> blockages = findBlockages();
   odb::dbBlock* block = db_->getChip()->getBlock();
-  const int two_microns = 2 * block->getDbUnitsPerMicron();
-  const int halo_x = options.halo_x >= 0 ? options.halo_x : two_microns;
-  const int halo_y = options.halo_y >= 0 ? options.halo_y : two_microns;
-  const int dist = options.dist >= 0 ? options.dist : two_microns;
+  const int halo_x = options.halo_x >= 0 ? options.halo_x : defaultDistance();
+  const int halo_y = options.halo_y >= 0 ? options.halo_y : defaultDistance();
   const int min_row_width
       = options.endcap_master ? 2 * options.endcap_master->getWidth() : 0;
   odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
+}
+
+void Tapcell::run(const Options& options)
+{
+  cutRows(options);
+
+  const int dist = options.dist >= 0 ? options.dist : defaultDistance();
+
   vector<vector<odb::dbRow*>> rows = organizeRows();
   CornercapMasters masters;
   masters.nwin_master = options.cnrcap_nwin_master;
