@@ -100,12 +100,6 @@ class Tapcell
     std::string nwout_master;
   };
   typedef std::map<int, std::vector<std::vector<int>>> RowFills;
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
-  int phy_idx_;
-  std::vector<FilledSites> filled_sites_;
-  std::string tap_prefix_;
-  std::string endcap_prefix_;
 
   std::vector<odb::dbBox*> findBlockages();
   const std::pair<int, int> getMinMaxX(
@@ -164,6 +158,13 @@ class Tapcell
   int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
                      odb::dbMaster* tapcell_master,
                      int dist);
+
+  odb::dbDatabase* db_;
+  utl::Logger* logger_;
+  int phy_idx_;
+  std::vector<FilledSites> filled_sites_;
+  std::string tap_prefix_;
+  std::string endcap_prefix_;
 };
 
 }  // namespace tap
