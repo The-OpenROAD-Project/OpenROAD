@@ -1715,6 +1715,30 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
       // add patch only if poly is rect and its width is less than or equal to
       // rectWidth value on constraint
       checkMetalShape_addPatch(pin, min_area);
+    } else if (db_rule->getExceptMinWidth() != 0) {
+      logger_->warn(
+          DRT,
+          311,
+          "Unsupported branch EXCEPTMINWIDTH in PROPERTY LEF58_AREA.");
+    } else if (db_rule->getExceptEdgeLength() != 0
+               || db_rule->getExceptEdgeLengths()
+                      != std::pair<int, int>(0, 0)) {
+      logger_->warn(
+          DRT,
+          312,
+          "Unsupported branch EXCEPTEDGELENGTH in PROPERTY LEF58_AREA.");
+    } else if (db_rule->getExceptMinSize() != std::pair<int, int>(0, 0)) {
+      logger_->warn(
+          DRT, 313, "Unsupported branch EXCEPTMINSIZE in PROPERTY LEF58_AREA.");
+    } else if (db_rule->getExceptStep() != std::pair<int, int>(0, 0)) {
+      logger_->warn(
+          DRT, 314, "Unsupported branch EXCEPTSTEP in PROPERTY LEF58_AREA.");
+    } else if (db_rule->getMask() != 0) {
+      logger_->warn(
+          DRT, 315, "Unsupported branch MASK in PROPERTY LEF58_AREA.");
+    } else if (db_rule->getTrimLayer() != nullptr) {
+      logger_->warn(
+          DRT, 316, "Unsupported branch LAYER in PROPERTY LEF58_AREA.");
     } else {
       checkMetalShape_addPatch(pin, min_area);
     }
