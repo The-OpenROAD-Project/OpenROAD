@@ -43,6 +43,10 @@ namespace utl {
 class Logger;
 }
 
+namespace odb {
+class dbInst;
+}
+
 namespace gpl 
 {
 
@@ -77,7 +81,8 @@ class NesterovPlaceVars {
   int debug_pause_iterations;
   int debug_update_iterations;
   bool debug_draw_bins;
-
+  odb::dbInst* debug_inst;
+  
   NesterovPlaceVars();
   void reset();
 };

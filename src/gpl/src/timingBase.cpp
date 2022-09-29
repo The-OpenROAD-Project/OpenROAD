@@ -144,6 +144,10 @@ TimingBase::getTimingNetWeightOverflowSize() const {
   return timingNetWeightOverflow_.size();
 }
 
+void
+TimingBase::setTimingNetWeightMax(float max) {
+  net_weight_max_ = max;
+}
 
 bool
 TimingBase::updateGNetWeights(float overflow) {
