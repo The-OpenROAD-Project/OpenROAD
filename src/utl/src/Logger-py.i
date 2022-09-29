@@ -55,7 +55,8 @@ using namespace utl;
 %}
 
 // These are the Tool definitions
-%include "utl/ToolId.h"
+//%include "utl/ToolId.h"
+%include "utl/Logger.h"
 
 // this maps ToolId to unsigned long
 %include typemaps.i
