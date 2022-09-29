@@ -80,6 +80,7 @@ Replace::Replace()
   routabilityRcK4_(0.0),
   routabilityMaxBloatIter_(1),
   routabilityMaxInflationIter_(4),
+  timingNetWeightMax_(1.9),
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
   uniformTargetDensityMode_(false),
@@ -152,6 +153,7 @@ void Replace::reset() {
 
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
+  timingNetWeightMax_ = 1.9;
 
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
@@ -308,6 +310,7 @@ bool Replace::initNesterovPlace() {
   if( !tb_ ) {
     tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
     tb_->setTimingNetWeightOverflows(timingNetWeightOverflows_);
+    tb_->setTimingNetWeightMax(timingNetWeightMax_);
   }
 
   if( !np_ ) {
@@ -526,6 +529,11 @@ Replace::setPadRight(int pad) {
 void
 Replace::addTimingNetWeightOverflow(int overflow) {
   timingNetWeightOverflows_.push_back(overflow);
+}
+
+void
+Replace::setTimingNetWeightMax(float max) {
+  timingNetWeightMax_ = max;
 }
 
 }

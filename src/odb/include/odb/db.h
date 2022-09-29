@@ -148,6 +148,7 @@ class dbModInst;
 class dbGroup;
 class dbGCellGrid;
 class dbAccessPoint;
+class dbGlobalConnect;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -901,6 +902,26 @@ class dbBlock : public dbObject
   /// Get the access points of this block.
   ///
   dbSet<dbAccessPoint> getAccessPoints();
+
+  ///
+  /// Get the gloabl connects of this block.
+  ///
+  dbSet<dbGlobalConnect> getGlobalConnects();
+
+  ///
+  /// Evaluate global connect rules on this block.
+  /// and helper functions for global connections
+  /// on this block.
+  ///
+  void globalConnect();
+  void globalConnect(dbGlobalConnect* gc);
+  void addGlobalConnect(dbRegion* region,
+                        const char* instPattern,
+                        const char* pinPattern,
+                        dbNet* net,
+                        bool do_connect);
+  void reportGlobalConnect();
+  void clearGlobalConnect();
 
   ///
   /// Find a specific instance of this block.
@@ -9288,6 +9309,33 @@ class dbAccessPoint : public dbObject
 
   static void destroy(dbAccessPoint* ap);
   // User Code End dbAccessPoint
+};
+
+class dbGlobalConnect : public dbObject
+{
+ public:
+  // User Code Begin dbGlobalConnectEnums
+  // User Code End dbGlobalConnectEnums
+  dbRegion* getRegion() const;
+
+  dbNet* getNet() const;
+
+  std::string getInstPattern() const;
+
+  std::string getPinPattern() const;
+
+  // User Code Begin dbGlobalConnect
+  std::vector<dbInst*> getInsts() const;
+
+  void connect(dbInst* inst);
+
+  static dbGlobalConnect* create(dbNet* net,
+                                 dbRegion* region,
+                                 const std::string& inst_pattern,
+                                 const std::string& pin_pattern);
+
+  static void destroy(dbGlobalConnect* global_connect);
+  // User Code End dbGlobalConnect
 };
 
 // Generator Code End ClassDefinition

@@ -48,10 +48,12 @@ namespace pdn {
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbDatabase;
+using odb::dbGlobalConnect;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;
+using odb::dbRegion;
 
 using utl::Logger;
 
@@ -83,28 +85,6 @@ class PdnGen
   PdnGen();
 
   void init(dbDatabase* db, Logger* logger);
-
-  void addGlobalConnect(const char* instPattern,
-                        const char* pinPattern,
-                        dbNet* net,
-                        bool connect);
-  void addGlobalConnect(dbBox* region,
-                        const char* instPattern,
-                        const char* pinPattern,
-                        dbNet* net,
-                        bool connect);
-  void clearGlobalConnect();
-
-  void globalConnect(dbBlock* block);
-  void globalConnect(dbBlock* block,
-                     std::shared_ptr<regex>& instPattern,
-                     std::shared_ptr<regex>& pinPattern,
-                     dbNet* net);
-  void globalConnectRegion(dbBlock* block,
-                           dbBox* region,
-                           std::shared_ptr<regex>& instPattern,
-                           std::shared_ptr<regex>& pinPattern,
-                           dbNet* net);
 
   void reset();
   void resetShapes();
@@ -210,24 +190,6 @@ class PdnGen
   void repairVias(const std::set<odb::dbNet*>& nets);
 
  private:
-  using regexPairs
-      = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
-  using netRegexPairs = std::map<dbNet*, std::shared_ptr<regexPairs>>;
-  using regionNetRegexPairs = std::map<dbBox*, std::shared_ptr<netRegexPairs>>;
-
-  void findInstsInArea(dbBlock* block,
-                       dbBox* region,
-                       std::shared_ptr<regex>& instPattern,
-                       std::vector<dbInst*>& insts);
-  void buildMasterPinMatchingMap(
-      dbBlock* block,
-      std::shared_ptr<regex>& pinPattern,
-      std::map<dbMaster*, std::vector<dbMTerm*>>& masterMap);
-
-  void globalConnectRegion(dbBlock* block,
-                           dbBox* region,
-                           std::shared_ptr<netRegexPairs>);
-
   void trimShapes();
   void cleanupVias();
 
@@ -243,8 +205,6 @@ class PdnGen
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-
-  std::unique_ptr<regionNetRegexPairs> global_connect_;
 
   std::unique_ptr<PDNRenderer> debug_renderer_;
 

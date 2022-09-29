@@ -29,6 +29,7 @@ target_include_directories(defin
 
 target_link_libraries(defin
     PUBLIC
+        db
         zutil
         def
         defzlib

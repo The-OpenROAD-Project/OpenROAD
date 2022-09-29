@@ -33,6 +33,7 @@
 #pragma once
 
 #include <list>
+#include <vector>
 
 #include "dbCore.h"
 #include "dbHashTable.h"
@@ -91,6 +92,7 @@ class _dbModule;
 class _dbModInst;
 class _dbGroup;
 class _dbAccessPoint;
+class _dbGlobalConnect;
 class _dbGuide;
 class dbJournal;
 
@@ -102,6 +104,7 @@ class dbRegionInstItr;
 class dbModuleInstItr;
 class dbModuleModInstItr;
 class dbRegionGroupItr;
+class dbGlobalConnect;
 class dbGroupItr;
 class dbGroupInstItr;
 class dbGroupModInstItr;
@@ -214,6 +217,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbModInst>* _modinst_tbl;
   dbTable<_dbGroup>* _group_tbl;
   dbTable<_dbAccessPoint>* ap_tbl_;
+  dbTable<_dbGlobalConnect>* global_connect_tbl_;
   dbTable<_dbGuide>* _guide_tbl;
   _dbNameCache* _name_cache;
 
@@ -279,6 +283,8 @@ class _dbBlock : public _dbObject
   bool operator!=(const _dbBlock& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbBlock& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+
+  void globalConnect(const std::vector<dbGlobalConnect*>& connects);
 
   dbObjectTable* getObjectTable(dbObjectType type);
 };

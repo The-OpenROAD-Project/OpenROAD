@@ -61,7 +61,8 @@ void FastRouteCore::fixEmbeddedTrees()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < netCount(); netID++) {
-      checkAndFixEmbeddedTree(netID);
+      if (!nets_[netID]->is_routed)
+        checkAndFixEmbeddedTree(netID);
     }
   }
 }
@@ -457,18 +458,21 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 void FastRouteCore::convertToMazeroute()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    convertToMazerouteNet(netID);
+    if (!nets_[netID]->is_routed)
+      convertToMazerouteNet(netID);
   }
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      h_edges_[i][j].usage = h_edges_[i][j].est_usage;
+      // Add to keep the usage values of the last incremental routing performed
+      h_edges_[i][j].usage += h_edges_[i][j].est_usage;
     }
   }
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      v_edges_[i][j].usage = v_edges_[i][j].est_usage;
+      // Add to keep the usage values of the last incremental routing performed
+      v_edges_[i][j].usage += v_edges_[i][j].est_usage;
     }
   }
 
@@ -1337,6 +1341,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
+
+    if (nets_[netID]->is_routed)
+      continue;
 
     const int deg = sttrees_[netID].deg;
 
