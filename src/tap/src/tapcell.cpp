@@ -52,13 +52,9 @@ using std::min;
 using std::string;
 using std::vector;
 
-Tapcell::Tapcell()
-    : db_(nullptr),
-      logger_(nullptr),
-      phy_idx_(0),
-      tap_prefix_(""),
-      endcap_prefix_("")
+Tapcell::Tapcell() : db_(nullptr), logger_(nullptr)
 {
+  reset();
 }
 
 Tapcell::~Tapcell()
@@ -73,10 +69,10 @@ void Tapcell::init(odb::dbDatabase* db, utl::Logger* logger)
 
 void Tapcell::reset()
 {
-  Tapcell::phy_idx_ = 0;
-  Tapcell::filled_sites_.clear();
-  tap_prefix_.clear();
-  endcap_prefix_.clear();
+  phy_idx_ = 0;
+  filled_sites_.clear();
+  tap_prefix_ = "TAP_";
+  endcap_prefix_ = "PHY_";
 }
 
 //---------------------------------------------------------------
@@ -100,66 +96,68 @@ void Tapcell::clear()
   reset();
 }
 
-void Tapcell::run(odb::dbMaster* endcap_master,
-                  int halo_x,
-                  int halo_y,
-                  const string& cnrcap_nwin_master,
-                  const string& cnrcap_nwout_master,
-                  bool add_boundary_cell,
-                  const string& tap_nwintie_master,
-                  const string& tap_nwin2_master,
-                  const string& tap_nwin3_master,
-                  const string& tap_nwouttie_master,
-                  const string& tap_nwout2_master,
-                  const string& tap_nwout3_master,
-                  const string& incnrcap_nwin_master,
-                  const string& incnrcap_nwout_master,
-                  odb::dbMaster* tapcell_master,
-                  int dist)
+int Tapcell::defaultDistance() const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  return 2 * block->getDbUnitsPerMicron();
+}
+
+void Tapcell::cutRows(const Options& options)
 {
   vector<odb::dbBox*> blockages = findBlockages();
   odb::dbBlock* block = db_->getChip()->getBlock();
-  const int min_row_width = endcap_master ? 2 * endcap_master->getWidth() : 0;
+  const int halo_x = options.halo_x >= 0 ? options.halo_x : defaultDistance();
+  const int halo_y = options.halo_y >= 0 ? options.halo_y : defaultDistance();
+  const int min_row_width
+      = options.endcap_master ? 2 * options.endcap_master->getWidth() : 0;
   odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
+}
+
+void Tapcell::run(const Options& options)
+{
+  cutRows(options);
+
+  const int dist = options.dist >= 0 ? options.dist : defaultDistance();
+
   vector<vector<odb::dbRow*>> rows = organizeRows();
   CornercapMasters masters;
-  masters.nwin_master = cnrcap_nwin_master;
-  masters.nwout_master = cnrcap_nwout_master;
+  masters.nwin_master = options.cnrcap_nwin_master;
+  masters.nwout_master = options.cnrcap_nwout_master;
 
-  if (endcap_master != nullptr) {
-    insertEndcaps(rows, endcap_master, masters);
+  if (options.endcap_master != nullptr) {
+    insertEndcaps(rows, options.endcap_master, masters);
   }
-  if (add_boundary_cell) {
+  if (options.addBoundaryCells()) {
     vector<string> tap_nw_masters;
-    tap_nw_masters.push_back(tap_nwintie_master);
-    tap_nw_masters.push_back(tap_nwin2_master);
-    tap_nw_masters.push_back(tap_nwin3_master);
-    tap_nw_masters.push_back(tap_nwouttie_master);
-    tap_nw_masters.push_back(tap_nwout2_master);
-    tap_nw_masters.push_back(tap_nwout3_master);
+    tap_nw_masters.push_back(options.tap_nwintie_master);
+    tap_nw_masters.push_back(options.tap_nwin2_master);
+    tap_nw_masters.push_back(options.tap_nwin3_master);
+    tap_nw_masters.push_back(options.tap_nwouttie_master);
+    tap_nw_masters.push_back(options.tap_nwout2_master);
+    tap_nw_masters.push_back(options.tap_nwout3_master);
 
     vector<string> tap_macro_masters;
-    tap_macro_masters.push_back(incnrcap_nwin_master);
-    tap_macro_masters.push_back(tap_nwin2_master);
-    tap_macro_masters.push_back(tap_nwin3_master);
-    tap_macro_masters.push_back(tap_nwintie_master);
-    tap_macro_masters.push_back(incnrcap_nwout_master);
-    tap_macro_masters.push_back(tap_nwout2_master);
-    tap_macro_masters.push_back(tap_nwout3_master);
-    tap_macro_masters.push_back(tap_nwouttie_master);
+    tap_macro_masters.push_back(options.incnrcap_nwin_master);
+    tap_macro_masters.push_back(options.tap_nwin2_master);
+    tap_macro_masters.push_back(options.tap_nwin3_master);
+    tap_macro_masters.push_back(options.tap_nwintie_master);
+    tap_macro_masters.push_back(options.incnrcap_nwout_master);
+    tap_macro_masters.push_back(options.tap_nwout2_master);
+    tap_macro_masters.push_back(options.tap_nwout3_master);
+    tap_macro_masters.push_back(options.tap_nwouttie_master);
 
     insertAtTopBottom(rows,
                       tap_nw_masters,
-                      db_->findMaster(cnrcap_nwin_master.c_str()),
+                      db_->findMaster(options.cnrcap_nwin_master.c_str()),
                       endcap_prefix_);
     insertAroundMacros(rows,
                        tap_macro_masters,
-                       db_->findMaster(cnrcap_nwin_master.c_str()),
+                       db_->findMaster(options.cnrcap_nwin_master.c_str()),
                        endcap_prefix_);
   }
 
-  if (tapcell_master != nullptr) {
-    insertTapcells(rows, tapcell_master, dist);
+  if (options.tapcell_master != nullptr) {
+    insertTapcells(rows, options.tapcell_master, dist);
   }
   filled_sites_.clear();
 }
@@ -175,8 +173,8 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
 
   bool do_corners;
   if (!masters.nwin_master.empty() && !masters.nwout_master.empty()) {
-    if (masters.nwin_master.compare("INVALID") == 0
-        || masters.nwout_master.compare("INVALID") == 0) {
+    if (masters.nwin_master.empty()
+        || masters.nwout_master.empty()) {
       do_corners = 0;
     } else {
       do_corners = 1;
