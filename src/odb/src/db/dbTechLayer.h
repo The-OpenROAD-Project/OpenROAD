@@ -183,7 +183,6 @@ class _dbTechLayer : public _dbObject
 
   dbId<_dbTechLayerAntennaRule> _oxide1;
   dbId<_dbTechLayerAntennaRule> _oxide2;
-  static const uint db_schema_wrongway_width = 58;
   // User Code End Fields
   _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
