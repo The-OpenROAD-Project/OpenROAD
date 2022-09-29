@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#pragma once
+// This is only for including into Logger.h and Logger-py.i
 
 namespace utl {
 
@@ -54,11 +53,3 @@ const char* pop_metrics_stage();
 void suppress_message(utl::ToolId tool, int id);
 
 }   // namespace utl
-
-
-
-
-
-
-
-

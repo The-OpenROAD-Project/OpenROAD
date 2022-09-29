@@ -108,9 +108,7 @@ class Logger
     }
 
   template <typename... Args>
-#ifndef SWIGPYTHON
     __attribute__((noreturn))
-#endif
     inline void error(ToolId tool,
                       int id,
                       const std::string& message,
@@ -125,9 +123,7 @@ class Logger
     }
 
   template <typename... Args>
-#ifndef SWIGPYTHON
     __attribute__((noreturn))
-#endif
     void critical(ToolId tool,
                   int id,
                   const std::string& message,
@@ -140,7 +136,6 @@ class Logger
   // For logging to the metrics file.  This is a much more restricted
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
-#ifndef SWIGPYTHON
   template <typename T,
             typename = std::enable_if_t<std::is_arithmetic<T>::value>>
   inline void metric(const std::string_view metric,
@@ -150,7 +145,6 @@ class Logger
     oss << std::fixed << std::setprecision(4) << value;
     log_metric(std::string(metric), oss.str());
   }
-#endif
 
   inline void metric(const std::string_view metric,
                      const std::string& value)

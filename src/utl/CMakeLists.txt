@@ -32,17 +32,13 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_include_directories(utl_py
     PUBLIC
       include
-      ../odb/include
-      ../sta/include
-      ../grt/include
-      /usr/include/tcl8.6/
   )
 endif()
 
 target_sources(utl
   PRIVATE
     src/Logger.cpp
-    src/LoggerAPI.cpp
+    src/LoggerCommands.cpp
     src/MakeLogger.cpp
     src/Metrics.cpp
 )
