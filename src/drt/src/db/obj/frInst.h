@@ -87,14 +87,14 @@ class frInst : public frRef
    */
 
   dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override { xform_.setOrient(tmpOrient); }
+  void setOrient(const dbOrientType& tmpOrient) override
+  {
+    xform_.setOrient(tmpOrient);
+  }
   Point getOrigin() const override { return xform_.getOffset(); }
   void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
   dbTransform getTransform() const override { return xform_; }
-  void setTransform(const dbTransform& xformIn) override
-  {
-    xform_ = xformIn;
-  }
+  void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
 
   /* from frPinFig
    * hasPin
@@ -135,7 +135,7 @@ class frInst : public frRef
   dbTransform getUpdatedXform(bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);
   Rect getBoundaryBBox() const;
-  
+
   frInstTerm* getInstTerm(const std::string& name);
 
  private:

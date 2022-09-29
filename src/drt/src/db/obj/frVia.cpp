@@ -29,8 +29,8 @@
 #include "db/obj/frVia.h"
 
 #include "db/drObj/drVia.h"
-#include "serialization.h"
 #include "distributed/frArchive.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -70,11 +70,8 @@ void frVia::serialize(Archive& ar, const unsigned int version)
   serializeBlockObject(ar, owner_);
 }
 
+template void frVia::serialize<frIArchive>(frIArchive& ar,
+                                           const unsigned int file_version);
 
-template void frVia::serialize<frIArchive>(
-    frIArchive& ar,
-    const unsigned int file_version);
-
-template void frVia::serialize<frOArchive>(
-    frOArchive& ar,
-    const unsigned int file_version);
+template void frVia::serialize<frOArchive>(frOArchive& ar,
+                                           const unsigned int file_version);

@@ -118,7 +118,8 @@ void FlexGCWorker::checkMinStep(gcPin* pin)
   impl_->checkMetalShape_minStep(pin);
 }
 
-void FlexGCWorker::updateGCWorker() {
+void FlexGCWorker::updateGCWorker()
+{
   impl_->updateGCWorker();
 }
 
@@ -167,7 +168,8 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in)
     return false;
   }
 }
-gcNet* FlexGCWorker::getTargetNet() {
+gcNet* FlexGCWorker::getTargetNet()
+{
   return impl_->targetNet_;
 }
 void FlexGCWorker::setEnableSurgicalFix(bool in)
@@ -215,6 +217,7 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
   return impl_->getNets();
 }
 
-gcNet* FlexGCWorker::getNet(frNet* net) {
+gcNet* FlexGCWorker::getNet(frNet* net)
+{
   return impl_->getNet(net);
 }

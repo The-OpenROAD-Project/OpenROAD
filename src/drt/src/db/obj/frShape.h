@@ -74,16 +74,18 @@ class frShape : public frPinFig
 
   bool hasPin() const override
   {
-    return (owner_) && ((owner_->typeId() == frcBPin) ||
-                         owner_->typeId() == frcMPin);
+    return (owner_)
+           && ((owner_->typeId() == frcBPin) || owner_->typeId() == frcMPin);
   }
 
  protected:
   // constructors
   frShape() : frPinFig(), owner_(nullptr), index_in_owner_(0) {}
-  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), index_in_owner_(0) {}
+  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), index_in_owner_(0)
+  {
+  }
 
-  frBlockObject* owner_; // general back pointer 0
+  frBlockObject* owner_;  // general back pointer 0
   int index_in_owner_;
 
   template <class Archive>
@@ -97,10 +99,7 @@ class frRect : public frShape
  public:
   // constructors
   frRect() : frShape(), box_(), layer_(0) {}
-  frRect(const frRect& in)
-      : frShape(in), box_(in.box_), layer_(in.layer_)
-  {
-  }
+  frRect(const frRect& in) : frShape(in), box_(in.box_), layer_(in.layer_) {}
   frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
       : frShape(owner), box_(xl, yl, xh, yh), layer_(lNum)
   {
@@ -197,18 +196,11 @@ class frRect : public frShape
     return iter_;
   }
   void shift(int x, int y) { box_.moveDelta(x, y); }
-  void setLeft(frCoord v) {
-      box_.set_xlo(v);
-  }
-  void setRight(frCoord v) {
-      box_.set_xhi(v);
-  }
-  void setTop(frCoord v) {
-      box_.set_yhi(v);
-  }
-  void setBottom(frCoord v) {
-      box_.set_ylo(v);
-  }
+  void setLeft(frCoord v) { box_.set_xlo(v); }
+  void setRight(frCoord v) { box_.set_xhi(v); }
+  void setTop(frCoord v) { box_.set_yhi(v); }
+  void setBottom(frCoord v) { box_.set_ylo(v); }
+
  protected:
   Rect box_;
   frLayerNum layer_;
@@ -230,9 +222,7 @@ class frPatchWire : public frShape
 {
  public:
   // constructors
-  frPatchWire() : frShape(), offsetBox_(), origin_(), layer_(0)
-  {
-  }
+  frPatchWire() : frShape(), offsetBox_(), origin_(), layer_(0) {}
   frPatchWire(const frPatchWire& in)
       : frShape(in),
         offsetBox_(in.offsetBox_),
@@ -469,12 +459,7 @@ class frPathSeg : public frShape
  public:
   // constructors
   frPathSeg()
-      : frShape(),
-        begin_(),
-        end_(),
-        layer_(0),
-        style_(),
-        tapered_(false)
+      : frShape(), begin_(), end_(), layer_(0), style_(), tapered_(false)
   {
   }
   frPathSeg(const frPathSeg& in)
@@ -500,35 +485,37 @@ class frPathSeg : public frShape
   bool isVertical() const { return begin_.x() == end_.x(); }
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
-  void setHigh(frCoord v) {
-      if (isVertical())
-          end_.setY(v);
-      else 
-          end_.setX(v);
+  void setHigh(frCoord v)
+  {
+    if (isVertical())
+      end_.setY(v);
+    else
+      end_.setX(v);
   }
-  void setLow(frCoord v) {
-      if (isVertical())
-          begin_.setY(v);
-      else 
-          begin_.setX(v);
+  void setLow(frCoord v)
+  {
+    if (isVertical())
+      begin_.setY(v);
+    else
+      begin_.setX(v);
   }
-  bool isBeginTruncated() {
+  bool isBeginTruncated()
+  {
     return style_.getBeginStyle() == frcTruncateEndStyle;
   }
-  bool isEndTruncated() {
-    return style_.getEndStyle() == frcTruncateEndStyle;
-  }
+  bool isEndTruncated() { return style_.getEndStyle() == frcTruncateEndStyle; }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
   }
-  void setPoints_safe(const Point& beginIn, const Point& endIn) {
-      if (endIn < beginIn)
-            setPoints(endIn, beginIn);
-      else 
-          setPoints(beginIn, endIn);
+  void setPoints_safe(const Point& beginIn, const Point& endIn)
+  {
+    if (endIn < beginIn)
+      setPoints(endIn, beginIn);
+    else
+      setPoints(beginIn, endIn);
   }
   void setStyle(const frSegStyle& styleIn)
   {

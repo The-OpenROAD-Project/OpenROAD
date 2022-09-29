@@ -33,8 +33,8 @@
 #include <memory>
 #include <string>
 
-#include "frBaseTypes.h"
 #include "db/obj/frMarker.h"
+#include "frBaseTypes.h"
 
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
@@ -126,7 +126,7 @@ extern int CONGCOST;
 namespace odb {
 class Point;
 class Rect;
-}
+}  // namespace odb
 
 namespace fr {
 frCoord getGCELLGRIDX();
@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream& os, const fr::frBlock& blockIn);
 std::ostream& operator<<(std::ostream& os, const fr::frInst& instIn);
 std::ostream& operator<<(std::ostream& os, const fr::frInstTerm& instTermIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBTerm& termIn);
-//std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
+// std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);

@@ -43,9 +43,13 @@ OpenRoad* OpenRoad::openRoad()
   return nullptr;
 }
 
-void OpenRoad::writeDb(const char *) {}
+void OpenRoad::writeDb(const char*)
+{
+}
 
-void OpenRoad::readDb(const char *) {}
+void OpenRoad::readDb(const char*)
+{
+}
 
 void OpenRoad::addObserver(Observer* observer)
 {

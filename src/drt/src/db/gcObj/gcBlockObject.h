@@ -44,7 +44,6 @@ class gcBlockObject : public frBlockObject
   // constructors
   gcBlockObject() : frBlockObject() {}
   gcBlockObject(const gcBlockObject& in) : frBlockObject(in) {}
-
 };
 }  // namespace fr
 

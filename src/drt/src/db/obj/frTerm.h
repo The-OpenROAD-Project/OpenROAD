@@ -57,7 +57,8 @@ class frTerm : public frBlockObject
   virtual frAccessPoint* getAccessPoint(frCoord x,
                                         frCoord y,
                                         frLayerNum lNum,
-                                        int pinAccessIdx) = 0;
+                                        int pinAccessIdx)
+      = 0;
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
   {
     return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
@@ -80,12 +81,11 @@ class frTerm : public frBlockObject
   }
 
   frString name_;  // A, B, Z, VSS, VDD
-  frNet* net_;  // set later, term in instTerm does not have net
+  frNet* net_;     // set later, term in instTerm does not have net
   dbSigType type_;
   dbIoType direction_;
   int index_in_owner_;
   Rect bbox_;
-
 };
 
 }  // namespace fr

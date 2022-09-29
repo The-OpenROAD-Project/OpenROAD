@@ -180,11 +180,10 @@ class frAccessPoint : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
   frCoord x() const { return point_.x(); }
   frCoord y() const { return point_.y(); }
-  
-  void addPathSeg(frPathSeg ps) {
-      pathSegs_.push_back(std::move(ps));
-  }
-  std::vector<frPathSeg>& getPathSegs() { return pathSegs_;}
+
+  void addPathSeg(frPathSeg ps) { pathSegs_.push_back(std::move(ps)); }
+  std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
+
  private:
   Point point_;
   frLayerNum layerNum_;

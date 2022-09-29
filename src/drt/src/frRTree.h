@@ -56,7 +56,6 @@ namespace fr {
 template <typename T, typename Key = Rect>
 using RTree = bgi::rtree<std::pair<Key, T>, bgi::quadratic<16>>;
 
-
 }  // namespace fr
 
 #endif

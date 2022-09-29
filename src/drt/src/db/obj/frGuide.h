@@ -122,7 +122,6 @@ class frGuide : public frConnFig
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
   int index_in_owner_;
-
 };
 }  // namespace fr
 
