@@ -203,9 +203,8 @@ dbTechLayerWidthTableRule::getTechLayerWidthTableRule(dbTechLayer* inly,
 void dbTechLayerWidthTableRule::destroy(dbTechLayerWidthTableRule* rule)
 {
   _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  if(rule->isWrongDirection())
-  {
-    //reset wrong way width
+  if (rule->isWrongDirection()) {
+    // reset wrong way width
     layer->wrong_way_width_ = layer->_width;
   }
   dbProperty::destroyProperties(rule);

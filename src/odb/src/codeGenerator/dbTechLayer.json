@@ -132,7 +132,10 @@
     },
     {
       "type": "uint",
-      "name": "wrong_way_width_"
+      "name": "wrong_way_width_",
+      "flags":[
+        "no-serial"
+      ]
     }
   ],
   "constructors": [],

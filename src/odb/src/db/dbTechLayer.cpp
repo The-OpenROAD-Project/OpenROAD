@@ -717,7 +717,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
-  stream >> obj.wrong_way_width_;
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -773,6 +772,17 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._two_widths_sp_spacing;
   stream >> obj._oxide1;
   stream >> obj._oxide2;
+  if (obj.getDatabase()->isSchema(_dbTechLayer::db_schema_wrongway_width))
+    stream >> obj.wrong_way_width_;
+  else {
+    obj.wrong_way_width_ = obj._width;
+    for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules())
+      if (rule->isWrongDirection())
+      {
+        obj.wrong_way_width_ = *rule->getWidthTable().begin();
+        break;
+      }
+  }
   // User Code End >>
   return stream;
 }
@@ -780,7 +790,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
-  stream << obj.wrong_way_width_;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -836,6 +845,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._two_widths_sp_spacing;
   stream << obj._oxide1;
   stream << obj._oxide2;
+  if(obj.getDatabase()->isSchema(_dbTechLayer::db_schema_wrongway_width))
+    stream << obj.wrong_way_width_;
   // User Code End <<
   return stream;
 }
@@ -1264,11 +1275,9 @@ void dbTechLayer::setWidth(int width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_width = width;
-  if (layer->wrong_way_width_ == 0)
-  {
+  if (layer->wrong_way_width_ == 0) {
     layer->wrong_way_width_ = width;
   }
-  
 }
 
 int dbTechLayer::getSpacing()
