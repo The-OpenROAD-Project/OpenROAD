@@ -52,7 +52,7 @@ class frInst : public frRef
   }
   // getters
   odb::dbInst* getDbInst() const { return inst_; }
-  const frString getName() const { return inst_->getName(); }
+  frString getName() const { return inst_->getName(); }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
   {

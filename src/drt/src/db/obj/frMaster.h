@@ -96,7 +96,7 @@ class frMaster : public frBlockObject
     dieBox.init(llx, lly, urx, ury);
     return dieBox;
   }
-  const std::vector<frBoundary> getBoundaries() const
+  std::vector<frBoundary> getBoundaries() const
   {
     frCoord originX;
     frCoord originY;
@@ -118,7 +118,7 @@ class frMaster : public frBlockObject
   {
     return blockages_;
   }
-  const frString getName() const { return db_master_->getName(); }
+  frString getName() const { return db_master_->getName(); }
   const std::vector<std::unique_ptr<frMTerm>>& getTerms() const
   {
     return terms_;

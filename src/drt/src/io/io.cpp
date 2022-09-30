@@ -801,7 +801,6 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
       }
     }
-    // netIn->setType(net->getSigType());
     if (is_special)
       tmpBlock_->addSNet(std::move(uNetIn));
     else
@@ -1018,12 +1017,10 @@ void io::Parser::readDesign(odb::dbDatabase* db)
 void io::Parser::addFakeNets()
 {
   // add VSS fake net
-  auto vssFakeNet = make_unique<frNet>();
-  vssFakeNet->setIsFakeVSS(true);
+  auto vssFakeNet = make_unique<frNet>(true, false);
   design_->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
-  auto vddFakeNet = make_unique<frNet>();
-  vddFakeNet->setIsFakeVDD(true);
+  auto vddFakeNet = make_unique<frNet>(false, true);
   design_->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
 

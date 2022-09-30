@@ -86,12 +86,10 @@ void Fixture::addLayer(frTechObject* tech,
 
 void Fixture::setupTech(frTechObject* tech)
 {
-  // auto db = odb::dbDatabase::create();
   db_tech = odb::dbTech::create(db);
   db->getTech()->setDbUnitsPerMicron(1000);
   db->getTech()->setManufacturingGrid(10);
-  db_tech->setDbUnitsPerMicron(1000);
-  db_tech->setManufacturingGrid(10);
+  db_tech = db->getTech();
   tech->setTechObject(db_tech);
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
@@ -224,12 +222,10 @@ void Fixture::makeDesign()
   auto block = std::make_unique<frBlock>(db_block);
 
   // GC assumes these fake nets exist
-  auto vssFakeNet = std::make_unique<frNet>();
-  vssFakeNet->setIsFakeVSS(true);
+  auto vssFakeNet = std::make_unique<frNet>(true, false);
   block->addFakeSNet(std::move(vssFakeNet));
 
-  auto vddFakeNet = std::make_unique<frNet>();
-  vddFakeNet->setIsFakeVDD(true);
+  auto vddFakeNet = std::make_unique<frNet>(false, true);
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));

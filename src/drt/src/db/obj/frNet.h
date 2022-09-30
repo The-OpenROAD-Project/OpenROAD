@@ -51,7 +51,7 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet()
+  frNet(bool isFakeVSSNet, bool isFakeVDDNet)
       : frBlockObject(),
         db_net_(nullptr),
         tech_Obj_(nullptr),
@@ -69,8 +69,8 @@ class frNet : public frBlockObject
         rpins_(),
         guides_(),
         modified_(false),
-        isFakeVSSNet_(false),
-        isFakeVDDNet_(false),
+        isFakeVSSNet_(isFakeVSSNet),
+        isFakeVDDNet_(isFakeVDDNet),
         absPriorityLvl(0)
   {
   }
@@ -98,7 +98,7 @@ class frNet : public frBlockObject
   {
   }
   // getters
-  const frString getName() const
+  frString getName() const
   {
     frString name;
     if (isFakeVSSNet_)
@@ -255,7 +255,7 @@ class frNet : public frBlockObject
   }
   virtual frBlockObjectEnum typeId() const override { return frcNet; }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
-  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }  // refactor
+  void setAbsPriorityLvl(int l) { absPriorityLvl = l; } 
   int getAbsPriorityLvl() const { return absPriorityLvl; }
   bool isClock() const { return (db_net_->getSigType() == dbSigType::CLOCK); }
   void updateAbsPriority()
@@ -270,7 +270,6 @@ class frNet : public frBlockObject
   bool isSpecial() const
   {
     return db_net_->isSpecial();
-    ;
   }
   frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
   void setOrigGuides(const std::vector<frRect>& guides)

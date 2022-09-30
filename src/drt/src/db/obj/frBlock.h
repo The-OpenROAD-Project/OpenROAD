@@ -94,16 +94,16 @@ class frBlock : public frBlockObject
     }
     return Rect(llx, lly, urx, ury);
   }
-  const std::vector<frBoundary> getBoundaries() const
+  std::vector<frBoundary> getBoundaries() const
   {
     vector<frBoundary> bounds;
     frBoundary bound;
     vector<Point> points;
     odb::Rect box = db_block_->getDieArea();
-    points.push_back(Point(box.xMin(), box.yMin()));
-    points.push_back(Point(box.xMax(), box.yMax()));
-    points.push_back(Point(box.xMax(), box.yMin()));
-    points.push_back(Point(box.xMin(), box.yMax()));
+    points.push_back(box.ll());
+    points.push_back(box.ur());
+    points.push_back(box.lr());
+    points.push_back(box.ul());
     bound.setPoints(points);
     bounds.push_back(bound);
     return bounds;
@@ -126,7 +126,7 @@ class frBlock : public frBlockObject
     }
     return sol;
   }
-  const frString getName() const { return db_block_->getName(); }
+  frString getName() const { return db_block_->getName(); }
   const std::vector<std::unique_ptr<frInst>>& getInsts() const
   {
     return insts_;
@@ -309,7 +309,7 @@ class frBlock : public frBlockObject
   int getNumMarkers() const { return markers_.size(); }
   frNet* getFakeVSSNet() { return fakeSNets_[0].get(); }
   frNet* getFakeVDDNet() { return fakeSNets_[1].get(); }
-  const Rect getDieBox() const
+  Rect getDieBox() const
   {
     auto boundaries = getBoundaries();
     Rect dieBox;
