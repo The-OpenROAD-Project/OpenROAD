@@ -1,4 +1,4 @@
-add_library(odb
+add_library(db
     dbBTerm.cpp 
     dbStream.cpp 
     dbBTermItr.cpp 
@@ -125,25 +125,22 @@ add_library(odb
     # Generator Code End cpp
 )
 
-target_include_directories(odb
+target_include_directories(db
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
         ${TCL_INCLUDE_PATH}
 )
 
-set_target_properties(odb
+set_target_properties(db
   PROPERTIES
     # python requirement
     POSITION_INDEPENDENT_CODE ON
 )
 
-target_link_libraries(odb
+target_link_libraries(db
     PUBLIC
-        cdl
-        defin
-        defout
-        lefin
         lefout
+        defout
         tm
         zutil
         utl
@@ -151,6 +148,6 @@ target_link_libraries(odb
 )
 
 messages(
-  TARGET odb
+  TARGET db
   OUTPUT_DIR ../..
 )
