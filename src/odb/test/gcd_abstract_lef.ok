@@ -10,6 +10,4 @@
 [INFO ODB-0132]     Created 2 special nets and 3754 connections.
 [INFO ODB-0133]     Created 439 nets and 1193 connections.
 [INFO ODB-0134] Finished DEF file: data/gcd/gcd_nangate45_route.def
-Differences found at line 808.
-     RECT  10.07 34.915 20.56 35.085 ;
-    RECT  0 0 100.13 100.8 ;
+No differences found.
