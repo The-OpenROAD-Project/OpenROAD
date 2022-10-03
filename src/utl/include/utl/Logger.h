@@ -95,6 +95,8 @@ enum ToolId
  SIZE // the number of tools, do not put anything after this
 };
 
+#ifndef SWIG
+
 class Logger
 {
  public:
@@ -313,5 +315,7 @@ class Logger
 #undef FOREACH_TOOL
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
+
+#endif  //  SWIG
 
 }  // namespace utl
