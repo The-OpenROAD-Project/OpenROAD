@@ -52,3 +52,9 @@ target_link_libraries(utl
   PUBLIC
     spdlog::spdlog
 )
+
+target_link_libraries(utl_py
+  PUBLIC
+    spdlog::spdlog
+)
+
