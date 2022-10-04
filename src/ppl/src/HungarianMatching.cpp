@@ -63,7 +63,8 @@ HungarianMatching::HungarianMatching(Section& section,
 void HungarianMatching::findAssignment()
 {
   createMatrix();
-  hungarian_solver_.solve(hungarian_matrix_, assignment_);
+  if (!hungarian_matrix_.empty())
+    hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
 void HungarianMatching::createMatrix()
@@ -132,7 +133,7 @@ void HungarianMatching::findAssignmentForGroups()
 {
   createMatrixForGroups();
 
-  if (hungarian_matrix_.size() > 0)
+  if (!hungarian_matrix_.empty())
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
