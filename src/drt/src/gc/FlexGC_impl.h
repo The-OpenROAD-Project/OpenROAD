@@ -483,6 +483,8 @@ class FlexGCWorker::Impl
                                       const frDirEnum dir,
                                       box_t& box);
 
+  void checkMetalWidthViaTable();
+  void checkMetalWidthViaTable_main(gcRect* rect);
   // surgical fix
   void patchMetalShape();
   void patchMetalShape_minStep();
