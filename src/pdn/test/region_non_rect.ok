@@ -11,11 +11,9 @@
 [INFO ODB-0222] Reading LEF file: sky130_non_rect_region/SLC.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  sky130_non_rect_region/SLC.lef
-[INFO ODB-0127] Reading DEF file: sky130_non_rect_region/floorplan.def
 [INFO ODB-0128] Design: tempsenseInst
 [INFO ODB-0130]     Created 35 pins.
 [INFO ODB-0131]     Created 393 components and 1287 component-terminals.
 [INFO ODB-0133]     Created 155 nets and 491 connections.
-[INFO ODB-0134] Finished DEF file: sky130_non_rect_region/floorplan.def
 [ERROR PDN-0104] TEMP_ANALOG region contains 2 shapes, but only one is supported.
 PDN-0104

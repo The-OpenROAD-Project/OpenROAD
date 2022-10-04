@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # abutting cells / overlap padded
 read_lef Nangate45/Nangate45.lef
 read_def check3.def

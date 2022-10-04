@@ -1,4 +1,5 @@
 # repair_slew10 with set_max_transition design
+source "helpers.tcl"
 read_liberty repair_slew10.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_slew10.def

@@ -199,6 +199,8 @@ public:
                bool floorplan_init,
                bool incremental);
   
+  void writeLef(const char* filename);
+
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);

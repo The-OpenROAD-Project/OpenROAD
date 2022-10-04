@@ -2,12 +2,10 @@
 [INFO ODB-0223]     Created 2 technology layers
 [INFO ODB-0225]     Created 6 library cells
 [INFO ODB-0226] Finished LEF file:  liberty1.lef
-[INFO ODB-0127] Reading DEF file: hier1.def
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 6 components and 26 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 6 connections.
-[INFO ODB-0134] Finished DEF file: hier1.def
 b1/r1
 b1/r1
 b1/u1

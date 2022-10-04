@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # std cell abutting block
 read_lef Nangate45/Nangate45.lef
 read_lef extra.lef

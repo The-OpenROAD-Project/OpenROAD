@@ -639,7 +639,7 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   width = _lsp->_r1min;
   within = _lsp->_r1max;
   if (_lsp->_flags._rule == _dbTechLayerSpacingRule::ENDOFLINE) {
-    parallelSpace = false;
+    parallelEdge = false;
     return true;
   }
   parallelEdge = true;

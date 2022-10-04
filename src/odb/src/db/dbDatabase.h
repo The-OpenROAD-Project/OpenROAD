@@ -67,7 +67,8 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 57;  // Current revision number
+const uint db_schema_minor = 58;  // Current revision number
+const uint db_schema_add_global_connect = 58; // Revision where dbGlobalConnect was added
 
 template <class T>
 class dbTable;

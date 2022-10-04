@@ -3,13 +3,11 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: reg3.def
 [INFO ODB-0128] Design: reg1
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 5 components and 27 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 8 nets and 14 connections.
-[INFO ODB-0134] Finished DEF file: reg3.def
 [INFO RSZ-0028] Inserted 1 output buffers.
 [INFO RSZ-0058] Using max wire length 720um.
 [INFO RSZ-0036] Found 1 capacitance violations.

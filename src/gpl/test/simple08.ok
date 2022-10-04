@@ -7,13 +7,11 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0224]     Created 25 technology vias
 [INFO ODB-0225]     Created 441 library cells
 [INFO ODB-0226] Finished LEF file:  ./sky130hd.lef
-[INFO ODB-0127] Reading DEF file: ./simple08.def
 [INFO ODB-0128] Design: inverter
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 114 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO ODB-0134] Finished DEF file: ./simple08.def
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: 460 2720
 [INFO GPL-0004] CoreAreaLxLy: 5520 10880
@@ -50,6 +48,6 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] BinCnt: 64 64
 [INFO GPL-0029] BinSize: 360 510
 [INFO GPL-0030] NumBins: 4096
-[NesterovSolve] Iter: 1 overflow: 0.163043 HPWL: 84585
-[NesterovSolve] Finished with Overflow: 0.163043
+[NesterovSolve] Iter: 1 overflow: 0.183424 HPWL: 84585
+[NesterovSolve] Finished with Overflow: 0.183424
 No differences found.

@@ -32,15 +32,15 @@
 #include <memory>
 
 #include "db/infra/frBox.h"
+#include "odb/db.h"
 
 namespace fr {
 class frViaRuleGenerate
 {
  public:
   // constructors
-  frViaRuleGenerate(const frString& nameIn)
-      : name(nameIn),
-        isDefault(false),
+  frViaRuleGenerate()
+      : rule_(nullptr),
         botEnc(),
         cutRect(),
         cutSpacing(),
@@ -51,8 +51,9 @@ class frViaRuleGenerate
   {
   }
   // getters
-  const frString& getName() const { return name; }
-  bool getDefault() const { return isDefault; }
+  odb::dbTechViaGenerateRule* getDbTechViaGenerateRule() const { return rule_; }
+  const frString getName() const { return rule_->getName(); }
+  bool getDefault() const { return rule_->isDefault(); }
   const Point& getLayer1Enc() const { return botEnc; }
   const Rect& getCutRect() const { return cutRect; }
   const Point& getCutSpacing() const { return cutSpacing; }
@@ -61,7 +62,10 @@ class frViaRuleGenerate
   frLayerNum getLayer2Num() const { return topLayerNum; }
   frLayerNum getCutLayerNum() const { return cutLayerNum; }
   // setters
-  void setDefault(bool in) { isDefault = in; }
+  void setDbTechViaGenerateRule(odb::dbTechViaGenerateRule* ruleIn)
+  {
+    rule_ = ruleIn;
+  }
   void setLayer1Enc(const Point& in) { botEnc = in; }
   void setCutRect(const Rect& in) { cutRect = in; }
   void setCutSpacing(const Point& in) { cutSpacing = in; }
@@ -71,8 +75,7 @@ class frViaRuleGenerate
   void setLayer2Num(frLayerNum in) { topLayerNum = in; }
 
  private:
-  frString name;
-  bool isDefault;
+  odb::dbTechViaGenerateRule* rule_;
   Point botEnc;
   Rect cutRect;
   Point cutSpacing;
@@ -80,7 +83,6 @@ class frViaRuleGenerate
   frLayerNum botLayerNum;
   frLayerNum cutLayerNum;
   frLayerNum topLayerNum;
-
 };
 }  // namespace fr
 
