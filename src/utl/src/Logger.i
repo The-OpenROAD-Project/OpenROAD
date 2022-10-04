@@ -36,7 +36,7 @@
 %{
 
 #include "utl/Logger.h"
-#include "utl/LoggerCommands.h"
+#include "LoggerCommon.h"
     
 namespace ord {
 // Defined in OpenRoad.i
@@ -59,4 +59,5 @@ using ord::getLogger;
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
 
-%include "utl/LoggerCommands.h"
+%include "LoggerCommon.h"
+

@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// This is only for including into Logger.h and Logger-py.i
-
 namespace utl {
 
 void report(const char *msg);

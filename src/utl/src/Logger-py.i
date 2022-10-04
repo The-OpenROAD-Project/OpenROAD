@@ -38,7 +38,7 @@
 %{
 
 #include "utl/Logger.h"
-#include "utl/LoggerCommands.h"
+#include "LoggerCommon.h"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -54,13 +54,13 @@ using namespace utl;
 
 %}
 
-// These are the Tool definitions
-//%include "utl/ToolId.h"
-%include "utl/Logger.h"
+#define __attribute__(x)
 
 // this maps ToolId to unsigned long
 %include typemaps.i
 %apply unsigned long { ToolId };
 
 %include "../../Exception-py.i"
-%include "utl/LoggerCommands.h"
+
+%include "utl/Logger.h"
+%include "LoggerCommon.h"
