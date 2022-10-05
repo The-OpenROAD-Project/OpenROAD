@@ -125,7 +125,7 @@ proc write_lef { args } {
 proc write_abstract_lef { args } {
   sta::parse_key_args "write_abstract_lef" args keys {-bloat_factor} flags {-bloat_occupied_layers}
 
-  set bloat_factor 0
+  set bloat_factor 2
   if { [info exists keys(-bloat_factor)] } { 
     set bloat_factor $keys(-bloat_factor)
     sta::check_positive_float "bloat_factor" $bloat_factor
