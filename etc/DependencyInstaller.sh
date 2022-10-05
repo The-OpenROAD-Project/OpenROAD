@@ -5,15 +5,35 @@ set -euo pipefail
 _installCommonDev() {
     lastDir="$(pwd)"
     # tools versions
-    cmakeVersionBig=3.14
-    cmakeVersionSmall=${cmakeVersionBig}.0
-    swigVersion=4.0.1
-    boostVersionBig=1.76
-    boostVersionSmall=${boostVersionBig}.0
-    eigenVersion=3.3
-    lemonVersion=1.3.1
-    spdlogVersion=1.8.1
-
+    if [[ $1  == 22.04 ]]; then
+        dist="linux"
+        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+        cmakeVersionBig=3.24
+        cmakeVersionSmall=${cmakeVersionBig}.2
+        swigVersion=4.0.2
+        swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
+        boostVersionBig=1.80 
+        boostVersionSmall=${boostVersionBig}.0
+        boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
+        eigenVersion=3.4
+        lemonVersion=1.3.1
+        lemonChecksum="e89f887559113b68657eca67cf3329b5"
+        spdlogVersion=1.9.2
+    else
+        dist="Linux"
+        cmakeChecksum="73041a43d27a30cdcbfdfdb61310d081"
+        cmakeVersionBig=3.14
+        cmakeVersionSmall=${cmakeVersionBig}.0
+        swigVersion=4.0.1
+        swigChecksum="ef6a6d1dec755d867e7f5e860dc961f7"
+        boostVersionBig=1.76
+        boostVersionSmall=${boostVersionBig}.0
+        boostChecksum="e425bf1f1d8c36a3cd464884e74f007a"
+        eigenVersion=3.3
+        lemonVersion=1.3.1
+        lemonChecksum="e89f887559113b68657eca67cf3329b5"
+        spdlogVersion=1.8.1
+    fi
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
@@ -21,10 +41,10 @@ _installCommonDev() {
     # CMake
     if [[ -z $(cmake --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-Linux-x86_64.sh
-        md5sum -c <(echo "73041a43d27a30cdcbfdfdb61310d081  cmake-${cmakeVersionSmall}-Linux-x86_64.sh") || exit 1
-        chmod +x cmake-${cmakeVersionSmall}-Linux-x86_64.sh
-        ./cmake-${cmakeVersionSmall}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${dist}-x86_64.sh
+        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${dist}-x86_64.sh") || exit 1
+        chmod +x cmake-${cmakeVersionSmall}-${dist}-x86_64.sh
+        ./cmake-${cmakeVersionSmall}-${dist}-x86_64.sh --skip-license --prefix=/usr/local
     else
         echo "CMake already installed."
     fi
@@ -33,7 +53,7 @@ _installCommonDev() {
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
-        md5sum -c <(echo "ef6a6d1dec755d867e7f5e860dc961f7  rel-${swigVersion}.tar.gz") || exit 1
+        md5sum -c <(echo "${swigChecksum}  rel-${swigVersion}.tar.gz") || exit 1
         tar xfz rel-${swigVersion}.tar.gz
         cd swig-rel-${swigVersion}
         ./autogen.sh
@@ -49,7 +69,7 @@ _installCommonDev() {
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
-        md5sum -c <(echo "e425bf1f1d8c36a3cd464884e74f007a  boost_${boostVersionUnderscore}.tar.gz") || exit 1
+        md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh
@@ -83,7 +103,7 @@ _installCommonDev() {
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" /usr/local/include/lemon/config.h) ]]; then
         cd "${baseDir}"
         wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
-        md5sum -c <(echo "e89f887559113b68657eca67cf3329b5  lemon-${lemonVersion}.tar.gz") || exit 1
+        md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
         tar -xf lemon-${lemonVersion}.tar.gz
         cd lemon-${lemonVersion}
         cmake -B build .
@@ -144,9 +164,19 @@ _installUbuntuRuntime() {
         libgomp1 \
         libpython3.8 \
         libtcl \
-        qt5-default \
         qt5-image-formats-plugins \
         tcl-tclreadline
+
+    if [[ $1 == 22.04 ]]; then
+        apt-get install -y \
+        qtbase5-dev \
+        qtchooser \
+        qt5-qmake \
+        qtbase5-dev-tools
+    else 
+        apt-get install -y qt5-default
+    fi
+
     # need the strip "hack" above to run on docker
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
@@ -320,12 +350,13 @@ To enable GCC-8 or Clang-7 you need to run:
 EOF
         ;;
     "Ubuntu" )
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installUbuntuRuntime
+        _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
-            _installCommonDev
+            _installCommonDev "${version}"
         fi
         _installUbuntuCleanUp
         ;;
