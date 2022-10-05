@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,12 +33,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
-#include "ifp/InitFloorplan.hh"
-%}
+namespace utl {
 
-%include "../../Exception-py.i"
+void report(const char *msg);
+void info(utl::ToolId tool, int id, const char *msg);
+void warn(utl::ToolId tool, int id, const char *msg);
+void error(utl::ToolId tool, int id, const char *msg);
+void critical(utl::ToolId tool, int id, const char *msg);
+void open_metrics(const char *metrics_filename);
+void metric(const char *metric, const char *value);
+void metric_integer(const char *metric, const int value);
+void metric_float(const char *metric, const float value);
+void set_metrics_stage(const char *fmt);
+void clear_metrics_stage();
+void push_metrics_stage(const char *fmt);
+const char* pop_metrics_stage();
+void suppress_message(utl::ToolId tool, int id);
 
-%include <std_string.i>
-
-%include "ifp/InitFloorplan.hh"
+}   // namespace utl
