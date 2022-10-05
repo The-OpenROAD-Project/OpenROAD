@@ -372,7 +372,7 @@ bool parse(
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
+  _string %= lexeme[(alpha >> *(char_ - blank))];
 
   qi::rule<std::string::iterator, space_type> ORTHOGONAL
       = (lit("SPACINGTABLE") >> lit("ORTHOGONAL")
@@ -427,11 +427,15 @@ bool parse(
           &setOppositeEnclosureResizeSpacing, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> CUTCLASS
-      = (lit("CUTCLASS") >> +(_string >> -(string("SIDE") | string("END")))
-         >> +((string("-") | double_) >> (string("-") | double_))
-         >> *(_string >> -(string("SIDE") | string("END"))
-              >> +((string("-") | double_) >> (string("-") | double_))))
-          [boost::bind(&setCutClass, _1, parser, lefin)];
+      = (
+         lit("CUTCLASS") 
+         >> +(_string >> -(string("SIDE") | string("END"))) // FIRST ROW AND FIRST ENTRY OF SECOND ROW
+         >> +((string("-") | double_) >> (string("-") | double_)) // REMAINING SECOND ROW
+         >> *(
+              _string >> -(string("SIDE") | string("END"))
+              >> +((string("-") | double_) >> (string("-") | double_))
+            ) // REMAINING ROWS (3rd and below)
+        )[boost::bind(&setCutClass, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> DEFAULT
       = (lit("SPACINGTABLE")[boost::bind(&createDefSubRule, parser)]

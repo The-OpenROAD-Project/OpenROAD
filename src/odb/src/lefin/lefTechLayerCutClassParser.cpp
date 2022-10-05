@@ -63,7 +63,7 @@ bool parse(Iterator first,
            odb::lefin* lefin)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - ' ')];
+  _string %= lexeme[+(char_ - blank)];
   qi::rule<std::string::iterator, space_type> cutClassRule
       = (+(lit("CUTCLASS") >> _string >> lit("WIDTH") >> double_
            >> -(lit("LENGTH") >> double_) >> -(lit("CUTS") >> int_)

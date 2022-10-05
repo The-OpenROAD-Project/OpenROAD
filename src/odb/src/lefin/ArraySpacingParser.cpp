@@ -74,7 +74,7 @@ bool ArraySpacingParser::parse(std::string s)
 {
   rule_ = dbTechLayerArraySpacingRule::create(layer_);
   qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
+  _string %= lexeme[(alpha >> *(char_ - blank))];
   qi::rule<std::string::iterator, space_type> CUTCLASS
       = (lit("CUTCLASS") >> _string[boost::bind(&ArraySpacingParser::setCutClass, this, _1)]) ;
   qi::rule<std::string::iterator, space_type> VIA_WIDTH

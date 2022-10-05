@@ -339,7 +339,7 @@ bool parse(
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
+  _string %= lexeme[(alpha >> *(char_ - blank))];
   qi::rule<std::string::iterator, space_type> LAYER_CUTCLASS
       = (lit("CUTCLASS")
          >> _string[boost::bind(&setCutClass, _1, parser, layer)]
