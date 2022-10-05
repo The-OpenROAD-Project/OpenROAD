@@ -11,7 +11,6 @@ BOOST_AUTO_TEST_SUITE(test_suite)
 
 BOOST_AUTO_TEST_CASE(test_default)
 {
-  cout << "here" << endl;
   dbDatabase* db;
   db = createSimpleDB();
   auto tech = db->getTech();
