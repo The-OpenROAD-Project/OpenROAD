@@ -115,8 +115,6 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - blank)];
   odb::dbTechLayerAreaRule* rule = odb::dbTechLayerAreaRule::create(layer);
 
   qi::rule<std::string::iterator, space_type> EXCEPT_EDGE_LENGTH

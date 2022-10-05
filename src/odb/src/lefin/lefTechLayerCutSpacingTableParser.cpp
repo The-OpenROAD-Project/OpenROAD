@@ -371,9 +371,6 @@ bool parse(
     odb::lefin* lefin,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - blank))];
-
   qi::rule<std::string::iterator, space_type> ORTHOGONAL
       = (lit("SPACINGTABLE") >> lit("ORTHOGONAL")
          >> +(lit("WITHIN") >> double_ >> lit("SPACING") >> double_) >> lit(
