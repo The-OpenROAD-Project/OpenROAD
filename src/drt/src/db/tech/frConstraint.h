@@ -1509,10 +1509,9 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       const std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>&
           parallelRunLengthConstraintIn,
       const std::map<int, std::pair<frCoord, frCoord>>&
-          exceptWithinConstraintIn, odb::dbTechLayerSpacingTablePrlRule* ruleIn)
+          exceptWithinConstraintIn)
       : frSpacingTableConstraint(parallelRunLengthConstraintIn),
-        exceptWithinConstraint(exceptWithinConstraintIn),
-        rule_(ruleIn)
+        exceptWithinConstraint(exceptWithinConstraintIn)
   {
   }
   // getter
@@ -1540,6 +1539,11 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       std::map<int, std::pair<frCoord, frCoord>>& exceptWithinConstraintIn)
   {
     exceptWithinConstraint = exceptWithinConstraintIn;
+  }
+  void setDbTechLayerSpacingTablePrlRule(
+      odb::dbTechLayerSpacingTablePrlRule* ruleIn)
+  {
+    rule_ = ruleIn;
   }
 
   frConstraintTypeEnum typeId() const override
