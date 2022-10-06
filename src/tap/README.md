@@ -65,6 +65,19 @@ placement is similar to Figure 2.
 |:--:|:--:|
 | Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
 
+### Only cutting rows
+
+```
+cut_rows [-endcap_master endcap_master]
+         [-halo_width_x halo_x]
+         [-halo_width_y halo_y]
+```
+
+- `-endcap_master`. Specify the master used as an endcap.
+- `-halo_width_x`. Specify the horizontal halo size (in microns) around macros during cut rows.
+- `-halo_width_y`. Specify the vertical halo size (in microns) around macros during cut rows.
+
+
 ## Example scripts
 
 You can find script examples for both 45nm and 14nm in

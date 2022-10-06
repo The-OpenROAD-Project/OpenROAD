@@ -183,6 +183,40 @@ proc tapcell { args } {
   tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist
 }
 
+sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\
+                                 [-halo_width_x halo_x]\
+                                 [-halo_width_y halo_y]
+}
+proc cut_rows { args } {
+  sta::parse_key_args "cut_rows" args \
+    keys {-endcap_master -halo_width_x -halo_width_y} flags {}
+
+  sta::check_argc_eq0 "cut_rows" $args
+
+  set halo_x -1
+  if { [info exists keys(-halo_width_x)] } {
+    set halo_x $keys(-halo_width_x)
+  }
+  set halo_y -1
+    if { [info exists keys(-halo_width_y)] } {
+    set halo_y $keys(-halo_width_y)
+  }
+
+  set halo_x [ord::microns_to_dbu $halo_x]
+  set halo_y [ord::microns_to_dbu $halo_y]
+
+  set endcap_master "NULL"
+  if { [info exists keys(-endcap_master)] } {
+    set endcap_master_name $keys(-endcap_master)
+    set endcap_master [[ord::get_db] findMaster $endcap_master_name]
+    if { $endcap_master == "NULL" } {
+      utl::error TAP 34 "Master $endcap_master_name not found."
+    }
+  }
+
+  tap::cut_rows $endcap_master $halo_x $halo_y
+}
+
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\
                                       [-endcap_prefix endcap_prefix]
 }

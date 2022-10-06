@@ -95,6 +95,7 @@ class Tapcell
   void setEndcapPrefix(const std::string& endcap_prefix);
   void clear();
   void run(const Options& options);
+  void cutRows(const Options& options);
   void reset();
   int removeCells(const std::string& prefix);
 
@@ -170,6 +171,8 @@ class Tapcell
   int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
                      odb::dbMaster* tapcell_master,
                      int dist);
+
+  int defaultDistance() const;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

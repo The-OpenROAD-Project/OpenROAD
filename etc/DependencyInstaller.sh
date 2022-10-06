@@ -74,7 +74,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
-        sudo cp -r ./cusp /usr/local/include/
+        cp -r ./cusp /usr/local/include/
     else
         echo "CUSP already installed."
     fi

@@ -63,6 +63,24 @@ void Design::readVerilog(const std::string& file_name)
   app->readVerilog(file_name.c_str());
 }
 
+void Design::readDef(const std::string& file_name,
+                     bool continue_on_errors,      // = false
+                     bool floorplan_init,          // = false
+                     bool incremental              // = false
+                    )
+{
+  auto app = OpenRoad::openRoad();
+  if (floorplan_init && incremental) {
+    getLogger()->error(utl::ORD, 101, "Only one of the options -incremental and"
+                       " -floorplan_init can be set at a time");
+  }
+  if (tech_->getDB()->getTech() == nullptr) {
+    getLogger()->error(utl::ORD, 102, "No technology has been read.");
+  }
+  app->readDef(file_name.c_str(), continue_on_errors,
+               floorplan_init, incremental);
+}
+
 void Design::link(const std::string& design_name)
 {
   auto app = OpenRoad::openRoad();
