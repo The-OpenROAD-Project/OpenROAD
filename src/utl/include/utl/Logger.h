@@ -176,7 +176,7 @@ class Logger
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
-            typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+            typename U = std::enable_if_t<std::is_arithmetic<T>::value>>
   inline void metric(const std::string_view metric,
                      T value)
   {
