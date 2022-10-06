@@ -1,0 +1,7 @@
+[ERROR CTS-0099] Arbitrary CTS error message
+Traceback (most recent call last):
+  File "test_error_exception.py", line 2, in <module>
+    utl.error(utl.CTS, 99, "Arbitrary CTS error message")
+  File "utl_py.py", line 105, in error
+RuntimeError: CTS-0099
+ERROR 
