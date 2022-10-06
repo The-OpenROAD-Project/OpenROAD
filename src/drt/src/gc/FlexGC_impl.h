@@ -482,6 +482,14 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
+  void checkMetalShape_lef58Area(gcPin* pin);
+  bool checkMetalShape_lef58Area_exceptRectangle(
+      gcPolygon* poly,
+      odb::dbTechLayerAreaRule* db_rule);
+  bool checkMetalShape_lef58Area_rectWidth(gcPolygon* poly,
+                                           odb::dbTechLayerAreaRule* db_rule,
+                                           bool& check_rect_width);
+  void checkMetalShape_addPatch(gcPin* pin, int min_area);
 
   // surgical fix
   void patchMetalShape();
