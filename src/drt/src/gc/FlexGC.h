@@ -40,6 +40,7 @@ class FlexDRWorker;
 class gcNet;
 class gcPin;
 
+
 class FlexGCWorker
 {
  public:
@@ -79,10 +80,10 @@ class FlexGCWorker
   // used in rp_prep
   void checkMinStep(gcPin* pin);
   void updateGCWorker();
-
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;
+
 };
 }  // namespace fr
 

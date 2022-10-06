@@ -126,8 +126,7 @@ class fr1DLookupTbl
         retIdx = pos - rows.begin();
       } else {
         auto pos = upper_bound(rows.begin(), rows.end(), rowVal);
-        retIdx
-            = std::min((frUInt4) (pos - rows.begin()), (frUInt4) rows.size());
+        retIdx = std::min((frUInt4)(pos - rows.begin()), (frUInt4) rows.size());
       }
     }
     // lower extrapolation
@@ -157,6 +156,7 @@ class fr1DLookupTbl
   frExtrapolateType extrapolateTypeRowLower;
   frExtrapolateType extrapolateTypeRowUpper;
   bool lowerBound;
+
 };
 
 // fr2DLookupTbl

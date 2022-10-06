@@ -29,8 +29,8 @@
 #ifndef _FR_REF_H_
 #define _FR_REF_H_
 
-#include "db/obj/frFig.h"
 #include "odb/dbTypes.h"
+#include "db/obj/frFig.h"
 
 namespace fr {
 class frRef : public frPinFig

@@ -90,7 +90,8 @@ class frPin : public frBlockObject
       }
     }
   }
-  frPin(const frPin& in, const dbTransform& xform) : frBlockObject()
+  frPin(const frPin& in, const dbTransform& xform)
+      : frBlockObject()
   {
     for (auto& uPinFig : in.getFigs()) {
       auto pinFig = uPinFig.get();
@@ -114,6 +115,7 @@ class frPin : public frBlockObject
   std::vector<std::unique_ptr<frPinFig>> pinFigs_;  // optional, set later
   std::vector<std::unique_ptr<frPinAccess>>
       aps_;  // not copied in copy constructor
+
 };
 
 }  // namespace fr

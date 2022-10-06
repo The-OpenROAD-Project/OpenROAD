@@ -234,6 +234,7 @@ class gcNet : public gcBlockObject
   vector<unique_ptr<gcRect>> specialSpacingRects;
 
   void init();
+
 };
 }  // namespace fr
 

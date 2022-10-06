@@ -25,9 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "frBaseTypes.h"
-
 #include <iostream>
+
+#include "frBaseTypes.h"
 
 namespace fr {
 

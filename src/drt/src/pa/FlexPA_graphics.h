@@ -62,7 +62,7 @@ class FlexPAGraphics : public gui::Renderer
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
                 set<frInst*, frBlockObjectComp>* instClass);
-
+                
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
                 set<frInst*, frBlockObjectComp>* instClass);
@@ -96,8 +96,8 @@ class FlexPAGraphics : public gui::Renderer
  private:
   Logger* logger_;
   frDebugSettings* settings_;
-  frInst* inst_;           // from settings_->pinName
-  std::string term_name_;  // from settings_->pinName
+  frInst* inst_; // from settings_->pinName
+  std::string term_name_; // from settings_->pinName
   gui::Gui* gui_;
   frPin* pin_;
   frInstTerm* inst_term_;

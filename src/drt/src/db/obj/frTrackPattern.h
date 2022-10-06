@@ -82,6 +82,7 @@ class frTrackPattern : public frBlockObject
   frUInt4 numTracks_;
   frUInt4 trackSpacing_;
   frLayerNum layerNum_;
+
 };
 
 }  // namespace fr

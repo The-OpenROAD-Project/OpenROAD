@@ -66,6 +66,7 @@ class frRPin : public frBlockObject
   frBlockObject* term;         // either frBTerm or frInstTerm
   frAccessPoint* accessPoint;  // pref AP for frBTerm and frInstTerm
   frNet* net;
+
 };
 }  // namespace fr
 

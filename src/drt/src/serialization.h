@@ -50,11 +50,11 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
-#include "distributed/drUpdate.h"
 #include "frDesign.h"
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "distributed/drUpdate.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -489,7 +489,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id;
         (ar) & id;
         if (!inBounds(id, design->getTopBlock()->getTerms().size()))
-          exit(1);  // should throw error
+          exit(1); // should throw error
         obj = design->getTopBlock()->getTerms().at(id).get();
         break;
       }

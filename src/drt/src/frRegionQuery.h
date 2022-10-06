@@ -140,6 +140,7 @@ class frRegionQuery
   std::unique_ptr<Impl> impl_;
 
   frRegionQuery();
+
 };
 }  // namespace fr
 

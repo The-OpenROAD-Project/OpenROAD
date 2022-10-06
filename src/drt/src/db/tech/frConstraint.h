@@ -540,9 +540,10 @@ class frMinimumcutConstraint : public frConstraint
   }
   frMinimumcutConnectionEnum getConnection() const
   {
-    return (rule_->isAboveOnly())   ? frMinimumcutConnectionEnum::FROMABOVE
-           : (rule_->isBelowOnly()) ? frMinimumcutConnectionEnum::FROMBELOW
-                                    : frMinimumcutConnectionEnum::UNKNOWN;
+    return (rule_->isAboveOnly())
+               ? frMinimumcutConnectionEnum::FROMABOVE
+               : (rule_->isBelowOnly()) ? frMinimumcutConnectionEnum::FROMBELOW
+                                        : frMinimumcutConnectionEnum::UNKNOWN;
   }
   bool hasLength() const
   {
@@ -1508,8 +1509,7 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       const std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>&
           parallelRunLengthConstraintIn,
       const std::map<int, std::pair<frCoord, frCoord>>&
-          exceptWithinConstraintIn,
-      odb::dbTechLayerSpacingTablePrlRule* ruleIn)
+          exceptWithinConstraintIn, odb::dbTechLayerSpacingTablePrlRule* ruleIn)
       : frSpacingTableConstraint(parallelRunLengthConstraintIn),
         exceptWithinConstraint(exceptWithinConstraintIn),
         rule_(ruleIn)
@@ -1753,9 +1753,9 @@ class frLef58CutSpacingConstraint : public frConstraint
   {
     return (rule_->getCutClass() != nullptr && rule_->isConcaveCornerWidth())
                ? rule_->getWidth()
-           : (rule_->getCutClass() != nullptr && rule_->isAboveWidthValid())
-               ? rule_->getAboveWidth()
-               : -1;
+               : (rule_->getCutClass() != nullptr && rule_->isAboveWidthValid())
+                     ? rule_->getAboveWidth()
+                     : -1;
   }
   bool hasEnclosure() const { return (rule_->getEnclosure() != -1); }
   frCoord getEnclosure() const
@@ -1764,10 +1764,10 @@ class frLef58CutSpacingConstraint : public frConstraint
             && (rule_->isConcaveCornerWidth()
                 || rule_->isConcaveCornerParallel()))
                ? rule_->getEnclosure()
-           : (rule_->getCutClass() != nullptr
-              && rule_->isAboveWidthEnclosureValid())
-               ? rule_->getAboveEnclosure()
-               : -1;
+               : (rule_->getCutClass() != nullptr
+                  && rule_->isAboveWidthEnclosureValid())
+                     ? rule_->getAboveEnclosure()
+                     : -1;
   }
   bool hasEdgeLength() const { return (rule_->getEdgeLength() != -1); }
   frCoord getEdgeLength() const

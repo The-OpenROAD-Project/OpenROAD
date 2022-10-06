@@ -87,7 +87,7 @@ size_t getPeakRSS()
     return (size_t) 0L; /* Can't read? */
   }
   close(fd);
-  return (size_t) (psinfo.pr_rssize * 1024L);
+  return (size_t)(psinfo.pr_rssize * 1024L);
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) \
     || (defined(__APPLE__) && defined(__MACH__))
@@ -97,7 +97,7 @@ size_t getPeakRSS()
 #if defined(__APPLE__) && defined(__MACH__)
   return (size_t) rusage.ru_maxrss;
 #else
-  return (size_t) (rusage.ru_maxrss * 1024L);
+  return (size_t)(rusage.ru_maxrss * 1024L);
 #endif
 
 #else
