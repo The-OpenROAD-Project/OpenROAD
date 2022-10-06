@@ -1393,12 +1393,12 @@ void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
   Rect cutBox2 = via2.getCutBBox();
   int width2 = viaBox2.minDXDY();
   auto tech = getDesign()->getTech();
-  auto db_tech = tech->getDbTech();
   bool allow_stacking = true;
-  for (auto con : db_tech->getMetalWidthViaMap()) {
-    if (con->getCutLayer()
-            == tech->getLayer(viaDef1->getCutLayerNum())->getDbLayer()
-        && con->getViaName() != viaDef1->getName()) {
+  for (auto rule : tech->getLayer(viaDef1->getCutLayerNum())->getMetalWidthViaConstraints())
+  {
+    auto con = rule->getDbRule();
+    if(con->getViaName() != viaDef1->getName())
+    {
       if (isVia2Above && width2 >= con->getAboveLayerWidthLow()
           && width2 <= con->getAboveLayerWidthHigh()
           && width1 >= con->getBelowLayerWidthLow()
@@ -1413,21 +1413,26 @@ void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
         break;
       }
     }
-    if (con->getCutLayer()
-            == tech->getLayer(viaDef2->getCutLayerNum())->getDbLayer()
-        && con->getViaName() != viaDef2->getName()) {
-      if (isVia2Above && width2 >= con->getAboveLayerWidthLow()
-          && width2 <= con->getAboveLayerWidthHigh()
-          && width1 >= con->getBelowLayerWidthLow()
-          && width1 <= con->getBelowLayerWidthHigh()) {
-        allow_stacking = false;
-        break;
-      } else if (isVia1Above && width1 >= con->getAboveLayerWidthLow()
-                 && width1 <= con->getAboveLayerWidthHigh()
-                 && width2 >= con->getBelowLayerWidthLow()
-                 && width2 <= con->getBelowLayerWidthHigh()) {
-        allow_stacking = false;
-        break;
+  }
+  if(!allow_stacking) {
+    for (auto rule : tech->getLayer(viaDef2->getCutLayerNum())->getMetalWidthViaConstraints())
+    {
+      auto con = rule->getDbRule();
+      if(con->getViaName() != viaDef2->getName())
+      {
+        if (isVia2Above && width2 >= con->getAboveLayerWidthLow()
+            && width2 <= con->getAboveLayerWidthHigh()
+            && width1 >= con->getBelowLayerWidthLow()
+            && width1 <= con->getBelowLayerWidthHigh()) {
+          allow_stacking = false;
+          break;
+        } else if (isVia1Above && width1 >= con->getAboveLayerWidthLow()
+                  && width1 <= con->getAboveLayerWidthHigh()
+                  && width2 >= con->getBelowLayerWidthLow()
+                  && width2 <= con->getBelowLayerWidthHigh()) {
+          allow_stacking = false;
+          break;
+        }
       }
     }
   }

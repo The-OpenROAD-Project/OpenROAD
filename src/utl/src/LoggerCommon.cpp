@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -33,31 +33,119 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
 
 #include "utl/Logger.h"
 #include "LoggerCommon.h"
-    
+
 namespace ord {
 // Defined in OpenRoad.i
 utl::Logger *
 getLogger();
 }
 
-using utl::ToolId;
-using utl::Logger;
+
+namespace utl {
+
 using ord::getLogger;
 
-%}
-
-%typemap(in) utl::ToolId {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = utl::Logger::findToolId(arg);
+void
+report(const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->report(msg);
 }
 
-// Catch exceptions in inline functions.
-%include "../../Exception.i"
+void
+info(utl::ToolId tool,
+     int id,
+     const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->info(tool, id, msg);
+}
 
-%include "LoggerCommon.h"
+void
+warn(utl::ToolId tool,
+     int id,
+     const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->warn(tool, id, msg);
+}
 
+void
+error(utl::ToolId tool,
+      int id,
+      const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->error(tool, id, msg);
+}
+
+void
+critical(utl::ToolId tool,
+         int id,
+         const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->critical(tool, id, msg);
+}
+
+void
+open_metrics(const char *metrics_filename)
+{
+  Logger *logger = getLogger();
+  logger->addMetricsSink(metrics_filename);
+}
+
+void
+metric(const char *metric,
+       const char *value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void
+metric_integer(const char *metric,
+       const int value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void
+metric_float(const char *metric,
+       const float value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void set_metrics_stage(const char *fmt) {
+  Logger* logger = getLogger();
+  logger->setMetricsStage(fmt);
+}
+
+void clear_metrics_stage() {
+  Logger* logger = getLogger();
+  logger->clearMetricsStage();
+}
+
+void push_metrics_stage(const char *fmt){
+  Logger* logger = getLogger();
+  logger->pushMetricsStage(fmt);
+}
+
+const char* pop_metrics_stage(){
+  Logger* logger = getLogger();
+  return logger->popMetricsStage().c_str();
+}
+
+void suppress_message(utl::ToolId tool, int id)
+{
+  Logger* logger = getLogger();
+  logger->suppressMessage(tool, id);
+}
+
+} // namespace
