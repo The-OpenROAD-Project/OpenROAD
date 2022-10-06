@@ -35,6 +35,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/polygon/polygon.hpp>
 #include "db.h"
 #include "dbObject.h"
 #include "odb.h"
@@ -91,22 +92,29 @@ class lefout
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
-  void writeObstructions(dbBlock* db_block);
-  void getTechLayerObstructions(
-      dbBlock* db_block,
-      std::set<dbTechLayer*>& obstruction_layers) const;
+  void writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers);
+  void getObstructions(dbBlock* db_block,
+                       std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+                       int bloat_factor) const;
   void writeBox(std::string indent, dbBox* box);
-  void findWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
-                                 dbNet* net) const;
-  void findSWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
-                                  dbNet* net) const;
-  void writeBlock(dbBlock* db_block);
+  void writeRect(std::string indent, boost::polygon::rectangle_data<int> rect);
+  void findInstsObstructions(std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+                             dbBlock* db_block,
+                             int bloat_factor) const;
+  void findWireLayerObstructions(std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+                                 dbNet* net,
+                                 int bloat_factor) const;
+  void findSWireLayerObstructions(std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+                                  dbNet* net,
+                                  int bloat_factor) const;
+  void findLayerViaObstructions(std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
+                                dbSBox* box,
+                                int bloat_factor) const;
+  void writeBlock(dbBlock* db_block, int bloat_factor, bool bloat_occupied_layers);
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
-  void findLayerViaObstructions(std::set<dbTechLayer*>& obstruction_layers,
-                                dbSBox* box) const;
-
+  
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
       std::unordered_map<std::string, short>& propertiesMap);
@@ -134,7 +142,7 @@ class lefout
   bool writeTech(dbTech* tech, const char* lef_file);
   bool writeLib(dbLib* lib, const char* lef_file);
   bool writeTechAndLib(dbLib* lib, const char* lef_file);
-  bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
+  bool writeAbstractLef(dbBlock* db_block, const char* lef_file, int bloat_factor, bool bloat_occupied_layers);
 
   FILE* out() { return _out; }
 };
