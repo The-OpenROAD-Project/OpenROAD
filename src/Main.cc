@@ -81,6 +81,7 @@ using std::string;
 #ifdef ENABLE_PYTHON3
 extern "C" {
 extern PyObject* PyInit__ifp_py();
+extern PyObject* PyInit__utl_py();
 extern PyObject* PyInit__openroad_swig_py();
 extern PyObject* PyInit__odbpy();
 }
@@ -99,6 +100,7 @@ static void showSplash();
 #ifdef ENABLE_PYTHON3
 namespace sta {
 extern const char* ifp_py_python_inits[];
+extern const char* utl_py_python_inits[];
 extern const char* odbpy_python_inits[];
 extern const char* openroad_swig_py_python_inits[];
 }  // namespace sta
@@ -107,6 +109,11 @@ static void initPython()
 {
   if (PyImport_AppendInittab("_ifp_py", PyInit__ifp_py) == -1) {
     fprintf(stderr, "Error: could not add module _ifp_py\n");
+    exit(1);
+  }
+  
+  if (PyImport_AppendInittab("_utl_py", PyInit__utl_py) == -1) {
+    fprintf(stderr, "Error: could not add module _utl_py\n");
     exit(1);
   }
 
@@ -136,6 +143,25 @@ static void initPython()
     if (PyImport_ExecCodeModule("ifp", code) == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not add module ifp\n");
+      exit(1);
+    }
+
+    delete[] unencoded;
+  }
+
+  {
+    char* unencoded = sta::unencode(sta::utl_py_python_inits);
+
+    PyObject* code = Py_CompileString(unencoded, "utl_py.py", Py_file_input);
+    if (code == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not compile utl_py\n");
+      exit(1);
+    }
+
+    if (PyImport_ExecCodeModule("utl", code) == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not add module utl\n");
       exit(1);
     }
 

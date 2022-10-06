@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,12 +33,34 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+%module utl_py
+
 %{
-#include "ifp/InitFloorplan.hh"
+
+#include "utl/Logger.h"
+#include "LoggerCommon.h"
+
+namespace ord {
+// Defined in OpenRoad.i
+utl::Logger *
+getLogger();
+}
+
+using utl::ToolId;
+using utl::Logger;
+using ord::getLogger;
+
+using namespace utl;
+
 %}
+
+#define __attribute__(x)
+
+// this maps ToolId to unsigned long
+%include typemaps.i
+%apply unsigned long { ToolId };
 
 %include "../../Exception-py.i"
 
-%include <std_string.i>
-
-%include "ifp/InitFloorplan.hh"
+%include "utl/Logger.h"
+%include "LoggerCommon.h"
