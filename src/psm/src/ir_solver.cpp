@@ -476,10 +476,11 @@ bool IRSolver::createJ()
     }
     int x, y;
     inst->getLocation(x, y);
-    const int l = bottom_layer_;  // attach to the bottom most routing layer
     // Special condition to distribute power across multiple nodes for macro
     // blocks
-    if (inst->isBlock() || inst->isPad()) {
+    // TODO: The condition for PADs needs to be handled sperately once an
+    // appropriate testcase is found. Conditionally treated the same as a macro.
+    if (inst->isBlock() || inst->isPad()) { 
       dbBox* inst_bBox = inst->getBBox();
       std::set<int> pin_layers;
       auto iterms = inst->getITerms();
@@ -522,7 +523,7 @@ bool IRSolver::createJ()
             logger_->warn(
                 utl::PSM,
                 74,
-                "No nodes found in macro bounding box for Instance {} "
+                "No nodes found in macro or pad bounding box for Instance {} "
                 "for the pin layer at routing level {}. Using layer {}.",
                 inst->getName(),
                 max_l,
@@ -533,19 +534,27 @@ bool IRSolver::createJ()
         // If nodes are still not found we connect to the neartest node on the
         // highest pin layer with a warning
         if (num_nodes == 0) {
-          Node* node_J = Gmat_->getNode(x, y, max_l, true);
-          nodes_J = {node_J};
-          num_nodes = 1.0;
-          const Point node_loc = node_J->getLoc();
-          logger_->warn(utl::PSM,
-                        72,
-                        "No nodes found in macro bounding box for Instance {}."
-                        "Using nearest node at ({}, {}) on the pin layer at "
-                        "routing level {}.",
-                        inst->getName(),
-                        node_loc.getX(),
-                        node_loc.getY(),
-                        max_l);
+          if (Gmat_->findLayer(max_l)) {
+            Node* node_J = Gmat_->getNode(x, y, max_l, true);
+            nodes_J = {node_J};
+            num_nodes = 1.0;
+            const Point node_loc = node_J->getLoc();
+            logger_->warn(utl::PSM,
+                          72,
+                          "No nodes found in macro/pad bounding box for Instance {}."
+                          "Using nearest node at ({}, {}) on the pin layer at "
+                          "routing level {}.",
+                          inst->getName(),
+                          node_loc.getX(),
+                          node_loc.getY(),
+                          max_l);
+          } else {
+            logger_->error(utl::PSM,
+                           42,
+                           "Unable to connect macro/pad Instance {} "
+                           "to the power grid.",
+                           inst->getName());
+          }
         }
       }
       // Distribute the power across all nodes within the bounding box
@@ -555,7 +564,7 @@ bool IRSolver::createJ()
       }
       // For normal instances we only attach the current source to one node
     } else {
-      Node* node_J = Gmat_->getNode(x, y, l, true);
+      Node* node_J = Gmat_->getNode(x, y, bottom_layer_, true);
       const Point node_loc = node_J->getLoc();
       if (abs(node_loc.getX() - x) > node_density_
           || abs(node_loc.getY() - y) > node_density_) {
@@ -566,7 +575,7 @@ bool IRSolver::createJ()
                       inst->getName(),
                       node_loc.getX(),
                       node_loc.getY(),
-                      l,
+                      bottom_layer_,
                       x,
                       y);
       }
