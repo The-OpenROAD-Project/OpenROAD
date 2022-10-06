@@ -162,7 +162,7 @@ class RoutingCallBack : public dst::JobCallBack
     if (finish)
       sock.close();
   }
-  
+
   triton_route::TritonRoute* router_;
   dst::Distributed* dist_;
   utl::Logger* logger_;

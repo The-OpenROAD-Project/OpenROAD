@@ -414,19 +414,19 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
       turnLoc = Point(min(childLoc.x(), parentLoc.x()),
-                        max(childLoc.y(), parentLoc.y()));
+                      max(childLoc.y(), parentLoc.y()));
     } else {
       turnLoc = Point(max(childLoc.x(), parentLoc.x()),
-                        max(childLoc.y(), parentLoc.y()));
+                      max(childLoc.y(), parentLoc.y()));
     }
   } else {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
       turnLoc = Point(max(childLoc.x(), parentLoc.x()),
-                        min(childLoc.y(), parentLoc.y()));
+                      min(childLoc.y(), parentLoc.y()));
     } else {
       turnLoc = Point(min(childLoc.x(), parentLoc.x()),
-                        min(childLoc.y(), parentLoc.y()));
+                      min(childLoc.y(), parentLoc.y()));
     }
   }
 

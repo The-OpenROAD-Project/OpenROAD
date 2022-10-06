@@ -30,22 +30,18 @@
 
 #include <memory>
 
-#include "db/obj/frTerm.h"
 #include "db/obj/frMPin.h"
+#include "db/obj/frTerm.h"
 
 namespace fr {
 class frMaster;
 
 class frMTerm : public frTerm
 {
-  public:
+ public:
   // constructors
-  frMTerm(const frString& name)
-      : frTerm(name), master_(nullptr), pins_()
-  {
-  }
-  frMTerm(const frMTerm& in)
-      : frTerm(in), master_(in.master_)
+  frMTerm(const frString& name) : frTerm(name), master_(nullptr), pins_() {}
+  frMTerm(const frMTerm& in) : frTerm(in), master_(in.master_)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -121,7 +117,6 @@ class frMTerm : public frTerm
  protected:
   frMaster* master_;
   std::vector<std::unique_ptr<frMPin>> pins_;  // set later
-
 };
 
 }  // namespace fr

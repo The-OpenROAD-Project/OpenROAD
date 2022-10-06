@@ -56,7 +56,6 @@ struct frOArchive : OutputArchive
     OutputArchive::save(t);
   }
   frDesign* getDesign() const { return nullptr; }
-
 };
 struct frIArchive : InputArchive
 {

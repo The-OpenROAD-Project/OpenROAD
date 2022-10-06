@@ -325,9 +325,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     auto net2 = viaRect2->getNet();
     auto marker = make_unique<frMarker>();
     Rect box(gtl::xl(markerRect),
-              gtl::yl(markerRect),
-              gtl::xh(markerRect),
-              gtl::yh(markerRect));
+             gtl::yl(markerRect),
+             gtl::xh(markerRect),
+             gtl::yh(markerRect));
     marker->setBBox(box);
     marker->setLayerNum(layerNum1);
     marker->setConstraint(con);

@@ -47,12 +47,12 @@ void FlexTAWorker::initTracks()
       continue;
     }
     for (auto& tp : getDesign()->getTopBlock()->getTrackPatterns(lNum)) {
-      if ((getDir() == dbTechLayerDir::HORIZONTAL && tp->isHorizontal() == false)
+      if ((getDir() == dbTechLayerDir::HORIZONTAL
+           && tp->isHorizontal() == false)
           || (getDir() == dbTechLayerDir::VERTICAL
               && tp->isHorizontal() == true)) {
         bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-        frCoord lowCoord
-            = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
+        frCoord lowCoord = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
@@ -151,8 +151,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
       // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
       // actually act on BTerms. This code can be removed without changing
       // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what the
-      // anticipated behavior should be.
+      // a bug with the way BTerms are handled and it may give a clue to what
+      // the anticipated behavior should be.
       case frcBTerm: {
         /*auto bterm = static_cast<frBTerm*>(term);
         if (bterm->getNet() != net) {
@@ -162,7 +162,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         break;
       }
       default:
-       break;
+        break;
     }
     if (trueTerm) {
       int pinIdx = 0;
@@ -264,15 +264,15 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
       // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
       // actually act on BTerms. This code can be removed without changing
       // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what the
-      // anticipated behavior should be. Note that the bTerm can still affect
-      // whether wlen2 is set to 0 or not after if (trueTerm)...
+      // a bug with the way BTerms are handled and it may give a clue to what
+      // the anticipated behavior should be. Note that the bTerm can still
+      // affect whether wlen2 is set to 0 or not after if (trueTerm)...
       case frcBTerm: {
         auto bTerm = static_cast<frBTerm*>(term);
         if (bTerm->getNet() != net) {
           continue;
         }
-        //trueTerm = bterm;
+        // trueTerm = bterm;
         break;
       }
       default:
@@ -483,8 +483,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
-                           : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   for (auto coord : downViaCoordSet) {
@@ -498,8 +497,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
-                           : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   iroute->setWlenHelper(wlen);
@@ -597,16 +595,16 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock()) ||
-            (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
-            addToReassignIroutes(iroute.get());
+      if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
+          || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+        addToReassignIroutes(iroute.get());
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-          if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock()) ||
-            (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
-            addToReassignIroutes(iroute.get());
+        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
+            || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+          addToReassignIroutes(iroute.get());
       }
     }
   }
@@ -689,7 +687,7 @@ void FlexTAWorker::initFixedObjs()
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
         if (getTech()->getLayer(layerNum)->getType()
-                   == dbTechLayerType::ROUTING) {
+            == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
               && getTech()->getLayer(layerNum - 2)->getType()
@@ -739,7 +737,7 @@ void FlexTAWorker::initFixedObjs()
             }
           }
           bool isFatOBS = true;
-          if ((int)bounds.minDXDY() <= 2 * width) {
+          if ((int) bounds.minDXDY() <= 2 * width) {
             isFatOBS = false;
           }
           if (isMacro && isFatOBS) {
@@ -806,9 +804,9 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
           obsWidth, viaWidth, viaWidth /*prl*/);
     }
   }
-   auto& eol = layer->getDrEolSpacingConstraint();
-   if (viaBox.minDXDY() < eol.eolWidth)
-       bloatDist = std::max(bloatDist, eol.eolSpace);
+  auto& eol = layer->getDrEolSpacingConstraint();
+  if (viaBox.minDXDY() < eol.eolWidth)
+    bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following

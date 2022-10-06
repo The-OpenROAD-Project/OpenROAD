@@ -57,7 +57,6 @@ class frGCellPattern : public frBlockObject
   frCoord startCoord_;
   frUInt4 spacing_;
   frUInt4 count_;
-
 };
 }  // namespace fr
 

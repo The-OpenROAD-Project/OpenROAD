@@ -179,7 +179,8 @@ void FlexGR::searchRepairMacro(int iter,
       Rect macroBBox = inst->getBBox();
       Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
                         (macroBBox.yMin() + macroBBox.yMax()) / 2);
-      Point macroCenterIdx = getDesign()->getTopBlock()->getGCellIdx(macroCenter);
+      Point macroCenterIdx
+          = getDesign()->getTopBlock()->getGCellIdx(macroCenter);
       if (cmap2D_->hasBlock(
               macroCenterIdx.x(), macroCenterIdx.y(), 0, frDirEnum::E)
           && cmap2D_->hasBlock(
@@ -1631,7 +1632,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
 
     auto gcellNode = make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
-    Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(gcellIdx.first, gcellIdx.second));
+    Rect gcellBox = design_->getTopBlock()->getGCellBox(
+        Point(gcellIdx.first, gcellIdx.second));
     Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
               (gcellBox.yMin() + gcellBox.yMax()) / 2);
     gcellNode->setLayerNum(2);
@@ -1714,7 +1716,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
 
         Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
         Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-        
+
         // update congestion map
         // horizontal
         unsigned zIdx = 0;
@@ -1759,7 +1761,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
 
         Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
         Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-        
+
         // update congestion map
         // horizontal
         unsigned zIdx = 0;
@@ -1969,7 +1971,7 @@ void FlexGR::layerAssign_net(frNet* net)
 
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
       Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-      
+
       // update congestion map
       // horizontal
       unsigned zIdx = node->getLayerNum() / 2 - 1;
@@ -2465,7 +2467,7 @@ void FlexGR::updateDb()
       auto [bp, ep] = guide->getPoints();
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
       Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-      
+
       Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
       Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
@@ -2487,7 +2489,7 @@ void FlexGR::updateDb()
       }
     }
     auto dbGuides = dbNet->getGuides();
-    if(dbGuides.orderReversed() && dbGuides.reversible())
+    if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
 }

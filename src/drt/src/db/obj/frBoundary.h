@@ -78,7 +78,6 @@ class frBoundary : public frFig
 
  protected:
   std::vector<Point> points_;
-
 };
 }  // namespace fr
 

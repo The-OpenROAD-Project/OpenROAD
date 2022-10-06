@@ -101,9 +101,9 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         gtl::generalized_intersect(markerRect, rect2);
         auto marker = make_unique<frMarker>();
         Rect box(gtl::xl(markerRect),
-                  gtl::yl(markerRect),
-                  gtl::xh(markerRect),
-                  gtl::yh(markerRect));
+                 gtl::yl(markerRect),
+                 gtl::xh(markerRect),
+                 gtl::yh(markerRect));
         marker->setBBox(box);
         marker->setLayerNum(lNum);
         marker->setConstraint(
@@ -112,17 +112,17 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->addVictim(rects[i]->getNet()->getOwner(),
                           make_tuple(lNum,
                                      Rect(gtl::xl(rect1),
-                                           gtl::yl(rect1),
-                                           gtl::xh(rect1),
-                                           gtl::yh(rect1)),
+                                          gtl::yl(rect1),
+                                          gtl::xh(rect1),
+                                          gtl::yh(rect1)),
                                      rects[i]->isFixed()));
         marker->addSrc(rects[j]->getNet()->getOwner());
         marker->addAggressor(rects[j]->getNet()->getOwner(),
                              make_tuple(lNum,
                                         Rect(gtl::xl(rect2),
-                                              gtl::yl(rect2),
-                                              gtl::xh(rect2),
-                                              gtl::yh(rect2)),
+                                             gtl::yl(rect2),
+                                             gtl::xh(rect2),
+                                             gtl::yh(rect2)),
                                         rects[j]->isFixed()));
         addMarker(std::move(marker));
       } else
@@ -216,9 +216,10 @@ void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
 void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
 {
   if (targetNet_) {
-    for (int i
-         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
-         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -232,9 +233,10 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
     }
   } else {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
-         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
