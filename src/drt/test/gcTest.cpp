@@ -403,15 +403,14 @@ BOOST_DATA_TEST_CASE(spacing_prl,
 BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 {
   // Setup
-  auto dbLayer
-      = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
+  auto dbLayer = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
   dbLayer->initTwoWidths(2);
   dbLayer->addTwoWidthsIndexEntry(90);
   dbLayer->addTwoWidthsIndexEntry(190);
-  dbLayer->addTwoWidthsSpacingTableEntry(0, 0, 0);
-  dbLayer->addTwoWidthsSpacingTableEntry(0, 1, 50);
-  dbLayer->addTwoWidthsSpacingTableEntry(1, 0, 50);
-  dbLayer->addTwoWidthsSpacingTableEntry(1, 1, 150);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,0,0);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,1,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,0,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,1,150);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(2);
   layer->setDbLayer(dbLayer);
@@ -596,15 +595,14 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
 BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
 {
   // Setup
-  auto dbLayer
-      = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
+  auto dbLayer = odb::dbTechLayer::create(tech, "m1", odb::dbTechLayerType::ROUTING);
   dbLayer->initTwoWidths(2);
   dbLayer->addTwoWidthsIndexEntry(90);
   dbLayer->addTwoWidthsIndexEntry(190);
-  dbLayer->addTwoWidthsSpacingTableEntry(0, 0, 0);
-  dbLayer->addTwoWidthsSpacingTableEntry(0, 1, 50);
-  dbLayer->addTwoWidthsSpacingTableEntry(1, 0, 50);
-  dbLayer->addTwoWidthsSpacingTableEntry(1, 1, 150);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,0,0);
+  dbLayer->addTwoWidthsSpacingTableEntry(0,1,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,0,50);
+  dbLayer->addTwoWidthsSpacingTableEntry(1,1,150);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(2);
   layer->setDbLayer(dbLayer);
@@ -658,14 +656,11 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
 {
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
-  con->getWithinConstraint()->getDbTechLayerSpacingEolRule()->setEndToEndSpace(
-      300);
-  con->getWithinConstraint()->getDbTechLayerSpacingEolRule()->setSameMaskValid(
-      true);
-
-  auto endToEnd = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>(
-      con->getWithinConstraint()->getDbTechLayerSpacingEolRule());
+  auto endToEnd
+      = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
   con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+  endToEnd->setEndToEndSpace(300);
+  con->getWithinConstraint()->setSameMask(true);
 
   frNet* n1 = makeNet("n1");
 
@@ -718,9 +713,9 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
   makeLef58SpacingEolConstraint(2,    // layer_num
                                 200,  // space
                                 200,  // width
-                                50,   // within
+                                 50,  // within
                                 400,  // end_prl_spacing
-                                50);  // end_prl
+                                 50); // end_prl
 
   frNet* n1 = makeNet("n1");
 
