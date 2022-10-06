@@ -1,3 +1,4 @@
+source "helpers.tcl"
 proc set_inst_loc { inst_name x y } {
   set inst [get_cell $inst_name]
   [sta::sta_to_db_inst $inst] setOrigin [ord::microns_to_dbu $x] [ord::microns_to_dbu $y]

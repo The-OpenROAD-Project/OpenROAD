@@ -165,18 +165,31 @@ proc run_tests {} {
 }
 
 proc run_test { test } {
+  global test_langs
+
+  set langs $test_langs($test)
+  if {[llength $langs] == 0} {
+    puts "$test *NO CMD FILE*"
+    incr errors(no_cmd)
+  }
+  foreach lang $langs {
+    run_test_lang $test $lang
+  }
+}
+
+proc run_test_lang { test lang } {
   global result_dir diff_file errors diff_options
   
-  set cmd_file [test_cmd_file $test]
+  set cmd_file [test_cmd_file $test $lang]
   if [file exists $cmd_file] {
     set ok_file [test_ok_file $test]
-    set log_file [test_log_file $test]
-    foreach file [glob -nocomplain [file join $result_dir $test.*]] {
+    set log_file [test_log_file $test $lang]
+    foreach file [glob -nocomplain [file join $result_dir $test-$lang.*]] {
       file delete -force $file
     }
-    puts -nonewline $test
+    puts -nonewline "$test ($lang)"
     flush stdout
-    set test_errors [run_test_app $test $cmd_file $log_file]
+    set test_errors [run_test_app $test $cmd_file $log_file $lang]
     if { [lindex $test_errors 0] == "ERROR" } {
       puts " *ERROR* [lrange $test_errors 1 end]"
       append_failure $test
@@ -239,7 +252,7 @@ proc run_test { test } {
           }
         }
         check_metrics {
-          set error_msg [check_test_metrics $test]
+          set error_msg [check_test_metrics $test $lang]
           if { $error_msg != "pass" } {
             puts " *FAIL* $error_msg"
             append_failure $test
@@ -251,7 +264,7 @@ proc run_test { test } {
       }
     }
   } else {
-    puts "$test *NO CMD FILE*"
+    puts "$test ($lang) *NO CMD FILE*"
     incr errors(no_cmd)
   }
 }
@@ -281,16 +294,16 @@ proc append_failure { test } {
 }
 
 # Return error.
-proc run_test_app { test cmd_file log_file } {
+proc run_test_app { test cmd_file log_file lang } {
   global app_path errorCode use_valgrind
   if { $use_valgrind } {
-    return [run_test_valgrind $test $cmd_file $log_file]
+    return [run_test_valgrind $test $cmd_file $log_file $lang]
   } else {
-    return [run_test_plain $test $cmd_file $log_file]
+    return [run_test_plain $test $cmd_file $log_file $lang]
   }
 }
 
-proc run_test_plain { test cmd_file log_file } {
+proc run_test_plain { test cmd_file log_file lang } {
   global app_path app_options result_dir errorCode
   
   if { ![file exists $app_path] } {
@@ -300,7 +313,9 @@ proc run_test_plain { test cmd_file log_file } {
   } else {
     set save_dir [pwd]
     cd [file dirname $cmd_file]
-    if { [catch [concat exec $app_path $app_options -metrics [test_metrics_result_file $test]\
+    if { [catch [concat exec $app_path $app_options \
+                   [lang_flag $lang] \
+                   -metrics [test_metrics_result_file $test $lang]\
                    [file tail $cmd_file] >& $log_file]] } {
       cd $save_dir
       set signal [lindex $errorCode 2]
@@ -312,7 +327,7 @@ proc run_test_plain { test cmd_file log_file } {
         set pid [lindex $errorCode 1]
         set sys_corefile [test_sys_core_file $test $pid]
         if { [file exists $sys_corefile] } {
-          file copy $sys_corefile [test_core_file $test]
+          file copy $sys_corefile [test_core_file $test $lang]
         }
       }
       cleanse_logfile $test $log_file
@@ -324,24 +339,25 @@ proc run_test_plain { test cmd_file log_file } {
   }
 }
 
-proc run_test_valgrind { test cmd_file log_file } {
+proc run_test_valgrind { test cmd_file log_file lang } {
   global app_path app_options valgrind_options result_dir errorCode
   
-  set vg_cmd_file [test_valgrind_cmd_file $test]
+  set vg_cmd_file [test_valgrind_cmd_file $test $lang]
   set vg_stream [open $vg_cmd_file "w"]
   puts $vg_stream "cd [file dirname $cmd_file]"
   puts $vg_stream "source [file tail $cmd_file]"
   close $vg_stream
   
   set cmd [concat exec valgrind $valgrind_options \
-             $app_path $app_options $vg_cmd_file >& $log_file]
+               $app_path [lang_flag $lang] $app_options \
+               $vg_cmd_file >& $log_file]
   set error_msg ""
   if { [catch $cmd] } {
     set error_msg "ERROR [lindex $errorCode 3]"
   }
   file delete $vg_cmd_file
   cleanse_logfile $test $log_file
-  lappend error_msg [cleanse_valgrind_logfile $test $log_file]
+  lappend error_msg [cleanse_valgrind_logfile $test $log_file $lang]
   return $error_msg
 }
 
@@ -369,13 +385,13 @@ set valgrind_shared_lib_failure_regexp "No malloc'd blocks -- no leaks are possi
 
 # Scan the log file to separate valgrind notifications and check for
 # valgrind errors.
-proc cleanse_valgrind_logfile { test log_file } {
+proc cleanse_valgrind_logfile { test log_file lang } {
   global valgrind_mem_regexp valgrind_leak_regexp
   global valgrind_shared_lib_failure_regexp
   global valgrind_shared_lib_failure
   
   set tmp_file [test_tmp_file $test]
-  set valgrind_log_file [test_valgrind_file $test]
+  set valgrind_log_file [test_valgrind_file $test $lang]
   file copy -force $log_file $tmp_file
   set tmp [open $tmp_file "r"]
   set log [open $log_file "w"]
@@ -505,7 +521,7 @@ proc failed_tests {} {
 
 proc save_ok { test } {
   set ok_file [test_ok_file $test]
-  set log_file [test_log_file $test]
+  set log_file [test_log_file $test [result_lang $test]]
   if { ! [file exists $log_file] } {
     puts "Error: log file $log_file not found."
   } else {
@@ -537,13 +553,22 @@ proc save_defok_main {} {
 
 proc save_defok { test } {
   set defok_file [test_defok_file $test]
-  set def_file [test_def_result_file $test]
+  set def_file [test_def_result_file $test [result_lang $test]]
   if { [file exists $def_file] } {
     file copy -force $def_file $defok_file
   }
 }
 
 ################################################################
+
+proc result_lang { test } {
+  global test_langs
+
+  if {[lsearch $test_langs($test) tcl]} {
+    return tcl
+  }
+  return [lindex $test_langs($test) 0]
+}
 
 proc test_cmd_dir { test } {
   global cmd_dirs
@@ -555,8 +580,8 @@ proc test_cmd_dir { test } {
   }
 }
 
-proc test_cmd_file { test } {
-  return [file join [test_cmd_dir $test] "$test.tcl"]
+proc test_cmd_file { test lang } {
+  return [file join [test_cmd_dir $test] "$test.$lang"]
 }
 
 proc test_ok_file { test } {
@@ -569,14 +594,21 @@ proc test_defok_file { test } {
   return [file join $test_dir "$test.defok"]
 }
 
-proc test_log_file { test } {
+proc test_log_file { test lang } {
   global result_dir
-  return [file join $result_dir "$test.log"]
+  return [file join $result_dir "$test-$lang.log"]
 }
 
-proc test_def_result_file { test } {
+proc test_def_result_file { test lang } {
   global result_dir
-  return [file join $result_dir "$test.def"]
+  return [file join $result_dir "$test-$lang.def"]
+}
+
+proc lang_flag { lang } {
+  if {$lang == "py"} {
+    return "-python"
+  }
+  return ""
 }
 
 proc test_tmp_file { test } {
@@ -584,19 +616,19 @@ proc test_tmp_file { test } {
   return [file join $result_dir $test.tmp]
 }
 
-proc test_valgrind_cmd_file { test } {
+proc test_valgrind_cmd_file { test lang } {
   global result_dir
-  return [file join $result_dir $test.vg_cmd]
+  return [file join $result_dir $test-$lang.vg_cmd]
 }
 
-proc test_valgrind_file { test } {
+proc test_valgrind_file { test lang } {
   global result_dir
-  return [file join $result_dir $test.valgrind]
+  return [file join $result_dir $test-$lang.valgrind]
 }
 
-proc test_core_file { test } {
+proc test_core_file { test lang } {
   global result_dir
-  return [file join $result_dir $test.core]
+  return [file join $result_dir $test-$lang.core]
 }
 
 proc test_sys_core_file { test pid } {

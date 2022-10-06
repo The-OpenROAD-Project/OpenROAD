@@ -69,7 +69,6 @@
            int halo_y,
            const char* cnrcap_nwin_master,
            const char* cnrcap_nwout_master,
-           bool add_boundary_cell,
            const char* tap_nwintie_master,
            const char* tap_nwin2_master,
            const char* tap_nwin3_master,
@@ -81,22 +80,32 @@
            odb::dbMaster* tapcell_master,
            int dist)
   {
-    getTapcell()->run(endcap_master,
-                      halo_x,
-                      halo_y,
-                      cnrcap_nwin_master,
-                      cnrcap_nwout_master,
-                      add_boundary_cell,
-                      tap_nwintie_master,
-                      tap_nwin2_master,
-                      tap_nwin3_master,
-                      tap_nwouttie_master,
-                      tap_nwout2_master,
-                      tap_nwout3_master,
-                      incnrcap_nwin_master,
-                      incnrcap_nwout_master,
-                      tapcell_master,
-                      dist);
+    Options options;
+    options.endcap_master = endcap_master;
+    options.tapcell_master = tapcell_master;
+    options.dist = dist;
+    options.halo_x = halo_x;
+    options.halo_y = halo_y;
+    options.cnrcap_nwin_master = cnrcap_nwin_master;
+    options.cnrcap_nwout_master = cnrcap_nwout_master;
+    options.tap_nwintie_master = tap_nwintie_master;
+    options.tap_nwin2_master = tap_nwin2_master;
+    options.tap_nwin3_master = tap_nwin3_master;
+    options.tap_nwouttie_master = tap_nwouttie_master;
+    options.tap_nwout2_master = tap_nwout2_master;
+    options.tap_nwout3_master = tap_nwout3_master;
+    options.incnrcap_nwin_master = incnrcap_nwin_master;
+    options.incnrcap_nwout_master = incnrcap_nwout_master;
+    getTapcell()->run(options);
+  }
+
+  void cut_rows(odb::dbMaster* endcap_master, int halo_x, int halo_y)
+  {
+    Options options;
+    options.endcap_master = endcap_master;
+    options.halo_x = halo_x;
+    options.halo_y = halo_y;
+    getTapcell()->cutRows(options);
   }
 
   void clear()
@@ -110,11 +119,6 @@
   {
     return getTapcell()->removeCells(prefix);
   }
-
-  std::vector<odb::dbBox*> find_blockages() {
-    return getTapcell()->findBlockages();
-  }
-
 
   }  // namespace tap
 

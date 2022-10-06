@@ -139,11 +139,13 @@ class Replace
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
     void addTimingNetWeightOverflow(int overflow);
+    void setTimingNetWeightMax(float max);
 
     void setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
-                  bool initial);
+                  bool initial,
+                  odb::dbInst* inst = nullptr);
 
   private:
     odb::dbDatabase* db_;
@@ -189,6 +191,8 @@ class Replace
     int routabilityMaxBloatIter_;
     int routabilityMaxInflationIter_;
 
+    float timingNetWeightMax_;
+
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
     bool uniformTargetDensityMode_;
@@ -205,6 +209,7 @@ class Replace
     int gui_debug_update_iterations_;
     int gui_debug_draw_bins_;
     int gui_debug_initial_;
+    odb::dbInst* gui_debug_inst_;
 };
 }
 

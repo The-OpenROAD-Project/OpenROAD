@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  ./nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./diverge01.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[INFO ODB-0134] Finished DEF file: ./diverge01.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
@@ -40,8 +38,11 @@
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter: 1 overflow: 0.96303 HPWL: 3009901
-[NesterovSolve] Iter: 10 overflow: 0.41561 HPWL: 13218059
-[NesterovSolve] Iter: 20 overflow: 0.125037 HPWL: 8017904
-[NesterovSolve] Finished with Overflow: 0.093134
+[NesterovSolve] Iter: 1 overflow: 0.94271 HPWL: 3779352
+[NesterovSolve] Iter: 10 overflow: 0.248661 HPWL: 9105949
+[NesterovSolve] Iter: 20 overflow: 0.17497 HPWL: 6547448
+[NesterovSolve] Iter: 30 overflow: 0.143375 HPWL: 6019893
+[NesterovSolve] Iter: 40 overflow: 0.136144 HPWL: 5823323
+[NesterovSolve] Iter: 50 overflow: 0.105724 HPWL: 5780172
+[NesterovSolve] Finished with Overflow: 0.099589
 

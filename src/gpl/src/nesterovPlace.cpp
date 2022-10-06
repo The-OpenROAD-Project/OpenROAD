@@ -80,6 +80,7 @@ NesterovPlaceVars::reset() {
   debug_pause_iterations = 10;
   debug_update_iterations = 10;
   debug_draw_bins = true;
+  debug_inst = nullptr;
 }
 
 NesterovPlace::NesterovPlace() 
@@ -115,7 +116,7 @@ NesterovPlace::NesterovPlace(
   tb_ = tb;
   log_ = log;
   if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = make_unique<Graphics>(log_, this, pb, nb, npVars_.debug_draw_bins);
+    graphics_ = make_unique<Graphics>(log_, this, pb, nb, npVars_.debug_draw_bins, npVars.debug_inst);
   }
   init();
 }

@@ -64,6 +64,7 @@
 #include "dbExtControl.h"
 #include "dbFill.h"
 #include "dbGCellGrid.h"
+#include "dbGlobalConnect.h"
 #include "dbGroup.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupInstItr.h"
@@ -194,6 +195,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbAccessPointObj);
+
+  global_connect_tbl_ = new dbTable<_dbGlobalConnect>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGlobalConnectObj);
 
   _guide_tbl = new dbTable<_dbGuide>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGuideObj);
@@ -409,6 +413,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
 
+  global_connect_tbl_ = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
+
   _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
 
   _box_tbl = new dbTable<_dbBox>(db, this, *block._box_tbl);
@@ -540,6 +546,7 @@ _dbBlock::~_dbBlock()
   delete _modinst_tbl;
   delete _group_tbl;
   delete ap_tbl_;
+  delete global_connect_tbl_;
   delete _guide_tbl;
   delete _box_tbl;
   delete _via_tbl;
@@ -701,6 +708,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbAccessPointObj:
       return ap_tbl_;
 
+    case dbGlobalConnectObj:
+      return global_connect_tbl_;
+
     case dbGuideObj:
       return _guide_tbl;
 
@@ -839,6 +849,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._modinst_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
+  stream << *block.global_connect_tbl_;
   stream << *block._guide_tbl;
   stream << *block._box_tbl;
   stream << *block._via_tbl;
@@ -884,6 +895,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 
 dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 {
+  _dbDatabase* db = block.getImpl()->getDatabase();
+
   stream >> block._def_units;
   stream >> block._dbu_per_micron;
   stream >> block._hier_delimeter;
@@ -925,6 +938,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._modinst_tbl;
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
+  if (db->isSchema(db_schema_add_global_connect)) {
+    stream >> *block.global_connect_tbl_;
+  }
   stream >> *block._guide_tbl;
   stream >> *block._box_tbl;
   stream >> *block._via_tbl;
@@ -1255,6 +1271,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_modinst_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
+  DIFF_TABLE(global_connect_tbl_);
   DIFF_TABLE(_guide_tbl);
   DIFF_TABLE_NO_DEEP(_box_tbl);
   DIFF_TABLE(_via_tbl);
@@ -1339,6 +1356,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_modinst_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
+  DIFF_OUT_TABLE(global_connect_tbl_);
   DIFF_OUT_TABLE(_guide_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
   DIFF_OUT_TABLE(_via_tbl);
@@ -1580,6 +1598,12 @@ dbSet<dbAccessPoint> dbBlock::getAccessPoints()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbAccessPoint>(block, block->ap_tbl_);
+}
+
+dbSet<dbGlobalConnect> dbBlock::getGlobalConnects()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbGlobalConnect>(block, block->global_connect_tbl_);
 }
 
 dbInst* dbBlock::findInst(const char* name)
@@ -3237,10 +3261,10 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 // Utility to save_lef
 //
 
-void dbBlock::saveLef(char* filename)
+void dbBlock::saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers)
 {
   lefout writer(getImpl()->getLogger());
-  writer.writeAbstractLef(this, filename);
+  writer.writeAbstractLef(this, filename, bloat_factor, bloat_occupied_layers);
 }
 
 //
@@ -3746,6 +3770,137 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     net = *net_itr;
     net->preExttreeMergeRC(max_cap, corner);
+  }
+}
+
+void dbBlock::globalConnect()
+{
+  dbSet<dbGlobalConnect> gcs = getGlobalConnects();
+  const std::vector<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
+  _dbBlock* dbblock = (_dbBlock*) this;
+  dbblock->globalConnect(connects);
+}
+
+void dbBlock::globalConnect(dbGlobalConnect* gc)
+{
+  _dbBlock* dbblock = (_dbBlock*) this;
+  dbblock->globalConnect({gc});
+}
+
+void dbBlock::clearGlobalConnect()
+{
+  dbSet<dbGlobalConnect> gcs = getGlobalConnects();
+  std::set<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
+  for (auto* connect : connects) {
+    odb::dbGlobalConnect::destroy(connect);
+  }
+}
+
+void dbBlock::reportGlobalConnect()
+{
+  _dbBlock* dbblock = (_dbBlock*) this;
+  utl::Logger* logger = dbblock->getImpl()->getLogger();
+
+  dbSet<dbGlobalConnect> gcs = getGlobalConnects();
+
+  logger->report("Global connection rules: {}", gcs.size());
+  for (auto* connect : gcs) {
+    auto* region = connect->getRegion();
+
+    std::string region_msg;
+    if (region != nullptr) {
+      region_msg = fmt::format(" in \"{}\"", region->getName());
+    }
+    logger->report("  Instances{}: \"{}\" with pins \"{}\" connect to \"{}\"",
+                   region_msg,
+                   connect->getInstPattern(),
+                   connect->getPinPattern(),
+                   connect->getNet()->getName());
+  }
+}
+
+void dbBlock::addGlobalConnect(dbRegion* region,
+                               const char* instPattern,
+                               const char* pinPattern,
+                               dbNet* net,
+                               bool do_connect)
+{
+  _dbBlock* dbblock = (_dbBlock*) this;
+
+  utl::Logger* logger = dbblock->getImpl()->getLogger();
+
+  if (net == nullptr) {
+    logger->error(utl::ODB, 381, "Invalid net specified.");
+  }
+
+  if (net->isDoNotTouch()) {
+    logger->warn(utl::ODB, 382, "{} is marked do not touch, which will cause the global connect rule to be ignored.", net->getName());
+  }
+
+  dbGlobalConnect* gc = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
+
+  if (do_connect) {
+    globalConnect(gc);
+  }
+}
+
+
+void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
+{
+  _dbBlock* dbblock = (_dbBlock*) this;
+  utl::Logger* logger = dbblock->getImpl()->getLogger();
+
+  if (connects.empty()) {
+    logger->warn(utl::ODB, 378, "Global connections are not set up.");
+    return;
+  }
+
+  // order rules so non-regions are handled first
+  std::vector<_dbGlobalConnect*> non_region_rules;
+  std::vector<_dbGlobalConnect*> region_rules;
+
+  // only search for instances once
+  std::map<std::string, std::vector<dbInst*>> inst_map;
+  std::set<dbInst*> donottouchinsts;
+  for (dbGlobalConnect* connect : connects) {
+    _dbGlobalConnect* gc = (_dbGlobalConnect*)connect;
+    if (gc->region_ != 0) {
+      region_rules.push_back(gc);
+    } else {
+      non_region_rules.push_back(gc);
+    }
+    const std::string inst_pattern = connect->getInstPattern();
+    if (inst_map.find(inst_pattern) != inst_map.end()) {
+      continue;
+    }
+    std::vector<dbInst*> insts = connect->getInsts();
+
+    // remove insts marked do not touch
+    std::set<dbInst*> remove_insts;
+    for (dbInst* inst : insts) {
+      if (inst->isDoNotTouch()) {
+        remove_insts.insert(inst);
+      }
+    }
+    insts.erase(std::remove_if(insts.begin(), insts.end(), [&](dbInst* inst) {
+      return remove_insts.find(inst) != remove_insts.end();
+    }), insts.end());
+
+    inst_map[inst_pattern] = insts;
+    donottouchinsts.insert(remove_insts.begin(), remove_insts.end());
+  }
+
+  if (!donottouchinsts.empty()) {
+    for (dbInst* inst : donottouchinsts) {
+      logger->warn(utl::ODB, 383, "{} is marked do not touch and will be skipped in global connections.", inst->getName());
+    }
+  }
+
+  for (_dbGlobalConnect* connect : non_region_rules) {
+    connect->connect(inst_map[connect->inst_pattern_]);
+  }
+  for (_dbGlobalConnect* connect : region_rules) {
+    connect->connect(inst_map[connect->inst_pattern_]);
   }
 }
 

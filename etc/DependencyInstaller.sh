@@ -74,7 +74,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
-        sudo cp -r ./cusp /usr/local/include/
+        cp -r ./cusp /usr/local/include/
     else
         echo "CUSP already installed."
     fi
@@ -200,6 +200,57 @@ _installCentosRuntime() {
     yum update -y
 }
 
+_installHomebrewPackage() {
+    package=$1
+    commit=$2
+    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
+    curl -L ${url} > ${package}.rb
+
+    if brew list $package &> /dev/null
+        then
+        # Homebrew is awful at letting you use the version you want if a newer
+        # version is installed. The package must be completely removed to ensure
+        # only the correct version is installed
+        brew remove --force --ignore-dependencies $package
+    fi
+
+    # Must ignore dependencies to avoid automatic upgrade
+    export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+    brew install --ignore-dependencies --formula ./${package}.rb
+    brew pin ${package}
+
+    # Cleanup
+    rm ./${package}.rb
+}
+
+_installDarwin() {
+    if ! command -v brew &> /dev/null
+      then
+      echo "Homebrew is not found. Please install homebrew before continuing."
+      exit 1
+      fi
+    if ! xcode-select -p &> /dev/null
+      then
+      # xcode-select does not pause execution, so the user must handle it
+      cat <<EOF
+Xcode command line tools not installed.
+Run the following command to install them:
+  xcode-select --install
+Then, rerun this script.
+EOF
+      exit 1
+    fi
+    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+
+    # Lemon is not in the homebrew-core repo
+    brew install The-OpenROAD-Project/lemon-graph/lemon-graph
+
+    # Install fmt 8.1.1 because fmt 9 causes compile errors
+    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
+    # Install spdlog 1.9.2
+    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+}
+
 _help() {
     cat <<EOF
 
@@ -242,6 +293,9 @@ case "${platform}" in
             os="Unidentified OS, could not find /etc/os-release."
         fi
         ;;
+    "Darwin" )
+        os="Darwin"
+        ;;
     *)
         echo "${platform} is not supported" >&2
         echo "We only officially support Linux at the moment." >&2
@@ -274,6 +328,16 @@ EOF
             _installCommonDev
         fi
         _installUbuntuCleanUp
+        ;;
+    "Darwin" )
+        _installDarwin
+        cat <<EOF
+
+To install or run openroad, update your path with:
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
+
+You may wish to add this line to your .bashrc file
+EOF
         ;;
     *)
         echo "unsupported system: ${os}" >&2

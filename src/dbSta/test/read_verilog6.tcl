@@ -1,4 +1,5 @@
 # read_verilog missing liberty cell, missing lef and liberty cell
+source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 # BUF_X10
 read_lef read_verilog6.lef

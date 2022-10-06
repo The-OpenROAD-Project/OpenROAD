@@ -216,6 +216,9 @@ class GlobalRouter
   void setDebugRectilinearSTree(bool rectilinearSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setSttInputFilename(const char* file_name);
+
+  void saveSttInputFile(Net* net);
 
   // Highlight route in the gui.
   void highlightRoute(odb::dbNet* net, bool show_pin_locations);

@@ -1,3 +1,4 @@
+source "helpers.tcl"
 # welltap and spacing cells on core boundary
 read_lef Nangate45/Nangate45.lef
 read_lef extra.lef

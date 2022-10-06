@@ -142,11 +142,13 @@ class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
 class dbMetalWidthViaMap;
+class dbTechLayerAreaRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
 class dbGCellGrid;
 class dbAccessPoint;
+class dbGlobalConnect;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -902,6 +904,26 @@ class dbBlock : public dbObject
   dbSet<dbAccessPoint> getAccessPoints();
 
   ///
+  /// Get the gloabl connects of this block.
+  ///
+  dbSet<dbGlobalConnect> getGlobalConnects();
+
+  ///
+  /// Evaluate global connect rules on this block.
+  /// and helper functions for global connections
+  /// on this block.
+  ///
+  void globalConnect();
+  void globalConnect(dbGlobalConnect* gc);
+  void addGlobalConnect(dbRegion* region,
+                        const char* instPattern,
+                        const char* pinPattern,
+                        dbNet* net,
+                        bool do_connect);
+  void reportGlobalConnect();
+  void clearGlobalConnect();
+
+  ///
   /// Find a specific instance of this block.
   /// Returns NULL if the object was not found.
   ///
@@ -987,8 +1009,7 @@ class dbBlock : public dbObject
   //
   // Utility to save_lef
   //
-  // void dbBlock::saveLef(char *filename);
-  void saveLef(char* filename);
+  void saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers);
 
   //
   // Utility to save_def
@@ -6963,6 +6984,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerMinCutRule> getTechLayerMinCutRules() const;
 
+  dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8866,6 +8889,65 @@ class dbMetalWidthViaMap : public dbObject
   // User Code End dbMetalWidthViaMap
 };
 
+class dbTechLayerAreaRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerAreaRuleEnums
+  // User Code End dbTechLayerAreaRuleEnums
+
+  void setArea(int area);
+
+  int getArea() const;
+
+  void setExceptMinWidth(int except_min_width);
+
+  int getExceptMinWidth() const;
+
+  void setExceptEdgeLength(int except_edge_length);
+
+  int getExceptEdgeLength() const;
+
+  void setExceptEdgeLengths(std::pair<int, int> except_edge_lengths);
+
+  std::pair<int, int> getExceptEdgeLengths() const;
+
+  void setExceptMinSize(std::pair<int, int> except_min_size);
+
+  std::pair<int, int> getExceptMinSize() const;
+
+  void setExceptStep(std::pair<int, int> except_step);
+
+  std::pair<int, int> getExceptStep() const;
+
+  void setMask(int mask);
+
+  int getMask() const;
+
+  void setRectWidth(int rect_width);
+
+  int getRectWidth() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  void setOverlap(uint overlap);
+
+  uint getOverlap() const;
+
+  // User Code Begin dbTechLayerAreaRule
+
+  static dbTechLayerAreaRule* create(dbTechLayer* _layer);
+
+  void setTrimLayer(dbTechLayer* trim_layer);
+
+  dbTechLayer* getTrimLayer() const;
+
+  static void destroy(dbTechLayerAreaRule* rule);
+
+  // User Code End dbTechLayerAreaRule
+};
+
 class dbModule : public dbObject
 {
  public:
@@ -9222,6 +9304,33 @@ class dbAccessPoint : public dbObject
 
   static void destroy(dbAccessPoint* ap);
   // User Code End dbAccessPoint
+};
+
+class dbGlobalConnect : public dbObject
+{
+ public:
+  // User Code Begin dbGlobalConnectEnums
+  // User Code End dbGlobalConnectEnums
+  dbRegion* getRegion() const;
+
+  dbNet* getNet() const;
+
+  std::string getInstPattern() const;
+
+  std::string getPinPattern() const;
+
+  // User Code Begin dbGlobalConnect
+  std::vector<dbInst*> getInsts() const;
+
+  void connect(dbInst* inst);
+
+  static dbGlobalConnect* create(dbNet* net,
+                                 dbRegion* region,
+                                 const std::string& inst_pattern,
+                                 const std::string& pin_pattern);
+
+  static void destroy(dbGlobalConnect* global_connect);
+  // User Code End dbGlobalConnect
 };
 
 // Generator Code End ClassDefinition

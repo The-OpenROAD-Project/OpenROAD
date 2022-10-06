@@ -45,6 +45,7 @@ global_placement
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
     [-routability_rc_coefficients routability_rc_coefficients]
     [-timing_driven_net_reweight_overflow]
+    [-timing_driven_net_weight_max]
     [-pad_left pad_left]
     [-pad_right pad_right]
     [-verbose_level level]
@@ -66,13 +67,17 @@ global_placement
 - `-initial_place_max_iter`: set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`.
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
 - `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
+- `-timing_driven_net_weight_max`: Set the multiplier for the most timing critical nets. Default value is 1.9.
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 - `-force_cpu`: Force to use the CPU solver even if the GPU is available.
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and
-weight nets with low slack.  Use the `set_wire_rc` command to set
-resistance and capacitance of estimated wires used for timing.
+weight nets with low slack. It adjusts the 10% worst slacks using
+a multiplier (1.9 by default, modified with `-timing_driven_net_weight_max`).
+The multiplier is scaled from the full value for the worst slack, to 1.0 for
+the 10% worst slack. Use the `set_wire_rc` command to set resistance and
+capacitance of estimated wires used for timing.
 
 ## Example scripts
 

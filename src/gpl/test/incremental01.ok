@@ -3,12 +3,10 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  ./nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./incremental01.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[INFO ODB-0134] Finished DEF file: ./incremental01.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
@@ -40,17 +38,15 @@
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter: 1 overflow: 0.184609 HPWL: 4905260
-[NesterovSolve] Iter: 10 overflow: 0.387895 HPWL: 4711262
-[NesterovSolve] Iter: 20 overflow: 0.348875 HPWL: 4687605
-[NesterovSolve] Iter: 30 overflow: 0.308802 HPWL: 4701670
-[NesterovSolve] Iter: 40 overflow: 0.283079 HPWL: 4746321
-[NesterovSolve] Iter: 50 overflow: 0.249025 HPWL: 4789750
-[NesterovSolve] Iter: 60 overflow: 0.217552 HPWL: 4825595
-[NesterovSolve] Iter: 70 overflow: 0.185018 HPWL: 4858488
-[NesterovSolve] Iter: 80 overflow: 0.156018 HPWL: 4893661
-[NesterovSolve] Iter: 90 overflow: 0.132795 HPWL: 4927920
-[NesterovSolve] Iter: 100 overflow: 0.116595 HPWL: 4960721
-[NesterovSolve] Iter: 110 overflow: 0.100002 HPWL: 4983740
-[NesterovSolve] Finished with Overflow: 0.098539
+[NesterovSolve] Iter: 1 overflow: 0.186924 HPWL: 4999278
+[NesterovSolve] Iter: 10 overflow: 0.320645 HPWL: 4758762
+[NesterovSolve] Iter: 20 overflow: 0.290273 HPWL: 4745103
+[NesterovSolve] Iter: 30 overflow: 0.261217 HPWL: 4780681
+[NesterovSolve] Iter: 40 overflow: 0.225394 HPWL: 4817944
+[NesterovSolve] Iter: 50 overflow: 0.195071 HPWL: 4857050
+[NesterovSolve] Iter: 60 overflow: 0.166651 HPWL: 4887372
+[NesterovSolve] Iter: 70 overflow: 0.140869 HPWL: 4919492
+[NesterovSolve] Iter: 80 overflow: 0.11984 HPWL: 4948958
+[NesterovSolve] Iter: 90 overflow: 0.104071 HPWL: 4973494
+[NesterovSolve] Finished with Overflow: 0.099112
 No differences found.

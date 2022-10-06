@@ -31,6 +31,8 @@ set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
+  Design.cc
+  Tech.cc
   OpenRoad.cc
   Main.cc
   )
@@ -132,6 +134,7 @@ find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
+message(STATUS "boost: ${Boost_VERSION}")
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
@@ -324,10 +327,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
   swig_lib(NAME      openroad_swig_py
-		   NAMESPACE ord
-		   LANGUAGE  python
-		   I_FILE    OpenRoad-py.i
-		   SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           NAMESPACE ord
+           LANGUAGE  python
+           I_FILE    OpenRoad-py.i
+           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
   )
 
   target_link_libraries(openroad_swig_py
@@ -339,6 +342,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(openroad
     openroad_swig_py
     odbpy
+    ifp_py
+    utl_py
   )
 else()
   message(STATUS "Python3 disabled")

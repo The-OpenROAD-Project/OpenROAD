@@ -1092,6 +1092,7 @@ int startGui(int& argc,
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
   // Track the exit in case it originated during a script
   bool exit_requested = false;
+  int exit_code = EXIT_SUCCESS;
   QObject::connect(
       main_window, &MainWindow::exit, [&]() { exit_requested = true; });
 
@@ -1127,7 +1128,9 @@ int startGui(int& argc,
           == "exit") {  // exit, will be the last command if it is present
         // if there was a failure and exit was requested, exit with failure
         // this will mirror the behavior of tclAppInit
-        exit(EXIT_FAILURE);
+        gui->clearContinueAfterClose();
+        exit_code = EXIT_FAILURE;
+        exit_requested = true;
       }
     }
   }
@@ -1135,7 +1138,7 @@ int startGui(int& argc,
   // temporary storage for any exceptions thrown by scripts
   utl::ThreadException exception;
   // Execute script
-  if (!script.empty()) {
+  if (!script.empty() && !exit_requested) {
     try {
       main_window->getScriptWidget()->executeCommand(
           QString::fromStdString(script));
@@ -1150,9 +1153,8 @@ int startGui(int& argc,
     do_exec = false;
   }
 
-  int ret = 0;
   if (do_exec) {
-    ret = app.exec();
+    exit_code = app.exec();
   }
 
   // cleanup
@@ -1176,12 +1178,12 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (!gui->isContinueAfterClose()) {
+  if (!gui->isContinueAfterClose() || exit_requested) {
     // if exiting, go ahead and exit with gui return code.
-    exit(ret);
+    exit(exit_code);
   }
 
-  return ret;
+  return exit_code;
 }
 
 void Selected::highlight(Painter& painter,

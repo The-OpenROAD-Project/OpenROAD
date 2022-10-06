@@ -113,19 +113,46 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
                   "Creating stripe condunctance with invalid inputs. Min and "
                   "max values for X or Y are interchanged.");
   map<pair<int, int>, Node*> node_map;
-  for (auto x_itr = layer_map.lower_bound(x_min);
-       x_itr != layer_map.end() && x_itr->first <= x_max;
-       ++x_itr) {
-    map<int, Node*> y_itr_map = x_itr->second;
-    for (auto y_map_itr = y_itr_map.lower_bound(y_min);
-         y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
-         ++y_map_itr) {
+  // Also check one node before and after to see if it has an overlapping
+  // enclosure
+  // Start iterating from the first value in the map that is lower than x_min
+  auto x_strt = layer_map.lower_bound(x_min);
+  if (x_strt != layer_map.begin()) --x_strt;
+
+  // End iteration on the first value in the map that is larger than x_max
+  auto x_end = layer_map.upper_bound(x_max);
+  if (x_end != layer_map.end()) x_end++;
+
+  for (auto x_itr = x_strt; x_itr != x_end; ++x_itr) {
+    const map<int, Node*> y_itr_map = x_itr->second;
+  // Start iterating from the first value in the map that is lower than y_min
+    auto y_strt = y_itr_map.lower_bound(y_min);
+    if (y_strt != y_itr_map.begin()) y_strt--;
+
+  // End iteration on the first value in the map that is larger than y_max
+    auto y_end = y_itr_map.upper_bound(y_max);
+    if (y_end != y_itr_map.end()) y_end++;
+
+    for (auto y_itr = y_strt; y_itr != y_end; ++y_itr) {
+      auto encl = (y_itr->second)->getEnclosure();
       if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
-        node_map.insert(make_pair(make_pair(x_itr->first, y_map_itr->first),
-                                  y_map_itr->second));
-      } else {
-        node_map.insert(make_pair(make_pair(y_map_itr->first, x_itr->first),
-                                  y_map_itr->second));
+        // Skip if x+enclosure and y is not within bounds
+        if(((x_itr->first + encl.pos_x) < x_min)
+           || ((x_itr->first - encl.neg_x)>x_max)
+           || (y_itr->first < y_min) || (y_itr->first > y_max)) {
+           continue;
+        }
+        node_map.insert(make_pair(make_pair(x_itr->first, y_itr->first),
+                                  y_itr->second));
+      } else { //vertical
+        // Skip if y+enclosure and x is not within bounds
+        if(((y_itr->first + encl.pos_y) < y_min)
+           || ((y_itr->first - encl.neg_y)>y_max) 
+           || (x_itr->first < x_min) || (x_itr->first > x_max)){
+           continue;
+        }
+        node_map.insert(make_pair(make_pair(y_itr->first, x_itr->first),
+                                  y_itr->second));
       }
     }
   }
