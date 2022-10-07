@@ -134,6 +134,7 @@ find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
+message(STATUS "boost: ${Boost_VERSION}")
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
@@ -342,6 +343,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     openroad_swig_py
     odbpy
     ifp_py
+    utl_py
   )
 else()
   message(STATUS "Python3 disabled")
