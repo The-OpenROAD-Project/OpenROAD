@@ -5,35 +5,20 @@ set -euo pipefail
 _installCommonDev() {
     lastDir="$(pwd)"
     # tools versions
-    if [[ $1  == 22.04 ]]; then
-        dist="linux"
-        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
-        cmakeVersionBig=3.24
-        cmakeVersionSmall=${cmakeVersionBig}.2
-        swigVersion=4.0.2
-        swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
-        boostVersionBig=1.80 
-        boostVersionSmall=${boostVersionBig}.0
-        boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
-        eigenVersion=3.4
-        lemonVersion=1.3.1
-        lemonChecksum="e89f887559113b68657eca67cf3329b5"
-        spdlogVersion=1.9.2
-    else
-        dist="Linux"
-        cmakeChecksum="73041a43d27a30cdcbfdfdb61310d081"
-        cmakeVersionBig=3.14
-        cmakeVersionSmall=${cmakeVersionBig}.0
-        swigVersion=4.0.1
-        swigChecksum="ef6a6d1dec755d867e7f5e860dc961f7"
-        boostVersionBig=1.76
-        boostVersionSmall=${boostVersionBig}.0
-        boostChecksum="e425bf1f1d8c36a3cd464884e74f007a"
-        eigenVersion=3.3
-        lemonVersion=1.3.1
-        lemonChecksum="e89f887559113b68657eca67cf3329b5"
-        spdlogVersion=1.8.1
-    fi
+    osName="linux"
+    cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+    cmakeVersionBig=3.24
+    cmakeVersionSmall=${cmakeVersionBig}.2
+    swigVersion=4.0.2
+    swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
+    boostVersionBig=1.80 
+    boostVersionSmall=${boostVersionBig}.0
+    boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
+    eigenVersion=3.4
+    lemonVersion=1.3.1
+    lemonChecksum="e89f887559113b68657eca67cf3329b5"
+    spdlogVersion=1.8.1
+
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
@@ -41,10 +26,10 @@ _installCommonDev() {
     # CMake
     if [[ -z $(cmake --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${dist}-x86_64.sh
-        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${dist}-x86_64.sh") || exit 1
-        chmod +x cmake-${cmakeVersionSmall}-${dist}-x86_64.sh
-        ./cmake-${cmakeVersionSmall}-${dist}-x86_64.sh --skip-license --prefix=/usr/local
+        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
+        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
+        chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
+        ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=/usr/local
     else
         echo "CMake already installed."
     fi
