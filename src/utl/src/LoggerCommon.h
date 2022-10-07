@@ -47,7 +47,7 @@ void metric_float(const char *metric, const float value);
 void set_metrics_stage(const char *fmt);
 void clear_metrics_stage();
 void push_metrics_stage(const char *fmt);
-const char* pop_metrics_stage();
+void pop_metrics_stage();
 void suppress_message(utl::ToolId tool, int id);
 
 }   // namespace utl
