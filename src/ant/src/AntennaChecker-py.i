@@ -1,9 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
 // BSD 3-Clause License
+//
+// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,55 +28,48 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%module ant_py
 
-#include <string>
+%{
 
-namespace odb {
-class dbBlock;
-}  // namespace odb
+#include "odb/geom.h"
 
-namespace ifp {
-class InitFloorplan;
-}
-
-namespace ant {
-  class AntennaChecker;
-}
+#include "ant/AntennaChecker.hh"
+#include "ord/OpenRoad.hh"
 
 namespace ord {
+// Defined in OpenRoad.i
+odb::dbDatabase *getDb();
+}
+    
+using namespace odb;
 
-class Tech;
+%}
 
-class Design
-{
- public:
-  Design(Tech* tech);
-  void readVerilog(const std::string& file_name);
-  void readDef(const std::string& file_name,
-               bool continue_on_errors=false,
-               bool floorplan_init=false,
-               bool incremental=false
-              );
-  void link(const std::string& design_name);
+%include <std_vector.i>
+%import "odb.i"
+%include "../../Exception-py.i"
 
-  void writeDb(const std::string& file_name);
-  void writeDef(const std::string& file_name);
+%inline %{
 
-  odb::dbBlock* getBlock();
-  utl::Logger* getLogger();
+namespace ant {
+    
+bool
+anyViolations(char* net_name)
+{ 
+  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
+  if (net) {
+    auto antChecker = ord::OpenRoad::openRoad()->getAntennaChecker();
+    auto vios = antChecker->getAntennaViolations(net, nullptr);
+    return !vios.empty();
+  }
+  else
+    return false;
+}
 
-  int micronToDBU(double coord);
+}  // end namespace ant
+    
+%}  //  end %inline
 
-  // Services
-  ifp::InitFloorplan* getFloorplan();
-  ant::AntennaChecker *getAntennaChecker();
-
- private:
-  Tech* tech_;
-};
-
-}  // namespace ord
+%include "ant/AntennaChecker.hh"
