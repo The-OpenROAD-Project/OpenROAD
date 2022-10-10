@@ -27,14 +27,14 @@ assignees: ''
 <!--
     This part is incredibly important:
 
-    Please run the following shell command in the OpenRoad root folder:
+    Please run the following shell command in the OpenROAD root folder:
 
         ./etc/Env.sh
 
     Then copy and paste the ENTIRE output between the triple-backticks below. (```)
 
     If the command does not succeed, you are using an out-of-date version of
-    OpenRoad, and it is recommended that you update.
+    OpenROAD, and it is recommended that you update.
 -->
 ```
 YOUR SURVEY HERE
@@ -64,7 +64,7 @@ YOUR SURVEY HERE
 
 **Logs**
 <!--
-    Feel free to add any relevant logs to this section.
+    Feel free to add any relevant log snippets to this section.
     
     Please do ensure they're inside the triple-backticks. (```)
 -->

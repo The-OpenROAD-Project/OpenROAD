@@ -7,18 +7,18 @@ isGitRepo="$(git -C . rev-parse 2>/dev/null; echo $?)"
 if [[ "${isGitRepo}" != 0 ]]; then
     printf "git commit: unknown, this is not a git repository.\n(Please make sure that you have the latest code changes and add the commit hash in the description)\n"
 else
-    latestGitCommit="$(git ls-remote https://github.com/The-OpenROAD-Project/OpenROAD.git HEAD | awk '{ print $1}')"
+    latestGitCommit="$(git ls-remote https://github.com/The-OpenROAD-Project/OpenROAD.git HEAD | awk '{print $1}')"
     currentGitCommit="$(git rev-parse HEAD)"
     if [[ ${currentGitCommit} != ${latestGitCommit} ]]; then
-    echo "Please pull the latest changes, they may resolve your issue(s)."
-    exit 1
-    else 
+        echo "Please pull the latest changes, they may resolve your issue(s)."
+        exit 1
+    else
         echo "Git commit: ${currentGitCommit}"
     fi
 fi
 
 platform="$(uname -s)"
-echo "kernel: ${platform} $(uname -r)" 
+echo "kernel: ${platform} $(uname -r)"
 
 case "${platform}" in
     "Linux" )
