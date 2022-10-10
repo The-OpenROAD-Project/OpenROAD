@@ -6,18 +6,19 @@ FastRoute is an open-source global router originally derived from Iowa State Uni
 
 ```
 global_route [-guide_file out_file]
-             [-verbose verbose]
              [-congestion_iterations iterations]
              [-congestion_report_file file_name]
              [-grid_origin {x y}]
+             [-critical_nets_percentage percent]
              [-allow_congestion]
+             [-verbose]
 
 ```
 
 Options description:
 
 -   `guide_file`: Set the output guides file name (e.g., -guide_file
-    `route.guide`)
+    `route.guide`).
 -   `congestion_iterations`: Set the number of iterations made to remove the
     overflow of the routing (e.g., `-congestion_iterations 50`)
 -   `congestion_report_file`: Set the file name to save congestion report. The 
@@ -26,7 +27,8 @@ Options description:
 -   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
     example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
     x-, y- direction.
--   `allow_congestion`: Allow global routing results to be generated with remaining congestion
+-   `critical_nets_percentage`: Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default percentage is 0%.
+-   `allow_congestion`: Allow global routing results to be generated with remaining congestion.
 -   `verbose`: This flag enables the full reporting of the global routing.
 
 ```
