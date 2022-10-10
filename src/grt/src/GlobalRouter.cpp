@@ -660,7 +660,7 @@ void GlobalRouter::computeNetSlacks()
 
   // Find the slack threshold based on the percentage of critical nets
   // defined by the user
-  int threshold_index = std::ceil(slacks.size() * critical_nets_percentage_);
+  int threshold_index = std::ceil(slacks.size() * critical_nets_percentage_/100);
   float slack_th = slacks[threshold_index];
 
   // Ensure the slack threshold is negative
@@ -1251,7 +1251,7 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
 }
 
 void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage) {
-  critical_nets_percentage_ = critical_nets_percentage/100;
+  critical_nets_percentage_ = critical_nets_percentage;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
