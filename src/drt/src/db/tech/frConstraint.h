@@ -217,6 +217,9 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
         return "Lef58EolKeepOut";
+
+      case frConstraintTypeEnum::frcLef58AreaConstraint:
+        return "Lef58Area";
     }
     return "";
   }
@@ -2324,6 +2327,51 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
 
  protected:
   bool checkMask;
+};
+
+class frLef58AreaConstraint : public frConstraint
+{
+ public:
+  // constructor
+  frLef58AreaConstraint(odb::dbTechLayerAreaRule* dbRule)
+      : db_rule_(dbRule)
+  {
+  }
+  // getter
+  odb::dbTechLayerAreaRule* getODBRule() const { return db_rule_; }
+
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58AreaConstraint;
+  }
+
+  void report(utl::Logger* logger) const override
+  {
+    auto trim_layer = db_rule_->getTrimLayer();
+    std::string trim_layer_name = trim_layer != nullptr ? db_rule_->getTrimLayer()->getName() : "";
+    logger->report(
+        "LEF58 AREA rule: area {}, exceptMinWidth {}, exceptEdgeLength {}, "
+        "exceptEdgeLengths ({} {}), exceptMinSize ({} {}), exceptStep ({} {}), "
+        "mask {}, rectWidth {}, exceptRectangle {}, overlap {}, trimLayer {}",
+        db_rule_->getArea(),
+        db_rule_->getExceptMinWidth(),
+        db_rule_->getExceptEdgeLength(),
+        db_rule_->getExceptEdgeLengths().first,
+        db_rule_->getExceptEdgeLengths().second,
+        db_rule_->getExceptMinSize().first,
+        db_rule_->getExceptMinSize().second,
+        db_rule_->getExceptStep().first,
+        db_rule_->getExceptStep().second,
+        db_rule_->getMask(),
+        db_rule_->getRectWidth(),
+        db_rule_->isExceptRectangle(),
+        db_rule_->getOverlap(),
+        trim_layer_name);
+  }
+
+ private:
+  odb::dbTechLayerAreaRule* db_rule_;
 };
 
 using namespace std;
