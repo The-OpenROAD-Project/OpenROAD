@@ -138,9 +138,9 @@ transceivers, OpenPower-based Microwatt etc.
 ## Install dependencies
 
 For a limited number of configurations, the following script can be used
-to install dependencies. The script `etc/DependencyInstaller.sh` supports
-Centos7 and Ubuntu 20.04. You need root access to correctly install the
-dependencies with the script.
+to install dependencies.  The script `etc/DependencyInstaller.sh` supports
+Centos7 and Ubuntu 20.04. To correctly install the dependencies with the
+script you need to run as root or prepend `sudo` to the commands below.
 
 ``` shell
 ./etc/DependencyInstaller.sh -help
@@ -214,16 +214,16 @@ To install in a different directory use:
 ```
 
 ### LTO Options
-By default, OpenROAD is built with link time optimizations enabled. This adds 
+By default, OpenROAD is built with link time optimizations enabled. This adds
 about 1 minute to compile times and improves the runtime by about 11%. If
 you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
 generating a build.
 
 ### GPU acceleration
-The default solver for initial placement is single threaded. If you would like 
-to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time. 
+The default solver for initial placement is single threaded. If you would like
+to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time.
 
-Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html 
+Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
 ## Regression Tests
 
@@ -286,7 +286,7 @@ Below is a list of the available tools/modules included in the OpenROAD app:
 | [ioPlacer](./src/ppl/README.md) | Pin placement |
 | [ICeWall](./src/pad/README.md) | Chip-level connections |
 | [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
-| [Tapcell](./src/tap/README.md) | Tapcell insertion | 
+| [Tapcell](./src/tap/README.md) | Tapcell insertion |
 | [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
 | [RePlAce](./src/gpl/README.md) | Global placement |
 | [OpenSTA](src/sta/README.md) | Timing analysis |
