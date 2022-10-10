@@ -37,6 +37,7 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QVBoxLayout>
 
 Q_DECLARE_METATYPE(odb::dbNet*);
@@ -274,7 +275,8 @@ void GlobalConnectDialog::makeRule()
     auto* rule
         = odb::dbGlobalConnect::create(net, region, inst_pattern, pin_pattern);
     addRule(rule);
-  } catch (const std::runtime_error&) {
+  } catch (const std::runtime_error& error) {
+    QMessageBox::critical(this, error.what(), "Failed to add rule.");
   }
 
   layout_->removeWidget(inst_pattern_);
