@@ -1,0 +1,21 @@
+[INFO ODB-0222] Reading LEF file: data/sky130hd/sky130_fd_sc_hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  data/sky130hd/sky130_fd_sc_hd.tlef
+[INFO ODB-0222] Reading LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  data/sky130hd/sky130_fd_sc_hd_merged.lef
+Power Domains List:
+PowerDomain: PD_TOP, Elements: .
+PowerDomain: PD_AES_1, Elements: u_aes_1
+PowerDomain: PD_AES_2, Elements: u_aes_2
+Power Domain Info:
+PowerDomain: PD_AES_1
+PowerSwitch: psw_aes_1, OutSupply: vout, InSupply: vin, ControlPorts: {sleep power_down_aes_1}, On States {ON vin !sleep}
+Isolation: iso_aes_1, AppliesTo: outputs, Clamp: 0, Signal: isolaten_aes_1, Sense: low, Location: parent
+PowerDomain: PD_AES_2
+PowerSwitch: psw_aes_2, OutSupply: vout, InSupply: vin, ControlPorts: {sleep power_down_aes_2}, On States {ON vin !sleep}
+Isolation: iso_aes_2, AppliesTo: outputs, Clamp: 0, Signal: u_pwr_control/isolaten, Sense: low, Location: parent
+Logic Ports List:
+LogicPort: power_down_aes_1, Direction: in
+LogicPort: isolaten_aes_1, Direction: 

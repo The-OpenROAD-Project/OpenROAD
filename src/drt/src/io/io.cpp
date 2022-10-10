@@ -1282,6 +1282,11 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58EolExtConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerAreaRules()) {
+    auto con = make_unique<frLef58AreaConstraint>(rule);
+    tmpLayer->addLef58AreaConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,

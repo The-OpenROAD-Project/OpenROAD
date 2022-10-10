@@ -3,8 +3,8 @@ import helpers
 import ifp_helpers as ifph
 
 tech = Tech()
-tech.readLEF("sky130hd/sky130hd.tlef")
-tech.readLEF("sky130hd/sky130_fd_sc_hd_merged.lef")
+tech.readLef("sky130hd/sky130hd.tlef")
+tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")
 tech.readLiberty("sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib")
 
 design = Design(tech)
