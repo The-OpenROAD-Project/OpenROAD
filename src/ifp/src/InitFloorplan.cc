@@ -483,9 +483,13 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
     grid = dbTrackGrid::create(block_, layer);
   }
 
+  if (x_offset == 0) {
+    x_offset = x_pitch;
+  }
   if (y_offset == 0) {
     y_offset = y_pitch;
   }
+
   if (x_offset > die_area.dx()) {
     logger_->warn(
         IFP,
@@ -505,8 +509,8 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
   grid->addGridPatternX(die_area.xMin() + x_offset, x_track_count, x_pitch);
 
-  if (x_offset == 0) {
-    x_offset = x_pitch;
+  // Check if track origin is usable during router
+  int layer_min_width = layer->getMinWidth();
   }
   auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
   grid->addGridPatternY(die_area.yMin() + y_offset, y_track_count, y_pitch);
