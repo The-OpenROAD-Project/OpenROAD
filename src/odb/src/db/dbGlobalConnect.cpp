@@ -212,18 +212,19 @@ std::vector<dbInst*> dbGlobalConnect::getInsts() const
   return insts;
 }
 
-void dbGlobalConnect::connect(dbInst* inst)
+int dbGlobalConnect::connect(dbInst* inst)
 {
   if (inst->isDoNotTouch()) {
-    return;
+    return 0;
   }
 
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   if (!obj->appliesTo(inst)) {
-    return;
+    return 0;
   }
 
-  obj->connect({inst});
+  const auto connections = obj->connect({inst});
+  return connections.size();
 }
 
 dbGlobalConnect* dbGlobalConnect::create(dbNet* net,
@@ -309,7 +310,7 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   return mapping;
 }
 
-void _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
+std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
 {
   utl::Logger* logger = getImpl()->getLogger();
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
@@ -321,11 +322,12 @@ void _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
         379,
         "{} is marked do not touch, will be skipped for global conenctions",
         net->getName());
-    return;
+    return {};
   }
 
   const auto mterm_map = getMTermMapping();
 
+  std::set<dbITerm*> iterms;
   for (dbInst* inst : insts) {
     _dbInst* dbinst = (_dbInst*) inst;
     if (region_ != 0 && region_ != dbinst->_region) {
@@ -353,12 +355,17 @@ void _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
                      current_net->getName());
         continue;
       }
+      if (current_net == net) {
+        continue;
+      }
       iterm->connect(net);
       if (net->isSpecial()) {
         iterm->setSpecial();
       }
+      iterms.insert(iterm);
     }
   }
+  return iterms;
 }
 
 bool _dbGlobalConnect::appliesTo(dbInst* inst) const
