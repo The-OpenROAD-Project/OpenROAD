@@ -23,8 +23,6 @@ global_placement
     [-timing_driven]
     [-routability_driven]
     [-skip_initial_place]
-    [-disable_timing_driven]
-    [-disable_routability_driven]
     [-incremental]
     [-bin_grid_count grid_count]
     [-density target_density]
@@ -55,6 +53,7 @@ global_placement
 ### Tuning Parameters
 
 - `-timing_driven`: Enable timing-driven mode
+- `-routability_driven`: Enable routability-driven mode
 - `-skip_initial_place` : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
 - `-incremental` : Enable the incremental global placement. Users would need to tune other parameters (e.g., init_density_penalty) with pre-placed solutions.
 - `-bin_grid_count`: set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`.
