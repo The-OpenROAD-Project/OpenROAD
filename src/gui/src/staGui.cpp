@@ -422,18 +422,40 @@ void TimingPath::populateNodeList(sta::Path* path,
   float arrival_cur_stage = 0;
 
   sta::PathExpanded expand(path, sta);
+  auto* graph = sta->graph();
+  auto* network = sta->network();
+  auto* sdc = sta->sdc();
   for (size_t i = 0; i < expand.size(); i++) {
     const auto* ref = expand.path(i);
-    const auto pin = ref->vertex(sta)->pin();
+    sta::Vertex* vertex = ref->vertex(sta);
+    const auto pin = vertex->pin();
     const bool pin_is_clock = sta->isClock(pin);
     const auto slew = ref->slew(sta);
-    const bool is_driver = sta->network()->isDriver(pin);
-    const auto is_rising = ref->transition(sta) == sta::RiseFall::rise();
+    const bool is_driver = network->isDriver(pin);
+    const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
+
+    // based on: https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
+    int fanout = 0;
+    sta::VertexOutEdgeIterator iter(vertex, graph);
+    while (iter.hasNext()) {
+      sta::Edge* edge = iter.next();
+      if (edge->isWire()) {
+        sta::Pin* pin = edge->to(graph)->pin();
+        if (network->isTopLevelPort(pin)) {
+          // Output port counts as a fanout.
+          sta::Port* port = network->port(pin);
+          fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
+        }
+        else {
+          fanout++;
+        }
+      }
+    }
 
     float cap = 0.0;
     if (is_driver
-        && !(!clock_expanded && (sta->network()->isCheckClk(pin) || !i))) {
+        && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
       sta::Parasitic* parasitic
           = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
@@ -460,7 +482,8 @@ void TimingPath::populateNodeList(sta::Path* path,
                                          arrival + offset,
                                          arrival_cur_stage - arrival_prev_stage,
                                          slew,
-                                         cap));
+                                         cap,
+                                         fanout));
     arrival_prev_stage = arrival_cur_stage;
   }
 
@@ -618,6 +641,7 @@ void TimingPathNode::copyData(TimingPathNode* other) const
   other->slew_ = slew_;
   other->load_ = load_;
   other->path_slack_ = path_slack_;
+  other->fanout_ = fanout_;
 }
 
 const odb::Rect TimingPathNode::getPinBBox() const
