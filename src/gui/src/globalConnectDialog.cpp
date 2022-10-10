@@ -138,13 +138,6 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
     net_->addItem(QString::fromStdString(net->getName()),
                   QVariant::fromValue(static_cast<odb::dbNet*>(net)));
   }
-  for (auto* net : block_->getNets()) {
-    if (net->isSpecial()) {
-      continue;
-    }
-    net_->addItem(QString::fromStdString(net->getName()),
-                  QVariant::fromValue(static_cast<odb::dbNet*>(net)));
-  }
 
   const int row_idx = rules_.size() + 1;
   layout_->addWidget(inst_pattern_,
