@@ -177,6 +177,7 @@ struct TreeEdge
 
 struct StTree
 {
+  StTree() : deg(0), nodes(nullptr), edges(nullptr) {}
   int deg;
   TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
   TreeEdge* edges;  // the tree edges

@@ -1295,6 +1295,112 @@ void FastRouteCore::checkUsage()
   }
 }
 
+// This is a full comparison between edges used by the routing and
+// the usage in the h/v edges of the routing graph.  It is somewhat
+// expensive but helpful for finding usage errors.
+void FastRouteCore::verify2DEdgesUsage()
+{
+  multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
+
+  for (int netID = 0; netID < netCount(); netID++) {
+    const TreeNode* treenodes = sttrees_[netID].nodes;
+    const TreeEdge* treeedges = sttrees_[netID].edges;
+    const int deg = sttrees_[netID].deg;
+    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len == 0) {
+        continue;
+      }
+      const int n1 = treeedge->n1;
+      const int n2 = treeedge->n2;
+      const int x1 = treenodes[n1].x;
+      const int y1 = treenodes[n1].y;
+      const int x2 = treenodes[n2].x;
+      const int y2 = treenodes[n2].y;
+
+      const int ymin = std::min(y1, y2);
+      const int ymax = std::max(y1, y2);
+
+      if (treeedge->route.type == RouteType::LRoute) {
+        if (treeedge->route.xFirst) {  // horizontal first
+          for (int j = x1; j < x2; j++) {
+            h_edges[y1][j]++;
+          }
+          for (int j = ymin; j < ymax; j++) {
+            v_edges[j][x2]++;
+          }
+        } else {  // vertical first
+          for (int j = ymin; j < ymax; j++) {
+            v_edges[j][x1]++;
+          }
+          for (int j = x1; j < x2; j++) {
+            h_edges[y2][j]++;
+          }
+        }
+      } else if (treeedge->route.type == RouteType::ZRoute) {
+        const int Zpoint = treeedge->route.Zpoint;
+        if (treeedge->route.HVH)  // HVH
+        {
+          for (int i = x1; i < Zpoint; i++) {
+            h_edges[y1][i]++;
+          }
+          for (int i = Zpoint; i < x2; i++) {
+            h_edges[y2][i]++;
+          }
+          for (int i = ymin; i < ymax; i++) {
+            v_edges[i][Zpoint]++;
+          }
+        } else {  // VHV
+          if (y1 <= y2) {
+            for (int i = y1; i < Zpoint; i++) {
+              v_edges[i][x1]++;
+            }
+            for (int i = Zpoint; i < y2; i++) {
+              v_edges[i][x2]++;
+            }
+            for (int i = x1; i < x2; i++) {
+              h_edges[Zpoint][i]++;
+            }
+          } else {
+            for (int i = y2; i < Zpoint; i++) {
+              v_edges[i][x2]++;
+            }
+            for (int i = Zpoint; i < y1; i++) {
+              v_edges[i][x1]++;
+            }
+            for (int i = x1; i < x2; i++) {
+              h_edges[Zpoint][i]++;
+            }
+          }
+        }
+      }
+    }
+  }
+  for (int y = 0; y < y_grid_ - 1; ++y) {
+    for (int x = 0; x < x_grid_; ++x) {
+      if (v_edges[y][x] != v_edges_[y][x].est_usage) {
+        logger_->error(GRT,
+                       247,
+                       "v_edge mismatch {} vs {}",
+                       v_edges[y][x],
+                       v_edges_[y][x].est_usage);
+      }
+    }
+  }
+  for (int y = 0; y < y_grid_; ++y) {
+    for (int x = 0; x < x_grid_ - 1; ++x) {
+      if (h_edges[y][x] != h_edges_[y][x].est_usage) {
+        logger_->error(GRT,
+                       248,
+                       "h_edge mismatch {} vs {}",
+                       h_edges[y][x],
+                       h_edges_[y][x].est_usage);
+      }
+    }
+  }
+}
+
 void FastRouteCore::check2DEdgesUsage()
 {
   const int max_usage_multiplier = 40;
@@ -1305,8 +1411,14 @@ void FastRouteCore::check2DEdgesUsage()
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       if (h_edges_[i][j].usage >= max_h_edge_usage) {
-        logger_->error(
-            GRT, 228, "Horizontal edge usage exceeds the maximum allowed.");
+        logger_->error(GRT,
+                       228,
+                       "Horizontal edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       i,
+                       j,
+                       h_edges_[i][j].usage,
+                       max_h_edge_usage);
       }
     }
   }
@@ -1315,8 +1427,14 @@ void FastRouteCore::check2DEdgesUsage()
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
       if (v_edges_[i][j].usage >= max_v_edge_usage) {
-        logger_->error(
-            GRT, 229, "Vertical edge usage exceeds the maximum allowed.");
+        logger_->error(GRT,
+                       229,
+                       "Vertical edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       i,
+                       j,
+                       v_edges_[i][j].usage,
+                       max_v_edge_usage);
       }
     }
   }
