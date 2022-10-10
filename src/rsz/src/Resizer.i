@@ -638,6 +638,13 @@ set_debug_pin(const Pin *pin)
   resizer->setDebugPin(pin);
 }
 
+void
+set_worst_slack_nets_percent(float percent)
+{
+  Resizer *resizer = getResizer();
+  resizer->setWorstSlackNetsPercent(percent);
+}
+
 } // namespace
 
 %} // inline
