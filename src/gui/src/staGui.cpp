@@ -435,7 +435,8 @@ void TimingPath::populateNodeList(sta::Path* path,
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
 
-    // based on: https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
+    // based on:
+    // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
     int fanout = 0;
     sta::VertexOutEdgeIterator iter(vertex, graph);
     while (iter.hasNext()) {
@@ -446,16 +447,14 @@ void TimingPath::populateNodeList(sta::Path* path,
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
           fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
-        }
-        else {
+        } else {
           fanout++;
         }
       }
     }
 
     float cap = 0.0;
-    if (is_driver
-        && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
+    if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
       sta::Parasitic* parasitic
           = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
