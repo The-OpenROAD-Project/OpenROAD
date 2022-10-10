@@ -507,23 +507,36 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
     return;
   }
 
-  // Check if track origin is usable during router
   int layer_min_width = layer->getMinWidth();
 
   auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
   int origin_x = die_area.xMin() + x_offset;
+  // Check if track origin is usable during router
   if (layer_min_width/2 > origin_x) {
     origin_x += x_pitch;
     x_track_count--;
+  }
+
+  // Check if last track is usable during router
+  int last_x = origin_x + (x_track_count - 1) * x_pitch;
+  if (layer_min_width/2 > std::abs(last_x - die_area.xMax())) {
+    x_track_count--;;
   }
 
   grid->addGridPatternX(origin_x, x_track_count, x_pitch);
 
   auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
   int origin_y = die_area.yMin() + y_offset;
+  // Check if track origin is usable during router
   if (layer_min_width/2 > origin_y) {
     origin_y += y_pitch;
     y_track_count--;
+  }
+
+  // Check if last track is usable during router
+  int last_y = origin_y + (y_track_count - 1) * y_pitch;
+  if (layer_min_width/2 > std::abs(last_y - die_area.yMax())) {
+    y_track_count--;;
   }
 
   grid->addGridPatternY(origin_y, y_track_count, y_pitch);
