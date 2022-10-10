@@ -34,7 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "globalConnectDialog.h"
+#include "utl/Logger.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -73,7 +75,8 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
       inst_pattern_(new QLineEdit(this)),
       pin_pattern_(new QLineEdit(this)),
       net_(new QComboBox(this)),
-      region_(new QComboBox(this))
+      region_(new QComboBox(this)),
+      connections_(new QLabel(this))
 {
   setWindowTitle("Global Connect Rules");
 
@@ -83,6 +86,7 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   button_layout->addWidget(clear_);
   button_layout->addWidget(run_);
   layout->addLayout(button_layout);
+  layout->addWidget(connections_);
 
   setLayout(layout);
 
@@ -153,11 +157,13 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
       region_, row_idx, toValue(GlobalConnectField::Region), Qt::AlignCenter);
   layout_->addWidget(
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
+
+  connect(this, SIGNAL(connectionsMade(int)), this, SLOT(announceConnections(int)));
 }
 
 void GlobalConnectDialog::runRules()
 {
-  block_->globalConnect();
+  runRule(nullptr);
 }
 
 void GlobalConnectDialog::clearRules()
@@ -243,7 +249,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setAutoDefault(false);
   widgets.run->setDefault(false);
   connect(widgets.run, &QPushButton::pressed, this, [this, gc]() {
-    block_->globalConnect(gc);
+    runRule(gc);
   });
   layout_->addWidget(
       widgets.run, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
@@ -300,6 +306,25 @@ void GlobalConnectDialog::makeRule()
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
   adjustSize();
+}
+
+void GlobalConnectDialog::announceConnections(int connections)
+{
+  connections_->setText(QString::fromStdString(fmt::format("Connected {} pin(s)", connections)));
+}
+
+void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc)
+{
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  QApplication::processEvents();
+  int connections = 0;
+  if (gc == nullptr) {
+    connections = block_->globalConnect();
+  } else {
+    connections = block_->globalConnect(gc);
+  }
+  QApplication::restoreOverrideCursor();
+  emit connectionsMade(connections);
 }
 
 }  // namespace gui

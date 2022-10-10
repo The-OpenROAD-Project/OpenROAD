@@ -38,6 +38,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QGridLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QWidget>
@@ -52,11 +53,15 @@ class GlobalConnectDialog : public QDialog
  public:
   GlobalConnectDialog(odb::dbBlock* block, QWidget* parent = nullptr);
 
+ signals:
+  void connectionsMade(int connections);
+
  private slots:
   void runRules();
   void clearRules();
   void deleteRule(odb::dbGlobalConnect* gconnect);
   void makeRule();
+  void announceConnections(int connections);
 
  private:
   odb::dbBlock* block_;
@@ -84,7 +89,10 @@ class GlobalConnectDialog : public QDialog
   QComboBox* net_;
   QComboBox* region_;
 
+  QLabel* connections_;
+
   void addRule(odb::dbGlobalConnect* gc);
+  void runRule(odb::dbGlobalConnect* gc);
 };
 
 }  // namespace gui
