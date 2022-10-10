@@ -198,22 +198,27 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   const int row_idx = rules_.size() + 1;
   auto& widgets = rules_[gc];
 
+  auto setup_line = [](QLineEdit* line) {
+    line->setReadOnly(true);
+    line->setStyleSheet("color: black; background-color: lightGray");
+  };
+
   widgets.inst_pattern = new QLineEdit(this);
-  widgets.inst_pattern->setReadOnly(true);
+  setup_line(widgets.inst_pattern);
   widgets.inst_pattern->setText(QString::fromStdString(gc->getInstPattern()));
   layout_->addWidget(widgets.inst_pattern,
                      row_idx,
                      toValue(GlobalConnectField::Instance),
                      Qt::AlignCenter);
   widgets.pin_pattern = new QLineEdit(this);
-  widgets.pin_pattern->setReadOnly(true);
+  setup_line(widgets.pin_pattern);
   widgets.pin_pattern->setText(QString::fromStdString(gc->getPinPattern()));
   layout_->addWidget(widgets.pin_pattern,
                      row_idx,
                      toValue(GlobalConnectField::Pin),
                      Qt::AlignCenter);
   widgets.net = new QLineEdit(this);
-  widgets.net->setReadOnly(true);
+  setup_line(widgets.net);
   widgets.net->setText(QString::fromStdString(gc->getNet()->getName()));
   layout_->addWidget(
       widgets.net, row_idx, toValue(GlobalConnectField::Net), Qt::AlignCenter);
@@ -225,7 +230,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   } else {
     widgets.region->setText(QString::fromStdString(dbregion->getName()));
   }
-  widgets.region->setReadOnly(true);
+  setup_line(widgets.region);
   layout_->addWidget(widgets.region,
                      row_idx,
                      toValue(GlobalConnectField::Region),
