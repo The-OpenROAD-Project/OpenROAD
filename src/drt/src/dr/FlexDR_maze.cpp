@@ -578,7 +578,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
               continue;
             }
           } else {
-            if (!(dx > 0 && dy > 0) && dx + dy < dist) {
+            if (dx > 0 && dy > 0 && dx + dy < dist) {
               ;
             } else {
               continue;
