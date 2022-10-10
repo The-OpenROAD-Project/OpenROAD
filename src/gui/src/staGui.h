@@ -381,6 +381,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   enum Column
   {
     Pin,
+    Fanout,
     RiseFall,
     Time,
     Delay,

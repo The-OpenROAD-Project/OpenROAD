@@ -714,7 +714,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return 6;
+  return 7;
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(
@@ -745,6 +745,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case Delay:
       case Slew:
       case Load:
+      case Fanout:
         return Qt::AlignRight;
       case RiseFall:
         return Qt::AlignCenter;
@@ -789,6 +790,12 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
             return "";
           const auto cap_units = sta_->search()->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
+        }
+        case Fanout: {
+          if (node->getFanout() == 0) {
+            return "";
+          }
+          return node->getFanout();
         }
       }
     }
@@ -845,6 +852,8 @@ QVariant TimingPathDetailModel::headerData(int section,
         return "Slew";
       case Load:
         return "Load";
+      case Fanout:
+        return "Fanout";
     }
   }
   return QVariant();
