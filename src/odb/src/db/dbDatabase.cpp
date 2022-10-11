@@ -306,12 +306,12 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   stream >> db._schema_major;
 
   if (db._schema_major != db_schema_major)
-    throw ZException("Incompatible database schema revision");
+    throw ZException("incompatible database schema major revision (OpenROAD requires %d but database is %d)", db_schema_major, db._schema_major);
 
   stream >> db._schema_minor;
 
   if (db._schema_minor < db_schema_initial)
-    throw ZException("incompatible database schema revision");
+    throw ZException("incompatible database schema minor revision (database requires %d or greater but OpenROAD is %d)", db._schema_minor, db_schema_initial);
 
   stream >> db._master_id;
 
