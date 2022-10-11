@@ -104,8 +104,7 @@ dbVerilogNetwork::dbVerilogNetwork() : ConcreteNetwork(), db_network_(nullptr)
 void dbVerilogNetwork::init(dbNetwork* db_network)
 {
   db_network_ = db_network;
-  report_ = db_network_->report();
-  debug_ = db_network_->debug();
+  copyState(db_network_);
 }
 
 dbVerilogNetwork* makeDbVerilogNetwork()
