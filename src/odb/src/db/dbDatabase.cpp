@@ -310,7 +310,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 
   stream >> db._schema_minor;
 
-  if (db._schema_minor < db_schema_initial)
+  if (db_schema_initial < db._schema_minor)
     throw ZException("incompatible database schema minor revision (database requires %d or greater but OpenROAD is %d)", db._schema_minor, db_schema_initial);
 
   stream >> db._master_id;
