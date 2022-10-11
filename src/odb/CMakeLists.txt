@@ -28,6 +28,7 @@ add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
+add_subdirectory(src/upf)
 add_subdirectory(test/cpp)
 
 add_library(odb INTERFACE)

@@ -48,9 +48,9 @@ Corner: ss
    0.00    0.00 ^ r2/CK (DFF_X1)
    0.26    0.26 v r2/Q (DFF_X1)
    0.09    0.35 v u1/Z (BUF_X1)
-   0.11    0.46 v u2/ZN (AND2_X1)
-   0.00    0.46 v r3/D (DFF_X1)
-           0.46   data arrival time
+   0.11    0.45 v u2/ZN (AND2_X1)
+   0.00    0.45 v r3/D (DFF_X1)
+           0.45   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
@@ -60,9 +60,9 @@ Corner: ss
            9.84   data required time
 ---------------------------------------------------------
            9.84   data required time
-          -0.46   data arrival time
+          -0.45   data arrival time
 ---------------------------------------------------------
-           9.38   slack (MET)
+           9.39   slack (MET)
 
 
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -76,7 +76,7 @@ Corner: tt
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r2/CK (DFF_X1)
-   0.09    0.09 v r2/Q (DFF_X1)
+   0.08    0.08 v r2/Q (DFF_X1)
    0.03    0.11 v u1/Z (BUF_X1)
    0.03    0.14 v u2/ZN (AND2_X1)
    0.00    0.14 v r3/D (DFF_X1)

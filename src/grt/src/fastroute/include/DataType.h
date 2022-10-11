@@ -97,6 +97,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int edgeCost;
   int minLayer;
   int maxLayer;
+  float slack;
   // edge_cost_per_layer is null if there is no ndr for this net.
   std::vector<int> *edge_cost_per_layer;
   bool is_routed;
@@ -176,6 +177,7 @@ struct TreeEdge
 
 struct StTree
 {
+  StTree() : deg(0), nodes(nullptr), edges(nullptr) {}
   int deg;
   TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
   TreeEdge* edges;  // the tree edges

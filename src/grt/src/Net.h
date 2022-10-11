@@ -54,6 +54,8 @@ class Net
   void addPin(Pin& pin);
   std::vector<Pin>& getPins() { return pins_; }
   int getNumPins() const { return pins_.size(); }
+  float getSlack() const { return slack_; }
+  void setSlack(float slack) { slack_ = slack; }
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
@@ -61,6 +63,7 @@ class Net
  private:
   odb::dbNet* net_;
   std::vector<Pin> pins_;
+  float slack_;
   bool has_wires_;
 };
 
