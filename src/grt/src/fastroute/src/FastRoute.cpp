@@ -59,7 +59,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       layer_orientation_(0),
       x_range_(0),
       y_range_(0),
-      seg_count_(0),
       num_adjust_(0),
       v_capacity_(0),
       h_capacity_(0),
@@ -105,8 +104,6 @@ void FastRouteCore::clear()
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
   seglist_.clear();
-  seglist_index_.clear();
-  seglist_cnt_.clear();
 
   gxs_.clear();
   gys_.clear();
@@ -169,7 +166,7 @@ void FastRouteCore::clearNets()
   for (FrNet* net : nets_)
     delete net;
   nets_.clear();
-  seg_count_ = 0;
+  seglist_.clear();
   db_net_id_map_.clear();
 }
 
@@ -267,6 +264,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int cost,
                           int min_layer,
                           int max_layer,
+                          float slack,
                           std::vector<int>* edge_cost_per_layer)
 {
   int netID;
@@ -281,6 +279,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
     net->pinX.clear();
     net->pinY.clear();
     net->pinL.clear();
+    seglist_[netID].clear();
   }
   else {
     net = new FrNet;
@@ -288,13 +287,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
     netID = nets_.size() - 1;
     net->db_net = db_net;
     db_net_id_map_[db_net] = netID;
-
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
-    seg_count_ += 2 * num_pins - 3;
-
-    // the end pointer of the seglist
-    seglist_index_.resize(nets_.size() + 1);
-    seglist_index_[nets_.size()] = seg_count_;
   }
   net->is_routed = false;
   net->deg = num_pins;
@@ -303,7 +296,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   net->edgeCost = cost;
   net->minLayer = min_layer;
   net->maxLayer = max_layer;
-  net->edge_cost_per_layer = edge_cost_per_layer; 
+  net->slack = slack;
+  net->edge_cost_per_layer = edge_cost_per_layer;
 
   return netID;
 }
@@ -332,7 +326,9 @@ void FastRouteCore::clearNetRoute(const int netID)
 
   // clear stree
   delete[] sttrees_[netID].nodes;
-  delete[] sttrees_[netID].edges; 
+  delete[] sttrees_[netID].edges;
+  sttrees_[netID].nodes = nullptr;
+  sttrees_[netID].edges = nullptr;
 }
 
 void FastRouteCore::initEdges()
@@ -766,8 +762,7 @@ void FastRouteCore::initAuxVar()
 void FastRouteCore::initNetAuxVars()
 {
   int node_count = netCount();
-  seglist_cnt_.resize(node_count);
-  seglist_.resize(seg_count_);
+  seglist_.resize(node_count);
   sttrees_.resize(node_count);
   gxs_.resize(node_count);
   gys_.resize(node_count);
@@ -900,7 +895,7 @@ NetRouteMap FastRouteCore::run()
   gen_brk_RSMT(false, false, false, false, noADJ);
   routeLAll(true);
   gen_brk_RSMT(true, true, true, false, noADJ);
-
+  
   getOverflow2D(&maxOverflow);
   newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);

@@ -139,7 +139,7 @@ private:
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
-  static constexpr double rebuffer_buffer_penalty_ = .005;
+  static constexpr double rebuffer_buffer_penalty_ = .01;
 };
 
 } // namespace
