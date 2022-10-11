@@ -69,6 +69,10 @@ class Design
 
   int micronToDBU(double coord);
 
+  int evalTclString(const std::string& cmd);
+
+  Tech* getTech();
+
   // Services
   ifp::InitFloorplan* getFloorplan();
 
