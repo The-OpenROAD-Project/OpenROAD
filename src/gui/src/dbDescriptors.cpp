@@ -2655,7 +2655,9 @@ Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
   props.push_back({"Instances", insts});
 
   populateODBProperties(props, module);
-  populateODBProperties(props, mod_inst, "Instance");
+  if (mod_inst != nullptr) {
+    populateODBProperties(props, mod_inst, "Instance");
+  }
 
   return props;
 }
