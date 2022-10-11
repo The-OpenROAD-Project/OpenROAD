@@ -54,6 +54,11 @@ class Design
  public:
   Design(Tech* tech);
   void readVerilog(const std::string& file_name);
+  void readDef(const std::string& file_name,
+               bool continue_on_errors=false,
+               bool floorplan_init=false,
+               bool incremental=false
+              );
   void link(const std::string& design_name);
 
   void writeDb(const std::string& file_name);

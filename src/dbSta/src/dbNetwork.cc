@@ -895,6 +895,7 @@ void dbNetwork::readDbNetlistAfter()
 {
   makeTopCell();
   findConstantNets();
+  checkLibertyCorners();
 }
 
 void dbNetwork::makeTopCell()

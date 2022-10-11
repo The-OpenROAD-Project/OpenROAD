@@ -64,6 +64,7 @@
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
+#include "sta/MinMax.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -96,6 +97,7 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
+      critical_nets_percentage_(0),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -635,6 +637,55 @@ void GlobalRouter::findPins(Net* net,
   }
 }
 
+float GlobalRouter::getNetSlack(Net* net)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Net* sta_net = network->dbToSta(net->getDbNet());
+  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  return slack;
+}
+
+void GlobalRouter::computeNetSlacks()
+{
+  // Find the slack for all nets
+  std::unordered_map<Net*, float> net_slack_map;
+  std::vector<float> slacks;
+  for (auto net_itr : db_net_map_) {
+    Net* net = net_itr.second;
+    float slack = getNetSlack(net);
+    net_slack_map[net] = slack;
+    slacks.push_back(slack);
+  }
+  std::stable_sort(slacks.begin(), slacks.end());
+
+  // Find the slack threshold based on the percentage of critical nets
+  // defined by the user
+  int threshold_index = std::ceil(slacks.size() * critical_nets_percentage_/100);
+  float slack_th = slacks[threshold_index];
+
+  // Ensure the slack threshold is negative
+  if (slack_th >= 0) {
+    for (float slack : slacks) {
+      if (slack >= 0)
+        break;
+      slack_th = slack;
+    }
+  }
+
+  if (slack_th >= 0) {
+    return;
+  }
+
+  // Add the slack values smaller than the threshold to the nets
+  for (auto net_itr : net_slack_map) {
+    Net* net = net_itr.first;
+    float slack = net_itr.second;
+    if (slack <= slack_th) {
+      net->setSlack(slack);
+    }
+  }
+}
+
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -652,6 +703,10 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     g.seed(seed_);
 
     utl::shuffle(nets.begin(), nets.end(), g);
+  }
+
+  if (critical_nets_percentage_ != 0) {
+    computeNetSlacks();
   }
 
   for (Net* net : nets) {
@@ -711,6 +766,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                    edge_cost_for_net,
                                    min_layer - 1,
                                    max_layer - 1,
+                                   net->getSlack(),
                                    edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
       fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
@@ -725,10 +781,10 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
 }
 
 void GlobalRouter::saveSttInputFile(Net* net) {
-  const char* file_name = fastroute_->getSttInputFileName().c_str();
+  std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-  remove(file_name);
-  std::ofstream out(file_name);
+  remove(file_name.c_str());
+  std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
     odb::Point position = pin.getOnGridPosition(); // Pin position on grid
@@ -1036,6 +1092,9 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
+            new_h_capacity = edge_cap > 0 && adjustment != 1
+                                 ? std::max(new_h_capacity, 1)
+                                 : new_h_capacity;
             fastroute_->addAdjustment(
                 x - 1, y - 1, x, y - 1, layer, new_h_capacity, true);
           }
@@ -1053,6 +1112,9 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
             int new_v_capacity
                 = std::floor((float) edge_cap * (1 - adjustment));
+            new_v_capacity = edge_cap > 0 && adjustment != 1
+                                 ? std::max(new_v_capacity, 1)
+                                 : new_v_capacity;
             fastroute_->addAdjustment(
                 x - 1, y - 1, x - 1, y, layer, new_v_capacity, true);
           }
@@ -1186,6 +1248,10 @@ void GlobalRouter::setMinLayerForClock(const int min_layer)
 void GlobalRouter::setMaxLayerForClock(const int max_layer)
 {
   max_layer_for_clock_ = max_layer;
+}
+
+void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage) {
+  critical_nets_percentage_ = critical_nets_percentage;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)

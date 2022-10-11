@@ -463,42 +463,39 @@ void FastRouteCore::fluteCongest(const int netID,
 
 bool FastRouteCore::netCongestion(const int netID)
 {
-  for (int j = seglist_index_[netID];
-       j < seglist_index_[netID] + seglist_cnt_[netID];
-       j++) {
-    const Segment* seg = &seglist_[j];
+  for (const Segment& seg : seglist_[netID]) {
 
-    const int ymin = std::min(seg->y1, seg->y2);
-    const int ymax = std::max(seg->y1, seg->y2);
+    const int ymin = std::min(seg.y1, seg.y2);
+    const int ymax = std::max(seg.y1, seg.y2);
 
     // remove L routing
-    if (seg->xFirst) {
-      for (int i = seg->x1; i < seg->x2; i++) {
+    if (seg.xFirst) {
+      for (int i = seg.x1; i < seg.x2; i++) {
         const int cap = getEdgeCapacity(
-            nets_[netID], i, seg->y1, EdgeDirection::Horizontal);
-        if (h_edges_[seg->y1][i].est_usage >= cap) {
+            nets_[netID], i, seg.y1, EdgeDirection::Horizontal);
+        if (h_edges_[seg.y1][i].est_usage >= cap) {
           return true;
         }
       }
       for (int i = ymin; i < ymax; i++) {
         const int cap = getEdgeCapacity(
-            nets_[netID], seg->x2, i, EdgeDirection::Vertical);
-        if (v_edges_[i][seg->x2].est_usage >= cap) {
+            nets_[netID], seg.x2, i, EdgeDirection::Vertical);
+        if (v_edges_[i][seg.x2].est_usage >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
         const int cap = getEdgeCapacity(
-            nets_[netID], seg->x1, i, EdgeDirection::Vertical);
-        if (v_edges_[i][seg->x1].est_usage >= cap) {
+            nets_[netID], seg.x1, i, EdgeDirection::Vertical);
+        if (v_edges_[i][seg.x1].est_usage >= cap) {
           return true;
         }
       }
-      for (int i = seg->x1; i < seg->x2; i++) {
+      for (int i = seg.x1; i < seg.x2; i++) {
         const int cap = getEdgeCapacity(
-            nets_[netID], i, seg->y2, EdgeDirection::Horizontal);
-        if (h_edges_[seg->y2][i].est_usage >= cap) {
+            nets_[netID], i, seg.y2, EdgeDirection::Horizontal);
+        if (h_edges_[seg.y2][i].est_usage >= cap) {
           return true;
         }
       }
@@ -690,9 +687,8 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         }
       } else {
         // remove the est_usage due to the segments in this net
-        for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
-             j++) {
-          ripupSegL(&seglist_[j]);
+        for (auto& seg: seglist_[i]) {
+          ripupSegL(&seg);
         }
       }
     }
@@ -740,7 +736,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         wl1 += sttrees_[i].edges[j].len;
     }
 
-    int segcnt = 0;
     for (int j = 0; j < 2 * d - 2; j++) {
       const int x1 = rsmt.branch[j].x;
       const int y1 = rsmt.branch[j].y;
@@ -752,26 +747,25 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
-        const int segPos = seglist_index_[i] + segcnt;
+        seglist_[i].push_back(Segment());
+        auto& seg = seglist_[i].back();
         if (x1 < x2) {
-          seglist_[segPos].x1 = x1;
-          seglist_[segPos].x2 = x2;
-          seglist_[segPos].y1 = y1;
-          seglist_[segPos].y2 = y2;
+          seg.x1 = x1;
+          seg.x2 = x2;
+          seg.y1 = y1;
+          seg.y2 = y2;
         } else {
-          seglist_[segPos].x1 = x2;
-          seglist_[segPos].x2 = x1;
-          seglist_[segPos].y1 = y2;
-          seglist_[segPos].y2 = y1;
+          seg.x1 = x2;
+          seg.x2 = x1;
+          seg.y1 = y2;
+          seg.y2 = y1;
         }
 
-        seglist_[segPos].netID = i;
-        segcnt++;
+        seg.netID = i;
       }
     }  // loop j
 
-    seglist_cnt_[i] = segcnt;  // the number of segments for net i
-    totalNumSeg += segcnt;
+    totalNumSeg += seglist_[i].size();
 
     if (reRoute) {
       // update the est_usage due to the segments in this net

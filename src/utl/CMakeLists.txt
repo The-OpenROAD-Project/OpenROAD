@@ -18,11 +18,35 @@ include("openroad")
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
+         SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          utl_py
+           NAMESPACE     utl
+           LANGUAGE      python
+           I_FILE        src/Logger-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/utl
+                         ${PROJECT_SOURCE_DIR}/src
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/utl_py.py
+  )
+
+  target_include_directories(utl_py
+    PUBLIC
+      include
+      src
+  )
+  
+  target_link_libraries(utl_py
+    PUBLIC
+      spdlog::spdlog
+  )
+endif()
 
 target_sources(utl
   PRIVATE
     src/Logger.cpp
+    src/LoggerCommon.cpp
     src/MakeLogger.cpp
     src/Metrics.cpp
 )
@@ -30,6 +54,7 @@ target_sources(utl
 target_include_directories(utl
   PUBLIC
     include
+    src
 )
 
 target_link_libraries(utl
