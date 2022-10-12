@@ -350,6 +350,8 @@ RepairHold::repairEndHold(Vertex *end_vertex,
         if (path_vertex->isDriver(network_)
             && !resizer_->dontTouch(path_net)) {
           PinSeq load_pins;
+          Slacks slacks;
+          mergeInit(slacks);
           float excluded_cap = 0.0;
           bool loads_have_out_port = false;
           VertexOutEdgeIterator edge_iter(path_vertex, graph_);
@@ -362,6 +364,9 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               Pin *load_pin = fanout->pin();
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
+                Slacks fanout_slacks;
+                sta_->vertexSlacks(fanout, fanout_slacks);
+                mergeInto(fanout_slacks, slacks);
                 if (network_->direction(load_pin)->isAnyOutput()
                     && network_->isTopLevelPort(load_pin))
                   loads_have_out_port = true;
@@ -374,8 +379,6 @@ RepairHold::repairEndHold(Vertex *end_vertex,
             }
           }
           if (!load_pins.empty()) {
-            Slack slacks[RiseFall::index_count][MinMax::index_count];
-            sta_->vertexSlacks(path_vertex, slacks);
             debugPrint(logger_, RSZ,
                        "repair_hold", 3, " {} hold_slack={}/{} setup_slack={}/{} fanouts={}",
                        path_vertex->name(network_),
@@ -392,17 +395,17 @@ RepairHold::repairEndHold(Vertex *end_vertex,
             resizer_->bufferDelays(buffer_cell, load_cap, dcalc_ap,
                                    buffer_delays, buffer_slews);
             // setup_slack > -hold_slack
-            if (slacks[rise_index_][max_index_] - setup_margin
-                > -(slacks[rise_index_][min_index_] - hold_margin)
-                && slacks[fall_index_][max_index_] - setup_margin
-                > -(slacks[fall_index_][min_index_] - hold_margin)
-                // enough slack to insert the buffer
-                // setup_slack > buffer_delay
-                && (allow_setup_violations
-                    || ((slacks[rise_index_][max_index_] - setup_margin)
-                        > buffer_delays[rise_index_]
-                        && (slacks[fall_index_][max_index_] - setup_margin)
-                        > buffer_delays[fall_index_]))) {
+            if (allow_setup_violations
+                || (slacks[rise_index_][max_index_] - setup_margin
+                    > -(slacks[rise_index_][min_index_] - hold_margin)
+                    && slacks[fall_index_][max_index_] - setup_margin
+                    > -(slacks[fall_index_][min_index_] - hold_margin)
+                    // enough slack to insert the buffer
+                    // setup_slack > buffer_delay
+                    && (slacks[rise_index_][max_index_] - setup_margin)
+                    > buffer_delays[rise_index_]
+                    && (slacks[fall_index_][max_index_] - setup_margin)
+                    > buffer_delays[fall_index_])) {
               Vertex *path_load = expanded.path(i + 1)->vertex(sta_);
               Point path_load_loc = db_network_->location(path_load->pin());
               Point drvr_loc = db_network_->location(path_vertex->pin());
@@ -429,6 +432,29 @@ RepairHold::repairEndHold(Vertex *end_vertex,
       }
     }
   }
+}
+
+void
+RepairHold::mergeInit(Slacks &slacks)
+{
+  slacks[rise_index_][min_index_] = INF;
+  slacks[fall_index_][min_index_] = INF;
+  slacks[rise_index_][max_index_] = -INF;
+  slacks[fall_index_][max_index_] = -INF;
+}
+
+void
+RepairHold::mergeInto(Slacks &slacks,
+                      Slacks &result)
+{
+  result[rise_index_][min_index_] = min(result[rise_index_][min_index_],
+                                        slacks[rise_index_][min_index_]);
+  result[fall_index_][min_index_] = min(result[fall_index_][min_index_],
+                                        slacks[fall_index_][min_index_]);
+  result[rise_index_][max_index_] = max(result[rise_index_][max_index_],
+                                        slacks[rise_index_][max_index_]);
+  result[fall_index_][max_index_] = max(result[fall_index_][max_index_],
+                                        slacks[fall_index_][max_index_]);
 }
 
 void
