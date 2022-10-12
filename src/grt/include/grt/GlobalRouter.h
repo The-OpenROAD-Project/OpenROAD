@@ -169,6 +169,7 @@ class GlobalRouter
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
   void printGrid();
+  int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
   void readGuides(const char* file_name);  // just for display
