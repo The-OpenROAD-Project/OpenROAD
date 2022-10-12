@@ -51,25 +51,4 @@ using namespace odb;
 %import "odb.i"
 %include "../../Exception-py.i"
 
-%inline %{
-
-namespace ant {
-    
-bool
-anyViolations(char* net_name)
-{ 
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  if (net) {
-    auto antChecker = ord::OpenRoad::openRoad()->getAntennaChecker();
-    auto vios = antChecker->getAntennaViolations(net, nullptr);
-    return !vios.empty();
-  }
-  else
-    return false;
-}
-
-}  // end namespace ant
-    
-%}  //  end %inline
-
 %include "ant/AntennaChecker.hh"

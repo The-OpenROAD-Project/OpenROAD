@@ -87,6 +87,8 @@ class AntennaChecker
 
   vector<Violation> getAntennaViolations(dbNet* net,
                                          odb::dbMTerm* diode_mterm);
+
+  bool anyViolations(const std::string& netName);
   void initAntennaRules();
 
  private:

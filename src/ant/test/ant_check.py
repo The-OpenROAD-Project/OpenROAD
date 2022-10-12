@@ -16,6 +16,6 @@ count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
 
 net = "net50"
-# see comments in check_api1.py on check_net_violation 
-viol = 1 if ant.anyViolations(net) else 0
-print(f"Net {net} violations: {viol}")
+
+viol = ack.anyViolations(net)
+print(f"Net {net} violations: {int(viol)}")

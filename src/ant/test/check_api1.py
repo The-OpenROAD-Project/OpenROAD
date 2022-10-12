@@ -17,5 +17,5 @@ print(f"violation count = {count}", flush=True)
 # the tcl reg test treats it as an int. So we print an int here
 # so we can have the same log file
 net = "net50"
-viol = 1 if ant.anyViolations(net) else 0
-print(f"Net {net} violations: {viol}")
+viol = ack.anyViolations(net)
+print(f"Net {net} violations: {int(viol)}")
