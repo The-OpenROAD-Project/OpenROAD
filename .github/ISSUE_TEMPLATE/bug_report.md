@@ -42,7 +42,16 @@ YOUR SURVEY HERE
 
 **To Reproduce**
 <!--
-    You have two options here:
+    If you are running from OpenLane, please run the following shell command in the OpenLane root folder:
+            python3 ./scripts/or_issue.py\
+                --tool openroad\
+                --script ./scripts/openroad/<script-name>\
+                <run-path> # e.g designs/spm/runs/RUN_2022.03.01_19.21.10/tmp/routing/17-fill.def
+                # run path is implicitly specified by input def
+
+    For more information, follow this link https://openlane.readthedocs.io/en/latest/for_developers/using_or_issue.html?highlight=reproducible
+
+    Otherwise, you have two options here:
 
     A. Use `make <SCRIPT_NAME>_issue` to create a tar file with all the files to reproduce the bug(s).
         Steps:
@@ -51,9 +60,9 @@ YOUR SURVEY HERE
              "OpenROAD-flow-scripts/tools/OpenROAD"
         2. Set the ISSUE_TAG variable to rename the generated tar file
         3. Run the following shell command in this directory "OpenROAD-flow-scripts/flow"
-                                                     `make {script}_issue`
+                                        `make {script}_issue`
              where script is wildcarded from the "OpenROAD-flow-scripts/scripts" directory 
-                                                    # e.g "make cts_issue"
+                                        # e.g "make cts_issue"
         4. Upload the generated tar file
 
     B. Upload relevant files
