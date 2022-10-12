@@ -15,7 +15,8 @@ ack.checkAntennas("", True)
 count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
 
-net = "net50"
+net_name = "net50"
+net = design.getBlock().findNet(net_name)
+viol = len(ack.getAntennaViolations(net, None)) > 0
 
-viol = ack.anyViolations(net)
-print(f"Net {net} violations: {int(viol)}")
+print(f"Net {net_name} violations: {int(viol)}")

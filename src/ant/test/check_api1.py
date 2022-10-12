@@ -16,6 +16,9 @@ print(f"violation count = {count}", flush=True)
 # note that the tcl function check_net_violations is a boolean but
 # the tcl reg test treats it as an int. So we print an int here
 # so we can have the same log file
-net = "net50"
-viol = ack.anyViolations(net)
-print(f"Net {net} violations: {int(viol)}")
+
+net_name = "net50"
+net = design.getBlock().findNet(net_name)
+viol = len(ack.getAntennaViolations(net, None)) > 0
+
+print(f"Net {net_name} violations: {int(viol)}")

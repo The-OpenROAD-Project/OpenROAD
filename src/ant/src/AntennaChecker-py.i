@@ -42,12 +42,15 @@ namespace ord {
 // Defined in OpenRoad.i
 odb::dbDatabase *getDb();
 }
-    
+
 using namespace odb;
 
 %}
 
+
 %include <std_vector.i>
+%template(ViolationVector) std::vector<ant::Violation>;
+
 %import "odb.i"
 %include "../../Exception-py.i"
 

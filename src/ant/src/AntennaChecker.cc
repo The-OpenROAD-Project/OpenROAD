@@ -1765,17 +1765,6 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
   return false;
 }
 
-bool AntennaChecker::anyViolations(const std::string& netName)
-{
-    odb::dbNet* net = db_->getChip()->getBlock()->findNet(netName.c_str());
-    if (net) {
-        auto vios = getAntennaViolations(net, nullptr);
-        return !vios.empty();
-    } else {
-        return false;
-    }
-}
-
 vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
                                                        dbMTerm* diode_mterm)
 {
