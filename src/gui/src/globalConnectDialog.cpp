@@ -94,6 +94,7 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   add_->setToolTip(tr("Run"));
   add_->setAutoDefault(false);
   add_->setDefault(false);
+  add_->setEnabled(false);
 
   run_->setIcon(QIcon(":/play.png"));
   run_->setToolTip(tr("Run"));
@@ -159,6 +160,8 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
   connect(this, SIGNAL(connectionsMade(int)), this, SLOT(announceConnections(int)));
+  connect(inst_pattern_, SIGNAL(textChanged(const QString&)), this, SLOT(addRegexTextChanged(const QString&)));
+  connect(pin_pattern_, SIGNAL(textChanged(const QString&)), this, SLOT(addRegexTextChanged(const QString&)));
 }
 
 void GlobalConnectDialog::runRules()
@@ -305,6 +308,10 @@ void GlobalConnectDialog::makeRule()
   layout_->addWidget(
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
+  inst_pattern_->clear();
+  pin_pattern_->clear();
+  add_->setEnabled(false);
+
   adjustSize();
 }
 
@@ -325,6 +332,21 @@ void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc)
   }
   QApplication::restoreOverrideCursor();
   emit connectionsMade(connections);
+}
+
+void GlobalConnectDialog::addRegexTextChanged(const QString& text)
+{
+  // test if this is a valid regex
+  try {
+    std::regex(text.toStdString());
+  }
+  catch (const std::regex_error&) {
+    add_->setEnabled(false);
+    return;
+  }
+
+  const bool enable = !inst_pattern_->text().isEmpty() && !pin_pattern_->text().isEmpty();
+  add_->setEnabled(enable);
 }
 
 }  // namespace gui

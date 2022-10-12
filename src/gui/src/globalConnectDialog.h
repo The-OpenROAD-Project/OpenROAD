@@ -62,6 +62,7 @@ class GlobalConnectDialog : public QDialog
   void deleteRule(odb::dbGlobalConnect* gconnect);
   void makeRule();
   void announceConnections(int connections);
+  void addRegexTextChanged(const QString& text);
 
  private:
   odb::dbBlock* block_;
