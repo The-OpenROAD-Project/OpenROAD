@@ -345,14 +345,6 @@ void GlobalConnectDialog::addRegexTextChanged(const QString& text)
     return;
   }
 
-  QString check = text;
-  check.remove('$');
-  check.remove('^');
-  if (check.isEmpty()) {
-    add_->setEnabled(false);
-    return;
-  }
-
   const bool enable = !inst_pattern_->text().isEmpty() && !pin_pattern_->text().isEmpty();
   add_->setEnabled(enable);
 }
