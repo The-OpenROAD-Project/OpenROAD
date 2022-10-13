@@ -50,6 +50,7 @@ record_tests {
   repair_hold10
   repair_hold11
   repair_hold12
+  repair_hold13
   repair_setup1
   repair_setup2
   repair_setup3

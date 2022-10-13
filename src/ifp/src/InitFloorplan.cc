@@ -483,9 +483,13 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
     grid = dbTrackGrid::create(block_, layer);
   }
 
+  if (x_offset == 0) {
+    x_offset = x_pitch;
+  }
   if (y_offset == 0) {
     y_offset = y_pitch;
   }
+
   if (x_offset > die_area.dx()) {
     logger_->warn(
         IFP,
@@ -502,14 +506,41 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
         layer->getName());
     return;
   }
-  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
-  grid->addGridPatternX(die_area.xMin() + x_offset, x_track_count, x_pitch);
 
-  if (x_offset == 0) {
-    x_offset = x_pitch;
+  int layer_min_width = layer->getMinWidth();
+
+  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  int origin_x = die_area.xMin() + x_offset;
+  // Check if the track origin is not usable during routing
+
+  if (origin_x - layer_min_width / 2 < die_area.xMin()) {
+    origin_x += x_pitch;
+    x_track_count--;
   }
+
+  // Check if the last track is not usable during routing
+  int last_x = origin_x + (x_track_count - 1) * x_pitch;
+  if (last_x + layer_min_width / 2 > die_area.xMax()) {
+    x_track_count--;
+  }
+
+  grid->addGridPatternX(origin_x, x_track_count, x_pitch);
+
   auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
-  grid->addGridPatternY(die_area.yMin() + y_offset, y_track_count, y_pitch);
+  int origin_y = die_area.yMin() + y_offset;
+  // Check if the track origin is not usable during routing
+  if (origin_y - layer_min_width / 2 < die_area.yMin()) {
+    origin_y += y_pitch;
+    y_track_count--;
+  }
+
+  // Check if the last track is not usable during routing
+  int last_y = origin_y + (y_track_count - 1) * y_pitch;
+  if (last_y + layer_min_width / 2 > die_area.yMax()) {
+    y_track_count--;
+  }
+
+  grid->addGridPatternY(origin_y, y_track_count, y_pitch);
 }
 
 }  // namespace ifp

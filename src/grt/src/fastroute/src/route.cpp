@@ -222,9 +222,8 @@ void FastRouteCore::routeLAll(bool firstTime)
       if (nets_[i]->is_routed)
         continue;
 
-      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
-           j++) {
-        estimateOneSeg(&seglist_[j]);
+      for (auto& seg : seglist_[i]) {
+        estimateOneSeg(&seg);
       }
     }
     // L route
@@ -233,12 +232,10 @@ void FastRouteCore::routeLAll(bool firstTime)
       if (nets_[i]->is_routed)
         continue;
 
-      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
-           j++) {
+      for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
-        if (seglist_[j].x1 != seglist_[j].x2
-            || seglist_[j].y1 != seglist_[j].y2)
-          routeSegLFirstTime(&seglist_[j]);
+        if (seg.x1 != seg.x2 || seg.y1 != seg.y2)
+          routeSegLFirstTime(&seg);
       }
     }
   } else {  // previous is L-route
@@ -247,13 +244,11 @@ void FastRouteCore::routeLAll(bool firstTime)
       if (nets_[i]->is_routed)
         continue;
 
-      for (int j = seglist_index_[i]; j < seglist_index_[i] + seglist_cnt_[i];
-           j++) {
+      for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
-        if (seglist_[j].x1 != seglist_[j].x2
-            || seglist_[j].y1 != seglist_[j].y2) {
-          ripupSegL(&seglist_[j]);
-          routeSegL(&seglist_[j]);
+        if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
+          ripupSegL(&seg);
+          routeSegL(&seg);
         }
       }
     }
