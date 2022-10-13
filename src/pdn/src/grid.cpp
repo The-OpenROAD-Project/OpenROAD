@@ -943,6 +943,13 @@ std::set<odb::dbInst*> Grid::getInstances() const
   return insts;
 }
 
+void Grid::removeStrap(Straps* strap)
+{
+  straps_.erase(std::find_if(straps_.begin(), straps_.end(), [strap](const std::unique_ptr<Straps>& other) {
+    return strap == other.get();
+  }));
+}
+
 ///////////////
 
 CoreGrid::CoreGrid(VoltageDomain* domain,
