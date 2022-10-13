@@ -49,7 +49,7 @@ YOUR SURVEY HERE
                 <run-path> # e.g designs/spm/runs/RUN_2022.03.01_19.21.10/tmp/routing/17-fill.def
                 # run path is implicitly specified by input def
 
-    For more information, follow this link https://openlane.readthedocs.io/en/latest/for_developers/using_or_issue.html?highlight=reproducible
+    For more information, follow this link https://openlane.readthedocs.io/en/latest/for_developers/using_or_issue.html
 
     Otherwise, you have two options here:
 
