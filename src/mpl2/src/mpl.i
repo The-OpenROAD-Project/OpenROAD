@@ -76,6 +76,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_dead_space,
                           const float min_ar,
                           const int snap_layer) {
+
   auto macro_placer = getMacroPlacer2();
   return macro_placer->place(max_num_macro,
                              min_num_macro,

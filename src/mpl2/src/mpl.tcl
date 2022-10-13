@@ -60,7 +60,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -snap_layer snap_layer \
                                         }
 proc rtl_macro_placer { args } {
-<<<<<<< HEAD
     sta::parse_key_args "rtl_macro_placer" args keys { 
         -max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
@@ -71,34 +70,120 @@ proc rtl_macro_placer { args } {
         -pin_access_th -target_util \
         -target_dead_space -min_ar -snap_layer \
     } flag {  }
+
+# Set the default parameters for the macro_placer
+set max_num_macro 30
+set min_num_macro 5
+set max_num_inst  60000
+set min_num_inst  10000
+set tolerance     0.1
+set max_num_level 3
+set coarsening_ratio  10.0
+set num_bundled_ios   3
+set large_net_threshold 20
+set signature_net_threshold 20
+set halo_width   5.0
+set fence_lx     0.0
+set fence_ly     0.0
+set fence_ux     100000000.0
+set fence_uy     100000000.0
+
+set area_weight  0.1
+set outline_weight 10.0
+set wirelength_weight 0.5
+set guidance_weight 10.0
+set fence_weight   10.0
+set boundary_weight 5.0
+set notch_weight    5.0
+set pin_access_th   0.10
+set target_util 0.25
+set target_dead_space 0.25
+set min_ar  0.25
+set snap_layer 4
      
-    set max_num_macro  $keys(-max_num_macro)  
-    set min_num_macro  $keys(-min_num_macro) 
-    set max_num_inst   $keys(-max_num_inst)  
-    set min_num_inst   $keys(-min_num_inst)  
-    set tolerance      $keys(-tolerance)     
-    set max_num_level  $keys(-max_num_level) 
-    set coarsening_ratio $keys(-coarsening_ratio) 
-    set num_bundled_ios  $keys(-num_bundled_ios)  
-    set large_net_threshold  $keys(-large_net_threshold) 
-    set signature_net_threshold  $keys(-signature_net_threshold) 
-    set halo_width  $keys(-halo_width) 
-    set fence_lx    $keys(-fence_lx) 
-    set fence_ly    $keys(-fence_ly) 
-    set fence_ux    $keys(-fence_ux) 
-    set fence_uy    $keys(-fence_uy)
-    set area_weight $keys(-area_weight)
-    set wirelength_weight $keys(-wirelength_weight)
-    set outline_weight $keys(-outline_weight)
-    set guidance_weight $keys(-guidance_weight)
-    set fence_weight  $keys(-fence_weight)
-    set boundary_weight $keys(-boundary_weight)
-    set notch_weight  $keys(-notch_weight)
-    set pin_access_th $keys(-pin_access_th)
-    set target_util   $keys(-target_util)
-    set target_dead_space $keys(-target_dead_space)
-    set min_ar $keys(-min_ar)
-    set snap_layer $keys(-snap_layer)
+    if { [info exists keys(-max_num_macro)] } {
+      set max_num_macro  $keys(-max_num_macro)  
+    }
+    if { [info exists keys(-min_num_macro)] } {
+      set min_num_macro  $keys(-min_num_macro) 
+    }
+    if { [info exists keys(-max_num_inst)] } {
+      set max_num_inst   $keys(-max_num_inst)  
+    }
+    if { [info exists keys(-min_num_inst)] } {
+      set min_num_inst   $keys(-min_num_inst)  
+    }
+
+    if { [info exists keys(-tolerance)] } {
+      set tolerance      $keys(-tolerance)     
+    }
+
+    if { [info exists keys(-max_num_level)] } {
+      set max_num_level  $keys(-max_num_level) 
+    }
+    if { [info exists keys(-coarsening_ratio)] } {
+      set coarsening_ratio $keys(-coarsening_ratio) 
+    }
+    if { [info exists keys(-num_bundled_ios)] } {
+      set num_bundled_ios  $keys(-num_bundled_ios)  
+    }
+    if { [info exists keys(-large_net_threshold)] } {
+      set large_net_threshold  $keys(-large_net_threshold) 
+    }
+    if { [info exists keys(-signature_net_threshold)] } {
+      set signature_net_threshold  $keys(-signature_net_threshold) 
+    }
+    if { [info exists keys(-halo_width)] } {
+      set halo_width  $keys(-halo_width) 
+    }
+    if { [info exists keys(-fence_lx)] } {
+      set fence_lx    $keys(-fence_lx) 
+    }
+    if { [info exists keys(-fence_ly)] } {
+      set fence_ly    $keys(-fence_ly) 
+    }
+    if { [info exists keys(-fence_ux)] } {
+      set fence_ux    $keys(-fence_ux) 
+    }
+    if { [info exists keys(-fence_uy)] } {
+      set fence_uy    $keys(-fence_uy)
+    }
+    if { [info exists keys(-area_weight)] } {
+      set area_weight $keys(-area_weight)
+    }
+    if { [info exists keys(-wirelength_weight)] } {
+      set wirelength_weight $keys(-wirelength_weight)
+    }
+    if { [info exists keys(-outline_weight)] } {
+      set outline_weight $keys(-outline_weight)
+    }
+    if { [info exists keys(-guidance_weight)] } {
+      set guidance_weight $keys(-guidance_weight)
+    }
+    if { [info exists keys(-fence_weight)] } {
+      set fence_weight  $keys(-fence_weight)
+    }
+    if { [info exists keys(-boundary_weight)] } {
+      set boundary_weight $keys(-boundary_weight)
+    }
+    if { [info exists keys(-notch_weight)] } {
+      set notch_weight  $keys(-notch_weight)
+    }
+    if { [info exists keys(-pin_access_th)] } {
+      set pin_access_th $keys(-pin_access_th)
+    }
+    if { [info exists keys(-target_util)] } {
+      set target_util   $keys(-target_util)
+    }
+    if { [info exists keys(-target_dead_space)] } {
+      set target_dead_space $keys(-target_dead_space)
+    }
+    if { [info exists keys(-min_ar)] } {
+      set min_ar $keys(-min_ar)
+    }
+    if { [info exists keys(-snap_layer)] } {
+      set snap_layer $keys(-snap_layer)
+    }
         
     if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
                                       $min_num_macro  \
@@ -121,95 +206,7 @@ proc rtl_macro_placer { args } {
                                       $min_ar \
                                       $snap_layer \
                                       ]} {
-=======
-    sta::parse_key_args "rtl_macro_placer" args keys { -config_file -report_directory
-       -area_weight -wirelength_weight -outline_weight
-       -boundary_weight -macro_blockage_weight -location_weight -notch_weight -dead_space
-       -macro_halo -report_file -macro_blockage_file -prefer_location_file } flag {  }
 
-    if { ![info exists keys(-report_directory)] } {
-        utl::error MPL 2 "Missing mandatory -report_directory for RTLMP"
-    }
-
-#
-#  Default values for the weights
-#
-    set area_wt 0.01
-    set wirelength_wt 88.7
-    set outline_wt 74.71
-    set boundary_wt 225.0
-    set macro_blockage_wt 50.0
-    set location_wt 100.0
-    set notch_wt 212.0
-    set dead_space 0.05
-
-    set macro_halo 10.0
-    set report_directory "rtl_mp"
-    set report_file "partition.txt"
-    set config_file "" 
-    set macro_blockage_file "macro_blockage.txt"
-    set prefer_location_file "location.txt"
-
-    if { [info exists keys(-report_file)] } {
-        set report_file $keys(-report_file)
-    }
-
-    if { [info exists keys(-area_weight)] } {
-        set area_wt $keys(-area_weight)
-    }
-
-    if { [info exists keys(-wirelength_weight)] } {
-        set wirelength_wt $keys(-wirelength_weight)
-    }
-
-    if { [info exists keys(-outline_weight)] } {
-        set outline_wt $keys(-outline_weight)
-    }
-
-    if { [info exists keys(-boundary_weight)] } {
-        set boundary_wt $keys(-boundary_weight)
-    }
-
-    if { [info exists keys(-macro_blockage_weight)] } {
-        set macro_blockage_wt $keys(-macro_blockage_weight)
-    }
-
-    if { [info exists keys(-location_weight)] } {
-        set location_wt $keys(-location_weight)
-    }
-
-    if { [info exists keys(-notch_weight)] } {
-        set notch_wt $keys(-notch_weight)
-    }
-
-    if { [info exists keys(-dead_space)] } {
-        set dead_space $keys(-dead_space)
-    }
-
-    if { [info exists keys(-macro_halo)] } {
-        set macro_halo $keys(-macro_halo)
-    }
-
-    if { [info exists keys(-report_directory)] } {
-        set report_directory $keys(-report_directory)
-    }
-
-    if { [info exists keys(-config_file)] } {
-        set config_file $keys(-config_file)
-    }
-
-    if { [info exists keys(-macro_blockage_file)] } {
-        set macro_blockage_file $keys(-macro_blockage_file)
-    }
-
-    if { [info exists keys(-prefer_location_file)] } {
-        set prefer_location_file $keys(-prefer_location_file)
-    }
-
-    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $area_wt $wirelength_wt \
-                    $outline_wt $boundary_wt $macro_blockage_wt $location_wt $notch_wt $dead_space $macro_halo\
-                    $report_file $macro_blockage_file $prefer_location_file]} {
->>>>>>> origin/master
         return false
     }
 
