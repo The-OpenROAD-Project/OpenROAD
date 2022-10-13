@@ -971,10 +971,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
       logger_->error(
           PPL,
           79,
-          "Pin {} area {} is lesser than the minimum required area {}.",
+          "Pin {} area {:2.4f}um^2 is lesser than the minimum required area {:2.4f}um^2.",
           pin.getName(),
-          pin.getArea(),
-          required_min_area);
+          dbuToMicrons(dbuToMicrons(pin.getArea())),
+          dbuToMicrons(dbuToMicrons(required_min_area)));
     }
   } else {
     int pin_width = top_grid_->pin_width;
