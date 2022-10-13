@@ -2064,7 +2064,7 @@ int FlexPA::prepPattern_inst(frInst* inst,
       if (cnt != 0) {
         const double coord
             = (xWeight * sumXCoord + (1.0 - xWeight) * sumYCoord) / cnt;
-        pins.push_back({coord, {pin.get(), instTerm.get()}});
+        pins.push_back({(int)std::round(coord), {pin.get(), instTerm.get()}});
       }
     }
     if (nAps == 0 && instTerm->getTerm()->getPins().size())
