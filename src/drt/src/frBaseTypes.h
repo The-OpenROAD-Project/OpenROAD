@@ -203,7 +203,7 @@ enum class frConstraintTypeEnum
   frcSpacingTableInfluenceConstraint,
   frcLef58EolExtensionConstraint,
   frcLef58EolKeepOutConstraint,
-  frcLef58MinimumCutConstraint
+  frcLef58MinimumCutConstraint,
   frcLef58AreaConstraint
 };
 

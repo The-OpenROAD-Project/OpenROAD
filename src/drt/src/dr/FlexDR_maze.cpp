@@ -580,7 +580,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           } else {
             dx = std::max(dx, 0);
             dy = std::max(dy, 0);
-            if ((dx > 0 ^ dy > 0) && dx + dy < dist) {
+            if (((dx > 0) ^ (dy > 0)) && dx + dy < dist) {
               ;
             } else {
               continue;
