@@ -42,7 +42,6 @@ swig_lib(NAME      pdn
                        ${ODB_HOME}/src/swig/tcl
                        ${ODB_HOME}/include
          SCRIPTS   pdn.tcl
-                   PdnGen.tcl
 )
 
 target_sources(pdn

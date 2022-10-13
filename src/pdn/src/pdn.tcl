@@ -40,52 +40,44 @@ proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
     keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
 
-  sta::check_argc_eq0or1  "pdngen" $args
+  sta::check_argc_eq0  "pdngen" $args
 
   pdn::depricated flags -verbose
 
-  if {[llength $args] == 1} {
-    utl::warn PDN 1000 "Using legacy PDNGEN.\nConsider using \"convert_pdn_config $args\" to convert the legacy configuration."
-    set config_file [file nativename [lindex $args 0]]
-    pdngen::apply $config_file
-  } else {
-    sta::check_argc_eq0  "pdngen" $args
-
-    if {[info exists flags(-reset)]} {
-      if {[array size flags] != 1} {
-        utl::error PDN 1037 "-reset flag is mutually exclusive to all other flags"
-      }
-      pdn::reset
-      return
+  if {[info exists flags(-reset)]} {
+    if {[array size flags] != 1} {
+      utl::error PDN 1037 "-reset flag is mutually exclusive to all other flags"
     }
-    if {[info exists flags(-ripup)]} {
-      if {[array size flags] != 1} {
-        utl::error PDN 1038 "-ripup flag is mutually exclusive to all other flags"
-      }
-      pdn::rip_up
-      return
-    }
-    if {[info exists flags(-report_only)]} {
-      if {[array size flags] != 1} {
-        utl::error PDN 1039 "-report_only flag is mutually exclusive to all other flags"
-      }
-      pdn::report
-      return
-    }
-
-    set trim [expr [info exists flags(-skip_trim)] == 0]
-    set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
-
-    set failed_via_report ""
-    if {[info exists keys(-failed_via_report)]} {
-      set failed_via_report $keys(-failed_via_report)
-    }
-
-    pdn::check_setup
-    pdn::build_grids $trim
-    pdn::write_to_db $add_pins $failed_via_report
-    pdn::reset_shapes
+    pdn::reset
+    return
   }
+  if {[info exists flags(-ripup)]} {
+    if {[array size flags] != 1} {
+      utl::error PDN 1038 "-ripup flag is mutually exclusive to all other flags"
+    }
+    pdn::rip_up
+    return
+  }
+  if {[info exists flags(-report_only)]} {
+    if {[array size flags] != 1} {
+      utl::error PDN 1039 "-report_only flag is mutually exclusive to all other flags"
+    }
+    pdn::report
+    return
+  }
+
+  set trim [expr [info exists flags(-skip_trim)] == 0]
+  set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
+
+  set failed_via_report ""
+  if {[info exists keys(-failed_via_report)]} {
+    set failed_via_report $keys(-failed_via_report)
+  }
+
+  pdn::check_setup
+  pdn::build_grids $trim
+  pdn::write_to_db $add_pins $failed_via_report
+  pdn::reset_shapes
 }
 
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
