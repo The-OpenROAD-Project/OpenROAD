@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ppl/IOPlacer.h"
+
 #include <algorithm>
 #include <random>
 #include <sstream>
@@ -43,7 +45,6 @@
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "ppl/IOPlacer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -879,6 +880,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
 
   if (pin.getLayer() != top_grid_->layer) {
     int index = -1;
+    int required_min_area = 0;
 
     int i = 0;
     for (int layer : hor_layers_) {
@@ -910,6 +912,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       int height = int(
           std::max(2.0 * half_width,
                    ceil(core_->getMinAreaX()[index] / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaX()[index];
 
       int ext = 0;
       if (parms_->getVerticalLength() != -1) {
@@ -941,6 +944,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       int height = int(
           std::max(2.0 * half_width,
                    ceil(core_->getMinAreaY()[index] / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaY()[index];
 
       int ext = 0;
       if (parms_->getHorizontalLengthExtend() != -1) {
@@ -961,6 +965,16 @@ void IOPlacer::updatePinArea(IOPin& pin)
         pin.setLowerBound(pin.getX() - height, pin.getY() - half_width);
         pin.setUpperBound(pin.getX() + ext, pin.getY() + half_width);
       }
+    }
+
+    if (pin.getArea() < required_min_area) {
+      logger_->error(
+          PPL,
+          79,
+          "Pin {} area {} is lesser than the minimum required area {}.",
+          pin.getName(),
+          pin.getArea(),
+          required_min_area);
     }
   } else {
     int pin_width = top_grid_->pin_width;
@@ -1028,8 +1042,7 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   constraints_.push_back(constraint);
 }
 
-void IOPlacer::addTopLayerConstraint(PinList* pins,
-                                     const odb::Rect& region)
+void IOPlacer::addTopLayerConstraint(PinList* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
   constraints_.push_back(constraint);
