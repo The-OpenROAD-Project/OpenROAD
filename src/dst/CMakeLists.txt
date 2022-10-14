@@ -61,8 +61,10 @@ target_include_directories(dst
 target_link_libraries(dst
   PUBLIC
     utl
-    ${OPENSTA_LIBRARY}
-    ${Boost_LIBRARIES}
+    OpenSTA
+    Boost::serialization
+    Boost::system
+    Boost::thread
 )
 
 messages(

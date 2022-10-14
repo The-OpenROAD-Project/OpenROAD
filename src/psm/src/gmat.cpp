@@ -159,6 +159,15 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
   return node_map;
 }
 
+//! Function to check if the layer_map exists for a layer
+bool GMat::findLayer(int layer) 
+{
+  if (layer > layer_maps_.size() || layer <= 0)
+    return false;
+  const NodeMap& layer_map = layer_maps_[layer];
+  return (layer_map.size() != 0);
+}
+
 //! Function to return a pointer to the node with a index
 /*!
      \param x x location coordinate
@@ -168,8 +177,10 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
 */
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
+  if (!findLayer(layer))
+    logger_->error(utl::PSM, 45, "Layer {} contains no grid nodes.",layer);
   const NodeMap& layer_map = layer_maps_[layer];
-  if (layer != 1 && nearest == false) {
+  if (nearest == false) {
     const auto x_itr = layer_map.find(x);
     if (x_itr != layer_map.end()) {
       const auto y_itr = x_itr->second.find(y);
