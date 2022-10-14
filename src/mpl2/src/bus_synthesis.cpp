@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iterator>
 #include <set>
+#include <ortools/linear_solver/linear_solver.h>
 #include "object.h"
 #include "ilcplex/cplex.h"
 #include "ilcplex/ilocplex.h"

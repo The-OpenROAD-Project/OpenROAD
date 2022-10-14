@@ -62,13 +62,13 @@ typedef short unsigned int pixints;
  * CONFIGURED = has reasonable values for width, height, slices, etc
  * ALLOCATED = memory has been allocated
  */
-#define INIT 0
-#define WIDTH 1
-#define SLICES 2
-#define SCALING 4
-#define ALLOCATED 8
+const int INIT = 0;
+const int WIDTH = 1;
+const int SLICES = 2;
+const int SCALING = 4;
+const int ALLOCATED = 8;
 
-#define GS_ALL (WIDTH | SLICES | SCALING | ALLOCATED)
+const int GS_ALL = (WIDTH | SLICES | SCALING | ALLOCATED);
 
 #define GS_FILE 1
 #define GS_STRING 2
