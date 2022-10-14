@@ -31,6 +31,10 @@ assignees: ''
 
         ./etc/Env.sh
 
+    If you are an OpenLane user, please run the following shell command in the OpenLane root folder:
+
+        python3 ./env.py issue-survey
+
     Then copy and paste the ENTIRE output between the triple-backticks below. (```)
 
     If the command does not succeed, you are using an out-of-date version of
