@@ -8,13 +8,25 @@
 #include <algorithm>
 #include <iterator>
 #include <set>
+//#include <ortools/linear_solver/linear_solver.h>
+#include <absl/flags/flag.h>
+#include <absl/strings/match.h>
+#include <absl/strings/string_view.h>
+#include <ortools/base/commandlineflags.h>
+#include <ortools/base/init_google.h>
+#include <ortools/base/logging.h>
 #include <ortools/linear_solver/linear_solver.h>
+#include <ortools/linear_solver/linear_solver.pb.h>
 #include "object.h"
 #include "ilcplex/cplex.h"
 #include "ilcplex/ilocplex.h"
 
-
 namespace mpl {
+
+using operations_research::MPSolver;
+using operations_research::MPObjective;
+using operations_research::MPConstraint;
+using operations_research::MPVariable;
 
 //////////////////////////////////////////////////////////////
 // Class Graph
@@ -768,6 +780,10 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
    std::cout << "\n\n";
   }
 
+
+
+  // CPLEX Implementation (removed on 20221013 by Zhiang)
+  /*
   // Cal ILP Solver to solve the ILP problem
   IloEnv myenv;   // environment object
   IloModel mymodel(myenv);  // model object
@@ -813,10 +829,66 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
   if (feasible != IloTrue) 
     return false; // Something wrong, no feasible solution
   std::cout << "\n\n Total number of paths : " << num_paths << std::endl;
+  */
+
+  // Google OR-TOOLS for SCIP Implementation
+  // create the ILP solver with the SCIP backend
+  std::unique_ptr<MPSolver> solver(MPSolver::CreateSolver("SCIP"));
+  if (!solver) {
+    std::cout << "Error ! SCIP solver unavailable!" << std::endl;
+    return false;
+  }
+
+  // For each path, define a variable x
+  std::vector<const MPVariable*> x(num_paths);
+  for (int i = 0; i < num_paths; i++)
+    x[i] = solver->MakeIntVar(0.0, 1.0, "");
+  
+  // For each edge, define a variable y
+  std::vector<const MPVariable*> y(edge_list.size());
+  for (int i = 0; i < edge_list.size(); i++)
+    y[i] = solver->MakeIntVar(0.0, 1.0, "");
+  std::cout  << "Number of variables = " << solver->NumVariables() << std::endl;
+  const double infinity = solver->infinity();
+
+  // add constraints
+  int x_id = 0;
+  for (auto& net : nets) {
+    // need take a detail look [fix]
+    if (net.edge_paths.size() == 0)
+      continue;
+    MPConstraint* net_c = solver->MakeRowConstraint(1, 1, "");
+    for (auto& edge_path : net.edge_paths) {
+      for (auto& edge_id : edge_path) {
+        MPConstraint* edge_c = solver->MakeRowConstraint(0, infinity, "");
+        edge_c->SetCoefficient(x[x_id], -1);
+        edge_c->SetCoefficient(y[edge_id], 1);
+      }
+      net_c->SetCoefficient(x[x_id++], 1);
+    }
+  }
+  std::cout << "Number of constraints = " << solver->NumConstraints() << std::endl;
+  
+  // Create the objective function
+  MPObjective* const objective = solver->MutableObjective();
+  for (int i = 0; i < edge_list.size(); i++)
+    objective->SetCoefficient(y[i], edge_list[i].weight);
+  
+  objective->SetMinimization();
+  const MPSolver::ResultStatus result_status = solver->Solve();
+  // Check that the problem has an optimal solution.
+  if (result_status != MPSolver::OPTIMAL)
+    return false;  // The problem does not have an optimal solution;
+  std::cout << "Soluton : " << std::endl;
+  std::cout << "Optimal objective value = " << objective->Value() << std::endl;
+  
   // Generate the solution and check which edge get selected
   for (int i = 0; i < num_paths; i++) {
-    if (mycplex.getValue(x[i]) == 0)
-      continue; 
+    //if (mycplex.getValue(x[i]) == 0) for cplex
+    //  continue; 
+    if (x[i]->solution_value() == 0)
+      continue;
+
     std::cout << "working on path " << i << std::endl;
     auto target_cluster= soft_macros[nets[path_net_map[i]].terminals.second].GetCluster();
     PinAccess src_pin = NONE;
@@ -935,9 +1007,10 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
     }
     std::cout << "finish path " << i << std::endl;
   }
+  
   // closing the model
-  mycplex.clear();
-  myenv.end();
+  //mycplex.clear();
+  //myenv.end();
   return true;
 }
 
