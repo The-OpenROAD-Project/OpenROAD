@@ -842,7 +842,10 @@ NesterovPlace::getStepLength(
   debugPrint(log_, GPL, "replace", 3, "getStepLength:  CoordinateDistance: {:g}", coordiDistance);
   debugPrint(log_, GPL, "replace", 3, "getStepLength:  GradientDistance: {:g}", gradDistance);
 
-  return coordiDistance / gradDistance;
+  if (gradDistance == 0.0)
+    return 0;
+  else
+    return coordiDistance / gradDistance;
 }
 
 float
