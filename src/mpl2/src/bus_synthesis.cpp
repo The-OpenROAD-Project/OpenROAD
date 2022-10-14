@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <iterator>
 #include <set>
-//#include <ortools/linear_solver/linear_solver.h>
 #include <absl/flags/flag.h>
 #include <absl/strings/match.h>
 #include <absl/strings/string_view.h>
@@ -18,8 +17,11 @@
 #include <ortools/linear_solver/linear_solver.h>
 #include <ortools/linear_solver/linear_solver.pb.h>
 #include "object.h"
-//#include "ilcplex/cplex.h"
-//#include "ilcplex/ilocplex.h"
+
+#ifdef USE_CPLEX
+#include "ilcplex/cplex.h"
+#include "ilcplex/ilocplex.h"
+#endif
 
 namespace mpl {
 
@@ -781,7 +783,7 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
   }
 
 
-
+#ifdef USE_CPLEX
   // CPLEX Implementation (removed on 20221013 by Zhiang)
   /*
   // Cal ILP Solver to solve the ILP problem
@@ -830,6 +832,8 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
     return false; // Something wrong, no feasible solution
   std::cout << "\n\n Total number of paths : " << num_paths << std::endl;
   */
+
+#endif // USE_CPLEX
 
   // Google OR-TOOLS for SCIP Implementation
   // create the ILP solver with the SCIP backend
