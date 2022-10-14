@@ -1428,7 +1428,7 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
-      int new_y = (dist_lb < dist_ub) ? lb_y + (width / 2) : ub_y - (width / 2);
+      int new_y = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
       pos.setY(new_y);
     }
   }
