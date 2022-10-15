@@ -21,14 +21,18 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v32
-      - name: Check format of all changed files
+      - name: Check format of cpp changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            clang-format --dry-run --Werror $file
+            if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
+              clang-format --dry-run --Werror $file
+            fi
           done
-      - name: Check readability of all changed files
+      - name: Check readability of cpp changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            clang-tidy $file
+            if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
+              clang-tidy $file
+            fi
           done
         
