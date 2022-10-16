@@ -1114,11 +1114,16 @@ void FastRouteCore::StNetOrder()
   tree_order_cong_.resize(netCount());
 
   i = 0;
-  for (j = 0; j < netCount(); j++) {
+  for (j = 0; j < netCount(); j++) { 
+
     stree = &(sttrees_[j]);
     d = stree->deg;
     tree_order_cong_[j].xmin = 0;
     tree_order_cong_[j].treeIndex = j;
+
+    // if the net is routed
+    if (nets_[j]->is_routed) continue;
+
     for (ind = 0; ind < 2 * d - 3; ind++) {
       treeedges = stree->edges;
       treeedge = &(treeedges[ind]);
@@ -1218,11 +1223,13 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
+        v_edges_[ymin][gridsX[i]].usage += net->edgeCost;
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
           += net->layerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
+        h_edges_[gridsY[i]][xmin].usage += net->edgeCost;
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
           += net->layerEdgeCost(gridsL[i]);
       }
