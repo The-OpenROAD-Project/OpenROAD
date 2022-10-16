@@ -55,6 +55,8 @@
 
 namespace mpl {
 
+using std::string;
+
 //////////////////////////////////////////////////////////////////
 // Class SimulatedAnnealingCore
 template <class T>
@@ -545,6 +547,7 @@ void SimulatedAnnealingCore<T>::FastSA()
   CalPenalty();
 
   std::ofstream file;
+  //file.open(string(report_directory_) + string("/") + "floorplan.txt");
   file.open("floorplan.txt");
   for (auto& macro : macros_)
     file << macro.GetName() << "    "

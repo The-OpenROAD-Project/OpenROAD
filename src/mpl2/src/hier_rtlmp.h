@@ -111,6 +111,7 @@ class HierRTLMP {
     void SetTargetDeadSpace(float target_dead_space);
     void SetMinAR(float min_ar);
     void SetSnapLayer(int snap_layer);
+    void SetReportDirectory(const char* report_directory);
 
   private:
     ord::dbNetwork* network_ = nullptr;
@@ -130,6 +131,7 @@ class HierRTLMP {
     int num_hard_macros_cluster_ = 0;
 
     // Parameters related to macro placement
+    const char*   report_directory_;
     // User can specify a global region for some designs
     float global_fence_lx_ = std::numeric_limits<float>::max();
     float global_fence_ly_ = std::numeric_limits<float>::max();

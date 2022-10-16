@@ -82,7 +82,8 @@ class MacroPlacer2
                const float target_util,
                const float target_dead_space,
                const float min_ar, 
-               const int snap_layer);
+               const int snap_layer,
+               const char* report_directory);
   private:
     ord::dbNetwork* network_ = nullptr;
     sta::dbSta* sta_ = nullptr;

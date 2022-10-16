@@ -58,6 +58,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
+                                          -report_directory report_directory \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
@@ -68,7 +69,7 @@ proc rtl_macro_placer { args } {
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
         -boundary_weight -notch_weight \
         -pin_access_th -target_util \
-        -target_dead_space -min_ar -snap_layer \
+        -target_dead_space -min_ar -snap_layer -report_directory \
     } flag {  }
 
 # Set the default parameters for the macro_placer
@@ -100,6 +101,7 @@ set target_util 0.25
 set target_dead_space 0.25
 set min_ar  0.25
 set snap_layer 4
+set report_directory "hier_rtlmp"
      
     if { [info exists keys(-max_num_macro)] } {
       set max_num_macro  $keys(-max_num_macro)  
@@ -184,7 +186,13 @@ set snap_layer 4
     if { [info exists keys(-snap_layer)] } {
       set snap_layer $keys(-snap_layer)
     }
+    if { [info exists keys(-report_directory)] } {
+        set report_directory $keys(-report_directory)
+    }
+
         
+    file mkdir $report_directory
+
     if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
                                       $min_num_macro  \
                                       $max_num_inst   \
@@ -205,6 +213,7 @@ set snap_layer 4
                                       $target_dead_space \
                                       $min_ar \
                                       $snap_layer \
+                                      $report_directory \
                                       ]} {
 
         return false

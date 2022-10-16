@@ -508,9 +508,12 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float target_util,
                          const float target_dead_space, 
                          const float min_ar, 
-                         const int snap_layer)
+                         const int snap_layer,
+                         const char* report_directory)
 {
   HierRTLMP* rtlmp_engine_ = new HierRTLMP(network_, db_, sta_, logger_);
+
+  logger_->report("Hier_RTLMP report dir: {}", report_directory);
 
   rtlmp_engine_->SetTopLevelClusterSize(max_num_macro,
                                         min_num_macro,
@@ -537,6 +540,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetTargetDeadSpace(target_dead_space);
   rtlmp_engine_->SetMinAR(min_ar);
   rtlmp_engine_->SetSnapLayer(snap_layer);
+  rtlmp_engine_->SetReportDirectory(report_directory);
 
 
   rtlmp_engine_->HierRTLMacroPlacer();

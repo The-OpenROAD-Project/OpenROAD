@@ -85,6 +85,8 @@
 
 namespace mpl {
 
+using std::string;
+
 ///////////////////////////////////////////////////////////
 // Class HierRTLMP
 using utl::MPL;
@@ -224,6 +226,10 @@ void HierRTLMP::SetMinAR(float min_ar)
 void HierRTLMP::SetSnapLayer(int snap_layer)
 {
   snap_layer_ = snap_layer;
+}
+void HierRTLMP::SetReportDirectory(const char* report_directory)
+{
+  report_directory_ = report_directory;
 }
 
 
@@ -2746,6 +2752,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
     if (file_name[i] == '/')
       file_name[i] = '*';
       
+  file_name = string(report_directory_) + string("/") + file_name;
   file.open(file_name + "net.txt");
   for (auto& net : nets)
     file << macros[net.terminals.first].GetName() << "   "
@@ -2879,6 +2886,9 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
 
   // For debug
   //std::ofstream file;
+  //file_name = string("./") + string(report_directory_) + string("/") + file_name;
+  logger_->report(" file_name (cur) = {}", file_name);
+
   file.open(file_name + ".fp.txt");
   for (auto& macro : shaped_macros)
     file << macro.GetName() << "   "
@@ -2949,7 +2959,7 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
   
     
   // for debug
-  file.open("pin_access.txt");
+  file.open(string("./") + string(report_directory_) + string("/") + "pin_access.txt");
   for (auto& cluster : parent->GetChildren()) {
     std::set<PinAccess> pin_access;
     for (auto& [cluster_id, pin_weight] : cluster->GetPinAccessMap())
