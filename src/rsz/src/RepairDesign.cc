@@ -655,10 +655,11 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   double length1 = dbuToMeters(length);
   double wire_res, wire_cap;
   bnet->wireRC(corner_, resizer_, wire_res, wire_cap);
-  double load_cap = length1 * wire_cap + bnet->ref()->cap();
+  double ref_cap = bnet->ref()->cap();
+  double load_cap = length1 * wire_cap + ref_cap;
 
   float r_drvr = resizer_->driveResistance(drvr_pin_);
-  double load_slew = (r_drvr + length1 * wire_res) *
+  double load_slew = (r_drvr + dbuToMeters(wire_length) * wire_res) *
     load_cap * elmore_skew_factor_;
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load_slew={} r_drvr={}",
              "", level,
@@ -669,7 +670,6 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                                                       load_cap, false);
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-  float ref_cap = bnet->ref()->cap();
 
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
@@ -707,15 +707,20 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  delayAsString(load_slew, this, 3),
                  delayAsString(max_load_slew, this, 3));
       // Using elmore delay to approximate wire
-      // load_slew = (Rbuffer + L*Rwire) * (L*Cwire + Cref) * elmore_skew_factor_
+      // load_slew = (Rbuffer + (L+Lref)*Rwire) * (L*Cwire + Cref) * elmore_skew_factor_
       // Setting this to max_load_slew is a quadratic in L
-      // L^2*Rwire*Cwire + L*(Rbuffer*Cwire + Rwire*Cref)
+      // L^2*Rwire*Cwire + L*(Rbuffer*Cwire + Rwire*Cref + Rwire*Cwire*Lref)
       //   + Rbuffer*Cref - max_load_slew/elmore_skew_factor_
       // Solve using quadradic eqn for L.
+      float wire_length_ref1 = dbuToMeters(wire_length_ref);
       float r_buffer = resizer_->bufferDriveResistance(buffer_cell);
       float a = wire_res * wire_cap;
-      float b = r_buffer * wire_cap + wire_res * ref_cap;
-      float c = r_buffer * ref_cap - max_load_slew / elmore_skew_factor_;
+      float b = r_buffer * wire_cap
+        + wire_res * ref_cap
+        + wire_res * wire_cap * wire_length_ref1;
+      float c = r_buffer * ref_cap
+        + wire_length_ref1 * wire_res * ref_cap
+        - max_load_slew / elmore_skew_factor_;
       float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));
@@ -752,7 +757,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       to_x = buf_x;
       to_y = buf_y;
 
-      float length1 = dbuToMeters(length);
+      length1 = dbuToMeters(length);
       load_cap = repeater_cap + length1 * wire_cap;
       ref_cap = repeater_cap;
       load_slew = (r_drvr + length1 * wire_res) * load_cap * elmore_skew_factor_;
