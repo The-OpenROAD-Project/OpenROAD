@@ -73,16 +73,16 @@ proc rtl_macro_placer { args } {
     } flag {  }
 
 # Set the default parameters for the macro_placer
-set max_num_macro 30
-set min_num_macro 5
+set max_num_macro 12
+set min_num_macro 6
 set max_num_inst  60000
 set min_num_inst  10000
 set tolerance     0.1
 set max_num_level 3
 set coarsening_ratio  10.0
 set num_bundled_ios   3
-set large_net_threshold 20
-set signature_net_threshold 20
+set large_net_threshold 50
+set signature_net_threshold 50
 set halo_width   5.0
 set fence_lx     0.0
 set fence_ly     0.0
@@ -90,16 +90,16 @@ set fence_ux     100000000.0
 set fence_uy     100000000.0
 
 set area_weight  0.1
-set outline_weight 10.0
-set wirelength_weight 0.5
-set guidance_weight 10.0
-set fence_weight   10.0
+set outline_weight 100.0
+set wirelength_weight 50.0
+set guidance_weight 150.0
+set fence_weight   150.0
 set boundary_weight 5.0
-set notch_weight    5.0
-set pin_access_th   0.10
+set notch_weight    150.0
+set pin_access_th   0.05
 set target_util 0.25
 set target_dead_space 0.25
-set min_ar  0.25
+set min_ar  0.33
 set snap_layer 4
 set report_directory "hier_rtlmp"
      
