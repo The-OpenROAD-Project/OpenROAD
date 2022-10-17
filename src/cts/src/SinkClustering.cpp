@@ -44,6 +44,7 @@
 #include <tuple>
 
 #include "utl/Logger.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace cts {
 
