@@ -22,7 +22,6 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v32
       - name: Check format of cpp changed files
-        continue-on-error: true
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
@@ -44,7 +43,6 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v32
       - name: Check readability of cpp changed files
-        continue-on-error: true
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
