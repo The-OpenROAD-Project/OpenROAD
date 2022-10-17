@@ -51,10 +51,8 @@ class Point3D : public Point
     setY(y);
     z_ = z;
   }
-  bool operator==(const Point3D& pIn) const
-  {
-    return (x() == pIn.x()) && (y() == pIn.y()) && z_ == pIn.z_;
-  }
+  bool operator==(const Point3D& pIn) const{
+    return (x() == pIn.x()) && (y() == pIn.y()) && z_ == pIn.z_;}
 
   bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
 
