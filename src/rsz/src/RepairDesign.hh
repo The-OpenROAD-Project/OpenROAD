@@ -89,11 +89,11 @@ public:
   RepairDesign(Resizer *resizer);
   ~RepairDesign();
   void repairDesign(double max_wire_length,
-                    double max_slew_margin,
-                    double max_cap_margin);
+                    double slew_margin,
+                    double cap_margin);
   void repairDesign(double max_wire_length, // zero for none (meters)
-                    double max_slew_margin,
-                    double max_cap_margin,
+                    double slew_margin,
+                    double cap_margin,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,
@@ -102,8 +102,8 @@ public:
   int insertedBufferCount() const { return inserted_buffer_count_; }
   void repairNet(Net *net,
                  double max_wire_length,
-                 double max_slew_margin,
-                 double max_cap_margin);
+                 double slew_margin,
+                 double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
 
@@ -159,6 +159,7 @@ protected:
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
+  float maxSlewMargined(float max_slew);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
                          const Corner *corner);
@@ -235,8 +236,8 @@ protected:
   const Pin *drvr_pin_;
   float max_cap_;
   int max_length_;
-  double max_slew_margin_;
-  double max_cap_margin_;
+  double slew_margin_;
+  double cap_margin_;
   const Corner *corner_;
 
   int resize_count_;

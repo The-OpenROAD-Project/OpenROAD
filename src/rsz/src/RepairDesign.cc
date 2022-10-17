@@ -111,13 +111,13 @@ RepairDesign::init()
 // max_wire_length zero for none (meters)
 void
 RepairDesign::repairDesign(double max_wire_length,
-                           double max_slew_margin,
-                           double max_cap_margin)
+                           double slew_margin,
+                           double cap_margin)
 {
   init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length, max_slew_margin, max_cap_margin,
+  repairDesign(max_wire_length, slew_margin, cap_margin,
                repaired_net_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -139,8 +139,8 @@ RepairDesign::repairDesign(double max_wire_length,
 
 void
 RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
-                           double max_slew_margin,
-                           double max_cap_margin,
+                           double slew_margin,
+                           double cap_margin,
                            int &repaired_net_count,
                            int &slew_violations,
                            int &cap_violations,
@@ -148,8 +148,8 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            int &length_violations)
 {
   init();
-  max_slew_margin_ = max_slew_margin;
-  max_cap_margin_ = max_cap_margin;
+  slew_margin_ = slew_margin;
+  cap_margin_ = cap_margin;
 
   slew_violations = 0;
   cap_violations = 0;
@@ -201,8 +201,8 @@ void
 RepairDesign::repairClkNets(double max_wire_length)
 {
   init();
-  max_slew_margin_ = 0.0;
-  max_cap_margin_ = 0.0;
+  slew_margin_ = 0.0;
+  cap_margin_ = 0.0;
 
   // Need slews to resize inserted buffers.
   sta_->findDelays();
@@ -254,12 +254,12 @@ RepairDesign::repairClkNets(double max_wire_length)
 void
 RepairDesign::repairNet(Net *net,
                         double max_wire_length, // meters
-                        double max_slew_margin,
-                        double max_cap_margin)
+                        double slew_margin,
+                        double cap_margin)
 {
   init();
-  max_slew_margin_ = max_slew_margin;
-  max_cap_margin_ = max_cap_margin;
+  slew_margin_ = slew_margin;
+  cap_margin_ = cap_margin;
 
   int slew_violations = 0;
   int cap_violations = 0;
@@ -368,7 +368,7 @@ RepairDesign::repairNet(Net *net,
           sta_->checkCapacitance(drvr_pin, nullptr, max_,
                                  corner1, tr1, cap1, max_cap1, cap_slack1);
           if (max_cap1 > 0.0 && corner1) {
-            max_cap1 *= (1.0 - max_cap_margin_ / 100.0);
+            max_cap1 *= (1.0 - cap_margin_ / 100.0);
             max_cap = max_cap1;
             if (cap1 > max_cap1) {
               corner = corner1;
@@ -414,7 +414,7 @@ RepairDesign::repairNet(Net *net,
           // input pins.
           // Max slew violations at the load pins are repaired by inserting buffers
           // and reducing the wire length to the load.
-          resizer_->checkLoadSlews(drvr_pin, max_slew_margin_,
+          resizer_->checkLoadSlews(drvr_pin, slew_margin_,
                                    slew1, max_slew1, slew_slack1, corner1);
           if (slew_slack1 < 0.0) {
             debugPrint(logger_, RSZ, "repair_net", 2,
@@ -462,7 +462,7 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
     const RiseFall *tr1;
     sta_->checkCapacitance(drvr_pin, nullptr, max_,
                            corner1, tr1, cap1, max_cap1, cap_slack1);
-    max_cap1 *= (1.0 - max_cap_margin_ / 100.0);
+    max_cap1 *= (1.0 - cap_margin_ / 100.0);
     if (cap1 < max_cap1)
       return true;
   }
@@ -480,7 +480,7 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
     checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
-    resizer_->checkLoadSlews(drvr_pin, max_slew_margin_, slew1,
+    resizer_->checkLoadSlews(drvr_pin, slew_margin_, slew1,
                              max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
@@ -507,7 +507,7 @@ RepairDesign::checkSlew(const Pin *drvr_pin,
   sta_->checkSlew(drvr_pin, nullptr, max_, false,
                   corner1, tr1, slew1, limit1, slack1);
   if (corner1) {
-    limit1 *= (1.0 - max_slew_margin_ / 100.0);
+    limit1 *= (1.0 - slew_margin_ / 100.0);
     slack1 = limit1 - slew1;
     if (slack1 < slack) {
       slew = slew1;
@@ -636,6 +636,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   int wire_length_ref;
   repairNet(bnet->ref(), level+1, wire_length_ref, load_pins);
   float max_load_slew = bnet->maxLoadSlew();
+  float max_load_slew_margined = maxSlewMargined(max_load_slew);
 
   Point to_loc = bnet->ref()->location();
   int to_x = to_loc.getX();
@@ -674,7 +675,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
              && load_cap > max_cap_)
-         || load_slew > max_load_slew) {
+         || load_slew > max_load_slew_margined) {
     // Make the wire a bit shorter than necessary to allow for
     // offset from instance origin to pin and detailed placement movement.
     static double length_margin = .05;
@@ -706,16 +707,16 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                          metersToDbu((max_cap_ - ref_cap) / wire_cap));
       split_wire = true;
     }
-    if (load_slew > max_load_slew) { 
+    if (load_slew > max_load_slew_margined) { 
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}max load slew violation {} > {}",
                  "", level,
                  delayAsString(load_slew, this, 3),
-                 delayAsString(max_load_slew, this, 3));
+                 delayAsString(max_load_slew_margined, this, 3));
       // Using elmore delay to approximate wire
       // load_slew = (Rbuffer + (L+Lref)*Rwire) * (L*Cwire + Cref) * elmore_skew_factor_
-      // Setting this to max_load_slew is a quadratic in L
+      // Setting this to max_load_slew_margined is a quadratic in L
       // L^2*Rwire*Cwire + L*(Rbuffer*Cwire + Rwire*Cref + Rwire*Cwire*Lref)
-      //   + Rbuffer*Cref - max_load_slew/elmore_skew_factor_
+      //   + Rbuffer*Cref - max_load_slew_margined/elmore_skew_factor_
       // Solve using quadradic eqn for L.
       float wire_length_ref1 = dbuToMeters(wire_length_ref);
       float r_buffer = resizer_->bufferDriveResistance(buffer_cell);
@@ -725,7 +726,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
         + wire_res * wire_cap * wire_length_ref1;
       float c = r_buffer * ref_cap
         + wire_length_ref1 * wire_res * ref_cap
-        - max_load_slew / elmore_skew_factor_;
+        - max_load_slew_margined / elmore_skew_factor_;
       float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));
@@ -765,6 +766,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       length1 = dbuToMeters(length);
       load_cap = repeater_cap + length1 * wire_cap;
       ref_cap = repeater_cap;
+      max_load_slew_margined = maxSlewMargined(max_load_slew);
       load_slew = (r_drvr + length1 * wire_res) * load_cap * elmore_skew_factor_;
       buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                              load_cap, false);
@@ -780,6 +782,12 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
     else
       break;
   }
+}
+
+float
+RepairDesign::maxSlewMargined(float max_slew)
+{
+  return max_slew * (1.0 - slew_margin_ / 100.0);
 }
 
 void
@@ -827,6 +835,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   wire_length = wire_length_left + wire_length_right;
   float load_cap = cap_left + cap_right;
   float max_load_slew = min(max_load_slew_left, max_load_slew_right);
+  float max_load_slew_margined = maxSlewMargined(max_load_slew);
   LibertyCell *buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                                       load_cap, false);
 
@@ -837,20 +846,20 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   float r_drvr = resizer_->driveResistance(drvr_pin_);
   float load_slew = (r_drvr + dbuToMeters(wire_length) * wire_res)
     * load_cap * elmore_skew_factor_;
-  bool load_slew_violation = load_slew > max_load_slew;
+  bool load_slew_violation = load_slew > max_load_slew_margined;
   const char *repeater_reason = nullptr;
   // Driver slew checks were converted to max cap.
   if (load_slew_violation) {
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load slew violation {} > {}",
                "", level,
                delayAsString(load_slew, this, 3),
-               delayAsString(max_load_slew, this, 3));
+               delayAsString(max_load_slew_margined, this, 3));
     float slew_left = (r_drvr + dbuToMeters(wire_length_left) * wire_res)
       * cap_left * elmore_skew_factor_;
-    float slew_slack_left = max_load_slew_left - slew_left;
+    float slew_slack_left = maxSlewMargined(max_load_slew_left) - slew_left;
     float slew_right = (r_drvr + dbuToMeters(wire_length_right) * wire_res)
       * cap_right * elmore_skew_factor_;
-    float slew_slack_right = max_load_slew_right - slew_right;
+    float slew_slack_right = maxSlewMargined(max_load_slew_right) - slew_right;
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s} slew slack left={} right={}",
                "", level,
                delayAsString(slew_slack_left, this, 3),
