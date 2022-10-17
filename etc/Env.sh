@@ -10,7 +10,7 @@ else
     latestGitCommit="$(git ls-remote https://github.com/The-OpenROAD-Project/OpenROAD.git HEAD | awk '{print $1}')"
     currentGitCommit="$(git rev-parse HEAD)"
     if [[ ${currentGitCommit} != ${latestGitCommit} ]]; then
-        echo "Please pull the latest changes and try, if problem persists file a github issue with the re-producible test case."
+        echo "Please pull the latest changes and try again, if problem persists file a github issue with the re-producible test case."
         exit 1
     else
         echo "Git commit: ${currentGitCommit}"
