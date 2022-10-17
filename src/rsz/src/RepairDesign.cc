@@ -111,13 +111,13 @@ RepairDesign::init()
 // max_wire_length zero for none (meters)
 void
 RepairDesign::repairDesign(double max_wire_length,
-                           double slew_margin,
+                           double max_slew_margin,
                            double max_cap_margin)
 {
   init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length, slew_margin, max_cap_margin,
+  repairDesign(max_wire_length, max_slew_margin, max_cap_margin,
                repaired_net_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -139,7 +139,7 @@ RepairDesign::repairDesign(double max_wire_length,
 
 void
 RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
-                           double slew_margin,
+                           double max_slew_margin,
                            double max_cap_margin,
                            int &repaired_net_count,
                            int &slew_violations,
@@ -148,6 +148,8 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            int &length_violations)
 {
   init();
+  max_slew_margin_ = max_slew_margin;
+  max_cap_margin_ = max_cap_margin;
 
   slew_violations = 0;
   cap_violations = 0;
@@ -178,8 +180,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
-      repairNet(net, drvr_pin, drvr, slew_margin, max_cap_margin,
-                true, true, true, max_length, true,
+      repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
                 repaired_net_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
     if (debug)
@@ -200,6 +201,9 @@ void
 RepairDesign::repairClkNets(double max_wire_length)
 {
   init();
+  max_slew_margin_ = 0.0;
+  max_cap_margin_ = 0.0;
+
   // Need slews to resize inserted buffers.
   sta_->findDelays();
 
@@ -225,7 +229,7 @@ RepairDesign::repairClkNets(double max_wire_length)
             network_->isDriver(clk_pin)) {
           Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
           // Do not resize clock tree gates.
-          repairNet(net, clk_pin, drvr, 0.0, 0.0,
+          repairNet(net, clk_pin, drvr,
                     false, false, false, max_length, false,
                     repaired_net_count, slew_violations, cap_violations,
                     fanout_violations, length_violations);
@@ -250,10 +254,12 @@ RepairDesign::repairClkNets(double max_wire_length)
 void
 RepairDesign::repairNet(Net *net,
                         double max_wire_length, // meters
-                        double slew_margin,
+                        double max_slew_margin,
                         double max_cap_margin)
 {
   init();
+  max_slew_margin_ = max_slew_margin;
+  max_cap_margin_ = max_cap_margin;
 
   int slew_violations = 0;
   int cap_violations = 0;
@@ -276,8 +282,7 @@ RepairDesign::repairNet(Net *net,
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net, drvr_pin, drvr, slew_margin, max_cap_margin,
-              true, true, true, max_length, true,
+    repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
               repaired_net_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
   }
@@ -308,8 +313,6 @@ void
 RepairDesign::repairNet(Net *net,
                         const Pin *drvr_pin,
                         Vertex *drvr,
-                        double slew_margin,
-                        double max_cap_margin,
                         bool check_slew,
                         bool check_cap,
                         bool check_fanout,
@@ -339,7 +342,6 @@ RepairDesign::repairNet(Net *net,
         LoadRegion region = findLoadRegions(drvr_pin, max_fanout);
         corner_ = corner;
         makeRegionRepeaters(region, max_fanout, 1, drvr_pin,
-                            slew_margin, max_cap_margin,
                             check_slew, check_cap, max_length, resize_drvr);
 
       }
@@ -366,7 +368,7 @@ RepairDesign::repairNet(Net *net,
           sta_->checkCapacitance(drvr_pin, nullptr, max_,
                                  corner1, tr1, cap1, max_cap1, cap_slack1);
           if (max_cap1 > 0.0 && corner1) {
-            max_cap1 *= (1.0 - max_cap_margin / 100.0);
+            max_cap1 *= (1.0 - max_cap_margin_ / 100.0);
             max_cap = max_cap1;
             if (cap1 > max_cap1) {
               corner = corner1;
@@ -385,7 +387,7 @@ RepairDesign::repairNet(Net *net,
           float slew1, slew_slack1, max_slew1;
           const Corner *corner1;
           // Check slew at the driver.
-          checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
+          checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
           // Max slew violations at the driver pin are repaired by reducing the
           // load capacitance. Wire resistance may shield capacitance from the
           // driver but so this is conservative.
@@ -412,8 +414,8 @@ RepairDesign::repairNet(Net *net,
           // input pins.
           // Max slew violations at the load pins are repaired by inserting buffers
           // and reducing the wire length to the load.
-          resizer_->checkLoadSlews(drvr_pin, slew_margin, slew1,
-                                   max_slew1, slew_slack1, corner1);
+          resizer_->checkLoadSlews(drvr_pin, max_slew_margin_,
+                                   slew1, max_slew1, slew_slack1, corner1);
           if (slew_slack1 < 0.0) {
             debugPrint(logger_, RSZ, "repair_net", 2,
                        "load slew violation load_slew={} max_slew={}",
@@ -450,8 +452,6 @@ RepairDesign::repairNet(Net *net,
 
 bool
 RepairDesign::checkLimits(const Pin *drvr_pin,
-                          double slew_margin,
-                          double max_cap_margin,
                           bool check_slew,
                           bool check_cap,
                           bool check_fanout)
@@ -462,7 +462,7 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
     const RiseFall *tr1;
     sta_->checkCapacitance(drvr_pin, nullptr, max_,
                            corner1, tr1, cap1, max_cap1, cap_slack1);
-    max_cap1 *= (1.0 - max_cap_margin / 100.0);
+    max_cap1 *= (1.0 - max_cap_margin_ / 100.0);
     if (cap1 < max_cap1)
       return true;
   }
@@ -477,10 +477,10 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
   if (check_slew) {
     float slew1, slew_slack1, max_slew1;
     const Corner *corner1;
-    checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
+    checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
-    resizer_->checkLoadSlews(drvr_pin, slew_margin, slew1,
+    resizer_->checkLoadSlews(drvr_pin, max_slew_margin_, slew1,
                              max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
@@ -490,7 +490,6 @@ RepairDesign::checkLimits(const Pin *drvr_pin,
 
 void
 RepairDesign::checkSlew(const Pin *drvr_pin,
-                        double slew_margin,
                         // Return values.
                         Slew &slew,
                         float &limit,
@@ -508,7 +507,7 @@ RepairDesign::checkSlew(const Pin *drvr_pin,
   sta_->checkSlew(drvr_pin, nullptr, max_, false,
                   corner1, tr1, slew1, limit1, slack1);
   if (corner1) {
-    limit1 *= (1.0 - slew_margin / 100.0);
+    limit1 *= (1.0 - max_slew_margin_ / 100.0);
     slack1 = limit1 - slew1;
     if (slack1 < slack) {
       slew = slew1;
@@ -1006,8 +1005,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
                                   int max_fanout,
                                   int level,
                                   const Pin *drvr_pin,
-                                  double slew_margin,
-                                  double max_cap_margin,
                                   bool check_slew,
                                   bool check_cap,
                                   int max_length,
@@ -1018,8 +1015,8 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
   if (!region.regions_.empty()) {
     // Buffer from the bottom up.
     for (LoadRegion &sub : region.regions_)
-      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin, slew_margin,
-                          max_cap_margin, check_slew, check_cap, max_length,
+      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin, 
+                          check_slew, check_cap, max_length,
                           resize_drvr);
 
     PinSeq repeater_inputs;
@@ -1033,7 +1030,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
           makeFanoutRepeater(repeater_loads, repeater_inputs,
                              region.bbox_,
                              findClosedPinLoc(drvr_pin, repeater_loads),
-                             slew_margin, max_cap_margin,
                              check_slew, check_cap, max_length,
                              resize_drvr);
       }
@@ -1045,7 +1041,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
         makeFanoutRepeater(repeater_loads, repeater_inputs,
                            region.bbox_,
                            findClosedPinLoc(drvr_pin, repeater_loads),
-                           slew_margin, max_cap_margin,
                            check_slew, check_cap, max_length,
                            resize_drvr);
 
@@ -1054,7 +1049,6 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
       makeFanoutRepeater(repeater_loads, repeater_inputs,
                          region.bbox_,
                          findClosedPinLoc(drvr_pin, repeater_loads),
-                         slew_margin, max_cap_margin,
                          check_slew, check_cap, max_length,
                          resize_drvr);
     else
@@ -1070,8 +1064,6 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  PinSeq &repeater_inputs,
                                  Rect bbox,
                                  Point loc,
-                                 double slew_margin,
-                                 double max_cap_margin,
                                  bool check_slew,
                                  bool check_cap,
                                  int max_length,
@@ -1096,7 +1088,7 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairNet(out_net, repeater_out_pin, repeater_out_vertex,
-            slew_margin, max_cap_margin, check_slew, check_cap, false /* check_fanout */,
+            check_slew, check_cap, false /* check_fanout */,
             max_length, resize_drvr, repaired_net_count, slew_violations,
             cap_violations, fanout_violations, length_violations);
   repeater_inputs.push_back(repeater_in_pin);

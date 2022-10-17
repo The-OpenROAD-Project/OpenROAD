@@ -89,11 +89,11 @@ public:
   RepairDesign(Resizer *resizer);
   ~RepairDesign();
   void repairDesign(double max_wire_length,
-                    double slew_margin,
-                    double cap_margin);
+                    double max_slew_margin,
+                    double max_cap_margin);
   void repairDesign(double max_wire_length, // zero for none (meters)
-                    double slew_margin,
-                    double cap_margin,
+                    double max_slew_margin,
+                    double max_cap_margin,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,
@@ -102,8 +102,8 @@ public:
   int insertedBufferCount() const { return inserted_buffer_count_; }
   void repairNet(Net *net,
                  double max_wire_length,
-                 double slew_margin,
-                 double cap_margin);
+                 double max_slew_margin,
+                 double max_cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
 
@@ -112,8 +112,6 @@ protected:
   void repairNet(Net *net,
                  const Pin *drvr_pin,
                  Vertex *drvr,
-                 double slew_margin,
-                 double cap_margin,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
@@ -125,13 +123,10 @@ protected:
                  int &fanout_violations,
                  int &length_violations);
   bool checkLimits(const Pin *drvr_pin,
-                   double slew_margin,
-                   double cap_margin,
                    bool check_slew,
                    bool check_cap,
                    bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
-                 double slew_margin,
                  // Return values.
                  Slew &slew,
                  float &limit,
@@ -179,8 +174,6 @@ protected:
                            int max_fanout,
                            int level,
                            const Pin *drvr_pin,
-                           double slew_margin,
-                           double max_cap_margin,
                            bool check_slew,
                            bool check_cap,
                            int max_length,
@@ -189,8 +182,6 @@ protected:
                           PinSeq &repeater_inputs,
                           Rect bbox,
                           Point loc,
-                          double slew_margin,
-                          double max_cap_margin,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
@@ -244,6 +235,8 @@ protected:
   const Pin *drvr_pin_;
   float max_cap_;
   int max_length_;
+  double max_slew_margin_;
+  double max_cap_margin_;
   const Corner *corner_;
 
   int resize_count_;
