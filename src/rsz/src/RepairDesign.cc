@@ -644,8 +644,6 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   Point from_loc = bnet->location();
   int length = Point::manhattanDistance(from_loc, to_loc);
   wire_length = wire_length_ref + length;
-  // Back up from pt to from_pt adding repeaters as necessary for
-  // length/max_cap/max_slew violations.
   int from_x = from_loc.getX();
   int from_y = from_loc.getY();
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
@@ -655,6 +653,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   double length1 = dbuToMeters(length);
   double wire_res, wire_cap;
   bnet->wireRC(corner_, resizer_, wire_res, wire_cap);
+  // ref_cap includes ref's wire cap
   double ref_cap = bnet->ref()->cap();
   double load_cap = length1 * wire_cap + ref_cap;
 
@@ -671,6 +670,8 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
 
+  // Back up from pt to from_pt adding repeaters as necessary for
+  // length/max_cap/max_slew violations.
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
              && load_cap > max_cap_)
@@ -681,6 +682,11 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
     bool split_wire = false;
     bool resize = true;
     // Distance from repeater to ref_.
+    //              length
+    // from----------------------------to/ref
+    //
+    //                     split_length
+    // from-------repeater-------------to/ref
     int split_length = std::numeric_limits<int>::max();
     if (max_length_ > 0 && wire_length > max_length_) {
       debugPrint(logger_, RSZ, "repair_net", 3,
@@ -732,11 +738,11 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
         split_wire = true;
         resize = false;
       }
+    }
+    if (split_wire) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}split length={}",
                  "", level,
                  units_->distanceUnit()->asString(dbuToMeters(split_length), 1));
-    }
-    if (split_wire) {
       // Distance from to_pt to repeater backward toward from_pt.
       // Note that split_length can be longer than the wire length
       // because it is the maximum value that satisfies max slew/cap.
@@ -764,8 +770,6 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                              load_cap, false);
 
-      LibertyPort *input, *output;
-      buffer_cell->bufferPorts(input, output);
       bnet->setCapacitance(load_cap);
       bnet->setFanout(repeater_fanout);
       bnet->setMaxLoadSlew(max_load_slew);
@@ -822,7 +826,6 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
              fanout_right);
 
   wire_length = wire_length_left + wire_length_right;
-  float wire_length1 = dbuToMeters(wire_length);
   float load_cap = cap_left + cap_right;
   float max_load_slew = min(max_load_slew_left, max_load_slew_right);
   LibertyCell *buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
@@ -833,7 +836,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   bool repeater_left = false;
   bool repeater_right = false;
   float r_drvr = resizer_->driveResistance(drvr_pin_);
-  float load_slew = (r_drvr + wire_length1 * wire_res)
+  float load_slew = (r_drvr + dbuToMeters(wire_length) * wire_res)
     * load_cap * elmore_skew_factor_;
   bool load_slew_violation = load_slew > max_load_slew;
   const char *repeater_reason = nullptr;
@@ -843,17 +846,17 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
                "", level,
                delayAsString(load_slew, this, 3),
                delayAsString(max_load_slew, this, 3));
-    float slew_slack_left = max_load_slew_left
-      - (r_drvr + dbuToMeters(wire_length_left) * wire_res)
+    float slew_left = (r_drvr + dbuToMeters(wire_length_left) * wire_res)
       * cap_left * elmore_skew_factor_;
-    float slew_slack_right = max_load_slew_right
-      - (r_drvr + dbuToMeters(wire_length_right) * wire_res)
+    float slew_slack_left = max_load_slew_left - slew_left;
+    float slew_right = (r_drvr + dbuToMeters(wire_length_right) * wire_res)
       * cap_right * elmore_skew_factor_;
+    float slew_slack_right = max_load_slew_right - slew_right;
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s} slew slack left={} right={}",
                "", level,
                delayAsString(slew_slack_left, this, 3),
                delayAsString(slew_slack_right, this, 3));
-    // Isolate the branch with the smaller slack by buffering the OTHER branch.
+    // Isolate the branch with the smaller slack.
     if (slew_slack_left < slew_slack_right)
       repeater_left = true;
     else
@@ -1376,7 +1379,7 @@ RepairDesign::dbuToMeters(int dist) const
 double
 RepairDesign::dbuToMicrons(int dist) const
 {
-  return dist / dbu_;
+  return static_cast<double>(dist) / dbu_;
 }
 
 int
