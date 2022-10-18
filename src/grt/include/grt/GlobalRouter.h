@@ -243,6 +243,9 @@ class GlobalRouter
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
+  bool pinAccessPointPositions(const Pin& pin,
+                               std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+
  private:
   // Net functions
   Net* addNet(odb::dbNet* db_net);
