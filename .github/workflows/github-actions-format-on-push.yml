@@ -13,7 +13,7 @@ jobs:
       - name: setup
         run: |
           sudo apt update 
-          sudo apt install -y clang clang-format
+          sudo apt install -y clang-14 clang-format-14
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
@@ -24,29 +24,8 @@ jobs:
       - name: Check format of cpp changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
+            if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* ]]; then
               clang-format --dry-run --Werror $file
-            fi
-          done
-  readability:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: setup
-        run: |
-          sudo apt update 
-          sudo apt install -y clang clang-tidy
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v32
-      - name: Check readability of cpp changed files
-        run: |
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ "${file##*.}" =~ ^(h|o|i|C|cc|cp|cpp|c++|CPP|cxx)$ ]]; then
-              clang-tidy $file
             fi
           done
         
