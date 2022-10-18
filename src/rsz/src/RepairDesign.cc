@@ -713,7 +713,6 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       //   + Rbuffer*Cref - max_load_slew/elmore_skew_factor_
       // Solve using quadradic eqn for L.
       float r_buffer = resizer_->bufferDriveResistance(buffer_cell);
-      float ref_cap = bnet->ref()->cap();
       float a = wire_res * wire_cap;
       float b = r_buffer * wire_cap + wire_res * ref_cap;
       float c = r_buffer * ref_cap - max_load_slew / elmore_skew_factor_;

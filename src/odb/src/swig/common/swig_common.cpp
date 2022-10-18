@@ -43,7 +43,9 @@ bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2)
 {
   // Sadly the diff report is too implementation specific to reveal much about
   // the structural differences.
-  bool diffs = odb::dbDatabase::diff(db1, db2, nullptr, 2);
+  FILE* report = fopen("diffs.rpt", "w");
+  bool diffs = odb::dbDatabase::diff(db1, db2, report, 2);
+  fclose(report);
   if (diffs) {
     printf("Differences found.\n");
     odb::dbChip* chip1 = db1->getChip();

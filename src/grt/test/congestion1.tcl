@@ -7,7 +7,7 @@ set guide_file [make_result_file congestion1.guide]
 
 set_global_routing_layer_adjustment metal2 0.9
 set_global_routing_layer_adjustment metal3 0.9
-set_global_routing_layer_adjustment metal4-metal10 0.9
+set_global_routing_layer_adjustment metal4-metal10 1
 
 set_routing_layers -signal metal2-metal10
 
