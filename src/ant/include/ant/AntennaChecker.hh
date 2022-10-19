@@ -83,8 +83,6 @@ class AntennaChecker
                     bool verbose);
   int antennaViolationCount() const;
 
-  void findMaxAllowedLength(const char* net_name, const char* layer);
-
   void findMaxWireLength();
 
   vector<Violation> getAntennaViolations(dbNet* net,

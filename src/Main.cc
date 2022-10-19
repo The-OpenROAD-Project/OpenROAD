@@ -82,6 +82,7 @@ using std::string;
 extern "C" {
 extern PyObject* PyInit__ifp_py();
 extern PyObject* PyInit__utl_py();
+extern PyObject* PyInit__ant_py();
 extern PyObject* PyInit__openroad_swig_py();
 extern PyObject* PyInit__odbpy();
 }
@@ -101,6 +102,7 @@ static void showSplash();
 namespace sta {
 extern const char* ifp_py_python_inits[];
 extern const char* utl_py_python_inits[];
+extern const char* ant_py_python_inits[];
 extern const char* odbpy_python_inits[];
 extern const char* openroad_swig_py_python_inits[];
 }  // namespace sta
@@ -117,6 +119,11 @@ static void initPython()
     exit(1);
   }
 
+  if (PyImport_AppendInittab("_ant_py", PyInit__ant_py) == -1) {
+    fprintf(stderr, "Error: could not add module _ant_py\n");
+    exit(1);
+  }
+  
   if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
     fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
@@ -162,6 +169,25 @@ static void initPython()
     if (PyImport_ExecCodeModule("utl", code) == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not add module utl\n");
+      exit(1);
+    }
+
+    delete[] unencoded;
+  }
+
+  {
+    char* unencoded = sta::unencode(sta::ant_py_python_inits);
+
+    PyObject* code = Py_CompileString(unencoded, "ant_py.py", Py_file_input);
+    if (code == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not compile ant_py\n");
+      exit(1);
+    }
+
+    if (PyImport_ExecCodeModule("ant", code) == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not add module ant\n");
       exit(1);
     }
 
