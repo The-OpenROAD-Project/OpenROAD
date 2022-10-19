@@ -636,7 +636,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   int wire_length_ref;
   repairNet(bnet->ref(), level+1, wire_length_ref, load_pins);
   float max_load_slew = bnet->maxLoadSlew();
-  float max_load_slew_margined = maxSlewMargined(max_load_slew);
+  float max_load_slew_margined = max_load_slew; // maxSlewMargined(max_load_slew);
 
   Point to_loc = bnet->ref()->location();
   int to_x = to_loc.getX();
@@ -764,9 +764,10 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       to_y = buf_y;
 
       length1 = dbuToMeters(length);
+      wire_length_ref = 0.0;
       load_cap = repeater_cap + length1 * wire_cap;
       ref_cap = repeater_cap;
-      max_load_slew_margined = maxSlewMargined(max_load_slew);
+      max_load_slew_margined = max_load_slew; // maxSlewMargined(max_load_slew);
       load_slew = (r_drvr + length1 * wire_res) * load_cap * elmore_skew_factor_;
       buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                              load_cap, false);
@@ -835,7 +836,7 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   wire_length = wire_length_left + wire_length_right;
   float load_cap = cap_left + cap_right;
   float max_load_slew = min(max_load_slew_left, max_load_slew_right);
-  float max_load_slew_margined = maxSlewMargined(max_load_slew);
+  float max_load_slew_margined = max_load_slew; // maxSlewMargined(max_load_slew);
   LibertyCell *buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                                       load_cap, false);
 
