@@ -31,7 +31,7 @@ Path Type: max
    1.17    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
  151.27    0.23    0.25    0.26 ^ u2/Z (BUF_X1)
-           0.60    0.45    0.72 ^ u3/A (BUF_X1)
+           0.60    0.46    0.72 ^ u3/A (BUF_X1)
    0.24    0.02    0.02    0.74 ^ u3/Z (BUF_X1)
            0.02    0.00    0.74 ^ out1 (out)
                            0.74   data arrival time
@@ -60,7 +60,7 @@ Path Type: max
            0.02    0.00    0.04 v u2/A (BUF_X16)
   41.82    0.01    0.03    0.06 v u2/Z (BUF_X16)
            0.04    0.03    0.09 v wire2/A (BUF_X8)
-  63.06    0.01    0.04    0.13 v wire2/Z (BUF_X8)
+  63.06    0.01    0.04    0.14 v wire2/Z (BUF_X8)
            0.08    0.07    0.20 v wire1/A (BUF_X8)
   58.03    0.01    0.06    0.26 v wire1/Z (BUF_X8)
            0.07    0.06    0.32 v u3/A (BUF_X1)
