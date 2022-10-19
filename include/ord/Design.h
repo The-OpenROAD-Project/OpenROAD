@@ -45,6 +45,10 @@ namespace ifp {
 class InitFloorplan;
 }
 
+namespace ant {
+  class AntennaChecker;
+}
+
 namespace ord {
 
 class Tech;
@@ -75,6 +79,7 @@ class Design
 
   // Services
   ifp::InitFloorplan* getFloorplan();
+  ant::AntennaChecker *getAntennaChecker();
 
  private:
   Tech* tech_;

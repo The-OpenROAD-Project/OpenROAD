@@ -121,6 +121,12 @@ int Design::micronToDBU(double coord)
   return round(coord * dbuPerMicron);
 }
 
+ant::AntennaChecker* Design::getAntennaChecker()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getAntennaChecker();
+}
+
 int Design::evalTclString(const std::string& cmd)
 {
   Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();

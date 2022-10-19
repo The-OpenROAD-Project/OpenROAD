@@ -39,7 +39,6 @@
 #include <string>
 
 #include "utl/Logger.h"
-#include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 #include "sta/Path.hh"
@@ -47,6 +46,10 @@
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
 }
 
 namespace rsz {

@@ -86,8 +86,6 @@ void lefTechLayerEolKeepOutRuleParser::setInt(
 bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
                                                     odb::dbTechLayer* layer)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerEolKeepOutRule* rule
       = odb::dbTechLayerEolKeepOutRule::create(layer);
   qi::rule<std::string::iterator, space_type> EXCEPTWITHIN

@@ -113,12 +113,26 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin)
 void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
                                              GRoute &route)
 {
+  const int min_routing_layer = grouter_->getMinRoutingLayer();
+
   for (GSegment& segment : route) {
+    const int wire_length_dbu = segment.length();
+
+    const int init_layer = segment.init_layer;
     sta::ParasiticNode* n1
-      = ensureParasiticNode(segment.init_x, segment.init_y, segment.init_layer);
+        = (init_layer >= min_routing_layer)
+              ? ensureParasiticNode(segment.init_x, segment.init_y, init_layer)
+              : nullptr;
+
+    const int final_layer = segment.final_layer;
     sta::ParasiticNode* n2
-      = ensureParasiticNode(segment.final_x, segment.final_y, segment.final_layer);
-    int wire_length_dbu = segment.length();
+        = (final_layer >= min_routing_layer) ? ensureParasiticNode(
+              segment.final_x, segment.final_y, final_layer)
+                                             : nullptr;
+    if (!n1 || !n2) {
+      continue;
+    }
+
     sta::Units* units = sta_->units();
     float res = 0.0;
     float cap = 0.0;
@@ -181,12 +195,17 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
   int layer = pin.getConnectionLayer() + 1;
   RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode* grid_node = node_map_[grid_route];
+  float via_res = 0;
   
   // Use the pin layer for the connection.
   if (grid_node == nullptr) {
     layer--;
     grid_route = RoutePt(grid_pt.getX(), grid_pt.getY(), layer);
     grid_node = node_map_[grid_route];
+  } else {
+    odb::dbTechLayer* cut_layer
+      = tech_->findRoutingLayer(layer)->getLowerLayer();
+    via_res = cut_layer->getResistance();  // assumes single cut
   }
 
   if (grid_node) {
@@ -201,7 +220,7 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
                GRT,
                "est_rc",
                1,
-               "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} c={}",
+               "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
                parasitics_->name(grid_node),
                parasitics_->name(pin_node),
                grouter_->dbuToMicrons(pt.getX()),
@@ -209,18 +228,23 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
                grouter_->dbuToMicrons(wire_length_dbu),
                layer,
                units->resistanceUnit()->asString(res),
+               units->resistanceUnit()->asString(via_res),
                units->capacitanceUnit()->asString(cap));
 
     debugPrint(logger_, GRT, "est_rc", 1,
-               "pin {} -> to grid {}u layer={} r={} c={}",
+               "pin {} -> to grid {}u layer={} r={} via_res={} c={}",
                pin.getName(),
                static_cast<int>(dbuToMeters(wire_length_dbu) * 1e+6),
                layer,
                units->resistanceUnit()->asString(res),
+               units->resistanceUnit()->asString(via_res),
                units->capacitanceUnit()->asString(cap));
 
+    // We could added the via resistor before the segment pi-model
+    // but that would require an extra node and the accuracy of all
+    // this is not that high.  Instead we just lump them together.
     parasitics_->incrCap(pin_node, cap / 2.0, analysis_point_);
-    parasitics_->makeResistor(nullptr, pin_node, grid_node, res, analysis_point_);
+    parasitics_->makeResistor(nullptr, pin_node, grid_node, res + via_res, analysis_point_);
     parasitics_->incrCap(grid_node, cap / 2.0, analysis_point_);
   } else {
     logger_->warn(GRT, 26, "Missing route to pin {}.", pin.getName());

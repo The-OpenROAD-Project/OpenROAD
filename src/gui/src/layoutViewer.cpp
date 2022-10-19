@@ -1621,9 +1621,12 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = shapeSizeLimit();
-  Rect block_bounds = block_->getBBox()->getBox();
+  Rect block_bounds = block_->getDieArea();
+  if (!block_bounds.intersects(bounds)) {
+    return;
+  }
   const Rect draw_bounds = block_bounds.intersect(bounds);
+  const int min_resolution = shapeSizeLimit();
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;

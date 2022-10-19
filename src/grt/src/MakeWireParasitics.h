@@ -64,8 +64,6 @@ class Logger;
 
 namespace grt {
 
-typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
-
 class MakeWireParasitics
 {
  public:
@@ -80,6 +78,8 @@ class MakeWireParasitics
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
 
  private:
+  typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
+
   sta::Pin* staPin(Pin& pin);
   void makeRouteParasitics(odb::dbNet* net, GRoute &route);
   sta::ParasiticNode* ensureParasiticNode(int x, int y, int layer);
