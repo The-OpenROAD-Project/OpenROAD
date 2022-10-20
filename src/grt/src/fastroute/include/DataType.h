@@ -197,12 +197,8 @@ struct Route
   // valid for MazeRoute: a list of grids (n=routelen+1) the route
   // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   std::vector<short> gridsX;
-
-  // valid for MazeRoute: a list of grids (n=routelen+1) the route
-  // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   std::vector<short> gridsY;
-
-  std::vector<short> gridsL;  // n
+  std::vector<short> gridsL;
 
   // valid for MazeRoute: the number of edges in the route
   int routelen;
