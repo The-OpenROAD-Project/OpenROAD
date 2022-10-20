@@ -1414,18 +1414,13 @@ void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
   stree_ = stree;
 }
 
-std::vector<TreeEdge> convertToVector(TreeEdge* treeedges, int deg)
-{
-  std::vector<TreeEdge> treeEdges;
-  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-    treeEdges.push_back(treeedges[edgeID]);
-  }
-  return treeEdges;
-}
-
 void FastRouteRenderer::setStTreeValues(const StTree& stree)
 {
-  treeEdges_ = convertToVector(stree.edges, stree.deg);
+  treeEdges_.clear();
+  const int num_edges = 2 * stree.deg - 3;
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    treeEdges_.push_back(stree.edges[edgeID]);
+  }
 }
 void FastRouteRenderer::setIs3DVisualization(bool is3DVisualization)
 {
