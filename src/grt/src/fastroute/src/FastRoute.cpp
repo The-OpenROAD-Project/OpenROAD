@@ -34,12 +34,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "FastRoute.h"
-
 #include <algorithm>
 #include <unordered_set>
 
 #include "DataType.h"
+#include "FastRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -257,28 +256,24 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   getNetId(db_net, netID, exists);
   if (exists) {
     net = nets_[netID];
-
     clearNetRoute(netID);
-
-    net->clearPins();
     seglist_[netID].clear();
   } else {
     net = new FrNet;
     nets_.push_back(net);
     netID = nets_.size() - 1;
-    net->setDbNet(db_net);
     db_net_id_map_[db_net] = netID;
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
   }
-  net->setIsRouted(false);
-  net->setDegree(num_pins);
-  net->setIsClock(is_clock);
-  net->setDriverIdx(driver_idx);
-  net->setEdgeCost(cost);
-  net->setMinLayer(min_layer);
-  net->setMaxLayer(max_layer);
-  net->setSlack(slack);
-  net->setEdgeCostPerLayer(edge_cost_per_layer);
+  net->reset(db_net,
+             num_pins,
+             is_clock,
+             driver_idx,
+             cost,
+             min_layer,
+             max_layer,
+             slack,
+             edge_cost_per_layer);
 
   return net;
 }
@@ -1627,8 +1622,26 @@ void FrNet::addPin(int x, int y, int layer)
   pin_l_.push_back(layer);
 }
 
-void FrNet::clearPins()
+void FrNet::reset(odb::dbNet* db_net,
+                  int degree,
+                  bool is_clock,
+                  int driver_idx,
+                  int edge_cost,
+                  int min_layer,
+                  int max_layer,
+                  float slack,
+                  std::vector<int>* edge_cost_per_layer)
 {
+  db_net_ = db_net;
+  is_routed_ = false;
+  degree_ = degree;
+  is_clock_ = is_clock;
+  driver_idx_ = driver_idx;
+  edge_cost_ = edge_cost;
+  min_layer_ = min_layer;
+  max_layer_ = max_layer;
+  slack_ = slack;
+  edge_cost_per_layer_.reset(edge_cost_per_layer);
   pin_x_.clear();
   pin_y_.clear();
   pin_l_.clear();

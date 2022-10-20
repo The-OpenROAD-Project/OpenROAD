@@ -101,21 +101,18 @@ struct FrNet  // A Net is a set of connected MazePoints
   const std::vector<int>& getPinL() const { return pin_l_; }
 
   void addPin(int x, int y, int layer);
-  void clearPins();
-
-  void setDbNet(odb::dbNet* db_net) { db_net_ = db_net; }
-  void setDegree(int degree) { degree_ = degree; }
-  void setDriverIdx(int driver_idx) { driver_idx_ = driver_idx; }
-  void setEdgeCost(int edge_cost) { edge_cost_ = edge_cost; }
-  void setEdgeCostPerLayer(std::vector<int>* edge_cost_per_layer)
-  {
-    edge_cost_per_layer_.reset(edge_cost_per_layer);
-  }
-  void setIsClock(bool is_clock) { is_clock_ = is_clock; }
+  void reset(odb::dbNet* db_net,
+             int degree,
+             bool is_clock,
+             int driver_idx,
+             int edge_cost,
+             int min_layer,
+             int max_layer,
+             float slack,
+             std::vector<int>* edge_cost_per_layer);
   void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
-  void setSlack(float slack) { slack_ = slack; }
 
  private:
   odb::dbNet* db_net_;
