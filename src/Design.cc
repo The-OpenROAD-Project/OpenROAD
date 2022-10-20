@@ -121,4 +121,21 @@ int Design::micronToDBU(double coord)
   return round(coord * dbuPerMicron);
 }
 
+ant::AntennaChecker* Design::getAntennaChecker()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getAntennaChecker();
+}
+
+int Design::evalTclString(const std::string& cmd)
+{
+  Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
+  return Tcl_Eval(tcl_interp, cmd.c_str());
+}
+
+Tech* Design::getTech()
+{
+    return tech_;
+}
+
 }  // namespace ord

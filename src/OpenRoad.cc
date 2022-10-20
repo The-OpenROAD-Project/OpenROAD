@@ -362,10 +362,20 @@ void OpenRoad::writeLef(const char* filename)
   if (num_libs > 0) {
     if (num_libs > 1) {
       logger_->warn(
-          ORD, 34, "More than one lib exists, only one will be written.");
+          ORD, 34, "More than one lib exists, multiple files will be written.");
     }
 
-    lef_writer.writeTechAndLib(*libs.begin(), filename);
+    int cnt = 0;
+    for (auto lib : libs) {
+      std::string name(filename);
+      if (cnt > 0) {
+        name += "_" + std::to_string(cnt);
+        lef_writer.writeLib(lib, name.c_str());
+      } else {
+        lef_writer.writeTechAndLib(lib, name.c_str());
+      }
+      ++cnt;
+    }
   } else if (db_->getTech()) {
     lef_writer.writeTech(db_->getTech(), filename);
   }
