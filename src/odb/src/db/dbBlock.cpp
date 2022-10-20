@@ -37,6 +37,7 @@
 
 #include <fstream>
 #include <memory>
+#include <set>
 #include <string>
 
 #include "ZComponents.h"
@@ -3933,18 +3934,18 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
-void dbBlock::globalConnect()
+int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
   const std::vector<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
   _dbBlock* dbblock = (_dbBlock*) this;
-  dbblock->globalConnect(connects);
+  return dbblock->globalConnect(connects);
 }
 
-void dbBlock::globalConnect(dbGlobalConnect* gc)
+int dbBlock::globalConnect(dbGlobalConnect* gc)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
-  dbblock->globalConnect({gc});
+  return dbblock->globalConnect({gc});
 }
 
 void dbBlock::clearGlobalConnect()
@@ -3979,11 +3980,11 @@ void dbBlock::reportGlobalConnect()
   }
 }
 
-void dbBlock::addGlobalConnect(dbRegion* region,
-                               const char* instPattern,
-                               const char* pinPattern,
-                               dbNet* net,
-                               bool do_connect)
+int dbBlock::addGlobalConnect(dbRegion* region,
+                              const char* instPattern,
+                              const char* pinPattern,
+                              dbNet* net,
+                              bool do_connect)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
 
@@ -4000,25 +4001,27 @@ void dbBlock::addGlobalConnect(dbRegion* region,
   dbGlobalConnect* gc = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (do_connect) {
-    globalConnect(gc);
+    return globalConnect(gc);
   }
+  return 0;
 }
 
 
-void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
+int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
   utl::Logger* logger = dbblock->getImpl()->getLogger();
 
   if (connects.empty()) {
     logger->warn(utl::ODB, 378, "Global connections are not set up.");
-    return;
+    return 0;
   }
 
   // order rules so non-regions are handled first
   std::vector<_dbGlobalConnect*> non_region_rules;
   std::vector<_dbGlobalConnect*> region_rules;
 
+  std::set<dbITerm*> connected_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
@@ -4057,11 +4060,15 @@ void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   }
 
   for (_dbGlobalConnect* connect : non_region_rules) {
-    connect->connect(inst_map[connect->inst_pattern_]);
+    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    connected_iterms.insert(connections.begin(), connections.end());
   }
   for (_dbGlobalConnect* connect : region_rules) {
-    connect->connect(inst_map[connect->inst_pattern_]);
+    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    connected_iterms.insert(connections.begin(), connections.end());
   }
+
+  return connected_iterms.size();
 }
 
 }  // namespace odb
