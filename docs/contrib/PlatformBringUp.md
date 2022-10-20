@@ -256,11 +256,7 @@ module OPENROAD_CLKGATE (CK, E, GCK);
   input  E;
   output GCK;
 
-  `ifdef OPENROAD_CLKGATE
-    <clkgate_std_cell> latch (.CLK(CK), .GATE(E), .GCLK(GCK));
-  `else
-    assign GCK = CK;
-  `endif
+  <clkgate_std_cell> latch (.CLK(CK), .GATE(E), .GCLK(GCK));
 endmodule
 ```
 
@@ -280,7 +276,6 @@ output [7:0] out
 reg  [15:0] buffer_reg;
 wire        gck; // Gated clock
 
-`define OPENROAD_CLKGATE
 OPENROAD_CLKGATE clkgate (.CK(clk), .E(enable), .GCK(gck));
 
 // Buffer does not change if enable is low
