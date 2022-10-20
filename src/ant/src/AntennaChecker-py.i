@@ -43,6 +43,7 @@ namespace ord {
 odb::dbDatabase *getDb();
 }
 
+using namespace std;
 using namespace odb;
 
 %}
