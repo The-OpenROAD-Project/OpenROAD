@@ -18,10 +18,6 @@
 #include <ortools/linear_solver/linear_solver.pb.h>
 #include "object.h"
 
-#ifdef USE_CPLEX
-#include "ilcplex/cplex.h"
-#include "ilcplex/ilocplex.h"
-#endif
 
 namespace mpl {
 
@@ -781,59 +777,6 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros, // placed soft macros
    std::cout << std::endl;
    std::cout << "\n\n";
   }
-
-
-#ifdef USE_CPLEX
-  // CPLEX Implementation (removed on 20221013 by Zhiang)
-  /*
-  // Cal ILP Solver to solve the ILP problem
-  IloEnv myenv;   // environment object
-  IloModel mymodel(myenv);  // model object
-  // For each path, define a variable x
-  IloNumVarArray x(myenv, num_paths, 0, 1, ILOINT);
-  // For each edge, define a variable y
-  IloNumVarArray y(myenv, edge_list.size(), 0, 1, ILOINT);
-  // add constraints
-  int x_id = 0;
-  int num_constraints = 0;  // equal to number of nets
-  for (auto& net : nets) {
-    IloExpr expr(myenv); // empty expression
-    std::cout << "old num_constraints : " << num_constraints << std::endl;
-    for (auto& edge_path : net.edge_paths) {
-      for (auto& edge_id : edge_path) {
-        mymodel.add(x[x_id] <= y[edge_id]);
-        num_constraints++;
-      }
-      expr += x[x_id++];
-    }
-    // need take a detail look [fix]
-    if (net.edge_paths.size() == 0)
-     continue;
-    std::cout << "new num_constraints : " << num_constraints << std::endl;
-    mymodel.add(expr == 1);
-    expr.end(); // clear memory
-    num_constraints++;
-  }
-  
-  IloExpr obj_expr(myenv);   // empty expression
-  for (int i = 0; i < edge_list.size(); i++)
-    obj_expr += edge_list[i].weight * y[i]; // reduce the edges cross soft macros
-  mymodel.add(IloMinimize(myenv, obj_expr));  // adding minimization objective
-  obj_expr.end();  // clear memory
-  // Model Solution
-  IloCplex mycplex(myenv);
-  mycplex.extract(mymodel);
-  // solves model and stores whether or 
-  // not it is feasible in an IloBool variable called "feasible
-  IloBool feasible = mycplex.solve();
-  // solves model and stores whether or 
-  // not it is feasible in an IloBool variable called "feasible
-  if (feasible != IloTrue) 
-    return false; // Something wrong, no feasible solution
-  std::cout << "\n\n Total number of paths : " << num_paths << std::endl;
-  */
-
-#endif // USE_CPLEX
 
   // Google OR-TOOLS for SCIP Implementation
   // create the ILP solver with the SCIP backend

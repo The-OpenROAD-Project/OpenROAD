@@ -36,9 +36,7 @@ include("openroad")
 ##set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -std=c++17 -DIL_STD -m64")
 ##set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem")
 
-##find_package(Cplex)
 find_package(ortools REQUIRED)
-##include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
 
 swig_lib(NAME      mpl2
          NAMESPACE mpl2
@@ -74,7 +72,6 @@ target_link_libraries(mpl2
     odb
     gui
     ortools::ortools
-#    ${CPLEX_LIBRARIES}
     dl
 )
 
