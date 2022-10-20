@@ -329,8 +329,8 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
 
 bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 {
-  FrNet *net = nets_[netID];
-  
+  FrNet* net = nets_[netID];
+
   const TreeEdge* treeedges = sttrees_[netID].edges;
   const TreeEdge* treeedge = &(treeedges[edgeID]);
 
@@ -429,12 +429,12 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
-          -= net->getLayerEdgeCost(gridsL[i]);
+            -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
-          -= net->getLayerEdgeCost(gridsL[i]);
+            -= net->getLayerEdgeCost(gridsL[i]);
       } else {
         logger_->error(
             GRT, 122, "Maze ripup wrong for net {}.", nets_[netID]->getName());
@@ -452,7 +452,6 @@ void FastRouteCore::releaseNetResources(const int netID)
   const int deg = sttrees_[netID].deg;
 
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-
     const TreeEdge* treeedge = &(treeedges[edgeID]);
     const std::vector<short>& gridsX = treeedge->route.gridsX;
     const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -462,14 +461,13 @@ void FastRouteCore::releaseNetResources(const int netID)
     Edge3D* edge_3D;
 
     for (int i = 0; i < routeLen; i++) {
-
-      if(gridsL[i] != gridsL[i + 1])
+      if (gridsL[i] != gridsL[i + 1])
         continue;
       else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         edge = &v_edges_[ymin][gridsX[i]];
         edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
-        edge->usage -= edgeCost; 
+        edge->usage -= edgeCost;
         edge_3D->usage -= edgeCost;
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
@@ -477,7 +475,7 @@ void FastRouteCore::releaseNetResources(const int netID)
         edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
         edge->usage -= edgeCost;
         edge_3D->usage -= edgeCost;
-      } 
+      }
     }
   }
 }

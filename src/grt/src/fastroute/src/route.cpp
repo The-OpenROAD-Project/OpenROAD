@@ -218,7 +218,6 @@ void FastRouteCore::routeLAll(bool firstTime)
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
     for (int i = 0; i < netCount(); i++) {
-
       if (nets_[i]->isRouted())
         continue;
 
@@ -228,7 +227,6 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
     // L route
     for (int i = 0; i < netCount(); i++) {
-
       if (nets_[i]->isRouted())
         continue;
 
@@ -240,7 +238,6 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
-
       if (nets_[i]->isRouted())
         continue;
 
@@ -1066,7 +1063,6 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
       continue;
 
@@ -1260,7 +1256,6 @@ void FastRouteCore::spiralRouteAll()
   std::queue<int> edgeQueue;
 
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
       continue;
 
@@ -1310,9 +1305,8 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
-        continue;
+      continue;
 
     treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
@@ -1339,9 +1333,8 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
-        continue;
+      continue;
 
     newRipupNet(netID);
 
@@ -1397,9 +1390,8 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
-        continue;
+      continue;
 
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
@@ -1722,7 +1714,6 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
   for (int netID = 0; netID < netCount(); netID++) {
-
     if (nets_[netID]->isRouted())
       continue;
 

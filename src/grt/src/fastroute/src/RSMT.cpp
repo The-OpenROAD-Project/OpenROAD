@@ -706,19 +706,23 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
         if (cong) {
-          fluteCongest(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+          fluteCongest(
+              i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
         } else {
-          fluteNormal(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+          fluteNormal(
+              i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
         }
         if (d > 3) {
           numShift += edgeShiftNew(rsmt, i);
         }
       } else {
         // call FLUTE to generate RSMT for each net
-        fluteNormal(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+        fluteNormal(
+            i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
       }
     }
-    if (debug_->isOn_ && debug_->steinerTree_ && net->getDbNet() == debug_->net_) {
+    if (debug_->isOn_ && debug_->steinerTree_
+        && net->getDbNet() == debug_->net_) {
       steinerTreeVisualization(rsmt, net);
     }
 

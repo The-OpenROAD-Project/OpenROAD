@@ -1250,10 +1250,12 @@ void FastRouteCore::reInitTree(const int netID)
   // if failing tree was created with pd, fall back to flute with fluteNormal
   // first so the structs necessary for fluteCongest are filled
   if (net_alpha > 0.0) {
-    fluteNormal(netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
+    fluteNormal(
+        netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
   }
 
-  fluteCongest(netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
+  fluteCongest(
+      netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
 
   if (nets_[netID]->getDegree() > 3) {
     edgeShiftNew(rsmt, netID);

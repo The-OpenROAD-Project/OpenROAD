@@ -99,7 +99,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
-  
+
   void addPin(int x, int y, int layer);
   void clearPins();
 
@@ -125,7 +125,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   std::vector<int> pin_x_;  // x coordinates of pins
   std::vector<int> pin_y_;  // y coordinates of pins
   std::vector<int> pin_l_;  // l coordinates of pins
-  bool is_clock_;  // flag that indicates if net is a clock net
+  bool is_clock_;           // flag that indicates if net is a clock net
   int driver_idx_;
   int edge_cost_;
   int min_layer_;

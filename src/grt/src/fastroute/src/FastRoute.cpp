@@ -34,11 +34,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "FastRoute.h"
+
 #include <algorithm>
 #include <unordered_set>
 
 #include "DataType.h"
-#include "FastRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -942,7 +943,8 @@ NetRouteMap FastRouteCore::run()
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn_ && debug_->rectilinearSTree_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_
+          && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1193,7 +1195,8 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_
+          && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1235,7 +1238,8 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_
+          && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
