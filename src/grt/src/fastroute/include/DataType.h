@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -72,38 +73,71 @@ struct Segment  // A Segment is a 2-pin connection
 {
   bool xFirst;  // route x-direction first (only for L route)
   bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
-  bool maze;    // Whether this segment is routed by maze
 
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
-  int numEdges;          // number of H and V Edges to implement this Segment
 };
 
 struct FrNet  // A Net is a set of connected MazePoints
 {
-  int numPins() { return pinX.size(); }  // number of pins in the net
+  bool isClock() const { return is_clock_; }
+  bool isRouted() const { return is_routed_; }
+  float getSlack() const { return slack_; }
+  odb::dbNet* getDbNet() const { return db_net_; }
+  int getDegree() const { return degree_; }
+  int getDriverIdx() const { return driver_idx_; }
+  int getEdgeCost() const { return edge_cost_; }
+  const char* getName() const;
+  int getMaxLayer() const { return max_layer_; }
+  int getMinLayer() const { return min_layer_; }
+  int numPins() const { return pin_x_.size(); }
+  std::vector<int>* getEdgeCostPerLayer() const { return edge_cost_per_layer_; }
+
+  int getPinX(int idx) const { return pin_x_[idx]; }
+  int getPinY(int idx) const { return pin_y_[idx]; }
+  const std::vector<int>& getPinX() const { return pin_x_; }
+  const std::vector<int>& getPinY() const { return pin_y_; }
+  const std::vector<int>& getPinL() const { return pin_l_; }
+  
+  void addPin(int x, int y, int layer);
+  void clearPins();
+
+  void setDbNet(odb::dbNet* db_net) { db_net_ = db_net; }
+  void setDegree(int degree) { degree_ = degree; }
+  void setDriverIdx(int driver_idx) { driver_idx_ = driver_idx; }
+  void setEdgeCost(int edge_cost) { edge_cost_ = edge_cost; }
+  void setEdgeCostPerLayer(std::vector<int>* edge_cost_per_layer)
+  {
+    edge_cost_per_layer_ = edge_cost_per_layer;
+  }
+  void setIsClock(bool is_clock) { is_clock_ = is_clock; }
+  void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
+  void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
+  void setMinLayer(int min_layer) { min_layer_ = min_layer; }
+  void setSlack(float slack) { slack_ = slack; }
+
   int layerEdgeCost(int layer);
   ~FrNet();
 
-  odb::dbNet* db_net;
-  int deg;  // net degree (number of MazePoints connecting by the net, pins in
-            // same MazePoints count only 1)
-  std::vector<int> pinX;  // array of X coordinates of pins
-  std::vector<int> pinY;  // array of Y coordinates of pins
-  std::vector<int> pinL;  // array of L coordinates of pins
-  bool is_clock;          // flag that indicates if net is a clock net
-  int driver_idx;
-  int edgeCost;
-  int minLayer;
-  int maxLayer;
-  float slack;
-  // edge_cost_per_layer is null if there is no ndr for this net.
-  std::vector<int> *edge_cost_per_layer;
-  bool is_routed;
+ private:
+  odb::dbNet* db_net_;
+  // net degree (number of MazePoints connecting by the net, pins in
+  // same MazePoints count only as one)
+  int degree_;
+  std::vector<int> pin_x_;  // x coordinates of pins
+  std::vector<int> pin_y_;  // y coordinates of pins
+  std::vector<int> pin_l_;  // l coordinates of pins
+  bool is_clock_;  // flag that indicates if net is a clock net
+  int driver_idx_;
+  int edge_cost_;
+  int min_layer_;
+  int max_layer_;
+  float slack_;
+  // Non-null when an NDR has been applied to the net.
+  std::vector<int>* edge_cost_per_layer_ = nullptr;
+  bool is_routed_ = false;
 };
-
-const char* netName(FrNet* net);
 
 struct Edge  // An Edge is the routing track holder between two adjacent
              // MazePoints
@@ -141,28 +175,40 @@ struct TreeNode
   int edge[3];  // three adjacent edges
   int hID;
   int lID;
+  // If two nodes are at the same x & y then the duplicate will have
+  // stackAlias set to the index of the first node.  This does not
+  // apply to pins nodes, only Steiner nodes.
   int stackAlias;
 };
 
 struct Route
 {
   RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
-  bool xFirst;   // valid for LRoute, TRUE - the route is horizontal first (x1,
-                 // y1) - (x2, y1) - (x2, y2), false (x1, y1) - (x1, y2) - (x2,
-                 // y2)
-  bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
-                 // shape
-  short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
-  std::vector<short>
-      gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
-               // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  std::vector<short>
-      gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
-               // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
+
+  // valid for LRoute:
+  // true - the route is horizontal first (x1, y1) - (x2, y1) - (x2, y2),
+  // false (x1, y1) - (x1, y2) - (x2, y2)
+  bool xFirst;
+
+  // valid for ZRoute:
+  // true - the route is HVH shape, false - VHV shape
+  bool HVH;
+
+  // valid for ZRoute: the position of turn point for Z-shape
+  short Zpoint;
+
+  // valid for MazeRoute: a list of grids (n=routelen+1) the route
+  // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
+  std::vector<short> gridsX;
+
+  // valid for MazeRoute: a list of grids (n=routelen+1) the route
+  // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
+  std::vector<short> gridsY;
+
   std::vector<short> gridsL;  // n
-  int routelen;  // valid for MazeRoute, the number of edges in the route
-                 // Edge3D *edge;       // list of 3D edges the route go
-                 // through;
+
+  // valid for MazeRoute: the number of edges in the route
+  int routelen;
 };
 
 struct TreeEdge
@@ -195,12 +241,6 @@ struct OrderTree
   int length;
   int treeIndex;
   int xmin;
-};
-
-struct parent3D
-{
-  short l;
-  int x, y;
 };
 
 struct OrderNetEdge

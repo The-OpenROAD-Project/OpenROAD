@@ -81,7 +81,10 @@ class PtEqual
 
 typedef std::unordered_map<Pt, int, PtHash, PtEqual> PtMap;
 
-Graph::Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger)
+Graph::Graph(const vector<int>& x,
+             const vector<int>& y,
+             int root_index,
+             Logger* logger)
     : root_idx_(root_index), heap_size_(0), logger_(logger)
 {
   PtMap pts;

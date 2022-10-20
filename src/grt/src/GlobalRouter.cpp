@@ -760,7 +760,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
 
-    int netID = fastroute_->addNet(net->getDbNet(),
+    FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                    pins_on_grid.size(),
                                    is_clock,
                                    root_idx,
@@ -770,7 +770,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                    net->getSlack(),
                                    edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
-      fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
+      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()

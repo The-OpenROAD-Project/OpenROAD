@@ -34,12 +34,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "FastRoute.h"
-
 #include <algorithm>
 #include <unordered_set>
 
 #include "DataType.h"
+#include "FastRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -241,31 +240,15 @@ void FastRouteCore::setLayerOrientation(int x)
   layer_orientation_ = x;
 }
 
-void FastRouteCore::addPin(int netID, int x, int y, int layer)
-{
-  FrNet* net = nets_[netID];
-  net->pinX.push_back(x);
-  net->pinY.push_back(y);
-  net->pinL.push_back(layer);
-}
-
-void FastRouteCore::clearPins(int netID)
-{
-  FrNet* net = nets_[netID];
-  net->pinX.clear();
-  net->pinY.clear();
-  net->pinL.clear();
-}
-
-int FastRouteCore::addNet(odb::dbNet* db_net,
-                          int num_pins,
-                          bool is_clock,
-                          int driver_idx,
-                          int cost,
-                          int min_layer,
-                          int max_layer,
-                          float slack,
-                          std::vector<int>* edge_cost_per_layer)
+FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
+                             int num_pins,
+                             bool is_clock,
+                             int driver_idx,
+                             int cost,
+                             int min_layer,
+                             int max_layer,
+                             float slack,
+                             std::vector<int>* edge_cost_per_layer)
 {
   int netID;
   bool exists;
@@ -273,38 +256,30 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   getNetId(db_net, netID, exists);
   if (exists) {
     net = nets_[netID];
-   
+
     clearNetRoute(netID);
 
-    net->pinX.clear();
-    net->pinY.clear();
-    net->pinL.clear();
+    net->clearPins();
     seglist_[netID].clear();
-  }
-  else {
+  } else {
     net = new FrNet;
     nets_.push_back(net);
     netID = nets_.size() - 1;
-    net->db_net = db_net;
+    net->setDbNet(db_net);
     db_net_id_map_[db_net] = netID;
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
   }
-  net->is_routed = false;
-  net->deg = num_pins;
-  net->is_clock = is_clock;
-  net->driver_idx = driver_idx;
-  net->edgeCost = cost;
-  net->minLayer = min_layer;
-  net->maxLayer = max_layer;
-  net->slack = slack;
-  net->edge_cost_per_layer = edge_cost_per_layer;
+  net->setIsRouted(false);
+  net->setDegree(num_pins);
+  net->setIsClock(is_clock);
+  net->setDriverIdx(driver_idx);
+  net->setEdgeCost(cost);
+  net->setMinLayer(min_layer);
+  net->setMaxLayer(max_layer);
+  net->setSlack(slack);
+  net->setEdgeCostPerLayer(edge_cost_per_layer);
 
-  return netID;
-}
-
-void FastRouteCore::setNetDriverIdx(int netID, int root_idx)
-{
-  nets_[netID]->driver_idx = root_idx;
+  return net;
 }
 
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
@@ -671,7 +646,7 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
   int cap = 0;
 
   // get 2D edge capacity respecting layer restrictions
-  for (int l = net->minLayer; l <= net->maxLayer; l++) {
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     if (direction == EdgeDirection::Horizontal) {
       cap += h_edges_3D_[l][y1][x1].cap;
     } else {
@@ -773,12 +748,11 @@ NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < netCount(); netID++) {
-
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
       continue;
 
-    nets_[netID]->is_routed = true;
-    odb::dbNet* db_net = nets_[netID]->db_net;
+    nets_[netID]->setIsRouted(true);
+    odb::dbNet* db_net = nets_[netID]->getDbNet();
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
 
@@ -895,7 +869,7 @@ NetRouteMap FastRouteCore::run()
   gen_brk_RSMT(false, false, false, false, noADJ);
   routeLAll(true);
   gen_brk_RSMT(true, true, true, false, noADJ);
-  
+
   getOverflow2D(&maxOverflow);
   newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);
@@ -968,7 +942,7 @@ NetRouteMap FastRouteCore::run()
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn_ && debug_->rectilinearSTree_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->db_net == debug_->net_ && !nets_[netID]->is_routed) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1219,7 +1193,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->db_net == debug_->net_ && !nets_[netID]->is_routed) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1261,7 +1235,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->db_net == debug_->net_ && !nets_[netID]->is_routed) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1356,9 +1330,9 @@ void FastRouteCore::computeCongestionInformation()
 
 const char* getNetName(odb::dbNet* db_net);
 
-const char* netName(FrNet* net)
+const char* FrNet::getName() const
 {
-  return getNetName(net->db_net);
+  return getNetName(getDbNet());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1431,9 +1405,9 @@ void FastRouteRenderer::setTreeStructure(TreeStructure treeStructure)
 }
 void FastRouteRenderer::highlight(const FrNet* net)
 {
-  pinX_ = net->pinX;
-  pinY_ = net->pinY;
-  pinL_ = net->pinL;
+  pinX_ = net->getPinX();
+  pinY_ = net->getPinY();
+  pinL_ = net->getPinL();
 }
 void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
 {
@@ -1641,15 +1615,29 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 FrNet::~FrNet()
 {
-  delete edge_cost_per_layer;
+  delete edge_cost_per_layer_;
 }
 
 int FrNet::layerEdgeCost(int layer)
 {
-  if (edge_cost_per_layer)
-    return (*edge_cost_per_layer)[layer];
+  if (edge_cost_per_layer_)
+    return (*edge_cost_per_layer_)[layer];
   else
     return 1;
+}
+
+void FrNet::addPin(int x, int y, int layer)
+{
+  pin_x_.push_back(x);
+  pin_y_.push_back(y);
+  pin_l_.push_back(layer);
+}
+
+void FrNet::clearPins()
+{
+  pin_x_.clear();
+  pin_y_.clear();
+  pin_l_.clear();
 }
 
 }  // namespace grt

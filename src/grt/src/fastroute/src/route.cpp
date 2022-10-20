@@ -45,7 +45,7 @@ using utl::GRT;
 // possible L for L segments
 void FastRouteCore::estimateOneSeg(Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->edgeCost;
+  const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   const int ymin = std::min(seg->y1, seg->y2);
   const int ymax = std::max(seg->y1, seg->y2);
@@ -72,7 +72,7 @@ void FastRouteCore::estimateOneSeg(Segment* seg)
 
 void FastRouteCore::routeSegV(Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->edgeCost;
+  const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   const int ymin = std::min(seg->y1, seg->y2);
   const int ymax = std::max(seg->y1, seg->y2);
@@ -83,7 +83,7 @@ void FastRouteCore::routeSegV(Segment* seg)
 
 void FastRouteCore::routeSegH(Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->edgeCost;
+  const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   for (int i = seg->x1; i < seg->x2; i++)
     h_edges_[seg->y1][i].est_usage += edgeCost;
@@ -92,7 +92,7 @@ void FastRouteCore::routeSegH(Segment* seg)
 // L-route, based on previous L route
 void FastRouteCore::routeSegL(Segment* seg)
 {
-  const int edgeCost = nets_[seg->netID]->edgeCost;
+  const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   const int ymin = std::min(seg->y1, seg->y2);
   const int ymax = std::max(seg->y1, seg->y2);
@@ -184,7 +184,7 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
       costL2 += tmp;
   }
 
-  const int edgeCost = nets_[seg->netID]->edgeCost;
+  const int edgeCost = nets_[seg->netID]->getEdgeCost();
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
@@ -219,7 +219,7 @@ void FastRouteCore::routeLAll(bool firstTime)
     // estimate congestion with 0.5+0.5 L
     for (int i = 0; i < netCount(); i++) {
 
-      if (nets_[i]->is_routed)
+      if (nets_[i]->isRouted())
         continue;
 
       for (auto& seg : seglist_[i]) {
@@ -229,7 +229,7 @@ void FastRouteCore::routeLAll(bool firstTime)
     // L route
     for (int i = 0; i < netCount(); i++) {
 
-      if (nets_[i]->is_routed)
+      if (nets_[i]->isRouted())
         continue;
 
       for (auto& seg : seglist_[i]) {
@@ -241,7 +241,7 @@ void FastRouteCore::routeLAll(bool firstTime)
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
 
-      if (nets_[i]->is_routed)
+      if (nets_[i]->isRouted())
         continue;
 
       for (auto& seg : seglist_[i]) {
@@ -258,7 +258,7 @@ void FastRouteCore::routeLAll(bool firstTime)
 // L-route, rip-up the previous route according to the ripuptype
 void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 {
-  const int edgeCost = nets_[netID]->edgeCost;
+  const int edgeCost = nets_[netID]->getEdgeCost();
 
   const int d = sttrees_[netID].deg;
   TreeEdge* treeedges = sttrees_[netID].edges;
@@ -403,12 +403,12 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->is_routed)
+      if (!nets_[i]->isRouted())
         newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->is_routed)
+      if (!nets_[i]->isRouted())
         newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }
@@ -421,7 +421,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   if (sttrees_[netID].edges[edgeID].len
       > 0)  // only route the non-degraded edges (len>0)
@@ -553,7 +553,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   d = sttrees_[netID].deg;
 
@@ -848,7 +848,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 void FastRouteCore::newrouteZAll(int threshold)
 {
   for (int i = 0; i < netCount(); i++) {
-    if (!nets_[i]->is_routed)
+    if (!nets_[i]->isRouted())
       newrouteZ(i, threshold);  // ripup previous route and do Z-routing
   }
 }
@@ -868,7 +868,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   static const bool same_x = false;
   static const bool same_y = true;
@@ -1067,7 +1067,7 @@ void FastRouteCore::routeMonotonicAll(int threshold)
 {
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
       continue;
 
     for (int edgeID = 0; edgeID < sttrees_[netID].deg * 2 - 3; edgeID++) {
@@ -1092,7 +1092,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
   treeedges = sttrees_[netID].edges;
   treenodes = sttrees_[netID].nodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   treeedge = &(treeedges[edgeID]);
   if (treeedge->len > 0)  // only route the non-degraded edges (len>0)
@@ -1261,7 +1261,7 @@ void FastRouteCore::spiralRouteAll()
 
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
       continue;
 
     treenodes = sttrees_[netID].nodes;
@@ -1311,7 +1311,7 @@ void FastRouteCore::spiralRouteAll()
 
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
         continue;
 
     treeedges = sttrees_[netID].edges;
@@ -1340,7 +1340,7 @@ void FastRouteCore::spiralRouteAll()
 
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
         continue;
 
     newRipupNet(netID);
@@ -1398,7 +1398,7 @@ void FastRouteCore::spiralRouteAll()
 
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
         continue;
 
     treenodes = sttrees_[netID].nodes;
@@ -1432,7 +1432,7 @@ void FastRouteCore::routeLVEnew(int netID,
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   if (sttrees_[netID].edges[edgeID].len
       > threshold)  // only route the non-degraded edges (len>0)
@@ -1723,7 +1723,7 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 
   for (int netID = 0; netID < netCount(); netID++) {
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
       continue;
 
     int numEdges = 2 * sttrees_[netID].deg - 3;
@@ -1751,7 +1751,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
   treeedges = sttrees_[netID].edges;
   treenodes = sttrees_[netID].nodes;
 
-  int edgeCost = nets_[netID]->edgeCost;
+  int edgeCost = nets_[netID]->getEdgeCost();
 
   // loop for all the tree edges (2*d-3)
   for (i = 0; i < 2 * d - 3; i++) {
