@@ -311,33 +311,42 @@ int main(int argc, char* argv[])
     }
 
     bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    if (cmd_argc > 1 && cmd_argv[1][0] == '-') {
-      showUsage(cmd_argv[0], init_filename);
-    } else {
-      char* cmd_filename = cmd_argv[1];
-      FILE* cmd_file = fopen(cmd_filename, "r");
-      if (cmd_file == nullptr) {
-        logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
+    // handle filename argument.
+    if (cmd_argc > 1 ) {
+      if (cmd_argv[1][0] == '-') {
+        // ignore argument and remind usage if filename looks like a flag.
+        showUsage(cmd_argv[0], init_filename);
       } else {
-        std::vector<wchar_t*> args;
-        for(int i = 1; i < cmd_argc; i++) {
-          args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
-        }
-        PySys_SetArgv(cmd_argc-1, args.data());
-        int result = PyRun_SimpleFile(cmd_file, cmd_filename);
-        for (wchar_t* arg: args)  {
-          PyMem_RawFree(arg);
-        }
-        fclose(cmd_file);
-        if (exit_after_cmd_file) {
-          int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-          exit(exit_code);
+        char* cmd_filename = cmd_argv[1];
+        FILE* cmd_file = fopen(cmd_filename, "r");
+        if (cmd_file == nullptr) {
+          logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
+        } else {
+          // create new argv with remaining arguments.
+          std::vector<wchar_t*> args;
+          for(int i = 1; i < cmd_argc; i++) {
+            args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
+          }
+          PySys_SetArgv(cmd_argc-1, args.data());
+          // run filename thru Python interpreter.
+          int result = PyRun_SimpleFile(cmd_file, cmd_filename);
+          for (wchar_t* arg: args)  {
+            PyMem_RawFree(arg);
+          }
+          fclose(cmd_file);
+          // terminate if -exit flag was provided.
+          if (exit_after_cmd_file) {
+            int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+            exit(exit_code);
+          }
         }
       }
     }
 
+    // discard remaining args.
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
+    // drop into Python interpreter.
     return Py_Main(1, args.data());
   } else {
     // Python wants to install its own SIGINT handler to print KeyboardInterrupt
