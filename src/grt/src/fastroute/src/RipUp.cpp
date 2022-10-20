@@ -429,12 +429,12 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
-          -= net->layerEdgeCost(gridsL[i]);
+          -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
-          -= net->layerEdgeCost(gridsL[i]);
+          -= net->getLayerEdgeCost(gridsL[i]);
       } else {
         logger_->error(
             GRT, 122, "Maze ripup wrong for net {}.", nets_[netID]->getName());

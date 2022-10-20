@@ -92,7 +92,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
   int numPins() const { return pin_x_.size(); }
-  std::vector<int>* getEdgeCostPerLayer() const { return edge_cost_per_layer_; }
+  int getLayerEdgeCost(int layer) const;
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
@@ -109,16 +109,13 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setEdgeCost(int edge_cost) { edge_cost_ = edge_cost; }
   void setEdgeCostPerLayer(std::vector<int>* edge_cost_per_layer)
   {
-    edge_cost_per_layer_ = edge_cost_per_layer;
+    edge_cost_per_layer_.reset(edge_cost_per_layer);
   }
   void setIsClock(bool is_clock) { is_clock_ = is_clock; }
   void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
-
-  int layerEdgeCost(int layer);
-  ~FrNet();
 
  private:
   odb::dbNet* db_net_;
@@ -135,7 +132,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   int max_layer_;
   float slack_;
   // Non-null when an NDR has been applied to the net.
-  std::vector<int>* edge_cost_per_layer_ = nullptr;
+  std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
   bool is_routed_ = false;
 };
 

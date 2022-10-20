@@ -1613,12 +1613,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
 
 ////////////////////////////////////////////////////////////////
 
-FrNet::~FrNet()
-{
-  delete edge_cost_per_layer_;
-}
-
-int FrNet::layerEdgeCost(int layer)
+int FrNet::getLayerEdgeCost(int layer) const
 {
   if (edge_cost_per_layer_)
     return (*edge_cost_per_layer_)[layer];

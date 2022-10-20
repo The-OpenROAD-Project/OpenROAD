@@ -705,12 +705,12 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       min_y = std::min(gridsY[k], gridsY[k + 1]);
 
       v_edges_3D_[gridsL[k]][min_y][gridsX[k]].usage
-        += net->layerEdgeCost(gridsL[k]);
+        += net->getLayerEdgeCost(gridsL[k]);
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
 
       h_edges_3D_[gridsL[k]][gridsY[k]][min_x].usage
-        += net->layerEdgeCost(gridsL[k]);
+        += net->getLayerEdgeCost(gridsL[k]);
     }
   }
 }
@@ -1233,13 +1233,13 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage += net->getEdgeCost();
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
-          += net->layerEdgeCost(gridsL[i]);
+          += net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage += net->getEdgeCost();
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
-          += net->layerEdgeCost(gridsL[i]);
+          += net->getLayerEdgeCost(gridsL[i]);
       }
     }
   }
