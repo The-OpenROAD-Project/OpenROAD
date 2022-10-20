@@ -122,9 +122,21 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
+template <typename T>
+static std::vector<T*> sortedSet(odb::dbSet<T>& to_sort)
+{
+  std::vector<T*> sorted(to_sort.begin(), to_sort.end());
+  std::sort(sorted.begin(), sorted.end(), [](T* a, T* b) {
+    return a->getName() < b->getName();
+  });
+  return sorted;
+}
+
 void io::Parser::setInsts(odb::dbBlock* block)
 {
-  for (auto inst : block->getInsts()) {
+  odb::dbSet<odb::dbInst> insts = block->getInsts();
+
+  for (odb::dbInst* inst : sortedSet(insts)) {
     if (design_->name2master_.find(inst->getMaster()->getName())
         == design_->name2master_.end())
       logger_->error(
@@ -497,7 +509,9 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
 
 void io::Parser::setNets(odb::dbBlock* block)
 {
-  for (auto net : block->getNets()) {
+  odb::dbSet<odb::dbNet> nets = block->getNets();
+
+  for (odb::dbNet* net : sortedSet(nets)) {
     bool is_special = net->isSpecial();
     if (!is_special && net->getSigType().isSupply()) {
       logger_->error(DRT,
