@@ -189,7 +189,18 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
 {
   sta::Pin* sta_pin = staPin(pin);
   sta::ParasiticNode* pin_node = parasitics_->ensureParasiticNode(parasitic_, sta_pin);
-  const odb::Point& grid_pt = pin.getOnGridPosition();
+
+  odb::Point pt = pin.getPosition();
+  odb::Point grid_pt = pin.getOnGridPosition();
+
+  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+  bool has_access_points = grouter_->pinAccessPointPositions(pin, ap_positions);
+  if (has_access_points) {
+    auto ap_position = ap_positions.front();
+    pt = ap_position.first;
+    grid_pt = ap_position.second;
+  }
+
   // Use the route layer above the pin layer if there is a via
   // to the pin.
   int layer = pin.getConnectionLayer() + 1;
@@ -210,7 +221,6 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
 
   if (grid_node) {
     // Make wire from pin to gcell center on pin layer.
-    const odb::Point& pt = pin.getPosition();
     int wire_length_dbu
       = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
     float res, cap;
@@ -331,8 +341,17 @@ MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net)
     Net* net = grouter_->getNet(db_net);
     for (Pin& pin : net->getPins()) {
       int layer = pin.getConnectionLayer() + 1;
-      const odb::Point& grid_pt = pin.getOnGridPosition();
-      const odb::Point& pt = pin.getPosition();
+      odb::Point grid_pt = pin.getOnGridPosition();
+      odb::Point pt = pin.getPosition();
+
+      std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+      bool has_access_points = grouter_->pinAccessPointPositions(pin, ap_positions);
+      if (has_access_points) {
+        auto ap_position = ap_positions.front();
+        pt = ap_position.first;
+        grid_pt = ap_position.second;
+      }
+
       RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
       auto pt_itr = route_pts.find(grid_route);
       if (pt_itr == route_pts.end())

@@ -498,10 +498,9 @@ void GlobalRouter::updateDirtyNets()
   }
 }
 
-std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+bool GlobalRouter::pinAccessPointPositions(
     const Pin& pin,
-    bool& has_access_points,
-    odb::Point& pos_on_grid)
+    std::vector<std::pair<odb::Point, odb::Point>>& ap_positions)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
@@ -522,21 +521,40 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     }
   }
 
+  if (access_points.empty())
+    return false;
+
+  for (const odb::dbAccessPoint* ap : access_points) {
+    odb::Point ap_position = ap->getPoint();
+    if (!pin.isPort()) {
+      odb::dbTransform xform;
+      int x, y;
+      pin.getITerm()->getInst()->getLocation(x, y);
+      xform.setOffset({x, y});
+      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+      xform.apply(ap_position);
+    }
+
+    ap_positions.push_back({ap_position, grid_->getPositionOnGrid(ap_position)});
+  }
+
+  return true;
+}
+
+std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+    const Pin& pin,
+    bool& has_access_points,
+    odb::Point& pos_on_grid)
+{
+  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+
+  has_access_points = pinAccessPointPositions(pin, ap_positions);
+
   std::vector<odb::Point> positions_on_grid;
-  has_access_points = !access_points.empty();
 
   if (has_access_points) {
-    for (const odb::dbAccessPoint* ap : access_points) {
-      odb::Point ap_position = ap->getPoint();
-      if (!pin.isPort()) {
-        odb::dbTransform xform;
-        int x, y;
-        pin.getITerm()->getInst()->getLocation(x, y);
-        xform.setOffset({x, y});
-        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-        xform.apply(ap_position);
-      }
-      pos_on_grid = grid_->getPositionOnGrid(ap_position);
+    for (auto ap_position : ap_positions) {
+      pos_on_grid = ap_position.second;
       positions_on_grid.push_back(pos_on_grid);
     }
   } else {
