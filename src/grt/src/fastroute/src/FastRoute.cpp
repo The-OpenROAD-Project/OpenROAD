@@ -241,7 +241,6 @@ void FastRouteCore::setLayerOrientation(int x)
 }
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
-                             int num_pins,
                              bool is_clock,
                              int driver_idx,
                              int cost,
@@ -266,7 +265,6 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
   }
   net->reset(db_net,
-             num_pins,
              is_clock,
              driver_idx,
              cost,
@@ -1623,7 +1621,6 @@ void FrNet::addPin(int x, int y, int layer)
 }
 
 void FrNet::reset(odb::dbNet* db_net,
-                  int degree,
                   bool is_clock,
                   int driver_idx,
                   int edge_cost,
@@ -1634,7 +1631,6 @@ void FrNet::reset(odb::dbNet* db_net,
 {
   db_net_ = db_net;
   is_routed_ = false;
-  degree_ = degree;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

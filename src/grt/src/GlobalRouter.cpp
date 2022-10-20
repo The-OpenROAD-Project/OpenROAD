@@ -779,7 +779,6 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     getNetLayerRange(net, min_layer, max_layer);
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
-                                   pins_on_grid.size(),
                                    is_clock,
                                    root_idx,
                                    edge_cost_for_net,

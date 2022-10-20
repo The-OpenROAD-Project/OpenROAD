@@ -91,7 +91,7 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   TreeEdge* treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
-  const int sizeV = 2 * nets_[ind]->numPins();
+  const int sizeV = 2 * nets_[ind]->getNumPins();
   int nbrcnt[sizeV];
   for (int i = 0; i < numnodes; i++)
     nbrcnt[i] = 0;
@@ -510,7 +510,7 @@ bool FastRouteCore::VTreeSuite(const int netID)
   int xmin = BIG_INT;
   int ymin = BIG_INT;
 
-  const int deg = nets_[netID]->getDegree();
+  const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
     if (xmin > nets_[netID]->getPinX(i)) {
       xmin = nets_[netID]->getPinX(i);
@@ -540,7 +540,7 @@ bool FastRouteCore::HTreeSuite(const int netID)
   int xmin = BIG_INT;
   int ymin = BIG_INT;
 
-  const int deg = nets_[netID]->getDegree();
+  const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
     if (xmin > nets_[netID]->getPinX(i)) {
       xmin = nets_[netID]->getPinX(i);
@@ -565,7 +565,7 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
 float FastRouteCore::coeffADJ(const int netID)
 {
-  const int deg = nets_[netID]->getDegree();
+  const int deg = nets_[netID]->getNumPins();
   int xmax = 0;
   int ymax = 0;
   int xmin = BIG_INT;
@@ -665,7 +665,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       coeffV = 1.2;
     }
 
-    int d = net->getDegree();
+    int d = net->getNumPins();
 
     if (reRoute) {
       if (newType) {
@@ -730,7 +730,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       copyStTree(i, rsmt);
     }
 
-    if (net->getDegree() != rsmt.deg) {
+    if (net->getNumPins() != rsmt.deg) {
       d = rsmt.deg;
     }
 

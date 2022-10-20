@@ -119,7 +119,6 @@ class FastRouteCore
   void setTileSize(int size);
   void setLayerOrientation(int x);
   FrNet* addNet(odb::dbNet* db_net,
-                int num_pins,
                 bool is_clock,
                 int driver_idx,
                 int cost,
