@@ -464,7 +464,6 @@ void FastRouteCore::fluteCongest(const int netID,
 bool FastRouteCore::netCongestion(const int netID)
 {
   for (const Segment& seg : seglist_[netID]) {
-
     const int ymin = std::min(seg.y1, seg.y2);
     const int ymax = std::max(seg.y1, seg.y2);
 
@@ -478,16 +477,16 @@ bool FastRouteCore::netCongestion(const int netID)
         }
       }
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(
-            nets_[netID], seg.x2, i, EdgeDirection::Vertical);
+        const int cap
+            = getEdgeCapacity(nets_[netID], seg.x2, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg.x2].est_usage >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(
-            nets_[netID], seg.x1, i, EdgeDirection::Vertical);
+        const int cap
+            = getEdgeCapacity(nets_[netID], seg.x1, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg.x1].est_usage >= cap) {
           return true;
         }
@@ -511,19 +510,19 @@ bool FastRouteCore::VTreeSuite(const int netID)
   int xmin = BIG_INT;
   int ymin = BIG_INT;
 
-  const int deg = nets_[netID]->deg;
+  const int deg = nets_[netID]->getDegree();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->pinX[i]) {
-      xmin = nets_[netID]->pinX[i];
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
     }
-    if (xmax < nets_[netID]->pinX[i]) {
-      xmax = nets_[netID]->pinX[i];
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
     }
-    if (ymin > nets_[netID]->pinY[i]) {
-      ymin = nets_[netID]->pinY[i];
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
     }
-    if (ymax < nets_[netID]->pinY[i]) {
-      ymax = nets_[netID]->pinY[i];
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
     }
   }
 
@@ -541,19 +540,19 @@ bool FastRouteCore::HTreeSuite(const int netID)
   int xmin = BIG_INT;
   int ymin = BIG_INT;
 
-  const int deg = nets_[netID]->deg;
+  const int deg = nets_[netID]->getDegree();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->pinX[i]) {
-      xmin = nets_[netID]->pinX[i];
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
     }
-    if (xmax < nets_[netID]->pinX[i]) {
-      xmax = nets_[netID]->pinX[i];
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
     }
-    if (ymin > nets_[netID]->pinY[i]) {
-      ymin = nets_[netID]->pinY[i];
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
     }
-    if (ymax < nets_[netID]->pinY[i]) {
-      ymax = nets_[netID]->pinY[i];
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
     }
   }
 
@@ -566,24 +565,24 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
 float FastRouteCore::coeffADJ(const int netID)
 {
-  const int deg = nets_[netID]->deg;
+  const int deg = nets_[netID]->getDegree();
   int xmax = 0;
   int ymax = 0;
   int xmin = BIG_INT;
   int ymin = BIG_INT;
 
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->pinX[i]) {
-      xmin = nets_[netID]->pinX[i];
+    if (xmin > nets_[netID]->getPinX(i)) {
+      xmin = nets_[netID]->getPinX(i);
     }
-    if (xmax < nets_[netID]->pinX[i]) {
-      xmax = nets_[netID]->pinX[i];
+    if (xmax < nets_[netID]->getPinX(i)) {
+      xmax = nets_[netID]->getPinX(i);
     }
-    if (ymin > nets_[netID]->pinY[i]) {
-      ymin = nets_[netID]->pinY[i];
+    if (ymin > nets_[netID]->getPinY(i)) {
+      ymin = nets_[netID]->getPinY(i);
     }
-    if (ymax < nets_[netID]->pinY[i]) {
-      ymax = nets_[netID]->pinY[i];
+    if (ymax < nets_[netID]->getPinY(i)) {
+      ymax = nets_[netID]->getPinY(i);
     }
   }
 
@@ -652,7 +651,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
   for (int i = 0; i < netCount(); i++) {
     FrNet* net = nets_[i];
 
-    if (net->is_routed)
+    if (net->isRouted())
       continue;
 
     float coeffV = 1.36;
@@ -666,7 +665,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       coeffV = 1.2;
     }
 
-    int d = net->deg;
+    int d = net->getDegree();
 
     if (reRoute) {
       if (newType) {
@@ -687,7 +686,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         }
       } else {
         // remove the est_usage due to the segments in this net
-        for (auto& seg: seglist_[i]) {
+        for (auto& seg : seglist_[i]) {
           ripupSegL(&seg);
         }
       }
@@ -699,27 +698,27 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
     // check net alpha because FastRoute has a special implementation of flute
     // TODO: move this flute implementation to SteinerTreeBuilder
-    const float net_alpha = stt_builder_->getAlpha(net->db_net);
+    const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
     if (net_alpha > 0.0) {
       rsmt = stt_builder_->makeSteinerTree(
-          net->db_net, net->pinX, net->pinY, net->driver_idx);
+          net->getDbNet(), net->getPinX(), net->getPinY(), net->getDriverIdx());
     } else {
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
         if (cong) {
-          fluteCongest(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
+          fluteCongest(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
         } else {
-          fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
+          fluteNormal(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
         }
         if (d > 3) {
           numShift += edgeShiftNew(rsmt, i);
         }
       } else {
         // call FLUTE to generate RSMT for each net
-        fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
+        fluteNormal(i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
       }
     }
-    if (debug_->isOn_ && debug_->steinerTree_ && net->db_net == debug_->net_) {
+    if (debug_->isOn_ && debug_->steinerTree_ && net->getDbNet() == debug_->net_) {
       steinerTreeVisualization(rsmt, net);
     }
 
@@ -727,7 +726,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       copyStTree(i, rsmt);
     }
 
-    if (net->deg != rsmt.deg) {
+    if (net->getDegree() != rsmt.deg) {
       d = rsmt.deg;
     }
 

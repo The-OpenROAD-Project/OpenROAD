@@ -118,18 +118,15 @@ class FastRouteCore
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
   void setLayerOrientation(int x);
-  int addNet(odb::dbNet* db_net,
-             int num_pins,
-             bool is_clock,
-             int driver_idx,
-             int cost,
-             int min_layer,
-             int max_layer,
-             float slack,
-             std::vector<int>* edge_cost_per_layer);
-  void setNetDriverIdx(int netID, int root_idx);
-  void addPin(int netID, int x, int y, int layer);
-  void clearPins(int netID);
+  FrNet* addNet(odb::dbNet* db_net,
+                int num_pins,
+                bool is_clock,
+                int driver_idx,
+                int cost,
+                int min_layer,
+                int max_layer,
+                float slack,
+                std::vector<int>* edge_cost_per_layer);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearRoute(const int netID);
   void clearNetRoute(const int netID);
@@ -542,7 +539,7 @@ class FastRouteCore
       gys_;  // the copy of xs for nets, used for second FLUTE
   std::vector<std::vector<int>>
       gs_;  // the copy of vertical sequence for nets, used for second FLUTE
-  std::vector<std::vector<Segment>> seglist_; // indexed by netID, segID
+  std::vector<std::vector<Segment>> seglist_;  // indexed by netID, segID
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
