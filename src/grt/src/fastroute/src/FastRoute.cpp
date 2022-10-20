@@ -34,11 +34,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "FastRoute.h"
+
 #include <algorithm>
 #include <unordered_set>
 
 #include "DataType.h"
-#include "FastRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "utl/Logger.h"

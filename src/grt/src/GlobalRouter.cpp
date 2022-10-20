@@ -535,7 +535,8 @@ bool GlobalRouter::pinAccessPointPositions(
       xform.apply(ap_position);
     }
 
-    ap_positions.push_back({ap_position, grid_->getPositionOnGrid(ap_position)});
+    ap_positions.push_back(
+        {ap_position, grid_->getPositionOnGrid(ap_position)});
   }
 
   return true;
@@ -779,13 +780,13 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     getNetLayerRange(net, min_layer, max_layer);
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
-                                   is_clock,
-                                   root_idx,
-                                   edge_cost_for_net,
-                                   min_layer - 1,
-                                   max_layer - 1,
-                                   net->getSlack(),
-                                   edge_cost_per_layer);
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       min_layer - 1,
+                                       max_layer - 1,
+                                       net->getSlack(),
+                                       edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
