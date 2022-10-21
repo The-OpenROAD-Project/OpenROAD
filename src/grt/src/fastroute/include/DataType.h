@@ -85,57 +85,46 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool isRouted() const { return is_routed_; }
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
-  int getDegree() const { return degree_; }
   int getDriverIdx() const { return driver_idx_; }
   int getEdgeCost() const { return edge_cost_; }
   const char* getName() const;
   int getMaxLayer() const { return max_layer_; }
   int getMinLayer() const { return min_layer_; }
-  int numPins() const { return pin_x_.size(); }
-  std::vector<int>* getEdgeCostPerLayer() const { return edge_cost_per_layer_; }
+  int getNumPins() const { return pin_x_.size(); }
+  int getLayerEdgeCost(int layer) const;
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
-  
-  void addPin(int x, int y, int layer);
-  void clearPins();
 
-  void setDbNet(odb::dbNet* db_net) { db_net_ = db_net; }
-  void setDegree(int degree) { degree_ = degree; }
-  void setDriverIdx(int driver_idx) { driver_idx_ = driver_idx; }
-  void setEdgeCost(int edge_cost) { edge_cost_ = edge_cost; }
-  void setEdgeCostPerLayer(std::vector<int>* edge_cost_per_layer)
-  {
-    edge_cost_per_layer_ = edge_cost_per_layer;
-  }
-  void setIsClock(bool is_clock) { is_clock_ = is_clock; }
+  void addPin(int x, int y, int layer);
+  void reset(odb::dbNet* db_net,
+             bool is_clock,
+             int driver_idx,
+             int edge_cost,
+             int min_layer,
+             int max_layer,
+             float slack,
+             std::vector<int>* edge_cost_per_layer);
   void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
-  void setSlack(float slack) { slack_ = slack; }
-
-  int layerEdgeCost(int layer);
-  ~FrNet();
 
  private:
   odb::dbNet* db_net_;
-  // net degree (number of MazePoints connecting by the net, pins in
-  // same MazePoints count only as one)
-  int degree_;
   std::vector<int> pin_x_;  // x coordinates of pins
   std::vector<int> pin_y_;  // y coordinates of pins
   std::vector<int> pin_l_;  // l coordinates of pins
-  bool is_clock_;  // flag that indicates if net is a clock net
+  bool is_clock_;           // flag that indicates if net is a clock net
   int driver_idx_;
   int edge_cost_;
   int min_layer_;
   int max_layer_;
   float slack_;
   // Non-null when an NDR has been applied to the net.
-  std::vector<int>* edge_cost_per_layer_ = nullptr;
+  std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
   bool is_routed_ = false;
 };
 
@@ -200,12 +189,8 @@ struct Route
   // valid for MazeRoute: a list of grids (n=routelen+1) the route
   // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   std::vector<short> gridsX;
-
-  // valid for MazeRoute: a list of grids (n=routelen+1) the route
-  // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   std::vector<short> gridsY;
-
-  std::vector<short> gridsL;  // n
+  std::vector<short> gridsL;
 
   // valid for MazeRoute: the number of edges in the route
   int routelen;

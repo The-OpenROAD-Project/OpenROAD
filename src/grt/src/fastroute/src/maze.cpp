@@ -1011,7 +1011,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           nets_[net_id]->getName(),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins());
+          nets_[net_id]->getNumPins());
     return false;
   }
 
@@ -1189,7 +1189,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
           nets_[net_id]->getName(),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins());
+          nets_[net_id]->getNumPins());
     return false;
   }
 
@@ -1250,12 +1250,14 @@ void FastRouteCore::reInitTree(const int netID)
   // if failing tree was created with pd, fall back to flute with fluteNormal
   // first so the structs necessary for fluteCongest are filled
   if (net_alpha > 0.0) {
-    fluteNormal(netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
+    fluteNormal(
+        netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
   }
 
-  fluteCongest(netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
+  fluteCongest(
+      netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
 
-  if (nets_[netID]->getDegree() > 3) {
+  if (nets_[netID]->getNumPins() > 3) {
     edgeShiftNew(rsmt, netID);
   }
 
