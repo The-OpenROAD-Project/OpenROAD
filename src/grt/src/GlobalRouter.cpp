@@ -1399,6 +1399,7 @@ void GlobalRouter::perturbCapacities()
 void GlobalRouter::readGuides(const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
+  routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
     int min_layer = min_layer_for_clock_ > 0
