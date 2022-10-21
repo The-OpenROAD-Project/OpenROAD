@@ -1,0 +1,29 @@
+# This is "close" to correct but has a number of bugs that prevent
+# using it on the source tree.
+Language: Cpp
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AlignOperands: false
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: TopLevel
+BinPackArguments: false
+# fails
+BinPackParameters: false
+BraceWrapping:   
+  AfterClass: true
+  AfterStruct: true
+  AfterFunction: true
+  BeforeElse: true
+BreakBeforeBraces: Custom
+# fails if all initializers fit on one line
+BreakConstructorInitializers: AfterColon
+ColumnLimit: 0
+# fails
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 2
+IncludeBlocks: Preserve
+PointerAlignment: Right
