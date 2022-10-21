@@ -1398,6 +1398,11 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::readGuides(const char* file_name)
 {
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 249, "Load design before reading guides");
+  }
+
   block_ = db_->getChip()->getBlock();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
