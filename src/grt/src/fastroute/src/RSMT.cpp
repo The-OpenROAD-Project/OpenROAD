@@ -84,11 +84,11 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   sttrees_[ind].deg = d;
   const int numnodes = 2 * d - 2;
   const int numedges = 2 * d - 3;
-  sttrees_[ind].nodes = new TreeNode[numnodes];
-  sttrees_[ind].edges = new TreeEdge[numedges];
+  sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
+  sttrees_[ind].edges.reset(new TreeEdge[numedges]);
 
-  TreeNode* treenodes = sttrees_[ind].nodes;
-  TreeEdge* treeedges = sttrees_[ind].edges;
+  const auto& treenodes = sttrees_[ind].nodes;
+  const auto& treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
@@ -669,8 +669,8 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
     if (reRoute) {
       if (newType) {
-        const TreeEdge* treeedges = sttrees_[i].edges;
-        const TreeNode* treenodes = sttrees_[i].nodes;
+        const auto& treeedges = sttrees_[i].edges;
+        const auto& treenodes = sttrees_[i].nodes;
         for (int j = 0; j < 2 * d - 3; j++) {
           // only route the non-degraded edges (len>0)
           if (sttrees_[i].edges[j].len > 0) {
@@ -681,7 +681,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
             const int y1 = treenodes[n1].y;
             const int x2 = treenodes[n2].x;
             const int y2 = treenodes[n2].y;
-            newRipup(treeedge, treenodes, x1, y1, x2, y2, i);
+            newRipup(treeedge, x1, y1, x2, y2, i);
           }
         }
       } else {

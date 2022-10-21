@@ -403,7 +403,6 @@ class FastRouteCore
   void ripupSegL(const Segment* seg);
   void ripupSegZ(const Segment* seg);
   void newRipup(const TreeEdge* treeedge,
-                const TreeNode* treenodes,
                 const int x1,
                 const int y1,
                 const int x2,

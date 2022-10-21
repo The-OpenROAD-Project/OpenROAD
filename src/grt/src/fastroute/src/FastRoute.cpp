@@ -156,15 +156,12 @@ void FastRouteCore::clear()
 void FastRouteCore::clearNets()
 {
   if (!sttrees_.empty()) {
-    for (int i = 0; i < netCount(); i++) {
-      delete[] sttrees_[i].nodes;
-      delete[] sttrees_[i].edges;
-    }
     sttrees_.clear();
   }
 
-  for (FrNet* net : nets_)
+  for (FrNet* net : nets_) {
     delete net;
+  }
   nets_.clear();
   seglist_.clear();
   db_net_id_map_.clear();
@@ -295,10 +292,8 @@ void FastRouteCore::clearNetRoute(const int netID)
   releaseNetResources(netID);
 
   // clear stree
-  delete[] sttrees_[netID].nodes;
-  delete[] sttrees_[netID].edges;
-  sttrees_[netID].nodes = nullptr;
-  sttrees_[netID].edges = nullptr;
+  sttrees_[netID].nodes.reset();
+  sttrees_[netID].edges.reset();
 }
 
 void FastRouteCore::initEdges()
@@ -751,11 +746,11 @@ NetRouteMap FastRouteCore::getRoutes()
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
 
-    TreeEdge* treeedges = sttrees_[netID].edges;
+    const auto& treeedges = sttrees_[netID].edges;
     const int deg = sttrees_[netID].deg;
 
     for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
