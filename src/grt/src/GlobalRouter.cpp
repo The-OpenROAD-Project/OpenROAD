@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "grt/GlobalRouter.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -56,7 +58,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "heatMap.h"
 #include "odb/db.h"
@@ -1404,6 +1405,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   block_ = db_->getChip()->getBlock();
+  routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
     int min_layer = min_layer_for_clock_ > 0
