@@ -137,6 +137,9 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   unsigned short red;
   short last_usage;
   float est_usage;  // the estimated usage of the edge
+
+  unsigned short usage_red() const { return usage + red; }
+  float est_usage_red() const { return est_usage + red; }
 };
 
 struct Edge3D

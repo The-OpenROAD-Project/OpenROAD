@@ -528,9 +528,9 @@ void FastRouteCore::applyHorizontalAdjustments(const odb::Point& first_tile,
 void FastRouteCore::addVerticalAdjustments(
     const odb::Point& first_tile,
     const odb::Point& last_tile,
-    int layer,
-    interval<int>::type first_tile_reduce_interval,
-    interval<int>::type last_tile_reduce_interval)
+    const int layer,
+    const interval<int>::type& first_tile_reduce_interval,
+    const interval<int>::type& last_tile_reduce_interval)
 {
   // add intervals to set for each tile
   for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
@@ -551,9 +551,9 @@ void FastRouteCore::addVerticalAdjustments(
 void FastRouteCore::addHorizontalAdjustments(
     const odb::Point& first_tile,
     const odb::Point& last_tile,
-    int layer,
-    interval<int>::type first_tile_reduce_interval,
-    interval<int>::type last_tile_reduce_interval)
+    const int layer,
+    const interval<int>::type& first_tile_reduce_interval,
+    const interval<int>::type& last_tile_reduce_interval)
 {
   // add intervals to each tiles
   for (int x = first_tile.getX(); x < last_tile.getX(); x++) {

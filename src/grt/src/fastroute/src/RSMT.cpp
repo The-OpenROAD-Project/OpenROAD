@@ -423,7 +423,7 @@ void FastRouteCore::fluteCongest(const int netID,
       for (int k = ys[0]; k <= ys[d - 1]; k++)  // all grids in the column
       {
         for (int j = xs[i]; j < xs[i + 1]; j++)
-          usageH += (h_edges_[k][j].est_usage + h_edges_[k][j].red);
+          usageH += h_edges_[k][j].est_usage_red();
       }
       if (x_seg[i] != 0 && usageH != 0) {
         x_seg[i]
@@ -434,7 +434,7 @@ void FastRouteCore::fluteCongest(const int netID,
       int usageV = 0;
       for (int j = ys[i]; j < ys[i + 1]; j++) {
         for (int k = xs[0]; k <= xs[d - 1]; k++)  // all grids in the row
-          usageV += (v_edges_[j][k].est_usage + v_edges_[j][k].red);
+          usageV += v_edges_[j][k].est_usage_red();
       }
       if (y_seg[i] != 0 && usageV != 0) {
         y_seg[i]

@@ -289,14 +289,14 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     for (int i = 0; i < treeedge->route.routelen; i++) {
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (v_edges_[ymin][gridsX[i]].usage + v_edges_[ymin][gridsX[i]].red
+        if (v_edges_[ymin][gridsX[i]].usage_red()
             >= v_capacity_ - ripup_threshold) {
           needRipup = true;
           break;
         }
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (h_edges_[gridsY[i]][xmin].usage + h_edges_[gridsY[i]][xmin].red
+        if (h_edges_[gridsY[i]][xmin].usage_red()
             >= h_capacity_ - ripup_threshold) {
           needRipup = true;
           break;

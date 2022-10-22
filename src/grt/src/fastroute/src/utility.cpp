@@ -330,7 +330,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   FrNet* net = nets_[netID];
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
-  TreeEdge *treeedge = &(treeedges[edgeID]);
+  TreeEdge* treeedge = &(treeedges[edgeID]);
 
   const std::vector<short>& gridsX = treeedge->route.gridsX;
   const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -695,7 +695,7 @@ void FastRouteCore::layerAssignmentV4()
   int n1a, n2a;
   std::queue<int> edgeQueue;
 
-  TreeEdge *treeedge;
+  TreeEdge* treeedge;
 
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
@@ -837,7 +837,7 @@ void FastRouteCore::layerAssignment()
 {
   int netID, d, k, edgeID, deg, numpoints, n1, n2;
   bool redundant;
-  TreeEdge *treeedge;
+  TreeEdge* treeedge;
 
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
@@ -1096,7 +1096,7 @@ void FastRouteCore::StNetOrder()
 
     for (ind = 0; ind < 2 * d - 3; ind++) {
       const auto& treeedges = stree->edges;
-      const TreeEdge *treeedge = &(treeedges[ind]);
+      const TreeEdge* treeedge = &(treeedges[ind]);
 
       const std::vector<short>& gridsX = treeedge->route.gridsX;
       const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -1137,7 +1137,7 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
   int connectionCNT, routeLen;
 
   const auto& treeedges = sttrees_[netID].edges;
-  const TreeEdge *treeedge = &(treeedges[edgeID]);
+  const TreeEdge* treeedge = &(treeedges[edgeID]);
 
   routeLen = treeedge->route.routelen;
 
@@ -1223,7 +1223,7 @@ void FastRouteCore::checkUsage()
 
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       edge = sttrees_[netID].edges[edgeID];
-      TreeEdge *treeedge = &(treeedges[edgeID]);
+      TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         std::vector<short>& gridsX = treeedge->route.gridsX;
         std::vector<short>& gridsY = treeedge->route.gridsY;
