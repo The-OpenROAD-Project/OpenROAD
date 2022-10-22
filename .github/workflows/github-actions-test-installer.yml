@@ -1,0 +1,42 @@
+name: Test DependencyInstaller script
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:     
+  testInstaller:
+    strategy:
+      matrix:
+        os: ["ubuntu:20.04", "ubuntu:22.04", "centos:centos7"]
+        args: ["", "-prefix=/home/testUser/openroad-deps"]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.os }}
+    steps:
+      - name: Setup
+        run: |
+          if [ "${{ matrix.os }}" != "centos:centos7" ]; then 
+            apt-get update
+            apt-get -y install git
+          else
+            yum -y install git
+          fi
+      - name: Checkout repository code with submodules
+        run: |
+          echo $(pwd)
+          git clone --recursive https://github.com/${{ github.repository }}.git .
+          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          echo $(pwd)
+          git config --global --add safe.directory '*'
+          git fetch origin pull/${PR_NUMBER}/head:test
+          git checkout test
+      - name: runs installer
+        run: |
+          echo "test" | useradd -m testUser
+          su - testUser
+          mkdir -p /home/testUser/openroad-deps
+          ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
+          ./etc/Build.sh
