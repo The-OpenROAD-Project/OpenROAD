@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -32,63 +32,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
+%module grt_py
 
-#pragma once
+%{
+#include "grt/GlobalRouter.h"
 
-#include <string>
+using namespace grt;
 
-namespace odb {
-class dbBlock;
-}  // namespace odb
+%}
 
-namespace ifp {
-class InitFloorplan;
-}
+%include "../../Exception-py.i"
 
-namespace ant {
-  class AntennaChecker;
-}
+%include <std_string.i>
 
-namespace grt {
-  class GlobalRouter;
-}
-
-namespace ord {
-
-class Tech;
-
-class Design
-{
- public:
-  Design(Tech* tech);
-  void readVerilog(const std::string& file_name);
-  void readDef(const std::string& file_name,
-               bool continue_on_errors=false,
-               bool floorplan_init=false,
-               bool incremental=false
-              );
-  void link(const std::string& design_name);
-
-  void writeDb(const std::string& file_name);
-  void writeDef(const std::string& file_name);
-
-  odb::dbBlock* getBlock();
-  utl::Logger* getLogger();
-
-  int micronToDBU(double coord);
-
-  // This is intended as a temporary back door to tcl from Python
-  int evalTclString(const std::string& cmd);
-
-  Tech* getTech();
-
-  // Services
-  ifp::InitFloorplan* getFloorplan();
-  ant::AntennaChecker *getAntennaChecker();
-  grt::GlobalRouter* getGlobalRouter();
-
- private:
-  Tech* tech_;
-};
-
-}  // namespace ord
+%include "grt/GlobalRouter.h"

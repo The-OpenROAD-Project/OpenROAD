@@ -138,4 +138,10 @@ Tech* Design::getTech()
     return tech_;
 }
 
+grt::GlobalRouter* Design::getGlobalRouter()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getGlobalRouter();
+}
+
 }  // namespace ord

@@ -83,6 +83,7 @@ extern "C" {
 extern PyObject* PyInit__ifp_py();
 extern PyObject* PyInit__utl_py();
 extern PyObject* PyInit__ant_py();
+extern PyObject* PyInit__grt_py();
 extern PyObject* PyInit__openroad_swig_py();
 extern PyObject* PyInit__odbpy();
 }
@@ -103,6 +104,7 @@ namespace sta {
 extern const char* ifp_py_python_inits[];
 extern const char* utl_py_python_inits[];
 extern const char* ant_py_python_inits[];
+extern const char* grt_py_python_inits[];
 extern const char* odbpy_python_inits[];
 extern const char* openroad_swig_py_python_inits[];
 }  // namespace sta
@@ -121,6 +123,11 @@ static void initPython()
 
   if (PyImport_AppendInittab("_ant_py", PyInit__ant_py) == -1) {
     fprintf(stderr, "Error: could not add module _ant_py\n");
+    exit(1);
+  }
+  
+  if (PyImport_AppendInittab("_grt_py", PyInit__grt_py) == -1) {
+    fprintf(stderr, "Error: could not add module _grt_py\n");
     exit(1);
   }
   
@@ -188,6 +195,25 @@ static void initPython()
     if (PyImport_ExecCodeModule("ant", code) == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not add module ant\n");
+      exit(1);
+    }
+
+    delete[] unencoded;
+  }
+
+  {
+    char* unencoded = sta::unencode(sta::grt_py_python_inits);
+
+    PyObject* code = Py_CompileString(unencoded, "grt_py.py", Py_file_input);
+    if (code == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not compile grt_py\n");
+      exit(1);
+    }
+
+    if (PyImport_ExecCodeModule("grt", code) == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not add module grt\n");
       exit(1);
     }
 
