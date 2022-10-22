@@ -107,7 +107,6 @@ void FastRouteCore::ripupSegZ(const Segment* seg)
 }
 
 void FastRouteCore::newRipup(const TreeEdge* treeedge,
-                             const TreeNode* treenodes,
                              const int x1,
                              const int y1,
                              const int x2,
@@ -331,14 +330,14 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 {
   FrNet* net = nets_[netID];
 
-  const TreeEdge* treeedges = sttrees_[netID].edges;
+  const auto& treeedges = sttrees_[netID].edges;
   const TreeEdge* treeedge = &(treeedges[edgeID]);
 
   if (treeedge->len == 0) {
     return false;  // not ripup for degraded edge
   }
 
-  TreeNode* treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
 
   const int deg = sttrees_[netID].deg;
 
@@ -448,7 +447,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 void FastRouteCore::releaseNetResources(const int netID)
 {
   const int edgeCost = nets_[netID]->getEdgeCost();
-  const TreeEdge* treeedges = sttrees_[netID].edges;
+  const auto& treeedges = sttrees_[netID].edges;
   const int deg = sttrees_[netID].deg;
 
   // Only release resources if they were created at first place.
@@ -489,8 +488,8 @@ void FastRouteCore::newRipupNet(const int netID)
 {
   const int edgeCost = nets_[netID]->getEdgeCost();
 
-  const TreeEdge* treeedges = sttrees_[netID].edges;
-  const TreeNode* treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
   const int deg = sttrees_[netID].deg;
 
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {

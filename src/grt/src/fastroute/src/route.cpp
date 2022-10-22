@@ -258,8 +258,8 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   const int d = sttrees_[netID].deg;
-  TreeEdge* treeedges = sttrees_[netID].edges;
-  TreeNode* treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges (2*d-3)
   for (int i = 0; i < 2 * d - 3; i++) {
@@ -279,7 +279,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 
       // ripup the original routing
       if (ripuptype > RouteType::NoRoute)  // it's been routed
-        newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
+        newRipup(treeedge, x1, y1, x2, y2, netID);
 
       treeedge->route.type = RouteType::LRoute;
       if (x1 == x2)  // V-routing
@@ -415,17 +415,15 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
 {
   int i, j, n1, n2, x1, y1, x2, y2, segWidth, bestZ, ymin, ymax;
   float tmp, bestcost, btTEST;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
   if (sttrees_[netID].edges[edgeID].len
       > 0)  // only route the non-degraded edges (len>0)
   {
-    treeedges = sttrees_[netID].edges;
-    treeedge = &(treeedges[edgeID]);
-    treenodes = sttrees_[netID].nodes;
+    const auto& treeedges = sttrees_[netID].edges;
+    TreeEdge* treeedge = &(treeedges[edgeID]);
+    const auto& treenodes = sttrees_[netID].nodes;
     n1 = treeedge->n1;
     n2 = treeedge->n2;
     x1 = treenodes[n1].x;
@@ -437,7 +435,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
                                // no need to reroute)
     {
       // ripup the original routing
-      newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
+      newRipup(treeedge, x1, y1, x2, y2, netID);
 
       treeedge->route.type = RouteType::ZRoute;
 
@@ -547,20 +545,18 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
   float tmp, bestcost, btTEST;
   bool HVH;        // the shape of Z routing (true - HVH, false - VHV)
   bool y1Smaller;  // true - y1<y2, false y1>y2
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
   d = sttrees_[netID].deg;
 
-  treeedges = sttrees_[netID].edges;
-  treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges (2*d-3)
 
   for (ind = 0; ind < 2 * d - 3; ind++) {
-    treeedge = &(treeedges[ind]);
+    TreeEdge* treeedge = &(treeedges[ind]);
 
     n1 = treeedge->n1;
     n2 = treeedge->n2;
@@ -575,7 +571,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
       if (x1 != x2 && y1 != y2)  // not H or V edge, do Z-routing
       {
         // ripup the original routing
-        if (newRipupType2(treeedge, treenodes, x1, y1, x2, y2, d, netID)) {
+        if (newRipupType2(
+                treeedge, treenodes.get(), x1, y1, x2, y2, d, netID)) {
           n1a = treenodes[n1].stackAlias;
           n2a = treenodes[n2].stackAlias;
           status1 = treenodes[n1a].status;
@@ -862,8 +859,6 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
   multi_array<float, 2> cost;
   multi_array<bool, 2> parent;  // remember the parent of a grid on the shortest
                                 // path, true - same x, false - same y
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -873,9 +868,9 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
   if (sttrees_[netID].edges[edgeID].route.routelen
       > threshold)  // only route the non-degraded edges (len>0)
   {
-    treeedges = sttrees_[netID].edges;
-    treeedge = &(treeedges[edgeID]);
-    treenodes = sttrees_[netID].nodes;
+    const auto& treeedges = sttrees_[netID].edges;
+    TreeEdge *treeedge = &(treeedges[edgeID]);
+    const auto& treenodes = sttrees_[netID].nodes;
     n1 = treeedge->n1;
     n2 = treeedge->n2;
     x1 = treenodes[n1].x;
@@ -887,7 +882,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
                                // no need to reroute)
     {
       // ripup the original routing
-      newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
+      newRipup(treeedge, x1, y1, x2, y2, netID);
 
       segWidth = abs(x1 - x2);
       segHeight = abs(y1 - y2);
@@ -1082,15 +1077,13 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
   float costL2 = 0;
   float tmp;
   int ymin, ymax;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
-  treeedges = sttrees_[netID].edges;
-  treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
-  treeedge = &(treeedges[edgeID]);
+  TreeEdge *treeedge = &(treeedges[edgeID]);
   if (treeedge->len > 0)  // only route the non-degraded edges (len>0)
   {
     n1 = treeedge->n1;
@@ -1251,15 +1244,14 @@ void FastRouteCore::spiralRouteAll()
   int d, k, edgeID, nodeID, deg, numpoints, n1, n2;
   int na;
   bool redundant;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
+  TreeEdge *treeedge;
   std::queue<int> edgeQueue;
 
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
 
-    treenodes = sttrees_[netID].nodes;
+    const auto& treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
     numpoints = 0;
@@ -1308,8 +1300,8 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
-    treeedges = sttrees_[netID].edges;
-    treenodes = sttrees_[netID].nodes;
+    const auto& treeedges = sttrees_[netID].edges;
+    const auto& treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
@@ -1338,8 +1330,8 @@ void FastRouteCore::spiralRouteAll()
 
     newRipupNet(netID);
 
-    treeedges = sttrees_[netID].edges;
-    treenodes = sttrees_[netID].nodes;
+    const auto& treeedges = sttrees_[netID].edges;
+    const auto& treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
     /* edgeQueue.clear(); */
 
@@ -1393,7 +1385,7 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
-    treenodes = sttrees_[netID].nodes;
+    const auto& treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
     for (d = 0; d < 2 * deg - 2; d++) {
@@ -1421,17 +1413,15 @@ void FastRouteCore::routeLVEnew(int netID,
   bool LH1, LH2;
   bool BL1 = false;
   bool BL2 = false;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
   if (sttrees_[netID].edges[edgeID].len
       > threshold)  // only route the non-degraded edges (len>0)
   {
-    treeedges = sttrees_[netID].edges;
-    treeedge = &(treeedges[edgeID]);
-    treenodes = sttrees_[netID].nodes;
+    const auto& treeedges = sttrees_[netID].edges;
+    TreeEdge *treeedge = &(treeedges[edgeID]);
+    const auto& treenodes = sttrees_[netID].nodes;
     n1 = treeedge->n1;
     n2 = treeedge->n2;
     x1 = treenodes[n1].x;
@@ -1735,12 +1725,10 @@ void FastRouteCore::newrouteLInMaze(int netID)
   int i, j, d, n1, n2, x1, y1, x2, y2;
   int costL1, costL2, tmp;
   int ymin, ymax;
-  TreeEdge *treeedges, *treeedge;
-  TreeNode* treenodes;
 
   d = sttrees_[netID].deg;
-  treeedges = sttrees_[netID].edges;
-  treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
 
   int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -1749,7 +1737,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
     if (sttrees_[netID].edges[i].len
         > 0)  // only route the non-degraded edges (len>0)
     {
-      treeedge = &(treeedges[i]);
+      TreeEdge *treeedge = &(treeedges[i]);
 
       n1 = treeedge->n1;
       n2 = treeedge->n2;
