@@ -1449,8 +1449,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // left
         if (curX > regionX1) {
           float tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX - 1].usage
-                           + h_edges_[curY][curX - 1].red
+          const int pos1 = h_edges_[curY][curX - 1].usage_red()
                            + L * h_edges_[curY][(curX - 1)].last_usage;
 
           if (pos1 < h_cost_table_.size())
@@ -1463,8 +1462,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curX < regionX2 - 1) {
-              const int pos2 = h_edges_[curY][curX].usage
-                               + h_edges_[curY][curX].red
+              const int pos2 = h_edges_[curY][curX].usage_red()
                                + L * h_edges_[curY][curX].last_usage;
 
               if (pos2 < h_cost_table_.size())
@@ -1513,7 +1511,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // right
         if (curX < regionX2) {
           float tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX].usage + h_edges_[curY][curX].red
+          const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
           if (pos1 < h_cost_table_.size())
@@ -1526,8 +1524,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curX > regionX1 + 1) {
-              const int pos2 = h_edges_[curY][curX - 1].usage
-                               + h_edges_[curY][curX - 1].red
+              const int pos2 = h_edges_[curY][curX - 1].usage_red()
                                + L * h_edges_[curY][curX - 1].last_usage;
 
               if (pos2 < h_cost_table_.size())
@@ -1575,8 +1572,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // bottom
         if (curY > regionY1) {
           float tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY - 1][curX].usage
-                           + v_edges_[curY - 1][curX].red
+          const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
           if (pos1 < v_cost_table_.size())
@@ -1589,8 +1585,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curY < regionY2 - 1) {
-              const int pos2 = v_edges_[curY][curX].usage
-                               + v_edges_[curY][curX].red
+              const int pos2 = v_edges_[curY][curX].usage_red()
                                + L * v_edges_[curY][curX].last_usage;
 
               if (pos2 < v_cost_table_.size())
@@ -1637,7 +1632,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // top
         if (curY < regionY2) {
           float tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY][curX].usage + v_edges_[curY][curX].red
+          const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
           if (pos1 < v_cost_table_.size())
@@ -1650,8 +1645,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curY > regionY1 + 1) {
-              const int pos2 = v_edges_[curY - 1][curX].usage
-                               + v_edges_[curY - 1][curX].red
+              const int pos2 = v_edges_[curY - 1][curX].usage_red()
                                + L * v_edges_[curY - 1][curX].last_usage;
 
               if (pos2 < v_cost_table_.size())

@@ -108,13 +108,9 @@ class FastRouteCore
   ~FastRouteCore();
 
   void clear();
-  void clearNets();
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
-  void addMinWidth(int width, int layer);
-  void addMinSpacing(int spacing, int layer);
-  void addViaSpacing(int spacing, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
   void setLayerOrientation(int x);
@@ -126,9 +122,6 @@ class FastRouteCore
                 int max_layer,
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
-  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
-  void clearRoute(const int netID);
-  void clearNetRoute(const int netID);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -148,19 +141,20 @@ class FastRouteCore
                                   int layer,
                                   int first_tile_reduce,
                                   int last_tile_reduce);
-  void addVerticalAdjustments(const odb::Point& first_tile,
-                              const odb::Point& last_tile,
-                              int layer,
-                              interval<int>::type first_tile_reduce_interval,
-                              interval<int>::type last_tile_reduce_interval);
-  void addHorizontalAdjustments(const odb::Point& first_tile,
-                                const odb::Point& last_tile,
-                                int layer,
-                                interval<int>::type first_tile_reduce_interval,
-                                interval<int>::type last_tile_reduce_interval);
+  void addVerticalAdjustments(
+      const odb::Point& first_tile,
+      const odb::Point& last_tile,
+      const int layer,
+      const interval<int>::type& first_tile_reduce_interval,
+      const interval<int>::type& last_tile_reduce_interval);
+  void addHorizontalAdjustments(
+      const odb::Point& first_tile,
+      const odb::Point& last_tile,
+      const int layer,
+      const interval<int>::type& first_tile_reduce_interval,
+      const interval<int>::type& last_tile_reduce_interval);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
-  void initNetAuxVars();
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
@@ -172,14 +166,9 @@ class FastRouteCore
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
-  int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(int x1, int y1, int x2, int y2, int layer);
-  int getEdgeCurrentUsage(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
-  void setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
-  void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);
@@ -210,6 +199,19 @@ class FastRouteCore
   bool hasSaveSttInput();
 
  private:
+  int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
+  int getEdgeCurrentResource(int x1, int y1, int x2, int y2, int layer);
+  int getEdgeCurrentUsage(int x1, int y1, int x2, int y2, int layer);
+  void setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
+  void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
+  void clearRoute(const int netID);
+  void clearNetRoute(const int netID);
+  void initNetAuxVars();
+  void addMinWidth(int width, int layer);
+  void addMinSpacing(int spacing, int layer);
+  void addViaSpacing(int spacing, int layer);
+  void clearNets();
   NetRouteMap getRoutes();
 
   // maze functions
