@@ -45,6 +45,10 @@ namespace ifp {
 class InitFloorplan;
 }
 
+namespace utl {
+class Logger;
+}
+
 namespace ant {
 class AntennaChecker;
 }
