@@ -200,17 +200,9 @@ class FastRouteCore
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(int x1, int y1, int x2, int y2, int layer);
-  int getEdgeCurrentUsage(int x1, int y1, int x2, int y2, int layer);
-  void setEdgeUsage(int x1, int y1, int x2, int y2, int layer, int usage);
-  void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int cap);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
-  void clearRoute(const int netID);
   void clearNetRoute(const int netID);
   void initNetAuxVars();
-  void addMinWidth(int width, int layer);
-  void addMinSpacing(int spacing, int layer);
-  void addViaSpacing(int spacing, int layer);
   void clearNets();
   NetRouteMap getRoutes();
 
