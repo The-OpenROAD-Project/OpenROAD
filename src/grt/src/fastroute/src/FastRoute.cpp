@@ -281,11 +281,6 @@ void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
   net_id = exists ? itr->second : 0;
 }
 
-void FastRouteCore::clearRoute(const int netID)
-{
-  newRipupNet(netID);
-}
-
 void FastRouteCore::clearNetRoute(const int netID)
 {
   // clear used resources for the net route
@@ -349,50 +344,6 @@ void FastRouteCore::initEdges()
 void FastRouteCore::setNumAdjustments(int nAdjustments)
 {
   num_adjust_ = nAdjustments;
-}
-
-int FastRouteCore::getEdgeCurrentResource(int x1,
-                                          int y1,
-                                          int x2,
-                                          int y2,
-                                          int layer)
-{
-  int resource = 0;
-
-  const int k = layer - 1;
-  if (y1 == y2) {
-    resource = h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
-  } else if (x1 == x2) {
-    resource = v_edges_3D_[k][y1][x1].cap - v_edges_3D_[k][y1][x1].usage;
-  } else {
-    logger_->error(
-        GRT,
-        212,
-        "Cannot get edge resource: edge is not vertical or horizontal.");
-  }
-
-  return resource;
-}
-
-int FastRouteCore::getEdgeCurrentUsage(int x1,
-                                       int y1,
-                                       int x2,
-                                       int y2,
-                                       int layer)
-{
-  int usage = 0;
-
-  const int k = layer - 1;
-  if (y1 == y2) {
-    usage = h_edges_3D_[k][y1][x1].usage;
-  } else if (x1 == x2) {
-    usage = v_edges_3D_[k][y1][x1].usage;
-  } else {
-    logger_->error(
-        GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
-  }
-
-  return usage;
 }
 
 void FastRouteCore::setMaxNetDegree(int deg)
@@ -645,50 +596,6 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
   }
 
   return cap;
-}
-
-void FastRouteCore::setEdgeCapacity(int x1,
-                                    int y1,
-                                    int x2,
-                                    int y2,
-                                    int layer,
-                                    int cap)
-{
-  const int k = layer - 1;
-
-  if (y1 == y2) {  // horizontal edge
-    const int currCap = h_edges_3D_[k][y1][x1].cap;
-    h_edges_3D_[k][y1][x1].cap = cap;
-
-    const int reduce = currCap - cap;
-    h_edges_[y1][x1].cap -= reduce;
-  } else if (x1 == x2) {  // vertical edge
-    const int currCap = v_edges_3D_[k][y1][x1].cap;
-    v_edges_3D_[k][y1][x1].cap = cap;
-
-    const int reduce = currCap - cap;
-    v_edges_[y1][x1].cap -= reduce;
-  }
-}
-
-void FastRouteCore::setEdgeUsage(int x1,
-                                 int y1,
-                                 int x2,
-                                 int y2,
-                                 int layer,
-                                 int usage)
-{
-  const int k = layer - 1;
-
-  if (y1 == y2) {  // horizontal edge
-    h_edges_3D_[k][y1][x1].usage = usage;
-
-    h_edges_[y1][x1].usage += usage;
-  } else if (x1 == x2) {  // vertical edge
-    v_edges_3D_[k][y1][x1].usage = usage;
-
-    v_edges_[y1][x1].usage += usage;
-  }
 }
 
 void FastRouteCore::incrementEdge3DUsage(int x1,
