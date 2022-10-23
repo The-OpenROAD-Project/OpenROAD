@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "grt/GlobalRouter.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -56,15 +58,14 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "heatMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
-#include "sta/Parasitics.hh"
 #include "sta/MinMax.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -498,10 +499,9 @@ void GlobalRouter::updateDirtyNets()
   }
 }
 
-std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+bool GlobalRouter::pinAccessPointPositions(
     const Pin& pin,
-    bool& has_access_points,
-    odb::Point& pos_on_grid)
+    std::vector<std::pair<odb::Point, odb::Point>>& ap_positions)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
@@ -522,21 +522,41 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     }
   }
 
+  if (access_points.empty())
+    return false;
+
+  for (const odb::dbAccessPoint* ap : access_points) {
+    odb::Point ap_position = ap->getPoint();
+    if (!pin.isPort()) {
+      odb::dbTransform xform;
+      int x, y;
+      pin.getITerm()->getInst()->getLocation(x, y);
+      xform.setOffset({x, y});
+      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+      xform.apply(ap_position);
+    }
+
+    ap_positions.push_back(
+        {ap_position, grid_->getPositionOnGrid(ap_position)});
+  }
+
+  return true;
+}
+
+std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+    const Pin& pin,
+    bool& has_access_points,
+    odb::Point& pos_on_grid)
+{
+  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+
+  has_access_points = pinAccessPointPositions(pin, ap_positions);
+
   std::vector<odb::Point> positions_on_grid;
-  has_access_points = !access_points.empty();
 
   if (has_access_points) {
-    for (const odb::dbAccessPoint* ap : access_points) {
-      odb::Point ap_position = ap->getPoint();
-      if (!pin.isPort()) {
-        odb::dbTransform xform;
-        int x, y;
-        pin.getITerm()->getInst()->getLocation(x, y);
-        xform.setOffset({x, y});
-        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-        xform.apply(ap_position);
-      }
-      pos_on_grid = grid_->getPositionOnGrid(ap_position);
+    for (auto ap_position : ap_positions) {
+      pos_on_grid = ap_position.second;
       positions_on_grid.push_back(pos_on_grid);
     }
   } else {
@@ -660,7 +680,8 @@ void GlobalRouter::computeNetSlacks()
 
   // Find the slack threshold based on the percentage of critical nets
   // defined by the user
-  int threshold_index = std::ceil(slacks.size() * critical_nets_percentage_/100);
+  int threshold_index
+      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
   float slack_th = slacks[threshold_index];
 
   // Ensure the slack threshold is negative
@@ -759,20 +780,20 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
 
-    int netID = fastroute_->addNet(net->getDbNet(),
-                                   pins_on_grid.size(),
-                                   is_clock,
-                                   root_idx,
-                                   edge_cost_for_net,
-                                   min_layer - 1,
-                                   max_layer - 1,
-                                   net->getSlack(),
-                                   edge_cost_per_layer);
+    FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       min_layer - 1,
+                                       max_layer - 1,
+                                       net->getSlack(),
+                                       edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
-      fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
+      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
     // Save stt input on debug file
-    if (fastroute_->hasSaveSttInput() && net->getDbNet() == fastroute_->getDebugNet()) {
+    if (fastroute_->hasSaveSttInput()
+        && net->getDbNet() == fastroute_->getDebugNet()) {
       saveSttInputFile(net);
     }
     return true;
@@ -780,15 +801,17 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   return false;
 }
 
-void GlobalRouter::saveSttInputFile(Net* net) {
+void GlobalRouter::saveSttInputFile(Net* net)
+{
   std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
   remove(file_name.c_str());
   std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
-    odb::Point position = pin.getOnGridPosition(); // Pin position on grid
-    out << pin.getName() << " " << position.getX() << " " << position.getY() << "\n";
+    odb::Point position = pin.getOnGridPosition();  // Pin position on grid
+    out << pin.getName() << " " << position.getX() << " " << position.getY()
+        << "\n";
   }
   out.close();
 }
@@ -1250,7 +1273,8 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
   max_layer_for_clock_ = max_layer;
 }
 
-void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage) {
+void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
+{
   critical_nets_percentage_ = critical_nets_percentage;
 }
 
@@ -1375,7 +1399,13 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::readGuides(const char* file_name)
 {
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 249, "Load design before reading guides");
+  }
+
   block_ = db_->getChip()->getBlock();
+  routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
     int min_layer = min_layer_for_clock_ > 0
@@ -2378,6 +2408,26 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   return pitches;
 }
 
+// For multiple track patterns we need to compute an average
+// track pattern for gcell construction.
+void GlobalRouter::averageTrackPattern(odb::dbTrackGrid* grid,
+                                       bool is_x,
+                                       int& track_init,
+                                       int& num_tracks,
+                                       int& track_step)
+{
+  std::vector<int> coordinates;
+  if (is_x) {
+    grid->getGridX(coordinates);
+  } else {
+    grid->getGridY(coordinates);
+  }
+  const int span = coordinates.back() - coordinates.front();
+  track_init = coordinates.front();
+  track_step = span / coordinates.size();
+  num_tracks = coordinates.size();
+}
+
 void GlobalRouter::initRoutingTracks(int max_routing_layer)
 {
   auto l2vPitches = calcLayerPitches(max_routing_layer);
@@ -2394,8 +2444,11 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
 
     int track_step, track_init, num_tracks;
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      if (track_grid->getNumGridPatternsY() > 0) {
+      if (track_grid->getNumGridPatternsY() == 1) {
         track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
+      } else if (track_grid->getNumGridPatternsY() > 1) {
+        averageTrackPattern(
+            track_grid, false, track_init, num_tracks, track_step);
       } else {
         logger_->error(GRT,
                        124,
@@ -2404,9 +2457,11 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
         return;  // error throws
       }
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      if (track_grid->getNumGridPatternsX() > 0) {
+      if (track_grid->getNumGridPatternsX() == 1) {
         track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
-        ;
+      } else if (track_grid->getNumGridPatternsX() > 1) {
+        averageTrackPattern(
+            track_grid, true, track_init, num_tracks, track_step);
       } else {
         logger_->error(GRT,
                        147,

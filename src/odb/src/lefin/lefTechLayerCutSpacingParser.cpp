@@ -338,8 +338,6 @@ bool parse(
     odb::lefin* lefin,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
   qi::rule<std::string::iterator, space_type> LAYER_CUTCLASS
       = (lit("CUTCLASS")
          >> _string[boost::bind(&setCutClass, _1, parser, layer)]

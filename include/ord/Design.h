@@ -45,6 +45,10 @@ namespace ifp {
 class InitFloorplan;
 }
 
+namespace ant {
+  class AntennaChecker;
+}
+
 namespace ord {
 
 class Tech;
@@ -69,8 +73,14 @@ class Design
 
   int micronToDBU(double coord);
 
+  // This is intended as a temporary back door to tcl from Python
+  int evalTclString(const std::string& cmd);
+
+  Tech* getTech();
+
   // Services
   ifp::InitFloorplan* getFloorplan();
+  ant::AntennaChecker *getAntennaChecker();
 
  private:
   Tech* tech_;

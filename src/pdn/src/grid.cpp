@@ -943,6 +943,13 @@ std::set<odb::dbInst*> Grid::getInstances() const
   return insts;
 }
 
+void Grid::removeStrap(Straps* strap)
+{
+  straps_.erase(std::find_if(straps_.begin(), straps_.end(), [strap](const std::unique_ptr<Straps>& other) {
+    return strap == other.get();
+  }));
+}
+
 ///////////////
 
 CoreGrid::CoreGrid(VoltageDomain* domain,
@@ -972,6 +979,7 @@ const odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
+  std::set<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
     std::vector<odb::dbITerm*> iterms;
@@ -1003,8 +1011,17 @@ void CoreGrid::setupDirectConnect(
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
           this, iterm, connect_pad_layers);
       if (pad_connect->canConnect()) {
+        straps.insert(pad_connect.get());
         addStrap(std::move(pad_connect));
       }
+    }
+  }
+
+  PadDirectConnectionStraps::unifyConnectionTypes(straps);
+  // check if unified connections are still connectable and remove if not
+  for (auto* strap : straps) {
+    if (!strap->canConnect()) {
+      removeStrap(strap);
     }
   }
 }

@@ -169,6 +169,7 @@ class GlobalRouter
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
   void printGrid();
+  int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
   void readGuides(const char* file_name);  // just for display
@@ -242,6 +243,9 @@ class GlobalRouter
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
+  bool pinAccessPointPositions(const Pin& pin,
+                               std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+
  private:
   // Net functions
   Net* addNet(odb::dbNet* db_net);
@@ -253,6 +257,11 @@ class GlobalRouter
   void initRoutingLayers();
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
+  void averageTrackPattern(odb::dbTrackGrid* grid,
+                           bool is_x,
+                           int& track_init,
+                           int& num_tracks,
+                           int& track_step);
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);

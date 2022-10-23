@@ -61,7 +61,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (!nets_[netID]->is_routed)
+      if (!nets_[netID]->isRouted())
         checkAndFixEmbeddedTree(netID);
     }
   }
@@ -69,7 +69,7 @@ void FastRouteCore::fixEmbeddedTrees()
 
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
-  TreeEdge* treeedges = sttrees_[net_id].edges;
+  const auto& treeedges = sttrees_[net_id].edges;
   const int deg = sttrees_[net_id].deg;
 
   // group all edges that crosses the same position
@@ -82,7 +82,7 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   std::map<int, std::vector<std::pair<short, short>>, decltype(cmp)>
       edges_to_blocked_pos_map(cmp);
   for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
-    TreeEdge* treeedge = &(treeedges[edgeID]);
+    const TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
       int routeLen = treeedge->route.routelen;
       const std::vector<short>& gridsX = treeedge->route.gridsX;
@@ -123,7 +123,7 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
     return false;
   }
 
-  TreeEdge* treeedges = sttrees_[net_id].edges;
+  auto& treeedges = sttrees_[net_id].edges;
   TreeEdge* treeedge = &(treeedges[edge_id]);
 
   int n1 = treeedge->n1;
@@ -158,7 +158,7 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<std::pair<short, short>>& blocked_positions)
 {
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
-  TreeNode* treenodes = sttrees_[net_id].nodes;
+  auto& treenodes = sttrees_[net_id].nodes;
 
   auto sort_by_x = [](std::pair<short, short> a, std::pair<short, short> b) {
     return a.first < b.first;
@@ -321,7 +321,7 @@ void FastRouteCore::routeLShape(
 
 void FastRouteCore::convertToMazerouteNet(const int netID)
 {
-  TreeNode* treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
   for (int edgeID = 0; edgeID < 2 * sttrees_[netID].deg - 3; edgeID++) {
     TreeEdge* treeedge = &(sttrees_[netID].edges[edgeID]);
     const int edgelength = treeedge->len;
@@ -458,7 +458,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 void FastRouteCore::convertToMazeroute()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->is_routed)
+    if (!nets_[netID]->isRouted())
       convertToMazerouteNet(netID);
   }
 
@@ -721,8 +721,8 @@ void FastRouteCore::setupHeap(const int netID,
       in_region_[i][j] = true;
   }
 
-  const TreeEdge* treeedges = sttrees_[netID].edges;
-  const TreeNode* treenodes = sttrees_[netID].nodes;
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
   const int degree = sttrees_[netID].deg;
 
   const int n1 = treeedges[edgeID].n1;
@@ -1008,10 +1008,10 @@ bool FastRouteCore::updateRouteType1(const int net_id,
           GRT,
           169,
           "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-          netName(nets_[net_id]),
+          nets_[net_id]->getName(),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins());
+          nets_[net_id]->getNumPins());
     return false;
   }
 
@@ -1186,10 +1186,10 @@ bool FastRouteCore::updateRouteType2(const int net_id,
           GRT,
           170,
           "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-          netName(nets_[net_id]),
+          nets_[net_id]->getName(),
           x_pos,
           y_pos,
-          nets_[net_id]->numPins());
+          nets_[net_id]->getNumPins());
     return false;
   }
 
@@ -1242,20 +1242,22 @@ void FastRouteCore::reInitTree(const int netID)
       treeedge->route.gridsY.clear();
     }
   }
-  delete[] sttrees_[netID].nodes;
-  delete[] sttrees_[netID].edges;
+  sttrees_[netID].nodes.reset();
+  sttrees_[netID].edges.reset();
 
   Tree rsmt;
-  const float net_alpha = stt_builder_->getAlpha(nets_[netID]->db_net);
+  const float net_alpha = stt_builder_->getAlpha(nets_[netID]->getDbNet());
   // if failing tree was created with pd, fall back to flute with fluteNormal
   // first so the structs necessary for fluteCongest are filled
   if (net_alpha > 0.0) {
-    fluteNormal(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, rsmt);
+    fluteNormal(
+        netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
   }
 
-  fluteCongest(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, rsmt);
+  fluteCongest(
+      netID, nets_[netID]->getPinX(), nets_[netID]->getPinY(), 2, 1.2, rsmt);
 
-  if (nets_[netID]->deg > 3) {
+  if (nets_[netID]->getNumPins() > 3) {
     edgeShiftNew(rsmt, netID);
   }
 
@@ -1342,7 +1344,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
-    if (nets_[netID]->is_routed)
+    if (nets_[netID]->isRouted())
       continue;
 
     const int deg = sttrees_[netID].deg;
@@ -1351,8 +1353,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     netedgeOrderDec(netID);
 
-    TreeEdge* treeedges = sttrees_[netID].edges;
-    TreeNode* treenodes = sttrees_[netID].nodes;
+    auto& treeedges = sttrees_[netID].edges;
+    auto& treenodes = sttrees_[netID].nodes;
     // loop for all the tree edges (2*deg-3)
     const int num_edges = 2 * deg - 3;
     for (int edgeREC = 0; edgeREC < num_edges; edgeREC++) {
@@ -1447,8 +1449,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // left
         if (curX > regionX1) {
           float tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX - 1].usage
-                           + h_edges_[curY][curX - 1].red
+          const int pos1 = h_edges_[curY][curX - 1].usage_red()
                            + L * h_edges_[curY][(curX - 1)].last_usage;
 
           if (pos1 < h_cost_table_.size())
@@ -1461,8 +1462,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curX < regionX2 - 1) {
-              const int pos2 = h_edges_[curY][curX].usage
-                               + h_edges_[curY][curX].red
+              const int pos2 = h_edges_[curY][curX].usage_red()
                                + L * h_edges_[curY][curX].last_usage;
 
               if (pos2 < h_cost_table_.size())
@@ -1511,7 +1511,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // right
         if (curX < regionX2) {
           float tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX].usage + h_edges_[curY][curX].red
+          const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
           if (pos1 < h_cost_table_.size())
@@ -1524,8 +1524,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curX > regionX1 + 1) {
-              const int pos2 = h_edges_[curY][curX - 1].usage
-                               + h_edges_[curY][curX - 1].red
+              const int pos2 = h_edges_[curY][curX - 1].usage_red()
                                + L * h_edges_[curY][curX - 1].last_usage;
 
               if (pos2 < h_cost_table_.size())
@@ -1573,8 +1572,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // bottom
         if (curY > regionY1) {
           float tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY - 1][curX].usage
-                           + v_edges_[curY - 1][curX].red
+          const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
           if (pos1 < v_cost_table_.size())
@@ -1587,8 +1585,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curY < regionY2 - 1) {
-              const int pos2 = v_edges_[curY][curX].usage
-                               + v_edges_[curY][curX].red
+              const int pos2 = v_edges_[curY][curX].usage_red()
                                + L * v_edges_[curY][curX].last_usage;
 
               if (pos2 < v_cost_table_.size())
@@ -1635,7 +1632,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // top
         if (curY < regionY2) {
           float tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY][curX].usage + v_edges_[curY][curX].red
+          const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
           if (pos1 < v_cost_table_.size())
@@ -1648,8 +1645,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             tmp = d1[curY][curX] + cost1;
           } else {
             if (curY > regionY1 + 1) {
-              const int pos2 = v_edges_[curY - 1][curX].usage
-                               + v_edges_[curY - 1][curX].red
+              const int pos2 = v_edges_[curY - 1][curX].usage_red()
                                + L * v_edges_[curY - 1][curX].last_usage;
 
               if (pos2 < v_cost_table_.size())
@@ -1798,13 +1794,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n1, A1), (n1, A2)
           bool route_ok = updateRouteType1(netID,
-                                           treenodes,
+                                           treenodes.get(),
                                            n1,
                                            A1,
                                            A2,
                                            E1x,
                                            E1y,
-                                           treeedges,
+                                           treeedges.get(),
                                            edge_n1A1,
                                            edge_n1A2);
           if (!route_ok) {
@@ -1812,7 +1808,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               logger_->error(GRT,
                              150,
                              "Net {} has errors during updateRouteType1.",
-                             netName(nets_[netID]));
+                             nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1829,7 +1825,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
           bool route_ok = updateRouteType2(netID,
-                                           treenodes,
+                                           treenodes.get(),
                                            n1,
                                            A1,
                                            A2,
@@ -1837,7 +1833,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            C2,
                                            E1x,
                                            E1y,
-                                           treeedges,
+                                           treeedges.get(),
                                            edge_n1A1,
                                            edge_n1A2,
                                            edge_C1C2);
@@ -1846,7 +1842,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               logger_->warn(GRT,
                             151,
                             "Net {} has errors during updateRouteType2.",
-                            netName(nets_[netID]));
+                            nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1949,13 +1945,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n2, B1), (n2, B2)
           bool route_ok = updateRouteType1(netID,
-                                           treenodes,
+                                           treenodes.get(),
                                            n2,
                                            B1,
                                            B2,
                                            E2x,
                                            E2y,
-                                           treeedges,
+                                           treeedges.get(),
                                            edge_n2B1,
                                            edge_n2B2);
           if (!route_ok) {
@@ -1963,7 +1959,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               logger_->warn(GRT,
                             152,
                             "Net {} has errors during updateRouteType1.",
-                            netName(nets_[netID]));
+                            nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1981,7 +1977,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n2, D1), (n2, D2) and (B1, B2)
           bool route_ok = updateRouteType2(netID,
-                                           treenodes,
+                                           treenodes.get(),
                                            n2,
                                            B1,
                                            B2,
@@ -1989,7 +1985,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            D2,
                                            E2x,
                                            E2y,
-                                           treeedges,
+                                           treeedges.get(),
                                            edge_n2B1,
                                            edge_n2B2,
                                            edge_D1D2);
@@ -1998,7 +1994,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               logger_->warn(GRT,
                             153,
                             "Net {} has errors during updateRouteType2.",
-                            netName(nets_[netID]));
+                            nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -2076,7 +2072,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         treeedges[edge_n1n2].route.gridsY[i] = gridsY[i];
       }
 
-      int edgeCost = nets_[netID]->edgeCost;
+      int edgeCost = nets_[netID]->getEdgeCost();
 
       // update edge usage
       for (int i = 0; i < cnt_n1n2 - 1; i++) {

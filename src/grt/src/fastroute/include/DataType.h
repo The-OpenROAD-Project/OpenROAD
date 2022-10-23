@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -72,38 +73,60 @@ struct Segment  // A Segment is a 2-pin connection
 {
   bool xFirst;  // route x-direction first (only for L route)
   bool HVH;     // TRUE = HVH or false = VHV (only for Z route)
-  bool maze;    // Whether this segment is routed by maze
 
   short x1, y1, x2, y2;  // coordinates of two endpoints
   int netID;             // the netID of the net this segment belonging to
   short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
-  int numEdges;          // number of H and V Edges to implement this Segment
 };
 
 struct FrNet  // A Net is a set of connected MazePoints
 {
-  int numPins() { return pinX.size(); }  // number of pins in the net
-  int layerEdgeCost(int layer);
-  ~FrNet();
+  bool isClock() const { return is_clock_; }
+  bool isRouted() const { return is_routed_; }
+  float getSlack() const { return slack_; }
+  odb::dbNet* getDbNet() const { return db_net_; }
+  int getDriverIdx() const { return driver_idx_; }
+  int getEdgeCost() const { return edge_cost_; }
+  const char* getName() const;
+  int getMaxLayer() const { return max_layer_; }
+  int getMinLayer() const { return min_layer_; }
+  int getNumPins() const { return pin_x_.size(); }
+  int getLayerEdgeCost(int layer) const;
 
-  odb::dbNet* db_net;
-  int deg;  // net degree (number of MazePoints connecting by the net, pins in
-            // same MazePoints count only 1)
-  std::vector<int> pinX;  // array of X coordinates of pins
-  std::vector<int> pinY;  // array of Y coordinates of pins
-  std::vector<int> pinL;  // array of L coordinates of pins
-  bool is_clock;          // flag that indicates if net is a clock net
-  int driver_idx;
-  int edgeCost;
-  int minLayer;
-  int maxLayer;
-  float slack;
-  // edge_cost_per_layer is null if there is no ndr for this net.
-  std::vector<int> *edge_cost_per_layer;
-  bool is_routed;
+  int getPinX(int idx) const { return pin_x_[idx]; }
+  int getPinY(int idx) const { return pin_y_[idx]; }
+  const std::vector<int>& getPinX() const { return pin_x_; }
+  const std::vector<int>& getPinY() const { return pin_y_; }
+  const std::vector<int>& getPinL() const { return pin_l_; }
+
+  void addPin(int x, int y, int layer);
+  void reset(odb::dbNet* db_net,
+             bool is_clock,
+             int driver_idx,
+             int edge_cost,
+             int min_layer,
+             int max_layer,
+             float slack,
+             std::vector<int>* edge_cost_per_layer);
+  void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
+  void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
+  void setMinLayer(int min_layer) { min_layer_ = min_layer; }
+
+ private:
+  odb::dbNet* db_net_;
+  std::vector<int> pin_x_;  // x coordinates of pins
+  std::vector<int> pin_y_;  // y coordinates of pins
+  std::vector<int> pin_l_;  // l coordinates of pins
+  bool is_clock_;           // flag that indicates if net is a clock net
+  int driver_idx_;
+  int edge_cost_;
+  int min_layer_;
+  int max_layer_;
+  float slack_;
+  // Non-null when an NDR has been applied to the net.
+  std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
+  bool is_routed_ = false;
 };
-
-const char* netName(FrNet* net);
 
 struct Edge  // An Edge is the routing track holder between two adjacent
              // MazePoints
@@ -114,6 +137,9 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   unsigned short red;
   short last_usage;
   float est_usage;  // the estimated usage of the edge
+
+  unsigned short usage_red() const { return usage + red; }
+  float est_usage_red() const { return est_usage + red; }
 };
 
 struct Edge3D
@@ -141,28 +167,36 @@ struct TreeNode
   int edge[3];  // three adjacent edges
   int hID;
   int lID;
+  // If two nodes are at the same x & y then the duplicate will have
+  // stackAlias set to the index of the first node.  This does not
+  // apply to pins nodes, only Steiner nodes.
   int stackAlias;
 };
 
 struct Route
 {
   RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
-  bool xFirst;   // valid for LRoute, TRUE - the route is horizontal first (x1,
-                 // y1) - (x2, y1) - (x2, y2), false (x1, y1) - (x1, y2) - (x2,
-                 // y2)
-  bool HVH;      // valid for ZRoute, TRUE - the route is HVH shape, false - VHV
-                 // shape
-  short Zpoint;  // valid for ZRoute, the position of turn point for Z-shape
-  std::vector<short>
-      gridsX;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
-               // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  std::vector<short>
-      gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
-               // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  std::vector<short> gridsL;  // n
-  int routelen;  // valid for MazeRoute, the number of edges in the route
-                 // Edge3D *edge;       // list of 3D edges the route go
-                 // through;
+
+  // valid for LRoute:
+  // true - the route is horizontal first (x1, y1) - (x2, y1) - (x2, y2),
+  // false (x1, y1) - (x1, y2) - (x2, y2)
+  bool xFirst;
+
+  // valid for ZRoute:
+  // true - the route is HVH shape, false - VHV shape
+  bool HVH;
+
+  // valid for ZRoute: the position of turn point for Z-shape
+  short Zpoint;
+
+  // valid for MazeRoute: a list of grids (n=routelen+1) the route
+  // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
+  std::vector<short> gridsX;
+  std::vector<short> gridsY;
+  std::vector<short> gridsL;
+
+  // valid for MazeRoute: the number of edges in the route
+  int routelen;
 };
 
 struct TreeEdge
@@ -177,10 +211,10 @@ struct TreeEdge
 
 struct StTree
 {
-  StTree() : deg(0), nodes(nullptr), edges(nullptr) {}
-  int deg;
-  TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
-  TreeEdge* edges;  // the tree edges
+  int deg = 0;
+  // the nodes (pin and Steiner nodes) in the tree
+  std::unique_ptr<TreeNode[]> nodes;
+  std::unique_ptr<TreeEdge[]> edges;  // the tree edges
 };
 
 struct OrderNetPin
@@ -195,12 +229,6 @@ struct OrderTree
   int length;
   int treeIndex;
   int xmin;
-};
-
-struct parent3D
-{
-  short l;
-  int x, y;
 };
 
 struct OrderNetEdge

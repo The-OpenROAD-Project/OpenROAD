@@ -296,7 +296,7 @@ class _dbBlock : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbBlock& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  void globalConnect(const std::vector<dbGlobalConnect*>& connects);
+  int globalConnect(const std::vector<dbGlobalConnect*>& connects);
 
   dbObjectTable* getObjectTable(dbObjectType type);
 };

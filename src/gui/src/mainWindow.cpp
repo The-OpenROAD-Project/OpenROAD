@@ -63,6 +63,7 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "timingWidget.h"
+#include "globalConnectDialog.h"
 #include "utl/Logger.h"
 
 // must be loaded in global namespace
@@ -498,6 +499,9 @@ void MainWindow::createActions()
 
   font_ = new QAction("Application font", this);
 
+  global_connect_ = new QAction("Global connect", this);
+  global_connect_->setShortcut(QString("Ctrl+G"));
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -520,6 +524,8 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
+
+  connect(global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
@@ -560,6 +566,7 @@ void MainWindow::createMenus()
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     registerHeatMap(heat_map);
   }
+  tools_menu_->addAction(global_connect_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -1389,6 +1396,17 @@ void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
   heat_maps->removeAction(heatmap_actions_[heatmap]);
   heatmap_actions_.erase(heatmap);
+}
+
+void MainWindow::showGlobalConnect()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  GlobalConnectDialog dialog(block, this);
+  dialog.exec();
 }
 
 }  // namespace gui
