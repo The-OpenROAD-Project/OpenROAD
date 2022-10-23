@@ -115,7 +115,7 @@ static void initPython()
     fprintf(stderr, "Error: could not add module _ifp_py\n");
     exit(1);
   }
-  
+
   if (PyImport_AppendInittab("_utl_py", PyInit__utl_py) == -1) {
     fprintf(stderr, "Error: could not add module _utl_py\n");
     exit(1);
@@ -125,12 +125,12 @@ static void initPython()
     fprintf(stderr, "Error: could not add module _ant_py\n");
     exit(1);
   }
-  
+
   if (PyImport_AppendInittab("_grt_py", PyInit__grt_py) == -1) {
     fprintf(stderr, "Error: could not add module _grt_py\n");
     exit(1);
   }
-  
+
   if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
     fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
 
     bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     // handle filename argument.
-    if (cmd_argc > 1 ) {
+    if (cmd_argc > 1) {
       if (cmd_argv[1][0] == '-') {
         // ignore argument and remind usage if filename looks like a flag.
         showUsage(cmd_argv[0], init_filename);
@@ -350,13 +350,13 @@ int main(int argc, char* argv[])
         } else {
           // create new argv with remaining arguments.
           std::vector<wchar_t*> args;
-          for(int i = 1; i < cmd_argc; i++) {
+          for (int i = 1; i < cmd_argc; i++) {
             args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
           }
-          PySys_SetArgv(cmd_argc-1, args.data());
+          PySys_SetArgv(cmd_argc - 1, args.data());
           // run filename thru Python interpreter.
           int result = PyRun_SimpleFile(cmd_file, cmd_filename);
-          for (wchar_t* arg: args)  {
+          for (wchar_t* arg : args) {
             PyMem_RawFree(arg);
           }
           fclose(cmd_file);
@@ -549,10 +549,13 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
 #ifdef ENABLE_PYTHON3
-  printf("  -python               start with python interpreter [limited to db operations]\n");
+  printf(
+      "  -python               start with python interpreter [limited to db "
+      "operations]\n");
 #endif
   printf("  -log <file_name>      write a log in <file_name>\n");
-  printf("  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
+  printf(
+      "  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
   printf("  cmd_file              source cmd_file\n");
 }
 

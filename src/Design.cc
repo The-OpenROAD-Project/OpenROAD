@@ -33,9 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "odb/db.h"
 #include "ord/Design.h"
+
 #include "ifp/InitFloorplan.hh"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
 #include "utl/Logger.h"
@@ -64,21 +65,23 @@ void Design::readVerilog(const std::string& file_name)
 }
 
 void Design::readDef(const std::string& file_name,
-                     bool continue_on_errors,      // = false
-                     bool floorplan_init,          // = false
-                     bool incremental              // = false
-                    )
+                     bool continue_on_errors,  // = false
+                     bool floorplan_init,      // = false
+                     bool incremental          // = false
+)
 {
   auto app = OpenRoad::openRoad();
   if (floorplan_init && incremental) {
-    getLogger()->error(utl::ORD, 101, "Only one of the options -incremental and"
+    getLogger()->error(utl::ORD,
+                       101,
+                       "Only one of the options -incremental and"
                        " -floorplan_init can be set at a time");
   }
   if (tech_->getDB()->getTech() == nullptr) {
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
-  app->readDef(file_name.c_str(), continue_on_errors,
-               floorplan_init, incremental);
+  app->readDef(
+      file_name.c_str(), continue_on_errors, floorplan_init, incremental);
 }
 
 void Design::link(const std::string& design_name)
@@ -135,7 +138,7 @@ int Design::evalTclString(const std::string& cmd)
 
 Tech* Design::getTech()
 {
-    return tech_;
+  return tech_;
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()
