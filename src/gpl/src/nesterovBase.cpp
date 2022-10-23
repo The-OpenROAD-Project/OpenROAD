@@ -55,8 +55,14 @@ using namespace odb;
 static int 
 fastModulo(const int input, const int ceil);
 
+static float 
+integrate(integrationParams i);
+
 static int64_t
-getOverlapArea(const Bin* bin, const Instance* inst);
+getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron);
+
+static int64_t
+getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
 // Note that
 // int64_t is ideal in the following function, but
@@ -64,7 +70,10 @@ getOverlapArea(const Bin* bin, const Instance* inst);
 //
 // Choose to use "float" only in the following functions
 static float 
-getOverlapDensityArea(const Bin* bin, const GCell* cell);
+getOverlapDensityArea(const Bin* bin, const GCell* cell) ;
+
+static float 
+getOverlapDensityAreaUnscaled(const Bin* bin, const GCell* cell) ;
 
 static float
 fastExp(float exp);
@@ -457,7 +466,7 @@ GPin::updateDensityLocation(const GCell* gCell) {
 Bin::Bin() 
   : x_(0), y_(0), lx_(0), ly_(0),
   ux_(0), uy_(0), 
-  nonPlaceArea_(0), instPlacedArea_(0),
+  nonPlaceArea_(0), instPlacedArea_(0), instPlacedAreaUnscaled_(0), nonPlaceAreaUnscaled_(0),
   fillerArea_(0),
   density_ (0),
   targetDensity_(0),
@@ -478,7 +487,7 @@ Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
 Bin::~Bin() {
   x_ = y_ = 0;
   lx_ = ly_ = ux_ = uy_ = 0;
-  nonPlaceArea_ = instPlacedArea_ = fillerArea_ = 0;
+  nonPlaceArea_ = instPlacedArea_ = fillerArea_ = nonPlaceAreaUnscaled_ = instPlacedAreaUnscaled_ = 0;
   electroPhi_ = electroForceX_ = electroForceY_ = 0;
   density_ = targetDensity_ = 0;
 }
@@ -546,6 +555,7 @@ BinGrid::BinGrid()
   binSizeX_(0), binSizeY_(0),
   targetDensity_(0), 
   overflowArea_(0),
+  overflowAreaUnscaled_(0),
   isSetBinCntX_(0), isSetBinCntY_(0) {}
 
 BinGrid::BinGrid(Die* die) : BinGrid() {
@@ -559,6 +569,7 @@ BinGrid::~BinGrid() {
   binSizeX_ = binSizeY_ = 0;
   isSetBinCntX_ = isSetBinCntY_ = 0;
   overflowArea_ = 0;
+  overflowAreaUnscaled_ = 0;
 }
 
 void
@@ -664,6 +675,10 @@ BinGrid::overflowArea() const {
   return overflowArea_;
 }
 
+int64_t
+BinGrid::overflowAreaUnscaled() const {
+  return overflowAreaUnscaled_;
+}
 
 
 void
@@ -761,6 +776,7 @@ void
 BinGrid::updateBinsNonPlaceArea() {
   for(auto& bin : bins_) {
     bin->setNonPlaceArea(0);
+    bin->setNonPlaceAreaUnscaled(0);
   }
 
   for(auto& inst : pb_->nonPlaceInsts()) {
@@ -774,7 +790,9 @@ BinGrid::updateBinsNonPlaceArea() {
         // target density. 
         // See MS-replace paper
         //
-        bin->addNonPlaceArea( getOverlapArea(bin, inst) 
+        bin->addNonPlaceArea( getOverlapArea(bin, inst, pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron()) 
+           * bin->targetDensity() );
+        bin->addNonPlaceAreaUnscaled( getOverlapAreaUnscaled(bin, inst) 
            * bin->targetDensity() );
       }
     }
@@ -789,6 +807,7 @@ BinGrid::updateBinsGCellDensityArea(
   // clear the Bin-area info
   for(auto& bin : bins_) {
     bin->setInstPlacedArea(0);
+    bin->setInstPlacedAreaUnscaled(0);
     bin->setFillerArea(0);
   }
 
@@ -811,6 +830,10 @@ BinGrid::updateBinsGCellDensityArea(
             bin->addInstPlacedArea( 
                 getOverlapDensityArea(bin, cell) 
                 * cell->densityScale() * bin->targetDensity() ); 
+            bin->addInstPlacedAreaUnscaled( 
+                getOverlapDensityAreaUnscaled(bin,cell) 
+                * cell->densityScale() * bin->targetDensity() ); 
+
           }
         }
       }
@@ -819,9 +842,9 @@ BinGrid::updateBinsGCellDensityArea(
         for(int i = pairX.first; i < pairX.second; i++) {
           for(int j = pairY.first; j < pairY.second; j++) {
             Bin* bin = bins_[ j * binCntX_ + i ];
-            bin->addInstPlacedArea( 
-                getOverlapDensityArea(bin, cell) 
-                * cell->densityScale() ); 
+            int64_t overlapArea = getOverlapDensityArea(bin,cell);
+            bin->addInstPlacedArea( overlapArea * cell->densityScale() ); 
+            bin->addInstPlacedAreaUnscaled( overlapArea * cell->densityScale() ); 
           }
         }
       }
@@ -839,7 +862,7 @@ BinGrid::updateBinsGCellDensityArea(
   }  
 
   overflowArea_ = 0;
-
+  overflowAreaUnscaled_ = 0;
   // update density and overflowArea 
   // for nesterov use and FFT library
   for(auto& bin : bins_) {
@@ -854,6 +877,12 @@ BinGrid::updateBinsGCellDensityArea(
       += std::max(0.0f, 
           static_cast<float>(bin->instPlacedArea()) 
           + static_cast<float>(bin->nonPlaceArea())
+          - (binArea * bin->targetDensity()));
+    
+    overflowAreaUnscaled_ 
+      += std::max(0.0f, 
+          static_cast<float>(bin->instPlacedAreaUnscaled()) 
+          + static_cast<float>(bin->nonPlaceAreaUnscaled())
           - (binArea * bin->targetDensity()));
 
   }
@@ -1354,6 +1383,11 @@ NesterovBase::binSizeY() const {
 int64_t 
 NesterovBase::overflowArea() const {
   return bg_.overflowArea(); 
+}
+
+int64_t 
+NesterovBase::overflowAreaUnscaled() const {
+  return bg_.overflowAreaUnscaled(); 
 }
 
 int 
@@ -1877,14 +1911,119 @@ getOverlapDensityArea(const Bin* bin, const GCell* cell) {
     return 0;
   }
   else {
+    if(cell->isMacroInstance())
+    {
+      float meanX = (cell->dCx()-cell->dLx());
+      float meanY = (cell->dCy()-cell->dLy());
+      
+      // For the bivariate normal distribution, we are using
+      // the shifted means of X and Y.
+      // Sigma is used as the mean/4 for both dimensions
+      integrationParams i = {meanX, meanY, meanX/4, meanY/4, (float)(rectLx - cell->dLx()), (float)(rectLy - cell->dLy()), (float)(rectUx - cell->dLx()), (float)(rectUy - cell->dLy())};
+
+      float original = static_cast<float>(rectUx - rectLx) 
+      * static_cast<float>(rectUy - rectLy);
+      float scaled = integrate(i) * static_cast<float>(cell->dUx() - cell->dLx()) 
+      * static_cast<float>(cell->dUy() - cell->dLy());
+
+      // For heavily dense regions towards the center of the macro,
+      // we are using an upper limit of 2*(overlap) between the macro
+      // and the bin.
+      if (scaled >= original)
+      {
+        return min<float>(scaled, original*2);
+      }
+      // If the scaled value is smaller than the actual overlap
+      // then use the original overlap value instead.
+      // This is implemented to prevent cells from being placed
+      // at the outer sides of the macro.
+      else
+      {
+        return original;
+      }
+    }
+    else
+    {
+      return static_cast<float>(rectUx - rectLx) 
+        * static_cast<float>(rectUy - rectLy);
+    }
+  }
+}
+
+static float 
+getOverlapDensityAreaUnscaled(const Bin* bin, const GCell* cell) {
+  int rectLx = max(bin->lx(), cell->dLx()), 
+      rectLy = max(bin->ly(), cell->dLy()),
+      rectUx = min(bin->ux(), cell->dUx()), 
+      rectUy = min(bin->uy(), cell->dUy());
+  
+  if( rectLx >= rectUx || rectLy >= rectUy ) {
+    return 0;
+  }
+  else
+  {
     return static_cast<float>(rectUx - rectLx) 
       * static_cast<float>(rectUy - rectLy);
+  }
+  
+}
+
+
+static int64_t
+getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron) {
+  int rectLx = max(bin->lx(), inst->lx()), 
+      rectLy = max(bin->ly(), inst->ly()),
+      rectUx = min(bin->ux(), inst->ux()), 
+      rectUy = min(bin->uy(), inst->uy());
+
+  if( rectLx >= rectUx || rectLy >= rectUy ) {
+    return 0;
+  }
+  else {
+    if(inst->isMacro())
+    {
+      float meanX = (inst->cx()-inst->lx())/(float)dbu_per_micron;
+      float meanY = (inst->cy()-inst->ly())/(float)dbu_per_micron;
+      
+      // For the bivariate normal distribution, we are using
+      // the shifted means of X and Y.
+      // Sigma is used as the mean/4 for both dimensions
+      integrationParams i = {meanX, meanY, meanX/4, meanY/4, (rectLx - inst->lx())/(float)dbu_per_micron, 
+                            (rectLy - inst->ly())/(float)dbu_per_micron, (rectUx - inst->lx())/(float)dbu_per_micron,
+                            (rectUy - inst->ly())/(float)dbu_per_micron};
+
+      float original = static_cast<float>(rectUx - rectLx) 
+        * static_cast<float>(rectUy - rectLy);
+      float scaled = integrate(i) * static_cast<float>(inst->ux() - inst->lx()) 
+        * static_cast<float>(inst->uy() - inst->ly());
+      
+      // For heavily dense regions towards the center of the macro,
+      // we are using an upper limit of 2*(overlap) between the macro
+      // and the bin.
+      if (scaled >= original)
+      {
+        return min<float>(scaled, original*2);
+      }
+      // If the scaled value is smaller than the actual overlap
+      // then use the original overlap value instead.
+      // This is implemented to prevent cells from being placed
+      // at the outer sides of the macro.
+      else
+      {
+        return original;
+      }
+    }
+    else
+    {
+      return static_cast<float>(rectUx - rectLx) 
+        * static_cast<float>(rectUy - rectLy);
+    }
   }
 }
 
 
 static int64_t
-getOverlapArea(const Bin* bin, const Instance* inst) {
+getOverlapAreaUnscaled(const Bin* bin, const Instance* inst) {
   int rectLx = max(bin->lx(), inst->lx()), 
       rectLy = max(bin->ly(), inst->ly()),
       rectUx = min(bin->ux(), inst->ux()), 
@@ -1899,6 +2038,24 @@ getOverlapArea(const Bin* bin, const Instance* inst) {
   }
 }
 
+
+// A function that does 2D integration to the density function of a
+// bivariate normal distribution with 0 correlation.
+// Essentially, the function being integrated is the product
+// of 2 1D probability density functions (for x and y). The means and standard deviation of the 
+// probablity density functions are parametarized.
+// In this function, I am using the closed-form solution of the integration.
+// The limits of integration are lx->ux and ly->uy
+static float integrate(integrationParams i)
+{
+  float x1 = (i.meanX-i.lx)/(sqrt(2)*i.sigmaX);
+  float x2 = (i.meanX-i.ux)/(sqrt(2)*i.sigmaX);
+
+  float y1 = (i.meanY-i.ly)/(sqrt(2)*i.sigmaY);
+  float y2 = (i.meanY-i.uy)/(sqrt(2)*i.sigmaY);
+
+  return 0.25*(erf(x1)*erf(y1) + erf(x2)*erf(y2) - erf(x1)*erf(y2) - erf(x2)*erf(y1));
+}
 // 
 // https://codingforspeed.com/using-faster-exponential-approximation/
 static float
