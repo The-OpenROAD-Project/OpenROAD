@@ -46,11 +46,11 @@ class InitFloorplan;
 }
 
 namespace ant {
-  class AntennaChecker;
+class AntennaChecker;
 }
 
 namespace grt {
-  class GlobalRouter;
+class GlobalRouter;
 }
 
 namespace ord {
@@ -63,10 +63,9 @@ class Design
   Design(Tech* tech);
   void readVerilog(const std::string& file_name);
   void readDef(const std::string& file_name,
-               bool continue_on_errors=false,
-               bool floorplan_init=false,
-               bool incremental=false
-              );
+               bool continue_on_errors = false,
+               bool floorplan_init = false,
+               bool incremental = false);
   void link(const std::string& design_name);
 
   void writeDb(const std::string& file_name);
@@ -84,7 +83,7 @@ class Design
 
   // Services
   ifp::InitFloorplan* getFloorplan();
-  ant::AntennaChecker *getAntennaChecker();
+  ant::AntennaChecker* getAntennaChecker();
   grt::GlobalRouter* getGlobalRouter();
 
  private:
