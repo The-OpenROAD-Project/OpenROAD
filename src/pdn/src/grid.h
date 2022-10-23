@@ -101,6 +101,8 @@ class Grid
   virtual void addStrap(std::unique_ptr<Straps> strap);
   virtual void addConnect(std::unique_ptr<Connect> connect);
 
+  void removeStrap(Straps* strap);
+
   std::set<odb::dbTechLayer*> connectableLayers(odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins

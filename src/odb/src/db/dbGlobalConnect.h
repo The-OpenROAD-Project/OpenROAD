@@ -58,6 +58,7 @@ class _dbNet;
 // User Code Begin Classes
 class dbMaster;
 class dbMTerm;
+class dbITerm;
 // User Code End Classes
 
 // User Code Begin Structs
@@ -96,7 +97,7 @@ class _dbGlobalConnect : public _dbObject
                         const std::string& pattern,
                         const std::string& type);
   std::map<dbMaster*, std::set<dbMTerm*>> getMTermMapping();
-  void connect(const std::vector<dbInst*>& insts);
+  std::set<dbITerm*> connect(const std::vector<dbInst*>& insts);
   bool appliesTo(dbInst* inst) const;
   // User Code End Methods
 };

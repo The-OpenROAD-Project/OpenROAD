@@ -69,7 +69,7 @@ They include :
 Adding a new platform additionally requires the following:
 
 *   A validated installation of the OpenROAD flow scripts is available. See
-    instructions [here](../user/GettingStarted.md).:
+    instructions [here](../user/GettingStarted.md).
 *   A general knowledge of VLSI design and RTL to GDS flows.  OpenROAD
     implements a fully-automated RTL-GDSII but it requires familiarity with
     the OpenROAD flow scripts to debug problems.
@@ -234,64 +234,88 @@ standard cell GDS or individual standard cell GDS files have been generated,
 place them in their respective directories and set the `lib`, `lef`, and
 `gds` variables in the platform `config.mk` file to the correct paths.
 
-### Behavioral Models
+### Clock Gates
 
-Yosys requires behavioral Verilog modules for a latch and a gated clock. These
-modules are used during synthesis and follow a specific naming convention.
+--------------------------------------------------------------------------------
+Yosys cannot (currently) infer clock gates automatically. However, users can
+manually instantiate clock gates in their RTL using a generic interface. The
+purpose of this interface is to separate platform-specific RTL (also called
+"hardened" RTL) from platform-independent RTL (generic RTL).
 
-### Gated Clock
+This file is only required if you want to instantiate clock gates in your
+design.
 
-To create this module, a gated clock standard cell is required. This
-standard cell is used to create the OpenROAD specific module. Following is
-the generic structure of the behavioral latch module:
+To create this module, a gated clock standard cell is required. This standard
+cell is used to create the generic module `OPENROAD_CLKGATE`, as shown below.
 
 ```
-# cells_clkgate.v
-##########################
+// cells_clkgate.v
+//////////////////////////
 module OPENROAD_CLKGATE (CK, E, GCK);
-  input CK;
+  input  CK;
   input  E;
   output GCK;
 
- `ifdef OPENROAD_CLKGATE
-    <clkgate_std_cell> latch (.CLK(CK), .GATE(E), .GCLK(GCK));
- `else
-    assign GCK = CK;
- `endif
+  <clkgate_std_cell> latch (.CLK(CK), .GATE(E), .GCLK(GCK));
 endmodule
 ```
 
-### Latch
-
-Next is the generic latch. Once again, this requires a latch standard cell
-to be used. The structure of this module differs slightly from the `clkgate`
-module seen previously. Following is the generic structure of the behavioral
-latch module:
+An example instantiation of this module in a user design is shown below.
 
 ```
-# cells_latch.v
-########################
+// buffer.v
+// This is not a platform file, this is an example user design
+//////////////////////////
+
+module buffer (clk, enable, in, out);
+
+input        clk, enable;
+input  [7:0] in,
+output [7:0] out
+
+reg  [15:0] buffer_reg;
+wire        gck; // Gated clock
+
+OPENROAD_CLKGATE clkgate (.CK(clk), .E(enable), .GCK(gck));
+
+// Buffer does not change if enable is low
+always @(posedge gck) begin
+  buffer_reg[15:8] <= in;
+  buffer_reg[ 7:0] <= buffer_reg[15:8];
+end
+
+assign out = buffer_reg[ 7:0];
+
+```
+
+### Latches
+
+Yosys can automatically infer latches from RTL, however it requires a behavioral
+Verilog module. Example latch definitions are provided below. `DLATCH_P` is an
+active-high level-sensitive latch and `DLATCH_N` is an active-low
+level-sensitive latch.
+
+This file is only required if you want to infer latches for your design.
+
+```
+// cells_latch.v
+//////////////////////////
 module $_DLATCH_P_(input E, input D, output Q);
-     <d_latch_std_cell> _TECHMAP_REPLACE_ (
-       .D(D),
-       .G(E),
-       .Q(Q)
-       );
+  <d_latch_std_cell> _TECHMAP_REPLACE_ (
+    .D (D),
+    .G (E),
+    .Q (Q)
+  );
 endmodule
 
 module $_DLATCH_N_(input E, input D, output Q);
-     <d_latch_std_cell> _TECHMAP_REPLACE_ (
-       .D(D),
-       .GN(E),
-       .Q(Q)
-       );
+  <d_latch_std_cell> _TECHMAP_REPLACE_ (
+    .D  (D),
+    .GN (E),
+    .Q  (Q)
+  );
 endmodule
 ```
-
-This file contains two modules, `$_DLATCH_P_` and `$_DLATCH_N_`. Notice
-that `$_DLATCH_N_` has its gate input is negated making it enable on a low
-signal while `$_DLATCH_P_` has a non-negated gate input making it enable
-on a high signal.
 
 ### FastRoute Configuration
 

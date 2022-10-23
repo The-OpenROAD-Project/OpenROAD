@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -298,7 +298,7 @@ namespace odb {
   _{{klass.name}}::~_{{klass.name}}()
   {
     {% for field in klass.fields %}
-      {% if field.name == '_name' %}
+      {% if field.name == '_name' and 'no-destruct' not in field.flags %}
         if(_name)
           free((void*) _name);
       {% endif %}

@@ -47,14 +47,14 @@ namespace pdr {
 using stt::Tree;
 using utl::Logger;
 
-Tree primDijkstra(std::vector<int>& x,
-                  std::vector<int>& y,
+Tree primDijkstra(const std::vector<int>& x,
+                  const std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger);
 
-Tree primDijkstraRevII(std::vector<int>& x,
-                       std::vector<int>& y,
+Tree primDijkstraRevII(const std::vector<int>& x,
+                       const std::vector<int>& y,
                        int drvr_index,
                        float alpha,
                        Logger* logger);

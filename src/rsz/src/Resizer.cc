@@ -175,7 +175,8 @@ Resizer::Resizer() :
   resize_count_(0),
   inserted_buffer_count_(0),
   buffer_moved_into_core_(false),
-  max_wire_length_(0)
+  max_wire_length_(0),
+  worst_slack_nets_percent_(10)
 {
 }
 
@@ -934,13 +935,13 @@ Resizer::findResizeSlacks1()
   }
 
   // Find the nets with the worst slack.
-  double worst_percent = .1;
+
   //  sort(nets.begin(), nets.end(). [&](const Net *net1,
   sort(nets, [this](const Net *net1,
                  const Net *net2)
              { return resizeNetSlack(net1) < resizeNetSlack(net2); });
   worst_slack_nets_.clear();
-  for (int i = 0; i < nets.size() * worst_percent; i++)
+  for (int i = 0; i < nets.size() * worst_slack_nets_percent_ / 100.0; i++)
     worst_slack_nets_.push_back(nets[i]);
 }
 
@@ -2458,6 +2459,12 @@ void
 Resizer::setDebugPin(const Pin *pin)
 {
   debug_pin_ = pin;
+}
+
+void
+Resizer::setWorstSlackNetsPercent(float percent)
+{
+  worst_slack_nets_percent_ = percent;
 }
 
 } // namespace

@@ -39,7 +39,6 @@
 #include <string>
 
 #include "utl/Logger.h"
-#include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 #include "sta/Path.hh"
@@ -47,6 +46,10 @@
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
 }
 
 namespace rsz {
@@ -263,6 +266,7 @@ public:
                        Delay &delay,
                        Slew &slew);
   void setDebugPin(const Pin *pin);
+  void setWorstSlackNetsPercent(float);
 
   ////////////////////////////////////////////////////////////////
 
@@ -311,7 +315,7 @@ public:
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
   void findResizeSlacks();
-  // Return 10% of nets with worst slack.
+  // Return nets with worst slack.
   NetSeq &resizeWorstSlackNets();
   // Return net slack.
   Slack resizeNetSlack(const Net *net);
@@ -592,6 +596,7 @@ protected:
   bool buffer_moved_into_core_;
   // Slack map variables.
   float max_wire_length_;
+  float worst_slack_nets_percent_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
 

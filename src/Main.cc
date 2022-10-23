@@ -82,6 +82,7 @@ using std::string;
 extern "C" {
 extern PyObject* PyInit__ifp_py();
 extern PyObject* PyInit__utl_py();
+extern PyObject* PyInit__ant_py();
 extern PyObject* PyInit__openroad_swig_py();
 extern PyObject* PyInit__odbpy();
 }
@@ -101,6 +102,7 @@ static void showSplash();
 namespace sta {
 extern const char* ifp_py_python_inits[];
 extern const char* utl_py_python_inits[];
+extern const char* ant_py_python_inits[];
 extern const char* odbpy_python_inits[];
 extern const char* openroad_swig_py_python_inits[];
 }  // namespace sta
@@ -117,6 +119,11 @@ static void initPython()
     exit(1);
   }
 
+  if (PyImport_AppendInittab("_ant_py", PyInit__ant_py) == -1) {
+    fprintf(stderr, "Error: could not add module _ant_py\n");
+    exit(1);
+  }
+  
   if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
     fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
@@ -162,6 +169,25 @@ static void initPython()
     if (PyImport_ExecCodeModule("utl", code) == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not add module utl\n");
+      exit(1);
+    }
+
+    delete[] unencoded;
+  }
+
+  {
+    char* unencoded = sta::unencode(sta::ant_py_python_inits);
+
+    PyObject* code = Py_CompileString(unencoded, "ant_py.py", Py_file_input);
+    if (code == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not compile ant_py\n");
+      exit(1);
+    }
+
+    if (PyImport_ExecCodeModule("ant", code) == nullptr) {
+      PyErr_Print();
+      fprintf(stderr, "Error: could not add module ant\n");
       exit(1);
     }
 
@@ -285,33 +311,42 @@ int main(int argc, char* argv[])
     }
 
     bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    if (cmd_argc > 1 && cmd_argv[1][0] == '-') {
-      showUsage(cmd_argv[0], init_filename);
-    } else {
-      char* cmd_filename = cmd_argv[1];
-      FILE* cmd_file = fopen(cmd_filename, "r");
-      if (cmd_file == nullptr) {
-        logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
+    // handle filename argument.
+    if (cmd_argc > 1 ) {
+      if (cmd_argv[1][0] == '-') {
+        // ignore argument and remind usage if filename looks like a flag.
+        showUsage(cmd_argv[0], init_filename);
       } else {
-        std::vector<wchar_t*> args;
-        for(int i = 1; i < cmd_argc; i++) {
-          args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
-        }
-        PySys_SetArgv(cmd_argc-1, args.data());
-        int result = PyRun_SimpleFile(cmd_file, cmd_filename);
-        for (wchar_t* arg: args)  {
-          PyMem_RawFree(arg);
-        }
-        fclose(cmd_file);
-        if (exit_after_cmd_file) {
-          int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-          exit(exit_code);
+        char* cmd_filename = cmd_argv[1];
+        FILE* cmd_file = fopen(cmd_filename, "r");
+        if (cmd_file == nullptr) {
+          logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
+        } else {
+          // create new argv with remaining arguments.
+          std::vector<wchar_t*> args;
+          for(int i = 1; i < cmd_argc; i++) {
+            args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
+          }
+          PySys_SetArgv(cmd_argc-1, args.data());
+          // run filename thru Python interpreter.
+          int result = PyRun_SimpleFile(cmd_file, cmd_filename);
+          for (wchar_t* arg: args)  {
+            PyMem_RawFree(arg);
+          }
+          fclose(cmd_file);
+          // terminate if -exit flag was provided.
+          if (exit_after_cmd_file) {
+            int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+            exit(exit_code);
+          }
         }
       }
     }
 
+    // discard remaining args.
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
+    // drop into Python interpreter.
     return Py_Main(1, args.data());
   } else {
     // Python wants to install its own SIGINT handler to print KeyboardInterrupt

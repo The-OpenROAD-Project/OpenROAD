@@ -113,6 +113,10 @@ enum dbObjectType
   dbGCellGridObj,
   dbAccessPointObj,
   dbGlobalConnectObj,
+  dbPowerDomainObj,
+  dbLogicPortObj,
+  dbPowerSwitchObj,
+  dbIsolationObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

@@ -81,13 +81,15 @@
 #include "utl/MakeLogger.h"
 
 namespace sta {
-extern const char* openroad_swig_tcl_inits[];
+extern const char *openroad_swig_tcl_inits[];
+extern const char *upf_tcl_inits[];
 }
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_swig_Init(Tcl_Interp* interp);
-extern int Odbtcl_Init(Tcl_Interp* interp);
+extern int Openroad_swig_Init(Tcl_Interp *interp);
+extern int Odbtcl_Init(Tcl_Interp *interp);
+extern int Upf_Init(Tcl_Interp *interp);
 }
 
 // Main.cc set by main()
@@ -229,6 +231,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initLogger(logger_, tcl_interp);
   initGui(this);  // first so we can register our sink with the logger
   Odbtcl_Init(tcl_interp);
+  Upf_Init(tcl_interp);
+  evalTclInit(tcl_interp, sta::upf_tcl_inits);
   initInitFloorplan(this);
   initDbSta(this);
   initResizer(this);
@@ -358,10 +362,20 @@ void OpenRoad::writeLef(const char* filename)
   if (num_libs > 0) {
     if (num_libs > 1) {
       logger_->warn(
-          ORD, 34, "More than one lib exists, only one will be written.");
+          ORD, 34, "More than one lib exists, multiple files will be written.");
     }
 
-    lef_writer.writeTechAndLib(*libs.begin(), filename);
+    int cnt = 0;
+    for (auto lib : libs) {
+      std::string name(filename);
+      if (cnt > 0) {
+        name += "_" + std::to_string(cnt);
+        lef_writer.writeLib(lib, name.c_str());
+      } else {
+        lef_writer.writeTechAndLib(lib, name.c_str());
+      }
+      ++cnt;
+    }
   } else if (db_->getTech()) {
     lef_writer.writeTech(db_->getTech(), filename);
   }

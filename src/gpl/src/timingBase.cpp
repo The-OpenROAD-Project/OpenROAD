@@ -153,7 +153,7 @@ bool
 TimingBase::updateGNetWeights(float overflow) {
   rs_->findResizeSlacks();
 
-  // get Top 10% worst resize nets
+  // get worst resize nets
   sta::NetSeq &worst_slack_nets = rs_->resizeWorstSlackNets();
 
   if( worst_slack_nets.empty()) {
@@ -161,7 +161,7 @@ TimingBase::updateGNetWeights(float overflow) {
     return false;
   }
   
-  // min/max slack for worst 10% nets
+  // min/max slack for worst nets
   sta::Slack slack_min = rs_->resizeNetSlack(worst_slack_nets[0]);
   sta::Slack slack_max = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size()-1]);
 

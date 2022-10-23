@@ -344,6 +344,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     odbpy
     ifp_py
     utl_py
+    ant_py
   )
 else()
   message(STATUS "Python3 disabled")
