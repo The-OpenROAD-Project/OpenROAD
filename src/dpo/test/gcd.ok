@@ -67,6 +67,4 @@ Original HPWL             7709.2 u
 Final HPWL                7154.5 u
 Delta HPWL                  -7.2 %
 
-Differences found at line 368.
-    - _276_ NOR2_X2 + PLACED ( 161380 173600 ) FS ;
-    - _276_ NOR2_X2 + PLACED ( 165180 173600 ) FS ;
+No differences found.
