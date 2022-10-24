@@ -153,7 +153,6 @@ class GlobalRouter
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
   void setCriticalNetsPercentage(float critical_nets_percentage);
-  // unsigned getDbId();  // UNUSED
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
                            int min_y,
@@ -168,7 +167,6 @@ class GlobalRouter
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
-  // void printGrid();  // UNUSED
   int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
@@ -195,16 +193,12 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  // void removeDirtyNet(odb::dbNet* net);  //  UNUSED
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   void makeNetWires();
   void destroyNetWires();
 
   double dbuToMicrons(int64_t dbu);
-
-  // route clock nets public functions
-  // void routeClockNets();  //  UNUSED
 
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
@@ -333,7 +327,6 @@ class GlobalRouter
   // incremental funcions
   void updateDirtyRoutes();
   void mergeResults(NetRouteMap& routes);
-  // void removeDirtyNetsRouting();  // UNUSED
   void updateDirtyNets();
   void updateDbCongestion();
 
