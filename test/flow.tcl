@@ -174,18 +174,20 @@ utl::metric "RSZ::tns_max" [sta::total_negative_slack -max]
 utl::metric "RSZ::hold_buffer_count" [rsz::hold_buffer_count]
 
 ################################################################
-# Detailed Placement (final)
+# Detailed Placement
 
 detailed_placement
+
 # Capture utilization before fillers make it 100%
 utl::metric "DPL::utilization" [format %.1f [expr [rsz::utilization] * 100]]
 utl::metric "DPL::design_area" [sta::format_area [rsz::design_area] 0]
-filler_placement $filler_cells
-check_placement -verbose
 
 # checkpoint
-set grt_db [make_result_file ${design}_${platform}_grt.db]
-write_db $grt_db
+set dpl_db [make_result_file ${design}_${platform}_dpl.db]
+write_db $dpl_db
+
+set verilog_file [make_result_file ${design}_${platform}.v]
+write_verilog $verilog_file
 
 ################################################################
 # Global routing
@@ -203,9 +205,20 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Antenna repair
 
+repair_antennas
+
 check_antennas
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
-#repair_antennas
+
+################################################################
+# Filler placement
+
+filler_placement $filler_cells
+check_placement -verbose
+
+# checkpoint
+set fill_db [make_result_file ${design}_${platform}_fill.db]
+write_db $fill_db
 
 ################################################################
 # Detailed routing
