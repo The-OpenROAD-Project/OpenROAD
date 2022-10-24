@@ -491,6 +491,8 @@ class FlexGCWorker::Impl
                                            bool& check_rect_width);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
 
+  void checkMetalWidthViaTable();
+  void checkMetalWidthViaTable_main(gcRect* rect);
   // surgical fix
   void patchMetalShape();
   void patchMetalShape_minStep();

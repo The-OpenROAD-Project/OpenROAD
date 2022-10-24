@@ -525,6 +525,14 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
   }
   design->getTech()->addUConstraint(std::move(con));
 }
+void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
+                                   odb::dbMetalWidthViaMap* dbRule)
+{
+  auto con = make_unique<frMetalWidthViaConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addMetalWidthViaConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
 
 frNet* Fixture::makeNet(const char* name)
 {
