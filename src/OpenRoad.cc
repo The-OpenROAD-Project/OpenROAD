@@ -361,7 +361,7 @@ void OpenRoad::writeLef(const char* filename)
   odb::lefout lef_writer(logger_);
   if (num_libs > 0) {
     if (num_libs > 1) {
-      logger_->warn(
+      logger_->info(
           ORD, 34, "More than one lib exists, multiple files will be written.");
     }
 
