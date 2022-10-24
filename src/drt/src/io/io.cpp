@@ -1918,6 +1918,16 @@ void io::Parser::setLayers(odb::dbTech* db_tech)
         break;
     }
   }
+  // MetalWidthViaMap
+  for (auto rule : db_tech->getMetalWidthViaMap()) {
+    auto db_layer = rule->getCutLayer();
+    auto layer = tech_->getLayer(db_layer->getName());
+    if (layer == nullptr)
+      continue;
+    auto uCon = std::make_unique<frMetalWidthViaConstraint>(rule);
+    layer->addMetalWidthViaConstraint(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
+  }
 }
 
 void io::Parser::setMacros(odb::dbDatabase* db)

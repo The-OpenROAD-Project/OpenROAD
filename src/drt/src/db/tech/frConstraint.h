@@ -217,6 +217,9 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
         return "Lef58EolKeepOut";
+      
+      case frConstraintTypeEnum::frcMetalWidthViaConstraint:
+        return "MetalWidthViaMap";
 
       case frConstraintTypeEnum::frcLef58AreaConstraint:
         return "Lef58Area";
@@ -2327,6 +2330,24 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
 
  protected:
   bool checkMask;
+};
+
+class frMetalWidthViaConstraint : public frConstraint
+{
+ public:
+  frMetalWidthViaConstraint(odb::dbMetalWidthViaMap* rule) : dbRule(rule) {}
+  odb::dbMetalWidthViaMap* getDbRule() const { return dbRule; }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcMetalWidthViaConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("METALWIDTHVIAMAP");
+  }
+
+ private:
+  odb::dbMetalWidthViaMap* dbRule;
 };
 
 class frLef58AreaConstraint : public frConstraint
