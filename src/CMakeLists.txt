@@ -346,6 +346,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     utl_py
     ant_py
     grt_py
+    gpl_py
   )
 else()
   message(STATUS "Python3 disabled")

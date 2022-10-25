@@ -149,4 +149,9 @@ grt::GlobalRouter* Design::getGlobalRouter()
   return app->getGlobalRouter();
 }
 
+gpl::Replace* Design::getReplace() {
+  auto app = OpenRoad::openRoad();
+  return app->getReplace();
+}
+
 }  // namespace ord

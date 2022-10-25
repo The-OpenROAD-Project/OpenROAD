@@ -78,7 +78,6 @@ class Replace
     void reset();
 
     void setDb(odb::dbDatabase* odb);
-    void setSta(sta::dbSta* dbSta);
     void setResizer(rsz::Resizer* resizer);
     void setGlobalRouter(grt::GlobalRouter* fr);
     void setLogger(utl::Logger* log);
@@ -114,8 +113,6 @@ class Replace
     // HPWL: half-parameter wire length.
     void setReferenceHpwl(float deltaHpwl);
 
-    void setIncrementalPlaceMode(bool mode);
-    
     // temp funcs; OpenDB should have these values. 
     void setPadLeft(int padding);
     void setPadRight(int padding);

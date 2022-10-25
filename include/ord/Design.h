@@ -57,6 +57,10 @@ namespace grt {
 class GlobalRouter;
 }
 
+namespace gpl {
+class Replace;
+}
+
 namespace ord {
 
 class Tech;
@@ -89,6 +93,7 @@ class Design
   ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();
   grt::GlobalRouter* getGlobalRouter();
+  gpl::Replace* getReplace();
 
  private:
   Tech* tech_;
