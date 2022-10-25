@@ -325,9 +325,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     auto net2 = viaRect2->getNet();
     auto marker = make_unique<frMarker>();
     Rect box(gtl::xl(markerRect),
-              gtl::yl(markerRect),
-              gtl::xh(markerRect),
-              gtl::yh(markerRect));
+             gtl::yl(markerRect),
+             gtl::xh(markerRect),
+             gtl::yh(markerRect));
     marker->setBBox(box);
     marker->setLayerNum(layerNum1);
     marker->setConstraint(con);
@@ -393,5 +393,128 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     if (ptr->getPin() == viaRect->getPin())
       continue;
     checkLef58CutSpacingTbl_main(viaRect, ptr, con);
+  }
+}
+
+void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
+{
+  for (auto con : getTech()
+                      ->getLayer(rect->getLayerNum())
+                      ->getMetalWidthViaConstraints()) {
+    auto rule = con->getDbRule();
+    auto required_viadef = getTech()->getVia(rule->getViaName());
+    frVia required_via(required_viadef);
+    if (rect->width() == required_via.getCutBBox().minDXDY()
+        && rect->length() == required_via.getCutBBox().maxDXDY())
+      continue;
+    auto checkEnclosure =
+        [this](gcRect* rect, odb::dbMetalWidthViaMap* rule, bool above) {
+          vector<rq_box_value_t<gcRect*>> results;
+
+          auto& workerRegionQuery = getWorkerRegionQuery();
+          workerRegionQuery.queryMaxRectangle(
+              *rect, rect->getLayerNum() + ((above) ? 1 : -1), results);
+          gcRect* chosen_rect = nullptr;
+          for (auto& [box, obj] : results) {
+            if (!gtl::contains(*obj, *rect))
+              continue;
+            auto above_width = box.minDXDY();
+            if (above_width >= ((above) ? rule->getAboveLayerWidthLow()
+                                        : rule->getBelowLayerWidthLow())
+                && above_width <= ((above) ? rule->getAboveLayerWidthHigh()
+                                           : rule->getBelowLayerWidthHigh())) {
+              chosen_rect = obj;
+              if (!obj->isFixed())
+                break;
+            }
+          }
+          return chosen_rect;
+        };
+
+    // check above Metal Layer Width
+    gcRect* above_rect = checkEnclosure(rect, rule, true);
+    if (above_rect == nullptr)
+      continue;
+
+    // check below Metal Layer Width
+    gcRect* below_rect = checkEnclosure(rect, rule, true);
+    if (below_rect == nullptr)
+      continue;
+    if (below_rect->isFixed() && above_rect->isFixed() && rect->isFixed())
+      continue;
+    Rect markerBox(
+        gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+    auto net1 = above_rect->getNet();
+    auto net2 = below_rect->getNet();
+    auto marker = make_unique<frMarker>();
+    marker->setBBox(markerBox);
+    marker->setLayerNum(rect->getLayerNum());
+    marker->setConstraint(con);
+    marker->addSrc(net1->getOwner());
+    frCoord llx = gtl::xl(*above_rect);
+    frCoord lly = gtl::yl(*above_rect);
+    frCoord urx = gtl::xh(*above_rect);
+    frCoord ury = gtl::xh(*above_rect);
+    marker->addAggressor(net1->getOwner(),
+                         make_tuple(above_rect->getLayerNum(),
+                                    Rect(llx, lly, urx, ury),
+                                    above_rect->isFixed()));
+    marker->addSrc(net2->getOwner());
+    llx = gtl::xl(*below_rect);
+    lly = gtl::yl(*below_rect);
+    urx = gtl::xh(*below_rect);
+    ury = gtl::xh(*below_rect);
+    marker->addAggressor(net2->getOwner(),
+                         make_tuple(below_rect->getLayerNum(),
+                                    Rect(llx, lly, urx, ury),
+                                    below_rect->isFixed()));
+
+    marker->addSrc(rect->getNet()->getOwner());
+    marker->addVictim(
+        rect->getNet()->getOwner(),
+        make_tuple(rect->getLayerNum(), markerBox, rect->isFixed()));
+    addMarker(std::move(marker));
+    return;
+  }
+}
+
+void FlexGCWorker::Impl::checkMetalWidthViaTable()
+{
+  if (targetNet_) {
+    // layer --> net --> polygon --> maxrect
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+         i++) {
+      auto currLayer = getTech()->getLayer(i);
+      if (currLayer->getType() != dbTechLayerType::CUT) {
+        continue;
+      }
+      for (auto& pin : targetNet_->getPins(i)) {
+        for (auto& maxrect : pin->getMaxRectangles()) {
+          checkMetalWidthViaTable_main(maxrect.get());
+        }
+      }
+    }
+  } else {
+    // layer --> net --> polygon --> maxrect
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+         i++) {
+      auto currLayer = getTech()->getLayer(i);
+      if (currLayer->getType() != dbTechLayerType::CUT) {
+        continue;
+      }
+      for (auto& net : getNets()) {
+        for (auto& pin : net->getPins(i)) {
+          for (auto& maxrect : pin->getMaxRectangles()) {
+            checkMetalWidthViaTable_main(maxrect.get());
+          }
+        }
+      }
+    }
   }
 }

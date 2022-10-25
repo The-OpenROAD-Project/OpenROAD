@@ -23,8 +23,6 @@ global_placement
     [-timing_driven]
     [-routability_driven]
     [-skip_initial_place]
-    [-disable_timing_driven]
-    [-disable_routability_driven]
     [-incremental]
     [-bin_grid_count grid_count]
     [-density target_density]
@@ -46,6 +44,7 @@ global_placement
     [-routability_rc_coefficients routability_rc_coefficients]
     [-timing_driven_net_reweight_overflow]
     [-timing_driven_net_weight_max]
+    [-timing_driven_nets_percentage]
     [-pad_left pad_left]
     [-pad_right pad_right]
     [-verbose_level level]
@@ -55,6 +54,7 @@ global_placement
 ### Tuning Parameters
 
 - `-timing_driven`: Enable timing-driven mode
+- `-routability_driven`: Enable routability-driven mode
 - `-skip_initial_place` : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
 - `-incremental` : Enable the incremental global placement. Users would need to tune other parameters (e.g., init_density_penalty) with pre-placed solutions.
 - `-bin_grid_count`: set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`.
@@ -68,16 +68,18 @@ global_placement
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
 - `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
 - `-timing_driven_net_weight_max`: Set the multiplier for the most timing critical nets. Default value is 1.9.
+- `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 - `-force_cpu`: Force to use the CPU solver even if the GPU is available.
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and
-weight nets with low slack. It adjusts the 10% worst slacks using
-a multiplier (1.9 by default, modified with `-timing_driven_net_weight_max`).
-The multiplier is scaled from the full value for the worst slack, to 1.0 for
-the 10% worst slack. Use the `set_wire_rc` command to set resistance and
-capacitance of estimated wires used for timing.
+weight nets with low slack. It adjusts the worst slacks (10% by default,
+modified with -timing_driven_nets_percentage) using a multiplier (1.9 by
+default, modified with `-timing_driven_net_weight_max`). The multiplier
+is scaled from the full value for the worst slack, to 1.0 at the
+timing_driven_nets_percentage point. Use the `set_wire_rc` command to set
+resistance and capacitance of estimated wires used for timing.
 
 ## Example scripts
 

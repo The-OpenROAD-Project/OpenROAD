@@ -80,6 +80,9 @@ class Fixture
 
   void makeSpacingConstraint(frLayerNum layer_num);
 
+  void makeMetalWidthViaMap(frLayerNum layer_num,
+                            odb::dbMetalWidthViaMap* rule);
+
   void makeMinStepConstraint(frLayerNum layer_num);
 
   void makeMinStep58Constraint(frLayerNum layer_num);

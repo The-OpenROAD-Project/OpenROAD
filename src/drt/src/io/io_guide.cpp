@@ -985,7 +985,8 @@ void io::Parser::genGuides_final(
                  != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
-        logger_->warn(DRT, 220, "genGuides_final error 1.");
+        logger_->warn(
+            DRT, 220, "genGuides_final net {} error 1.", net->getName());
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
@@ -1003,14 +1004,18 @@ void io::Parser::genGuides_final(
                  != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
-        logger_->warn(DRT, 221, "genGuides_final error 2.");
+        logger_->warn(
+            DRT, 221, "genGuides_final net {} error 2.", net->getName());
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     }
   }
   for (auto& guides : pinIdx2GCellUpdated) {
     if (guides.empty()) {
-      logger_->warn(DRT, 222, "genGuides_final pin not in any guide.");
+      logger_->warn(DRT,
+                    222,
+                    "genGuides_final net {} pin not in any guide.",
+                    net->getName());
     }
   }
 

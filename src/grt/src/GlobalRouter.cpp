@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "grt/GlobalRouter.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -56,7 +58,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "heatMap.h"
 #include "odb/db.h"
@@ -498,10 +499,9 @@ void GlobalRouter::updateDirtyNets()
   }
 }
 
-std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+bool GlobalRouter::pinAccessPointPositions(
     const Pin& pin,
-    bool& has_access_points,
-    odb::Point& pos_on_grid)
+    std::vector<std::pair<odb::Point, odb::Point>>& ap_positions)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
@@ -522,21 +522,41 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     }
   }
 
+  if (access_points.empty())
+    return false;
+
+  for (const odb::dbAccessPoint* ap : access_points) {
+    odb::Point ap_position = ap->getPoint();
+    if (!pin.isPort()) {
+      odb::dbTransform xform;
+      int x, y;
+      pin.getITerm()->getInst()->getLocation(x, y);
+      xform.setOffset({x, y});
+      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+      xform.apply(ap_position);
+    }
+
+    ap_positions.push_back(
+        {ap_position, grid_->getPositionOnGrid(ap_position)});
+  }
+
+  return true;
+}
+
+std::vector<odb::Point> GlobalRouter::findOnGridPositions(
+    const Pin& pin,
+    bool& has_access_points,
+    odb::Point& pos_on_grid)
+{
+  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
+
+  has_access_points = pinAccessPointPositions(pin, ap_positions);
+
   std::vector<odb::Point> positions_on_grid;
-  has_access_points = !access_points.empty();
 
   if (has_access_points) {
-    for (const odb::dbAccessPoint* ap : access_points) {
-      odb::Point ap_position = ap->getPoint();
-      if (!pin.isPort()) {
-        odb::dbTransform xform;
-        int x, y;
-        pin.getITerm()->getInst()->getLocation(x, y);
-        xform.setOffset({x, y});
-        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-        xform.apply(ap_position);
-      }
-      pos_on_grid = grid_->getPositionOnGrid(ap_position);
+    for (auto ap_position : ap_positions) {
+      pos_on_grid = ap_position.second;
       positions_on_grid.push_back(pos_on_grid);
     }
   } else {
@@ -760,17 +780,16 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
 
-    int netID = fastroute_->addNet(net->getDbNet(),
-                                   pins_on_grid.size(),
-                                   is_clock,
-                                   root_idx,
-                                   edge_cost_for_net,
-                                   min_layer - 1,
-                                   max_layer - 1,
-                                   net->getSlack(),
-                                   edge_cost_per_layer);
+    FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
+                                       is_clock,
+                                       root_idx,
+                                       edge_cost_for_net,
+                                       min_layer - 1,
+                                       max_layer - 1,
+                                       net->getSlack(),
+                                       edge_cost_per_layer);
     for (RoutePt& pin_pos : pins_on_grid) {
-      fastroute_->addPin(netID, pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
+      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
@@ -1380,7 +1399,13 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::readGuides(const char* file_name)
 {
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 249, "Load design before reading guides");
+  }
+
   block_ = db_->getChip()->getBlock();
+  routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
     int min_layer = min_layer_for_clock_ > 0
