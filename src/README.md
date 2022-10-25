@@ -85,7 +85,24 @@ metal obstructions.
 
 ``` tcl
 read reg1.db
-write_abstract_lef reg1_abstract.lef
+write_abstract_lef reg1_abstract.lef \
+		   [-bloat_factor shape_pitch_bloat_factor ] \
+		   [-bloat_occupied_layers ] 	
+```
+### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bloat_factor` | Specifies the bloat factor of the shapes in order for merging obstructions |
+| `-bloat_occupied_layers` | Specifies that the obstruction will include the entire layer |
+
+### Examples
+```
+# Increase the shapes in 3 pitches (for every layer)
+write_abstract_lef reg1_abstract.lef -bloat factor 3
+
+# The obstructions will contain the entire layer of the nets
+write_abstract_lef reg1_abstract.lef -bloat_occupied_layers
 ```
 
 ### Global Connections
