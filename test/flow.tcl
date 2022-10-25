@@ -223,6 +223,10 @@ write_db $fill_db
 ################################################################
 # Detailed routing
 
+# Run pin access again after inserting diodes and moving cells
+pin_access -bottom_routing_layer $min_routing_layer \
+           -top_routing_layer $max_routing_layer
+
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
