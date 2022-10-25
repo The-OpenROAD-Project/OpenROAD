@@ -205,7 +205,7 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Antenna repair
 
-repair_antennas
+repair_antennas -iterations 3
 
 check_antennas
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
