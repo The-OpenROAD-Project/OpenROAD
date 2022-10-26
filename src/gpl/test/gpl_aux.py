@@ -4,27 +4,9 @@ import utl
 DEFAULT_TARGET_DENSITY = 0.7
 
 
-def is_pos_int(x):
-    if x == None:
-        return False
-    elif isinstance(x, int) and x > 0 :
-        return True
-    else:
-        utl.error(utl.GPL, 513, f"TypeError: {x} is not a postive integer")
-    return False
-
-
-def is_pos_float(x):
-    if x == None:
-        return False
-    elif isinstance(x, float) and x > 0.0:
-        return True
-    else:
-        utl.error(utl.GPL, 514, f"TypeError: {x} is not a positive float")
-    return False
-
-
-# no positional args here
+# Besides design, there are no positional args here. General strategy is that 
+# when an arg is None, we just skip setting it, otherwise we will set the
+# parameter after a quick type check.
 def global_placement(design, *,
     skip_initial_place=False,
     skip_nesterov_place=False,
@@ -33,39 +15,36 @@ def global_placement(design, *,
     incremental=False,
     force_cpu=False,
     skip_io=False,
-    bin_grid_count=None,       # positive int
-    density=None,              # target_density: 'uniform' or 0<d<1
-    init_density_penalty=None, # positive float
-    init_wirelength_coef=None, # positive float
-    min_phi_coef=None,         # positive float
-    max_phi_coef=None,         # positive float
-    reference_hpwl=None,       # positive int
-    overflow=None,             # overflow
-    initial_place_max_iter=None,     # int > 0
-    initial_place_max_fanout=None,   # initial_place_max_fanout
-    routability_check_overflow=None, # routability_check_overflow
-    routability_max_density=None,    # positive float
-    routability_max_bloat_iter=None, # int
-    routability_max_inflation_iter=None,      # int
-    routability_target_rc_metric=None,        # routability_target_rc_metric
-    routability_inflation_ratio_coef=None,    # routability_inflation_ratio_coef
-    routability_max_inflation_ratio=None,     # routability_max_inflation_ratio
+    bin_grid_count=None,       # positive int, default 0
+    density=None,              # 'uniform' or 0.0 < d < 1.0  default 0.7
+    init_density_penalty=None, # positive float  default 0.00008
+    init_wirelength_coef=None, # positive float  default 0.25
+    min_phi_coef=None,         # positive float  default 0.95
+    max_phi_coef=None,         # positive float  default 1.05
+    reference_hpwl=None,       # positive int    default 446000000
+    overflow=None,             # positive float
+    initial_place_max_iter=None,     # positive int, default 20
+    initial_place_max_fanout=None,   # positive int, default 200
+    routability_check_overflow=None, # positive float
+    routability_max_density=None,    # positive float  default  0.99
+    routability_max_bloat_iter=None, # positive int  default  1
+    routability_max_inflation_iter=None,      # positive int  default 4
+    routability_target_rc_metric=None,        # positive float
+    routability_inflation_ratio_coef=None,    # positive float
+    routability_max_inflation_ratio=None,     # positive float
     routability_rc_coefficients=None,         # a list of four floats
     timing_driven_net_reweight_overflow=None, # list of ints
-    timing_driven_net_weight_max=None,        # timing_driven_net_weight_max
-    timing_driven_nets_percentage=None,       # timing_driven_nets_percentage
-    pad_left=None, # int
-    pad_right=None # int
+    timing_driven_net_weight_max=None,        # float
+    timing_driven_nets_percentage=None,       # float
+    pad_left=None, # positive int
+    pad_right=None # positive int
 ):
     gpl = design.getReplace()
 
     if skip_initial_place:
-          gpl.setInitialPlaceMaxIter(0)
-    elif initial_place_max_iter != None:
-        if is_pos_int(init_place_max_iter):
-            gpl.setInitialPlaceMaxIter(init_place_max_iter)
-        else:
-            utl.error(utl.GPL, 501, "Bad init_place_max_iter (int, >0)")
+        gpl.setInitialPlaceMaxIter(0)
+    elif is_pos_int(initial_place_max_iter):
+        gpl.setInitialPlaceMaxIter(initial_place_max_iter)
 
     gpl.setForceCPU(force_cpu)
 
@@ -80,7 +59,7 @@ def global_placement(design, *,
             utl.error(utl.GPL, 502, "No liberty libraries found.")
 
         if skip_io:
-            utl.error(utl.GPL, 503, "-skip_io will disable timing driven mode.")
+            utl.warn(utl.GPL, 503, "-skip_io will disable timing driven mode.")
             gpl.setTimingDrivenMode(False)
 
         if timing_driven_net_reweight_overflow != None:
@@ -91,11 +70,11 @@ def global_placement(design, *,
         for ov in overflow_list:
             gpl.addTimingNetWeightOverflow(ov)
 
-        if timing_driven_net_weight_max != None:
+        if is_pos_float(timing_driven_net_weight_max):
             gpl.setTimingNetWeightMax(timing_driven_net_weight_max)
 
-        if timing_driven_nets_percentage != None:
-            design.evalTclString("rsz::set_worst_slack_nets_percent $timing_driven_nets_percentage")
+        if is_pos_float(timing_driven_nets_percentage):
+            design.evalTclString(f"rsz::set_worst_slack_nets_percent {timing_driven_nets_percentage}")
 
     gpl.setRoutabilityDrivenMode(routability_driven)
 
@@ -108,7 +87,6 @@ def global_placement(design, *,
     elif initial_place_max_fanout != None:
         utl.error(utl.GPL, 505, "initial_place_max_fanout must be a positive integer")
 
-    # Magic numbers
     uniform_mode = False
 
     if density != None:
@@ -190,8 +168,28 @@ def global_placement(design, *,
         gpl.setDb(design.getTech().getDB())
         gpl.setLogger(design.getLogger())
         gpl.setGlobalRouter(design.getGlobalRouter())
-        # no idea if this will work (actually, it doesn't)
-        #rz = design.evalTclString("getOpenRoad()->getResizer()")
+        # This will have to wait until rsz is Python wrapped
+        #rz = design.getResizer()
         #gpl.setResizer(rz)
     else:
         utl.error(utl.GPL, 506, "No rows defined in design. Use initialize_floorplan to add rows.")
+
+
+def is_pos_int(x):
+    if x == None:
+        return False
+    elif isinstance(x, int) and x > 0 :
+        return True
+    else:
+        utl.error(utl.GPL, 507, f"TypeError: {x} is not a postive integer")
+    return False
+
+
+def is_pos_float(x):
+    if x == None:
+        return False
+    elif isinstance(x, float) and x > 0.0:
+        return True
+    else:
+        utl.error(utl.GPL, 508, f"TypeError: {x} is not a positive float")
+    return False
