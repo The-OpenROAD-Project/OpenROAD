@@ -1082,7 +1082,7 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
     eolWidth = eolWidthIn;
     exactWidth = exactWidthIn;
   }
-  void setWrongDirSpace(bool in)
+  void setWrongDirSpace(frCoord in)
   {
     wrongDirSpacing = true;
     wrongDirSpace = in;

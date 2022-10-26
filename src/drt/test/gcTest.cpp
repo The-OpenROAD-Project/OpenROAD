@@ -667,6 +667,24 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
              Rect(100, 0, 350, 100));
 }
 
+BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  con->setWrongDirSpace(100);
+  db_tech->findLayer("m1")->setDirection(odb::dbTechLayerDir::VERTICAL);
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {250, 50}, {1000, 50});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 0);
+}
+
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
                      ext,
