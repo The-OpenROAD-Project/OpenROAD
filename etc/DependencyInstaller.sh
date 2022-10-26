@@ -97,17 +97,6 @@ _installCommonDev() {
         echo "Lemon already installed."
     fi
 
-    # spdlog
-    if [[ -z $(grep "PACKAGE_VERSION \"${spdlogVersion}\"" ${spdlogFolder}) ]]; then
-        cd "${baseDir}"
-        git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
-        cd spdlog
-        cmake -B build .
-        cmake --build build -j $(nproc) --target install
-    else
-        echo "spdlog already installed."
-    fi
-
     cd "$lastDir"
     rm -rf "${baseDir}"
 }
@@ -259,11 +248,6 @@ EOF
 
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
-
-    # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
-    # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
 }
 
 _help() {
@@ -320,8 +304,6 @@ esac
 
 case "${os}" in
     "CentOS Linux" )
-        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         _installCentosRuntime
         if [[ "${option}" == "dev" ]]; then
             _installCentosDev
@@ -336,8 +318,6 @@ EOF
         ;;
     "Ubuntu" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev

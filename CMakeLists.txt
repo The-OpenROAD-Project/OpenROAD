@@ -61,6 +61,9 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 # Allow to use external shared abc libraries
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
+# Allow to use external shared spdlog libraries
+option(USE_SYSTEM_SPDLOG "Use system shared spdlog library" OFF)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )

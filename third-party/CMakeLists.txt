@@ -49,3 +49,8 @@ if (NOT USE_SYSTEM_ABC)
   add_subdirectory(abc)
 
 endif()
+
+if (NOT USE_SYSTEM_SPDLOG)
+  set(SPDLOG_FMT_EXTERNAL OFF)
+  add_subdirectory(spdlog)
+endif()
