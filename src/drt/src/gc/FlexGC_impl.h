@@ -504,6 +504,7 @@ class FlexGCWorker::Impl
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
+  bool isWrongDir(gcSegment* edge);
   
 };
 }  // namespace fr

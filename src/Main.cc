@@ -286,11 +286,22 @@ static void initPython()
 }
 #endif
 
-static void handler(int)
+static volatile sig_atomic_t fatal_error_in_progress = 0;
+
+static void handler(int sig)
 {
+  if (fatal_error_in_progress) {
+    raise(sig);
+  }
+  fatal_error_in_progress = 1;
+
+  std::cerr << "Signal " << sig << " received\n";
+
   std::cerr << "Stack trace:\n";
   std::cerr << boost::stacktrace::stacktrace();
-  exit(1);
+
+  signal(sig, SIG_DFL);
+  raise(sig);
 }
 
 int main(int argc, char* argv[])
