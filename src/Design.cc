@@ -132,10 +132,11 @@ ant::AntennaChecker* Design::getAntennaChecker()
   return app->getAntennaChecker();
 }
 
-int Design::evalTclString(const std::string& cmd)
+const std::string Design::evalTclString(const std::string& cmd)
 {
   Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
-  return Tcl_Eval(tcl_interp, cmd.c_str());
+  Tcl_Eval(tcl_interp, cmd.c_str());
+  return std::string(Tcl_GetStringResult(tcl_interp));
 }
 
 Tech* Design::getTech()
