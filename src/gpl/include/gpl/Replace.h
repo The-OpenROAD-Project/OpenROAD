@@ -38,23 +38,23 @@
 #include <vector>
 
 namespace odb {
-  class dbDatabase;
-  class dbInst;
-}
+class dbDatabase;
+class dbInst;
+}  // namespace odb
 namespace sta {
-  class dbSta;
+class dbSta;
 }
 
 namespace grt {
-  class GlobalRouter;
+class GlobalRouter;
 }
 
 namespace rsz {
-  class Resizer;
+class Resizer;
 }
 
 namespace utl {
-  class Logger;
+class Logger;
 }
 
 namespace gpl {
@@ -70,144 +70,144 @@ class Debug;
 
 class Replace
 {
-  public:
-    Replace();
-    ~Replace();
+ public:
+  Replace();
+  ~Replace();
 
-    void init();
-    void reset();
+  void init();
+  void reset();
 
-    void setDb(odb::dbDatabase* odb);
-    void setResizer(rsz::Resizer* resizer);
-    void setGlobalRouter(grt::GlobalRouter* fr);
-    void setLogger(utl::Logger* log);
+  void setDb(odb::dbDatabase* odb);
+  void setResizer(rsz::Resizer* resizer);
+  void setGlobalRouter(grt::GlobalRouter* fr);
+  void setLogger(utl::Logger* log);
 
-    void doIncrementalPlace();
-    void doInitialPlace();
+  void doIncrementalPlace();
+  void doInitialPlace();
 
-    bool initNesterovPlace();
-    int doNesterovPlace(int start_iter = 0);
+  bool initNesterovPlace();
+  int doNesterovPlace(int start_iter = 0);
 
-    // Initial Place param settings
-    void setInitialPlaceMaxIter(int iter);
-    void setInitialPlaceMinDiffLength(int length);
-    void setInitialPlaceMaxSolverIter(int iter);
-    void setInitialPlaceMaxFanout(int fanout);
-    void setInitialPlaceNetWeightScale(float scale);
+  // Initial Place param settings
+  void setInitialPlaceMaxIter(int iter);
+  void setInitialPlaceMinDiffLength(int length);
+  void setInitialPlaceMaxSolverIter(int iter);
+  void setInitialPlaceMaxFanout(int fanout);
+  void setInitialPlaceNetWeightScale(float scale);
 
-    void setNesterovPlaceMaxIter(int iter);
+  void setNesterovPlaceMaxIter(int iter);
 
-    void setBinGridCntX(int binGridCntX);
-    void setBinGridCntY(int binGridCntY);
+  void setBinGridCntX(int binGridCntX);
+  void setBinGridCntY(int binGridCntY);
 
-    void setTargetDensity(float density);
-    void setUniformTargetDensityMode(bool mode);
-    void setTargetOverflow(float overflow);
-    void setInitDensityPenalityFactor(float penaltyFactor);
-    void setInitWireLengthCoef(float coef);
-    void setMinPhiCoef(float minPhiCoef);
-    void setMaxPhiCoef(float maxPhiCoef);
+  void setTargetDensity(float density);
+  void setUniformTargetDensityMode(bool mode);
+  void setTargetOverflow(float overflow);
+  void setInitDensityPenalityFactor(float penaltyFactor);
+  void setInitWireLengthCoef(float coef);
+  void setMinPhiCoef(float minPhiCoef);
+  void setMaxPhiCoef(float maxPhiCoef);
 
-    float getUniformTargetDensity();
+  float getUniformTargetDensity();
 
-    // HPWL: half-parameter wire length.
-    void setReferenceHpwl(float deltaHpwl);
+  // HPWL: half-parameter wire length.
+  void setReferenceHpwl(float deltaHpwl);
 
-    // temp funcs; OpenDB should have these values. 
-    void setPadLeft(int padding);
-    void setPadRight(int padding);
+  // temp funcs; OpenDB should have these values.
+  void setPadLeft(int padding);
+  void setPadRight(int padding);
 
-    void setForceCPU(bool force_cpu);
-    void setTimingDrivenMode(bool mode);
+  void setForceCPU(bool force_cpu);
+  void setTimingDrivenMode(bool mode);
 
-    void setSkipIoMode(bool mode);
+  void setSkipIoMode(bool mode);
 
-    void setRoutabilityDrivenMode(bool mode);
-    void setRoutabilityCheckOverflow(float overflow);
-    void setRoutabilityMaxDensity(float density);
+  void setRoutabilityDrivenMode(bool mode);
+  void setRoutabilityCheckOverflow(float overflow);
+  void setRoutabilityMaxDensity(float density);
 
-    void setRoutabilityMaxBloatIter(int iter);
-    void setRoutabilityMaxInflationIter(int iter);
+  void setRoutabilityMaxBloatIter(int iter);
+  void setRoutabilityMaxInflationIter(int iter);
 
-    void setRoutabilityTargetRcMetric(float rc);
-    void setRoutabilityInflationRatioCoef(float ratio);
-    void setRoutabilityMaxInflationRatio(float ratio);
+  void setRoutabilityTargetRcMetric(float rc);
+  void setRoutabilityInflationRatioCoef(float ratio);
+  void setRoutabilityMaxInflationRatio(float ratio);
 
-    void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
+  void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
-    void addTimingNetWeightOverflow(int overflow);
-    void setTimingNetWeightMax(float max);
+  void addTimingNetWeightOverflow(int overflow);
+  void setTimingNetWeightMax(float max);
 
-    void setDebug(int pause_iterations,
-                  int update_iterations,
-                  bool draw_bins,
-                  bool initial,
-                  odb::dbInst* inst = nullptr);
+  void setDebug(int pause_iterations,
+                int update_iterations,
+                bool draw_bins,
+                bool initial,
+                odb::dbInst* inst = nullptr);
 
-  private:
-    odb::dbDatabase* db_;
-    rsz::Resizer* rs_;
-    grt::GlobalRouter* fr_;
-    utl::Logger* log_;
+ private:
+  odb::dbDatabase* db_;
+  rsz::Resizer* rs_;
+  grt::GlobalRouter* fr_;
+  utl::Logger* log_;
 
-    std::shared_ptr<PlacerBase> pb_;
-    std::shared_ptr<NesterovBase> nb_;
-    std::shared_ptr<RouteBase> rb_;
-    std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<PlacerBase> pb_;
+  std::shared_ptr<NesterovBase> nb_;
+  std::shared_ptr<RouteBase> rb_;
+  std::shared_ptr<TimingBase> tb_;
 
-    std::unique_ptr<InitialPlace> ip_;
-    std::unique_ptr<NesterovPlace> np_;
+  std::unique_ptr<InitialPlace> ip_;
+  std::unique_ptr<NesterovPlace> np_;
 
-    int initialPlaceMaxIter_;
-    int initialPlaceMinDiffLength_;
-    int initialPlaceMaxSolverIter_;
-    int initialPlaceMaxFanout_;
-    float initialPlaceNetWeightScale_;
-    bool forceCPU_;
+  int initialPlaceMaxIter_;
+  int initialPlaceMinDiffLength_;
+  int initialPlaceMaxSolverIter_;
+  int initialPlaceMaxFanout_;
+  float initialPlaceNetWeightScale_;
+  bool forceCPU_;
 
-    int nesterovPlaceMaxIter_;
-    int binGridCntX_;
-    int binGridCntY_;
-    float overflow_;
-    float density_;
-    float initDensityPenalityFactor_;
-    float initWireLengthCoef_;
-    float minPhiCoef_;
-    float maxPhiCoef_;
-    float referenceHpwl_;
+  int nesterovPlaceMaxIter_;
+  int binGridCntX_;
+  int binGridCntY_;
+  float overflow_;
+  float density_;
+  float initDensityPenalityFactor_;
+  float initWireLengthCoef_;
+  float minPhiCoef_;
+  float maxPhiCoef_;
+  float referenceHpwl_;
 
-    float routabilityCheckOverflow_;
-    float routabilityMaxDensity_;
-    float routabilityTargetRcMetric_;
-    float routabilityInflationRatioCoef_;
-    float routabilityMaxInflationRatio_;
+  float routabilityCheckOverflow_;
+  float routabilityMaxDensity_;
+  float routabilityTargetRcMetric_;
+  float routabilityInflationRatioCoef_;
+  float routabilityMaxInflationRatio_;
 
-    // routability RC metric coefficients
-    float routabilityRcK1_, routabilityRcK2_, routabilityRcK3_, routabilityRcK4_;
+  // routability RC metric coefficients
+  float routabilityRcK1_, routabilityRcK2_, routabilityRcK3_, routabilityRcK4_;
 
-    int routabilityMaxBloatIter_;
-    int routabilityMaxInflationIter_;
+  int routabilityMaxBloatIter_;
+  int routabilityMaxInflationIter_;
 
-    float timingNetWeightMax_;
+  float timingNetWeightMax_;
 
-    bool timingDrivenMode_;
-    bool routabilityDrivenMode_;
-    bool uniformTargetDensityMode_;
-    bool skipIoMode_;
+  bool timingDrivenMode_;
+  bool routabilityDrivenMode_;
+  bool uniformTargetDensityMode_;
+  bool skipIoMode_;
 
-    std::vector<int> timingNetWeightOverflows_;
-   
-    // temp variable; OpenDB should have these values. 
-    int padLeft_;
-    int padRight_;
+  std::vector<int> timingNetWeightOverflows_;
 
-    bool gui_debug_;
-    int gui_debug_pause_iterations_;
-    int gui_debug_update_iterations_;
-    int gui_debug_draw_bins_;
-    int gui_debug_initial_;
-    odb::dbInst* gui_debug_inst_;
+  // temp variable; OpenDB should have these values.
+  int padLeft_;
+  int padRight_;
+
+  bool gui_debug_;
+  int gui_debug_pause_iterations_;
+  int gui_debug_update_iterations_;
+  int gui_debug_draw_bins_;
+  int gui_debug_initial_;
+  odb::dbInst* gui_debug_inst_;
 };
-}
+}  // namespace gpl
 
 #endif
