@@ -84,8 +84,7 @@ metal obstructions.
 
 
 ``` tcl
-write_abstract_lef [-bloat_factor bloat_factor] \
-                   [-bloat_occupied_layers] \
+write_abstract_lef (-bloat_factor bloat_factor|-bloat_occupied_layers) \
 		   filename
 ```
 ### Options
