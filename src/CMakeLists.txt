@@ -48,7 +48,6 @@ endif()
 set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
-set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
   Design.cc
@@ -183,7 +182,6 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${PAD_HOME}/src/pad.tcl
                    ${ODB_HOME}/src/db/odb.tcl
 )
 
@@ -222,6 +220,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Build flow tools
 add_subdirectory(ifp)
+add_subdirectory(pad)
 add_subdirectory(odb)
 if (NOT USE_SYSTEM_OPENSTA)
   add_subdirectory(sta)
@@ -282,6 +281,7 @@ target_include_directories(openroad
 
 target_link_libraries(openroad
   ifp
+  pad
   openroad_swig
   gpl
   dpl
