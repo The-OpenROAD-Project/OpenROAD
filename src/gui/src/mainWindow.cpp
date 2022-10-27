@@ -318,8 +318,13 @@ MainWindow::MainWindow(QWidget* parent)
     setSelected(selected, false);
     odb::Rect bbox;
     selected.getBBox(bbox);
-    // 10 microns
-    const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+
+    auto* block = getBlock();
+    int zoomout_dist = std::numeric_limits<int>::max();
+    if (block != nullptr) {
+      // 10 microns
+      zoomout_dist = 10 * block->getDbUnitsPerMicron();
+    }
     // twice the largest dimension of bounding box
     const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
     // pick smallest
