@@ -65,6 +65,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
+#include "pad/MakePad.h"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
@@ -248,6 +249,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer(this);
   initMacroPlacer2(this);
   initOpenRCX(this);
+  initPad(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
