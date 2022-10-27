@@ -1,4 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
@@ -29,24 +30,18 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
-%}
+////////////////////////////////////////////////////////////////
+//
+// C++ functions visible as TCL functions.
+//
+////////////////////////////////////////////////////////////////
 
-%exception {
-  try { $function }
-  catch (std::bad_alloc &) {
-    fprintf(stderr, "Error: out of memory.");
-    exit(0);
-  }
-  // This catches std::runtime_error (utl::error) and sta::Exception.
-  catch (std::exception &excp) {
-    PyErr_SetString(PyExc_RuntimeError, excp.what());
-    SWIG_fail;
-  }
-  catch (...) {
-    PyErr_SetString(PyExc_Exception, "Unknown exception");
-    SWIG_fail;
-  }      
-}
+%include "../../Exception.i"
+
+%inline %{
+
+
+%} // inline

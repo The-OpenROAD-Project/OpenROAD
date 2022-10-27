@@ -84,8 +84,25 @@ metal obstructions.
 
 
 ``` tcl
+write_abstract_lef (-bloat_factor bloat_factor|-bloat_occupied_layers) \
+		   filename
+```
+### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bloat_factor` | Specifies the bloat factor used when bloating then merging shapes into LEF obstructions. The factor is measured in # of default metal pitches for the respective layer. A factor of `0` will result in detailed LEF obstructions |
+| `-bloat_occupied_layers` | Generates cover obstructions (obstructions over the entire layer) for each layer where shapes are present |
+
+### Examples
+```
 read reg1.db
-write_abstract_lef reg1_abstract.lef
+
+# Bloat metal shapes by 3 pitches (respectively for every layer) and then merge
+write_abstract_lef -bloat_factor 3 reg1_abstract.lef
+
+# Produce cover obstructions for each layer with shapes present
+write_abstract_lef -bloat_occupied_layers reg1_abstract.lef
 ```
 
 ### Global Connections

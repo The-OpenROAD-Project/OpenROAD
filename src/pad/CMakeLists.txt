@@ -1,12 +1,8 @@
-#!/bin/sh
-# The next line is executed by /bin/sh, but not Tcl \
-exec tclsh $0 ${1+"$@"}
-
-###############################################################################
+############################################################################
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, Parallax Software, Inc.
+## Copyright (c) 2022, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -17,7 +13,7 @@ exec tclsh $0 ${1+"$@"}
 ##
 ## * Redistributions in binary form must reproduce the above copyright notice,
 ##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
+##   and/or other materials provided with the distribution.
 ##
 ## * Neither the name of the copyright holder nor the names of its
 ##   contributors may be used to endorse or promote products derived from
@@ -35,21 +31,31 @@ exec tclsh $0 ${1+"$@"}
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 ##
-###############################################################################
+############################################################################
 
-# Usage: regression [test1 [test2...]]
-# Where test1 is all or the name of a tcl script in /test
-# Wildcard matching with '*' and '?' in test names is supported.
+include("openroad")
 
-# Directory containing tests.
-set test_dir [file dirname [file normalize [info script]]]
-set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
+swig_lib(NAME      pad
+         NAMESPACE pad
+         I_FILE    src/pad.i
+         SCRIPTS   src/pad.tcl
+)
 
-source [file join $openroad_dir "test" "regression.tcl"]
-source [file join $test_dir "regression_tests_large.tcl"]
+target_sources(pad
+  PRIVATE
+    src/MakePad.cc
+)
 
-regression_main
+target_include_directories(pad
+  PUBLIC
+    include
+)
 
-# Local Variables:
-# mode:tcl
-# End:
+target_link_libraries(pad
+  PRIVATE
+    OpenSTA
+)
+
+messages(
+  TARGET pad
+)

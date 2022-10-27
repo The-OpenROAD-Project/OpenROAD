@@ -17,7 +17,7 @@ exec tclsh $0 ${1+"$@"}
 ##
 ## * Redistributions in binary form must reproduce the above copyright notice,
 ##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
+##   and/or other materials provided with the distribution.
 ##
 ## * Neither the name of the copyright holder nor the names of its
 ##   contributors may be used to endorse or promote products derived from
@@ -37,7 +37,7 @@ exec tclsh $0 ${1+"$@"}
 ##
 ###############################################################################
 
-# Usage: regression [test1 [test2...]]
+# Usage: save_defok test1 [test2...] | failures
 # Where test1 is all or the name of a tcl script in /test
 # Wildcard matching with '*' and '?' in test names is supported.
 
@@ -46,9 +46,9 @@ set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 
 source [file join $openroad_dir "test" "regression.tcl"]
-source [file join $test_dir "regression_tests_large.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
 
-regression_main
+save_defok_main
 
 # Local Variables:
 # mode:tcl
