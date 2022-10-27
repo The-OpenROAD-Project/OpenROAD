@@ -46,10 +46,10 @@ using NodeIdx = int;
 
 struct NodeEnclosure
 {
-  int neg_x=0;
-  int pos_x=0;
-  int neg_y=0;
-  int pos_y=0;
+  int neg_x = 0;
+  int pos_x = 0;
+  int neg_y = 0;
+  int pos_y = 0;
 };
 
 //! Node class which stores the properties of the node of the PDN
@@ -83,9 +83,9 @@ class Node
   void setConnected();
 
   bool hasInstances() const;
-  
+
   void setEnclosure(NodeEnclosure encl);
-  
+
   NodeEnclosure getEnclosure() const;
 
   const std::vector<dbInst*>& getInstances() const;
@@ -99,7 +99,7 @@ class Node
   double current_src_{0.0};
   double voltage_{0.0};
   bool connected_{false};
-  NodeEnclosure encl_{0,0,0,0};
+  NodeEnclosure encl_{0, 0, 0, 0};
   std::vector<dbInst*> connected_instances_;
 };
 }  // namespace psm
