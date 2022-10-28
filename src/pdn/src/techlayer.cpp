@@ -32,9 +32,9 @@
 
 #include "techlayer.h"
 
-#include "utl/Logger.h"
-
 #include <limits>
+
+#include "utl/Logger.h"
 
 namespace pdn {
 
@@ -103,7 +103,9 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
   return delta_pos;
 }
 
-int TechLayer::snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up)
+int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,
+                                       int pos,
+                                       bool round_up)
 {
   if (!tech->hasManufacturingGrid()) {
     return pos;
@@ -137,11 +139,18 @@ bool TechLayer::checkIfManufacturingGrid(odb::dbTech* tech, int value)
   return true;
 }
 
-bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const
+bool TechLayer::checkIfManufacturingGrid(int value,
+                                         utl::Logger* logger,
+                                         const std::string& type) const
 {
   auto* tech = layer_->getTech();
   if (!checkIfManufacturingGrid(tech, value)) {
-    logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(tech->getManufacturingGrid()));
+    logger->error(utl::PDN,
+                  191,
+                  "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.",
+                  type,
+                  dbuToMicron(value),
+                  dbuToMicron(tech->getManufacturingGrid()));
     return false;
   }
 
@@ -163,29 +172,27 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
     uint rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
-    rules.push_back(MinCutRule{
-      nullptr,
-      min_cut_rule->isAboveOnly(),
-      min_cut_rule->isBelowOnly(),
-      static_cast<int>(rule_width),
-      static_cast<int>(numcuts)
-    });
+    rules.push_back(MinCutRule{nullptr,
+                               min_cut_rule->isAboveOnly(),
+                               min_cut_rule->isBelowOnly(),
+                               static_cast<int>(rule_width),
+                               static_cast<int>(numcuts)});
   }
 
   for (auto* rule : layer_->getTechLayerMinCutRules()) {
     for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
-      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(cut_class_name.c_str());
+      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(
+          cut_class_name.c_str());
       if (cut_class == nullptr) {
-        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(cut_class_name.c_str());
+        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(
+            cut_class_name.c_str());
       }
 
-      rules.push_back(MinCutRule{
-        cut_class,
-        rule->isFromBelow(), // same as ABOVE
-        rule->isFromAbove(), // same as BELOW
-        rule->getWidth(),
-        cuts
-      });
+      rules.push_back(MinCutRule{cut_class,
+                                 rule->isFromBelow(),  // same as ABOVE
+                                 rule->isFromAbove(),  // same as BELOW
+                                 rule->getWidth(),
+                                 cuts});
     }
   }
 
@@ -205,8 +212,7 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
 
   // make sure minimum area is honored
   const int dbu_per_micron = getLefUnits();
-  const double area
-      = min_area * dbu_per_micron * dbu_per_micron;
+  const double area = min_area * dbu_per_micron * dbu_per_micron;
 
   odb::Rect new_rect = rect;
 
@@ -216,15 +222,19 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
     if (layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       const int required_width = std::ceil(area / height);
       const int added_width = (required_width - width) / 2;
-      const int new_x0 = snapToManufacturingGrid(rect.xMin() - added_width, false);
-      const int new_x1 = snapToManufacturingGrid(rect.xMax() + added_width, true);
+      const int new_x0
+          = snapToManufacturingGrid(rect.xMin() - added_width, false);
+      const int new_x1
+          = snapToManufacturingGrid(rect.xMax() + added_width, true);
       new_rect.set_xlo(new_x0);
       new_rect.set_xhi(new_x1);
     } else {
       const int required_height = std::ceil(area / width);
       const int added_height = (required_height - height) / 2;
-      const int new_y0 = snapToManufacturingGrid(rect.yMin() - added_height, false);
-      const int new_y1 = snapToManufacturingGrid(rect.yMax() + added_height, true);
+      const int new_y0
+          = snapToManufacturingGrid(rect.yMin() - added_height, false);
+      const int new_y1
+          = snapToManufacturingGrid(rect.yMax() + added_height, true);
       new_rect.set_ylo(new_y0);
       new_rect.set_yhi(new_y1);
     }

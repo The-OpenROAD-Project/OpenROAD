@@ -210,8 +210,14 @@ class Shape
 
   static const Box rectToBox(const odb::Rect& rect);
 
-  bool allowsNonPreferredDirectionChange() const { return allow_non_preferred_change_; }
-  virtual void setAllowsNonPreferredDirectionChange() { allow_non_preferred_change_ = true; }
+  bool allowsNonPreferredDirectionChange() const
+  {
+    return allow_non_preferred_change_;
+  }
+  virtual void setAllowsNonPreferredDirectionChange()
+  {
+    allow_non_preferred_change_ = true;
+  }
 
  private:
   odb::dbTechLayer* layer_;

@@ -138,7 +138,8 @@ class FollowPins : public Straps
 class PadDirectConnectionStraps : public Straps
 {
  public:
-  enum ConnectionType {
+  enum ConnectionType
+  {
     None,
     Edge,
     OverPads
@@ -170,7 +171,8 @@ class PadDirectConnectionStraps : public Straps
   void setConnectionType(ConnectionType type);
   ConnectionType getConnectionType() const { return type_; }
 
-  static void unifyConnectionTypes(const std::set<PadDirectConnectionStraps*>& straps);
+  static void unifyConnectionTypes(
+      const std::set<PadDirectConnectionStraps*>& straps);
 
  private:
   odb::dbITerm* iterm_;
@@ -198,7 +200,9 @@ class PadDirectConnectionStraps : public Straps
   std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
   const std::vector<odb::dbBox*>& getPins() const { return pins_; }
 
-  ShapePtr getClosestShape(const ShapeTree& search_shapes, const odb::Rect& pin_shape, odb::dbNet* net) const;
+  ShapePtr getClosestShape(const ShapeTree& search_shapes,
+                           const odb::Rect& pin_shape,
+                           odb::dbNet* net) const;
 };
 
 class RepairChannelStraps : public Straps
@@ -226,10 +230,14 @@ class RepairChannelStraps : public Straps
 
   bool isAtEndOfRepairOptions() const;
   void continueRepairs(const ShapeTreeMap& other_shapes);
-  bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
+  bool testBuild(const ShapeTreeMap& local_shapes,
+                 const ShapeTreeMap& obstructions);
   bool isEmpty() const;
 
-  void addNets(const std::set<odb::dbNet*> nets) { nets_.insert(nets.begin(), nets.end()); }
+  void addNets(const std::set<odb::dbNet*> nets)
+  {
+    nets_.insert(nets.begin(), nets.end());
+  }
   const odb::Rect& getArea() const { return area_; }
 
   // static functions to help build repair channels

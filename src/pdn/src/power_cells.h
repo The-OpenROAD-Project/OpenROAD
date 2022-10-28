@@ -32,15 +32,14 @@
 
 #pragma once
 
-#include "shape.h"
-
 #include <array>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "odb/dbTypes.h"
+#include "shape.h"
 
 namespace odb {
 class dbMaster;
@@ -85,12 +84,17 @@ class PowerCell
   bool appliesToRow(odb::dbRow* row) const;
 
   // returns the site positions that overlap the power pin
-  const std::set<int>& getAlwaysOnPowerPinPositions() const { return alwayson_power_positions_; }
+  const std::set<int>& getAlwaysOnPowerPinPositions() const
+  {
+    return alwayson_power_positions_;
+  }
 
   void report() const;
 
   void populateAlwaysOnPinPositions(int site_width);
-  static std::set<int> getRectAsSiteWidths(const odb::Rect& rect, int site_width, int offset);
+  static std::set<int> getRectAsSiteWidths(const odb::Rect& rect,
+                                           int site_width,
+                                           int offset);
 
  private:
   utl::Logger* logger_;
@@ -106,7 +110,6 @@ class PowerCell
 
 class GridSwitchedPower
 {
-
  public:
   enum NetworkType
   {
@@ -138,7 +141,8 @@ class GridSwitchedPower
   NetworkType network_;
 
   // instances with additional information;
-  struct InstanceInfo {
+  struct InstanceInfo
+  {
     std::set<int> sites;
     std::set<odb::dbRow*> rows;
   };
@@ -146,12 +150,15 @@ class GridSwitchedPower
 
   Straps* getLowestStrap() const;
 
-  std::set<int> computeLocations(const odb::Rect& strap, int site_width, const odb::Rect& corearea) const;
+  std::set<int> computeLocations(const odb::Rect& strap,
+                                 int site_width,
+                                 const odb::Rect& corearea) const;
 
   using InstValue = std::pair<Box, odb::dbInst*>;
   using InstTree = bgi::rtree<InstValue, bgi::quadratic<16>>;
   InstTree buildInstanceSearchTree() const;
-  odb::dbInst* checkOverlappingInst(odb::dbInst* cell, const InstTree& insts) const;
+  odb::dbInst* checkOverlappingInst(odb::dbInst* cell,
+                                    const InstTree& insts) const;
   void checkAndFixOverlappingInsts(const InstTree& insts);
 
   ShapeTree buildStrapTargetList(Straps* target) const;
@@ -159,7 +166,8 @@ class GridSwitchedPower
   using RowValue = std::pair<Box, odb::dbRow*>;
   using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;
   RowTree buildRowTree() const;
-  std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst, const RowTree& rows) const;
+  std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
+                                        const RowTree& rows) const;
 
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;
   void updateControlNetwork();

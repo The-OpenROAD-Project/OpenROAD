@@ -57,8 +57,7 @@ class ViaRepair
   using LayerViaTree = std::map<odb::dbTechLayer*, ViaTree>;
 
  public:
-  ViaRepair(utl::Logger* logger,
-            const std::set<odb::dbNet*>& nets);
+  ViaRepair(utl::Logger* logger, const std::set<odb::dbNet*>& nets);
 
   void repair();
 

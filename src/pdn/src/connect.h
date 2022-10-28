@@ -117,7 +117,9 @@ class Connect
 
   void printViaReport() const;
 
-  void addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net);
+  void addFailedVia(failedViaReason reason,
+                    const odb::Rect& rect,
+                    odb::dbNet* net);
   void writeFailedVias(std::ofstream& file) const;
 
  private:
@@ -135,8 +137,8 @@ class Connect
   std::set<odb::dbTechLayer*> ongrid_;
   std::map<odb::dbTechLayer*, int> split_cuts_;
 
-  // map of built vias, where the key is the width and height of the via intersection,
-  // and the value points of the associated via stack.
+  // map of built vias, where the key is the width and height of the via
+  // intersection, and the value points of the associated via stack.
   using ViaIndex = std::pair<int, int>;
   std::map<ViaIndex, std::unique_ptr<DbGenerateStackedVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
@@ -145,15 +147,17 @@ class Connect
   std::vector<odb::dbTechLayer*> intermediate_layers_;
   std::vector<odb::dbTechLayer*> intermediate_routing_layers_;
 
-  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>> failed_vias_;
+  std::map<failedViaReason, std::set<std::pair<odb::dbNet*, odb::Rect>>>
+      failed_vias_;
 
-  DbVia* makeSingleLayerVia(odb::dbBlock* block,
-                            odb::dbTechLayer* lower,
-                            const std::set<odb::Rect>& lower_rects,
-                            const ViaGenerator::Constraint& lower_constraint,
-                            odb::dbTechLayer* upper,
-                            const std::set<odb::Rect>& upper_rects,
-                            const ViaGenerator::Constraint& upper_constraint) const;
+  DbVia* makeSingleLayerVia(
+      odb::dbBlock* block,
+      odb::dbTechLayer* lower,
+      const std::set<odb::Rect>& lower_rects,
+      const ViaGenerator::Constraint& lower_constraint,
+      odb::dbTechLayer* upper,
+      const std::set<odb::Rect>& upper_rects,
+      const ViaGenerator::Constraint& upper_constraint) const;
 
   void populateDBVias();
   void populateGenerateRules();
@@ -173,9 +177,13 @@ class Connect
       odb::dbBlock* block) const;
 
   using ViaLayerRects = std::set<odb::Rect>;
-  bool isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper) const;
-  std::vector<ViaLayerRects> generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
-  std::vector<ViaLayerRects> generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+  bool isComplexStackedVia(const odb::Rect& lower,
+                           const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateViaRects(const odb::Rect& lower,
+                                              const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateComplexStackedViaRects(
+      const odb::Rect& lower,
+      const odb::Rect& upper) const;
   void generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const;
 
   int getMinWidth(odb::dbTechLayer* layer) const;
