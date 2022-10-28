@@ -180,7 +180,7 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   auto srcs = vio->getSources();
   if (!srcs.empty()) {
     SelectionSet sources;
-    for (auto src : srcs) {
+    for (auto& src : srcs) {
       auto select = gui->makeSelected(src);
       if (select) {
         sources.insert(select);

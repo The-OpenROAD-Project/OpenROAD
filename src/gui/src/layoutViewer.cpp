@@ -1118,7 +1118,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
 
     for (auto* renderer : renderers) {
-      for (auto selected : renderer->select(layer, region)) {
+      for (auto& selected : renderer->select(layer, region)) {
         // copy selected items from the renderer
         selections.push_back(selected);
       }
