@@ -79,13 +79,21 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
+#define PY_MODULES_WITHOUT_OPENROAD \
+  X(ifp)                            \
+  X(utl)                            \
+  X(ant)                            \
+  X(grt)                            \
+  X(odb)
+
+#define PY_MODULES            \
+  PY_MODULES_WITHOUT_OPENROAD \
+  X(openroad_swig)
+
 extern "C" {
-extern PyObject* PyInit__ifp_py();
-extern PyObject* PyInit__utl_py();
-extern PyObject* PyInit__ant_py();
-extern PyObject* PyInit__grt_py();
-extern PyObject* PyInit__openroad_swig_py();
-extern PyObject* PyInit__odbpy();
+#define X(name) extern PyObject* PyInit__##name##_py();
+PY_MODULES
+#undef X
 }
 #endif
 
@@ -101,144 +109,48 @@ static void showSplash();
 
 #ifdef ENABLE_PYTHON3
 namespace sta {
-extern const char* ifp_py_python_inits[];
-extern const char* utl_py_python_inits[];
-extern const char* ant_py_python_inits[];
-extern const char* grt_py_python_inits[];
-extern const char* odbpy_python_inits[];
-extern const char* openroad_swig_py_python_inits[];
+#define X(name) extern const char* name##_py_python_inits[];
+PY_MODULES
+#undef X
 }  // namespace sta
 
 static void initPython()
 {
-  if (PyImport_AppendInittab("_ifp_py", PyInit__ifp_py) == -1) {
-    fprintf(stderr, "Error: could not add module _ifp_py\n");
-    exit(1);
+#define X(name)                                                             \
+  if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
+    fprintf(stderr, "Error: could not add module _" #name "_py\n");         \
+    exit(1);                                                                \
   }
-
-  if (PyImport_AppendInittab("_utl_py", PyInit__utl_py) == -1) {
-    fprintf(stderr, "Error: could not add module _utl_py\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_ant_py", PyInit__ant_py) == -1) {
-    fprintf(stderr, "Error: could not add module _ant_py\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_grt_py", PyInit__grt_py) == -1) {
-    fprintf(stderr, "Error: could not add module _grt_py\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
-    fprintf(stderr, "Error: could not add module odbpy\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_openroad_swig_py", PyInit__openroad_swig_py)
-      == -1) {
-    fprintf(stderr, "Error: could not add module openroadpy\n");
-    exit(1);
-  }
+  PY_MODULES
+#undef X
 
   Py_Initialize();
 
-  {
-    char* unencoded = sta::unencode(sta::ifp_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "ifp_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile ifp_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("ifp", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module ifp\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
+#define X(name)                                                       \
+  {                                                                   \
+    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
+    PyObject* code                                                    \
+        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                            \
+      PyErr_Print();                                                  \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
+      exit(1);                                                        \
+    }                                                                 \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
+      PyErr_Print();                                                  \
+      fprintf(stderr, "Error: could not add module " #name "\n");     \
+      exit(1);                                                        \
+    }                                                                 \
+    delete[] unencoded;                                               \
   }
+  PY_MODULES_WITHOUT_OPENROAD
+#undef X
+#undef PY_MODULES
+#undef PY_MODULES_WITHOUT_OPENROAD
 
-  {
-    char* unencoded = sta::unencode(sta::utl_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "utl_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile utl_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("utl", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module utl\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
-  {
-    char* unencoded = sta::unencode(sta::ant_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "ant_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile ant_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("ant", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module ant\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
-  {
-    char* unencoded = sta::unencode(sta::grt_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "grt_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile grt_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("grt", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module grt\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
-  {
-    char* unencoded = sta::unencode(sta::odbpy_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "odbpy.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile odbpy\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("odb", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module odb\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
+  // So why do we need both openroad_swig and openroad names here? Must be a
+  // missnaming somewhere, but it means we cannot easily use the X macro trick
+  // here.
   {
     char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
 

@@ -35,21 +35,21 @@
 #include "Python.h"
 
 extern "C" {
-extern PyObject* PyInit__odbpy();
+extern PyObject* PyInit__odb_py();
 }
 
 int main(int argc, char* argv[])
 {
-  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
+  if (PyImport_AppendInittab("_odb_py", PyInit__odb_py) == -1) {
     fprintf(stderr, "Error: could not extend in-built modules table\n");
     exit(1);
   }
   wchar_t** args = new wchar_t*[argc];
   for (size_t i = 0; i < argc; i++) {
     size_t sz = strlen(argv[i]);
-    args[i] = new wchar_t[sz+1];
+    args[i] = new wchar_t[sz + 1];
     args[i][sz] = '\0';
-    for(size_t j = 0;j < sz; j++) {
+    for (size_t j = 0; j < sz; j++) {
       args[i][j] = (wchar_t) argv[i][j];
     }
   }
