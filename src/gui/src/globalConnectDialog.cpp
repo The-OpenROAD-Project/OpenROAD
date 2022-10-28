@@ -34,13 +34,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "globalConnectDialog.h"
-#include "utl/Logger.h"
 
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QVBoxLayout>
+
+#include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbNet*);
 Q_DECLARE_METATYPE(odb::dbRegion*);
@@ -159,9 +160,16 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   layout_->addWidget(
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
-  connect(this, SIGNAL(connectionsMade(int)), this, SLOT(announceConnections(int)));
-  connect(inst_pattern_, SIGNAL(textChanged(const QString&)), this, SLOT(addRegexTextChanged(const QString&)));
-  connect(pin_pattern_, SIGNAL(textChanged(const QString&)), this, SLOT(addRegexTextChanged(const QString&)));
+  connect(
+      this, SIGNAL(connectionsMade(int)), this, SLOT(announceConnections(int)));
+  connect(inst_pattern_,
+          SIGNAL(textChanged(const QString&)),
+          this,
+          SLOT(addRegexTextChanged(const QString&)));
+  connect(pin_pattern_,
+          SIGNAL(textChanged(const QString&)),
+          this,
+          SLOT(addRegexTextChanged(const QString&)));
 }
 
 void GlobalConnectDialog::runRules()
@@ -251,9 +259,8 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setToolTip(tr("Run"));
   widgets.run->setAutoDefault(false);
   widgets.run->setDefault(false);
-  connect(widgets.run, &QPushButton::pressed, this, [this, gc]() {
-    runRule(gc);
-  });
+  connect(
+      widgets.run, &QPushButton::pressed, this, [this, gc]() { runRule(gc); });
   layout_->addWidget(
       widgets.run, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
@@ -317,7 +324,8 @@ void GlobalConnectDialog::makeRule()
 
 void GlobalConnectDialog::announceConnections(int connections)
 {
-  connections_->setText(QString::fromStdString(fmt::format("Connected {} pin(s)", connections)));
+  connections_->setText(
+      QString::fromStdString(fmt::format("Connected {} pin(s)", connections)));
 }
 
 void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc)
@@ -339,13 +347,13 @@ void GlobalConnectDialog::addRegexTextChanged(const QString& text)
   // test if this is a valid regex
   try {
     std::regex(text.toStdString());
-  }
-  catch (const std::regex_error&) {
+  } catch (const std::regex_error&) {
     add_->setEnabled(false);
     return;
   }
 
-  const bool enable = !inst_pattern_->text().isEmpty() && !pin_pattern_->text().isEmpty();
+  const bool enable
+      = !inst_pattern_->text().isEmpty() && !pin_pattern_->text().isEmpty();
   add_->setEnabled(enable);
 }
 

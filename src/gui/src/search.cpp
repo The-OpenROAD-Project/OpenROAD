@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "search.h"
+
 #include <tuple>
 #include <utility>
 
 #include "dbShape.h"
-#include "search.h"
 
 namespace gui {
 

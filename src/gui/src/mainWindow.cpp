@@ -55,6 +55,7 @@
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "globalConnectDialog.h"
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -63,7 +64,6 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "timingWidget.h"
-#include "globalConnectDialog.h"
 #include "utl/Logger.h"
 
 // must be loaded in global namespace
@@ -530,7 +530,8 @@ void MainWindow::createActions()
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
 
-  connect(global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
+  connect(
+      global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
