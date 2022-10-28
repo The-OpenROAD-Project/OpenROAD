@@ -363,8 +363,9 @@ void Search::addSNet(odb::dbNet* net)
           points = rect.getPoints();
         }
         Polygon poly;
-        for (auto point : points)
+        for (const auto& point : points) {
           bg::append(poly.outer(), Point(point.getX(), point.getY()));
+        }
         polygon_shapes_[box->getTechLayer()].insert({bbox, poly, net});
       }
     }

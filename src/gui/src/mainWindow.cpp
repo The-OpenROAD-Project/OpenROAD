@@ -1141,7 +1141,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto sel_obj : selected_) {
+  for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {

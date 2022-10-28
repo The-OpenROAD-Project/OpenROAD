@@ -2244,7 +2244,7 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(
   ap->getAccesses(accesses);
 
   std::string directions;
-  for (auto dir : accesses) {
+  for (const auto& dir : accesses) {
     if (!directions.empty()) {
       directions += ", ";
     }
