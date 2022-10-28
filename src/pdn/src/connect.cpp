@@ -36,9 +36,9 @@
 #include <regex>
 
 #include "grid.h"
-#include "techlayer.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 
 namespace pdn {
@@ -135,7 +135,8 @@ bool Connect::isSingleLayerVia() const
   return intermediate_routing_layers_.empty();
 }
 
-bool Connect::isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper) const
+bool Connect::isComplexStackedVia(const odb::Rect& lower,
+                                  const odb::Rect& upper) const
 {
   if (isSingleLayerVia()) {
     return false;
@@ -153,7 +154,9 @@ bool Connect::isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper
   return false;
 }
 
-std::vector<Connect::ViaLayerRects> Connect::generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+std::vector<Connect::ViaLayerRects> Connect::generateViaRects(
+    const odb::Rect& lower,
+    const odb::Rect& upper) const
 {
   const odb::Rect intersection = lower.intersect(upper);
 
@@ -166,38 +169,41 @@ std::vector<Connect::ViaLayerRects> Connect::generateViaRects(const odb::Rect& l
   return stack;
 }
 
-std::vector<Connect::ViaLayerRects> Connect::generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+std::vector<Connect::ViaLayerRects> Connect::generateComplexStackedViaRects(
+    const odb::Rect& lower,
+    const odb::Rect& upper) const
 {
-  auto adjust_rect = [](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
-    const int width = is_x ? intersection.dx() : intersection.dy();
-    if (width < min_width) {
-      // fix intersection to meet min width
-      const int min_add = min_width - width;
-      const int half_min_add0 = min_add / 2;
-      const int half_min_add1 = min_add - half_min_add0;
+  auto adjust_rect =
+      [](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
+        const int width = is_x ? intersection.dx() : intersection.dy();
+        if (width < min_width) {
+          // fix intersection to meet min width
+          const int min_add = min_width - width;
+          const int half_min_add0 = min_add / 2;
+          const int half_min_add1 = min_add - half_min_add0;
 
-      int new_min = -half_min_add0;
-      int new_max = half_min_add1;
-      if (is_x) {
-        new_min += intersection.xMin();
-        new_max += intersection.xMax();
-      } else {
-        new_min += intersection.yMin();
-        new_max += intersection.yMax();
-      }
+          int new_min = -half_min_add0;
+          int new_max = half_min_add1;
+          if (is_x) {
+            new_min += intersection.xMin();
+            new_max += intersection.xMax();
+          } else {
+            new_min += intersection.yMin();
+            new_max += intersection.yMax();
+          }
 
-      new_min = TechLayer::snapToManufacturingGrid(tech, new_min, false);
-      new_max = TechLayer::snapToManufacturingGrid(tech, new_max, true);
+          new_min = TechLayer::snapToManufacturingGrid(tech, new_min, false);
+          new_max = TechLayer::snapToManufacturingGrid(tech, new_max, true);
 
-      if (is_x) {
-        intersection.set_xlo(new_min);
-        intersection.set_xhi(new_max);
-      } else {
-        intersection.set_ylo(new_min);
-        intersection.set_yhi(new_max);
-      }
-    }
-  };
+          if (is_x) {
+            intersection.set_xlo(new_min);
+            intersection.set_xhi(new_max);
+          } else {
+            intersection.set_ylo(new_min);
+            intersection.set_yhi(new_max);
+          }
+        }
+      };
 
   std::vector<ViaLayerRects> stack;
   stack.push_back({lower});
@@ -219,14 +225,16 @@ std::vector<Connect::ViaLayerRects> Connect::generateComplexStackedViaRects(cons
   return stack;
 }
 
-void Connect::generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const
+void Connect::generateMinEnclosureViaRects(
+    std::vector<ViaLayerRects>& rects) const
 {
   // fill possible rects with min width rects to ensure min enclosure is checked
   for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
     auto* layer = intermediate_routing_layers_[i];
     auto& layer_rects = rects[i + 1];
 
-    const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal
+        = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const int min_width = layer->getWidth();
 
     ViaLayerRects new_rects;
@@ -279,11 +287,13 @@ int Connect::getMinWidth(odb::dbTechLayer* layer) const
     above_max_enc = getMaxEnclosureFromCutLayer(above, min_width);
   }
 
-  // return the min width + the worst case enclosure to enclosure to ensure a via will fit
+  // return the min width + the worst case enclosure to enclosure to ensure a
+  // via will fit
   return min_width + 2 * std::max(below_max_enc, above_max_enc);
 }
 
-int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const
+int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
+                                         int min_width) const
 {
   int max_enclosure = 0;
   for (auto* rule : layer->getTechLayerCutEnclosureRules()) {
@@ -388,9 +398,8 @@ void Connect::report() const
   auto* block = grid_->getBlock();
   const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-  logger->report("  Connect layers {} -> {}",
-                 layer0_->getName(),
-                 layer1_->getName());
+  logger->report(
+      "  Connect layers {} -> {}", layer0_->getName(), layer1_->getName());
   if (!fixed_generate_vias_.empty() || !fixed_tech_vias_.empty()) {
     std::string vias;
     for (auto* via : fixed_generate_vias_) {
@@ -447,8 +456,8 @@ void Connect::makeVia(odb::dbSWire* wire,
   const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
 
   // check if off grid and don't add one if it is
-  if (!TechLayer::checkIfManufacturingGrid(tech, x) ||
-      !TechLayer::checkIfManufacturingGrid(tech, y)) {
+  if (!TechLayer::checkIfManufacturingGrid(tech, x)
+      || !TechLayer::checkIfManufacturingGrid(tech, y)) {
     DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
     dummy_via.generate(wire->getBlock(), wire, type, 0, 0, grid_->getLogger());
     return;
@@ -464,14 +473,14 @@ void Connect::makeVia(odb::dbSWire* wire,
     std::vector<ViaLayerRects> stack_rects;
     if (isComplexStackedVia(lower_rect, upper_rect)) {
       debugPrint(grid_->getLogger(),
-          utl::PDN,
-          "Via",
-          2,
-          "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
-          getLowerLayer()->getName(),
-          getUpperLayer()->getName(),
-          x / static_cast<double>(tech->getLefUnits()),
-          y / static_cast<double>(tech->getLefUnits()));
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
+                 getLowerLayer()->getName(),
+                 getUpperLayer()->getName(),
+                 x / static_cast<double>(tech->getLefUnits()),
+                 y / static_cast<double>(tech->getLefUnits()));
 
       stack_rects = generateComplexStackedViaRects(lower_rect, upper_rect);
     } else {
@@ -515,14 +524,13 @@ void Connect::makeVia(odb::dbSWire* wire,
         }
       }
 
-      auto* new_via = makeSingleLayerVia(
-          wire->getBlock(),
-          l0,
-          via_lower_rects,
-          lower_constraint,
-          l1,
-          via_upper_rects,
-          upper_constraint);
+      auto* new_via = makeSingleLayerVia(wire->getBlock(),
+                                         l0,
+                                         via_lower_rects,
+                                         lower_constraint,
+                                         l1,
+                                         via_upper_rects,
+                                         upper_constraint);
       if (new_via == nullptr) {
         // no via made, so build dummy via for warning
         for (auto* stack_via : stack) {
@@ -541,10 +549,12 @@ void Connect::makeVia(odb::dbSWire* wire,
       }
     }
 
-    via = std::make_unique<DbGenerateStackedVia>(stack, layer0_, wire->getBlock(), ongrid_);
+    via = std::make_unique<DbGenerateStackedVia>(
+        stack, layer0_, wire->getBlock(), ongrid_);
   }
 
-  shapes = via->generate(wire->getBlock(), wire, type, x, y, grid_->getLogger());
+  shapes
+      = via->generate(wire->getBlock(), wire, type, x, y, grid_->getLogger());
 
   if (skip_caching) {
     via = nullptr;
@@ -620,10 +630,12 @@ DbVia* Connect::generateDbVia(
     return nullptr;
   }
 
-  std::stable_sort(vias.begin(), vias.end(), [](const std::shared_ptr<ViaGenerator>& lhs,
-                                                const std::shared_ptr<ViaGenerator>& rhs) {
-    return lhs->isPreferredOver(rhs.get());
-  });
+  std::stable_sort(vias.begin(),
+                   vias.end(),
+                   [](const std::shared_ptr<ViaGenerator>& lhs,
+                      const std::shared_ptr<ViaGenerator>& rhs) {
+                     return lhs->isPreferredOver(rhs.get());
+                   });
 
   std::shared_ptr<ViaGenerator> best_rule = *vias.begin();
   DbVia* built_via = best_rule->generate(block);
@@ -632,13 +644,14 @@ DbVia* Connect::generateDbVia(
   return built_via;
 }
 
-DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
-                                   odb::dbTechLayer* lower,
-                                   const std::set<odb::Rect>& lower_rects,
-                                   const ViaGenerator::Constraint& lower_constraint,
-                                   odb::dbTechLayer* upper,
-                                   const std::set<odb::Rect>& upper_rects,
-                                   const ViaGenerator::Constraint& upper_constraint) const
+DbVia* Connect::makeSingleLayerVia(
+    odb::dbBlock* block,
+    odb::dbTechLayer* lower,
+    const std::set<odb::Rect>& lower_rects,
+    const ViaGenerator::Constraint& lower_constraint,
+    odb::dbTechLayer* upper,
+    const std::set<odb::Rect>& upper_rects,
+    const ViaGenerator::Constraint& upper_constraint) const
 {
   debugPrint(grid_->getLogger(),
              utl::PDN,
@@ -653,13 +666,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
     for (const auto& upper_rect : upper_rects) {
       for (odb::dbTechViaGenerateRule* db_via : generate_via_rules_) {
         std::shared_ptr<GenerateViaGenerator> rule
-            = std::make_shared<GenerateViaGenerator>(
-                grid_->getLogger(),
-                db_via,
-                lower_rect,
-                lower_constraint,
-                upper_rect,
-                upper_constraint);
+            = std::make_shared<GenerateViaGenerator>(grid_->getLogger(),
+                                                     db_via,
+                                                     lower_rect,
+                                                     lower_constraint,
+                                                     upper_rect,
+                                                     upper_constraint);
 
         if (!rule->isSetupValid(lower, upper)) {
           debugPrint(grid_->getLogger(),
@@ -696,12 +708,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
     for (const auto& upper_rect : upper_rects) {
       for (odb::dbTechVia* db_via : tech_vias_) {
         std::shared_ptr<TechViaGenerator> rule
-          = std::make_shared<TechViaGenerator>(grid_->getLogger(),
-                                               db_via,
-                                               lower_rect,
-                                               lower_constraint,
-                                               upper_rect,
-                                               upper_constraint);
+            = std::make_shared<TechViaGenerator>(grid_->getLogger(),
+                                                 db_via,
+                                                 lower_rect,
+                                                 lower_constraint,
+                                                 upper_rect,
+                                                 upper_constraint);
 
         if (!rule->isSetupValid(lower, upper)) {
           debugPrint(grid_->getLogger(),
@@ -902,17 +914,13 @@ void Connect::printViaReport() const
              report.size());
 
   for (const auto& [via_name, count] : report) {
-    debugPrint(logger,
-               utl::PDN,
-               "Write",
-               2,
-               "Via \"{}\": {}",
-               via_name,
-               count);
+    debugPrint(logger, utl::PDN, "Write", 2, "Via \"{}\": {}", via_name, count);
   }
 }
 
-void Connect::addFailedVia(failedViaReason reason, const odb::Rect& rect, odb::dbNet* net)
+void Connect::addFailedVia(failedViaReason reason,
+                           const odb::Rect& rect,
+                           odb::dbNet* net)
 {
   failed_vias_[reason].insert({net, rect});
 }
@@ -924,21 +932,21 @@ void Connect::writeFailedVias(std::ofstream& file) const
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
     switch (reason) {
-    case failedViaReason::OBSTRUCTED:
-      reason_str = "Obstructed";
-      break;
-    case failedViaReason::BUILD:
-      reason_str = "Build";
-      break;
-    case failedViaReason::RIPUP:
-      reason_str = "Ripup";
-      break;
-    case failedViaReason::RECHECK:
-      reason_str = "Recheck";
-      break;
-    case failedViaReason::OTHER:
-      reason_str = "Other";
-      break;
+      case failedViaReason::OBSTRUCTED:
+        reason_str = "Obstructed";
+        break;
+      case failedViaReason::BUILD:
+        reason_str = "Build";
+        break;
+      case failedViaReason::RIPUP:
+        reason_str = "Ripup";
+        break;
+      case failedViaReason::RECHECK:
+        reason_str = "Recheck";
+        break;
+      case failedViaReason::OTHER:
+        reason_str = "Other";
+        break;
     }
     reason_str += " - " + grid_->getLongName();
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
@@ -946,7 +954,8 @@ void Connect::writeFailedVias(std::ofstream& file) const
     for (const auto& [net, shape] : shapes) {
       file << "violation type: " << reason_str << std::endl;
       file << "\tsrcs: net:" << net->getName() << std::endl;
-      file << "\tbbox = " << Shape::getRectText(shape, dbumicrons) << " on Layer -" << std::endl;
+      file << "\tbbox = " << Shape::getRectText(shape, dbumicrons)
+           << " on Layer -" << std::endl;
     }
   }
 }
