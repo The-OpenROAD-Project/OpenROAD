@@ -1132,7 +1132,8 @@ void DbNetDescriptor::highlight(std::any object,
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
   const bool is_supply = net->getSigType().isSupply();
-  const bool is_routed_special = net->isSpecial() && net->getFirstSWire() != nullptr;
+  const bool is_routed_special
+      = net->isSpecial() && net->getFirstSWire() != nullptr;
   auto should_draw_term = [sink_object](const odb::dbObject* term) -> bool {
     if (sink_object == nullptr) {
       return true;
@@ -1957,16 +1958,16 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   if (layer->hasXYPitch()) {
     if (layer->getPitchX() != 0) {
       props.push_back(
-        {"Pitch X", Property::convert_dbu(layer->getPitchX(), true)});
+          {"Pitch X", Property::convert_dbu(layer->getPitchX(), true)});
     }
     if (layer->getPitchY() != 0) {
       props.push_back(
-        {"Pitch Y", Property::convert_dbu(layer->getPitchY(), true)});
+          {"Pitch Y", Property::convert_dbu(layer->getPitchY(), true)});
     }
   } else {
     if (layer->getPitch() != 0) {
       props.push_back(
-        {"Pitch", Property::convert_dbu(layer->getPitch(), true)});
+          {"Pitch", Property::convert_dbu(layer->getPitch(), true)});
     }
   }
   if (layer->getWidth() != 0) {

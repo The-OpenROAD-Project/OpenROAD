@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "layoutViewer.h"
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDebug>
@@ -61,7 +63,6 @@
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
-#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -184,13 +185,12 @@ class GuiPainter : public Painter
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
     if (roundX > 0 || roundY > 0)
-      painter_->drawRoundRect(QRect(rect.xMin(), rect.yMin(),
-                                    rect.dx(), rect.dy()),
-                              roundX,
-                              roundY);
+      painter_->drawRoundRect(
+          QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
+          roundX,
+          roundY);
     else
-      painter_->drawRect(QRect(rect.xMin(), rect.yMin(),
-                               rect.dx(), rect.dy()));
+      painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
   }
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
@@ -1558,8 +1558,10 @@ void LayoutViewer::addInstTransform(QTransform& xfm,
 void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
   auto box_to_qrect = [](odb::dbBox* box) -> QRect {
-    return QRect(box->xMin(), box->yMin(),
-                 box->xMax() - box->xMin(), box->yMax() - box->yMin());
+    return QRect(box->xMin(),
+                 box->yMin(),
+                 box->xMax() - box->xMin(),
+                 box->yMax() - box->yMin());
   };
 
   // store obstructions
@@ -2234,7 +2236,8 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         }
         const auto& ll = box.min_corner();
         const auto& ur = box.max_corner();
-        painter->drawRect(QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        painter->drawRect(
+            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
       }
 
       auto polygon_iter = search_.searchPolygonShapes(layer,
@@ -2314,8 +2317,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   }
 }
 
-void LayoutViewer::drawGCellGrid(QPainter* painter,
-                                 const odb::Rect& bounds)
+void LayoutViewer::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
 {
   if (!options_->isGCellGridVisible()) {
     return;

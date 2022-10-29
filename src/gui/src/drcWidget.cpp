@@ -350,8 +350,10 @@ void DRCWidget::toggleParent(QStandardItem* child)
     states.push_back(pchild->checkState() == Qt::Checked);
   }
 
-  const bool all_on = std::all_of(states.begin(), states.end(), [](bool v){return v;});
-  const bool any_on = std::any_of(states.begin(), states.end(), [](bool v){return v;});
+  const bool all_on
+      = std::all_of(states.begin(), states.end(), [](bool v) { return v; });
+  const bool any_on
+      = std::any_of(states.begin(), states.end(), [](bool v) { return v; });
 
   if (all_on) {
     parent->setCheckState(Qt::Checked);
@@ -362,7 +364,9 @@ void DRCWidget::toggleParent(QStandardItem* child)
   }
 }
 
-bool DRCWidget::setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent)
+bool DRCWidget::setVisibleDRC(QStandardItem* item,
+                              bool visible,
+                              bool announce_parent)
 {
   QVariant data = item->data();
   if (data.isValid()) {
@@ -467,7 +471,8 @@ void DRCWidget::updateModel()
           = makeItem(QString::number(violation_idx++));
       violation_index->setData(QVariant::fromValue(violation));
       violation_index->setCheckable(true);
-      violation_index->setCheckState(violation->isVisible() ? Qt::Checked : Qt::Unchecked);
+      violation_index->setCheckState(violation->isVisible() ? Qt::Checked
+                                                            : Qt::Unchecked);
 
       type_group->appendRow({violation_index, violation_item});
     }
