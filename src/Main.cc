@@ -148,9 +148,8 @@ static void initPython()
 #undef PY_MODULES
 #undef PY_MODULES_WITHOUT_OPENROAD
 
-  // So why do we need both openroad_swig and openroad names here? Must be a
-  // missnaming somewhere, but it means we cannot easily use the X macro trick
-  // here.
+  // Need to separately handle openroad here because we need both
+  // the names "openroad_swig" and "openroad".
   {
     char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
 
