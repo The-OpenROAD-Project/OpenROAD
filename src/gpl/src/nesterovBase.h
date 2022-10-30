@@ -971,7 +971,7 @@ inline const std::vector<Bin*> & NesterovBase::bins() const {
   return bg_.bins();
 }
 
-class integrationParams{
+class biNormalParameters {
   public:
     float meanX;
     float meanY;

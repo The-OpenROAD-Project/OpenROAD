@@ -56,7 +56,7 @@ static int
 fastModulo(const int input, const int ceil);
 
 static float 
-integrate(integrationParams i);
+calculateBiVariateNormalCDF(biNormalParameters  i);
 
 static int64_t
 getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron);
@@ -1933,13 +1933,13 @@ getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron) {
       // For the bivariate normal distribution, we are using
       // the shifted means of X and Y.
       // Sigma is used as the mean/4 for both dimensions
-      integrationParams i = {meanX, meanY, meanX/4, meanY/4, (rectLx - inst->lx())/(float)dbu_per_micron, 
+      biNormalParameters  i = {meanX, meanY, meanX/4, meanY/4, (rectLx - inst->lx())/(float)dbu_per_micron, 
                             (rectLy - inst->ly())/(float)dbu_per_micron, (rectUx - inst->lx())/(float)dbu_per_micron,
                             (rectUy - inst->ly())/(float)dbu_per_micron};
 
       float original = static_cast<float>(rectUx - rectLx) 
         * static_cast<float>(rectUy - rectLy);
-      float scaled = integrate(i) * static_cast<float>(inst->ux() - inst->lx()) 
+      float scaled = calculateBiVariateNormalCDF(i) * static_cast<float>(inst->ux() - inst->lx()) 
         * static_cast<float>(inst->uy() - inst->ly());
       
       // For heavily dense regions towards the center of the macro,
@@ -1991,7 +1991,7 @@ getOverlapAreaUnscaled(const Bin* bin, const Instance* inst) {
 // probablity density functions are parametarized.
 // In this function, I am using the closed-form solution of the integration.
 // The limits of integration are lx->ux and ly->uy
-static float integrate(integrationParams i)
+static float calculateBiVariateNormalCDF(biNormalParameters  i)
 {
   float x1 = (i.meanX-i.lx)/(sqrt(2)*i.sigmaX);
   float x2 = (i.meanX-i.ux)/(sqrt(2)*i.sigmaX);
