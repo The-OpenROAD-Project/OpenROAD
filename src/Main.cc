@@ -79,20 +79,20 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
-#define PY_MODULES_WITHOUT_OPENROAD \
-  X(ifp)                            \
-  X(utl)                            \
-  X(ant)                            \
-  X(grt)                            \
+#define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
+  X(ifp)                                 \
+  X(utl)                                 \
+  X(ant)                                 \
+  X(grt)                                 \
   X(odb)
 
-#define PY_MODULES            \
-  PY_MODULES_WITHOUT_OPENROAD \
+#define FOREACH_TOOL(X)            \
+  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
   X(openroad_swig)
 
 extern "C" {
 #define X(name) extern PyObject* PyInit__##name##_py();
-PY_MODULES
+FOREACH_TOOL(X)
 #undef X
 }
 #endif
@@ -110,7 +110,7 @@ static void showSplash();
 #ifdef ENABLE_PYTHON3
 namespace sta {
 #define X(name) extern const char* name##_py_python_inits[];
-PY_MODULES
+FOREACH_TOOL(X)
 #undef X
 }  // namespace sta
 
@@ -121,7 +121,7 @@ static void initPython()
     fprintf(stderr, "Error: could not add module _" #name "_py\n");         \
     exit(1);                                                                \
   }
-  PY_MODULES
+  FOREACH_TOOL(X)
 #undef X
 
   Py_Initialize();
@@ -143,10 +143,10 @@ static void initPython()
     }                                                                 \
     delete[] unencoded;                                               \
   }
-  PY_MODULES_WITHOUT_OPENROAD
+  FOREACH_TOOL_WITHOUT_OPENROAD(X)
 #undef X
-#undef PY_MODULES
-#undef PY_MODULES_WITHOUT_OPENROAD
+#undef FOREACH_TOOL
+#undef FOREACH_TOOL_WITHOUT_OPENROAD
 
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
