@@ -62,6 +62,7 @@ class DisplayControls;
 class Inspector;
 class TimingWidget;
 class DRCWidget;
+class ClockWidget;
 class BrowserWidget;
 
 // This is the main window for the GUI.  Currently we use a single
@@ -93,6 +94,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
+  ClockWidget* getClockViewer() const { return clock_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
 
@@ -283,6 +285,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   LayoutScroll* scroll_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
+  ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
 
   FindObjectDialog* find_dialog_;

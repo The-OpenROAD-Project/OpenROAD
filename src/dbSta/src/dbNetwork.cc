@@ -239,9 +239,9 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
 bool DbInstancePinIterator::hasNext()
 {
   if (top_) {
-    if (bitr_ == bitr_end_)
+    if (bitr_ == bitr_end_) {
       return false;
-    else {
+    } else {
       dbBTerm* bterm = *bitr_;
       next_ = network_->dbToSta(bterm);
       bitr_++;
@@ -250,8 +250,7 @@ bool DbInstancePinIterator::hasNext()
   } else {
     while (iitr_ != iitr_end_) {
       dbITerm* iterm = *iitr_;
-      if (!(iterm->getSigType() == dbSigType::POWER
-            || iterm->getSigType() == dbSigType::GROUND)) {
+      if (!iterm->getSigType().isSupply()) {
         next_ = network_->dbToSta(*iitr_);
         ++iitr_;
         return true;
@@ -295,8 +294,7 @@ bool DbNetPinIterator::hasNext()
 {
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
-    if (!(iterm->getSigType() == dbSigType::POWER
-          || iterm->getSigType() == dbSigType::GROUND)) {
+    if (!iterm->getSigType().isSupply()) {
       next_ = reinterpret_cast<Pin*>(*iitr_);
       ++iitr_;
       return true;

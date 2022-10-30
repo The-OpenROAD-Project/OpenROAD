@@ -50,6 +50,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
+    src/clockWidget.cpp
     resources/resource.qrc
   )
 
