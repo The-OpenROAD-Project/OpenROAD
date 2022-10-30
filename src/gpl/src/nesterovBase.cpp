@@ -72,9 +72,6 @@ getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 static float 
 getOverlapDensityArea(const Bin* bin, const GCell* cell) ;
 
-static float 
-getOverlapDensityAreaUnscaled(const Bin* bin, const GCell* cell) ;
-
 static float
 fastExp(float exp);
 
@@ -827,12 +824,10 @@ BinGrid::updateBinsGCellDensityArea(
         for(int i = pairX.first; i < pairX.second; i++) {
           for(int j = pairY.first; j < pairY.second; j++) {
             Bin* bin = bins_[ j * binCntX_ + i ];
-            bin->addInstPlacedArea( 
-                getOverlapDensityArea(bin, cell) 
-                * cell->densityScale() * bin->targetDensity() ); 
-            bin->addInstPlacedAreaUnscaled( 
-                getOverlapDensityAreaUnscaled(bin,cell) 
-                * cell->densityScale() * bin->targetDensity() ); 
+
+            float overlap = getOverlapDensityArea(bin, cell);
+            bin->addInstPlacedArea(  overlap * cell->densityScale() * bin->targetDensity() ); 
+            bin->addInstPlacedAreaUnscaled( overlap * cell->densityScale() * bin->targetDensity() ); 
 
           }
         }
@@ -1899,59 +1894,9 @@ fastModulo(const int input, const int ceil) {
   return input >= ceil? input % ceil : input;
 }
 
-// int64_t is recommended, but float is 2x fast
+
 static float 
 getOverlapDensityArea(const Bin* bin, const GCell* cell) {
-  int rectLx = max(bin->lx(), cell->dLx()), 
-      rectLy = max(bin->ly(), cell->dLy()),
-      rectUx = min(bin->ux(), cell->dUx()), 
-      rectUy = min(bin->uy(), cell->dUy());
-  
-  if( rectLx >= rectUx || rectLy >= rectUy ) {
-    return 0;
-  }
-  else {
-    if(cell->isMacroInstance())
-    {
-      float meanX = (cell->dCx()-cell->dLx());
-      float meanY = (cell->dCy()-cell->dLy());
-      
-      // For the bivariate normal distribution, we are using
-      // the shifted means of X and Y.
-      // Sigma is used as the mean/4 for both dimensions
-      integrationParams i = {meanX, meanY, meanX/4, meanY/4, (float)(rectLx - cell->dLx()), (float)(rectLy - cell->dLy()), (float)(rectUx - cell->dLx()), (float)(rectUy - cell->dLy())};
-
-      float original = static_cast<float>(rectUx - rectLx) 
-      * static_cast<float>(rectUy - rectLy);
-      float scaled = integrate(i) * static_cast<float>(cell->dUx() - cell->dLx()) 
-      * static_cast<float>(cell->dUy() - cell->dLy());
-
-      // For heavily dense regions towards the center of the macro,
-      // we are using an upper limit of 2*(overlap) between the macro
-      // and the bin.
-      if (scaled >= original)
-      {
-        return min<float>(scaled, original*2);
-      }
-      // If the scaled value is smaller than the actual overlap
-      // then use the original overlap value instead.
-      // This is implemented to prevent cells from being placed
-      // at the outer sides of the macro.
-      else
-      {
-        return original;
-      }
-    }
-    else
-    {
-      return static_cast<float>(rectUx - rectLx) 
-        * static_cast<float>(rectUy - rectLy);
-    }
-  }
-}
-
-static float 
-getOverlapDensityAreaUnscaled(const Bin* bin, const GCell* cell) {
   int rectLx = max(bin->lx(), cell->dLx()), 
       rectLy = max(bin->ly(), cell->dLy()),
       rectUx = min(bin->ux(), cell->dUx()), 
@@ -2002,7 +1947,7 @@ getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron) {
       // and the bin.
       if (scaled >= original)
       {
-        return min<float>(scaled, original*2);
+        return min<float>(scaled, original*1.15);
       }
       // If the scaled value is smaller than the actual overlap
       // then use the original overlap value instead.
