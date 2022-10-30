@@ -57,8 +57,7 @@ Grid::Grid(VoltageDomain* domain,
       starts_with_power_(starts_with_power),
       allow_repair_channels_(false)
 {
-  obstruction_layers_.insert(generate_obstructions.begin(),
-                             generate_obstructions.end());
+  obstruction_layers_ = generate_obstructions;
 }
 
 Grid::~Grid()
