@@ -26,10 +26,8 @@ jobs:
           fi
       - name: Checkout repository code with submodules
         run: |
-          echo $(pwd)
           git clone --recursive https://github.com/${{ github.repository }}.git .
           PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
-          echo $(pwd)
           git config --global --add safe.directory '*'
           git fetch origin pull/${PR_NUMBER}/head:test
           git checkout test
@@ -39,4 +37,6 @@ jobs:
           su - testUser
           mkdir -p /home/testUser/openroad-deps
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
-          ./etc/Build.sh
+          PREFIX=${{ matrix.args }}|awk -F"=" '{split($2,a," ");gsub(/"/, "", a[1]);print a[1]}'
+          swigPrefix=${PREFIX:-"/usr"}
+          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}"
