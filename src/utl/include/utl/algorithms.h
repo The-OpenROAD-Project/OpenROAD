@@ -35,25 +35,25 @@
 
 #pragma once
 
-#include "boost/random.hpp"
-#include "boost/generator_iterator.hpp"
 #include <tuple>
+
+#include "boost/generator_iterator.hpp"
+#include "boost/random.hpp"
 
 namespace utl {
 
 // std::shuffle produces different results on different platforms.
 // This custom shuffle function is used for consistency in different platforms.
-template<class RandomIt, class URBG>
+template <class RandomIt, class URBG>
 void shuffle(RandomIt first, RandomIt last, URBG&& g)
 {
   int n = last - first;
 
-  boost::uniform_int<> distribution(1, n-1);
-  boost::variate_generator< URBG, boost::uniform_int<> >
-                dice(g, distribution);
+  boost::uniform_int<> distribution(1, n - 1);
+  boost::variate_generator<URBG, boost::uniform_int<>> dice(g, distribution);
 
-  for (int i = n-1; i > 0; i--) {
-    std::swap(first[i], first[dice(i+1)]);
+  for (int i = n - 1; i > 0; i--) {
+    std::swap(first[i], first[dice(i + 1)]);
   }
 }
 
@@ -63,23 +63,27 @@ void shuffle(RandomIt first, RandomIt last, URBG&& g)
 template <typename T,
           typename TIter = decltype(std::begin(std::declval<T>())),
           typename = decltype(std::end(std::declval<T>()))>
-constexpr auto enumerate(T && iterable)
+constexpr auto enumerate(T&& iterable)
 {
-    struct iterator
+  struct iterator
+  {
+    size_t i;
+    TIter iter;
+    bool operator!=(const iterator& other) const { return iter != other.iter; }
+    void operator++()
     {
-        size_t i;
-        TIter iter;
-        bool operator != (const iterator & other) const { return iter != other.iter; }
-        void operator ++ () { ++i; ++iter; }
-        auto operator * () const { return std::tie(i, *iter); }
-    };
-    struct iterable_wrapper
-    {
-        T iterable;
-        auto begin() { return iterator{ 0, std::begin(iterable) }; }
-        auto end() { return iterator{ 0, std::end(iterable) }; }
-    };
-    return iterable_wrapper{ std::forward<T>(iterable) };
+      ++i;
+      ++iter;
+    }
+    auto operator*() const { return std::tie(i, *iter); }
+  };
+  struct iterable_wrapper
+  {
+    T iterable;
+    auto begin() { return iterator{0, std::begin(iterable)}; }
+    auto end() { return iterator{0, std::end(iterable)}; }
+  };
+  return iterable_wrapper{std::forward<T>(iterable)};
 }
 
-}
+}  // namespace utl

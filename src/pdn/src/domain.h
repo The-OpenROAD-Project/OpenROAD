@@ -83,7 +83,10 @@ class VoltageDomain
   odb::dbNet* getAlwaysOnPower() const { return power_; }
   odb::dbNet* getSwitchedPower() const { return switched_power_; }
 
-  void setSwitchedPower(odb::dbNet* switched_power) { switched_power_ = switched_power; }
+  void setSwitchedPower(odb::dbNet* switched_power)
+  {
+    switched_power_ = switched_power;
+  }
   bool hasSwitchedPower() const { return switched_power_ != nullptr; }
 
   // returns the order in which the nets should be arranged in the grid shapes

@@ -124,16 +124,18 @@ class PdnGen
                     PowerCell* powercell,
                     odb::dbNet* powercontrol,
                     const char* powercontrolnetwork);
-  void makeInstanceGrid(VoltageDomain* domain,
-                        const std::string& name,
-                        StartsWith starts_with,
-                        odb::dbInst* inst,
-                        const std::array<int, 4>& halo,
-                        bool pg_pins_to_boundary,
-                        bool default_grid,
-                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
-  void makeExistingGrid(const std::string& name,
-                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
+  void makeInstanceGrid(
+      VoltageDomain* domain,
+      const std::string& name,
+      StartsWith starts_with,
+      odb::dbInst* inst,
+      const std::array<int, 4>& halo,
+      bool pg_pins_to_boundary,
+      bool default_grid,
+      const std::vector<odb::dbTechLayer*>& generate_obstructions);
+  void makeExistingGrid(
+      const std::string& name,
+      const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
   // Shapes
   void makeRing(Grid* grid,

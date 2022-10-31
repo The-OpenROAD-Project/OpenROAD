@@ -55,6 +55,7 @@
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "globalConnectDialog.h"
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -63,7 +64,6 @@
 #include "selectHighlightWindow.h"
 #include "staGui.h"
 #include "timingWidget.h"
-#include "globalConnectDialog.h"
 #include "utl/Logger.h"
 
 // must be loaded in global namespace
@@ -318,8 +318,13 @@ MainWindow::MainWindow(QWidget* parent)
     setSelected(selected, false);
     odb::Rect bbox;
     selected.getBBox(bbox);
-    // 10 microns
-    const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+
+    auto* block = getBlock();
+    int zoomout_dist = std::numeric_limits<int>::max();
+    if (block != nullptr) {
+      // 10 microns
+      zoomout_dist = 10 * block->getDbUnitsPerMicron();
+    }
     // twice the largest dimension of bounding box
     const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
     // pick smallest
@@ -525,7 +530,8 @@ void MainWindow::createActions()
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
 
-  connect(global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
+  connect(
+      global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
@@ -1136,7 +1142,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto sel_obj : selected_) {
+  for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
