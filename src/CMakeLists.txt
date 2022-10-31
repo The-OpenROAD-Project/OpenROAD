@@ -361,7 +361,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
   target_link_libraries(openroad
     openroad_swig_py
-    odbpy
+    odb_py
     ifp_py
     utl_py
     ant_py
