@@ -143,6 +143,12 @@ class FlexRP
       frViaDef* viaDef2,
       bool isCurrDirX,
       ForbiddenRanges& forbiddenRanges);
+  void prep_via2viaForbiddenLen_widthViaMap(
+      const frLayerNum& lNum,
+      frViaDef* viaDef1,
+      frViaDef* viaDef2,
+      bool isCurrDirX,
+      ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_cutSpc(
       const frLayerNum& lNum,
       frViaDef* viaDef1,

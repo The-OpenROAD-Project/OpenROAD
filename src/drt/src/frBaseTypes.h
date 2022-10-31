@@ -204,6 +204,7 @@ enum class frConstraintTypeEnum
   frcLef58EolExtensionConstraint,
   frcLef58EolKeepOutConstraint,
   frcLef58MinimumCutConstraint,
+  frcMetalWidthViaConstraint,
   frcLef58AreaConstraint
 };
 

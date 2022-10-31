@@ -3452,5 +3452,7 @@ int FlexGCWorker::Impl::main()
   checkMetalSpacingTableInfluence();
   // check MINIMUMCUT
   checkMinimumCut();
+  // check LEF58_METALWIDTHVIATABLE
+  checkMetalWidthViaTable();
   return 0;
 }

@@ -41,13 +41,12 @@
 
 namespace pdn {
 
-ViaRepair::ViaRepair(utl::Logger* logger,
-                     const std::set<odb::dbNet*>& nets)
-  : logger_(logger),
-    nets_(nets),
-    use_obs_(true),
-    use_nets_(true),
-    use_inst_(true)
+ViaRepair::ViaRepair(utl::Logger* logger, const std::set<odb::dbNet*>& nets)
+    : logger_(logger),
+      nets_(nets),
+      use_obs_(true),
+      use_nets_(true),
+      use_inst_(true)
 {
 }
 
@@ -58,17 +57,20 @@ void ViaRepair::repair()
 
   ObsRect combined_obs;
   if (use_obs_) {
-    for (const auto& [layer, obs] : collectBlockObstructions((*nets_.begin())->getBlock())) {
+    for (const auto& [layer, obs] :
+         collectBlockObstructions((*nets_.begin())->getBlock())) {
       combined_obs[layer].insert(obs.begin(), obs.end());
     }
   }
   if (use_nets_) {
-    for (const auto& [layer, obs] : collectInstanceObstructions((*nets_.begin())->getBlock())) {
+    for (const auto& [layer, obs] :
+         collectInstanceObstructions((*nets_.begin())->getBlock())) {
       combined_obs[layer].insert(obs.begin(), obs.end());
     }
   }
   if (use_inst_) {
-    for (const auto& [layer, obs] : collectNetObstructions((*nets_.begin())->getBlock())) {
+    for (const auto& [layer, obs] :
+         collectNetObstructions((*nets_.begin())->getBlock())) {
       combined_obs[layer].insert(obs.begin(), obs.end());
     }
   }
@@ -104,7 +106,10 @@ void ViaRepair::repair()
 
     for (const auto& obs : layer_obstructions_rect) {
       const odb::Rect obs_rect(xl(obs), yl(obs), xh(obs), yh(obs));
-      for (auto itr = layer_vias.qbegin(bgi::intersects(Shape::rectToBox(obs_rect))); itr != layer_vias.qend(); itr++) {
+      for (auto itr
+           = layer_vias.qbegin(bgi::intersects(Shape::rectToBox(obs_rect)));
+           itr != layer_vias.qend();
+           itr++) {
         odb::dbSBox* box = itr->second;
         if (box->getTechVia() != nullptr) {
           tech_vias.insert(box);
@@ -125,7 +130,11 @@ void ViaRepair::repair()
   }
   for (const auto& [layer, vias] : block_vias_to_remove) {
     if (!vias.empty()) {
-      logger_->warn(utl::PDN, 226, "{} contains block vias to be removed, which is not supported."), layer->getName();
+      logger_->warn(
+          utl::PDN,
+          226,
+          "{} contains block vias to be removed, which is not supported."),
+          layer->getName();
     }
   }
 }
@@ -158,7 +167,8 @@ ViaRepair::LayerViaTree ViaRepair::collectVias()
         if (tech_via != nullptr) {
           int x, y;
           wire->getViaXY(x, y);
-          for (const auto& obs : TechViaGenerator::getViaObstructionRects(logger_, tech_via, x, y)) {
+          for (const auto& obs : TechViaGenerator::getViaObstructionRects(
+                   logger_, tech_via, x, y)) {
             vias[cut_layer].insert({Shape::rectToBox(obs), wire});
           }
         } else {
@@ -277,7 +287,11 @@ void ViaRepair::report() const
     }
     const int total = via_count_.at(layer);
     double percent = static_cast<double>(removals) / total * 100;
-    logger_->report("{} removed {} vias out of {} vias ({:.2f}%).", layer->getName(), removals, total, percent);
+    logger_->report("{} removed {} vias out of {} vias ({:.2f}%).",
+                    layer->getName(),
+                    removals,
+                    total,
+                    percent);
     removed_vias = true;
   }
 

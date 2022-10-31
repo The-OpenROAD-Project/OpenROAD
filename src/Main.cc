@@ -79,12 +79,21 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
+#define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
+  X(ifp)                                 \
+  X(utl)                                 \
+  X(ant)                                 \
+  X(grt)                                 \
+  X(odb)
+
+#define FOREACH_TOOL(X)            \
+  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
+  X(openroad_swig)
+
 extern "C" {
-extern PyObject* PyInit__ifp_py();
-extern PyObject* PyInit__utl_py();
-extern PyObject* PyInit__ant_py();
-extern PyObject* PyInit__openroad_swig_py();
-extern PyObject* PyInit__odbpy();
+#define X(name) extern PyObject* PyInit__##name##_py();
+FOREACH_TOOL(X)
+#undef X
 }
 #endif
 
@@ -100,119 +109,47 @@ static void showSplash();
 
 #ifdef ENABLE_PYTHON3
 namespace sta {
-extern const char* ifp_py_python_inits[];
-extern const char* utl_py_python_inits[];
-extern const char* ant_py_python_inits[];
-extern const char* odbpy_python_inits[];
-extern const char* openroad_swig_py_python_inits[];
+#define X(name) extern const char* name##_py_python_inits[];
+FOREACH_TOOL(X)
+#undef X
 }  // namespace sta
 
 static void initPython()
 {
-  if (PyImport_AppendInittab("_ifp_py", PyInit__ifp_py) == -1) {
-    fprintf(stderr, "Error: could not add module _ifp_py\n");
-    exit(1);
+#define X(name)                                                             \
+  if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
+    fprintf(stderr, "Error: could not add module _" #name "_py\n");         \
+    exit(1);                                                                \
   }
-  
-  if (PyImport_AppendInittab("_utl_py", PyInit__utl_py) == -1) {
-    fprintf(stderr, "Error: could not add module _utl_py\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_ant_py", PyInit__ant_py) == -1) {
-    fprintf(stderr, "Error: could not add module _ant_py\n");
-    exit(1);
-  }
-  
-  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
-    fprintf(stderr, "Error: could not add module odbpy\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("_openroad_swig_py", PyInit__openroad_swig_py)
-      == -1) {
-    fprintf(stderr, "Error: could not add module openroadpy\n");
-    exit(1);
-  }
+  FOREACH_TOOL(X)
+#undef X
 
   Py_Initialize();
 
-  {
-    char* unencoded = sta::unencode(sta::ifp_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "ifp_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile ifp_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("ifp", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module ifp\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
+#define X(name)                                                       \
+  {                                                                   \
+    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
+    PyObject* code                                                    \
+        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                            \
+      PyErr_Print();                                                  \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
+      exit(1);                                                        \
+    }                                                                 \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
+      PyErr_Print();                                                  \
+      fprintf(stderr, "Error: could not add module " #name "\n");     \
+      exit(1);                                                        \
+    }                                                                 \
+    delete[] unencoded;                                               \
   }
+  FOREACH_TOOL_WITHOUT_OPENROAD(X)
+#undef X
+#undef FOREACH_TOOL
+#undef FOREACH_TOOL_WITHOUT_OPENROAD
 
-  {
-    char* unencoded = sta::unencode(sta::utl_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "utl_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile utl_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("utl", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module utl\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
-  {
-    char* unencoded = sta::unencode(sta::ant_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "ant_py.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile ant_py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("ant", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module ant\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
-  {
-    char* unencoded = sta::unencode(sta::odbpy_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "odbpy.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile odbpy\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("odb", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module odb\n");
-      exit(1);
-    }
-
-    delete[] unencoded;
-  }
-
+  // Need to separately handle openroad here because we need both
+  // the names "openroad_swig" and "openroad".
   {
     char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
 
@@ -234,11 +171,22 @@ static void initPython()
 }
 #endif
 
-static void handler(int)
+static volatile sig_atomic_t fatal_error_in_progress = 0;
+
+static void handler(int sig)
 {
+  if (fatal_error_in_progress) {
+    raise(sig);
+  }
+  fatal_error_in_progress = 1;
+
+  std::cerr << "Signal " << sig << " received\n";
+
   std::cerr << "Stack trace:\n";
   std::cerr << boost::stacktrace::stacktrace();
-  exit(1);
+
+  signal(sig, SIG_DFL);
+  raise(sig);
 }
 
 int main(int argc, char* argv[])
@@ -312,7 +260,7 @@ int main(int argc, char* argv[])
 
     bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     // handle filename argument.
-    if (cmd_argc > 1 ) {
+    if (cmd_argc > 1) {
       if (cmd_argv[1][0] == '-') {
         // ignore argument and remind usage if filename looks like a flag.
         showUsage(cmd_argv[0], init_filename);
@@ -324,13 +272,13 @@ int main(int argc, char* argv[])
         } else {
           // create new argv with remaining arguments.
           std::vector<wchar_t*> args;
-          for(int i = 1; i < cmd_argc; i++) {
+          for (int i = 1; i < cmd_argc; i++) {
             args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
           }
-          PySys_SetArgv(cmd_argc-1, args.data());
+          PySys_SetArgv(cmd_argc - 1, args.data());
           // run filename thru Python interpreter.
           int result = PyRun_SimpleFile(cmd_file, cmd_filename);
-          for (wchar_t* arg: args)  {
+          for (wchar_t* arg : args) {
             PyMem_RawFree(arg);
           }
           fclose(cmd_file);
@@ -523,10 +471,13 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
 #ifdef ENABLE_PYTHON3
-  printf("  -python               start with python interpreter [limited to db operations]\n");
+  printf(
+      "  -python               start with python interpreter [limited to db "
+      "operations]\n");
 #endif
   printf("  -log <file_name>      write a log in <file_name>\n");
-  printf("  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
+  printf(
+      "  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
   printf("  cmd_file              source cmd_file\n");
 }
 

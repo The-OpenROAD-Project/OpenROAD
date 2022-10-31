@@ -418,6 +418,15 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
   }
   return false;
 }
+bool FlexGCWorker::Impl::isWrongDir(gcSegment* edge)
+{
+  auto layer = getTech()->getLayer(edge->getLayerNum());
+  return layer->getDir() == odb::dbTechLayerDir::HORIZONTAL
+             ? (edge->getDir() == frDirEnum::E
+                || edge->getDir() == frDirEnum::W)
+             : (edge->getDir() == frDirEnum::S
+                || edge->getDir() == frDirEnum::N);
+}
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     gcSegment* edge,
@@ -443,6 +452,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       auto withinCon = con->getWithinConstraint();
       eolWithin = withinCon->getEolWithin();
       eolSpace = con->getEolSpace();
+      if (isWrongDir(edge) && con->hasWrongDirSpacing())
+        eolSpace = con->getWrongDirSpace();
       eolNonPrlSpacing = eolSpace;
       if (withinCon->hasEndPrlSpacing()) {
         endPrlSpacing = withinCon->getEndPrlSpacing();
@@ -561,17 +572,18 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
       != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
     return true;
   auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
-  if (!con->getWithinConstraint()->hasEndToEndConstraint())
-    return true;
-  auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
   frCoord eolSpace = con->getEolSpace();
-  frCoord endSpace = endToEndCon->getEndToEndSpace();
+  if (isWrongDir(edge1) && con->hasWrongDirSpacing())
+    eolSpace = con->getWrongDirSpace();
   gtl::rectangle_data<frCoord> rect1;
   gtl::set_points(rect1, edge1->low(), edge1->high());
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
   frCoord dist = gtl::euclidean_distance(rect1, rect2);
-  if (checkMetalEndOfLine_eol_isEolEdge(edge2, constraint)) {
+  bool edge2isEol = checkMetalEndOfLine_eol_isEolEdge(edge2, constraint);
+  if (con->getWithinConstraint()->hasEndToEndConstraint() && edge2isEol) {
+    auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
+    frCoord endSpace = endToEndCon->getEndToEndSpace();
     if (dist < endSpace)
       return true;
   } else {
@@ -639,16 +651,17 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     }
     // skip if in endprl region but not an endprl case and not in the
     // non-endprl region.
+    bool checkPrl = false;
     if (endPrlSpacing > 0) {
       const frDirEnum dir = edge->getDir();
       const gtl::orientation_2d orient
           = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
                                                          : gtl::VERTICAL;
       const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
-      bool check
+      checkPrl
           = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
             > eolNonPrlSpacing;
-      if (check) {
+      if (checkPrl) {
         const frCoord edge1_low = edge->low().get(orient);
         const frCoord edge1_high = edge->high().get(orient);
         const frCoord edge1_min = std::min(edge1_low, edge1_high);
@@ -667,7 +680,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     }
 
     // check endtoend
-    if (!checkMetalEndOfLine_eol_hasEol_endToEndHelper(edge, ptr, constraint))
+    if (!checkPrl
+        && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
+            edge, ptr, constraint))
       continue;
     checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
   }

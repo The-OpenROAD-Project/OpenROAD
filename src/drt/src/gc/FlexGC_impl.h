@@ -496,6 +496,8 @@ class FlexGCWorker::Impl
                                            bool& check_rect_width);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
 
+  void checkMetalWidthViaTable();
+  void checkMetalWidthViaTable_main(gcRect* rect);
   // surgical fix
   void patchMetalShape();
   void patchMetalShape_minStep();
@@ -507,6 +509,7 @@ class FlexGCWorker::Impl
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
+  bool isWrongDir(gcSegment* edge);
   
 };
 }  // namespace fr

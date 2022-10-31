@@ -1,20 +1,20 @@
 include("openroad")
 
-swig_lib(NAME          odbpy
+swig_lib(NAME          odb_py
          NAMESPACE     odb
          LANGUAGE      python
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/python
-         SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/odbpy.py
+         SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/odb_py.py
 )
 
-target_include_directories(odbpy
+target_include_directories(odb_py
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/odb
 )
 
-target_link_libraries(odbpy
+target_link_libraries(odb_py
     PUBLIC
         odb
         utl
@@ -25,21 +25,21 @@ target_link_libraries(odbpy
 )
 
 # Executable
-add_executable(odbpy-bin 
+add_executable(odb_py-bin 
                 main.cpp 
 )
 
-target_include_directories(odbpy-bin
+target_include_directories(odb_py-bin
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include/odb
 )
 
-target_link_libraries(odbpy-bin
+target_link_libraries(odb_py-bin
   PUBLIC
-    odbpy
+    odb_py
 )
 
-set_target_properties(odbpy-bin
+set_target_properties(odb_py-bin
     PROPERTIES 
-        OUTPUT_NAME odbpy
+        OUTPUT_NAME odb_py
 )

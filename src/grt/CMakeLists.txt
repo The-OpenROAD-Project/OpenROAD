@@ -74,6 +74,35 @@ target_link_libraries(grt
     Boost::boost
 )
 
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          grt_py
+           NAMESPACE     grt
+           LANGUAGE      python
+           I_FILE        src/GlobalRouter-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/grt
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/grt_py.py
+  )
+
+  target_include_directories(grt_py
+    PUBLIC
+      include
+  )
+
+  target_link_libraries(grt_py
+    PUBLIC
+      utl
+      FastRoute4.1
+      ant
+      dpl
+      dbSta
+      gui
+      stt
+      OpenSTA
+      Boost::boost
+  )
+
+endif()
+
 messages(
   TARGET grt
 )
