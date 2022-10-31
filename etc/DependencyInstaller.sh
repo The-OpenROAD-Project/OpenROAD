@@ -45,8 +45,8 @@ _installCommonDev() {
         cd swig-rel-${swigVersion}
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
-        make -j $(nproc)
-        make -j $(nproc) install
+        make -j $(nproc) DESTDIR=${swigPrefix}
+        make -j $(nproc) install DESTDIR=${swigPrefix}
     else
         echo "Swig already installed."
     fi
@@ -115,9 +115,8 @@ _installCommonDev() {
     fi
 
     if [[ ! -z ${PREFIX} ]]; then 
-        echo "alias swig='${swigPrefix}/bin/swig'" >> ~/.bash_aliases
-        echo "alias cmake='${cmakePrefix}/bin/cmake'" >> ~/.bash_aliases
-        source ~/.bash_aliases
+        echo "export PATH=$PATH:${Prefix}" >> ~/.bash_profile
+        source ~/.bash_profile
     fi
 
     cd "$lastDir"

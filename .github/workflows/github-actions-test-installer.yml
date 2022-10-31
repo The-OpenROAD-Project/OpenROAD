@@ -34,6 +34,6 @@ jobs:
       - name: runs installer
         run: |
           echo "test" | useradd -m testUser
-          su - testUser
           mkdir -p /home/testUser/openroad-deps
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
+          ./etc/Build.sh
