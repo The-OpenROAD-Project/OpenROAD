@@ -37,6 +37,3 @@ jobs:
           su - testUser
           mkdir -p /home/testUser/openroad-deps
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
-          PREFIX=${{ matrix.args }}|awk -F"=" '{split($2,a," ");gsub(/"/, "", a[1]);print a[1]}'
-          swigPrefix=${PREFIX:-"/usr"}
-          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig"
