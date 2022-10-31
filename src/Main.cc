@@ -115,8 +115,9 @@ FOREACH_TOOL(X)
 #undef X
 }  // namespace sta
 
-static void initPython()
+static void initPython(int argc, char *const *argv, int inspect)
 {
+
 #define X(name)                                                             \
   if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
     fprintf(stderr, "Error: could not add module _" #name "_py\n");         \
@@ -125,7 +126,12 @@ static void initPython()
   FOREACH_TOOL(X)
 #undef X
 
-  Py_Initialize();
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  PyConfig_SetBytesArgv(&config, argc, argv); 
+  config.inspect = inspect;
+  Py_InitializeFromConfig(&config);
+  PyConfig_Clear(&config);
 
 #define X(name)                                                       \
   {                                                                   \
@@ -226,12 +232,6 @@ int main(int argc, char* argv[])
   cmd_argc = argc;
   cmd_argv = argv;
 #ifdef ENABLE_PYTHON3
-  // Capture the current SIGINT handler before python changes it.
-  struct sigaction orig_sigint_handler;
-  sigaction(SIGINT, NULL, &orig_sigint_handler);
-
-  initPython();
-
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
@@ -259,49 +259,10 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    bool exit_after_cmd_file = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    // handle filename argument.
-    if (cmd_argc > 1) {
-      if (cmd_argv[1][0] == '-') {
-        // ignore argument and remind usage if filename looks like a flag.
-        showUsage(cmd_argv[0], init_filename);
-      } else {
-        char* cmd_filename = cmd_argv[1];
-        FILE* cmd_file = fopen(cmd_filename, "r");
-        if (cmd_file == nullptr) {
-          logger->warn(utl::ORD, 40, "cannot open: '{}'", cmd_filename);
-        } else {
-          // create new argv with remaining arguments.
-          std::vector<wchar_t*> args;
-          for (int i = 1; i < cmd_argc; i++) {
-            args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
-          }
-          PySys_SetArgv(cmd_argc - 1, args.data());
-          // run filename thru Python interpreter.
-          int result = PyRun_SimpleFile(cmd_file, cmd_filename);
-          for (wchar_t* arg : args) {
-            PyMem_RawFree(arg);
-          }
-          fclose(cmd_file);
-          // terminate if -exit flag was provided.
-          if (exit_after_cmd_file) {
-            int exit_code = (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-            exit(exit_code);
-          }
-        }
-      }
-    }
-
-    // discard remaining args.
-    std::vector<wchar_t*> args;
-    args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
-    // drop into Python interpreter.
-    return Py_Main(1, args.data());
-  } else {
-    // Python wants to install its own SIGINT handler to print KeyboardInterrupt
-    // on ctrl-C. We don't want that if python is not the main interpreter.
-    // We restore the handler from before initPython.
-    sigaction(SIGINT, &orig_sigint_handler, NULL);
+    bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    int inspect = exit ? 0 : 1;
+    initPython(cmd_argc, cmd_argv, inspect);
+    return Py_RunMain();
   }
 #endif
 
