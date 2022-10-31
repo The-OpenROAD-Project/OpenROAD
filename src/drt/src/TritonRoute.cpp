@@ -276,6 +276,11 @@ void TritonRoute::resetDb(const char* file_name)
   design_->getRegionQuery()->initDRObj();
 }
 
+void TritonRoute::clearDesign()
+{
+  design_ = std::make_unique<frDesign>(logger_);
+}
+
 static void deserializeUpdate(frDesign* design,
                               const std::string& updateStr,
                               std::vector<drUpdate>& updates)
@@ -779,6 +784,7 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 {
+  clearDesign();
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   ENABLE_VIA_GEN = true;
   initDesign();
