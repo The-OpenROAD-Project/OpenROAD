@@ -227,12 +227,22 @@ _installOpenSuseDev() {
         llvm \
         clang \
         gcc-c++ \
+        libstdc++6-devel-gcc8 \
+        pcre-devel \
         python3-devel \
         python3-pip \
         readline5-devel \
         tcl-devel \
         wget \
-        git 
+        git \
+        gzip
+    
+    if [[ ! "$(printf '%s\n' "8.0.0" "$(gcc --version)" | sort -V | head -n1)" = "8.0.0" ]]; then 
+        zypper -n install gcc11-c++
+        updatedb
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
+    fi
 }
 
 _installOpenSuseRuntime() {
@@ -382,6 +392,13 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
+        cat <<EOF
+
+To install or run openroad, update your path with:
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
+
+You may wish to add this line to your .bashrc file
+EOF
         ;;
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
@@ -393,11 +410,9 @@ EOF
         fi
         _installOpenSuseCleanUp
         cat <<EOF
-
-To install or run openroad, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
-
-You may wish to add this line to your .bashrc file
+To enable GCC-11 you need to run:
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
     *)
