@@ -555,7 +555,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
   std::vector<odb::Point> positions_on_grid;
 
   if (has_access_points) {
-    for (auto ap_position : ap_positions) {
+    for (const auto& ap_position : ap_positions) {
       pos_on_grid = ap_position.second;
       positions_on_grid.push_back(pos_on_grid);
     }
