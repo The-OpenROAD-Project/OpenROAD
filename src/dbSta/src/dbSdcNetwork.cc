@@ -48,13 +48,15 @@ dbSdcNetwork::dbSdcNetwork(Network* network) : SdcNetwork(network)
 }
 
 // Override SdcNetwork to NetworkNameAdapter.
-Instance* dbSdcNetwork::findInstance(const char* path_name) const{
+Instance* dbSdcNetwork::findInstance(const char* path_name) const
+{
   Instance* inst = network_->findInstance(path_name);
   if (inst == nullptr)
     inst = network_->findInstance(escapeDividers(path_name, this));
   if (inst == nullptr)
     inst = network_->findInstance(escapeBrackets(path_name, this));
-  return inst;}
+  return inst;
+}
 
 void dbSdcNetwork::findInstancesMatching(const Instance*,
                                          const PatternMatch* pattern,

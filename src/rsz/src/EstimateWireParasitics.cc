@@ -126,11 +126,13 @@ Resizer::setWireSignalRC(const Corner *corner,
 }
 
 double
-Resizer::wireSignalResistance(const Corner *corner) const{
+Resizer::wireSignalResistance(const Corner *corner) const
+{
   if (wire_signal_res_.empty())
     return 0.0;
   else
-    return wire_signal_res_[corner->index()];}
+    return wire_signal_res_[corner->index()];
+}
 
 double
 Resizer::wireSignalCapacitance(const Corner *corner) const
