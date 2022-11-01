@@ -215,6 +215,41 @@ _installCentosRuntime() {
     yum update -y
 }
 
+_installOpenSuseCleanUp() {
+    zypper -n clean --all
+    zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
+}
+
+_installOpenSuseDev() {
+    zypper -n install -t pattern devel_basis
+    zypper -n install \
+        lcov \
+        llvm \
+        clang \
+        gcc-c++ \
+        python3-devel \
+        python3-pip \
+        readline5-devel \
+        tcl-devel \
+        wget \
+        git 
+}
+
+_installOpenSuseRuntime() {
+    zypper refresh && zypper -n update
+    zypper -n install \
+        binutils \
+        libgomp1 \
+        libpython3_6m1_0 \
+        libqt5-qtbase \
+        libqt5-creator \
+        libqt5-qtstyleplugins \
+        qimgv \
+        tcl \
+        tcllib
+    zypper refresh && zypper -n update
+}
+
 _installHomebrewPackage() {
     package=$1
     commit=$2
@@ -347,6 +382,16 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
+        ;;
+    "openSUSE Leap" )
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installOpenSuseRuntime
+        if [[ "${option}" == "dev" ]]; then
+            _installOpenSuseDev
+            _installCommonDev
+        fi
+        _installOpenSuseCleanUp
         cat <<EOF
 
 To install or run openroad, update your path with:
