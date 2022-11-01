@@ -54,7 +54,11 @@ class Validator
 
   // Check value is in [limit, +inf] (CLOSED) or (limit, +inf] (OPEN)
   template <typename T>
-  void check_above(const char* name, T value, T limit, int id, EndType end = CLOSED)
+  void check_above(const char* name,
+                   T value,
+                   T limit,
+                   int id,
+                   EndType end = CLOSED)
   {
     static_assert(std::is_arithmetic_v<T>, "Must be arithmetic type");
     if (value < limit || (end == OPEN && value == limit)) {
@@ -70,7 +74,11 @@ class Validator
 
   // Check value is in [-inf, limit] (CLOSED) or [-inf, limit) (OPEN)
   template <typename T>
-  void check_below(const char* name, T value, T limit, int id, EndType end = CLOSED)
+  void check_below(const char* name,
+                   T value,
+                   T limit,
+                   int id,
+                   EndType end = CLOSED)
   {
     static_assert(std::is_arithmetic_v<T>, "Must be arithmetic type");
     if (value > limit || (end == OPEN && value == limit)) {

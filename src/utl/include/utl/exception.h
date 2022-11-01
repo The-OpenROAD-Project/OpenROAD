@@ -58,7 +58,8 @@ class ThreadException
     }
   }
 
-  bool hasException() const {
+  bool hasException() const
+  {
     if (ptr_) {
       return true;
     } else {
@@ -71,4 +72,4 @@ class ThreadException
   std::mutex lock_;
 };
 
-}
+}  // namespace utl
