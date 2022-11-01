@@ -761,7 +761,7 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
   bool first = true;
   std::vector<std::unique_ptr<gcSegment>> tmpEdges;
   gtl::point_data<frCoord> prev;
-  for (gtl::point_data<frCoord> cur : poly) {
+  for (const gtl::point_data<frCoord>& cur : poly) {
     if (first) {
       prev = cur;
       first = false;
