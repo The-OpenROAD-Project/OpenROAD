@@ -34,18 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rmp/Restructure.h"
-#include <time.h>
+
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -68,8 +68,6 @@ using utl::RMP;
 using namespace abc;
 
 namespace rmp {
-
-
 
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
@@ -115,7 +113,7 @@ void Restructure::run(char* liberty_file_name,
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  if (is_area_mode_) // Only in area mode
+  if (is_area_mode_)  // Only in area mode
     removeConstCells();
 
   getBlob(max_depth);
@@ -137,9 +135,12 @@ void Restructure::getBlob(unsigned max_depth)
 
   getEndPoints(ends, is_area_mode_, max_depth);
   if (ends.size()) {
-    sta::PinSet boundary_points = !is_area_mode_ ? resizer_->findFanins(&ends) : resizer_->findFaninFanouts(&ends);
+    sta::PinSet boundary_points = !is_area_mode_
+                                      ? resizer_->findFanins(&ends)
+                                      : resizer_->findFaninFanouts(&ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
-    logger_->report("Found {} pins in extracted logic.", boundary_points.size());
+    logger_->report("Found {} pins in extracted logic.",
+                    boundary_points.size());
     for (sta::Pin* pin : boundary_points) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
@@ -155,7 +156,7 @@ void Restructure::getBlob(unsigned max_depth)
 void Restructure::runABC()
 {
   input_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
-    + "_crit_path.blif";
+                          + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -169,7 +170,7 @@ void Restructure::runABC()
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str(), !is_area_mode_);
   debugPrint(
-	     logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
+      logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
@@ -191,39 +192,39 @@ void Restructure::runABC()
   float best_delay_gain = std::numeric_limits<float>::max();
 
   debugPrint(
-	     logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
+      logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
 
-  for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
+  for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
+       curr_mode_idx++) {
     output_blif_file_name_
-      = work_dir_name_ + std::string(block_->getConstName())
-      + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = work_dir_name_ + std::string(block_->getConstName())
+          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
 
     opt_mode_ = modes[curr_mode_idx];
 
-    const std::string abc_script_file = work_dir_name_
-      + std::to_string(curr_mode_idx)
-      + "ord_abc_script.tcl";
+    const std::string abc_script_file
+        = work_dir_name_ + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
     if (logfile_ == "")
       logfile_ = work_dir_name_ + "abc.log";
 
     debugPrint(logger_,
-	       RMP,
-	       "remap",
-	       1,
-	       "Writing ABC script file {}.",
-	       abc_script_file);
+               RMP,
+               "remap",
+               1,
+               "Writing ABC script file {}.",
+               abc_script_file);
 
     if (writeAbcScript(abc_script_file)) {
       // call linked abc
       Abc_Start();
-      Abc_Frame_t * abc_frame = Abc_FrameGetGlobalFrame();
+      Abc_Frame_t* abc_frame = Abc_FrameGetGlobalFrame();
       const std::string command = "source " + abc_script_file;
-      child_proc[curr_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
-      if ( child_proc[curr_mode_idx] )
-	{
-	  logger_->error(RMP, 26, "Error executing ABC command {}.", command);
-	  return;
-	}
+      child_proc[curr_mode_idx]
+          = Cmd_CommandExecute(abc_frame, command.c_str());
+      if (child_proc[curr_mode_idx]) {
+        logger_->error(RMP, 26, "Error executing ABC command {}.", command);
+        return;
+      }
       Abc_Stop();
       // exit linked abc
       files_to_remove.emplace_back(abc_script_file);
@@ -238,8 +239,8 @@ void Restructure::runABC()
     }
 
     output_blif_file_name_
-      = work_dir_name_ + std::string(block_->getConstName())
-      + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+        = work_dir_name_ + std::string(block_->getConstName())
+          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
     const std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
 
     int level_gain = 0;
@@ -248,10 +249,14 @@ void Restructure::runABC()
     bool success = readAbcLog(abc_log_name, level_gain, delay);
     if (success) {
       success
-	= blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
-      logger_->report("Optimized to {} instances in iteration {} with max path depth decrease of {}, delay of {}.",
-                      num_instances,
-                      curr_mode_idx, level_gain, delay);
+          = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
+      logger_->report(
+          "Optimized to {} instances in iteration {} with max path depth "
+          "decrease of {}, delay of {}.",
+          num_instances,
+          curr_mode_idx,
+          level_gain,
+          delay);
 
       if (success) {
         if (is_area_mode_) {
@@ -260,12 +265,12 @@ void Restructure::runABC()
             best_blif = output_blif_file_name_;
           }
         } else {
-          // Using only DELAY_4 for delay based gain since other modes not showing good gains
+          // Using only DELAY_4 for delay based gain since other modes not
+          // showing good gains
           if (modes[curr_mode_idx] == Mode::DELAY_4) {
             best_delay_gain = delay;
             best_blif = output_blif_file_name_;
           }
-
         }
       }
     }
@@ -284,7 +289,8 @@ void Restructure::runABC()
                "Number constants after restructure {}.",
                countConsts(block_));
   } else {
-    logger_->info(RMP, 21, "All re-synthesis runs discarded, keeping original netlist.");
+    logger_->info(
+        RMP, 21, "All re-synthesis runs discarded, keeping original netlist.");
   }
 
   for (auto file_to_remove : files_to_remove) {
@@ -303,12 +309,13 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                unsigned max_depth)
 {
   auto sta_state = open_sta_->search();
-  sta::VertexSet*  end_points  = sta_state->endpoints();
+  sta::VertexSet* end_points = sta_state->endpoints();
   std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
   for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
-      sta::PathRef path_ref = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
+      sta::PathRef path_ref
+          = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
       sta::Path* path = path_ref.path();
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
@@ -326,12 +333,12 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   // unconstrained end points
   if (is_area_mode_) {
     auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
-                                        false /*no_output_delay*/,
-                                        false /*reg_multiple_clks*/,
-                                        true /*reg_no_clks*/,
-                                        true /*unconstrained_endpoints*/,
-                                        false /*loops*/,
-                                        false /*generated_clks*/);
+                                         false /*no_output_delay*/,
+                                         false /*reg_multiple_clks*/,
+                                         true /*reg_no_clks*/,
+                                         true /*unconstrained_endpoints*/,
+                                         false /*loops*/,
+                                         false /*generated_clks*/);
     debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
     if (!errors.empty() && errors[0]->size() > 1) {
       sta::CheckError* error = errors[0];
@@ -478,7 +485,8 @@ bool Restructure::writeAbcScript(std::string file_name)
   }
 
   for (auto lib_name : lib_file_names_) {
-    // abc read_lib prints verbose by default, -v toggles to off to avoid read time being printed
+    // abc read_lib prints verbose by default, -v toggles to off to avoid read
+    // time being printed
     std::string read_lib_str = "read_lib -v " + lib_name + "\n";
     script << read_lib_str;
   }
@@ -601,7 +609,9 @@ void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
   }
 }
 
-bool Restructure::readAbcLog(std::string abc_file_name, int& level_gain, float& final_delay)
+bool Restructure::readAbcLog(std::string abc_file_name,
+                             int& level_gain,
+                             float& final_delay)
 {
   std::ifstream abc_file(abc_file_name);
   if (abc_file.bad()) {
@@ -615,49 +625,51 @@ bool Restructure::readAbcLog(std::string abc_file_name, int& level_gain, float& 
   std::vector<double> level;
   std::vector<float> delay;
 
-  //read the file line by line
-  while (std::getline(abc_file, buf))
-  {
-      //convert the line in to stream:
-      std::istringstream ss(buf);
-      std::vector<std::string> tokens;
+  // read the file line by line
+  while (std::getline(abc_file, buf)) {
+    // convert the line in to stream:
+    std::istringstream ss(buf);
+    std::vector<std::string> tokens;
 
-      //read the line, word by word
-      while (std::getline(ss, buf, delimiter))
-          tokens.push_back(buf);
+    // read the line, word by word
+    while (std::getline(ss, buf, delimiter))
+      tokens.push_back(buf);
 
-      if (!tokens.empty() && tokens[0] == "Error:") {
-        status = false;
-        logger_->warn(RMP, 25, "ABC run failed, see log file {} for details.", abc_file_name);
-        break;
-      }
-      if (tokens.size() > 7 && tokens[tokens.size()-3] == "lev" && tokens[tokens.size()-2] == "=") {
-        level.emplace_back(std::stoi(tokens[tokens.size()-1]));
-      }
-      if (tokens.size() > 7) {
-        std::string prev_token = "";
-        for (std::string token : tokens) {
-          if (prev_token == "delay" && token.at(0) == '=') {
-            std::string delay_str = token;
-            if (delay_str.size() > 1) {
-              delay_str.erase(delay_str.begin()); // remove first char which is '='
-              delay.emplace_back(std::stof(delay_str));
-            }
-            break;
+    if (!tokens.empty() && tokens[0] == "Error:") {
+      status = false;
+      logger_->warn(RMP,
+                    25,
+                    "ABC run failed, see log file {} for details.",
+                    abc_file_name);
+      break;
+    }
+    if (tokens.size() > 7 && tokens[tokens.size() - 3] == "lev"
+        && tokens[tokens.size() - 2] == "=") {
+      level.emplace_back(std::stoi(tokens[tokens.size() - 1]));
+    }
+    if (tokens.size() > 7) {
+      std::string prev_token = "";
+      for (std::string token : tokens) {
+        if (prev_token == "delay" && token.at(0) == '=') {
+          std::string delay_str = token;
+          if (delay_str.size() > 1) {
+            delay_str.erase(
+                delay_str.begin());  // remove first char which is '='
+            delay.emplace_back(std::stof(delay_str));
           }
-          prev_token = token;
+          break;
         }
+        prev_token = token;
       }
-
+    }
   }
 
   if (level.size() > 1) {
-    level_gain = level[0] - level[level.size()-1];
+    level_gain = level[0] - level[level.size() - 1];
   }
   if (delay.size() > 0) {
-    final_delay = delay[delay.size()-1]; // last value in file
+    final_delay = delay[delay.size() - 1];  // last value in file
   }
   return status;
-
 }
 }  // namespace rmp
