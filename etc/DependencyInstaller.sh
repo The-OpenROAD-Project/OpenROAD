@@ -124,6 +124,7 @@ _installUbuntuDev() {
     apt-get -y install \
         automake \
         autotools-dev \
+        build-essential \
         bison \
         flex \
         clang \
