@@ -825,9 +825,9 @@ BinGrid::updateBinsGCellDensityArea(
           for(int j = pairY.first; j < pairY.second; j++) {
             Bin* bin = bins_[ j * binCntX_ + i ];
 
-            float overlap = getOverlapDensityArea(bin, cell);
-            bin->addInstPlacedArea(  overlap * cell->densityScale() * bin->targetDensity() ); 
-            bin->addInstPlacedAreaUnscaled( overlap * cell->densityScale() * bin->targetDensity() ); 
+            const float scaledAvea = getOverlapDensityArea(bin, cell) * cell->densityScale() * bin->targetDensity();
+            bin->addInstPlacedArea(  scaledAvea ); 
+            bin->addInstPlacedAreaUnscaled( scaledAvea ); 
 
           }
         }
@@ -837,9 +837,9 @@ BinGrid::updateBinsGCellDensityArea(
         for(int i = pairX.first; i < pairX.second; i++) {
           for(int j = pairY.first; j < pairY.second; j++) {
             Bin* bin = bins_[ j * binCntX_ + i ];
-            int64_t overlapArea = getOverlapDensityArea(bin,cell);
-            bin->addInstPlacedArea( overlapArea * cell->densityScale() ); 
-            bin->addInstPlacedAreaUnscaled( overlapArea * cell->densityScale() ); 
+            const float scaledArea = getOverlapDensityArea(bin,cell) * cell->densityScale();
+            bin->addInstPlacedArea( scaledArea ); 
+            bin->addInstPlacedAreaUnscaled( scaledArea ); 
           }
         }
       }
@@ -862,23 +862,24 @@ BinGrid::updateBinsGCellDensityArea(
   // for nesterov use and FFT library
   for(auto& bin : bins_) {
     int64_t binArea = bin->binArea(); 
+    const float scaledBinArea = static_cast<float>(binArea * bin->targetDensity());
     bin->setDensity( 
         ( static_cast<float> (bin->instPlacedArea())
           + static_cast<float> (bin->fillerArea()) 
           + static_cast<float> (bin->nonPlaceArea()) )
-        / static_cast<float>(binArea * bin->targetDensity()));
+        / scaledBinArea);
 
     overflowArea_ 
       += std::max(0.0f, 
           static_cast<float>(bin->instPlacedArea()) 
           + static_cast<float>(bin->nonPlaceArea())
-          - (binArea * bin->targetDensity()));
+          - scaledBinArea);
     
     overflowAreaUnscaled_ 
       += std::max(0.0f, 
           static_cast<float>(bin->instPlacedAreaUnscaled()) 
           + static_cast<float>(bin->nonPlaceAreaUnscaled())
-          - (binArea * bin->targetDensity()));
+          - scaledBinArea);
 
   }
 }
@@ -1905,8 +1906,7 @@ getOverlapDensityArea(const Bin* bin, const GCell* cell) {
   if( rectLx >= rectUx || rectLy >= rectUy ) {
     return 0;
   }
-  else
-  {
+  else {
     return static_cast<float>(rectUx - rectLx) 
       * static_cast<float>(rectUy - rectLy);
   }
@@ -1924,46 +1924,46 @@ getOverlapArea(const Bin* bin, const Instance* inst, int dbu_per_micron) {
   if( rectLx >= rectUx || rectLy >= rectUy ) {
     return 0;
   }
-  else {
-    if(inst->isMacro())
-    {
-      float meanX = (inst->cx()-inst->lx())/(float)dbu_per_micron;
-      float meanY = (inst->cy()-inst->ly())/(float)dbu_per_micron;
-      
-      // For the bivariate normal distribution, we are using
-      // the shifted means of X and Y.
-      // Sigma is used as the mean/4 for both dimensions
-      biNormalParameters  i = {meanX, meanY, meanX/4, meanY/4, (rectLx - inst->lx())/(float)dbu_per_micron, 
-                            (rectLy - inst->ly())/(float)dbu_per_micron, (rectUx - inst->lx())/(float)dbu_per_micron,
-                            (rectUy - inst->ly())/(float)dbu_per_micron};
+  
+  if(inst->isMacro())
+  {
+    const float meanX = (inst->cx()-inst->lx())/(float)dbu_per_micron;
+    const float meanY = (inst->cy()-inst->ly())/(float)dbu_per_micron;
+    
+    // For the bivariate normal distribution, we are using
+    // the shifted means of X and Y.
+    // Sigma is used as the mean/4 for both dimensions
+    const biNormalParameters  i = {meanX, meanY, meanX/4, meanY/4, (rectLx - inst->lx())/(float)dbu_per_micron, 
+                          (rectLy - inst->ly())/(float)dbu_per_micron, (rectUx - inst->lx())/(float)dbu_per_micron,
+                          (rectUy - inst->ly())/(float)dbu_per_micron};
 
-      float original = static_cast<float>(rectUx - rectLx) 
-        * static_cast<float>(rectUy - rectLy);
-      float scaled = calculateBiVariateNormalCDF(i) * static_cast<float>(inst->ux() - inst->lx()) 
-        * static_cast<float>(inst->uy() - inst->ly());
-      
-      // For heavily dense regions towards the center of the macro,
-      // we are using an upper limit of 2*(overlap) between the macro
-      // and the bin.
-      if (scaled >= original)
-      {
-        return min<float>(scaled, original*1.15);
-      }
-      // If the scaled value is smaller than the actual overlap
-      // then use the original overlap value instead.
-      // This is implemented to prevent cells from being placed
-      // at the outer sides of the macro.
-      else
-      {
-        return original;
-      }
+    const float original = static_cast<float>(rectUx - rectLx) 
+      * static_cast<float>(rectUy - rectLy);
+    const float scaled = calculateBiVariateNormalCDF(i) * static_cast<float>(inst->ux() - inst->lx()) 
+      * static_cast<float>(inst->uy() - inst->ly());
+    
+    // For heavily dense regions towards the center of the macro,
+    // we are using an upper limit of 1.15*(overlap) between the macro
+    // and the bin.
+    if (scaled >= original)
+    {
+      return min<float>(scaled, original*1.15);
     }
+    // If the scaled value is smaller than the actual overlap
+    // then use the original overlap value instead.
+    // This is implemented to prevent cells from being placed
+    // at the outer sides of the macro.
     else
     {
-      return static_cast<float>(rectUx - rectLx) 
-        * static_cast<float>(rectUy - rectLy);
+      return original;
     }
   }
+  else
+  {
+    return static_cast<float>(rectUx - rectLx) 
+      * static_cast<float>(rectUy - rectLy);
+  }
+  
 }
 
 
@@ -1991,13 +1991,15 @@ getOverlapAreaUnscaled(const Bin* bin, const Instance* inst) {
 // probablity density functions are parametarized.
 // In this function, I am using the closed-form solution of the integration.
 // The limits of integration are lx->ux and ly->uy
+// For reference: the equation that is being integrated is: 
+//      (1/(2*pi*sigmaX*sigmaY))*e^(-(y-meanY)^2/(2*sigmaY*sigmaY))*e^(-(x-meanX)^2/(2*sigmaX*sigmaX))
 static float calculateBiVariateNormalCDF(biNormalParameters  i)
 {
-  float x1 = (i.meanX-i.lx)/(sqrt(2)*i.sigmaX);
-  float x2 = (i.meanX-i.ux)/(sqrt(2)*i.sigmaX);
+  const float x1 = (i.meanX-i.lx)/(sqrt(2)*i.sigmaX);
+  const float x2 = (i.meanX-i.ux)/(sqrt(2)*i.sigmaX);
 
-  float y1 = (i.meanY-i.ly)/(sqrt(2)*i.sigmaY);
-  float y2 = (i.meanY-i.uy)/(sqrt(2)*i.sigmaY);
+  const float y1 = (i.meanY-i.ly)/(sqrt(2)*i.sigmaY);
+  const float y2 = (i.meanY-i.uy)/(sqrt(2)*i.sigmaY);
 
   return 0.25*(erf(x1)*erf(y1) + erf(x2)*erf(y2) - erf(x1)*erf(y2) - erf(x2)*erf(y1));
 }
