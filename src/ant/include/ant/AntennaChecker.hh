@@ -78,8 +78,8 @@ class AntennaChecker
             grt::GlobalRouter* global_router,
             utl::Logger* logger);
 
-  // net_name nullptr -> check all nets
-  int checkAntennas(const char* net_name, bool verbose);
+  // net nullptr -> check all nets
+  int checkAntennas(dbNet* net = nullptr, bool verbose = false);
   int antennaViolationCount() const;
 
   void findMaxWireLength();

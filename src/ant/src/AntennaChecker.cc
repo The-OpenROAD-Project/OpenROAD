@@ -1564,7 +1564,7 @@ void AntennaChecker::checkGate(
   }
 }
 
-int AntennaChecker::checkAntennas(const char* net_name, bool verbose)
+int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 {
   initAntennaRules();
 
@@ -1586,12 +1586,13 @@ int AntennaChecker::checkAntennas(const char* net_name, bool verbose)
   int net_violation_count = 0;
   int pin_violation_count = 0;
 
-  if (strlen(net_name) > 0) {
-    dbNet* net = block_->findNet(net_name);
-    if (net && !net->isSpecial())
+  if (net) {
+    if (!net->isSpecial()) {
       checkNet(net, true, verbose, net_violation_count, pin_violation_count);
-    else
-      logger_->error(ANT, 12, "-net {} not Found.", net_name);
+    } else {
+      logger_->error(
+          ANT, 14, "Skipped net {} because it is special.", net->getName());
+    }
   } else {
     for (dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
