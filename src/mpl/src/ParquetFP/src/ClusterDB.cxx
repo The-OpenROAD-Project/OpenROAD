@@ -272,9 +272,10 @@ void ClusterDB::cluster1Layer(unsigned layerNum,
           // else {
           //	// get weighted average of ARs
           //	newNodeMinAR = ((largeNodeArea*largeNodeMinAR) +
-          //(smallNodeArea*smallNodeMinAR)) 		/ (largeNodeArea + smallNodeArea);
-          //	newNodeMaxAR = ((largeNodeArea*largeNodeMaxAR) +
-          //(largeNodeArea*smallNodeMaxAR)) 		/ (largeNodeArea + smallNodeArea);
+          //(smallNodeArea*smallNodeMinAR)) 		/ (largeNodeArea +
+          // smallNodeArea); 	newNodeMaxAR = ((largeNodeArea*largeNodeMaxAR) +
+          //(largeNodeArea*smallNodeMaxAR)) 		/ (largeNodeArea +
+          // smallNodeArea);
           // }
 
           sprintf(blockName, "Block_%d_%d", layerNum, blkCtr);

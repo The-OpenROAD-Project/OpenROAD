@@ -968,13 +968,13 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
 
     if (pin.getArea() < required_min_area) {
-      logger_->error(
-          PPL,
-          79,
-          "Pin {} area {:2.4f}um^2 is lesser than the minimum required area {:2.4f}um^2.",
-          pin.getName(),
-          dbuToMicrons(dbuToMicrons(pin.getArea())),
-          dbuToMicrons(dbuToMicrons(required_min_area)));
+      logger_->error(PPL,
+                     79,
+                     "Pin {} area {:2.4f}um^2 is lesser than the minimum "
+                     "required area {:2.4f}um^2.",
+                     pin.getName(),
+                     dbuToMicrons(dbuToMicrons(pin.getArea())),
+                     dbuToMicrons(dbuToMicrons(required_min_area)));
     }
   } else {
     int pin_width = top_grid_->pin_width;
@@ -1428,7 +1428,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
-      int new_y = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
+      int new_y
+          = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
       pos.setY(new_y);
     }
   }

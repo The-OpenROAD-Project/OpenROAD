@@ -588,10 +588,16 @@ void definNet::pathVia(const char* via_name)
     _cur_layer = top;
   else {
     ++_errors;
-    _logger->warn(
-        utl::ODB,
-        110,
-        "error: invalid VIA layers, cannot determine exit layer of path");
+    _logger->warn(utl::ODB,
+                  110,
+                  "error: invalid VIA layers in {} in net {}, currently on "
+                  "layer {} at ({}, {}), cannot determine exit "
+                  "layer of path",
+                  via_name,
+                  _cur_net->getName(),
+                  _cur_layer->getName(),
+                  _prev_x,
+                  _prev_y);
   }
 }
 

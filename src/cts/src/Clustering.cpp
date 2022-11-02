@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "Clustering.h"
+
 #include <float.h>
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
@@ -52,7 +54,6 @@
 #include <string>
 #include <vector>
 
-#include "Clustering.h"
 #include "utl/Logger.h"
 
 namespace cts::CKMeans {

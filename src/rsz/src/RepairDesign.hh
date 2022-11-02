@@ -112,8 +112,6 @@ protected:
   void repairNet(Net *net,
                  const Pin *drvr_pin,
                  Vertex *drvr,
-                 double slew_margin,
-                 double cap_margin,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
@@ -125,13 +123,10 @@ protected:
                  int &fanout_violations,
                  int &length_violations);
   bool checkLimits(const Pin *drvr_pin,
-                   double slew_margin,
-                   double cap_margin,
                    bool check_slew,
                    bool check_cap,
                    bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
-                 double slew_margin,
                  // Return values.
                  Slew &slew,
                  float &limit,
@@ -164,6 +159,7 @@ protected:
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
+  float maxSlewMargined(float max_slew);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
                          const Corner *corner);
@@ -179,8 +175,6 @@ protected:
                            int max_fanout,
                            int level,
                            const Pin *drvr_pin,
-                           double slew_margin,
-                           double max_cap_margin,
                            bool check_slew,
                            bool check_cap,
                            int max_length,
@@ -189,8 +183,6 @@ protected:
                           PinSeq &repeater_inputs,
                           Rect bbox,
                           Point loc,
-                          double slew_margin,
-                          double max_cap_margin,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
@@ -244,6 +236,8 @@ protected:
   const Pin *drvr_pin_;
   float max_cap_;
   int max_length_;
+  double slew_margin_;
+  double cap_margin_;
   const Corner *corner_;
 
   int resize_count_;

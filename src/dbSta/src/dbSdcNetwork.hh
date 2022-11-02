@@ -42,7 +42,7 @@ namespace sta {
 
 class dbSdcNetwork : public SdcNetwork
 {
- public:
+public:
   dbSdcNetwork(Network* network);
   virtual Instance* findInstance(const char* path_name) const;
   virtual void findInstancesMatching(const Instance* contex,
@@ -55,7 +55,7 @@ class dbSdcNetwork : public SdcNetwork
                                 const PatternMatch* pattern,
                                 PinSeq* pins) const;
 
- protected:
+protected:
   void findInstancesMatching1(const PatternMatch* pattern,
                               InstanceSeq* insts) const;
   void findNetsMatching1(const PatternMatch* pattern, NetSeq* nets) const;

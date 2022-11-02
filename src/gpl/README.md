@@ -87,6 +87,33 @@ resistance and capacitance of estimated wires used for timing.
 
 ## Limitations
 
+## Using the Python interface to gpl
+
+This api tries to stay close to the api defined in C++ class `Replace`
+that is located in gpl/include/gpl/Replace.h
+
+When initializing a design, a sequence of Python commands might look like
+the following:
+
+    from openroad import Design, Tech
+    tech = Tech()
+    tech.readLef(...)
+    design = Design(tech)
+    design.readDef(...)
+    gpl = design.getReplace()
+    
+Here is an example of some options / configurations to the global placer.
+(See Replace.h for a complete list)
+
+    gpl.setInitialPlaceMaxIter(iter)
+    gpl.setSkipIoMode(skip_io)
+    gpl.setTimingDrivenMode(timing_driven)
+    gpl.setTimingNetWeightMax(weight)
+
+There are some useful Python functions located in the file
+grt/test/grt_aux.py but these are not considered a part of the (final)
+api and they may change.
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
