@@ -63,7 +63,6 @@ using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbPlacementStatus;
-using odb::dbSigType;
 using odb::Rect;
 
 Cell::Cell()
