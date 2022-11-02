@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "graph.h"
+
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -40,7 +42,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include "graph.h"
 #include "utl/Logger.h"
 
 namespace pdr {
