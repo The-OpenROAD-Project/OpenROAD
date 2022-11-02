@@ -10,7 +10,7 @@ design = Design(tech)
 design.readDef("ant_check.def")
 ack = design.getAntennaChecker()
 
-ack.checkAntennas("", True)
+ack.checkAntennas(verbose=True)
 
 count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
