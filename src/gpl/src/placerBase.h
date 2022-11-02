@@ -34,9 +34,9 @@
 #ifndef __PLACER_BASE__
 #define __PLACER_BASE__
 
-#include <vector>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 namespace odb {
 class dbDatabase;
@@ -53,7 +53,7 @@ class dbBox;
 
 class Rect;
 
-}
+}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -65,13 +65,16 @@ class Pin;
 class Net;
 class GCell;
 
-
-class Instance {
-public:
+class Instance
+{
+ public:
   Instance();
-  Instance(odb::dbInst* inst, int padLeft, int padRight,
-           int site_height, utl::Logger* logger);
-  Instance(int lx, int ly, int ux, int uy); // dummy instance
+  Instance(odb::dbInst* inst,
+           int padLeft,
+           int padRight,
+           int site_height,
+           utl::Logger* logger);
+  Instance(int lx, int ly, int ux, int uy);  // dummy instance
   ~Instance();
 
   odb::dbInst* dbInst() const { return inst_; }
@@ -116,14 +119,13 @@ public:
   int dy() const;
   int64_t area() const;
 
-  
   void setExtId(int extId);
   int extId() const { return extId_; }
 
   void addPin(Pin* pin);
-  const std::vector<Pin*> & pins() const { return pins_; }
+  const std::vector<Pin*>& pins() const { return pins_; }
 
-private:
+ private:
   odb::dbInst* inst_;
   std::vector<Pin*> pins_;
   int lx_;
@@ -135,8 +137,9 @@ private:
   bool is_locked_;
 };
 
-class Pin {
-public:
+class Pin
+{
+ public:
   Pin();
   Pin(odb::dbITerm* iTerm);
   Pin(odb::dbBTerm* bTerm);
@@ -179,8 +182,8 @@ public:
   Instance* instance() const { return inst_; }
   Net* net() const { return net_; }
   std::string name() const;
-  
-private:
+
+ private:
   void* term_;
   Instance* inst_;
   Net* net_;
@@ -197,19 +200,20 @@ private:
   int offsetCx_;
   int offsetCy_;
 
-  unsigned char iTermField_:1;
-  unsigned char bTermField_:1;
-  unsigned char minPinXField_:1;
-  unsigned char minPinYField_:1;
-  unsigned char maxPinXField_:1;
-  unsigned char maxPinYField_:1;
+  unsigned char iTermField_ : 1;
+  unsigned char bTermField_ : 1;
+  unsigned char minPinXField_ : 1;
+  unsigned char minPinYField_ : 1;
+  unsigned char maxPinXField_ : 1;
+  unsigned char maxPinYField_ : 1;
 
   void updateCoordi(odb::dbITerm* iTerm);
   void updateCoordi(odb::dbBTerm* bTerm);
 };
 
-class Net {
-public:
+class Net
+{
+ public:
   Net();
   Net(odb::dbNet* net, bool skipIoMode);
   ~Net();
@@ -226,14 +230,14 @@ public:
 
   void updateBox(bool skipIoMode = false);
 
-  const std::vector<Pin*> & pins() const { return pins_; }
+  const std::vector<Pin*>& pins() const { return pins_; }
 
   odb::dbNet* dbNet() const { return net_; }
   odb::dbSigType getSigType() const;
 
   void addPin(Pin* pin);
 
-private:
+ private:
   odb::dbNet* net_;
   std::vector<Pin*> pins_;
   int lx_;
@@ -242,8 +246,9 @@ private:
   int uy_;
 };
 
-class Die {
-public:
+class Die
+{
+ public:
   Die();
   Die(const odb::Rect& dieBox, const odb::Rect& coreRect);
   ~Die();
@@ -273,7 +278,7 @@ public:
   int64_t dieArea() const;
   int64_t coreArea() const;
 
-private:
+ private:
   int dieLx_;
   int dieLy_;
   int dieUx_;
@@ -284,23 +289,23 @@ private:
   int coreUy_;
 };
 
-class PlacerBaseVars {
-public:
+class PlacerBaseVars
+{
+ public:
   int padLeft;
   int padRight;
   bool skipIoMode;
 
   PlacerBaseVars();
-  void reset(); 
+  void reset();
 };
 
-class PlacerBase {
-public:
+class PlacerBase
+{
+ public:
   PlacerBase();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBase(odb::dbDatabase* db, 
-      PlacerBaseVars pbVars, 
-      utl::Logger* log);
+  PlacerBase(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -345,7 +350,7 @@ public:
 
   void unlockAll();
 
-private:
+ private:
   odb::dbDatabase* db_;
   utl::Logger* log_;
 
@@ -388,6 +393,6 @@ private:
   void reset();
 };
 
-}
+}  // namespace gpl
 
 #endif
