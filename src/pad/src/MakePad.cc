@@ -33,9 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "pad/MakePad.h"
+
 #include <tcl.h>
 
-#include "pad/MakePad.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
