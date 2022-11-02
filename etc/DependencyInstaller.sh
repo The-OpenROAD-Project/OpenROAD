@@ -341,7 +341,7 @@ EOF
         _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
-            _installCommonDev "${version}"
+            _installCommonDev
         fi
         _installUbuntuCleanUp
         ;;
