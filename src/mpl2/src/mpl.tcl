@@ -75,8 +75,8 @@ proc rtl_macro_placer { args } {
 # Set the default parameters for the macro_placer
 set max_num_macro 12
 set min_num_macro 6
-set max_num_inst  60000
-set min_num_inst  10000
+set max_num_inst  30000
+set min_num_inst  5000
 set tolerance     0.1
 set max_num_level 3
 set coarsening_ratio  10.0
