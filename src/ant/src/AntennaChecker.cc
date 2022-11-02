@@ -29,6 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "ant/AntennaChecker.hh"
+
 #include <stdio.h>
 #include <tcl.h>
 
@@ -36,7 +38,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
