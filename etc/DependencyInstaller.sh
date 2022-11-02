@@ -120,9 +120,8 @@ _installOrTools() {
     orToolsVersionSmall=${orToolsVersionBig}.1874
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-    tar -xf ${orToolsFile}
     mkdir -p /opt/or-tools
-    mv or-tools_cpp_${os}-${version}_${orToolsVersionSmall} /opt/or-tools
+    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
 }
 
 _installUbuntuCleanUp() {
