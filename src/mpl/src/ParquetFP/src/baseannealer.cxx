@@ -64,8 +64,7 @@ BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line* const params,
                            parquetfp::DB* const db)
     : _db(db),
       _params(params),
-      _analSolve(new parquetfp::AnalytSolve(
-          const_cast<parquetfp::DB*>(db))),
+      _analSolve(new parquetfp::AnalytSolve(const_cast<parquetfp::DB*>(db))),
 
       _isFixedOutline(_params->reqdAR != FREE_OUTLINE),
       _outlineDeadspaceRatio((_isFixedOutline)
