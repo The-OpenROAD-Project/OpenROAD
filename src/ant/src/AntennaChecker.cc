@@ -29,6 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "ant/AntennaChecker.hh"
+
 #include <stdio.h>
 #include <tcl.h>
 
@@ -36,7 +38,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -219,9 +220,10 @@ void AntennaChecker::initAntennaRules()
       if ((PSR_ratio != 0 || diffPSR.indices.size() != 0)
           && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
         logger_->warn(ANT,
-                       13,
-                       "No THICKNESS is provided for layer {}.  Checks on this layer will not be correct.",
-                       tech_layer->getConstName());
+                      13,
+                      "No THICKNESS is provided for layer {}.  Checks on this "
+                      "layer will not be correct.",
+                      tech_layer->getConstName());
       }
     }
 
