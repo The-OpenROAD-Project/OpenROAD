@@ -11,7 +11,7 @@ _installCommonDev() {
     cmakeVersionSmall=${cmakeVersionBig}.2
     swigVersion=4.0.2
     swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
-    boostVersionBig=1.80 
+    boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
@@ -159,7 +159,7 @@ _installUbuntuRuntime() {
         qtchooser \
         qt5-qmake \
         qtbase5-dev-tools
-    else 
+    else
         apt-get install -y qt5-default
     fi
 
