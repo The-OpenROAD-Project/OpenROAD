@@ -3095,13 +3095,13 @@ int GlobalRouter::findInstancesObstructions(
     }
 
     for (odb::dbMTerm* mterm : master->getMTerms()) {
-      for (odb::dbMPin* mterm : mterm->getMPins()) {
+      for (odb::dbMPin* mpin : mterm->getMPins()) {
         odb::Point lower_bound;
         odb::Point upper_bound;
         odb::Rect pin_box;
         int pin_layer;
 
-        for (odb::dbBox* box : mterm->getGeometry()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
           odb::Rect rect = box->getBox();
           transform.apply(rect);
 
@@ -3119,7 +3119,8 @@ int GlobalRouter::findInstancesObstructions(
             if (!die_area.contains(pin_box)) {
               logger_->error(GRT,
                              39,
-                             "Found pin outside die area in instance {}.",
+                             "Found pin {} outside die area in instance {}.",
+                             mterm->getConstName(),
                              inst->getConstName());
               pin_out_of_die_count++;
             }
