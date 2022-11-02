@@ -42,11 +42,8 @@ namespace ord {
 
 class OpenRoad;
 
-dpl::Opendp *
-makeOpendp();
-void
-initOpendp(OpenRoad *openroad);
-void
-deleteOpendp(dpl::Opendp *opendp);
+dpl::Opendp* makeOpendp();
+void initOpendp(OpenRoad* openroad);
+void deleteOpendp(dpl::Opendp* opendp);
 
 }  // namespace ord
