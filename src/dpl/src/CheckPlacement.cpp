@@ -48,18 +48,17 @@ using odb::dbPlacementStatus;
 
 using utl::DPL;
 
-void
-Opendp::checkPlacement(bool verbose)
+void Opendp::checkPlacement(bool verbose)
 {
   importDb();
 
-  vector<Cell *> placed_failures;
-  vector<Cell *> in_rows_failures;
-  vector<Cell *> overlap_failures;
-  vector<Cell *> site_align_failures;
+  vector<Cell*> placed_failures;
+  vector<Cell*> in_rows_failures;
+  vector<Cell*> overlap_failures;
+  vector<Cell*> site_align_failures;
 
   initGrid();
-  for (Cell &cell : cells_) {
+  for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
       if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
@@ -77,64 +76,61 @@ Opendp::checkPlacement(bool verbose)
 
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
-  reportFailures(overlap_failures, 5, "Overlap", verbose, [&](Cell *cell) -> void {
-    reportOverlapFailure(cell);
-  });
+  reportFailures(
+      overlap_failures, 5, "Overlap", verbose, [&](Cell* cell) -> void {
+        reportOverlapFailure(cell);
+      });
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
 
-  logger_->metric("design__violations", placed_failures.size() + in_rows_failures.size() + overlap_failures.size() + site_align_failures.size());
-  if (placed_failures.size()
-      + in_rows_failures.size()
-      + overlap_failures.size()
-      + site_align_failures.size() > 0) {
+  logger_->metric("design__violations",
+                  placed_failures.size() + in_rows_failures.size()
+                      + overlap_failures.size() + site_align_failures.size());
+  if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
+          + site_align_failures.size()
+      > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
 }
 
-void
-Opendp::reportFailures(const vector<Cell *> &failures,
-                       int msg_id,
-                       const char *msg,
-                       bool verbose) const
+void Opendp::reportFailures(const vector<Cell*>& failures,
+                            int msg_id,
+                            const char* msg,
+                            bool verbose) const
 {
-  reportFailures(failures, msg_id, msg, verbose,
-                 [&](Cell *cell) -> void {
-                   logger_->report(" {}", cell->name());
-                 });
+  reportFailures(failures, msg_id, msg, verbose, [&](Cell* cell) -> void {
+    logger_->report(" {}", cell->name());
+  });
 }
 
-void
-Opendp::reportFailures(const vector<Cell *> &failures,
-                       int msg_id,
-                       const char *msg,
-                       bool verbose,
-                       const std::function<void(Cell *cell)> &report_failure) const
+void Opendp::reportFailures(
+    const vector<Cell*>& failures,
+    int msg_id,
+    const char* msg,
+    bool verbose,
+    const std::function<void(Cell* cell)>& report_failure) const
 {
   if (!failures.empty()) {
     logger_->warn(DPL, msg_id, "{} check failed ({}).", msg, failures.size());
     if (verbose) {
-      for (Cell *cell : failures) {
+      for (Cell* cell : failures) {
         report_failure(cell);
       }
     }
   }
 }
 
-void
-Opendp::reportOverlapFailure(Cell *cell) const
+void Opendp::reportOverlapFailure(Cell* cell) const
 {
-  const Cell *overlap = checkOverlap(*cell);
+  const Cell* overlap = checkOverlap(*cell);
   logger_->report(" {} overlaps {}", cell->name(), overlap->name());
 }
 
-bool
-Opendp::isPlaced(const Cell *cell)
+bool Opendp::isPlaced(const Cell* cell)
 {
   return cell->db_inst_->isPlaced();
 }
 
-bool
-Opendp::checkInRows(const Cell &cell) const
+bool Opendp::checkInRows(const Cell& cell) const
 {
   int x_ll = gridX(&cell);
   int x_ur = gridEndX(&cell);
@@ -142,7 +138,7 @@ Opendp::checkInRows(const Cell &cell) const
   int y_ur = gridEndY(&cell);
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel *pixel = gridPixel(x, y);
+      Pixel* pixel = gridPixel(x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid)
         return false;
@@ -171,25 +167,21 @@ Opendp::checkInRows(const Cell &cell) const
 // The rules apply to both FIXED or PLACED instances
 
 // Return the cell this cell overlaps.
-Cell *
-Opendp::checkOverlap(Cell &cell) const
+Cell* Opendp::checkOverlap(Cell& cell) const
 {
-  Cell *overlap_cell = nullptr;
-  visitCellPixels(cell, true,
-                  [&] (Pixel *pixel) {
-                    Cell *pixel_cell = pixel->cell;
-                    if (pixel_cell) {
-                      if (pixel_cell != &cell && overlap(&cell, pixel_cell))
-                        overlap_cell = pixel_cell;
-                    }
-                    else
-                      pixel->cell = &cell;
-                  } );
+  Cell* overlap_cell = nullptr;
+  visitCellPixels(cell, true, [&](Pixel* pixel) {
+    Cell* pixel_cell = pixel->cell;
+    if (pixel_cell) {
+      if (pixel_cell != &cell && overlap(&cell, pixel_cell))
+        overlap_cell = pixel_cell;
+    } else
+      pixel->cell = &cell;
+  });
   return overlap_cell;
 }
 
-bool
-Opendp::overlap(const Cell *cell1, const Cell *cell2) const
+bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 {
   // BLOCK/BLOCK overlaps allowed
   if (isBlock(cell1) && isBlock(cell2)) {
@@ -203,25 +195,21 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
   if (padded) {
     ur1 = Point(ll1.getX() + paddedWidth(cell1), ll1.getY() + cell1->height_);
     ur2 = Point(ll2.getX() + paddedWidth(cell2), ll2.getY() + cell2->height_);
-  }
-  else {
+  } else {
     ur1 = Point(ll1.getX() + cell1->width_, ll1.getY() + cell1->height_);
     ur2 = Point(ll2.getX() + cell2->width_, ll2.getY() + cell2->height_);
   }
   return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
-    && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
+         && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
 }
 
-bool
-Opendp::isOverlapPadded(const Cell *cell1, const Cell *cell2) const
+bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
 {
-  return isCrWtBlClass(cell1)
-    && isCrWtBlClass(cell2)
-    && !(isWtClass(cell1) && isWtClass(cell2));
+  return isCrWtBlClass(cell1) && isCrWtBlClass(cell2)
+         && !(isWtClass(cell1) && isWtClass(cell2));
 }
 
-bool
-Opendp::isCrWtBlClass(const Cell *cell) const
+bool Opendp::isCrWtBlClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
@@ -274,11 +262,10 @@ Opendp::isCrWtBlClass(const Cell *cell) const
   return false;
 }
 
-bool
-Opendp::isWtClass(const Cell *cell) const
+bool Opendp::isWtClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::CORE_WELLTAP;
 }
 
-}  // namespace
+}  // namespace dpl
