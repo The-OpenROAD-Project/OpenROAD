@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "HTreeBuilder.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -40,7 +42,6 @@
 #include <memory>
 
 #include "Clustering.h"
-#include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "utl/Logger.h"
 
