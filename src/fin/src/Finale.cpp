@@ -31,8 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "DensityFill.h"
 #include "fin/Finale.h"
+
+#include "DensityFill.h"
 
 namespace fin {
 
