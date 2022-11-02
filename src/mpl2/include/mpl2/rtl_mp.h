@@ -40,55 +40,56 @@
 #include <unordered_map>
 #include <vector>
 
-#include "odb/db.h"
-#include "utl/Logger.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace mpl {
 
 class MacroPlacer2
 {
-  public:
-    void init(ord::dbNetwork* network,
-              odb::dbDatabase* db,
-              sta::dbSta* sta,
-              utl::Logger* logger);
+ public:
+  void init(ord::dbNetwork* network,
+            odb::dbDatabase* db,
+            sta::dbSta* sta,
+            utl::Logger* logger);
 
-    bool place(const int max_num_macro,
-               const int min_num_macro,
-               const int max_num_inst,
-               const int min_num_inst,
-               const float tolerance,
-               const int max_num_level,
-               const float coarsening_ratio,
-               const int num_bundled_ios,
-               const int large_net_threshold,
-               const int signature_net_threshold,
-               const float halo_width,
-               const float fence_lx,
-               const float fence_ly,
-               const float fence_ux,
-               const float fence_uy,
-               const float area_weight,
-               const float outline_weight,
-               const float wirelength_weight,
-               const float guidance_weight,
-               const float fence_weight,
-               const float boundary_weight,
-               const float notch_weight,
-               const float pin_access_th,
-               const float target_util,
-               const float target_dead_space,
-               const float min_ar, 
-               const int snap_layer,
-               const char* report_directory);
-  private:
-    ord::dbNetwork* network_ = nullptr;
-    sta::dbSta* sta_ = nullptr;
-    odb::dbDatabase* db_ = nullptr;
-    utl::Logger* logger_ = nullptr;
+  bool place(const int max_num_macro,
+             const int min_num_macro,
+             const int max_num_inst,
+             const int min_num_inst,
+             const float tolerance,
+             const int max_num_level,
+             const float coarsening_ratio,
+             const int num_bundled_ios,
+             const int large_net_threshold,
+             const int signature_net_threshold,
+             const float halo_width,
+             const float fence_lx,
+             const float fence_ly,
+             const float fence_ux,
+             const float fence_uy,
+             const float area_weight,
+             const float outline_weight,
+             const float wirelength_weight,
+             const float guidance_weight,
+             const float fence_weight,
+             const float boundary_weight,
+             const float notch_weight,
+             const float pin_access_th,
+             const float target_util,
+             const float target_dead_space,
+             const float min_ar,
+             const int snap_layer,
+             const char* report_directory);
+
+ private:
+  ord::dbNetwork* network_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace mpl
