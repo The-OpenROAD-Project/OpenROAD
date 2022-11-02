@@ -32,6 +32,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+#include "architecture.h"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -39,7 +41,6 @@
 #include <stack>
 #include <vector>
 
-#include "architecture.h"
 #include "network.h"
 #include "router.h"
 
