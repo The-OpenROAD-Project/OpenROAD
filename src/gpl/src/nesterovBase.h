@@ -550,13 +550,22 @@ public:
   void setInstPlacedArea(int64_t area);
   void setFillerArea(int64_t area);
 
+  void setNonPlaceAreaUnscaled(int64_t area);
+  void setInstPlacedAreaUnscaled(int64_t area);
+  
   void addNonPlaceArea(int64_t area);
   void addInstPlacedArea(int64_t area);
   void addFillerArea(int64_t area);
 
+  void addNonPlaceAreaUnscaled(int64_t area);
+  void addInstPlacedAreaUnscaled(int64_t area);
+
   const int64_t binArea() const;
   const int64_t nonPlaceArea() const { return nonPlaceArea_; }
   const int64_t instPlacedArea() const { return instPlacedArea_; }
+  const int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  const int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
+
   const int64_t fillerArea() const { return fillerArea_; }
 
 private:
@@ -572,6 +581,9 @@ private:
 
   int64_t nonPlaceArea_;
   int64_t instPlacedArea_;
+
+  int64_t instPlacedAreaUnscaled_;
+  int64_t nonPlaceAreaUnscaled_;
   int64_t fillerArea_;
 
   float density_;
@@ -637,8 +649,18 @@ Bin::setNonPlaceArea(int64_t area) {
 }
 
 inline void
+Bin::setNonPlaceAreaUnscaled(int64_t area) {
+  nonPlaceAreaUnscaled_ = area;
+}
+
+inline void
 Bin::setInstPlacedArea(int64_t area) {
   instPlacedArea_ = area;
+}
+
+inline void
+Bin::setInstPlacedAreaUnscaled(int64_t area) {
+  instPlacedAreaUnscaled_ = area;
 }
 
 inline void
@@ -654,6 +676,16 @@ Bin::addNonPlaceArea(int64_t area) {
 inline void
 Bin::addInstPlacedArea(int64_t area) {
   instPlacedArea_ += area;
+}
+
+inline void
+Bin::addNonPlaceAreaUnscaled(int64_t area) {
+  nonPlaceAreaUnscaled_ += area;
+}
+
+inline void
+Bin::addInstPlacedAreaUnscaled(int64_t area) {
+  instPlacedAreaUnscaled_ += area;
 }
 
 inline void
@@ -698,6 +730,7 @@ public:
   int binSizeY() const;
 
   int64_t overflowArea() const;
+  int64_t overflowAreaUnscaled() const;
 
   // return bins_ index with given gcell
   std::pair<int, int> getDensityMinMaxIdxX(const GCell* gcell) const;
@@ -725,6 +758,8 @@ private:
   int binSizeY_;
   float targetDensity_;
   int64_t overflowArea_;
+  int64_t overflowAreaUnscaled_;
+
   unsigned char isSetBinCntX_:1;
   unsigned char isSetBinCntY_:1;
 };
@@ -796,6 +831,7 @@ public:
   int binSizeX() const;
   int binSizeY() const;
   int64_t overflowArea() const;
+  int64_t overflowAreaUnscaled() const;
 
   const std::vector<Bin*> & bins() const;
 
@@ -934,6 +970,18 @@ private:
 inline const std::vector<Bin*> & NesterovBase::bins() const {
   return bg_.bins();
 }
+
+class biNormalParameters {
+  public:
+    float meanX;
+    float meanY;
+    float sigmaX;
+    float sigmaY;
+    float lx;
+    float ly;
+    float ux;
+    float uy;
+};
 
 }
 

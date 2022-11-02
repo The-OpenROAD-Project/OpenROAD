@@ -185,6 +185,7 @@ private:
 
   // phi is described in ePlace paper.
   float sumOverflow_;
+  float sumOverflowUnscaled_;
 
   // half-parameter-wire-length
   int64_t prevHpwl_;

@@ -94,6 +94,7 @@ NesterovPlace::NesterovPlace()
   wireLengthCoefX_(0), 
   wireLengthCoefY_(0),
   sumOverflow_(0),
+  sumOverflowUnscaled_(0),
   prevHpwl_(0),
   isDiverged_(false),
   isRoutabilityNeed_(true),
@@ -178,9 +179,13 @@ void NesterovPlace::init() {
     static_cast<float>(nb_->overflowArea()) 
         / static_cast<float>(nb_->nesterovInstsArea());
 
+  sumOverflowUnscaled_ = 
+    static_cast<float>(nb_->overflowAreaUnscaled()) 
+        / static_cast<float>(nb_->nesterovInstsArea());
+
   debugPrint(log_, GPL, "replace", 3, "npinit: OverflowArea: {}", nb_->overflowArea());
   debugPrint(log_, GPL, "replace", 3, "npinit: NesterovInstArea: {}", nb_->nesterovInstsArea());
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitSumOverflow: {:g}", sumOverflow_);
+  debugPrint(log_, GPL, "replace", 3, "npinit: InitSumOverflow: {:g}", sumOverflowUnscaled_);
 
   updateWireLengthCoef(sumOverflow_);
 
@@ -229,7 +234,11 @@ void NesterovPlace::init() {
     static_cast<float>(nb_->overflowArea()) 
         / static_cast<float>(nb_->nesterovInstsArea());
   
-  debugPrint(log_, GPL, "replace", 3, "npinit: PrevSumOverflow {:g}", sumOverflow_);
+  sumOverflowUnscaled_ = 
+    static_cast<float>(nb_->overflowAreaUnscaled()) 
+        / static_cast<float>(nb_->nesterovInstsArea());
+  
+  debugPrint(log_, GPL, "replace", 3, "npinit: PrevSumOverflow {:g}", sumOverflowUnscaled_);
   
   stepLength_  
     = getStepLength (prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
@@ -542,7 +551,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // dynamic adjustment for
     // better convergence with
     // large designs 
-    if( !isMaxPhiCoefChanged && sumOverflow_ 
+    if( !isMaxPhiCoefChanged && sumOverflowUnscaled_ 
         < 0.35f ) {
       isMaxPhiCoefChanged = true;
       npVars_.maxPhiCoef *= 0.99;
@@ -572,11 +581,11 @@ NesterovPlace::doNesterovPlace(int start_iter) {
 
     if( iter == 0 || (iter+1) % 10 == 0 ) {
       log_->report("[NesterovSolve] Iter: {} overflow: {:g} HPWL: {}",
-          iter+1, sumOverflow_, prevHpwl_);
+          iter+1, sumOverflowUnscaled_, prevHpwl_);
     }
 
-    if( minSumOverflow > sumOverflow_ ) {
-      minSumOverflow = sumOverflow_;
+    if( minSumOverflow > sumOverflowUnscaled_ ) {
+      minSumOverflow = sumOverflowUnscaled_;
       hpwlWithMinSumOverflow = prevHpwl_; 
     }
 
@@ -608,8 +617,8 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // 1) happen overflow < 20%
     // 2) Hpwl is growing
     //
-    if( sumOverflow_ < 0.3f
-        && sumOverflow_ - minSumOverflow >= 0.02f
+    if( sumOverflowUnscaled_ < 0.3f
+        && sumOverflowUnscaled_ - minSumOverflow >= 0.02f
         && hpwlWithMinSumOverflow * 1.2f < prevHpwl_ ) {
       divergeMsg_ = "RePlAce divergence detected. ";
       divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
@@ -656,7 +665,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // save snapshots for routability-driven  
     if( !isSnapshotSaved 
         && npVars_.routabilityDrivenMode 
-        && 0.6 >= sumOverflow_ ) {
+        && 0.6 >= sumOverflowUnscaled_ ) {
       snapshotCoordi = curCoordi_; 
       snapshotSLPCoordi = curSLPCoordi_;
       snapshotSLPSumGrads = curSLPSumGrads_;
@@ -673,7 +682,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // check routability using GR
     if( npVars_.routabilityDrivenMode 
         && isRoutabilityNeed_ 
-        && npVars_.routabilityCheckOverflow >= sumOverflow_ ) {
+        && npVars_.routabilityCheckOverflow >= sumOverflowUnscaled_ ) {
 
       // recover the densityPenalty values
       // if further routability-driven is needed 
@@ -708,12 +717,11 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     }
 
     // if it reached target overflow
-    if( sumOverflow_ <= npVars_.targetOverflow ) {
-       log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
+    if( sumOverflowUnscaled_ <= npVars_.targetOverflow ) {
+       log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflowUnscaled_);
        break;
     }
   }
- 
   // in all case including diverge, 
   // db should be updated. 
   updateDb();
@@ -801,9 +809,13 @@ NesterovPlace::updateNextIter() {
       static_cast<float>(nb_->overflowArea()) 
         / static_cast<float>(nb_->nesterovInstsArea());
 
+  sumOverflowUnscaled_ = 
+      static_cast<float>(nb_->overflowAreaUnscaled()) 
+        / static_cast<float>(nb_->nesterovInstsArea());
+
   debugPrint(log_, GPL, "replace", 3, "updateNextIter:  Gradient: {:g}", getSecondNorm(curSLPSumGrads_));
   debugPrint(log_, GPL, "replace", 3, "updateNextIter:  Phi: {:g}", nb_->sumPhi());
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  Overflow: {:g}", sumOverflow_);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  Overflow: {:g}", sumOverflowUnscaled_);
 
   updateWireLengthCoef(sumOverflow_);
   int64_t hpwl = nb_->getHpwl();
