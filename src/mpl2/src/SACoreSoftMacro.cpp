@@ -42,100 +42,116 @@
 #include <unordered_map>
 #include <vector>
 
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "SimulatedAnnealingCore.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "object.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Bfs.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sta.hh"
-#include "object.h"
-#include "SimulatedAnnealingCore.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
 // constructors
-SACoreSoftMacro::SACoreSoftMacro(float outline_width, 
-                float outline_height, // boundary constraints
-                const std::vector<SoftMacro>& macros, 
-                // weight for different penalty
-                float area_weight,
-                float outline_weight,
-                float wirelength_weight,
-                float guidance_weight,
-                float fence_weight, // each blockage will be modeled by a macro with fences
-                float boundary_weight,
-                float macro_blockage_weight,
-                float notch_weight,
-                // notch threshold
-                float notch_h_threshold,
-                float notch_v_threshold,
-                // probability of each action 
-                float pos_swap_prob,
-                float neg_swap_prob,
-                float double_swap_prob,
-                float exchange_prob,
-                float resize_prob,
-                // Fast SA hyperparameter
-                float init_prob, int max_num_step, int num_perturb_per_step,
-                int k, int c, unsigned seed) 
-  : SimulatedAnnealingCore<SoftMacro>(outline_width, outline_height, macros,
-                              area_weight, outline_weight, wirelength_weight, 
-                              guidance_weight, fence_weight,
-                              pos_swap_prob, neg_swap_prob, double_swap_prob, exchange_prob,
-                              init_prob, max_num_step, num_perturb_per_step, k, c, seed) 
-{ 
+SACoreSoftMacro::SACoreSoftMacro(
+    float outline_width,
+    float outline_height,  // boundary constraints
+    const std::vector<SoftMacro>& macros,
+    // weight for different penalty
+    float area_weight,
+    float outline_weight,
+    float wirelength_weight,
+    float guidance_weight,
+    float fence_weight,  // each blockage will be modeled by a macro with fences
+    float boundary_weight,
+    float macro_blockage_weight,
+    float notch_weight,
+    // notch threshold
+    float notch_h_threshold,
+    float notch_v_threshold,
+    // probability of each action
+    float pos_swap_prob,
+    float neg_swap_prob,
+    float double_swap_prob,
+    float exchange_prob,
+    float resize_prob,
+    // Fast SA hyperparameter
+    float init_prob,
+    int max_num_step,
+    int num_perturb_per_step,
+    int k,
+    int c,
+    unsigned seed)
+    : SimulatedAnnealingCore<SoftMacro>(outline_width,
+                                        outline_height,
+                                        macros,
+                                        area_weight,
+                                        outline_weight,
+                                        wirelength_weight,
+                                        guidance_weight,
+                                        fence_weight,
+                                        pos_swap_prob,
+                                        neg_swap_prob,
+                                        double_swap_prob,
+                                        exchange_prob,
+                                        init_prob,
+                                        max_num_step,
+                                        num_perturb_per_step,
+                                        k,
+                                        c,
+                                        seed)
+{
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;
-  original_notch_weight_    = notch_weight;
-  resize_prob_     = resize_prob;
-  notch_h_th_      = notch_h_threshold;
-  notch_v_th_      = notch_v_threshold;
-  adjust_h_th_     = notch_h_th_;
-  adjust_v_th_     = notch_v_th_;
+  original_notch_weight_ = notch_weight;
+  resize_prob_ = resize_prob;
+  notch_h_th_ = notch_h_threshold;
+  notch_v_th_ = notch_v_threshold;
+  adjust_h_th_ = notch_h_th_;
+  adjust_v_th_ = notch_v_th_;
 }
 
 // acessors functions
-float SACoreSoftMacro::GetBoundaryPenalty() const 
+float SACoreSoftMacro::GetBoundaryPenalty() const
 {
   return boundary_penalty_;
 }
 
-float SACoreSoftMacro::GetNormBoundaryPenalty() const 
+float SACoreSoftMacro::GetNormBoundaryPenalty() const
 {
   return norm_boundary_penalty_;
 }
 
-
-float SACoreSoftMacro::GetMacroBlockagePenalty() const 
+float SACoreSoftMacro::GetMacroBlockagePenalty() const
 {
   return macro_blockage_penalty_;
 }
 
-float SACoreSoftMacro::GetNormMacroBlockagePenalty() const 
+float SACoreSoftMacro::GetNormMacroBlockagePenalty() const
 {
   return norm_macro_blockage_penalty_;
 }
 
-float SACoreSoftMacro::GetNotchPenalty() const 
+float SACoreSoftMacro::GetNotchPenalty() const
 {
   return notch_penalty_;
 }
 
-float SACoreSoftMacro::GetNormNotchPenalty() const 
+float SACoreSoftMacro::GetNormNotchPenalty() const
 {
   return norm_notch_penalty_;
 }
 
-
 // Operations
-float SACoreSoftMacro::CalNormCost() 
+float SACoreSoftMacro::CalNormCost()
 {
-  float cost = 0.0; // Initialize cost
+  float cost = 0.0;  // Initialize cost
   if (norm_area_penalty_ > 0.0)
     cost += area_weight_ * (width_ * height_) / norm_area_penalty_;
   if (norm_outline_penalty_ > 0.0)
@@ -149,12 +165,12 @@ float SACoreSoftMacro::CalNormCost()
   if (norm_boundary_penalty_ > 0.0)
     cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
   if (norm_macro_blockage_penalty_ > 0.0)
-    cost += macro_blockage_weight_ * macro_blockage_penalty_ / norm_macro_blockage_penalty_; 
+    cost += macro_blockage_weight_ * macro_blockage_penalty_
+            / norm_macro_blockage_penalty_;
   if (norm_notch_penalty_ > 0.0)
     cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
   return cost;
 }
-
 
 void SACoreSoftMacro::CalPenalty()
 {
@@ -167,7 +183,6 @@ void SACoreSoftMacro::CalPenalty()
   CalNotchPenalty();
 }
 
-
 void SACoreSoftMacro::Perturb()
 {
   if (macros_.size() == 0)
@@ -178,17 +193,16 @@ void SACoreSoftMacro::Perturb()
   pre_neg_seq_ = neg_seq_;
   pre_width_ = width_;
   pre_height_ = height_;
-  pre_outline_penalty_  = outline_penalty_;
-  pre_wirelength_       = wirelength_;
+  pre_outline_penalty_ = outline_penalty_;
+  pre_wirelength_ = wirelength_;
   pre_guidance_penalty_ = guidance_penalty_;
-  pre_fence_penalty_    = fence_penalty_;
+  pre_fence_penalty_ = fence_penalty_;
   pre_boundary_penalty_ = boundary_penalty_;
   pre_macro_blockage_penalty_ = macro_blockage_penalty_;
-  pre_notch_penalty_    = notch_penalty_;   
-
+  pre_notch_penalty_ = notch_penalty_;
 
   // generate random number (0 - 1) to determine actions
-  const float op = (distribution_) (generator_);
+  const float op = (distribution_)(generator_);
   const float action_prob_1 = pos_swap_prob_;
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;
@@ -196,23 +210,23 @@ void SACoreSoftMacro::Perturb()
   const float action_prob_5 = action_prob_4 + resize_prob_;
   if (op <= action_prob_1) {
     action_id_ = 1;
-    SingleSeqSwap(true); // Swap two macros in pos_seq_
+    SingleSeqSwap(true);  // Swap two macros in pos_seq_
   } else if (op <= action_prob_2) {
     action_id_ = 2;
-    SingleSeqSwap(false); // Swap two macros in neg_seq_;
+    SingleSeqSwap(false);  // Swap two macros in neg_seq_;
   } else if (op <= action_prob_3) {
     action_id_ = 3;
-    DoubleSeqSwap(); // Swap two macros in pos_seq_ and 
-                     // other two macros in neg_seq_
+    DoubleSeqSwap();  // Swap two macros in pos_seq_ and
+                      // other two macros in neg_seq_
   } else if (op <= action_prob_4) {
     action_id_ = 4;
     ExchangeMacros();  // exchange two macros in the sequence pair
   } else {
-    action_id_= 5;
+    action_id_ = 5;
     pre_macros_ = macros_;
-    Resize();      // Flip one macro
+    Resize();  // Flip one macro
   }
-  
+
   // update the macro locations based on Sequence Pair
   PackFloorplan();
   // Update all the penalties
@@ -223,7 +237,7 @@ void SACoreSoftMacro::Restore()
 {
   if (macros_.size() == 0)
     return;
- 
+
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
@@ -237,20 +251,20 @@ void SACoreSoftMacro::Restore()
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }
- 
-  width_  = pre_width_;
+
+  width_ = pre_width_;
   height_ = pre_height_;
-  outline_penalty_  = pre_outline_penalty_;
-  wirelength_       = pre_wirelength_;
+  outline_penalty_ = pre_outline_penalty_;
+  wirelength_ = pre_wirelength_;
   guidance_penalty_ = pre_guidance_penalty_;
-  fence_penalty_    = pre_fence_penalty_;
+  fence_penalty_ = pre_fence_penalty_;
   boundary_penalty_ = pre_boundary_penalty_;
   macro_blockage_penalty_ = pre_macro_blockage_penalty_;
-  notch_penalty_    = pre_notch_penalty_;
+  notch_penalty_ = pre_notch_penalty_;
 }
 
 void SACoreSoftMacro::Initialize()
-{  
+{
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
   std::vector<float> guidance_penalty_list;
@@ -263,7 +277,7 @@ void SACoreSoftMacro::Initialize()
   std::vector<float> height_list;
   for (int i = 0; i < num_perturb_per_step_; i++) {
     Perturb();
-    // store current penalties 
+    // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
     area_penalty_list.push_back(width_ * height_);
@@ -275,29 +289,29 @@ void SACoreSoftMacro::Initialize()
     macro_blockage_penalty_list.push_back(macro_blockage_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
   }
- 
-  norm_area_penalty_     = CalAverage(area_penalty_list);
-  norm_outline_penalty_  = CalAverage(outline_penalty_list);
-  norm_wirelength_       = CalAverage(wirelength_list);
+
+  norm_area_penalty_ = CalAverage(area_penalty_list);
+  norm_outline_penalty_ = CalAverage(outline_penalty_list);
+  norm_wirelength_ = CalAverage(wirelength_list);
   norm_guidance_penalty_ = CalAverage(guidance_penalty_list);
-  norm_fence_penalty_    = CalAverage(fence_penalty_list);
+  norm_fence_penalty_ = CalAverage(fence_penalty_list);
   norm_boundary_penalty_ = CalAverage(boundary_penalty_list);
   norm_macro_blockage_penalty_ = CalAverage(macro_blockage_penalty_list);
-  //norm_notch_penalty_    = CalAverage(notch_penalty_list);
-  norm_notch_penalty_    = outline_width_ * outline_height_;
+  // norm_notch_penalty_    = CalAverage(notch_penalty_list);
+  norm_notch_penalty_ = outline_width_ * outline_height_;
 
   // Calculate initial temperature
   std::vector<float> cost_list;
   for (int i = 0; i < outline_penalty_list.size(); i++) {
-    width_            = width_list[i];
-    height_           = height_list[i];
-    outline_penalty_  = outline_penalty_list[i];
-    wirelength_       = wirelength_list[i];
+    width_ = width_list[i];
+    height_ = height_list[i];
+    outline_penalty_ = outline_penalty_list[i];
+    wirelength_ = wirelength_list[i];
     guidance_penalty_ = guidance_penalty_list[i];
-    fence_penalty_    = fence_penalty_list[i];
+    fence_penalty_ = fence_penalty_list[i];
     boundary_penalty_ = boundary_penalty_list[i];
     macro_blockage_penalty_ = macro_blockage_penalty_list[i];
-    notch_penalty_    = notch_penalty_list[i];
+    notch_penalty_ = notch_penalty_list[i];
     cost_list.push_back(CalNormCost());
   }
   float delta_cost = 0.0;
@@ -314,7 +328,7 @@ void SACoreSoftMacro::CalBoundaryPenalty()
   boundary_penalty_ = 0.0;
   if (boundary_weight_ <= 0.0)
     return;
-  
+
   for (const auto& macro : macros_) {
     if (macro.GetNumMacro() > 0) {
       const float lx = macro.GetX();
@@ -323,7 +337,8 @@ void SACoreSoftMacro::CalBoundaryPenalty()
       const float uy = ly + macro.GetHeight();
       const float x_dist = std::min(lx, std::abs(outline_width_ - ux));
       const float y_dist = std::min(ly, std::abs(outline_height_ - uy));
-      boundary_penalty_ += std::pow(std::min(x_dist, y_dist) * macro.GetNumMacro(), 2);
+      boundary_penalty_
+          += std::pow(std::min(x_dist, y_dist) * macro.GetNumMacro(), 2);
     }
   }
 }
@@ -333,7 +348,7 @@ void SACoreSoftMacro::CalMacroBlockagePenalty()
   macro_blockage_penalty_ = 0.0;
   if (blockages_.size() == 0)
     return;
-  
+
   for (auto& bbox : blockages_) {
     for (const auto& macro : macros_) {
       if (macro.GetNumMacro() > 0) {
@@ -346,11 +361,12 @@ void SACoreSoftMacro::CalMacroBlockagePenalty()
         const float region_ux = bbox.xMax();
         const float region_uy = bbox.yMax();
         if (ux <= region_lx || lx >= region_ux || uy <= region_ly
-             || ly >= region_uy)
-           ;
+            || ly >= region_uy)
+          ;
         else {
           const float width = std::min(ux, region_ux) - std::max(lx, region_lx);
-          const float height = std::min(uy, region_uy) - std::max(ly, region_ly);
+          const float height
+              = std::min(uy, region_uy) - std::max(ly, region_ly);
           macro_blockage_penalty_ += width * height;
         }
       }
@@ -363,18 +379,20 @@ void SACoreSoftMacro::AlignMacroClusters()
 {
   if (width_ > outline_width_ || height_ > outline_height_)
     return;
-  // update threshold value  
+  // update threshold value
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
   for (auto& macro : macros_) {
     if (macro.IsMacroCluster() == true) {
-      adjust_h_th_ = std::min(adjust_h_th_, macro.GetWidth() * (1 - acc_tolerance_));
-      adjust_v_th_ = std::min(adjust_v_th_, macro.GetHeight() * (1 - acc_tolerance_));
+      adjust_h_th_
+          = std::min(adjust_h_th_, macro.GetWidth() * (1 - acc_tolerance_));
+      adjust_v_th_
+          = std::min(adjust_v_th_, macro.GetHeight() * (1 - acc_tolerance_));
     }
   }
   const float ratio = 0.1;
   adjust_h_th_ = std::min(adjust_h_th_, outline_height_ * ratio);
-  adjust_v_th_ = std::min(adjust_v_th_, outline_width_  * ratio);
+  adjust_v_th_ = std::min(adjust_v_th_, outline_width_ * ratio);
 
   // Align macro clusters to boundaries
   for (auto& macro : macros_) {
@@ -421,8 +439,9 @@ void SACoreSoftMacro::CalNotchPenalty()
   std::set<float> y_point;
   std::vector<bool> macro_mask;
   for (auto& macro : macros_) {
-    if (macro.GetArea() <= 0.0 ||
-       (macro.IsMacroCluster() == false && macro.IsMixedCluster() == false)) {
+    if (macro.GetArea() <= 0.0
+        || (macro.IsMacroCluster() == false
+            && macro.IsMixedCluster() == false)) {
       macro_mask.push_back(false);
       continue;
     }
@@ -440,7 +459,7 @@ void SACoreSoftMacro::CalNotchPenalty()
   std::vector<float> x_grid(x_point.begin(), x_point.end());
   std::vector<float> y_grid(y_point.begin(), y_point.end());
   // create grid in a row-based manner
-  std::vector<std::vector<int> > grids; // store the macro id
+  std::vector<std::vector<int>> grids;  // store the macro id
   const int num_x = x_grid.size() - 1;
   const int num_y = y_grid.size() - 1;
   for (int j = 0; j < num_y; j++) {
@@ -453,14 +472,18 @@ void SACoreSoftMacro::CalNotchPenalty()
       continue;
     int x_start = 0;
     int x_end = 0;
-    CalSegmentLoc(macros_[macro_id].GetX(), 
+    CalSegmentLoc(macros_[macro_id].GetX(),
                   macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
-                  x_start, x_end, x_grid);
+                  x_start,
+                  x_end,
+                  x_grid);
     int y_start = 0;
-    int y_end   = 0;
-    CalSegmentLoc(macros_[macro_id].GetY(), 
+    int y_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(),
                   macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
-                  y_start, y_end, y_grid);
+                  y_start,
+                  y_end,
+                  y_grid);
     for (int j = y_start; j < y_end; j++)
       for (int i = x_start; i < x_end; i++)
         grids[j][i] = macro_id;
@@ -471,114 +494,118 @@ void SACoreSoftMacro::CalNotchPenalty()
       continue;
     int x_start = 0;
     int x_end = 0;
-    CalSegmentLoc(macros_[macro_id].GetX(), 
+    CalSegmentLoc(macros_[macro_id].GetX(),
                   macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
-                  x_start, x_end, x_grid);
+                  x_start,
+                  x_end,
+                  x_grid);
     int y_start = 0;
-    int y_end   = 0;
-    CalSegmentLoc(macros_[macro_id].GetY(), 
+    int y_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(),
                   macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
-                  y_start, y_end, y_grid);
+                  y_start,
+                  y_end,
+                  y_grid);
     int x_start_new = x_start;
-    int x_end_new   = x_end;
+    int x_end_new = x_end;
     int y_start_new = y_start;
-    int y_end_new   = y_end;
+    int y_end_new = y_end;
     // check left first
     for (int i = x_start - 1; i >= 0; i--) {
       bool flag = true;
       for (int j = y_start; j < y_end; j++) {
         if (grids[j][i] != -1) {
-          flag = false; // we cannot extend the current cluster   
+          flag = false;  // we cannot extend the current cluster
           break;
-        } // end if
-      } // end y
-      if (flag == false) { // extension done
-        break; 
+        }                   // end if
+      }                     // end y
+      if (flag == false) {  // extension done
+        break;
       } else {
-        x_start_new--; // extend left
-        for (int j = y_start; j < y_end; j++) 
+        x_start_new--;  // extend left
+        for (int j = y_start; j < y_end; j++)
           grids[j][i] = macro_id;
-      } // end update
-    } // end left 
+      }  // end update
+    }    // end left
     // check top second
     for (int j = y_end; j < num_y; j++) {
       bool flag = true;
       for (int i = x_start; i < x_end; i++) {
         if (grids[j][i] != -1) {
-          flag = false; // we cannot extend the current cluster   
+          flag = false;  // we cannot extend the current cluster
           break;
-        } // end if
-      } // end y
-      if (flag == false) { // extension done
-        break; 
+        }                   // end if
+      }                     // end y
+      if (flag == false) {  // extension done
+        break;
       } else {
-        y_end_new++; // extend top
-        for (int i = x_start; i < x_end; i++) 
+        y_end_new++;  // extend top
+        for (int i = x_start; i < x_end; i++)
           grids[j][i] = macro_id;
-      } // end update
-    } // end top 
+      }  // end update
+    }    // end top
     // check right third
     for (int i = x_end; i < num_x; i++) {
       bool flag = true;
       for (int j = y_start; j < y_end; j++) {
         if (grids[j][i] != -1) {
-          flag = false; // we cannot extend the current cluster   
+          flag = false;  // we cannot extend the current cluster
           break;
-        } // end if
-      } // end y
-      if (flag == false) { // extension done
-        break; 
+        }                   // end if
+      }                     // end y
+      if (flag == false) {  // extension done
+        break;
       } else {
-        x_end_new++; // extend right
-        for (int j = y_start; j < y_end; j++) 
+        x_end_new++;  // extend right
+        for (int j = y_start; j < y_end; j++)
           grids[j][i] = macro_id;
-      } // end update
-    } // end right
+      }  // end update
+    }    // end right
     // check down second
     for (int j = y_start - 1; j >= 0; j--) {
       bool flag = true;
       for (int i = x_start; i < x_end; i++) {
         if (grids[j][i] != -1) {
-          flag = false; // we cannot extend the current cluster   
+          flag = false;  // we cannot extend the current cluster
           break;
-        } // end if
-      } // end y
-      if (flag == false) { // extension done
-        break; 
+        }                   // end if
+      }                     // end y
+      if (flag == false) {  // extension done
+        break;
       } else {
-        y_start_new--; // extend down
-        for (int i = x_start; i < x_end; i++) 
+        y_start_new--;  // extend down
+        for (int i = x_start; i < x_end; i++)
           grids[j][i] = macro_id;
-      } // end update
-    } // end down 
+      }  // end update
+    }    // end down
     // check the notch area
     if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_)
-      notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new]) * 
-                        macros_[macro_id].GetHeight();    
+      notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new])
+                        * macros_[macro_id].GetHeight();
     if ((x_grid[x_end_new] - x_grid[x_end]) <= notch_h_th_)
-      notch_penalty_ += (x_grid[x_end_new] - x_grid[x_end]) * 
-                        macros_[macro_id].GetHeight();   
+      notch_penalty_ += (x_grid[x_end_new] - x_grid[x_end])
+                        * macros_[macro_id].GetHeight();
     if ((y_grid[y_start] - y_grid[y_start_new]) <= notch_v_th_)
-      notch_penalty_ += (y_grid[y_start] - y_grid[y_start_new]) * 
-                        macros_[macro_id].GetWidth();
+      notch_penalty_ += (y_grid[y_start] - y_grid[y_start_new])
+                        * macros_[macro_id].GetWidth();
     if ((y_grid[y_end_new] - y_grid[y_end]) <= notch_v_th_)
-      notch_penalty_ += (y_grid[y_end_new] - y_grid[y_end]) * 
-                        macros_[macro_id].GetWidth();   
-  } 
+      notch_penalty_
+          += (y_grid[y_end_new] - y_grid[y_end]) * macros_[macro_id].GetWidth();
+  }
   macros_ = pre_macros_;
 }
 
-
 void SACoreSoftMacro::Resize()
 {
-  int idx = static_cast<int>(std::floor((distribution_)(generator_) * macros_.size()));
+  int idx = static_cast<int>(
+      std::floor((distribution_)(generator_) *macros_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.IsMacroCluster() == true) {
     src_macro.ResizeRandomly(distribution_, generator_);
     return;
   }
-  
+
   const float lx = src_macro.GetX();
   const float ly = src_macro.GetY();
   const float ux = lx + src_macro.GetWidth();
@@ -587,14 +614,14 @@ void SACoreSoftMacro::Resize()
   if (ux >= outline_width_ || uy >= outline_height_) {
     src_macro.ResizeRandomly(distribution_, generator_);
     return;
-  } 
+  }
 
-  if ((distribution_) (generator_) < 0.4) {
+  if ((distribution_)(generator_) < 0.4) {
     src_macro.ResizeRandomly(distribution_, generator_);
     return;
   }
 
-  float option = (distribution_) (generator_);
+  float option = (distribution_)(generator_);
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
     float e_x2 = outline_width_;
@@ -613,7 +640,7 @@ void SACoreSoftMacro::Resize()
     }
     if (d_x2 <= lx)
       return;
-    else    
+    else
       src_macro.SetWidth(d_x2 - lx);
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
@@ -639,7 +666,6 @@ void SACoreSoftMacro::Resize()
   }
 }
 
-
 void SACoreSoftMacro::Shrink()
 {
   for (auto& macro : macros_)
@@ -648,25 +674,25 @@ void SACoreSoftMacro::Shrink()
 
 void SACoreSoftMacro::PrintResults() const
 {
-  std::cout << "outline_penalty : "
-            << outline_penalty_ / norm_outline_penalty_ << std::endl;
-  std::cout << "wirelength : "
-            << wirelength_ / norm_wirelength_ << std::endl;
+  std::cout << "outline_penalty : " << outline_penalty_ / norm_outline_penalty_
+            << std::endl;
+  std::cout << "wirelength : " << wirelength_ / norm_wirelength_ << std::endl;
   std::cout << "guidance_penalty : "
             << guidance_penalty_ / norm_guidance_penalty_ << std::endl;
-  std::cout << "fence_penalty : "
-            << fence_penalty_ / norm_fence_penalty_ << std::endl;
-  std::cout << "boundary_penalty : " 
+  std::cout << "fence_penalty : " << fence_penalty_ / norm_fence_penalty_
+            << std::endl;
+  std::cout << "boundary_penalty : "
             << boundary_penalty_ / norm_boundary_penalty_ << std::endl;
-  std::cout << "macro_blockage_penalty : " 
-            << macro_blockage_penalty_ / norm_macro_blockage_penalty_ << std::endl;
-  std::cout << "notch_penalty : " << notch_penalty_ / norm_notch_penalty_ << std::endl;
+  std::cout << "macro_blockage_penalty : "
+            << macro_blockage_penalty_ / norm_macro_blockage_penalty_
+            << std::endl;
+  std::cout << "notch_penalty : " << notch_penalty_ / norm_notch_penalty_
+            << std::endl;
 }
-
 
 // fill the dead space by adjust the size of MixedCluster
 void SACoreSoftMacro::FillDeadSpace()
-{ 
+{
   // if the floorplan is invalid, do nothing
   if (width_ > outline_width_ || height_ > outline_height_)
     return;
@@ -691,7 +717,7 @@ void SACoreSoftMacro::FillDeadSpace()
   std::vector<float> x_grid(x_point.begin(), x_point.end());
   std::vector<float> y_grid(y_point.begin(), y_point.end());
   // create grid in a row-based manner
-  std::vector<std::vector<int> > grids; // store the macro id
+  std::vector<std::vector<int>> grids;  // store the macro id
   const int num_x = x_grid.size() - 1;
   const int num_y = y_grid.size() - 1;
   for (int j = 0; j < num_y; j++) {
@@ -704,14 +730,18 @@ void SACoreSoftMacro::FillDeadSpace()
       continue;
     int x_start = 0;
     int x_end = 0;
-    CalSegmentLoc(macros_[macro_id].GetX(), 
+    CalSegmentLoc(macros_[macro_id].GetX(),
                   macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
-                  x_start, x_end, x_grid);
+                  x_start,
+                  x_end,
+                  x_grid);
     int y_start = 0;
-    int y_end   = 0;
-    CalSegmentLoc(macros_[macro_id].GetY(), 
+    int y_end = 0;
+    CalSegmentLoc(macros_[macro_id].GetY(),
                   macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
-                  y_start, y_end, y_grid);
+                  y_start,
+                  y_end,
+                  y_grid);
     for (int j = y_start; j < y_end; j++)
       for (int i = x_start; i < x_end; i++)
         grids[j][i] = macro_id;
@@ -721,100 +751,104 @@ void SACoreSoftMacro::FillDeadSpace()
     for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
       if (macros_[macro_id].GetArea() <= 0.0)
         continue;
-      const bool forward_flag = (order == 0) ?
-                                 macros_[macro_id].IsMixedCluster() :
-                                 macros_[macro_id].IsStdCellCluster();
+      const bool forward_flag = (order == 0)
+                                    ? macros_[macro_id].IsMixedCluster()
+                                    : macros_[macro_id].IsStdCellCluster();
       if (forward_flag == false)
         continue;
       int x_start = 0;
       int x_end = 0;
-      CalSegmentLoc(macros_[macro_id].GetX(), 
+      CalSegmentLoc(macros_[macro_id].GetX(),
                     macros_[macro_id].GetX() + macros_[macro_id].GetWidth(),
-                    x_start, x_end, x_grid);
+                    x_start,
+                    x_end,
+                    x_grid);
       int y_start = 0;
-      int y_end   = 0;
-      CalSegmentLoc(macros_[macro_id].GetY(), 
+      int y_end = 0;
+      CalSegmentLoc(macros_[macro_id].GetY(),
                     macros_[macro_id].GetY() + macros_[macro_id].GetHeight(),
-                    y_start, y_end, y_grid);
+                    y_start,
+                    y_end,
+                    y_grid);
       int x_start_new = x_start;
-      int x_end_new   = x_end;
+      int x_end_new = x_end;
       int y_start_new = y_start;
-      int y_end_new   = y_end;
+      int y_end_new = y_end;
       // propagate left first
       for (int i = x_start - 1; i >= 0; i--) {
         bool flag = true;
         for (int j = y_start; j < y_end; j++) {
           if (grids[j][i] != -1) {
-            flag = false; // we cannot extend the current cluster   
+            flag = false;  // we cannot extend the current cluster
             break;
-          } // end if
-        } // end y
-        if (flag == false) { // extension done
-          break; 
+          }                   // end if
+        }                     // end y
+        if (flag == false) {  // extension done
+          break;
         } else {
-          x_start_new--; // extend left
-          for (int j = y_start; j < y_end; j++) 
+          x_start_new--;  // extend left
+          for (int j = y_start; j < y_end; j++)
             grids[j][i] = macro_id;
-        } // end update
-      } // end left 
+        }  // end update
+      }    // end left
       x_start = x_start_new;
       // propagate top second
       for (int j = y_end; j < num_y; j++) {
         bool flag = true;
         for (int i = x_start; i < x_end; i++) {
           if (grids[j][i] != -1) {
-            flag = false; // we cannot extend the current cluster   
+            flag = false;  // we cannot extend the current cluster
             break;
-          } // end if
-        } // end y
-        if (flag == false) { // extension done
-          break; 
+          }                   // end if
+        }                     // end y
+        if (flag == false) {  // extension done
+          break;
         } else {
-          y_end_new++; // extend top
-          for (int i = x_start; i < x_end; i++) 
+          y_end_new++;  // extend top
+          for (int i = x_start; i < x_end; i++)
             grids[j][i] = macro_id;
-        } // end update
-      } // end top
+        }  // end update
+      }    // end top
       y_end = y_end_new;
       // propagate right third
       for (int i = x_end; i < num_x; i++) {
         bool flag = true;
         for (int j = y_start; j < y_end; j++) {
           if (grids[j][i] != -1) {
-            flag = false; // we cannot extend the current cluster   
+            flag = false;  // we cannot extend the current cluster
             break;
-          } // end if
-        } // end y
-        if (flag == false) { // extension done
-          break; 
+          }                   // end if
+        }                     // end y
+        if (flag == false) {  // extension done
+          break;
         } else {
-          x_end_new++; // extend right
-          for (int j = y_start; j < y_end; j++) 
+          x_end_new++;  // extend right
+          for (int j = y_start; j < y_end; j++)
             grids[j][i] = macro_id;
-        } // end update
-      } // end right
+        }  // end update
+      }    // end right
       x_end = x_end_new;
       // propagate down second
       for (int j = y_start - 1; j >= 0; j--) {
         bool flag = true;
         for (int i = x_start; i < x_end; i++) {
           if (grids[j][i] != -1) {
-            flag = false; // we cannot extend the current cluster   
+            flag = false;  // we cannot extend the current cluster
             break;
-          } // end if
-        } // end y
-        if (flag == false) { // extension done
-          break; 
+          }                   // end if
+        }                     // end y
+        if (flag == false) {  // extension done
+          break;
         } else {
-          y_start_new--; // extend down
-          for (int i = x_start; i < x_end; i++) 
+          y_start_new--;  // extend down
+          for (int i = x_start; i < x_end; i++)
             grids[j][i] = macro_id;
-        } // end update
-      } // end down 
+        }  // end update
+      }    // end down
       y_start = y_start_new;
       // update the location of cluster
       macros_[macro_id].SetLocationF(x_grid[x_start], y_grid[y_start]);
-      macros_[macro_id].SetShapeF(x_grid[x_end] - x_grid[x_start], 
+      macros_[macro_id].SetShapeF(x_grid[x_end] - x_grid[x_start],
                                   y_grid[y_end] - y_grid[y_start]);
     }
   }
@@ -822,21 +856,22 @@ void SACoreSoftMacro::FillDeadSpace()
 
 // A utility function for FillDeadSpace.
 // It's used for calculate the start point and end point for a segment in a grid
-void SACoreSoftMacro::CalSegmentLoc(float seg_start, float seg_end,
-                                    int& start_id,   int& end_id,
+void SACoreSoftMacro::CalSegmentLoc(float seg_start,
+                                    float seg_end,
+                                    int& start_id,
+                                    int& end_id,
                                     std::vector<float>& grid)
 {
   start_id = -1;
   end_id = -1;
   for (int i = 0; i < grid.size() - 1; i++) {
-    if ((grid[i] <= seg_start) && (grid[i+1] > seg_start))
+    if ((grid[i] <= seg_start) && (grid[i + 1] > seg_start))
       start_id = i;
-    if ((grid[i] <= seg_end) && (grid[i+1] > seg_end))
+    if ((grid[i] <= seg_end) && (grid[i + 1] > seg_end))
       end_id = i;
-  } 
+  }
   if (end_id == -1)
     end_id = grid.size() - 1;
 }
-
 
 }  // namespace mpl

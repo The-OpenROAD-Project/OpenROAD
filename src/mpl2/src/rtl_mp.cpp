@@ -43,10 +43,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "hier_rtlmp.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
-#include "hier_rtlmp.h"
 
 using utl::PAR;
 
@@ -431,15 +431,12 @@ bool rtl_macro_placer(const char* config_file,
 
   // Write back to odb
   auto block = db->getChip()->getBlock();
-  bool create_cluster_regions = false; // turned off till validation of flow through gpl and dpl/dpo
-  for (const auto cluster : clusters) {
-    if (cluster->GetNumMacro() > 0) {
-      float cluster_lx = cluster->GetX();
-      float cluster_ly = cluster->GetY();
-      vector<Macro> macros = cluster->GetMacros();
-      for (const auto& macro : macros) {
-        float lx = outline_lx + cluster_lx + macro.GetX() + halo_width;
-        float ly = outline_ly + cluster_ly + macro.GetY() + halo_width;
+  bool create_cluster_regions = false; // turned off till validation of flow
+through gpl and dpl/dpo for (const auto cluster : clusters) { if
+(cluster->GetNumMacro() > 0) { float cluster_lx = cluster->GetX(); float
+cluster_ly = cluster->GetY(); vector<Macro> macros = cluster->GetMacros(); for
+(const auto& macro : macros) { float lx = outline_lx + cluster_lx + macro.GetX()
++ halo_width; float ly = outline_ly + cluster_ly + macro.GetY() + halo_width;
         odb::dbOrientType orientation(macro.GetOrientation().c_str());
         lx = round(lx / pitch_x) * pitch_x;
         ly = round(ly / pitch_y) * pitch_y;
@@ -469,20 +466,18 @@ bool rtl_macro_placer(const char* config_file,
 }
 */
 
-
 void MacroPlacer2::init(ord::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
                         utl::Logger* logger)
 {
   network_ = network;
-  db_  = db;
+  db_ = db;
   sta_ = sta;
   logger_ = logger;
 }
 
-
-bool MacroPlacer2::place(const int max_num_macro, 
+bool MacroPlacer2::place(const int max_num_macro,
                          const int min_num_macro,
                          const int max_num_inst,
                          const int min_num_inst,
@@ -506,8 +501,8 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float notch_weight,
                          const float pin_access_th,
                          const float target_util,
-                         const float target_dead_space, 
-                         const float min_ar, 
+                         const float target_dead_space,
+                         const float min_ar,
                          const int snap_layer,
                          const char* report_directory)
 {
@@ -515,10 +510,8 @@ bool MacroPlacer2::place(const int max_num_macro,
 
   logger_->report("Hier_RTLMP report dir: {}", report_directory);
 
-  rtlmp_engine_->SetTopLevelClusterSize(max_num_macro,
-                                        min_num_macro,
-                                        max_num_inst,  
-                                        min_num_inst);
+  rtlmp_engine_->SetTopLevelClusterSize(
+      max_num_macro, min_num_macro, max_num_inst, min_num_inst);
   rtlmp_engine_->SetClusterSizeTolerance(tolerance);
   rtlmp_engine_->SetMaxNumLevel(max_num_level);
   rtlmp_engine_->SetClusterSizeRatioPerLevel(coarsening_ratio);
@@ -526,8 +519,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetLargeNetThreshold(large_net_threshold);
   rtlmp_engine_->SetSignatureNetThreshold(signature_net_threshold);
   rtlmp_engine_->SetHaloWidth(halo_width);
-  rtlmp_engine_->SetGlobalFence(fence_lx, fence_ly,
-                                fence_ux, fence_uy);
+  rtlmp_engine_->SetGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
   rtlmp_engine_->SetAreaWeight(area_weight);
   rtlmp_engine_->SetOutlineWeight(outline_weight);
   rtlmp_engine_->SetWirelengthWeight(wirelength_weight);
@@ -541,7 +533,6 @@ bool MacroPlacer2::place(const int max_num_macro,
   rtlmp_engine_->SetMinAR(min_ar);
   rtlmp_engine_->SetSnapLayer(snap_layer);
   rtlmp_engine_->SetReportDirectory(report_directory);
-
 
   rtlmp_engine_->HierRTLMacroPlacer();
 

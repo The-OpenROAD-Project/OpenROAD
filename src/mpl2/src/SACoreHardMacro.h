@@ -42,64 +42,70 @@
 #include <unordered_map>
 #include <vector>
 
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "SimulatedAnnealingCore.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "object.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Bfs.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sta.hh"
-#include "object.h"
-#include "SimulatedAnnealingCore.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
-// 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine and PinAlignEngine
-// 2) SACoreSoftMacro : SA for soft macros.  It will be called by MacroPlaceEngine
-class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro> {
-  public:
-    SACoreHardMacro() {   };
-    SACoreHardMacro(float outline_width, float outline_height, // boundary constraints
-                    const std::vector<HardMacro>& macros, 
-                    // weight for different penalty
-                    float area_weight,
-                    float outline_weight, 
-                    float wirelength_weight,
-                    float guidance_weight,
-                    float fence_weight, // each blockage will be modeled by a macro with fences
-                    // probability of each action 
-                    float pos_swap_prob,
-                    float neg_swap_prob,
-                    float double_swap_prob,
-                    float exchange_prob,
-                    float flip_prob,
-                    // Fast SA hyperparameter
-                    float init_prob, int max_num_step, int num_perturb_per_step,
-                    int k, int c, unsigned seed = 0);
+// 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
+// and PinAlignEngine 2) SACoreSoftMacro : SA for soft macros.  It will be
+// called by MacroPlaceEngine
+class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
+{
+ public:
+  SACoreHardMacro(){};
+  SACoreHardMacro(float outline_width,
+                  float outline_height,  // boundary constraints
+                  const std::vector<HardMacro>& macros,
+                  // weight for different penalty
+                  float area_weight,
+                  float outline_weight,
+                  float wirelength_weight,
+                  float guidance_weight,
+                  float fence_weight,  // each blockage will be modeled by a
+                                       // macro with fences
+                  // probability of each action
+                  float pos_swap_prob,
+                  float neg_swap_prob,
+                  float double_swap_prob,
+                  float exchange_prob,
+                  float flip_prob,
+                  // Fast SA hyperparameter
+                  float init_prob,
+                  int max_num_step,
+                  int num_perturb_per_step,
+                  int k,
+                  int c,
+                  unsigned seed = 0);
 
-    // Initialize the SA worker
-    void Initialize(); 
-    void FillDeadSpace() {   }
-    // print results
-    void PrintResults();
+  // Initialize the SA worker
+  void Initialize();
+  void FillDeadSpace() {}
+  // print results
+  void PrintResults();
 
-  private:
-    float CalNormCost();
-    void CalPenalty();
-    void Shrink() {    }
+ private:
+  float CalNormCost();
+  void CalPenalty();
+  void Shrink() {}
 
-    void Perturb();
-    void Restore();
-    // actions used
-    void FlipMacro(); // flip hard macros
+  void Perturb();
+  void Restore();
+  // actions used
+  void FlipMacro();  // flip hard macros
 
-    float flip_prob_ = 0.0;
+  float flip_prob_ = 0.0;
 };
 
-} // namespace mpl
-
-
+}  // namespace mpl
