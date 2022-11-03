@@ -491,7 +491,6 @@ void SimulatedAnnealingCore<T>::FastSA()
   // const for restart
   int num_restart = 1;
   const int max_num_restart = 2;
-  const int shrink_freq = int(max_num_step_ * shrink_freq_);
   // SA process
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
@@ -534,14 +533,6 @@ void SimulatedAnnealingCore<T>::FastSA()
       CalPenalty();
       pre_cost = CalNormCost();
     }
-    /*
-    if (step % shrink_freq == 0) {
-      Shrink();
-      PackFloorplan();
-      CalPenalty();
-      pre_cost = CalNormCost();
-    }
-    */
   }  // end while
   // update the final results
   PackFloorplan();

@@ -67,7 +67,7 @@ float Dbu2Micro(int metric, float dbu)
 
 int Micro2Dbu(float metric, float dbu)
 {
-  return std::round(metric * std::round(dbu));
+  return std::round(metric * dbu);
 }
 
 // Sort shapes
@@ -83,30 +83,34 @@ bool SortShape(const std::pair<float, float>& shape1,
 
 std::string to_string(const PinAccess& pin_access)
 {
-  if (pin_access == L)
-    return std::string("L");
-  else if (pin_access == T)
-    return std::string("T");
-  else if (pin_access == R)
-    return std::string("R");
-  else if (pin_access == B)
-    return std::string("B");
-  else
-    return std::string("NONE");
+  switch(pin_access) {
+    case L:
+      return std::string("L");
+    case T:
+      return std::string("T");
+    case R:
+      return std::string("R");
+    case B:
+      return std::string("B");
+    default:
+      return std::string("NONE");
+  }
 }
 
 PinAccess Opposite(const PinAccess& pin_access)
 {
-  if (pin_access == L)
-    return R;
-  else if (pin_access == T)
-    return B;
-  else if (pin_access == R)
-    return L;
-  else if (pin_access == B)
-    return T;
-  else
-    return NONE;
+  switch (pin_access) {
+    case L: 
+      return R;
+    case T:
+      return B;
+    case R:
+      return L;
+    case B:
+      return T;
+    default:
+      return NONE;
+  }
 }
 
 // Compare two intervals according to starting points
@@ -925,19 +929,14 @@ std::string HardMacro::GetOrientation() const
 
 // We do not allow rotation of macros
 // This may violate the direction of metal layers
-// axis = true, flip horizontally
-// axis = false, flip vertically
-void HardMacro::Flip(bool axis)
+void HardMacro::Flip(bool flip_horizontal)
 {
-  // if (orientation_.getString() == std::string("MY"))
-  //  return;
-  if (axis == true) {
+  if (flip_horizontal == true) {
     orientation_ = orientation_.flipX();
     pin_y_ = height_ - pin_y_;
   } else {
     orientation_ = orientation_.flipY();
     pin_x_ = width_ - pin_x_;
-    // std::cout << "action :  " << orientation_.getString() << std::endl;
   }
 }
 

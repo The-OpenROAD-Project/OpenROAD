@@ -166,7 +166,6 @@ void SACoreHardMacro::Perturb()
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;
   const float action_prob_4 = action_prob_3 + exchange_prob_;
-  const float action_prob_5 = action_prob_4 + flip_prob_;
   if (op <= action_prob_1) {
     action_id_ = 1;
     SingleSeqSwap(true);  // Swap two macros in pos_seq_

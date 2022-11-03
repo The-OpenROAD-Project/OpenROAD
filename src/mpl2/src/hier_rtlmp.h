@@ -311,11 +311,11 @@ class HierRTLMP
   // it's a special node in the physical hierachy tree
   // Our physical hierarchy tree is as following:
   //             root_cluster_ (top design)
-  //            /    /    /    \    \    \
-    //           L    T     M1   M2    B    T  (L, T, B, T are clusters for
+  //            *    *    *    *    *   * 
+  //           L    T     M1   M2    B    T  (L, T, B, T are clusters for
   //           bundled IOs)
-  //                    /    \
-    //                   M3    M4     (M1, M2, M3 and M4 are clusters for logical
+  //                    *   * 
+  //                   M3    M4     (M1, M2, M3 and M4 are clusters for logical
   //                   modules
   Cluster* root_cluster_ = nullptr;      // cluster_id = 0 for root cluster
   std::map<int, Cluster*> cluster_map_;  // cluster_id, cluster

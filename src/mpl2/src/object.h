@@ -67,14 +67,14 @@ namespace mpl {
 // hard macro : a macro used in the design, for example, a SRAM macro
 //              We may generate some fake hard macros to model the
 //              behaviors of pin access blockage
-// soft macro : the physical abstraction for a cluster. We may inflat
+// soft macro : the physical abstraction for a cluster. We may inflate (bloat) 
 //              the area of the standard cells in the cluster when we
 //              create soft macros from clusters. That means the bounding
 //              box of a cluster is usually large than the actual size of the
 //              cluster
 //
 //  Note in our framework, when we try to describe the postition of an object,
-//  pos = (x, y) is the lower corner of the object.
+//  pos = (x, y) is the lower left corner of the object.
 //
 //
 // Note in our framework, except the fence constraints, all the constraints
@@ -395,9 +395,8 @@ class HardMacro
   std::string GetOrientation() const;
   // We do not allow rotation of macros
   // This may violate the direction of metal layers
-  // axis = true, flip horizontally
-  // axis = false, flip vertically
-  void Flip(bool axis);
+  // flip about X or Y axis
+  void Flip(bool flip_horizontal);
 
   // Interfaces with OpenDB
   odb::dbInst* GetInst() const;
@@ -589,12 +588,14 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
+    this->HPWL = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
+    this->HPWL = 0;
   }
 
   bool operator==(const BundledNet& net)

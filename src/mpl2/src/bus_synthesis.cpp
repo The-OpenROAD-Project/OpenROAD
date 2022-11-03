@@ -790,6 +790,10 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     int path_id = 0;
     for (const auto& edge_path : net.edge_paths) {
       // here the edge paths only include edges crossing soft macros (IOs)
+      std::cout << "path :  ";
+      for (auto& edge_id : edge_path)
+        std::cout << edge_id << "   ";
+      std::cout << std::endl;
       path_net_path_map[num_paths] = path_id++;
       path_net_map[num_paths++] = net_id;
     }
