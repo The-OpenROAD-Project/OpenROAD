@@ -1107,7 +1107,7 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "VA", 110, 110);
   if (lef58) {
-    makeLef58CutSpacingConstraint_adjacentCut(3, 10, 1, 1, 200);
+    makeLef58CutSpacingConstraint_adjacentCut(3, 190, 3, 1, 200);
     frNet* n1 = makeNet("n1");
     frNet* n2 = makeNet("n2");
     frNet* n3 = makeNet("n3");
