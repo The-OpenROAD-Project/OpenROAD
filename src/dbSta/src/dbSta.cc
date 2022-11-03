@@ -217,9 +217,12 @@ extern const char* dbSta_tcl_inits[];
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
+  gui_(nullptr),
+  logger_(nullptr),
+  db_network_(nullptr),
+  db_report_(nullptr),
   db_cbk_(nullptr),
-  path_renderer_(nullptr),
-  power_density_heatmap_(nullptr)
+  path_renderer_(nullptr)
 {
 }
 

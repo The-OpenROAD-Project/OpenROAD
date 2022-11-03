@@ -149,8 +149,20 @@ void dbWireEncoder::initPath(dbTechLayer* layer,
 }
 
 dbWireEncoder::dbWireEncoder()
+    : _wire(nullptr),
+      _tech(nullptr),
+      _block(nullptr),
+      _layer(nullptr),
+      _idx(0),
+      _x(0),
+      _y(0),
+      _non_default_rule(0),
+      _point_cnt(0),
+      _via_cnt(0),
+      _prev_extended_colinear_pnt(false),
+      _wire_type(0),
+      _rule_opcode(0)
 {
-  _wire = NULL;
 }
 
 dbWireEncoder::~dbWireEncoder()
