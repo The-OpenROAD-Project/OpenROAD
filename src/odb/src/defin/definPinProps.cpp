@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "definPinProps.h"
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,10 +37,11 @@
 #include <string>
 
 #include "db.h"
+#include "definPinProps.h"
 
 namespace odb {
 
-definPinProps::definPinProps()
+definPinProps::definPinProps() : _cur_obj(nullptr)
 {
 }
 

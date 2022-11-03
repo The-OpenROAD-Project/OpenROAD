@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "triton_route/TritonRoute.h"
-
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
 #include <fstream>
@@ -55,6 +53,7 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
+#include "triton_route/TritonRoute.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -71,10 +70,16 @@ extern int Drt_Init(Tcl_Interp* interp);
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      db_(nullptr),
+      logger_(nullptr),
+      stt_builder_(nullptr),
       num_drvs_(-1),
       gui_(gui::Gui::get()),
+      dist_(nullptr),
       distributed_(false),
+      dist_port_(0),
       results_sz_(0),
+      cloud_sz_(0),
       dist_pool_(1)
 {
 }

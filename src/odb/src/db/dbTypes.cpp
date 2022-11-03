@@ -1251,6 +1251,8 @@ dbBoxOwner::dbBoxOwner(const char* value)
     _value = SWIRE;
   else if (strcasecmp(value, "REGION") == 0)
     _value = REGION;
+  else
+    _value = UNKNOWN;
 }
 
 dbBoxOwner::dbBoxOwner(Value value)
@@ -1844,7 +1846,7 @@ dbMTermShapeType::dbMTermShapeType(const char* value)
   else if (strcasecmp(value, "FEEDTHRU") == 0)
     _value = FEEDTHRU;
 
-  else 
+  else
     _value = NONE;
 }
 

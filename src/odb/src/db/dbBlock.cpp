@@ -558,6 +558,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
+  _num_ext_dbs = 0;
+  _ptFile = nullptr;
+  _bterm_pins = nullptr;
+
   // ??? Initialize search-db on copy?
   _searchDb = NULL;
 
