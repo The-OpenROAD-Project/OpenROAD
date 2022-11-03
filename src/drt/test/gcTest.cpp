@@ -1117,7 +1117,7 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
     makeVia(vd, n1, {1000, 1000});
     makeVia(vd, n2, {1000, 820});
     makeVia(vd, n3, {820, 1000});
-    makeVia(vd, n4, {890, 700});
+    makeVia(vd, n4, {1000, 1180});
 
     runGC();
 
