@@ -130,17 +130,6 @@ void SACoreHardMacro::CalPenalty()
 
 void SACoreHardMacro::FlipMacro()
 {
-  /*
-  macro_id_ = static_cast<int>(std::floor(
-              (distribution_)(generator_) * macros_.size()));
-  const float prob = (distribution_) (generator_);
-  macros_[macro_id_].Flip(false);
-
-  if (prob <= 0.5)
-    macros_[macro_id_].Flip(true);
-  else
-    macros_[macro_id_].Flip(false);
-  */
   for (auto& macro : macros_)
     macro.Flip(false);
 }

@@ -83,7 +83,7 @@ bool SortShape(const std::pair<float, float>& shape1,
 
 std::string to_string(const PinAccess& pin_access)
 {
-  switch(pin_access) {
+  switch (pin_access) {
     case L:
       return std::string("L");
     case T:
@@ -100,7 +100,7 @@ std::string to_string(const PinAccess& pin_access)
 PinAccess Opposite(const PinAccess& pin_access)
 {
   switch (pin_access) {
-    case L: 
+    case L:
       return R;
     case T:
       return B;
@@ -590,12 +590,14 @@ bool Cluster::IsSameConnSignature(const Cluster& cluster, float net_threshold)
   return true;
 }
 
+//
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
 // candidate_clusters are small clusters,
 // any cluster not in candidate_clusters is a well-formed cluster
+//
 int Cluster::GetCloseCluster(const std::vector<int>& candidate_clusters,
                              float net_threshold)
 {
