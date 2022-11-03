@@ -150,6 +150,9 @@ if (BUILD_TCLX AND TCLX_H)
 endif()
 
 find_package(SWIG 3.0 REQUIRED)
+if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
+  message(WARNING "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
+endif()
 include(UseSWIG)
 
 find_package(Boost REQUIRED)

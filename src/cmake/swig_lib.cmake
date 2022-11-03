@@ -102,6 +102,9 @@ function(swig_lib)
       PRIVATE
         ${Python3_INCLUDE_DIRS}
     )
+    if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
+      set_property(TARGET ${ARG_NAME} PROPERTY SWIG_COMPILE_OPTIONS -flatstaticmethod)
+    endif()
 
     swig_link_libraries(${ARG_NAME}
       PUBLIC

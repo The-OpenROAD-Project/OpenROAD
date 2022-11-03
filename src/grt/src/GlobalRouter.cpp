@@ -1434,6 +1434,7 @@ void GlobalRouter::readGuides(const char* file_name)
     logger_->error(GRT, 233, "Failed to open guide file {}.", file_name);
   }
 
+  bool skip = false;
   while (fin.good()) {
     getline(fin, line);
     if (line == "(" || line == "" || line == ")") {
@@ -1453,7 +1454,22 @@ void GlobalRouter::readGuides(const char* file_name)
       if (!net) {
         logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
       }
+      skip = false;
     } else if (tokens.size() == 5) {
+      if (skip) {
+        continue;
+      }
+
+      if (db_net_map_.find(net) == db_net_map_.end()) {
+        logger_->warn(GRT,
+                      250,
+                      "Net {} has guides but is not routed by the global "
+                      "router and will be skipped.",
+                      net->getName());
+        skip = true;
+        continue;
+      }
+
       auto layer = tech->findLayer(tokens[4].c_str());
       if (!layer) {
         logger_->error(GRT, 235, "Cannot find layer {}.", tokens[4]);
@@ -3079,13 +3095,13 @@ int GlobalRouter::findInstancesObstructions(
     }
 
     for (odb::dbMTerm* mterm : master->getMTerms()) {
-      for (odb::dbMPin* mterm : mterm->getMPins()) {
+      for (odb::dbMPin* mpin : mterm->getMPins()) {
         odb::Point lower_bound;
         odb::Point upper_bound;
         odb::Rect pin_box;
         int pin_layer;
 
-        for (odb::dbBox* box : mterm->getGeometry()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
           odb::Rect rect = box->getBox();
           transform.apply(rect);
 
@@ -3103,7 +3119,8 @@ int GlobalRouter::findInstancesObstructions(
             if (!die_area.contains(pin_box)) {
               logger_->error(GRT,
                              39,
-                             "Found pin outside die area in instance {}.",
+                             "Found pin {} outside die area in instance {}.",
+                             mterm->getConstName(),
                              inst->getConstName());
               pin_out_of_die_count++;
             }

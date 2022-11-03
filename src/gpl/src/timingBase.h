@@ -37,11 +37,11 @@
 #include <vector>
 
 namespace rsz {
-  class Resizer;
+class Resizer;
 }
 
 namespace utl {
-  class Logger;
+class Logger;
 }
 
 namespace gpl {
@@ -49,38 +49,38 @@ namespace gpl {
 class NesterovBase;
 class GNet;
 
-class TimingBase {
-  public:
-    TimingBase();
-    TimingBase(std::shared_ptr<NesterovBase> nb,
-        rsz::Resizer* rs,
-        utl::Logger* log);
+class TimingBase
+{
+ public:
+  TimingBase();
+  TimingBase(std::shared_ptr<NesterovBase> nb,
+             rsz::Resizer* rs,
+             utl::Logger* log);
 
-    // check whether overflow reached the timingOverflow
-    bool isTimingNetWeightOverflow(float overflow);
-    void addTimingNetWeightOverflow(int overflow);
-    void setTimingNetWeightOverflows(std::vector<int>& overflows);
-    void deleteTimingNetWeightOverflow(int overflow);
-    void clearTimingNetWeightOverflow();
-    size_t getTimingNetWeightOverflowSize() const;
+  // check whether overflow reached the timingOverflow
+  bool isTimingNetWeightOverflow(float overflow);
+  void addTimingNetWeightOverflow(int overflow);
+  void setTimingNetWeightOverflows(std::vector<int>& overflows);
+  void deleteTimingNetWeightOverflow(int overflow);
+  void clearTimingNetWeightOverflow();
+  size_t getTimingNetWeightOverflowSize() const;
 
-    void setTimingNetWeightMax(float overflow);
+  void setTimingNetWeightMax(float overflow);
 
-    // updateNetWeight.
-    // True: successfully reweighted gnets
-    // False: no slacks found
-    bool updateGNetWeights(float overflow);
+  // updateNetWeight.
+  // True: successfully reweighted gnets
+  // False: no slacks found
+  bool updateGNetWeights(float overflow);
 
-  private:
-    rsz::Resizer* rs_;
-    utl::Logger* log_;
-    std::shared_ptr<NesterovBase> nb_;
+ private:
+  rsz::Resizer* rs_;
+  utl::Logger* log_;
+  std::shared_ptr<NesterovBase> nb_;
 
-    std::vector<int> timingNetWeightOverflow_;
-    std::vector<int> timingOverflowChk_;
-    float net_weight_max_;
-    void initTimingOverflowChk();
+  std::vector<int> timingNetWeightOverflow_;
+  std::vector<int> timingOverflowChk_;
+  float net_weight_max_;
+  void initTimingOverflowChk();
 };
 
-} // namespace
-
+}  // namespace gpl
