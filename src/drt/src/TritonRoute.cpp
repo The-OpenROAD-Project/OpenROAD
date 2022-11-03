@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "triton_route/TritonRoute.h"
+
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
 #include <fstream>
@@ -53,7 +55,6 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-#include "triton_route/TritonRoute.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;

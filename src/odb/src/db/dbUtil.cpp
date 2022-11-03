@@ -30,10 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbUtil.h"
+
 #include "db.h"
 #include "dbShape.h"
 #include "dbTechLayerRule.h"
-#include "dbUtil.h"
 #include "dbWireCodec.h"
 #include "utl/Logger.h"
 

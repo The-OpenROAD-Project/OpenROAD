@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbWireCodec.h"
+
 #include <ctype.h>
 
 #include "db.h"
@@ -40,7 +42,6 @@
 #include "dbTech.h"
 #include "dbTechLayerRule.h"
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 
