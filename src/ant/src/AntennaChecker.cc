@@ -707,8 +707,7 @@ double AntennaChecker::gateArea(dbMTerm* mterm)
     vector<std::pair<double, dbTechLayer*>> gate_areas;
     pin_model->getGateArea(gate_areas);
 
-    for (auto gate_area_layer : gate_areas) {
-      double gate_area = gate_area_layer.first;
+    for (const auto [gate_area, layer] : gate_areas) {
       max_gate_area = std::max(max_gate_area, gate_area);
     }
   }
@@ -1834,9 +1833,8 @@ double AntennaChecker::diffArea(dbMTerm* mterm)
   double max_diff_area = 0.0;
   vector<std::pair<double, dbTechLayer*>> diff_areas;
   mterm->getDiffArea(diff_areas);
-  for (auto area_layer : diff_areas) {
-    double diff_area = area_layer.first;
-    max_diff_area = std::max(max_diff_area, diff_area);
+  for (const auto [area, layer] : diff_areas) {
+    max_diff_area = std::max(max_diff_area, area);
   }
   return max_diff_area;
 }

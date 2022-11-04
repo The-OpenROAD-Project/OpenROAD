@@ -525,14 +525,14 @@ void FastRouteCore::addHorizontalAdjustments(
 void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 {
   // Calculate reduce for vertical tiles
-  for (auto it : vertical_blocked_intervals_) {
-    int x = std::get<0>(it.first);
-    int y = std::get<1>(it.first);
-    int layer = std::get<2>(it.first);
+  for (const auto& [tile, intervals] : vertical_blocked_intervals_) {
+    int x = std::get<0>(tile);
+    int y = std::get<1>(tile);
+    int layer = std::get<2>(tile);
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : it.second) {
+      for (auto interval_it : intervals) {
         reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
                        / track_space[layer - 1]);
       }
@@ -543,14 +543,14 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     }
   }
   // Calculate reduce for horizontal tiles
-  for (auto it : horizontal_blocked_intervals_) {
-    int x = std::get<0>(it.first);
-    int y = std::get<1>(it.first);
-    int layer = std::get<2>(it.first);
+  for (const auto& [tile, intervals] : horizontal_blocked_intervals_) {
+    int x = std::get<0>(tile);
+    int y = std::get<1>(tile);
+    int layer = std::get<2>(tile);
     int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : it.second) {
+      for (const auto& interval_it : intervals) {
         reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
                        / track_space[layer - 1]);
       }

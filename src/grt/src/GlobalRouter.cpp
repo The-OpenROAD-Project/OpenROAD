@@ -136,8 +136,9 @@ void GlobalRouter::init(utl::Logger* logger,
 void GlobalRouter::clear()
 {
   routes_.clear();
-  for (auto net_itr : db_net_map_)
-    delete net_itr.second;
+  for (auto [ignored, net] : db_net_map_) {
+    delete net;
+  }
   db_net_map_.clear();
   routing_tracks_->clear();
   routing_layers_.clear();
@@ -152,8 +153,9 @@ GlobalRouter::~GlobalRouter()
   delete routing_tracks_;
   delete fastroute_;
   delete grid_;
-  for (auto net_itr : db_net_map_)
-    delete net_itr.second;
+  for (auto [ignored, net] : db_net_map_) {
+    delete net;
+  }
   delete repair_antennas_;
 }
 
@@ -698,9 +700,7 @@ void GlobalRouter::computeNetSlacks()
   }
 
   // Add the slack values smaller than the threshold to the nets
-  for (auto net_itr : net_slack_map) {
-    Net* net = net_itr.first;
-    float slack = net_itr.second;
+  for (auto [net, slack] : net_slack_map) {
     if (slack <= slack_th) {
       net->setSlack(slack);
     }
@@ -2229,8 +2229,7 @@ void GlobalRouter::initAdjustments()
 std::vector<Pin*> GlobalRouter::getAllPorts()
 {
   std::vector<Pin*> ports;
-  for (auto net_itr : db_net_map_) {
-    Net* net = net_itr.second;
+  for (auto [ignored, net] : db_net_map_) {
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
         ports.push_back(&pin);
@@ -2607,8 +2606,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
     }
   }
 
-  for (auto net_itr : db_net_map_) {
-    Net* net = net_itr.second;
+  for (auto [ignored, net] : db_net_map_) {
     bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
     if (!is_non_leaf_clock) {
       nets.push_back(net);

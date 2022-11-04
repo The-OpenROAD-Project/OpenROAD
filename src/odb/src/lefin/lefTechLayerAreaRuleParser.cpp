@@ -41,13 +41,13 @@ lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefin* l)
 }
 
 void lefTechLayerAreaRuleParser::parse(
-    std::string s,
+    const std::string& s,
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;

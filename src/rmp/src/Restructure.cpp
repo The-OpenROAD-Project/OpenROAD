@@ -293,7 +293,7 @@ void Restructure::runABC()
         RMP, 21, "All re-synthesis runs discarded, keeping original netlist.");
   }
 
-  for (auto file_to_remove : files_to_remove) {
+  for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1))
       std::remove(file_to_remove.c_str());
   }
@@ -484,7 +484,7 @@ bool Restructure::writeAbcScript(std::string file_name)
     return false;
   }
 
-  for (auto lib_name : lib_file_names_) {
+  for (const auto& lib_name : lib_file_names_) {
     // abc read_lib prints verbose by default, -v toggles to off to avoid read
     // time being printed
     std::string read_lib_str = "read_lib -v " + lib_name + "\n";

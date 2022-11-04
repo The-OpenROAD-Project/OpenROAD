@@ -239,8 +239,7 @@ RepairSetup::repairSetup(PathRef &path,
                  && pair1.first > pair2.first);
          });
     // Attack gates with largest load delays first.
-    for (auto index_delay : load_delays) {
-      int drvr_index = index_delay.first;
+    for (const auto [drvr_index, ignored] : load_delays) {
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       const Pin *drvr_pin = drvr_vertex->pin();

@@ -587,7 +587,7 @@ inline gtl::polygon_90_set_data<frCoord> bg2gtl(const polygon_t& p)
   gtl::polygon_90_set_data<frCoord> set;
   gtl::polygon_90_data<frCoord> poly;
   std::vector<gtl::point_data<frCoord>> points;
-  for (auto pt : p.outer()) {
+  for (const auto& pt : p.outer()) {
     points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
   }
   poly.set(points.begin(), points.end());
@@ -634,10 +634,10 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
   } else {
     bg::difference(markerPoly, pins, result);
   }
-  for (auto poly : result) {
+  for (const auto& poly : result) {
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
-    for (auto rect : res) {
+    for (const auto& rect : res) {
       gcRect* rect3 = new gcRect(*rect2);
       rect3->setRect(rect);
       gtl::rectangle_data<frCoord> newMarkerRect(markerRect);
