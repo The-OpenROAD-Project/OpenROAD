@@ -72,11 +72,11 @@ void MetalWidthViaMapParser::setPGVia()
   via_map->setPgVia(true);
 }
 
-void MetalWidthViaMapParser::parse(std::string s)
+void MetalWidthViaMapParser::parse(const std::string& s)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;

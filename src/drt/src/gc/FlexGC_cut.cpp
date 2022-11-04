@@ -191,7 +191,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1,
   vector<rq_box_value_t<gcRect*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(qb, viaRect1->getLayerNum() - 1, results);
-  for (auto res : results) {
+  for (const auto& res : results) {
     auto metalRect = res.second;
     if (gtl::intersects(*metalRect, *viaRect1, false))
       if (gtl::intersects(*metalRect, *viaRect2, false))

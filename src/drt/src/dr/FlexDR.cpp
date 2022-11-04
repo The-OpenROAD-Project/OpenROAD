@@ -2101,7 +2101,7 @@ void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
   using namespace boost::polygon::operators;
   gtl::polygon_90_data<frCoord> poly;
   vector<gtl::point_data<frCoord>> points;
-  for (auto point : rect.getPoints()) {
+  for (const auto& point : rect.getPoints()) {
     points.push_back({point.x(), point.y()});
   }
   poly.set(points.begin(), points.end());
@@ -2228,7 +2228,7 @@ int FlexDR::main()
   init();
   frTime t;
 
-  for (auto args : strategy()) {
+  for (auto& args : strategy()) {
     if (iter_ < 3)
       FIXEDSHAPECOST = ROUTESHAPECOST;
     else if (iter_ < 10)

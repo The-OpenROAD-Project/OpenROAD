@@ -722,7 +722,7 @@ std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
   for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
     if (pin->aps_.size() > pin_access_idx) {
-      for (auto id : pin->aps_[pin_access_idx]) {
+      for (const auto& id : pin->aps_[pin_access_idx]) {
         aps[mpin].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
       }
     }
