@@ -39,6 +39,8 @@
 #include "node.h"
 #include "pdrevII.h"
 
+#include "spdlog/fmt/ostr.h"
+
 namespace pdr {
 
 using std::ostream;
@@ -68,3 +70,5 @@ class Edge
 };
 
 }  // namespace pdr
+
+template <> struct fmt::formatter<pdr::Edge> : ostream_formatter {};

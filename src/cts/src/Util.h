@@ -36,6 +36,7 @@
 #pragma once
 
 #include <ostream>
+#include "spdlog/fmt/ostr.h"
 
 namespace cts {
 
@@ -137,3 +138,6 @@ class Box
 };
 
 }  // namespace cts
+
+template <typename T> struct fmt::formatter<cts::Box<T>> : ostream_formatter {};
+template <typename T> struct fmt::formatter<cts::Point<T>> : ostream_formatter {};

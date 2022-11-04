@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "pdrevII.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace pdr {
 
@@ -98,3 +99,5 @@ class Node1
 };
 
 }  // namespace pdr
+
+template <> struct fmt::formatter<pdr::Node> : ostream_formatter {};

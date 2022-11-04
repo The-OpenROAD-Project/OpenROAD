@@ -35,6 +35,7 @@
 
 #include "frBaseTypes.h"
 #include "db/obj/frMarker.h"
+#include "spdlog/fmt/ostr.h"
 
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
@@ -176,4 +177,21 @@ std::ostream& operator<<(std::ostream& os, const drNet& n);
 std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
+
+template <> struct fmt::formatter<fr::frViaDef> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frBlock> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frInst> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frInstTerm> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frBTerm> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frRect> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frPolygon> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frShape> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frConnFig> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frPathSeg> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frGuide> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frBlockObject> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frNet> : ostream_formatter {};
+template <> struct fmt::formatter<fr::drNet> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frMarker> : ostream_formatter {};
+
 #endif

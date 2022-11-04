@@ -34,6 +34,7 @@
 #include <iostream>
 
 #include "frBaseTypes.h"
+#include "spdlog/fmt/ostr.h"
 
 extern size_t getPeakRSS();
 extern size_t getCurrentRSS();
@@ -60,5 +61,7 @@ class frTime
 
 std::ostream& operator<<(std::ostream& os, const frTime& t);
 }  // namespace fr
+
+template <> struct fmt::formatter<fr::frTime> : ostream_formatter {};
 
 #endif

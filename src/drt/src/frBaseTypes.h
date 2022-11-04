@@ -43,6 +43,7 @@
 
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+#include "spdlog/fmt/ostr.h"
 
 namespace odb {
   class Rect;
@@ -344,5 +345,11 @@ inline bool is_loading(const Archive& ar)
 }
 
 }  // namespace fr
+
+template <> struct fmt::formatter<fr::frBlockObjectEnum> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frConstraintTypeEnum> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frCornerTypeEnum> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frMinimumcutConnectionEnum> : ostream_formatter {};
+template <> struct fmt::formatter<fr::frMinstepTypeEnum> : ostream_formatter {};
 
 #endif
