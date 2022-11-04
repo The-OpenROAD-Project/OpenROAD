@@ -237,14 +237,11 @@ void HierRTLMP::HierRTLMacroPlacer()
   // the cluster sizes for the parent levels are determined by the coarsening
   // ratio
   //
-  max_num_macro_base_
-      = max_num_macro_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
-  min_num_macro_base_
-      = min_num_macro_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
-  max_num_inst_base_
-      = max_num_inst_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
-  min_num_inst_base_
-      = min_num_inst_base_ * std::pow(coarsening_ratio_, max_num_level_ - 1);
+  unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ - 1);
+  max_num_macro_base_ = max_num_macro_base_ * coarsening_factor;
+  min_num_macro_base_ = min_num_macro_base_ * coarsening_factor;
+  max_num_inst_base_ = max_num_inst_base_ * coarsening_factor;
+  min_num_inst_base_ = min_num_inst_base_ * coarsening_factor;
 
   //
   // Get the database information
