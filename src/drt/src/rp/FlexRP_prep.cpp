@@ -1356,103 +1356,83 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
 
 void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
     const frLayerNum& lNum,
-    frViaDef* viaDef1,
-    frViaDef* viaDef2,
-    bool isCurrDirX,
+    const frViaDef* viaDef1,
+    const frViaDef* viaDef2,
+    const bool isCurrDirX,
     ForbiddenRanges& forbiddenRanges)
 {
-  if (!viaDef1 || !viaDef2) {
-    return;
-  }
-  if (viaDef1 == viaDef2) {
+  if (!viaDef1 || !viaDef2 || viaDef1 == viaDef2) {
     return;
   }
 
-  bool isVia1Above = false;
-  frVia via1(viaDef1);
-  Rect viaBox1;
-  if (viaDef1->getLayer1Num() == lNum) {
-    viaBox1 = via1.getLayer1BBox();
-    isVia1Above = true;
+  const bool isVia1Above = (viaDef1->getLayer1Num() == lNum);
+  const bool isVia2Above = (viaDef2->getLayer1Num() == lNum);
+  assert(isVia1Above != isVia2Above);
+
+  const Rect viaBox1(isVia1Above ? viaDef1->getLayer1ShapeBox()
+                                 : viaDef1->getLayer2ShapeBox());
+
+  const Rect viaBox2(isVia2Above ? viaDef2->getLayer1ShapeBox()
+                                 : viaDef2->getLayer2ShapeBox());
+
+  int lower_width;
+  int upper_width;
+  const frViaDef* lowerViaDef;
+  if (isVia2Above) {
+    lower_width = viaBox1.minDXDY();
+    upper_width = viaBox2.minDXDY();
+    lowerViaDef = viaDef1;
   } else {
-    viaBox1 = via1.getLayer2BBox();
-    isVia1Above = false;
+    lower_width = viaBox2.minDXDY();
+    upper_width = viaBox1.minDXDY();
+    lowerViaDef = viaDef2;
   }
-  Rect cutBox1 = via1.getCutBBox();
-  int width1 = viaBox1.minDXDY();
-  bool isVia2Above = false;
-  frVia via2(viaDef2);
-  Rect viaBox2;
-  if (viaDef2->getLayer1Num() == lNum) {
-    viaBox2 = via2.getLayer1BBox();
-    isVia2Above = true;
-  } else {
-    viaBox2 = via2.getLayer2BBox();
-    isVia2Above = false;
-  }
-  Rect cutBox2 = via2.getCutBBox();
-  int width2 = viaBox2.minDXDY();
-  auto tech = getDesign()->getTech();
+
+  const auto tech = getDesign()->getTech();
+  const auto cutLayer = tech->getLayer(lowerViaDef->getCutLayerNum());
   bool allow_stacking = true;
-  for (auto rule : tech->getLayer(viaDef1->getCutLayerNum())->getMetalWidthViaConstraints())
-  {
-    auto con = rule->getDbRule();
-    if(con->getViaName() != viaDef1->getName())
-    {
-      if (isVia2Above && width2 >= con->getAboveLayerWidthLow()
-          && width2 <= con->getAboveLayerWidthHigh()
-          && width1 >= con->getBelowLayerWidthLow()
-          && width1 <= con->getBelowLayerWidthHigh()) {
-        allow_stacking = false;
-        break;
-      } else if (isVia1Above && width1 >= con->getAboveLayerWidthLow()
-                 && width1 <= con->getAboveLayerWidthHigh()
-                 && width2 >= con->getBelowLayerWidthLow()
-                 && width2 <= con->getBelowLayerWidthHigh()) {
+  for (const auto rule : cutLayer->getMetalWidthViaConstraints()) {
+    const auto con = rule->getDbRule();
+    if (con->getViaName() != lowerViaDef->getName()) {
+      if (con->getAboveLayerWidthLow() <= upper_width
+          && upper_width <= con->getAboveLayerWidthHigh()
+          && con->getBelowLayerWidthLow() <= lower_width
+          && lower_width <= con->getBelowLayerWidthHigh()) {
         allow_stacking = false;
         break;
       }
     }
   }
-  if(!allow_stacking) {
-    for (auto rule : tech->getLayer(viaDef2->getCutLayerNum())->getMetalWidthViaConstraints())
-    {
-      auto con = rule->getDbRule();
-      if(con->getViaName() != viaDef2->getName())
-      {
-        if (isVia2Above && width2 >= con->getAboveLayerWidthLow()
-            && width2 <= con->getAboveLayerWidthHigh()
-            && width1 >= con->getBelowLayerWidthLow()
-            && width1 <= con->getBelowLayerWidthHigh()) {
-          allow_stacking = false;
-          break;
-        } else if (isVia1Above && width1 >= con->getAboveLayerWidthLow()
-                  && width1 <= con->getAboveLayerWidthHigh()
-                  && width2 >= con->getBelowLayerWidthLow()
-                  && width2 <= con->getBelowLayerWidthHigh()) {
-          allow_stacking = false;
-          break;
-        }
-      }
-    }
-  }
-  if (allow_stacking)
+
+  if (allow_stacking) {
     return;
+  }
+
+  const Rect cutBox1 = viaDef1->getCutShapeBox();
+  const Rect cutBox2 = viaDef2->getCutShapeBox();
+
   frCoord minReqDist;
   if (isCurrDirX) {
-    minReqDist = max(cutBox2.xMax() - 0 + 0 - viaBox1.xMin(),
-                     viaBox1.xMax() - 0 + 0 - cutBox2.xMin());
-    minReqDist = max(minReqDist,
-                     max(cutBox1.xMax() - 0 + 0 - viaBox2.xMin(),
-                         viaBox2.xMax() - 0 + 0 - cutBox1.xMin()));
+    minReqDist = max({cutBox2.xMax() - viaBox1.xMin(),
+                      viaBox1.xMax() - cutBox2.xMin(),
+                      cutBox1.xMax() - viaBox2.xMin(),
+                      viaBox2.xMax() - cutBox1.xMin()});
   } else {
-    minReqDist = max(cutBox2.yMax() - 0 + 0 - viaBox1.yMin(),
-                     viaBox1.yMax() - 0 + 0 - cutBox2.yMin());
-    minReqDist = max(minReqDist,
-                     max(cutBox1.yMax() - 0 + 0 - viaBox2.yMin(),
-                         viaBox2.yMax() - 0 + 0 - cutBox1.yMin()));
+    minReqDist = max({cutBox2.yMax() - viaBox1.yMin(),
+                      viaBox1.yMax() - cutBox2.yMin(),
+                      cutBox1.yMax() - viaBox2.yMin(),
+                      viaBox2.yMax() - cutBox1.yMin()});
   }
   forbiddenRanges.push_back(make_pair(0, minReqDist));
+
+  debugPrint(logger_,
+             utl::DRT,
+             "widthViaMap",
+             1,
+             "widthViaMap: constrain {} to {} by {}",
+             viaDef1->getName(),
+             viaDef2->getName(),
+             minReqDist);
 }
 
 void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
