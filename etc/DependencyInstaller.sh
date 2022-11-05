@@ -226,7 +226,8 @@ _installOpenSuseDev() {
         lcov \
         llvm \
         clang \
-        gcc-c++ \
+        gcc \
+        gcc11-c++ \
         libstdc++6-devel-gcc8 \
         pcre-devel \
         python3-devel \
@@ -237,12 +238,9 @@ _installOpenSuseDev() {
         git \
         gzip
     
-    if [[ ! "$(printf '%s\n' "8.0.0" "$(gcc --version)" | sort -V | head -n1)" = "8.0.0" ]]; then 
-        zypper -n install gcc11-c++
-        updatedb
-        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
-        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
-    fi
+    updatedb
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
 
 _installOpenSuseRuntime() {
