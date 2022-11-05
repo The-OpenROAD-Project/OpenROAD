@@ -348,14 +348,18 @@ case "${os}" in
             _installCommonDev
         fi
         _installCentosCleanUp
+        if [[ ! -z ${PREFIX} ]]; then
+            cat <<EOF
+To use cmake, set cmake as an alias:
+    alias cmake='${PREFIX}/bin/cmake' 
+    or  run
+    source ~/.bash_aliases
+EOF
+        fi
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
     source /opt/rh/llvm-toolset-7.0/enable
-if you have provided a prefix, set cmake as an alias:
-    alias cmake='<YOUR-PREFIX>/bin/cmake' 
-    or  run
-    source ~/.bash_aliases
 EOF
         ;;
     "Ubuntu" )
@@ -368,10 +372,14 @@ EOF
             _installCommonDev "${version}"
         fi
         _installUbuntuCleanUp
-        cat <<EOF
-if you have provided a prefix, set cmake as an alias:
-    alias cmake='<YOUR-PREFIX>/bin/cmake'
+        if [[ ! -z ${PREFIX} ]]; then
+            cat <<EOF
+To use cmake, set cmake as an alias:
+    alias cmake='${PREFIX}/bin/cmake' 
+    or  run
+    source ~/.bash_aliases
 EOF
+        fi
         ;;
     "Darwin" )
         _installDarwin
