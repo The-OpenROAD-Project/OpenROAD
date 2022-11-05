@@ -70,7 +70,7 @@ void FastRouteCore::fixEmbeddedTrees()
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   const auto& treeedges = sttrees_[net_id].edges;
-  const int deg = sttrees_[net_id].deg;
+  const int num_edges = sttrees_[net_id].num_edges();
 
   // group all edges that crosses the same position
   std::unordered_map<std::pair<short, short>,
@@ -81,7 +81,7 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   auto cmp = [&](int a, int b) { return treeedges[a].len > treeedges[b].len; };
   std::map<int, std::vector<std::pair<short, short>>, decltype(cmp)>
       edges_to_blocked_pos_map(cmp);
-  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
       int routeLen = treeedge->route.routelen;
@@ -322,7 +322,7 @@ void FastRouteCore::routeLShape(
 void FastRouteCore::convertToMazerouteNet(const int netID)
 {
   auto& treenodes = sttrees_[netID].nodes;
-  for (int edgeID = 0; edgeID < 2 * sttrees_[netID].deg - 3; edgeID++) {
+  for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
     TreeEdge* treeedge = &(sttrees_[netID].edges[edgeID]);
     const int edgelength = treeedge->len;
     const int n1 = treeedge->n1;
@@ -723,7 +723,7 @@ void FastRouteCore::setupHeap(const int netID,
 
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
-  const int degree = sttrees_[netID].deg;
+  const int num_terminals = sttrees_[netID].num_terminals;
 
   const int n1 = treeedges[edgeID].n1;
   const int n2 = treeedges[edgeID].n2;
@@ -735,21 +735,21 @@ void FastRouteCore::setupHeap(const int netID,
   src_heap.clear();
   dest_heap.clear();
 
-  if (degree == 2)  // 2-pin net
+  if (num_terminals == 2)  // 2-pin net
   {
     d1[y1][x1] = 0;
     src_heap.push_back(&d1[y1][x1]);
     d2[y2][x2] = 0;
     dest_heap.push_back(&d2[y2][x2]);
   } else {  // net with more than 2 pins
-    const int numNodes = 2 * degree - 2;
+    const int numNodes = sttrees_[netID].num_nodes;
 
     std::vector<bool> visited(numNodes, false);
     std::vector<int> queue(numNodes);
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap
-    if (n1 < degree) {  // n1 is a Pin node
+    if (n1 < num_terminals) {  // n1 is a Pin node
       // just need to put n1 itself into src_heap
       d1[y1][x1] = 0;
       src_heap.push_back(&d1[y1][x1]);
@@ -773,7 +773,7 @@ void FastRouteCore::setupHeap(const int netID,
         const int cur = queue[queuehead];
         queuehead++;
         visited[cur] = true;
-        if (cur < degree) {  // cur node isn't a Steiner node
+        if (cur < num_terminals) {  // cur node isn't a Steiner node
           continue;
         }
         for (int i = 0; i < 3; i++) {
@@ -828,7 +828,7 @@ void FastRouteCore::setupHeap(const int netID,
     // find all the grids on subtree t2 (connect to n2) and put them into
     // dest_heap find all the grids on tree edges in subtree t2 (connecting to
     // n2) and put them into dest_heap
-    if (n2 < degree) {  // n2 is a Pin node
+    if (n2 < num_terminals) {  // n2 is a Pin node
       // just need to put n1 itself into src_heap
       d2[y2][x2] = 0;
       dest_heap.push_back(&d2[y2][x2]);
@@ -853,7 +853,7 @@ void FastRouteCore::setupHeap(const int netID,
         visited[cur] = true;
         queuehead++;
 
-        if (cur < degree) {  // cur node isn't a Steiner node
+        if (cur < num_terminals) {  // cur node isn't a Steiner node
           continue;
         }
         for (int i = 0; i < 3; i++) {
@@ -1233,8 +1233,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
 
 void FastRouteCore::reInitTree(const int netID)
 {
-  const int deg = sttrees_[netID].deg;
-  const int numEdges = 2 * deg - 3;
+  const int numEdges = sttrees_[netID].num_edges();
   for (int edgeID = 0; edgeID < numEdges; edgeID++) {
     TreeEdge* treeedge = &(sttrees_[netID].edges[edgeID]);
     if (treeedge->len > 0) {
@@ -1347,7 +1346,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     if (nets_[netID]->isRouted())
       continue;
 
-    const int deg = sttrees_[netID].deg;
+    const int num_terminals = sttrees_[netID].num_terminals;
 
     const int origENG = expand;
 
@@ -1355,8 +1354,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
-    // loop for all the tree edges (2*deg-3)
-    const int num_edges = 2 * deg - 3;
+    // loop for all the tree edges
+    const int num_edges = sttrees_[netID].num_edges();
     for (int edgeREC = 0; edgeREC < num_edges; edgeREC++) {
       const int edgeID = net_eo_[edgeREC].edgeID;
       TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -1755,7 +1754,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       const int edge_n1n2 = edgeID;
       // (1) consider subtree1
-      if (n1 >= deg && (E1x != n1x || E1y != n1y))
+      if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
       // n1 is not a pin and E1!=n1, then make change to subtree1,
       // otherwise, no change to subtree1
       {
@@ -1906,7 +1905,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }    // n1 is not a pin and E1!=n1
 
       // (2) consider subtree2
-      if (n2 >= deg && (E2x != n2x || E2y != n2y))
+      if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
       // n2 is not a pin and E2!=n2, then make change to subtree2,
       // otherwise, no change to subtree2
       {

@@ -654,9 +654,9 @@ NetRouteMap FastRouteCore::getRoutes()
     std::unordered_set<GSegment, GSegmentHash> net_segs;
 
     const auto& treeedges = sttrees_[netID].edges;
-    const int deg = sttrees_[netID].deg;
+    const int num_edges = sttrees_[netID].num_edges();
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
@@ -1317,7 +1317,7 @@ void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
 void FastRouteRenderer::setStTreeValues(const StTree& stree)
 {
   treeEdges_.clear();
-  const int num_edges = 2 * stree.deg - 3;
+  const int num_edges = stree.num_edges();
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     treeEdges_.push_back(stree.edges[edgeID]);
   }
