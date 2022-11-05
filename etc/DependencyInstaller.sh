@@ -236,7 +236,8 @@ _installOpenSuseDev() {
         tcl-devel \
         wget \
         git \
-        gzip
+        gzip \
+        mlocate
     
     updatedb
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
