@@ -57,10 +57,7 @@ class Parameters
   }
   int getHorizontalLengthExtend() const { return horizontal_length_extend_; }
 
-  void setVerticalLengthExtend(int length)
-  {
-    vertical_length_extend_ = length;
-  }
+  void setVerticalLengthExtend(int length) { vertical_length_extend_ = length; }
   int getVerticalLengthExtend() const { return vertical_length_extend_; }
 
   void setHorizontalLength(int length) { horizontal_length_ = length; }

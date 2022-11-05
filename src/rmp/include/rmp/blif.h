@@ -38,8 +38,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <set>
 #include <map>
+#include <set>
 #include <string>
 
 namespace ord {
@@ -91,8 +91,8 @@ class Blif
   std::string const0_cell_port_;
   std::string const1_cell_;
   std::string const1_cell_port_;
-  std::map<std::string, std::pair<float,float>> requireds_;
-  std::map<std::string, std::pair<float,float>> arrivals_;
+  std::map<std::string, std::pair<float, float>> requireds_;
+  std::map<std::string, std::pair<float, float>> arrivals_;
   static int call_id_;
 };
 

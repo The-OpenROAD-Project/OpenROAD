@@ -461,13 +461,13 @@ bool parse(Iterator first,
 
 namespace odb {
 
-void lefTechLayerSpacingEolParser::parse(std::string s,
+void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
                                          odb::lefin* l)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;

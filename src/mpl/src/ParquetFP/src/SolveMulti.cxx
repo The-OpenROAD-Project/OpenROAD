@@ -30,9 +30,9 @@
 ***
 ***************************************************************************/
 
-#include <memory>
-
 #include "SolveMulti.h"
+
+#include <memory>
 
 #include "Annealer.h"
 #include "ClusterDB.h"

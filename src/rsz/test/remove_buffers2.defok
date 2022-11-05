@@ -19,7 +19,7 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 NETS 3 ;
     - in1 ( PIN in1 ) ( i1 A ) + USE SIGNAL ;
-    - out1 ( PIN out1 ) ( b2 A ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( b2 A ) ( i1 ZN ) + USE SIGNAL ;
     - out2 ( PIN out2 ) ( b2 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

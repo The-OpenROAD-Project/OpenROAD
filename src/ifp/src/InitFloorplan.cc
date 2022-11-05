@@ -33,12 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ifp/InitFloorplan.hh"
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
-#include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/util.h"
@@ -232,8 +233,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
       int domain_yMin = std::numeric_limits<int>::max();
       int domain_xMax = std::numeric_limits<int>::min();
       int domain_yMax = std::numeric_limits<int>::min();
-      for(auto boundary : domain_region->getBoundaries())
-      {
+      for (auto boundary : domain_region->getBoundaries()) {
         domain_xMin = std::min(domain_xMin, boundary->xMin());
         domain_yMin = std::min(domain_yMin, boundary->yMin());
         domain_xMax = std::max(domain_xMax, boundary->xMax());
@@ -299,7 +299,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
           int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
           // snap to the site grid rightward
           rcr_xMin = odb::makeSiteLoc(rcr_xMin, site_dx, false, 0);
-          
+
           // in case there is at least one valid site width on the right, create
           // right core rows
           if (rcr_xMin + site_dx < core_ux) {

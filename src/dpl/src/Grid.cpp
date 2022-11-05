@@ -37,12 +37,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dpl/Opendp.h"
-
+#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <limits>
-#include <boost/polygon/polygon.hpp>
 
+#include "dpl/Opendp.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -56,12 +55,11 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbTransform;
 
-void
-Opendp::initGrid()
+void Opendp::initGrid()
 {
   // Make pixel grid
   if (grid_ == nullptr) {
-    grid_ = new Pixel *[row_count_];
+    grid_ = new Pixel*[row_count_];
     for (int y = 0; y < row_count_; y++)
       grid_[y] = new Pixel[row_site_count_];
   }
@@ -69,7 +67,7 @@ Opendp::initGrid()
   // Init pixels.
   for (int y = 0; y < row_count_; y++) {
     for (int x = 0; x < row_site_count_; x++) {
-      Pixel &pixel = grid_[y][x];
+      Pixel& pixel = grid_[y][x];
       pixel.cell = nullptr;
       pixel.group_ = nullptr;
       pixel.util = 0.0;
@@ -103,8 +101,8 @@ Opendp::initGrid()
     // within the diamond search that may still lead to failures.
     const int safety = 20;
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
-    const int xh = std::min(row_site_count_,
-                            x_end + max_displacement_x_ - safety);
+    const int xh
+        = std::min(row_site_count_, x_end + max_displacement_x_ - safety);
     const int yl = std::max(0, y_row - max_displacement_y_ + safety);
     const int yh = std::min(row_count_, y_row + max_displacement_y_ - safety);
 
@@ -122,24 +120,21 @@ Opendp::initGrid()
   }
 }
 
-void
-Opendp::deleteGrid()
+void Opendp::deleteGrid()
 {
   if (grid_) {
     for (int i = 0; i < row_count_; i++) {
-      delete [] grid_[i];
+      delete[] grid_[i];
     }
-    delete [] grid_;
+    delete[] grid_;
   }
   grid_ = nullptr;
 }
 
-Pixel *
-Opendp::gridPixel(int grid_x,
-                  int grid_y) const
+Pixel* Opendp::gridPixel(int grid_x, int grid_y) const
 {
-  if (grid_x >= 0 && grid_x < row_site_count_
-      && grid_y >= 0 && grid_y < row_count_)
+  if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
+      && grid_y < row_count_)
     return &grid_[grid_y][grid_x];
   else
     return nullptr;
@@ -147,17 +142,18 @@ Opendp::gridPixel(int grid_x,
 
 ////////////////////////////////////////////////////////////////
 
-void
-Opendp::visitCellPixels(Cell &cell,
-                        bool padded,
-                        const std::function <void (Pixel *pixel)>& visitor) const
+void Opendp::visitCellPixels(
+    Cell& cell,
+    bool padded,
+    const std::function<void(Pixel* pixel)>& visitor) const
 {
-  dbInst *inst = cell.db_inst_;
-  dbMaster *master = inst->getMaster();
+  dbInst* inst = cell.db_inst_;
+  dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
-  for (dbBox *obs : obstructions) {
-    if (obs->getTechLayer()->getType() == odb::dbTechLayerType::Value::OVERLAP) {
+  for (dbBox* obs : obstructions) {
+    if (obs->getTechLayer()->getType()
+        == odb::dbTechLayerType::Value::OVERLAP) {
       have_obstructions = true;
 
       Rect rect = obs->getBox();
@@ -170,7 +166,7 @@ Opendp::visitCellPixels(Cell &cell,
       int y_end = gridEndY(rect.yMax() - core_.yMin());
       for (int x = x_start; x < x_end; x++) {
         for (int y = y_start; y < y_end; y++) {
-          Pixel *pixel = gridPixel(x, y);
+          Pixel* pixel = gridPixel(x, y);
           if (pixel)
             visitor(pixel);
         }
@@ -184,7 +180,7 @@ Opendp::visitCellPixels(Cell &cell,
     int y_end = gridEndY(&cell);
     for (int x = x_start; x < x_end; x++) {
       for (int y = y_start; y < y_end; y++) {
-        Pixel *pixel = gridPixel(x, y);
+        Pixel* pixel = gridPixel(x, y);
         if (pixel)
           visitor(pixel);
       }
@@ -192,32 +188,28 @@ Opendp::visitCellPixels(Cell &cell,
   }
 }
 
-void
-Opendp::setFixedGridCells()
+void Opendp::setFixedGridCells()
 {
-  for (Cell &cell : cells_) {
+  for (Cell& cell : cells_) {
     if (isFixed(&cell))
-      visitCellPixels(cell, true,
-                      [&] (Pixel *pixel) { setGridCell(cell, pixel); } );
+      visitCellPixels(
+          cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
   }
 }
 
-void
-Opendp::setGridCell(Cell &cell,
-                    Pixel *pixel)
+void Opendp::setGridCell(Cell& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
 }
 
-void
-Opendp::groupAssignCellRegions()
+void Opendp::groupAssignCellRegions()
 {
-  for (Group &group : groups_) {
+  for (Group& group : groups_) {
     int64_t site_count = 0;
     for (int x = 0; x < row_site_count_; x++) {
       for (int y = 0; y < row_count_; y++) {
-        Pixel *pixel = gridPixel(x, y);
+        Pixel* pixel = gridPixel(x, y);
         if (pixel->is_valid && pixel->group_ == &group) {
           site_count++;
         }
@@ -226,10 +218,10 @@ Opendp::groupAssignCellRegions()
     int64_t site_area = site_count * site_width_ * row_height_;
 
     int64_t cell_area = 0;
-    for (Cell *cell : group.cells_) {
+    for (Cell* cell : group.cells_) {
       cell_area += cell->area();
 
-      for (Rect &rect : group.regions) {
+      for (Rect& rect : group.regions) {
         if (isInside(cell, &rect)) {
           cell->region_ = &rect;
         }
@@ -242,8 +234,7 @@ Opendp::groupAssignCellRegions()
   }
 }
 
-void
-Opendp::groupInitPixels2()
+void Opendp::groupInitPixels2()
 {
   for (int x = 0; x < row_site_count_; x++) {
     for (int y = 0; y < row_count_; y++) {
@@ -252,9 +243,9 @@ Opendp::groupInitPixels2()
                y * row_height_,
                (x + 1) * site_width_,
                (y + 1) * row_height_);
-      Pixel *pixel = gridPixel(x, y);
-      for (Group &group : groups_) {
-        for (Rect &rect : group.regions) {
+      Pixel* pixel = gridPixel(x, y);
+      for (Group& group : groups_) {
+        for (Rect& rect : group.regions) {
           if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
             pixel->util = 0.0;
             pixel->cell = &dummy_cell_;
@@ -267,33 +258,29 @@ Opendp::groupInitPixels2()
 }
 
 /* static */
-bool
-Opendp::isInside(const Rect &cell, const Rect &box)
+bool Opendp::isInside(const Rect& cell, const Rect& box)
 {
-  return cell.xMin() >= box.xMin()
-    && cell.xMax() <= box.xMax()
-    && cell.yMin() >= box.yMin()
-    && cell.yMax() <= box.yMax();
+  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax()
+         && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
 }
 
-bool
-Opendp::checkOverlap(const Rect &cell, const Rect &box)
+bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
 {
-  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin() && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
+  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin()
+         && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
 }
 
-void
-Opendp::groupInitPixels()
+void Opendp::groupInitPixels()
 {
   for (int x = 0; x < row_site_count_; x++) {
     for (int y = 0; y < row_count_; y++) {
-      Pixel *pixel = gridPixel(x, y);
+      Pixel* pixel = gridPixel(x, y);
       pixel->util = 0.0;
     }
   }
 
-  for (Group &group : groups_) {
-    for (Rect &rect : group.regions) {
+  for (Group& group : groups_) {
+    for (Rect& rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height_);
       int row_end = divFloor(rect.yMax(), row_height_);
 
@@ -302,21 +289,22 @@ Opendp::groupInitPixels()
         int col_end = divFloor(rect.xMax(), site_width_);
 
         for (int l = col_start; l < col_end; l++) {
-          Pixel *pixel = gridPixel(l, k);
+          Pixel* pixel = gridPixel(l, k);
           pixel->util += 1.0;
         }
         if (rect.xMin() % site_width_ != 0) {
-          Pixel *pixel = gridPixel(col_start, k);
-          pixel->util -= (rect.xMin() % site_width_) / static_cast<double>(site_width_);
+          Pixel* pixel = gridPixel(col_start, k);
+          pixel->util
+              -= (rect.xMin() % site_width_) / static_cast<double>(site_width_);
         }
         if (rect.xMax() % site_width_ != 0) {
-          Pixel *pixel = gridPixel(col_end - 1, k);
+          Pixel* pixel = gridPixel(col_end - 1, k);
           pixel->util -= ((site_width_ - rect.xMax()) % site_width_)
-            / static_cast<double>(site_width_);
+                         / static_cast<double>(site_width_);
         }
       }
     }
-    for (Rect &rect : group.regions) {
+    for (Rect& rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height_);
       int row_end = divFloor(rect.yMax(), row_height_);
 
@@ -326,13 +314,12 @@ Opendp::groupInitPixels()
 
         // Assign group to each pixel.
         for (int l = col_start; l < col_end; l++) {
-          Pixel *pixel = gridPixel(l, k);
+          Pixel* pixel = gridPixel(l, k);
           if (pixel->util == 1.0) {
             pixel->group_ = &group;
             pixel->is_valid = true;
             pixel->util = 1.0;
-          }
-          else if (pixel->util > 0.0 && pixel->util < 1.0) {
+          } else if (pixel->util > 0.0 && pixel->util < 1.0) {
             pixel->cell = &dummy_cell_;
             pixel->util = 0.0;
             pixel->is_valid = false;
@@ -343,15 +330,14 @@ Opendp::groupInitPixels()
   }
 }
 
-void
-Opendp::erasePixel(Cell *cell)
+void Opendp::erasePixel(Cell* cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
     int x_end = gridPaddedEndX(cell);
     int y_end = gridEndY(cell);
     for (int x = gridPaddedX(cell); x < x_end; x++) {
       for (int y = gridY(cell); y < y_end; y++) {
-        Pixel *pixel = gridPixel(x, y);
+        Pixel* pixel = gridPixel(x, y);
         pixel->cell = nullptr;
         pixel->util = 0;
       }
@@ -361,8 +347,7 @@ Opendp::erasePixel(Cell *cell)
   }
 }
 
-void
-Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
+void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 {
   assert(!cell->is_placed_);
   int x_end = grid_x + gridPaddedWidth(cell);
@@ -372,16 +357,24 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
   setGridPaddedLoc(cell, grid_x, grid_y);
   cell->is_placed_ = true;
 
-  debugPrint(logger_, DPL, "place", 1, " paint {} ({}-{}, {}-{})",
-             cell->name(), grid_x, x_end - 1, grid_y, y_end - 1);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             " paint {} ({}-{}, {}-{})",
+             cell->name(),
+             grid_x,
+             x_end - 1,
+             grid_y,
+             y_end - 1);
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
-      Pixel *pixel = gridPixel(x, y);
+      Pixel* pixel = gridPixel(x, y);
       if (pixel->cell) {
-        logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
-      }
-      else {
+        logger_->error(
+            DPL, 13, "Cannot paint grid because it is already occupied.");
+      } else {
         pixel->cell = cell;
         pixel->util = 1.0;
       }
@@ -392,4 +385,4 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
   cell->orient_ = gridPixel(grid_x, grid_y)->orient_;
 }
 
-}  // namespace opendp
+}  // namespace dpl

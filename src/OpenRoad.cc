@@ -33,10 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ord/OpenRoad.hh"
+
 #include <iostream>
 #include <thread>
-
-#include "ord/OpenRoad.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -82,15 +82,15 @@
 #include "utl/MakeLogger.h"
 
 namespace sta {
-extern const char *openroad_swig_tcl_inits[];
-extern const char *upf_tcl_inits[];
-}
+extern const char* openroad_swig_tcl_inits[];
+extern const char* upf_tcl_inits[];
+}  // namespace sta
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_swig_Init(Tcl_Interp *interp);
-extern int Odbtcl_Init(Tcl_Interp *interp);
-extern int Upf_Init(Tcl_Interp *interp);
+extern int Openroad_swig_Init(Tcl_Interp* interp);
+extern int Odbtcl_Init(Tcl_Interp* interp);
+extern int Upf_Init(Tcl_Interp* interp);
 }
 
 // Main.cc set by main()
