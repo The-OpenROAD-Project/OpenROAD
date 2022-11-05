@@ -37,5 +37,7 @@ jobs:
           mkdir -p /home/testUser/openroad-deps
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
           PREFIX=${{ matrix.args }}|awk -F"=" '{split($2,a," ");gsub(/"/, "", a[1]);print a[1]}'
-          swigPrefix=${PREFIX:-"/usr"}
-          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig -DSWIG_DIR=$(${swigPrefix}/bin/swig -swiglib)"
+          filePrefix=${PREFIX:-"/usr/local"}
+          cat ${filePrefix}/share/cmake-3.24/Modules/FindSWIG.cmake
+          sed -i 's/# find_program(SWIG_EXECUTABLE NAMES swig3.0 swig2.0 swig)/find_program(SWIG_EXECUTABLE NAMES swig4.0 swig3.0 swig2.0 swig)/' ${filePrefix}/share/cmake-3.24/Modules/FindSWIG.cmake
+          ./etc/Build.sh -clean
