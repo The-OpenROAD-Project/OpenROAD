@@ -38,4 +38,4 @@ jobs:
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
           PREFIX=${{ matrix.args }} && PREFIX=${PREFIX#*=}
           swigPrefix=${PREFIX:-"/usr"}
-          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig -DSWIG_DIR=$(${swigPrefix}/bin/swig -swiglib)"
+          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig"
