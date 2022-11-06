@@ -38,14 +38,12 @@ _installCommonDev() {
     # SWIG
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        if [[ ${swigVersionType} == "tag"]]; then
-            wget https://github.com/swig/swig/archive/v${swigVersion}.tar.gz
-        else
-            wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
-        fi
-        md5sum -c <(echo "${swigChecksum}  rel-${swigVersion}.tar.gz") || exit 1
-        tar xfz rel-${swigVersion}.tar.gz
-        cd swig-rel-${swigVersion}
+        tarName=rel-${swigVersion}.tar.gz
+        [[ ${swigVersionType} == "tag" ]] && tarName=v${swigVersion}.tar.gz
+        wget https://github.com/swig/swig/archive/${tarName}
+        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        tar xfz ${tarName}
+        cd swig-${tarName%%.tar*}
         ./autogen.sh
         ./configure --prefix=/usr
         make -j $(nproc)
