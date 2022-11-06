@@ -37,5 +37,5 @@ jobs:
           mkdir -p /home/testUser/openroad-deps
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
           PREFIX=${{ matrix.args }} && PREFIX=${PREFIX#*=}
-          swigPrefix=${PREFIX:-"/usr"}
+          swigPrefix=${PREFIX:-"/usr/usr"}
           ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig"
