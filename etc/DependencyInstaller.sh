@@ -9,8 +9,9 @@ _installCommonDev() {
     cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
-    swigVersion=4.0.2
-    swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
+    swigVersionType="tag"
+    swigVersion=4.1.0
+    swigChecksum="794433378154eb61270a3ac127d9c5f3"
     boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
@@ -37,7 +38,11 @@ _installCommonDev() {
     # SWIG
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
+        if [[ ${swigVersionType} == "tag"]]; then
+            wget https://github.com/swig/swig/archive/v${swigVersion}.tar.gz
+        else
+            wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
+        fi
         md5sum -c <(echo "${swigChecksum}  rel-${swigVersion}.tar.gz") || exit 1
         tar xfz rel-${swigVersion}.tar.gz
         cd swig-rel-${swigVersion}
