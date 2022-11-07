@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbTypes.h"
+
 #include <ctype.h>
 #include <string.h>
 
 #include "dbId.h"
-#include "dbTypes.h"
 
 namespace odb {
 
@@ -1251,6 +1252,8 @@ dbBoxOwner::dbBoxOwner(const char* value)
     _value = SWIRE;
   else if (strcasecmp(value, "REGION") == 0)
     _value = REGION;
+  else
+    _value = UNKNOWN;
 }
 
 dbBoxOwner::dbBoxOwner(Value value)
@@ -1844,7 +1847,7 @@ dbMTermShapeType::dbMTermShapeType(const char* value)
   else if (strcasecmp(value, "FEEDTHRU") == 0)
     _value = FEEDTHRU;
 
-  else 
+  else
     _value = NONE;
 }
 

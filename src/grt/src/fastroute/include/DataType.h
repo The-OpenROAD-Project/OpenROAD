@@ -211,10 +211,13 @@ struct TreeEdge
 
 struct StTree
 {
-  int deg = 0;
-  // the nodes (pin and Steiner nodes) in the tree
+  int num_nodes = 0;
+  int num_terminals = 0;
+  // The nodes (pin and Steiner nodes) in the tree.
   std::unique_ptr<TreeNode[]> nodes;
-  std::unique_ptr<TreeEdge[]> edges;  // the tree edges
+  std::unique_ptr<TreeEdge[]> edges;
+
+  int num_edges() const { return num_nodes - 1; }
 };
 
 struct OrderNetPin

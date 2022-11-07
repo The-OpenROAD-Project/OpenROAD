@@ -101,7 +101,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   odb::Rect core = block_->getCoreArea();
 
-  for (auto cell : dp_->getCells()) {
+  for (const auto& cell : dp_->getCells()) {
     if (!cell.is_placed_) {
       continue;
     }

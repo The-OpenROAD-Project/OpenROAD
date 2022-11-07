@@ -868,7 +868,7 @@ void dbTechLayerCutSpacingTableDefRule::setSpacingTable(
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   obj->row_map_ = row_map;
   obj->col_map_ = col_map;
-  for (auto spacing : table) {
+  for (const auto& spacing : table) {
     dbVector<std::pair<int, int>> tmp;
     tmp = spacing;
     obj->spacing_tbl_.push_back(tmp);
@@ -885,7 +885,7 @@ void dbTechLayerCutSpacingTableDefRule::getSpacingTable(
   row_map = obj->row_map_;
   col_map = obj->col_map_;
   table.clear();
-  for (auto spacing : obj->spacing_tbl_) {
+  for (const auto& spacing : obj->spacing_tbl_) {
     table.push_back(spacing);
   }
 }
@@ -972,10 +972,7 @@ int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
-  for (auto entry : obj->prl_tbl_) {
-    std::string class1 = std::get<0>(entry);
-    std::string class2 = std::get<1>(entry);
-    int prl = std::get<2>(entry);
+  for (const auto& [class1, class2, prl] : obj->prl_tbl_) {
     if ((class1 == cutClass1 || class1 == "ALL")
         && (class2 == cutClass2 || class2 == "ALL"))
       return prl;

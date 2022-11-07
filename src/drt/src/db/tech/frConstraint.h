@@ -2157,7 +2157,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
     std::string rows = "";
     for (auto row : tbl.getRows())
       rows = rows + std::to_string(row) + " ";
-    for (auto val : tbl.getValues())
+    for (const auto& val : tbl.getValues())
       vals = vals + "(" + std::to_string(val.first) + ","
              + std::to_string(val.second) + ") ";
     logger->report("\trowName: {}", tbl.getRowName());

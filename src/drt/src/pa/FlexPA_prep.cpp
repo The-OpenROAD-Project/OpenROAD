@@ -102,7 +102,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       auto layerNum = obj->getLayerNum();
       vector<gtl::point_data<frCoord>> points;
       // must be copied pts
-      for (auto pt : obj->getPoints()) {
+      for (Point pt : obj->getPoints()) {
         xform.apply(pt);
         points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
       }

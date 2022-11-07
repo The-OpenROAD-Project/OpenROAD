@@ -67,8 +67,7 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
 {
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
-  for (auto net_route : routing) {
-    odb::dbNet* db_net = net_route.first;
+  for (auto& [db_net, route] : routing) {
     if (db_net->getWire()) {
       std::vector<ant::Violation> net_violations =
         arc_->getAntennaViolations(db_net, diode_mterm);
@@ -91,9 +90,7 @@ void RepairAntennas::makeNetWires(NetRouteMap& routing,
   std::map<int, odb::dbTechVia*> default_vias
     = grouter_->getDefaultVias(max_routing_layer);
 
-  for (auto net_route : routing) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
+  for (auto& [db_net, route] : routing) {
     makeNetWire(db_net, route, default_vias);
   }
 }
@@ -516,8 +513,7 @@ double RepairAntennas::diffArea(odb::dbMTerm *mterm)
   double max_diff_area = 0.0;
   std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;
   mterm->getDiffArea(diff_areas);
-  for (auto area_layer : diff_areas) {
-    double diff_area = area_layer.first;
+  for (auto [diff_area, layer] : diff_areas) {
     max_diff_area = std::max(max_diff_area, diff_area);
   }
   return max_diff_area;

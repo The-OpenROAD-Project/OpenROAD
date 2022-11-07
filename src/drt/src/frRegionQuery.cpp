@@ -192,7 +192,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
           // Decompose the polygon to rectangles and store those
           // Convert the frPolygon to a Boost polygon
           vector<gtl::point_data<frCoord>> points;
-          for (auto pt : ((frPolygon*) shape)->getPoints()) {
+          for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
             points.push_back({pt.x(), pt.y()});
           }
@@ -263,7 +263,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
           // Decompose the polygon to rectangles and store those
           // Convert the frPolygon to a Boost polygon
           vector<gtl::point_data<frCoord>> points;
-          for (auto pt : ((frPolygon*) shape)->getPoints()) {
+          for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
             points.push_back({pt.x(), pt.y()});
           }
@@ -482,7 +482,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       // Decompose the polygon to rectangles and store those
       // Convert the frPolygon to a Boost polygon
       vector<gtl::point_data<frCoord>> points;
-      for (auto pt : ((frPolygon*) shape)->getPoints()) {
+      for (Point pt : ((frPolygon*) shape)->getPoints()) {
         xform.apply(pt);
         points.push_back({pt.x(), pt.y()});
       }

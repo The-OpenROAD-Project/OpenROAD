@@ -40,12 +40,12 @@ lefTechLayerEolKeepOutRuleParser::lefTechLayerEolKeepOutRuleParser(lefin* l)
   lefin_ = l;
 }
 
-void lefTechLayerEolKeepOutRuleParser::parse(std::string s,
+void lefTechLayerEolKeepOutRuleParser::parse(const std::string& s,
                                              odb::dbTechLayer* layer)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
