@@ -38,12 +38,12 @@ _installCommonDev() {
     # SWIG
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        tarName=rel-${swigVersion}.tar.gz
-        [[ ${swigVersionType} == "tag" ]] && tarName=v${swigVersion}.tar.gz
+        tarName="rel-${swigVersion}.tar.gz"
+        [[ ${swigVersionType} == "tag" ]] && tarName="v${swigVersion}.tar.gz"
         wget https://github.com/swig/swig/archive/${tarName}
         md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
         tar xfz ${tarName}
-        cd swig-${tarName%%.tar*}
+        cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
         ./autogen.sh
         ./configure --prefix=/usr
         make -j $(nproc)
@@ -147,6 +147,7 @@ _installUbuntuDev() {
         gcc \
         git \
         lcov \
+        libpcre2-dev \
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
@@ -203,6 +204,7 @@ _installCentosDev() {
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
+        pcre2-devel \
         readline-devel \
         tcl \
         tcl-devel \
