@@ -55,6 +55,8 @@
 
 namespace mpl {
 
+extern utl::Logger* _mpl2_logger;
+
 using std::string;
 
 //////////////////////////////////////////////////////////////////
@@ -142,10 +144,10 @@ void SimulatedAnnealingCore<T>::SetGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::IsValid() const
 {
-  std::cout << "width_ :  " << width_ << "   "
-            << "outline_width_ :  " << outline_width_ << std::endl;
-  std::cout << "height_ : " << height_ << "   "
-            << "outline_height_ : " << outline_height_ << std::endl;
+  _mpl2_logger->report(
+      "width_ :  {}  outline_width_ :  {} ", width_, outline_width_);
+  _mpl2_logger->report(
+      "height_ : {} outline_height_: {}", height_, outline_height_);
   return (width_ <= outline_width_ * (1.0 + acc_tolerance_))
          && (height_ <= outline_height_ * (1.0 + acc_tolerance_));
 }

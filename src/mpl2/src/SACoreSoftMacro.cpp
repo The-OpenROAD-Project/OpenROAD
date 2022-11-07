@@ -56,6 +56,8 @@
 
 namespace mpl {
 
+extern utl::Logger* _mpl2_logger;
+
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
 // constructors
@@ -673,20 +675,19 @@ void SACoreSoftMacro::Shrink()
 
 void SACoreSoftMacro::PrintResults() const
 {
-  std::cout << "outline_penalty : " << outline_penalty_ / norm_outline_penalty_
-            << std::endl;
-  std::cout << "wirelength : " << wirelength_ / norm_wirelength_ << std::endl;
-  std::cout << "guidance_penalty : "
-            << guidance_penalty_ / norm_guidance_penalty_ << std::endl;
-  std::cout << "fence_penalty : " << fence_penalty_ / norm_fence_penalty_
-            << std::endl;
-  std::cout << "boundary_penalty : "
-            << boundary_penalty_ / norm_boundary_penalty_ << std::endl;
-  std::cout << "macro_blockage_penalty : "
-            << macro_blockage_penalty_ / norm_macro_blockage_penalty_
-            << std::endl;
-  std::cout << "notch_penalty : " << notch_penalty_ / norm_notch_penalty_
-            << std::endl;
+  _mpl2_logger->report("outline_penalty : {}",
+                       outline_penalty_ / norm_outline_penalty_);
+  _mpl2_logger->report("wirelength : {}", wirelength_ / norm_wirelength_);
+  _mpl2_logger->report("guidance_penalty : {}",
+                       guidance_penalty_ / norm_guidance_penalty_);
+  _mpl2_logger->report("fence_penalty : {}",
+                       fence_penalty_ / norm_fence_penalty_);
+  _mpl2_logger->report("boundary_penalty : {}",
+                       boundary_penalty_ / norm_boundary_penalty_);
+  _mpl2_logger->report("macro_blockage_penalty : {}",
+                       macro_blockage_penalty_ / norm_macro_blockage_penalty_);
+  _mpl2_logger->report("notch_penalty : {}",
+                       notch_penalty_ / norm_notch_penalty_);
 }
 
 // fill the dead space by adjust the size of MixedCluster

@@ -56,6 +56,8 @@
 
 namespace mpl {
 
+extern utl::Logger* _mpl2_logger;
+
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
 // constructors
@@ -179,9 +181,11 @@ void SACoreHardMacro::Perturb()
   // Update all the penalties
   CalPenalty();
   if (action_id_ == 105)
-    std::cout << "wirelength_weight_ = " << wirelength_weight_ << "  "
-              << "pre_wirelength_ = " << pre_wirelength_ << "  "
-              << "wirelength_ = " << wirelength_ << "   " << std::endl;
+    _mpl2_logger->report(
+        "wirelength_weight_ = {} pre_wirelength = {} wirelength = {}",
+        wirelength_weight_,
+        pre_wirelength_,
+        wirelength_);
 }
 
 void SACoreHardMacro::Restore()
@@ -257,32 +261,39 @@ void SACoreHardMacro::Initialize()
 
 void SACoreHardMacro::PrintResults()
 {
-  std::cout << "SACoreHardMacro" << std::endl;
-  std::cout << "outline_penalty_  = " << outline_penalty_ << std::endl;
-  std::cout << "wirelength_  = " << wirelength_ << std::endl;
+  _mpl2_logger->report("SACoreHardMacro");
+  _mpl2_logger->report("outline_penalty_  = {}", outline_penalty_);
+  _mpl2_logger->report("wirelength_  = {}", wirelength_);
   for (auto& net : nets_)
-    std::cout << "net  src = " << net.terminals.first << "  "
-              << "target = " << net.terminals.second << "  "
-              << "weight = " << net.weight << std::endl;
+    _mpl2_logger->report("net  src = {} target = {} weight = {}",
+                         net.terminals.first,
+                         net.terminals.second,
+                         net.weight);
 
   for (auto& macro : macros_)
-    std::cout << "name : " << macro.GetName() << "lx = " << macro.GetX() << "  "
-              << "ly = " << macro.GetY() << "  "
-              << "pin_x = " << macro.GetPinX() << "  "
-              << "pin_y = " << macro.GetPinY() << "  "
-              << "orientation = " << macro.GetOrientation() << std::endl;
+    _mpl2_logger->report(
+        "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
+        macro.GetName(),
+        macro.GetX(),
+        macro.GetY(),
+        macro.GetPinX(),
+        macro.GetPinY(),
+        macro.GetOrientation());
   // FlipMacro();
   CalPenalty();
-  std::cout << "wirelength_  = " << wirelength_ << std::endl;
+  _mpl2_logger->report("wirelength_  = {}", wirelength_);
   for (auto& macro : macros_)
-    std::cout << "name : " << macro.GetName() << "lx = " << macro.GetX() << "  "
-              << "ly = " << macro.GetY() << "  "
-              << "pin_x = " << macro.GetPinX() << "  "
-              << "pin_y = " << macro.GetPinY() << "  "
-              << "orientation = " << macro.GetOrientation() << std::endl;
+    _mpl2_logger->report(
+        "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
+        macro.GetName(),
+        macro.GetX(),
+        macro.GetY(),
+        macro.GetPinX(),
+        macro.GetPinY(),
+        macro.GetOrientation());
 
-  std::cout << "guidance_penalty_  = " << guidance_penalty_ << std::endl;
-  std::cout << "fence_penalty_  = " << fence_penalty_ << std::endl;
+  _mpl2_logger->report("guidance_penalty_  = {}", guidance_penalty_);
+  _mpl2_logger->report("fence_penalty_  = {}", fence_penalty_);
 }
 
 }  // namespace mpl
