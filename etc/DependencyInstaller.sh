@@ -179,6 +179,62 @@ _installUbuntuRuntime() {
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
 
+_installRHELCleanUp() {
+    yum clean -y all
+    rm -rf /var/lib/apt/lists/*
+}
+
+_installRHELDev() {
+    yum -y install \
+        autoconf \
+        automake \
+        gcc \
+        gcc-c++ \
+        gdb \
+        glibc-devel \
+        libtool	\
+        make \
+        pkgconf \
+        pkgconf-m4 \
+        pkgconf-pkg-config \
+        redhat-rpm-config \
+        rpm-build \
+        wget \
+        git \
+        llvm7.0 \
+        llvm7.0-libs \
+        llvm7.0-devel \	
+        pcre-devel \
+        pcre2-devel \
+        tcl-tclreadline-devel \
+        readline \
+        tcllib \
+        tcl-tclreadline-devel \
+        zlib-devel \
+        python3 \
+        python3-pip \
+        python3-devel \
+        clang \
+        clang-devel
+    yum install -y \
+        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
+        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+}
+
+_installRHELRuntime() {
+    if [[ -z $(yum list installed epel-release) ]]; then
+        yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    fi
+    yum -y update
+    yum -y install \
+        tzdata \
+        binutils \
+        libgomp \
+        python3-libs \
+        tcl \
+        tcl-tclreadline
+}
+
 _installCentosCleanUp() {
     yum clean -y all
     rm -rf /var/lib/apt/lists/*
@@ -359,6 +415,17 @@ EOF
         fi
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
+        ;;
+    "Red Hat Enterprise Linux")
+        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installRHELRuntime
+        if [[ "${option}" == "dev" ]]; then
+            _installRHELDev
+            _installCommonDev
+        fi
+        # _installOrTools "rhel" "8" "amd64"
+        _installRHELCleanUp
         ;;
     "Darwin" )
         _installDarwin
