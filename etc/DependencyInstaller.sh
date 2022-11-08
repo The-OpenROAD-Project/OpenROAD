@@ -203,7 +203,7 @@ _installRHELDev() {
         git \
         llvm7.0 \
         llvm7.0-libs \
-        llvm7.0-devel \	
+        llvm7.0-devel \
         pcre-devel \
         pcre2-devel \
         tcl-tclreadline-devel \
@@ -216,15 +216,15 @@ _installRHELDev() {
         python3-devel \
         clang \
         clang-devel
+
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 }
 
 _installRHELRuntime() {
-    if [[ -z $(yum list installed epel-release) ]]; then
-        yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    fi
+    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
     yum -y update
     yum -y install \
         tzdata \
