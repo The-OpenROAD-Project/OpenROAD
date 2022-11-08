@@ -1476,8 +1476,24 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
           Net *tie_net = network_->net(tie_pin);
           sta_->deleteNet(tie_net);
           parasitics_invalid_.erase(tie_net);
-          // Delete the tie instance.
-          sta_->deleteInstance(inst);
+          // Delete the tie instance if no other ports are in use.
+          // A tie cell can have both tie hi and low outputs.
+          bool has_other_fanout = false;
+          InstancePinIterator* inst_pin_iter = network_->pinIterator(inst);
+          while (inst_pin_iter->hasNext()) {
+            Pin *pin = inst_pin_iter->next();
+            if (pin != drvr_pin) {
+              Net* net = network_->net(pin);
+              if (net && !network_->isPower(net) && !network_->isGround(net)) {
+                has_other_fanout = true;
+                break;
+              }
+            }
+          }
+          delete inst_pin_iter;
+          if (!has_other_fanout) {
+            sta_->deleteInstance(inst);
+          }
         }
       }
     }
