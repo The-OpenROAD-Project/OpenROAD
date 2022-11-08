@@ -45,8 +45,8 @@ _installCommonDev() {
         cd swig-rel-${swigVersion}
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
-        make -j $(nproc) DESTDIR=${swigPrefix}
-        make -j $(nproc) install DESTDIR=${swigPrefix}
+        make -j $(nproc)
+        make -j $(nproc) install
     else
         echo "Swig already installed."
     fi
