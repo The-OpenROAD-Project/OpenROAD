@@ -119,6 +119,8 @@ class lefout
       dbObject* obj,
       std::unordered_map<std::string, short>& propertiesMap);
 
+  int determineBloat(dbTechLayer* layer, int bloat_factor) const;
+
  public:
   double lefdist(int value) { return ((double) value * _dist_factor); }
 

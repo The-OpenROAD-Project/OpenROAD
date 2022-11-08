@@ -43,6 +43,19 @@
 using namespace boost::polygon::operators;
 using namespace odb;
 
+int lefout::determineBloat(dbTechLayer* layer, int bloat_factor) const
+{
+  int bloat = 0;
+
+  const int pitch = layer->getPitch();
+  if (pitch != 0) {
+    bloat = pitch;
+  } else {
+    bloat = 2 * layer->getSpacing();
+  }
+  return bloat_factor * bloat;
+}
+
 void lefout::writeVersion(const char* version)
 {
   fprintf(_out, "VERSION %s ;\n", version);
@@ -165,7 +178,7 @@ void lefout::writeObstructions(dbBlock* db_block, int bloat_factor, bool bloat_o
     if (bloat_occupied_layers) {
 	    writeBox("   ", block_bounding_box);	
     } else {
-    	int bloat = bloat_factor*tech_layer->getPitch();
+       const int bloat = determineBloat(tech_layer, bloat_factor);
     	boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
     	shrink_poly.shrink2(bloat, bloat, bloat, bloat);
     	
@@ -215,7 +228,7 @@ void lefout::findInstsObstructions(
     // Add insts obstructions
     for (dbSet<dbObstruction>::iterator obs_itr = inst_obs.begin(); obs_itr != inst_obs.end(); ++obs_itr) {
       dbObstruction* obs = *obs_itr;
-      int bloat = bloat_factor * obs->getBBox()->getTechLayer()->getPitch();
+      const int bloat = determineBloat(obs->getBBox()->getTechLayer(), bloat_factor);
       boost::polygon::polygon_90_set_data<int> poly;
       poly = boost::polygon::rectangle_data<int>{obs->getBBox()->xMax(),
                                                  obs->getBBox()->yMax(),
@@ -232,7 +245,7 @@ void lefout::findInstsObstructions(
       dbShape shape;
       dbITermShapeItr iterm_shape_itr;
       for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
-        int bloat = bloat_factor * shape.getTechLayer()->getPitch();
+        const int bloat = determineBloat(shape.getTechLayer(), bloat_factor);
         boost::polygon::polygon_90_set_data<int> poly;
         poly = boost::polygon::rectangle_data<int>{shape.xMax(),
                                                    shape.yMax(),
@@ -259,7 +272,7 @@ void lefout::findSWireLayerObstructions(
         // https://github.com/The-OpenROAD-Project/OpenROAD/pull/725#discussion_r669927312
         findLayerViaObstructions(obstructions, box, bloat_factor);
       } else {
-        int bloat = bloat_factor*box->getTechLayer()->getPitch();
+        const int bloat = determineBloat(box->getTechLayer(), bloat_factor);
         boost::polygon::polygon_90_set_data<int> poly;
         poly = boost::polygon::rectangle_data<int>{box->xMax(), box->yMax(), box->xMin(), box->yMin()};
         obstructions[box->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
@@ -279,7 +292,7 @@ void lefout::findLayerViaObstructions(
     if (db_shape.isViaBox()) {
       continue;
     }
-    int bloat = bloat_factor*db_shape.getTechLayer()->getPitch();
+    const int bloat = determineBloat(db_shape.getTechLayer(), bloat_factor);
     boost::polygon::polygon_90_set_data<int> poly;
     poly = boost::polygon::rectangle_data<int>{db_shape.getBox().xMax(),
                                                db_shape.getBox().yMax(),
@@ -308,7 +321,7 @@ void lefout::findWireLayerObstructions(
     if (shape.isVia()) {
       continue;
     }
-    int bloat = bloat_factor*shape.getTechLayer()->getPitch();
+    const int bloat = determineBloat(shape.getTechLayer(), bloat_factor);
     boost::polygon::polygon_90_set_data<int> poly;
     poly = boost::polygon::rectangle_data<int>{shape.getBox().xMax(),
                                                shape.getBox().yMax(),
