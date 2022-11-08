@@ -198,7 +198,7 @@ std::vector<dbPowerSwitch*> dbPowerDomain::getPowerSwitches()
 
   std::vector<dbPowerSwitch*> switches;
 
-  for (auto ps : obj->_power_switch) {
+  for (const auto& ps : obj->_power_switch) {
     switches.push_back((dbPowerSwitch*) par->_powerswitch_tbl->getPtr(ps));
   }
 
@@ -212,7 +212,7 @@ std::vector<dbIsolation*> dbPowerDomain::getIsolations()
 
   std::vector<dbIsolation*> isolations;
 
-  for (auto iso : obj->_isolation) {
+  for (const auto& iso : obj->_isolation) {
     isolations.push_back((dbIsolation*) par->_isolation_tbl->getPtr(iso));
   }
 

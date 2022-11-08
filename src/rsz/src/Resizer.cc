@@ -2304,10 +2304,8 @@ void
 Resizer::journalRestore(int &resize_count,
                         int &inserted_buffer_count)
 {
-  for (auto inst_cell : resized_inst_map_) {
-    Instance *inst = inst_cell.first;
+  for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
-      LibertyCell *lib_cell = inst_cell.second;
       debugPrint(logger_, RSZ, "journal", 1, "journal restore {} ({})",
                  network_->pathName(inst),
                  lib_cell->name());

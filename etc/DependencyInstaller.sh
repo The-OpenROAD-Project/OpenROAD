@@ -11,7 +11,7 @@ _installCommonDev() {
     cmakeVersionSmall=${cmakeVersionBig}.2
     swigVersion=4.0.2
     swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
-    boostVersionBig=1.80 
+    boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
@@ -112,6 +112,18 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 }
 
+_installOrTools() {
+    os=$1
+    version=$2
+    arch=$3
+    orToolsVersionBig=9.4
+    orToolsVersionSmall=${orToolsVersionBig}.1874
+    orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
+    wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
+    mkdir -p /opt/or-tools
+    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
+}
+
 _installUbuntuCleanUp() {
     apt-get autoclean -y
     apt-get autoremove -y
@@ -124,6 +136,7 @@ _installUbuntuDev() {
     apt-get -y install \
         automake \
         autotools-dev \
+        build-essential \
         bison \
         flex \
         clang \
@@ -158,7 +171,7 @@ _installUbuntuRuntime() {
         qtchooser \
         qt5-qmake \
         qtbase5-dev-tools
-    else 
+    else
         apt-get install -y qt5-default
     fi
 
@@ -369,6 +382,7 @@ case "${os}" in
             _installCentosDev
             _installCommonDev
         fi
+        _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
@@ -383,12 +397,14 @@ EOF
         _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
-            _installCommonDev "${version}"
+            _installCommonDev
         fi
+        _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
     "Darwin" )
         _installDarwin
+        _installOrTools "MacOsX" "12.5" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:

@@ -62,9 +62,8 @@ void initAntennaChecker(OpenRoad* openroad)
 
   Ant_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ant_tcl_inits);
-  openroad->getAntennaChecker()->init(openroad->getDb(),
-                                      openroad->getGlobalRouter(),
-                                      openroad->getLogger());
+  openroad->getAntennaChecker()->init(
+      openroad->getDb(), openroad->getGlobalRouter(), openroad->getLogger());
 }
 
 }  // namespace ord

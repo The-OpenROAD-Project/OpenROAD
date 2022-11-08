@@ -81,9 +81,10 @@ static int mapxy(const int nx,
 void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
 {
   const int d = rsmt.deg;
-  sttrees_[ind].deg = d;
   const int numnodes = 2 * d - 2;
   const int numedges = 2 * d - 3;
+  sttrees_[ind].num_nodes = numnodes;
+  sttrees_[ind].num_terminals = d;
   sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
   sttrees_[ind].edges.reset(new TreeEdge[numedges]);
 

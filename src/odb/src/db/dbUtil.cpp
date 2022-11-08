@@ -40,13 +40,19 @@
 
 namespace odb {
 
-dbCreateNetUtil::dbCreateNetUtil() : _ruleNameHint(0)
+dbCreateNetUtil::dbCreateNetUtil()
+    : _tech(nullptr),
+      _block(nullptr),
+      _ruleNameHint(0),
+      _milosFormat(false),
+      _currentNet(nullptr),
+      _mapArray(nullptr),
+      _mapCnt(0),
+      _ecoCnt(0),
+      _skipPowerNets(true),
+      _useLocation(false),
+      _verbose(false)
 {
-  _milosFormat = false;
-  _skipPowerNets = true;
-  _currentNet = NULL;
-  _mapArray = NULL;
-  _ecoCnt = 0;
 }
 dbCreateNetUtil::~dbCreateNetUtil()
 {

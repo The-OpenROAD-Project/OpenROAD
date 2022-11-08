@@ -133,7 +133,12 @@ class _dbTechLayerAntennaRule : public _dbObject
   double _area_minus_diff_factor;
   bool _has_antenna_cumroutingpluscut;
 
-  _dbTechLayerAntennaRule(_dbDatabase*) {}
+  _dbTechLayerAntennaRule(_dbDatabase*)
+      : _gate_plus_diff_factor(0),
+        _area_minus_diff_factor(0),
+        _has_antenna_cumroutingpluscut(false)
+  {
+  }
   _dbTechLayerAntennaRule(_dbDatabase*, const _dbTechLayerAntennaRule& r)
       : _layer(r._layer),
         _area_mult(r._area_mult),
