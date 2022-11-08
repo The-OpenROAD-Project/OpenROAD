@@ -46,13 +46,13 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
   (ar) & index_in_owner_;
 
   if (is_loading(ar)) {
-    int conId;
+    int conId = -1;
     (ar) & conId;
     if (conId >= 0)
       constraint_ = design->getTech()->getConstraint(conId);
     else
       constraint_ = nullptr;
-    int sz;
+    int sz = 0;
     (ar) & sz;
     while (sz--) {
       frBlockObject* obj;

@@ -53,7 +53,7 @@ void drVia::serialize(Archive& ar, const unsigned int version)
   (ar) & beginMazeIdx_;
   (ar) & endMazeIdx_;
   serializeViaDef(ar, viaDef_);
-  bool tmp;
+  bool tmp = false;
   if (is_loading(ar)) {
     (ar) & tmp;
     tapered_ = tmp;
