@@ -421,6 +421,7 @@ EOF
             _installOpenSuseDev
             _installCommonDev
         fi
+        _installOrTools "opensuse" "leap" "amd64"
         _installOpenSuseCleanUp
         cat <<EOF
 To enable GCC-11 you need to run:
