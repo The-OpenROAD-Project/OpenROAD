@@ -1479,7 +1479,8 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
           // Delete the tie instance if no other ports are in use.
           // A tie cell can have both tie hi and low outputs.
           bool has_other_fanout = false;
-          InstancePinIterator* inst_pin_iter = network_->pinIterator(inst);
+          std::unique_ptr<InstancePinIterator> inst_pin_iter{
+              network_->pinIterator(inst)};
           while (inst_pin_iter->hasNext()) {
             Pin *pin = inst_pin_iter->next();
             if (pin != drvr_pin) {
@@ -1490,7 +1491,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
               }
             }
           }
-          delete inst_pin_iter;
           if (!has_other_fanout) {
             sta_->deleteInstance(inst);
           }
