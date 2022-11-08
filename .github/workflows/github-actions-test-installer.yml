@@ -39,4 +39,4 @@ jobs:
           PREFIX=${{ matrix.args }} && PREFIX=${PREFIX#*=}
           swigPrefix=${PREFIX:-"/usr/usr"}
           swigDIR=$(${swigPrefix}/bin/swig -swiglib)
-          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE=${swigPrefix}/bin/swig -DSWIG_DIR=${swigDIR}"
+          ./etc/Build.sh -cmake="-DSWIG_EXECUTABLE="${swigPrefix}/bin/swig" -DSWIG_DIR="${swigDIR}""
