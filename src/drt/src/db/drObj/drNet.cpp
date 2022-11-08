@@ -48,7 +48,7 @@ void drNet::serialize(Archive& ar, const unsigned int version)
     frBlockObject* obj;
     serializeBlockObject(ar, obj);
     fNet_ = (frNet*) obj;
-    int terms_sz;
+    int terms_sz = 0;
     (ar) & terms_sz;
     while (terms_sz--) {
       serializeBlockObject(ar, obj);
