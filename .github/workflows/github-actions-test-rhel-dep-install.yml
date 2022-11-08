@@ -1,4 +1,4 @@
-name: Test Opensuse Dependency Installation script
+name: Test RHEL Dependency Installation script
 on:
   # Triggers the workflow on push or pull request events
   push:
@@ -14,6 +14,7 @@ jobs:
     steps:
       - name: Setup
         run: |
+          yum -y update
           yum -y install git
       - name: Checkout repository code with submodules
         run: |

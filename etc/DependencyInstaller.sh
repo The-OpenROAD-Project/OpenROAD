@@ -271,10 +271,10 @@ _installCentosDev() {
 }
 
 _installCentosRuntime() {
-    yum update -y
     if [[ -z $(yum list installed epel-release) ]]; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     fi
+    yum update -y
     yum install -y \
         libgomp \
         python36-libs \
