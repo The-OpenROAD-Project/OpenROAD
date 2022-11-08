@@ -214,15 +214,17 @@ float Metric::GetInflatArea() const
 ///////////////////////////////////////////////////////////////////////
 // Cluster Class
 // Constructors and Destructors
-Cluster::Cluster(int cluster_id)
+Cluster::Cluster(int cluster_id, utl::Logger* logger)
 {
   this->id_ = cluster_id;
+  logger_ = logger;
 }
 
-Cluster::Cluster(int cluster_id, std::string cluster_name)
+Cluster::Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger)
 {
   this->id_ = cluster_id;
   this->name_ = cluster_name;
+  logger_ = logger;
 }
 
 Cluster::~Cluster()
@@ -604,8 +606,7 @@ int Cluster::GetCloseCluster(const std::vector<int>& candidate_clusters,
   int closely_cluster = -1;
   int num_closely_clusters = 0;
   for (auto& [cluster_id, num_nets] : connection_map_) {
-    std::cout << "cluster_id : " << cluster_id << " nets :  " << num_nets
-              << std::endl;
+    logger_->report("cluster_id : {}  nets: {}", cluster_id, num_nets);
     if (num_nets > net_threshold
         && std::find(
                candidate_clusters.begin(), candidate_clusters.end(), cluster_id)
@@ -627,8 +628,7 @@ void Cluster::SetPinAccess(int cluster_id,
                            float net_weight)
 {
   if (cluster_id < 0)
-    std::cout << "Error !!!\n"
-              << "Cluster id is less than 0 in SetPinAccess" << std::endl;
+    logger_->report("Error !!! Cluster id is less than 0 in SetPinAccess");
   pin_access_map_[cluster_id]
       = std::pair<PinAccess, float>(pin_access, net_weight);
 }

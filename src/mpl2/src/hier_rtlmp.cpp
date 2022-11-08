@@ -308,7 +308,7 @@ void HierRTLMP::HierRTLMacroPlacer()
   //
   cluster_id_ = 0;
   // set the level of cluster to be 0
-  root_cluster_ = new Cluster(cluster_id_, std::string("root"));
+  root_cluster_ = new Cluster(cluster_id_, std::string("root"), logger_);
   // set the design metric as the metric for the root cluster
   root_cluster_->AddDbModule(block_->getTopModule());
   root_cluster_->SetMetric(*metric_);
@@ -586,7 +586,7 @@ void HierRTLMP::CreateBundledIOs()
        i++) {  // four boundaries (Left, Top, Right and Bottom in order)
     for (int j = 0; j < num_bundled_IOs_; j++) {
       std::string cluster_name = prefix_vec[i] + std::to_string(j);
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name);
+      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       root_cluster_->AddChild(cluster);
       cluster->SetParent(root_cluster_);
       cluster_io_map[cluster_id_] = false;
@@ -856,7 +856,7 @@ void HierRTLMP::BreakCluster(Cluster* parent)
     // we first model each child logical module as a cluster
     for (odb::dbModInst* child : module->getChildren()) {
       std::string cluster_name = child->getMaster()->getHierarchicalName();
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name);
+      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->AddDbModule(child->getMaster());
       SetInstProperty(cluster);
       SetClusterMetric(cluster);
@@ -868,7 +868,7 @@ void HierRTLMP::BreakCluster(Cluster* parent)
     // Check the glue logics
     std::string cluster_name
         = std::string("(") + parent->GetName() + ")_glue_logic";
-    Cluster* cluster = new Cluster(cluster_id_, cluster_name);
+    Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
       odb::dbMaster* master = inst->getMaster();
@@ -898,7 +898,7 @@ void HierRTLMP::BreakCluster(Cluster* parent)
     // parent cluster has few logical modules or many glue insts
     for (auto& module : parent->GetDbModules()) {
       std::string cluster_name = module->getHierarchicalName();
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name);
+      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->AddDbModule(module);
       SetInstProperty(cluster);
       SetClusterMetric(cluster);
@@ -912,7 +912,7 @@ void HierRTLMP::BreakCluster(Cluster* parent)
         || (parent->GetLeafMacros().size() > 0)) {
       std::string cluster_name
           = std::string("(") + parent->GetName() + ")_glue_logic";
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name);
+      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       for (auto& inst : parent->GetLeafStdCells())
         cluster->AddLeafStdCell(inst);
       for (auto& inst : parent->GetLeafMacros())
@@ -1685,7 +1685,7 @@ void HierRTLMP::BreakLargeFlatCluster(Cluster* parent)
   parent->SetName(cluster_name + std::string("_0"));
   // create a new cluster for part 1
   Cluster* cluster_part_1
-      = new Cluster(cluster_id_, cluster_name + std::string("_1"));
+      = new Cluster(cluster_id_, cluster_name + std::string("_1"), logger_);
   // we do not need to touch the fixed vertices (they have been assigned before)
   for (int i = num_fixed_vertices; i < part.size(); i++)
     if (part[i] == 0)
@@ -1766,7 +1766,7 @@ void HierRTLMP::LeafClusterStdCellHardMacroSep(Cluster* root_cluster)
     std::vector<Cluster*> macro_clusters;
     for (auto& hard_macro : hard_macros) {
       std::string cluster_name = hard_macro->GetName();
-      Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name);
+      Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
       macro_cluster->AddLeafMacro(hard_macro->GetInst());
       SetInstProperty(macro_cluster);
       SetClusterMetric(macro_cluster);
@@ -1892,7 +1892,7 @@ void HierRTLMP::LeafClusterStdCellHardMacroSep(Cluster* root_cluster)
       // If we need a subtree , add standard cell cluster
       std::string std_cell_cluster_name = cluster->GetName();
       Cluster* std_cell_cluster
-          = new Cluster(cluster_id_, std_cell_cluster_name);
+          = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
       std_cell_cluster->CopyInstances(*cluster);
       std_cell_cluster->ClearLeafMacros();
       std_cell_cluster->SetClusterType(StdCellCluster);
@@ -3252,7 +3252,7 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
   for (auto& hard_macro : hard_macros) {
     int macro_id = macros.size();
     std::string cluster_name = hard_macro->GetName();
-    Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name);
+    Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
     macro_cluster->AddLeafMacro(hard_macro->GetInst());
     SetInstProperty(macro_cluster);
     cluster_id_macro_id_map[cluster_id_] = macro_id;

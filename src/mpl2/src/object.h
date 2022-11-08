@@ -67,7 +67,7 @@ namespace mpl {
 // hard macro : a macro used in the design, for example, a SRAM macro
 //              We may generate some fake hard macros to model the
 //              behaviors of pin access blockage
-// soft macro : the physical abstraction for a cluster. We may inflate (bloat) 
+// soft macro : the physical abstraction for a cluster. We may inflate (bloat)
 //              the area of the standard cells in the cluster when we
 //              create soft macros from clusters. That means the bounding
 //              box of a cluster is usually large than the actual size of the
@@ -183,8 +183,8 @@ class Cluster
  public:
   // constructors
   Cluster() {}
-  Cluster(int cluster_id);  // cluster name can be updated
-  Cluster(int cluster_id, std::string cluster_name);
+  Cluster(int cluster_id, utl::Logger* logger);  // cluster name can be updated
+  Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger);
   // destructor
   ~Cluster();  // we need to define this for remove pointers
 
@@ -338,6 +338,7 @@ class Cluster
   // pin access for each bundled connection
   std::map<int, std::pair<PinAccess, float>> pin_access_map_;
   std::map<PinAccess, std::map<PinAccess, float>> boundary_connection_map_;
+  utl::Logger* logger_;
 };
 
 // A hard macro have fixed width and height
