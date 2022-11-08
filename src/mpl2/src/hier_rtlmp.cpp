@@ -85,8 +85,6 @@ namespace mpl {
 
 using std::string;
 
-utl::Logger* _mpl2_logger;
-
 ///////////////////////////////////////////////////////////
 // Class HierRTLMP
 using utl::MPL;
@@ -101,7 +99,6 @@ HierRTLMP::HierRTLMP(ord::dbNetwork* network,
   db_ = db;
   sta_ = sta;
   logger_ = logger;
-  _mpl2_logger = logger;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2092,7 +2089,8 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
                                                 num_perturb_per_step,
                                                 k_,
                                                 c_,
-                                                random_seed_);
+                                                random_seed_,
+                                                logger_);
       sa_vector.push_back(sa);
     }
     // multi threads
@@ -2145,7 +2143,8 @@ void HierRTLMP::CalClusterMacroTilings(Cluster* parent)
                                                 num_perturb_per_step,
                                                 k_,
                                                 c_,
-                                                random_seed_);
+                                                random_seed_,
+                                                logger_);
       sa_vector.push_back(sa);
     }
     // multi threads
@@ -2278,7 +2277,8 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
                                                 num_perturb_per_step,
                                                 k_,
                                                 c_,
-                                                random_seed_);
+                                                random_seed_,
+                                                logger_);
       sa_vector.push_back(sa);
     }
     // multi threads
@@ -2326,7 +2326,8 @@ void HierRTLMP::CalHardMacroClusterShape(Cluster* cluster)
                                                 num_perturb_per_step,
                                                 k_,
                                                 c_,
-                                                random_seed_);
+                                                random_seed_,
+                                                logger_);
       sa_vector.push_back(sa);
     }
     // multi threads
@@ -2874,7 +2875,8 @@ void HierRTLMP::MultiLevelMacroPlacement(Cluster* parent)
                                 num_perturb_per_step,
                                 k_,
                                 c_,
-                                random_seed_);
+                                random_seed_,
+                                logger_);
       sa->SetFences(fences);
       sa->SetGuides(guides);
       sa->SetNets(nets);
@@ -3216,7 +3218,8 @@ void HierRTLMP::CallBusPlanning(std::vector<SoftMacro>& shaped_macros,
                   edge_list,
                   vertex_list,
                   nets,
-                  congestion_weight_)
+                  congestion_weight_,
+                  logger_)
       == false)
     logger_->error(MPL, 2029, "Fail !!! Cannot do bus planning !!!");
 }
@@ -3356,7 +3359,8 @@ void HierRTLMP::HardMacroClusterMacroPlacement(Cluster* cluster)
                                 num_perturb_per_step,
                                 k_,
                                 c_,
-                                random_seed_);
+                                random_seed_,
+                                logger_);
       sa->SetNets(nets);
       sa->SetFences(fences);
       sa->SetGuides(guides);

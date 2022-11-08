@@ -93,7 +93,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int num_perturb_per_step,
                   int k,
                   int c,
-                  unsigned seed = 0);
+                  unsigned seed = 0,
+                  utl::Logger* logger = nullptr);
   // accessors
   float GetBoundaryPenalty() const;
   float GetNormBoundaryPenalty() const;

@@ -56,8 +56,6 @@
 
 namespace mpl {
 
-extern utl::Logger* _mpl2_logger;
-
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
 // constructors
@@ -89,7 +87,8 @@ SACoreSoftMacro::SACoreSoftMacro(
     int num_perturb_per_step,
     int k,
     int c,
-    unsigned seed)
+    unsigned seed,
+    utl::Logger* logger)
     : SimulatedAnnealingCore<SoftMacro>(outline_width,
                                         outline_height,
                                         macros,
@@ -107,7 +106,8 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         num_perturb_per_step,
                                         k,
                                         c,
-                                        seed)
+                                        seed,
+                                        logger)
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;
@@ -117,6 +117,7 @@ SACoreSoftMacro::SACoreSoftMacro(
   notch_v_th_ = notch_v_threshold;
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
+  logger_ = logger;
 }
 
 // acessors functions
@@ -675,19 +676,17 @@ void SACoreSoftMacro::Shrink()
 
 void SACoreSoftMacro::PrintResults() const
 {
-  _mpl2_logger->report("outline_penalty : {}",
-                       outline_penalty_ / norm_outline_penalty_);
-  _mpl2_logger->report("wirelength : {}", wirelength_ / norm_wirelength_);
-  _mpl2_logger->report("guidance_penalty : {}",
-                       guidance_penalty_ / norm_guidance_penalty_);
-  _mpl2_logger->report("fence_penalty : {}",
-                       fence_penalty_ / norm_fence_penalty_);
-  _mpl2_logger->report("boundary_penalty : {}",
-                       boundary_penalty_ / norm_boundary_penalty_);
-  _mpl2_logger->report("macro_blockage_penalty : {}",
-                       macro_blockage_penalty_ / norm_macro_blockage_penalty_);
-  _mpl2_logger->report("notch_penalty : {}",
-                       notch_penalty_ / norm_notch_penalty_);
+  logger_->report("outline_penalty : {}",
+                  outline_penalty_ / norm_outline_penalty_);
+  logger_->report("wirelength : {}", wirelength_ / norm_wirelength_);
+  logger_->report("guidance_penalty : {}",
+                  guidance_penalty_ / norm_guidance_penalty_);
+  logger_->report("fence_penalty : {}", fence_penalty_ / norm_fence_penalty_);
+  logger_->report("boundary_penalty : {}",
+                  boundary_penalty_ / norm_boundary_penalty_);
+  logger_->report("macro_blockage_penalty : {}",
+                  macro_blockage_penalty_ / norm_macro_blockage_penalty_);
+  logger_->report("notch_penalty : {}", notch_penalty_ / norm_notch_penalty_);
 }
 
 // fill the dead space by adjust the size of MixedCluster

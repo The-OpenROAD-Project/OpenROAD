@@ -487,8 +487,6 @@ class SoftMacro
     refer_ly_ = refer_ly;
     x_ = refer_lx;
     y_ = refer_ly;
-    std::cout << "refer_lx_ :  " << refer_lx_ << "  "
-              << "refer_ly_ :  " << refer_ly_ << "  " << std::endl;
   }
   void SetX(float x);
   void SetY(float y);

@@ -87,7 +87,8 @@ class SimulatedAnnealingCore
       int num_perturb_per_step,
       int k,
       int c,
-      unsigned seed = 0);
+      unsigned seed = 0,
+      utl::Logger* logger = nullptr);
 
   void SetNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
@@ -221,6 +222,7 @@ class SimulatedAnnealingCore
   float neg_swap_prob_ = 0.0;
   float double_swap_prob_ = 0.0;
   float exchange_prob_ = 0.0;
+  utl::Logger* logger_ = nullptr;
 };
 
 // SACore wrapper function

@@ -56,8 +56,6 @@
 
 namespace mpl {
 
-extern utl::Logger* _mpl2_logger;
-
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
 // constructors
@@ -83,7 +81,8 @@ SACoreHardMacro::SACoreHardMacro(
     int num_perturb_per_step,
     int k,
     int c,
-    unsigned seed)
+    unsigned seed,
+    utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(outline_width,
                                         outline_height,
                                         macros,
@@ -101,7 +100,8 @@ SACoreHardMacro::SACoreHardMacro(
                                         num_perturb_per_step,
                                         k,
                                         c,
-                                        seed)
+                                        seed,
+                                        logger)
 {
   flip_prob_ = flip_prob;
 }
@@ -181,7 +181,7 @@ void SACoreHardMacro::Perturb()
   // Update all the penalties
   CalPenalty();
   if (action_id_ == 105)
-    _mpl2_logger->report(
+    logger_->report(
         "wirelength_weight_ = {} pre_wirelength = {} wirelength = {}",
         wirelength_weight_,
         pre_wirelength_,
@@ -261,17 +261,17 @@ void SACoreHardMacro::Initialize()
 
 void SACoreHardMacro::PrintResults()
 {
-  _mpl2_logger->report("SACoreHardMacro");
-  _mpl2_logger->report("outline_penalty_  = {}", outline_penalty_);
-  _mpl2_logger->report("wirelength_  = {}", wirelength_);
+  logger_->report("SACoreHardMacro");
+  logger_->report("outline_penalty_  = {}", outline_penalty_);
+  logger_->report("wirelength_  = {}", wirelength_);
   for (auto& net : nets_)
-    _mpl2_logger->report("net  src = {} target = {} weight = {}",
-                         net.terminals.first,
-                         net.terminals.second,
-                         net.weight);
+    logger_->report("net  src = {} target = {} weight = {}",
+                    net.terminals.first,
+                    net.terminals.second,
+                    net.weight);
 
   for (auto& macro : macros_)
-    _mpl2_logger->report(
+    logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
         macro.GetName(),
         macro.GetX(),
@@ -281,9 +281,9 @@ void SACoreHardMacro::PrintResults()
         macro.GetOrientation());
   // FlipMacro();
   CalPenalty();
-  _mpl2_logger->report("wirelength_  = {}", wirelength_);
+  logger_->report("wirelength_  = {}", wirelength_);
   for (auto& macro : macros_)
-    _mpl2_logger->report(
+    logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
         macro.GetName(),
         macro.GetX(),
@@ -292,8 +292,8 @@ void SACoreHardMacro::PrintResults()
         macro.GetPinY(),
         macro.GetOrientation());
 
-  _mpl2_logger->report("guidance_penalty_  = {}", guidance_penalty_);
-  _mpl2_logger->report("fence_penalty_  = {}", fence_penalty_);
+  logger_->report("guidance_penalty_  = {}", guidance_penalty_);
+  logger_->report("fence_penalty_  = {}", fence_penalty_);
 }
 
 }  // namespace mpl

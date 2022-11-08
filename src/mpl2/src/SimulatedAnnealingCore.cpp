@@ -55,8 +55,6 @@
 
 namespace mpl {
 
-extern utl::Logger* _mpl2_logger;
-
 using std::string;
 
 //////////////////////////////////////////////////////////////////
@@ -83,7 +81,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int num_perturb_per_step,
     int k,
     int c,
-    unsigned seed)
+    unsigned seed,
+    utl::Logger* logger)
 {
   outline_width_ = outline_width;
   outline_height_ = outline_height;
@@ -110,6 +109,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   generator_ = randGen;
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
   distribution_ = distribution;
+
+  logger_ = logger;
 
   // macros and nets
   macros_ = macros;
@@ -144,10 +145,9 @@ void SimulatedAnnealingCore<T>::SetGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::IsValid() const
 {
-  _mpl2_logger->report(
+  logger_->report(
       "width_ :  {}  outline_width_ :  {} ", width_, outline_width_);
-  _mpl2_logger->report(
-      "height_ : {} outline_height_: {}", height_, outline_height_);
+  logger_->report("height_ : {} outline_height_: {}", height_, outline_height_);
   return (width_ <= outline_width_ * (1.0 + acc_tolerance_))
          && (height_ <= outline_height_ * (1.0 + acc_tolerance_));
 }

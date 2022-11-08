@@ -80,16 +80,6 @@ struct Edge
     this->weight = edge.weight;
     this->num_nets = edge.num_nets;
   }
-
-  void Print()
-  {
-    std::cout << "***********************************" << std::endl;
-    std::cout << "edge_id = " << edge_id << std::endl;
-    std::cout << "terminals =   " << terminals.first << "  " << terminals.second
-              << std::endl;
-    std::cout << "direction =   " << direction << std::endl;
-    std::cout << "pin_access =  " << to_string(pin_access) << std::endl;
-  }
 };
 
 // We use Arrow object in the adjacency matrix to represent the grid graph
@@ -114,7 +104,10 @@ class Graph
   Graph(int num_vertices, float congestion_weight);
   void AddEdge(int src, int dest, float weight, Edge* edge_ptr);
   // Calculate shortest pathes in terms of boundary edges
-  void CalNetEdgePaths(int src, int target, BundledNet& net);
+  void CalNetEdgePaths(int src,
+                       int target,
+                       BundledNet& net,
+                       utl::Logger* logger);
   bool IsConnected() const;  // check the GFS is connected
  private:
   std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
@@ -177,7 +170,8 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                                                           // for each soft macro
                  std::vector<Edge>&
                      edge_list,  // edge_list and vertex_list are all empty list
-                 std::vector<Vertex>& vertex_list);
+                 std::vector<Vertex>& vertex_list,
+                 utl::Logger* logger);
 
 // Calculate the paths for global buses with ILP
 // congestion_weight : the cost for each edge is
@@ -189,7 +183,8 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  std::vector<Vertex>& vertex_list,
                  std::vector<BundledNet>& nets,
                  // parameters
-                 float congestion_weight);
+                 float congestion_weight,
+                 utl::Logger* logger);
 
 }  // namespace mpl
 

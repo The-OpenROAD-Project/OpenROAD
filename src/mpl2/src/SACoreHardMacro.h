@@ -87,7 +87,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   int num_perturb_per_step,
                   int k,
                   int c,
-                  unsigned seed = 0);
+                  unsigned seed = 0,
+                  utl::Logger* logger_ = nullptr);
 
   // Initialize the SA worker
   void Initialize();
