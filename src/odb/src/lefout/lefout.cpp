@@ -205,6 +205,17 @@ void lefout::getObstructions(
     std::map<dbTechLayer*,boost::polygon::polygon_90_set_data<int>>& obstructions,
     int bloat_factor) const
 {
+  for (dbObstruction* obs : db_block->getObstructions()) {
+    dbBox* obs_box = obs->getBBox();
+    const int bloat = determineBloat(obs_box->getTechLayer(), bloat_factor);
+    const Rect obs_rect = obs_box->getBox();
+    boost::polygon::polygon_90_set_data<int> poly;
+    poly = boost::polygon::rectangle_data<int>{obs_rect.xMax(),
+                                               obs_rect.yMax(),
+                                               obs_rect.xMin(),
+                                               obs_rect.yMin()};
+    obstructions[obs_box->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+  }
 
   findInstsObstructions(obstructions, db_block, bloat_factor);
 
