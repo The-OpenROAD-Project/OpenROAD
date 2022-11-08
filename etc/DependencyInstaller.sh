@@ -9,8 +9,9 @@ _installCommonDev() {
     cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
-    swigVersion=4.0.2
-    swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
+    swigVersionType="tag"
+    swigVersion=4.1.0
+    swigChecksum="794433378154eb61270a3ac127d9c5f3"
     boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
@@ -37,10 +38,12 @@ _installCommonDev() {
     # SWIG
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
-        md5sum -c <(echo "${swigChecksum}  rel-${swigVersion}.tar.gz") || exit 1
-        tar xfz rel-${swigVersion}.tar.gz
-        cd swig-rel-${swigVersion}
+        tarName="rel-${swigVersion}.tar.gz"
+        [[ ${swigVersionType} == "tag" ]] && tarName="v${swigVersion}.tar.gz"
+        wget https://github.com/swig/swig/archive/${tarName}
+        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        tar xfz ${tarName}
+        cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
         ./autogen.sh
         ./configure --prefix=/usr
         make -j $(nproc)
@@ -144,6 +147,7 @@ _installUbuntuDev() {
         gcc \
         git \
         lcov \
+        libpcre2-dev \
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
@@ -200,6 +204,7 @@ _installCentosDev() {
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
+        pcre2-devel \
         readline-devel \
         tcl \
         tcl-devel \
