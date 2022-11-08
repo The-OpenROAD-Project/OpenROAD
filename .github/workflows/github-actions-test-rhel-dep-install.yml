@@ -1,0 +1,28 @@
+name: Test Opensuse Dependency Installation script
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:     
+  testInstaller:
+    runs-on: ubuntu-latest
+    container:
+      image: "redhat/ubi8"
+    steps:
+      - name: Setup
+        run: |
+          yum -y install git
+      - name: Checkout repository code with submodules
+        run: |
+          git clone --recursive https://github.com/${{ github.repository }}.git .
+          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          git config --global --add safe.directory '*'
+          git fetch origin pull/${PR_NUMBER}/head:test
+          git checkout test
+      - name: runs installer
+        run: |
+          ./etc/DependencyInstaller.sh -dev
+          ./etc/Build.sh -clean
