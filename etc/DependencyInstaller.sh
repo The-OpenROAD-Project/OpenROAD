@@ -223,7 +223,7 @@ _installRHELDev() {
 }
 
 _installRHELRuntime() {
-    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
     yum -y update
     yum -y install \
