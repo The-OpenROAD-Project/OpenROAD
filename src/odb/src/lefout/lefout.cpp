@@ -223,18 +223,22 @@ void lefout::findInstsObstructions(
   auto insts = db_block->getInsts();
   for (dbSet<dbInst>::iterator insts_itr = insts.begin(); insts_itr != insts.end(); ++insts_itr) {
     dbInst* inst = *insts_itr;
-    dbSet<dbObstruction> inst_obs = inst->getBlock()->getObstructions();
+    dbSet<dbBox> inst_obs = inst->getMaster()->getObstructions();
+    dbTransform trans;
+    inst->getTransform(trans);
     
     // Add insts obstructions
-    for (dbSet<dbObstruction>::iterator obs_itr = inst_obs.begin(); obs_itr != inst_obs.end(); ++obs_itr) {
-      dbObstruction* obs = *obs_itr;
-      const int bloat = determineBloat(obs->getBBox()->getTechLayer(), bloat_factor);
+    for (dbSet<dbBox>::iterator obs_itr = inst_obs.begin(); obs_itr != inst_obs.end(); ++obs_itr) {
+      dbBox* obs = *obs_itr;
+      const int bloat = determineBloat(obs->getTechLayer(), bloat_factor);
+      Rect obs_box = obs->getBox();
+      trans.apply(obs_box);
       boost::polygon::polygon_90_set_data<int> poly;
-      poly = boost::polygon::rectangle_data<int>{obs->getBBox()->xMax(),
-                                                 obs->getBBox()->yMax(),
-                                                 obs->getBBox()->xMin(),
-                                                 obs->getBBox()->yMin()};
-      obstructions[obs->getBBox()->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
+      poly = boost::polygon::rectangle_data<int>{obs_box.xMax(),
+                                                 obs_box.yMax(),
+                                                 obs_box.xMin(),
+                                                 obs_box.yMin()};
+      obstructions[obs->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
     }
 
     // Add inst Iterms to obstructions 
@@ -293,11 +297,12 @@ void lefout::findLayerViaObstructions(
       continue;
     }
     const int bloat = determineBloat(db_shape.getTechLayer(), bloat_factor);
+    const Rect& via_box = db_shape.getBox();
     boost::polygon::polygon_90_set_data<int> poly;
-    poly = boost::polygon::rectangle_data<int>{db_shape.getBox().xMax(),
-                                               db_shape.getBox().yMax(),
-                                               db_shape.getBox().xMin(), 
-                                               db_shape.getBox().yMin()};
+    poly = boost::polygon::rectangle_data<int>{via_box.xMax(),
+                                               via_box.yMax(),
+                                               via_box.xMin(),
+                                               via_box.yMin()};
     obstructions[db_shape.getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
   }
 }
