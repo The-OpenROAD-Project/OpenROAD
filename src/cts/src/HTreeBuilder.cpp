@@ -976,22 +976,25 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
   double connectionLength = 0.0;
   for (unsigned techCharWireIdx : techCharWires_) {
     const WireSegment& wireSegment = techChar_->getWireSegment(techCharWireIdx);
-    const unsigned wireSegLen = wireSegment.getLength();
+    unsigned wireSegLen = wireSegment.getLength();
+    if (wireSegment.getNumBuffers() < 1 && sink) {
+      connectionLength += wireSegLen;
+    }
     for (int buffer = 0; buffer < wireSegment.getNumBuffers(); ++buffer) {
       const double location
           = wireSegment.getBufferLocation(buffer) * wireSegLen;
-      const double locationlLength = connectionLength + location;
+      connectionLength += location;
 
       double x = std::numeric_limits<double>::max();
       double y = std::numeric_limits<double>::max();
-      if (locationlLength < lengthX) {
+      if (connectionLength < lengthX) {
         y = root_.getY();
-        x = (isLowToHiX) ? (root_.getX() + locationlLength)
-                         : (root_.getX() - locationlLength);
+        x = (isLowToHiX) ? (root_.getX() + connectionLength)
+                         : (root_.getX() - connectionLength);
       } else {
         x = target_.getX();
-        y = (isLowToHiY) ? (root_.getY() + (locationlLength - lengthX))
-                         : (root_.getY() - (locationlLength - lengthX));
+        y = (isLowToHiY) ? (root_.getY() + (connectionLength - lengthX))
+                         : (root_.getY() - (connectionLength - lengthX));
       }
 
       std::string buffMaster = (forceBuffer != "")
