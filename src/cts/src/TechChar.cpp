@@ -895,8 +895,8 @@ TechChar::ResultData TechChar::computeTopologyResults(
       outPinVert, sta::RiseFall::rise(), sta::MinMax::max());
   float pinFall = openStaChar_->vertexSlew(
       outPinVert, sta::RiseFall::fall(), sta::MinMax::max());
-  float pinSlew
-      = std::round((pinRise + pinFall) / 2 / charSlewStepSize_) * charSlewStepSize_;
+  float pinSlew = std::round((pinRise + pinFall) / 2 / charSlewStepSize_)
+                  * charSlewStepSize_;
   results.pinSlew = pinSlew;
 
   return results;
