@@ -102,7 +102,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       auto layerNum = obj->getLayerNum();
       vector<gtl::point_data<frCoord>> points;
       // must be copied pts
-      for (auto pt : obj->getPoints()) {
+      for (Point pt : obj->getPoints()) {
         xform.apply(pt);
         points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
       }
@@ -2064,7 +2064,7 @@ int FlexPA::prepPattern_inst(frInst* inst,
       if (cnt != 0) {
         const double coord
             = (xWeight * sumXCoord + (1.0 - xWeight) * sumYCoord) / cnt;
-        pins.push_back({coord, {pin.get(), instTerm.get()}});
+        pins.push_back({(int)std::round(coord), {pin.get(), instTerm.get()}});
       }
     }
     if (nAps == 0 && instTerm->getTerm()->getPins().size())

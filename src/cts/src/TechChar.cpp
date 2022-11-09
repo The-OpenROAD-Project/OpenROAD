@@ -33,13 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "TechChar.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 
-#include "TechChar.h"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"

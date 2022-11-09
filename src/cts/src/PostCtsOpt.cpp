@@ -128,11 +128,12 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
 {
   unsigned inputCap = techChar_->getActualMinInputCap();
   unsigned inputSlew = techChar_->getMaxSlew() / 2;
-  const int wireSegmentUnit = techChar_->getLengthUnit() * options_->getDbUnits();
+  const int wireSegmentUnit
+      = techChar_->getLengthUnit() * options_->getDbUnits();
   const Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
-                          (float) driver->getY() / wireSegmentUnit);
+                                (float) driver->getY() / wireSegmentUnit);
   const Point<double> sinkLoc((float) sink->getX() / wireSegmentUnit,
-                        (float) sink->getY() / wireSegmentUnit);
+                              (float) sink->getY() / wireSegmentUnit);
   const unsigned wireLength = driverLoc.computeDist(sinkLoc);
   const unsigned slewThreshold = options_->getMaxSlew();
   const unsigned tolerance = 1;
@@ -144,12 +145,12 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
     for (int wireCount = 0; wireCount < numWires; ++wireCount) {
       unsigned outCap = 0, outSlew = 0;
       const unsigned key = builder_->computeMinDelaySegment(charSegLength,
-                                                      inputSlew,
-                                                      inputCap,
-                                                      slewThreshold,
-                                                      tolerance,
-                                                      outSlew,
-                                                      outCap);
+                                                            inputSlew,
+                                                            inputCap,
+                                                            slewThreshold,
+                                                            tolerance,
+                                                            outSlew,
+                                                            outCap);
       if (logger_->debugCheck(utl::CTS, "HTree", 3)) {
         techChar_->reportSegment(key);
       }

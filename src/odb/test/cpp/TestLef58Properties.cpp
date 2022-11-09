@@ -216,16 +216,22 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST((cutLayer->findTechLayerCutClassRule("VA") == cut_rule));
 
   auto cutSpacingRules = cutLayer->getTechLayerCutSpacingRules();
-  BOOST_TEST(cutSpacingRules.size() == 2);
+  BOOST_TEST(cutSpacingRules.size() == 3);
   int i = 0;
   for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules) {
-    if (i) {
+    if (i == 1) {
       BOOST_TEST(subRule->getCutSpacing() == 0.3 * distFactor);
       BOOST_TEST(subRule->getType()
                  == odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
       BOOST_TEST(subRule->isSameMetal());
       BOOST_TEST(subRule->isStack());
       BOOST_TEST(std::string(subRule->getSecondLayer()->getName()) == "metal1");
+    } else if (i == 2) {
+      BOOST_TEST(subRule->getCutSpacing() == 0.2 * distFactor);
+      BOOST_TEST(subRule->getType()
+                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
+      BOOST_TEST(subRule->getAdjacentCuts() == 3);
+      BOOST_TEST(subRule->getTwoCuts() == 1);
     } else {
       BOOST_TEST(subRule->getCutSpacing() == 0.12 * distFactor);
       BOOST_TEST(subRule->getType()

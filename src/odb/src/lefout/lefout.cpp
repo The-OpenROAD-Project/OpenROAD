@@ -221,7 +221,6 @@ void lefout::findInstsObstructions(
                                                  obs->getBBox()->yMax(),
                                                  obs->getBBox()->xMin(),
                                                  obs->getBBox()->yMin()};
-      std::cout << inst->getName() << std::endl ;
       obstructions[obs->getBBox()->getTechLayer()] += poly.bloat(bloat,bloat,bloat,bloat);
     }
 

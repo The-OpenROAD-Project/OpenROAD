@@ -1,5 +1,6 @@
 import odb
 import os
+import utl
 
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
@@ -39,3 +40,16 @@ def diff_files(file1, file2):
 
     print("No differences found.")
     return 0
+
+# Output voltage file is specified as ...
+utl.suppress_message(utl.PSM, 2)
+# Output current file specified ...
+utl.suppress_message(utl.PSM, 3)
+# Output spice file is specified as
+utl.suppress_message(utl.PSM, 5)
+# SPICE file is written at
+utl.suppress_message(utl.PSM, 6)
+# Reading DEF file
+utl.suppress_message(utl.ODB, 127)
+# Finished DEF file
+utl.suppress_message(utl.ODB, 134)

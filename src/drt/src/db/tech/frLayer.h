@@ -569,6 +569,16 @@ class frLayer {
     return (!lef58EolKeepOutConstraints.empty());
   }
 
+  void addMetalWidthViaConstraint(frMetalWidthViaConstraint* in)
+  {
+    metalWidthViaConstraints.push_back(in);
+  }
+
+  const std::vector<frMetalWidthViaConstraint*>& getMetalWidthViaConstraints()
+      const
+  {
+    return metalWidthViaConstraints;
+  }
   void addLef58AreaConstraint(frLef58AreaConstraint* in) {
     lef58AreaConstraints.push_back(in);
   }
@@ -697,6 +707,7 @@ class frLayer {
 
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
+  std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints;
   drEolSpacingConstraint drEolCon;
 };

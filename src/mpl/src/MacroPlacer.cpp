@@ -1210,11 +1210,9 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap& adj_map)
     macro_weights_[i].resize(weight_size);
   }
 
-  for (auto pair_weight : adj_map) {
-    const MacroPair& from_to = pair_weight.first;
+  for (const auto& [from_to, weight] : adj_map) {
     Macro* from = from_to.first;
     Macro* to = from_to.second;
-    float weight = pair_weight.second;
     if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
       int idx1 = macroIndex(from);
       int idx2 = macroIndex(to);

@@ -64,3 +64,5 @@ using qi::lexeme;
 
 using ascii::space;
 using phoenix::ref;
+
+static const qi::rule<std::string::iterator, std::string(), ascii::space_type> _string = lexeme[(alpha >> *(char_ - blank - '\n'))];

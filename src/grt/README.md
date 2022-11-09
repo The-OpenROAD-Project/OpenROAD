@@ -228,6 +228,60 @@ The `global_route_debug` command allows you to start a debug mode to view the st
 
 ## Limitations
 
+## Using the Python interface to grt
+
+**NOTE:** The Python interface is currently in development and may
+change.
+
+This api tries to stay close to the api defined in C++ class
+GlobalRouter that is located in grt/include/grt/GlobalRouter.h. 
+
+When initializing a design, a sequence of Python commands might look like
+the following:
+
+    from openroad import Design, Tech
+    tech = Tech()
+    tech.readLef(...)
+    design = Design(tech)
+    design.readDef(...)
+    gr = design.getGlobalRouter()
+    
+Here are some options / configurations to the globalRoute
+command. (See GlobalRouter.h for a complete list)
+
+    gr.setGridOrigin(x, y)                     # int, default 0,0
+    gr.setCongestionReportFile(file_name)      # string
+    gr.setOverflowIterations(n)                # int, default 50
+    gr.setAllowCongestion(allowCongestion)     # boolean, default False
+    gr.setCriticalNetsPercentage(percentage)   # float
+    gr.setMinRoutingLayer(minLayer)            # int
+    gr.setMaxRoutingLayer(maxLayer)            # int
+    gr.setMinLayerForClock(minLayer)           # int
+    gr.setMaxLayerForClock(maxLayer)           # int
+    gr.setVerbose(v)                           # boolean, default False
+
+and when ready to actually do the global route:
+
+    gr.globalRoute(save_guides)                # boolean, default False
+    
+If you have set `save_guides` to True, you can then save the guides in `file_name` with:
+
+    design.getBlock().writeGuides(file_name)
+
+You can find the index of a named layer with
+
+    lindex = tech.getDB().getTech().findLayer(layer_name)
+
+or, if you only have the Python design object
+
+    lindex = design.getTech().getDB().getTech().findLayer(layer_name)
+    
+Be aware that much of the error checking is done in TCL, so that with
+the current C++ / Python api, that might be an issue to deal
+with. There are also some useful Python functions located in the file
+grt/test/grt_aux.py but these are not considered a part of the (final)
+api and they may change.
+
 ## FAQs
 
 Check out

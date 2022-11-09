@@ -78,17 +78,13 @@ class AntennaChecker
             grt::GlobalRouter* global_router,
             utl::Logger* logger);
 
-  // net_name nullptr -> check all nets
-  int checkAntennas(const char *net_name,
-                    bool verbose);
+  // net nullptr -> check all nets
+  int checkAntennas(dbNet* net = nullptr, bool verbose = false);
   int antennaViolationCount() const;
-
-  void findMaxAllowedLength(const char* net_name, const char* layer);
 
   void findMaxWireLength();
 
-  vector<Violation> getAntennaViolations(dbNet* net,
-                                         odb::dbMTerm* diode_mterm);
+  vector<Violation> getAntennaViolations(dbNet* net, odb::dbMTerm* diode_mterm);
   void initAntennaRules();
 
  private:
@@ -101,8 +97,8 @@ class AntennaChecker
   bool ifSegmentRoot(dbWireGraph::Node* node, int wire_level);
 
   void findWireBelowIterms(dbWireGraph::Node* node,
-                           double &iterm_gate_area,
-                           double &iterm_diff_area,
+                           double& iterm_gate_area,
+                           double& iterm_diff_area,
                            int wire_level,
                            std::set<dbITerm*>& iv,
                            std::set<dbWireGraph::Node*>& nv);
@@ -129,20 +125,24 @@ class AntennaChecker
                       double ref_val,
                       double def);
 
-  vector<PARinfo> buildWireParTable(const vector<dbWireGraph::Node*> &wire_roots);
-  vector<ARinfo> buildWireCarTable(const vector<PARinfo> &PARtable,
-                                        const vector<PARinfo> &VIA_PARtable,
-                                        const vector<dbWireGraph::Node*> &gate_iterms);
-  vector<PARinfo> buildViaParTable(const vector<dbWireGraph::Node*> &wire_roots);
-  vector<ARinfo> buildViaCarTable(const vector<PARinfo> &PARtable,
-                                       const vector<PARinfo> &VIA_PARtable,
-                                       const vector<dbWireGraph::Node*> &gate_iterms);
+  vector<PARinfo> buildWireParTable(
+      const vector<dbWireGraph::Node*>& wire_roots);
+  vector<ARinfo> buildWireCarTable(
+      const vector<PARinfo>& PARtable,
+      const vector<PARinfo>& VIA_PARtable,
+      const vector<dbWireGraph::Node*>& gate_iterms);
+  vector<PARinfo> buildViaParTable(
+      const vector<dbWireGraph::Node*>& wire_roots);
+  vector<ARinfo> buildViaCarTable(
+      const vector<PARinfo>& PARtable,
+      const vector<PARinfo>& VIA_PARtable,
+      const vector<dbWireGraph::Node*>& gate_iterms);
 
   vector<dbWireGraph::Node*> findWireRoots(dbWire* wire);
   void findWireRoots(dbWire* wire,
                      // Return values.
-                     vector<dbWireGraph::Node*> &wire_roots,
-                     vector<dbWireGraph::Node*> &gate_iterms);
+                     vector<dbWireGraph::Node*>& wire_roots,
+                     vector<dbWireGraph::Node*>& gate_iterms);
 
   std::pair<bool, bool> checkWirePar(const ARinfo& AntennaRatio,
                                      dbNet* net,
@@ -159,17 +159,18 @@ class AntennaChecker
                 bool report_if_no_violation,
                 bool verbose,
                 // Return values.
-                int &net_violation_count,
-                int &pin_violation_count);
-  void checkGate(dbNet* net, dbWireGraph::Node* gate,
-                 vector<ARinfo> &CARtable,
-                 vector<ARinfo> &VIA_CARtable,
+                int& net_violation_count,
+                int& pin_violation_count);
+  void checkGate(dbNet* net,
+                 dbWireGraph::Node* gate,
+                 vector<ARinfo>& CARtable,
+                 vector<ARinfo>& VIA_CARtable,
                  bool report,
                  bool verbose,
                  // Return values.
-                 bool &violation,
-                 std::unordered_set<dbWireGraph::Node*> &violated_gates);
-  bool checkViolation(const PARinfo &par_info, dbTechLayer* layer);
+                 bool& violation,
+                 std::unordered_set<dbWireGraph::Node*>& violated_gates);
+  bool checkViolation(const PARinfo& par_info, dbTechLayer* layer);
   bool antennaRatioDiffDependent(dbTechLayer* layer);
 
   void findWireRootIterms(dbWireGraph::Node* node,
@@ -178,9 +179,8 @@ class AntennaChecker
   double diffArea(dbMTerm* mterm);
   double gateArea(dbMTerm* mterm);
 
-  vector<std::pair<double, vector<dbITerm*>>> parMaxWireLength(
-      dbNet* net,
-      int layer);
+  vector<std::pair<double, vector<dbITerm*>>> parMaxWireLength(dbNet* net,
+                                                               int layer);
   vector<std::pair<double, vector<dbITerm*>>> getViolatedWireLength(
       dbNet* net,
       int routing_level);

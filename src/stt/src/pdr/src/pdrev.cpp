@@ -48,8 +48,8 @@ using utl::PDR;
 class PdRev
 {
  public:
-  PdRev(std::vector<int>& x,
-        std::vector<int>& y,
+  PdRev(const std::vector<int>& x,
+        const std::vector<int>& y,
         int root_index,
         Logger* logger);
   ~PdRev();
@@ -70,8 +70,8 @@ class PdRev
   Logger* logger_;
 };
 
-Tree primDijkstra(std::vector<int>& x,
-                  std::vector<int>& y,
+Tree primDijkstra(const std::vector<int>& x,
+                  const std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger)
@@ -80,8 +80,8 @@ Tree primDijkstra(std::vector<int>& x,
   return pd.primDijkstra(alpha, drvr_index);
 }
 
-Tree primDijkstraRevII(std::vector<int>& x,
-                       std::vector<int>& y,
+Tree primDijkstraRevII(const std::vector<int>& x,
+                       const std::vector<int>& y,
                        int drvr_index,
                        float alpha,
                        Logger* logger)
@@ -99,8 +99,8 @@ Tree primDijkstraRevII(std::vector<int>& x,
   return pd.primDijkstraRevII(alpha, drvr_index);
 }
 
-PdRev::PdRev(std::vector<int>& x,
-             std::vector<int>& y,
+PdRev::PdRev(const std::vector<int>& x,
+             const std::vector<int>& y,
              int root_index,
              Logger* logger)
     : logger_(logger)

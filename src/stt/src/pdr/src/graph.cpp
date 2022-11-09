@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "graph.h"
+
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -40,7 +42,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include "graph.h"
 #include "utl/Logger.h"
 
 namespace pdr {
@@ -81,7 +82,10 @@ class PtEqual
 
 typedef std::unordered_map<Pt, int, PtHash, PtEqual> PtMap;
 
-Graph::Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger)
+Graph::Graph(const vector<int>& x,
+             const vector<int>& y,
+             int root_index,
+             Logger* logger)
     : root_idx_(root_index), heap_size_(0), logger_(logger)
 {
   PtMap pts;

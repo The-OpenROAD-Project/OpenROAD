@@ -1,8 +1,9 @@
+#include "Graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
-#include "Graphics.h"
 #include "utl/Logger.h"
 
 namespace cts {

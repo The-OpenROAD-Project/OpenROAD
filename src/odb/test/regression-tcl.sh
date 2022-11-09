@@ -1,7 +1,7 @@
 set -e
 
 BASE_DIR=$(dirname $0)
-APP=$BASE_DIR/../build/src/swig/tcl/opendbtcl
+APP=$BASE_DIR/../../../build/src/odb/src/swig/tcl/odbtcl
 
 echo "Running tests.."
 echo "================="

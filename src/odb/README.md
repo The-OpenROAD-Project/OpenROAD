@@ -35,7 +35,7 @@ and functions that we are still documenting (for both TCL and Python).
 ### TCL
 
 After building successfully, run OpenDB Tcl shell using
-`./build/src/swig/tcl/opendbtcl`. An example usage:
+`../../build/src/odb/src/swig/tcl/odbtcl`. An example usage:
 
 ```
 set db [dbDatabase_create]

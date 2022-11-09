@@ -40,12 +40,12 @@ lefTechLayerCutEnclosureRuleParser::lefTechLayerCutEnclosureRuleParser(lefin* l)
   lefin_ = l;
 }
 
-void lefTechLayerCutEnclosureRuleParser::parse(std::string s,
+void lefTechLayerCutEnclosureRuleParser::parse(const std::string& s,
                                                odb::dbTechLayer* layer)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
@@ -83,8 +83,6 @@ void lefTechLayerCutEnclosureRuleParser::setInt(
 bool lefTechLayerCutEnclosureRuleParser::parseSubRule(std::string s,
                                                       odb::dbTechLayer* layer)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - blank)];
   odb::dbTechLayerCutEnclosureRule* rule
       = odb::dbTechLayerCutEnclosureRule::create(layer);
   qi::rule<std::string::iterator, space_type> EOL

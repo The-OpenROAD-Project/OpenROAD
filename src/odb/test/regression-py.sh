@@ -1,8 +1,8 @@
 set -e
 
 BASE_DIR=$(dirname $0)
-export PYTHONPATH=$BASE_DIR/../../../build/src/OpenDB/src/swig/python:$PYTHONPATH
-APP=$BASE_DIR/../../../build/src/OpenDB/src/swig/python/opendbpy
+export PYTHONPATH=$BASE_DIR/../../../build/src/odb/src/swig/python:$PYTHONPATH
+APP=$BASE_DIR/../../../build/src/odb/src/swig/python/odbpy
 
 echo "Running tests .."
 echo "================"
