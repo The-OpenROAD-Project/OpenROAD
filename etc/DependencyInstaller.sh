@@ -384,6 +384,6 @@ EOF
 esac
 
 cat <<EOF
-Make sure that CMakke find_package can find or-tools. Example, add to your ~/.bashrc:
+Make sure that CMake find_package can find or-tools. Example, add to your ~/.bashrc:
     export CMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake
 EOF
