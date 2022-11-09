@@ -461,9 +461,8 @@ void TechChar::initCharacterization()
   if (masterVector.size() < 1) {
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
-  odb::dbMaster* testBuf = nullptr;
   for (const std::string& masterString : masterVector) {
-    testBuf = db_->findMaster(masterString.c_str());
+    odb::dbMaster* testBuf = db_->findMaster(masterString.c_str());
     if (testBuf == nullptr) {
       logger_->error(CTS,
                      74,
@@ -577,7 +576,7 @@ void TechChar::initCharacterization()
         "    Check the -wire_unit parameter or the technology files.");
   }
 
-  setLenghthUnit(charBuf_->getHeight() * 10 / 2 / dbUnitsPerMicron);
+  setLengthUnit(charBuf_->getHeight() * 10 / 2 / dbUnitsPerMicron);
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
