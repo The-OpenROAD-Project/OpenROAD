@@ -156,4 +156,10 @@ gpl::Replace* Design::getReplace()
   return app->getReplace();
 }
 
+dpl::Opendp* Design::getOpendp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpendp();
+}
+
 }  // namespace ord

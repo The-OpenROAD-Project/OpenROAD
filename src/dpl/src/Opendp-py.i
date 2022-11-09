@@ -30,78 +30,26 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
+%module dpl_py
 
-#pragma once
+%{
 
-#include <string>
+#include "ord/OpenRoad.hh"
+#include "dpl/Opendp.h"
+#include "utl/Logger.h"
 
-namespace odb {
-class dbBlock;
-}  // namespace odb
+using std::vector;
+using namespace odb;
 
-namespace ifp {
-class InitFloorplan;
-}
+%}
 
-namespace utl {
-class Logger;
-}
+%include "../../Exception-py.i"
 
-namespace ant {
-class AntennaChecker;
-}
+%include <std_unordered_map.i>
+%include <std_set.i>
 
-namespace grt {
-class GlobalRouter;
-}
+%import "odb.i"
+%import "odb/dbTypes.h"
 
-namespace gpl {
-class Replace;
-}
-
-namespace dpl {
-class Opendp;
-}
-
-namespace ord {
-
-class Tech;
-
-class Design
-{
- public:
-  Design(Tech* tech);
-  void readVerilog(const std::string& file_name);
-  void readDef(const std::string& file_name,
-               bool continue_on_errors = false,
-               bool floorplan_init = false,
-               bool incremental = false);
-  void link(const std::string& design_name);
-
-  void writeDb(const std::string& file_name);
-  void writeDef(const std::string& file_name);
-
-  odb::dbBlock* getBlock();
-  utl::Logger* getLogger();
-
-  int micronToDBU(double coord);
-
-  // This is intended as a temporary back door to tcl from Python
-  const std::string evalTclString(const std::string& cmd);
-
-  Tech* getTech();
-
-  // Services
-  ifp::InitFloorplan* getFloorplan();
-  ant::AntennaChecker* getAntennaChecker();
-  grt::GlobalRouter* getGlobalRouter();
-  gpl::Replace* getReplace();
-  dpl::Opendp* getOpendp();
-
- private:
-  Tech* tech_;
-};
-
-}  // namespace ord
+%include "dpl/Opendp.h"
