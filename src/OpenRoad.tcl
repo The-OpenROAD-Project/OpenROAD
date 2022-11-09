@@ -229,11 +229,6 @@ proc suppress_message {args} {
   utl::suppress_message $tool $id
 }
 
-sta::define_cmd_args "python" { args }
-proc python {args} {
-  ord::python_cmd $args
-}
-
 proc set_thread_count { count } {
   ord::set_thread_count $count
 }
