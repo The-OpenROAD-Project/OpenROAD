@@ -173,9 +173,9 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-global_route()
+global_route(bool start_incremental, bool end_incremental)
 {
-  getGlobalRouter()->globalRoute(true);
+  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
 }
 
 void

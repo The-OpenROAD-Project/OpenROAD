@@ -108,7 +108,8 @@ GlobalRouter::GlobalRouter()
       block_(nullptr),
       repair_antennas_(nullptr),
       heatmap_(nullptr),
-      congestion_file_name_(nullptr)
+      congestion_file_name_(nullptr),
+      grouter_cbk_(nullptr)
 {
 }
 
@@ -265,27 +266,42 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty();
 }
 
-void GlobalRouter::globalRoute(bool save_guides)
+void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool end_incremental)
 {
-  clear();
-  block_ = db_->getChip()->getBlock();
-
-  if (max_routing_layer_ == -1) {
-    max_routing_layer_ = computeMaxRoutingLayer();
+  if(start_incremental && end_incremental) {
+    printf("Both option defined\n");
   }
+  else if(start_incremental){
+    grouter_cbk_ = new GRouteDbCbk(this);
+    grouter_cbk_->addOwner(block_);
+  }
+  else if(end_incremental) {
+    printf("Inc GRT:%ld\n", dirty_nets_.size());
+    updateDirtyRoutes();
+    grouter_cbk_->removeOwner();
+    delete grouter_cbk_;
+    grouter_cbk_ = nullptr; 
+  }
+  else {
+    clear();
+    block_ = db_->getChip()->getBlock();
 
-  int min_layer = min_layer_for_clock_ > 0
+    if (max_routing_layer_ == -1) {
+      max_routing_layer_ = computeMaxRoutingLayer();
+    }
+
+    int min_layer = min_layer_for_clock_ > 0
                       ? std::min(min_routing_layer_, min_layer_for_clock_)
                       : min_routing_layer_;
-  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
-  std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-  if (verbose_)
-    reportResources();
+    if (verbose_)
+      reportResources();
 
-  routes_ = findRouting(nets, min_layer, max_layer);
-  updateDbCongestion();
+    routes_ = findRouting(nets, min_layer, max_layer);
+    updateDbCongestion();
 
   saveCongestion();
 
@@ -311,13 +327,14 @@ void GlobalRouter::globalRoute(bool save_guides)
     logger_->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
-  if (verbose_)
-    reportCongestion();
-  computeWirelength();
-  if (verbose_)
-    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-  if (save_guides)
-    saveGuides();
+    if (verbose_)
+      reportCongestion();
+    computeWirelength();
+    if (verbose_)
+      logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+    if (save_guides)
+      saveGuides();
+  }
 }
 
 void GlobalRouter::updateDbCongestion()

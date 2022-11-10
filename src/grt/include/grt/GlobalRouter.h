@@ -100,6 +100,7 @@ class RoutePt;
 class GrouteRenderer;
 class GlobalRouter;
 class RoutingCongestionDataSource;
+class GRouteDbCbk;
 
 struct RegionAdjustment
 {
@@ -186,7 +187,7 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute(bool save_guides = false);
+  void globalRoute(bool save_guides = false, bool start_incremental = false, bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes();
@@ -433,6 +434,9 @@ class GlobalRouter
 
   // variables congestion report file
   const char* congestion_file_name_;
+
+  // incremental grt
+  GRouteDbCbk* grouter_cbk_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
