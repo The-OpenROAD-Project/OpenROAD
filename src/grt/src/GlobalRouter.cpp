@@ -275,32 +275,35 @@ void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool en
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
   }
-  else if(end_incremental) {
-    printf("Inc GRT:%ld\n", dirty_nets_.size());
-    updateDirtyRoutes();
-    grouter_cbk_->removeOwner();
-    delete grouter_cbk_;
-    grouter_cbk_ = nullptr; 
-  }
-  else {
-    clear();
-    block_ = db_->getChip()->getBlock();
-
-    if (max_routing_layer_ == -1) {
-      max_routing_layer_ = computeMaxRoutingLayer();
+  else{
+    if(end_incremental) {
+      printf("Inc GRT:%ld\n", dirty_nets_.size());
+      updateDirtyRoutes();
+      grouter_cbk_->removeOwner();
+      delete grouter_cbk_;
+      grouter_cbk_ = nullptr; 
     }
+    else {
+      clear();
+      block_ = db_->getChip()->getBlock();
 
-    int min_layer = min_layer_for_clock_ > 0
+      if (max_routing_layer_ == -1) {
+        max_routing_layer_ = computeMaxRoutingLayer();
+      }
+
+      int min_layer = min_layer_for_clock_ > 0
                       ? std::min(min_routing_layer_, min_layer_for_clock_)
                       : min_routing_layer_;
-    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+      int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
-    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+      std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-    if (verbose_)
-      reportResources();
+      if (verbose_)
+        reportResources();
 
-    routes_ = findRouting(nets, min_layer, max_layer);
+      routes_ = findRouting(nets, min_layer, max_layer);
+    }
+
     updateDbCongestion();
 
   saveCongestion();
