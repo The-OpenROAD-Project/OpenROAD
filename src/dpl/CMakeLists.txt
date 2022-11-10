@@ -93,17 +93,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/dpl_py.py
   )
 
-  target_include_directories(dpl_py
-    PUBLIC
-      include
-  )
-
   target_link_libraries(dpl_py
     PUBLIC
-      gui
+      dpl
       odb
-      OpenSTA
-      utl
   )
 
 endif()
