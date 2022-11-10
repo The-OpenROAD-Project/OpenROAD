@@ -113,11 +113,6 @@ class CtsOptions
     forceBuffersOnLeafLevel_ = force;
   }
   bool forceBuffersOnLeafLevel() const { return forceBuffersOnLeafLevel_; }
-  void setWriteOnlyClockNets(bool writeOnlyClk)
-  {
-    writeOnlyClockNets_ = writeOnlyClk;
-  }
-  bool writeOnlyClockNets() const { return writeOnlyClockNets_; }
   void setRunPostCtsOpt(bool run) { runPostCtsOpt_ = run; }
   bool runPostCtsOpt() { return runPostCtsOpt_; }
   void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
@@ -217,7 +212,6 @@ class CtsOptions
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
-  bool writeOnlyClockNets_ = false;
   bool runPostCtsOpt_ = true;
   double bufDistRatio_ = 0.1;
   long int clockRoots_ = 0;

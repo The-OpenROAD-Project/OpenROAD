@@ -727,10 +727,6 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     }
   });
 
-  if (options_->writeOnlyClockNets()) {
-    removeNonClockNets();
-  }
-
   int minPath = std::numeric_limits<int>::max();
   int maxPath = std::numeric_limits<int>::min();
   rootSubNet->forEachSink([&](ClockInst* inst) {
@@ -903,15 +899,6 @@ bool TritonCTS::masterExists(const std::string& master) const
 {
   return db_->findMaster(master.c_str());
 };
-
-void TritonCTS::removeNonClockNets()
-{
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType() != odb::dbSigType::CLOCK) {
-      odb::dbNet::destroy(net);
-    }
-  }
-}
 
 void TritonCTS::findClockRoots(sta::Clock* clk,
                                std::set<odb::dbNet*>& clockNets)
