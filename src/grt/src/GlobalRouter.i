@@ -33,203 +33,227 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%
-{
+
+%{
 #include "grt/GlobalRouter.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
-  namespace ord {
-  // Defined in OpenRoad.i
-  grt::GlobalRouter* getGlobalRouter();
-  }  // namespace ord
-
-  using ord::getGlobalRouter;
-  using sta::LibertyPort;
-  %
+namespace ord {
+// Defined in OpenRoad.i
+grt::GlobalRouter* getGlobalRouter();
 }
 
-% include "../../Exception.i"
+using ord::getGlobalRouter;
+using sta::LibertyPort;
+%}
 
-    % import <stl.i> % import <std_vector.i>
-    % template(vector_int) std::vector<int>;
+%include "../../Exception.i"
 
-% inline %
+%import <stl.i>
+%import <std_vector.i>
+%template(vector_int) std::vector<int>;
+
+%inline %{
+
+namespace grt {
+
+bool
+have_routes()
 {
-  namespace grt {
+  return getGlobalRouter()->haveRoutes();
+}
 
-  bool have_routes()
-  {
-    return getGlobalRouter()->haveRoutes();
-  }
+void
+set_capacity_adjustment(float adjustment)
+{
+  getGlobalRouter()->setAdjustment(adjustment);
+}
 
-  void set_capacity_adjustment(float adjustment)
-  {
-    getGlobalRouter()->setAdjustment(adjustment);
-  }
+void
+add_layer_adjustment(int layer, float reductionPercentage)
+{
+  getGlobalRouter()->addLayerAdjustment(layer, reductionPercentage);
+}
 
-  void add_layer_adjustment(int layer, float reductionPercentage)
-  {
-    getGlobalRouter()->addLayerAdjustment(layer, reductionPercentage);
-  }
+void
+add_region_adjustment(int minX,
+                           int minY,
+                           int maxX,
+                           int maxY,
+                           int layer,
+                           float reductionPercentage)
+{
+  getGlobalRouter()->addRegionAdjustment(
+      minX, minY, maxX, maxY, layer, reductionPercentage);
+}
 
-  void add_region_adjustment(int minX,
-                             int minY,
-                             int maxX,
-                             int maxY,
-                             int layer,
-                             float reductionPercentage)
-  {
-    getGlobalRouter()->addRegionAdjustment(
-        minX, minY, maxX, maxY, layer, reductionPercentage);
-  }
+void
+set_min_layer(int minLayer)
+{
+  getGlobalRouter()->setMinRoutingLayer(minLayer);
+}
 
-  void set_min_layer(int minLayer)
-  {
-    getGlobalRouter()->setMinRoutingLayer(minLayer);
-  }
+void
+set_max_layer(int maxLayer)
+{
+  getGlobalRouter()->setMaxRoutingLayer(maxLayer);
+}
 
-  void set_max_layer(int maxLayer)
-  {
-    getGlobalRouter()->setMaxRoutingLayer(maxLayer);
-  }
+void
+set_verbose(bool v)
+{
+  getGlobalRouter()->setVerbose(v);
+}
 
-  void set_verbose(bool v)
-  {
-    getGlobalRouter()->setVerbose(v);
-  }
+void
+set_overflow_iterations(int iterations)
+{
+  getGlobalRouter()->setOverflowIterations(iterations);
+}
 
-  void set_overflow_iterations(int iterations)
-  {
-    getGlobalRouter()->setOverflowIterations(iterations);
-  }
+void set_congestion_report_file (const char * file_name)
+{
+  getGlobalRouter()->setCongestionReportFile(file_name);
+}
 
-  void set_congestion_report_file(const char* file_name)
-  {
-    getGlobalRouter()->setCongestionReportFile(file_name);
-  }
+void
+set_grid_origin(int x, int y)
+{
+  getGlobalRouter()->setGridOrigin(x, y);
+}
 
-  void set_grid_origin(int x, int y)
-  {
-    getGlobalRouter()->setGridOrigin(x, y);
-  }
+void
+set_allow_congestion(bool allowCongestion)
+{
+  getGlobalRouter()->setAllowCongestion(allowCongestion);
+}
 
-  void set_allow_congestion(bool allowCongestion)
-  {
-    getGlobalRouter()->setAllowCongestion(allowCongestion);
-  }
+void
+set_clock_layer_range(int minLayer, int maxLayer)
+{
+  getGlobalRouter()->setMinLayerForClock(minLayer);
+  getGlobalRouter()->setMaxLayerForClock(maxLayer);
+}
 
-  void set_clock_layer_range(int minLayer, int maxLayer)
-  {
-    getGlobalRouter()->setMinLayerForClock(minLayer);
-    getGlobalRouter()->setMaxLayerForClock(maxLayer);
-  }
+void
+set_critical_nets_percentage(float criticalNetsPercentage)
+{
+  getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
+}
 
-  void set_critical_nets_percentage(float criticalNetsPercentage)
-  {
-    getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
-  }
+void
+set_macro_extension(int macroExtension)
+{
+  getGlobalRouter()->setMacroExtension(macroExtension);
+}
 
-  void set_macro_extension(int macroExtension)
-  {
-    getGlobalRouter()->setMacroExtension(macroExtension);
-  }
+void
+set_pin_offset(int pin_offset)
+{
+  getGlobalRouter()->setPinOffset(pin_offset);
+}
 
-  void set_pin_offset(int pin_offset)
-  {
-    getGlobalRouter()->setPinOffset(pin_offset);
-  }
+void
+set_seed(int seed)
+{
+  getGlobalRouter()->setSeed(seed);
+}
 
-  void set_seed(int seed)
-  {
-    getGlobalRouter()->setSeed(seed);
-  }
+void
+set_capacities_perturbation_percentage(float percentage)
+{
+  getGlobalRouter()->setCapacitiesPerturbationPercentage(percentage);
+}
 
-  void set_capacities_perturbation_percentage(float percentage)
-  {
-    getGlobalRouter()->setCapacitiesPerturbationPercentage(percentage);
-  }
+void
+set_perturbation_amount(int perturbation)
+{
+  getGlobalRouter()->setPerturbationAmount(perturbation);
+}
 
-  void set_perturbation_amount(int perturbation)
-  {
-    getGlobalRouter()->setPerturbationAmount(perturbation);
-  }
+void
+global_route()
+{
+  getGlobalRouter()->globalRoute(true);
+}
 
-  void global_route()
-  {
-    getGlobalRouter()->globalRoute(true);
-  }
+void
+estimate_rc()
+{
+  getGlobalRouter()->estimateRC();
+}
 
-  void estimate_rc()
-  {
-    getGlobalRouter()->estimateRC();
-  }
+std::vector<int>
+route_layer_lengths(odb::dbNet* db_net)
+{
+  return getGlobalRouter()->routeLayerLengths(db_net);
+}
 
-  std::vector<int> route_layer_lengths(odb::dbNet* db_net)
-  {
-    return getGlobalRouter()->routeLayerLengths(db_net);
-  }
+void
+repair_antennas(odb::dbMTerm* diode_mterm, int iterations)
+{
+  getGlobalRouter()->repairAntennas(diode_mterm, iterations);
+}
 
-  void repair_antennas(odb::dbMTerm* diode_mterm, int iterations)
-  {
-    getGlobalRouter()->repairAntennas(diode_mterm, iterations);
-  }
+void
+highlight_net_route(odb::dbNet *net, bool show_pin_locations)
+{
+  getGlobalRouter()->highlightRoute(net, show_pin_locations);
+}
 
-  void highlight_net_route(odb::dbNet* net, bool show_pin_locations)
-  {
-    getGlobalRouter()->highlightRoute(net, show_pin_locations);
-  }
+void
+read_guides(const char* fileName)
+{
+  getGlobalRouter()->readGuides(fileName);
+}
 
-  void read_guides(const char* fileName)
-  {
-    getGlobalRouter()->readGuides(fileName);
-  }
+void set_global_route_debug_cmd(const odb::dbNet *net,
+                                bool steinerTree,
+                                bool rectilinearSTree,
+                                bool tree2D,
+                                bool tree3D)
+{
+  getGlobalRouter()->initDebugFastRoute();
+  getGlobalRouter()->setDebugNet(net);
+  getGlobalRouter()->setDebugSteinerTree(steinerTree);
+  getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
+  getGlobalRouter()->setDebugTree2D(tree2D);
+  getGlobalRouter()->setDebugTree3D(tree3D);
+}
 
-  void set_global_route_debug_cmd(const odb::dbNet* net,
-                                  bool steinerTree,
-                                  bool rectilinearSTree,
-                                  bool tree2D,
-                                  bool tree3D)
-  {
-    getGlobalRouter()->initDebugFastRoute();
-    getGlobalRouter()->setDebugNet(net);
-    getGlobalRouter()->setDebugSteinerTree(steinerTree);
-    getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
-    getGlobalRouter()->setDebugTree2D(tree2D);
-    getGlobalRouter()->setDebugTree3D(tree3D);
-  }
+void set_global_route_debug_stt_input_filename(const char* file_name)
+{
+  getGlobalRouter()->setSttInputFilename(file_name);
+}
 
-  void set_global_route_debug_stt_input_filename(const char* file_name)
-  {
-    getGlobalRouter()->setSttInputFilename(file_name);
-  }
+void create_wl_report_file(const char* file_name, bool verbose)
+{
+  getGlobalRouter()->createWLReportFile(file_name, verbose);
+}
 
-  void create_wl_report_file(const char* file_name, bool verbose)
-  {
-    getGlobalRouter()->createWLReportFile(file_name, verbose);
-  }
+void report_net_wire_length(odb::dbNet* net,
+                            bool global_route,
+                            bool detailed_route,
+                            bool verbose,
+                            const char* file_name)
+{
+  getGlobalRouter()->reportNetWireLength(
+      net, global_route, detailed_route, verbose, file_name);
+}
 
-  void report_net_wire_length(odb::dbNet* net,
-                              bool global_route,
-                              bool detailed_route,
-                              bool verbose,
-                              const char* file_name)
-  {
-    getGlobalRouter()->reportNetWireLength(
-        net, global_route, detailed_route, verbose, file_name);
-  }
+void
+clear_route_guides()
+{
+  getGlobalRouter()->clearRouteGui();
+}
 
-  void clear_route_guides()
-  {
-    getGlobalRouter()->clearRouteGui();
-  }
+void
+report_layer_wire_lengths()
+{
+  getGlobalRouter()->reportLayerWireLengths();
+}
 
-  void report_layer_wire_lengths()
-  {
-    getGlobalRouter()->reportLayerWireLengths();
-  }
+} // namespace
 
-  }  // namespace grt
-
-  %
-}  // inline
+%} // inline
