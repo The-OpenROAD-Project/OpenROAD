@@ -296,7 +296,7 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
+void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations, float par_margin)
 {
   if (repair_antennas_ == nullptr)
     repair_antennas_
@@ -323,7 +323,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
     if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
     violations = repair_antennas_->checkAntennaViolations(
-        routes_, max_routing_layer_, diode_mterm);
+        routes_, max_routing_layer_, diode_mterm, par_margin);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
