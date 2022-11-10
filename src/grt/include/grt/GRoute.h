@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace odb {
 class dbNet;
@@ -56,13 +56,16 @@ struct GSegment
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
   bool isVia() { return (init_x == final_x && init_y == final_y); }
-  int length() { return std::abs(init_x - final_x) + std::abs(init_y - final_y); }
+  int length()
+  {
+    return std::abs(init_x - final_x) + std::abs(init_y - final_y);
+  }
   bool operator==(const GSegment& segment) const;
 };
 
 struct GSegmentHash
 {
-  std::size_t operator() (const GSegment& seg) const;
+  std::size_t operator()(const GSegment& seg) const;
 };
 
 class Capacities

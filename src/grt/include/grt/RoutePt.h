@@ -56,4 +56,4 @@ class RoutePt
 
 bool operator<(const RoutePt& p1, const RoutePt& p2);
 
-}  // namespace
+}  // namespace grt
