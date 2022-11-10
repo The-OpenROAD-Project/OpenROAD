@@ -353,7 +353,7 @@ case "${os}" in
 To use cmake, set cmake as an alias:
     alias cmake='${PREFIX}/bin/cmake' 
     or  run
-    source ~/.bash_aliases
+    source ~/.bash_profile
 EOF
         fi
         cat <<EOF
@@ -377,7 +377,7 @@ EOF
 To use cmake, set cmake as an alias:
     alias cmake='${PREFIX}/bin/cmake' 
     or  run
-    source ~/.bash_aliases
+    source ~/.bash_profile
 EOF
         fi
         ;;
