@@ -54,12 +54,6 @@ using ord::getTritonCts;
 %inline %{
 
 void
-set_simple_cts(bool enable)
-{
-  getTritonCts()->getParms()->setSimpleCts(enable);
-}
-
-void
 set_sink_clustering(bool enable)
 {
   getTritonCts()->getParms()->setSinkClustering(enable);

@@ -263,7 +263,7 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
-  void getClockLayerResCap(float dbUnitsPerMicron);
+  void initClockLayerResCap(float dbUnitsPerMicron);
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
@@ -298,8 +298,8 @@ class TechChar
   sta::Corner* charCorner_ = nullptr;
   odb::dbBlock* charBlock_ = nullptr;
   odb::dbMaster* charBuf_ = nullptr;
-  std::string charBufIn_ = "";
-  std::string charBufOut_ = "";
+  odb::dbMTerm* charBufIn_ = nullptr;
+  odb::dbMTerm* charBufOut_ = nullptr;
   double resPerDBU_;  // ohms/dbu
   double capPerDBU_;  // farads/dbu
   float charSlewStepSize_ = 0.0;

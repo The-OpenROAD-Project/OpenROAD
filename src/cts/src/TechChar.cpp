@@ -429,7 +429,7 @@ void TechChar::reportSegment(unsigned key) const
   }
 }
 
-void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
+void TechChar::initClockLayerResCap(float dbUnitsPerMicron)
 {
   // Clock RC should be set with set_wire_rc -clock
   sta::Corner* corner = openSta_->cmdCorner();
@@ -454,7 +454,7 @@ void TechChar::initCharacterization()
   odb::dbBlock* block = chip->getBlock();
   float dbUnitsPerMicron = block->getDbUnitsPerMicron();
 
-  getClockLayerResCap(dbUnitsPerMicron);
+  initClockLayerResCap(dbUnitsPerMicron);
 
   // Gets the buffer masters and its in/out pins.
   std::vector<std::string> masterVector = options_->getBufferList();
@@ -517,19 +517,19 @@ void TechChar::initCharacterization()
     if (masterTerminal->getIoType() == odb::dbIoType::INPUT
         && (masterTerminal->getSigType() == odb::dbSigType::SIGNAL
             || masterTerminal->getSigType() == odb::dbSigType::CLOCK)) {
-      charBufIn_ = masterTerminal->getName();
+      charBufIn_ = masterTerminal;
     } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT
                && masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
-      charBufOut_ = masterTerminal->getName();
+      charBufOut_ = masterTerminal;
     }
   }
 
-  if (charBufIn_.empty()) {
+  if (!charBufIn_) {
     logger_->error(
         CTS, 534, "Could not find buffer input port for {}.", bufMasterName);
   }
 
-  if (charBufOut_.empty()) {
+  if (!charBufOut_) {
     logger_->error(
         CTS, 541, "Could not find buffer output port for {}.", bufMasterName);
   }
@@ -542,15 +542,15 @@ void TechChar::initCharacterization()
   charBlock_ = odb::dbBlock::create(block, characterizationBlockName);
 
   // Defines the different wirelengths to test and the characterization unit.
-  unsigned wirelengthIterations = options_->getCharWirelengthIterations();
+  const unsigned wirelengthIterations = options_->getCharWirelengthIterations();
   unsigned maxWirelength = (charBuf_->getHeight() * 10)
                            * wirelengthIterations;  // Hard-coded limit
   if (options_->getWireSegmentUnit() == 0) {
-    unsigned charaunit = charBuf_->getHeight() * 10;
+    const unsigned charaunit = charBuf_->getHeight() * 10;
     options_->setWireSegmentUnit(charaunit);
   } else {
     // Updates the units to DBU.
-    unsigned segmentDistance = options_->getWireSegmentUnit();
+    const unsigned segmentDistance = options_->getWireSegmentUnit();
     options_->setWireSegmentUnit(segmentDistance * dbUnitsPerMicron);
   }
 
@@ -701,10 +701,8 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                               + std::to_string(wireCounter);
         odb::dbInst* bufInstance
             = odb::dbInst::create(charBlock_, charBuf_, bufName.c_str());
-        odb::dbITerm* bufInstanceInPin
-            = bufInstance->findITerm(charBufIn_.c_str());
-        odb::dbITerm* bufInstanceOutPin
-            = bufInstance->findITerm(charBufOut_.c_str());
+        odb::dbITerm* bufInstanceInPin = bufInstance->getITerm(charBufIn_);
+        odb::dbITerm* bufInstanceOutPin = bufInstance->getITerm(charBufOut_);
         bufInstanceInPin->connect(net);
         // Updates the topology with the old net and number of nodes that didn't
         // have buffers until now.
@@ -879,7 +877,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
     sta::LibertyCell* firstInstLiberty = db_network_->libertyCell(
         db_network_->dbToSta(solution.instVector[0]));
     sta::LibertyPort* firstPinLiberty
-        = firstInstLiberty->findLibertyPort(charBufIn_.c_str());
+        = firstInstLiberty->findLibertyPort(charBufIn_->getName().c_str());
     float firstPinCap = firstPinLiberty->capacitance();
     incap = firstPinCap + length * capPerDBU_;
   }

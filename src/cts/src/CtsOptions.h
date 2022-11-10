@@ -57,9 +57,6 @@ class CtsOptions
   {
   }
 
-  void setBlockName(const std::string& blockName) { blockName_ = blockName; }
-  std::string getBlockName() const { return blockName_; }
-
   void setClockNets(const std::string& clockNets) { clockNets_ = clockNets; }
   std::string getClockNets() const { return clockNets_; }
   void setRootBuffer(const std::string& buffer) { rootBuffer_ = buffer; }
@@ -80,8 +77,6 @@ class CtsOptions
   bool getPlotSolution() const { return plotSolution_; }
   void setGuiDebug() { gui_debug_ = true; }
   bool getGuiDebug() const { return gui_debug_; }
-  void setSimpleCts(bool enable) { simpleCts_ = enable; }
-  bool getSimpleCts() const { return simpleCts_; }
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }
   void setSinkClusteringUseMaxCap(bool useMaxCap)
@@ -194,7 +189,6 @@ class CtsOptions
   stt::SteinerTreeBuilder* getSttBuilder() { return sttBuilder_; }
 
  private:
-  std::string blockName_ = "";
   std::string clockNets_ = "";
   std::string rootBuffer_ = "";
   std::string sinkBuffer_ = "";
@@ -203,7 +197,6 @@ class CtsOptions
   int dbUnits_ = -1;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
-  bool simpleCts_ = false;
   bool sinkClusteringEnable_ = true;
   bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
@@ -238,8 +231,8 @@ class CtsOptions
   unsigned numStaticLayers_ = 0;
   std::vector<std::string> bufferList_;
   std::vector<odb::dbNet*> clockNetsObjs_;
-  utl::Logger* logger_;
-  stt::SteinerTreeBuilder* sttBuilder_;
+  utl::Logger* logger_ = nullptr;
+  stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
 };
 
 }  // namespace cts
