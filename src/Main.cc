@@ -115,7 +115,7 @@ FOREACH_TOOL(X)
 #undef X
 }  // namespace sta
 
-static void initPython(int argc, char* argv[], int inspect)
+static void initPython()
 {
 #define X(name)                                                             \
   if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
@@ -124,14 +124,7 @@ static void initPython(int argc, char* argv[], int inspect)
   }
   FOREACH_TOOL(X)
 #undef X
-
-  PyConfig config;
-  PyConfig_InitPythonConfig(&config);
-  PyConfig_SetBytesArgv(&config, argc, argv);
-  config.inspect = inspect;
-  Py_InitializeFromConfig(&config);
-  PyConfig_Clear(&config);
-
+  Py_Initialize();
 #define X(name)                                                       \
   {                                                                   \
     char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
@@ -258,12 +251,19 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
+    initPython();
     bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    int inspect = exit ? 0 : 1;
-    initPython(cmd_argc, cmd_argv, inspect);
-    return Py_RunMain();
+    std::vector<wchar_t*> args;
+    args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
+    if (!exit) {
+        args.push_back(Py_DecodeLocale("-i", nullptr));
+    }
+    for (int i = 1; i < cmd_argc; i++) {
+      args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
+    }
+    return Py_Main(args.size(), args.data());
   }
-#endif
+#endif // ENABLE_PYTHON3
 
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
