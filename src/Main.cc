@@ -256,14 +256,14 @@ int main(int argc, char* argv[])
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     if (!exit) {
-        args.push_back(Py_DecodeLocale("-i", nullptr));
+      args.push_back(Py_DecodeLocale("-i", nullptr));
     }
     for (int i = 1; i < cmd_argc; i++) {
       args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
     }
     return Py_Main(args.size(), args.data());
   }
-#endif // ENABLE_PYTHON3
+#endif  // ENABLE_PYTHON3
 
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
