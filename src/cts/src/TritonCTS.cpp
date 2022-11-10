@@ -597,28 +597,6 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
   return builder;
 }
 
-void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const
-{
-  std::stringstream allNames(options_->getClockNets());
-
-  std::string tmpName = "";
-  while (allNames >> tmpName) {
-    clockNetNames.push_back(tmpName);
-  }
-
-  unsigned numClocks = clockNetNames.size();
-  logger_->info(CTS, 11, " Number of user-input clocks: {}.", numClocks);
-
-  if (numClocks > 0) {
-    std::string rpt = " (";
-    for (const std::string& name : clockNetNames) {
-      rpt = rpt + " \"" + name + "\"";
-    }
-    rpt = rpt + " )";
-    logger_->report("{}", rpt);
-  }
-}
-
 void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 {
   odb::dbITermShapeItr itr;

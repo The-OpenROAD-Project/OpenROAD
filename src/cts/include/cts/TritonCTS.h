@@ -105,7 +105,6 @@ class TritonCTS
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
-  void parseClockNames(std::vector<std::string>& clockNetNames) const;
   void initOneClockTree(odb::dbNet* driverNet,
                         std::string sdcClockName,
                         TreeBuilder* parent);
