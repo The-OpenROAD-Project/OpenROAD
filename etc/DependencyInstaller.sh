@@ -9,9 +9,10 @@ _installCommonDev() {
     cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
-    swigVersion=4.0.2
-    swigChecksum="19a61126f0f89c56b2c2e9e39cc33efe"
-    boostVersionBig=1.80 
+    swigVersionType="tag"
+    swigVersion=4.1.0
+    swigChecksum="794433378154eb61270a3ac127d9c5f3"
+    boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
@@ -39,10 +40,12 @@ _installCommonDev() {
     swigPrefix=${PREFIX:-"/usr"}
     if [[ -z $(${swigPrefix}/bin/swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
-        md5sum -c <(echo "${swigChecksum}  rel-${swigVersion}.tar.gz") || exit 1
-        tar xfz rel-${swigVersion}.tar.gz
-        cd swig-rel-${swigVersion}
+        tarName="rel-${swigVersion}.tar.gz"
+        [[ ${swigVersionType} == "tag" ]] && tarName="v${swigVersion}.tar.gz"
+        wget https://github.com/swig/swig/archive/${tarName}
+        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        tar xfz ${tarName}
+        cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
         make -j $(nproc)
@@ -123,6 +126,18 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 }
 
+_installOrTools() {
+    os=$1
+    version=$2
+    arch=$3
+    orToolsVersionBig=9.4
+    orToolsVersionSmall=${orToolsVersionBig}.1874
+    orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
+    wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
+    mkdir -p /opt/or-tools
+    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
+}
+
 _installUbuntuCleanUp() {
     apt-get autoclean -y
     apt-get autoremove -y
@@ -135,6 +150,7 @@ _installUbuntuDev() {
     apt-get -y install \
         automake \
         autotools-dev \
+        build-essential \
         bison \
         flex \
         clang \
@@ -142,6 +158,7 @@ _installUbuntuDev() {
         gcc \
         git \
         lcov \
+        libpcre2-dev \
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
@@ -169,7 +186,7 @@ _installUbuntuRuntime() {
         qtchooser \
         qt5-qmake \
         qtbase5-dev-tools
-    else 
+    else
         apt-get install -y qt5-default
     fi
 
@@ -198,6 +215,7 @@ _installCentosDev() {
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
+        pcre2-devel \
         readline-devel \
         tcl \
         tcl-devel \
@@ -347,6 +365,7 @@ case "${os}" in
             _installCentosDev
             _installCommonDev
         fi
+        _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         if [[ ! -z ${PREFIX} ]]; then
             cat <<EOF
@@ -369,8 +388,9 @@ EOF
         _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
-            _installCommonDev "${version}"
+            _installCommonDev
         fi
+        _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         if [[ ! -z ${PREFIX} ]]; then
             cat <<EOF
@@ -383,6 +403,7 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
+        _installOrTools "MacOsX" "12.5" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
@@ -397,3 +418,8 @@ EOF
         _help
         ;;
 esac
+
+cat <<EOF
+Make sure that CMake find_package can find or-tools. Example, add to your ~/.bashrc:
+    export CMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake
+EOF

@@ -36,6 +36,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
+#include "detailed_manager.h"
+
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -46,7 +48,6 @@
 #include <utility>
 
 #include "architecture.h"
-#include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
 #include "router.h"

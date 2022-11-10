@@ -1168,7 +1168,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    for (auto selected : renderer->select(nullptr, region)) {
+    for (auto& selected : renderer->select(nullptr, region)) {
       selections.push_back(selected);
     }
   }

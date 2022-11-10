@@ -35,8 +35,8 @@
 
 #pragma once
 
-#include <string>
 #include <set>
+#include <string>
 #include <vector>
 
 extern "C" {
@@ -50,14 +50,14 @@ class dbTech;
 class dbLib;
 class Point;
 class Rect;
-}
+}  // namespace odb
 
 namespace sta {
 class dbSta;
 class dbNetwork;
 class Resizer;
 class LibertyCell;
-}
+}  // namespace sta
 
 namespace rsz {
 class Resizer;
@@ -98,7 +98,7 @@ class Finale;
 namespace mpl {
 class MacroPlacer;
 class MacroPlacer2;
-}
+}  // namespace mpl
 
 namespace gpl {
 class Replace;
@@ -119,7 +119,6 @@ class PDNSim;
 namespace ant {
 class AntennaChecker;
 }
-
 
 namespace par {
 class PartitionMgr;
@@ -149,80 +148,80 @@ class dbVerilogNetwork;
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
-public:
+ public:
   // Singleton accessor.
   // This accessor should ONLY be used for tcl commands.
   // Tools should use their initialization functions to get the
   // OpenRoad object and/or any other tools they need to reference.
-  static OpenRoad *openRoad();
-  void init(Tcl_Interp *tcl_interp);
+  static OpenRoad* openRoad();
+  void init(Tcl_Interp* tcl_interp);
 
-  Tcl_Interp *tclInterp() { return tcl_interp_; }
-  utl::Logger *getLogger() { return logger_; }
-  odb::dbDatabase *getDb() { return db_; }
-  sta::dbSta *getSta() { return sta_; }
-  sta::dbNetwork *getDbNetwork();
-  rsz::Resizer *getResizer() { return resizer_; }
-  rmp::Restructure *getRestructure() { return restructure_; } 
-  cts::TritonCTS *getTritonCts() { return tritonCts_; } 
-  dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
-  dpl::Opendp *getOpendp() { return opendp_; }
-  dpo::Optdp *getOptdp() { return optdp_; }
-  fin::Finale *getFinale() { return finale_; }
-  tap::Tapcell *getTapcell() { return tapcell_; }
-  mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
-  mpl::MacroPlacer2 *getMacroPlacer2() { return macro_placer2_; }
-  rcx::Ext *getOpenRCX() { return extractor_; }
-  triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
+  Tcl_Interp* tclInterp() { return tcl_interp_; }
+  utl::Logger* getLogger() { return logger_; }
+  odb::dbDatabase* getDb() { return db_; }
+  sta::dbSta* getSta() { return sta_; }
+  sta::dbNetwork* getDbNetwork();
+  rsz::Resizer* getResizer() { return resizer_; }
+  rmp::Restructure* getRestructure() { return restructure_; }
+  cts::TritonCTS* getTritonCts() { return tritonCts_; }
+  dbVerilogNetwork* getVerilogNetwork() { return verilog_network_; }
+  dpl::Opendp* getOpendp() { return opendp_; }
+  dpo::Optdp* getOptdp() { return optdp_; }
+  fin::Finale* getFinale() { return finale_; }
+  tap::Tapcell* getTapcell() { return tapcell_; }
+  mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
+  mpl::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
+  rcx::Ext* getOpenRCX() { return extractor_; }
+  triton_route::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getGlobalRouter() { return global_router_; }
-  par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
-  ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
-  ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
-  pdn::PdnGen *getPdnGen() { return pdngen_; }
-  dst::Distributed *getDistributed() { return distributer_; }
-  stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
+  par::PartitionMgr* getPartitionMgr() { return partitionMgr_; }
+  ant::AntennaChecker* getAntennaChecker() { return antenna_checker_; }
+  ppl::IOPlacer* getIOPlacer() { return ioPlacer_; }
+  pdn::PdnGen* getPdnGen() { return pdngen_; }
+  dst::Distributed* getDistributed() { return distributer_; }
+  stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
   bool unitsInitialized();
 
-  void readLef(const char *filename,
-	       const char *lib_name,
-	       bool make_tech,
-	       bool make_library);
+  void readLef(const char* filename,
+               const char* lib_name,
+               bool make_tech,
+               bool make_library);
 
-  void readDef(const char *filename,
+  void readDef(const char* filename,
                bool continue_on_errors,
                bool floorplan_init,
                bool incremental);
-  
+
   void writeLef(const char* filename);
 
-  void writeDef(const char *filename,
-		// major.minor (avoid including defout.h)
-		string version);
-  
-  void writeCdl(const char *outFilename,
+  void writeDef(const char* filename,
+                // major.minor (avoid including defout.h)
+                string version);
+
+  void writeCdl(const char* outFilename,
                 const std::vector<const char*>& mastersFilenames,
                 bool includeFillers);
 
-  void readVerilog(const char *filename);
+  void readVerilog(const char* filename);
   // Write a flat verilog netlist for the database.
-  void writeVerilog(const char *filename,
-		    bool sort,
-		    bool include_pwr_gnd,
-		    std::vector<sta::LibertyCell*> *remove_cells);
-  void linkDesign(const char *top_cell_name);
+  void writeVerilog(const char* filename,
+                    bool sort,
+                    bool include_pwr_gnd,
+                    std::vector<sta::LibertyCell*>* remove_cells);
+  void linkDesign(const char* top_cell_name);
 
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
 
-  void readDb(const char *filename);
-  void writeDb(const char *filename);
+  void readDb(const char* filename);
+  void writeDb(const char* filename);
 
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);
@@ -235,7 +234,7 @@ public:
   // Observer interface
   class Observer
   {
-  public:
+   public:
     virtual ~Observer();
 
     // Either pointer could be null
@@ -243,52 +242,51 @@ public:
     virtual void postReadDef(odb::dbBlock* block) = 0;
     virtual void postReadDb(odb::dbDatabase* db) = 0;
 
-  private:
+   private:
     OpenRoad* owner_ = nullptr;
     friend class OpenRoad;
   };
 
-  void addObserver(Observer *observer);
-  void removeObserver(Observer *observer);
+  void addObserver(Observer* observer);
+  void removeObserver(Observer* observer);
 
-protected:
+ protected:
   ~OpenRoad();
 
-private:
+ private:
   OpenRoad();
 
-  Tcl_Interp *tcl_interp_;
-  utl::Logger *logger_;
-  odb::dbDatabase *db_;
-  dbVerilogNetwork *verilog_network_;
-  sta::dbSta *sta_;
-  rsz::Resizer *resizer_;
-  ppl::IOPlacer *ioPlacer_;
-  dpl::Opendp *opendp_;
-  dpo::Optdp *optdp_;
-  fin::Finale *finale_;
-  mpl::MacroPlacer *macro_placer_;
-  mpl::MacroPlacer2 *macro_placer2_;
-  grt::GlobalRouter *global_router_;
-  rmp::Restructure *restructure_;
-  cts::TritonCTS *tritonCts_;
-  tap::Tapcell *tapcell_;
-  rcx::Ext *extractor_;
-  triton_route::TritonRoute *detailed_router_;
-  ant::AntennaChecker *antenna_checker_;
-  gpl::Replace *replace_;
-  psm::PDNSim *pdnsim_; 
-  par::PartitionMgr *partitionMgr_;
-  pdn::PdnGen *pdngen_;
-  dst::Distributed *distributer_;
-  stt::SteinerTreeBuilder *stt_builder_;
+  Tcl_Interp* tcl_interp_;
+  utl::Logger* logger_;
+  odb::dbDatabase* db_;
+  dbVerilogNetwork* verilog_network_;
+  sta::dbSta* sta_;
+  rsz::Resizer* resizer_;
+  ppl::IOPlacer* ioPlacer_;
+  dpl::Opendp* opendp_;
+  dpo::Optdp* optdp_;
+  fin::Finale* finale_;
+  mpl::MacroPlacer* macro_placer_;
+  mpl::MacroPlacer2* macro_placer2_;
+  grt::GlobalRouter* global_router_;
+  rmp::Restructure* restructure_;
+  cts::TritonCTS* tritonCts_;
+  tap::Tapcell* tapcell_;
+  rcx::Ext* extractor_;
+  triton_route::TritonRoute* detailed_router_;
+  ant::AntennaChecker* antenna_checker_;
+  gpl::Replace* replace_;
+  psm::PDNSim* pdnsim_;
+  par::PartitionMgr* partitionMgr_;
+  pdn::PdnGen* pdngen_;
+  dst::Distributed* distributer_;
+  stt::SteinerTreeBuilder* stt_builder_;
 
-  std::set<Observer *> observers_;
+  std::set<Observer*> observers_;
 
   int threads_;
 };
 
-int
-tclAppInit(Tcl_Interp *interp);
+int tclAppInit(Tcl_Interp* interp);
 
-} // namespace ord
+}  // namespace ord

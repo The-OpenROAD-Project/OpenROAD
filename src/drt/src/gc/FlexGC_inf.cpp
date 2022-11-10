@@ -176,7 +176,7 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::E, queryBox1);
     checkRectMetSpcTblInf_queryBox(*rect, within, frDirEnum::W, queryBox2);
   }
-  for (auto queryBox : {queryBox1, queryBox2}) {
+  for (const auto& queryBox : {queryBox1, queryBox2}) {
     gtl::rectangle_data<frCoord> queryRect(queryBox.min_corner().x(),
                                            queryBox.min_corner().y(),
                                            queryBox.max_corner().x(),

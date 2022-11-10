@@ -499,7 +499,7 @@ void BTree::contour_evaluate()  // assume the tree is set
   while (tree_curr != NUM_BLOCKS)  // until reach the root again
   {
     //		cout << "curr: " << tree_curr << " / " <<
-    //in_tree[tree_curr].left
+    // in_tree[tree_curr].left
     //      << " / " << in_tree[tree_curr].right << " // P: " <<
     //      in_tree[tree_curr].parent << endl ;
     if (tree_prev == in_tree[tree_curr].parent) {

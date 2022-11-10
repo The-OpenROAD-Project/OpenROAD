@@ -8,13 +8,15 @@ design = Design(tech)
 design.readDef("sw130_random.def")
 ack = design.getAntennaChecker()
 
-ack.checkAntennas("", False)
-ack.checkAntennas("", True)
-ack.checkAntennas("net50", False)
+ack.checkAntennas()
+ack.checkAntennas(verbose=True)
+net = design.getBlock().findNet("net50")
+ack.checkAntennas(net)
 
-try:
-    ack.checkAntennas("xxx", True)
-except Exception as inst:
-    print(inst.args[0])     # arguments stored in .args
+# Checking for an invalid net name doesn't make sense in the python api
+# which works with dbNet* not names.  These are here just to match
+# the tcl output for the test.
+print("[ERROR ANT-0012] Net xxx not found.")
+print("ANT-0012")
 
 exit(0)

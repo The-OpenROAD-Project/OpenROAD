@@ -41,9 +41,9 @@
 #include <vector>
 
 #include "CtsOptions.h"
+#include "Graphics.h"
 #include "TechChar.h"
 #include "Util.h"
-#include "Graphics.h"
 
 namespace utl {
 class Logger;

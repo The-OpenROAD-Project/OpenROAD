@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "tap/tapcell.h"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -41,7 +43,6 @@
 #include "odb/util.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "tap/tapcell.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -173,8 +174,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
 
   bool do_corners;
   if (!masters.nwin_master.empty() && !masters.nwout_master.empty()) {
-    if (masters.nwin_master.empty()
-        || masters.nwout_master.empty()) {
+    if (masters.nwin_master.empty() || masters.nwout_master.empty()) {
       do_corners = 0;
     } else {
       do_corners = 1;
@@ -441,7 +441,7 @@ bool Tapcell::checkIfFilled(int x,
     x_end = x + width;
   }
 
-  for (auto placement : row_insts) {
+  for (const auto& placement : row_insts) {
     if (x_end > placement[0] && x_start < placement[1]) {
       int left_x = placement[0] - width;
       int right_x = placement[1];

@@ -77,11 +77,11 @@ void MinCutParser::setAreaWithin(double within)
   rule_->setAreaWithinDistValid(true);
 }
 
-void MinCutParser::parse(std::string s)
+void MinCutParser::parse(const std::string& s)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
