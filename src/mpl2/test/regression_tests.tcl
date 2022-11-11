@@ -1,3 +1,3 @@
 record_tests {
-    mp_test1
+    bp_fe_top
 }
