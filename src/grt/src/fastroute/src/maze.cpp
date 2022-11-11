@@ -108,6 +108,7 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 
   // fix the longest edge and break the loop
   if (!edges_to_blocked_pos_map.empty()) {
+    printf("FIX OVERLAPPING\n");
     int edge = edges_to_blocked_pos_map.begin()->first;
     std::vector<std::pair<short, short>>& blocked_positions
         = edges_to_blocked_pos_map.begin()->second;
@@ -171,6 +172,22 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<short> new_route_x, new_route_y;
     const TreeNode& startpoint = treenodes[treeedge->n1];
     const TreeNode& endpoint = treenodes[treeedge->n2];
+    
+    // release usage
+    const int edgeCost = nets_[net_id]->getEdgeCost();
+    const std::vector<short>& gridsX = treeedge->route.gridsX;
+    const std::vector<short>& gridsY = treeedge->route.gridsY;
+
+    for (int i = 0; i < treeedge->route.routelen; i++) {
+      if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+        const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+        v_edges_[ymin][gridsX[i]].usage -= edgeCost;
+      } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
+        const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+        h_edges_[gridsY[i]][xmin].usage -= edgeCost;
+      }
+    } 
+
     routeLShape(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
