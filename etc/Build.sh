@@ -1,8 +1,6 @@
 #!/bin/bash
 
 set -euo pipefail
-shopt -s expand_aliases
-source ~/.bash_profile || true
 
 cd "$(dirname $(readlink -f $0))/../"
 
