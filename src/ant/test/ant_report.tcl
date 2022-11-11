@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_lef ant_check.lef
 read_def ant_check.def
 
-# set a report file
+# set report file
 set report_file [make_result_file ant_report.rpt]
 
 check_antennas -report_file $report_file
