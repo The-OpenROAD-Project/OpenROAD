@@ -85,6 +85,7 @@ using std::string;
   X(ant)                                 \
   X(grt)                                 \
   X(gpl)                                 \
+  X(dpl)                                 \
   X(odb)
 
 #define FOREACH_TOOL(X)            \
