@@ -118,6 +118,7 @@ _installCommonDev() {
     fi
 
     if [[ ! -z ${PREFIX} ]]; then 
+        export PATH=${PREFIX}/bin:$PATH
         echo "export PATH=${PREFIX}/bin:$PATH" >> ~/.bash_profile
     fi
 
