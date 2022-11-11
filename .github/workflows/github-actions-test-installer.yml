@@ -40,5 +40,7 @@ jobs:
             source /opt/rh/devtoolset-8/enable
             source /opt/rh/llvm-toolset-7.0/enable
           fi
-          [[ -f ~/.bash_profile ]] && . ~/.bash_profile
+          if [ -f ~/.bash_profile ]; then
+            . ~/.bash_profile
+          fi
           ./etc/Build.sh -clean
