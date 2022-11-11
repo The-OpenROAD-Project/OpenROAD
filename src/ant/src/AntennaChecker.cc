@@ -2113,10 +2113,7 @@ void AntennaChecker::findMaxWireLength()
 
 void AntennaChecker::setReportFileName(const char* file_name)
 {
-  if (file_name != NULL && file_name[0] != '\0')
-    report_file_name_ = file_name;
-  else
-    report_file_name_ = nullptr;
+  report_file_name_ = file_name;
 }
 
 }  // namespace ant

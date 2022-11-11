@@ -40,11 +40,11 @@ proc check_antennas { args } {
 
   sta::check_argc_eq0 "check_antennas" $args
 
-  set report_file ""
+  # set report_file ""
   if { [info exists keys(-report_file)] } {
     set report_file $keys(-report_file)
+    ant::set_report_file_name $report_file
   }
-  ant::set_report_file_name $report_file
 
   set verbose [info exists flags(-verbose)]
 
