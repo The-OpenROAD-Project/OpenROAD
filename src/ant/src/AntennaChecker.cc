@@ -35,6 +35,7 @@
 #include <tcl.h>
 
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <unordered_set>
 
@@ -141,7 +142,8 @@ AntennaChecker::AntennaChecker()
       dbu_per_micron_(0),
       global_router_(nullptr),
       logger_(nullptr),
-      net_violation_count_(0)
+      net_violation_count_(0),
+      report_file_name_(nullptr)
 {
 }
 
@@ -1097,7 +1099,8 @@ vector<ARinfo> AntennaChecker::buildViaCarTable(
 std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
                                                    dbNet* net,
                                                    bool report,
-                                                   bool verbose)
+                                                   bool verbose,
+                                                   std::ofstream& report_file)
 {
   dbTechLayer* layer = AntennaRatio.par_info.wire_root->layer();
   const double par = AntennaRatio.par_info.PAR;
@@ -1157,31 +1160,57 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
 
     if (report) {
       if (PAR_ratio != 0) {
-        if (par_violation || verbose)
+        if (par_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << par << (par_violation ? "*" : " ")
+                        << " Ratio: " << PAR_ratio << " (Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
                           par,
                           par_violation ? "*" : " ",
                           PAR_ratio);
+        }
       } else {
-        if (diff_par_violation || verbose)
+        if (diff_par_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << diff_par
+                        << (diff_par_violation ? "*" : " ")
+                        << " Ratio: " << diffPAR_PWL_ratio << " (Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
                           diff_par,
                           diff_par_violation ? "*" : " ",
                           diffPAR_PWL_ratio);
+        }
       }
 
       if (PSR_ratio != 0) {
-        if (psr_violation || verbose)
+        if (psr_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << psr << (psr_violation ? "*" : " ")
+                        << " Ratio: " << PSR_ratio << " (S.Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (S.Area)",
                           psr,
                           psr_violation ? "*" : " ",
                           PSR_ratio);
+        }
       } else {
-        if (diff_psr_violation || verbose)
+        if (diff_psr_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << diff_psr
+                        << (diff_psr_violation ? "*" : " ")
+                        << " Ratio: " << diffPSR_PWL_ratio << " (S.Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (S.Area)",
                           diff_psr,
                           diff_psr_violation ? "*" : " ",
                           diffPSR_PWL_ratio);
+        }
       }
     }
   }
@@ -1191,7 +1220,8 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
 std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
                                                    bool par_checked,
                                                    bool report,
-                                                   bool verbose)
+                                                   bool verbose,
+                                                   std::ofstream& report_file)
 {
   dbTechLayer* layer = AntennaRatio.par_info.wire_root->layer();
   const double car = AntennaRatio.CAR;
@@ -1250,31 +1280,57 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
 
     if (report) {
       if (CAR_ratio != 0) {
-        if (car_violation || verbose)
+        if (car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << car << (car_violation ? "*" : " ")
+                        << " Ratio: " << CAR_ratio << " (C.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
                           car,
                           car_violation ? "*" : " ",
                           CAR_ratio);
+        }
       } else {
-        if (diff_car_violation || verbose)
+        if (diff_car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << car
+                        << (diff_car_violation ? "*" : " ")
+                        << " Ratio: " << diffCAR_PWL_ratio << " (C.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
                           car,
                           diff_car_violation ? "*" : " ",
                           diffCAR_PWL_ratio);
+        }
       }
 
       if (CSR_ratio != 0) {
-        if (car_violation || verbose)
+        if (car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << csr << (csr_violation ? "*" : " ")
+                        << " Ratio: " << CSR_ratio << " (C.S.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.S.Area)",
                           csr,
                           csr_violation ? "*" : " ",
                           CSR_ratio);
+        }
       } else {
-        if (diff_car_violation || verbose)
+        if (diff_car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << diff_csr
+                        << (diff_csr_violation ? "*" : " ")
+                        << " Ratio: " << diffCSR_PWL_ratio << " (C.S.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.S.Area)",
                           diff_csr,
                           diff_csr_violation ? "*" : " ",
                           diffCSR_PWL_ratio);
+        }
       }
     }
   }
@@ -1283,7 +1339,8 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
 
 bool AntennaChecker::checkViaPar(const ARinfo& AntennaRatio,
                                  bool report,
-                                 bool verbose)
+                                 bool verbose,
+                                 std::ofstream& report_file)
 {
   const dbTechLayer* layer = getViaLayer(
       findVia(AntennaRatio.par_info.wire_root,
@@ -1318,26 +1375,41 @@ bool AntennaChecker::checkViaPar(const ARinfo& AntennaRatio,
 
     if (report) {
       if (PAR_ratio != 0) {
-        if (par_violation || verbose)
+        if (par_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << par << (par_violation ? "*" : " ")
+                        << " Ratio: " << PAR_ratio << " (Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
                           par,
                           par_violation ? "*" : " ",
                           PAR_ratio);
+        }
       } else {
-        if (diff_par_violation || verbose)
+        if (diff_par_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    PAR: " << par
+                        << (diff_par_violation ? "*" : " ")
+                        << " Ratio: " << diffPAR_PWL_ratio << " (Area)\n";
+          }
+
           logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (Area)",
                           par,
                           diff_par_violation ? "*" : " ",
                           diffPAR_PWL_ratio);
+        }
       }
     }
   }
+
   return violated;
 }
 
 bool AntennaChecker::checkViaCar(const ARinfo& AntennaRatio,
                                  bool report,
-                                 bool verbose)
+                                 bool verbose,
+                                 std::ofstream& report_file)
 {
   dbTechLayer* layer = getViaLayer(
       findVia(AntennaRatio.par_info.wire_root,
@@ -1373,17 +1445,30 @@ bool AntennaChecker::checkViaCar(const ARinfo& AntennaRatio,
 
     if (report) {
       if (CAR_ratio != 0) {
-        if (car_violation || verbose)
+        if (car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << car << (car_violation ? "*" : " ")
+                        << " Ratio: " << CAR_ratio << " (C.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
                           car,
                           car_violation ? "*" : " ",
                           CAR_ratio);
+        }
       } else {
-        if (diff_car_violation || verbose)
+        if (diff_car_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "    CAR: " << car
+                        << (diff_car_violation ? "*" : " ")
+                        << " Ratio: " << diffCAR_PWL_ratio << " (C.Area)\n";
+          }
+
           logger_->report("    CAR: {:7.2f}{} Ratio: {:7.2f} (C.Area)",
                           car,
                           diff_car_violation ? "*" : " ",
                           diffCAR_PWL_ratio);
+        }
       }
     }
   }
@@ -1446,6 +1531,12 @@ void AntennaChecker::checkNet(dbNet* net,
 {
   dbWire* wire = net->getWire();
   if (wire) {
+    std::ofstream report_file;
+    if (report_file_name_ != nullptr) {
+      report_file.open(report_file_name_,
+                       std::ofstream::out | std::ofstream::app);
+    }
+
     vector<dbWireGraph::Node*> wire_roots;
     vector<dbWireGraph::Node*> gate_nodes;
     findWireRoots(wire, wire_roots, gate_nodes);
@@ -1466,6 +1557,7 @@ void AntennaChecker::checkNet(dbNet* net,
                 VIA_CARtable,
                 false,
                 verbose,
+                report_file,
                 violation,
                 violated_gates);
 
@@ -1476,6 +1568,10 @@ void AntennaChecker::checkNet(dbNet* net,
 
     // Repeat with reporting.
     if (violation || report_if_no_violation) {
+      if (report_file.is_open()) {
+        report_file << "Net " << net->getConstName() << "\n";
+      }
+
       logger_->report("Net {}", net->getConstName());
 
       for (dbWireGraph::Node* gate : gate_nodes) {
@@ -1485,10 +1581,14 @@ void AntennaChecker::checkNet(dbNet* net,
                   VIA_CARtable,
                   true,
                   verbose,
+                  report_file,
                   violation,
                   violated_gates);
       }
       logger_->report("");
+    }
+    if (report_file_name_ != nullptr) {
+      report_file.close();
     }
   }
 }
@@ -1500,6 +1600,7 @@ void AntennaChecker::checkGate(
     vector<ARinfo>& VIA_CARtable,
     bool report,
     bool verbose,
+    std::ofstream& report_file,
     // Return values.
     bool& violation,
     unordered_set<dbWireGraph::Node*>& violated_gates)
@@ -1507,10 +1608,11 @@ void AntennaChecker::checkGate(
   bool first_pin_violation = true;
   for (const auto& ar : CARtable) {
     if (ar.GateNode == gate) {
-      auto wire_PAR_violation = checkWirePar(ar, net, false, verbose);
+      auto wire_PAR_violation
+          = checkWirePar(ar, net, false, verbose, report_file);
 
-      auto wire_CAR_violation
-          = checkWireCar(ar, wire_PAR_violation.second, false, verbose);
+      auto wire_CAR_violation = checkWireCar(
+          ar, wire_PAR_violation.second, false, verbose, report_file);
       bool wire_violation
           = wire_PAR_violation.first || wire_CAR_violation.first;
       violation |= wire_violation;
@@ -1522,26 +1624,43 @@ void AntennaChecker::checkGate(
           if (first_pin_violation) {
             dbITerm* iterm = dbITerm::getITerm(block_, gate->object()->getId());
             dbMTerm* mterm = iterm->getMTerm();
+            if (report_file.is_open()) {
+              report_file << "  " << iterm->getInst()->getConstName() << "/"
+                          << mterm->getConstName() << "("
+                          << mterm->getMaster()->getConstName() << ")\n";
+            }
+
             logger_->report("  {}/{} ({})",
                             iterm->getInst()->getConstName(),
                             mterm->getConstName(),
                             mterm->getMaster()->getConstName());
           }
+          if (report_file.is_open()) {
+            report_file << "    "
+                        << ar.par_info.wire_root->layer()->getConstName()
+                        << "\n";
+          }
+
           logger_->report("    {}",
                           ar.par_info.wire_root->layer()->getConstName());
           first_pin_violation = false;
         }
-        checkWirePar(ar, net, true, verbose);
-        checkWireCar(ar, wire_PAR_violation.second, true, verbose);
-        if (wire_violation || verbose)
+        checkWirePar(ar, net, true, verbose, report_file);
+        checkWireCar(ar, wire_PAR_violation.second, true, verbose, report_file);
+        if (wire_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "\n";
+          }
+
           logger_->report("");
+        }
       }
     }
   }
   for (const auto& via_ar : VIA_CARtable) {
     if (via_ar.GateNode == gate) {
-      bool VIA_PAR_violation = checkViaPar(via_ar, false, verbose);
-      bool VIA_CAR_violation = checkViaCar(via_ar, false, verbose);
+      bool VIA_PAR_violation = checkViaPar(via_ar, false, verbose, report_file);
+      bool VIA_CAR_violation = checkViaCar(via_ar, false, verbose, report_file);
       bool via_violation = VIA_PAR_violation || VIA_CAR_violation;
       violation |= via_violation;
       if (via_violation)
@@ -1552,12 +1671,21 @@ void AntennaChecker::checkGate(
           dbWireGraph::Edge* via
               = findVia(via_ar.par_info.wire_root,
                         via_ar.par_info.wire_root->layer()->getRoutingLevel());
+
+          if (report_file.is_open()) {
+            report_file << "    " << getViaName(via).c_str() << "\n";
+          }
           logger_->report("    {}", getViaName(via).c_str());
         }
-        checkViaPar(via_ar, true, verbose);
-        checkViaCar(via_ar, true, verbose);
-        if (via_violation || verbose)
+        checkViaPar(via_ar, true, verbose, report_file);
+        checkViaCar(via_ar, true, verbose, report_file);
+        if (via_violation || verbose) {
+          if (report_file.is_open()) {
+            report_file << "\n";
+          }
+
           logger_->report("");
+        }
       }
     }
   }
@@ -1981,6 +2109,14 @@ void AntennaChecker::findMaxWireLength()
   if (max_wire_net)
     logger_->report(
         "net {} length {}", max_wire_net->getConstName(), max_wire_length);
+}
+
+void AntennaChecker::setReportFileName(const char* file_name)
+{
+  if (file_name != NULL && file_name[0] != '\0')
+    report_file_name_ = file_name;
+  else
+    report_file_name_ = nullptr;
 }
 
 }  // namespace ant
