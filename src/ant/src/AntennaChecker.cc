@@ -1690,7 +1690,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   if (!report_file_name_.empty()) {
     remove(report_file_name_.c_str());
     report_file.open(report_file_name_,
-                    std::ofstream::out | std::ofstream::app);
+                     std::ofstream::out | std::ofstream::app);
   }
 
   bool grt_routes = global_router_->haveRoutes();
@@ -1713,7 +1713,12 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 
   if (net) {
     if (!net->isSpecial()) {
-      checkNet(net, true, verbose, report_file, net_violation_count, pin_violation_count);
+      checkNet(net,
+               true,
+               verbose,
+               report_file,
+               net_violation_count,
+               pin_violation_count);
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -1721,7 +1726,12 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   } else {
     for (dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
-        checkNet(net, false, verbose, report_file, net_violation_count, pin_violation_count);
+        checkNet(net,
+                 false,
+                 verbose,
+                 report_file,
+                 net_violation_count,
+                 pin_violation_count);
       }
     }
   }
