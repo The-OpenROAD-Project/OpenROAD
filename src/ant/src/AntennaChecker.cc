@@ -142,8 +142,7 @@ AntennaChecker::AntennaChecker()
       dbu_per_micron_(0),
       global_router_(nullptr),
       logger_(nullptr),
-      net_violation_count_(0),
-      report_file_name_(nullptr)
+      net_violation_count_(0)
 {
 }
 
@@ -1525,18 +1524,13 @@ void AntennaChecker::findWireRoots(dbWire* wire,
 void AntennaChecker::checkNet(dbNet* net,
                               bool report_if_no_violation,
                               bool verbose,
+                              std::ofstream& report_file,
                               // Return values.
                               int& net_violation_count,
                               int& pin_violation_count)
 {
   dbWire* wire = net->getWire();
   if (wire) {
-    std::ofstream report_file;
-    if (report_file_name_ != nullptr) {
-      report_file.open(report_file_name_,
-                       std::ofstream::out | std::ofstream::app);
-    }
-
     vector<dbWireGraph::Node*> wire_roots;
     vector<dbWireGraph::Node*> gate_nodes;
     findWireRoots(wire, wire_roots, gate_nodes);
@@ -1586,9 +1580,6 @@ void AntennaChecker::checkNet(dbNet* net,
                   violated_gates);
       }
       logger_->report("");
-    }
-    if (report_file_name_ != nullptr) {
-      report_file.close();
     }
   }
 }
@@ -1695,6 +1686,13 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 {
   initAntennaRules();
 
+  std::ofstream report_file;
+  if (!report_file_name_.empty()) {
+    remove(report_file_name_.c_str());
+    report_file.open(report_file_name_,
+                    std::ofstream::out | std::ofstream::app);
+  }
+
   bool grt_routes = global_router_->haveRoutes();
   bool drt_routes = haveRoutedNets();
   bool use_grt_routes = (grt_routes && !drt_routes);
@@ -1715,7 +1713,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 
   if (net) {
     if (!net->isSpecial()) {
-      checkNet(net, true, verbose, net_violation_count, pin_violation_count);
+      checkNet(net, true, verbose, report_file, net_violation_count, pin_violation_count);
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -1723,13 +1721,17 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   } else {
     for (dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
-        checkNet(net, false, verbose, net_violation_count, pin_violation_count);
+        checkNet(net, false, verbose, report_file, net_violation_count, pin_violation_count);
       }
     }
   }
 
   logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
   logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
+
+  if (!report_file_name_.empty()) {
+    report_file.close();
+  }
 
   if (use_grt_routes)
     global_router_->destroyNetWires();

@@ -167,6 +167,7 @@ class AntennaChecker
   void checkNet(dbNet* net,
                 bool report_if_no_violation,
                 bool verbose,
+                std::ofstream& report_file,
                 // Return values.
                 int& net_violation_count,
                 int& pin_violation_count);
