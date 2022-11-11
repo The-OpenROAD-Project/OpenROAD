@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-echo $PATH
-
 cd "$(dirname $(readlink -f $0))/../"
 
 # default values, can be overwritten by cmdline args
