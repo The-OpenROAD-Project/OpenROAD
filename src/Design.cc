@@ -162,4 +162,10 @@ dpl::Opendp* Design::getOpendp()
   return app->getOpendp();
 }
 
+mpl::MacroPlacer* Design::getMacroPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getMacroPlacer();
+}
+
 }  // namespace ord
