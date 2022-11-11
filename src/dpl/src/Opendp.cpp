@@ -64,44 +64,39 @@ using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbPlacementStatus;
 using odb::Rect;
-using odb::dbSigType;
 
-Cell::Cell() :
-  db_inst_(nullptr),
-  x_(0),
-  y_(0),
-  width_(0),
-  height_(0),
-  is_placed_(false),
-  hold_(false),
-  group_(nullptr),
-  region_(nullptr)
+Cell::Cell()
+    : db_inst_(nullptr),
+      x_(0),
+      y_(0),
+      width_(0),
+      height_(0),
+      is_placed_(false),
+      hold_(false),
+      group_(nullptr),
+      region_(nullptr)
 {
 }
 
-const char *
-Cell::name() const
+const char* Cell::name() const
 {
   return db_inst_->getConstName();
 }
 
-int64_t
-Cell::area() const
+int64_t Cell::area() const
 {
-  dbMaster *master = db_inst_->getMaster();
+  dbMaster* master = db_inst_->getMaster();
   return int64_t(master->getWidth()) * master->getHeight();
 }
 
 ////////////////////////////////////////////////////////////////
 
-bool
-Opendp::isFixed(const Cell *cell) const
+bool Opendp::isFixed(const Cell* cell) const
 {
   return cell == &dummy_cell_ || cell->db_inst_->isFixed();
 }
 
-bool
-Opendp::isMultiRow(const Cell *cell) const
+bool Opendp::isMultiRow(const Cell* cell) const
 {
   auto iter = db_master_map_.find(cell->db_inst_->getMaster());
   assert(iter != db_master_map_.end());
@@ -110,31 +105,30 @@ Opendp::isMultiRow(const Cell *cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Group::Group() :
-  util(0.0)
+Group::Group() : util(0.0)
 {
 }
 
-Opendp::Opendp() :
-  logger_(nullptr),
-  db_(nullptr),
-  block_(nullptr),
-  pad_left_(0),
-  pad_right_(0),
-  row_height_(0),
-  site_width_(0),
-  row_count_(0),
-  row_site_count_(0),
-  have_multi_row_cells_(false),
-  max_displacement_x_(0),
-  max_displacement_y_(0),
-  grid_(nullptr),
-  filler_count_(0),
-  have_fillers_(false),
-  hpwl_before_(0),
-  displacement_avg_(0),
-  displacement_sum_(0),
-  displacement_max_(0)
+Opendp::Opendp()
+    : logger_(nullptr),
+      db_(nullptr),
+      block_(nullptr),
+      pad_left_(0),
+      pad_right_(0),
+      row_height_(0),
+      site_width_(0),
+      row_count_(0),
+      row_site_count_(0),
+      have_multi_row_cells_(false),
+      max_displacement_x_(0),
+      max_displacement_y_(0),
+      grid_(nullptr),
+      filler_count_(0),
+      have_fillers_(false),
+      hpwl_before_(0),
+      displacement_avg_(0),
+      displacement_sum_(0),
+      displacement_max_(0)
 {
   dummy_cell_.is_placed_ = true;
 }
@@ -144,68 +138,51 @@ Opendp::~Opendp()
   deleteGrid();
 }
 
-void
-Opendp::init(dbDatabase *db,
-             Logger *logger)
+void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
 }
 
-void
-Opendp::initBlock()
+void Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
 }
 
-void
-Opendp::setPaddingGlobal(int left,
-                         int right)
+void Opendp::setPaddingGlobal(int left, int right)
 {
   pad_left_ = left;
   pad_right_ = right;
 }
 
-void
-Opendp::setPadding(dbInst *inst,
-                   int left,
-                   int right)
+void Opendp::setPadding(dbInst* inst, int left, int right)
 {
   inst_padding_map_[inst] = std::make_pair(left, right);
 }
 
-void
-Opendp::setPadding(dbMaster *master,
-                   int left,
-                   int right)
+void Opendp::setPadding(dbMaster* master, int left, int right)
 {
   master_padding_map_[master] = std::make_pair(left, right);
 }
 
-bool
-Opendp::havePadding() const
+bool Opendp::havePadding() const
 {
-  return pad_left_ > 0 || pad_right_ > 0
-    || !master_padding_map_.empty()
-    || !inst_padding_map_.empty();
+  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
+         || !inst_padding_map_.empty();
 }
 
-void
-Opendp::setDebug(bool displacement,
-                 float min_displacement,
-                 const dbInst* debug_instance)
+void Opendp::setDebug(bool displacement,
+                      float min_displacement,
+                      const dbInst* debug_instance)
 {
   if (Graphics::guiActive()) {
-    graphics_ = std::make_unique<Graphics>(this,
-                                           min_displacement,
-                                           debug_instance);
+    graphics_
+        = std::make_unique<Graphics>(this, min_displacement, debug_instance);
   }
 }
 
-void
-Opendp::detailedPlacement(int max_displacement_x,
-                          int max_displacement_y)
+void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
 {
   importDb();
 
@@ -216,8 +193,7 @@ Opendp::detailedPlacement(int max_displacement_x,
     // defaults
     max_displacement_x_ = 500;
     max_displacement_y_ = 100;
-  }
-  else {
+  } else {
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
@@ -235,12 +211,11 @@ Opendp::detailedPlacement(int max_displacement_x,
   }
 }
 
-void
-Opendp::updateDbInstLocations()
+void Opendp::updateDbInstLocations()
 {
-  for (Cell &cell : cells_) {
+  for (Cell& cell : cells_) {
     if (!isFixed(&cell) && isStdCell(&cell)) {
-      dbInst *db_inst_ = cell.db_inst_;
+      dbInst* db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell.orient_)
         db_inst_->setOrient(cell.orient_);
@@ -254,38 +229,44 @@ Opendp::updateDbInstLocations()
   }
 }
 
-void
-Opendp::reportLegalizationStats() const
+void Opendp::reportLegalizationStats() const
 {
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
-  logger_->report("total displacement   {:10.1f} u", dbuToMicrons(displacement_sum_));
-  logger_->metric("design__instance__displacement__total", dbuToMicrons(displacement_sum_));
-  logger_->report("average displacement {:10.1f} u", dbuToMicrons(displacement_avg_));
-  logger_->metric("design__instance__displacement__mean", dbuToMicrons(displacement_avg_));
-  logger_->report("max displacement     {:10.1f} u", dbuToMicrons(displacement_max_));
-  logger_->metric("design__instance__displacement__max", dbuToMicrons(displacement_max_));
-  logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before_));
+  logger_->report("total displacement   {:10.1f} u",
+                  dbuToMicrons(displacement_sum_));
+  logger_->metric("design__instance__displacement__total",
+                  dbuToMicrons(displacement_sum_));
+  logger_->report("average displacement {:10.1f} u",
+                  dbuToMicrons(displacement_avg_));
+  logger_->metric("design__instance__displacement__mean",
+                  dbuToMicrons(displacement_avg_));
+  logger_->report("max displacement     {:10.1f} u",
+                  dbuToMicrons(displacement_max_));
+  logger_->metric("design__instance__displacement__max",
+                  dbuToMicrons(displacement_max_));
+  logger_->report("original HPWL        {:10.1f} u",
+                  dbuToMicrons(hpwl_before_));
   double hpwl_legal = hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
-  int hpwl_delta = (hpwl_before_ == 0.0)
-    ? 0.0
-    : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
+  int hpwl_delta
+      = (hpwl_before_ == 0.0)
+            ? 0.0
+            : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
 }
 
 ////////////////////////////////////////////////////////////////
 
-void
-Opendp::findDisplacementStats()
+void Opendp::findDisplacementStats()
 {
   displacement_avg_ = 0;
   displacement_sum_ = 0;
   displacement_max_ = 0;
 
-  for (const Cell &cell : cells_) {
+  for (const Cell& cell : cells_) {
     int displacement = disp(&cell);
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
@@ -299,17 +280,15 @@ Opendp::findDisplacementStats()
 }
 
 // Note that this does NOT use cell/core coordinates.
-int64_t
-Opendp::hpwl() const
+int64_t Opendp::hpwl() const
 {
   int64_t hpwl_sum = 0;
-  for (dbNet *net : block_->getNets())
+  for (dbNet* net : block_->getNets())
     hpwl_sum += hpwl(net);
   return hpwl_sum;
 }
 
-int64_t
-Opendp::hpwl(dbNet *net) const
+int64_t Opendp::hpwl(dbNet* net) const
 {
   if (net->getSigType().isSupply())
     return 0;
@@ -321,9 +300,7 @@ Opendp::hpwl(dbNet *net) const
 
 ////////////////////////////////////////////////////////////////
 
-Point
-Opendp::initialLocation(const Cell *cell,
-                        bool padded) const
+Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
@@ -334,15 +311,13 @@ Opendp::initialLocation(const Cell *cell,
   return Point(loc_x, loc_y);
 }
 
-int
-Opendp::disp(const Cell *cell) const
+int Opendp::disp(const Cell* cell) const
 {
   Point init = initialLocation(cell, false);
   return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
 }
 
-bool
-Opendp::isPaddedType(dbInst *inst) const
+bool Opendp::isPaddedType(dbInst* inst) const
 {
   dbMasterType type = inst->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
@@ -395,8 +370,7 @@ Opendp::isPaddedType(dbInst *inst) const
   return false;
 }
 
-bool
-Opendp::isStdCell(const Cell *cell) const
+bool Opendp::isStdCell(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
@@ -450,33 +424,28 @@ Opendp::isStdCell(const Cell *cell) const
 }
 
 /* static */
-bool
-Opendp::isBlock(const Cell *cell)
+bool Opendp::isBlock(const Cell* cell)
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::BLOCK;
 }
 
-int
-Opendp::gridEndX() const
+int Opendp::gridEndX() const
 {
   return gridEndX(core_.dx());
 }
 
-int
-Opendp::gridEndY() const
+int Opendp::gridEndY() const
 {
   return gridEndY(core_.dy());
 }
 
-int
-Opendp::padLeft(const Cell *cell) const
+int Opendp::padLeft(const Cell* cell) const
 {
   return padLeft(cell->db_inst_);
 }
 
-int
-Opendp::padLeft(dbInst *inst) const
+int Opendp::padLeft(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
@@ -487,19 +456,16 @@ Opendp::padLeft(dbInst *inst) const
       return itr2->second.first;
     else
       return pad_left_;
-  }
-  else
+  } else
     return 0;
 }
 
-int
-Opendp::padRight(const Cell *cell) const
+int Opendp::padRight(const Cell* cell) const
 {
   return padRight(cell->db_inst_);
 }
 
-int
-Opendp::padRight(dbInst *inst) const
+int Opendp::padRight(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
@@ -510,145 +476,122 @@ Opendp::padRight(dbInst *inst) const
       return itr2->second.second;
     else
       return pad_right_;
-  }
-  else
+  } else
     return 0;
 }
 
-int
-Opendp::paddedWidth(const Cell *cell) const
+int Opendp::paddedWidth(const Cell* cell) const
 {
   return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
 }
 
-int
-Opendp::gridPaddedWidth(const Cell *cell) const
+int Opendp::gridPaddedWidth(const Cell* cell) const
 {
   return divCeil(paddedWidth(cell), site_width_);
 }
 
-int
-Opendp::gridHeight(const Cell *cell) const
+int Opendp::gridHeight(const Cell* cell) const
 {
   return divCeil(cell->height_, row_height_);
 }
 
-int64_t
-Opendp::paddedArea(const Cell *cell) const
+int64_t Opendp::paddedArea(const Cell* cell) const
 {
   return int64_t(paddedWidth(cell)) * cell->height_;
 }
 
 // Callers should probably be using gridPaddedWidth.
-int
-Opendp::gridNearestWidth(const Cell *cell) const
+int Opendp::gridNearestWidth(const Cell* cell) const
 {
   return divRound(paddedWidth(cell), site_width_);
 }
 
 // Callers should probably be using gridHeight.
-int
-Opendp::gridNearestHeight(const Cell *cell) const
+int Opendp::gridNearestHeight(const Cell* cell) const
 {
   return divRound(cell->height_, row_height_);
 }
 
-int
-Opendp::gridX(int x) const
+int Opendp::gridX(int x) const
 {
   return x / site_width_;
 }
 
-int
-Opendp::gridEndX(int x) const
+int Opendp::gridEndX(int x) const
 {
   return divCeil(x, site_width_);
 }
 
-int
-Opendp::gridY(int y) const
+int Opendp::gridY(int y) const
 {
   return y / row_height_;
 }
 
-int
-Opendp::gridEndY(int y) const
+int Opendp::gridEndY(int y) const
 {
   return divCeil(y, row_height_);
 }
 
-int
-Opendp::gridX(const Cell *cell) const
+int Opendp::gridX(const Cell* cell) const
 {
   return gridX(cell->x_);
 }
 
-int
-Opendp::gridPaddedX(const Cell *cell) const
+int Opendp::gridPaddedX(const Cell* cell) const
 {
   return gridX(cell->x_ - padLeft(cell) * site_width_);
 }
 
-int
-Opendp::gridY(const Cell *cell) const
+int Opendp::gridY(const Cell* cell) const
 {
   return gridY(cell->y_);
 }
 
-void
-Opendp::setGridPaddedLoc(Cell *cell, int x, int y) const
+void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
   cell->x_ = (x + padLeft(cell)) * site_width_;
   cell->y_ = y * row_height_;
 }
 
-int
-Opendp::gridPaddedEndX(const Cell *cell) const
+int Opendp::gridPaddedEndX(const Cell* cell) const
 {
   return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
                  site_width_);
 }
 
-int
-Opendp::gridEndX(const Cell *cell) const
+int Opendp::gridEndX(const Cell* cell) const
 {
   return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
-int
-Opendp::gridEndY(const Cell *cell) const
+int Opendp::gridEndY(const Cell* cell) const
 {
   return divCeil(cell->y_ + cell->height_, row_height_);
 }
 
-double
-Opendp::dbuToMicrons(int64_t dbu) const
+double Opendp::dbuToMicrons(int64_t dbu) const
 {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu / dbu_micron;
 }
 
-double
-Opendp::dbuAreaToMicrons(int64_t dbu_area) const
+double Opendp::dbuAreaToMicrons(int64_t dbu_area) const
 {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu_area / (dbu_micron * dbu_micron);
 }
 
-int
-divRound(int dividend, int divisor)
+int divRound(int dividend, int divisor)
 {
   return round(static_cast<double>(dividend) / divisor);
 }
 
-int
-divCeil(int dividend, int divisor)
+int divCeil(int dividend, int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-int
-divFloor(int dividend, int divisor)
+int divFloor(int dividend, int divisor)
 {
   return dividend / divisor;
 }

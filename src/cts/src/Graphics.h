@@ -48,7 +48,7 @@ class Graphics : public gui::Renderer
   unsigned group_size_;
   SinkClustering* sink_clustering_;
   utl::Logger* logger_;
-  std::vector<Point<double>> points_; // used for sink_clustering
+  std::vector<Point<double>> points_;  // used for sink_clustering
 };
 
 }  // namespace cts

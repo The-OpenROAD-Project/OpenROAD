@@ -193,6 +193,12 @@ class Fixture
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
   void initRegionQuery();
+  frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_adjacentCut(
+      frLayerNum layer_num,
+      frCoord spacing,
+      int adjacent_cuts,
+      int two_cuts,
+      frCoord within);
 
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;

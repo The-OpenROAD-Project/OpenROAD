@@ -36,21 +36,23 @@
 
 namespace gpl {
 
-class FloatPoint {
-  public:
+class FloatPoint
+{
+ public:
   float x;
   float y;
   FloatPoint();
   FloatPoint(float x, float y);
 };
 
-class IntPoint {
-  public:
+class IntPoint
+{
+ public:
   int x;
   int y;
   IntPoint();
   IntPoint(int x, int y);
 };
-}
+}  // namespace gpl
 
 #endif

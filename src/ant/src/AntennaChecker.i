@@ -56,7 +56,17 @@ namespace ant {
 int
 check_antennas(const char *net_name, bool verbose)
 {
-  return getAntennaChecker()->checkAntennas(net_name, verbose);
+  auto app = ord::OpenRoad::openRoad();
+  auto block = app->getDb()->getChip()->getBlock();
+  dbNet* net = nullptr;
+  if (strlen(net_name) > 0) {
+    net = block->findNet(net_name);
+    if (!net) {
+      auto logger = app->getLogger();
+      logger->error(utl::ANT, 12, "Net {} not found.", net_name);
+    }
+  }
+  return getAntennaChecker()->checkAntennas(net, verbose);
 }
 
 int

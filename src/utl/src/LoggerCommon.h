@@ -33,21 +33,23 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "utl/Logger.h"
+
 namespace utl {
 
-void report(const char *msg);
-void info(utl::ToolId tool, int id, const char *msg);
-void warn(utl::ToolId tool, int id, const char *msg);
-void error(utl::ToolId tool, int id, const char *msg);
-void critical(utl::ToolId tool, int id, const char *msg);
-void open_metrics(const char *metrics_filename);
-void metric(const char *metric, const char *value);
-void metric_integer(const char *metric, const int value);
-void metric_float(const char *metric, const float value);
-void set_metrics_stage(const char *fmt);
+void report(const char* msg);
+void info(utl::ToolId tool, int id, const char* msg);
+void warn(utl::ToolId tool, int id, const char* msg);
+void error(utl::ToolId tool, int id, const char* msg);
+void critical(utl::ToolId tool, int id, const char* msg);
+void open_metrics(const char* metrics_filename);
+void metric(const char* metric, const char* value);
+void metric_integer(const char* metric, const int value);
+void metric_float(const char* metric, const float value);
+void set_metrics_stage(const char* fmt);
 void clear_metrics_stage();
-void push_metrics_stage(const char *fmt);
+void push_metrics_stage(const char* fmt);
 void pop_metrics_stage();
 void suppress_message(utl::ToolId tool, int id);
 
-}   // namespace utl
+}  // namespace utl

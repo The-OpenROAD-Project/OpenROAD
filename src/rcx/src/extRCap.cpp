@@ -49,7 +49,8 @@ namespace rcx {
 using namespace odb;
 using utl::RCX;
 
-typedef struct {
+typedef struct
+{
   int netid;
   double ctot;
   double cref;
@@ -59,23 +60,26 @@ typedef struct {
   double rdif;
 } ext_rctot;
 
-void extMain::initIncrementalSpef(const char* origp, const char* newp,
-                                  const char* excludeC, bool noBackSlash) {
+void extMain::initIncrementalSpef(const char* origp,
+                                  const char* newp,
+                                  const char* excludeC,
+                                  bool noBackSlash)
+{
   if (_origSpefFilePrefix)
     free(_origSpefFilePrefix);
   _origSpefFilePrefix = NULL;
   if (origp)
-    _origSpefFilePrefix = strdup((char*)origp);
+    _origSpefFilePrefix = strdup((char*) origp);
   if (_newSpefFilePrefix)
     free(_newSpefFilePrefix);
   _newSpefFilePrefix = NULL;
   if (newp)
-    _newSpefFilePrefix = strdup((char*)newp);
+    _newSpefFilePrefix = strdup((char*) newp);
   if (_excludeCells)
     free(_excludeCells);
   _excludeCells = NULL;
   if (excludeC)
-    _excludeCells = strdup((char*)excludeC);
+    _excludeCells = strdup((char*) excludeC);
   if (!_origSpefFilePrefix && !_newSpefFilePrefix)
     _bufSpefCnt = 0;
   else
@@ -83,9 +87,13 @@ void extMain::initIncrementalSpef(const char* origp, const char* newp,
   _incrNoBackSlash = noBackSlash;
 }
 
-void extMain::reportTotalCap(const char* file, bool icap, bool ires,
-                             double ccmult, const char* ref,
-                             const char* rd_file) {
+void extMain::reportTotalCap(const char* file,
+                             bool icap,
+                             bool ires,
+                             double ccmult,
+                             const char* ref,
+                             const char* rd_file)
+{
   FILE* fp = stdout;
   if (file != NULL)
     fp = fopen(file, "w");
@@ -103,7 +111,7 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
     }
   } else {
     Ath__parser parser;
-    parser.openFile((char*)ref);
+    parser.openFile((char*) ref);
     logger_->info(RCX, 184, "Reading ref_file {} ...", ref);
     while (parser.parseNextLine() > 0) {
       // parser.printWords(stdout);
@@ -134,7 +142,11 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
 
       double tot_diff = 100.0 * (ref_tot - totCap) / ref_tot;
       if (parser.getWordCnt() < 3) {
-        fprintf(fp, "%5.1f %13.6f %13.6f %s\n", tot_diff, totCap, ref_tot,
+        fprintf(fp,
+                "%5.1f %13.6f %13.6f %s\n",
+                tot_diff,
+                totCap,
+                ref_tot,
                 net->getConstName());
         continue;
       }
@@ -142,8 +154,15 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
       double ref_cc = parser.getDouble(2);
       double cc_diff = 100.0 * (ref_cc - ccCap) / ref_cc;
 
-      fprintf(fp, "%5.1f %5.1f   %13.6f %13.6f   %13.6f %13.6f  %s\n", tot_diff,
-              cc_diff, totCap, ref_tot, ccCap, ref_cc, net->getConstName());
+      fprintf(fp,
+              "%5.1f %5.1f   %13.6f %13.6f   %13.6f %13.6f  %s\n",
+              tot_diff,
+              cc_diff,
+              totCap,
+              ref_tot,
+              ccCap,
+              ref_cc,
+              net->getConstName());
     }
   }
   if (file != NULL)
@@ -152,7 +171,8 @@ void extMain::reportTotalCap(const char* file, bool icap, bool ires,
 
 /////////////////////////////////////////////////////
 
-typedef struct {
+typedef struct
+{
   int netid0;
   int netid1;
   double cctot;
@@ -160,8 +180,10 @@ typedef struct {
   double ccdif;
 } ext_cctot;
 
-static bool read_total_cc_file(const char* file, Darr<ext_cctot>& V,
-                               Logger* logger) {
+static bool read_total_cc_file(const char* file,
+                               Darr<ext_cctot>& V,
+                               Logger* logger)
+{
   FILE* fp = fopen(file, "r");
   if (!fp) {
     logger->warn(RCX, 33, "Can't open {}", file);
@@ -179,9 +201,10 @@ static bool read_total_cc_file(const char* file, Darr<ext_cctot>& V,
   return true;
 }
 
-static int ext_cctot_cmp(const void* a, const void* b) {
-  ext_cctot* x = (ext_cctot*)a;
-  ext_cctot* y = (ext_cctot*)b;
+static int ext_cctot_cmp(const void* a, const void* b)
+{
+  ext_cctot* x = (ext_cctot*) a;
+  ext_cctot* y = (ext_cctot*) b;
   if (x->ccdif < y->ccdif)
     return 1;
   if (x->ccdif > y->ccdif)
@@ -189,14 +212,17 @@ static int ext_cctot_cmp(const void* a, const void* b) {
   return 0;
 }
 
-static bool read_ref_cc_file(const char* file, int netn, Darr<ext_cctot>& V,
-                             Logger* logger) {
+static bool read_ref_cc_file(const char* file,
+                             int netn,
+                             Darr<ext_cctot>& V,
+                             Logger* logger)
+{
   FILE* fp = fopen(file, "r");
   if (!fp) {
     logger->warn(RCX, 34, "Can't open {}", file);
     return false;
   }
-  int* indV = (int*)malloc((2 + netn) * sizeof(int));
+  int* indV = (int*) malloc((2 + netn) * sizeof(int));
   int nn = V.n();
   char line[256];
   ext_cctot x;
@@ -245,12 +271,14 @@ static bool read_ref_cc_file(const char* file, int netn, Darr<ext_cctot>& V,
   return true;
 }
 
-void extMain::reportTotalCc(const char* file, const char* ref,
-                            const char* rd_file) {
+void extMain::reportTotalCc(const char* file,
+                            const char* ref,
+                            const char* rd_file)
+{
   Darr<ext_cctot> V;
   dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator nitr;
-  dbNet* net0, *net1;
+  dbNet *net0, *net1;
   std::vector<dbNet*> netV;
   std::vector<double> ccV;
   //  dbSet<dbCCSeg> ccSet;
@@ -348,37 +376,43 @@ void extMain::reportTotalCc(const char* file, const char* ref,
         max_abs_cc = difabs;
       }
     }
-    logger_->info(RCX, 196, "Worst abs cctot(net0, net1) diff = {} pF",
-                  max_abs_cc);
-    logger_->info(RCX, 197, "{} net pairs have absolute cctot diff > {} pF",
-                  nccdif, abs_ccthresh);
-    logger_->info(RCX, 207, "{} net pairs have absolute cctot diff > {} pF",
-                  nccdif2, abs_ccthresh2);
+    logger_->info(
+        RCX, 196, "Worst abs cctot(net0, net1) diff = {} pF", max_abs_cc);
+    logger_->info(RCX,
+                  197,
+                  "{} net pairs have absolute cctot diff > {} pF",
+                  nccdif,
+                  abs_ccthresh);
+    logger_->info(RCX,
+                  207,
+                  "{} net pairs have absolute cctot diff > {} pF",
+                  nccdif2,
+                  abs_ccthresh2);
     V.dsort(ext_cctot_cmp);
-    dbNet* net0, *net1;
+    dbNet *net0, *net1;
     x = V.get(0);
     if (x.ccdif > 0.0) {
       logger_->info(RCX, 198, "Max cc_tot diff vs ref = {} pF", x.ccdif);
       net0 = dbNet::getNet(_block, x.netid0);
       net1 = dbNet::getNet(_block, x.netid1);
-      logger_->info(RCX, 199, "Net0 {} {}", net0->getId(),
-                    net0->getConstName());
-      logger_->info(RCX, 200, "Net1 {} {}", net1->getId(),
-                    net1->getConstName());
-      logger_->info(RCX, 201, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref,
-                    x.ccdif);
+      logger_->info(
+          RCX, 199, "Net0 {} {}", net0->getId(), net0->getConstName());
+      logger_->info(
+          RCX, 200, "Net1 {} {}", net1->getId(), net1->getConstName());
+      logger_->info(
+          RCX, 201, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
     }
     x = V.get(nn - 1);
     if (x.ccdif < 0.0) {
       logger_->info(RCX, 202, "Min cc_tot diff vs ref = {} pF", x.ccdif);
       net0 = dbNet::getNet(_block, x.netid0);
       net1 = dbNet::getNet(_block, x.netid1);
-      logger_->info(RCX, 420, "Net0 {} {}", net0->getId(),
-                    net0->getConstName());
-      logger_->info(RCX, 419, "Net1 {} {}", net1->getId(),
-                    net1->getConstName());
-      logger_->info(RCX, 421, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref,
-                    x.ccdif);
+      logger_->info(
+          RCX, 420, "Net0 {} {}", net0->getId(), net0->getConstName());
+      logger_->info(
+          RCX, 419, "Net1 {} {}", net1->getId(), net1->getConstName());
+      logger_->info(
+          RCX, 421, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
     }
     if (fp) {
       fprintf(fp, "# netid0 netid1 cctot ccref ccdif\n");
@@ -386,8 +420,13 @@ void extMain::reportTotalCc(const char* file, const char* ref,
         x = V.get(j);
         if (x.ccdif < abs_ccthresh && x.ccdif > -abs_ccthresh)
           continue;
-        fprintf(fp, "%6d %6d %8g %8g %8g\n", x.netid0, x.netid1, x.cctot,
-                x.ccref, x.ccdif);
+        fprintf(fp,
+                "%6d %6d %8g %8g %8g\n",
+                x.netid0,
+                x.netid1,
+                x.cctot,
+                x.ccref,
+                x.ccdif);
       }
     }
   }
@@ -397,9 +436,16 @@ void extMain::reportTotalCc(const char* file, const char* ref,
 
 /////////////////////////////////////////////////////
 
-void extMain::extDump(char* file, bool openTreeFile, bool closeTreeFile,
-                      bool ccCapGeom, bool ccNetGeom, bool trackCnt,
-                      bool signal, bool power, uint layer) {
+void extMain::extDump(char* file,
+                      bool openTreeFile,
+                      bool closeTreeFile,
+                      bool ccCapGeom,
+                      bool ccNetGeom,
+                      bool trackCnt,
+                      bool signal,
+                      bool power,
+                      uint layer)
+{
   Ath__searchBox bb;
   ZPtr<ISdb> targetSdb;
   if (closeTreeFile) {
@@ -439,15 +485,15 @@ void extMain::extDump(char* file, bool openTreeFile, bool closeTreeFile,
     dumpPowerWire = false;
   if (!signal && power)
     dumpSignalWire = false;
-  bool* etable = (bool*)malloc(100 * sizeof(bool));
+  bool* etable = (bool*) malloc(100 * sizeof(bool));
   bool init = layer == 0 ? false : true;
   for (uint idx = 0; idx < 100; idx++)
     etable[idx] = init;
   etable[layer] = false;
   targetSdb->resetMaxArea();
   dbBox* tbox = _block->getBBox();
-  targetSdb->searchWireIds(tbox->xMin(), tbox->yMin(), tbox->xMax(),
-                           tbox->yMax(), false, etable);
+  targetSdb->searchWireIds(
+      tbox->xMin(), tbox->yMin(), tbox->xMax(), tbox->yMax(), false, etable);
   targetSdb->startIterator();
   uint wid, wflags;
   while ((wid = targetSdb->getNextWireId())) {
@@ -457,13 +503,19 @@ void extMain::extDump(char* file, bool openTreeFile, bool closeTreeFile,
         continue;
     }
     targetSdb->getSearchPtr()->getCoords(&bb, wid);
-    fprintf(fp, "m%d %d %d  %d %d\n", bb.getLevel(), bb.loXY(0), bb.loXY(1),
-            bb.hiXY(0), bb.hiXY(1));
+    fprintf(fp,
+            "m%d %d %d  %d %d\n",
+            bb.getLevel(),
+            bb.loXY(0),
+            bb.loXY(1),
+            bb.hiXY(0),
+            bb.hiXY(1));
   }
   if (fp)
     fclose(fp);
 }
-void extMain::extCount(bool signalWireSeg, bool powerWireSeg) {
+void extMain::extCount(bool signalWireSeg, bool powerWireSeg)
+{
   if (!signalWireSeg && !powerWireSeg)
     signalWireSeg = powerWireSeg = true;
   uint signalViaCnt = 0;
@@ -482,11 +534,19 @@ void extMain::extCount(bool signalWireSeg, bool powerWireSeg) {
       net->getSignalWireCount(signalWireCnt, signalViaCnt);
   }
   if (signalWireSeg)
-    logger_->info(RCX, 204, "{} signal seg ({} wire, {} via)",
-                  signalWireCnt + signalViaCnt, signalWireCnt, signalViaCnt);
+    logger_->info(RCX,
+                  204,
+                  "{} signal seg ({} wire, {} via)",
+                  signalWireCnt + signalViaCnt,
+                  signalWireCnt,
+                  signalViaCnt);
   if (powerWireSeg)
-    logger_->info(RCX, 205, "{} power seg ({} wire, {} via)",
-                  powerWireCnt + powerViaCnt, powerWireCnt, powerViaCnt);
+    logger_->info(RCX,
+                  205,
+                  "{} power seg ({} wire, {} via)",
+                  powerWireCnt + powerViaCnt,
+                  powerWireCnt,
+                  powerViaCnt);
 }
 /*
 class extNetStats
@@ -507,19 +567,22 @@ class extNetStats
         Rect _bbox;
 };
 */
-bool extMain::outOfBounds_i(int limit[2], int v) {
+bool extMain::outOfBounds_i(int limit[2], int v)
+{
   if ((v < limit[0]) || (v > limit[1]))
     return true;
   else
     return false;
 }
-bool extMain::outOfBounds_d(double limit[2], double v) {
+bool extMain::outOfBounds_d(double limit[2], double v)
+{
   if ((v < limit[0]) || (v > limit[1]))
     return true;
   else
     return false;
 }
-bool extMain::printNetRC(char* buff, dbNet* net, extNetStats* st) {
+bool extMain::printNetRC(char* buff, dbNet* net, extNetStats* st)
+{
   double tCap = net->getTotalCapacitance(0, true);
   if (tCap <= 0.0)
     return false;
@@ -549,7 +612,8 @@ bool extMain::printNetRC(char* buff, dbNet* net, extNetStats* st) {
 
   return true;
 }
-bool extMain::printNetDB(char* buff, dbNet* net, extNetStats* st) {
+bool extMain::printNetDB(char* buff, dbNet* net, extNetStats* st)
+{
   uint termCnt = net->getTermCount();
   if (outOfBounds_i(st->_termCnt, termCnt))
     return false;
@@ -606,14 +670,26 @@ bool extMain::printNetDB(char* buff, dbNet* net, extNetStats* st) {
     sprintf(buf1, ".%d", ii);
     str += buf1;
   }
-  sprintf(buff, "V %d Wc %d  L %d  %dM%s T %d B %d", viaCnt, wireCnt,
-          len / 1000, layerCnt, str.c_str(), termCnt, btermCnt);
+  sprintf(buff,
+          "V %d Wc %d  L %d  %dM%s T %d B %d",
+          viaCnt,
+          wireCnt,
+          len / 1000,
+          layerCnt,
+          str.c_str(),
+          termCnt,
+          btermCnt);
   return true;
 }
 
-uint extMain::printNetStats(FILE* fp, dbBlock* block, extNetStats* bounds,
-                            bool skipRC, bool skipDb, bool skipPower,
-                            std::list<int>* list_of_nets) {
+uint extMain::printNetStats(FILE* fp,
+                            dbBlock* block,
+                            extNetStats* bounds,
+                            bool skipRC,
+                            bool skipDb,
+                            bool skipPower,
+                            std::list<int>* list_of_nets)
+{
   Rect bbox(bounds->_ll[0], bounds->_ll[1], bounds->_ur[0], bounds->_ur[1]);
 
   char buff1[256];
@@ -652,7 +728,8 @@ uint extMain::printNetStats(FILE* fp, dbBlock* block, extNetStats* bounds,
   }
   return cnt;
 }
-void extNetStats::reset() {
+void extNetStats::reset()
+{
   _tcap[0] = 0.0;
   _tcap[1] = 1.0 * INT_MAX;
   _ccap[0] = 0.0;
@@ -691,8 +768,12 @@ void extNetStats::reset() {
   for (uint ii = 0; ii < 20; ii++)
     _layerFilter[ii] = true;
 }
-void extNetStats::update_double_limits(int n, double v1, double v2, double* val,
-                                       double units) {
+void extNetStats::update_double_limits(int n,
+                                       double v1,
+                                       double v2,
+                                       double* val,
+                                       double units)
+{
   if (n == 0) {
     val[0] = v1 * units;
     val[1] = v2 * units;
@@ -701,16 +782,19 @@ void extNetStats::update_double_limits(int n, double v1, double v2, double* val,
   else if (n == 2)
     val[1] = v2 * units;
 }
-void extNetStats::update_double(Ath__parser* parser, const char* word,
-                                double* val, double units) {
+void extNetStats::update_double(Ath__parser* parser,
+                                const char* word,
+                                double* val,
+                                double units)
+{
   double v1, v2;
   int n = parser->get2Double(word, ":", v1, v2);
 
   if (n >= 0)
     update_double_limits(n, v1, v2, val, units);
 }
-void extNetStats::update_int_limits(int n, int v1, int v2, int* val,
-                                    uint units) {
+void extNetStats::update_int_limits(int n, int v1, int v2, int* val, uint units)
+{
   if (n == 0) {
     val[0] = v1 * units;
     val[1] = v2 * units;
@@ -719,15 +803,19 @@ void extNetStats::update_int_limits(int n, int v1, int v2, int* val,
   else if (n == 2)
     val[1] = v2 * units;
 }
-void extNetStats::update_int(Ath__parser* parser, const char* word, int* val,
-                             uint units) {
+void extNetStats::update_int(Ath__parser* parser,
+                             const char* word,
+                             int* val,
+                             uint units)
+{
   int v1, v2;
   int n = parser->get2Int(word, ":", v1, v2);
 
   if (n >= 0)
     update_int_limits(n, v1, v2, val, units);
 }
-void extNetStats::update_bbox(Ath__parser* parser, const char* bbox) {
+void extNetStats::update_bbox(Ath__parser* parser, const char* bbox)
+{
   int n = parser->mkWords(bbox, " ");
 
   if (n <= 3) {
