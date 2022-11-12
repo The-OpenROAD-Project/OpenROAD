@@ -65,6 +65,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace mpl {
+class MacroPlacer;
+}
+
 namespace ord {
 
 class Tech;
@@ -99,6 +103,7 @@ class Design
   grt::GlobalRouter* getGlobalRouter();
   gpl::Replace* getReplace();
   dpl::Opendp* getOpendp();
+  mpl::MacroPlacer* getMacroPlacer();
 
  private:
   Tech* tech_;
