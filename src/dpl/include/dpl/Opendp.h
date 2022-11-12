@@ -43,7 +43,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <tuple>  // pair
 #include <unordered_map>
 #include <utility>  // pair
 #include <vector>
@@ -60,7 +59,6 @@ using std::map;
 using std::pair;
 using std::set;
 using std::string;
-using std::tuple;
 using std::unordered_map;
 using std::vector;
 
@@ -178,7 +176,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  void clear();
   void init(dbDatabase* db, Logger* logger);
   void initBlock();
   // legalize/report
@@ -206,7 +203,6 @@ class Opendp
   int64_t hpwl(dbNet* net) const;
   void findDisplacementStats();
   void optimizeMirroring();
-  void reportGrid();
 
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }

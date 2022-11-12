@@ -34,67 +34,75 @@
 
 namespace grt {
 
-RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db) :
-    gui::HeatMapDataSource(logger, "Routing Congestion", "Routing", "RoutingCongestion"),
-    db_(db),
-    direction_(ALL),
-    layer_(nullptr)
+RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
+                                                         odb::dbDatabase* db)
+    : gui::HeatMapDataSource(logger,
+                             "Routing Congestion",
+                             "Routing",
+                             "RoutingCongestion"),
+      db_(db),
+      direction_(ALL),
+      layer_(nullptr)
 {
-  addMultipleChoiceSetting("Direction",
-                           "Direction:",
-                           []() { return std::vector<std::string>{"All", "Horizontal", "Vertical"}; },
-                           [this]() -> std::string {
-                             switch(direction_) {
-                             case ALL:
-                               return "All";
-                             case HORIZONTAL:
-                               return "Horizontal";
-                             case VERTICAL:
-                               return "Vertical";
-                             }
-                             return "All"; // default to all
-                           },
-                           [this](const std::string& value) {
-                             if (value == "All") {
-                               direction_ = ALL;
-                             } else if (value == "Horizontal") {
-                               direction_ = HORIZONTAL;
-                             } else if (value == "Vertical") {
-                               direction_ = VERTICAL;
-                             } else {
-                               direction_ = ALL; // default to all
-                             }
-                           });
-  addMultipleChoiceSetting("Layer",
-                           "Layer:",
-                           [this]() {
-                             std::vector<std::string> layers{"All"};
-                             auto* tech = db_->getTech();
-                             if (tech == nullptr) {
-                              return layers;
-                             }
-                             for (auto* layer : tech->getLayers()) {
-                               if (layer->getRoutingLevel() != 0) {
-                                 layers.push_back(layer->getName());
-                               }
-                             }
-                             return layers;
-                           },
-                           [this]() -> std::string {
-                             if (layer_ == nullptr) {
-                               return "All"; // default to all
-                             } else {
-                               return layer_->getName();
-                             }
-                           },
-                           [this](const std::string& value) {
-                            auto* tech = db_->getTech();
-                             if (value == "All" || tech == nullptr) {
-                               layer_ = nullptr;
-                             } else {
-                               layer_ = tech->findLayer(value.c_str());
-                             }
-                           });
+  addMultipleChoiceSetting(
+      "Direction",
+      "Direction:",
+      []() {
+        return std::vector<std::string>{"All", "Horizontal", "Vertical"};
+      },
+      [this]() -> std::string {
+        switch (direction_) {
+          case ALL:
+            return "All";
+          case HORIZONTAL:
+            return "Horizontal";
+          case VERTICAL:
+            return "Vertical";
+        }
+        return "All";  // default to all
+      },
+      [this](const std::string& value) {
+        if (value == "All") {
+          direction_ = ALL;
+        } else if (value == "Horizontal") {
+          direction_ = HORIZONTAL;
+        } else if (value == "Vertical") {
+          direction_ = VERTICAL;
+        } else {
+          direction_ = ALL;  // default to all
+        }
+      });
+  addMultipleChoiceSetting(
+      "Layer",
+      "Layer:",
+      [this]() {
+        std::vector<std::string> layers{"All"};
+        auto* tech = db_->getTech();
+        if (tech == nullptr) {
+          return layers;
+        }
+        for (auto* layer : tech->getLayers()) {
+          if (layer->getRoutingLevel() != 0) {
+            layers.push_back(layer->getName());
+          }
+        }
+        return layers;
+      },
+      [this]() -> std::string {
+        if (layer_ == nullptr) {
+          return "All";  // default to all
+        } else {
+          return layer_->getName();
+        }
+      },
+      [this](const std::string& value) {
+        auto* tech = db_->getTech();
+        if (value == "All" || tech == nullptr) {
+          layer_ = nullptr;
+        } else {
+          layer_ = tech->findLayer(value.c_str());
+        }
+      });
 }
 
 double RoutingCongestionDataSource::getGridXSize() const
@@ -181,9 +189,11 @@ bool RoutingCongestionDataSource::populateMap()
 
     //-1 indicates capacity is not well defined...
     const double hor_congestion
-        = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity : -1;
+        = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity
+                            : -1;
     const double ver_congestion
-        = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity : -1;
+        = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
+                            : -1;
 
     double congestion = 0.0;
     if (direction_ == ALL) {

@@ -156,4 +156,16 @@ gpl::Replace* Design::getReplace()
   return app->getReplace();
 }
 
+dpl::Opendp* Design::getOpendp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpendp();
+}
+
+mpl::MacroPlacer* Design::getMacroPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getMacroPlacer();
+}
+
 }  // namespace ord
