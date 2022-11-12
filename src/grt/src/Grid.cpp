@@ -136,11 +136,12 @@ void Grid::getBlockedTiles(const odb::Rect& obstruction,
   last_tile_bds = odb::Rect(ll_last_tile, ur_last_tile);
 }
 
-interval<int>::type Grid::computeTileReduceInterval(const odb::Rect& obs,
-                            const odb::Rect& tile,
-                            int track_space,
-                            bool first,
-                            odb::dbTechLayerDir direction)
+interval<int>::type Grid::computeTileReduceInterval(
+    const odb::Rect& obs,
+    const odb::Rect& tile,
+    int track_space,
+    bool first,
+    odb::dbTechLayerDir direction)
 {
   int start_point, end_point;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -165,7 +166,7 @@ interval<int>::type Grid::computeTileReduceInterval(const odb::Rect& obs,
       start_point = tile.yMin();
       end_point = obs.yMax();
     }
-  }  
+  }
   interval<int>::type reduce_interval(start_point, end_point);
   return reduce_interval;
 }

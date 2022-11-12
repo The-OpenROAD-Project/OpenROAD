@@ -482,14 +482,6 @@ OpenRoad::Observer::~Observer()
     owner_->removeObserver(this);
   }
 }
-
-#ifdef ENABLE_PYTHON3
-void OpenRoad::pythonCommand(const char* py_command)
-{
-  PyRun_SimpleString(py_command);
-}
-#endif
-
 void OpenRoad::setThreadCount(int threads, bool printInfo)
 {
   int max_threads = std::thread::hardware_concurrency();
