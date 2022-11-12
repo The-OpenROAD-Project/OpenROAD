@@ -424,7 +424,7 @@ EOF
             _installRHELDev
             _installCommonDev
         fi
-        # _installOrTools "rhel" "8" "amd64"
+        _installOrTools "centos" "8" "amd64"
         _installRHELCleanUp
         ;;
     "Darwin" )

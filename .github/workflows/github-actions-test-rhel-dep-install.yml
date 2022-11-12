@@ -24,6 +24,12 @@ jobs:
           git fetch origin pull/${PR_NUMBER}/head:test
           git checkout test
       - name: runs installer
+        run: ./etc/DependencyInstaller.sh -dev
+      - name: tests OR-TOOLS
         run: |
-          ./etc/DependencyInstaller.sh -dev
-          ./etc/Build.sh -clean
+          lastDir=$(pwd)
+          cd /opt/or-tools
+          make test
+          cd ${lastDir}
+      - name: builds project
+        run: ./etc/Build.sh -clean
