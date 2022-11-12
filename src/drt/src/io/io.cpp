@@ -643,10 +643,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              endX = endX;
-              endY = endY;
               break;
             case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
@@ -656,13 +652,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              beginExt = beginExt;
-              endX = endX;
-              endY = endY;
-              endExt = endExt;
-
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
@@ -672,10 +661,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
-              left = left;
-              bottom = bottom;
-              right = right;
-              top = top;
               hasRect = true;
               break;
             case odb::dbWireDecoder::ITERM:

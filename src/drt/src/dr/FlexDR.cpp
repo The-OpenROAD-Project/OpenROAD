@@ -2382,7 +2382,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & isCongested_;
   if (is_loading(ar)) {
     // boundaryPin_
-    int sz;
+    int sz = 0;
     (ar) & sz;
     while (sz--) {
       frBlockObject* obj;

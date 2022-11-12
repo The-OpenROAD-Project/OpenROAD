@@ -3430,7 +3430,9 @@ void dbBlock::saveLef(char* filename,
                       bool bloat_occupied_layers)
 {
   lefout writer(getImpl()->getLogger());
-  writer.writeAbstractLef(this, filename, bloat_factor, bloat_occupied_layers);
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
+  writer.writeAbstractLef(this, filename);
 }
 
 //

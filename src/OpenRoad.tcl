@@ -125,7 +125,7 @@ proc write_lef { args } {
 proc write_abstract_lef { args } {
   sta::parse_key_args "write_abstract_lef" args keys {-bloat_factor} flags {-bloat_occupied_layers}
 
-  set bloat_factor 2
+  set bloat_factor 10
   if { [info exists keys(-bloat_factor)] } { 
     set bloat_factor $keys(-bloat_factor)
     sta::check_positive_float "bloat_factor" $bloat_factor
@@ -227,11 +227,6 @@ proc suppress_message {args} {
   lassign $args tool id
   sta::check_integer "suppress_message_level" $id
   utl::suppress_message $tool $id
-}
-
-sta::define_cmd_args "python" { args }
-proc python {args} {
-  ord::python_cmd $args
 }
 
 proc set_thread_count { count } {
