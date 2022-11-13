@@ -26,3 +26,5 @@ jobs:
         run: |
           ./etc/DependencyInstaller.sh -dev
           ./etc/Build.sh -clean
+      - name: test build
+        run: ./test/regression
