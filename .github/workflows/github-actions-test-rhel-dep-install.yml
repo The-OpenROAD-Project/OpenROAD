@@ -33,3 +33,5 @@ jobs:
           cd ${lastDir}
       - name: builds project
         run: ./etc/Build.sh -clean
+      - name: test build
+        run: ./test/regression
