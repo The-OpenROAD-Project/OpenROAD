@@ -243,6 +243,7 @@ _installOpenSuseDev() {
         gcc11-c++ \
         libstdc++6-devel-gcc8 \
         pcre-devel \
+        pcre2-devel \
         python3-devel \
         python3-pip \
         readline5-devel \
