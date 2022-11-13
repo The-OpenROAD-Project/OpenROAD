@@ -61,6 +61,14 @@ namespace gpl {
 class Replace;
 }
 
+namespace dpl {
+class Opendp;
+}
+
+namespace mpl {
+class MacroPlacer;
+}
+
 namespace ord {
 
 class Tech;
@@ -94,6 +102,8 @@ class Design
   ant::AntennaChecker* getAntennaChecker();
   grt::GlobalRouter* getGlobalRouter();
   gpl::Replace* getReplace();
+  dpl::Opendp* getOpendp();
+  mpl::MacroPlacer* getMacroPlacer();
 
  private:
   Tech* tech_;

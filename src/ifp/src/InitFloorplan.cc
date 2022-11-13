@@ -478,10 +478,6 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   v.check_positive("y_pitch", y_pitch, 42);
 
   Rect die_area = block_->getDieArea();
-  auto grid = block_->findTrackGrid(layer);
-  if (!grid) {
-    grid = dbTrackGrid::create(block_, layer);
-  }
 
   if (x_offset == 0) {
     x_offset = x_pitch;
@@ -505,6 +501,11 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
         "Track pattern for {} will be skipped due to y_offset > die height.",
         layer->getName());
     return;
+  }
+
+  auto grid = block_->findTrackGrid(layer);
+  if (!grid) {
+    grid = dbTrackGrid::create(block_, layer);
   }
 
   int layer_min_width = layer->getMinWidth();

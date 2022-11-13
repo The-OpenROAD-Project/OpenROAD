@@ -227,10 +227,6 @@ class OpenRoad
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
 
-#ifdef ENABLE_PYTHON3
-  void pythonCommand(const char* py_command);
-#endif
-
   // Observer interface
   class Observer
   {
