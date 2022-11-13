@@ -546,7 +546,8 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
     frCoord spacing,
     int adjacent_cuts,
     int two_cuts,
-    frCoord within) {
+    frCoord within)
+{
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   auto rule = odb::dbTechLayerCutSpacingRule::create(layer->getDbLayer());
