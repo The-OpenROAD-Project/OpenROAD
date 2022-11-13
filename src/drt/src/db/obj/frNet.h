@@ -255,7 +255,7 @@ class frNet : public frBlockObject
   }
   virtual frBlockObjectEnum typeId() const override { return frcNet; }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
-  void setAbsPriorityLvl(int l) { absPriorityLvl = l; } 
+  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }
   int getAbsPriorityLvl() const { return absPriorityLvl; }
   bool isClock() const { return (db_net_->getSigType() == dbSigType::CLOCK); }
   void updateAbsPriority()
@@ -267,10 +267,7 @@ class frNet : public frBlockObject
       max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
     absPriorityLvl = max;
   }
-  bool isSpecial() const
-  {
-    return db_net_->isSpecial();
-  }
+  bool isSpecial() const { return db_net_->isSpecial(); }
   frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
   void setOrigGuides(const std::vector<frRect>& guides)
   {

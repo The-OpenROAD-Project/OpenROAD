@@ -86,11 +86,11 @@ void Fixture::addLayer(frTechObject* tech,
 
 void Fixture::setupTech(frTechObject* tech)
 {
+  tech->setManufacturingGrid(10);
+  tech->setDBUPerUU(1000);
+
+  auto db = odb::dbDatabase::create();
   db_tech = odb::dbTech::create(db);
-  db->getTech()->setDbUnitsPerMicron(1000);
-  db->getTech()->setManufacturingGrid(10);
-  db_tech = db->getTech();
-  tech->setTechObject(db_tech);
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
