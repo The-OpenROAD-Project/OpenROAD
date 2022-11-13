@@ -16,6 +16,4 @@ original HPWL             100.7 u
 legalized HPWL             95.5 u
 delta HPWL                   -5 %
 
-Differences found at line 34.
-    - f0/_281_ INV_X1 + PLACED ( 31420 28000 ) FS ;
-    - f0/_281_ INV_X1 + PLACED ( 28000 30800 ) N ;
+No differences found.
