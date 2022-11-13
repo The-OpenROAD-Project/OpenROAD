@@ -42,9 +42,11 @@
 
 #include "Util.h"
 #include "db.h"
-#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
+namespace stt {
+class SteinerTreeBuilder;
+}
 namespace cts {
 
 class CtsOptions

@@ -174,4 +174,11 @@ void Netlist::clear()
   _db_pin_idx_map.clear();
 }
 
+int IOPin::getArea() const
+{
+  int area = std::abs((upper_bound_.getX() - lower_bound_.getX())
+                      * (upper_bound_.getY() - lower_bound_.getY()));
+  return area;
+}
+
 }  // namespace ppl

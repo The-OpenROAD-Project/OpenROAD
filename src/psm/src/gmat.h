@@ -81,8 +81,9 @@ class GMat
   ~GMat();
   //! Function to return a pointer to the node with a index
   Node* getNode(NodeIdx node);
+  bool findLayer(int layer);
   //! Function to return a pointer to the node with the x, y, and layer number
-  Node* getNode(int x, int y, int layer, bool nearest = false);
+  Node* getNode(int x, int y, int layer, bool nearest);
   //! Function to return a vector to all nodes in the region defined
   std::vector<Node*> getNodes(int layer,
                               int x_min,

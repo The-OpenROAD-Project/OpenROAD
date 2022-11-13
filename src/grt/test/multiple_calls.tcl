@@ -13,4 +13,5 @@ set_global_routing_layer_adjustment * 0.8
 global_route -verbose
 write_guides $guide_file2
 
-diff_file $guide_file1 $guide_file2
+diff_file multiple_calls.guideok1 $guide_file1
+diff_file multiple_calls.guideok2 $guide_file2

@@ -150,7 +150,8 @@ class TimingPathNode
                  float arrival = 0.0,
                  float delay = 0.0,
                  float slew = 0.0,
-                 float load = 0.0)
+                 float load = 0.0,
+                 int fanout = 0)
       : pin_(pin),
         is_clock_(is_clock),
         is_rising_(is_rising),
@@ -161,6 +162,7 @@ class TimingPathNode
         slew_(slew),
         load_(load),
         path_slack_(0.0),
+        fanout_(fanout),
         paired_nodes_({}),
         instance_node_(nullptr)
   {
@@ -201,6 +203,9 @@ class TimingPathNode
   void setPathSlack(float value) { path_slack_ = value; }
   float getPathSlack() const { return path_slack_; }
 
+  void setFanout(int fanout) { fanout_ = fanout; }
+  int getFanout() const { return fanout_; }
+
   bool hasValues() const { return has_values_; }
 
   void addPairedNode(const TimingPathNode* node) { paired_nodes_.insert(node); }
@@ -225,6 +230,7 @@ class TimingPathNode
   float slew_;
   float load_;
   float path_slack_;
+  int fanout_;
 
   std::set<const TimingPathNode*> paired_nodes_;
   const TimingPathNode* instance_node_;
@@ -375,6 +381,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   enum Column
   {
     Pin,
+    Fanout,
     RiseFall,
     Time,
     Delay,

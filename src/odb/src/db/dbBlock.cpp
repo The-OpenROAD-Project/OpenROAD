@@ -37,6 +37,7 @@
 
 #include <fstream>
 #include <memory>
+#include <set>
 #include <string>
 
 #include "ZComponents.h"
@@ -80,7 +81,9 @@
 #include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbIntHashTable.hpp"
+#include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLogicPort.h"
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
@@ -88,6 +91,8 @@
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
+#include "dbPowerDomain.h"
+#include "dbPowerSwitch.h"
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
@@ -189,6 +194,18 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _modinst_tbl = new dbTable<_dbModInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModInstObj);
+
+  _powerdomain_tbl = new dbTable<_dbPowerDomain>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
+
+  _logicport_tbl = new dbTable<_dbLogicPort>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLogicPortObj);
+
+  _powerswitch_tbl = new dbTable<_dbPowerSwitch>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerSwitchObj);
+
+  _isolation_tbl = new dbTable<_dbIsolation>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbIsolationObj);
 
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
@@ -299,6 +316,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
+  _powerdomain_hash.setTable(_powerdomain_tbl);
+  _logicport_hash.setTable(_logicport_tbl);
+  _powerswitch_hash.setTable(_powerswitch_tbl);
+  _isolation_hash.setTable(_isolation_tbl);
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -379,6 +400,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _inst_hash(block._inst_hash),
       _module_hash(block._module_hash),
       _modinst_hash(block._modinst_hash),
+      _powerdomain_hash(block._powerdomain_hash),
+      _logicport_hash(block._logicport_hash),
+      _powerswitch_hash(block._powerswitch_hash),
+      _isolation_hash(block._isolation_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
       _bterm_hash(block._bterm_hash),
@@ -408,6 +433,16 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _module_tbl = new dbTable<_dbModule>(db, this, *block._module_tbl);
 
   _modinst_tbl = new dbTable<_dbModInst>(db, this, *block._modinst_tbl);
+
+  _powerdomain_tbl
+      = new dbTable<_dbPowerDomain>(db, this, *block._powerdomain_tbl);
+
+  _logicport_tbl = new dbTable<_dbLogicPort>(db, this, *block._logicport_tbl);
+
+  _powerswitch_tbl
+      = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
+
+  _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
 
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
@@ -478,6 +513,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
+  _powerdomain_hash.setTable(_powerdomain_tbl);
+  _logicport_hash.setTable(_logicport_tbl);
+  _powerswitch_hash.setTable(_powerswitch_tbl);
+  _isolation_hash.setTable(_isolation_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -521,6 +560,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
+  _num_ext_dbs = 0;
+  _ptFile = nullptr;
+  _bterm_pins = nullptr;
+
   // ??? Initialize search-db on copy?
   _searchDb = NULL;
 
@@ -545,6 +588,10 @@ _dbBlock::~_dbBlock()
   delete _inst_tbl;
   delete _module_tbl;
   delete _modinst_tbl;
+  delete _powerdomain_tbl;
+  delete _logicport_tbl;
+  delete _powerswitch_tbl;
+  delete _isolation_tbl;
   delete _group_tbl;
   delete ap_tbl_;
   delete global_connect_tbl_;
@@ -703,6 +750,18 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbModInstObj:
       return _modinst_tbl;
 
+    case dbPowerDomainObj:
+      return _powerdomain_tbl;
+
+    case dbLogicPortObj:
+      return _logicport_tbl;
+
+    case dbPowerSwitchObj:
+      return _powerswitch_tbl;
+
+    case dbIsolationObj:
+      return _isolation_tbl;
+
     case dbGroupObj:
       return _group_tbl;
 
@@ -825,6 +884,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+  stream << block._powerdomain_hash;
+  stream << block._logicport_hash;
+  stream << block._powerswitch_hash;
+  stream << block._isolation_hash;
   stream << block._group_hash;
   stream << block._inst_hdr_hash;
   stream << block._bterm_hash;
@@ -848,6 +911,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._inst_tbl;
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
+  stream << *block._powerdomain_tbl;
+  stream << *block._logicport_tbl;
+  stream << *block._powerswitch_tbl;
+  stream << *block._isolation_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
   stream << *block.global_connect_tbl_;
@@ -920,6 +987,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  stream >> block._powerdomain_hash;
+  stream >> block._logicport_hash;
+  stream >> block._powerswitch_hash;
+  stream >> block._isolation_hash;
   stream >> block._group_hash;
   stream >> block._inst_hdr_hash;
   stream >> block._bterm_hash;
@@ -937,6 +1008,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
+  stream >> *block._powerdomain_tbl;
+  stream >> *block._logicport_tbl;
+  stream >> *block._powerswitch_tbl;
+  stream >> *block._isolation_tbl;
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
   if (db->isSchema(db_schema_add_global_connect)) {
@@ -1086,6 +1161,18 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_modinst_hash != rhs._modinst_hash)
     return false;
 
+  if (_powerdomain_hash != rhs._powerdomain_hash)
+    return false;
+
+  if (_logicport_hash != rhs._logicport_hash)
+    return false;
+
+  if (_powerswitch_hash != rhs._powerswitch_hash)
+    return false;
+
+  if (_isolation_hash != rhs._isolation_hash)
+    return false;
+
   if (_group_hash != rhs._group_hash)
     return false;
 
@@ -1135,6 +1222,18 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
 
   if (*_modinst_tbl != *rhs._modinst_tbl)
+    return false;
+
+  if (*_powerdomain_tbl != *rhs._powerdomain_tbl)
+    return false;
+
+  if (*_logicport_tbl != *rhs._logicport_tbl)
+    return false;
+
+  if (*_powerswitch_tbl != *rhs._powerswitch_tbl)
+    return false;
+
+  if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
 
   if (*_group_tbl != *rhs._group_tbl)
@@ -1251,6 +1350,10 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_inst_hash);
     DIFF_HASH_TABLE(_module_hash);
     DIFF_HASH_TABLE(_modinst_hash);
+    DIFF_HASH_TABLE(_powerdomain_hash);
+    DIFF_HASH_TABLE(_logicport_hash);
+    DIFF_HASH_TABLE(_powerswitch_hash);
+    DIFF_HASH_TABLE(_isolation_hash);
     DIFF_HASH_TABLE(_group_hash);
     DIFF_HASH_TABLE(_inst_hdr_hash);
     DIFF_HASH_TABLE(_bterm_hash);
@@ -1270,6 +1373,10 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_inst_tbl);
   DIFF_TABLE(_module_tbl);
   DIFF_TABLE(_modinst_tbl);
+  DIFF_TABLE(_powerdomain_tbl);
+  DIFF_TABLE(_logicport_tbl);
+  DIFF_TABLE(_powerswitch_tbl);
+  DIFF_TABLE(_isolation_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
   DIFF_TABLE(global_connect_tbl_);
@@ -1336,6 +1443,10 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_inst_hash);
     DIFF_OUT_HASH_TABLE(_module_hash);
     DIFF_OUT_HASH_TABLE(_modinst_hash);
+    DIFF_OUT_HASH_TABLE(_powerdomain_hash);
+    DIFF_OUT_HASH_TABLE(_logicport_hash);
+    DIFF_OUT_HASH_TABLE(_powerswitch_hash);
+    DIFF_OUT_HASH_TABLE(_isolation_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
     DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
     DIFF_OUT_HASH_TABLE(_bterm_hash);
@@ -1355,6 +1466,10 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_inst_tbl);
   DIFF_OUT_TABLE(_module_tbl);
   DIFF_OUT_TABLE(_modinst_tbl);
+  DIFF_OUT_TABLE(_powerdomain_tbl);
+  DIFF_OUT_TABLE(_logicport_tbl);
+  DIFF_OUT_TABLE(_powerswitch_tbl);
+  DIFF_OUT_TABLE(_isolation_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE(global_connect_tbl_);
@@ -1589,6 +1704,30 @@ dbSet<dbModInst> dbBlock::getModInsts()
   return dbSet<dbModInst>(block, block->_modinst_tbl);
 }
 
+dbSet<dbPowerDomain> dbBlock::getPowerDomains()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbPowerDomain>(block, block->_powerdomain_tbl);
+}
+
+dbSet<dbLogicPort> dbBlock::getLogicPorts()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLogicPort>(block, block->_logicport_tbl);
+}
+
+dbSet<dbPowerSwitch> dbBlock::getPowerSwitches()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbPowerSwitch>(block, block->_powerswitch_tbl);
+}
+
+dbSet<dbIsolation> dbBlock::getIsolations()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbIsolation>(block, block->_isolation_tbl);
+}
+
 dbSet<dbGroup> dbBlock::getGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1617,6 +1756,30 @@ dbModule* dbBlock::findModule(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbModule*) block->_module_hash.find(name);
+}
+
+dbPowerDomain* dbBlock::findPowerDomain(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbPowerDomain*) block->_powerdomain_hash.find(name);
+}
+
+dbLogicPort* dbBlock::findLogicPort(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLogicPort*) block->_logicport_hash.find(name);
+}
+
+dbPowerSwitch* dbBlock::findPowerSwitch(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbPowerSwitch*) block->_powerswitch_hash.find(name);
+}
+
+dbIsolation* dbBlock::findIsolation(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbIsolation*) block->_isolation_hash.find(name);
 }
 
 dbModInst* dbBlock::findModInst(const char* path)
@@ -3262,9 +3425,13 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 // Utility to save_lef
 //
 
-void dbBlock::saveLef(char* filename)
+void dbBlock::saveLef(char* filename,
+                      int bloat_factor,
+                      bool bloat_occupied_layers)
 {
   lefout writer(getImpl()->getLogger());
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
   writer.writeAbstractLef(this, filename);
 }
 
@@ -3774,18 +3941,18 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
-void dbBlock::globalConnect()
+int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
   const std::vector<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
   _dbBlock* dbblock = (_dbBlock*) this;
-  dbblock->globalConnect(connects);
+  return dbblock->globalConnect(connects);
 }
 
-void dbBlock::globalConnect(dbGlobalConnect* gc)
+int dbBlock::globalConnect(dbGlobalConnect* gc)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
-  dbblock->globalConnect({gc});
+  return dbblock->globalConnect({gc});
 }
 
 void dbBlock::clearGlobalConnect()
@@ -3820,11 +3987,11 @@ void dbBlock::reportGlobalConnect()
   }
 }
 
-void dbBlock::addGlobalConnect(dbRegion* region,
-                               const char* instPattern,
-                               const char* pinPattern,
-                               dbNet* net,
-                               bool do_connect)
+int dbBlock::addGlobalConnect(dbRegion* region,
+                              const char* instPattern,
+                              const char* pinPattern,
+                              dbNet* net,
+                              bool do_connect)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
 
@@ -3846,24 +4013,26 @@ void dbBlock::addGlobalConnect(dbRegion* region,
       = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (do_connect) {
-    globalConnect(gc);
+    return globalConnect(gc);
   }
+  return 0;
 }
 
-void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
+int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
   utl::Logger* logger = dbblock->getImpl()->getLogger();
 
   if (connects.empty()) {
     logger->warn(utl::ODB, 378, "Global connections are not set up.");
-    return;
+    return 0;
   }
 
   // order rules so non-regions are handled first
   std::vector<_dbGlobalConnect*> non_region_rules;
   std::vector<_dbGlobalConnect*> region_rules;
 
+  std::set<dbITerm*> connected_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
@@ -3910,11 +4079,15 @@ void _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   }
 
   for (_dbGlobalConnect* connect : non_region_rules) {
-    connect->connect(inst_map[connect->inst_pattern_]);
+    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    connected_iterms.insert(connections.begin(), connections.end());
   }
   for (_dbGlobalConnect* connect : region_rules) {
-    connect->connect(inst_map[connect->inst_pattern_]);
+    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    connected_iterms.insert(connections.begin(), connections.end());
   }
+
+  return connected_iterms.size();
 }
 
 }  // namespace odb

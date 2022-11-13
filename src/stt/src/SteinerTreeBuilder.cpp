@@ -63,9 +63,9 @@ void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
-                                         std::vector<int>& y,
-                                         int drvr_index)
+Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
+                                         const std::vector<int>& y,
+                                         const int drvr_index)
 {
   Tree tree = makeSteinerTree(x, y, drvr_index, alpha_);
 
@@ -73,9 +73,9 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
-                                         std::vector<int>& x,
-                                         std::vector<int>& y,
-                                         int drvr_index)
+                                         const std::vector<int>& x,
+                                         const std::vector<int>& y,
+                                         const int drvr_index)
 {
   float net_alpha = alpha_;
   int min_fanout = min_fanout_alpha_.first;
@@ -96,10 +96,10 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
   return makeSteinerTree(x, y, drvr_index, net_alpha);
 }
 
-Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
-                                         std::vector<int>& y,
-                                         int drvr_index,
-                                         float alpha)
+Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
+                                         const std::vector<int>& y,
+                                         const int drvr_index,
+                                         const float alpha)
 {
   if (alpha > 0.0) {
     Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);

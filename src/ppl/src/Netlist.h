@@ -125,6 +125,7 @@ class IOPin
   Direction getDirection() const { return direction_; }
   odb::Point getLowerBound() const { return lower_bound_; };
   odb::Point getUpperBound() const { return upper_bound_; };
+  int getArea() const;
   std::string getNetName() const { return bterm_->getNet()->getName(); }
   odb::dbPlacementStatus getPlacementStatus() const
   {

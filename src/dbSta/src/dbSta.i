@@ -22,6 +22,7 @@ using sta::Instance;
 %include "sdf/Sdf.i"
 %include "dcalc/DelayCalc.i"
 %include "parasitics/Parasitics.i"
+%include "power/Power.i"
 
 namespace std {
   %template(dbNetVector) vector<dbNet*>;

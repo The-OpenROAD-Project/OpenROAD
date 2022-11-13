@@ -2,6 +2,7 @@
 #include "utl/Logger.h"
 
 #include "db.h"
+
 using namespace odb;
 
 dbMaster* createMaster2X1(dbLib*      lib,

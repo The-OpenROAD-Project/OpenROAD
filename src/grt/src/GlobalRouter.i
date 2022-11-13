@@ -137,6 +137,12 @@ set_clock_layer_range(int minLayer, int maxLayer)
 }
 
 void
+set_critical_nets_percentage(float criticalNetsPercentage)
+{
+  getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
+}
+
+void
 set_macro_extension(int macroExtension)
 {
   getGlobalRouter()->setMacroExtension(macroExtension);
@@ -226,13 +232,14 @@ void create_wl_report_file(const char* file_name, bool verbose)
   getGlobalRouter()->createWLReportFile(file_name, verbose);
 }
 
-void report_net_wire_length(odb::dbNet *net,
+void report_net_wire_length(odb::dbNet* net,
                             bool global_route,
                             bool detailed_route,
                             bool verbose,
                             const char* file_name)
 {
-  getGlobalRouter()->reportNetWireLength(net, global_route, detailed_route, verbose, file_name);
+  getGlobalRouter()->reportNetWireLength(
+      net, global_route, detailed_route, verbose, file_name);
 }
 
 void

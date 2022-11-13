@@ -34,14 +34,14 @@
 
 #include <boost/geometry.hpp>
 
-#include "techlayer.h"
 #include "connect.h"
 #include "domain.h"
-#include "power_cells.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "power_cells.h"
 #include "rings.h"
 #include "straps.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 
 namespace pdn {
@@ -57,7 +57,7 @@ Grid::Grid(VoltageDomain* domain,
       starts_with_power_(starts_with_power),
       allow_repair_channels_(false)
 {
-  obstruction_layers_.insert(generate_obstructions.begin(), generate_obstructions.end());
+  obstruction_layers_ = generate_obstructions;
 }
 
 Grid::~Grid()
@@ -147,7 +147,8 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->makeShapes(local_shapes);
     // cut shapes to avoid obstructions
     component->cutShapes(local_obstructions);
-    // add shapes and obstructions to they are accounted for in future components
+    // add shapes and obstructions to they are accounted for in future
+    // components
     component->getObstructions(local_obstructions);
     component->getShapes(local_shapes);
   }
@@ -185,7 +186,8 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
 
     TechLayer techlayer(layer);
     techlayer.populateGrid(block);
-    const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal
+        = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const int min_width = techlayer.getMinWidth();
     const int min_spacing = techlayer.getSpacing(0);
 
@@ -209,21 +211,24 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
         delta_y -= min_spacing;
       }
 
-      const odb::Rect obs(
-          rect.xMin() - delta_x,
-          rect.yMin() - delta_y,
-          rect.xMax() + delta_x,
-          rect.yMax() + delta_y);
+      const odb::Rect obs(rect.xMin() - delta_x,
+                          rect.yMin() - delta_y,
+                          rect.xMax() + delta_x,
+                          rect.yMax() + delta_y);
 
       if (techlayer.hasGrid()) {
         std::vector<int> grid = techlayer.getGrid();
-        grid.erase(std::remove_if(grid.begin(), grid.end(), [&obs, is_horizontal](int pos) {
-          if (is_horizontal) {
-            return !(obs.yMin() <= pos && pos <= obs.yMax());
-          } else {
-            return !(obs.xMin() <= pos && pos <= obs.xMax());
-          }
-        }), grid.end());
+        grid.erase(
+            std::remove_if(grid.begin(),
+                           grid.end(),
+                           [&obs, is_horizontal](int pos) {
+                             if (is_horizontal) {
+                               return !(obs.yMin() <= pos && pos <= obs.yMax());
+                             } else {
+                               return !(obs.xMin() <= pos && pos <= obs.xMax());
+                             }
+                           }),
+            grid.end());
         // add by tracks
         const int min_width = techlayer.getMinWidth();
         const int half0_min_width = min_width / 2;
@@ -248,12 +253,8 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
         }
       } else {
         // add blob
-        odb::dbObstruction::create(block,
-                                   layer,
-                                   obs.xMin(),
-                                   obs.yMin(),
-                                   obs.xMax(),
-                                   obs.yMax());
+        odb::dbObstruction::create(
+            block, layer, obs.xMin(), obs.yMin(), obs.xMax(), obs.yMax());
       }
     }
   }
@@ -575,10 +576,20 @@ void Grid::checkSetup() const
 
   if (follow_pin_layers.size() > 1 && follow_pin_connect.empty()) {
     // found no connect statements between followpins
-    getLogger()->error(utl::PDN, 192, "There are multiple ({}) followpin definitions in {}, but no connect statements between them.", follow_pin_layers.size(), getName());
+    getLogger()->error(utl::PDN,
+                       192,
+                       "There are multiple ({}) followpin definitions in {}, "
+                       "but no connect statements between them.",
+                       follow_pin_layers.size(),
+                       getName());
   }
   if (follow_pin_layers.size() - 1 != follow_pin_connect.size()) {
-    getLogger()->error(utl::PDN, 193, "There are only ({}) followpin connect statements when {} is/are required.", follow_pin_connect.size(), follow_pin_layers.size() - 1);
+    getLogger()->error(utl::PDN,
+                       193,
+                       "There are only ({}) followpin connect statements when "
+                       "{} is/are required.",
+                       follow_pin_connect.size(),
+                       follow_pin_layers.size() - 1);
   }
 
   for (auto* connect0 : follow_pin_connect) {
@@ -592,15 +603,15 @@ void Grid::checkSetup() const
       const int c0_upper = connect0->getUpperLayer()->getRoutingLevel();
       const int c1_lower = connect1->getLowerLayer()->getRoutingLevel();
       const int c1_upper = connect1->getUpperLayer()->getRoutingLevel();
-      if (std::tie(c0_lower, c0_upper) >
-          std::tie(c1_lower, c1_upper)) {
+      if (std::tie(c0_lower, c0_upper) > std::tie(c1_lower, c1_upper)) {
         std::swap(connect0, connect1);
       }
 
       if (connect0->overlaps(connect1) || connect1->overlaps(connect0)) {
         getLogger()->error(utl::PDN,
                            194,
-                           "Connect statements for followpins overlap between layers: {} -> {} and {} -> {}",
+                           "Connect statements for followpins overlap between "
+                           "layers: {} -> {} and {} -> {}",
                            connect0->getLowerLayer()->getName(),
                            connect0->getUpperLayer()->getName(),
                            connect1->getLowerLayer()->getName(),
@@ -755,7 +766,8 @@ const std::vector<GridComponent*> Grid::getGridComponents() const
 }
 
 void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                     bool do_pins, const ShapeTreeMap& obstructions) const
+                     bool do_pins,
+                     const ShapeTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
   std::vector<ViaPtr> vias;
@@ -850,7 +862,9 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts)
+void Grid::makeInitialObstructions(odb::dbBlock* block,
+                                   ShapeTreeMap& obs,
+                                   const std::set<odb::dbInst*>& skip_insts)
 {
   // routing obs
   for (auto* ob : block->getObstructions()) {
@@ -883,9 +897,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const
       continue;
     }
     auto* master = inst->getMaster();
-    if (!master->isPad() &&
-        !master->isBlock() &&
-        !master->isCover()) {
+    if (!master->isPad() && !master->isBlock() && !master->isCover()) {
       continue;
     }
 
@@ -893,7 +905,8 @@ void Grid::makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const
       continue;
     }
 
-    for (const auto& [layer, shapes] : InstanceGrid::getInstanceObstructions(inst)) {
+    for (const auto& [layer, shapes] :
+         InstanceGrid::getInstanceObstructions(inst)) {
       obs[layer].insert(shapes.begin(), shapes.end());
     }
   }
@@ -943,6 +956,15 @@ std::set<odb::dbInst*> Grid::getInstances() const
   return insts;
 }
 
+void Grid::removeStrap(Straps* strap)
+{
+  straps_.erase(std::find_if(straps_.begin(),
+                             straps_.end(),
+                             [strap](const std::unique_ptr<Straps>& other) {
+                               return strap == other.get();
+                             }));
+}
+
 ///////////////
 
 CoreGrid::CoreGrid(VoltageDomain* domain,
@@ -972,6 +994,7 @@ const odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
+  std::set<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
     std::vector<odb::dbITerm*> iterms;
@@ -991,7 +1014,8 @@ void CoreGrid::setupDirectConnect(
     // sort by name to keep stable
     std::stable_sort(
         iterms.begin(), iterms.end(), [](odb::dbITerm* l, odb::dbITerm* r) {
-          const int name_compare = r->getInst()->getName().compare(l->getInst()->getName());
+          const int name_compare
+              = r->getInst()->getName().compare(l->getInst()->getName());
           if (name_compare != 0) {
             return name_compare < 0;
           }
@@ -1003,8 +1027,17 @@ void CoreGrid::setupDirectConnect(
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
           this, iterm, connect_pad_layers);
       if (pad_connect->canConnect()) {
+        straps.insert(pad_connect.get());
         addStrap(std::move(pad_connect));
       }
+    }
+  }
+
+  PadDirectConnectionStraps::unifyConnectionTypes(straps);
+  // check if unified connections are still connectable and remove if not
+  for (auto* strap : straps) {
+    if (!strap->canConnect()) {
+      removeStrap(strap);
     }
   }
 }
@@ -1019,11 +1052,12 @@ void CoreGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
 ///////////////
 
-InstanceGrid::InstanceGrid(VoltageDomain* domain,
-                           const std::string& name,
-                           bool start_with_power,
-                           odb::dbInst* inst,
-                           const std::vector<odb::dbTechLayer*>& generate_obstructions)
+InstanceGrid::InstanceGrid(
+    VoltageDomain* domain,
+    const std::string& name,
+    bool start_with_power,
+    odb::dbInst* inst,
+    const std::vector<odb::dbTechLayer*>& generate_obstructions)
     : Grid(domain, name, start_with_power, generate_obstructions),
       inst_(inst),
       halos_({0, 0, 0, 0}),
@@ -1133,7 +1167,9 @@ const odb::Rect InstanceGrid::getGridBoundary() const
   return getDomainBoundary();
 }
 
-ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst, const InstanceGrid::Halo& halo)
+ShapeTreeMap InstanceGrid::getInstanceObstructions(
+    odb::dbInst* inst,
+    const InstanceGrid::Halo& halo)
 {
   ShapeTreeMap obs;
 
@@ -1158,12 +1194,15 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(odb::dbInst* inst, const Inst
 
   // generate obstructions based on pins
   for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
-    const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-    const bool is_vertical = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    const bool is_horizontal
+        = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const bool is_vertical
+        = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     for (const auto& [box, pin_shape] : pin_shapes) {
       pin_shape->setShapeType(Shape::BLOCK_OBS);
       pin_shape->generateObstruction();
-      pin_shape->setObstruction(applyHalo(pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
+      pin_shape->setObstruction(applyHalo(
+          pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
       obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
     }
   }
@@ -1208,7 +1247,8 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
         for (auto* box : mpin->getGeometry()) {
           odb::Rect box_rect = box->getBox();
           transform.apply(box_rect);
-          auto shape = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          auto shape
+              = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
           shape->setShapeType(Shape::FIXED);
           pins.push_back(shape);
         }
@@ -1255,9 +1295,13 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
     }
   }
 
-  nets.erase(std::remove_if(nets.begin(), nets.end(), [&connected_nets](odb::dbNet* net) {
-    return connected_nets.find(net) == connected_nets.end();
-  }), nets.end());
+  nets.erase(std::remove_if(nets.begin(),
+                            nets.end(),
+                            [&connected_nets](odb::dbNet* net) {
+                              return connected_nets.find(net)
+                                     == connected_nets.end();
+                            }),
+             nets.end());
 
   return nets;
 }
@@ -1277,14 +1321,15 @@ void InstanceGrid::report() const
 
 ////////
 
-ExistingGrid::ExistingGrid(PdnGen* pdngen,
-                           odb::dbBlock* block,
-                           utl::Logger* logger,
-                           const std::string& name,
-                           const std::vector<odb::dbTechLayer*>& generate_obstructions)
-  : Grid(nullptr, name, false, generate_obstructions),
-    shapes_(),
-    domain_(nullptr)
+ExistingGrid::ExistingGrid(
+    PdnGen* pdngen,
+    odb::dbBlock* block,
+    utl::Logger* logger,
+    const std::string& name,
+    const std::vector<odb::dbTechLayer*>& generate_obstructions)
+    : Grid(nullptr, name, false, generate_obstructions),
+      shapes_(),
+      domain_(nullptr)
 {
   std::set<odb::dbNet*> nets;
 
@@ -1321,12 +1366,8 @@ ExistingGrid::ExistingGrid(PdnGen* pdngen,
 
   std::vector<odb::dbNet*> nets_vec;
   nets_vec.insert(nets_vec.end(), nets.begin(), nets.end());
-  domain_ = std::make_unique<VoltageDomain>(pdngen,
-                                            block,
-                                            power,
-                                            ground,
-                                            nets_vec,
-                                            logger);
+  domain_ = std::make_unique<VoltageDomain>(
+      pdngen, block, power, ground, nets_vec, logger);
 
   setDomain(domain_.get());
 
@@ -1358,7 +1399,10 @@ void ExistingGrid::addStrap(std::unique_ptr<Straps> strap)
 
 void ExistingGrid::addGridComponent(GridComponent* component) const
 {
-  getLogger()->error(utl::PDN, 188, "Existing grid does not support adding {}.", GridComponent::typeToString(component->type()));
+  getLogger()->error(utl::PDN,
+                     188,
+                     "Existing grid does not support adding {}.",
+                     GridComponent::typeToString(component->type()));
 }
 
 }  // namespace pdn

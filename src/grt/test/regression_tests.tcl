@@ -8,6 +8,7 @@ record_tests {
   congestion4
   congestion5
   congestion6
+  critical_nets_percentage
   est_rc1
   est_rc2
   gcd

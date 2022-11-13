@@ -5,13 +5,19 @@ set -euo pipefail
 _installCommonDev() {
     lastDir="$(pwd)"
     # tools versions
-    cmakeVersionBig=3.14
-    cmakeVersionSmall=${cmakeVersionBig}.0
-    swigVersion=4.0.1
-    boostVersionBig=1.76
+    osName="linux"
+    cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+    cmakeVersionBig=3.24
+    cmakeVersionSmall=${cmakeVersionBig}.2
+    swigVersionType="tag"
+    swigVersion=4.1.0
+    swigChecksum="794433378154eb61270a3ac127d9c5f3"
+    boostVersionBig=1.80
     boostVersionSmall=${boostVersionBig}.0
-    eigenVersion=3.3
+    boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
+    eigenVersion=3.4
     lemonVersion=1.3.1
+    lemonChecksum="e89f887559113b68657eca67cf3329b5"
     spdlogVersion=1.8.1
 
     # temp dir to download and compile
@@ -21,10 +27,10 @@ _installCommonDev() {
     # CMake
     if [[ -z $(cmake --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-Linux-x86_64.sh
-        md5sum -c <(echo "73041a43d27a30cdcbfdfdb61310d081  cmake-${cmakeVersionSmall}-Linux-x86_64.sh") || exit 1
-        chmod +x cmake-${cmakeVersionSmall}-Linux-x86_64.sh
-        ./cmake-${cmakeVersionSmall}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
+        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
+        chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
+        ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=/usr/local
     else
         echo "CMake already installed."
     fi
@@ -32,10 +38,12 @@ _installCommonDev() {
     # SWIG
     if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
-        wget https://github.com/swig/swig/archive/rel-${swigVersion}.tar.gz
-        md5sum -c <(echo "ef6a6d1dec755d867e7f5e860dc961f7  rel-${swigVersion}.tar.gz") || exit 1
-        tar xfz rel-${swigVersion}.tar.gz
-        cd swig-rel-${swigVersion}
+        tarName="rel-${swigVersion}.tar.gz"
+        [[ ${swigVersionType} == "tag" ]] && tarName="v${swigVersion}.tar.gz"
+        wget https://github.com/swig/swig/archive/${tarName}
+        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        tar xfz ${tarName}
+        cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
         ./autogen.sh
         ./configure --prefix=/usr
         make -j $(nproc)
@@ -49,7 +57,7 @@ _installCommonDev() {
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
-        md5sum -c <(echo "e425bf1f1d8c36a3cd464884e74f007a  boost_${boostVersionUnderscore}.tar.gz") || exit 1
+        md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh
@@ -74,7 +82,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
-        sudo cp -r ./cusp /usr/local/include/
+        cp -r ./cusp /usr/local/include/
     else
         echo "CUSP already installed."
     fi
@@ -83,7 +91,7 @@ _installCommonDev() {
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" /usr/local/include/lemon/config.h) ]]; then
         cd "${baseDir}"
         wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
-        md5sum -c <(echo "e89f887559113b68657eca67cf3329b5  lemon-${lemonVersion}.tar.gz") || exit 1
+        md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
         tar -xf lemon-${lemonVersion}.tar.gz
         cd lemon-${lemonVersion}
         cmake -B build .
@@ -107,6 +115,18 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 }
 
+_installOrTools() {
+    os=$1
+    version=$2
+    arch=$3
+    orToolsVersionBig=9.4
+    orToolsVersionSmall=${orToolsVersionBig}.1874
+    orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
+    wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
+    mkdir -p /opt/or-tools
+    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
+}
+
 _installUbuntuCleanUp() {
     apt-get autoclean -y
     apt-get autoremove -y
@@ -119,6 +139,7 @@ _installUbuntuDev() {
     apt-get -y install \
         automake \
         autotools-dev \
+        build-essential \
         bison \
         flex \
         clang \
@@ -126,6 +147,7 @@ _installUbuntuDev() {
         gcc \
         git \
         lcov \
+        libpcre2-dev \
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
@@ -144,9 +166,19 @@ _installUbuntuRuntime() {
         libgomp1 \
         libpython3.8 \
         libtcl \
-        qt5-default \
         qt5-image-formats-plugins \
         tcl-tclreadline
+
+    if [[ $1 == 22.04 ]]; then
+        apt-get install -y \
+        qtbase5-dev \
+        qtchooser \
+        qt5-qmake \
+        qtbase5-dev-tools
+    else
+        apt-get install -y qt5-default
+    fi
+
     # need the strip "hack" above to run on docker
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
@@ -172,6 +204,7 @@ _installCentosDev() {
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
+        pcre2-devel \
         readline-devel \
         tcl \
         tcl-devel \
@@ -312,6 +345,7 @@ case "${os}" in
             _installCentosDev
             _installCommonDev
         fi
+        _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
@@ -320,17 +354,20 @@ To enable GCC-8 or Clang-7 you need to run:
 EOF
         ;;
     "Ubuntu" )
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installUbuntuRuntime
+        _installUbuntuRuntime "${version}"
         if [[ "${option}" == "dev" ]]; then
             _installUbuntuDev
             _installCommonDev
         fi
+        _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
     "Darwin" )
         _installDarwin
+        _installOrTools "MacOsX" "12.5" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
@@ -345,3 +382,8 @@ EOF
         _help
         ;;
 esac
+
+cat <<EOF
+Make sure that CMake find_package can find or-tools. Example, add to your ~/.bashrc:
+    export CMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake
+EOF

@@ -56,11 +56,14 @@ struct frOArchive : OutputArchive
     OutputArchive::save(t);
   }
   frDesign* getDesign() const { return nullptr; }
-
 };
+
 struct frIArchive : InputArchive
 {
-  frIArchive(std::istream& os, unsigned flags = 0) : InputArchive(os, flags) {}
+  frIArchive(std::istream& os, unsigned flags = 0)
+      : InputArchive(os, flags), design(nullptr)
+  {
+  }
 
   // forward to base class
   template <class T>

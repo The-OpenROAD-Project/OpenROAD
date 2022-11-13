@@ -41,13 +41,13 @@ lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefin* l)
 }
 
 void lefTechLayerAreaRuleParser::parse(
-    std::string s,
+    const std::string& s,
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
@@ -115,8 +115,6 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerAreaRule* rule = odb::dbTechLayerAreaRule::create(layer);
 
   qi::rule<std::string::iterator, space_type> EXCEPT_EDGE_LENGTH

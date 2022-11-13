@@ -63,7 +63,8 @@ HungarianMatching::HungarianMatching(Section& section,
 void HungarianMatching::findAssignment()
 {
   createMatrix();
-  hungarian_solver_.solve(hungarian_matrix_, assignment_);
+  if (!hungarian_matrix_.empty())
+    hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
 void HungarianMatching::createMatrix()
@@ -76,7 +77,8 @@ void HungarianMatching::createMatrix()
     if (slots_[i].blocked) {
       continue;
     }
-    hungarian_matrix_[slot_index].resize(num_io_pins_, std::numeric_limits<int>::max());
+    hungarian_matrix_[slot_index].resize(num_io_pins_,
+                                         std::numeric_limits<int>::max());
     for (int idx : pin_indices_) {
       const IOPin& io_pin = netlist_->getIoPin(idx);
       if (!io_pin.isInGroup()) {
@@ -132,7 +134,7 @@ void HungarianMatching::findAssignmentForGroups()
 {
   createMatrixForGroups();
 
-  if (hungarian_matrix_.size() > 0)
+  if (!hungarian_matrix_.empty())
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
@@ -143,7 +145,10 @@ void HungarianMatching::createMatrixForGroups()
   }
 
   if (group_size_ > 0) {
-    for (int i = begin_slot_; i < end_slot_; i += group_size_) {
+    // end the loop when i > (end_slot_ - group_size_ + 1)
+    // to avoid access invalid positions of slots_.
+    for (int i = begin_slot_; i <= (end_slot_ - group_size_ + 1);
+         i += group_size_) {
       bool blocked = false;
       for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
@@ -157,7 +162,10 @@ void HungarianMatching::createMatrixForGroups()
 
     hungarian_matrix_.resize(group_slots_);
     int slot_index = 0;
-    for (int i = begin_slot_; i < end_slot_; i += group_size_) {
+    // end the loop when i > (end_slot_ - group_size_ + 1)
+    // to avoid access invalid positions of slots_.
+    for (int i = begin_slot_; i <= (end_slot_ - group_size_ + 1);
+         i += group_size_) {
       int groupIndex = 0;
       Point newPos = slots_[i].pos;
 
@@ -171,7 +179,8 @@ void HungarianMatching::createMatrixForGroups()
         continue;
       }
 
-      hungarian_matrix_[slot_index].resize(num_pin_groups_, std::numeric_limits<int>::max());
+      hungarian_matrix_[slot_index].resize(num_pin_groups_,
+                                           std::numeric_limits<int>::max());
       for (const std::vector<int>& io_group : pin_groups_) {
         int group_hpwl = 0;
         for (const int io_idx : io_group) {

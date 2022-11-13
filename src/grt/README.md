@@ -6,18 +6,19 @@ FastRoute is an open-source global router originally derived from Iowa State Uni
 
 ```
 global_route [-guide_file out_file]
-             [-verbose verbose]
              [-congestion_iterations iterations]
              [-congestion_report_file file_name]
              [-grid_origin {x y}]
+             [-critical_nets_percentage percent]
              [-allow_congestion]
+             [-verbose]
 
 ```
 
 Options description:
 
 -   `guide_file`: Set the output guides file name (e.g., -guide_file
-    `route.guide`)
+    `route.guide`).
 -   `congestion_iterations`: Set the number of iterations made to remove the
     overflow of the routing (e.g., `-congestion_iterations 50`)
 -   `congestion_report_file`: Set the file name to save congestion report. The 
@@ -26,7 +27,8 @@ Options description:
 -   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
     example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
     x-, y- direction.
--   `allow_congestion`: Allow global routing results to be generated with remaining congestion
+-   `critical_nets_percentage`: Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default percentage is 0%.
+-   `allow_congestion`: Allow global routing results to be generated with remaining congestion.
 -   `verbose`: This flag enables the full reporting of the global routing.
 
 ```
@@ -225,6 +227,60 @@ The `global_route_debug` command allows you to start a debug mode to view the st
 ## Regression tests
 
 ## Limitations
+
+## Using the Python interface to grt
+
+**NOTE:** The Python interface is currently in development and may
+change.
+
+This api tries to stay close to the api defined in C++ class
+GlobalRouter that is located in grt/include/grt/GlobalRouter.h. 
+
+When initializing a design, a sequence of Python commands might look like
+the following:
+
+    from openroad import Design, Tech
+    tech = Tech()
+    tech.readLef(...)
+    design = Design(tech)
+    design.readDef(...)
+    gr = design.getGlobalRouter()
+    
+Here are some options / configurations to the globalRoute
+command. (See GlobalRouter.h for a complete list)
+
+    gr.setGridOrigin(x, y)                     # int, default 0,0
+    gr.setCongestionReportFile(file_name)      # string
+    gr.setOverflowIterations(n)                # int, default 50
+    gr.setAllowCongestion(allowCongestion)     # boolean, default False
+    gr.setCriticalNetsPercentage(percentage)   # float
+    gr.setMinRoutingLayer(minLayer)            # int
+    gr.setMaxRoutingLayer(maxLayer)            # int
+    gr.setMinLayerForClock(minLayer)           # int
+    gr.setMaxLayerForClock(maxLayer)           # int
+    gr.setVerbose(v)                           # boolean, default False
+
+and when ready to actually do the global route:
+
+    gr.globalRoute(save_guides)                # boolean, default False
+    
+If you have set `save_guides` to True, you can then save the guides in `file_name` with:
+
+    design.getBlock().writeGuides(file_name)
+
+You can find the index of a named layer with
+
+    lindex = tech.getDB().getTech().findLayer(layer_name)
+
+or, if you only have the Python design object
+
+    lindex = design.getTech().getDB().getTech().findLayer(layer_name)
+    
+Be aware that much of the error checking is done in TCL, so that with
+the current C++ / Python api, that might be an issue to deal
+with. There are also some useful Python functions located in the file
+grt/test/grt_aux.py but these are not considered a part of the (final)
+api and they may change.
 
 ## FAQs
 

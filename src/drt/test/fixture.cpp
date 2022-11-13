@@ -239,23 +239,16 @@ frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
 {
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
-
-  auto rule = odb::dbTechLayerCornerSpacingRule::create(layer->getDbLayer());
-  if (type == frCornerTypeEnum::CONVEX)
-    rule->setType(odb::dbTechLayerCornerSpacingRule::CornerType::CONVEXCORNER);
-  else
-    rule->setType(odb::dbTechLayerCornerSpacingRule::CornerType::CONCAVECORNER);
+  auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+  auto rptr = con.get();
+  rptr->setCornerType(type);
+  rptr->setSameXY(true);
   if (eolWidth >= 0) {
-    rule->setExceptEol(true);
-    rule->setEolWidth(eolWidth);
+    rptr->setEolWidth(eolWidth);
   }
 
-  auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl,
-                                                              rule);
-  auto rptr = con.get();
-  rptr->setSameXY(true);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58CornerSpacingConstraint(rptr);
   tech->addUConstraint(std::move(con));
   return rptr;
@@ -278,30 +271,27 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
 
 void Fixture::makeMinStepConstraint(frLayerNum layer_num)
 {
+  auto con = std::make_unique<frMinStepConstraint>();
+
+  con->setMinstepType(frMinstepTypeEnum::STEP);
+  con->setMinStepLength(50);
+
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  auto db_layer = layer->getDbLayer();
-  db_layer->setMinStep(50);
-
-  auto con = std::make_unique<frMinStepConstraint>(db_layer);
-  con->setMinstepType(frMinstepTypeEnum::STEP);
   layer->setMinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }
 
 void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
+  auto con = std::make_unique<frLef58MinStepConstraint>();
+
+  con->setMinStepLength(50);
+  con->setMaxEdges(1);
+  con->setEolWidth(200);
+
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  auto rule = odb::dbTechLayerMinStepRule::create(layer->getDbLayer());
-  rule->setMinStepLength(50);
-  rule->setMaxEdgesValid(true);
-  rule->setMinAdjLength1Valid(true);
-  rule->setMaxEdges(1);
-  rule->setNoBetweenEol(true);
-  rule->setEolWidth(200);
-
-  auto con = std::make_unique<frLef58MinStepConstraint>(rule);
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }
@@ -318,12 +308,10 @@ void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
 
 void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
 {
+  auto con = std::make_unique<frMinEnclosedAreaConstraint>(200 * 200);
+
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  auto rule = odb::dbTechMinEncRule::create(layer->getDbLayer());
-  rule->setEnclosure(200 * 200);
-
-  auto con = std::make_unique<frMinEnclosedAreaConstraint>(rule);
   layer->addMinEnclosedAreaConstraint(con.get());
   tech->addUConstraint(std::move(con));
 }
@@ -333,30 +321,23 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
                                              frCoord par_within,
                                              bool two_edges)
 {
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
+  auto con = std::make_unique<frSpacingEndOfLineConstraint>();
 
-  auto rule = odb::dbTechLayerSpacingRule::create(layer->getDbLayer());
+  con->setMinSpacing(200);
+  con->setEolWidth(200);
+  con->setEolWithin(50);
+
   if (par_space != -1) {
     if (par_within == -1) {
       throw std::invalid_argument("Must give par_within with par_space");
     }
+    con->setParSpace(par_space);
+    con->setParWithin(par_within);
+    con->setTwoEdges(two_edges);
   }
-  if (par_space == 0) {
-    par_space = -1;
-  }
-  if (par_within == 0) {
-    par_within = -1;
-  }
-  rule->setEol(200,
-               50,
-               ((par_space != -1) && (par_within != -1)),
-               par_space,
-               par_within,
-               two_edges);
 
-  auto con = std::make_unique<frSpacingEndOfLineConstraint>(rule);
-  con->setMinSpacing(200);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
   layer->addEolSpacing(con.get());
   tech->addUConstraint(std::move(con));
 }
@@ -388,13 +369,10 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
-
-  auto rule = odb::dbTechLayerEolExtensionRule::create(layer->getDbLayer());
-  rule->setParallelOnly(parallelOnly);
-
   unique_ptr<frLef58EolExtensionConstraint> uCon
-      = make_unique<frLef58EolExtensionConstraint>(tbl, rule);
+      = make_unique<frLef58EolExtensionConstraint>(tbl);
   uCon->setMinSpacing(spacing);
+  uCon->setParallelOnly(parallelOnly);
   auto rptr = uCon.get();
   tech->addUConstraint(std::move(uCon));
   layer->addLef58EolExtConstraint(rptr);
@@ -434,20 +412,16 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-
-  auto rule = odb::dbTechLayerEolKeepOutRule::create(layer->getDbLayer());
-  rule->setEolWidth(width);
-  rule->setForwardExt(forward);
-  rule->setBackwardExt(backward);
-  rule->setSideExt(side);
-  rule->setCornerOnly(cornerOnly);
-  rule->setExceptWithin(exceptWithin);
-  rule->setWithinLow(withinLow);
-  rule->setWithinHigh(withinHigh);
-
-  auto con = std::make_unique<frLef58EolKeepOutConstraint>(rule);
+  auto con = std::make_unique<frLef58EolKeepOutConstraint>();
   auto rptr = con.get();
-
+  rptr->setEolWidth(width);
+  rptr->setForwardExt(forward);
+  rptr->setBackwardExt(backward);
+  rptr->setSideExt(side);
+  rptr->setCornerOnly(cornerOnly);
+  rptr->setExceptWithin(exceptWithin);
+  rptr->setWithinLow(withinLow);
+  rptr->setWithinHigh(withinHigh);
   layer->addLef58EolKeepOutConstraint(rptr);
   tech->addUConstraint(std::move(con));
 }
@@ -460,26 +434,15 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
     frCoord end_prl_spacing,
     frCoord end_prl)
 {
+  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
+  auto con = uCon.get();
+  con->setEol(space, width);
+  auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+  con->setWithinConstraint(withinCon);
+  withinCon->setEolWithin(within);
+  withinCon->setEndPrl(end_prl_spacing, end_prl);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-
-  auto rule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
-  rule->setEolWidth(width);
-  rule->setEolSpace(space);
-
-  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>(rule);
-  auto con = uCon.get();
-
-  auto withinRule = odb::dbTechLayerSpacingEolRule::create(layer->getDbLayer());
-  withinRule->setEolWithin(within);
-  withinRule->setEndPrlSpacingValid(true);
-  withinRule->setEndPrl(end_prl);
-  withinRule->setEndPrlSpace(end_prl_spacing);
-
-  auto withinCon
-      = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>(withinRule);
-  con->setWithinConstraint(withinCon);
-
   layer->addLef58SpacingEndOfLineConstraint(con);
   tech->addUConstraint(std::move(uCon));
   return con;
@@ -492,15 +455,11 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
     fr::frCoord par_within,
     bool two_edges)
 {
-  con->getDbTechLayerSpacingEolRule()->setParSpace(par_space);
-  con->getDbTechLayerSpacingEolRule()->setParWithin(par_within);
-  con->getDbTechLayerSpacingEolRule()->setTwoEdgesValid(two_edges);
-
   auto parallelEdge
-      = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>(
-          con->getDbTechLayerSpacingEolRule());
+      = std::make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
   con->getWithinConstraint()->setParallelEdgeConstraint(parallelEdge);
-
+  parallelEdge->setPar(par_space, par_within);
+  parallelEdge->setTwoEdges(two_edges);
   return parallelEdge;
 }
 
@@ -511,19 +470,10 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     bool max,
     bool two_sides)
 {
-  con->getDbTechLayerSpacingEolRule()->setMaxLengthValid(max);
-  con->getDbTechLayerSpacingEolRule()->setMinLengthValid(!max);
-  if (max) {
-    con->getDbTechLayerSpacingEolRule()->setMaxLength(min_max_length);
-  } else {
-    con->getDbTechLayerSpacingEolRule()->setMinLength(min_max_length);
-  }
-  con->getDbTechLayerSpacingEolRule()->setTwoEdgesValid(two_sides);
-
   auto minMax
-      = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>(
-          con->getDbTechLayerSpacingEolRule());
+      = std::make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
   con->getWithinConstraint()->setMaxMinLengthConstraint(minMax);
+  minMax->setLength(max, min_max_length, two_sides);
   return minMax;
 }
 
@@ -536,17 +486,13 @@ Fixture::makeLef58SpacingEolCutEncloseConstraint(
     bool below,
     bool allCuts)
 {
-  con->getDbTechLayerSpacingEolRule()->setAboveValid(above);
-  con->getDbTechLayerSpacingEolRule()->setEncloseDist(encloseDist);
-  con->getDbTechLayerSpacingEolRule()->setCutToMetalSpace(cutToMetalSpacing);
-  con->getDbTechLayerSpacingEolRule()->setBelowValid(below);
-  con->getDbTechLayerSpacingEolRule()->setAllCutsValid(allCuts);
-
   auto cutEnc
       = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          con->getDbTechLayerSpacingEolRule());
+          encloseDist, cutToMetalSpacing);
   con->getWithinConstraint()->setEncloseCutConstraint(cutEnc);
-
+  cutEnc->setAbove(above);
+  cutEnc->setBelow(below);
+  cutEnc->setAllCuts(allCuts);
   return cutEnc;
 }
 
@@ -556,14 +502,9 @@ void Fixture::makeCutClass(frLayerNum layer_num,
                            frCoord height)
 {
   auto cutClass = make_unique<frLef58CutClass>();
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
-  auto rule
-      = odb::dbTechLayerCutClassRule::create(layer->getDbLayer(), name.c_str());
-  rule->setLengthValid(true);
-  rule->setWidth(width);
-  rule->setLength(height);
-  cutClass->setDbTechLayerCutClassRule(rule);
+  cutClass->setName(name);
+  cutClass->setViaWidth(width);
+  cutClass->setViaLength(height);
   design->getTech()->addCutClass(layer_num, std::move(cutClass));
 }
 
@@ -590,6 +531,41 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
     }
   }
   design->getTech()->addUConstraint(std::move(con));
+}
+void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
+                                   odb::dbMetalWidthViaMap* dbRule)
+{
+  auto con = make_unique<frMetalWidthViaConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addMetalWidthViaConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
+    frLayerNum layer_num,
+    frCoord spacing,
+    int adjacent_cuts,
+    int two_cuts,
+    frCoord within) {
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerCutSpacingRule::create(layer->getDbLayer());
+  rule->setCutSpacing(spacing);
+  rule->setAdjacentCuts(adjacent_cuts);
+  // con->setTwoCuts(two_cuts);
+  rule->setWithin(within);
+  rule->setCenterToCenter(true);
+
+  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto con = uCon.get();
+  con->setCutClassIdx(0);
+  con->setCutSpacing(rule->getCutSpacing());
+  con->setAdjacentCuts(rule->getAdjacentCuts());
+  con->setCutWithin(rule->getWithin());
+  con->setCenterToCenter(rule->isCenterToCenter());
+  layer->addLef58CutSpacingConstraint(con);
+  tech->addUConstraint(std::move(uCon));
+  return con;
 }
 
 frNet* Fixture::makeNet(const char* name)

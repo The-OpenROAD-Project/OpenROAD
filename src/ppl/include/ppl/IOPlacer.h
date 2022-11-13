@@ -55,13 +55,13 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
-class Constraint;
 class Core;
 class Interval;
 class IOPin;
 class Netlist;
-class Section;
-class Slot;
+struct Constraint;
+struct Section;
+struct Slot;
 struct TopLayerGrid;
 
 using odb::Point;

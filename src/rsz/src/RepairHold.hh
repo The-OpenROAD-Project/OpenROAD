@@ -62,6 +62,8 @@ using sta::Vertex;
 using sta::PinSeq;
 using sta::VertexSeq;
 
+typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
+
 class RepairHold : StaState
 {
 public:
@@ -117,6 +119,9 @@ private:
                      LibertyCell *buffer_cell,
                      Point loc);
   bool checkMaxSlewCap(const Pin *drvr_pin);
+  void mergeInit(Slacks &slacks);
+  void mergeInto(Slacks &slacks,
+                 Slacks &result);
 
   Logger *logger_;
   dbSta *sta_;

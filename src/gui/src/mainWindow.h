@@ -241,6 +241,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void setUseDBU(bool use_dbu);
   void setClearLocation();
   void showApplicationFont();
+  void showGlobalConnect();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -307,6 +308,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* show_dbu_;
   QAction* default_ruler_style_;
   QAction* font_;
+  QAction* global_connect_;
 
   QLabel* location_;
 

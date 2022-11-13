@@ -78,13 +78,13 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
       bool matched = false;
       auto iter = entries.begin();
       while (iter != entries.end()) {
-          auto copy_iter = iter;
-          iter++;
-          if (matching(copy_iter->key)) {
-              if (matched)
-                entries.erase(copy_iter);
-              matched = true;
-          }
+        auto copy_iter = iter;
+        iter++;
+        if (matching(copy_iter->key)) {
+          if (matched)
+            entries.erase(copy_iter);
+          matched = true;
+        }
       }
       break;
     }
@@ -106,11 +106,11 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
     case MetricsPolicyType::Remove: {
       auto iter = entries.begin();
       while (iter != entries.end()) {
-          auto copy_iter = iter;
-          iter++;
-          if (matching(copy_iter->key)) {
-              entries.erase(copy_iter);
-          }
+        auto copy_iter = iter;
+        iter++;
+        if (matching(copy_iter->key)) {
+          entries.erase(copy_iter);
+        }
       }
       break;
     }
@@ -125,7 +125,7 @@ std::vector<MetricsPolicy> MetricsPolicy::makeDefaultPolicies()
       // MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
       // MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
       // MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, true)
-      };
+  };
 }
 
 }  // namespace utl

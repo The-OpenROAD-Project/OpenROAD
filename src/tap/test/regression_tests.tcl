@@ -10,4 +10,6 @@ record_tests {
   gcd_ripup
   no_endcap
   symmetry
+  cut_rows
+  cut_rows_with_endcaps
 }
