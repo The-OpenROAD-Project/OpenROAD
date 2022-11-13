@@ -55,6 +55,7 @@
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "globalConnectDialog.h"
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -317,8 +318,13 @@ MainWindow::MainWindow(QWidget* parent)
     setSelected(selected, false);
     odb::Rect bbox;
     selected.getBBox(bbox);
-    // 10 microns
-    const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+
+    auto* block = getBlock();
+    int zoomout_dist = std::numeric_limits<int>::max();
+    if (block != nullptr) {
+      // 10 microns
+      zoomout_dist = 10 * block->getDbUnitsPerMicron();
+    }
     // twice the largest dimension of bounding box
     const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
     // pick smallest
@@ -498,6 +504,9 @@ void MainWindow::createActions()
 
   font_ = new QAction("Application font", this);
 
+  global_connect_ = new QAction("Global connect", this);
+  global_connect_->setShortcut(QString("Ctrl+G"));
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -520,6 +529,9 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
+
+  connect(
+      global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
@@ -560,6 +572,7 @@ void MainWindow::createMenus()
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     registerHeatMap(heat_map);
   }
+  tools_menu_->addAction(global_connect_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -1129,7 +1142,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto sel_obj : selected_) {
+  for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
@@ -1389,6 +1402,17 @@ void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
   heat_maps->removeAction(heatmap_actions_[heatmap]);
   heatmap_actions_.erase(heatmap);
+}
+
+void MainWindow::showGlobalConnect()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  GlobalConnectDialog dialog(block, this);
+  dialog.exec();
 }
 
 }  // namespace gui

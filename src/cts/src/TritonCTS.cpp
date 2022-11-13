@@ -447,13 +447,21 @@ void TritonCTS::populateTritonCTS()
     }
     clockNetsInfo.emplace_back(std::make_pair(clockNets, std::string("")));
   } else {
+    std::set<odb::dbNet*> allClkNets;
     staClockNets_ = openSta_->findClkNets();
     sta::Sdc* sdc = openSta_->sdc();
     for (auto clk : *sdc->clocks()) {
       std::string clkName = clk->name();
       std::set<odb::dbNet*> clkNets;
       findClockRoots(clk, clkNets);
+      for (auto net : clkNets) {
+        if (allClkNets.find(net) != allClkNets.end()) {
+          logger_->error(
+              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+        }
+      }
       clockNetsInfo.emplace_back(make_pair(clkNets, clkName));
+      allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
 

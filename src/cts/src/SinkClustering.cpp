@@ -43,6 +43,7 @@
 #include <string>
 #include <tuple>
 
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -164,8 +165,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   if (logger_->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
 
-  if (options_->getGuiDebug()
-      || logger_->debugCheck(CTS, "Stree", 1) ) {
+  if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
     clusteringVisualizer(original_points, groupSize);
   }
 }

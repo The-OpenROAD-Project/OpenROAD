@@ -1337,8 +1337,13 @@ dbInst* dbInst::create(dbBlock* block_,
     ZASSERT(inst_hdr);
   }
 
-  if (block->_inst_hash.hasMember(name_))
-    return NULL;
+  if (block->_inst_hash.hasMember(name_)) {
+    block->getImpl()->getLogger()->error(
+        utl::ODB,
+        385,
+        "Attempt to create instance with duplicate name: {}",
+        name_);
+  }
 
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),

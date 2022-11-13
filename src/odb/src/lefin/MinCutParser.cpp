@@ -77,11 +77,11 @@ void MinCutParser::setAreaWithin(double within)
   rule_->setAreaWithinDistValid(true);
 }
 
-void MinCutParser::parse(std::string s)
+void MinCutParser::parse(const std::string& s)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
@@ -98,8 +98,6 @@ void MinCutParser::parse(std::string s)
 bool MinCutParser::parseSubRule(std::string s)
 {
   rule_ = dbTechLayerMinCutRule::create(layer_);
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
   qi::rule<std::string::iterator, space_type> CUTCLASS
       = (lit("CUTCLASS") >> _string >> int_) [boost::bind(&MinCutParser::addCutClass, this, _1)] ;
   qi::rule<std::string::iterator, space_type> WITHIN

@@ -29,6 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "ant/AntennaChecker.hh"
+
 #include <stdio.h>
 #include <tcl.h>
 
@@ -36,7 +38,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -219,9 +220,10 @@ void AntennaChecker::initAntennaRules()
       if ((PSR_ratio != 0 || diffPSR.indices.size() != 0)
           && layerType == dbTechLayerType::ROUTING && wire_thickness_dbu == 0) {
         logger_->warn(ANT,
-                       13,
-                       "No THICKNESS is provided for layer {}.  Checks on this layer will not be correct.",
-                       tech_layer->getConstName());
+                      13,
+                      "No THICKNESS is provided for layer {}.  Checks on this "
+                      "layer will not be correct.",
+                      tech_layer->getConstName());
       }
     }
 
@@ -705,8 +707,7 @@ double AntennaChecker::gateArea(dbMTerm* mterm)
     vector<std::pair<double, dbTechLayer*>> gate_areas;
     pin_model->getGateArea(gate_areas);
 
-    for (auto gate_area_layer : gate_areas) {
-      double gate_area = gate_area_layer.first;
+    for (const auto [gate_area, layer] : gate_areas) {
       max_gate_area = std::max(max_gate_area, gate_area);
     }
   }
@@ -1562,7 +1563,7 @@ void AntennaChecker::checkGate(
   }
 }
 
-int AntennaChecker::checkAntennas(const char* net_name, bool verbose)
+int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 {
   initAntennaRules();
 
@@ -1584,12 +1585,13 @@ int AntennaChecker::checkAntennas(const char* net_name, bool verbose)
   int net_violation_count = 0;
   int pin_violation_count = 0;
 
-  if (strlen(net_name) > 0) {
-    dbNet* net = block_->findNet(net_name);
-    if (net && !net->isSpecial())
+  if (net) {
+    if (!net->isSpecial()) {
       checkNet(net, true, verbose, net_violation_count, pin_violation_count);
-    else
-      logger_->error(ANT, 12, "-net {} not Found.", net_name);
+    } else {
+      logger_->error(
+          ANT, 14, "Skipped net {} because it is special.", net->getName());
+    }
   } else {
     for (dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
@@ -1831,9 +1833,8 @@ double AntennaChecker::diffArea(dbMTerm* mterm)
   double max_diff_area = 0.0;
   vector<std::pair<double, dbTechLayer*>> diff_areas;
   mterm->getDiffArea(diff_areas);
-  for (auto area_layer : diff_areas) {
-    double diff_area = area_layer.first;
-    max_diff_area = std::max(max_diff_area, diff_area);
+  for (const auto [area, layer] : diff_areas) {
+    max_diff_area = std::max(max_diff_area, area);
   }
   return max_diff_area;
 }

@@ -40,11 +40,11 @@
 
 #include "connect.h"
 #include "domain.h"
-#include "power_cells.h"
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "ord/OpenRoad.hh"
+#include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
 #include "straps.h"
@@ -197,7 +197,8 @@ void PdnGen::trimShapes()
 
         // if pin layer, do not modify the shapes, but allow them to be
         // removed if they are not connected to anything
-        const bool is_pin_layer = pin_layers.find(shape->getLayer()) != pin_layers.end();
+        const bool is_pin_layer
+            = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         Shape* new_shape = nullptr;
         const odb::Rect new_rect = shape->getMinimumRect();
@@ -337,14 +338,13 @@ void PdnGen::makeSwitchedPowerCell(odb::dbMaster* master,
     logger_->error(utl::PDN, 196, "{} is already defined.", master->getName());
   }
 
-  switched_power_cells_.push_back(std::make_unique<PowerCell>(
-      logger_,
-      master,
-      control,
-      acknowledge,
-      switched_power,
-      alwayson_power,
-      ground));
+  switched_power_cells_.push_back(std::make_unique<PowerCell>(logger_,
+                                                              master,
+                                                              control,
+                                                              acknowledge,
+                                                              switched_power,
+                                                              alwayson_power,
+                                                              ground));
 }
 
 std::vector<Grid*> PdnGen::getGrids() const
@@ -386,22 +386,25 @@ std::vector<Grid*> PdnGen::findGrid(const std::string& name) const
   return found_grids;
 }
 
-void PdnGen::makeCoreGrid(VoltageDomain* domain,
-                          const std::string& name,
-                          StartsWith starts_with,
-                          const std::vector<odb::dbTechLayer*>& pin_layers,
-                          const std::vector<odb::dbTechLayer*>& generate_obstructions,
-                          PowerCell* powercell,
-                          odb::dbNet* powercontrol,
-                          const char* powercontrolnetwork)
+void PdnGen::makeCoreGrid(
+    VoltageDomain* domain,
+    const std::string& name,
+    StartsWith starts_with,
+    const std::vector<odb::dbTechLayer*>& pin_layers,
+    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+    PowerCell* powercell,
+    odb::dbNet* powercontrol,
+    const char* powercontrolnetwork)
 {
-  auto grid = std::make_unique<CoreGrid>(domain, name, starts_with == POWER, generate_obstructions);
+  auto grid = std::make_unique<CoreGrid>(
+      domain, name, starts_with == POWER, generate_obstructions);
   grid->setPinLayers(pin_layers);
   if (powercell != nullptr) {
-    grid->setSwitchedPower(new GridSwitchedPower(grid.get(),
-                                                 powercell,
-                                                 powercontrol,
-                                                 GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+    grid->setSwitchedPower(new GridSwitchedPower(
+        grid.get(),
+        powercell,
+        powercontrol,
+        GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
   }
   domain->addGrid(std::move(grid));
 }
@@ -420,14 +423,15 @@ Grid* PdnGen::instanceGrid(odb::dbInst* inst) const
   return nullptr;
 }
 
-void PdnGen::makeInstanceGrid(VoltageDomain* domain,
-                              const std::string& name,
-                              StartsWith starts_with,
-                              odb::dbInst* inst,
-                              const std::array<int, 4>& halo,
-                              bool pg_pins_to_boundary,
-                              bool default_grid,
-                              const std::vector<odb::dbTechLayer*>& generate_obstructions)
+void PdnGen::makeInstanceGrid(
+    VoltageDomain* domain,
+    const std::string& name,
+    StartsWith starts_with,
+    odb::dbInst* inst,
+    const std::array<int, 4>& halo,
+    bool pg_pins_to_boundary,
+    bool default_grid,
+    const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   auto* check_grid = instanceGrid(inst);
   if (check_grid != nullptr) {
@@ -458,8 +462,8 @@ void PdnGen::makeInstanceGrid(VoltageDomain* domain,
     }
   }
 
-  auto grid
-      = std::make_unique<InstanceGrid>(domain, name, starts_with == POWER, inst, generate_obstructions);
+  auto grid = std::make_unique<InstanceGrid>(
+      domain, name, starts_with == POWER, inst, generate_obstructions);
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
@@ -470,10 +474,12 @@ void PdnGen::makeInstanceGrid(VoltageDomain* domain,
   domain->addGrid(std::move(grid));
 }
 
-void PdnGen::makeExistingGrid(const std::string& name,
-                              const std::vector<odb::dbTechLayer*>& generate_obstructions)
+void PdnGen::makeExistingGrid(
+    const std::string& name,
+    const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
-  auto grid = std::make_unique<ExistingGrid>(this, db_->getChip()->getBlock(), logger_, name, generate_obstructions);
+  auto grid = std::make_unique<ExistingGrid>(
+      this, db_->getChip()->getBlock(), logger_, name, generate_obstructions);
 
   ensureCoreDomain();
   getCoreDomain()->addGrid(std::move(grid));
@@ -672,7 +678,8 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   if (!report_file.empty()) {
     std::ofstream file(report_file);
     if (!file) {
-      logger_->warn(utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
+      logger_->warn(
+          utl::PDN, 228, "Unable to open \"{}\" to write.", report_file);
       return;
     }
 
@@ -738,7 +745,7 @@ void PdnGen::ripUp(odb::dbNet* net)
       }
     }
     for (auto* pin : pins) {
-        odb::dbBPin::destroy(pin);
+      odb::dbBPin::destroy(pin);
     }
     if (bterm->getBPins().empty()) {
       terms.insert(bterm);
@@ -748,7 +755,7 @@ void PdnGen::ripUp(odb::dbNet* net)
     odb::dbBTerm::destroy(term);
   }
   auto swires = net->getSWires();
-  for (auto iter = swires.begin(); iter != swires.end(); ) {
+  for (auto iter = swires.begin(); iter != swires.end();) {
     iter = odb::dbSWire::destroy(iter);
   }
 }
@@ -788,11 +795,12 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
     }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
-        logger_->warn(utl::PDN,
-                      189,
-                      "Supply pin {} of instance {} is not connected to any net.",
-                      term->getMTerm()->getName(),
-                      inst->getName());
+        logger_->warn(
+            utl::PDN,
+            189,
+            "Supply pin {} of instance {} is not connected to any net.",
+            term->getMTerm()->getName(),
+            inst->getName());
       }
     }
   }

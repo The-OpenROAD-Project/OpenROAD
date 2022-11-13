@@ -66,6 +66,7 @@ get_db_block();
 
 %}
 
+%include "Exception-py.i"
 %include "ord/Tech.h"
 %include "ord/Design.h"
 

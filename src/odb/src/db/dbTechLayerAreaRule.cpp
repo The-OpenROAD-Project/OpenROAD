@@ -327,6 +327,16 @@ dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* _layer)
 {
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerAreaRule* newrule = layer->area_rules_tbl_->create();
+  newrule->area_ = 0;
+  newrule->except_min_width_ = 0;
+  newrule->except_edge_length_ = 0;
+  newrule->except_edge_lengths_ = std::pair<int, int>(0, 0);
+  newrule->except_min_size_ = std::pair<int, int>(0, 0);
+  newrule->except_step_ = std::pair<int, int>(0, 0);
+  newrule->mask_ = 0;
+  newrule->rect_width_ = 0;
+  newrule->flags_.except_rectangle_ = false;
+  newrule->flags_.overlap_ = 0;
   return ((dbTechLayerAreaRule*) newrule);
 }
 

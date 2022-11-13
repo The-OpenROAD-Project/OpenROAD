@@ -138,6 +138,13 @@ class FollowPins : public Straps
 class PadDirectConnectionStraps : public Straps
 {
  public:
+  enum ConnectionType
+  {
+    None,
+    Edge,
+    OverPads
+  };
+
   PadDirectConnectionStraps(
       Grid* grid,
       odb::dbITerm* iterm,
@@ -161,21 +168,29 @@ class PadDirectConnectionStraps : public Straps
   // cut shapes and remove if connection to ring is not possible
   virtual void cutShapes(const ShapeTreeMap& obstructions) override;
 
+  void setConnectionType(ConnectionType type);
+  ConnectionType getConnectionType() const { return type_; }
+
+  static void unifyConnectionTypes(
+      const std::set<PadDirectConnectionStraps*>& straps);
+
  private:
   odb::dbITerm* iterm_;
   odb::dbWireShapeType target_shapes_;
   odb::dbDirection pad_edge_;
+  ConnectionType type_;
+  std::vector<odb::dbTechLayer*> layers_;
 
   std::vector<odb::dbBox*> pins_;
 
   std::string getName() const;
 
   // find all the dbBox's to attempt to connect to
-  void initialize(const std::vector<odb::dbTechLayer*>& layers);
+  void initialize(ConnectionType type);
 
   bool isConnectHorizontal() const;
 
-  std::vector<odb::dbBox*> getPinsFacingCore(const std::vector<odb::dbTechLayer*>& layers) const;
+  std::vector<odb::dbBox*> getPinsFacingCore();
   std::vector<odb::dbBox*> getPinsFormingRing();
   std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> getPinsByLayer() const;
 
@@ -185,9 +200,9 @@ class PadDirectConnectionStraps : public Straps
   std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
   const std::vector<odb::dbBox*>& getPins() const { return pins_; }
 
-  ShapePtr getClosestShape(const ShapeTree& search_shapes, const odb::Rect& pin_shape, odb::dbNet* net) const;
-
-  bool isEdgeConnecting() const { return getLayer() == nullptr; }
+  ShapePtr getClosestShape(const ShapeTree& search_shapes,
+                           const odb::Rect& pin_shape,
+                           odb::dbNet* net) const;
 };
 
 class RepairChannelStraps : public Straps
@@ -215,10 +230,14 @@ class RepairChannelStraps : public Straps
 
   bool isAtEndOfRepairOptions() const;
   void continueRepairs(const ShapeTreeMap& other_shapes);
-  bool testBuild(const ShapeTreeMap& local_shapes, const ShapeTreeMap& obstructions);
+  bool testBuild(const ShapeTreeMap& local_shapes,
+                 const ShapeTreeMap& obstructions);
   bool isEmpty() const;
 
-  void addNets(const std::set<odb::dbNet*> nets) { nets_.insert(nets.begin(), nets.end()); }
+  void addNets(const std::set<odb::dbNet*> nets)
+  {
+    nets_.insert(nets.begin(), nets.end());
+  }
   const odb::Rect& getArea() const { return area_; }
 
   // static functions to help build repair channels

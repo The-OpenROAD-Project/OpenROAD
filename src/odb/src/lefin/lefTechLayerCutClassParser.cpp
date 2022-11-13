@@ -62,8 +62,6 @@ bool parse(Iterator first,
            odb::dbTechLayer* layer,
            odb::lefin* lefin)
 {
-  qi::rule<Iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - ' ')];
   qi::rule<std::string::iterator, space_type> cutClassRule
       = (+(lit("CUTCLASS") >> _string >> lit("WIDTH") >> double_
            >> -(lit("LENGTH") >> double_) >> -(lit("CUTS") >> int_)

@@ -100,5 +100,5 @@ Net net50
 
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.
-[ERROR ANT-0012] -net xxx not Found.
+[ERROR ANT-0012] Net xxx not found.
 ANT-0012

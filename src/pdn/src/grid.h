@@ -78,9 +78,9 @@ class Grid
   };
 
   Grid(VoltageDomain* domain,
-      const std::string& name,
-      bool start_with_power,
-      const std::vector<odb::dbTechLayer*>& generate_obstructions);
+       const std::string& name,
+       bool start_with_power,
+       const std::vector<odb::dbTechLayer*>& generate_obstructions);
   virtual ~Grid();
 
   const std::string getName() const { return name_; }
@@ -100,6 +100,8 @@ class Grid
   virtual void addRing(std::unique_ptr<Rings> ring);
   virtual void addStrap(std::unique_ptr<Straps> strap);
   virtual void addConnect(std::unique_ptr<Connect> connect);
+
+  void removeStrap(Straps* strap);
 
   std::set<odb::dbTechLayer*> connectableLayers(odb::dbTechLayer* layer) const;
 
@@ -173,10 +175,13 @@ class Grid
   void resetShapes();
 
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-                 bool do_pins, const ShapeTreeMap& obstructions) const;
+                 bool do_pins,
+                 const ShapeTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs, const std::set<odb::dbInst*>& skip_insts);
+  static void makeInitialObstructions(odb::dbBlock* block,
+                                      ShapeTreeMap& obs,
+                                      const std::set<odb::dbInst*>& skip_insts);
   static void makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes);
 
   virtual bool isReplaceable() const { return false; }
@@ -208,7 +213,7 @@ class Grid
   std::vector<std::unique_ptr<Connect>> connect_;
 
   std::set<odb::dbTechLayer*> pin_layers_;
-  std::set<odb::dbTechLayer*> obstruction_layers_;
+  std::vector<odb::dbTechLayer*> obstruction_layers_;
 
   ViaTree vias_;
 
@@ -252,9 +257,13 @@ class InstanceGrid : public Grid
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }
-  virtual std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
+  virtual std::set<odb::dbInst*> getInstances() const override
+  {
+    return {inst_};
+  }
 
-  virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
+  virtual std::vector<odb::dbNet*> getNets(
+      bool starts_with_power) const override;
 
   using Halo = std::array<int, 4>;
   void addHalo(const Halo& halos);
@@ -271,7 +280,8 @@ class InstanceGrid : public Grid
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
   virtual bool isReplaceable() const override { return replaceable_; }
 
-  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst, const Halo& halo = {0, 0, 0, 0});
+  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst,
+                                              const Halo& halo = {0, 0, 0, 0});
   static ShapeTreeMap getInstancePins(odb::dbInst* inst);
 
  protected:

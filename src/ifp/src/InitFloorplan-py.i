@@ -37,6 +37,8 @@
 #include "ifp/InitFloorplan.hh"
 %}
 
+%include "../../Exception-py.i"
+
 %include <std_string.i>
 
 %include "ifp/InitFloorplan.hh"

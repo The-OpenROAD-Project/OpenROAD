@@ -43,7 +43,7 @@ namespace odb {
 class lefTechLayerSpacingEolParser
 {
  public:
-  static void parse(std::string, dbTechLayer*, lefin*);
+  static void parse(const std::string&, dbTechLayer*, lefin*);
 };
 
 class lefTechLayerMinStepParser
@@ -131,7 +131,7 @@ class lefTechLayerCutEnclosureRuleParser
 {
  public:
   lefTechLayerCutEnclosureRuleParser(lefin*);
-  void parse(std::string, odb::dbTechLayer*);
+  void parse(const std::string&, odb::dbTechLayer*);
 
  private:
   lefin* lefin_;
@@ -147,7 +147,7 @@ class lefTechLayerEolExtensionRuleParser
 {
  public:
   lefTechLayerEolExtensionRuleParser(lefin*);
-  void parse(std::string, odb::dbTechLayer*);
+  void parse(const std::string&, odb::dbTechLayer*);
 
  private:
   lefin* lefin_;
@@ -162,7 +162,7 @@ class lefTechLayerEolKeepOutRuleParser
 {
  public:
   lefTechLayerEolKeepOutRuleParser(lefin*);
-  void parse(std::string, odb::dbTechLayer*);
+  void parse(const std::string&, odb::dbTechLayer*);
 
  private:
   lefin* lefin_;
@@ -180,7 +180,7 @@ class lefTechLayerAreaRuleParser
 {
  public:
   lefTechLayerAreaRuleParser(lefin*);
-  void parse(std::string,
+  void parse(const std::string&,
              odb::dbTechLayer*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
 
@@ -233,7 +233,7 @@ class WidthTableParser
       : layer_(layer), lefin_(lefin), rule_(nullptr)
   {
   }
-  void parse(std::string);
+  void parse(const std::string&);
 
  private:
   void addWidth(double width);
@@ -250,7 +250,7 @@ class MinCutParser
       : layer_(layer), lefin_(lefin), rule_(nullptr)
   {
   }
-  void parse(std::string);
+  void parse(const std::string&);
 
  private:
   bool parseSubRule(std::string);
@@ -280,7 +280,7 @@ class MetalWidthViaMapParser
         via_map(nullptr)
   {
   }
-  void parse(std::string);
+  void parse(const std::string&);
 
  private:
   bool parseSubRule(std::string);

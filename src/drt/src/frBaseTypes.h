@@ -202,7 +202,9 @@ enum class frConstraintTypeEnum
   frcRecheckConstraint,
   frcSpacingTableInfluenceConstraint,
   frcLef58EolExtensionConstraint,
-  frcLef58EolKeepOutConstraint
+  frcLef58EolKeepOutConstraint,
+  frcMetalWidthViaConstraint,
+  frcLef58AreaConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);

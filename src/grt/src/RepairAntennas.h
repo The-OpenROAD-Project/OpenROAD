@@ -40,10 +40,10 @@
 #include <boost/iterator/function_output_iterator.hpp>
 #include <string>
 
-#include "grt/RoutePt.h"
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
+#include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
@@ -71,7 +71,8 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById> AntennaViolations;
+typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>
+    AntennaViolations;
 typedef std::map<RoutePt, std::vector<Pin*>> RoutePtPins;
 
 class RepairAntennas
@@ -87,7 +88,10 @@ class RepairAntennas
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  int illegalDiodePlacementCount() const { return illegal_diode_placement_count_; }
+  int illegalDiodePlacementCount() const
+  {
+    return illegal_diode_placement_count_;
+  }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)
@@ -96,11 +100,10 @@ class RepairAntennas
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void makeNetWires(NetRouteMap& routing,
-                    int max_routing_layer);
+  void makeNetWires(NetRouteMap& routing, int max_routing_layer);
   void destroyNetWires();
   odb::dbMTerm* findDiodeMTerm();
-  double diffArea(odb::dbMTerm *mterm);
+  double diffArea(odb::dbMTerm* mterm);
 
  private:
   typedef int coord_type;
@@ -122,23 +125,23 @@ class RepairAntennas
   bool diodeInRow(odb::Rect diode_rect);
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
-                           std::map<int, odb::dbTechVia*> &default_vias);
+                           std::map<int, odb::dbTechVia*>& default_vias);
   RoutePtPins findRoutePtPins(Net* net);
-  void addWireTerms(Net *net,
+  void addWireTerms(Net* net,
                     GRoute& route,
                     int grid_x,
                     int grid_y,
                     int layer,
-                    odb::dbTechLayer *tech_layer,
+                    odb::dbTechLayer* tech_layer,
                     int jct_id,
-                    RoutePtPins &route_pt_pins,
-                    odb::dbWireEncoder &wire_encoder);
+                    RoutePtPins& route_pt_pins,
+                    odb::dbWireEncoder& wire_encoder);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
-  
-    GlobalRouter* grouter_;
+
+  GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;
   dpl::Opendp* opendp_;
   odb::dbDatabase* db_;

@@ -7,8 +7,8 @@ set(TEST_LIBS
         lef
         defin
         defout
-        lefout
         lefin
+        lefout
         cdl
         ${TCL_LIBRARY}
         Boost::boost

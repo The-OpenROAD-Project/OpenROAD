@@ -96,6 +96,9 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
     corner_ = sta_->cmdCorner();
     BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
     if (bnet) {
+      bool debug = (drvr_pin == resizer_->debug_pin_);
+      if (debug)
+        logger_->setDebugLevel(RSZ, "rebuffer", 3);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
@@ -128,6 +131,8 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
                      inserted_buffer_count);
         }
       }
+      if (debug)
+        logger_->setDebugLevel(RSZ, "rebuffer", 0);
     }
     else 
       logger_->warn(RSZ, 75, "makeBufferedNet failed for driver {}",
@@ -139,11 +144,12 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
 Slack
 RepairSetup::slackPenalized(BufferedNetPtr bnet)
 {
-  return slackPenalized(bnet, 0);
+  return slackPenalized(bnet, -1);
 }
 
 Slack
 RepairSetup::slackPenalized(BufferedNetPtr bnet,
+                            // Only used for debug print.
                             int index)
 {
   const PathRef &req_path = bnet->requiredPath();
@@ -156,7 +162,7 @@ RepairSetup::slackPenalized(BufferedNetPtr bnet,
     double slack_penalized = slack * (1.0 - (slack > 0
                                              ? buffer_penalty
                                              : -buffer_penalty));
-    if (index > 0)
+    if (index >= 0)
       debugPrint(logger_, RSZ, "rebuffer", 2,
                  "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
                  index,

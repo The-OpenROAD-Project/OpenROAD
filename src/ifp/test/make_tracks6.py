@@ -4,7 +4,7 @@ import odb
 import helpers
 
 tech = Tech()
-tech.readLEF("Nangate45/Nangate45.lef")
+tech.readLef("Nangate45/Nangate45.lef")
 
 design = Design(tech)
 design.readVerilog("reg1.v")

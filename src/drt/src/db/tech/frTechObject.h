@@ -32,7 +32,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <set>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -40,8 +39,9 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
+#include <set>
 namespace odb {
-class dbTechLayer;
+  class dbTechLayer;
 }
 namespace fr {
 namespace io {
@@ -52,14 +52,10 @@ class frTechObject
 {
  public:
   // constructors
-  frTechObject() : db_tech_(nullptr) {}
+  frTechObject() : dbUnit(0), manufacturingGrid(0) {}
   // getters
-  odb::dbTech* getDbTech() const { return db_tech_; }
-  frUInt4 getDBUPerUU() const { return db_tech_->getDbUnitsPerMicron(); }
-  frUInt4 getManufacturingGrid() const
-  {
-    return db_tech_->getManufacturingGrid();
-  }
+  frUInt4 getDBUPerUU() const { return dbUnit; }
+  frUInt4 getManufacturingGrid() const { return manufacturingGrid; }
   frLayer* getLayer(const frString& name) const
   {
     if (name2layer.find(name) == name2layer.end()) {
@@ -97,11 +93,13 @@ class frTechObject
   }
   bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
   {
-    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
+    return unidirectional_layers_.find(dbLayer)
+           != unidirectional_layers_.end();
   }
 
   // setters
-  void setTechObject(odb::dbTech* dbTechIn) { db_tech_ = dbTechIn; }
+  void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
+  void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
   void addLayer(std::unique_ptr<frLayer> in)
   {
     name2layer[in->getName()] = in.get();
@@ -135,8 +133,8 @@ class frTechObject
   {
     in->setId(uConstraints.size());
     auto type = in->typeId();
-    if (type == frConstraintTypeEnum::frcMinStepConstraint
-        || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
+        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
       hasCornerSpacingConstraint_ = true;
     }
     uConstraints.push_back(std::move(in));
@@ -161,9 +159,10 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    return isIncluded((ndr ? ndr->via2ViaForbiddenLen
-                           : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-                      len);
+    return isIncluded(
+        (ndr ? ndr->via2ViaForbiddenLen
+             : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
+        len);
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
@@ -272,10 +271,7 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasCornerSpacingConstraint() const
-  {
-    return hasCornerSpacingConstraint_;
-  }
+  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -288,7 +284,8 @@ class frTechObject
   }
 
  private:
-  odb::dbTech* db_tech_;
+  frUInt4 dbUnit;
+  frUInt4 manufacturingGrid;
 
   std::map<frString, frLayer*> name2layer;
   std::vector<std::unique_ptr<frLayer>> layers;
@@ -305,7 +302,7 @@ class frTechObject
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
-  template <typename T>
+  template<typename T>
   using ByLayer = std::vector<T>;
 
   // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
