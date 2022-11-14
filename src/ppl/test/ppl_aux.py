@@ -333,7 +333,9 @@ def set_io_pin_constraint(design, *,
             pin_list = parse_pin_names(design, pin_names)
             design.getIOPlacer().addNamesConstraint(pin_list, edge_, begin, end)
 
-    elif (mo := re.fullmatch("(up):(.*)", region)) != None:
+    elif bool(re.fullmatch("(up):(.*)", region)):
+        # no walrus in < 3.8
+        mo = re.fullmatch("(up):(.*)", region)
         if mo.group(2) == "*":
             die_area = dbBlock.getDieArea()
             llx = die_area.xMin()
