@@ -343,8 +343,8 @@ def set_io_pin_constraint(design, *,
             urx = die_area.xMax()
             ury = die_area.yMax()
 
-        elif len(box := mo.group(2).split()) == 4:
-            llx, lly, urx, ury = box
+        elif len(mo.group(2).split()) == 4:
+            llx, lly, urx, ury = mo.group(2).split()
             llx = design.micronToDBU(float(llx))
             lly = design.micronToDBU(float(lly))
             urx = design.micronToDBU(float(urx))
