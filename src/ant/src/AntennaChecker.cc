@@ -141,7 +141,8 @@ AntennaChecker::AntennaChecker()
       dbu_per_micron_(0),
       global_router_(nullptr),
       logger_(nullptr),
-      net_violation_count_(0)
+      net_violation_count_(0),
+      par_margin_(0)
 {
 }
 
@@ -1178,7 +1179,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
                           PSR_ratio);
       } else {
         if (diff_psr_violation || verbose)
-          logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (S.Area)",
+          logger_->report("    PAR: {:7.2f}{} Ratio: {:7.2f} (S.Area Diff)",
                           diff_psr,
                           diff_psr_violation ? "*" : " ",
                           diffPSR_PWL_ratio);
@@ -1741,24 +1742,32 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
 
   if (layer->hasDefaultAntennaRule()) {
     const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
-    const double PAR_ratio = antenna_rule->getPAR();
+    double PAR_ratio = antenna_rule->getPAR();
+    PAR_ratio *= (1.0 - par_margin_ / 100.0);
     if (PAR_ratio != 0) {
       if (par > PAR_ratio)
         return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
-      const double diffPAR_ratio = getPwlFactor(diffPAR, diff_area, 0.0);
+      double diffPAR_ratio = getPwlFactor(diffPAR, diff_area, 0.0);
+      diffPAR_ratio *= (1.0 - par_margin_ / 100.0);
+
+
       if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
         return true;
     }
 
-    const double PSR_ratio = antenna_rule->getPSR();
+    double PSR_ratio = antenna_rule->getPSR();
+    PSR_ratio *= (1.0 - par_margin_ / 100.0);
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio)
         return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
-      const double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
+      double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
+      diffPSR_ratio *= (1.0 - par_margin_ / 100.0);
+
+
       if (diffPSR_ratio != 0 && diff_psr > diffPSR_ratio)
         return true;
     }
@@ -1768,8 +1777,10 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
 }
 
 vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
-                                                       dbMTerm* diode_mterm)
+                                                       dbMTerm* diode_mterm,
+                                                       float par_margin)
 {
+  par_margin_ = par_margin;
   double diode_diff_area = 0.0;
   if (diode_mterm)
     diode_diff_area = diffArea(diode_mterm);
