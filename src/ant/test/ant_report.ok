@@ -6,23 +6,28 @@
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0131]     Created 3 components and 24 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 3 connections.
-Net net50
-  _264_/B2 (sky130_fd_sc_ms__a222oi_1)
-    met3
-    PAR:   43.13* Ratio:   15.15 (S.Area)
+Net: net50
+  Pin: _264_/B2 (sky130_fd_sc_ms__a222oi_1)
+    Layer: met3
+      Partial area ratio:   43.13
+      Required ratio:   15.15 (Side area) (VIOLATED)
 
-    met2
-    PAR:  208.38* Ratio:   10.00 (S.Area)
+    Layer: met2
+      Partial area ratio:  208.38
+      Required ratio:   10.00 (Side area) (VIOLATED)
 
-  output50/A (sky130_fd_sc_ms__buf_1)
-    met3
-    PAR:   43.13* Ratio:   15.15 (S.Area)
+  Pin: output50/A (sky130_fd_sc_ms__buf_1)
+    Layer: met3
+      Partial area ratio:   43.13
+      Required ratio:   15.15 (Side area) (VIOLATED)
 
-    met2
-    PAR:  208.38* Ratio:   10.00 (S.Area)
+    Layer: met2
+      Partial area ratio:  208.38
+      Required ratio:   10.00 (Side area) (VIOLATED)
 
-    met1
-    PAR:  273.94* Ratio:   10.00 (S.Area)
+    Layer: met1
+      Partial area ratio:  273.94
+      Required ratio:   10.00 (Side area) (VIOLATED)
 
 
 [INFO ANT-0002] Found 1 net violations.

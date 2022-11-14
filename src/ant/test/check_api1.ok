@@ -6,10 +6,11 @@
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0131]     Created 6 components and 48 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 6 connections.
-Net net50
-  output50/A (sky130_fd_sc_ms__buf_1)
-    met2
-    PAR:  419.33* Ratio:  400.00 (S.Area)
+Net: net50
+  Pin: output50/A (sky130_fd_sc_ms__buf_1)
+    Layer: met2
+      Partial area ratio:  419.33
+      Required ratio:  400.00 (Side area) (VIOLATED)
 
 
 [INFO ANT-0002] Found 1 net violations.
