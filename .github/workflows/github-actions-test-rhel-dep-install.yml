@@ -36,6 +36,7 @@ jobs:
       - name: test build
         run: ./test/regression
       - name: Archive code coverage results
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: code-coverage-report
