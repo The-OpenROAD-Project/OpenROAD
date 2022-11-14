@@ -9,11 +9,8 @@
 namespace cts {
 using utl::CTS;
 
-Graphics::Graphics(HTreeBuilder* h_tree_builder,
-                   Clock* clock_)
-    : clock_(clock_),
-      h_tree_builder_(h_tree_builder),
-      sink_clustering_(nullptr)
+Graphics::Graphics(HTreeBuilder* h_tree_builder, Clock* clock_)
+    : clock_(clock_), h_tree_builder_(h_tree_builder), sink_clustering_(nullptr)
 {
   gui::Gui::get()->registerRenderer(this);
 }
