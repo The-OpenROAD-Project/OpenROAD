@@ -10,16 +10,18 @@
 [INFO ODB-0131]     Created 1277 components and 6322 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2554 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
-Net _224_
-  _511_/B1 (sky130_fd_sc_hs__o21a_1)
-    met1
-    PAR:  432.23* Ratio:  400.00 (S.Area)
+Net: _224_
+  Pin: _511_/B1 (sky130_fd_sc_hs__o21a_1)
+    Layer: met1
+      Partial area ratio:  432.23
+      Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net net48
-  output48/A (sky130_fd_sc_hs__clkbuf_1)
-    met1
-    PAR:  437.21* Ratio:  400.00 (S.Area)
+Net: net48
+  Pin: output48/A (sky130_fd_sc_hs__clkbuf_1)
+    Layer: met1
+      Partial area ratio:  437.21
+      Required ratio:  400.00 (Side area) (VIOLATED)
 
 
 [INFO ANT-0002] Found 2 net violations.
