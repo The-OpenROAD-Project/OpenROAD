@@ -1,0 +1,35 @@
+[INFO ODB-0222] Reading LEF file: ant_check.lef
+[INFO ODB-0223]     Created 14 technology layers
+[INFO ODB-0224]     Created 30 technology vias
+[INFO ODB-0225]     Created 3 library cells
+[INFO ODB-0226] Finished LEF file:  ant_check.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 3 components and 24 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 3 connections.
+Net: net50
+  Pin: _264_/B2 (sky130_fd_sc_ms__a222oi_1)
+    Layer: met3
+      Partial area ratio:   43.13
+      Required ratio:   15.15 (Side area) (VIOLATED)
+
+    Layer: met2
+      Partial area ratio:  208.38
+      Required ratio:   10.00 (Side area) (VIOLATED)
+
+  Pin: output50/A (sky130_fd_sc_ms__buf_1)
+    Layer: met3
+      Partial area ratio:   43.13
+      Required ratio:   15.15 (Side area) (VIOLATED)
+
+    Layer: met2
+      Partial area ratio:  208.38
+      Required ratio:   10.00 (Side area) (VIOLATED)
+
+    Layer: met1
+      Partial area ratio:  273.94
+      Required ratio:   10.00 (Side area) (VIOLATED)
+
+
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 2 pin violations.
+No differences found.

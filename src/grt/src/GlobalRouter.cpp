@@ -304,9 +304,11 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
 
   if (diode_mterm == nullptr) {
     diode_mterm = repair_antennas_->findDiodeMTerm();
-    if (diode_mterm == nullptr)
-      logger_->error(
+    if (diode_mterm == nullptr) {
+      logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
+      return;
+    }
   }
   if (repair_antennas_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT,
