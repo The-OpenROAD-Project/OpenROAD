@@ -407,6 +407,13 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
 
   auto* port = network_->dbToSta(tie_term);
   auto* lib_port = network_->libertyPort(port);
+  if (!lib_port) {
+    // What does this mean??? Should there be a message here?
+    //
+    // libertyPort() is checked for null everywhere else in OpenROAD that
+    // I found.
+    return;
+  }
   auto func_operation = lib_port->function()->op();
   const bool is_zero = func_operation == sta::FuncExpr::op_zero;
   const bool is_one = func_operation == sta::FuncExpr::op_one;

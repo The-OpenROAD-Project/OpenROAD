@@ -33,4 +33,9 @@
 ##
 ###############################################################################
 
+set(CMAKE_CXX_FLAGS_DEBUG -g)
+set(CMAKE_CXX_FLAGS -g)
+
+
 add_subdirectory(src)
+
