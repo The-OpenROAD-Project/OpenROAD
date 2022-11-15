@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "object.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 

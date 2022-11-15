@@ -33,25 +33,6 @@
 
 #include "SACoreHardMacro.h"
 
-#include <algorithm>
-#include <cmath>
-#include <fstream>
-#include <random>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <vector>
-
-#include "SimulatedAnnealingCore.h"
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
-#include "object.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace mpl {

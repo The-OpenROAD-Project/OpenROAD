@@ -35,24 +35,25 @@
 
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <map>
-#include <queue>
 #include <random>
+#include <set>
 #include <string>
 #include <vector>
 
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+#include "odb/dbTypes.h"
+
+namespace odb {
+class dbInst;
+class dbModule;
+}  // namespace odb
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
+class HardMacro;
 
 // *********************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP

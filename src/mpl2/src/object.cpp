@@ -35,22 +35,9 @@
 
 #include "object.h"
 
-#include <algorithm>
-#include <fstream>
 #include <iostream>
-#include <map>
-#include <queue>
-#include <random>
-#include <string>
-#include <vector>
 
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace mpl {

@@ -1,8 +1,41 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2021, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
 // ************************************************
 // Route important buses based on current layout
 // ************************************************
-#ifndef BUS_SYNTHESIS_H__
-#define BUS_SYNTHESIS_H__
 
 #include <map>
 #include <vector>
@@ -11,7 +44,7 @@
 
 namespace mpl {
 
-typedef std::pair<float, float> Point;
+using Point = std::pair<float, float>;
 
 // Each point in the hanan grid is represented by a vertex (with no size)
 // And each bundled IO pin is represented by a vertex
@@ -29,7 +62,7 @@ struct Vertex
       = 0.0;  // the weight of the vertex : macro utilization of the SoftMacro
               // which the vertex belongs to.
               // For bundled IO pin, we set the macro utilization to be zero
-  Vertex() {}
+
   Vertex(int vertex_id, Point pos) : vertex_id(vertex_id), pos(pos) {}
 };
 
@@ -37,7 +70,7 @@ struct VertexDist
 {
   int vertex;  // vertex_id of current vertex
   float dist;  // shortest distance (currently) between vertex and root vertex
-  VertexDist(){};
+
   VertexDist(int vertex, float dist) : vertex(vertex), dist(dist) {}
 };
 
@@ -65,7 +98,7 @@ struct Edge
   float length_w = 0.0;  // weighted length : weight * length
   float weight = 0.0;    // the largeest macro utilization of terminals
   float num_nets = 0.0;  // num_nets passing through this edge
-  Edge() {}
+
   Edge(int edge_id) : edge_id(edge_id) {}
   // create a reverse edge by changing the order of terminals
   Edge(int edge_id, Edge& edge)
@@ -88,7 +121,7 @@ struct Arrow
   int dest;                  // src -> dest (destination)
   float weight;              // weight must be nonnegative (or cost)
   Edge* edge_ptr = nullptr;  // the pointer of corresponding edge
-  Arrow(){};
+
   Arrow(int dest, float weight, Edge* edge_ptr)
       : dest(dest), weight(weight), edge_ptr(edge_ptr)
   {
@@ -100,7 +133,6 @@ struct Arrow
 class Graph
 {
  public:
-  Graph() {}
   Graph(int num_vertices, float congestion_weight);
   void AddEdge(int src, int dest, float weight, Edge* edge_ptr);
   // Calculate shortest pathes in terms of boundary edges
@@ -109,6 +141,7 @@ class Graph
                        BundledNet& net,
                        utl::Logger* logger);
   bool IsConnected() const;  // check the GFS is connected
+
  private:
   std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
   int max_num_path_
@@ -187,5 +220,3 @@ bool CalNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  utl::Logger* logger);
 
 }  // namespace mpl
-
-#endif  // BUS_SYNTHESIS_H__

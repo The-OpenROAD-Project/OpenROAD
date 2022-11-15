@@ -34,51 +34,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "hier_rtlmp.h"
 
-#include <sys/stat.h>
-
-#include <algorithm>
-#include <cmath>
 #include <fstream>
-#include <iostream>
-#include <limits>
-#include <map>
 #include <queue>
-#include <string>
 #include <thread>
-#include <tuple>
-#include <vector>
 
 // Partitioner note : currently we are still using MLPart to partition large
 // flat clusters Later this will be replaced by our TritonPart
 //#include "par/MLPart.h"
+
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
-#include "SimulatedAnnealingCore.h"
 #include "bus_synthesis.h"
+#include "db_sta/dbNetwork.hh"
 #include "object.h"
 #include "odb/db.h"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/PathAnalysisPt.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchPred.hh"
-#include "sta/Sequential.hh"
-#include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -90,7 +60,7 @@ using std::string;
 using utl::MPL;
 
 // Constructors
-HierRTLMP::HierRTLMP(ord::dbNetwork* network,
+HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger)
