@@ -87,7 +87,7 @@ SACoreHardMacro::SACoreHardMacro(
   flip_prob_ = flip_prob;
 }
 
-float SACoreHardMacro::CalNormCost()
+float SACoreHardMacro::calNormCost()
 {
   float cost = 0.0;  // Initialize cost
   if (norm_area_penalty_ > 0.0)
@@ -103,21 +103,21 @@ float SACoreHardMacro::CalNormCost()
   return cost;
 }
 
-void SACoreHardMacro::CalPenalty()
+void SACoreHardMacro::calPenalty()
 {
-  CalOutlinePenalty();
-  CalWirelength();
-  CalGuidancePenalty();
-  CalFencePenalty();
+  calOutlinePenalty();
+  calWirelength();
+  calGuidancePenalty();
+  calFencePenalty();
 }
 
-void SACoreHardMacro::FlipMacro()
+void SACoreHardMacro::flipMacro()
 {
   for (auto& macro : macros_)
-    macro.Flip(false);
+    macro.flip(false);
 }
 
-void SACoreHardMacro::Perturb()
+void SACoreHardMacro::perturb()
 {
   if (macros_.size() == 0)
     return;
@@ -140,27 +140,27 @@ void SACoreHardMacro::Perturb()
   const float action_prob_4 = action_prob_3 + exchange_prob_;
   if (op <= action_prob_1) {
     action_id_ = 1;
-    SingleSeqSwap(true);  // Swap two macros in pos_seq_
+    singleSeqSwap(true);  // Swap two macros in pos_seq_
   } else if (op <= action_prob_2) {
     action_id_ = 2;
-    SingleSeqSwap(false);  // Swap two macros in neg_seq_;
+    singleSeqSwap(false);  // Swap two macros in neg_seq_;
   } else if (op <= action_prob_3) {
     action_id_ = 3;
-    DoubleSeqSwap();  // Swap two macros in pos_seq_ and
+    doubleSeqSwap();  // Swap two macros in pos_seq_ and
                       // other two macros in neg_seq_
   } else if (op <= action_prob_4) {
     action_id_ = 4;
-    ExchangeMacros();  // exchange two macros in the sequence pair
+    exchangeMacros();  // exchange two macros in the sequence pair
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    FlipMacro();  // Flip one macro
+    flipMacro();  // Flip one macro
   }
 
   // update the macro locations based on Sequence Pair
-  PackFloorplan();
+  packFloorplan();
   // Update all the penalties
-  CalPenalty();
+  calPenalty();
   if (action_id_ == 105)
     logger_->report(
         "wirelength_weight_ = {} pre_wirelength = {} wirelength = {}",
@@ -169,7 +169,7 @@ void SACoreHardMacro::Perturb()
         wirelength_);
 }
 
-void SACoreHardMacro::Restore()
+void SACoreHardMacro::restore()
 {
   if (macros_.size() == 0)
     return;
@@ -197,7 +197,7 @@ void SACoreHardMacro::Restore()
   fence_penalty_ = pre_fence_penalty_;
 }
 
-void SACoreHardMacro::Initialize()
+void SACoreHardMacro::initialize()
 {
   std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
@@ -207,7 +207,7 @@ void SACoreHardMacro::Initialize()
   std::vector<float> width_list;
   std::vector<float> height_list;
   for (int i = 0; i < num_perturb_per_step_; i++) {
-    Perturb();
+    perturb();
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
@@ -218,11 +218,11 @@ void SACoreHardMacro::Initialize()
     fence_penalty_list.push_back(fence_penalty_);
   }
 
-  norm_area_penalty_ = CalAverage(area_penalty_list);
-  norm_outline_penalty_ = CalAverage(outline_penalty_list);
-  norm_wirelength_ = CalAverage(wirelength_list);
-  norm_guidance_penalty_ = CalAverage(guidance_penalty_list);
-  norm_fence_penalty_ = CalAverage(fence_penalty_list);
+  norm_area_penalty_ = calAverage(area_penalty_list);
+  norm_outline_penalty_ = calAverage(outline_penalty_list);
+  norm_wirelength_ = calAverage(wirelength_list);
+  norm_guidance_penalty_ = calAverage(guidance_penalty_list);
+  norm_fence_penalty_ = calAverage(fence_penalty_list);
   // Calculate initial temperature
   std::vector<float> cost_list;
   for (int i = 0; i < outline_penalty_list.size(); i++) {
@@ -232,7 +232,7 @@ void SACoreHardMacro::Initialize()
     wirelength_ = wirelength_list[i];
     guidance_penalty_ = guidance_penalty_list[i];
     fence_penalty_ = fence_penalty_list[i];
-    cost_list.push_back(CalNormCost());
+    cost_list.push_back(calNormCost());
   }
   float delta_cost = 0.0;
   for (int i = 1; i < cost_list.size(); i++)
@@ -240,7 +240,7 @@ void SACoreHardMacro::Initialize()
   init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
-void SACoreHardMacro::PrintResults()
+void SACoreHardMacro::printResults()
 {
   logger_->report("SACoreHardMacro");
   logger_->report("outline_penalty_  = {}", outline_penalty_);
@@ -254,24 +254,24 @@ void SACoreHardMacro::PrintResults()
   for (auto& macro : macros_)
     logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
-        macro.GetName(),
-        macro.GetX(),
-        macro.GetY(),
-        macro.GetPinX(),
-        macro.GetPinY(),
-        macro.GetOrientation());
+        macro.getName(),
+        macro.getX(),
+        macro.getY(),
+        macro.getPinX(),
+        macro.getPinY(),
+        macro.getOrientation());
   // FlipMacro();
-  CalPenalty();
+  calPenalty();
   logger_->report("wirelength_  = {}", wirelength_);
   for (auto& macro : macros_)
     logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
-        macro.GetName(),
-        macro.GetX(),
-        macro.GetY(),
-        macro.GetPinX(),
-        macro.GetPinY(),
-        macro.GetOrientation());
+        macro.getName(),
+        macro.getX(),
+        macro.getY(),
+        macro.getPinX(),
+        macro.getPinY(),
+        macro.getOrientation());
 
   logger_->report("guidance_penalty_  = {}", guidance_penalty_);
   logger_->report("fence_penalty_  = {}", fence_penalty_);

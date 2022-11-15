@@ -102,31 +102,31 @@ bool MacroPlacer2::place(const int max_num_macro,
 
   logger_->report("Hier_RTLMP report dir: {}", report_directory);
 
-  rtlmp_engine_->SetTopLevelClusterSize(
+  rtlmp_engine_->setTopLevelClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
-  rtlmp_engine_->SetClusterSizeTolerance(tolerance);
-  rtlmp_engine_->SetMaxNumLevel(max_num_level);
-  rtlmp_engine_->SetClusterSizeRatioPerLevel(coarsening_ratio);
-  rtlmp_engine_->SetNumBundledIOsPerBoundary(num_bundled_ios);
-  rtlmp_engine_->SetLargeNetThreshold(large_net_threshold);
-  rtlmp_engine_->SetSignatureNetThreshold(signature_net_threshold);
-  rtlmp_engine_->SetHaloWidth(halo_width);
-  rtlmp_engine_->SetGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
-  rtlmp_engine_->SetAreaWeight(area_weight);
-  rtlmp_engine_->SetOutlineWeight(outline_weight);
-  rtlmp_engine_->SetWirelengthWeight(wirelength_weight);
-  rtlmp_engine_->SetGuidanceWeight(guidance_weight);
-  rtlmp_engine_->SetFenceWeight(fence_weight);
-  rtlmp_engine_->SetBoundaryWeight(boundary_weight);
-  rtlmp_engine_->SetNotchWeight(notch_weight);
-  rtlmp_engine_->SetPinAccessThreshold(pin_access_th);
-  rtlmp_engine_->SetTargetUtil(target_util);
-  rtlmp_engine_->SetTargetDeadSpace(target_dead_space);
-  rtlmp_engine_->SetMinAR(min_ar);
-  rtlmp_engine_->SetSnapLayer(snap_layer);
-  rtlmp_engine_->SetReportDirectory(report_directory);
+  rtlmp_engine_->setClusterSizeTolerance(tolerance);
+  rtlmp_engine_->setMaxNumLevel(max_num_level);
+  rtlmp_engine_->setClusterSizeRatioPerLevel(coarsening_ratio);
+  rtlmp_engine_->setNumBundledIOsPerBoundary(num_bundled_ios);
+  rtlmp_engine_->setLargeNetThreshold(large_net_threshold);
+  rtlmp_engine_->setSignatureNetThreshold(signature_net_threshold);
+  rtlmp_engine_->setHaloWidth(halo_width);
+  rtlmp_engine_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
+  rtlmp_engine_->setAreaWeight(area_weight);
+  rtlmp_engine_->setOutlineWeight(outline_weight);
+  rtlmp_engine_->setWirelengthWeight(wirelength_weight);
+  rtlmp_engine_->setGuidanceWeight(guidance_weight);
+  rtlmp_engine_->setFenceWeight(fence_weight);
+  rtlmp_engine_->setBoundaryWeight(boundary_weight);
+  rtlmp_engine_->setNotchWeight(notch_weight);
+  rtlmp_engine_->setPinAccessThreshold(pin_access_th);
+  rtlmp_engine_->setTargetUtil(target_util);
+  rtlmp_engine_->setTargetDeadSpace(target_dead_space);
+  rtlmp_engine_->setMinAR(min_ar);
+  rtlmp_engine_->setSnapLayer(snap_layer);
+  rtlmp_engine_->setReportDirectory(report_directory);
 
-  rtlmp_engine_->HierRTLMacroPlacer();
+  rtlmp_engine_->hierRTLMacroPlacer();
 
   return true;
 }

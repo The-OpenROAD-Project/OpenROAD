@@ -36,6 +36,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <string>
@@ -54,8 +55,9 @@ class Logger;
 
 namespace mpl {
 class HardMacro;
+class SoftMacro;
 
-// *********************************************************************************
+// ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
 //
 //
@@ -81,20 +83,13 @@ class HardMacro;
 // Note in our framework, except the fence constraints, all the constraints
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
-//*********************************************************************************
+//*****************************************************************************
 
 // Basic utility functions
 
-// converion between dbu and micro
-float Dbu2Micro(int metric, float dbu);
-int Micro2Dbu(float metric, float dbu);
-
-// Sort shapes
-bool SortShape(const std::pair<float, float>& shape1,
-               const std::pair<float, float>& shape2);
-
-bool ComparePairFirst(std::pair<float, float> p1, std::pair<float, float> p2);
-bool ComparePairProduct(std::pair<float, float> p1, std::pair<float, float> p2);
+// converion between dbu and microns
+float dbuToMicron(int metric, float dbu);
+int micronToDbu(float metric, float dbu);
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
@@ -110,13 +105,9 @@ enum PinAccess
   T,
   R
 };
-std::string to_string(const PinAccess& pin_access);
-PinAccess Opposite(const PinAccess& pin_access);
 
-class Metric;
-class HardMacro;
-class SoftMacro;
-class Cluster;
+std::string toString(const PinAccess& pin_access);
+PinAccess opposite(const PinAccess& pin_access);
 
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
@@ -135,27 +126,26 @@ enum ClusterType
 class Metric
 {
  public:
-  // default constructor
-  Metric() {}
+  Metric() = default;
   Metric(unsigned int num_std_cell,
          unsigned int num_macro,
          float std_cell_area,
          float macro_area);
 
-  void AddMetric(const Metric& metric);
-  void InflatStdCellArea(float std_cell_util);
-  void InflatMacroArea(float inflat_macro_area);
-  const std::pair<unsigned int, unsigned int> GetCountStats() const;
-  const std::pair<float, float> GetAreaStats() const;
-  const std::pair<float, float> GetInflatAreaStats() const;
-  unsigned int GetNumMacro() const;
-  unsigned int GetNumStdCell() const;
-  float GetStdCellArea() const;
-  float GetMacroArea() const;
-  float GetArea() const;
-  float GetInflatStdCellArea() const;
-  float GetInflatMacroArea() const;
-  float GetInflatArea() const;
+  void addMetric(const Metric& metric);
+  void inflatStdCellArea(float std_cell_util);
+  void inflatMacroArea(float inflat_macro_area);
+  const std::pair<unsigned int, unsigned int> getCountStats() const;
+  const std::pair<float, float> getAreaStats() const;
+  const std::pair<float, float> getInflatAreaStats() const;
+  unsigned int getNumMacro() const;
+  unsigned int getNumStdCell() const;
+  float getStdCellArea() const;
+  float getMacroArea() const;
+  float getArea() const;
+  float getInflatStdCellArea() const;
+  float getInflatMacroArea() const;
+  float getInflatArea() const;
 
  private:
   // In the hierarchical autoclustering part,
@@ -183,85 +173,82 @@ class Cluster
 {
  public:
   // constructors
-  Cluster() {}
   Cluster(int cluster_id, utl::Logger* logger);  // cluster name can be updated
   Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger);
-  // destructor
-  ~Cluster();  // we need to define this for remove pointers
 
   // cluster id can not be changed
-  int GetId() const;
+  int getId() const;
   // cluster name can be updated
-  const std::string GetName() const;
-  void SetName(const std::string name);
+  const std::string getName() const;
+  void setName(const std::string name);
   // cluster type (default type = MixedCluster)
-  void SetClusterType(const ClusterType& cluster_type);
-  const ClusterType GetClusterType() const;
+  void setClusterType(const ClusterType& cluster_type);
+  const ClusterType getClusterType() const;
 
   // Instances (Here we store dbModule to reduce memory)
-  void AddDbModule(odb::dbModule* dbModule);
-  void AddLeafStdCell(odb::dbInst* leaf_std_cell);
-  void AddLeafMacro(odb::dbInst* leaf_macro);
-  void SpecifyHardMacros(std::vector<HardMacro*>& hard_macros);
-  const std::vector<odb::dbModule*> GetDbModules() const;
-  const std::vector<odb::dbInst*> GetLeafStdCells() const;
-  const std::vector<odb::dbInst*> GetLeafMacros() const;
-  const std::vector<HardMacro*> GetHardMacros() const;
-  void ClearDbModules();
-  void ClearLeafStdCells();
-  void ClearLeafMacros();
-  void ClearHardMacros();
-  void CopyInstances(const Cluster& cluster);  // only based on cluster type
+  void addDbModule(odb::dbModule* dbModule);
+  void addLeafStdCell(odb::dbInst* leaf_std_cell);
+  void addLeafMacro(odb::dbInst* leaf_macro);
+  void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
+  const std::vector<odb::dbModule*> getDbModules() const;
+  const std::vector<odb::dbInst*> getLeafStdCells() const;
+  const std::vector<odb::dbInst*> getLeafMacros() const;
+  const std::vector<HardMacro*> getHardMacros() const;
+  void clearDbModules();
+  void clearLeafStdCells();
+  void clearLeafMacros();
+  void clearHardMacros();
+  void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   // IO cluster
   // When you specify the io cluster, you must specify the postion
   // of this IO cluster
-  void SetIOClusterFlag(const std::pair<float, float> pos,
+  void setIOClusterFlag(const std::pair<float, float> pos,
                         const float width,
                         const float height);
-  bool GetIOClusterFlag() const;
+  bool getIOClusterFlag() const;
 
   // Metric Support
-  void SetMetric(const Metric& metric);
-  const Metric GetMetric() const;
-  int GetNumStdCell() const;
-  int GetNumMacro() const;
-  float GetArea() const;
-  float GetMacroArea() const;
-  float GetStdCellArea() const;
+  void setMetric(const Metric& metric);
+  const Metric getMetric() const;
+  int getNumStdCell() const;
+  int getNumMacro() const;
+  float getArea() const;
+  float getMacroArea() const;
+  float getStdCellArea() const;
 
   // Physical location support
-  float GetWidth() const;
-  float GetHeight() const;
-  float GetX() const;
-  float GetY() const;
-  void SetX(float x);
-  void SetY(float y);
-  const std::pair<float, float> GetLocation() const;
+  float getWidth() const;
+  float getHeight() const;
+  float getX() const;
+  float getY() const;
+  void setX(float x);
+  void setY(float y);
+  const std::pair<float, float> getLocation() const;
 
   // Hierarchy Support
-  void SetParent(Cluster* parent);
-  void AddChild(Cluster* child);
-  void RemoveChild(const Cluster* child);
-  void AddChildren(const std::vector<Cluster*>& children);
-  void RemoveChildren();
-  Cluster* GetParent() const;
-  std::set<Cluster*> GetChildren() const;
+  void setParent(Cluster* parent);
+  void addChild(Cluster* child);
+  void removeChild(const Cluster* child);
+  void addChildren(const std::vector<Cluster*>& children);
+  void removeChildren();
+  Cluster* getParent() const;
+  std::set<Cluster*> getChildren() const;
 
-  bool IsLeaf() const;  // if the cluster is a leaf cluster
-  bool MergeCluster(Cluster& cluster,
+  bool isLeaf() const;  // if the cluster is a leaf cluster
+  bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
   // Connection signature support
-  void InitConnection();
-  void AddConnection(int cluster_id, float weight);
-  const std::map<int, float> GetConnection() const;
-  bool IsSameConnSignature(const Cluster& cluster, float net_threshold);
+  void initConnection();
+  void addConnection(int cluster_id, float weight);
+  const std::map<int, float> getConnection() const;
+  bool isSameConnSignature(const Cluster& cluster, float net_threshold);
   // Get closely-connected cluster if such cluster exists
   // For example, if a small cluster A is closely connected to a
   // well-formed cluster B, (there are also other well-formed clusters
   // C, D), A is only connected to B and A has no connection with C, D
-  int GetCloseCluster(const std::vector<int>& candidate_clusters,
+  int getCloseCluster(const std::vector<int>& candidate_clusters,
                       float net_threshold);
 
   // Path synthesis support
@@ -269,26 +256,26 @@ class Cluster
   // not have any connections outsize the parent cluster
   // All the outside connections have been converted to the connections
   // related to pin access
-  void SetPinAccess(int cluster_id, PinAccess pin_access, float weight);
-  void AddBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
-  const std::pair<PinAccess, float> GetPinAccess(int cluster_id);
-  const std::map<int, std::pair<PinAccess, float>> GetPinAccessMap() const;
-  const std::map<PinAccess, std::map<PinAccess, float>> GetBoundaryConnection()
+  void setPinAccess(int cluster_id, PinAccess pin_access, float weight);
+  void addBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
+  const std::pair<PinAccess, float> getPinAccess(int cluster_id);
+  const std::map<int, std::pair<PinAccess, float>> getPinAccessMap() const;
+  const std::map<PinAccess, std::map<PinAccess, float>> getBoundaryConnection()
       const;
 
   // virtual connections
-  const std::vector<std::pair<int, int>> GetVirtualConnections() const;
-  void AddVirtualConnection(int src, int target);
+  const std::vector<std::pair<int, int>> getVirtualConnections() const;
+  void addVirtualConnection(int src, int target);
 
   // Print Basic Information
-  void PrintBasicInformation(utl::Logger* logger) const;
+  void printBasicInformation(utl::Logger* logger) const;
 
   // Macro Placement Support
-  void SetSoftMacro(SoftMacro* soft_macro);
-  SoftMacro* GetSoftMacro() const;
+  void setSoftMacro(SoftMacro* soft_macro);
+  SoftMacro* getSoftMacro() const;
 
-  void SetMacroTilings(const std::vector<std::pair<float, float>>& tilings);
-  const std::vector<std::pair<float, float>> GetMacroTilings() const;
+  void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);
+  const std::vector<std::pair<float, float>> getMacroTilings() const;
 
  private:
   // Private Variables
@@ -316,7 +303,7 @@ class Cluster
 
   // Each cluster cooresponding to a SoftMacro in the placement engine
   // which will concludes the information about real pos, width, height, area
-  SoftMacro* soft_macro_ = nullptr;
+  std::unique_ptr<SoftMacro> soft_macro_;
 
   // Each cluster is a node in the physical hierarchy tree
   // Thus we need to define related to parent and children pointers
@@ -349,7 +336,6 @@ class Cluster
 class HardMacro
 {
  public:
-  HardMacro() {}
   // Create a macro with specified size
   // Model fixed terminals
   HardMacro(std::pair<float, float> loc, const std::string name);
@@ -367,46 +353,46 @@ class HardMacro
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
-  void SetLocation(const std::pair<float, float>& location);
-  void SetX(float x);
-  void SetY(float y);
-  const std::pair<float, float> GetLocation() const;
-  float GetX() const;
-  float GetY() const;
+  void setLocation(const std::pair<float, float>& location);
+  void setX(float x);
+  void setY(float y);
+  const std::pair<float, float> getLocation() const;
+  float getX() const;
+  float getY() const;
   // The position of pins relative to the lower left of the instance
-  float GetPinX() const;
-  float GetPinY() const;
+  float getPinX() const;
+  float getPinY() const;
   // The position of pins relative to the origin of the canvas;
-  float GetAbsPinX() const;
-  float GetAbsPinY() const;
+  float getAbsPinX() const;
+  float getAbsPinY() const;
   // width, height (include halo_width)
-  float GetWidth() const;
-  float GetHeight() const;
+  float getWidth() const;
+  float getHeight() const;
 
   // Note that the real X and Y does NOT include halo_width
-  void SetRealLocation(const std::pair<float, float>& location);
-  void SetRealX(float x);
-  void SetRealY(float y);
-  const std::pair<float, float> GetRealLocation() const;
-  float GetRealX() const;
-  float GetRealY() const;
-  float GetRealWidth() const;
-  float GetRealHeight() const;
+  void setRealLocation(const std::pair<float, float>& location);
+  void setRealX(float x);
+  void setRealY(float y);
+  const std::pair<float, float> getRealLocation() const;
+  float getRealX() const;
+  float getRealY() const;
+  float getRealWidth() const;
+  float getRealHeight() const;
 
   // Orientation support
-  std::string GetOrientation() const;
+  std::string getOrientation() const;
   // We do not allow rotation of macros
   // This may violate the direction of metal layers
   // flip about X or Y axis
-  void Flip(bool flip_horizontal);
+  void flip(bool flip_horizontal);
 
   // Interfaces with OpenDB
-  odb::dbInst* GetInst() const;
-  const std::string GetName() const;
-  const std::string GetMasterName() const;
+  odb::dbInst* getInst() const;
+  const std::string getName() const;
+  const std::string getMasterName() const;
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
-  void UpdateDb(float pitch_x, float pitch_y);
+  void updateDb(float pitch_x, float pitch_y);
 
  private:
   // We define x_, y_ and orientation_ here
@@ -458,7 +444,6 @@ class HardMacro
 class SoftMacro
 {
  public:
-  SoftMacro() {}
   // Create a SoftMacro with specified size
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string name);
@@ -478,58 +463,58 @@ class SoftMacro
   // create a SoftMacro from a cluster
   SoftMacro(Cluster* cluster);
 
-  void PrintShape();
+  void printShape();
 
   // name
-  const std::string GetName() const;
+  const std::string getName() const;
   // Physical Information
-  void SetReference(float refer_lx, float refer_ly)
+  void setReference(float refer_lx, float refer_ly)
   {
     refer_lx_ = refer_lx;
     refer_ly_ = refer_ly;
     x_ = refer_lx;
     y_ = refer_ly;
   }
-  void SetX(float x);
-  void SetY(float y);
-  void SetLocation(const std::pair<float, float>& location);
-  void SetWidth(float width);      // only for StdCellCluster and MixedCluster
-  void SetHeight(float height);    // only for StdCellCluster and MixedCluster
-  void ShrinkArea(float percent);  // only for StdCellCluster
-  void SetArea(float area);        // only for StdCellCluster and MixedCluster
-  void ResizeRandomly(std::uniform_real_distribution<float>& distribution,
+  void setX(float x);
+  void setY(float y);
+  void setLocation(const std::pair<float, float>& location);
+  void setWidth(float width);      // only for StdCellCluster and MixedCluster
+  void setHeight(float height);    // only for StdCellCluster and MixedCluster
+  void shrinkArea(float percent);  // only for StdCellCluster
+  void setArea(float area);        // only for StdCellCluster and MixedCluster
+  void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
   // This function for discrete shape curves, HardMacroCluster
   // If force_flag_ = true, it will force the update of width_list_ and
   // height_list_
-  void SetShapes(const std::vector<std::pair<float, float>>& shapes,
+  void setShapes(const std::vector<std::pair<float, float>>& shapes,
                  bool force_flag = false);  // < <width, height>
   // This function for specify shape curves (piecewise function),
   // for StdCellCluster and MixedCluster
-  void SetShapes(const std::vector<std::pair<float, float>>& width_list,
+  void setShapes(const std::vector<std::pair<float, float>>& width_list,
                  float area);
-  float GetX() const;
-  float GetY() const;
-  float GetPinX() const;
-  float GetPinY() const;
-  const std::pair<float, float> GetLocation() const;
-  float GetWidth() const;
-  float GetHeight() const;
-  float GetArea() const;
+  float getX() const;
+  float getY() const;
+  float getPinX() const;
+  float getPinY() const;
+  const std::pair<float, float> getLocation() const;
+  float getWidth() const;
+  float getHeight() const;
+  float getArea() const;
   // Num Macros
-  bool IsMacroCluster() const;
-  bool IsStdCellCluster() const;
-  bool IsMixedCluster() const;
-  void SetLocationF(float x, float y);
-  void SetShapeF(float width, float height);
-  int GetNumMacro() const;
+  bool isMacroCluster() const;
+  bool isStdCellCluster() const;
+  bool isMixedCluster() const;
+  void setLocationF(float x, float y);
+  void setShapeF(float width, float height);
+  int getNumMacro() const;
   // Align Flag support
-  void SetAlignFlag(bool flag);
-  bool GetAlignFlag() const;
+  void setAlignFlag(bool flag);
+  bool getAlignFlag() const;
   // cluster
-  Cluster* GetCluster() const;
+  Cluster* getCluster() const;
   // calculate macro utilization
-  float GetMacroUtil() const;
+  float getMacroUtil() const;
 
  private:
   // We define x_, y_ and orientation_ here
@@ -556,7 +541,7 @@ class SoftMacro
   bool align_flag_ = false;
 
   // utility function
-  int FindPos(std::vector<std::pair<float, float>>& list,
+  int findPos(std::vector<std::pair<float, float>>& list,
               float& value,
               bool increase_order);
 };
@@ -583,7 +568,6 @@ struct BundledNet
   int src_cluster_id = -1;
   int target_cluster_id = -1;
 
-  BundledNet() {}
   BundledNet(int src, int target, float weight)
   {
     this->terminals = std::pair<int, int>(src, target);
@@ -607,7 +591,7 @@ struct BundledNet
 
 // Here we redefine the Rect class
 // odb::Rect use database unit
-// Rect class use float type for Micro unit
+// Rect class use float type for Micron unit
 struct Rect
 {
   float lx = 0.0;
@@ -626,14 +610,14 @@ struct Rect
   float xMax() const { return ux; }
   float yMax() const { return uy; }
 
-  bool IsValid() const
+  bool isValid() const
   {
     return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
   }
 
-  void Merge(const Rect& rect)
+  void merge(const Rect& rect)
   {
-    if (IsValid() == false)
+    if (!isValid())
       return;
 
     lx = std::min(lx, rect.lx);
@@ -642,12 +626,12 @@ struct Rect
     uy = std::max(uy, rect.uy);
   }
 
-  void Relocate(float outline_lx,
+  void relocate(float outline_lx,
                 float outline_ly,
                 float outline_ux,
                 float outline_uy)
   {
-    if (IsValid() == false)
+    if (!isValid())
       return;
 
     lx = std::max(lx, outline_lx);

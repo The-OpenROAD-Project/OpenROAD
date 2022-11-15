@@ -74,23 +74,12 @@ struct VertexDist
   VertexDist(int vertex, float dist) : vertex(vertex), dist(dist) {}
 };
 
-// Define the comparator for VetexDist object, so VertexDist object can be
-// used in priority_queue
-class VertexDistComparator
-{
- public:
-  bool operator()(const VertexDist& x, const VertexDist& y)
-  {
-    return x.dist > y.dist;
-  }
-};
-
 // The connection between two vertices is represented by an edge
 struct Edge
 {
   int edge_id;                    // edge id of current edge
   std::pair<int, int> terminals;  // the vertex_id of two terminal vertices
-  bool direction;                 // True for horizontal and False for vertical
+  bool direction = false;         // True for horizontal and False for vertical
   bool internal = true;  // True for edge within one SoftMacro otherwise false
   PinAccess pin_access
       = NONE;            // pin_access for internal == false (for src vertex)
@@ -104,14 +93,13 @@ struct Edge
   Edge(int edge_id, Edge& edge)
   {
     this->edge_id = edge_id;
-    this->terminals
-        = std::pair<int, int>(edge.terminals.second, edge.terminals.first);
-    this->internal = edge.internal;
-    this->pin_access = Opposite(edge.pin_access);
-    this->length = edge.length;
-    this->length_w = edge.length_w;
-    this->weight = edge.weight;
-    this->num_nets = edge.num_nets;
+    terminals = {edge.terminals.second, edge.terminals.first};
+    internal = edge.internal;
+    pin_access = opposite(edge.pin_access);
+    length = edge.length;
+    length_w = edge.length_w;
+    weight = edge.weight;
+    num_nets = edge.num_nets;
   }
 };
 
@@ -134,13 +122,13 @@ class Graph
 {
  public:
   Graph(int num_vertices, float congestion_weight);
-  void AddEdge(int src, int dest, float weight, Edge* edge_ptr);
+  void addEdge(int src, int dest, float weight, Edge* edge_ptr);
   // Calculate shortest pathes in terms of boundary edges
-  void CalNetEdgePaths(int src,
+  void calNetEdgePaths(int src,
                        int target,
                        BundledNet& net,
                        utl::Logger* logger);
-  bool IsConnected() const;  // check the GFS is connected
+  bool isConnected() const;  // check the GFS is connected
 
  private:
   std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
@@ -157,11 +145,11 @@ class Graph
   // Find the shortest paths relative to root vertex based on priority queue
   // We store the paths in the format of parent vertices
   // If we want to get real pathes, we need to traverse back the parent vertices
-  void CalShortPathParentVertices(int root);
+  void calShortPathParentVertices(int root);
   // Find real paths between root vertex and target vertex
   // by traversing back the parent vertices in a recursive manner
   // Similar to DFS (not exactly DFS)
-  void CalShortPaths(
+  void calShortPaths(
       // all paths between root vertex and target vertex
       std::vector<std::vector<int>>& paths,
       // current path between root vertex and target vertex
@@ -171,7 +159,7 @@ class Graph
       // current parent vertex
       int parent);
   // Calculate shortest edge paths
-  void CalEdgePaths(
+  void calEdgePaths(
       // shortest paths, path = { vertex_id }
       std::vector<std::vector<int>>& paths,
       // shortest boundary edge paths
@@ -182,7 +170,7 @@ class Graph
 
 // Get vertices in a given segement
 // We consider start terminal and end terminal
-void GetVerticesInSegment(const std::vector<float>& grid,
+void getVerticesInSegment(const std::vector<float>& grid,
                           const float start_point,
                           const float end_point,
                           int& start_idx,
@@ -190,7 +178,7 @@ void GetVerticesInSegment(const std::vector<float>& grid,
 
 // Get vertices within a given rectangle
 // Calculate the start index and end index in the grid
-void GetVerticesInRect(const std::vector<float>& x_grid,
+void getVerticesInRect(const std::vector<float>& x_grid,
                        const std::vector<float>& y_grid,
                        const Rect& rect,
                        int& x_start,
@@ -198,7 +186,7 @@ void GetVerticesInRect(const std::vector<float>& x_grid,
                        int& y_start,
                        int& y_end);
 
-void CreateGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
+void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  std::vector<int>& soft_macro_vertex_id,  // store the vertex id
                                                           // for each soft macro
                  std::vector<Edge>&
@@ -209,7 +197,7 @@ void CreateGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
 // Calculate the paths for global buses with ILP
 // congestion_weight : the cost for each edge is
 // (1 - congestion_weight) * length + congestion_weight * length_w
-bool CalNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
+bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  std::vector<int>& soft_macro_vertex_id,  // store the vertex id
                                                           // for each soft macro
                  std::vector<Edge>& edge_list,

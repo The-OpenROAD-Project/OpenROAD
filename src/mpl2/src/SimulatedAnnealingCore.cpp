@@ -110,25 +110,25 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 
 // access functions
 template <class T>
-void SimulatedAnnealingCore<T>::SetNets(const std::vector<BundledNet>& nets)
+void SimulatedAnnealingCore<T>::setNets(const std::vector<BundledNet>& nets)
 {
   nets_ = nets;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::SetFences(const std::map<int, Rect>& fences)
+void SimulatedAnnealingCore<T>::setFences(const std::map<int, Rect>& fences)
 {
   fences_ = fences;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::SetGuides(const std::map<int, Rect>& guides)
+void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 {
   guides_ = guides;
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::IsValid() const
+bool SimulatedAnnealingCore<T>::isValid() const
 {
   logger_->report(
       "width_ :  {}  outline_width_ :  {} ", width_, outline_width_);
@@ -138,104 +138,104 @@ bool SimulatedAnnealingCore<T>::IsValid() const
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetNormCost()
+float SimulatedAnnealingCore<T>::getNormCost()
 {
-  return CalNormCost();
+  return calNormCost();
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetWidth() const
+float SimulatedAnnealingCore<T>::getWidth() const
 {
   return width_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetHeight() const
+float SimulatedAnnealingCore<T>::getHeight() const
 {
   return height_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetOutlinePenalty() const
+float SimulatedAnnealingCore<T>::getOutlinePenalty() const
 {
   return outline_penalty_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetNormOutlinePenalty() const
+float SimulatedAnnealingCore<T>::getNormOutlinePenalty() const
 {
   return norm_outline_penalty_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetWirelength() const
+float SimulatedAnnealingCore<T>::getWirelength() const
 {
   return wirelength_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetNormWirelength() const
+float SimulatedAnnealingCore<T>::getNormWirelength() const
 {
   return norm_wirelength_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetGuidancePenalty() const
+float SimulatedAnnealingCore<T>::getGuidancePenalty() const
 {
   return guidance_penalty_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetNormGuidancePenalty() const
+float SimulatedAnnealingCore<T>::getNormGuidancePenalty() const
 {
   return norm_guidance_penalty_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetFencePenalty() const
+float SimulatedAnnealingCore<T>::getFencePenalty() const
 {
   return fence_penalty_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::GetNormFencePenalty() const
+float SimulatedAnnealingCore<T>::getNormFencePenalty() const
 {
   return norm_fence_penalty_;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::GetMacros(std::vector<T>& macros) const
+void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
 {
   macros = macros_;
 }
 
 // Private functions
 template <class T>
-float SimulatedAnnealingCore<T>::CalNormCost()
+float SimulatedAnnealingCore<T>::calNormCost()
 {
   return 0.0;  // this function will be redefined in the derived class
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::CalPenalty()
+void SimulatedAnnealingCore<T>::calPenalty()
 {
   return;  // this function will be redefined in the derived class
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::Shrink()
+void SimulatedAnnealingCore<T>::shrink()
 {
   return;  // this function will be redefined in the derived class
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::FillDeadSpace()
+void SimulatedAnnealingCore<T>::fillDeadSpace()
 {
   return;  // this function will be redefined in the derived class
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::CalOutlinePenalty()
+void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
   const float max_width = std::max(outline_width_, width_);
   const float max_height = std::max(outline_height_, height_);
@@ -243,7 +243,7 @@ void SimulatedAnnealingCore<T>::CalOutlinePenalty()
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::CalWirelength()
+void SimulatedAnnealingCore<T>::calWirelength()
 {
   // Initialization
   wirelength_ = 0.0;
@@ -251,16 +251,16 @@ void SimulatedAnnealingCore<T>::CalWirelength()
     return;
 
   for (const auto& net : nets_) {
-    const float x1 = macros_[net.terminals.first].GetPinX();
-    const float y1 = macros_[net.terminals.first].GetPinY();
-    const float x2 = macros_[net.terminals.second].GetPinX();
-    const float y2 = macros_[net.terminals.second].GetPinY();
+    const float x1 = macros_[net.terminals.first].getPinX();
+    const float y1 = macros_[net.terminals.first].getPinY();
+    const float x2 = macros_[net.terminals.second].getPinX();
+    const float y2 = macros_[net.terminals.second].getPinY();
     wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::CalFencePenalty()
+void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
@@ -268,10 +268,10 @@ void SimulatedAnnealingCore<T>::CalFencePenalty()
     return;
 
   for (const auto& [id, bbox] : fences_) {
-    const float lx = macros_[id].GetX();
-    const float ly = macros_[id].GetY();
-    const float ux = lx + macros_[id].GetWidth();
-    const float uy = ly + macros_[id].GetHeight();
+    const float lx = macros_[id].getX();
+    const float ly = macros_[id].getY();
+    const float ux = lx + macros_[id].getWidth();
+    const float uy = ly + macros_[id].getHeight();
     const float width = std::max(ux, bbox.xMax()) - std::min(lx, bbox.xMin())
                         - (bbox.xMax() - bbox.xMin());
     const float height = std::max(uy, bbox.yMax()) - std::min(ly, bbox.yMin())
@@ -281,7 +281,7 @@ void SimulatedAnnealingCore<T>::CalFencePenalty()
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::CalGuidancePenalty()
+void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
@@ -289,10 +289,10 @@ void SimulatedAnnealingCore<T>::CalGuidancePenalty()
     return;
 
   for (const auto& [id, bbox] : guides_) {
-    const float macro_lx = macros_[id].GetX();
-    const float macro_ly = macros_[id].GetY();
-    const float macro_ux = macro_lx + macros_[id].GetWidth();
-    const float macro_uy = macro_ly + macros_[id].GetHeight();
+    const float macro_lx = macros_[id].getX();
+    const float macro_ly = macros_[id].getY();
+    const float macro_ux = macro_lx + macros_[id].getWidth();
+    const float macro_uy = macro_ly + macros_[id].getHeight();
     // center to center distance
     const float width = (macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin());
     const float height = (macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin());
@@ -309,11 +309,11 @@ void SimulatedAnnealingCore<T>::CalGuidancePenalty()
 
 // Determine the positions of macros based on sequence pair
 template <class T>
-void SimulatedAnnealingCore<T>::PackFloorplan()
+void SimulatedAnnealingCore<T>::packFloorplan()
 {
   for (auto& macro : macros_) {
-    macro.SetX(0.0);
-    macro.SetY(0.0);
+    macro.setX(0.0);
+    macro.setY(0.0);
   }
 
   // calculate X position
@@ -328,11 +328,11 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i];  // macro_id
     // add the continue syntax to handle fixed terminals
-    if (macros_[b].GetWidth() <= 0 || macros_[b].GetHeight() <= 0)
+    if (macros_[b].getWidth() <= 0 || macros_[b].getHeight() <= 0)
       continue;
     const int p = match[b].second;  // the position of current macro in neg_seq_
-    macros_[b].SetX(length[p]);
-    const float t = macros_[b].GetX() + macros_[b].GetWidth();
+    macros_[b].setX(length[p]);
+    const float t = macros_[b].getX() + macros_[b].getWidth();
     for (int j = p; j < neg_seq_.size(); j++)
       if (t > length[j])
         length[j] = t;
@@ -355,11 +355,11 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq[i];  // macro_id
     // add continue syntax to handle fixed terminals
-    if (macros_[b].GetHeight() <= 0 || macros_[b].GetWidth() <= 0.0)
+    if (macros_[b].getHeight() <= 0 || macros_[b].getWidth() <= 0.0)
       continue;
     const int p = match[b].second;  // the position of current macro in neg_seq_
-    macros_[b].SetY(length[p]);
-    const float t = macros_[b].GetY() + macros_[b].GetHeight();
+    macros_[b].setY(length[p]);
+    const float t = macros_[b].getY() + macros_[b].getHeight();
     for (int j = p; j < neg_seq_.size(); j++)
       if (t > length[j])
         length[j] = t;
@@ -372,21 +372,21 @@ void SimulatedAnnealingCore<T>::PackFloorplan()
 
 // Perturb
 template <class T>
-void SimulatedAnnealingCore<T>::Perturb()
+void SimulatedAnnealingCore<T>::perturb()
 {
   return;  // This function will be redefined in the derived classes
 }
 
 // Perturb
 template <class T>
-void SimulatedAnnealingCore<T>::Restore()
+void SimulatedAnnealingCore<T>::restore()
 {
   return;  // This function will be redefined in the derived classes
 }
 
 // SingleSeqSwap
 template <class T>
-void SimulatedAnnealingCore<T>::SingleSeqSwap(bool pos)
+void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
 {
   if (macros_.size() <= 1)
     return;
@@ -405,7 +405,7 @@ void SimulatedAnnealingCore<T>::SingleSeqSwap(bool pos)
 
 // DoubleSeqSwap
 template <class T>
-void SimulatedAnnealingCore<T>::DoubleSeqSwap()
+void SimulatedAnnealingCore<T>::doubleSeqSwap()
 {
   if (macros_.size() <= 1)
     return;
@@ -422,7 +422,7 @@ void SimulatedAnnealingCore<T>::DoubleSeqSwap()
 
 // ExchaneMacros
 template <class T>
-void SimulatedAnnealingCore<T>::ExchangeMacros()
+void SimulatedAnnealingCore<T>::exchangeMacros()
 {
   if (macros_.size() <= 1)
     return;
@@ -447,7 +447,7 @@ void SimulatedAnnealingCore<T>::ExchangeMacros()
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::CalAverage(std::vector<float>& value_list)
+float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 {
   if (value_list.size() == 0)
     return 0.0;
@@ -459,17 +459,17 @@ float SimulatedAnnealingCore<T>::CalAverage(std::vector<float>& value_list)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::Initialize()
+void SimulatedAnnealingCore<T>::initialize()
 {
   return;  // This function will be redefined in derived classes
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::FastSA()
+void SimulatedAnnealingCore<T>::fastSA()
 {
-  Perturb();  // Perturb from beginning
+  perturb();  // Perturb from beginning
   // record the previous status
-  float cost = CalNormCost();
+  float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
   int step = 1;
@@ -481,15 +481,15 @@ void SimulatedAnnealingCore<T>::FastSA()
   // SA process
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
-      Perturb();
-      cost = CalNormCost();
+      perturb();
+      cost = calNormCost();
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / t) : 1;
       if (num < prob)
         pre_cost = cost;
       else
-        Restore();
+        restore();
     }
     t *= 0.985;
     // increase step
@@ -498,10 +498,10 @@ void SimulatedAnnealingCore<T>::FastSA()
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
-      Shrink();
-      PackFloorplan();
-      CalPenalty();
-      pre_cost = CalNormCost();
+      shrink();
+      packFloorplan();
+      calPenalty();
+      pre_cost = calNormCost();
       num_restart++;
       step = 1;
       t = init_T_;
@@ -509,22 +509,22 @@ void SimulatedAnnealingCore<T>::FastSA()
     // only consider the last step to optimize notch weight
     if (step == max_num_step_ - macros_.size()) {
       notch_weight_ = original_notch_weight_;
-      PackFloorplan();
-      CalPenalty();
-      pre_cost = CalNormCost();
+      packFloorplan();
+      calPenalty();
+      pre_cost = calNormCost();
     }
   }  // end while
   // update the final results
-  PackFloorplan();
+  packFloorplan();
   // FillDeadSpace();
-  CalPenalty();
+  calPenalty();
 
   std::ofstream file;
   // file.open(string(report_directory_) + string("/") + "floorplan.txt");
   file.open("floorplan.txt");
   for (auto& macro : macros_)
-    file << macro.GetName() << "    " << macro.GetX() << "    " << macro.GetY()
-         << "    " << macro.GetWidth() << "   " << macro.GetHeight()
+    file << macro.getName() << "    " << macro.getX() << "    " << macro.getY()
+         << "    " << macro.getWidth() << "   " << macro.getHeight()
          << std::endl;
   file.close();
 }
