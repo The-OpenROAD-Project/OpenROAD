@@ -407,10 +407,10 @@ void SimulatedAnnealingCore<T>::SingleSeqSwap(bool pos)
     return;
 
   const int index1
-      = (int) (std::floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+      = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2)
-    index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
 
   if (pos == true)
     std::swap(pos_seq_[index1], pos_seq_[index2]);
@@ -426,10 +426,10 @@ void SimulatedAnnealingCore<T>::DoubleSeqSwap()
     return;
 
   const int index1
-      = (int) (std::floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+      = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2)
-    index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   std::swap(neg_seq_[index1], neg_seq_[index2]);
@@ -443,10 +443,10 @@ void SimulatedAnnealingCore<T>::ExchangeMacros()
     return;
 
   // swap positive seq
-  int index1 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+  int index1 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
   while (index1 == index2)
-    index2 = (int) (std::floor((distribution_)(generator_) *macros_.size()));
+    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   int neg_index1 = -1;
