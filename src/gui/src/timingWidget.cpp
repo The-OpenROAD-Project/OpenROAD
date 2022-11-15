@@ -44,6 +44,7 @@
 #include <QVBoxLayout>
 
 #include "db_sta/dbSta.hh"
+#include "staGui.h"
 
 namespace gui {
 
@@ -270,8 +271,8 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
 
   auto* path = focus_model->getPathAt(index);
 
-  path_details_model_->populateModel(path, path->getPathNodes());
-  capture_details_model_->populateModel(path, path->getCaptureNodes());
+  path_details_model_->populateModel(path, &path->getPathNodes());
+  capture_details_model_->populateModel(path, &path->getCaptureNodes());
 
   path_details_table_view_->resizeColumnsToContents();
   path_details_table_view_->horizontalHeader()->setSectionResizeMode(
