@@ -35,28 +35,37 @@
 
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <map>
-#include <queue>
+#include <set>
 #include <string>
 #include <vector>
 
-#include "SACoreHardMacro.h"
-#include "SACoreSoftMacro.h"
-#include "SimulatedAnnealingCore.h"
-#include "bus_synthesis.h"
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
-#include "object.h"
-#include "odb/db.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+namespace odb {
+class dbBTerm;
+class dbBlock;
+class dbDatabase;
+class dbITerm;
+class dbInst;
+class dbModule;
+}  // namespace odb
+
+namespace sta {
+class dbNetwork;
+class dbSta;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
+struct BundledNet;
+class Cluster;
+class HardMacro;
+class Metric;
+struct Rect;
+class SoftMacro;
+
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
 // Support designs with IO Pads.
@@ -71,7 +80,7 @@ class HierRTLMP
 {
  public:
   HierRTLMP() {}
-  HierRTLMP(ord::dbNetwork* network,
+  HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger);
@@ -122,7 +131,7 @@ class HierRTLMP
   void SetReportDirectory(const char* report_directory);
 
  private:
-  ord::dbNetwork* network_ = nullptr;
+  sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;

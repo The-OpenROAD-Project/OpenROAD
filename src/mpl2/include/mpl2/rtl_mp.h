@@ -33,25 +33,25 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
+namespace odb {
+class dbDatabase;
+}
 
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+namespace sta {
+class dbNetwork;
+class dbSta;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
 
 class MacroPlacer2
 {
  public:
-  void init(ord::dbNetwork* network,
+  void init(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger);
@@ -86,7 +86,7 @@ class MacroPlacer2
              const char* report_directory);
 
  private:
-  ord::dbNetwork* network_ = nullptr;
+  sta::dbNetwork* network_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;

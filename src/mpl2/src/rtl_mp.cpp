@@ -33,32 +33,14 @@
 
 #include "mpl2/rtl_mp.h"
 
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <random>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 #include "hier_rtlmp.h"
-#include "odb/db.h"
-#include "ord/OpenRoad.hh"
+#include "object.h"
 #include "utl/Logger.h"
-
-using utl::PAR;
 
 namespace mpl {
 using odb::dbDatabase;
-using std::cout;
-using std::endl;
-using std::ofstream;
 using std::string;
-using std::to_string;
 using std::unordered_map;
-using std::vector;
 using utl::Logger;
 using utl::MPL;
 
@@ -76,7 +58,7 @@ static void get_param(const unordered_map<string, string>& params,
   logger->info(MPL, 9, "RTL-MP param: {}: {}.", name, param);
 }
 
-void MacroPlacer2::init(ord::dbNetwork* network,
+void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
                         utl::Logger* logger)

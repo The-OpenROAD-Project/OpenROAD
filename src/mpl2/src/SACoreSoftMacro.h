@@ -33,26 +33,14 @@
 
 #pragma once
 
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <random>
-#include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "SimulatedAnnealingCore.h"
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
 #include "object.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
 
@@ -143,8 +131,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   float adjust_h_th_;  // the threshold for adjust hard macro clusters
                        // horizontally
-  float
-      adjust_v_th_;  // the threshold for adjust hard macro clusters vertically
+  float adjust_v_th_;  // the threshold for adjust hard macro clusters
+                       // vertically
 
   // additional penalties
   float boundary_weight_ = 0.0;
