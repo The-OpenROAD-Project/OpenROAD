@@ -73,3 +73,7 @@ suppress_message PPL 41
 suppress_message PPL 48
 suppress_message PPL 49
 suppress_message PPL 60
+
+# suppress tap info messages
+suppress_message TAP 100
+suppress_message TAP 101
