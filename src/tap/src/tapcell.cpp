@@ -310,7 +310,7 @@ LocationType Tapcell::getLocationType(const int x,
   if (!in_above && in_below) {
     return BelowMacro;
   }
-  return TapNone;
+  return NoMacro;
 }
 
 odb::dbMaster* Tapcell::pickCornerMaster(LocationType top_bottom,
