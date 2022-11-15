@@ -818,6 +818,7 @@ void lefin::layer(lefiLayer* layer)
       auto* rule = odb::dbTechLayerArraySpacingRule::create(l);
       rule->setCutSpacing(cut_spacing);
       rule->setArrayWidth(width);
+      rule->setLongArray(is_long);
       rule->setCutsArraySpacing(cuts, array_spacing);
     }
   }
