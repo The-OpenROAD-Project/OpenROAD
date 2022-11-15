@@ -174,4 +174,10 @@ ppl::IOPlacer* Design::getIOPlacer()
   return app->getIOPlacer();
 }
 
+tap::Tapcell* Design::getTapcell()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTapcell();
+}
+
 }  // namespace ord
