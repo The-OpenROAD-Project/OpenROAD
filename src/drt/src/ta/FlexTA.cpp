@@ -73,13 +73,11 @@ int FlexTAWorker::main()
   init();
   if (isInitTA()) {
     hardIroutesMode = true;
-    if (getTAIter() != -1)
-      sortIroutes();
+    sortIroutes();
     assign();
     hardIroutesMode = false;
   }
-  if (getTAIter() != -1)
-    sortIroutes();
+  sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -128,13 +126,11 @@ int FlexTAWorker::main_mt()
   init();
   if (isInitTA()) {
     hardIroutesMode = true;
-    if (getTAIter() != -1)
-      sortIroutes();
+    sortIroutes();
     assign();
     hardIroutesMode = false;
   }
-  if (getTAIter() != -1)
-    sortIroutes();
+  sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -348,22 +344,18 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   frTime t;
 
   if (VERBOSE > 1) {
-    if (iter == -1) {
-      cout << endl << "start polishing ..." << endl;
+    cout << endl << "start " << iter;
+    string suffix;
+    if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
+      suffix = "st";
+    } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
+      suffix = "nd";
+    } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
+      suffix = "rd";
     } else {
-      cout << endl << "start " << iter;
-      string suffix;
-      if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
-        suffix = "st";
-      } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
-        suffix = "nd";
-      } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
-        suffix = "rd";
-      } else {
-        suffix = "th";
-      }
-      cout << suffix << " optimization iteration ..." << endl;
+      suffix = "th";
     }
+    cout << suffix << " optimization iteration ..." << endl;
   }
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);

@@ -858,11 +858,7 @@ void FlexTAWorker::init()
 {
   rq_.init();
   initTracks();
-  if (getTAIter() != -1) {
-    initFixedObjs();
-  }
+  initFixedObjs();
   initIroutes();
-  if (getTAIter() != -1) {
-    initCosts();
-  }
+  initCosts();
 }

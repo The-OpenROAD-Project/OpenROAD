@@ -1178,9 +1178,6 @@ void FlexTAWorker::assignIroute(taPin* iroute)
 
 void FlexTAWorker::assign()
 {
-  if (getTAIter() == -1) {
-    return;
-  }
   int maxBufferSize = 20;
   vector<taPin*> buffers(maxBufferSize, nullptr);
   int currBufferIdx = 0;
