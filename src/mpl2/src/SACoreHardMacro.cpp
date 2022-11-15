@@ -152,7 +152,7 @@ void SACoreHardMacro::Perturb()
   pre_fence_penalty_ = fence_penalty_;
 
   // generate random number (0 - 1) to determine actions
-  const float op = (distribution_)(generator_);
+  const float op = (distribution_) (generator_);
   const float action_prob_1 = pos_swap_prob_;
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;

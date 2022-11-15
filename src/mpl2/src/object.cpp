@@ -1345,10 +1345,10 @@ void SoftMacro::ResizeRandomly(
   if (width_list_.size() == 0)
     return;
   const int idx = static_cast<int>(
-      std::floor((distribution)(generator) *width_list_.size()));
+      std::floor((distribution) (generator) *width_list_.size()));
   const float min_width = width_list_[idx].first;
   const float max_width = width_list_[idx].second;
-  width_ = min_width + (distribution)(generator) * (max_width - min_width);
+  width_ = min_width + (distribution) (generator) * (max_width - min_width);
   area_ = width_list_[idx].first * height_list_[idx].first;
   height_ = area_ / width_;
 }

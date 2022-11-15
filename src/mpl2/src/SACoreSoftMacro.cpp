@@ -205,7 +205,7 @@ void SACoreSoftMacro::Perturb()
   pre_notch_penalty_ = notch_penalty_;
 
   // generate random number (0 - 1) to determine actions
-  const float op = (distribution_)(generator_);
+  const float op = (distribution_) (generator_);
   const float action_prob_1 = pos_swap_prob_;
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;
@@ -600,7 +600,7 @@ void SACoreSoftMacro::CalNotchPenalty()
 void SACoreSoftMacro::Resize()
 {
   int idx = static_cast<int>(
-      std::floor((distribution_)(generator_) *macros_.size()));
+      std::floor((distribution_) (generator_) *macros_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.IsMacroCluster() == true) {
@@ -618,12 +618,12 @@ void SACoreSoftMacro::Resize()
     return;
   }
 
-  if ((distribution_)(generator_) < 0.4) {
+  if ((distribution_) (generator_) < 0.4) {
     src_macro.ResizeRandomly(distribution_, generator_);
     return;
   }
 
-  float option = (distribution_)(generator_);
+  float option = (distribution_) (generator_);
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
     float e_x2 = outline_width_;
