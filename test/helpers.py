@@ -29,9 +29,9 @@ def diff_files(file1, file2):
     num_lines2 = len(lines2)
     for i in range(min(num_lines1, num_lines2)):
         if lines1[i] != lines2[i]:
-            print(f"Differences found at line {i}")
-            print(lines1[i])
-            print(lines2[i])
+            print(f"Differences found at line {i}.")
+            print(lines1[i][:-1])
+            print(lines2[i][:-1])
             return 1
 
     if num_lines1 != num_lines2:
