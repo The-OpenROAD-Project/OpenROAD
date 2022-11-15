@@ -804,6 +804,25 @@ void lefin::layer(lefiLayer* layer)
     }
   }
 
+  if (layer->hasArraySpacing()) {
+    const bool is_long = layer->hasLongArray();
+    const int cut_spacing = dbdist(layer->cutSpacing());
+    int width = 0;
+    if (layer->hasViaWidth()) {
+      width = dbdist(layer->viaWidth());
+    }
+    for (j = 0; j < layer->numArrayCuts(); j++) {
+      const int array_spacing = dbdist(layer->arraySpacing(j));
+      const int cuts = layer->arrayCuts(j);
+
+      auto* rule = odb::dbTechLayerArraySpacingRule::create(l);
+      rule->setCutSpacing(cut_spacing);
+      rule->setArrayWidth(width);
+      rule->setLongArray(is_long);
+      rule->setCutsArraySpacing(cuts, array_spacing);
+    }
+  }
+
   lefiSpacingTable* cur_sptbl;
   for (j = 0; j < layer->numSpacingTable(); j++) {
     cur_sptbl = layer->spacingTable(j);
