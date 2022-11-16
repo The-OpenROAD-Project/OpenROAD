@@ -1485,13 +1485,13 @@ void HierRTLMP::dataFlowDFSMacroPin(
 void HierRTLMP::updateDataFlow()
 {
   // bterm, macros or ffs
-  for (auto bterm_pair : io_ffs_conn_map_) {
+  for (const auto& [bterm, insts] : io_ffs_conn_map_) {
     const int driver_id
-        = odb::dbIntProperty::find(bterm_pair.first, "cluster_id")->getValue();
+        = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = 1.0 / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
-      for (auto& inst : bterm_pair.second[i]) {
+      for (auto& inst : insts[i]) {
         const int cluster_id
             = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
         sink_clusters.insert(cluster_id);
@@ -1504,14 +1504,14 @@ void HierRTLMP::updateDataFlow()
   }
 
   // macros to ffs
-  for (auto iterm_pair : macro_ffs_conn_map_) {
+  for (const auto& [iterm, insts] : macro_ffs_conn_map_) {
     const int driver_id
-        = odb::dbIntProperty::find(iterm_pair.first->getInst(), "cluster_id")
+        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")
               ->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = 1.0 / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
-      for (auto& inst : iterm_pair.second[i]) {
+      for (auto& inst : insts[i]) {
         const int cluster_id
             = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
         sink_clusters.insert(cluster_id);
@@ -1524,14 +1524,14 @@ void HierRTLMP::updateDataFlow()
   }
 
   // macros to macros
-  for (auto iterm_pair : macro_macro_conn_map_) {
+  for (const auto& [iterm, insts] : macro_macro_conn_map_) {
     const int driver_id
-        = odb::dbIntProperty::find(iterm_pair.first->getInst(), "cluster_id")
+        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")
               ->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
-      for (auto& inst : iterm_pair.second[i]) {
+      for (auto& inst : insts[i]) {
         const int cluster_id
             = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
         sink_clusters.insert(cluster_id);
