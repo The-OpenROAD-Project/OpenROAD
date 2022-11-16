@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -68,42 +68,49 @@ bool parse(Iterator first,
              | lit("MIMCAP")[boost::bind(&odb::dbTechLayer::setLef58Type,
                                          layer,
                                          odb::dbTechLayer::LEF58_TYPE::MIMCAP)]
-             | lit("STACKEDMIMCAP")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::STACKEDMIMCAP)]
-             | lit("TSVMETAL")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::TSVMETAL)]
-             | lit("PASSIVATION")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::PASSIVATION)]
+             | lit("STACKEDMIMCAP")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::STACKEDMIMCAP)]
+             | lit("TSVMETAL")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::TSVMETAL)]
+             | lit("PASSIVATION")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::PASSIVATION)]
              | lit("HIGHR")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::HIGHR)]
-             | lit("TRIMMETAL")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::TRIMMETAL)]
+                                        layer,
+                                        odb::dbTechLayer::LEF58_TYPE::HIGHR)]
+             | lit("TRIMMETAL")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::TRIMMETAL)]
              | lit("REGION")[boost::bind(&odb::dbTechLayer::setLef58Type,
                                          layer,
                                          odb::dbTechLayer::LEF58_TYPE::REGION)]
              | lit("MEOL")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::MEOL)]
-             | lit("WELLDISTANCE")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::WELLDISTANCE)]
+                                       layer,
+                                       odb::dbTechLayer::LEF58_TYPE::MEOL)]
+             | lit("WELLDISTANCE")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::WELLDISTANCE)]
              | lit("CPODE")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::CPODE)]
+                                        layer,
+                                        odb::dbTechLayer::LEF58_TYPE::CPODE)]
              | lit("TSV")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::TSV)]
-             | lit("PADMETAL")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::PADMETAL)]
-             | lit("POLYROUTING")[boost::bind(&odb::dbTechLayer::setLef58Type,
-                                         layer,
-                                         odb::dbTechLayer::LEF58_TYPE::POLYROUTING)])
+                                      layer,
+                                      odb::dbTechLayer::LEF58_TYPE::TSV)]
+             | lit("PADMETAL")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::PADMETAL)]
+             | lit("POLYROUTING")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::POLYROUTING)])
          >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, TypeRule, space);

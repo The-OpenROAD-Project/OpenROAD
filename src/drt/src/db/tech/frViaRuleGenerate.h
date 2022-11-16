@@ -80,7 +80,6 @@ class frViaRuleGenerate
   frLayerNum botLayerNum;
   frLayerNum cutLayerNum;
   frLayerNum topLayerNum;
-
 };
 }  // namespace fr
 

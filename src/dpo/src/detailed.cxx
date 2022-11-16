@@ -107,7 +107,7 @@ bool Detailed::improve(DetailedMgr& mgr)
   // oriented for their respective row assignments.
   // We do not need to do flipping though.
   {
-    DetailedOrient orienter(arch_, network_, rt_);
+    DetailedOrient orienter(arch_, network_);
     orienter.run(mgr_, "orient -f");
   }
 
@@ -166,13 +166,13 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     //  DetailedInterleave interleave(arch_, network_, rt_);
     //  interleave.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
-    DetailedReorderer ro(arch_, network_, rt_);
+    DetailedReorderer ro(arch_, network_);
     ro.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "orient") == 0) {
-    DetailedOrient orienter(arch_, network_, rt_);
+    DetailedOrient orienter(arch_, network_);
     orienter.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "default") == 0) {
-    DetailedRandom random(arch_, network_, rt_);
+    DetailedRandom random(arch_, network_);
     random.run(mgr_, args);
   } else {
     return;

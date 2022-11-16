@@ -36,8 +36,8 @@
 #include <iosfwd>
 #include <vector>
 
-#include "odb.h"
 #include "isotropy.h"
+#include "odb.h"
 
 namespace odb {
 

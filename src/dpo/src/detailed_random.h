@@ -75,7 +75,7 @@ class DetailedRandom
   };
 
  public:
-  DetailedRandom(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedRandom(Architecture* arch, Network* network);
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
@@ -96,7 +96,6 @@ class DetailedRandom
 
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   // Candidate cells.
   std::vector<Node*> candidates_;

@@ -73,26 +73,19 @@ VIAS 7 ;
     - M2_M1rct_0 + RECT via1 ( -25 -65 ) ( 25 65 ) + RECT metal1 ( -35 -95 ) ( 35 95 ) + RECT metal2 ( -65 -65 ) ( 65 65 ) ;
     - myvia1 + RECT metal1 ( 0 0 ) ( 40000 40000 ) + RECT via1 ( 0 0 ) ( 40000 40000 ) + RECT metal2 ( 0 0 ) ( 40000 40000 ) ;
 END VIAS
-NONDEFAULTRULES 3 ;
-    - matt
-      + HARDSPACING
-      + LAYER metal2 WIDTH 1 SPACING 2 WIREEXTENSION 3
-      + MINCUTS via1 2
-    ;
+NONDEFAULTRULES 1 ;
     - DEFAULT
-      + LAYER metal1 WIDTH 10 SPACING 2 WIREEXTENSION 1
-      + LAYER metal2 WIDTH 10 SPACING 2
-      + LAYER metal3 WIDTH 11 SPACING 3
-      + VIA M2_M1_via
-      + VIA M3_M2_via
-      + VIARULE M2_M1
-      + MINCUTS via1 2
-    + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 realrangeprop 25.25     ;
-    - RULE2
       + HARDSPACING
+      + LAYER poly WIDTH 10 SPACING 2 WIREEXTENSION 1
       + LAYER metal1 WIDTH 10 SPACING 2 WIREEXTENSION 1
       + LAYER metal2 WIDTH 10 SPACING 2
-      + LAYER metal3 WIDTH 11 SPACING 3
+      + LAYER metal3 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal4 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal5 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal6 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal7 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal8 WIDTH 11 SPACING 3 WIREEXTENSION 3
+      + LAYER metal9 WIDTH 11 SPACING 3 WIREEXTENSION 3
       + VIA M2_M1_via
       + VIA M3_M2_via
       + VIARULE M2_M1
@@ -167,7 +160,7 @@ NETS 24 ;
       NEW metal3 ( 4 5 ) ( 6 * ) ;
     - _w1_ ( _d5_ D ) ( _g1_ Y ) ( _d3_ D ) ( _d4_ D ) + USE SIGNAL ;
     - _w2_ ( _g2_ Y ) ( _d6_ D ) ( _d8_ D ) ( _d7_ D ) + USE SIGNAL ;
-    - _xout0 + USE SIGNAL + NONDEFAULTRULE matt
+    - _xout0 + USE SIGNAL + NONDEFAULTRULE DEFAULT
       + ROUTED metal2 ( 0 0 ) M2_M1_via E
       NEW metal2 TAPER ( 0 0 ) ( * 10 ) ;
     - _xout1 + USE SIGNAL + FIXEDBUMP ;

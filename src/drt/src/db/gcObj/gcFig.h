@@ -45,7 +45,6 @@ class gcFig : public gcBlockObject
   // constructors
   gcFig() : gcBlockObject() {}
   gcFig(const gcFig& in) : gcBlockObject(in) {}
-
 };
 
 class gcNet;
@@ -69,7 +68,6 @@ class gcConnFig : public gcFig
   // constructors
   gcConnFig() : gcFig() {}
   gcConnFig(const gcConnFig& in) : gcFig(in) {}
-
 };
 
 class gcPin;
@@ -99,7 +97,6 @@ class gcPinFig : public gcConnFig
  protected:
   gcPinFig() : gcConnFig() {}
   gcPinFig(const gcPinFig& in) : gcConnFig(in) {}
-
 };
 
 }  // namespace fr
