@@ -50,12 +50,11 @@ void deleteTritonRoute(triton_route::TritonRoute* router)
 
 void initTritonRoute(OpenRoad* openroad)
 {
-  openroad->getTritonRoute()->init(
-      openroad->tclInterp(),
-      openroad->getDb(),
-      openroad->getLogger(),
-      openroad->getDistributed(),
-      openroad->getSteinerTreeBuilder());
+  openroad->getTritonRoute()->init(openroad->tclInterp(),
+                                   openroad->getDb(),
+                                   openroad->getLogger(),
+                                   openroad->getDistributed(),
+                                   openroad->getSteinerTreeBuilder());
 }
 
 }  // namespace ord
