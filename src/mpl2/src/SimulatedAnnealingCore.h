@@ -55,7 +55,6 @@ template <class T>
 class SimulatedAnnealingCore
 {
  public:
-  SimulatedAnnealingCore(){};
   SimulatedAnnealingCore(
       float outline_width,
       float outline_height,          // boundary constraints
@@ -65,9 +64,8 @@ class SimulatedAnnealingCore
       float outline_weight,
       float wirelength_weight,
       float guidance_weight,
-      float
-          fence_weight,  // each blockage will be modeled by a macro with fences
-      // probability of each action
+      float fence_weight,  // each blockage will be modeled by a macro
+                           // with fences probability of each action
       float pos_swap_prob,
       float neg_swap_prob,
       float double_swap_prob,
@@ -81,54 +79,54 @@ class SimulatedAnnealingCore
       unsigned seed = 0,
       utl::Logger* logger = nullptr);
 
-  void SetNets(const std::vector<BundledNet>& nets);
+  void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
-  void SetFences(const std::map<int, Rect>& fences);
+  void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
-  void SetGuides(const std::map<int, Rect>& guides);
+  void setGuides(const std::map<int, Rect>& guides);
 
-  bool IsValid() const;
-  float GetNormCost();  // This is not a const function
+  bool isValid() const;
+  float getNormCost();  // This is not a const function
 
-  float GetWidth() const;
-  float GetHeight() const;
-  float GetOutlinePenalty() const;
-  float GetNormOutlinePenalty() const;
-  float GetWirelength() const;
-  float GetNormWirelength() const;
-  float GetGuidancePenalty() const;
-  float GetNormGuidancePenalty() const;
-  float GetFencePenalty() const;
-  float GetNormFencePenalty() const;
-  void GetMacros(std::vector<T>& macros) const;
+  float getWidth() const;
+  float getHeight() const;
+  float getOutlinePenalty() const;
+  float getNormOutlinePenalty() const;
+  float getWirelength() const;
+  float getNormWirelength() const;
+  float getGuidancePenalty() const;
+  float getNormGuidancePenalty() const;
+  float getFencePenalty() const;
+  float getNormFencePenalty() const;
+  void getMacros(std::vector<T>& macros) const;
 
   // Initialize the SA worker
-  virtual void Initialize();
+  virtual void initialize();
   // Run FastSA algorithm
-  void FastSA();
-  virtual void FillDeadSpace();
+  void fastSA();
+  virtual void fillDeadSpace();
 
  protected:
-  virtual float CalNormCost();
-  virtual void CalPenalty();
-  void CalOutlinePenalty();
-  void CalWirelength();
-  void CalGuidancePenalty();
-  void CalFencePenalty();
+  virtual float calNormCost();
+  virtual void calPenalty();
+  void calOutlinePenalty();
+  void calWirelength();
+  void calGuidancePenalty();
+  void calFencePenalty();
 
   // operations
-  void PackFloorplan();
-  virtual void Perturb();
-  virtual void Restore();
+  void packFloorplan();
+  virtual void perturb();
+  virtual void restore();
   // actions used
-  void SingleSeqSwap(bool pos);
-  void DoubleSeqSwap();
-  void ExchangeMacros();
+  void singleSeqSwap(bool pos);
+  void doubleSeqSwap();
+  void exchangeMacros();
 
-  virtual void Shrink();  // Shrink the size of macros
+  virtual void shrink();  // Shrink the size of macros
 
   // utilities
-  float CalAverage(std::vector<float>& value_list);
+  float calAverage(std::vector<float>& value_list);
 
   /////////////////////////////////////////////
   // private member variables
@@ -221,8 +219,8 @@ class SimulatedAnnealingCore
 template <class T>
 void RunSA(T* sa_core)
 {
-  sa_core->Initialize();
-  sa_core->FastSA();
+  sa_core->initialize();
+  sa_core->fastSA();
 }
 
 }  // namespace mpl

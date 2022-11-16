@@ -52,7 +52,6 @@ namespace mpl {
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
-  SACoreHardMacro(){};
   SACoreHardMacro(float outline_width,
                   float outline_height,  // boundary constraints
                   const std::vector<HardMacro>& macros,
@@ -79,20 +78,20 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   utl::Logger* logger_ = nullptr);
 
   // Initialize the SA worker
-  void Initialize();
-  void FillDeadSpace() {}
+  void initialize() override;
+  void fillDeadSpace() override {}
   // print results
-  void PrintResults();
+  void printResults();
 
  private:
-  float CalNormCost();
-  void CalPenalty();
-  void Shrink() {}
+  float calNormCost() override;
+  void calPenalty() override;
+  void shrink() override {}
 
-  void Perturb();
-  void Restore();
+  void perturb() override;
+  void restore() override;
   // actions used
-  void FlipMacro();  // flip hard macros
+  void flipMacro();  // flip hard macros
 
   float flip_prob_ = 0.0;
 };
