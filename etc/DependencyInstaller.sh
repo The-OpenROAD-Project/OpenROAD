@@ -117,11 +117,6 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
-    if [[ ! -z ${PREFIX} ]]; then 
-        export PATH=${PREFIX}/bin:$PATH
-        echo "export PATH=${PREFIX}/bin:$PATH" >> ~/.bash_profile
-    fi
-
     cd "$lastDir"
     rm -rf "${baseDir}"
 }
@@ -327,7 +322,7 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="$HOME/.local"
             ;;
         -prefix=*)
-            export PREFIX=`echo $1 | sed -e 's/^[^=]*=//g'`
+            export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -367,14 +362,6 @@ case "${os}" in
         fi
         _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
-        if [[ ! -z ${PREFIX} ]]; then
-            cat <<EOF
-To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake' 
-    or  run
-    source ~/.bash_profile
-EOF
-        fi
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
@@ -392,14 +379,6 @@ EOF
         fi
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
-        if [[ ! -z ${PREFIX} ]]; then
-            cat <<EOF
-To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake' 
-    or  run
-    source ~/.bash_profile
-EOF
-        fi
         ;;
     "Darwin" )
         _installDarwin
@@ -423,3 +402,13 @@ cat <<EOF
 Make sure that CMake find_package can find or-tools. Example, add to your ~/.bashrc:
     export CMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake
 EOF
+
+if [[ ! -z ${PREFIX} ]]; then
+            cat <<EOF
+To use cmake, set cmake as an alias:
+    alias cmake='${PREFIX}/bin/cmake' 
+    or  run
+    echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
+    source ~/.bash_profile
+EOF
+fi
