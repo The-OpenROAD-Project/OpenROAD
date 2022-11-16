@@ -30,24 +30,24 @@
 /* ************************************************************************** */
 /* ************************************************************************** */
 
-
 #ifndef CDEFIDEBUG_H
 #define CDEFIDEBUG_H
 
 #include <stdio.h>
+
 #include "defiTypedefs.h"
 
 /* Set flag */
-EXTERN void defiSetDebug (int  num, int  value);
+EXTERN void defiSetDebug(int num, int value);
 
 /* Read flag */
-EXTERN int defiDebug (int  num);
+EXTERN int defiDebug(int num);
 
 /* Error loggin function */
-EXTERN void defiError (int  check, int  msgNum, const char*  message);
+EXTERN void defiError(int check, int msgNum, const char* message);
 
 /* for auto upshifting names in case insensitive files */
-EXTERN const char* upperCase (const char*  c);
-EXTERN const char* DEFCASE (const char*  ch);
+EXTERN const char* upperCase(const char* c);
+EXTERN const char* DEFCASE(const char* ch);
 
 #endif

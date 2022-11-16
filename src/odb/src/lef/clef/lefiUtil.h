@@ -23,31 +23,31 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFIUTIL_H
 #define CLEFIUTIL_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /* Structure to return Macro data to FE                                       */
 
 /*int lefiValidTime();                                                        */
-EXTERN int lefiValidUser ();
+EXTERN int lefiValidUser();
 
-EXTERN char* lefiUser ();
+EXTERN char* lefiUser();
 
-EXTERN char* lefiOrientStr (int  orient);
+EXTERN char* lefiOrientStr(int orient);
 
-EXTERN double convert_name2num (const char * versionName);
+EXTERN double convert_name2num(const char* versionName);
 
-EXTERN bool  validateMaskNumber (int  num);
+EXTERN bool validateMaskNumber(int num);
 
 #endif

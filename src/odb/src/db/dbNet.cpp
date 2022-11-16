@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbNet.h"
+
 #include <algorithm>
 
 #include "db.h"
@@ -53,7 +55,6 @@
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
-#include "dbNet.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
