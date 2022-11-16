@@ -101,14 +101,14 @@ class SimulatedAnnealingCore
   void getMacros(std::vector<T>& macros) const;
 
   // Initialize the SA worker
-  virtual void initialize();
+  virtual void initialize() = 0;
   // Run FastSA algorithm
   void fastSA();
-  virtual void fillDeadSpace();
+  virtual void fillDeadSpace() = 0;
 
  protected:
-  virtual float calNormCost() const;
-  virtual void calPenalty();
+  virtual float calNormCost() const = 0;
+  virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
   void calGuidancePenalty();
@@ -116,14 +116,14 @@ class SimulatedAnnealingCore
 
   // operations
   void packFloorplan();
-  virtual void perturb();
-  virtual void restore();
+  virtual void perturb() = 0;
+  virtual void restore() = 0;
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
   void exchangeMacros();
 
-  virtual void shrink();  // Shrink the size of macros
+  virtual void shrink() = 0;  // Shrink the size of macros
 
   // utilities
   float calAverage(std::vector<float>& value_list);

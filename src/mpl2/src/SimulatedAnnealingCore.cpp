@@ -211,30 +211,6 @@ void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
 
 // Private functions
 template <class T>
-float SimulatedAnnealingCore<T>::calNormCost() const
-{
-  return 0.0;  // this function will be redefined in the derived class
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::calPenalty()
-{
-  return;  // this function will be redefined in the derived class
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::shrink()
-{
-  return;  // this function will be redefined in the derived class
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::fillDeadSpace()
-{
-  return;  // this function will be redefined in the derived class
-}
-
-template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
   const float max_width = std::max(outline_width_, width_);
@@ -373,20 +349,6 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   height_ = length[macros_.size() - 1];
 }
 
-// Perturb
-template <class T>
-void SimulatedAnnealingCore<T>::perturb()
-{
-  return;  // This function will be redefined in the derived classes
-}
-
-// Perturb
-template <class T>
-void SimulatedAnnealingCore<T>::restore()
-{
-  return;  // This function will be redefined in the derived classes
-}
-
 // SingleSeqSwap
 template <class T>
 void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
@@ -459,12 +421,6 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
   for (const auto& value : value_list)
     sum += value;
   return sum / value_list.size();
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::initialize()
-{
-  return;  // This function will be redefined in derived classes
 }
 
 template <class T>
