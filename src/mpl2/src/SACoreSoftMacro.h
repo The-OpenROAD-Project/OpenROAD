@@ -103,7 +103,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   }
 
  private:
-  float calNormCost() override;
+  float calNormCost() const override;
   void calPenalty() override;
 
   void perturb() override;
@@ -113,8 +113,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void shrink() override;
 
-  std::vector<Rect> blockages_;
-
   // A utility function for FillDeadSpace.
   // It's used for calculate the start point and end point for a segment in a
   // grid
@@ -123,6 +121,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                      int& start_id,
                      int& end_id,
                      std::vector<float>& grid);
+
+  void calBoundaryPenalty();
+  void calNotchPenalty();
+  void calMacroBlockagePenalty();
+
+  std::vector<Rect> blockages_;
 
   // notch threshold
   float notch_h_th_;
@@ -148,10 +152,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float norm_boundary_penalty_ = 0.0;
   float norm_notch_penalty_ = 0.0;
   float norm_macro_blockage_penalty_ = 0.0;
-
-  void calBoundaryPenalty();
-  void calNotchPenalty();
-  void calMacroBlockagePenalty();
 
   // action prob
   float resize_prob_ = 0.0;

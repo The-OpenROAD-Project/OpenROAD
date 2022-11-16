@@ -131,6 +131,116 @@ class HierRTLMP
   void setReportDirectory(const char* report_directory);
 
  private:
+  void calDataFlow();
+  void updateDataFlow();
+  void dataFlowDFSIOPin(int parent,
+                        int idx,
+                        std::vector<std::set<odb::dbInst*>>& insts,
+                        std::map<int, odb::dbBTerm*>& io_pin_vertex,
+                        std::map<int, odb::dbInst*>& std_cell_vertex,
+                        std::map<int, odb::dbITerm*>& macro_pin_vertex,
+                        std::vector<bool>& stop_flag_vec,
+                        std::vector<bool>& visited,
+                        std::vector<std::vector<int>>& vertices,
+                        std::vector<std::vector<int>>& hyperedges,
+                        bool backward_flag);
+  void dataFlowDFSMacroPin(int parent,
+                           int idx,
+                           std::vector<std::set<odb::dbInst*>>& std_cells,
+                           std::vector<std::set<odb::dbInst*>>& macros,
+                           std::map<int, odb::dbBTerm*>& io_pin_vertex,
+                           std::map<int, odb::dbInst*>& std_cell_vertex,
+                           std::map<int, odb::dbITerm*>& macro_pin_vertex,
+                           std::vector<bool>& stop_flag_vec,
+                           std::vector<bool>& visited,
+                           std::vector<std::vector<int>>& vertices,
+                           std::vector<std::vector<int>>& hyperedges,
+                           bool backward_flag);
+  // DFS-manner function to traverse the logical hierarchy
+  Metric* computeMetric(odb::dbModule* module);
+  // Calculate metric for cluster based its type
+  void setClusterMetric(Cluster* cluster);
+  // Map IOs to Pads (for designs with IO pads)
+  void mapIOPads();
+  // create bundled IOs as clusters (for designs with IO pins or Pads)
+  void createBundledIOs();
+
+  // update the cluster_id property of insts in the cluster
+  // Create physical hierarchy tree in a post-order DFS manner
+  void multiLevelCluster(Cluster* parent);
+  void setInstProperty(Cluster* cluster);
+  void setInstProperty(odb::dbModule* module,
+                       int cluster_id,
+                       bool include_macro);
+  void breakCluster(Cluster* parent);
+  void mergeClusters(std::vector<Cluster*>& candidate_clusters);
+  void calculateConnection();
+  void printConnection();
+  void printClusters();
+  void updateSubTree(Cluster* parent);
+  // Break large flat clusters with MLPart
+  // A flat cluster does not have a logical module
+  void breakLargeFlatCluster(Cluster* cluster);
+
+  // Traverse the physical hierarchy tree in a DFS manner
+  // Split macros and std cells in the leaf clusters
+  // In the normal operation, we call this function after
+  // creating the physical hierarchy tree
+  void leafClusterStdCellHardMacroSep(Cluster* root_cluster);
+  // Map all the macros into their HardMacro objects for all the clusters
+  void mapMacroInCluster2HardMacro(Cluster* cluster);
+  // Get all the hard macros in a logical module
+  void getHardMacros(odb::dbModule* module,
+                     std::vector<HardMacro*>& hard_macros);
+
+  // Print the physical hierachical tree in a DFS manner
+  void printPhysicalHierarchyTree(Cluster* parent, int level);
+  // Determine the macro tilings within each cluster in a bottom-up manner
+  // (Post-Order DFS manner)
+  void calClusterMacroTilings(Cluster* root_cluster);
+  // calculate the pin blockage for IO pins
+  void createPinBlockage();
+  // Determine the macro tilings for each HardMacroCluster
+  // multi thread enabled
+  // random seed deterministic enabled
+  void calHardMacroClusterShape(Cluster* cluster);
+  // The cluster placement is done in a top-down manner
+  // (Preorder DFS)
+  void multiLevelMacroPlacement(Cluster* parent);
+  // place macros within the HardMacroCluster
+  void hardMacroClusterMacroPlacement(Cluster* parent);
+  // Merge nets to reduce runtime
+  void mergeNets(std::vector<BundledNet>& nets);
+  // determine the shape for children cluster
+  bool shapeChildrenCluster(Cluster* parent,
+                            std::vector<SoftMacro>& macros,
+                            std::map<std::string, int>& soft_macro_id_map,
+                            float target_util,
+                            float target_dead_space);
+  // Call Path Synthesis to route buses
+  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
+                       std::vector<BundledNet>& nets_old);
+
+  /*
+  // Place macros in a hierarchical mode based on the above
+  // physcial hierarchical tree
+  // The macro placement is done in a DFS manner (PreOrder)
+  void multiLevelMacroPlacement(Cluster* cluster);
+  // Determine the shape (area, possible aspect ratios) of each cluster
+  void calClusterShape(Cluster* cluster);
+  // Calculate possible macro tilings for HardMacroCluster
+  void calMacroTilings(Cluster* cluster);
+  // Determine positions and implementation of each children cluster
+  void placeChildrenClusters(Cluster* parent);
+  // Merge nets to reduce runtime
+  void mergeNets(std::vector<BundledNet>& nets);
+  // Route buses within the parent cluster
+  void callPathSynthesis(Cluster* parent);
+  // Determine the orientation and position of each hard macro
+  // in each HardMacroCluster
+  void placeHardMacros(Cluster* cluster);
+  */
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -236,41 +346,12 @@ class HierRTLMP
       io_ffs_conn_map_;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_macro_conn_map_;
-  void calDataFlow();
-  void updateDataFlow();
-  void dataFlowDFSIOPin(int parent,
-                        int idx,
-                        std::vector<std::set<odb::dbInst*>>& insts,
-                        std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                        std::map<int, odb::dbInst*>& std_cell_vertex,
-                        std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                        std::vector<bool>& stop_flag_vec,
-                        std::vector<bool>& visited,
-                        std::vector<std::vector<int>>& vertices,
-                        std::vector<std::vector<int>>& hyperedges,
-                        bool backward_flag);
-  void dataFlowDFSMacroPin(int parent,
-                           int idx,
-                           std::vector<std::set<odb::dbInst*>>& std_cells,
-                           std::vector<std::set<odb::dbInst*>>& macros,
-                           std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                           std::map<int, odb::dbInst*>& std_cell_vertex,
-                           std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                           std::vector<bool>& stop_flag_vec,
-                           std::vector<bool>& visited,
-                           std::vector<std::vector<int>>& vertices,
-                           std::vector<std::vector<int>>& hyperedges,
-                           bool backward_flag);
 
   // statistics of the design
   // Here when we calculate macro area, we do not include halo_width
   Metric* metric_ = nullptr;
   // store the metric for each hierarchical logical module
   std::map<const odb::dbModule*, Metric*> logical_module_map_;
-  // DFS-manner function to traverse the logical hierarchy
-  Metric* computeMetric(odb::dbModule* module);
-  // Calculate metric for cluster based its type
-  void setClusterMetric(Cluster* cluster);
   // associate each Macro to the HardMacro object
   std::map<odb::dbInst*, HardMacro*> hard_macro_map_;
 
@@ -335,85 +416,5 @@ class HierRTLMP
   // clusters However, we store the instances in their corresponding clusters
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
-  // Map IOs to Pads (for designs with IO pads)
-  void mapIOPads();
-  // create bundled IOs as clusters (for designs with IO pins or Pads)
-  void createBundledIOs();
-
-  // update the cluster_id property of insts in the cluster
-  // Create physical hierarchy tree in a post-order DFS manner
-  void multiLevelCluster(Cluster* parent);
-  void setInstProperty(Cluster* cluster);
-  void setInstProperty(odb::dbModule* module,
-                       int cluster_id,
-                       bool include_macro);
-  void breakCluster(Cluster* parent);
-  void mergeClusters(std::vector<Cluster*>& candidate_clusters);
-  void calculateConnection();
-  void printConnection();
-  void printClusters();
-  void updateSubTree(Cluster* parent);
-  // Break large flat clusters with MLPart
-  // A flat cluster does not have a logical module
-  void breakLargeFlatCluster(Cluster* cluster);
-
-  // Traverse the physical hierarchy tree in a DFS manner
-  // Split macros and std cells in the leaf clusters
-  // In the normal operation, we call this function after
-  // creating the physical hierarchy tree
-  void leafClusterStdCellHardMacroSep(Cluster* root_cluster);
-  // Map all the macros into their HardMacro objects for all the clusters
-  void mapMacroInCluster2HardMacro(Cluster* cluster);
-  // Get all the hard macros in a logical module
-  void getHardMacros(odb::dbModule* module,
-                     std::vector<HardMacro*>& hard_macros);
-
-  // Print the physical hierachical tree in a DFS manner
-  void printPhysicalHierarchyTree(Cluster* parent, int level);
-  // Determine the macro tilings within each cluster in a bottom-up manner
-  // (Post-Order DFS manner)
-  void calClusterMacroTilings(Cluster* root_cluster);
-  // calculate the pin blockage for IO pins
-  void createPinBlockage();
-  // Determine the macro tilings for each HardMacroCluster
-  // multi thread enabled
-  // random seed deterministic enabled
-  void calHardMacroClusterShape(Cluster* cluster);
-  // The cluster placement is done in a top-down manner
-  // (Preorder DFS)
-  void multiLevelMacroPlacement(Cluster* parent);
-  // place macros within the HardMacroCluster
-  void hardMacroClusterMacroPlacement(Cluster* parent);
-  // Merge nets to reduce runtime
-  void mergeNets(std::vector<BundledNet>& nets);
-  // determine the shape for children cluster
-  bool shapeChildrenCluster(Cluster* parent,
-                            std::vector<SoftMacro>& macros,
-                            std::map<std::string, int>& soft_macro_id_map,
-                            float target_util,
-                            float target_dead_space);
-  // Call Path Synthesis to route buses
-  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
-                       std::vector<BundledNet>& nets_old);
-
-  /*
-  // Place macros in a hierarchical mode based on the above
-  // physcial hierarchical tree
-  // The macro placement is done in a DFS manner (PreOrder)
-  void multiLevelMacroPlacement(Cluster* cluster);
-  // Determine the shape (area, possible aspect ratios) of each cluster
-  void calClusterShape(Cluster* cluster);
-  // Calculate possible macro tilings for HardMacroCluster
-  void calMacroTilings(Cluster* cluster);
-  // Determine positions and implementation of each children cluster
-  void placeChildrenClusters(Cluster* parent);
-  // Merge nets to reduce runtime
-  void mergeNets(std::vector<BundledNet>& nets);
-  // Route buses within the parent cluster
-  void callPathSynthesis(Cluster* parent);
-  // Determine the orientation and position of each hard macro
-  // in each HardMacroCluster
-  void placeHardMacros(Cluster* cluster);
-  */
 };
 }  // namespace mpl

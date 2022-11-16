@@ -2073,7 +2073,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreSoftMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings
@@ -2127,7 +2127,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreSoftMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings
@@ -2261,7 +2261,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings
@@ -2310,7 +2310,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings
@@ -2867,7 +2867,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreSoftMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings
@@ -3350,7 +3350,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     // multi threads
     std::vector<std::thread> threads;
     for (auto& sa : sa_vector)
-      threads.push_back(std::thread(RunSA<SACoreHardMacro>, sa));
+      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
     for (auto& th : threads)
       th.join();
     // add macro tilings

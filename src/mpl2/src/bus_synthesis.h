@@ -50,6 +50,8 @@ using Point = std::pair<float, float>;
 // And each bundled IO pin is represented by a vertex
 struct Vertex
 {
+  Vertex(int vertex_id, Point pos) : vertex_id(vertex_id), pos(pos) {}
+
   int vertex_id = -1;  // vertex_id of current vertex
   int macro_id
       = -1;  // soft_macro_id of the SoftMacro which the vertex belongs to
@@ -62,32 +64,19 @@ struct Vertex
       = 0.0;  // the weight of the vertex : macro utilization of the SoftMacro
               // which the vertex belongs to.
               // For bundled IO pin, we set the macro utilization to be zero
-
-  Vertex(int vertex_id, Point pos) : vertex_id(vertex_id), pos(pos) {}
 };
 
 struct VertexDist
 {
+  VertexDist(int vertex, float dist) : vertex(vertex), dist(dist) {}
+
   int vertex;  // vertex_id of current vertex
   float dist;  // shortest distance (currently) between vertex and root vertex
-
-  VertexDist(int vertex, float dist) : vertex(vertex), dist(dist) {}
 };
 
 // The connection between two vertices is represented by an edge
 struct Edge
 {
-  int edge_id;                    // edge id of current edge
-  std::pair<int, int> terminals;  // the vertex_id of two terminal vertices
-  bool direction = false;         // True for horizontal and False for vertical
-  bool internal = true;  // True for edge within one SoftMacro otherwise false
-  PinAccess pin_access
-      = NONE;            // pin_access for internal == false (for src vertex)
-  float length = 0.0;    // the length of edge
-  float length_w = 0.0;  // weighted length : weight * length
-  float weight = 0.0;    // the largeest macro utilization of terminals
-  float num_nets = 0.0;  // num_nets passing through this edge
-
   Edge(int edge_id) : edge_id(edge_id) {}
   // create a reverse edge by changing the order of terminals
   Edge(int edge_id, Edge& edge)
@@ -101,19 +90,30 @@ struct Edge
     weight = edge.weight;
     num_nets = edge.num_nets;
   }
+
+  int edge_id;                    // edge id of current edge
+  std::pair<int, int> terminals;  // the vertex_id of two terminal vertices
+  bool direction = false;         // True for horizontal and False for vertical
+  bool internal = true;  // True for edge within one SoftMacro otherwise false
+  PinAccess pin_access
+      = NONE;            // pin_access for internal == false (for src vertex)
+  float length = 0.0;    // the length of edge
+  float length_w = 0.0;  // weighted length : weight * length
+  float weight = 0.0;    // the largeest macro utilization of terminals
+  float num_nets = 0.0;  // num_nets passing through this edge
 };
 
 // We use Arrow object in the adjacency matrix to represent the grid graph
 struct Arrow
 {
-  int dest;                  // src -> dest (destination)
-  float weight;              // weight must be nonnegative (or cost)
-  Edge* edge_ptr = nullptr;  // the pointer of corresponding edge
-
   Arrow(int dest, float weight, Edge* edge_ptr)
       : dest(dest), weight(weight), edge_ptr(edge_ptr)
   {
   }
+
+  int dest;                  // src -> dest (destination)
+  float weight;              // weight must be nonnegative (or cost)
+  Edge* edge_ptr = nullptr;  // the pointer of corresponding edge
 };
 
 // Grid graph for the clustered netlist
@@ -131,17 +131,6 @@ class Graph
   bool isConnected() const;  // check the GFS is connected
 
  private:
-  std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
-  int max_num_path_
-      = 10;  // limit the maximum number of candidate paths to reduce runtime
-  float congestion_weight_ = 1.0;
-  // store the parent vertices for each vertex in the shortest paths
-  // for example, there are two paths from root to dest
-  // path1: root -> A -> dest
-  // path2: root -> B -> dest
-  // then dest vertex has two parents:  A and B
-  // So the parent of each vertex is a vector instead of some vertex
-  std::map<int, std::vector<std::vector<int>>> parents_;
   // Find the shortest paths relative to root vertex based on priority queue
   // We store the paths in the format of parent vertices
   // If we want to get real pathes, we need to traverse back the parent vertices
@@ -166,6 +155,18 @@ class Graph
       std::vector<std::vector<int>>& edge_paths,
       // length of shortest paths
       float& HPWL);
+
+  // store the parent vertices for each vertex in the shortest paths
+  // for example, there are two paths from root to dest
+  // path1: root -> A -> dest
+  // path2: root -> B -> dest
+  // then dest vertex has two parents:  A and B
+  // So the parent of each vertex is a vector instead of some vertex
+  std::map<int, std::vector<std::vector<int>>> parents_;
+  std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
+  int max_num_path_
+      = 10;  // limit the maximum number of candidate paths to reduce runtime
+  float congestion_weight_ = 1.0;
 };
 
 // Get vertices in a given segement

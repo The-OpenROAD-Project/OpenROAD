@@ -138,7 +138,7 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getNormCost()
+float SimulatedAnnealingCore<T>::getNormCost() const
 {
   return calNormCost();
 }
@@ -211,7 +211,7 @@ void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
 
 // Private functions
 template <class T>
-float SimulatedAnnealingCore<T>::calNormCost()
+float SimulatedAnnealingCore<T>::calNormCost() const
 {
   return 0.0;  // this function will be redefined in the derived class
 }

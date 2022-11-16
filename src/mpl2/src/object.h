@@ -517,6 +517,11 @@ class SoftMacro
   float getMacroUtil() const;
 
  private:
+  // utility function
+  int findPos(std::vector<std::pair<float, float>>& list,
+              float& value,
+              bool increase_order);
+
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
   float x_ = 0.0;          // lower left corner
@@ -539,35 +544,11 @@ class SoftMacro
   // if the cluster has been aligned related to other macro_cluster or
   // boundaries
   bool align_flag_ = false;
-
-  // utility function
-  int findPos(std::vector<std::pair<float, float>>& list,
-              float& value,
-              bool increase_order);
 };
 
 // In our netlist model, we only have two-pin nets
 struct BundledNet
 {
-  std::pair<int, int>
-      terminals;  // id for terminals
-                  // here the id can be the id of hard macro or soft macro
-  float weight;   // Number of bundled connections (can be timing-related
-                  // weight)
-  // support for bus synthsis
-  float HPWL;  // HPWL of the Net (in terms of path length)
-  // shortest paths:  to minimize timing
-  // store all the shortest paths between two soft macros
-  std::vector<std::vector<int>> edge_paths;
-  // store all the shortest paths between two soft macros in terms of
-  // boundary edges.  All the internal edges are removed
-  std::vector<std::vector<int>> boundary_edge_paths;
-
-  // In our framework, we only bundled connections between clusters.
-  // Thus each net must have both src_cluster_id and target_cluster_id
-  int src_cluster_id = -1;
-  int target_cluster_id = -1;
-
   BundledNet(int src, int target, float weight)
   {
     this->terminals = std::pair<int, int>(src, target);
@@ -587,6 +568,25 @@ struct BundledNet
     return (terminals.first == net.terminals.first)
            && (terminals.second == net.terminals.second);
   }
+
+  std::pair<int, int>
+      terminals;  // id for terminals
+                  // here the id can be the id of hard macro or soft macro
+  float weight;   // Number of bundled connections (can be timing-related
+                  // weight)
+  // support for bus synthsis
+  float HPWL;  // HPWL of the Net (in terms of path length)
+  // shortest paths:  to minimize timing
+  // store all the shortest paths between two soft macros
+  std::vector<std::vector<int>> edge_paths;
+  // store all the shortest paths between two soft macros in terms of
+  // boundary edges.  All the internal edges are removed
+  std::vector<std::vector<int>> boundary_edge_paths;
+
+  // In our framework, we only bundled connections between clusters.
+  // Thus each net must have both src_cluster_id and target_cluster_id
+  int src_cluster_id = -1;
+  int target_cluster_id = -1;
 };
 
 // Here we redefine the Rect class
@@ -594,11 +594,6 @@ struct BundledNet
 // Rect class use float type for Micron unit
 struct Rect
 {
-  float lx = 0.0;
-  float ly = 0.0;
-  float ux = 0.0;
-  float uy = 0.0;
-
   Rect() {}
   Rect(const float lx, const float ly, const float ux, const float uy)
       : lx(lx), ly(ly), ux(ux), uy(uy)
@@ -643,6 +638,11 @@ struct Rect
     ux -= outline_lx;
     uy -= outline_ly;
   }
+
+  float lx = 0.0;
+  float ly = 0.0;
+  float ux = 0.0;
+  float uy = 0.0;
 };
 
 }  // namespace mpl
