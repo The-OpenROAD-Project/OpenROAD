@@ -30,10 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbBTerm.h"
+
 #include "db.h"
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
-#include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
 #include "dbBox.h"

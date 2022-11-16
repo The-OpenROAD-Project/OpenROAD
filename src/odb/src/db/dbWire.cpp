@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbWire.h"
+
 #include <algorithm>
 
 #include "db.h"
@@ -42,7 +44,6 @@
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
-#include "dbWire.h"
 #include "dbWireOpcode.h"
 #include "utl/Logger.h"
 namespace odb {

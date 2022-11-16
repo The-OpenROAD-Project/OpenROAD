@@ -43,19 +43,19 @@
 namespace odb {
 
 tmg_rcpt::tmg_rcpt()
-  : _x(0),
-    _y(0),
-    _layer(nullptr),
-    _tindex(-1),
-    _next_for_term(nullptr),
-    _t_alt(nullptr),
-    _next_for_clear(nullptr),
-    _sring(nullptr),
-    _dbwire_id(-1),
-    _fre(false),
-    _jct(false),
-    _pinpt(false),
-    _c2pinpt(false)
+    : _x(0),
+      _y(0),
+      _layer(nullptr),
+      _tindex(-1),
+      _next_for_term(nullptr),
+      _t_alt(nullptr),
+      _next_for_clear(nullptr),
+      _sring(nullptr),
+      _dbwire_id(-1),
+      _fre(false),
+      _jct(false),
+      _pinpt(false),
+      _c2pinpt(false)
 {
 }
 
@@ -396,8 +396,8 @@ void tmg_conn::loadSWire(dbNet* net)
         shape.setSegment(layer1, rect);
       }
 
-      if (_ptV.empty() || layer1 != _ptV.back()._layer
-          || x1 != _ptV.back()._x || y1 != _ptV.back()._y) {
+      if (_ptV.empty() || layer1 != _ptV.back()._layer || x1 != _ptV.back()._x
+          || y1 != _ptV.back()._y) {
         pt = allocPt();
         pt->_x = x1;
         pt->_y = y1;
@@ -552,7 +552,14 @@ void tmg_conn::splitBySj(bool verbose,
       endTo = _rcV[k]._ito;
       _rcV[k]._ito = _ptV.size() - 1;
       // create new tmg_rc
-      addRc(k, _rcV[k]._shape, _ptV.size() - 1, endTo, nxmin, nymin, nxmax, nymax);
+      addRc(k,
+            _rcV[k]._shape,
+            _ptV.size() - 1,
+            endTo,
+            nxmin,
+            nymin,
+            nxmax,
+            nymax);
       _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
       if (verbose || _gVerbose)
         notice(0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, nymax);
@@ -1725,10 +1732,8 @@ void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
       _connected);  // this will change,
                     // we should wire-order the disconnected nets
   if (!_connected && verbose) {
-    notice(0,
-           "disconnected net %d  %s\n",
-           _net->getId(),
-           _net->getName().c_str());
+    notice(
+        0, "disconnected net %d  %s\n", _net->getId(), _net->getName().c_str());
     printDisconnect();  // this is not complete
   }
 }
@@ -1915,8 +1920,10 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
         }
       }
       if (verbose) {
-        notice(0, "%d-%d %s%s%s%s\n",
-               jfr, jto,
+        notice(0,
+               "%d-%d %s%s%s%s\n",
+               jfr,
+               jto,
                is_short ? " short" : "",
                is_loop ? " loop" : "",
                x && x->_iterm ? " iterm" : "",

@@ -25,11 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -424,15 +424,17 @@ bool parse(
           &setOppositeEnclosureResizeSpacing, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> CUTCLASS
-      = (
-         lit("CUTCLASS") 
-         >> +(_string >> -(string("SIDE") | string("END"))) // FIRST ROW AND FIRST ENTRY OF SECOND ROW
-         >> +((string("-") | double_) >> (string("-") | double_)) // REMAINING SECOND ROW
-         >> *(
-              _string >> -(string("SIDE") | string("END"))
-              >> +((string("-") | double_) >> (string("-") | double_))
-            ) // REMAINING ROWS (3rd and below)
-        )[boost::bind(&setCutClass, _1, parser, lefin)];
+      = (lit("CUTCLASS")
+         >> +(_string
+              >> -(string("SIDE")
+                   | string("END")))  // FIRST ROW AND FIRST ENTRY OF SECOND ROW
+         >> +((string("-") | double_)
+              >> (string("-") | double_))  // REMAINING SECOND ROW
+         >> *(_string >> -(string("SIDE") | string("END"))
+              >> +((string("-") | double_)
+                   >> (string("-")
+                       | double_)))  // REMAINING ROWS (3rd and below)
+         )[boost::bind(&setCutClass, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> DEFAULT
       = (lit("SPACINGTABLE")[boost::bind(&createDefSubRule, parser)]

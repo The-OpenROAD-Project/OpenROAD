@@ -144,9 +144,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                  layer,
                                  boost::ref(incomplete_props))])
          >> lit("OVERLAP")
-         >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap,
-                                rule,
-                                _1)]);
+         >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap, rule, _1)]);
 
   qi::rule<std::string::iterator, space_type> AREA
       = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
@@ -154,10 +152,9 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                             _1,
                                             rule,
                                             &odb::dbTechLayerAreaRule::setArea)]
-         >> -(lit("MASK")
-              >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask,
-                                     rule,
-                                     _1)])
+         >> -(
+             lit("MASK")
+             >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask, rule, _1)])
          >> -(lit("EXCEPTMINWIDTH") >> double_[boost::bind(
                   &lefTechLayerAreaRuleParser::setInt,
                   this,
@@ -178,8 +175,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
   auto last = s.end();
   bool valid = qi::phrase_parse(first, last, AREA, space) && first == last;
   if (!valid) {
-    if (!incomplete_props.empty()
-        && incomplete_props.back().first == rule)
+    if (!incomplete_props.empty() && incomplete_props.back().first == rule)
       incomplete_props.pop_back();
     odb::dbTechLayerAreaRule::destroy(rule);
   }
