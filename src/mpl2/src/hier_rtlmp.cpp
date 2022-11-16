@@ -2737,12 +2737,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
   }
   // add the virtual connections
-  for (auto conn : parent->getVirtualConnections()) {
-    BundledNet net(soft_macro_id_map[cluster_map_[conn.first]->getName()],
-                   soft_macro_id_map[cluster_map_[conn.second]->getName()],
+  for (const auto [cluster1, cluster2] : parent->getVirtualConnections()) {
+    BundledNet net(soft_macro_id_map[cluster_map_[cluster1]->getName()],
+                   soft_macro_id_map[cluster_map_[cluster2]->getName()],
                    virtual_weight_);
-    net.src_cluster_id = conn.first;
-    net.target_cluster_id = conn.second;
+    net.src_cluster_id = cluster1;
+    net.target_cluster_id = cluster2;
     nets.push_back(net);
   }
 
