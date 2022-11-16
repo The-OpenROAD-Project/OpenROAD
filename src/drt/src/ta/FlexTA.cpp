@@ -45,58 +45,6 @@ using namespace fr;
 
 using utl::ThreadException;
 
-int FlexTAWorker::main()
-{
-  using namespace std::chrono;
-  high_resolution_clock::time_point t0 = high_resolution_clock::now();
-  if (VERBOSE > 1) {
-    stringstream ss;
-    ss << endl
-       << "start TA worker (BOX) ("
-       << routeBox_.xMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-       << ", "
-       << routeBox_.yMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-       << ") ("
-       << routeBox_.xMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-       << ", "
-       << routeBox_.yMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-       << ") ";
-    if (getDir() == dbTechLayerDir::HORIZONTAL) {
-      ss << "H";
-    } else {
-      ss << "V";
-    }
-    ss << endl;
-    cout << ss.str();
-  }
-
-  init();
-  if (isInitTA()) {
-    hardIroutesMode = true;
-    sortIroutes();
-    assign();
-    hardIroutesMode = false;
-  }
-  sortIroutes();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  assign();
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
-  end();
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
-
-  duration<double> time_span0 = duration_cast<duration<double>>(t1 - t0);
-  duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
-  duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-
-  if (VERBOSE > 1) {
-    stringstream ss;
-    ss << "time (INIT/ASSIGN/POST) " << time_span0.count() << " "
-       << time_span1.count() << " " << time_span2.count() << " " << endl;
-    cout << ss.str() << flush;
-  }
-  return 0;
-}
-
 int FlexTAWorker::main_mt()
 {
   ProfileTask profile("TA:main_mt");
@@ -161,123 +109,75 @@ int FlexTA::initTA_helper(int iter,
   auto& ygp = gCellPatterns.at(1);
   int sol = 0;
   numPanels = 0;
-  if (MAX_THREADS == 1) {
-    if (isH) {
-      for (int i = offset; i < (int) ygp.getCount(); i += size) {
-        FlexTAWorker worker(getDesign());
-        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
-        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-            Point((int) xgp.getCount() - 1,
-                  min(i + size - 1, (int) ygp.getCount() - 1)));
-        Rect routeBox(
-            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-        Rect extBox;
-        routeBox.bloat(ygp.getSpacing() / 2, extBox);
-        worker.setRouteBox(routeBox);
-        worker.setExtBox(extBox);
-        worker.setDir(dbTechLayerDir::HORIZONTAL);
-        worker.setTAIter(iter);
-        worker.main();
-        sol += worker.getNumAssigned();
-        numPanels++;
-        // if (VERBOSE > 0) {
-        //   cout <<"Done with " <<numAssigned <<"horizontal wires";
-        // }
+  vector<vector<unique_ptr<FlexTAWorker>>> workers;
+  if (isH) {
+    for (int i = offset; i < (int) ygp.getCount(); i += size) {
+      auto uworker = make_unique<FlexTAWorker>(getDesign());
+      auto& worker = *(uworker.get());
+      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
+      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          Point((int) xgp.getCount() - 1,
+                min(i + size - 1, (int) ygp.getCount() - 1)));
+      Rect routeBox(
+          beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+      Rect extBox;
+      routeBox.bloat(ygp.getSpacing() / 2, extBox);
+      worker.setRouteBox(routeBox);
+      worker.setExtBox(extBox);
+      worker.setDir(dbTechLayerDir::HORIZONTAL);
+      worker.setTAIter(iter);
+      if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
+        workers.push_back(vector<unique_ptr<FlexTAWorker>>());
       }
-    } else {
-      for (int i = offset; i < (int) xgp.getCount(); i += size) {
-        FlexTAWorker worker(getDesign());
-        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
-        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-            Point(min(i + size - 1, (int) xgp.getCount() - 1),
-                  (int) ygp.getCount() - 1));
-        Rect routeBox(
-            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-        Rect extBox;
-        routeBox.bloat(xgp.getSpacing() / 2, extBox);
-        worker.setRouteBox(routeBox);
-        worker.setExtBox(extBox);
-        worker.setDir(dbTechLayerDir::VERTICAL);
-        worker.setTAIter(iter);
-        worker.main();
-        sol += worker.getNumAssigned();
-        numPanels++;
-        // if (VERBOSE > 0) {
-        //   cout <<"Done with " <<numAssigned <<"vertical wires";
-        // }
-      }
+      workers.back().push_back(std::move(uworker));
     }
   } else {
-    vector<vector<unique_ptr<FlexTAWorker>>> workers;
-    if (isH) {
-      for (int i = offset; i < (int) ygp.getCount(); i += size) {
-        auto uworker = make_unique<FlexTAWorker>(getDesign());
-        auto& worker = *(uworker.get());
-        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
-        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-            Point((int) xgp.getCount() - 1,
-                  min(i + size - 1, (int) ygp.getCount() - 1)));
-        Rect routeBox(
-            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-        Rect extBox;
-        routeBox.bloat(ygp.getSpacing() / 2, extBox);
-        worker.setRouteBox(routeBox);
-        worker.setExtBox(extBox);
-        worker.setDir(dbTechLayerDir::HORIZONTAL);
-        worker.setTAIter(iter);
-        if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-          workers.push_back(vector<unique_ptr<FlexTAWorker>>());
-        }
-        workers.back().push_back(std::move(uworker));
+    for (int i = offset; i < (int) xgp.getCount(); i += size) {
+      auto uworker = make_unique<FlexTAWorker>(getDesign());
+      auto& worker = *(uworker.get());
+      Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
+      Rect endBox = getDesign()->getTopBlock()->getGCellBox(
+          Point(min(i + size - 1, (int) xgp.getCount() - 1),
+                (int) ygp.getCount() - 1));
+      Rect routeBox(
+          beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+      Rect extBox;
+      routeBox.bloat(xgp.getSpacing() / 2, extBox);
+      worker.setRouteBox(routeBox);
+      worker.setExtBox(extBox);
+      worker.setDir(dbTechLayerDir::VERTICAL);
+      worker.setTAIter(iter);
+      if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
+        workers.push_back(vector<unique_ptr<FlexTAWorker>>());
       }
-    } else {
-      for (int i = offset; i < (int) xgp.getCount(); i += size) {
-        auto uworker = make_unique<FlexTAWorker>(getDesign());
-        auto& worker = *(uworker.get());
-        Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
-        Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-            Point(min(i + size - 1, (int) xgp.getCount() - 1),
-                  (int) ygp.getCount() - 1));
-        Rect routeBox(
-            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-        Rect extBox;
-        routeBox.bloat(xgp.getSpacing() / 2, extBox);
-        worker.setRouteBox(routeBox);
-        worker.setExtBox(extBox);
-        worker.setDir(dbTechLayerDir::VERTICAL);
-        worker.setTAIter(iter);
-        if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-          workers.push_back(vector<unique_ptr<FlexTAWorker>>());
-        }
-        workers.back().push_back(std::move(uworker));
-      }
+      workers.back().push_back(std::move(uworker));
     }
+  }
 
-    omp_set_num_threads(min(8, MAX_THREADS));
-    // parallel execution
-    // multi thread
-    for (auto& workerBatch : workers) {
-      ProfileTask profile("TA:batch");
-      ThreadException exception;
+  omp_set_num_threads(min(8, MAX_THREADS));
+  // parallel execution
+  // multi thread
+  for (auto& workerBatch : workers) {
+    ProfileTask profile("TA:batch");
+    ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int) workerBatch.size(); i++) {
-        try {
-          workerBatch[i]->main_mt();
+    for (int i = 0; i < (int) workerBatch.size(); i++) {
+      try {
+        workerBatch[i]->main_mt();
 #pragma omp critical
-          {
-            sol += workerBatch[i]->getNumAssigned();
-            numPanels++;
-          }
-        } catch (...) {
-          exception.capture();
+        {
+          sol += workerBatch[i]->getNumAssigned();
+          numPanels++;
         }
+      } catch (...) {
+        exception.capture();
       }
-      exception.rethrow();
-      for (int i = 0; i < (int) workerBatch.size(); i++) {
-        workerBatch[i]->end();
-      }
-      workerBatch.clear();
     }
+    exception.rethrow();
+    for (int i = 0; i < (int) workerBatch.size(); i++) {
+      workerBatch[i]->end();
+    }
+    workerBatch.clear();
   }
   return sol;
 }
