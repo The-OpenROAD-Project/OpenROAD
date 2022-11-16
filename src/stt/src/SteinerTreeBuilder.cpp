@@ -33,16 +33,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "stt/SteinerTreeBuilder.h"
-
 #include <map>
 #include <vector>
 
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "stt/LinesRenderer.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "stt/flute.h"
-#include "stt/pdrev.h"
+#include "stt/pd.h"
 
 namespace stt {
 
