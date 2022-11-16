@@ -1,5 +1,5 @@
-name: Standalone OpenROAD Bug report
-description: File a bug report concerned with OpenROAD only
+name: OpenROAD Bug report with OpenROAD Flow Scripts 
+description: File a bug report if you are running from OpenROAD Flow Scripts
 
 body:
   - type: markdown
@@ -26,7 +26,7 @@ body:
         ---
         #### This part is incredibly important:
 
-        Please run the following shell command in the OpenROAD root folder:
+        Please run the following shell command in the OpenROAD root folder e.g "tools/OpenROAD":
         ```
         ./etc/Env.sh
         ```
@@ -46,8 +46,21 @@ body:
       value: |
         ---
         #### To reproduce the bug: 
+        ##### You have two options here:
 
-        ##### Upload relevant files
+        A. Use `make <SCRIPT_NAME>_issue` to create a tar file with all the files to reproduce the bug(s).
+
+        &nbsp;&nbsp;&nbsp;&nbsp;Steps:
+
+        &nbsp;&nbsp;&nbsp;&nbsp;1. Head to the flow directory e.g "./flow"
+
+        &nbsp;&nbsp;&nbsp;&nbsp;2. Set the ISSUE_TAG variable to rename the generated tar file
+
+        &nbsp;&nbsp;&nbsp;&nbsp;3. Run `make {script}_issue` in the directory "OpenROAD-flow-scripts/flow" where script is wildcarded from the "OpenROAD-flow-scripts/scripts" directory e.g `make cts_issue`
+                                          
+        &nbsp;&nbsp;&nbsp;&nbsp;4. Upload the generated tar file
+
+        B. Upload relevant files
 
         &nbsp;&nbsp;&nbsp;&nbsp;- Upload a tar file containing the relevant files (.def, .lef and flow.tcl).
 
