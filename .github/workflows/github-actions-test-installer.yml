@@ -1,6 +1,8 @@
 name: Test DependencyInstaller script
 on:
   # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
   schedule:
   - cron: "0 8 * * MON"
   # Allows you to run this workflow manually from the Actions tab
