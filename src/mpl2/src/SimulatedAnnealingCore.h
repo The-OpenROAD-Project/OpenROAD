@@ -180,10 +180,6 @@ class SimulatedAnnealingCore
   int macro_id_ = -1;          // the macro changed in the perturb
   int action_id_ = -1;         // the action_id of current step
 
-  // we define accuracy to determine whether the floorplan is valid
-  // because the error introduced by the type conversion
-  float acc_tolerance_ = 0.001;
-
   // metrics
   float width_ = 0.0;
   float height_ = 0.0;
@@ -211,7 +207,12 @@ class SimulatedAnnealingCore
   float neg_swap_prob_ = 0.0;
   float double_swap_prob_ = 0.0;
   float exchange_prob_ = 0.0;
+
   utl::Logger* logger_ = nullptr;
+
+  // we define accuracy to determine whether the floorplan is valid
+  // because the error introduced by the type conversion
+  static constexpr float acc_tolerance_ = 0.001;
 };
 
 // SACore wrapper function

@@ -90,16 +90,21 @@ SACoreHardMacro::SACoreHardMacro(
 float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
-  if (norm_area_penalty_ > 0.0)
+  if (norm_area_penalty_ > 0.0) {
     cost += area_weight_ * (width_ * height_) / norm_area_penalty_;
-  if (norm_outline_penalty_ > 0.0)
+  }
+  if (norm_outline_penalty_ > 0.0) {
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
-  if (norm_wirelength_ > 0.0)
+  }
+  if (norm_wirelength_ > 0.0) {
     cost += wirelength_weight_ * wirelength_ / norm_wirelength_;
-  if (norm_guidance_penalty_ > 0.0)
+  }
+  if (norm_guidance_penalty_ > 0.0) {
     cost += guidance_weight_ * guidance_penalty_ / norm_guidance_penalty_;
-  if (norm_fence_penalty_ > 0.0)
+  }
+  if (norm_fence_penalty_ > 0.0) {
     cost += fence_weight_ * fence_penalty_ / norm_fence_penalty_;
+  }
   return cost;
 }
 
@@ -113,14 +118,16 @@ void SACoreHardMacro::calPenalty()
 
 void SACoreHardMacro::flipMacro()
 {
-  for (auto& macro : macros_)
+  for (auto& macro : macros_) {
     macro.flip(false);
+  }
 }
 
 void SACoreHardMacro::perturb()
 {
-  if (macros_.size() == 0)
+  if (macros_.size() == 0) {
     return;
+  }
 
   // Keep back up
   pre_pos_seq_ = pos_seq_;
@@ -133,7 +140,7 @@ void SACoreHardMacro::perturb()
   pre_fence_penalty_ = fence_penalty_;
 
   // generate random number (0 - 1) to determine actions
-  const float op = (distribution_) (generator_);
+  const float op = distribution_(generator_);
   const float action_prob_1 = pos_swap_prob_;
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;
@@ -161,30 +168,32 @@ void SACoreHardMacro::perturb()
   packFloorplan();
   // Update all the penalties
   calPenalty();
-  if (action_id_ == 105)
+  if (action_id_ == 105) {
     logger_->report(
         "wirelength_weight_ = {} pre_wirelength = {} wirelength = {}",
         wirelength_weight_,
         pre_wirelength_,
         wirelength_);
+  }
 }
 
 void SACoreHardMacro::restore()
 {
-  if (macros_.size() == 0)
+  if (macros_.size() == 0) {
     return;
+  }
 
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 5)
+  if (action_id_ == 5) {
     macros_ = pre_macros_;
-  // macros_[macro_id_] = pre_macros_[macro_id_];
-  else if (action_id_ == 1)
+    // macros_[macro_id_] = pre_macros_[macro_id_];
+  } else if (action_id_ == 1) {
     pos_seq_ = pre_pos_seq_;
-  else if (action_id_ == 2)
+  } else if (action_id_ == 2) {
     neg_seq_ = pre_neg_seq_;
-  else {
+  } else {
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }
@@ -235,8 +244,9 @@ void SACoreHardMacro::initialize()
     cost_list.push_back(calNormCost());
   }
   float delta_cost = 0.0;
-  for (int i = 1; i < cost_list.size(); i++)
+  for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
+  }
   init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
@@ -245,13 +255,14 @@ void SACoreHardMacro::printResults()
   logger_->report("SACoreHardMacro");
   logger_->report("outline_penalty_  = {}", outline_penalty_);
   logger_->report("wirelength_  = {}", wirelength_);
-  for (auto& net : nets_)
+  for (auto& net : nets_) {
     logger_->report("net  src = {} target = {} weight = {}",
                     net.terminals.first,
                     net.terminals.second,
                     net.weight);
+  }
 
-  for (auto& macro : macros_)
+  for (auto& macro : macros_) {
     logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
         macro.getName(),
@@ -260,10 +271,11 @@ void SACoreHardMacro::printResults()
         macro.getPinX(),
         macro.getPinY(),
         macro.getOrientation());
+  }
   // FlipMacro();
   calPenalty();
   logger_->report("wirelength_  = {}", wirelength_);
-  for (auto& macro : macros_)
+  for (auto& macro : macros_) {
     logger_->report(
         "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
         macro.getName(),
@@ -272,6 +284,7 @@ void SACoreHardMacro::printResults()
         macro.getPinX(),
         macro.getPinY(),
         macro.getOrientation());
+  }
 
   logger_->report("guidance_penalty_  = {}", guidance_penalty_);
   logger_->report("fence_penalty_  = {}", fence_penalty_);

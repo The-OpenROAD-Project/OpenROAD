@@ -133,6 +133,7 @@ bool SimulatedAnnealingCore<T>::isValid() const
   logger_->report(
       "width_ :  {}  outline_width_ :  {} ", width_, outline_width_);
   logger_->report("height_ : {} outline_height_: {}", height_, outline_height_);
+
   return (width_ <= outline_width_ * (1.0 + acc_tolerance_))
          && (height_ <= outline_height_ * (1.0 + acc_tolerance_));
 }
@@ -279,10 +280,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
                             - (bbox.xMax() + bbox.xMin()) / 2.0);
     float y_dist = std::abs((macro_uy + macro_ly) / 2.0
                             - (bbox.yMax() + bbox.yMin()) / 2.0);
-    x_dist = x_dist - width > 0.0 ? x_dist - width : 0.0;
-    y_dist = y_dist - height > 0.0 ? y_dist - height : 0.0;
-    if (x_dist >= 0.0 && y_dist >= 0.0)
-      guidance_penalty_ += std::min(x_dist, y_dist);
+    x_dist = std::max(x_dist - width, 0.0f);
+    y_dist = std::max(y_dist - height, 0.0f);
+    guidance_penalty_ += std::min(x_dist, y_dist);
   }
 }
 
@@ -307,24 +307,28 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq_[i];  // macro_id
     // add the continue syntax to handle fixed terminals
-    if (macros_[b].getWidth() <= 0 || macros_[b].getHeight() <= 0)
+    if (macros_[b].getWidth() <= 0 || macros_[b].getHeight() <= 0) {
       continue;
+    }
     const int p = match[b].second;  // the position of current macro in neg_seq_
     macros_[b].setX(length[p]);
     const float t = macros_[b].getX() + macros_[b].getWidth();
-    for (int j = p; j < neg_seq_.size(); j++)
-      if (t > length[j])
+    for (int j = p; j < neg_seq_.size(); j++) {
+      if (t > length[j]) {
         length[j] = t;
-      else
+      } else {
         break;
+      }
+    }
   }
   // update width_ of current floorplan
   width_ = length[macros_.size() - 1];
 
   // calulate Y position
   std::vector<int> pos_seq(pos_seq_.size());
-  for (int i = 0; i < macros_.size(); i++)
+  for (int i = 0; i < macros_.size(); i++) {
     pos_seq[i] = pos_seq_[macros_.size() - 1 - i];
+  }
   // store the position of each macro in the pos_seq_ and neg_seq_
   for (int i = 0; i < macros_.size(); i++) {
     match[pos_seq[i]].first = i;
@@ -334,16 +338,19 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int b = pos_seq[i];  // macro_id
     // add continue syntax to handle fixed terminals
-    if (macros_[b].getHeight() <= 0 || macros_[b].getWidth() <= 0.0)
+    if (macros_[b].getHeight() <= 0 || macros_[b].getWidth() <= 0.0) {
       continue;
+    }
     const int p = match[b].second;  // the position of current macro in neg_seq_
     macros_[b].setY(length[p]);
     const float t = macros_[b].getY() + macros_[b].getHeight();
-    for (int j = p; j < neg_seq_.size(); j++)
-      if (t > length[j])
+    for (int j = p; j < neg_seq_.size(); j++) {
+      if (t > length[j]) {
         length[j] = t;
-      else
+      } else {
         break;
+      }
+    }
   }
   // update width_ of current floorplan
   height_ = length[macros_.size() - 1];
@@ -353,33 +360,38 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 template <class T>
 void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
 {
-  if (macros_.size() <= 1)
+  if (macros_.size() <= 1) {
     return;
+  }
 
   const int index1
-      = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  while (index1 == index2)
-    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+      = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  while (index1 == index2) {
+    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  }
 
-  if (pos)
+  if (pos) {
     std::swap(pos_seq_[index1], pos_seq_[index2]);
-  else
+  } else {
     std::swap(neg_seq_[index1], neg_seq_[index2]);
+  }
 }
 
 // DoubleSeqSwap
 template <class T>
 void SimulatedAnnealingCore<T>::doubleSeqSwap()
 {
-  if (macros_.size() <= 1)
+  if (macros_.size() <= 1) {
     return;
+  }
 
   const int index1
-      = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  while (index1 == index2)
-    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+      = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  while (index1 == index2) {
+    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  }
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   std::swap(neg_seq_[index1], neg_seq_[index2]);
@@ -389,24 +401,29 @@ void SimulatedAnnealingCore<T>::doubleSeqSwap()
 template <class T>
 void SimulatedAnnealingCore<T>::exchangeMacros()
 {
-  if (macros_.size() <= 1)
+  if (macros_.size() <= 1) {
     return;
+  }
 
   // swap positive seq
-  int index1 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  int index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
-  while (index1 == index2)
-    index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
+  const int index1
+      = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  while (index1 == index2) {
+    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  }
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   int neg_index1 = -1;
   int neg_index2 = -1;
   // swap negative seq
   for (int i = 0; i < macros_.size(); i++) {
-    if (pos_seq_[index1] == neg_seq_[i])
+    if (pos_seq_[index1] == neg_seq_[i]) {
       neg_index1 = i;
-    if (pos_seq_[index2] == neg_seq_[i])
+    }
+    if (pos_seq_[index2] == neg_seq_[i]) {
       neg_index2 = i;
+    }
   }
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
@@ -414,12 +431,14 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 {
-  if (value_list.size() == 0)
+  if (value_list.size() == 0) {
     return 0.0;
+  }
 
   float sum = 0.0;
-  for (const auto& value : value_list)
+  for (const auto& value : value_list) {
     sum += value;
+  }
   return sum / value_list.size();
 }
 
@@ -445,10 +464,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / t) : 1;
-      if (num < prob)
+      if (num < prob) {
         pre_cost = cost;
-      else
+      } else {
         restore();
+      }
     }
     t *= 0.985;
     // increase step
@@ -475,16 +495,15 @@ void SimulatedAnnealingCore<T>::fastSA()
   }  // end while
   // update the final results
   packFloorplan();
-  // FillDeadSpace();
   calPenalty();
 
   std::ofstream file;
-  // file.open(string(report_directory_) + string("/") + "floorplan.txt");
   file.open("floorplan.txt");
-  for (auto& macro : macros_)
+  for (auto& macro : macros_) {
     file << macro.getName() << "    " << macro.getX() << "    " << macro.getY()
          << "    " << macro.getWidth() << "   " << macro.getHeight()
          << std::endl;
+  }
   file.close();
 }
 

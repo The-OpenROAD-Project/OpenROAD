@@ -129,12 +129,15 @@ class Graph
 {
  public:
   Graph(int num_vertices, float congestion_weight);
+
   void addEdge(int src, int dest, float weight, Edge* edge_ptr);
+
   // Calculate shortest pathes in terms of boundary edges
   void calNetEdgePaths(int src,
                        int target,
                        BundledNet& net,
                        utl::Logger* logger);
+
   bool isConnected() const;  // check the GFS is connected
 
  private:
