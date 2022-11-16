@@ -81,8 +81,8 @@ static int mapxy(const int nx,
 void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
 {
   const int d = rsmt.deg;
-  const int numnodes = 2 * d - 2;
-  const int numedges = 2 * d - 3;
+  const int numnodes = rsmt.branchCount();
+  const int numedges = numnodes - 1;
   sttrees_[ind].num_nodes = numnodes;
   sttrees_[ind].num_terminals = d;
   sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
@@ -740,7 +740,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         wl1 += sttrees_[i].edges[j].len;
     }
 
-    for (int j = 0; j < 2 * d - 2; j++) {
+    for (int j = 0; j < rsmt.branchCount(); j++) {
       const int x1 = rsmt.branch[j].x;
       const int y1 = rsmt.branch[j].y;
       const int n = rsmt.branch[j].n;
