@@ -1506,8 +1506,7 @@ void HierRTLMP::updateDataFlow()
   // macros to ffs
   for (const auto& [iterm, insts] : macro_ffs_conn_map_) {
     const int driver_id
-        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")
-              ->getValue();
+        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = 1.0 / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
@@ -1526,8 +1525,7 @@ void HierRTLMP::updateDataFlow()
   // macros to macros
   for (const auto& [iterm, insts] : macro_macro_conn_map_) {
     const int driver_id
-        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")
-              ->getValue();
+        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
@@ -3111,8 +3109,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   // for debug
-  file.open("./" + report_directory_ + "/"
-            + "pin_access.txt");
+  file.open("./" + report_directory_ + "/" + "pin_access.txt");
   for (auto& cluster : parent->getChildren()) {
     std::set<PinAccess> pin_access;
     for (auto& [cluster_id, pin_weight] : cluster->getPinAccessMap()) {

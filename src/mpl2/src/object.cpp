@@ -190,7 +190,9 @@ Cluster::Cluster(int cluster_id, utl::Logger* logger)
   logger_ = logger;
 }
 
-Cluster::Cluster(int cluster_id, const std::string& cluster_name, utl::Logger* logger)
+Cluster::Cluster(int cluster_id,
+                 const std::string& cluster_name,
+                 utl::Logger* logger)
 {
   id_ = cluster_id;
   name_ = cluster_name;
