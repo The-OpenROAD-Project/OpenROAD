@@ -407,6 +407,13 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
 
   auto* port = network_->dbToSta(tie_term);
   auto* lib_port = network_->libertyPort(port);
+  if (!lib_port) {
+    logger_->error(utl::IFP,
+                   39,
+                   "Liberty cell or port {}/{} not found.",
+                   master->getName(),
+                   tie_term->getName());
+  }
   auto func_operation = lib_port->function()->op();
   const bool is_zero = func_operation == sta::FuncExpr::op_zero;
   const bool is_one = func_operation == sta::FuncExpr::op_one;
