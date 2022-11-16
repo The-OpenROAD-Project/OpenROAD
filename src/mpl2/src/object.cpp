@@ -103,43 +103,41 @@ Metric::Metric(unsigned int num_std_cell,
                float std_cell_area,
                float macro_area)
 {
-  this->num_std_cell_ = num_std_cell;
-  this->num_macro_ = num_macro;
-  this->std_cell_area_ = std_cell_area;
-  this->macro_area_ = macro_area;
+  num_std_cell_ = num_std_cell;
+  num_macro_ = num_macro;
+  std_cell_area_ = std_cell_area;
+  macro_area_ = macro_area;
 }
 
 void Metric::addMetric(const Metric& metric)
 {
-  this->num_std_cell_ += metric.num_std_cell_;
-  this->num_macro_ += metric.num_macro_;
-  this->std_cell_area_ += metric.std_cell_area_;
-  this->macro_area_ += metric.macro_area_;
-  this->inflat_std_cell_area_ += metric.inflat_std_cell_area_;
-  this->inflat_macro_area_ += metric.inflat_macro_area_;
+  num_std_cell_ += metric.num_std_cell_;
+  num_macro_ += metric.num_macro_;
+  std_cell_area_ += metric.std_cell_area_;
+  macro_area_ += metric.macro_area_;
+  inflat_std_cell_area_ += metric.inflat_std_cell_area_;
+  inflat_macro_area_ += metric.inflat_macro_area_;
 }
 
 void Metric::inflatStdCellArea(float std_cell_util)
 {
   if ((std_cell_util > 0.0) && (std_cell_util < 1.0))
-    this->inflat_std_cell_area_ /= std_cell_util;
+    inflat_std_cell_area_ /= std_cell_util;
 }
 
 const std::pair<unsigned int, unsigned int> Metric::getCountStats() const
 {
-  return std::pair<unsigned int, unsigned int>(this->num_std_cell_,
-                                               this->num_macro_);
+  return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
 const std::pair<float, float> Metric::getAreaStats() const
 {
-  return std::pair<float, float>(this->std_cell_area_, this->macro_area_);
+  return std::pair<float, float>(std_cell_area_, macro_area_);
 }
 
 const std::pair<float, float> Metric::getInflatAreaStats() const
 {
-  return std::pair<float, float>(this->inflat_std_cell_area_,
-                                 this->inflat_macro_area_);
+  return std::pair<float, float>(inflat_std_cell_area_, inflat_macro_area_);
 }
 
 unsigned int Metric::getNumMacro() const
@@ -187,14 +185,14 @@ float Metric::getInflatArea() const
 // Constructors and Destructors
 Cluster::Cluster(int cluster_id, utl::Logger* logger)
 {
-  this->id_ = cluster_id;
+  id_ = cluster_id;
   logger_ = logger;
 }
 
 Cluster::Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger)
 {
-  this->id_ = cluster_id;
-  this->name_ = cluster_name;
+  id_ = cluster_id;
+  name_ = cluster_name;
   logger_ = logger;
 }
 
@@ -363,7 +361,7 @@ int Cluster::getNumMacro() const
 
 float Cluster::getArea() const
 {
-  return this->getStdCellArea() + this->getMacroArea();
+  return getStdCellArea() + getMacroArea();
 }
 
 float Cluster::getStdCellArea() const
@@ -639,13 +637,12 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
   line += std::string(80, '*') + "\n";
   line += "[INFO] cluster_name :  " + name_ + "  ";
   line += "cluster_id : " + std::to_string(id_) + "  \n";
-  line += "num_std_cell : " + std::to_string(this->getNumStdCell()) + "  ";
-  line += "num_macro : " + std::to_string(this->getNumMacro()) + "\n";
-  line += "width : " + std::to_string(this->getWidth()) + "  ";
-  line += "height : " + std::to_string(this->getHeight()) + "  ";
-  line
-      += "location :  ( " + std::to_string((this->getLocation()).first) + " , ";
-  line += std::to_string((this->getLocation()).second) + " )\n";
+  line += "num_std_cell : " + std::to_string(getNumStdCell()) + "  ";
+  line += "num_macro : " + std::to_string(getNumMacro()) + "\n";
+  line += "width : " + std::to_string(getWidth()) + "  ";
+  line += "height : " + std::to_string(getHeight()) + "  ";
+  line += "location :  ( " + std::to_string((getLocation()).first) + " , ";
+  line += std::to_string((getLocation()).second) + " )\n";
   for (const auto& hard_macro : hard_macros_) {
     line += "\t macro_name : " + hard_macro->getName();
     line += "\t width : " + std::to_string(hard_macro->getRealWidth());
@@ -896,7 +893,7 @@ std::string HardMacro::getOrientation() const
 // This may violate the direction of metal layers
 void HardMacro::flip(bool flip_horizontal)
 {
-  if (flip_horizontal == true) {
+  if (flip_horizontal) {
     orientation_ = orientation_.flipX();
     pin_y_ = height_ - pin_y_;
   } else {
@@ -929,15 +926,15 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
 {
   if ((inst_ == nullptr) || (dbu_ <= 0.0))
     return;
-  float lx = this->getRealX();
-  float ly = this->getRealY();
-  float ux = lx + this->getRealWidth();
-  float uy = ly + this->getRealHeight();
+  float lx = getRealX();
+  float ly = getRealY();
+  float ux = lx + getRealWidth();
+  float uy = ly + getRealHeight();
   lx = std::round(lx / pitch_x) * pitch_x;
   ux = std::round(ux / pitch_x) * pitch_x;
   ly = std::round(ly / pitch_y) * pitch_y;
   uy = std::round(uy / pitch_y) * pitch_y;
-  std::cout << "Update macro " << this->getName() << std::endl;
+  std::cout << "Update macro " << getName() << std::endl;
   std::cout << "lx :  " << lx << "  "
             << "ly :  " << ly << "  "
             << "ux :  " << ux << "  "
@@ -1027,7 +1024,7 @@ void SoftMacro::setX(float x)
     return;
   }
 
-  if (fixed_ == false)
+  if (!fixed_)
     x_ = x;
 }
 
@@ -1041,13 +1038,13 @@ void SoftMacro::setY(float y)
     return;
   }
 
-  if (fixed_ == false)
+  if (!fixed_)
     y_ = y;
 }
 
 void SoftMacro::setLocation(const std::pair<float, float>& location)
 {
-  if (fixed_ == true)
+  if (fixed_)
     return;
   x_ = location.first;
   y_ = location.second;
@@ -1060,7 +1057,7 @@ int SoftMacro::findPos(std::vector<std::pair<float, float>>& list,
 {
   // We assume the value is within the range of list
   int idx = 0;
-  if (increase_order == true) {
+  if (increase_order) {
     while ((idx < list.size()) && (list[idx].second < value))
       idx++;
     if (list[idx].first > value)
@@ -1079,7 +1076,7 @@ void SoftMacro::setWidth(float width)
   if (width <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag() == true)
+      || cluster_->getIOClusterFlag())
     return;
 
   // the width_list_ is sorted in nondecreasing order
@@ -1104,7 +1101,7 @@ void SoftMacro::setHeight(float height)
   if (height <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag() == true)
+      || cluster_->getIOClusterFlag())
     return;
 
   // the height_list_ is sorted in nonincreasing order
@@ -1135,7 +1132,7 @@ void SoftMacro::shrinkArea(float percent)
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() != StdCellCluster
-      || cluster_->getIOClusterFlag() == true)
+      || cluster_->getIOClusterFlag())
     return;
 
   width_ = width_ * percent;
@@ -1148,7 +1145,7 @@ void SoftMacro::setArea(float area)
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag() == true
+      || cluster_->getIOClusterFlag()
       || area <= width_list_[0].first * height_list_[0].first)
     return;
 
@@ -1181,7 +1178,7 @@ void SoftMacro::setArea(float area)
 void SoftMacro::setShapes(const std::vector<std::pair<float, float>>& shapes,
                           bool force_flag)
 {
-  if (force_flag == false
+  if (!force_flag
       && (shapes.size() == 0 || cluster_ == nullptr
           || cluster_->getClusterType() != HardMacroCluster))
     return;
@@ -1203,7 +1200,7 @@ void SoftMacro::setShapes(
     float area)
 {
   if (width_list.size() == 0 || area <= 0.0 || cluster_ == nullptr
-      || cluster_->getIOClusterFlag() == true
+      || cluster_->getIOClusterFlag()
       || cluster_->getClusterType() == HardMacroCluster)
     return;
   area_ = area;
@@ -1225,7 +1222,7 @@ void SoftMacro::setShapes(
         std::pair<float, float>(area / shape.first, area / shape.second));
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;
-  std::cout << this->getName() << std::endl;
+  std::cout << getName() << std::endl;
   std::cout << "width_list : ";
   for (auto& width : width_list_)
     std::cout << width.first << "  -  " << width.second << "   ";

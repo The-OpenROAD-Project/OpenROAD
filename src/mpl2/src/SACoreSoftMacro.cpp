@@ -450,7 +450,7 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   // detect the notch region around each MixedCluster and HardMacroCluster
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (macro_mask[macro_id] == false)
+    if (!macro_mask[macro_id])
       continue;
     int x_start = 0;
     int x_end = 0;
@@ -472,7 +472,7 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   // check surroundings of each HardMacroCluster and MixecCluster
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (macro_mask[macro_id] == false)
+    if (!macro_mask[macro_id])
       continue;
     int x_start = 0;
     int x_end = 0;
@@ -501,7 +501,7 @@ void SACoreSoftMacro::calNotchPenalty()
           break;
         }                   // end if
       }                     // end y
-      if (flag == false) {  // extension done
+      if (!flag) {  // extension done
         break;
       } else {
         x_start_new--;  // extend left
@@ -518,7 +518,7 @@ void SACoreSoftMacro::calNotchPenalty()
           break;
         }                   // end if
       }                     // end y
-      if (flag == false) {  // extension done
+      if (!flag) {  // extension done
         break;
       } else {
         y_end_new++;  // extend top
@@ -535,7 +535,7 @@ void SACoreSoftMacro::calNotchPenalty()
           break;
         }                   // end if
       }                     // end y
-      if (flag == false) {  // extension done
+      if (!flag) {  // extension done
         break;
       } else {
         x_end_new++;  // extend right
@@ -552,7 +552,7 @@ void SACoreSoftMacro::calNotchPenalty()
           break;
         }                   // end if
       }                     // end y
-      if (flag == false) {  // extension done
+      if (!flag) {  // extension done
         break;
       } else {
         y_start_new--;  // extend down
@@ -733,7 +733,7 @@ void SACoreSoftMacro::fillDeadSpace()
       const bool forward_flag = (order == 0)
                                     ? macros_[macro_id].isMixedCluster()
                                     : macros_[macro_id].isStdCellCluster();
-      if (forward_flag == false)
+      if (!forward_flag)
         continue;
       int x_start = 0;
       int x_end = 0;
@@ -762,7 +762,7 @@ void SACoreSoftMacro::fillDeadSpace()
             break;
           }                   // end if
         }                     // end y
-        if (flag == false) {  // extension done
+        if (!flag) {  // extension done
           break;
         } else {
           x_start_new--;  // extend left
@@ -780,7 +780,7 @@ void SACoreSoftMacro::fillDeadSpace()
             break;
           }                   // end if
         }                     // end y
-        if (flag == false) {  // extension done
+        if (!flag) {  // extension done
           break;
         } else {
           y_end_new++;  // extend top
@@ -798,7 +798,7 @@ void SACoreSoftMacro::fillDeadSpace()
             break;
           }                   // end if
         }                     // end y
-        if (flag == false) {  // extension done
+        if (!flag) {  // extension done
           break;
         } else {
           x_end_new++;  // extend right
@@ -816,7 +816,7 @@ void SACoreSoftMacro::fillDeadSpace()
             break;
           }                   // end if
         }                     // end y
-        if (flag == false) {  // extension done
+        if (!flag) {  // extension done
           break;
         } else {
           y_start_new--;  // extend down

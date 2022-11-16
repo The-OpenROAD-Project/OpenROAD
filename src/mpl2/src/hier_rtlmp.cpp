@@ -504,12 +504,12 @@ void HierRTLMP::mapIOPads()
   // Check if this design has IO pads
   bool is_pad_design = false;
   for (auto inst : block_->getInsts()) {
-    if (inst->getMaster()->isPad() == true) {
+    if (inst->getMaster()->isPad()) {
       is_pad_design = true;
       break;
     }
   }
-  if (is_pad_design == false)
+  if (!is_pad_design)
     return;
 
   for (odb::dbNet* net : block_->getNets()) {
@@ -664,7 +664,7 @@ void HierRTLMP::createBundledIOs()
   floorplan_uy_ = dbuToMicron(floorplan_uy_, dbu_);
 
   for (auto& [cluster_id, flag] : cluster_io_map) {
-    if (flag == false) {
+    if (!flag) {
       logger_->report("remove cluster : {}",
                       cluster_map_[cluster_id]->getName());
       cluster_map_[cluster_id]->getParent()->removeChild(
@@ -759,7 +759,7 @@ void HierRTLMP::setInstProperty(odb::dbModule* module,
                                 int cluster_id,
                                 bool include_macro)
 {
-  if (include_macro == true) {
+  if (include_macro) {
     for (odb::dbInst* inst : module->getInsts())
       odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
   } else {  // only consider standard cells
@@ -907,8 +907,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
   // Merge small clusters
   std::vector<Cluster*> candidate_clusters;
   for (auto& cluster : parent->getChildren())
-    if (cluster->getIOClusterFlag() == false
-        && cluster->getNumStdCell() < min_num_inst_
+    if (!cluster->getIOClusterFlag() && cluster->getNumStdCell() < min_num_inst_
         && cluster->getNumMacro() < min_num_macro_)
       candidate_clusters.push_back(cluster);
   mergeClusters(candidate_clusters);
@@ -971,13 +970,11 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
           candidate_clusters[i]->getName(),
           (cluster_id != -1 ? cluster_map_[cluster_id]->getName() : "   "));
       // end debug
-      if (cluster_id != -1
-          && cluster_map_[cluster_id]->getIOClusterFlag() == false) {
+      if (cluster_id != -1 && !cluster_map_[cluster_id]->getIOClusterFlag()) {
         Cluster*& cluster = cluster_map_[cluster_id];
         bool delete_flag = false;
-        if (cluster->mergeCluster(*candidate_clusters[i], delete_flag)
-            == true) {
-          if (delete_flag == true) {
+        if (cluster->mergeCluster(*candidate_clusters[i], delete_flag)) {
+          if (delete_flag) {
             cluster_map_.erase(candidate_clusters[i]->getId());
             delete candidate_clusters[i];
           }
@@ -998,13 +995,12 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
             continue;
           bool flag = candidate_clusters[i]->isSameConnSignature(
               *candidate_clusters[j], signature_net_threshold_);
-          if (flag == true) {
+          if (flag) {
             cluster_class[j] = i;
             bool delete_flag = false;
             if (candidate_clusters[i]->mergeCluster(*candidate_clusters[j],
-                                                    delete_flag)
-                == true) {
-              if (delete_flag == true) {
+                                                    delete_flag)) {
+              if (delete_flag) {
                 cluster_map_.erase(candidate_clusters[j]->getId());
                 delete candidate_clusters[j];
               }
@@ -1078,7 +1074,7 @@ void HierRTLMP::calculateConnection()
       else
         loads_id.push_back(cluster_id);
     }
-    if (pad_flag == true)
+    if (pad_flag)
       continue;  // the nets with Pads should be ignored
     // check the connected IO pins
     for (odb::dbBTerm* bterm : net->getBTerms()) {
@@ -1183,7 +1179,7 @@ void HierRTLMP::calDataFlow()
       else
         loads_id.insert(vertex_id);
     }
-    if (pad_flag == true)
+    if (pad_flag)
       continue;  // the nets with Pads should be ignored
     // check the connected IO pins
     for (odb::dbBTerm* bterm : net->getBTerms()) {
@@ -1294,7 +1290,7 @@ void HierRTLMP::dataFlowDFSIOPin(int parent,
                                  bool backward_flag)
 {
   visited[parent] = true;
-  if (stop_flag_vec[parent] == true) {
+  if (stop_flag_vec[parent]) {
     if (parent < io_pin_vertex.size()) {
       ;  // currently we do not consider IO pin to IO pin connnection
     } else if (parent < io_pin_vertex.size() + std_cell_vertex.size()) {
@@ -1308,11 +1304,11 @@ void HierRTLMP::dataFlowDFSIOPin(int parent,
   if (idx >= max_num_ff_dist_)
     return;
 
-  if (backward_flag == false) {
+  if (!backward_flag) {
     for (auto& hyperedge : vertices[parent]) {
       for (auto& vertex : hyperedges[hyperedge]) {
         // we do not consider pin to pin
-        if (visited[vertex] == true || vertex < io_pin_vertex.size())
+        if (visited[vertex] || vertex < io_pin_vertex.size())
           continue;
         dataFlowDFSIOPin(vertex,
                          idx,
@@ -1331,7 +1327,7 @@ void HierRTLMP::dataFlowDFSIOPin(int parent,
     for (auto& hyperedge : vertices[parent]) {
       const int vertex = hyperedges[hyperedge][0];  // driver vertex
       // we do not consider pin to pin
-      if (visited[vertex] == true || vertex < io_pin_vertex.size())
+      if (visited[vertex] || vertex < io_pin_vertex.size())
         continue;
       dataFlowDFSIOPin(vertex,
                        idx,
@@ -1363,7 +1359,7 @@ void HierRTLMP::dataFlowDFSMacroPin(
     bool backward_flag)
 {
   visited[parent] = true;
-  if (stop_flag_vec[parent] == true) {
+  if (stop_flag_vec[parent]) {
     if (parent < io_pin_vertex.size()) {
       ;  // the connection between IO and macro pins have been considers
     } else if (parent < io_pin_vertex.size() + std_cell_vertex.size()) {
@@ -1377,11 +1373,11 @@ void HierRTLMP::dataFlowDFSMacroPin(
   if (idx >= max_num_ff_dist_)
     return;
 
-  if (backward_flag == false) {
+  if (!backward_flag) {
     for (auto& hyperedge : vertices[parent]) {
       for (auto& vertex : hyperedges[hyperedge]) {
         // we do not consider pin to pin
-        if (visited[vertex] == true || vertex < io_pin_vertex.size())
+        if (visited[vertex] || vertex < io_pin_vertex.size())
           continue;
         dataFlowDFSMacroPin(vertex,
                             idx,
@@ -1401,7 +1397,7 @@ void HierRTLMP::dataFlowDFSMacroPin(
     for (auto& hyperedge : vertices[parent]) {
       const int vertex = hyperedges[hyperedge][0];
       // we do not consider pin to pin
-      if (visited[vertex] == true || vertex < io_pin_vertex.size())
+      if (visited[vertex] || vertex < io_pin_vertex.size())
         continue;
       dataFlowDFSMacroPin(vertex,
                           idx,
@@ -1523,7 +1519,7 @@ void HierRTLMP::updateSubTree(Cluster* parent)
   for (auto child : parent->getChildren())
     wavefront.push(child);
 
-  while (wavefront.empty() == false) {
+  while (!wavefront.empty()) {
     Cluster* cluster = wavefront.front();
     wavefront.pop();
     if (cluster->getChildren().size() == 0) {
@@ -1617,7 +1613,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
         loads_id.push_back(vertex_id);
     }
     // ignore the nets with IO pads
-    if (pad_flag == true)
+    if (pad_flag)
       continue;
     // check the connected IO pins
     for (odb::dbBTerm* bterm : net->getBTerms()) {
@@ -1789,7 +1785,7 @@ void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
             continue;
           bool flag = macro_clusters[i]->isSameConnSignature(
               *macro_clusters[j], signature_net_threshold_);
-          if (flag == true)
+          if (flag)
             macro_signature_class[j] = i;
         }
       }
@@ -1830,7 +1826,7 @@ void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
                             macro_clusters[j]->getName());
             bool delete_flag = false;
             macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
-            if (delete_flag == true) {
+            if (delete_flag) {
               // remove the merged macro cluster
               cluster_map_.erase(macro_clusters[j]->getId());
               delete macro_clusters[j];
@@ -2438,7 +2434,7 @@ void HierRTLMP::createPinBlockage()
       sum_range += range.second - range.first;
   float net_sum = 0.0;
   for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->getIOClusterFlag() == false)
+    if (!cluster->getIOClusterFlag())
       continue;
     for (auto& [cluster_id, num_net] : cluster->getConnection())
       net_sum += num_net;
@@ -2481,7 +2477,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag() == true)
+    if (cluster->getIOClusterFlag())
       continue;
     SoftMacro* macro = new SoftMacro(cluster);
     cluster->setSoftMacro(
@@ -2531,7 +2527,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
     // for IO cluster
-    if (cluster->getIOClusterFlag() == true) {
+    if (cluster->getIOClusterFlag()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.push_back(SoftMacro(
           std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
@@ -2590,9 +2586,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       for (auto& [target_pin, old_weight] : pin_map) {
         float weight = old_weight;
         // if (macros[soft_macro_id_map[toString(src_pin)]].IsStdCellCluster()
-        // == true ||
+        //  ||
         //    macros[soft_macro_id_map[toString(target_pin)]].IsStdCellCluster()
-        //    == true)
+        //    )
         //  weight *= virtual_weight_;
         nets.push_back(BundledNet(soft_macro_id_map[toString(src_pin)],
                                   soft_macro_id_map[toString(target_pin)],
@@ -2823,13 +2819,13 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       logger_->report("start run_id : {} ", run_id);
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
-      if (shapeChildrenCluster(parent,
-                               shaped_macros,
-                               soft_macro_id_map,
-                               target_util,
-                               target_dead_space)
-          == false)
+      if (!shapeChildrenCluster(parent,
+                                shaped_macros,
+                                soft_macro_id_map,
+                                target_util,
+                                target_dead_space)) {
         continue;
+      }
       logger_->report("finish run_id :  {}", run_id);
       weight_sum = 1.0;
       SACoreSoftMacro* sa
@@ -3054,7 +3050,7 @@ bool HierRTLMP::shapeChildrenCluster(
   }
   logger_->report("pin access area {} ", macro_area_tot);
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag() == true)
+    if (cluster->getIOClusterFlag())
       continue;
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_area_tot += cluster->getStdCellArea();
@@ -3126,7 +3122,7 @@ bool HierRTLMP::shapeChildrenCluster(
   logger_->report("std_cell_inflat : {}", std_cell_inflat);
   // set the shape for each macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag() == true)
+    if (cluster->getIOClusterFlag())
       continue;
     if (cluster->getClusterType() == StdCellCluster) {
       const float area = cluster->getArea() * (1.0 + std_cell_inflat);
@@ -3194,15 +3190,15 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
   std::vector<int> soft_macro_vertex_id;
   std::vector<Edge> edge_list;
   std::vector<Vertex> vertex_list;
-  if (calNetPaths(shaped_macros,
-                  soft_macro_vertex_id,
-                  edge_list,
-                  vertex_list,
-                  nets,
-                  congestion_weight_,
-                  logger_)
-      == false)
+  if (!calNetPaths(shaped_macros,
+                   soft_macro_vertex_id,
+                   edge_list,
+                   vertex_list,
+                   nets,
+                   congestion_weight_,
+                   logger_)) {
     logger_->error(MPL, 2029, "Fail !!! Cannot do bus planning !!!");
+  }
 }
 
 // place macros within the HardMacroCluster
@@ -3260,7 +3256,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
         != cluster_id_macro_id_map.end())
       continue;
     auto& temp_cluster = cluster_map_[cluster_id];
-    if (temp_cluster->getIOClusterFlag() == true)
+    if (temp_cluster->getIOClusterFlag())
       continue;
     // model other cluster as a fixed macro with zero size
     cluster_id_macro_id_map[cluster_id] = macros.size();
@@ -3279,7 +3275,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   for (auto macro_cluster : macro_clusters) {
     const int src_id = macro_cluster->getId();
     for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
-      if (cluster_map_[cluster_id]->getIOClusterFlag() == true)
+      if (cluster_map_[cluster_id]->getIOClusterFlag())
         continue;
       BundledNet net(cluster_id_macro_id_map[src_id],
                      cluster_id_macro_id_map[cluster_id],

@@ -247,8 +247,9 @@ void SimulatedAnnealingCore<T>::calWirelength()
 {
   // Initialization
   wirelength_ = 0.0;
-  if (wirelength_weight_ <= 0.0)
+  if (wirelength_weight_ <= 0.0) {
     return;
+  }
 
   for (const auto& net : nets_) {
     const float x1 = macros_[net.terminals.first].getPinX();
@@ -264,8 +265,9 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
-  if (fence_weight_ <= 0.0)
+  if (fence_weight_ <= 0.0) {
     return;
+  }
 
   for (const auto& [id, bbox] : fences_) {
     const float lx = macros_[id].getX();
@@ -285,8 +287,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
-  if (guidance_weight_ <= 0.0)
+  if (guidance_weight_ <= 0.0) {
     return;
+  }
 
   for (const auto& [id, bbox] : guides_) {
     const float macro_lx = macros_[id].getX();
@@ -397,7 +400,7 @@ void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
   while (index1 == index2)
     index2 = (int) (std::floor((distribution_) (generator_) *macros_.size()));
 
-  if (pos == true)
+  if (pos)
     std::swap(pos_seq_[index1], pos_seq_[index2]);
   else
     std::swap(neg_seq_[index1], neg_seq_[index2]);

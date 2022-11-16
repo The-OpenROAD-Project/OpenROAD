@@ -84,13 +84,13 @@ void Graph::calShortPathParentVertices(int root)
   dist[root] = 0.0;
   wavefront.push(VertexDist{root, dist[root]});
   // Forward propagation
-  while (wavefront.empty() == false) {
+  while (!wavefront.empty()) {
     VertexDist vertex_dist = wavefront.top();
     wavefront.pop();
     // check if the vertex has been visited
     // we may have a vertex with different distances in the wavefront
     // only the shortest distance of the vertex should be used.
-    if (visited[vertex_dist.vertex] == true)
+    if (visited[vertex_dist.vertex])
       continue;
     // mark current vertex as visited
     visited[vertex_dist.vertex] = true;
@@ -167,7 +167,7 @@ void Graph::calEdgePaths(
       Edge* edge_ptr = adj_map[path[i]][path[i + 1]];
       distance += edge_ptr->length * (1 - congestion_weight_);
       distance += edge_ptr->length_w * congestion_weight_;
-      if (edge_ptr->internal == false) {
+      if (!edge_ptr->internal) {
         hash_value += edge_ptr->edge_id * edge_ptr->edge_id;
         edge_path.push_back(edge_ptr->edge_id);
       }
@@ -326,7 +326,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
           vertex_list[vertex_id].disable_h_edge = true;
       }
     }
-    if (test_flag == false)
+    if (!test_flag)
       logger->report("Error\n\n");
 
     // increase macro id
@@ -353,10 +353,9 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     for (int x_idx = 0; x_idx < x_grid.size() - 1; x_idx++) {
       const int src = y_idx * x_grid.size() + x_idx;
       const int target = src + 1;
-      if (vertex_list[src].disable_h_edge == true
-          || vertex_list[target].disable_h_edge == true
-          || vertex_list[src].disable_v_edge == true
-          || vertex_list[target].disable_v_edge == true)
+      if (vertex_list[src].disable_h_edge || vertex_list[target].disable_h_edge
+          || vertex_list[src].disable_v_edge
+          || vertex_list[target].disable_v_edge)
         continue;
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals = std::pair<int, int>(src, target);
@@ -406,10 +405,9 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     for (int y_idx = 0; y_idx < y_grid.size() - 1; y_idx++) {
       const int src = y_idx * x_grid.size() + x_idx;
       const int target = src + x_grid.size();
-      if (vertex_list[src].disable_h_edge == true
-          || vertex_list[target].disable_h_edge == true
-          || vertex_list[src].disable_v_edge == true
-          || vertex_list[target].disable_v_edge == true)
+      if (vertex_list[src].disable_h_edge || vertex_list[target].disable_h_edge
+          || vertex_list[src].disable_v_edge
+          || vertex_list[target].disable_v_edge)
         continue;
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals = std::pair<int, int>(src, target);
@@ -460,12 +458,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   for (int y_idx = 0; y_idx < y_grid.size(); y_idx++) {
     for (int x_idx = 1; x_idx < x_grid.size() - 1; x_idx++) {
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
-      if (vertex.disable_v_edge == false && vertex.disable_h_edge == false) {
+      if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true
-                 && vertex.disable_h_edge == true) {
+      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true) {
+      } else if (vertex.disable_v_edge) {
         const int src = vertex.vertex_id - 1;
         const int target = vertex.vertex_id + 1;
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -510,12 +507,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   for (int y_idx = 1; y_idx < y_grid.size() - 1; y_idx++) {
     for (int x_idx = 0; x_idx < x_grid.size(); x_idx++) {
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
-      if (vertex.disable_v_edge == false && vertex.disable_h_edge == false) {
+      if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true
-                 && vertex.disable_h_edge == true) {
+      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_h_edge == true) {
+      } else if (vertex.disable_h_edge) {
         const int src = vertex.vertex_id - x_grid.size();
         const int target = vertex.vertex_id + x_grid.size();
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -584,7 +580,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       if (neighbor >= vertex_list.size())
         continue;
       auto& n_vertex = vertex_list[neighbor];
-      if (n_vertex.disable_v_edge == true || n_vertex.disable_h_edge == true)
+      if (n_vertex.disable_v_edge || n_vertex.disable_h_edge)
         continue;
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals
@@ -614,7 +610,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       if (neighbor >= vertex_list.size())
         continue;
       auto& n_vertex = vertex_list[neighbor];
-      if (n_vertex.disable_v_edge == true || n_vertex.disable_h_edge == true)
+      if (n_vertex.disable_v_edge || n_vertex.disable_h_edge)
         continue;
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals
@@ -635,8 +631,8 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     edge.weight = std::max(vertex_list[edge.terminals.first].weight,
                            vertex_list[edge.terminals.second].weight);
     // for the edge crossing soft macros
-    if (edge.internal == false) {
-      if (edge.direction == true) {  // horizontal
+    if (!edge.internal) {
+      if (edge.direction) {  // horizontal
         edge.pin_access = R;
       } else {
         edge.pin_access = T;

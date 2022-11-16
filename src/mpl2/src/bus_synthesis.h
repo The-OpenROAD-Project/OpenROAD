@@ -52,18 +52,25 @@ struct Vertex
 {
   Vertex(int vertex_id, Point pos) : vertex_id(vertex_id), pos(pos) {}
 
-  int vertex_id = -1;  // vertex_id of current vertex
-  int macro_id
-      = -1;  // soft_macro_id of the SoftMacro which the vertex belongs to
-  bool disable_v_edge
-      = false;  // disable the vertical connection of this vertex
-  bool disable_h_edge
-      = false;  // disable the horizontal connection of this vertex
-  Point pos;    // position of the vertex
-  float weight
-      = 0.0;  // the weight of the vertex : macro utilization of the SoftMacro
-              // which the vertex belongs to.
-              // For bundled IO pin, we set the macro utilization to be zero
+  // vertex_id of current vertex
+  int vertex_id = -1;
+
+  // soft_macro_id of the SoftMacro which the vertex belongs to
+  int macro_id = -1;
+
+  // disable the vertical connection of this vertex
+  bool disable_v_edge = false;
+
+  // disable the horizontal connection of this vertex
+  bool disable_h_edge = false;
+
+  // position of the vertex
+  Point pos;
+
+  // The weight of the vertex : macro utilization of the SoftMacro
+  // which the vertex belongs to.  For bundled IO pin, we set the
+  // macro utilization to be zero
+  float weight = 0.0;
 };
 
 struct VertexDist
@@ -164,8 +171,8 @@ class Graph
   // So the parent of each vertex is a vector instead of some vertex
   std::map<int, std::vector<std::vector<int>>> parents_;
   std::vector<std::vector<Arrow>> adj_;  // adjacency matrix
-  int max_num_path_
-      = 10;  // limit the maximum number of candidate paths to reduce runtime
+  // limit the maximum number of candidate paths to reduce runtime
+  int max_num_path_ = 10;
   float congestion_weight_ = 1.0;
 };
 
@@ -190,8 +197,8 @@ void getVerticesInRect(const std::vector<float>& x_grid,
 void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  std::vector<int>& soft_macro_vertex_id,  // store the vertex id
                                                           // for each soft macro
-                 std::vector<Edge>&
-                     edge_list,  // edge_list and vertex_list are all empty list
+                 std::vector<Edge>& edge_list,  // edge_list and vertex_list
+                                                // are all empty list
                  std::vector<Vertex>& vertex_list,
                  utl::Logger* logger);
 
