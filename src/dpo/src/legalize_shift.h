@@ -68,7 +68,7 @@ class ShiftLegalizerParams
 class ShiftLegalizer
 {
  public:
-  ShiftLegalizer(ShiftLegalizerParams& params);
+  ShiftLegalizer();
   ~ShiftLegalizer();
 
   bool legalize(DetailedMgr& mgr);
@@ -80,8 +80,6 @@ class ShiftLegalizer
   double clump(std::vector<Node*>& order);
   void merge(Clump* r);
   bool violated(Clump* r, Clump*& l, int& dist);
-
-  ShiftLegalizerParams& params_;
 
   DetailedMgr* mgr_;
   Architecture* arch_;

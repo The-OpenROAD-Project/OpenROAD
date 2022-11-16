@@ -49,11 +49,9 @@ namespace dpo {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 DetailedReorderer::DetailedReorderer(Architecture* arch,
-                                     Network* network,
-                                     RoutingParams* rt)
+                                     Network* network)
     : arch_(arch),
       network_(network),
-      rt_(rt),
       mgrPtr_(nullptr),
       skipNetsLargerThanThis_(100),
       traversal_(0),

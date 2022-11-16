@@ -93,14 +93,12 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedABU::DetailedABU(Architecture* arch,
-                         Network* network,
-                         RoutingParams* rt)
+                         Network* network)
     : DetailedObjective("abu"),
       mgrPtr_(nullptr),
       orientPtr_(nullptr),
       arch_(arch),
       network_(network),
-      rt_(rt),
       abuGridUnit_(0.0),
       abuGridNumX_(0),
       abuGridNumY_(0),

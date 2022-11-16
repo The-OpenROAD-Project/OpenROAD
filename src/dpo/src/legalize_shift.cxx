@@ -63,9 +63,8 @@ struct ShiftLegalizer::Clump
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-ShiftLegalizer::ShiftLegalizer(ShiftLegalizerParams& params)
-    : params_(params),
-      mgr_(nullptr),
+ShiftLegalizer::ShiftLegalizer()
+    : mgr_(nullptr),
       arch_(nullptr),
       network_(nullptr),
       rt_(nullptr)
