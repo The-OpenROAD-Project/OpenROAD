@@ -46,7 +46,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: or-environment
+    id: ol-environment
     attributes:
       label: OpenLane Environment
       render: shell
