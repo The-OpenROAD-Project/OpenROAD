@@ -92,8 +92,7 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedABU::DetailedABU(Architecture* arch,
-                         Network* network)
+DetailedABU::DetailedABU(Architecture* arch, Network* network)
     : DetailedObjective("abu"),
       mgrPtr_(nullptr),
       orientPtr_(nullptr),

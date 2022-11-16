@@ -48,8 +48,7 @@ namespace dpo {
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-DetailedReorderer::DetailedReorderer(Architecture* arch,
-                                     Network* network)
+DetailedReorderer::DetailedReorderer(Architecture* arch, Network* network)
     : arch_(arch),
       network_(network),
       mgrPtr_(nullptr),

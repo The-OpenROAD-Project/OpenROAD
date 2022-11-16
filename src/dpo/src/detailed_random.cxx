@@ -87,12 +87,8 @@ bool DetailedRandom::isNumber(char ch)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedRandom::DetailedRandom(Architecture* arch,
-                               Network* network)
-    : mgrPtr_(nullptr),
-      arch_(arch),
-      network_(network),
-      movesPerCandidate_(3.0)
+DetailedRandom::DetailedRandom(Architecture* arch, Network* network)
+    : mgrPtr_(nullptr), arch_(arch), network_(network), movesPerCandidate_(3.0)
 {
 }
 

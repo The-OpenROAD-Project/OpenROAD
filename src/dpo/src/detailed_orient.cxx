@@ -53,8 +53,7 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedOrient::DetailedOrient(Architecture* arch,
-                               Network* network)
+DetailedOrient::DetailedOrient(Architecture* arch, Network* network)
     : arch_(arch),
       network_(network),
       mgrPtr_(nullptr),
