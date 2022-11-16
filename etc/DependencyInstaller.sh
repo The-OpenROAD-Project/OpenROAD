@@ -25,18 +25,20 @@ _installCommonDev() {
     mkdir -p "${baseDir}"
 
     # CMake
-    if [[ -z $(cmake --version | grep ${cmakeVersionBig}) ]]; then
+    cmakePrefix=${PREFIX:-"/usr/local"}
+    if [[ -z $(${cmakePrefix}/bin/cmake --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
         md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
-        ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=/usr/local
+        ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=${cmakePrefix}
     else
         echo "CMake already installed."
     fi
 
     # SWIG
-    if [[ -z $(swig -version | grep ${swigVersion}) ]]; then
+    swigPrefix=${PREFIX:-"/usr"}
+    if [[ -z $(${swigPrefix}/bin/swig -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         tarName="rel-${swigVersion}.tar.gz"
         [[ ${swigVersionType} == "tag" ]] && tarName="v${swigVersion}.tar.gz"
@@ -45,7 +47,7 @@ _installCommonDev() {
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
         ./autogen.sh
-        ./configure --prefix=/usr
+        ./configure --prefix=${swigPrefix}
         make -j $(nproc)
         make -j $(nproc) install
     else
@@ -53,7 +55,8 @@ _installCommonDev() {
     fi
 
     # boost
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" /usr/local/include/boost/version.hpp) ]]; then
+    boostPrefix=${PREFIX:-"/usr/local/include"}
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/boost/version.hpp) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
@@ -67,35 +70,38 @@ _installCommonDev() {
     fi
 
     # eigen
-    if [[ ! -d /usr/local/include/eigen3/ ]]; then
+    eigenPrefix=${PREFIX:-"/usr/local/include"}
+    if [[ ! -d ${eigenPrefix}/eigen3/ ]]; then
         cd "${baseDir}"
         git clone -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
         cd eigen
-        cmake -B build .
-        cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Eigen already installed."
     fi
 
     # CUSP
-    if [[ ! -d /usr/local/include/cusp/ ]]; then
+    cuspPrefix=${PREFIX:-"/usr/local/include"}
+    if [[ ! -d ${cuspPrefix}/cusp/ ]]; then
         cd "${baseDir}"
         git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
-        cp -r ./cusp /usr/local/include/
+        cp -r ./cusp ${cuspPrefix}
     else
         echo "CUSP already installed."
     fi
 
     # lemon
-    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" /usr/local/include/lemon/config.h) ]]; then
+    lemonPrefix=${PREFIX:-"/usr/local/include"}
+    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/lemon/config.h) ]]; then
         cd "${baseDir}"
         wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
         md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
         tar -xf lemon-${lemonVersion}.tar.gz
         cd lemon-${lemonVersion}
-        cmake -B build .
-        cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Lemon already installed."
     fi
@@ -105,8 +111,8 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        cmake -B build .
-        cmake --build build -j $(nproc) --target install
+        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
     fi
@@ -289,6 +295,8 @@ _help() {
 
 Usage: $0 -run[time]
        $0 -dev[elopment]
+       $0 -prefix=DIR
+       $0 -local
 
 EOF
     exit "${1:-1}"
@@ -296,6 +304,7 @@ EOF
 
 # default option
 option="runtime"
+PREFIX=""
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -308,6 +317,12 @@ while [ "$#" -gt 0 ]; do
             ;;
         -dev|-development)
             option="dev"
+            ;;
+        -local)
+            export PREFIX="$HOME/.local"
+            ;;
+        -prefix=*)
+            export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -382,3 +397,19 @@ EOF
         _help
         ;;
 esac
+
+cat <<EOF
+Make sure that CMake find_package can find or-tools. Example, add to your ~/.bashrc:
+    export CMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake
+EOF
+
+if [[ ! -z ${PREFIX} ]]; then
+            cat <<EOF
+To use cmake, set cmake as an alias:
+    alias cmake='${PREFIX}/bin/cmake' 
+    or  run
+    echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
+    source ~/.bash_profile
+EOF
+fi
+
