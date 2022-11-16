@@ -59,12 +59,6 @@ class RoutingParams;
 // Classes.
 //////////////////////////////////////////////////////////////////////////////
 
-class ShiftLegalizerParams
-{
- public:
-  ShiftLegalizerParams() {}
-};
-
 class ShiftLegalizer
 {
  public:
