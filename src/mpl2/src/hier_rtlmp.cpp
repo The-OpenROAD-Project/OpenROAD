@@ -2903,7 +2903,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
   }
 
-  file_name = string(report_directory_) + string("/") + file_name;
+  file_name = report_directory_ + "/" + file_name;
   file.open(file_name + "net.txt");
   for (auto& net : nets) {
     file << macros[net.terminals.first].getName() << "   "
@@ -3111,7 +3111,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   // for debug
-  file.open(string("./") + string(report_directory_) + string("/")
+  file.open("./" + report_directory_ + "/"
             + "pin_access.txt");
   for (auto& cluster : parent->getChildren()) {
     std::set<PinAccess> pin_access;
