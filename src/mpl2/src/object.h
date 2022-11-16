@@ -553,14 +553,14 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    this->HPWL = 0;
+    HPWL = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    this->HPWL = 0;
+    HPWL = 0;
   }
 
   bool operator==(const BundledNet& net)

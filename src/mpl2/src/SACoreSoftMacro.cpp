@@ -136,23 +136,31 @@ float SACoreSoftMacro::getNormNotchPenalty() const
 float SACoreSoftMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
-  if (norm_area_penalty_ > 0.0)
+  if (norm_area_penalty_ > 0.0) {
     cost += area_weight_ * (width_ * height_) / norm_area_penalty_;
-  if (norm_outline_penalty_ > 0.0)
+  }
+  if (norm_outline_penalty_ > 0.0) {
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
-  if (norm_wirelength_ > 0.0)
+  }
+  if (norm_wirelength_ > 0.0) {
     cost += wirelength_weight_ * wirelength_ / norm_wirelength_;
-  if (norm_guidance_penalty_ > 0.0)
+  }
+  if (norm_guidance_penalty_ > 0.0) {
     cost += guidance_weight_ * guidance_penalty_ / norm_guidance_penalty_;
-  if (norm_fence_penalty_ > 0.0)
+  }
+  if (norm_fence_penalty_ > 0.0) {
     cost += fence_weight_ * fence_penalty_ / norm_fence_penalty_;
-  if (norm_boundary_penalty_ > 0.0)
+  }
+  if (norm_boundary_penalty_ > 0.0) {
     cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
-  if (norm_macro_blockage_penalty_ > 0.0)
+  }
+  if (norm_macro_blockage_penalty_ > 0.0) {
     cost += macro_blockage_weight_ * macro_blockage_penalty_
             / norm_macro_blockage_penalty_;
-  if (norm_notch_penalty_ > 0.0)
+  }
+  if (norm_notch_penalty_ > 0.0) {
     cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
+  }
   return cost;
 }
 
@@ -169,8 +177,9 @@ void SACoreSoftMacro::calPenalty()
 
 void SACoreSoftMacro::perturb()
 {
-  if (macros_.size() == 0)
+  if (macros_.size() == 0) {
     return;
+  }
 
   // Keep back up
   pre_pos_seq_ = pos_seq_;
@@ -186,7 +195,7 @@ void SACoreSoftMacro::perturb()
   pre_notch_penalty_ = notch_penalty_;
 
   // generate random number (0 - 1) to determine actions
-  const float op = (distribution_) (generator_);
+  const float op = distribution_(generator_);
   const float action_prob_1 = pos_swap_prob_;
   const float action_prob_2 = action_prob_1 + neg_swap_prob_;
   const float action_prob_3 = action_prob_2 + double_swap_prob_;
@@ -218,19 +227,20 @@ void SACoreSoftMacro::perturb()
 
 void SACoreSoftMacro::restore()
 {
-  if (macros_.size() == 0)
+  if (macros_.size() == 0) {
     return;
+  }
 
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 5)
+  if (action_id_ == 5) {
     macros_[macro_id_] = pre_macros_[macro_id_];
-  else if (action_id_ == 1)
+  } else if (action_id_ == 1) {
     pos_seq_ = pre_pos_seq_;
-  else if (action_id_ == 2)
+  } else if (action_id_ == 2) {
     neg_seq_ = pre_neg_seq_;
-  else {
+  } else {
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }
@@ -298,8 +308,9 @@ void SACoreSoftMacro::initialize()
     cost_list.push_back(calNormCost());
   }
   float delta_cost = 0.0;
-  for (int i = 1; i < cost_list.size(); i++)
+  for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
+  }
   init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
@@ -309,8 +320,9 @@ void SACoreSoftMacro::calBoundaryPenalty()
 {
   // Initialization
   boundary_penalty_ = 0.0;
-  if (boundary_weight_ <= 0.0)
+  if (boundary_weight_ <= 0.0) {
     return;
+  }
 
   for (const auto& macro : macros_) {
     if (macro.getNumMacro() > 0) {
@@ -329,8 +341,9 @@ void SACoreSoftMacro::calBoundaryPenalty()
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
-  if (blockages_.size() == 0)
+  if (blockages_.size() == 0) {
     return;
+  }
 
   for (auto& bbox : blockages_) {
     for (const auto& macro : macros_) {
@@ -343,10 +356,8 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         const float region_ly = bbox.yMin();
         const float region_ux = bbox.xMax();
         const float region_uy = bbox.yMax();
-        if (ux <= region_lx || lx >= region_ux || uy <= region_ly
-            || ly >= region_uy)
-          ;
-        else {
+        if (ux > region_lx && lx < region_ux && uy > region_ly
+            && ly < region_uy) {
           const float width = std::min(ux, region_ux) - std::max(lx, region_lx);
           const float height
               = std::min(uy, region_uy) - std::max(ly, region_ly);
@@ -360,8 +371,9 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
 // Align macro clusters to reduce notch
 void SACoreSoftMacro::alignMacroClusters()
 {
-  if (width_ > outline_width_ || height_ > outline_height_)
+  if (width_ > outline_width_ || height_ > outline_height_) {
     return;
+  }
   // update threshold value
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
@@ -385,15 +397,17 @@ void SACoreSoftMacro::alignMacroClusters()
       const float ux = lx + macro.getWidth();
       const float uy = ly + macro.getHeight();
       // align to left / right boundaries
-      if (lx <= adjust_h_th_)
+      if (lx <= adjust_h_th_) {
         macro.setX(0.0);
-      else if (outline_width_ - ux <= adjust_h_th_)
+      } else if (outline_width_ - ux <= adjust_h_th_) {
         macro.setX(outline_width_ - macro.getWidth());
+      }
       // align to top / bottom boundaries
-      if (ly <= adjust_v_th_)
+      if (ly <= adjust_v_th_) {
         macro.setY(0.0);
-      else if (outline_height_ - uy <= adjust_v_th_)
+      } else if (outline_height_ - uy <= adjust_v_th_) {
         macro.setY(outline_height_ - macro.getHeight());
+      }
     }
   }
 }
@@ -403,8 +417,9 @@ void SACoreSoftMacro::calNotchPenalty()
 {
   // Initialization
   notch_penalty_ = 0.0;
-  if (notch_weight_ <= 0.0)
+  if (notch_weight_ <= 0.0) {
     return;
+  }
   // If the floorplan cannot fit into the outline
   // We think the entire floorplan is a "huge" notch
   if (width_ > outline_width_ || height_ > outline_height_) {
@@ -450,8 +465,9 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   // detect the notch region around each MixedCluster and HardMacroCluster
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (macro_mask[macro_id] == false)
+    if (!macro_mask[macro_id]) {
       continue;
+    }
     int x_start = 0;
     int x_end = 0;
     calSegmentLoc(macros_[macro_id].getX(),
@@ -466,14 +482,17 @@ void SACoreSoftMacro::calNotchPenalty()
                   y_start,
                   y_end,
                   y_grid);
-    for (int j = y_start; j < y_end; j++)
-      for (int i = x_start; i < x_end; i++)
+    for (int j = y_start; j < y_end; j++) {
+      for (int i = x_start; i < x_end; i++) {
         grids[j][i] = macro_id;
+      }
+    }
   }
   // check surroundings of each HardMacroCluster and MixecCluster
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (macro_mask[macro_id] == false)
+    if (!macro_mask[macro_id]) {
       continue;
+    }
     int x_start = 0;
     int x_end = 0;
     calSegmentLoc(macros_[macro_id].getX(),
@@ -499,14 +518,15 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }                   // end if
-      }                     // end y
-      if (flag == false) {  // extension done
+        }           // end if
+      }             // end y
+      if (!flag) {  // extension done
         break;
       } else {
         x_start_new--;  // extend left
-        for (int j = y_start; j < y_end; j++)
+        for (int j = y_start; j < y_end; j++) {
           grids[j][i] = macro_id;
+        }
       }  // end update
     }    // end left
     // check top second
@@ -516,14 +536,15 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }                   // end if
-      }                     // end y
-      if (flag == false) {  // extension done
+        }           // end if
+      }             // end y
+      if (!flag) {  // extension done
         break;
       } else {
         y_end_new++;  // extend top
-        for (int i = x_start; i < x_end; i++)
+        for (int i = x_start; i < x_end; i++) {
           grids[j][i] = macro_id;
+        }
       }  // end update
     }    // end top
     // check right third
@@ -533,14 +554,15 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }                   // end if
-      }                     // end y
-      if (flag == false) {  // extension done
+        }           // end if
+      }             // end y
+      if (!flag) {  // extension done
         break;
       } else {
         x_end_new++;  // extend right
-        for (int j = y_start; j < y_end; j++)
+        for (int j = y_start; j < y_end; j++) {
           grids[j][i] = macro_id;
+        }
       }  // end update
     }    // end right
     // check down second
@@ -550,37 +572,42 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }                   // end if
-      }                     // end y
-      if (flag == false) {  // extension done
+        }           // end if
+      }             // end y
+      if (!flag) {  // extension done
         break;
       } else {
         y_start_new--;  // extend down
-        for (int i = x_start; i < x_end; i++)
+        for (int i = x_start; i < x_end; i++) {
           grids[j][i] = macro_id;
+        }
       }  // end update
     }    // end down
     // check the notch area
-    if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_)
+    if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_) {
       notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new])
                         * macros_[macro_id].getHeight();
-    if ((x_grid[x_end_new] - x_grid[x_end]) <= notch_h_th_)
+    }
+    if ((x_grid[x_end_new] - x_grid[x_end]) <= notch_h_th_) {
       notch_penalty_ += (x_grid[x_end_new] - x_grid[x_end])
                         * macros_[macro_id].getHeight();
-    if ((y_grid[y_start] - y_grid[y_start_new]) <= notch_v_th_)
+    }
+    if ((y_grid[y_start] - y_grid[y_start_new]) <= notch_v_th_) {
       notch_penalty_ += (y_grid[y_start] - y_grid[y_start_new])
                         * macros_[macro_id].getWidth();
-    if ((y_grid[y_end_new] - y_grid[y_end]) <= notch_v_th_)
+    }
+    if ((y_grid[y_end_new] - y_grid[y_end]) <= notch_v_th_) {
       notch_penalty_
           += (y_grid[y_end_new] - y_grid[y_end]) * macros_[macro_id].getWidth();
+    }
   }
   macros_ = pre_macros_;
 }
 
 void SACoreSoftMacro::resize()
 {
-  int idx = static_cast<int>(
-      std::floor((distribution_) (generator_) *macros_.size()));
+  const int idx = static_cast<int>(
+      std::floor(distribution_(generator_) * macros_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
@@ -598,60 +625,67 @@ void SACoreSoftMacro::resize()
     return;
   }
 
-  if ((distribution_) (generator_) < 0.4) {
+  if (distribution_(generator_) < 0.4) {
     src_macro.resizeRandomly(distribution_, generator_);
     return;
   }
 
-  float option = (distribution_) (generator_);
+  const float option = distribution_(generator_);
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
     float e_x2 = outline_width_;
     for (const auto& macro : macros_) {
-      float cur_x2 = macro.getX() + macro.getWidth();
-      if (cur_x2 > ux && cur_x2 < e_x2)
+      const float cur_x2 = macro.getX() + macro.getWidth();
+      if (cur_x2 > ux && cur_x2 < e_x2) {
         e_x2 = cur_x2;
+      }
     }
     src_macro.setWidth(e_x2 - lx);
   } else if (option <= 0.5) {
     float d_x2 = lx;
     for (const auto& macro : macros_) {
-      float cur_x2 = macro.getX() + macro.getWidth();
-      if (cur_x2 < ux && cur_x2 > d_x2)
+      const float cur_x2 = macro.getX() + macro.getWidth();
+      if (cur_x2 < ux && cur_x2 > d_x2) {
         d_x2 = cur_x2;
+      }
     }
-    if (d_x2 <= lx)
+    if (d_x2 <= lx) {
       return;
-    else
+    } else {
       src_macro.setWidth(d_x2 - lx);
+    }
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
     float a_y2 = outline_height_;
     for (const auto& macro : macros_) {
-      float cur_y2 = macro.getY() + macro.getHeight();
-      if (cur_y2 > uy && cur_y2 < a_y2)
+      const float cur_y2 = macro.getY() + macro.getHeight();
+      if (cur_y2 > uy && cur_y2 < a_y2) {
         a_y2 = cur_y2;
+      }
     }
     src_macro.setHeight(a_y2 - ly);
   } else {
     // Change the height of soft block to Bb = c.y2 - b.y1
     float c_y2 = ly;
     for (const auto& macro : macros_) {
-      float cur_y2 = macro.getY() + macro.getHeight();
-      if (cur_y2 < uy && cur_y2 > c_y2)
+      const float cur_y2 = macro.getY() + macro.getHeight();
+      if (cur_y2 < uy && cur_y2 > c_y2) {
         c_y2 = cur_y2;
+      }
     }
-    if (c_y2 <= ly)
+    if (c_y2 <= ly) {
       return;
-    else
+    } else {
       src_macro.setHeight(c_y2 - ly);
+    }
   }
 }
 
 void SACoreSoftMacro::shrink()
 {
-  for (auto& macro : macros_)
+  for (auto& macro : macros_) {
     macro.shrinkArea(shrink_factor_);
+  }
 }
 
 void SACoreSoftMacro::printResults() const
@@ -673,16 +707,18 @@ void SACoreSoftMacro::printResults() const
 void SACoreSoftMacro::fillDeadSpace()
 {
   // if the floorplan is invalid, do nothing
-  if (width_ > outline_width_ || height_ > outline_height_)
+  if (width_ > outline_width_ || height_ > outline_height_) {
     return;
+  }
 
   // adjust the location of MixedCluster
   // Step1 : Divide the entire floorplan into grids
   std::set<float> x_point;
   std::set<float> y_point;
   for (auto& macro : macros_) {
-    if (macro.getArea() <= 0.0)
+    if (macro.getArea() <= 0.0) {
       continue;
+    }
     x_point.insert(macro.getX());
     x_point.insert(macro.getX() + macro.getWidth());
     y_point.insert(macro.getY());
@@ -705,8 +741,9 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 
   for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-    if (macros_[macro_id].getArea() <= 0.0)
+    if (macros_[macro_id].getArea() <= 0.0) {
       continue;
+    }
     int x_start = 0;
     int x_end = 0;
     calSegmentLoc(macros_[macro_id].getX(),
@@ -721,20 +758,24 @@ void SACoreSoftMacro::fillDeadSpace()
                   y_start,
                   y_end,
                   y_grid);
-    for (int j = y_start; j < y_end; j++)
-      for (int i = x_start; i < x_end; i++)
+    for (int j = y_start; j < y_end; j++) {
+      for (int i = x_start; i < x_end; i++) {
         grids[j][i] = macro_id;
+      }
+    }
   }
   // propagate from the MixedCluster and then StdCellCluster
   for (int order = 0; order <= 1; order++) {
     for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
-      if (macros_[macro_id].getArea() <= 0.0)
+      if (macros_[macro_id].getArea() <= 0.0) {
         continue;
+      }
       const bool forward_flag = (order == 0)
                                     ? macros_[macro_id].isMixedCluster()
                                     : macros_[macro_id].isStdCellCluster();
-      if (forward_flag == false)
+      if (!forward_flag) {
         continue;
+      }
       int x_start = 0;
       int x_end = 0;
       calSegmentLoc(macros_[macro_id].getX(),
@@ -760,14 +801,15 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }                   // end if
-        }                     // end y
-        if (flag == false) {  // extension done
+          }           // end if
+        }             // end y
+        if (!flag) {  // extension done
           break;
         } else {
           x_start_new--;  // extend left
-          for (int j = y_start; j < y_end; j++)
+          for (int j = y_start; j < y_end; j++) {
             grids[j][i] = macro_id;
+          }
         }  // end update
       }    // end left
       x_start = x_start_new;
@@ -778,14 +820,15 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }                   // end if
-        }                     // end y
-        if (flag == false) {  // extension done
+          }           // end if
+        }             // end y
+        if (!flag) {  // extension done
           break;
         } else {
           y_end_new++;  // extend top
-          for (int i = x_start; i < x_end; i++)
+          for (int i = x_start; i < x_end; i++) {
             grids[j][i] = macro_id;
+          }
         }  // end update
       }    // end top
       y_end = y_end_new;
@@ -796,14 +839,15 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }                   // end if
-        }                     // end y
-        if (flag == false) {  // extension done
+          }           // end if
+        }             // end y
+        if (!flag) {  // extension done
           break;
         } else {
           x_end_new++;  // extend right
-          for (int j = y_start; j < y_end; j++)
+          for (int j = y_start; j < y_end; j++) {
             grids[j][i] = macro_id;
+          }
         }  // end update
       }    // end right
       x_end = x_end_new;
@@ -814,14 +858,15 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }                   // end if
-        }                     // end y
-        if (flag == false) {  // extension done
+          }           // end if
+        }             // end y
+        if (!flag) {  // extension done
           break;
         } else {
           y_start_new--;  // extend down
-          for (int i = x_start; i < x_end; i++)
+          for (int i = x_start; i < x_end; i++) {
             grids[j][i] = macro_id;
+          }
         }  // end update
       }    // end down
       y_start = y_start_new;
@@ -844,13 +889,16 @@ void SACoreSoftMacro::calSegmentLoc(float seg_start,
   start_id = -1;
   end_id = -1;
   for (int i = 0; i < grid.size() - 1; i++) {
-    if ((grid[i] <= seg_start) && (grid[i + 1] > seg_start))
+    if ((grid[i] <= seg_start) && (grid[i + 1] > seg_start)) {
       start_id = i;
-    if ((grid[i] <= seg_end) && (grid[i + 1] > seg_end))
+    }
+    if ((grid[i] <= seg_end) && (grid[i + 1] > seg_end)) {
       end_id = i;
+    }
   }
-  if (end_id == -1)
+  if (end_id == -1) {
     end_id = grid.size() - 1;
+  }
 }
 
 }  // namespace mpl

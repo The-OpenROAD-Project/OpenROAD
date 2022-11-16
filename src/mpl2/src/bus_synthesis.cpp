@@ -1,3 +1,36 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
+
 #include "bus_synthesis.h"
 
 #include <absl/flags/flag.h>
@@ -30,7 +63,6 @@ using operations_research::MPVariable;
 
 //////////////////////////////////////////////////////////////
 // Class Graph
-// Constructors
 Graph::Graph(int num_vertices, float congestion_weight)
     : adj_(num_vertices), congestion_weight_(congestion_weight)
 {
@@ -84,14 +116,15 @@ void Graph::calShortPathParentVertices(int root)
   dist[root] = 0.0;
   wavefront.push(VertexDist{root, dist[root]});
   // Forward propagation
-  while (wavefront.empty() == false) {
+  while (!wavefront.empty()) {
     VertexDist vertex_dist = wavefront.top();
     wavefront.pop();
     // check if the vertex has been visited
     // we may have a vertex with different distances in the wavefront
     // only the shortest distance of the vertex should be used.
-    if (visited[vertex_dist.vertex] == true)
+    if (visited[vertex_dist.vertex]) {
       continue;
+    }
     // mark current vertex as visited
     visited[vertex_dist.vertex] = true;
     for (const auto& edge : adj_[vertex_dist.vertex]) {
@@ -121,8 +154,9 @@ void Graph::calShortPaths(
     // current parent vertex
     int parent)
 {
-  if (paths.size() >= max_num_path_)
+  if (paths.size() >= max_num_path_) {
     return;
+  }
 
   // Base case
   if (parent == -1) {
@@ -134,8 +168,9 @@ void Graph::calShortPaths(
   for (const auto& ancestor : parent_vertices[parent]) {
     path.push_back(parent);
     // This step is necessary to avoid loops caused by the edge with zero weight
-    if (std::find(path.begin(), path.end(), ancestor) == path.end())
+    if (std::find(path.begin(), path.end(), ancestor) == path.end()) {
       calShortPaths(paths, path, parent_vertices, ancestor);
+    }
     path.pop_back();
   }
 }
@@ -151,23 +186,24 @@ void Graph::calEdgePaths(
 {
   // map each edge in the adjacency matrix to edge_ptr
   std::vector<std::map<int, Edge*>> adj_map(adj_.size());
-  for (int i = 0; i < adj_.size(); i++)
-    for (auto& arrow : adj_[i])
+  for (int i = 0; i < adj_.size(); i++) {
+    for (auto& arrow : adj_[i]) {
       adj_map[i][arrow.dest] = arrow.edge_ptr;
+    }
+  }
   // use sum(edge_id * edge_id) as hash value for each path
   std::set<int> path_hash_set;
   float distance = 0.0;
   std::vector<int> edge_path;
-  int hash_value = 0;
   for (const auto& path : paths) {
     // convert path to edge_path
     edge_path.clear();
-    hash_value = 0;
+    int hash_value = 0;
     for (int i = 0; i < path.size() - 1; i++) {
       Edge* edge_ptr = adj_map[path[i]][path[i + 1]];
       distance += edge_ptr->length * (1 - congestion_weight_);
       distance += edge_ptr->length_w * congestion_weight_;
-      if (edge_ptr->internal == false) {
+      if (!edge_ptr->internal) {
         hash_value += edge_ptr->edge_id * edge_ptr->edge_id;
         edge_path.push_back(edge_ptr->edge_id);
       }
@@ -189,8 +225,9 @@ void Graph::calNetEdgePaths(int src,
 {
   logger->report("Enter CalNetEdgePaths");
   // check if the parent vertices have been calculated
-  if (parents_.find(src) == parents_.end())
+  if (parents_.find(src) == parents_.end()) {
     calShortPathParentVertices(src);  // calculate parent vertices
+  }
   logger->report("Finish CalShortPathParentVertices");
   // initialize an empty path
   std::vector<int> path;
@@ -207,8 +244,8 @@ void Graph::calNetEdgePaths(int src,
 void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  std::vector<int>& soft_macro_vertex_id,  // store the vertex id
                                                           // for each soft macro
-                 std::vector<Edge>&
-                     edge_list,  // edge_list and vertex_list are all empty list
+                 std::vector<Edge>& edge_list,  // edge_list and vertex_list
+                                                // are all empty list
                  std::vector<Vertex>& vertex_list,
                  utl::Logger* logger)
 {
@@ -255,9 +292,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   // we assign weight to all the vertices
   // the weight of each vertex is the macro utilization of the cluster
   // (softmacro) to which it belongs to
-  for (auto y : y_grid)
-    for (auto x : x_grid)
+  for (auto y : y_grid) {
+    for (auto x : x_grid) {
       vertex_list.push_back(Vertex(vertex_list.size(), Point(x, y)));
+    }
+  }
   // initialize the macro_id and macro util for each vertex
   for (auto& vertex : vertex_list) {
     vertex.weight = 0.0;   // weight is the macro util
@@ -267,13 +306,15 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   logger->report("Finish Creating vertex list");
 
   logger->report("x_grid:  ");
-  ;
-  for (auto& x : x_grid)
+
+  for (auto& x : x_grid) {
     logger->report(" {} ", x);
+  }
   logger->report("\n");
   logger->report("y_grid:  ");
-  for (auto& y : y_grid)
+  for (auto& y : y_grid) {
     logger->report(" {} ", y);
+  }
   logger->report("\n");
 
   int macro_id = 0;
@@ -319,21 +360,25 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
           test_flag = true;
         }
         // if the grid point is on the left or right boundry
-        if (x_grid[x_idx] == lx || x_grid[x_idx] == ux)
+        if (x_grid[x_idx] == lx || x_grid[x_idx] == ux) {
           vertex_list[vertex_id].disable_v_edge = true;
+        }
         // if the grid point is on the top or bottom boundry
-        if (y_grid[y_idx] == ly || y_grid[y_idx] == uy)
+        if (y_grid[y_idx] == ly || y_grid[y_idx] == uy) {
           vertex_list[vertex_id].disable_h_edge = true;
+        }
       }
     }
-    if (test_flag == false)
+    if (!test_flag) {
       logger->report("Error\n\n");
+    }
 
     // increase macro id
     macro_id++;
-    if (soft_macro.getArea() <= 0.0)
+    if (soft_macro.getArea() <= 0.0) {
       logger->report(
           "macro_id : {}  {}", macro_id, soft_macro_vertex_id.size());
+    }
   }
 
   logger->report("soft_macro_vertex_id.size() : {} soft_macros.size(): {}",
@@ -341,11 +386,12 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  soft_macros.size());
   logger->report("Finish macro_id assignment");
   // print vertex id
-  for (int i = 0; i < soft_macros.size(); i++)
+  for (int i = 0; i < soft_macros.size(); i++) {
     logger->report("macro_id : {} vertex_id: {} macro_id: {}",
                    i,
                    soft_macro_vertex_id[i],
                    vertex_list[soft_macro_vertex_id[i]].vertex_id);
+  }
 
   // add all the edges between grids (undirected)
   // add all the horizontal edges
@@ -353,11 +399,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     for (int x_idx = 0; x_idx < x_grid.size() - 1; x_idx++) {
       const int src = y_idx * x_grid.size() + x_idx;
       const int target = src + 1;
-      if (vertex_list[src].disable_h_edge == true
-          || vertex_list[target].disable_h_edge == true
-          || vertex_list[src].disable_v_edge == true
-          || vertex_list[target].disable_v_edge == true)
+      if (vertex_list[src].disable_h_edge || vertex_list[target].disable_h_edge
+          || vertex_list[src].disable_v_edge
+          || vertex_list[target].disable_v_edge) {
         continue;
+      }
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals = std::pair<int, int>(src, target);
       edge.direction = true;  // true means horizontal edge
@@ -406,11 +452,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     for (int y_idx = 0; y_idx < y_grid.size() - 1; y_idx++) {
       const int src = y_idx * x_grid.size() + x_idx;
       const int target = src + x_grid.size();
-      if (vertex_list[src].disable_h_edge == true
-          || vertex_list[target].disable_h_edge == true
-          || vertex_list[src].disable_v_edge == true
-          || vertex_list[target].disable_v_edge == true)
+      if (vertex_list[src].disable_h_edge || vertex_list[target].disable_h_edge
+          || vertex_list[src].disable_v_edge
+          || vertex_list[target].disable_v_edge) {
         continue;
+      }
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals = std::pair<int, int>(src, target);
       edge.direction = false;  // false means vertical edge
@@ -460,12 +506,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   for (int y_idx = 0; y_idx < y_grid.size(); y_idx++) {
     for (int x_idx = 1; x_idx < x_grid.size() - 1; x_idx++) {
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
-      if (vertex.disable_v_edge == false && vertex.disable_h_edge == false) {
+      if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true
-                 && vertex.disable_h_edge == true) {
+      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true) {
+      } else if (vertex.disable_v_edge) {
         const int src = vertex.vertex_id - 1;
         const int target = vertex.vertex_id + 1;
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -510,12 +555,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   for (int y_idx = 1; y_idx < y_grid.size() - 1; y_idx++) {
     for (int x_idx = 0; x_idx < x_grid.size(); x_idx++) {
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
-      if (vertex.disable_v_edge == false && vertex.disable_h_edge == false) {
+      if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge == true
-                 && vertex.disable_h_edge == true) {
+      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_h_edge == true) {
+      } else if (vertex.disable_h_edge) {
         const int src = vertex.vertex_id - x_grid.size();
         const int target = vertex.vertex_id + x_grid.size();
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -561,8 +605,9 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
 
   // handle all the IO cluster
   for (int i = 0; i < soft_macros.size(); i++) {
-    if (soft_macros[i].getArea() > 0.0)
+    if (soft_macros[i].getArea() > 0.0) {
       continue;
+    }
     auto& vertex = vertex_list[soft_macro_vertex_id[i]];
     vertex.macro_id = i;  // update the macro id
     logger->report("macro_id : {}", vertex.macro_id);
@@ -581,11 +626,13 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     }
     logger->report("step1");
     for (auto& neighbor : neighbors) {
-      if (neighbor >= vertex_list.size())
+      if (neighbor >= vertex_list.size()) {
         continue;
+      }
       auto& n_vertex = vertex_list[neighbor];
-      if (n_vertex.disable_v_edge == true || n_vertex.disable_h_edge == true)
+      if (n_vertex.disable_v_edge || n_vertex.disable_h_edge) {
         continue;
+      }
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals
           = std::pair<int, int>(vertex.vertex_id, n_vertex.vertex_id);
@@ -611,11 +658,13 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     }
     logger->report("step3");
     for (auto& neighbor : neighbors) {
-      if (neighbor >= vertex_list.size())
+      if (neighbor >= vertex_list.size()) {
         continue;
+      }
       auto& n_vertex = vertex_list[neighbor];
-      if (n_vertex.disable_v_edge == true || n_vertex.disable_h_edge == true)
+      if (n_vertex.disable_v_edge || n_vertex.disable_h_edge) {
         continue;
+      }
       Edge edge(edge_list.size());  // create an edge with edge id
       edge.terminals
           = std::pair<int, int>(vertex.vertex_id, n_vertex.vertex_id);
@@ -635,8 +684,8 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     edge.weight = std::max(vertex_list[edge.terminals.first].weight,
                            vertex_list[edge.terminals.second].weight);
     // for the edge crossing soft macros
-    if (edge.internal == false) {
-      if (edge.direction == true) {  // horizontal
+    if (!edge.internal) {
+      if (edge.direction) {  // horizontal
         edge.pin_access = R;
       } else {
         edge.pin_access = T;
@@ -645,17 +694,19 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   }    // update edge weight
 
   int num_edges = edge_list.size();
-  for (int i = 0; i < num_edges; i++)
+  for (int i = 0; i < num_edges; i++) {
     edge_list.push_back(Edge(edge_list.size(), edge_list[i]));
+  }
 
   logger->report("\n****************************************");
   logger->report("macro_id,  macro,  vertex_id, macro_id");
-  for (int i = 0; i < soft_macros.size(); i++)
+  for (int i = 0; i < soft_macros.size(); i++) {
     logger->report("i:  {}  {}  {} {}",
                    i,
                    soft_macros[i].getName(),
                    soft_macro_vertex_id[i],
                    vertex_list[soft_macro_vertex_id[i]].macro_id);
+  }
   logger->report("exiting create graph");
 }
 
@@ -713,8 +764,9 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     for (const auto& edge_path : net.edge_paths) {
       // here the edge paths only include edges crossing soft macros (IOs)
       logger->report("path :  ");
-      for (auto& edge_id : edge_path)
+      for (auto& edge_id : edge_path) {
         logger->report("{} ", edge_id);
+      }
       logger->report("\n");
       path_net_path_map[num_paths] = path_id++;
       path_net_map[num_paths++] = net_id;
@@ -731,8 +783,9 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         "src :  {}  target {}", net.terminals.first, net.terminals.second);
     for (auto& edge_path : net.edge_paths) {
       logger->report("path :  ");
-      for (auto& edge_id : edge_path)
+      for (auto& edge_id : edge_path) {
         logger->report(" {}  ", edge_id);
+      }
       logger->report("\n");
     }
   }
@@ -747,13 +800,15 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
 
   // For each path, define a variable x
   std::vector<const MPVariable*> x(num_paths);
-  for (int i = 0; i < num_paths; i++)
+  for (int i = 0; i < num_paths; i++) {
     x[i] = solver->MakeIntVar(0.0, 1.0, "");
+  }
 
   // For each edge, define a variable y
   std::vector<const MPVariable*> y(edge_list.size());
-  for (int i = 0; i < edge_list.size(); i++)
+  for (int i = 0; i < edge_list.size(); i++) {
     y[i] = solver->MakeIntVar(0.0, 1.0, "");
+  }
   logger->report("Number of variables = {}", solver->NumVariables());
   const double infinity = solver->infinity();
 
@@ -761,8 +816,9 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   int x_id = 0;
   for (auto& net : nets) {
     // need take a detail look [fix]
-    if (net.edge_paths.size() == 0)
+    if (net.edge_paths.size() == 0) {
       continue;
+    }
     MPConstraint* net_c = solver->MakeRowConstraint(1, 1, "");
     for (auto& edge_path : net.edge_paths) {
       for (auto& edge_id : edge_path) {
@@ -777,23 +833,24 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
 
   // Create the objective function
   MPObjective* const objective = solver->MutableObjective();
-  for (int i = 0; i < edge_list.size(); i++)
+  for (int i = 0; i < edge_list.size(); i++) {
     objective->SetCoefficient(y[i], edge_list[i].weight);
+  }
 
   objective->SetMinimization();
   const MPSolver::ResultStatus result_status = solver->Solve();
   // Check that the problem has an optimal solution.
-  if (result_status != MPSolver::OPTIMAL)
+  if (result_status != MPSolver::OPTIMAL) {
     return false;  // The problem does not have an optimal solution;
+  }
   logger->report("Soluton : ");
   logger->report("Optimal objective value = {}", objective->Value());
 
   // Generate the solution and check which edge get selected
   for (int i = 0; i < num_paths; i++) {
-    // if (mycplex.getValue(x[i]) == 0) for cplex
-    //  continue;
-    if (x[i]->solution_value() == 0)
+    if (x[i]->solution_value() == 0) {
       continue;
+    }
 
     logger->report("working on path {}", i);
     auto target_cluster
@@ -829,8 +886,9 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
             "start_name : {}",
             soft_macros[vertex_list[edge.terminals.first].macro_id].getName());
       }
-      if (start_cluster != nullptr)
+      if (start_cluster != nullptr) {
         logger->report("start_cluster_id : {}", start_cluster->getId());
+      }
       Cluster* end_cluster = nullptr;
       if (vertex_list[edge.terminals.second].macro_id != -1) {
         end_cluster = soft_macros[vertex_list[edge.terminals.second].macro_id]
@@ -839,8 +897,9 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
             "end_name : {}",
             soft_macros[vertex_list[edge.terminals.second].macro_id].getName());
       }
-      if (end_cluster != nullptr)
+      if (end_cluster != nullptr) {
         logger->report("end_cluster_id : {}", end_cluster->getId());
+      }
 
       if (start_cluster == nullptr && end_cluster == nullptr) {
         logger->report("(1) This should not happen");
@@ -905,25 +964,30 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     if (target_cluster != nullptr && last_edge_id >= 0) {
       auto& edge = edge_list[last_edge_id];
       Cluster* start_cluster = nullptr;
-      if (vertex_list[edge.terminals.first].macro_id != -1)
+      if (vertex_list[edge.terminals.first].macro_id != -1) {
         start_cluster = soft_macros[vertex_list[edge.terminals.first].macro_id]
                             .getCluster();
-      if (start_cluster != nullptr)
+      }
+      if (start_cluster != nullptr) {
         logger->report("start_cluster_id : {}", start_cluster->getId());
+      }
       Cluster* end_cluster = nullptr;
-      if (vertex_list[edge.terminals.second].macro_id != -1)
+      if (vertex_list[edge.terminals.second].macro_id != -1) {
         end_cluster = soft_macros[vertex_list[edge.terminals.second].macro_id]
                           .getCluster();
-      if (end_cluster != nullptr)
+      }
+      if (end_cluster != nullptr) {
         logger->report("end_cluster_id : {}", end_cluster->getId());
-      if (start_cluster == target_cluster)
+      }
+      if (start_cluster == target_cluster) {
         target_cluster->setPinAccess(
             src_cluster_id, edge.pin_access, net_weight);
-      else if (end_cluster == target_cluster)
+      } else if (end_cluster == target_cluster) {
         target_cluster->setPinAccess(
             src_cluster_id, opposite(edge.pin_access), net_weight);
-      else
+      } else {
         logger->report("(3) Error ! This should not happen");
+      }
     }
     logger->report("finish path {}", i);
   }
@@ -958,14 +1022,17 @@ void getVerticesInSegment(const std::vector<float>& grid,
 {
   start_idx = 0;
   end_idx = 0;
-  if (grid.size() == 0 || start_point > end_point)
+  if (grid.size() == 0 || start_point > end_point) {
     return;
+  }
   // calculate start_idx
-  while (start_idx < grid.size() && grid[start_idx] < start_point)
+  while (start_idx < grid.size() && grid[start_idx] < start_point) {
     start_idx++;
+  }
   // calculate end_idx
-  while (end_idx < grid.size() && grid[end_idx] <= end_point)
+  while (end_idx < grid.size() && grid[end_idx] <= end_point) {
     end_idx++;
+  }
 }
 
 }  // namespace mpl

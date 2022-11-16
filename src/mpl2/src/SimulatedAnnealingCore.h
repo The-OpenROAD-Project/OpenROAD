@@ -101,14 +101,14 @@ class SimulatedAnnealingCore
   void getMacros(std::vector<T>& macros) const;
 
   // Initialize the SA worker
-  virtual void initialize();
+  virtual void initialize() = 0;
   // Run FastSA algorithm
   void fastSA();
-  virtual void fillDeadSpace();
+  virtual void fillDeadSpace() = 0;
 
  protected:
-  virtual float calNormCost() const;
-  virtual void calPenalty();
+  virtual float calNormCost() const = 0;
+  virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
   void calGuidancePenalty();
@@ -116,14 +116,14 @@ class SimulatedAnnealingCore
 
   // operations
   void packFloorplan();
-  virtual void perturb();
-  virtual void restore();
+  virtual void perturb() = 0;
+  virtual void restore() = 0;
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
   void exchangeMacros();
 
-  virtual void shrink();  // Shrink the size of macros
+  virtual void shrink() = 0;  // Shrink the size of macros
 
   // utilities
   float calAverage(std::vector<float>& value_list);
@@ -180,10 +180,6 @@ class SimulatedAnnealingCore
   int macro_id_ = -1;          // the macro changed in the perturb
   int action_id_ = -1;         // the action_id of current step
 
-  // we define accuracy to determine whether the floorplan is valid
-  // because the error introduced by the type conversion
-  float acc_tolerance_ = 0.001;
-
   // metrics
   float width_ = 0.0;
   float height_ = 0.0;
@@ -211,7 +207,12 @@ class SimulatedAnnealingCore
   float neg_swap_prob_ = 0.0;
   float double_swap_prob_ = 0.0;
   float exchange_prob_ = 0.0;
+
   utl::Logger* logger_ = nullptr;
+
+  // we define accuracy to determine whether the floorplan is valid
+  // because the error introduced by the type conversion
+  static constexpr float acc_tolerance_ = 0.001;
 };
 
 // SACore wrapper function

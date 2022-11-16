@@ -44,11 +44,7 @@ class Logger;
 
 namespace mpl {
 
-// Class SimulatedAnnealingCore is a base class
-// It will have two derived classes:
-// 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
-// and PinAlignEngine 2) SACoreSoftMacro : SA for soft macros.  It will be
-// called by MacroPlaceEngine
+// SA for soft macros.  It will be called by MacroPlaceEngine
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
