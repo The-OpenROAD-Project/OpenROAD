@@ -71,7 +71,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   // respective quandrant of each node (the index).  Any node beyond
   // this coordinate would have another node in its bbox and is
   // therefore not a nearest neighbor.  This depends on processing the
-  // nodes in the order of increasing y distance.
+  // nodes in order of increasing y distance.
   vector<int> ur(pt_count, std::numeric_limits<int>::max());
   vector<int> ul(pt_count, std::numeric_limits<int>::min());
   vector<int> lr(pt_count, std::numeric_limits<int>::max());
@@ -121,13 +121,13 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
 
 /////////// Minimum Spanning Tree per PD costing
 
-// A potential edge in the minimum spanning tree (MST).  This are stored
+// A potential edge in the minimum spanning tree (MST).  These are stored
 // in the heap during the PD search.
 struct SearchEdge
 {
-  float weight;     // the heap key holding the PD cost of this edge
-  int path_length;  // distance from the driver to node
-  ListGraph::Node parent;
+  float weight;            // the heap key holding the PD cost of this edge
+  int path_length;         // distance from the driver to node
+  ListGraph::Node parent;  // may be updated during the search
   const ListGraph::Node node;
 };
 
@@ -155,6 +155,9 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
   const int num_nodes = graph.maxNodeId() + 1;
   int num_visited = 0;
   ListGraph::NodeMap<bool> visited(graph);
+
+  // Handles allow you to reference a heap entry for the node even
+  // as the heap is updated.
   vector<Heap::handle_type> handles(num_nodes);
 
   Heap heap;
@@ -180,13 +183,12 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
       if (visited[neighbor_node]) {
         continue;  // already in the graph
       }
-      const int edge_length = std::abs(node_point[neighbor_node].getX()
-                                       - node_point[edge.node].getX())
-                              + std::abs(node_point[neighbor_node].getY()
-                                         - node_point[edge.node].getY());
 
+      const int edge_length = Point::manhattanDistance(
+          node_point[neighbor_node], node_point[edge.node]);
       const int neighbor_path_length = edge_length + edge.path_length;
       const float neighbor_weight = edge_length + alpha * edge.path_length;
+
       auto& handle = handles[neighbor];
       if (handle == Heap::handle_type()) {  // not in the heap
         handles[neighbor] = heap.push(
@@ -238,7 +240,7 @@ static CandidateSteiner best_steiner_for_node(
   CandidateSteiner best;
   best.gain = 0;
 
-  // Loop through all edge pairs.  N^2 but N is always small.
+  // Loop through all edge pairs.  N^2 but N is small.
   for (ListGraph::IncEdgeIt edge1(graph, node); edge1 != INVALID; ++edge1) {
     auto n1 = graph.runningNode(edge1);
     const Point pt1 = node_point[n1];
@@ -248,22 +250,23 @@ static CandidateSteiner best_steiner_for_node(
       const Point pt2 = node_point[n2];
 
       Point pt_steiner = pt_node;
-      if (std::min(pt1.getX(), pt2.getX()) > pt_node.getX()) {  // both right
+      if (std::min(pt1.getX(), pt2.getX()) > pt_node.getX()) {
+        // both right of node
         pt_steiner.setX(std::min(pt1.getX(), pt2.getX()));
-      } else if (std::max(pt1.getX(), pt2.getX())
-                 < pt_node.getX()) {  // both left
+      } else if (std::max(pt1.getX(), pt2.getX()) < pt_node.getX()) {
+        // both left of node
         pt_steiner.setX(std::max(pt1.getX(), pt2.getX()));
       }
 
-      if (std::min(pt1.getY(), pt2.getY()) > pt_node.getY()) {  // both above
+      if (std::min(pt1.getY(), pt2.getY()) > pt_node.getY()) {
+        // both above node
         pt_steiner.setY(std::min(pt1.getY(), pt2.getY()));
-      } else if (std::max(pt1.getY(), pt2.getY())
-                 < pt_node.getY()) {  // both below
+      } else if (std::max(pt1.getY(), pt2.getY()) < pt_node.getY()) {
+        // both below node
         pt_steiner.setY(std::max(pt1.getY(), pt2.getY()));
       }
 
-      const int gain = std::abs(pt_steiner.getX() - pt_node.getX())
-                       + std::abs(pt_steiner.getY() - pt_node.getY());
+      const int gain = Point::manhattanDistance(pt_steiner, pt_node);
       if (gain > best.gain) {
         best = {gain, node, edge1, edge2, pt_steiner};
       }
@@ -332,15 +335,16 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
     }
 
     if (new_node) {
+      // Add to the heap
       graph.addEdge(steiner_node, best.node);
       handles[steiner_node]
           = heap.push(best_steiner_for_node(graph, steiner_node, node_point));
     }
 
+    // Find the new best candidate for the updated nodes
     handles[best.node]
         = heap.push(best_steiner_for_node(graph, best.node, node_point));
 
-    // Find the new best candidate for the updated nodes
     for (auto node : {opp1, opp2}) {
       *handles[node] = best_steiner_for_node(graph, node, node_point);
       heap.update(handles[node]);
@@ -352,7 +356,8 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
 
 // Flute only returns nodes with maximum degee of three.  grt assumes
 // this property so we enfoce it here.  Any degree four node is split
-// into two nodes with a zero length edge between them.
+// into two nodes with a zero length edge between them.  A very high
+// degree node could be split more than once.
 static void splitDegree4Nodes(ListGraph& graph,
                               ListGraph::NodeMap<Point>& node_point)
 {
