@@ -190,7 +190,9 @@ Cluster::Cluster(int cluster_id, utl::Logger* logger)
   logger_ = logger;
 }
 
-Cluster::Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger)
+Cluster::Cluster(int cluster_id,
+                 const std::string& cluster_name,
+                 utl::Logger* logger)
 {
   id_ = cluster_id;
   name_ = cluster_name;
@@ -208,7 +210,7 @@ const std::string Cluster::getName() const
   return name_;
 }
 
-void Cluster::setName(const std::string name)
+void Cluster::setName(const std::string& name)
 {
   name_ = name;
 }
@@ -710,7 +712,7 @@ void Cluster::addVirtualConnection(int src, int target)
 
 ///////////////////////////////////////////////////////////////////////
 // Metric HardMacro
-HardMacro::HardMacro(std::pair<float, float> loc, const std::string name)
+HardMacro::HardMacro(std::pair<float, float> loc, const std::string& name)
 {
   width_ = 0.0;
   height_ = 0.0;
@@ -721,7 +723,7 @@ HardMacro::HardMacro(std::pair<float, float> loc, const std::string name)
   y_ = loc.second;
 }
 
-HardMacro::HardMacro(float width, float height, const std::string name)
+HardMacro::HardMacro(float width, float height, const std::string& name)
 {
   width_ = width;
   height_ = height;
@@ -992,7 +994,7 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
 // Create a SoftMacro with specified size
 // In this case, we think the cluster is a macro cluster with only one macro
 // SoftMacro : Hard Macro (or pin access blockage)
-SoftMacro::SoftMacro(float width, float height, const std::string name)
+SoftMacro::SoftMacro(float width, float height, const std::string& name)
 {
   name_ = name;
   width_ = width;
@@ -1004,7 +1006,7 @@ SoftMacro::SoftMacro(float width, float height, const std::string name)
 // SoftMacro : Fixed Hard Macro (or blockage)
 SoftMacro::SoftMacro(float width,
                      float height,
-                     const std::string name,
+                     const std::string& name,
                      float lx,
                      float ly)
 {
@@ -1020,7 +1022,7 @@ SoftMacro::SoftMacro(float width,
 
 // Create a SoftMacro representing the IO cluster or fixed terminals
 SoftMacro::SoftMacro(const std::pair<float, float>& pos,
-                     const std::string name,
+                     const std::string& name,
                      float width,
                      float height,
                      Cluster* cluster)
