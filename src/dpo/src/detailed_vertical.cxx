@@ -170,7 +170,7 @@ void DetailedVerticalSwap::verticalSwap()
   Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
 
   // Wirelength objective.
-  DetailedHPWL hpwlObj(arch_, network_, rt_);
+  DetailedHPWL hpwlObj(network_);
   hpwlObj.init(mgr_, nullptr);  // Ignore orientation.
 
   double currHpwl = hpwlObj.curr();

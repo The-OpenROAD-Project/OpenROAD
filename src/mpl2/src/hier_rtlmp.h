@@ -230,10 +230,6 @@ class HierRTLMP
   // technology-related variables
   float dbu_ = 0.0;
 
-  // enable bus synthesis or not
-  // this feature is just for test
-  bool path_syn_flag_ = false;
-
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
 
