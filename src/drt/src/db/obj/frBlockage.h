@@ -39,7 +39,13 @@ class frBlockage : public frBlockObject
 {
  public:
   // constructors
-  frBlockage() : frBlockObject(), pin_(nullptr), design_rule_width_(-1), index_in_owner_(0) {}
+  frBlockage()
+      : frBlockObject(),
+        pin_(nullptr),
+        design_rule_width_(-1),
+        index_in_owner_(0)
+  {
+  }
   // getters
   frBPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
@@ -55,7 +61,6 @@ class frBlockage : public frBlockObject
   std::unique_ptr<frBPin> pin_;
   frCoord design_rule_width_;
   int index_in_owner_;
-
 };
 }  // namespace fr
 

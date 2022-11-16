@@ -49,7 +49,7 @@ struct FlexGCWorkerRegionQuery::Impl
 
   FlexGCWorker* gcWorker_;
   std::vector<RTree<gcSegment*, segment_t>> polygon_edges_;  // merged
-  std::vector<RTree<gcRect*>> max_rectangles_;  // merged
+  std::vector<RTree<gcRect*>> max_rectangles_;               // merged
   std::vector<RTree<gcRect>>
       spc_rectangles_;  // rects that require nondefault spacing that intersects
                         // tapered max rects
@@ -227,8 +227,9 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
       addSpcRectangle(spcRect.get(), allSpcRectangles);
   }
 
-   for (int i = 0; i < numLayers; i++) {
-    polygon_edges_[i] = boost::move(RTree<gcSegment*, segment_t>(allPolygonEdges[i]));
+  for (int i = 0; i < numLayers; i++) {
+    polygon_edges_[i]
+        = boost::move(RTree<gcSegment*, segment_t>(allPolygonEdges[i]));
     max_rectangles_[i] = boost::move(RTree<gcRect*>(allMaxRectangles[i]));
     spc_rectangles_[i] = boost::move(RTree<gcRect>(allSpcRectangles[i]));
   }
@@ -249,7 +250,7 @@ void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)
     }
   }
   for (auto& spcR : net->getSpecialSpcRects()) {
-      addSpcRectangle(spcR.get());
+    addSpcRectangle(spcR.get());
   }
 }
 
@@ -267,7 +268,7 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
       }
     }
   }
-  for (auto& spcR: net->getSpecialSpcRects()) {
-      removeSpcRectangle(spcR.get());
+  for (auto& spcR : net->getSpecialSpcRects()) {
+    removeSpcRectangle(spcR.get());
   }
 }

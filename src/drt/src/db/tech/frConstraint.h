@@ -217,7 +217,7 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
         return "Lef58EolKeepOut";
-      
+
       case frConstraintTypeEnum::frcMetalWidthViaConstraint:
         return "MetalWidthViaMap";
 
@@ -2354,10 +2354,7 @@ class frLef58AreaConstraint : public frConstraint
 {
  public:
   // constructor
-  frLef58AreaConstraint(odb::dbTechLayerAreaRule* dbRule)
-      : db_rule_(dbRule)
-  {
-  }
+  frLef58AreaConstraint(odb::dbTechLayerAreaRule* dbRule) : db_rule_(dbRule) {}
   // getter
   odb::dbTechLayerAreaRule* getODBRule() const { return db_rule_; }
 
@@ -2370,7 +2367,8 @@ class frLef58AreaConstraint : public frConstraint
   void report(utl::Logger* logger) const override
   {
     auto trim_layer = db_rule_->getTrimLayer();
-    std::string trim_layer_name = trim_layer != nullptr ? db_rule_->getTrimLayer()->getName() : "";
+    std::string trim_layer_name
+        = trim_layer != nullptr ? db_rule_->getTrimLayer()->getName() : "";
     logger->report(
         "LEF58 AREA rule: area {}, exceptMinWidth {}, exceptEdgeLength {}, "
         "exceptEdgeLengths ({} {}), exceptMinSize ({} {}), exceptStep ({} {}), "

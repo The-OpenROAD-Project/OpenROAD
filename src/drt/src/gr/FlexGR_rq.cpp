@@ -191,8 +191,8 @@ void FlexGRWorkerRegionQuery::query(const Rect& box,
                                     vector<grConnFig*>& result) const
 {
   vector<rq_box_value_t<grConnFig*>> temp;
-  box_t boostb = box_t(point_t(box.xMin(), box.yMin()),
-                       point_t(box.xMax(), box.yMax()));
+  box_t boostb
+      = box_t(point_t(box.xMin(), box.yMin()), point_t(box.xMax(), box.yMax()));
   shapes_.at(layerNum).query(bgi::intersects(boostb), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
@@ -204,8 +204,8 @@ void FlexGRWorkerRegionQuery::query(
     const frLayerNum layerNum,
     vector<rq_box_value_t<grConnFig*>>& result) const
 {
-  box_t boostb = box_t(point_t(box.xMin(), box.yMin()),
-                       point_t(box.xMax(), box.yMax()));
+  box_t boostb
+      = box_t(point_t(box.xMin(), box.yMin()), point_t(box.xMax(), box.yMax()));
   shapes_.at(layerNum).query(bgi::intersects(boostb), back_inserter(result));
 }
 
