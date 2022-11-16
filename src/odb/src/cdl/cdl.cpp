@@ -33,16 +33,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "odb/cdl.h"
+
 #include <algorithm>
 #include <fstream>
 #include <list>
 #include <regex>
-#include <string>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "odb/cdl.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -144,8 +145,11 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
           break;
         }
         if (mtermMap.find(master) != mtermMap.end()) {
-          logger->warn(utl::ODB, 285, "Master {} seen more than once in {}.",
-                       token, fileName);
+          logger->warn(utl::ODB,
+                       285,
+                       "Master {} seen more than once in {}.",
+                       token,
+                       fileName);
           break;
         }
         mterms = &mtermMap[master];
@@ -208,9 +212,10 @@ bool cdl::writeCdl(utl::Logger* logger,
     if (it == mtermMap.end()) {
       if (master->getMTermCount() == 0) {
         logger->warn(utl::ODB,
-                      357,
-                      "Master {} was not in the masters CDL files, but master has no pins.",
-                      master->getName());
+                     357,
+                     "Master {} was not in the masters CDL files, but master "
+                     "has no pins.",
+                     master->getName());
       } else {
         logger->error(utl::ODB,
                       287,

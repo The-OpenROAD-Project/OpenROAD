@@ -604,8 +604,8 @@ void dbTechLayerSpacingRule::setEol(uint width,
       && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
       && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE));
 
-   _lsp->_r1min = width;
-   _lsp->_r1max = within;
+  _lsp->_r1min = width;
+  _lsp->_r1max = within;
   if (!parallelEdge) {
     _lsp->_flags._rule = _dbTechLayerSpacingRule::ENDOFLINE;
   } else {

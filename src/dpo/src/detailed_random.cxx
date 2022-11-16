@@ -87,14 +87,8 @@ bool DetailedRandom::isNumber(char ch)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedRandom::DetailedRandom(Architecture* arch,
-                               Network* network,
-                               RoutingParams* rt)
-    : mgrPtr_(nullptr),
-      arch_(arch),
-      network_(network),
-      rt_(rt),
-      movesPerCandidate_(3.0)
+DetailedRandom::DetailedRandom(Architecture* arch, Network* network)
+    : mgrPtr_(nullptr), arch_(arch), network_(network), movesPerCandidate_(3.0)
 {
 }
 
@@ -226,15 +220,15 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       // else if( objs[i] == "drc" )   std::cout << "drc objective requested."
       // << std::endl;
       if (objs[i] == "abu") {
-        auto objABU = new DetailedABU(arch_, network_, rt_);
+        auto objABU = new DetailedABU(arch_, network_);
         objABU->init(mgrPtr_, nullptr);
         objectives_.push_back(objABU);
       } else if (objs[i] == "disp") {
-        auto objDisp = new DetailedDisplacement(arch_, network_, rt_);
+        auto objDisp = new DetailedDisplacement(arch_);
         objDisp->init(mgrPtr_, nullptr);
         objectives_.push_back(objDisp);
       } else if (objs[i] == "hpwl") {
-        auto objHpwl = new DetailedHPWL(arch_, network_, rt_);
+        auto objHpwl = new DetailedHPWL(network_);
         objHpwl->init(mgrPtr_, nullptr);
         objectives_.push_back(objHpwl);
       } else {
@@ -244,7 +238,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
   if (objectives_.size() == 0) {
     // Default objective.
-    auto objHpwl = new DetailedHPWL(arch_, network_, rt_);
+    auto objHpwl = new DetailedHPWL(network_);
     objHpwl->init(mgrPtr_, nullptr);
     objectives_.push_back(objHpwl);
   }

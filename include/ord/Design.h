@@ -69,6 +69,10 @@ namespace mpl {
 class MacroPlacer;
 }
 
+namespace ppl {
+class IOPlacer;
+}
+
 namespace ord {
 
 class Tech;
@@ -104,6 +108,7 @@ class Design
   gpl::Replace* getReplace();
   dpl::Opendp* getOpendp();
   mpl::MacroPlacer* getMacroPlacer();
+  ppl::IOPlacer* getIOPlacer();
 
  private:
   Tech* tech_;

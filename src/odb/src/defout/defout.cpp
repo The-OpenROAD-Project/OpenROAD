@@ -34,8 +34,8 @@
 
 #include <stdio.h>
 
-#include "odb/db.h"
 #include "defout_impl.h"
+#include "odb/db.h"
 
 namespace odb {
 

@@ -36,6 +36,7 @@
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
+#include "dbMetalWidthViaMap.h"
 #include "dbNameCache.h"
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
@@ -51,7 +52,6 @@
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaLayerRule.h"
 #include "dbTechViaRule.h"
-#include "dbMetalWidthViaMap.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -415,8 +415,9 @@ _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
       db, this, *t._via_generate_rule_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(db, this, *t._prop_tbl);
-  
-  _metal_width_via_map_tbl = new dbTable<_dbMetalWidthViaMap>(db, this, *t._metal_width_via_map_tbl);
+
+  _metal_width_via_map_tbl
+      = new dbTable<_dbMetalWidthViaMap>(db, this, *t._metal_width_via_map_tbl);
 
   _via_hash.setTable(_via_tbl);
 

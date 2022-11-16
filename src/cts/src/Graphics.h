@@ -20,11 +20,9 @@ class SinkClustering;
 class Graphics : public gui::Renderer
 {
  public:
-  Graphics(utl::Logger* logger, HTreeBuilder* HTreeBuilder, Clock* clock);
+  Graphics(HTreeBuilder* HTreeBuilder, Clock* clock);
 
-  Graphics(utl::Logger* logger,
-           SinkClustering* SinkClustering,
-           unsigned groupSize,
+  Graphics(SinkClustering* SinkClustering,
            const std::vector<Point<double>>& points);
 
   // Draw the graphics; optionally pausing afterwards
@@ -45,9 +43,7 @@ class Graphics : public gui::Renderer
 
   Clock* clock_;
   HTreeBuilder* h_tree_builder_;
-  unsigned group_size_;
   SinkClustering* sink_clustering_;
-  utl::Logger* logger_;
   std::vector<Point<double>> points_;  // used for sink_clustering
 };
 

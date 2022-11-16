@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2012 - 2013, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author: dell $
 //  $Revision: #1 $
 //  $Date: 2017/06/06 $
@@ -32,9 +32,9 @@
 
 #include <stdarg.h>
 #include <stdio.h>
- 
-#include "lefiKRDefs.hpp"
+
 #include "lefiDefs.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiUser.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
@@ -47,17 +47,15 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
  * a colon-delimited list of directories in which to find
  * include files.
  */
-extern int lefwWrite ( FILE *file,
-                 const char *fileName,
-                 lefiUserData userData );
+extern int lefwWrite(FILE* file, const char* fileName, lefiUserData userData);
 
 /*
  * Set all of the callbacks that have not yet been set to a function
  * that will add up how many times a given lef data type was ignored
  * (ie no callback was done).  The statistics can later be printed out.
  */
-extern void lefwSetRegisterUnusedCallbacks ( void );
-extern void lefwPrintUnusedCallbacks ( FILE* f );
+extern void lefwSetRegisterUnusedCallbacks(void);
+extern void lefwPrintUnusedCallbacks(FILE* f);
 
 /*
  * Set/get the client-provided user data.  lefi doesn't look at
@@ -67,13 +65,14 @@ extern void lefwPrintUnusedCallbacks ( FILE* f );
  * next callback.  The lefi writer and writer maintain separate
  * user data pointers.
  */
-extern void lefwSetUserData ( lefiUserData );
-extern lefiUserData lefwGetUserData ( void );
- 
+extern void lefwSetUserData(lefiUserData);
+extern lefiUserData lefwGetUserData(void);
+
 /*
  * An enum describing all of the types of writer callbacks.
  */
-typedef enum {
+typedef enum
+{
   lefwUnspecifiedCbkType = 0,
   lefwVersionCbkType,
   lefwCaseSensitiveCbkType,
@@ -110,8 +109,7 @@ typedef enum {
    * that you add, you must add an item to this enum. */
 
 } lefwCallbackType_e;
- 
- 
+
 /* Declarations of function signatures for each type of callback.
  * These declarations are type-safe when compiling with ANSI C
  * or C++; you will only be able to register a function pointer
@@ -144,13 +142,12 @@ typedef enum {
  * switch based on the callback type to handle the appropriate type of
  * data.
  */
- 
 
-// A declaration of the signature of all callbacks that return nothing. 
-typedef int (*lefwVoidCbkFnType) ( lefwCallbackType_e, lefiUserData );
+// A declaration of the signature of all callbacks that return nothing.
+typedef int (*lefwVoidCbkFnType)(lefwCallbackType_e, lefiUserData);
 
- /* NEW CALLBACK - If your callback returns a pointer to a new class then
-  * you must add a type function here. */
+/* NEW CALLBACK - If your callback returns a pointer to a new class then
+ * you must add a type function here. */
 
 /* Functions to call to register a callback function.
  */
@@ -193,15 +190,15 @@ extern void lefwSetEndLibCbk(lefwVoidCbkFnType);
  * function.  This is especially useful if you want to check to see
  * if you forgot anything.
  */
-extern void lefwSetUnusedCallbacks (lefwVoidCbkFnType func);
+extern void lefwSetUnusedCallbacks(lefwVoidCbkFnType func);
 
-// Routine to set the message logging routine for errors 
+// Routine to set the message logging routine for errors
 typedef void (*LEFI_LOG_FUNCTION)(const char*);
-extern void lefwSetLogFunction( LEFI_LOG_FUNCTION );
+extern void lefwSetLogFunction(LEFI_LOG_FUNCTION);
 
-// Routine to set the message logging routine for warnings 
+// Routine to set the message logging routine for warnings
 typedef void (*LEFI_WARNING_LOG_FUNCTION)(const char*);
-extern void lefwSetWarningLogFunction( LEFI_WARNING_LOG_FUNCTION );
+extern void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION);
 
 END_LEFDEF_PARSER_NAMESPACE
 

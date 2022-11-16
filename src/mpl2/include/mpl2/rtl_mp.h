@@ -33,38 +33,61 @@
 
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
+namespace odb {
+class dbDatabase;
+}
 
-#include "odb/db.h"
-#include "utl/Logger.h"
+namespace sta {
+class dbNetwork;
+class dbSta;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
 
 class MacroPlacer2
 {
  public:
-  void init(odb::dbDatabase* db, utl::Logger* logger);
-  bool place(const char* config_file,
-             const char* report_directory,
-             const float area_wt,
-             const float wirelength_wt,
-             const float outline_wt,
-             const float boundary_wt,
-             const float macro_blockage_wt,
-             const float location_wt,
-             const float notch_wt,
-             const float dead_space,
-             const float macro_halo,
-             const char* report_file,
-             const char* macro_blockage_file,
-             const char* prefer_location_file);
+  void init(sta::dbNetwork* network,
+            odb::dbDatabase* db,
+            sta::dbSta* sta,
+            utl::Logger* logger);
+
+  bool place(const int max_num_macro,
+             const int min_num_macro,
+             const int max_num_inst,
+             const int min_num_inst,
+             const float tolerance,
+             const int max_num_level,
+             const float coarsening_ratio,
+             const int num_bundled_ios,
+             const int large_net_threshold,
+             const int signature_net_threshold,
+             const float halo_width,
+             const float fence_lx,
+             const float fence_ly,
+             const float fence_ux,
+             const float fence_uy,
+             const float area_weight,
+             const float outline_weight,
+             const float wirelength_weight,
+             const float guidance_weight,
+             const float fence_weight,
+             const float boundary_weight,
+             const float notch_weight,
+             const float pin_access_th,
+             const float target_util,
+             const float target_dead_space,
+             const float min_ar,
+             const int snap_layer,
+             const char* report_directory);
 
  private:
+  sta::dbNetwork* network_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };

@@ -720,9 +720,9 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
   makeLef58SpacingEolConstraint(2,    // layer_num
                                 200,  // space
                                 200,  // width
-                                 50,  // within
+                                50,   // within
                                 400,  // end_prl_spacing
-                                 50); // end_prl
+                                50);  // end_prl
 
   frNet* n1 = makeNet("n1");
 

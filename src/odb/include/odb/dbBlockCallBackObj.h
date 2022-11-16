@@ -71,7 +71,9 @@ class dbBlockCallBackObj
   virtual void inDbInstCreate(dbInst*) {}
   virtual void inDbInstCreate(dbInst*, dbRegion*) {}
   virtual void inDbInstDestroy(dbInst*) {}
-  virtual void inDbInstPlacementStatusBefore(dbInst*, const dbPlacementStatus&) {}
+  virtual void inDbInstPlacementStatusBefore(dbInst*, const dbPlacementStatus&)
+  {
+  }
   virtual void inDbInstSwapMasterBefore(dbInst*, dbMaster*) {}
   virtual void inDbInstSwapMasterAfter(dbInst*) {}
   virtual void inDbPreMoveInst(dbInst*) {}
@@ -160,7 +162,7 @@ class dbBlockCallBackObj
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
-  
+
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }
 

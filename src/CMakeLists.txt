@@ -33,6 +33,9 @@
 ##
 ###############################################################################
 
+# The location used by etc/DependencyInstaller.sh
+list(APPEND CMAKE_INSTALL_RPATH "/opt/or-tools/lib64")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 include("openroad")
@@ -372,6 +375,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     gpl_py
     dpl_py
     mpl_py
+    ppl_py
   )
 else()
   message(STATUS "Python3 disabled")

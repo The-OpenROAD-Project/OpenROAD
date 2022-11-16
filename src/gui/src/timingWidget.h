@@ -42,12 +42,25 @@
 #include <QSpinBox>
 #include <QSplitter>
 #include <QTableView>
-#include <vector>
+#include <memory>
 
+#include "gui/gui.h"
 #include "odb/db.h"
-#include "staGui.h"
+
+namespace sta {
+class dbSta;
+}
 
 namespace gui {
+
+class TimingPath;
+class TimingPathRenderer;
+class TimingConeRenderer;
+class TimingControlsDialog;
+class TimingPathDetailModel;
+class TimingPathsModel;
+class GuiDBChangeListener;
+
 class TimingWidget : public QDockWidget
 {
   Q_OBJECT

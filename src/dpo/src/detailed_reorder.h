@@ -48,7 +48,7 @@ class RoutingParams;
 class DetailedReorderer
 {
  public:
-  DetailedReorderer(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedReorderer(Architecture* arch, Network* network);
 
   void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
@@ -67,7 +67,6 @@ class DetailedReorderer
   // Standard stuff.
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   // For segments.
   DetailedMgr* mgrPtr_;

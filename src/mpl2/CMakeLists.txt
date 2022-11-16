@@ -33,6 +33,14 @@
 
 include("openroad")
 
+# The location used by etc/DependencyInstaller.sh
+list(APPEND CMAKE_PREFIX_PATH
+  "/opt/or-tools/lib64/cmake"
+  "/opt/or-tools/lib/cmake"
+)
+
+find_package(ortools REQUIRED)
+
 swig_lib(NAME      mpl2
          NAMESPACE mpl2
          I_FILE    src/mpl.i
@@ -43,10 +51,12 @@ target_sources(mpl2
   PRIVATE
     src/MakeMacroPlacer.cpp
     src/rtl_mp.cpp
-    src/pin_alignment.cpp
-    src/block_placement.cpp
-    src/shape_engine.cpp
-    src/util.cpp
+    src/hier_rtlmp.cpp
+    src/object.cpp
+    src/SimulatedAnnealingCore.cpp
+    src/SACoreHardMacro.cpp
+    src/SACoreSoftMacro.cpp
+    src/bus_synthesis.cpp
 )
 
 messages(
@@ -64,4 +74,7 @@ target_link_libraries(mpl2
     OpenSTA
     odb
     gui
+    ortools::ortools
+    dl
 )
+

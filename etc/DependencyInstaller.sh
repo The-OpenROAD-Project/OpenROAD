@@ -412,3 +412,4 @@ To use cmake, set cmake as an alias:
     source ~/.bash_profile
 EOF
 fi
+

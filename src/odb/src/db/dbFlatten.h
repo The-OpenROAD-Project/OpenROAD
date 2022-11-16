@@ -107,9 +107,7 @@ class dbFlatten
                   dbWire* dst_);
   void copyObstruction(dbBlock* dst_block, dbObstruction* src);
   void copyBlockage(dbBlock* dst_block, dbBlockage* src);
-  void copyRegion(dbBlock* parent_block,
-                  dbInst* child_inst,
-                  dbRegion* src);
+  void copyRegion(dbBlock* parent_block, dbInst* child_inst, dbRegion* src);
   void copyGroup(dbBlock* parent_block,
                  dbRegion* parent_region,
                  dbInst* child_inst,
