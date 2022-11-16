@@ -133,7 +133,7 @@ float SACoreSoftMacro::getNormNotchPenalty() const
 }
 
 // Operations
-float SACoreSoftMacro::calNormCost()
+float SACoreSoftMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
   if (norm_area_penalty_ > 0.0)

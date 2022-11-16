@@ -86,7 +86,7 @@ class SimulatedAnnealingCore
   void setGuides(const std::map<int, Rect>& guides);
 
   bool isValid() const;
-  float getNormCost();  // This is not a const function
+  float getNormCost() const;
 
   float getWidth() const;
   float getHeight() const;
@@ -107,7 +107,7 @@ class SimulatedAnnealingCore
   virtual void fillDeadSpace();
 
  protected:
-  virtual float calNormCost();
+  virtual float calNormCost() const;
   virtual void calPenalty();
   void calOutlinePenalty();
   void calWirelength();
@@ -217,7 +217,7 @@ class SimulatedAnnealingCore
 // SACore wrapper function
 // T can be SACoreHardMacro or SACoreSoftMacro
 template <class T>
-void RunSA(T* sa_core)
+void runSA(T* sa_core)
 {
   sa_core->initialize();
   sa_core->fastSA();

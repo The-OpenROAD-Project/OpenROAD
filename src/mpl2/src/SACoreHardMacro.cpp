@@ -87,7 +87,7 @@ SACoreHardMacro::SACoreHardMacro(
   flip_prob_ = flip_prob;
 }
 
-float SACoreHardMacro::calNormCost()
+float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
   if (norm_area_penalty_ > 0.0)
