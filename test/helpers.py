@@ -63,3 +63,7 @@ utl.suppress_message(utl.PPL, 60)
 # suppress tap info messages
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
+
+# supress cts info messages
+utl.suppress_message(utl.CTS, 36)
+utl.suppress_message(utl.CTS, 37)
