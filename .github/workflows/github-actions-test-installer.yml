@@ -26,17 +26,14 @@ jobs:
           else
             yum -y install git
           fi
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Checkout repository code with submodules
         run: |
-          git clone --recursive https://github.com/${{ github.repository }}.git .
-          BRANCH_NAME=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
           git config --global --add safe.directory '*'
-          if [ ${BRANCH_NAME} =~ '^[0-9]+$' ]; then 
-            git fetch origin pull/${BRANCH_NAME}/head:test
-            git checkout test
-          else
-            git checkout ${BRANCH_NAME}
-          fi
+          git submodule update --init
       - name: Runs installer
         run: |
           echo "test" | useradd -m testUser
