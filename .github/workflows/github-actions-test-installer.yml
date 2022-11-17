@@ -43,7 +43,7 @@ jobs:
           ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
       - name: Build project
         run: |
-          if [ "${{ matrix.os }}" == "centos:centos7" ]; then
+          if [ "${{ matrix.os }}" = "centos:centos7" ]; then
             source /opt/rh/devtoolset-8/enable
             source /opt/rh/llvm-toolset-7.0/enable
           fi
