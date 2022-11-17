@@ -30,8 +30,8 @@ jobs:
         run: |
           git clone --recursive https://github.com/${{ github.repository }}.git .
           BRANCH_NAME=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          git config --global --add safe.directory '*'
           if [ ${BRANCH_NAME} =~ ^[[:digit:]] ]; then 
-            git config --global --add safe.directory '*'
             git fetch origin pull/${BRANCH_NAME}/head:test
             git checkout test
           fi
