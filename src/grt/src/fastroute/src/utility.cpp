@@ -1786,7 +1786,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
 
   deg = t.deg;
   // find root of the tree
-  for (i = deg; i < 2 * deg - 2; i++) {
+  for (i = deg; i < t.branchCount(); i++) {
     if (t.branch[i].n == i) {
       root = i;
       break;
@@ -1794,7 +1794,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   }
 
   // find all neighbors for steiner nodes
-  for (i = deg; i < 2 * deg - 2; i++)
+  for (i = deg; i < t.branchCount(); i++)
     nbrCnt[i] = 0;
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
@@ -1803,7 +1803,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
     nbrCnt[n]++;
   }
   // edges from steiner to steiner
-  for (i = deg; i < 2 * deg - 2; i++) {
+  for (i = deg; i < t.branchCount(); i++) {
     if (i != root)  // not the removed steiner nodes and root
     {
       n = t.branch[i].n;
@@ -1819,7 +1819,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   {
     // find all H or V edges (steiner pairs)
     pairCnt = 0;
-    for (i = deg; i < 2 * deg - 2; i++) {
+    for (i = deg; i < t.branchCount(); i++) {
       n = t.branch[i].n;
       if (t.branch[i].x == t.branch[n].x) {
         if (t.branch[i].y < t.branch[n].y) {
@@ -2120,7 +2120,7 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
 
     // find all pairs of steiner node at the same position (steiner pairs)
     pairCnt = 0;
-    for (i = deg; i < 2 * deg - 2; i++) {
+    for (i = deg; i < t.branchCount(); i++) {
       n = t.branch[i].n;
       if (n != i && n != t.branch[n].n && t.branch[i].x == t.branch[n].x
           && t.branch[i].y == t.branch[n].y) {
@@ -2150,7 +2150,7 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
         N1nbrH = N1nbrV = N2nbrH = N2nbrV = -1;
         // find the nodes directed to cur_pairN1(2 nodes) and cur_pairN2(1
         // nodes)
-        for (j = 0; j < 2 * deg - 2; j++) {
+        for (j = 0; j < t.branchCount(); j++) {
           n = t.branch[j].n;
           if (n == cur_pairN1) {
             if (t.branch[j].x == t.branch[cur_pairN1].x

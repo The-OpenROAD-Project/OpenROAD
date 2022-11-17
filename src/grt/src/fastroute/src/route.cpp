@@ -253,7 +253,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
-  // loop for all the tree edges (2*d-3)
+  // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {
     // only route the non-degraded edges (len>0)
     if (sttrees_[netID].edges[i].len > 0) {
@@ -534,8 +534,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
-  // loop for all the tree edges (2*d-3)
-
+  // loop for all the tree edges
   for (int ind = 0; ind < num_edges; ind++) {
     TreeEdge* treeedge = &(treeedges[ind]);
 
@@ -1672,7 +1671,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
 
   const int edgeCost = nets_[netID]->getEdgeCost();
 
-  // loop for all the tree edges (2*d-3)
+  // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {
     if (sttrees_[netID].edges[i].len <= 0) {
       // only route the non-degraded edges (len>0)
