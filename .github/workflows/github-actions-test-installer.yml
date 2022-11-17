@@ -37,8 +37,7 @@ jobs:
       - name: Runs installer
         run: |
           mkdir -p /home/testUser/openroad-deps
-          if [ "${{ matrix.os }}" == "centos:centos7" ]; then
-          ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}   
+          ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
       - name: Build project
         run: |
           if [ "${{ matrix.os }}" == "centos:centos7" ]; then
