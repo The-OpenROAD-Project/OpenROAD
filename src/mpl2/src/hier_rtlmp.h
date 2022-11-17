@@ -221,26 +221,6 @@ class HierRTLMP
   void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                        std::vector<BundledNet>& nets_old);
 
-  /*
-  // Place macros in a hierarchical mode based on the above
-  // physcial hierarchical tree
-  // The macro placement is done in a DFS manner (PreOrder)
-  void multiLevelMacroPlacement(Cluster* cluster);
-  // Determine the shape (area, possible aspect ratios) of each cluster
-  void calClusterShape(Cluster* cluster);
-  // Calculate possible macro tilings for HardMacroCluster
-  void calMacroTilings(Cluster* cluster);
-  // Determine positions and implementation of each children cluster
-  void placeChildrenClusters(Cluster* parent);
-  // Merge nets to reduce runtime
-  void mergeNets(std::vector<BundledNet>& nets);
-  // Route buses within the parent cluster
-  void callPathSynthesis(Cluster* parent);
-  // Determine the orientation and position of each hard macro
-  // in each HardMacroCluster
-  void placeHardMacros(Cluster* cluster);
-  */
-
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -250,15 +230,11 @@ class HierRTLMP
   // technology-related variables
   float dbu_ = 0.0;
 
-  // enable bus synthesis or not
-  // this feature is just for test
-  bool path_syn_flag_ = false;
-
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
 
   // Parameters related to macro placement
-  const char* report_directory_;
+  std::string report_directory_;
   // User can specify a global region for some designs
   float global_fence_lx_ = std::numeric_limits<float>::max();
   float global_fence_ly_ = std::numeric_limits<float>::max();

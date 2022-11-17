@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbITerm.h"
+
 #include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -41,7 +43,6 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHier.h"
-#include "dbITerm.h"
 #include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbJournal.h"

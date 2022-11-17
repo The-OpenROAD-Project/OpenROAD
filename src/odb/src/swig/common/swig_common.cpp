@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "swig_common.h"
+
 #include <libgen.h>
 
 #include <array>
@@ -34,7 +36,6 @@
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
-#include "swig_common.h"
 #include "utl/Logger.h"
 
 using namespace boost::polygon::operators;

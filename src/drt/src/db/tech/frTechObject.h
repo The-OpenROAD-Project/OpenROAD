@@ -32,6 +32,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -39,9 +40,8 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
-#include <set>
 namespace odb {
-  class dbTechLayer;
+class dbTechLayer;
 }
 namespace fr {
 namespace io {
@@ -93,8 +93,7 @@ class frTechObject
   }
   bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
   {
-    return unidirectional_layers_.find(dbLayer)
-           != unidirectional_layers_.end();
+    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
 
   // setters
@@ -133,8 +132,8 @@ class frTechObject
   {
     in->setId(uConstraints.size());
     auto type = in->typeId();
-    if (type == frConstraintTypeEnum::frcMinStepConstraint ||
-        type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
+    if (type == frConstraintTypeEnum::frcMinStepConstraint
+        || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
       hasCornerSpacingConstraint_ = true;
     }
     uConstraints.push_back(std::move(in));
@@ -159,10 +158,9 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    return isIncluded(
-        (ndr ? ndr->via2ViaForbiddenLen
-             : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-        len);
+    return isIncluded((ndr ? ndr->via2ViaForbiddenLen
+                           : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
+                      len);
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
@@ -271,7 +269,10 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasCornerSpacingConstraint() const { return hasCornerSpacingConstraint_; }
+  bool hasCornerSpacingConstraint() const
+  {
+    return hasCornerSpacingConstraint_;
+  }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -302,7 +303,7 @@ class frTechObject
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
-  template<typename T>
+  template <typename T>
   using ByLayer = std::vector<T>;
 
   // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x

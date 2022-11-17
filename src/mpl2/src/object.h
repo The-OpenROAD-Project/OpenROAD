@@ -174,13 +174,13 @@ class Cluster
  public:
   // constructors
   Cluster(int cluster_id, utl::Logger* logger);  // cluster name can be updated
-  Cluster(int cluster_id, std::string cluster_name, utl::Logger* logger);
+  Cluster(int cluster_id, const std::string& cluster_name, utl::Logger* logger);
 
   // cluster id can not be changed
   int getId() const;
   // cluster name can be updated
   const std::string getName() const;
-  void setName(const std::string name);
+  void setName(const std::string& name);
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
@@ -338,10 +338,10 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<float, float> loc, const std::string name);
+  HardMacro(std::pair<float, float> loc, const std::string& name);
 
   // In this case, we model the pin position at the center of the macro
-  HardMacro(float width, float height, const std::string name);
+  HardMacro(float width, float height, const std::string& name);
   // create a macro from dbInst
   // dbu is needed to convert the database unit to real size
   HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
@@ -429,7 +429,7 @@ class HardMacro
 // SoftMacro is a physical abstraction for Cluster.
 // Note that constrast to classical soft macro definition,
 // we allow the soft macro to change its area.
-// For the SoftMacro cooresponding to different types of clusters,
+// For the SoftMacro corresponding to different types of clusters,
 // we allow different shape constraints:
 // For SoftMacro corresponding to MixedCluster and StdCellCluster,
 // the macro must have fixed area
@@ -446,16 +446,16 @@ class SoftMacro
  public:
   // Create a SoftMacro with specified size
   // Create a SoftMacro representing the blockage
-  SoftMacro(float width, float height, const std::string name);
+  SoftMacro(float width, float height, const std::string& name);
   // Create a SoftMacro representing fixed hard macro or blockage
   SoftMacro(float width,
             float height,
-            const std::string name,
+            const std::string& name,
             float lx,
             float ly);
   // Create a SoftMacro representing the IO cluster
   SoftMacro(const std::pair<float, float>& pos,
-            const std::string name,
+            const std::string& name,
             float width = 0.0,
             float height = 0.0,
             Cluster* cluster = nullptr);
@@ -553,14 +553,14 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    this->HPWL = 0;
+    HPWL = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    this->HPWL = 0;
+    HPWL = 0;
   }
 
   bool operator==(const BundledNet& net)

@@ -32,10 +32,10 @@
 
 #pragma once
 
+#include <boost/polygon/polygon.hpp>
 #include <string>
 #include <unordered_map>
 
-#include <boost/polygon/polygon.hpp>
 #include "db.h"
 #include "dbObject.h"
 #include "odb.h"
@@ -70,10 +70,11 @@ class lefout
   int bloat_factor_;
   bool bloat_occupied_layers_;
 
-  template<typename GenericBox>
+  template <typename GenericBox>
   void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
 
-  using ObstructionMap = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
+  using ObstructionMap
+      = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
   void writeTech(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
@@ -99,22 +100,29 @@ class lefout
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
-  void writeRect(const std::string& indent, const boost::polygon::rectangle_data<int>& rect);
-  void findInstsObstructions(ObstructionMap& obstructions, dbBlock* db_block) const;
-  void findWireLayerObstructions(ObstructionMap& obstructions, dbNet* net) const;
-  void findSWireLayerObstructions(ObstructionMap& obstructions, dbNet* net) const;
-  void findLayerViaObstructions(ObstructionMap& obstructions, dbSBox* box) const;
+  void writeRect(const std::string& indent,
+                 const boost::polygon::rectangle_data<int>& rect);
+  void findInstsObstructions(ObstructionMap& obstructions,
+                             dbBlock* db_block) const;
+  void findWireLayerObstructions(ObstructionMap& obstructions,
+                                 dbNet* net) const;
+  void findSWireLayerObstructions(ObstructionMap& obstructions,
+                                  dbNet* net) const;
+  void findLayerViaObstructions(ObstructionMap& obstructions,
+                                dbSBox* box) const;
   void writeBlock(dbBlock* db_block);
   void writePins(dbBlock* db_block);
   void writePowerPins(dbBlock* db_block);
   void writeBlockTerms(dbBlock* db_block);
-  
+
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
       std::unordered_map<std::string, short>& propertiesMap);
 
   int determineBloat(dbTechLayer* layer) const;
-  void insertObstruction(dbTechLayer* layer, const Rect& rect, ObstructionMap& obstructions) const;
+  void insertObstruction(dbTechLayer* layer,
+                         const Rect& rect,
+                         ObstructionMap& obstructions) const;
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
  public:

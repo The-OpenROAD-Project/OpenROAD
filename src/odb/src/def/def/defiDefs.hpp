@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2013, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author: dell $
 //  $Revision: #1 $
 //  $Date: 2017/06/06 $
@@ -32,8 +32,8 @@
 #ifndef DEFI_DEFS_H
 #define DEFI_DEFS_H
 
-#include <stdio.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "defiKRDefs.hpp"
 
@@ -55,44 +55,47 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 typedef struct defpoint defPOINT;
 
-struct defpoint {
-    int x;
-    int y;
-    };
+struct defpoint
+{
+  int x;
+  int y;
+};
 
 typedef struct defrect defRECT;
 
-struct defrect {
-    defPOINT ll,ur;
-    };
+struct defrect
+{
+  defPOINT ll, ur;
+};
 
 typedef struct deftoken defTOKEN;
 
-struct deftoken {
-    defTOKEN *next;
-    int what;
-    int data;
-    defPOINT pt;
-    };
+struct deftoken
+{
+  defTOKEN* next;
+  int what;
+  int data;
+  defPOINT pt;
+};
 
 #define START_LIST 10001
 #define POINT_SPEC 10002
-#define VIA_SPEC   10003
+#define VIA_SPEC 10003
 #define WIDTH_SPEC 10004
 #define LAYER_SPEC 10005
 #define SHAPE_SPEC 10006
 
-#ifndef	MIN
-#define MIN(x,y) ((x) < (y)? (x) : (y))
+#ifndef MIN
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-#ifndef	MIN
-#define MAX(x,y) ((x) > (y)? (x) : (y))
+#ifndef MIN
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
-#define ROUND(x) ((x) >= 0 ? (int)((x)+0.5) : (int)((x)-0.5))
+#define ROUND(x) ((x) >= 0 ? (int) ((x) + 0.5) : (int) ((x) -0.5))
 
-//defTOKEN *TokenFromRect();
+// defTOKEN *TokenFromRect();
 
 /*=================== Enumerated Types ============================*/
 typedef int defiBoolean;
@@ -106,10 +109,9 @@ typedef enum
 {
   /* decrease likelihood of accidentally correct values by starting
      at an unusual number */
-  defiInvalidObject = 41713, 
+  defiInvalidObject = 41713,
   defiUnknownObject /* void * */
 } defiObjectType_e;
-
 
 /* The memory policy controls how an object which refers to or is composed of
  * other objects manages those sub-objects, particularly when the parent
@@ -150,10 +152,10 @@ typedef enum
   /* decrease likelihood of accidentally correct values by starting
      at an unusual number */
   defiInvalidMemoryPolicy = 23950,
-  defiPrivateSubObjects,      // deep copy + delete
-  defiReferencedSubObjects,   // shallow copy, no delete
-  defiOrphanSubObjects,       // deep copy, no delete
-  defiAdoptedSubObjects       // shallow copy + delete
+  defiPrivateSubObjects,     // deep copy + delete
+  defiReferencedSubObjects,  // shallow copy, no delete
+  defiOrphanSubObjects,      // deep copy, no delete
+  defiAdoptedSubObjects      // shallow copy + delete
 } defiMemoryPolicy_e;
 
 /* An opaque pointer for passing user data through from one API
@@ -161,8 +163,8 @@ typedef enum
  * A handle which a user can set to point to their own data
  * on a per-callback basis.  (See the comment in defwWriter.h)
  */
-#define defiUserData void *
-#define defiUserDataHandle void **
+#define defiUserData void*
+#define defiUserDataHandle void**
 
 /* On SunOs 4.1.3 with acc, this is in libansi.a, but isn't properly
  * declared anywhere in the header files supplied with the compiler.
@@ -173,7 +175,7 @@ extern int strcasecmp(const char*, const char*);
 
 #ifdef WIN32
 #define strdup _strdup
-#endif 
+#endif
 
 END_LEFDEF_PARSER_NAMESPACE
 

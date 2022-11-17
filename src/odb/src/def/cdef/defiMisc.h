@@ -23,24 +23,27 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CDEFIMISC_H
 #define CDEFIMISC_H
 
 #include <stdio.h>
+
 #include "defiTypedefs.h"
 
-EXTERN int defiGeometries_numPoints (const defiGeometries* obj);
-EXTERN void defiGeometries_points (const defiGeometries* obj, int  index, int*  x, int*  y);
+EXTERN int defiGeometries_numPoints(const defiGeometries* obj);
+EXTERN void defiGeometries_points(const defiGeometries* obj,
+                                  int index,
+                                  int* x,
+                                  int* y);
 
-EXTERN int defiStyles_style (const defiStyles* obj);
-EXTERN struct defiPoints defiStyles_getPolygon (const defiStyles* obj);
+EXTERN int defiStyles_style(const defiStyles* obj);
+EXTERN struct defiPoints defiStyles_getPolygon(const defiStyles* obj);
 
 #endif

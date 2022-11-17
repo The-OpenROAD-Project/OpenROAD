@@ -217,7 +217,7 @@ void definNonDefaultRule::endRule()
       props.reverse();
 
     // Verify all routing layers have a rule
-    for (int level = 0; level < _tech->getRoutingLayerCount(); ++level) {
+    for (int level = 1; level < _tech->getRoutingLayerCount(); ++level) {
       auto layer = _tech->findRoutingLayer(level);
       auto rule = _cur_rule->getLayerRule(layer);
       if (!rule) {

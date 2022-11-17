@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbInst.h"
+
 #include <algorithm>
 
 #include "db.h"
@@ -47,7 +49,6 @@
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
-#include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbJournal.h"
 #include "dbLib.h"

@@ -31,10 +31,10 @@
 
 #include <memory>
 
-#include "odb/dbTypes.h"
 #include "db/obj/frShape.h"
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
+#include "odb/dbTypes.h"
 
 namespace fr {
 class frNet;
@@ -110,10 +110,7 @@ class taVia : public taRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override
-  {
-    return dbTransform(origin_);
-  }
+  dbTransform getTransform() const override { return dbTransform(origin_); }
   void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
