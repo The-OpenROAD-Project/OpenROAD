@@ -34,8 +34,9 @@ jobs:
           if [ ${BRANCH_NAME} =~ '^[0-9]+$' ]; then 
             git fetch origin pull/${BRANCH_NAME}/head:test
             git checkout test
+          else
+            git checkout ${BRANCH_NAME}
           fi
-          git checkout ${BRANCH_NAME}
       - name: Runs installer
         run: |
           echo "test" | useradd -m testUser
