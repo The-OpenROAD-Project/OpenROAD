@@ -24,6 +24,7 @@ jobs:
             apt-get update
             apt-get -y install git
           else
+            yum -y install https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm
             yum -y install git
           fi
       - name: Check out repository code
