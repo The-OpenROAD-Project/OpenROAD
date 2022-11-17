@@ -55,7 +55,7 @@ enum LocationType
 {
   AboveMacro,
   BelowMacro,
-  None,
+  NoMacro,
 };
 
 struct Options
