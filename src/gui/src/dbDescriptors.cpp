@@ -1309,6 +1309,11 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   }
   props.push_back({"BTerms", bterms});
 
+  auto* ndr = net->getNonDefaultRule();
+  if (ndr != nullptr) {
+    props.push_back({"Non-default rule", gui->makeSelected(ndr)});
+  }
+
   populateODBProperties(props, net);
 
   return props;
@@ -2778,6 +2783,11 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
         {"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
   }
 
+  auto* ndr = via->getNonDefaultRule();
+  if (ndr != nullptr) {
+    props.push_back({"Non-default Rule", gui->makeSelected(ndr)});
+  }
+
   populateODBProperties(props, via);
 
   return props;
@@ -2903,6 +2913,256 @@ bool DbGenerateViaDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   return true;
+}
+
+//////////////////////////////////////////////////
+
+DbNonDefaultRuleDescriptor::DbNonDefaultRuleDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbNonDefaultRuleDescriptor::getName(std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechNonDefaultRule*>(object);
+  return rule->getName();
+}
+
+std::string DbNonDefaultRuleDescriptor::getTypeName() const
+{
+  return "Non-default Rule";
+}
+
+bool DbNonDefaultRuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbNonDefaultRuleDescriptor::highlight(std::any object,
+                                           Painter& painter,
+                                           void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbNonDefaultRuleDescriptor::getProperties(
+    std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechNonDefaultRule*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  std::vector<odb::dbTechLayerRule*> rule_layers;
+  rule->getLayerRules(rule_layers);
+  SelectionSet layers;
+  for (auto* layer : rule_layers) {
+    layers.insert(gui->makeSelected(layer));
+  }
+  props.push_back({"Layer rules", layers});
+
+  std::vector<odb::dbTechVia*> rule_vias;
+  rule->getVias(rule_vias);
+  SelectionSet vias;
+  for (auto* via : rule_vias) {
+    vias.insert(gui->makeSelected(via));
+  }
+  props.push_back({"Tech vias", vias});
+
+  std::vector<odb::dbTechSameNetRule*> rule_samenets;
+  rule->getSameNetRules(rule_samenets);
+  SelectionSet samenet_rules;
+  for (auto* samenet : rule_samenets) {
+    samenet_rules.insert(gui->makeSelected(samenet));
+  }
+  props.push_back({"Same net rules", samenet_rules});
+
+  props.push_back({"Is block rule", rule->isBlockRule()});
+
+  populateODBProperties(props, rule);
+
+  return props;
+}
+
+Selected DbNonDefaultRuleDescriptor::makeSelected(std::any object,
+                                                  void* additional_data) const
+{
+  if (auto rule = std::any_cast<odb::dbTechNonDefaultRule*>(&object)) {
+    return Selected(*rule, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbNonDefaultRuleDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_rule = std::any_cast<odb::dbTechNonDefaultRule*>(l);
+  auto r_rule = std::any_cast<odb::dbTechNonDefaultRule*>(r);
+  return l_rule->getId() < r_rule->getId();
+}
+
+bool DbNonDefaultRuleDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* rule : db_->getTech()->getNonDefaultRules()) {
+    objects.insert(makeSelected(rule, nullptr));
+  }
+
+  for (auto* rule : block->getNonDefaultRules()) {
+    objects.insert(makeSelected(rule, nullptr));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbTechLayerRuleDescriptor::DbTechLayerRuleDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbTechLayerRuleDescriptor::getName(std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechLayerRule*>(object);
+  return rule->getLayer()->getName();
+}
+
+std::string DbTechLayerRuleDescriptor::getTypeName() const
+{
+  return "Tech layer rule";
+}
+
+bool DbTechLayerRuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechLayerRuleDescriptor::highlight(std::any object,
+                                          Painter& painter,
+                                          void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbTechLayerRuleDescriptor::getProperties(
+    std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechLayerRule*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Layer", gui->makeSelected(rule->getLayer())});
+  props.push_back(
+      {"Non-default Rule", gui->makeSelected(rule->getNonDefaultRule())});
+  props.push_back({"Is block rule", rule->isBlockRule()});
+
+  props.push_back({"Width", Property::convert_dbu(rule->getWidth(), true)});
+  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
+
+  populateODBProperties(props, rule);
+
+  return props;
+}
+
+Selected DbTechLayerRuleDescriptor::makeSelected(std::any object,
+                                                 void* additional_data) const
+{
+  if (auto rule = std::any_cast<odb::dbTechLayerRule*>(&object)) {
+    return Selected(*rule, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbTechLayerRuleDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_rule = std::any_cast<odb::dbTechLayerRule*>(l);
+  auto r_rule = std::any_cast<odb::dbTechLayerRule*>(r);
+  return l_rule->getId() < r_rule->getId();
+}
+
+bool DbTechLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  return false;
+}
+
+//////////////////////////////////////////////////
+
+DbTechSameNetRuleDescriptor::DbTechSameNetRuleDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbTechSameNetRuleDescriptor::getName(std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechSameNetRule*>(object);
+  return rule->getLayer1()->getName() + " - " + rule->getLayer2()->getName();
+}
+
+std::string DbTechSameNetRuleDescriptor::getTypeName() const
+{
+  return "Tech same net rule";
+}
+
+bool DbTechSameNetRuleDescriptor::getBBox(std::any object,
+                                          odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechSameNetRuleDescriptor::highlight(std::any object,
+                                            Painter& painter,
+                                            void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbTechSameNetRuleDescriptor::getProperties(
+    std::any object) const
+{
+  auto* rule = std::any_cast<odb::dbTechSameNetRule*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Layer 1", gui->makeSelected(rule->getLayer1())});
+  props.push_back({"Layer 2", gui->makeSelected(rule->getLayer2())});
+
+  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
+  props.push_back({"Allow via stacking", rule->getAllowStackedVias()});
+
+  populateODBProperties(props, rule);
+
+  return props;
+}
+
+Selected DbTechSameNetRuleDescriptor::makeSelected(std::any object,
+                                                   void* additional_data) const
+{
+  if (auto rule = std::any_cast<odb::dbTechSameNetRule*>(&object)) {
+    return Selected(*rule, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbTechSameNetRuleDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_rule = std::any_cast<odb::dbTechSameNetRule*>(l);
+  auto r_rule = std::any_cast<odb::dbTechSameNetRule*>(r);
+  return l_rule->getId() < r_rule->getId();
+}
+
+bool DbTechSameNetRuleDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  return false;
 }
 
 }  // namespace gui
