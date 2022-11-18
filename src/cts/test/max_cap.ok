@@ -40,7 +40,7 @@ TritonCTS forced slew degradation on these wires.
     Key: 336 inSlew: 1 inCap: 3 outSlew: 26 load: 1 length: 8 delay: 133
       location: 0.5 buffer: sky130_fd_sc_hs__clkbuf_1
     Key: 54 inSlew: 12 inCap: 3 outSlew: 8 load: 1 length: 4 delay: 88
-      location: 1 buffer: sky130_fd_sc_hs__clkbuf_1
+      location: 1.0 buffer: sky130_fd_sc_hs__clkbuf_1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
 [INFO CTS-0018]     Created 5 clock buffers.
