@@ -20,9 +20,6 @@ jobs:
     steps:
       - name: Setup
         run: |
-          if [ ! -z "${{ matrix.args }}" ]; then
-            echo "there is a prefix"
-          fi
           if [ "${{ matrix.os }}" != "centos:centos7" ]; then 
             apt-get update
             apt-get -y install git
@@ -51,8 +48,10 @@ jobs:
             source /opt/rh/llvm-toolset-7.0/enable
           fi
           if [ ! -z "${{ matrix.args }}" ]; then
+            PREFIX=${{ matrix.args }}|awk -F"=" '{split($2,a," ");gsub(/"/, "", a[1]);print a[1]}'
             echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
             . ~/.bash_profile
+            echo $PATH
           fi
           chmod +x ./etc/Build.sh
           ./etc/Build.sh -clean
