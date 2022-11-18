@@ -129,76 +129,79 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   vector<frBlockObject*> result;
   box = Rect(bp, bp);
   rq->queryGRPin(box, result);
-  dbTransform instXform;  // (0,0), R0
-  dbTransform shiftXform;
+
   for (auto& term : result) {
-    frMTerm* trueTerm = nullptr;
-    frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto iterm = static_cast<frInstTerm*>(term);
         if (iterm->getNet() != net) {
           continue;
         }
-        inst = iterm->getInst();
-        shiftXform = inst->getTransform();
+        frInst* inst = iterm->getInst();
+        dbTransform shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
-        trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+        frMTerm* mterm = iterm->getTerm();
+        int pinIdx = 0;
+        for (auto& pin : mterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          frAccessPoint* ap
+              = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+          if (ap == nullptr) {
+            continue;
+          }
+          Point bp = ap->getPoint();
+          auto bNum = ap->getLayerNum();
+          shiftXform.apply(bp);
+          if (layerNum == bNum && getRouteBox().intersects(bp)) {
+            wlen2 = isH ? bp.y() : bp.x();
+            maxBegin = isH ? bp.x() : bp.y();
+            minEnd = isH ? bp.x() : bp.y();
+            wlen = 0;
+            if (hasDown) {
+              downViaCoordSet.insert(maxBegin);
+            }
+            if (hasUp) {
+              upViaCoordSet.insert(maxBegin);
+            }
+            return true;
+          }
+          pinIdx++;
+        }
         break;
       }
-      // TODO FIXME
-      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
-      // actually act on BTerms. This code can be removed without changing
-      // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what
-      // the anticipated behavior should be.
       case frcBTerm: {
-        /*auto bterm = static_cast<frBTerm*>(term);
+        auto bterm = static_cast<frBTerm*>(term);
         if (bterm->getNet() != net) {
           continue;
         }
-        trueTerm = bterm;*/
+        for (auto& pin : bterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
+            Point bp = ap->getPoint();
+            auto bNum = ap->getLayerNum();
+            if (layerNum == bNum && getRouteBox().intersects(bp)) {
+              wlen2 = isH ? bp.y() : bp.x();
+              maxBegin = isH ? bp.x() : bp.y();
+              minEnd = isH ? bp.x() : bp.y();
+              wlen = 0;
+              if (hasDown) {
+                downViaCoordSet.insert(maxBegin);
+              }
+              if (hasUp) {
+                upViaCoordSet.insert(maxBegin);
+              }
+              return true;
+            }
+          }
+        }
         break;
       }
       default:
         break;
-    }
-    if (trueTerm) {
-      int pinIdx = 0;
-      int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-      for (auto& pin : trueTerm->getPins()) {
-        frAccessPoint* ap = nullptr;
-        if (inst) {
-          ap = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-        }
-        if (!pin->hasPinAccess()) {
-          continue;
-        }
-        if (pinAccessIdx == -1) {
-          continue;
-        }
-        if (ap == nullptr) {
-          continue;
-        }
-        Point apBp = ap->getPoint();
-        auto bNum = ap->getLayerNum();
-        shiftXform.apply(apBp);
-        if (layerNum == bNum && getRouteBox().intersects(apBp)) {
-          wlen2 = isH ? apBp.y() : apBp.x();
-          maxBegin = isH ? apBp.x() : apBp.y();
-          minEnd = isH ? apBp.x() : apBp.y();
-          wlen = 0;
-          if (hasDown) {
-            downViaCoordSet.insert(maxBegin);
-          }
-          if (hasUp) {
-            upViaCoordSet.insert(maxBegin);
-          }
-          return true;
-        }
-        pinIdx++;
-      }
     }
   }
 
@@ -242,70 +245,59 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
     box = Rect(ep, ep);
     rq->queryGRPin(box, result);
   }
-  dbTransform instXform;  // (0,0), R0
-  dbTransform shiftXform;
   for (auto& term : result) {
-    frMTerm* trueTerm = nullptr;
-    frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto iterm = static_cast<frInstTerm*>(term);
         if (iterm->getNet() != net) {
           continue;
         }
-        inst = iterm->getInst();
-        shiftXform = inst->getTransform();
+        frInst* inst = iterm->getInst();
+        dbTransform shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
-        trueTerm = iterm->getTerm();
+        frMTerm* mterm = iterm->getTerm();
+        int pinIdx = 0;
+        for (auto& pin : mterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          frAccessPoint* ap
+              = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+          if (ap == nullptr) {
+            continue;
+          }
+          Point bp = ap->getPoint();
+          shiftXform.apply(bp);
+          if (getRouteBox().intersects(bp)) {
+            wlen2 = isH ? bp.y() : bp.x();
+            return;
+          }
+          pinIdx++;
+        }
         break;
       }
-      // TODO FIXME
-      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
-      // actually act on BTerms. This code can be removed without changing
-      // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what
-      // the anticipated behavior should be. Note that the bTerm can still
-      // affect whether wlen2 is set to 0 or not after if (trueTerm)...
       case frcBTerm: {
-        auto bTerm = static_cast<frBTerm*>(term);
-        if (bTerm->getNet() != net) {
+        auto bterm = static_cast<frBTerm*>(term);
+        if (bterm->getNet() != net) {
           continue;
         }
-        // trueTerm = bterm;
+        for (auto& pin : bterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
+            Point bp = ap->getPoint();
+            if (getRouteBox().intersects(bp)) {
+              wlen2 = isH ? bp.y() : bp.x();
+              return;
+            }
+          }
+        }
         break;
       }
       default:
         break;
     }
-
-    if (trueTerm) {
-      int pinIdx = 0;
-      int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-      for (auto& pin : trueTerm->getPins()) {
-        frAccessPoint* ap = nullptr;
-        if (inst) {
-          ap = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-        }
-        if (!pin->hasPinAccess()) {
-          continue;
-        }
-        if (pinAccessIdx == -1) {
-          continue;
-        }
-        if (ap == nullptr) {
-          continue;
-        }
-        Point apBp = ap->getPoint();
-        shiftXform.apply(apBp);
-        if (getRouteBox().intersects(apBp)) {
-          wlen2 = isH ? apBp.y() : apBp.x();
-          return;
-        }
-        pinIdx++;
-      }
-    };  // to do @@@@@
-    wlen2 = 0;
   }
 }
 
