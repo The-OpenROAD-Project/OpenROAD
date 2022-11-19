@@ -83,7 +83,7 @@ struct Pixel;
 struct Group;
 class Graphics;
 
-using Grid = Pixel*;
+using Grid = Pixel**;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -268,7 +268,7 @@ class Opendp
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
-  void moveHopeless(int& grid_x, int& grid_y) const;
+  bool moveHopeless(int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -395,7 +395,7 @@ class Opendp
   vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
-  Grid* grid_;
+  Grid grid_;
   Cell dummy_cell_;
 
   // Filler placement.
