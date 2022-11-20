@@ -14,26 +14,19 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-      - name: Install lemon
-        run: |
-          wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz
-          tar -xf lemon-1.3.1.tar.gz
-          cd lemon-1.3.1
-          cmake -B build .
-          cmake --build build -j --target install
-      - name: Install brew dependencies
-        run: |
-          brew install bison boost eigen flex libomp pyqt5 python spdlog
-          brew install swig tcl-tk zlib
       - name: Check out repository code
         uses: actions/checkout@v2
         with:
           submodules: 'recursive'
+      - name: Install dependencies
+        run: |
+          ./etc/DependencyInstaller.sh
       - name: Build OpenROAD
         run: |
           export PATH="/usr/local/opt/bison/bin:$PATH"
           export PATH="/usr/local/opt/flex/bin:$PATH"
           export PATH="/usr/local/opt/tcl-tk/bin:$PATH"
+          export CMAKE_PREFIX_PATH="$(brew --prefix)/opt/or-tools"
           export PKG_CONFIG_PATH="/usr/local/opt/tcl-tk/lib/pkgconfig"
           export MY_QT_PATH=$(find /usr/local/Cellar/qt@5/ -type d -iwholename "*cmake/Qt5")
           echo "MY_QT_PATH = $MY_QT_PATH"
