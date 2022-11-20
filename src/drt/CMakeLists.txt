@@ -82,6 +82,7 @@ target_sources(drt
     src/ta/FlexTA_rq.cpp
     src/ta/FlexTA_assign.cpp
     src/ta/FlexTA.cpp
+    src/ta/FlexTA_graphics.cpp
     src/global.cpp
     src/gc/FlexGC_end.cpp
     src/gc/FlexGC_rq.cpp
