@@ -53,7 +53,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 class HardMacro;
 class SoftMacro;
 
@@ -645,4 +645,4 @@ struct Rect
   float uy = 0.0;
 };
 
-}  // namespace mpl
+}  // namespace mpl2

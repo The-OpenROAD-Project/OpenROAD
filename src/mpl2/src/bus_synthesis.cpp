@@ -54,7 +54,7 @@
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using operations_research::MPConstraint;
 using operations_research::MPObjective;
@@ -1035,4 +1035,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   return true;
 }
 
-}  // namespace mpl
+}  // namespace mpl2

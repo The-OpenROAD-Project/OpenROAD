@@ -35,7 +35,7 @@
 
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
@@ -69,6 +69,7 @@ SACoreSoftMacro::SACoreSoftMacro(
     int k,
     int c,
     unsigned seed,
+    Graphics* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<SoftMacro>(outline_width,
                                         outline_height,
@@ -88,6 +89,7 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         k,
                                         c,
                                         seed,
+                                        graphics,
                                         logger)
 {
   boundary_weight_ = boundary_weight;
@@ -901,4 +903,4 @@ void SACoreSoftMacro::calSegmentLoc(float seg_start,
   }
 }
 
-}  // namespace mpl
+}  // namespace mpl2

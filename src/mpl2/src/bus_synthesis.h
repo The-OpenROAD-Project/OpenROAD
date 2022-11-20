@@ -42,7 +42,7 @@
 
 #include "object.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using Point = std::pair<float, float>;
 
@@ -192,4 +192,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  float congestion_weight,
                  utl::Logger* logger);
 
-}  // namespace mpl
+}  // namespace mpl2
