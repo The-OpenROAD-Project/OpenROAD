@@ -40,7 +40,7 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 using utl::MPL;
 
 ///////////////////////////////////////////////////////////////////////
@@ -1445,4 +1445,4 @@ void SoftMacro::printShape()
   std::cout << std::endl;
 }
 
-}  // namespace mpl
+}  // namespace mpl2

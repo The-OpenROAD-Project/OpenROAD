@@ -42,7 +42,8 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
+class Graphics;
 
 // SA for soft macros.  It will be called by MacroPlaceEngine
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
@@ -76,8 +77,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int num_perturb_per_step,
                   int k,
                   int c,
-                  unsigned seed = 0,
-                  utl::Logger* logger = nullptr);
+                  unsigned seed,
+                  Graphics* graphics,
+                  utl::Logger* logger);
   // accessors
   float getBoundaryPenalty() const;
   float getNormBoundaryPenalty() const;
@@ -153,4 +155,4 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float resize_prob_ = 0.0;
 };
 
-}  // namespace mpl
+}  // namespace mpl2

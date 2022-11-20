@@ -41,10 +41,11 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 
 struct BundledNet;
 struct Rect;
+class Graphics;
 
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
@@ -76,8 +77,9 @@ class SimulatedAnnealingCore
       int num_perturb_per_step,
       int k,
       int c,
-      unsigned seed = 0,
-      utl::Logger* logger = nullptr);
+      unsigned seed,
+      Graphics* graphics,
+      utl::Logger* logger);
 
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
@@ -126,7 +128,7 @@ class SimulatedAnnealingCore
   virtual void shrink() = 0;  // Shrink the size of macros
 
   // utilities
-  float calAverage(std::vector<float>& value_list);
+  static float calAverage(std::vector<float>& value_list);
 
   /////////////////////////////////////////////
   // private member variables
@@ -209,6 +211,7 @@ class SimulatedAnnealingCore
   float exchange_prob_ = 0.0;
 
   utl::Logger* logger_ = nullptr;
+  Graphics* graphics_ = nullptr;
 
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
@@ -224,4 +227,4 @@ void runSA(T* sa_core)
   sa_core->fastSA();
 }
 
-}  // namespace mpl
+}  // namespace mpl2

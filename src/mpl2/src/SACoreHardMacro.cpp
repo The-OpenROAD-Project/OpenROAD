@@ -35,7 +35,7 @@
 
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
@@ -63,6 +63,7 @@ SACoreHardMacro::SACoreHardMacro(
     int k,
     int c,
     unsigned seed,
+    Graphics* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(outline_width,
                                         outline_height,
@@ -82,6 +83,7 @@ SACoreHardMacro::SACoreHardMacro(
                                         k,
                                         c,
                                         seed,
+                                        graphics,
                                         logger)
 {
   flip_prob_ = flip_prob;
@@ -290,4 +292,4 @@ void SACoreHardMacro::printResults()
   logger_->report("fence_penalty_  = {}", fence_penalty_);
 }
 
-}  // namespace mpl
+}  // namespace mpl2
