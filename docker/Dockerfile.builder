@@ -14,4 +14,4 @@ ARG numThreads=$(nproc)
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -cmake="-DCMAKE_PREFIX_PATH=/opt/or-tools"
+RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads}
