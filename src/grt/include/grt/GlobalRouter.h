@@ -170,7 +170,8 @@ class GlobalRouter
   int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
-  void readGuides(const char* file_name);  // just for display
+  void readGuides(const char* file_name);
+  void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);

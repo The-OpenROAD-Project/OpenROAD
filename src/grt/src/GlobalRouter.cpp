@@ -1498,6 +1498,21 @@ void GlobalRouter::readGuides(const char* file_name)
   saveGuidesFromFile(guides);
 }
 
+void GlobalRouter::loadGuidesFromDB()
+{
+  for (odb::dbNet* net : block_->getNets()) {
+    for (odb::dbGuide* guide : net->getGuides()) {
+      boxToGlobalRouting(guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
+    }
+  }
+
+  for (auto& net_route : routes_) {
+    std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
+    GRoute& route = net_route.second;
+    mergeSegments(pins, route);
+  }
+}
+
 void GlobalRouter::updateEdgesUsage()
 {
   for (const auto& [net, groute] : routes_) {
