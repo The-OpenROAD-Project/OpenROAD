@@ -35,6 +35,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "FlexTA_graphics.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"
@@ -153,6 +154,13 @@ int FlexTAWorker::main_mt()
   }
   return 0;
 }
+
+FlexTA::FlexTA(frDesign* in, Logger* logger)
+    : tech_(in->getTech()), design_(in), logger_(logger)
+{
+}
+
+FlexTA::~FlexTA() = default;
 
 int FlexTA::initTA_helper(int iter,
                           int size,
@@ -412,6 +420,15 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
 }
 
+void FlexTA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+{
+  bool on = settings->debugTA;
+  graphics_
+      = on && FlexTAGraphics::guiActive()
+            ? std::make_unique<FlexTAGraphics>(settings, design_, db, logger_)
+            : nullptr;
+}
+
 int FlexTA::main()
 {
   ProfileTask profile("TA:main");
@@ -421,7 +438,14 @@ int FlexTA::main()
     logger_->info(DRT, 181, "Start track assignment.");
   }
   initTA(50);
+  if (graphics_) {
+    graphics_->endIter(0);
+  }
+
   searchRepair(1, 50, 0);
+  if (graphics_) {
+    graphics_->endIter(1);
+  }
 
   if (VERBOSE > 0) {
     logger_->info(DRT, 182, "Complete track assignment.");
