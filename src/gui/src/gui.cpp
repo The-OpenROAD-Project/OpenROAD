@@ -1200,7 +1200,7 @@ void Selected::highlight(Painter& painter,
 
 Descriptor::Properties Selected::getProperties() const
 {
-  Descriptor::Properties props = descriptor_->getProperties(object_);
+  Descriptor::Properties props = descriptor_->getProperties(object_, additional_data_);
   props.insert(props.begin(), {"Name", getName()});
   props.insert(props.begin(), {"Type", getTypeName()});
   odb::Rect bbox;
@@ -1213,7 +1213,7 @@ Descriptor::Properties Selected::getProperties() const
 
 Descriptor::Actions Selected::getActions() const
 {
-  auto actions = descriptor_->getActions(object_);
+  auto actions = descriptor_->getActions(object_, additional_data_);
 
   odb::Rect bbox;
   if (getBBox(bbox)) {
