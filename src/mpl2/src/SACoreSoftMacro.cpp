@@ -313,7 +313,8 @@ void SACoreSoftMacro::initialize()
   for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
   }
-  init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+  init_temperature_
+      = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
 // We only push hard macro clusters to boundaries
