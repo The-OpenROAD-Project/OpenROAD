@@ -150,7 +150,9 @@ std::string DRCDescriptor::getTypeName() const
   return "DRC";
 }
 
-bool DRCDescriptor::getBBox(std::any object, std::any /* additional_data */, odb::Rect& bbox) const
+bool DRCDescriptor::getBBox(std::any object,
+                            std::any /* additional_data */,
+                            odb::Rect& bbox) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
   bbox = vio->getBBox();
@@ -165,7 +167,8 @@ void DRCDescriptor::highlight(std::any object,
   vio->paint(painter);
 }
 
-Descriptor::Properties DRCDescriptor::getProperties(std::any object,
+Descriptor::Properties DRCDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
@@ -212,7 +215,10 @@ Selected DRCDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DRCDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DRCDescriptor::lessThan(std::any l,
+                             std::any /* l_data */,
+                             std::any r,
+                             std::any /* r_data */) const
 {
   auto l_drc = std::any_cast<DRCViolation*>(l);
   auto r_drc = std::any_cast<DRCViolation*>(r);

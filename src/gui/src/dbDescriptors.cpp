@@ -246,7 +246,9 @@ std::string DbInstDescriptor::getTypeName() const
   return "Inst";
 }
 
-bool DbInstDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbInstDescriptor::getBBox(std::any object,
+                               std::any additional_data,
+                               odb::Rect& bbox) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
   bbox = inst->getBBox()->getBox();
@@ -272,7 +274,8 @@ bool DbInstDescriptor::isInst(std::any object) const
   return true;
 }
 
-Descriptor::Properties DbInstDescriptor::getProperties(std::any object,
+Descriptor::Properties DbInstDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto gui = Gui::get();
@@ -324,7 +327,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object,
 }
 
 Descriptor::Actions DbInstDescriptor::getActions(std::any object,
-    std::any additional_data) const
+                                                 std::any additional_data) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
   return Actions(
@@ -335,7 +338,7 @@ Descriptor::Actions DbInstDescriptor::getActions(std::any object,
 }
 
 Descriptor::Editors DbInstDescriptor::getEditors(std::any object,
-    std::any additional_data) const
+                                                 std::any additional_data) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
 
@@ -464,7 +467,10 @@ Selected DbInstDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbInstDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbInstDescriptor::lessThan(std::any l,
+                                std::any /* l_data */,
+                                std::any r,
+                                std::any /* r_data */) const
 {
   auto l_inst = std::any_cast<odb::dbInst*>(l);
   auto r_inst = std::any_cast<odb::dbInst*>(r);
@@ -655,7 +661,9 @@ std::string DbMasterDescriptor::getTypeName() const
   return "Master";
 }
 
-bool DbMasterDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbMasterDescriptor::getBBox(std::any object,
+                                 std::any additional_data,
+                                 odb::Rect& bbox) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
   master->getPlacementBoundary(bbox);
@@ -680,7 +688,8 @@ void DbMasterDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties DbMasterDescriptor::getProperties(std::any object,
+Descriptor::Properties DbMasterDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
@@ -726,7 +735,10 @@ Selected DbMasterDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbMasterDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbMasterDescriptor::lessThan(std::any l,
+                                  std::any /* l_data */,
+                                  std::any r,
+                                  std::any /* r_data */) const
 {
   auto l_master = std::any_cast<odb::dbMaster*>(l);
   auto r_master = std::any_cast<odb::dbMaster*>(r);
@@ -813,7 +825,9 @@ std::string DbNetDescriptor::getTypeName() const
   return "Net";
 }
 
-bool DbNetDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbNetDescriptor::getBBox(std::any object,
+                              std::any additional_data,
+                              odb::Rect& bbox) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   auto wire = net->getWire();
@@ -1277,7 +1291,7 @@ void DbNetDescriptor::highlight(std::any object,
 }
 
 bool DbNetDescriptor::isSlowHighlight(std::any object,
-    std::any additional_data) const
+                                      std::any additional_data) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   return net->getSigType().isSupply();
@@ -1288,7 +1302,8 @@ bool DbNetDescriptor::isNet(std::any object) const
   return true;
 }
 
-Descriptor::Properties DbNetDescriptor::getProperties(std::any object,
+Descriptor::Properties DbNetDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
@@ -1327,7 +1342,7 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object,
 }
 
 Descriptor::Editors DbNetDescriptor::getEditors(std::any object,
-    std::any additional_data) const
+                                                std::any additional_data) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   Editors editors;
@@ -1356,7 +1371,7 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object,
 }
 
 Descriptor::Actions DbNetDescriptor::getActions(std::any object,
-    std::any additional_data) const
+                                                std::any additional_data) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
 
@@ -1420,7 +1435,10 @@ Selected DbNetDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbNetDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbNetDescriptor::lessThan(std::any l,
+                               std::any /* l_data */,
+                               std::any r,
+                               std::any /* r_data */) const
 {
   auto l_net = std::any_cast<odb::dbNet*>(l);
   auto r_net = std::any_cast<odb::dbNet*>(r);
@@ -1467,7 +1485,9 @@ std::string DbITermDescriptor::getTypeName() const
   return "ITerm";
 }
 
-bool DbITermDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbITermDescriptor::getBBox(std::any object,
+                                std::any additional_data,
+                                odb::Rect& bbox) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
   if (iterm->getInst()->getPlacementStatus().isPlaced()) {
@@ -1500,7 +1520,8 @@ void DbITermDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties DbITermDescriptor::getProperties(std::any object,
+Descriptor::Properties DbITermDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto gui = Gui::get();
@@ -1531,7 +1552,8 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object,
   return props;
 }
 
-Descriptor::Actions DbITermDescriptor::getActions(std::any object,
+Descriptor::Actions DbITermDescriptor::getActions(
+    std::any object,
     std::any additional_data) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
@@ -1551,7 +1573,10 @@ Selected DbITermDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbITermDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbITermDescriptor::lessThan(std::any l,
+                                 std::any /* l_data */,
+                                 std::any r,
+                                 std::any /* r_data */) const
 {
   auto l_iterm = std::any_cast<odb::dbITerm*>(l);
   auto r_iterm = std::any_cast<odb::dbITerm*>(r);
@@ -1591,7 +1616,9 @@ std::string DbBTermDescriptor::getTypeName() const
   return "BTerm";
 }
 
-bool DbBTermDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbBTermDescriptor::getBBox(std::any object,
+                                std::any additional_data,
+                                odb::Rect& bbox) const
 {
   auto* bterm = std::any_cast<odb::dbBTerm*>(object);
   bbox = bterm->getBBox();
@@ -1611,7 +1638,8 @@ void DbBTermDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties DbBTermDescriptor::getProperties(std::any object,
+Descriptor::Properties DbBTermDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto gui = Gui::get();
@@ -1625,7 +1653,8 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object,
   return props;
 }
 
-Descriptor::Editors DbBTermDescriptor::getEditors(std::any object,
+Descriptor::Editors DbBTermDescriptor::getEditors(
+    std::any object,
     std::any additional_data) const
 {
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
@@ -1634,7 +1663,8 @@ Descriptor::Editors DbBTermDescriptor::getEditors(std::any object,
   return editors;
 }
 
-Descriptor::Actions DbBTermDescriptor::getActions(std::any object,
+Descriptor::Actions DbBTermDescriptor::getActions(
+    std::any object,
     std::any additional_data) const
 {
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
@@ -1654,7 +1684,10 @@ Selected DbBTermDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbBTermDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbBTermDescriptor::lessThan(std::any l,
+                                 std::any /* l_data */,
+                                 std::any r,
+                                 std::any /* r_data */) const
 {
   auto l_bterm = std::any_cast<odb::dbBTerm*>(l);
   auto r_bterm = std::any_cast<odb::dbBTerm*>(r);
@@ -1694,7 +1727,9 @@ std::string DbBlockageDescriptor::getTypeName() const
   return "Blockage";
 }
 
-bool DbBlockageDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbBlockageDescriptor::getBBox(std::any object,
+                                   std::any additional_data,
+                                   odb::Rect& bbox) const
 {
   auto* blockage = std::any_cast<odb::dbBlockage*>(object);
   odb::dbBox* box = blockage->getBBox();
@@ -1739,7 +1774,8 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(
   return props;
 }
 
-Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object,
+Descriptor::Editors DbBlockageDescriptor::getEditors(
+    std::any object,
     std::any additional_data) const
 {
   auto blockage = std::any_cast<odb::dbBlockage*>(object);
@@ -1777,7 +1813,10 @@ Selected DbBlockageDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbBlockageDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbBlockageDescriptor::lessThan(std::any l,
+                                    std::any /* l_data */,
+                                    std::any r,
+                                    std::any /* r_data */) const
 {
   auto l_blockage = std::any_cast<odb::dbBlockage*>(l);
   auto r_blockage = std::any_cast<odb::dbBlockage*>(r);
@@ -1818,7 +1857,9 @@ std::string DbObstructionDescriptor::getTypeName() const
   return "Obstruction";
 }
 
-bool DbObstructionDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbObstructionDescriptor::getBBox(std::any object,
+                                      std::any additional_data,
+                                      odb::Rect& bbox) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   odb::dbBox* box = obs->getBBox();
@@ -1873,7 +1914,8 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(
   return props;
 }
 
-Descriptor::Actions DbObstructionDescriptor::getActions(std::any object,
+Descriptor::Actions DbObstructionDescriptor::getActions(
+    std::any object,
     std::any additional_data) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
@@ -1913,7 +1955,10 @@ Selected DbObstructionDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbObstructionDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbObstructionDescriptor::lessThan(std::any l,
+                                       std::any /* l_data */,
+                                       std::any r,
+                                       std::any /* r_data */) const
 {
   auto l_obs = std::any_cast<odb::dbObstruction*>(l);
   auto r_obs = std::any_cast<odb::dbObstruction*>(r);
@@ -1954,7 +1999,9 @@ std::string DbTechLayerDescriptor::getTypeName() const
   return "Tech layer";
 }
 
-bool DbTechLayerDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbTechLayerDescriptor::getBBox(std::any object,
+                                    std::any additional_data,
+                                    odb::Rect& bbox) const
 {
   return false;
 }
@@ -2191,7 +2238,10 @@ Selected DbTechLayerDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbTechLayerDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbTechLayerDescriptor::lessThan(std::any l,
+                                     std::any /* l_data */,
+                                     std::any r,
+                                     std::any /* r_data */) const
 {
   auto l_layer = std::any_cast<odb::dbTechLayer*>(l);
   auto r_layer = std::any_cast<odb::dbTechLayer*>(r);
@@ -2232,7 +2282,8 @@ std::string DbItermAccessPointDescriptor::getTypeName() const
   return "Access Point";
 }
 
-bool DbItermAccessPointDescriptor::getBBox(std::any object, std::any additional_data,
+bool DbItermAccessPointDescriptor::getBBox(std::any object,
+                                           std::any additional_data,
                                            odb::Rect& bbox) const
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
@@ -2303,8 +2354,9 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(
   return props;
 }
 
-Selected DbItermAccessPointDescriptor::makeSelected(std::any object,
-                                                    std::any additional_data) const
+Selected DbItermAccessPointDescriptor::makeSelected(
+    std::any object,
+    std::any additional_data) const
 {
   if (object.type() == typeid(DbItermAccessPoint)) {
     auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
@@ -2313,7 +2365,10 @@ Selected DbItermAccessPointDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbItermAccessPointDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbItermAccessPointDescriptor::lessThan(std::any l,
+                                            std::any /* l_data */,
+                                            std::any r,
+                                            std::any /* r_data */) const
 {
   auto l_iterm_ap = std::any_cast<DbItermAccessPoint>(l);
   auto r_iterm_ap = std::any_cast<DbItermAccessPoint>(r);
@@ -2361,7 +2416,9 @@ std::string DbGroupDescriptor::getTypeName() const
   return "Group";
 }
 
-bool DbGroupDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbGroupDescriptor::getBBox(std::any object,
+                                std::any additional_data,
+                                odb::Rect& bbox) const
 {
   auto* group = std::any_cast<odb::dbGroup*>(object);
   auto* region = group->getRegion();
@@ -2386,7 +2443,8 @@ void DbGroupDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties DbGroupDescriptor::getProperties(std::any object,
+Descriptor::Properties DbGroupDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto* group = std::any_cast<odb::dbGroup*>(object);
@@ -2446,7 +2504,10 @@ Selected DbGroupDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbGroupDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbGroupDescriptor::lessThan(std::any l,
+                                 std::any /* l_data */,
+                                 std::any r,
+                                 std::any /* r_data */) const
 {
   auto l_layer = std::any_cast<odb::dbGroup*>(l);
   auto r_layer = std::any_cast<odb::dbGroup*>(r);
@@ -2487,7 +2548,9 @@ std::string DbRegionDescriptor::getTypeName() const
   return "Region";
 }
 
-bool DbRegionDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbRegionDescriptor::getBBox(std::any object,
+                                 std::any additional_data,
+                                 odb::Rect& bbox) const
 {
   auto* region = std::any_cast<odb::dbRegion*>(object);
   auto boxes = region->getBoundaries();
@@ -2523,7 +2586,8 @@ void DbRegionDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties DbRegionDescriptor::getProperties(std::any object,
+Descriptor::Properties DbRegionDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto* region = std::any_cast<odb::dbRegion*>(object);
@@ -2559,7 +2623,10 @@ Selected DbRegionDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbRegionDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbRegionDescriptor::lessThan(std::any l,
+                                  std::any /* l_data */,
+                                  std::any r,
+                                  std::any /* r_data */) const
 {
   auto l_layer = std::any_cast<odb::dbRegion*>(l);
   auto r_layer = std::any_cast<odb::dbRegion*>(r);
@@ -2606,7 +2673,9 @@ std::string DbModuleDescriptor::getTypeName() const
   return "Module";
 }
 
-bool DbModuleDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbModuleDescriptor::getBBox(std::any object,
+                                 std::any additional_data,
+                                 odb::Rect& bbox) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
   bbox.mergeInit();
@@ -2648,7 +2717,8 @@ void DbModuleDescriptor::highlight(std::any object,
   painter.restoreState();
 }
 
-Descriptor::Properties DbModuleDescriptor::getProperties(std::any object,
+Descriptor::Properties DbModuleDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
@@ -2700,7 +2770,10 @@ Selected DbModuleDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbModuleDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbModuleDescriptor::lessThan(std::any l,
+                                  std::any /* l_data */,
+                                  std::any r,
+                                  std::any /* r_data */) const
 {
   auto l_layer = std::any_cast<odb::dbModule*>(l);
   auto r_layer = std::any_cast<odb::dbModule*>(r);
@@ -2750,7 +2823,9 @@ std::string DbTechViaDescriptor::getTypeName() const
   return "Tech Via";
 }
 
-bool DbTechViaDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbTechViaDescriptor::getBBox(std::any object,
+                                  std::any additional_data,
+                                  odb::Rect& bbox) const
 {
   return false;
 }
@@ -2761,7 +2836,8 @@ void DbTechViaDescriptor::highlight(std::any object,
 {
 }
 
-Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object,
+Descriptor::Properties DbTechViaDescriptor::getProperties(
+    std::any object,
     std::any additional_data) const
 {
   auto* via = std::any_cast<odb::dbTechVia*>(object);
@@ -2825,7 +2901,10 @@ Selected DbTechViaDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbTechViaDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbTechViaDescriptor::lessThan(std::any l,
+                                   std::any /* l_data */,
+                                   std::any r,
+                                   std::any /* r_data */) const
 {
   auto l_via = std::any_cast<odb::dbTechVia*>(l);
   auto r_via = std::any_cast<odb::dbTechVia*>(r);
@@ -2860,7 +2939,9 @@ std::string DbGenerateViaDescriptor::getTypeName() const
   return "Generate Via Rule";
 }
 
-bool DbGenerateViaDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbGenerateViaDescriptor::getBBox(std::any object,
+                                      std::any additional_data,
+                                      odb::Rect& bbox) const
 {
   return false;
 }
@@ -2920,7 +3001,10 @@ Selected DbGenerateViaDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbGenerateViaDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbGenerateViaDescriptor::lessThan(std::any l,
+                                       std::any /* l_data */,
+                                       std::any r,
+                                       std::any /* r_data */) const
 {
   auto l_via = std::any_cast<odb::dbTechViaGenerateRule*>(l);
   auto r_via = std::any_cast<odb::dbTechViaGenerateRule*>(r);
@@ -2956,7 +3040,9 @@ std::string DbNonDefaultRuleDescriptor::getTypeName() const
   return "Non-default Rule";
 }
 
-bool DbNonDefaultRuleDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbNonDefaultRuleDescriptor::getBBox(std::any object,
+                                         std::any additional_data,
+                                         odb::Rect& bbox) const
 {
   return false;
 }
@@ -3007,8 +3093,9 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getProperties(
   return props;
 }
 
-Selected DbNonDefaultRuleDescriptor::makeSelected(std::any object,
-                                                  std::any additional_data) const
+Selected DbNonDefaultRuleDescriptor::makeSelected(
+    std::any object,
+    std::any additional_data) const
 {
   if (auto rule = std::any_cast<odb::dbTechNonDefaultRule*>(&object)) {
     return Selected(*rule, this, additional_data);
@@ -3016,7 +3103,10 @@ Selected DbNonDefaultRuleDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbNonDefaultRuleDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbNonDefaultRuleDescriptor::lessThan(std::any l,
+                                          std::any /* l_data */,
+                                          std::any r,
+                                          std::any /* r_data */) const
 {
   auto l_rule = std::any_cast<odb::dbTechNonDefaultRule*>(l);
   auto r_rule = std::any_cast<odb::dbTechNonDefaultRule*>(r);
@@ -3063,7 +3153,9 @@ std::string DbTechLayerRuleDescriptor::getTypeName() const
   return "Tech layer rule";
 }
 
-bool DbTechLayerRuleDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbTechLayerRuleDescriptor::getBBox(std::any object,
+                                        std::any additional_data,
+                                        odb::Rect& bbox) const
 {
   return false;
 }
@@ -3105,7 +3197,10 @@ Selected DbTechLayerRuleDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbTechLayerRuleDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbTechLayerRuleDescriptor::lessThan(std::any l,
+                                         std::any /* l_data */,
+                                         std::any r,
+                                         std::any /* r_data */) const
 {
   auto l_rule = std::any_cast<odb::dbTechLayerRule*>(l);
   auto r_rule = std::any_cast<odb::dbTechLayerRule*>(r);
@@ -3135,7 +3230,8 @@ std::string DbTechSameNetRuleDescriptor::getTypeName() const
   return "Tech same net rule";
 }
 
-bool DbTechSameNetRuleDescriptor::getBBox(std::any object, std::any additional_data,
+bool DbTechSameNetRuleDescriptor::getBBox(std::any object,
+                                          std::any additional_data,
                                           odb::Rect& bbox) const
 {
   return false;
@@ -3167,8 +3263,9 @@ Descriptor::Properties DbTechSameNetRuleDescriptor::getProperties(
   return props;
 }
 
-Selected DbTechSameNetRuleDescriptor::makeSelected(std::any object,
-                                                   std::any additional_data) const
+Selected DbTechSameNetRuleDescriptor::makeSelected(
+    std::any object,
+    std::any additional_data) const
 {
   if (auto rule = std::any_cast<odb::dbTechSameNetRule*>(&object)) {
     return Selected(*rule, this, additional_data);
@@ -3176,7 +3273,10 @@ Selected DbTechSameNetRuleDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbTechSameNetRuleDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbTechSameNetRuleDescriptor::lessThan(std::any l,
+                                           std::any /* l_data */,
+                                           std::any r,
+                                           std::any /* r_data */) const
 {
   auto l_rule = std::any_cast<odb::dbTechSameNetRule*>(l);
   auto r_rule = std::any_cast<odb::dbTechSameNetRule*>(r);
@@ -3205,7 +3305,9 @@ std::string DbSiteDescriptor::getTypeName() const
   return "Site";
 }
 
-bool DbSiteDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbSiteDescriptor::getBBox(std::any object,
+                               std::any additional_data,
+                               odb::Rect& bbox) const
 {
   return false;
 }
@@ -3256,7 +3358,10 @@ Selected DbSiteDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbSiteDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool DbSiteDescriptor::lessThan(std::any l,
+                                std::any /* l_data */,
+                                std::any r,
+                                std::any /* r_data */) const
 {
   auto l_site = std::any_cast<odb::dbSite*>(l);
   auto r_site = std::any_cast<odb::dbSite*>(r);
@@ -3291,7 +3396,9 @@ std::string DbRowDescriptor::getTypeName() const
   return "Row";
 }
 
-bool DbRowDescriptor::getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const
+bool DbRowDescriptor::getBBox(std::any object,
+                              std::any additional_data,
+                              odb::Rect& bbox) const
 {
   if (additional_data.has_value()) {
     bbox = std::any_cast<odb::Rect>(additional_data);
@@ -3335,7 +3442,8 @@ Descriptor::Properties DbRowDescriptor::getProperties(
   props.push_back({"Direction", row->getDirection().getString()});
 
   props.push_back({"Site count", row->getSiteCount()});
-  props.push_back({"Site spacing", Property::convert_dbu(row->getSpacing(), true)});
+  props.push_back(
+      {"Site spacing", Property::convert_dbu(row->getSpacing(), true)});
 
   populateODBProperties(props, row);
 
@@ -3351,7 +3459,10 @@ Selected DbRowDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool DbRowDescriptor::lessThan(std::any l, std::any l_data, std::any r, std::any r_data) const
+bool DbRowDescriptor::lessThan(std::any l,
+                               std::any l_data,
+                               std::any r,
+                               std::any r_data) const
 {
   auto l_via = std::any_cast<odb::dbRow*>(l);
   auto r_via = std::any_cast<odb::dbRow*>(r);

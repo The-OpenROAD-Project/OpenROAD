@@ -136,7 +136,9 @@ std::string RulerDescriptor::getTypeName() const
   return "Ruler";
 }
 
-bool RulerDescriptor::getBBox(std::any object, std::any /* additional_data */, odb::Rect& bbox) const
+bool RulerDescriptor::getBBox(std::any object,
+                              std::any /* additional_data */,
+                              odb::Rect& bbox) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   bbox = odb::Rect(ruler->getPt0(), ruler->getPt1());
@@ -157,7 +159,9 @@ void RulerDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties RulerDescriptor::getProperties(std::any object, std::any /* additional_data */) const
+Descriptor::Properties RulerDescriptor::getProperties(
+    std::any object,
+    std::any /* additional_data */) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   return {{"Label", ruler->getLabel()},
@@ -175,7 +179,9 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object, std::any 
           {"Euclidian", ruler->isEuclidian()}};
 }
 
-Descriptor::Editors RulerDescriptor::getEditors(std::any object, std::any /* additional_data */) const
+Descriptor::Editors RulerDescriptor::getEditors(
+    std::any object,
+    std::any /* additional_data */) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
@@ -239,7 +245,9 @@ bool RulerDescriptor::editPoint(std::any value,
   return true;
 }
 
-Descriptor::Actions RulerDescriptor::getActions(std::any object, std::any /* additional_data */) const
+Descriptor::Actions RulerDescriptor::getActions(
+    std::any object,
+    std::any /* additional_data */) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
 
@@ -258,7 +266,10 @@ Selected RulerDescriptor::makeSelected(std::any object,
   return Selected();
 }
 
-bool RulerDescriptor::lessThan(std::any l, std::any /* l_data */, std::any r, std::any /* r_data */) const
+bool RulerDescriptor::lessThan(std::any l,
+                               std::any /* l_data */,
+                               std::any r,
+                               std::any /* r_data */) const
 {
   auto l_ruler = std::any_cast<Ruler*>(l);
   auto r_ruler = std::any_cast<Ruler*>(r);

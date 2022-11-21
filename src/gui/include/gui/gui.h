@@ -269,7 +269,9 @@ class Descriptor
   {
     return getTypeName();
   }
-  virtual bool getBBox(std::any object, std::any additional_data, odb::Rect& bbox) const = 0;
+  virtual bool getBBox(std::any object,
+                       std::any additional_data,
+                       odb::Rect& bbox) const = 0;
 
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
@@ -318,14 +320,26 @@ class Descriptor
   };
   using Editors = std::map<std::string, Editor>;
 
-  virtual Properties getProperties(std::any object, std::any additional_data) const = 0;
-  virtual Actions getActions(std::any /* object */, std::any /* additional_data */) const { return Actions(); }
-  virtual Editors getEditors(std::any /* object */, std::any /* additional_data */) const { return Editors(); }
+  virtual Properties getProperties(std::any object,
+                                   std::any additional_data) const = 0;
+  virtual Actions getActions(std::any /* object */,
+                             std::any /* additional_data */) const
+  {
+    return Actions();
+  }
+  virtual Editors getEditors(std::any /* object */,
+                             std::any /* additional_data */) const
+  {
+    return Editors();
+  }
 
   virtual Selected makeSelected(std::any object,
                                 std::any additional_data) const = 0;
 
-  virtual bool lessThan(std::any l, std::any l_data, std::any r, std::any r_data) const = 0;
+  virtual bool lessThan(std::any l,
+                        std::any l_data,
+                        std::any r,
+                        std::any r_data) const = 0;
 
   static const Editor makeEditor(const EditorCallback& func,
                                  const std::vector<EditorOption>& options)
@@ -342,7 +356,11 @@ class Descriptor
   virtual void highlight(std::any object,
                          Painter& painter,
                          std::any additional_data = {}) const = 0;
-  virtual bool isSlowHighlight(std::any /* object */, std::any /* additional_data */) const { return false; }
+  virtual bool isSlowHighlight(std::any /* object */,
+                               std::any /* additional_data */) const
+  {
+    return false;
+  }
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -388,7 +406,10 @@ class Selected
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style
                  = Painter::Brush::SOLID) const;
-  bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_, additional_data_); }
+  bool isSlowHighlight() const
+  {
+    return descriptor_->isSlowHighlight(object_, additional_data_);
+  }
 
   Descriptor::Properties getProperties() const;
 
@@ -417,7 +438,8 @@ class Selected
     auto& l_type_info = l.object_.type();
     auto& r_type_info = r.object_.type();
     if (l_type_info == r_type_info) {
-      return l.descriptor_->lessThan(l.object_, l.additional_data_, r.object_, r.additional_data_);
+      return l.descriptor_->lessThan(
+          l.object_, l.additional_data_, r.object_, r.additional_data_);
     }
     return l_type_info.before(r_type_info);
   }

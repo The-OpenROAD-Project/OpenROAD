@@ -462,16 +462,15 @@ class GuiPainter : public Painter
   }
 };
 
-LayoutViewer::LayoutViewer(
-    Options* options,
-    ScriptWidget* output_widget,
-    const SelectionSet& selected,
-    const HighlightSet& highlighted,
-    const std::vector<std::unique_ptr<Ruler>>& rulers,
-    Gui* gui,
-    std::function<bool(void)> usingDBU,
-    std::function<bool(void)> showRulerAsEuclidian,
-    QWidget* parent)
+LayoutViewer::LayoutViewer(Options* options,
+                           ScriptWidget* output_widget,
+                           const SelectionSet& selected,
+                           const HighlightSet& highlighted,
+                           const std::vector<std::unique_ptr<Ruler>>& rulers,
+                           Gui* gui,
+                           std::function<bool(void)> usingDBU,
+                           std::function<bool(void)> showRulerAsEuclidian,
+                           QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
       options_(options),
@@ -1702,7 +1701,8 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
   }
 }
 
-std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(const odb::Rect& bounds)
+std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
+    const odb::Rect& bounds)
 {
   int min_resolution = nominalViewableResolution();
   if (options_->isDetailedVisibility()) {
