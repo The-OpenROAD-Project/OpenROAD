@@ -42,6 +42,7 @@ class dbTechLayer;
 namespace fr {
 
 class frDesign;
+class frNet;
 
 // This class draws debugging graphics on the layout
 class FlexTAGraphics : public gui::Renderer
@@ -55,6 +56,11 @@ class FlexTAGraphics : public gui::Renderer
 
   // Show a message in the status bar
   void status(const std::string& message);
+
+  // Draw iroutes for one guide
+  void drawIrouteGuide(frNet* net,
+                       odb::dbTechLayer* layer,
+                       gui::Painter& painter);
 
   // From Renderer API
   virtual void drawLayer(odb::dbTechLayer* layer,
@@ -73,6 +79,7 @@ class FlexTAGraphics : public gui::Renderer
   frBlock* top_block_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
+  frNet* net_;
 };
 
 }  // namespace fr

@@ -38,7 +38,8 @@ FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
     : logger_(logger),
       settings_(settings),
       gui_(gui::Gui::get()),
-      top_block_(design->getTopBlock())
+      top_block_(design->getTopBlock()),
+      net_(nullptr)
 {
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
@@ -55,7 +56,9 @@ FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
   gui_->registerRenderer(this);
 }
 
-void FlexTAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void FlexTAGraphics::drawIrouteGuide(frNet* net,
+                                     odb::dbTechLayer* layer,
+                                     gui::Painter& painter)
 {
   frLayerNum layerNum;
 
@@ -64,30 +67,27 @@ void FlexTAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  if (settings_->netName.empty()) {
-    return;
-  }
-
-  for (auto& net : top_block_->getNets()) {
-    if (net->getName() != settings_->netName) {
-      continue;
-    }
-    for (auto& guide : net->getGuides()) {
-      for (auto& uConnFig : guide->getRoutes()) {
-        auto connFig = uConnFig.get();
-        switch (connFig->typeId()) {
-          case frcPathSeg: {
-            auto seg = static_cast<frPathSeg*>(connFig);
-            if (seg->getLayerNum() == layerNum) {
-              auto bbox = seg->getBBox();
-              painter.drawRect(seg->getBBox());
-            }
-            break;
-          }
-          default:
-            break;
+  for (auto& guide : net->getGuides()) {
+    for (auto& uConnFig : guide->getRoutes()) {
+      auto connFig = uConnFig.get();
+      if (connFig->typeId() == frcPathSeg) {
+        auto seg = static_cast<frPathSeg*>(connFig);
+        if (seg->getLayerNum() == layerNum) {
+          auto bbox = seg->getBBox();
+          painter.drawRect(seg->getBBox());
         }
       }
+    }
+  }
+}
+
+void FlexTAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+{
+  if (net_) {
+    drawIrouteGuide(net_, layer, painter);
+  } else {
+    for (auto& net : top_block_->getNets()) {
+      drawIrouteGuide(net.get(), layer, painter);
     }
   }
 }
@@ -99,6 +99,14 @@ void FlexTAGraphics::status(const std::string& message)
 
 void FlexTAGraphics::endIter(int iter)
 {
+  if (!settings_->netName.empty()) {
+    for (auto& net : top_block_->getNets()) {
+      if (net->getName() == settings_->netName) {
+        net_ = net.get();
+      }
+    }
+  }
+
   status("End iter: " + std::to_string(iter));
   if (settings_->allowPause) {
     gui_->redraw();
