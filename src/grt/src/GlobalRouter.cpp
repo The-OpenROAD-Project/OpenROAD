@@ -1500,6 +1500,8 @@ void GlobalRouter::readGuides(const char* file_name)
     }
   }
 
+  updateVias();
+
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
@@ -1521,6 +1523,8 @@ void GlobalRouter::loadGuidesFromDB()
     }
   }
 
+  updateVias();
+
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
@@ -1529,6 +1533,22 @@ void GlobalRouter::loadGuidesFromDB()
 
   updateEdgesUsage();
   heatmap_->update();
+}
+
+void GlobalRouter::updateVias()
+{
+  for (auto& net_route : routes_) {
+    GRoute& route = net_route.second;
+    for (int i = 0; i < route.size() - 1; i++) {
+      GSegment& seg1 = route[i];
+      GSegment& seg2 = route[i + 1];
+      if (seg1.isVia() && seg1.init_layer < seg2.init_layer) {
+        seg1.final_layer = seg2.init_layer;
+      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer) {
+        seg2.init_layer = seg1.final_layer;
+      }
+    }
+  }
 }
 
 void GlobalRouter::updateEdgesUsage()
