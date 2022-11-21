@@ -56,7 +56,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
-    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
+    auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
