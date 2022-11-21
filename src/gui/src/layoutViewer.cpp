@@ -1208,6 +1208,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
   }
+
+  if (options_->areRowsVisible() && options_->areRowsSelectable()) {
+    for (auto* row : block_->getRows()) {
+      if (row->getBBox().intersects(region)) {
+        selections.push_back(makeSelected_(row));
+      }
+    }
+  }
 }
 
 int LayoutViewer::selectArea(const odb::Rect& area, bool append)
