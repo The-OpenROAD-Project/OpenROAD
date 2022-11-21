@@ -2736,7 +2736,6 @@ void DbTechViaDescriptor::highlight(std::any object,
                                     Painter& painter,
                                     void* additional_data) const
 {
-  return;
 }
 
 Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
@@ -2846,7 +2845,6 @@ void DbGenerateViaDescriptor::highlight(std::any object,
                                         Painter& painter,
                                         void* additional_data) const
 {
-  return;
 }
 
 Descriptor::Properties DbGenerateViaDescriptor::getProperties(
@@ -2942,7 +2940,6 @@ void DbNonDefaultRuleDescriptor::highlight(std::any object,
                                            Painter& painter,
                                            void* additional_data) const
 {
-  return;
 }
 
 Descriptor::Properties DbNonDefaultRuleDescriptor::getProperties(
@@ -3049,7 +3046,6 @@ void DbTechLayerRuleDescriptor::highlight(std::any object,
                                           Painter& painter,
                                           void* additional_data) const
 {
-  return;
 }
 
 Descriptor::Properties DbTechLayerRuleDescriptor::getProperties(
@@ -3122,7 +3118,6 @@ void DbTechSameNetRuleDescriptor::highlight(std::any object,
                                             Painter& painter,
                                             void* additional_data) const
 {
-  return;
 }
 
 Descriptor::Properties DbTechSameNetRuleDescriptor::getProperties(
