@@ -681,11 +681,11 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
   Properties props({{"Master type", master->getType().getString()}});
+  auto gui = Gui::get();
   auto site = master->getSite();
   if (site != nullptr) {
-    props.push_back({"Site", site->getConstName()});
+    props.push_back({"Site", gui->makeSelected(site)});
   }
-  auto gui = Gui::get();
   std::vector<std::any> mterms;
   for (auto mterm : master->getMTerms()) {
     mterms.push_back(mterm->getConstName());
@@ -3158,6 +3158,177 @@ bool DbTechSameNetRuleDescriptor::lessThan(std::any l, std::any r) const
 bool DbTechSameNetRuleDescriptor::getAllObjects(SelectionSet& objects) const
 {
   return false;
+}
+
+//////////////////////////////////////////////////
+
+DbSiteDescriptor::DbSiteDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbSiteDescriptor::getName(std::any object) const
+{
+  auto* site = std::any_cast<odb::dbSite*>(object);
+  return site->getName();
+}
+
+std::string DbSiteDescriptor::getTypeName() const
+{
+  return "Site";
+}
+
+bool DbSiteDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbSiteDescriptor::highlight(std::any object,
+                                 Painter& painter,
+                                 void* additional_data) const
+{
+  return;
+}
+
+Descriptor::Properties DbSiteDescriptor::getProperties(
+    std::any object) const
+{
+  auto* site = std::any_cast<odb::dbSite*>(object);
+
+  Properties props;
+
+  props.push_back({"Width", Property::convert_dbu(site->getWidth(), true)});
+  props.push_back({"Height", Property::convert_dbu(site->getHeight(), true)});
+
+  props.push_back({"Site class", site->getClass().getString()});
+
+  std::vector<std::any> symmetry;
+  if (site->getSymmetryX()) {
+    symmetry.push_back("X");
+  }
+  if (site->getSymmetryY()) {
+    symmetry.push_back("Y");
+  }
+  if (site->getSymmetryR90()) {
+    symmetry.push_back("R90");
+  }
+  props.push_back({"Symmetry", symmetry});
+
+  populateODBProperties(props, site);
+
+  return props;
+}
+
+Selected DbSiteDescriptor::makeSelected(std::any object,
+                                        void* additional_data) const
+{
+  if (auto site = std::any_cast<odb::dbSite*>(&object)) {
+    return Selected(*site, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbSiteDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_site = std::any_cast<odb::dbSite*>(l);
+  auto r_site = std::any_cast<odb::dbSite*>(r);
+  return l_site->getId() < r_site->getId();
+}
+
+bool DbSiteDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto* lib : db_->getLibs()) {
+    for (auto* site : lib->getSites()) {
+      objects.insert(makeSelected(site, nullptr));
+    }
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbRowDescriptor::DbRowDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbRowDescriptor::getName(std::any object) const
+{
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  return row->getName();
+}
+
+std::string DbRowDescriptor::getTypeName() const
+{
+  return "Row";
+}
+
+bool DbRowDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  bbox = row->getBBox();
+  return true;
+}
+
+void DbRowDescriptor::highlight(std::any object,
+                                Painter& painter,
+                                void* additional_data) const
+{
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  painter.drawRect(row->getBBox());
+}
+
+Descriptor::Properties DbRowDescriptor::getProperties(
+    std::any object) const
+{
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Site", gui->makeSelected(row->getSite())});
+  int x, y;
+  row->getOrigin(x, y);
+  PropertyList origin;
+  origin.push_back({"X", Property::convert_dbu(x, true)});
+  origin.push_back({"Y", Property::convert_dbu(y, true)});
+  props.push_back({"Origin", origin});
+
+  props.push_back({"Orientation", row->getOrient().getString()});
+  props.push_back({"Direction", row->getDirection().getString()});
+
+  props.push_back({"Site count", row->getSiteCount()});
+  props.push_back({"Site spacing", Property::convert_dbu(row->getSpacing(), true)});
+
+  populateODBProperties(props, row);
+
+  return props;
+}
+
+Selected DbRowDescriptor::makeSelected(std::any object,
+                                       void* additional_data) const
+{
+  if (auto via = std::any_cast<odb::dbRow*>(&object)) {
+    return Selected(*via, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbRowDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_via = std::any_cast<odb::dbRow*>(l);
+  auto r_via = std::any_cast<odb::dbRow*>(r);
+  return l_via->getId() < r_via->getId();
+}
+
+bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* row : block->getRows()) {
+    objects.insert(makeSelected(row, nullptr));
+  }
+
+  return true;
 }
 
 }  // namespace gui
