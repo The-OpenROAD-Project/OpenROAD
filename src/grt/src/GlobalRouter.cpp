@@ -1509,6 +1509,25 @@ void GlobalRouter::readGuides(const char* file_name)
 
 void GlobalRouter::loadGuidesFromDB()
 {
+  block_ = db_->getChip()->getBlock();
+  routes_.clear();
+  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
+    max_routing_layer_ = computeMaxRoutingLayer();
+    int min_layer = min_layer_for_clock_ > 0
+                        ? std::min(min_routing_layer_, min_layer_for_clock_)
+                        : min_routing_layer_;
+    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+
+    initRoutingLayers();
+    initRoutingTracks(max_layer);
+    initCoreGrid(max_layer);
+    initAdjustments();
+    setCapacities(min_layer, max_layer);
+    applyAdjustments(min_layer, max_layer);
+  }
+  std::vector<Net*> nets = initNetlist();
+  initNets(nets);
+  
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
       boxToGlobalRouting(guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
