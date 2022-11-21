@@ -41,8 +41,8 @@
 #include <vector>
 
 #include "RoutingTracks.h"
-#include "odb/db.h"
 #include "boost/icl/interval.hpp"
+#include "odb/db.h"
 
 using boost::icl::interval;
 
@@ -137,10 +137,10 @@ class Grid
                         odb::dbTechLayerDir direction);
 
   interval<int>::type computeTileReduceInterval(const odb::Rect& obs,
-                                               const odb::Rect& tile,
-                                               int track_space,
-                                               bool first,
-                                               odb::dbTechLayerDir direction);
+                                                const odb::Rect& tile,
+                                                int track_space,
+                                                bool first,
+                                                odb::dbTechLayerDir direction);
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;

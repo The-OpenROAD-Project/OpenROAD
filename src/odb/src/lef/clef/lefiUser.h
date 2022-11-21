@@ -23,9 +23,9 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -38,7 +38,6 @@
 /*  an application only needs to include either lefrReader.h(pp)              */
 /*  or lefwWriter.h(pp).                                                      */
 /*                                                                            */
-
 
 #ifndef CLEFIUSER_H
 #define CLEFIUSER_H
@@ -57,7 +56,6 @@
 #include "lefiUtil.h"
 #include "lefiVia.h"
 #include "lefiViaRule.h"
-
 
 /* NEW CALLBACK add the reference here                                        */
 

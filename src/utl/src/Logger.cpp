@@ -35,9 +35,9 @@
 
 #include "utl/Logger.h"
 
-#include <mutex>
 #include <atomic>
 #include <fstream>
+#include <mutex>
 
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -47,19 +47,21 @@ namespace utl {
 
 int Logger::max_message_print = 1000;
 
-Logger::Logger(const char* log_filename, const char *metrics_filename)
-  : debug_on_(false)
+Logger::Logger(const char* log_filename, const char* metrics_filename)
+    : debug_on_(false)
 {
   // This ensures it is safe to update the message counters
   // without using locks.
   static_assert(std::atomic<MessageCounter::value_type>::is_always_lock_free,
                 "message counter should be atomic");
 
- sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+  sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
-    sinks_.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
-  
-  logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
+    sinks_.push_back(
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
+
+  logger_ = std::make_shared<spdlog::logger>(
+      "logger", sinks_.begin(), sinks_.end());
   logger_->set_pattern(pattern_);
   logger_->set_level(spdlog::level::level_enum::debug);
 
@@ -75,19 +77,18 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
 
 Logger::~Logger()
 {
-    finalizeMetrics();
+  finalizeMetrics();
 }
 
-void Logger::addMetricsSink(const char *metrics_filename)
+void Logger::addMetricsSink(const char* metrics_filename)
 {
- metrics_sinks_.push_back(metrics_filename);
+  metrics_sinks_.push_back(metrics_filename);
 }
 
-ToolId
-Logger::findToolId(const char *tool_name)
+ToolId Logger::findToolId(const char* tool_name)
 {
   int tool_id = 0;
-  for (const char *tool : tool_names_) {
+  for (const char* tool : tool_names_) {
     if (strcmp(tool_name, tool) == 0)
       return static_cast<ToolId>(tool_id);
     tool_id++;
@@ -104,8 +105,7 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
       groups.erase(it);
       debug_on_ = std::any_of(debug_group_level_.begin(),
                               debug_group_level_.end(),
-                              [](auto& group) { return !group.empty(); }
-                              );
+                              [](auto& group) { return !group.empty(); });
     }
   } else {
     debug_on_ = true;
@@ -117,7 +117,7 @@ void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
   logger_->sinks().push_back(sink);
-  logger_->set_pattern(pattern_); // updates the new sink
+  logger_->set_pattern(pattern_);  // updates the new sink
 }
 
 void Logger::removeSink(spdlog::sink_ptr sink)
@@ -135,42 +135,45 @@ void Logger::removeSink(spdlog::sink_ptr sink)
   }
 }
 
-void Logger::setMetricsStage(std::string_view format) {
-
-  if(metrics_stages_.empty())
+void Logger::setMetricsStage(std::string_view format)
+{
+  if (metrics_stages_.empty())
     metrics_stages_.push(std::string(format));
   else
     metrics_stages_.top() = format;
 }
 
-void Logger::clearMetricsStage() {
+void Logger::clearMetricsStage()
+{
   std::stack<std::string> new_stack;
   metrics_stages_.swap(new_stack);
 }
 
-void Logger::pushMetricsStage(std::string_view format) {
+void Logger::pushMetricsStage(std::string_view format)
+{
   metrics_stages_.push(std::string(format));
 }
 
-std::string Logger::popMetricsStage() {
-  if(!metrics_stages_.empty()) {
+std::string Logger::popMetricsStage()
+{
+  if (!metrics_stages_.empty()) {
     std::string stage = metrics_stages_.top();
     metrics_stages_.pop();
     return stage;
-  }
-  else {
+  } else {
     return "";
   }
 }
 
-void Logger::finalizeMetrics() {
-  for(MetricsPolicy policy : metrics_policies_) {
+void Logger::finalizeMetrics()
+{
+  for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);
   }
 
   std::string json = MetricsEntry::assembleJSON(metrics_entries_);
-  
-  for(std::string sink_path : metrics_sinks_) {
+
+  for (std::string sink_path : metrics_sinks_) {
     std::ofstream sink_file(sink_path);
     sink_file << json;
   }
@@ -181,4 +184,4 @@ void Logger::suppressMessage(ToolId tool, int id)
   message_counters_[tool][id] = max_message_print + 1;
 }
 
-}  // namespace
+}  // namespace utl

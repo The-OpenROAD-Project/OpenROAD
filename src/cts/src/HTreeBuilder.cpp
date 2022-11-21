@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "HTreeBuilder.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -40,7 +42,6 @@
 #include <memory>
 
 #include "Clustering.h"
-#include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "utl/Logger.h"
 
@@ -901,7 +902,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::treeVisualizer()
 {
-  graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
+  graphics_ = std::make_unique<Graphics>(this, &(clock_));
   if (Graphics::guiActive())
     graphics_->clockPlot(true);
 }

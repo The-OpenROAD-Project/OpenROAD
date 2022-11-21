@@ -72,7 +72,7 @@ Rect frInstTerm::getBBox(bool updatedTransform)
   dbTransform trans;
   if (updatedTransform)
     trans = getInst()->getUpdatedXform();
-  else 
+  else
     trans = getInst()->getTransform();
   trans.apply(bbox);
   return bbox;

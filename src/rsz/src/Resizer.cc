@@ -1476,8 +1476,24 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
           Net *tie_net = network_->net(tie_pin);
           sta_->deleteNet(tie_net);
           parasitics_invalid_.erase(tie_net);
-          // Delete the tie instance.
-          sta_->deleteInstance(inst);
+          // Delete the tie instance if no other ports are in use.
+          // A tie cell can have both tie hi and low outputs.
+          bool has_other_fanout = false;
+          std::unique_ptr<InstancePinIterator> inst_pin_iter{
+              network_->pinIterator(inst)};
+          while (inst_pin_iter->hasNext()) {
+            Pin *pin = inst_pin_iter->next();
+            if (pin != drvr_pin) {
+              Net* net = network_->net(pin);
+              if (net && !network_->isPower(net) && !network_->isGround(net)) {
+                has_other_fanout = true;
+                break;
+              }
+            }
+          }
+          if (!has_other_fanout) {
+            sta_->deleteInstance(inst);
+          }
         }
       }
     }
@@ -2304,10 +2320,8 @@ void
 Resizer::journalRestore(int &resize_count,
                         int &inserted_buffer_count)
 {
-  for (auto inst_cell : resized_inst_map_) {
-    Instance *inst = inst_cell.first;
+  for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
-      LibertyCell *lib_cell = inst_cell.second;
       debugPrint(logger_, RSZ, "journal", 1, "journal restore {} ({})",
                  network_->pathName(inst),
                  lib_cell->name());

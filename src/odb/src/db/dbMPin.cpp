@@ -166,9 +166,9 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   // TODO: fix for multi chip block heirarchy
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
   std::vector<std::vector<odb::dbAccessPoint*>> result;
-  for (auto pa : pin->aps_) {
+  for (const auto& pa : pin->aps_) {
     result.push_back(std::vector<odb::dbAccessPoint*>());
-    for (auto ap : pa) {
+    for (const auto& ap : pa) {
       result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
     }
   }

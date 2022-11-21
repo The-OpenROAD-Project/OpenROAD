@@ -57,6 +57,26 @@ namespace grt {
 class GlobalRouter;
 }
 
+namespace gpl {
+class Replace;
+}
+
+namespace dpl {
+class Opendp;
+}
+
+namespace mpl {
+class MacroPlacer;
+}
+
+namespace ppl {
+class IOPlacer;
+}
+
+namespace tap {
+class Tapcell;
+}
+
 namespace ord {
 
 class Tech;
@@ -81,7 +101,7 @@ class Design
   int micronToDBU(double coord);
 
   // This is intended as a temporary back door to tcl from Python
-  int evalTclString(const std::string& cmd);
+  const std::string evalTclString(const std::string& cmd);
 
   Tech* getTech();
 
@@ -89,6 +109,11 @@ class Design
   ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();
   grt::GlobalRouter* getGlobalRouter();
+  gpl::Replace* getReplace();
+  dpl::Opendp* getOpendp();
+  mpl::MacroPlacer* getMacroPlacer();
+  ppl::IOPlacer* getIOPlacer();
+  tap::Tapcell* getTapcell();
 
  private:
   Tech* tech_;

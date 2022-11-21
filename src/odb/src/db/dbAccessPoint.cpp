@@ -265,7 +265,7 @@ const std::vector<std::tuple<Rect, bool, bool>>& dbAccessPoint::getSegments()
 
 void dbAccessPoint::setAccesses(const std::vector<dbDirection>& accesses)
 {
-  for (auto dir : accesses) {
+  for (const auto& dir : accesses) {
     setAccess(true, dir);
   }
 }
@@ -469,7 +469,7 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
         }
       }
     }
-    for (auto iterm_id : _ap->iterms_) {
+    for (const auto& iterm_id : _ap->iterms_) {
       _dbITerm* iterm = block->_iterm_tbl->getPtr(iterm_id);
       auto ap_itr = iterm->aps_.begin();
       while (ap_itr != iterm->aps_.end()) {

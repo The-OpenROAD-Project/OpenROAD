@@ -39,9 +39,9 @@
 
 #include "domain.h"
 #include "grid.h"
-#include "power_cells.h"
 #include "ord/OpenRoad.hh"
 #include "pdn/PdnGen.hh"
+#include "power_cells.h"
 #include "renderer.h"
 
 namespace sta {

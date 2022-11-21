@@ -23,23 +23,23 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFIPROPTYPE_H
 #define CLEFIPROPTYPE_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /* Struct holds the data type for one property, if the property is            */
 /* either REAL or INTEGER.                                                    */
 
-EXTERN const char lefiPropType_propType (const lefiPropType* obj, char*  name);
+EXTERN const char lefiPropType_propType(const lefiPropType* obj, char* name);
 
 #endif

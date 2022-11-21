@@ -534,6 +534,34 @@ void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
   design->getTech()->addUConstraint(std::move(con));
 }
 
+frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
+    frLayerNum layer_num,
+    frCoord spacing,
+    int adjacent_cuts,
+    int two_cuts,
+    frCoord within)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  auto rule = odb::dbTechLayerCutSpacingRule::create(layer->getDbLayer());
+  rule->setCutSpacing(spacing);
+  rule->setAdjacentCuts(adjacent_cuts);
+  // con->setTwoCuts(two_cuts);
+  rule->setWithin(within);
+  rule->setCenterToCenter(true);
+
+  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto con = uCon.get();
+  con->setCutClassIdx(0);
+  con->setCutSpacing(rule->getCutSpacing());
+  con->setAdjacentCuts(rule->getAdjacentCuts());
+  con->setCutWithin(rule->getWithin());
+  con->setCenterToCenter(rule->isCenterToCenter());
+  layer->addLef58CutSpacingConstraint(con);
+  tech->addUConstraint(std::move(uCon));
+  return con;
+}
+
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();

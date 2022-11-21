@@ -252,8 +252,7 @@ std::vector<dbAccessPoint*> dbBPin::getAccessPoints() const
   _dbBPin* bpin = (_dbBPin*) this;
   _dbBlock* block = (_dbBlock*) getBTerm()->getBlock();
   std::vector<dbAccessPoint*> aps;
-  for(auto ap : bpin->aps_)
-  {
+  for (const auto& ap : bpin->aps_) {
     aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
   }
   return aps;

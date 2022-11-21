@@ -339,12 +339,12 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
 
   auto& treenodes = sttrees_[netID].nodes;
 
-  const int deg = sttrees_[netID].deg;
+  const int num_terminals = sttrees_[netID].num_terminals;
 
   const int n1a = treeedge->n1a;
   const int n2a = treeedge->n2a;
 
-  int bl = (n1a < deg) ? 0 : BIG_INT;
+  int bl = (n1a < num_terminals) ? 0 : BIG_INT;
   int hl = 0;
   int hid = BIG_INT;
   int bid = BIG_INT;
@@ -382,7 +382,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   treenodes[n1a].topL = hl;
   treenodes[n1a].hID = hid;
 
-  bl = (n2a < deg) ? 0 : BIG_INT;
+  bl = (n2a < num_terminals) ? 0 : BIG_INT;
   hl = 0;
   hid = bid = BIG_INT;
 
@@ -448,13 +448,13 @@ void FastRouteCore::releaseNetResources(const int netID)
 {
   const int edgeCost = nets_[netID]->getEdgeCost();
   const auto& treeedges = sttrees_[netID].edges;
-  const int deg = sttrees_[netID].deg;
+  const int num_edges = sttrees_[netID].num_edges();
 
   // Only release resources if they were created at first place.
   // Cases like "read_guides" can call this function multiple times,
   // without creating treeedges inside the core code.
   if (treeedges != nullptr) {
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
       const std::vector<short>& gridsX = treeedge->route.gridsX;
       const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -490,9 +490,9 @@ void FastRouteCore::newRipupNet(const int netID)
 
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
-  const int deg = sttrees_[netID].deg;
+  const int num_edges = sttrees_[netID].num_edges();
 
-  for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);
     if (treeedge->len > 0) {
       const int n1 = treeedge->n1;

@@ -141,7 +141,7 @@ getMacroPlacer()
   return openroad->getMacroPlacer();
 }
 
-mpl::MacroPlacer2 *
+mpl2::MacroPlacer2 *
 getMacroPlacer2()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -515,15 +515,6 @@ units_initialized()
   OpenRoad *openroad = getOpenRoad();
   return openroad->unitsInitialized();
 }
-
-#ifdef ENABLE_PYTHON3
-void
-python_cmd(const char* py_command)
-{
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->pythonCommand(py_command);
-}
-#endif
 
 namespace ord {
 

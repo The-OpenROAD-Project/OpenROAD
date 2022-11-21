@@ -456,7 +456,8 @@ void TritonCTS::populateTritonCTS()
       findClockRoots(clk, clkNets);
       for (auto net : clkNets) {
         if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          logger_->error(
+              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
         }
       }
       clockNetsInfo.emplace_back(make_pair(clkNets, clkName));

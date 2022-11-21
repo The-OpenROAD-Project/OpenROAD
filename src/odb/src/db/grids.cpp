@@ -1041,7 +1041,7 @@ void Ath__track::linkWire(Ath__wire*& w1, Ath__wire*& w2)
         || w1->_base > w2->_base + w2->_width
         || w2->_base > w1->_base + w1->_width)
       w1->setNext(w2);
-    else {  // only good for adj == Z_endAdjust
+    else {                          // only good for adj == Z_endAdjust
       if (w1->_base < w2->_base) {  // w1 is wider?
         w2->_xy = nend;
         w1->setNext(w2);

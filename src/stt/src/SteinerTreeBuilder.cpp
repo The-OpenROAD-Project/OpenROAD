@@ -337,7 +337,7 @@ static int findPathDepth(const Tree& tree, int drvr_index)
 {
   int branch_count = tree.branchCount();
   PDedges edges(branch_count);
-  if (branch_count > 2) {
+  if (branch_count > 1) {
     for (int i = 0; i < branch_count; i++) {
       const stt::Branch& branch = tree.branch[i];
       int neighbor = branch.n;

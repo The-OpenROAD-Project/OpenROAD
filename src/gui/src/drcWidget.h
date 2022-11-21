@@ -45,9 +45,8 @@
 #include <variant>
 
 #include "gui/gui.h"
-#include "odb/db.h"
-
 #include "inspector.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

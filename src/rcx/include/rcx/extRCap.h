@@ -43,10 +43,10 @@
 #include "ISdb.h"
 #include "ZObject.h"
 #include "db.h"
-#include "wire.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
+#include "wire.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)
@@ -340,10 +340,7 @@ class extDistWidthRCTable
   extDistRC* _rc31;
 
  public:
-  extDistWidthRCTable(bool dummy,
-                      uint met,
-                      uint layerCnt,
-                      uint width);
+  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
@@ -1273,7 +1270,7 @@ class extMeasure
                     Ath__array1D<odb::SEQ*>* residueSeq);
   void printDgContext();
   void initTargetSeq();
-  void getDgOverlap(CoupleOptions &options);
+  void getDgOverlap(CoupleOptions& options);
   void getDgOverlap(odb::SEQ* sseq,
                     uint dir,
                     Ath__array1D<odb::SEQ*>* dgContext,
