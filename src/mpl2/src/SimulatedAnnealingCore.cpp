@@ -35,10 +35,11 @@
 
 #include <fstream>
 
+#include "graphics.h"
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using std::string;
 
@@ -67,7 +68,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int k,
     int c,
     unsigned seed,
+    Graphics* graphics,
     utl::Logger* logger)
+    : graphics_(graphics)
 {
   outline_width_ = outline_width;
   outline_height_ = outline_height;
@@ -90,8 +93,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   c_ = c;
 
   // generate random
-  std::mt19937 randGen(seed);
-  generator_ = randGen;
+  std::mt19937 rand_gen(seed);
+  generator_ = rand_gen;
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
   distribution_ = distribution;
 
@@ -354,6 +357,10 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
   // update width_ of current floorplan
   height_ = length[macros_.size() - 1];
+
+  if (graphics_) {
+    graphics_->saStep(macros_);
+  }
 }
 
 // SingleSeqSwap
@@ -428,18 +435,16 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
+/* static */
 template <class T>
 float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 {
-  if (value_list.size() == 0) {
-    return 0.0;
+  const auto size = value_list.size();
+  if (size == 0) {
+    return 0;
   }
 
-  float sum = 0.0;
-  for (const auto& value : value_list) {
-    sum += value;
-  }
-  return sum / value_list.size();
+  return std::accumulate(value_list.begin(), value_list.end(), 0) / size;
 }
 
 template <class T>
@@ -451,7 +456,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   float pre_cost = cost;
   float delta_cost = 0.0;
   int step = 1;
-  float t = init_T_;
+  float temperature = init_temperature_;
   notch_weight_ = 0.0;
   // const for restart
   int num_restart = 1;
@@ -463,14 +468,15 @@ void SimulatedAnnealingCore<T>::fastSA()
       cost = calNormCost();
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
-      const float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / t) : 1;
+      const float prob
+          = (delta_cost > 0.0) ? exp((-1) * delta_cost / temperature) : 1;
       if (num < prob) {
         pre_cost = cost;
       } else {
         restore();
       }
     }
-    t *= 0.985;
+    temperature *= 0.985;
     // increase step
     step++;
     // check if restart condition
@@ -483,7 +489,7 @@ void SimulatedAnnealingCore<T>::fastSA()
       pre_cost = calNormCost();
       num_restart++;
       step = 1;
-      t = init_T_;
+      temperature = init_temperature_;
     }  // end if
     // only consider the last step to optimize notch weight
     if (step == max_num_step_ - macros_.size()) {
@@ -510,4 +516,4 @@ void SimulatedAnnealingCore<T>::fastSA()
 template class SimulatedAnnealingCore<SoftMacro>;
 template class SimulatedAnnealingCore<HardMacro>;
 
-}  // namespace mpl
+}  // namespace mpl2

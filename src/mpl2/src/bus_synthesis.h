@@ -42,7 +42,7 @@
 
 #include "object.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using Point = std::pair<float, float>;
 
@@ -164,7 +164,7 @@ class Graph
       // shortest boundary edge paths
       std::vector<std::vector<int>>& edge_paths,
       // length of shortest paths
-      float& HPWL);
+      float& hpwl);
 
   // store the parent vertices for each vertex in the shortest paths
   // for example, there are two paths from root to dest
@@ -179,32 +179,6 @@ class Graph
   float congestion_weight_ = 1.0;
 };
 
-// Get vertices in a given segement
-// We consider start terminal and end terminal
-void getVerticesInSegment(const std::vector<float>& grid,
-                          const float start_point,
-                          const float end_point,
-                          int& start_idx,
-                          int& end_idx);
-
-// Get vertices within a given rectangle
-// Calculate the start index and end index in the grid
-void getVerticesInRect(const std::vector<float>& x_grid,
-                       const std::vector<float>& y_grid,
-                       const Rect& rect,
-                       int& x_start,
-                       int& x_end,
-                       int& y_start,
-                       int& y_end);
-
-void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
-                 std::vector<int>& soft_macro_vertex_id,  // store the vertex id
-                                                          // for each soft macro
-                 std::vector<Edge>& edge_list,  // edge_list and vertex_list
-                                                // are all empty list
-                 std::vector<Vertex>& vertex_list,
-                 utl::Logger* logger);
-
 // Calculate the paths for global buses with ILP
 // congestion_weight : the cost for each edge is
 // (1 - congestion_weight) * length + congestion_weight * length_w
@@ -218,4 +192,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  float congestion_weight,
                  utl::Logger* logger);
 
-}  // namespace mpl
+}  // namespace mpl2

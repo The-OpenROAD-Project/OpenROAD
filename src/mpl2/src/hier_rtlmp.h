@@ -35,7 +35,9 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -58,13 +60,14 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 struct BundledNet;
 class Cluster;
 class HardMacro;
 class Metric;
 struct Rect;
 class SoftMacro;
+class Graphics;
 
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
@@ -79,11 +82,11 @@ class SoftMacro;
 class HierRTLMP
 {
  public:
-  HierRTLMP() {}
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger);
+  ~HierRTLMP();
 
   // Top Level Interface Function
   // This function is the inferface for calling HierRTLMP
@@ -129,6 +132,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
+  void setDebug();
 
  private:
   void calDataFlow();
@@ -243,16 +247,16 @@ class HierRTLMP
 
   float halo_width_ = 0.0;
 
-  int num_runs_ = 10;     // number of runs for SA
-  int num_threads_ = 10;  // number of threads
-  int random_seed_ = 0;   // random seed for deterministic
+  const int num_runs_ = 10;     // number of runs for SA
+  const int num_threads_ = 10;  // number of threads
+  const int random_seed_ = 0;   // random seed for deterministic
 
-  float target_dead_space_ = 0.2;        // dead space for the cluster
-  float target_util_ = 0.25;             // target utilization of the design
-  float target_dead_space_step_ = 0.05;  // step for dead space
-  float target_util_step_ = 0.1;         // step for utilization
-  float num_target_util_ = 10;
-  float num_target_dead_space_ = 20;
+  float target_dead_space_ = 0.2;  // dead space for the cluster
+  float target_util_ = 0.25;       // target utilization of the design
+  const float target_dead_space_step_ = 0.05;  // step for dead space
+  const float target_util_step_ = 0.1;         // step for utilization
+  const float num_target_util_ = 10;
+  const float num_target_dead_space_ = 20;
 
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1
                         // / min_ar_)
@@ -287,16 +291,16 @@ class HierRTLMP
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
-  int max_num_step_ = 5000;
-  int num_perturb_per_step_ = 3000;
+  const int max_num_step_ = 5000;
+  const int num_perturb_per_step_ = 3000;
   // if step < k_, T = init_T_ / (c_ * step_);
   // else T = init_T_ / step
-  int k_ = 5000000;
-  int c_ = 1000.0;
+  const int k_ = 5000000;
+  const int c_ = 1000.0;
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
-  float virtual_weight_ = 2000.0;
+  const float virtual_weight_ = 2000.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.3;
@@ -314,8 +318,8 @@ class HierRTLMP
   float floorplan_uy_ = 0.0;
 
   // dataflow parameters and store the dataflow
-  int max_num_ff_dist_ = 3;  // maximum number of FF distances between
-  float dataflow_factor_ = 2.0;
+  const int max_num_ff_dist_ = 3;  // maximum number of FF distances between
+  const float dataflow_factor_ = 2.0;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_ffs_conn_map_;
   std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
@@ -358,18 +362,18 @@ class HierRTLMP
   // We ignore global nets during clustering
   int large_net_threshold_ = 100;
   // we only consider bus when we do bus planning
-  int bus_net_threshold_ = 32;
+  const int bus_net_threshold_ = 32;
   // the weight used for balance timing and congestion
-  float congestion_weight_ = 0.5;
+  const float congestion_weight_ = 0.5;
 
   // Determine if the cluster is macro dominated
   // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
   // then the cluster is macro-dominated cluster
-  float macro_dominated_cluster_threshold_ = 0.01;
+  const float macro_dominated_cluster_threshold_ = 0.01;
 
   // since we convert from the database unit to the micrometer
   // during calculation, we may loss some accuracy.
-  float conversion_tolerance_ = 0.01;
+  const float conversion_tolerance_ = 0.01;
 
   // Physical hierarchy tree
   int cluster_id_ = 0;
@@ -392,5 +396,7 @@ class HierRTLMP
   // clusters However, we store the instances in their corresponding clusters
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
+
+  std::unique_ptr<Graphics> graphics_;
 };
-}  // namespace mpl
+}  // namespace mpl2

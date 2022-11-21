@@ -621,20 +621,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), min(prl1, prl2));
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, min(prl1, prl2));
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, width2, min(prl1, prl2), false);
     if (isH) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
@@ -660,21 +648,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   width1 = viaBox1.minDXDY();
   prl1 = isH ? (viaBox1.yMax() - viaBox1.yMin())
              : (viaBox1.xMax() - viaBox1.xMin());
-  reqDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, prl1);
-    }
-  }
+  reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, prl1, false);
   if (isH) {
     reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
@@ -924,20 +899,8 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), min(prl1, prl2));
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, min(prl1, prl2));
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, width2, min(prl1, prl2), false);
     if (isCurrDirX) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
@@ -963,21 +926,8 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   width1 = viaBox1.minDXDY();
   prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
                     : (viaBox1.xMax() - viaBox1.xMin());
-  reqDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, prl1);
-    }
-  }
+  reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, prl1, false);
   if (isCurrDirX) {
     reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
@@ -1375,20 +1325,8 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, defaultWidth), prl1);
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, defaultWidth, prl1);
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, defaultWidth, prl1, false);
     if (isCurrDirX) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += defaultWidth;

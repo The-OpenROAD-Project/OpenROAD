@@ -1997,7 +1997,7 @@ bool AntennaChecker::antennaRatioDiffDependent(dbTechLayer* layer)
     const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
     dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
-    return diffPAR.indices.size() > 1 || diffPSR.indices.size() > 1;
+    return diffPAR.indices.size() >= 1 || diffPSR.indices.size() >= 1;
   }
   return false;
 }

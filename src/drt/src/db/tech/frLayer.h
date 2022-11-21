@@ -340,6 +340,10 @@ class frLayer
   // new functions
   bool hasMinSpacing() const { return (minSpc); }
   frConstraint* getMinSpacing() const { return minSpc; }
+  frCoord getMinSpacingValue(frCoord width1,
+                             frCoord width2,
+                             frCoord prl,
+                             bool use_min_spacing);
   void setMinSpacing(frConstraint* in, bool verbose = false)
   {
     if (verbose && minSpc != nullptr) {

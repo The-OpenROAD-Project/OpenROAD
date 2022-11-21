@@ -166,11 +166,6 @@ The `report_global_connect` command is used print out the currently defined glob
 report_global_connect
 ```
 
-### Limitations of the Abstract LEF Writer
-
-Currently the writer will place an obstruction over the entire block area on any
-metal layer if there is any object on that metal layer.
-
 ## TCL functions
 
 Get the die and core areas as a list in microns: `llx lly urx ury`

@@ -54,12 +54,52 @@
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using operations_research::MPConstraint;
 using operations_research::MPObjective;
 using operations_research::MPSolver;
 using operations_research::MPVariable;
+
+///////////////////////////////////////////////////////////////////////
+// Utility Functions
+
+// Get vertices in a given segement
+// We consider start terminal and end terminal
+static void getVerticesInSegment(const std::vector<float>& grid,
+                                 const float start_point,
+                                 const float end_point,
+                                 int& start_idx,
+                                 int& end_idx)
+{
+  start_idx = 0;
+  end_idx = 0;
+  if (grid.size() == 0 || start_point > end_point) {
+    return;
+  }
+  // calculate start_idx
+  while (start_idx < grid.size() && grid[start_idx] < start_point) {
+    start_idx++;
+  }
+  // calculate end_idx
+  while (end_idx < grid.size() && grid[end_idx] <= end_point) {
+    end_idx++;
+  }
+}
+
+// Get vertices within a given rectangle
+// Calculate the start index and end index in the grid
+static void getVerticesInRect(const std::vector<float>& x_grid,
+                              const std::vector<float>& y_grid,
+                              const Rect& rect,
+                              int& x_start,
+                              int& x_end,
+                              int& y_start,
+                              int& y_end)
+{
+  getVerticesInSegment(x_grid, rect.xMin(), rect.xMax(), x_start, x_end);
+  getVerticesInSegment(y_grid, rect.yMin(), rect.yMax(), y_start, y_end);
+}
 
 //////////////////////////////////////////////////////////////
 // Class Graph
@@ -182,7 +222,7 @@ void Graph::calEdgePaths(
     // shortest boundary edge paths
     std::vector<std::vector<int>>& edge_paths,
     // length of shortest paths
-    float& HPWL)
+    float& hpwl)
 {
   // map each edge in the adjacency matrix to edge_ptr
   std::vector<std::map<int, Edge*>> adj_map(adj_.size());
@@ -210,7 +250,7 @@ void Graph::calEdgePaths(
     }
     // add edge_path to edge_paths
     if (path_hash_set.find(hash_value) == path_hash_set.end()) {
-      HPWL = distance;
+      hpwl = distance;
       edge_paths.push_back(edge_path);
       path_hash_set.insert(hash_value);
     }  // done edge_path
@@ -235,7 +275,7 @@ void Graph::calNetEdgePaths(int src,
   calShortPaths(paths, path, parents_[src],
                 target);  // pathes in vertex id
   logger->report("Finish CalShortPaths");
-  calEdgePaths(paths, net.edge_paths, net.HPWL);  // pathes in edges
+  calEdgePaths(paths, net.edge_paths, net.hpwl);  // pathes in edges
   logger->report("Finish CalEdgePaths");
 }
 
@@ -995,44 +1035,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   return true;
 }
 
-///////////////////////////////////////////////////////////////////////
-// Utility Functions
-
-// Get vertices within a given rectangle
-// Calculate the start index and end index in the grid
-void getVerticesInRect(const std::vector<float>& x_grid,
-                       const std::vector<float>& y_grid,
-                       const Rect& rect,
-                       int& x_start,
-                       int& x_end,
-                       int& y_start,
-                       int& y_end)
-{
-  getVerticesInSegment(x_grid, rect.xMin(), rect.xMax(), x_start, x_end);
-  getVerticesInSegment(y_grid, rect.yMin(), rect.yMax(), y_start, y_end);
-}
-
-// Get vertices in a given segement
-// We consider start terminal and end terminal
-void getVerticesInSegment(const std::vector<float>& grid,
-                          const float start_point,
-                          const float end_point,
-                          int& start_idx,
-                          int& end_idx)
-{
-  start_idx = 0;
-  end_idx = 0;
-  if (grid.size() == 0 || start_point > end_point) {
-    return;
-  }
-  // calculate start_idx
-  while (start_idx < grid.size() && grid[start_idx] < start_point) {
-    start_idx++;
-  }
-  // calculate end_idx
-  while (end_idx < grid.size() && grid[end_idx] <= end_point) {
-    end_idx++;
-  }
-}
-
-}  // namespace mpl
+}  // namespace mpl2

@@ -73,6 +73,10 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace tap {
+class Tapcell;
+}
+
 namespace ord {
 
 class Tech;
@@ -109,6 +113,7 @@ class Design
   dpl::Opendp* getOpendp();
   mpl::MacroPlacer* getMacroPlacer();
   ppl::IOPlacer* getIOPlacer();
+  tap::Tapcell* getTapcell();
 
  private:
   Tech* tech_;

@@ -42,7 +42,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 
 // SA for hard macros.  It will be called by ShapeEngine and PinAlignEngine
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
@@ -70,8 +70,9 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   int num_perturb_per_step,
                   int k,
                   int c,
-                  unsigned seed = 0,
-                  utl::Logger* logger_ = nullptr);
+                  unsigned seed,
+                  Graphics* graphics,
+                  utl::Logger* logger);
 
   // Initialize the SA worker
   void initialize() override;
@@ -92,4 +93,4 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   float flip_prob_ = 0.0;
 };
 
-}  // namespace mpl
+}  // namespace mpl2

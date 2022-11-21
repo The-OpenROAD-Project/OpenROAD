@@ -37,36 +37,22 @@
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 using odb::dbDatabase;
 using std::string;
 using std::unordered_map;
 using utl::Logger;
 using utl::MPL;
 
-template <class T>
-static void get_param(const unordered_map<string, string>& params,
-                      const char* name,
-                      T& param,
-                      Logger* logger)
-{
-  auto iter = params.find(name);
-  if (iter != params.end()) {
-    std::istringstream s(iter->second);
-    s >> param;
-  }
-  logger->info(MPL, 9, "RTL-MP param: {}: {}.", name, param);
-}
+MacroPlacer2::MacroPlacer2() = default;
+MacroPlacer2::~MacroPlacer2() = default;
 
 void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
                         utl::Logger* logger)
 {
-  network_ = network;
-  db_ = db;
-  sta_ = sta;
-  logger_ = logger;
+  hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, sta, logger);
 }
 
 bool MacroPlacer2::place(const int max_num_macro,
@@ -98,37 +84,38 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const int snap_layer,
                          const char* report_directory)
 {
-  HierRTLMP* rtlmp_engine_ = new HierRTLMP(network_, db_, sta_, logger_);
-
-  logger_->report("Hier_RTLMP report dir: {}", report_directory);
-
-  rtlmp_engine_->setTopLevelClusterSize(
+  hier_rtlmp_->setTopLevelClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
-  rtlmp_engine_->setClusterSizeTolerance(tolerance);
-  rtlmp_engine_->setMaxNumLevel(max_num_level);
-  rtlmp_engine_->setClusterSizeRatioPerLevel(coarsening_ratio);
-  rtlmp_engine_->setNumBundledIOsPerBoundary(num_bundled_ios);
-  rtlmp_engine_->setLargeNetThreshold(large_net_threshold);
-  rtlmp_engine_->setSignatureNetThreshold(signature_net_threshold);
-  rtlmp_engine_->setHaloWidth(halo_width);
-  rtlmp_engine_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
-  rtlmp_engine_->setAreaWeight(area_weight);
-  rtlmp_engine_->setOutlineWeight(outline_weight);
-  rtlmp_engine_->setWirelengthWeight(wirelength_weight);
-  rtlmp_engine_->setGuidanceWeight(guidance_weight);
-  rtlmp_engine_->setFenceWeight(fence_weight);
-  rtlmp_engine_->setBoundaryWeight(boundary_weight);
-  rtlmp_engine_->setNotchWeight(notch_weight);
-  rtlmp_engine_->setPinAccessThreshold(pin_access_th);
-  rtlmp_engine_->setTargetUtil(target_util);
-  rtlmp_engine_->setTargetDeadSpace(target_dead_space);
-  rtlmp_engine_->setMinAR(min_ar);
-  rtlmp_engine_->setSnapLayer(snap_layer);
-  rtlmp_engine_->setReportDirectory(report_directory);
+  hier_rtlmp_->setClusterSizeTolerance(tolerance);
+  hier_rtlmp_->setMaxNumLevel(max_num_level);
+  hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
+  hier_rtlmp_->setNumBundledIOsPerBoundary(num_bundled_ios);
+  hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
+  hier_rtlmp_->setSignatureNetThreshold(signature_net_threshold);
+  hier_rtlmp_->setHaloWidth(halo_width);
+  hier_rtlmp_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
+  hier_rtlmp_->setAreaWeight(area_weight);
+  hier_rtlmp_->setOutlineWeight(outline_weight);
+  hier_rtlmp_->setWirelengthWeight(wirelength_weight);
+  hier_rtlmp_->setGuidanceWeight(guidance_weight);
+  hier_rtlmp_->setFenceWeight(fence_weight);
+  hier_rtlmp_->setBoundaryWeight(boundary_weight);
+  hier_rtlmp_->setNotchWeight(notch_weight);
+  hier_rtlmp_->setPinAccessThreshold(pin_access_th);
+  hier_rtlmp_->setTargetUtil(target_util);
+  hier_rtlmp_->setTargetDeadSpace(target_dead_space);
+  hier_rtlmp_->setMinAR(min_ar);
+  hier_rtlmp_->setSnapLayer(snap_layer);
+  hier_rtlmp_->setReportDirectory(report_directory);
 
-  rtlmp_engine_->hierRTLMacroPlacer();
+  hier_rtlmp_->hierRTLMacroPlacer();
 
   return true;
 }
 
-}  // namespace mpl
+void MacroPlacer2::setDebug()
+{
+  hier_rtlmp_->setDebug();
+}
+
+}  // namespace mpl2
