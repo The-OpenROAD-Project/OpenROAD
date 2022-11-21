@@ -1050,7 +1050,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   if (options_->areRowsVisible()) {
-    for (const auto& row_site : getRowRects(search_line)) {
+    for (const auto& [row, row_site] : getRowRects(search_line)) {
       check_rect(row_site);
     }
   }
@@ -1210,10 +1210,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   if (options_->areRowsVisible() && options_->areRowsSelectable()) {
-    for (auto* row : block_->getRows()) {
-      if (row->getBBox().intersects(region)) {
-        selections.push_back(makeSelected_(row));
-      }
+    for (const auto& [row, rect] : getRowRects(region)) {
+      selections.push_back(Gui::get()->makeSelected(row, rect));
     }
   }
 }
@@ -1698,13 +1696,13 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
   painter->setPen(pen);
   painter->setBrush(Qt::NoBrush);
 
-  for (const auto& row_site : getRowRects(bounds)) {
+  for (const auto& [row, row_site] : getRowRects(bounds)) {
     painter->drawRect(
         row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
   }
 }
 
-std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
+std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(const odb::Rect& bounds)
 {
   int min_resolution = nominalViewableResolution();
   if (options_->isDetailedVisibility()) {
@@ -1717,7 +1715,7 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
                                  bounds.yMax(),
                                  min_resolution);
 
-  std::vector<odb::Rect> rects;
+  std::vector<std::pair<odb::dbRow*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
     int x;
     int y;
@@ -1760,10 +1758,10 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
     if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
-        const Rect row(x, y, x + w, y + h);
-        if (row.intersects(bounds)) {
+        const Rect row_rect(x, y, x + w, y + h);
+        if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
-          rects.push_back({x, y, x + w, y + h});
+          rects.emplace_back(row, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
