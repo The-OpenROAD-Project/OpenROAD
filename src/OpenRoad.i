@@ -141,7 +141,7 @@ getMacroPlacer()
   return openroad->getMacroPlacer();
 }
 
-mpl::MacroPlacer2 *
+mpl2::MacroPlacer2 *
 getMacroPlacer2()
 {
   OpenRoad *openroad = getOpenRoad();

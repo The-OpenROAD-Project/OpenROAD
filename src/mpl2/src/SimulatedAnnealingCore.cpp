@@ -35,10 +35,11 @@
 
 #include <fstream>
 
+#include "graphics.h"
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using std::string;
 
@@ -67,7 +68,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int k,
     int c,
     unsigned seed,
+    Graphics* graphics,
     utl::Logger* logger)
+    : graphics_(graphics)
 {
   outline_width_ = outline_width;
   outline_height_ = outline_height;
@@ -354,6 +357,10 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
   // update width_ of current floorplan
   height_ = length[macros_.size() - 1];
+
+  if (graphics_) {
+    graphics_->saStep(macros_);
+  }
 }
 
 // SingleSeqSwap
@@ -428,18 +435,16 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
+/* static */
 template <class T>
 float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 {
-  if (value_list.size() == 0) {
-    return 0.0;
+  const auto size = value_list.size();
+  if (size == 0) {
+    return 0;
   }
 
-  float sum = 0.0;
-  for (const auto& value : value_list) {
-    sum += value;
-  }
-  return sum / value_list.size();
+  return std::accumulate(value_list.begin(), value_list.end(), 0) / size;
 }
 
 template <class T>
@@ -510,4 +515,4 @@ void SimulatedAnnealingCore<T>::fastSA()
 template class SimulatedAnnealingCore<SoftMacro>;
 template class SimulatedAnnealingCore<HardMacro>;
 
-}  // namespace mpl
+}  // namespace mpl2

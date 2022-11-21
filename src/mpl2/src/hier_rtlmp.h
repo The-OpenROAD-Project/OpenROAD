@@ -37,6 +37,7 @@
 
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -59,13 +60,14 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 struct BundledNet;
 class Cluster;
 class HardMacro;
 class Metric;
 struct Rect;
 class SoftMacro;
+class Graphics;
 
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
@@ -80,11 +82,11 @@ class SoftMacro;
 class HierRTLMP
 {
  public:
-  HierRTLMP() {}
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger);
+  ~HierRTLMP();
 
   // Top Level Interface Function
   // This function is the inferface for calling HierRTLMP
@@ -130,6 +132,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
+  void setDebug();
 
  private:
   void calDataFlow();
@@ -393,5 +396,7 @@ class HierRTLMP
   // clusters However, we store the instances in their corresponding clusters
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
+
+  std::unique_ptr<Graphics> graphics_;
 };
-}  // namespace mpl
+}  // namespace mpl2

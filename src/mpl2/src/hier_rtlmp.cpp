@@ -46,18 +46,21 @@
 #include "SACoreSoftMacro.h"
 #include "bus_synthesis.h"
 #include "db_sta/dbNetwork.hh"
+#include "graphics.h"
 #include "object.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using std::string;
 
 ///////////////////////////////////////////////////////////
 // Class HierRTLMP
 using utl::MPL;
+
+HierRTLMP::~HierRTLMP() = default;
 
 // Constructors
 HierRTLMP::HierRTLMP(sta::dbNetwork* network,
@@ -660,8 +663,6 @@ void HierRTLMP::createBundledIOs()
       cluster_id = cluster_id_base + num_bundled_IOs_ * 3
                    + std::floor((floorplan_ux_ - (lx + ux) / 2.0) / x_base);
     }
-
-    logger_->report("cluster_name :  {} ", cluster_map_[cluster_id]->getName());
 
     // Check if the IO pins / Pads exist
     if (cluster_id == -1) {
@@ -2144,6 +2145,9 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
@@ -2171,16 +2175,21 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
                                                 k_,
                                                 c_,
                                                 random_seed_,
+                                                graphics_.get(),
                                                 logger_);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreSoftMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -2201,6 +2210,9 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width;
       const float height = outline_height * vary_factor_list[run_id++];
@@ -2228,16 +2240,21 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
                                                 k_,
                                                 c_,
                                                 random_seed_,
+                                                graphics_.get(),
                                                 logger_);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreSoftMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -2347,6 +2364,9 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     std::vector<SACoreHardMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
@@ -2369,16 +2389,21 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
                                                 k_,
                                                 c_,
                                                 random_seed_,
+                                                graphics_.get(),
                                                 logger_);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreHardMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -2399,6 +2424,9 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     std::vector<SACoreHardMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width;
       const float height = outline_height * vary_factor_list[run_id++];
@@ -2421,16 +2449,21 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
                                                 k_,
                                                 c_,
                                                 random_seed_,
+                                                graphics_.get(),
                                                 logger_);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreHardMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -2962,6 +2995,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
       // determine the shape for each macro
@@ -3002,6 +3038,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                                 k_,
                                 c_,
                                 random_seed_,
+                                graphics_.get(),
                                 logger_);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -3009,13 +3046,17 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa->setBlockages(blockages);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreSoftMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreSoftMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -3494,6 +3535,9 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     std::vector<SACoreHardMacro*> sa_vector;
     run_thread
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
+    if (graphics_) {
+      run_thread = 1;
+    }
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_width * outline_height / width;
@@ -3517,19 +3561,24 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 k_,
                                 c_,
                                 random_seed_,
+                                graphics_.get(),
                                 logger_);
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa_vector.push_back(sa);
     }
-    // multi threads
-    std::vector<std::thread> threads;
-    for (auto& sa : sa_vector) {
-      threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
-    }
-    for (auto& th : threads) {
-      th.join();
+    if (sa_vector.size() == 1) {
+      runSA<SACoreHardMacro>(sa_vector[0]);
+    } else {
+      // multi threads
+      std::vector<std::thread> threads;
+      for (auto& sa : sa_vector) {
+        threads.push_back(std::thread(runSA<SACoreHardMacro>, sa));
+      }
+      for (auto& th : threads) {
+        th.join();
+      }
     }
     // add macro tilings
     for (auto& sa : sa_vector) {
@@ -3567,4 +3616,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   setInstProperty(cluster);
 }
 
-}  // namespace mpl
+void HierRTLMP::setDebug()
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  graphics_ = std::make_unique<Graphics>(dbu, logger_);
+}
+
+}  // namespace mpl2
