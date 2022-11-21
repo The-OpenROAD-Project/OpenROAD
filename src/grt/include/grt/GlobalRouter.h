@@ -184,7 +184,7 @@ class GlobalRouter
   void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
-  bool haveRoutes() const { return !routes_.empty(); }
+  bool haveRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
 

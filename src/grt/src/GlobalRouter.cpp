@@ -246,6 +246,15 @@ void GlobalRouter::saveCongestion()
   }
 }
 
+bool GlobalRouter::haveRoutes()
+{
+  if (routes_.empty()) {
+    loadGuidesFromDB();
+  }
+
+  return !routes_.empty();
+}
+
 void GlobalRouter::globalRoute(bool save_guides)
 {
   clear();
