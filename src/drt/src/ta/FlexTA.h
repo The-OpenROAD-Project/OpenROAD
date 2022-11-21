@@ -177,7 +177,6 @@ class FlexTAWorker
   FlexTAWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
   int getNumAssigned() const { return numAssigned_; }
   // others
-  int main();
   int main_mt();
 
  private:
