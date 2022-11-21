@@ -127,8 +127,8 @@ void TimingWidget::init(sta::dbSta* sta)
   cone_renderer_->setSTA(sta);
   settings_->setSTA(sta);
 
-  setup_timing_paths_model_ = new TimingPathsModel(sta, this);
-  hold_timing_paths_model_ = new TimingPathsModel(sta, this);
+  setup_timing_paths_model_ = new TimingPathsModel(settings_->getSTA(), this);
+  hold_timing_paths_model_ = new TimingPathsModel(settings_->getSTA(), this);
   path_details_model_ = new TimingPathDetailModel(false, sta, this);
   capture_details_model_ = new TimingPathDetailModel(true, sta, this);
 
@@ -349,16 +349,12 @@ void TimingWidget::populatePaths()
 {
   clearPathDetails();
 
-  const int count = settings_->getPathCount();
   const auto from = settings_->getFromPins();
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
-  const bool unconstrained = settings_->getUnconstrained();
 
-  setup_timing_paths_model_->populateModel(
-      true, count, from, thru, to, unconstrained);
-  hold_timing_paths_model_->populateModel(
-      false, count, from, thru, to, unconstrained);
+  setup_timing_paths_model_->populateModel(from, thru, to);
+  hold_timing_paths_model_->populateModel(from, thru, to);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();

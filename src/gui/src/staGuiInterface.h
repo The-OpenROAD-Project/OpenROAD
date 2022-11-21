@@ -232,6 +232,8 @@ class STAGuiInterface
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
   sta::dbSta* getSTA() const { return sta_; }
 
+  sta::dbNetwork* getNetwork() const { return sta_->getDbNetwork(); }
+
   sta::Corner* getCorner() const { return corner_; }
   void setCorner(sta::Corner* corner) { corner_ = corner; }
 
