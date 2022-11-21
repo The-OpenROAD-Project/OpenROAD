@@ -1408,13 +1408,8 @@ void GlobalRouter::perturbCapacities()
   }
 }
 
-void GlobalRouter::readGuides(const char* file_name)
+void GlobalRouter::initGridAndNets()
 {
-  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
-      || db_->getTech() == nullptr) {
-    logger_->error(GRT, 249, "Load design before reading guides");
-  }
-
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
@@ -1433,6 +1428,16 @@ void GlobalRouter::readGuides(const char* file_name)
   }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
+}
+
+void GlobalRouter::readGuides(const char* file_name)
+{
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 249, "Load design before reading guides");
+  }
+
+  initGridAndNets();
 
   odb::dbTech* tech = db_->getTech();
 
@@ -1509,25 +1514,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
 void GlobalRouter::loadGuidesFromDB()
 {
-  block_ = db_->getChip()->getBlock();
-  routes_.clear();
-  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
-    max_routing_layer_ = computeMaxRoutingLayer();
-    int min_layer = min_layer_for_clock_ > 0
-                        ? std::min(min_routing_layer_, min_layer_for_clock_)
-                        : min_routing_layer_;
-    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
-
-    initRoutingLayers();
-    initRoutingTracks(max_layer);
-    initCoreGrid(max_layer);
-    initAdjustments();
-    setCapacities(min_layer, max_layer);
-    applyAdjustments(min_layer, max_layer);
-  }
-  std::vector<Net*> nets = initNetlist();
-  initNets(nets);
-  
+  initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
       boxToGlobalRouting(guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);

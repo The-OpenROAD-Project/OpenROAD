@@ -360,6 +360,7 @@ class GlobalRouter
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
+  void initGridAndNets();
 
   utl::Logger* logger_;
   gui::Gui* gui_;
