@@ -87,9 +87,7 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [](const std::any& object) {
-            return Gui::get()->makeSelected(object);
-          },
+          Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           this)),

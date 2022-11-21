@@ -468,7 +468,7 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
-    std::function<Selected(const std::any&)> makeSelected,
+    Gui* gui,
     std::function<bool(void)> usingDBU,
     std::function<bool(void)> showRulerAsEuclidian,
     QWidget* parent)
@@ -485,7 +485,7 @@ LayoutViewer::LayoutViewer(
       min_depth_(0),
       max_depth_(99),
       rubber_band_showing_(false),
-      makeSelected_(makeSelected),
+      gui_(gui),
       usingDBU_(usingDBU),
       showRulerAsEuclidian_(showRulerAsEuclidian),
       building_ruler_(false),
@@ -1102,7 +1102,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.yMax(),
                                              shape_limit);
     for (auto& [box, blockage] : blockages) {
-      selections.push_back(makeSelected_(blockage));
+      selections.push_back(gui_->makeSelected(blockage));
     }
   }
 
@@ -1133,7 +1133,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.yMax(),
                                             shape_limit);
       for (auto& [box, obs] : obs) {
-        selections.push_back(makeSelected_(obs));
+        selections.push_back(gui_->makeSelected(obs));
       }
     }
 
@@ -1147,7 +1147,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto& [box, net] : box_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(makeSelected_(net));
+        selections.push_back(gui_->makeSelected(net));
       }
     }
 
@@ -1161,7 +1161,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(makeSelected_(net));
+        selections.push_back(gui_->makeSelected(net));
       }
     }
   }
@@ -1183,7 +1183,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   for (auto& [box, inst] : insts) {
     if (options_->isInstanceVisible(inst)
         && options_->isInstanceSelectable(inst)) {
-      selections.push_back(makeSelected_(inst));
+      selections.push_back(gui_->makeSelected(inst));
     }
   }
 
@@ -1194,7 +1194,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     const int ruler_margin = 4 / pixels_per_dbu_;  // 4 pixels in each direction
     for (auto& ruler : rulers_) {
       if (ruler->fuzzyIntersection(region, ruler_margin)) {
-        selections.push_back(makeSelected_(ruler.get()));
+        selections.push_back(gui_->makeSelected(ruler.get()));
       }
     }
   }
@@ -1203,7 +1203,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     for (auto db_region : block_->getRegions()) {
       for (auto box : db_region->getBoundaries()) {
         if (box->getBox().intersects(region)) {
-          selections.push_back(makeSelected_(db_region));
+          selections.push_back(gui_->makeSelected(db_region));
         }
       }
     }
@@ -1211,7 +1211,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
   if (options_->areRowsVisible() && options_->areRowsSelectable()) {
     for (const auto& [row, rect] : getRowRects(region)) {
-      selections.push_back(Gui::get()->makeSelected(row, rect));
+      selections.push_back(gui_->makeSelected(row, rect));
     }
   }
 }
