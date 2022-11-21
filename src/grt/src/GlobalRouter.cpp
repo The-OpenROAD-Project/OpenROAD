@@ -1526,6 +1526,9 @@ void GlobalRouter::loadGuidesFromDB()
     GRoute& route = net_route.second;
     mergeSegments(pins, route);
   }
+
+  updateEdgesUsage();
+  heatmap_->update();
 }
 
 void GlobalRouter::updateEdgesUsage()
