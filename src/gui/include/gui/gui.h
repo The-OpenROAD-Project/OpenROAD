@@ -323,7 +323,7 @@ class Descriptor
   virtual Editors getEditors(std::any /* object */) const { return Editors(); }
 
   virtual Selected makeSelected(std::any object,
-                                void* additional_data) const = 0;
+                                std::any additional_data) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
@@ -341,7 +341,7 @@ class Descriptor
   // and brush before calling.
   virtual void highlight(std::any object,
                          Painter& painter,
-                         void* additional_data = nullptr) const = 0;
+                         std::any additional_data = {}) const = 0;
   virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
@@ -353,11 +353,11 @@ class Selected
 {
  public:
   // Null case
-  Selected() : additional_data_(nullptr), descriptor_(nullptr) {}
+  Selected() : object_({}), additional_data_({}), descriptor_(nullptr) {}
 
   Selected(std::any object,
            const Descriptor* descriptor,
-           void* additional_data = nullptr)
+           std::any additional_data = {})
       : object_(object),
         additional_data_(additional_data),
         descriptor_(descriptor)
@@ -429,8 +429,7 @@ class Selected
 
  private:
   std::any object_;
-  void* additional_data_;  // Will only be required for highlighting input nets,
-                           // in which case it will store the input instTerm
+  std::any additional_data_;
   const Descriptor* descriptor_;
 };
 
@@ -548,7 +547,7 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object, void* additional_data = nullptr);
+  Selected makeSelected(std::any object, std::any additional_data = {});
 
   // Set the current selected object in the gui.
   void setSelected(Selected selection);

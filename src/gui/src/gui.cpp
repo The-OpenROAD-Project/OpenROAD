@@ -227,7 +227,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object, void* additional_data)
+Selected Gui::makeSelected(std::any object, std::any additional_data)
 {
   if (!object.has_value()) {
     return Selected();

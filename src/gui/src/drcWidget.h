@@ -121,10 +121,10 @@ class DRCDescriptor : public Descriptor
 
   void highlight(std::any object,
                  Painter& painter,
-                 void* additional_data) const override;
+                 std::any additional_data) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object, std::any additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
