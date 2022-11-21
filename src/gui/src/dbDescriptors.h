@@ -52,24 +52,6 @@ namespace gui {
 // Descriptor classes for OpenDB objects.  Eventually these should
 // become part of the database code generation.
 
-//class DbDescriptor : public Descriptor
-//{
-// public:
-//  DbDescriptor(odb::dbDatabase* db);
-//
-//  bool lessThan(std::any l, std::any l_data, std::any r, std::any r_data) const override;
-//
-//  static void registerDbDescriptors();
-//
-// protected:
-//  odb::dbDatabase* getDatabase() const { return db_; }
-//  odb::dbTech* getTech() const { return db_->getTech(); }
-//  odb::dbBlock* getBlock() const;
-//
-// private:
-//  odb::dbDatabase* db_;
-//};
-
 class DbInstDescriptor : public Descriptor
 {
  public:
