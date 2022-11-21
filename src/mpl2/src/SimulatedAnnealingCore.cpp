@@ -93,8 +93,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   c_ = c;
 
   // generate random
-  std::mt19937 randGen(seed);
-  generator_ = randGen;
+  std::mt19937 rand_gen(seed);
+  generator_ = rand_gen;
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
   distribution_ = distribution;
 
@@ -456,7 +456,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   float pre_cost = cost;
   float delta_cost = 0.0;
   int step = 1;
-  float t = init_T_;
+  float temperature = init_temperature_;
   notch_weight_ = 0.0;
   // const for restart
   int num_restart = 1;
@@ -468,14 +468,15 @@ void SimulatedAnnealingCore<T>::fastSA()
       cost = calNormCost();
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
-      const float prob = (delta_cost > 0.0) ? exp((-1) * delta_cost / t) : 1;
+      const float prob
+          = (delta_cost > 0.0) ? exp((-1) * delta_cost / temperature) : 1;
       if (num < prob) {
         pre_cost = cost;
       } else {
         restore();
       }
     }
-    t *= 0.985;
+    temperature *= 0.985;
     // increase step
     step++;
     // check if restart condition
@@ -488,7 +489,7 @@ void SimulatedAnnealingCore<T>::fastSA()
       pre_cost = calNormCost();
       num_restart++;
       step = 1;
-      t = init_T_;
+      temperature = init_temperature_;
     }  // end if
     // only consider the last step to optimize notch weight
     if (step == max_num_step_ - macros_.size()) {

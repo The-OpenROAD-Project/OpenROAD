@@ -154,7 +154,7 @@ class SimulatedAnnealingCore
 
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
-  float init_T_ = 1.0;
+  float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
   // if step < k_, T = init_T_ / (c_ * step_);
@@ -163,8 +163,8 @@ class SimulatedAnnealingCore
   int c_ = 0;
 
   // shrink_factor for dynamic weight
-  float shrink_factor_ = 0.8;
-  float shrink_freq_ = 0.1;
+  const float shrink_factor_ = 0.8;
+  const float shrink_freq_ = 0.1;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
