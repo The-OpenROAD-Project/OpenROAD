@@ -1645,11 +1645,11 @@ void GlobalRouter::saveGuides()
 
   for (odb::dbNet* db_net : block_->getNets()) {
     db_net->clearGuides();
-    Net* net = db_net_map_[db_net];
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
       continue;
     }
+    Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
 
     if (!route.empty()) {
