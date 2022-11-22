@@ -2880,47 +2880,47 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     const float h_size = outline_width * ratio;
     const float v_size = outline_height * ratio;
 
-    const float L_size = net_map[soft_macro_id_map[toString(L)]] > 0
+    const float l_size = net_map[soft_macro_id_map[toString(L)]] > 0
                              ? (outline_height - 2 * v_size) / 2.0
                              : 0.0;
-    const float R_size = net_map[soft_macro_id_map[toString(R)]] > 0
+    const float r_size = net_map[soft_macro_id_map[toString(R)]] > 0
                              ? (outline_height - 2 * v_size) / 2.0
                              : 0.0;
-    const float B_size = net_map[soft_macro_id_map[toString(B)]] > 0
+    const float b_size = net_map[soft_macro_id_map[toString(B)]] > 0
                              ? (outline_width - 2 * h_size) / 2.0
                              : 0.0;
-    const float T_size = net_map[soft_macro_id_map[toString(T)]] > 0
+    const float t_size = net_map[soft_macro_id_map[toString(T)]] > 0
                              ? (outline_width - 2 * h_size) / 2.0
                              : 0.0;
 
     logger_->report("pin_access_net_width_ratio_:  {}",
                     pin_access_net_width_ratio_);
     // update the size of pin access macro
-    if (L_size > 0) {
-      // L_size = v_size;
+    if (l_size > 0) {
+      // l_size = v_size;
       macros[soft_macro_id_map[toString(L)]]
-          = SoftMacro(h_size, L_size, toString(L));
+          = SoftMacro(h_size, l_size, toString(L));
       fences[soft_macro_id_map[toString(L)]]
           = Rect(0.0, 0.0, h_size, outline_height);
     }
-    if (R_size > 0) {
-      // R_size = v_size;
+    if (r_size > 0) {
+      // r_size = v_size;
       macros[soft_macro_id_map[toString(R)]]
-          = SoftMacro(h_size, R_size, toString(R));
+          = SoftMacro(h_size, r_size, toString(R));
       fences[soft_macro_id_map[toString(R)]]
           = Rect(outline_width - h_size, 0.0, outline_width, outline_height);
     }
-    if (T_size > 0) {
-      // T_size = h_size;
+    if (t_size > 0) {
+      // t_size = h_size;
       macros[soft_macro_id_map[toString(T)]]
-          = SoftMacro(T_size, v_size, toString(T));
+          = SoftMacro(t_size, v_size, toString(T));
       fences[soft_macro_id_map[toString(T)]]
           = Rect(0.0, outline_height - v_size, outline_width, outline_height);
     }
-    if (B_size > 0) {
-      // B_size = h_size;
+    if (b_size > 0) {
+      // b_size = h_size;
       macros[soft_macro_id_map[toString(B)]]
-          = SoftMacro(B_size, v_size, toString(B));
+          = SoftMacro(b_size, v_size, toString(B));
       fences[soft_macro_id_map[toString(B)]]
           = Rect(0.0, 0.0, outline_width, v_size);
     }

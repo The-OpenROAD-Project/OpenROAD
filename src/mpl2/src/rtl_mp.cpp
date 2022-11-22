@@ -44,20 +44,6 @@ using std::unordered_map;
 using utl::Logger;
 using utl::MPL;
 
-template <class T>
-static void get_param(const unordered_map<string, string>& params,
-                      const char* name,
-                      T& param,
-                      Logger* logger)
-{
-  auto iter = params.find(name);
-  if (iter != params.end()) {
-    std::istringstream s(iter->second);
-    s >> param;
-  }
-  logger->info(MPL, 9, "RTL-MP param: {}: {}.", name, param);
-}
-
 MacroPlacer2::MacroPlacer2() = default;
 MacroPlacer2::~MacroPlacer2() = default;
 

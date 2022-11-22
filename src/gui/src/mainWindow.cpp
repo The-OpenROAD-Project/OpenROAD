@@ -436,6 +436,12 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
       new DbGenerateViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
+      new DbNonDefaultRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayerRule*>(
+      new DbTechLayerRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechSameNetRule*>(
+      new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   controls_->setDBInstDescriptor(inst_descriptor);

@@ -164,7 +164,7 @@ class Graph
       // shortest boundary edge paths
       std::vector<std::vector<int>>& edge_paths,
       // length of shortest paths
-      float& HPWL);
+      float& hpwl);
 
   // store the parent vertices for each vertex in the shortest paths
   // for example, there are two paths from root to dest

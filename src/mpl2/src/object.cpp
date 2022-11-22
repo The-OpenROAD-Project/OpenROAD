@@ -227,9 +227,9 @@ const ClusterType Cluster::getClusterType() const
 }
 
 // Instances (Here we store dbModule to reduce memory)
-void Cluster::addDbModule(odb::dbModule* dbModule)
+void Cluster::addDbModule(odb::dbModule* db_module)
 {
-  dbModules_.push_back(dbModule);
+  db_modules_.push_back(db_module);
 }
 
 void Cluster::addLeafStdCell(odb::dbInst* leaf_std_cell)
@@ -249,7 +249,7 @@ void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 
 const std::vector<odb::dbModule*> Cluster::getDbModules() const
 {
-  return dbModules_;
+  return db_modules_;
 }
 
 const std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
@@ -269,7 +269,7 @@ const std::vector<HardMacro*> Cluster::getHardMacros() const
 
 void Cluster::clearDbModules()
 {
-  dbModules_.clear();
+  db_modules_.clear();
 }
 
 void Cluster::clearLeafStdCells()
@@ -291,7 +291,7 @@ void Cluster::clearHardMacros()
 void Cluster::copyInstances(const Cluster& cluster)
 {
   // clear firstly
-  dbModules_.clear();
+  db_modules_.clear();
   leaf_std_cells_.clear();
   leaf_macros_.clear();
   hard_macros_.clear();
@@ -304,8 +304,9 @@ void Cluster::copyInstances(const Cluster& cluster)
     leaf_std_cells_.insert(leaf_std_cells_.end(),
                            cluster.leaf_std_cells_.begin(),
                            cluster.leaf_std_cells_.end());
-    dbModules_.insert(
-        dbModules_.end(), cluster.dbModules_.begin(), cluster.dbModules_.end());
+    db_modules_.insert(db_modules_.end(),
+                       cluster.db_modules_.begin(),
+                       cluster.db_modules_.end());
   } else {  // type_ == MixedCluster
     leaf_macros_.insert(leaf_macros_.end(),
                         cluster.leaf_macros_.begin(),
@@ -313,8 +314,9 @@ void Cluster::copyInstances(const Cluster& cluster)
     leaf_std_cells_.insert(leaf_std_cells_.end(),
                            cluster.leaf_std_cells_.begin(),
                            cluster.leaf_std_cells_.end());
-    dbModules_.insert(
-        dbModules_.end(), cluster.dbModules_.begin(), cluster.dbModules_.end());
+    db_modules_.insert(db_modules_.end(),
+                       cluster.db_modules_.begin(),
+                       cluster.db_modules_.end());
   }
 }
 
@@ -504,8 +506,9 @@ bool Cluster::mergeCluster(Cluster& cluster, bool& delete_flag)
   leaf_std_cells_.insert(leaf_std_cells_.end(),
                          cluster.leaf_std_cells_.begin(),
                          cluster.leaf_std_cells_.end());
-  dbModules_.insert(
-      dbModules_.end(), cluster.dbModules_.begin(), cluster.dbModules_.end());
+  db_modules_.insert(db_modules_.end(),
+                     cluster.db_modules_.begin(),
+                     cluster.db_modules_.end());
   delete_flag = true;
   // if current cluster is not a leaf cluster
   if (children_.size() > 0) {
