@@ -763,8 +763,6 @@ HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width)
   }
   pin_x_ = dbuToMicron((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
   pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_width_;
-  std::cout << "pin_x : " << pin_x_ << std::endl;
-  std::cout << "pin_y : " << pin_y_ << std::endl;
 }
 
 // overload the comparison operators
