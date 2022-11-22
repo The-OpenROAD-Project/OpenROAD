@@ -1681,9 +1681,9 @@ void GlobalRouter::saveGuides()
               && segment.init_x != segment.final_x
               && segment.init_y != segment.final_y) {
             logger_->error(GRT,
-                          74,
-                          "Routing with guides in blocked metal for net {}.",
-                          db_net->getConstName());
+                           74,
+                           "Routing with guides in blocked metal for net {}.",
+                           db_net->getConstName());
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];

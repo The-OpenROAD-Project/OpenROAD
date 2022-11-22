@@ -300,7 +300,8 @@ class GlobalRouter
                           int min_routing_layer,
                           int max_routing_layer);
   void connectPadPins(NetRouteMap& routes);
-  void mergeBox(std::vector<odb::Rect>& guide_box, const std::set<odb::Point>& via_positions);
+  void mergeBox(std::vector<odb::Rect>& guide_box,
+                const std::set<odb::Point>& via_positions);
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& new_seg,
