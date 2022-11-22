@@ -1519,7 +1519,8 @@ void GlobalRouter::loadGuidesFromDB()
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
-      boxToGlobalRouting(guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
+      boxToGlobalRouting(
+          guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
     }
   }
 
@@ -1542,9 +1543,17 @@ void GlobalRouter::updateVias()
     for (int i = 0; i < route.size() - 1; i++) {
       GSegment& seg1 = route[i];
       GSegment& seg2 = route[i + 1];
-      if (seg1.isVia() && seg1.init_layer < seg2.init_layer) {
+
+      odb::Point seg1_init(seg1.init_x, seg1.init_y);
+      odb::Point seg1_final(seg1.final_x, seg1.final_y);
+      odb::Point seg2_init(seg2.init_x, seg2.init_y);
+      odb::Point seg2_final(seg2.final_x, seg2.final_y);
+
+      if (seg1.isVia() && seg1.init_layer < seg2.init_layer
+          && (seg1_init == seg2_init || seg1_init == seg2_final)) {
         seg1.final_layer = seg2.init_layer;
-      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer) {
+      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer
+                 && (seg2_init == seg1_init || seg2_init == seg1_final)) {
         seg2.init_layer = seg1.final_layer;
       }
     }
