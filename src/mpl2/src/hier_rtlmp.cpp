@@ -237,13 +237,25 @@ void HierRTLMP::hierRTLMacroPlacer()
   floorplan_ly_ = dbuToMicron(die_box.yMin(), dbu_);
   floorplan_ux_ = dbuToMicron(die_box.xMax(), dbu_);
   floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
-  logger_->info(MPL,
-                2023,
-                "Floorplan Outline ({}, {}) ({}, {})",
-                floorplan_lx_,
-                floorplan_ly_,
-                floorplan_ux_,
-                floorplan_uy_);
+
+  odb::Rect core_box = block_->getCoreArea();
+  int core_lx = dbuToMicron(core_box.xMin(), dbu_);
+  int core_ly = dbuToMicron(core_box.yMin(), dbu_);
+  int core_ux = dbuToMicron(core_box.xMax(), dbu_);
+  int core_uy = dbuToMicron(core_box.yMax(), dbu_);
+
+  logger_->info(
+      MPL,
+      2023,
+      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({} {} {} {})",
+      floorplan_lx_,
+      floorplan_ly_,
+      floorplan_ux_,
+      floorplan_uy_,
+      core_lx,
+      core_ly,
+      core_ux,
+      core_uy);
   logger_->report(
       "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
       max_num_level_,
@@ -258,12 +270,11 @@ void HierRTLMP::hierRTLMacroPlacer()
   // and report the statistics
   //
   metric_ = computeMetric(block_->getTopModule());
-  float floorplan_area
-      = (floorplan_ux_ - floorplan_lx_) * (floorplan_uy_ - floorplan_ly_);
+  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
   float util
-      = (metric_->getStdCellArea() + metric_->getMacroArea()) / floorplan_area;
+      = (metric_->getStdCellArea() + metric_->getMacroArea()) / core_area;
   float core_util
-      = metric_->getStdCellArea() / (floorplan_area - metric_->getMacroArea());
+      = metric_->getStdCellArea() / (core_area - metric_->getMacroArea());
 
   logger_->info(MPL,
                 402,
@@ -273,7 +284,7 @@ void HierRTLMP::hierRTLMacroPlacer()
                 "\tNumber of macros : {}\n"
                 "\tArea of macros : {}\n"
                 "\tTotal area : {}\n"
-                "\tUtilization : {}\n"
+                "\tDesign Utilization : {}\n"
                 "\tCore Utilization: {}\n",
                 metric_->getNumStdCell(),
                 metric_->getStdCellArea(),
@@ -429,11 +440,8 @@ Metric* HierRTLMP::computeMetric(odb::dbModule* module)
   for (odb::dbInst* inst : module->getInsts()) {
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad, a cover or
-    // empty block (such as marker)
+    // check if the instance is a pad or a cover macro
     if (master->isPad() || master->isCover()) {
-      // if (master->isPad() || master->isCover()
-      //    || (master->isBlock() && liberty_cell == nullptr)) {
       continue;
     }
 
@@ -558,9 +566,9 @@ void HierRTLMP::mapIOPads()
 }
 
 //
-// Create Bunded IOs in the following the order : L, T, R, B
+// Create Bundled IOs in the following the order : L, T, R, B
 // We will have num_bundled_IOs_ x 4 clusters for bundled IOs
-// BUndled Os are only created for pins in the region
+// Bundled IOs are only created for pins in the region
 //
 void HierRTLMP::createBundledIOs()
 {
@@ -600,19 +608,19 @@ void HierRTLMP::createBundledIOs()
       int y = 0.0;
       int width = 0;
       int height = 0;
-      if (i == 0) {
+      if (i == 0) {  // Left boundary
         x = floorplan_lx_;
         y = floorplan_ly_ + y_base * j;
         height = y_base;
-      } else if (i == 1) {
+      } else if (i == 1) {  // Top boundary
         x = floorplan_lx_ + x_base * j;
         y = floorplan_uy_;
         width = x_base;
-      } else if (i == 2) {
+      } else if (i == 2) {  // Right boundary
         x = floorplan_ux_;
         y = floorplan_uy_ - y_base * (j + 1);
         height = y_base;
-      } else {
+      } else {  // Bottom boundary
         x = floorplan_ux_ - x_base * (j + 1);
         y = floorplan_ly_;
         width = x_base;
@@ -632,7 +640,7 @@ void HierRTLMP::createBundledIOs()
     int ly = std::numeric_limits<int>::max();
     int ux = 0;
     int uy = 0;
-    // If the design with IO pads, these block terms
+    // If the design has IO pads, these block terms
     // will not have block pins.
     // Otherwise, the design will have IO pins.
     for (const auto pin : term->getBPins()) {
@@ -648,7 +656,7 @@ void HierRTLMP::createBundledIOs()
       continue;
     }
 
-    // If the design with PADS, get the bbox from the PAD inst
+    // If the term has a connected pad, get the bbox from the pad inst
     if (io_pad_map_.find(term) != io_pad_map_.end()) {
       lx = io_pad_map_[term]->getBBox()->xMin();
       ly = io_pad_map_[term]->getBBox()->yMin();
