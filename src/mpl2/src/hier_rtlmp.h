@@ -135,7 +135,7 @@ class HierRTLMP
   void setDebug();
 
  private:
-  void calDataFlow();
+  void createDataFlow();
   void updateDataFlow();
   void dataFlowDFSIOPin(int parent,
                         int idx,
