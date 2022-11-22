@@ -86,8 +86,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
            NAMESPACE     cts
            LANGUAGE      python
            I_FILE        TritonCTS-py.i
-           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/cts
-                         ${PROJECT_SOURCE_DIR}/src
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include/cts
+                         ${PROJECT_SOURCE_DIR}
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/cts_py.py
   )
 
