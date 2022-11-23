@@ -387,6 +387,9 @@ EOF
     fi
     brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
 
+    # Some systems neeed this to correclty find OpenMP package during build
+    brew link --force libomp
+
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
