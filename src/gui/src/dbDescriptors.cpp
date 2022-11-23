@@ -704,6 +704,19 @@ Descriptor::Properties DbMasterDescriptor::getProperties(
     mterms.push_back(mterm->getConstName());
   }
   props.push_back({"MTerms", mterms});
+
+  std::vector<std::any> symmetry;
+  if (master->getSymmetryX()) {
+    symmetry.push_back("X");
+  }
+  if (master->getSymmetryY()) {
+    symmetry.push_back("Y");
+  }
+  if (master->getSymmetryR90()) {
+    symmetry.push_back("R90");
+  }
+  props.push_back({"Symmetry", symmetry});
+
   SelectionSet equivalent;
   std::set<odb::dbMaster*> equivalent_masters;
   getMasterEquivalent(sta_, master, equivalent_masters);
