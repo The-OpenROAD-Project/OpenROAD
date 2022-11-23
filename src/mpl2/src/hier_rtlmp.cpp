@@ -40,8 +40,6 @@
 
 // Partitioner note : currently we are still using MLPart to partition large
 // flat clusters Later this will be replaced by our TritonPart
-#include "par/MLPart.h"
-
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
 #include "bus_synthesis.h"
@@ -49,6 +47,7 @@
 #include "graphics.h"
 #include "object.h"
 #include "odb/db.h"
+#include "par/MLPart.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
