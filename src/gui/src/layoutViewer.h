@@ -326,7 +326,7 @@ class LayoutViewer : public QWidget
   int instanceSizeLimit();
   int shapeSizeLimit();
 
-  std::vector<std::pair<odb::dbRow*, odb::Rect>> getRowRects(
+  std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
       const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();

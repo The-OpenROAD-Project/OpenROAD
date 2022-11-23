@@ -1209,8 +1209,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   if (options_->areRowsVisible() && options_->areRowsSelectable()) {
-    for (const auto& [row, rect] : getRowRects(region)) {
-      selections.push_back(gui_->makeSelected(row, rect));
+    for (const auto& [row_obj, rect] : getRowRects(region)) {
+      if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
+        selections.push_back(
+            gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
+      } else {
+        selections.push_back(
+            gui_->makeSelected(static_cast<odb::dbSite*>(row_obj), rect));
+      }
     }
   }
 }
@@ -1701,7 +1707,7 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
   }
 }
 
-std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
+std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     const odb::Rect& bounds)
 {
   int min_resolution = nominalViewableResolution();
@@ -1715,11 +1721,13 @@ std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
                                  bounds.yMax(),
                                  min_resolution);
 
-  std::vector<std::pair<odb::dbRow*, odb::Rect>> rects;
+  std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
     int x;
     int y;
     row->getOrigin(x, y);
+
+    rects.emplace_back(row, row->getBBox());
 
     dbSite* site = row->getSite();
     int spacing = row->getSpacing();
@@ -1746,6 +1754,7 @@ std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
 
     dbRowDir dir = row->getDirection();
     int count = row->getSiteCount();
+    odb::dbObject* obj = row;
     if (!w_visible) {
       // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
@@ -1754,6 +1763,8 @@ std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
         h = spacing * count;
       }
       count = 1;
+    } else {
+      obj = site;
     }
     if (h_visible) {
       // row height can be seen
@@ -1761,7 +1772,7 @@ std::vector<std::pair<odb::dbRow*, odb::Rect>> LayoutViewer::getRowRects(
         const Rect row_rect(x, y, x + w, y + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
-          rects.emplace_back(row, row_rect);
+          rects.emplace_back(obj, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
