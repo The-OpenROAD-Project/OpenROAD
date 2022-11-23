@@ -3322,6 +3322,11 @@ bool DbSiteDescriptor::getBBox(std::any object,
                                std::any additional_data,
                                odb::Rect& bbox) const
 {
+  if (additional_data.has_value()) {
+    bbox = std::any_cast<odb::Rect>(additional_data);
+    return true;
+  }
+
   return false;
 }
 
@@ -3329,7 +3334,9 @@ void DbSiteDescriptor::highlight(std::any object,
                                  Painter& painter,
                                  std::any additional_data) const
 {
-  return;
+  if (additional_data.has_value()) {
+    painter.drawRect(std::any_cast<odb::Rect>(additional_data));
+  }
 }
 
 Descriptor::Properties DbSiteDescriptor::getProperties(
@@ -3372,13 +3379,27 @@ Selected DbSiteDescriptor::makeSelected(std::any object,
 }
 
 bool DbSiteDescriptor::lessThan(std::any l,
-                                std::any /* l_data */,
+                                std::any l_data,
                                 std::any r,
-                                std::any /* r_data */) const
+                                std::any r_data) const
 {
   auto l_site = std::any_cast<odb::dbSite*>(l);
   auto r_site = std::any_cast<odb::dbSite*>(r);
-  return l_site->getId() < r_site->getId();
+  if (l_site->getId() < r_site->getId()) {
+    return true;
+  }
+
+  odb::Rect l_rect(0, 0, 0, 0);
+  odb::Rect r_rect(0, 0, 0, 0);
+
+  if (l_data.has_value()) {
+    l_rect = std::any_cast<odb::Rect>(l_data);
+  }
+  if (r_data.has_value()) {
+    r_rect = std::any_cast<odb::Rect>(r_data);
+  }
+
+  return l_rect < r_rect;
 }
 
 bool DbSiteDescriptor::getAllObjects(SelectionSet& objects) const
@@ -3413,12 +3434,8 @@ bool DbRowDescriptor::getBBox(std::any object,
                               std::any additional_data,
                               odb::Rect& bbox) const
 {
-  if (additional_data.has_value()) {
-    bbox = std::any_cast<odb::Rect>(additional_data);
-  } else {
-    auto* row = std::any_cast<odb::dbRow*>(object);
-    bbox = row->getBBox();
-  }
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  bbox = row->getBBox();
   return true;
 }
 
@@ -3426,12 +3443,8 @@ void DbRowDescriptor::highlight(std::any object,
                                 Painter& painter,
                                 std::any additional_data) const
 {
-  if (additional_data.has_value()) {
-    painter.drawRect(std::any_cast<odb::Rect>(additional_data));
-  } else {
-    auto* row = std::any_cast<odb::dbRow*>(object);
-    painter.drawRect(row->getBBox());
-  }
+  auto* row = std::any_cast<odb::dbRow*>(object);
+  painter.drawRect(row->getBBox());
 }
 
 Descriptor::Properties DbRowDescriptor::getProperties(
@@ -3473,28 +3486,14 @@ Selected DbRowDescriptor::makeSelected(std::any object,
 }
 
 bool DbRowDescriptor::lessThan(std::any l,
-                               std::any l_data,
+                               std::any /* l_data */,
                                std::any r,
-                               std::any r_data) const
+                               std::any /* r_data */) const
 {
-  auto l_via = std::any_cast<odb::dbRow*>(l);
-  auto r_via = std::any_cast<odb::dbRow*>(r);
+  auto l_row = std::any_cast<odb::dbRow*>(l);
+  auto r_row = std::any_cast<odb::dbRow*>(r);
 
-  if (l_via->getId() < r_via->getId()) {
-    return true;
-  }
-
-  odb::Rect l_rect(0, 0, 0, 0);
-  odb::Rect r_rect(0, 0, 0, 0);
-
-  if (l_data.has_value()) {
-    l_rect = std::any_cast<odb::Rect>(l_data);
-  }
-  if (r_data.has_value()) {
-    r_rect = std::any_cast<odb::Rect>(r_data);
-  }
-
-  return l_rect < r_rect;
+  return l_row->getId() < r_row->getId();
 }
 
 bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
