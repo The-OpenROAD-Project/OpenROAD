@@ -126,7 +126,7 @@ class LayoutViewer : public QWidget
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
-               std::function<Selected(const std::any&)> makeSelected,
+               Gui* gui,
                std::function<bool(void)> usingDBU,
                std::function<bool(void)> showRulerAsEuclidian,
                QWidget* parent = nullptr);
@@ -326,7 +326,8 @@ class LayoutViewer : public QWidget
   int instanceSizeLimit();
   int shapeSizeLimit();
 
-  std::vector<odb::Rect> getRowRects(const odb::Rect& bounds);
+  std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+      const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();
 
@@ -379,7 +380,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_press_pos_;
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
-  std::function<Selected(const std::any&)> makeSelected_;
+  Gui* gui_;
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
 
