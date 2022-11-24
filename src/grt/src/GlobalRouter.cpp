@@ -3944,10 +3944,7 @@ IncrementalGRoute::~IncrementalGRoute()
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
-  // check if the pins changes positions
-  bool is_change = checkPinPositions(net);
-  if (is_change)
-    dirty_nets_.insert(net);
+  dirty_nets_.insert(net);
 }
 
 void GlobalRouter::updateDirtyRoutes()
@@ -3966,7 +3963,9 @@ void GlobalRouter::updateDirtyRoutes()
     std::vector<Net*> dirty_nets;
     dirty_nets.reserve(dirty_nets_.size());
     for (odb::dbNet* db_net : dirty_nets_) {
-      dirty_nets.push_back(db_net_map_[db_net]);
+      // check if the pins changes positions 
+      if( checkPinPositions(db_net))
+        dirty_nets.push_back(db_net_map_[db_net]);
     }
     initFastRouteIncr(dirty_nets);
 

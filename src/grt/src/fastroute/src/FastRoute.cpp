@@ -1571,12 +1571,18 @@ bool FrNet::changePinPosition(std::vector<int>& new_pin_x,
     bkpos[std::make_tuple(pin_x_[i],pin_y_[i],pin_l_[i])]++;
 
   for(int i = 0; i<new_pin_x.size(); i++){
-    std::tuple<int, int, int> pin_pos =std:: make_tuple(new_pin_x[i], new_pin_y[i], new_pin_l[i]);
+    std::tuple<int, int, int> pin_pos = std::make_tuple(new_pin_x[i], new_pin_y[i], new_pin_l[i]);
     if(bkpos[pin_pos] == 0) {
       dif_pos = true;
       break;
     }
     bkpos[pin_pos]--;
+  }
+  for(auto it : bkpos){
+    if(it.second > 0){
+      dif_pos = true;
+      break;
+    }
   }
 
   return dif_pos;
