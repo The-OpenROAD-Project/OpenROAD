@@ -157,9 +157,7 @@ bool DRCDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void DRCDescriptor::highlight(std::any object,
-                              Painter& painter,
-                              void* additional_data) const
+void DRCDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
   vio->paint(painter);
@@ -202,11 +200,10 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   return props;
 }
 
-Selected DRCDescriptor::makeSelected(std::any object,
-                                     void* additional_data) const
+Selected DRCDescriptor::makeSelected(std::any object) const
 {
   if (auto vio = std::any_cast<DRCViolation*>(&object)) {
-    return Selected(*vio, this, additional_data);
+    return Selected(*vio, this);
   }
   return Selected();
 }
@@ -221,7 +218,7 @@ bool DRCDescriptor::lessThan(std::any l, std::any r) const
 bool DRCDescriptor::getAllObjects(SelectionSet& objects) const
 {
   for (auto& violation : violations_) {
-    objects.insert(makeSelected(violation.get(), nullptr));
+    objects.insert(makeSelected(violation.get()));
   }
   return true;
 }
