@@ -269,9 +269,7 @@ class Descriptor
   {
     return getTypeName();
   }
-  virtual bool getBBox(std::any object,
-                       std::any additional_data,
-                       odb::Rect& bbox) const = 0;
+  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
@@ -320,26 +318,13 @@ class Descriptor
   };
   using Editors = std::map<std::string, Editor>;
 
-  virtual Properties getProperties(std::any object,
-                                   std::any additional_data) const = 0;
-  virtual Actions getActions(std::any /* object */,
-                             std::any /* additional_data */) const
-  {
-    return Actions();
-  }
-  virtual Editors getEditors(std::any /* object */,
-                             std::any /* additional_data */) const
-  {
-    return Editors();
-  }
+  virtual Properties getProperties(std::any object) const = 0;
+  virtual Actions getActions(std::any /* object */) const { return Actions(); }
+  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
 
-  virtual Selected makeSelected(std::any object,
-                                std::any additional_data) const = 0;
+  virtual Selected makeSelected(std::any object) const = 0;
 
-  virtual bool lessThan(std::any l,
-                        std::any l_data,
-                        std::any r,
-                        std::any r_data) const = 0;
+  virtual bool lessThan(std::any l, std::any r) const = 0;
 
   static const Editor makeEditor(const EditorCallback& func,
                                  const std::vector<EditorOption>& options)
@@ -353,14 +338,8 @@ class Descriptor
 
   // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
-  virtual void highlight(std::any object,
-                         Painter& painter,
-                         std::any additional_data = {}) const = 0;
-  virtual bool isSlowHighlight(std::any /* object */,
-                               std::any /* additional_data */) const
-  {
-    return false;
-  }
+  virtual void highlight(std::any object, Painter& painter) const = 0;
+  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -371,14 +350,10 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), additional_data_({}), descriptor_(nullptr) {}
+  Selected() : object_({}), descriptor_(nullptr) {}
 
-  Selected(std::any object,
-           const Descriptor* descriptor,
-           std::any additional_data = {})
-      : object_(object),
-        additional_data_(additional_data),
-        descriptor_(descriptor)
+  Selected(std::any object, const Descriptor* descriptor)
+      : object_(object), descriptor_(descriptor)
   {
   }
 
@@ -390,7 +365,7 @@ class Selected
   std::string getTypeName() const { return descriptor_->getTypeName(object_); }
   bool getBBox(odb::Rect& bbox) const
   {
-    return descriptor_->getBBox(object_, additional_data_, bbox);
+    return descriptor_->getBBox(object_, bbox);
   }
 
   bool isInst() const { return descriptor_->isInst(object_); }
@@ -406,10 +381,7 @@ class Selected
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style
                  = Painter::Brush::SOLID) const;
-  bool isSlowHighlight() const
-  {
-    return descriptor_->isSlowHighlight(object_, additional_data_);
-  }
+  bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
 
@@ -427,7 +399,7 @@ class Selected
 
   Descriptor::Editors getEditors() const
   {
-    return descriptor_->getEditors(object_, additional_data_);
+    return descriptor_->getEditors(object_);
   }
 
   operator bool() const { return object_.has_value(); }
@@ -438,8 +410,7 @@ class Selected
     auto& l_type_info = l.object_.type();
     auto& r_type_info = r.object_.type();
     if (l_type_info == r_type_info) {
-      return l.descriptor_->lessThan(
-          l.object_, l.additional_data_, r.object_, r.additional_data_);
+      return l.descriptor_->lessThan(l.object_, r.object_);
     }
     return l_type_info.before(r_type_info);
   }
@@ -451,7 +422,6 @@ class Selected
 
  private:
   std::any object_;
-  std::any additional_data_;
   const Descriptor* descriptor_;
 };
 

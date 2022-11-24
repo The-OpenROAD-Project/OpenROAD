@@ -53,22 +53,13 @@ class GridGraphDescriptor : public gui::Descriptor
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object,
-               std::any additional_data,
-               odb::Rect& bbox) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 gui::Painter& painter,
-                 std::any additional_data) const override;
+  void highlight(std::any object, gui::Painter& painter) const override;
 
-  Properties getProperties(std::any object,
-                           std::any additional_data) const override;
-  gui::Selected makeSelected(std::any object,
-                             std::any additional_data) const override;
-  bool lessThan(std::any l,
-                std::any l_data,
-                std::any r,
-                std::any r_data) const override;
+  Properties getProperties(std::any object) const override;
+  gui::Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(gui::SelectionSet& objects) const override;
 };
@@ -85,9 +76,7 @@ std::string GridGraphDescriptor::getTypeName() const
   return "Grid Graph Node";
 }
 
-bool GridGraphDescriptor::getBBox(std::any object,
-                                  std::any /* additional_data */,
-                                  odb::Rect& bbox) const
+bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -98,11 +87,10 @@ bool GridGraphDescriptor::getBBox(std::any object,
 }
 
 void GridGraphDescriptor::highlight(std::any object,
-                                    gui::Painter& painter,
-                                    std::any additional_data) const
+                                    gui::Painter& painter) const
 {
   odb::Rect bbox;
-  getBBox(object, additional_data, bbox);
+  getBBox(object, bbox);
   auto x = bbox.xMin();
   auto y = bbox.yMin();
   bbox.init(x - 20, y - 20, x + 20, y + 20);
@@ -110,8 +98,7 @@ void GridGraphDescriptor::highlight(std::any object,
 }
 
 gui::Descriptor::Properties GridGraphDescriptor::getProperties(
-    std::any object,
-    std::any additional_data) const
+    std::any object) const
 {
   auto data = std::any_cast<Data>(object);
   auto* graph = data.graph;
@@ -206,19 +193,15 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   return props;
 }
 
-gui::Selected GridGraphDescriptor::makeSelected(std::any object,
-                                                std::any additional_data) const
+gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
 {
   if (auto data = std::any_cast<Data>(&object)) {
-    return gui::Selected(*data, this, additional_data);
+    return gui::Selected(*data, this);
   }
   return gui::Selected();
 }
 
-bool GridGraphDescriptor::lessThan(std::any l,
-                                   std::any /* l_data */,
-                                   std::any r,
-                                   std::any /* r_data */) const
+bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
 {
   auto l_grid = std::any_cast<Data>(l);
   auto r_grid = std::any_cast<Data>(r);

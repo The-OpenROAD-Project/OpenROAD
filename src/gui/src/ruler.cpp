@@ -136,18 +136,14 @@ std::string RulerDescriptor::getTypeName() const
   return "Ruler";
 }
 
-bool RulerDescriptor::getBBox(std::any object,
-                              std::any /* additional_data */,
-                              odb::Rect& bbox) const
+bool RulerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   bbox = odb::Rect(ruler->getPt0(), ruler->getPt1());
   return true;
 }
 
-void RulerDescriptor::highlight(std::any object,
-                                Painter& painter,
-                                std::any additional_data) const
+void RulerDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   if (ruler->isEuclidian()) {
@@ -159,9 +155,7 @@ void RulerDescriptor::highlight(std::any object,
   }
 }
 
-Descriptor::Properties RulerDescriptor::getProperties(
-    std::any object,
-    std::any /* additional_data */) const
+Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   return {{"Label", ruler->getLabel()},
@@ -179,9 +173,7 @@ Descriptor::Properties RulerDescriptor::getProperties(
           {"Euclidian", ruler->isEuclidian()}};
 }
 
-Descriptor::Editors RulerDescriptor::getEditors(
-    std::any object,
-    std::any /* additional_data */) const
+Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
@@ -245,9 +237,7 @@ bool RulerDescriptor::editPoint(std::any value,
   return true;
 }
 
-Descriptor::Actions RulerDescriptor::getActions(
-    std::any object,
-    std::any /* additional_data */) const
+Descriptor::Actions RulerDescriptor::getActions(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
 
@@ -257,19 +247,15 @@ Descriptor::Actions RulerDescriptor::getActions(
            }}};
 }
 
-Selected RulerDescriptor::makeSelected(std::any object,
-                                       std::any additional_data) const
+Selected RulerDescriptor::makeSelected(std::any object) const
 {
   if (auto ruler = std::any_cast<Ruler*>(&object)) {
-    return Selected(*ruler, this, additional_data);
+    return Selected(*ruler, this);
   }
   return Selected();
 }
 
-bool RulerDescriptor::lessThan(std::any l,
-                               std::any /* l_data */,
-                               std::any r,
-                               std::any /* r_data */) const
+bool RulerDescriptor::lessThan(std::any l, std::any r) const
 {
   auto l_ruler = std::any_cast<Ruler*>(l);
   auto r_ruler = std::any_cast<Ruler*>(r);
@@ -280,7 +266,7 @@ bool RulerDescriptor::lessThan(std::any l,
 bool RulerDescriptor::getAllObjects(SelectionSet& objects) const
 {
   for (auto& ruler : rulers_) {
-    objects.insert(makeSelected(ruler.get(), nullptr));
+    objects.insert(makeSelected(ruler.get()));
   }
   return true;
 }

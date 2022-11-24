@@ -91,24 +91,15 @@ class RulerDescriptor : public Descriptor
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
-  bool getBBox(std::any object,
-               std::any /* additional_data */,
-               odb::Rect& bbox) const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 std::any additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
-  Properties getProperties(std::any object,
-                           std::any additional_data) const override;
-  Editors getEditors(std::any object, std::any additional_data) const override;
-  Actions getActions(std::any object, std::any additional_data) const override;
-  Selected makeSelected(std::any object,
-                        std::any additional_data) const override;
-  bool lessThan(std::any l,
-                std::any l_data,
-                std::any r,
-                std::any r_data) const override;
+  Properties getProperties(std::any object) const override;
+  Editors getEditors(std::any object) const override;
+  Actions getActions(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
 
