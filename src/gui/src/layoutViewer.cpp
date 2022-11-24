@@ -60,6 +60,7 @@
 #include <vector>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
@@ -1214,8 +1215,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         selections.push_back(
             gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
       } else {
-        selections.push_back(
-            gui_->makeSelected(static_cast<odb::dbSite*>(row_obj), rect));
+        selections.push_back(gui_->makeSelected(DbSiteDescriptor::SpecificSite{
+            static_cast<odb::dbSite*>(row_obj), rect}));
       }
     }
   }

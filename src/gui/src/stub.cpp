@@ -133,8 +133,7 @@ void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
-Selected Gui::makeSelected(std::any /* object */,
-                           std::any /* additional_data */)
+Selected Gui::makeSelected(std::any /* object */)
 {
   return Selected();
 }

@@ -808,7 +808,7 @@ DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
 
 std::string DbNetDescriptor::getName(std::any object) const
 {
-  return std::any_cast<odb::dbNet*>(object)->getName();
+  return getNet(object)->getName();
 }
 
 std::string DbNetDescriptor::getTypeName() const
@@ -818,7 +818,7 @@ std::string DbNetDescriptor::getTypeName() const
 
 bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  auto net = std::any_cast<odb::dbNet*>(object);
+  auto net = getNet(object);
   auto wire = net->getWire();
   bool has_box = false;
   bbox.mergeInit();
@@ -1128,11 +1128,8 @@ void DbNetDescriptor::findPath(NodeMap& graph,
 // if nullptr, all flywires will be drawn
 void DbNetDescriptor::highlight(std::any object, Painter& painter) const
 {
-  odb::dbObject* sink_object = nullptr;
-  // if (additional_data.has_value()) { TODO
-  //   sink_object = std::any_cast<odb::dbObject*>(additional_data);
-  // }
-  auto net = std::any_cast<odb::dbNet*>(object);
+  odb::dbObject* sink_object = getSink(object);
+  auto net = getNet(object);
 
   auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
@@ -1279,7 +1276,7 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
 
 bool DbNetDescriptor::isSlowHighlight(std::any object) const
 {
-  auto net = std::any_cast<odb::dbNet*>(object);
+  auto net = getNet(object);
   return net->getSigType().isSupply();
 }
 
@@ -1290,7 +1287,7 @@ bool DbNetDescriptor::isNet(std::any object) const
 
 Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 {
-  auto net = std::any_cast<odb::dbNet*>(object);
+  auto net = getNet(object);
   Properties props({{"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
                     {"Wire type", net->getWireType().getString()},
@@ -1327,7 +1324,7 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 
 Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
 {
-  auto net = std::any_cast<odb::dbNet*>(object);
+  auto net = getNet(object);
   Editors editors;
   addRenameEditor(net, editors);
   editors.insert({"Special", makeEditor([net](std::any value) {
@@ -1355,7 +1352,7 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
 
 Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
 {
-  auto net = std::any_cast<odb::dbNet*>(object);
+  auto net = getNet(object);
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;
@@ -1413,13 +1410,16 @@ Selected DbNetDescriptor::makeSelected(std::any object) const
   if (auto net = std::any_cast<odb::dbNet*>(&object)) {
     return Selected(*net, this);
   }
+  if (auto net = std::any_cast<NetWithSink>(&object)) {
+    return Selected(*net, this);
+  }
   return Selected();
 }
 
 bool DbNetDescriptor::lessThan(std::any l, std::any r) const
 {
-  auto l_net = std::any_cast<odb::dbNet*>(l);
-  auto r_net = std::any_cast<odb::dbNet*>(r);
+  auto l_net = getNet(l);
+  auto r_net = getNet(r);
   return l_net->getId() < r_net->getId();
 }
 
@@ -1438,6 +1438,24 @@ bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
     objects.insert(makeSelected(net));
   }
   return true;
+}
+
+odb::dbNet* DbNetDescriptor::getNet(std::any object) const
+{
+  odb::dbNet** net = std::any_cast<odb::dbNet*>(&object);
+  if (net != nullptr) {
+    return *net;
+  }
+  return std::any_cast<NetWithSink>(object).net;
+}
+
+odb::dbObject* DbNetDescriptor::getSink(std::any object) const
+{
+  NetWithSink* net_sink = std::any_cast<NetWithSink>(&object);
+  if (net_sink != nullptr) {
+    return net_sink->sink;
+  }
+  return nullptr;
 }
 
 //////////////////////////////////////////////////
@@ -3135,7 +3153,7 @@ DbSiteDescriptor::DbSiteDescriptor(odb::dbDatabase* db) : db_(db)
 
 std::string DbSiteDescriptor::getName(std::any object) const
 {
-  auto* site = std::any_cast<odb::dbSite*>(object);
+  auto* site = getSite(object);
   return site->getName();
 }
 
@@ -3146,24 +3164,24 @@ std::string DbSiteDescriptor::getTypeName() const
 
 bool DbSiteDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  // if (additional_data.has_value()) { TODO
-  //   bbox = std::any_cast<odb::Rect>(additional_data);
-  //   return true;
-  // }
+  if (isSpecificSite(object)) {
+    bbox = getRect(object);
+    return true;
+  }
 
   return false;
 }
 
 void DbSiteDescriptor::highlight(std::any object, Painter& painter) const
 {
-  // if (additional_data.has_value()) { TODO
-  //   painter.drawRect(std::any_cast<odb::Rect>(additional_data));
-  // }
+  if (isSpecificSite(object)) {
+    painter.drawRect(getRect(object));
+  }
 }
 
 Descriptor::Properties DbSiteDescriptor::getProperties(std::any object) const
 {
-  auto* site = std::any_cast<odb::dbSite*>(object);
+  auto* site = getSite(object);
 
   Properties props;
 
@@ -3194,29 +3212,23 @@ Selected DbSiteDescriptor::makeSelected(std::any object) const
   if (auto site = std::any_cast<odb::dbSite*>(&object)) {
     return Selected(*site, this);
   }
+  if (auto site = std::any_cast<SpecificSite>(&object)) {
+    return Selected(*site, this);
+  }
   return Selected();
 }
 
 bool DbSiteDescriptor::lessThan(std::any l, std::any r) const
 {
-  auto l_site = std::any_cast<odb::dbSite*>(l);
-  auto r_site = std::any_cast<odb::dbSite*>(r);
+  auto l_site = getSite(l);
+  auto r_site = getSite(r);
   if (l_site->getId() < r_site->getId()) {
     return true;
   }
 
-  // odb::Rect l_rect(0, 0, 0, 0); TODO
-  // odb::Rect r_rect(0, 0, 0, 0);
-
-  // if (l_data.has_value()) {
-  //   l_rect = std::any_cast<odb::Rect>(l_data);
-  // }
-  // if (r_data.has_value()) {
-  //   r_rect = std::any_cast<odb::Rect>(r_data);
-  // }
-
-  // return l_rect < r_rect;
-  return false;
+  const odb::Rect l_rect = getRect(l);
+  const odb::Rect r_rect = getRect(r);
+  return l_rect < r_rect;
 }
 
 bool DbSiteDescriptor::getAllObjects(SelectionSet& objects) const
@@ -3228,6 +3240,30 @@ bool DbSiteDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   return true;
+}
+
+odb::dbSite* DbSiteDescriptor::getSite(std::any object) const
+{
+  odb::dbSite** site = std::any_cast<odb::dbSite*>(&object);
+  if (site != nullptr) {
+    return *site;
+  }
+  SpecificSite ss = std::any_cast<SpecificSite>(object);
+  return ss.site;
+}
+
+odb::Rect DbSiteDescriptor::getRect(std::any object) const
+{
+  SpecificSite* ss = std::any_cast<SpecificSite>(&object);
+  if (ss != nullptr) {
+    return ss->rect;
+  }
+  return odb::Rect();
+}
+
+bool DbSiteDescriptor::isSpecificSite(std::any object) const
+{
+  return std::any_cast<SpecificSite>(&object) != nullptr;
 }
 
 //////////////////////////////////////////////////

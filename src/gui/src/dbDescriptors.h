@@ -147,6 +147,12 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
+  struct NetWithSink
+  {
+    odb::dbNet* net;
+    odb::dbObject* sink;
+  };
+
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
                   const std::set<odb::dbNet*>& focus_nets,
@@ -199,6 +205,9 @@ class DbNetDescriptor : public Descriptor
 
   const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
+
+  odb::dbNet* getNet(std::any object) const;
+  odb::dbObject* getSink(std::any object) const;
 
   static const int max_iterms_ = 10000;
 };
@@ -522,6 +531,12 @@ class DbTechSameNetRuleDescriptor : public Descriptor
 class DbSiteDescriptor : public Descriptor
 {
  public:
+  struct SpecificSite
+  {
+    odb::dbSite* site;
+    odb::Rect rect;
+  };
+
   DbSiteDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
@@ -539,6 +554,10 @@ class DbSiteDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+
+  odb::dbSite* getSite(std::any object) const;
+  odb::Rect getRect(std::any object) const;
+  bool isSpecificSite(std::any object) const;
 };
 
 class DbRowDescriptor : public Descriptor

@@ -539,7 +539,7 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object, std::any additional_data = {});
+  Selected makeSelected(std::any object);
 
   // Set the current selected object in the gui.
   void setSelected(Selected selection);
