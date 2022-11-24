@@ -270,6 +270,7 @@ class GlobalRouter
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
+  bool checkPinPositions(odb::dbNet* net);
   void getNetLayerRange(Net* net, int& min_layer, int& max_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);

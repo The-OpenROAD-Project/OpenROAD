@@ -274,6 +274,22 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
+bool FastRouteCore::changePinPositionNet(odb::dbNet* db_net,
+                                        std::vector<int>& new_pin_x,
+                                        std::vector<int>& new_pin_y,
+                                        std::vector<int>& new_pin_l)
+{
+  int netID;
+  bool exists;
+  getNetId(db_net, netID, exists);
+
+  if(exists) {
+    FrNet* net = nets_[netID];
+    return net->changePinPosition(new_pin_x, new_pin_y, new_pin_l);
+  }
+  return true;
+}
+
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
 {
   auto itr = db_net_id_map_.find(db_net);
@@ -1538,10 +1554,32 @@ void FrNet::reset(odb::dbNet* db_net,
   min_layer_ = min_layer;
   max_layer_ = max_layer;
   slack_ = slack;
-  edge_cost_per_layer_.reset(edge_cost_per_layer);
+  edge_cost_per_layer_.reset(edge_cost_per_layer); 
   pin_x_.clear();
   pin_y_.clear();
   pin_l_.clear();
+}
+
+bool FrNet::changePinPosition(std::vector<int>& new_pin_x,
+                              std::vector<int>& new_pin_y,
+                              std::vector<int>& new_pin_l)
+{
+  bool dif_pos = false;
+  std::unordered_map<std::tuple<int,int,int>, int, boost::hash<std::tuple<int,int,int>>> bkpos;
+
+  for(int i = 0; i<getNumPins(); i++)
+    bkpos[std::make_tuple(pin_x_[i],pin_y_[i],pin_l_[i])]++;
+
+  for(int i = 0; i<new_pin_x.size(); i++){
+    std::tuple<int, int, int> pin_pos =std:: make_tuple(new_pin_x[i], new_pin_y[i], new_pin_l[i]);
+    if(bkpos[pin_pos] == 0) {
+      dif_pos = true;
+      break;
+    }
+    bkpos[pin_pos]--;
+  }
+
+  return dif_pos;
 }
 
 }  // namespace grt

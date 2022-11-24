@@ -111,6 +111,9 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
+  bool changePinPosition(std::vector<int>& new_pin_x,
+                         std::vector<int>& new_pin_y,
+                         std::vector<int>& new_pin_l); 
 
  private:
   odb::dbNet* db_net_;

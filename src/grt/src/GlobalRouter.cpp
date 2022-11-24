@@ -277,7 +277,6 @@ void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool en
   }
   else{
     if(end_incremental) {
-      printf("Inc GRT:%ld\n", dirty_nets_.size());
       updateDirtyRoutes();
       grouter_cbk_->removeOwner();
       delete grouter_cbk_;
@@ -807,6 +806,21 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 }
 
+bool GlobalRouter::checkPinPositions(odb::dbNet* net)
+{
+  std::vector<RoutePt> pins_on_grid;
+  int root_idx;
+  findPins(db_net_map_[net], pins_on_grid, root_idx);
+  std::vector<int> new_x, new_y, new_l;
+
+  for (RoutePt& pin_pos : pins_on_grid) {
+    new_x.push_back(pin_pos.x());
+    new_y.push_back(pin_pos.y());
+    new_l.push_back(pin_pos.layer() - 1);
+  }
+  return fastroute_->changePinPositionNet(net, new_x, new_y, new_l);
+}
+
 bool GlobalRouter::makeFastrouteNet(Net* net)
 {
   std::vector<RoutePt> pins_on_grid;
@@ -851,6 +865,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
+     
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -3929,7 +3944,10 @@ IncrementalGRoute::~IncrementalGRoute()
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
-  dirty_nets_.insert(net);
+  // check if the pins changes positions
+  bool is_change = checkPinPositions(net);
+  if (is_change)
+    dirty_nets_.insert(net);
 }
 
 void GlobalRouter::updateDirtyRoutes()
