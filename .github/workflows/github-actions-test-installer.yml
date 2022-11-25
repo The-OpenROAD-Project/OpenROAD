@@ -24,11 +24,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bridge-utils
-          pkill docker
-          iptables -t nat -F
-          ifconfig docker0 down
-          brctl delbr docker0
-          service docker restart
+          sudo pkill docker
+          sudo iptables -t nat -F
+          sudo ifconfig docker0 down
+          sudo brctl delbr docker0
+          sudo service docker restart
       - name: Runs installer
         run: |
           ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
