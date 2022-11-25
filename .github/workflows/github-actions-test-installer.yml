@@ -34,4 +34,4 @@ jobs:
           ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
-          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compiler }} ${{ matrix.args }}
+          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
