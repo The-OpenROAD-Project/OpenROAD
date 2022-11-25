@@ -20,6 +20,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
+      - name: Network Setup
+        run: |
+          apt-get install bridge-utils
+          pkill docker
+          iptables -t nat -F
+          ifconfig docker0 down
+          brctl delbr docker0
+          service docker restart
       - name: Runs installer
         run: |
           ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
