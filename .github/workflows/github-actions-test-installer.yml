@@ -22,7 +22,8 @@ jobs:
           fetch-depth: 1
       - name: Network Setup
         run: |
-          apt-get install bridge-utils
+          sudo apt-get update
+          sudo apt-get install -y bridge-utils
           pkill docker
           iptables -t nat -F
           ifconfig docker0 down
