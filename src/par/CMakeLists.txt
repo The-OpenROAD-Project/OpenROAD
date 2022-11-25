@@ -56,7 +56,6 @@ target_sources(par
     src/HypergraphDecomposition.cpp
     src/PartitionNetwork.cpp
     src/PartOptions.cpp
-    src/autocluster.cpp
 )
 
 messages(

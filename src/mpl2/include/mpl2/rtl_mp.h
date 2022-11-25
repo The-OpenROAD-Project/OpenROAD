@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace odb {
 class dbDatabase;
 }
@@ -46,11 +48,16 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
+
+class HierRTLMP;
 
 class MacroPlacer2
 {
  public:
+  MacroPlacer2();
+  ~MacroPlacer2();
+
   void init(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
@@ -85,11 +92,10 @@ class MacroPlacer2
              const int snap_layer,
              const char* report_directory);
 
+  void setDebug();
+
  private:
-  sta::dbNetwork* network_ = nullptr;
-  sta::dbSta* sta_ = nullptr;
-  odb::dbDatabase* db_ = nullptr;
-  utl::Logger* logger_ = nullptr;
+  std::unique_ptr<HierRTLMP> hier_rtlmp_;
 };
 
-}  // namespace mpl
+}  // namespace mpl2

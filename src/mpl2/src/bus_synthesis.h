@@ -42,7 +42,7 @@
 
 #include "object.h"
 
-namespace mpl {
+namespace mpl2 {
 
 using Point = std::pair<float, float>;
 
@@ -164,7 +164,7 @@ class Graph
       // shortest boundary edge paths
       std::vector<std::vector<int>>& edge_paths,
       // length of shortest paths
-      float& HPWL);
+      float& hpwl);
 
   // store the parent vertices for each vertex in the shortest paths
   // for example, there are two paths from root to dest
@@ -192,4 +192,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                  float congestion_weight,
                  utl::Logger* logger);
 
-}  // namespace mpl
+}  // namespace mpl2

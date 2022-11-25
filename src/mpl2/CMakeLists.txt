@@ -57,6 +57,7 @@ target_sources(mpl2
     src/SACoreHardMacro.cpp
     src/SACoreSoftMacro.cpp
     src/bus_synthesis.cpp
+    src/graphics.cpp
 )
 
 messages(

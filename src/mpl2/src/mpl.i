@@ -36,7 +36,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-mpl::MacroPlacer2*
+mpl2::MacroPlacer2*
 getMacroPlacer2();
 }
 
@@ -107,6 +107,13 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              min_ar,
                              snap_layer,
                              report_directory);
+}
+
+void
+set_debug_cmd()
+{
+  auto macro_placer = getMacroPlacer2();
+  macro_placer->setDebug();
 }
 
 } // namespace

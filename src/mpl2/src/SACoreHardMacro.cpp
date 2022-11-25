@@ -35,7 +35,7 @@
 
 #include "utl/Logger.h"
 
-namespace mpl {
+namespace mpl2 {
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
@@ -63,6 +63,7 @@ SACoreHardMacro::SACoreHardMacro(
     int k,
     int c,
     unsigned seed,
+    Graphics* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(outline_width,
                                         outline_height,
@@ -82,6 +83,7 @@ SACoreHardMacro::SACoreHardMacro(
                                         k,
                                         c,
                                         seed,
+                                        graphics,
                                         logger)
 {
   flip_prob_ = flip_prob;
@@ -247,7 +249,8 @@ void SACoreHardMacro::initialize()
   for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
   }
-  init_T_ = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+  init_temperature_
+      = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
 }
 
 void SACoreHardMacro::printResults()
@@ -290,4 +293,4 @@ void SACoreHardMacro::printResults()
   logger_->report("fence_penalty_  = {}", fence_penalty_);
 }
 
-}  // namespace mpl
+}  // namespace mpl2

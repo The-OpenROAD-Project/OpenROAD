@@ -221,3 +221,9 @@ proc rtl_macro_placer { args } {
 
     return true
 }
+
+namespace eval mpl2 {
+proc mpl_debug { args } {
+  mpl2::set_debug_cmd
+}
+}

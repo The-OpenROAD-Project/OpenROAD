@@ -292,6 +292,7 @@ struct frDebugSettings
         debugDumpDR(false),
         debugMaze(false),
         debugPA(false),
+        debugTA(false),
         draw(true),
         allowPause(true),
         x(-1),
@@ -315,6 +316,7 @@ struct frDebugSettings
   bool debugDumpDR;
   bool debugMaze;
   bool debugPA;
+  bool debugTA;
   bool draw;
   bool allowPause;
   std::string netName;

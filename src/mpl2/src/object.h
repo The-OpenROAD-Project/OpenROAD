@@ -53,7 +53,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl {
+namespace mpl2 {
 class HardMacro;
 class SoftMacro;
 
@@ -186,7 +186,7 @@ class Cluster
   const ClusterType getClusterType() const;
 
   // Instances (Here we store dbModule to reduce memory)
-  void addDbModule(odb::dbModule* dbModule);
+  void addDbModule(odb::dbModule* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
   void addLeafMacro(odb::dbInst* leaf_macro);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
@@ -286,7 +286,7 @@ class Cluster
   // Instances in the cluster
   // the logical module included in the cluster
   // dbModule is a object representing logical module in the OpenDB
-  std::vector<odb::dbModule*> dbModules_;
+  std::vector<odb::dbModule*> db_modules_;
   // the std cell instances in the cluster (leaf std cell instances)
   std::vector<odb::dbInst*> leaf_std_cells_;
   // the macros in the cluster (leaf macros)
@@ -553,14 +553,14 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    HPWL = 0;
+    hpwl = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    HPWL = 0;
+    hpwl = 0;
   }
 
   bool operator==(const BundledNet& net)
@@ -575,7 +575,7 @@ struct BundledNet
   float weight;   // Number of bundled connections (can be timing-related
                   // weight)
   // support for bus synthsis
-  float HPWL;  // HPWL of the Net (in terms of path length)
+  float hpwl;  // HPWL of the Net (in terms of path length)
   // shortest paths:  to minimize timing
   // store all the shortest paths between two soft macros
   std::vector<std::vector<int>> edge_paths;
@@ -645,4 +645,4 @@ struct Rect
   float uy = 0.0;
 };
 
-}  // namespace mpl
+}  // namespace mpl2

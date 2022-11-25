@@ -51,7 +51,6 @@ extern "C" {
 #include <iostream>
 
 #include "HypergraphDecomposition.h"
-#include "autocluster.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -1394,43 +1393,6 @@ void PartitionMgr::reportGraph()
   logger_->info(PAR, 67, "Number of Nodes: {}", graph_->getNumVertex());
   logger_->info(
       PAR, 68, "Number of Hyperedges/Edges: {}", graph_->getNumEdges());
-}
-
-void PartitionMgr::partitionDesign(unsigned int max_num_macro,
-                                   unsigned int min_num_macro,
-                                   unsigned int max_num_inst,
-                                   unsigned int min_num_inst,
-                                   unsigned int net_threshold,
-                                   unsigned int ignore_net_threshold,
-                                   unsigned int virtual_weight,
-                                   unsigned int num_hops,
-                                   unsigned int timing_weight,
-                                   bool std_cell_timing_flag,
-                                   const char* report_directory,
-                                   const char* file_name,
-                                   float keepin_lx,
-                                   float keepin_ly,
-                                   float keepin_ux,
-                                   float keepin_uy)
-{
-  auto clusterer
-      = std::make_unique<AutoClusterMgr>(db_network_, db_, _sta, logger_);
-  clusterer->partitionDesign(max_num_macro,
-                             min_num_macro,
-                             max_num_inst,
-                             min_num_inst,
-                             net_threshold,
-                             virtual_weight,
-                             ignore_net_threshold,
-                             num_hops,
-                             timing_weight,
-                             std_cell_timing_flag,
-                             report_directory,
-                             file_name,
-                             keepin_lx,
-                             keepin_ly,
-                             keepin_ux,
-                             keepin_uy);
 }
 
 }  // namespace par
