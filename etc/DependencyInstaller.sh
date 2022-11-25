@@ -23,6 +23,7 @@ _installCommonDev() {
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
+    if [[ ! -z $PREFIX ]]; then mkdir -p ${PREFIX}; fi
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}

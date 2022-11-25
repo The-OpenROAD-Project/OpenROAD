@@ -9,45 +9,18 @@ jobs:
   testInstaller:
     strategy:
       matrix:
-        os: ["ubuntu:20.04", "ubuntu:22.04", "centos:centos7"]
-        args: ["", "-prefix=/home/testUser/openroad-deps"]
+        os: ["ubuntu20", "ubuntu22", "centos7"]
+        args: ["", "-local"]
+        compilers: ["gcc", "clang"]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.os }}
     steps:
-      - name: Setup
-        run: |
-          if [ "${{ matrix.os }}" != "centos:centos7" ]; then 
-            apt-get update
-            apt-get -y install git
-          else
-            yum -y install https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm
-            yum -y install git
-          fi
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Checkout repository code with submodules
-        run: |
-          git config --global --add safe.directory '*'
-          git submodule update --init
+          fetch-depth: 1
       - name: Runs installer
         run: |
-          echo "test" | useradd -m testUser
-          mkdir -p /home/testUser/openroad-deps
-          chmod +x ./etc/DependencyInstaller.sh
-          ./etc/DependencyInstaller.sh -dev ${{ matrix.args }}
+          ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
-          if [ "${{ matrix.os }}" = "centos:centos7" ]; then
-            source /opt/rh/devtoolset-8/enable
-            source /opt/rh/llvm-toolset-7.0/enable
-          fi
-          if [ ! -z "${{ matrix.args }}" ]; then
-            PREFIX=$(echo ${{ matrix.args }}|awk -F"=" '{split($2,a," ");gsub(/"/, "", a[1]);print a[1]}')
-            echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
-            . ~/.bash_profile
-          fi
-          chmod +x ./etc/Build.sh
-          ./etc/Build.sh -clean
+          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compiler }} ${{ matrix.args }}
