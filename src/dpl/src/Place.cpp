@@ -927,14 +927,14 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
 // The site doesn't need to be empty but mearly valid.  That should
 // be a reasonable place to start the search.  Returns true if any
 // site can be found.
-bool Opendp::moveHopeless(int& grid_x, int& grid_y) const
+bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
 {
   int best_x = grid_x;
   int best_y = grid_y;
   int best_dist = std::numeric_limits<int>::max();
   for (int x = grid_x - 1; x >= 0; --x) {  // left
     if (grid_[grid_y][x].is_valid) {
-      best_dist = (grid_x - x) * site_width_;
+      best_dist = (grid_x - x - 1) * site_width_;
       best_x = x;
       best_y = grid_y;
       break;
@@ -942,7 +942,7 @@ bool Opendp::moveHopeless(int& grid_x, int& grid_y) const
   }
   for (int x = grid_x + 1; x < row_site_count_; ++x) {  // right
     if (grid_[grid_y][x].is_valid) {
-      const int dist = (x - grid_x) * site_width_;
+      const int dist = (x - grid_x) * site_width_ - cell->width_;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = x;
@@ -953,7 +953,7 @@ bool Opendp::moveHopeless(int& grid_x, int& grid_y) const
   }
   for (int y = grid_y - 1; y >= 0; --y) {  // below
     if (grid_[y][grid_x].is_valid) {
-      const int dist = (grid_y - y) * row_height_;
+      const int dist = (grid_y - y - 1) * row_height_;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = grid_x;
@@ -964,7 +964,7 @@ bool Opendp::moveHopeless(int& grid_x, int& grid_y) const
   }
   for (int y = grid_y + 1; y < row_count_; ++y) {  // above
     if (grid_[y][grid_x].is_valid) {
-      const int dist = (y - grid_y) * row_height_;
+      const int dist = (y - grid_y) * row_height_ - cell->height_;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = grid_x;
@@ -999,7 +999,7 @@ Point Opendp::legalPt(const Cell* cell, bool padded) const
   Pixel* pixel = gridPixel(grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
-    if (pixel->is_hopeless && moveHopeless(grid_x, grid_y)) {
+    if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
       legal_pt = Point(grid_x * site_width_, grid_y * row_height_);
       pixel = gridPixel(grid_x, grid_y);
     }
