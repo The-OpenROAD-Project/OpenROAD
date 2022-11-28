@@ -226,6 +226,8 @@ class OpenRoad
   void readDb(const char* filename);
   void writeDb(const char* filename);
 
+  void diffDbs(const char* filename1, const char* filename2, const char* diffs);
+
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
