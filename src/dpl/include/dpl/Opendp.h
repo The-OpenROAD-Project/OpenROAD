@@ -268,7 +268,7 @@ class Opendp
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
-  bool moveHopeless(int& grid_x, int& grid_y) const;
+  bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
