@@ -15,6 +15,6 @@ ARG LOCAL_PATH=""
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-ENV PATH=${LOCAL_PATH}${PATH}
+ENV PATH=${LOCAL_PATH}:${PATH}
 
 RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads}

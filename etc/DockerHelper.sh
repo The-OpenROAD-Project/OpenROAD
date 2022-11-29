@@ -33,7 +33,7 @@ usage: $0 [CMD] [OPTIONS]
   -sha                          Use git commit sha as the tag image. Default is
                                   'latest'.
   -h -help                      Show this message and exits
-  -local                        installs with prefix /home/openroad-deps
+  -local                        Installs with prefix /home/openroad-deps
 
 EOF
     exit "${1:-1}"
@@ -77,7 +77,7 @@ _setup() {
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="${buildArgs} --build-arg LOCAL_PATH=${LOCAL_PATH}"
+                buildArgs="${buildArgs} --build-arg LOCAL_PATH=${LOCAL_PATH}/bin"
             fi
             imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
@@ -85,7 +85,7 @@ _setup() {
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="--build-arg PREFIX=${PREFIX}"
+                buildArgs="--build-arg INSTALLER_ARGS=-prefix=${LOCAL_PATH}"
             else
                 buildArgs=""
             fi
@@ -214,8 +214,7 @@ compiler="gcc"
 useCommitSha="no"
 isLocal="no"
 numThreads="$(nproc)"
-PREFIX="-prefix=/home/openroad-deps"
-LOCAL_PATH="/home/openroad-deps/bin:"
+LOCAL_PATH="/home/openroad-deps"
 
 while [ "$#" -gt 0 ]; do
     case "${1}" in
