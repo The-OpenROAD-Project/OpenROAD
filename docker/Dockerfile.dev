@@ -7,5 +7,8 @@ ARG fromImage=centos:centos7
 
 FROM $fromImage
 
+ARG INSTALLER_ARGS=""
+
 COPY DependencyInstaller.sh /tmp/.
-RUN /tmp/DependencyInstaller.sh -dev && rm -f /tmp/DependencyInstaller.sh
+
+RUN /tmp/DependencyInstaller.sh -dev $INSTALLER_ARGS && rm -f /tmp/DependencyInstaller.sh
