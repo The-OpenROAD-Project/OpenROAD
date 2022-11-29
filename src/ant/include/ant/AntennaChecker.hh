@@ -86,7 +86,7 @@ class AntennaChecker
 
   vector<Violation> getAntennaViolations(dbNet* net,
                                          odb::dbMTerm* diode_mterm,
-                                         float par_margin);
+                                         float violation_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
 
@@ -205,7 +205,7 @@ class AntennaChecker
   utl::Logger* logger_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_;
-  float par_margin_;
+  float violation_margin_;
   std::string report_file_name_;
 
   static constexpr int max_diode_count_per_gate = 10;
