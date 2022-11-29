@@ -227,7 +227,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object, void* additional_data)
+Selected Gui::makeSelected(std::any object)
 {
   if (!object.has_value()) {
     return Selected();
@@ -235,7 +235,7 @@ Selected Gui::makeSelected(std::any object, void* additional_data)
 
   auto it = descriptors_.find(object.type());
   if (it != descriptors_.end()) {
-    return it->second->makeSelected(object, additional_data);
+    return it->second->makeSelected(object);
   } else {
     logger_->warn(utl::GUI,
                   33,
@@ -1195,7 +1195,7 @@ void Selected::highlight(Painter& painter,
   painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
-  return descriptor_->highlight(object_, painter, additional_data_);
+  return descriptor_->highlight(object_, painter);
 }
 
 Descriptor::Properties Selected::getProperties() const

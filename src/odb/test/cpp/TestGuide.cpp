@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   auto block = db->getChip()->getBlock();
   auto layer = tech->findLayer("L1");
   auto net = dbNet::create(block, "n1");
-  dbGuide::create(net, layer, {0,0,100,100});
+  dbGuide::create(net, layer, {0, 0, 100, 100});
   dbGuide::create(net, layer, {0, 100, 100, 200});
   net->getGuides().reverse();
   BOOST_TEST(net->getGuides().size() == 2);

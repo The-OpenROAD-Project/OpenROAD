@@ -87,9 +87,7 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [](const std::any& object) {
-            return Gui::get()->makeSelected(object);
-          },
+          Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           this)),
@@ -387,6 +385,7 @@ MainWindow::~MainWindow()
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
+  gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -422,6 +421,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
       db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(new DbNetDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -436,6 +437,16 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
       new DbGenerateViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
+      new DbNonDefaultRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayerRule*>(
+      new DbTechLayerRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechSameNetRule*>(
+      new DbTechSameNetRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
+  gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
+      new DbSiteDescriptor(db_));
+  gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   controls_->setDBInstDescriptor(inst_descriptor);
@@ -1158,8 +1169,8 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(
-              Gui::get()->makeSelected(inst_term->getNet(), inst_term));
+          connected_nets.insert(Gui::get()->makeSelected(
+              DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
       }
     }
   }

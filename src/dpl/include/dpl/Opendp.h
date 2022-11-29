@@ -43,7 +43,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <tuple>  // pair
 #include <unordered_map>
 #include <utility>  // pair
 #include <vector>
@@ -60,7 +59,6 @@ using std::map;
 using std::pair;
 using std::set;
 using std::string;
-using std::tuple;
 using std::unordered_map;
 using std::vector;
 
@@ -85,7 +83,7 @@ struct Pixel;
 struct Group;
 class Graphics;
 
-using Grid = Pixel*;
+using Grid = Pixel**;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -178,7 +176,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  void clear();
   void init(dbDatabase* db, Logger* logger);
   void initBlock();
   // legalize/report
@@ -206,7 +203,6 @@ class Opendp
   int64_t hpwl(dbNet* net) const;
   void findDisplacementStats();
   void optimizeMirroring();
-  void reportGrid();
 
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
@@ -272,7 +268,7 @@ class Opendp
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
-  void moveHopeless(int& grid_x, int& grid_y) const;
+  bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -399,7 +395,7 @@ class Opendp
   vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
-  Grid* grid_;
+  Grid grid_;
   Cell dummy_cell_;
 
   // Filler placement.

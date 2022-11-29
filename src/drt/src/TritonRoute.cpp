@@ -110,6 +110,11 @@ void TritonRoute::setDebugPA(bool on)
   debug_->debugPA = on;
 }
 
+void TritonRoute::setDebugTA(bool on)
+{
+  debug_->debugTA = on;
+}
+
 void TritonRoute::setDistributed(bool on)
 {
   distributed_ = on;
@@ -570,6 +575,7 @@ void TritonRoute::gr()
 void TritonRoute::ta()
 {
   FlexTA ta(getDesign(), logger_);
+  ta.setDebug(debug_.get(), db_);
   ta.main();
 }
 

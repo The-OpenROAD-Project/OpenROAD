@@ -3436,8 +3436,6 @@ void extMain::railConnOpt(odb::dbNet* pNet)
   bool dbg = false;
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
   odb::dbTech* tech = _block->getDb()->getTech();
-  odb::dbBox* bb = _block->getBBox();
-  odb::Rect BB = bb->getBox();
 
   initPowerSearch();
 

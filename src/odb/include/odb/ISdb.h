@@ -39,8 +39,8 @@
 #include "geom.h"
 #include "gseq.h"
 #include "odb.h"
-#include "util.h"
 #include "rcx.h"
+#include "util.h"
 
 namespace odb {
 

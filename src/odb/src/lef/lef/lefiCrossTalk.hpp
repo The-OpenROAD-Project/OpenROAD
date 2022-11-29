@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2012 - 2013, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author: dell $
 //  $Revision: #1 $
 //  $Date: 2017/06/06 $
@@ -31,19 +31,22 @@
 #define lefiCrossTalk_h
 
 #include <stdio.h>
+
 #include "lefiKRDefs.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 // Structure returned for the noise margin callback.
-// This lef construct has two floating point numbers. 
-struct lefiNoiseMargin {
+// This lef construct has two floating point numbers.
+struct lefiNoiseMargin
+{
   double high;
   double low;
 };
 
-class lefiNoiseVictim {
-public:
+class lefiNoiseVictim
+{
+ public:
   lefiNoiseVictim(double d);
   void Init(double d);
 
@@ -58,7 +61,7 @@ public:
   int numNoises() const;
   double noise(int index) const;
 
-protected:
+ protected:
   double length_;
 
   int numNoises_;
@@ -66,8 +69,9 @@ protected:
   double* noises_;
 };
 
-class lefiNoiseResistance {
-public:
+class lefiNoiseResistance
+{
+ public:
   lefiNoiseResistance();
   void Init();
 
@@ -86,7 +90,7 @@ public:
   int numVictims() const;
   lefiNoiseVictim* victim(int index) const;
 
-protected:
+ protected:
   int numNums_;
   int numsAllocated_;
   double* nums_;
@@ -96,8 +100,9 @@ protected:
   lefiNoiseVictim** victims_;
 };
 
-class lefiNoiseEdge {
-public:
+class lefiNoiseEdge
+{
+ public:
   lefiNoiseEdge();
   void Init();
 
@@ -116,7 +121,7 @@ public:
   int numResistances();
   lefiNoiseResistance* resistance(int index);
 
-protected:
+ protected:
   double edge_;
 
   int numResistances_;
@@ -124,8 +129,9 @@ protected:
   lefiNoiseResistance** resistances_;
 };
 
-class lefiNoiseTable {
-public:
+class lefiNoiseTable
+{
+ public:
   lefiNoiseTable();
   void Init();
 
@@ -146,7 +152,7 @@ public:
   int numEdges();
   lefiNoiseEdge* edge(int index);
 
-protected:
+ protected:
   int num_;
 
   int numEdges_;
@@ -154,8 +160,9 @@ protected:
   lefiNoiseEdge** edges_;
 };
 
-class lefiCorrectionVictim {
-public:
+class lefiCorrectionVictim
+{
+ public:
   lefiCorrectionVictim(double d);
   void Init(double d);
 
@@ -170,7 +177,7 @@ public:
   int numCorrections();
   double correction(int index);
 
-protected:
+ protected:
   double length_;
 
   int numCorrections_;
@@ -178,8 +185,9 @@ protected:
   double* corrections_;
 };
 
-class lefiCorrectionResistance {
-public:
+class lefiCorrectionResistance
+{
+ public:
   lefiCorrectionResistance();
   void Init();
 
@@ -198,7 +206,7 @@ public:
   int numVictims();
   lefiCorrectionVictim* victim(int index);
 
-protected:
+ protected:
   int numNums_;
   int numsAllocated_;
   double* nums_;
@@ -208,36 +216,38 @@ protected:
   lefiCorrectionVictim** victims_;
 };
 
-class lefiCorrectionEdge {
-public:
+class lefiCorrectionEdge
+{
+ public:
   lefiCorrectionEdge();
   void Init();
- 
+
   void Destroy();
   ~lefiCorrectionEdge();
- 
+
   void clear();
- 
+
   void addEdge(double d);
   void addResistance();
   void addResistanceNumber(double d);
   void addVictimLength(double d);
   void addVictimCorrection(double d);
- 
+
   double edge();
   int numResistances();
   lefiCorrectionResistance* resistance(int index);
- 
-protected:
+
+ protected:
   double edge_;
- 
+
   int numResistances_;
   int resistancesAllocated_;
   lefiCorrectionResistance** resistances_;
 };
 
-class lefiCorrectionTable {
-public:
+class lefiCorrectionTable
+{
+ public:
   lefiCorrectionTable();
   void Init();
 
@@ -258,7 +268,7 @@ public:
   int numEdges();
   lefiCorrectionEdge* edge(int index);
 
-protected:
+ protected:
   int num_;
 
   int numEdges_;

@@ -235,7 +235,7 @@ Rect dbRow::getBBox()
   _dbRow* row = (_dbRow*) this;
 
   if (row->_site_cnt == 0) {
-    return  Rect(0, 0, 0, 0);
+    return Rect(0, 0, 0, 0);
   }
 
   dbSite* site = getSite();

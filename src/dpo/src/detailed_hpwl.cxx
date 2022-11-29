@@ -52,13 +52,9 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedHPWL::DetailedHPWL(Architecture* arch,
-                           Network* network,
-                           RoutingParams* rt)
+DetailedHPWL::DetailedHPWL(Network* network)
     : DetailedObjective("hpwl"),
-      arch_(arch),
       network_(network),
-      rt_(rt),
       mgrPtr_(nullptr),
       orientPtr_(nullptr),
       skipNetsLargerThanThis_(100),

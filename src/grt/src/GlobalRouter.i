@@ -232,13 +232,14 @@ void create_wl_report_file(const char* file_name, bool verbose)
   getGlobalRouter()->createWLReportFile(file_name, verbose);
 }
 
-void report_net_wire_length(odb::dbNet *net,
+void report_net_wire_length(odb::dbNet* net,
                             bool global_route,
                             bool detailed_route,
                             bool verbose,
                             const char* file_name)
 {
-  getGlobalRouter()->reportNetWireLength(net, global_route, detailed_route, verbose, file_name);
+  getGlobalRouter()->reportNetWireLength(
+      net, global_route, detailed_route, verbose, file_name);
 }
 
 void

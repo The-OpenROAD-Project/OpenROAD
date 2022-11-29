@@ -71,7 +71,7 @@ bool _dbVia::operator==(const _dbVia& rhs) const
 
   if (_flags._orient != rhs._flags._orient)
     return false;
-  
+
   if (_flags.default_ != rhs._flags.default_)
     return false;
 

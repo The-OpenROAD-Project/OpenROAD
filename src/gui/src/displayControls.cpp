@@ -411,7 +411,7 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   // Rows
   row_color_ = QColor(0, 0xff, 0, 0x70);
-  makeParentItem(rows_, "Rows", root, Qt::Unchecked, false, row_color_);
+  makeParentItem(rows_, "Rows", root, Qt::Unchecked, true, row_color_);
 
   // Rows
   makeParentItem(pin_markers_, "Pin Markers", root, Qt::Checked);
@@ -1532,6 +1532,11 @@ bool DisplayControls::areRegionsSelectable() const
 bool DisplayControls::areRowsVisible()
 {
   return isRowVisible(&rows_);
+}
+
+bool DisplayControls::areRowsSelectable()
+{
+  return isRowSelectable(&rows_);
 }
 
 QColor DisplayControls::rowColor()

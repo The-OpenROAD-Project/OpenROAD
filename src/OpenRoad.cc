@@ -421,6 +421,38 @@ void OpenRoad::writeDb(const char* filename)
   }
 }
 
+void OpenRoad::diffDbs(const char* filename1,
+                       const char* filename2,
+                       const char* diffs)
+{
+  FILE* stream1 = fopen(filename1, "r");
+  if (stream1 == nullptr) {
+    logger_->error(ORD, 103, "Can't open {}", filename1);
+  }
+
+  FILE* stream2 = fopen(filename2, "r");
+  if (stream2 == nullptr) {
+    logger_->error(ORD, 104, "Can't open {}", filename1);
+  }
+
+  FILE* out = fopen(diffs, "w");
+  if (out == nullptr) {
+    logger_->error(ORD, 105, "Can't open {}", diffs);
+  }
+
+  auto db1 = odb::dbDatabase::create();
+  auto db2 = odb::dbDatabase::create();
+
+  db1->read(stream1);
+  db2->read(stream2);
+
+  odb::dbDatabase::diff(db1, db2, out, 2);
+
+  fclose(stream1);
+  fclose(stream2);
+  fclose(out);
+}
+
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
@@ -482,14 +514,6 @@ OpenRoad::Observer::~Observer()
     owner_->removeObserver(this);
   }
 }
-
-#ifdef ENABLE_PYTHON3
-void OpenRoad::pythonCommand(const char* py_command)
-{
-  PyRun_SimpleString(py_command);
-}
-#endif
-
 void OpenRoad::setThreadCount(int threads, bool printInfo)
 {
   int max_threads = std::thread::hardware_concurrency();

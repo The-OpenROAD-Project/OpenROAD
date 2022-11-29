@@ -88,6 +88,12 @@ check_net_violation(char* net_name)
     return false;
 }
 
+void
+set_report_file_name(char* file_name)
+{
+  getAntennaChecker()->setReportFileName(file_name);
+}
+
 } // namespace
 
 %} // inline

@@ -53,7 +53,6 @@ enum Ath__overlapAdjust
   Z_endAdjust
 };
 
-
 class Ath__track;
 
 class Ath__searchBox
@@ -203,9 +202,7 @@ class Ath__track
   bool _ordered;
 
  public:
-  uint getTrackNum() { 
-    return _num;
-  };
+  uint getTrackNum() { return _num; };
   void set(Ath__grid* g,
            int x,
            int y,
