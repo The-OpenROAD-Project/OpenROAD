@@ -19,6 +19,6 @@ print(f"violation count = {count}", flush=True)
 
 net_name = "net50"
 net = design.getBlock().findNet(net_name)
-viol = len(ack.getAntennaViolations(net, None)) > 0
+viol = len(ack.getAntennaViolations(net, None, 0)) > 0
 
 print(f"Net {net_name} violations: {int(viol)}")
