@@ -1170,7 +1170,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
               par_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1185,7 +1185,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
               diff_par_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1202,7 +1202,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
               psr_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1217,7 +1217,7 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
               diff_psr_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1300,7 +1300,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
               car_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1315,7 +1315,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
               diff_car_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1332,7 +1332,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
               csr_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1347,7 +1347,7 @@ std::pair<bool, bool> AntennaChecker::checkWireCar(const ARinfo& AntennaRatio,
               diff_csr_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1405,7 +1405,7 @@ bool AntennaChecker::checkViaPar(const ARinfo& AntennaRatio,
               par_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1420,7 +1420,7 @@ bool AntennaChecker::checkViaPar(const ARinfo& AntennaRatio,
               diff_par_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << par_report;
+            report_file << par_report << "\n";
           }
           logger_->report("{}", par_report);
         }
@@ -1480,7 +1480,7 @@ bool AntennaChecker::checkViaCar(const ARinfo& AntennaRatio,
               car_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1495,7 +1495,7 @@ bool AntennaChecker::checkViaCar(const ARinfo& AntennaRatio,
               diff_car_violation ? "(VIOLATED)" : "");
 
           if (report_file.is_open()) {
-            report_file << car_report;
+            report_file << car_report << "\n";
           }
           logger_->report("{}", car_report);
         }
@@ -1699,7 +1699,7 @@ void AntennaChecker::checkGate(
           std::string via_name
               = fmt::format("    Via: {}", getViaName(via).c_str());
           if (report_file.is_open()) {
-            report_file << via_name;
+            report_file << via_name << "\n";
           }
           logger_->report("{}", via_name);
         }
