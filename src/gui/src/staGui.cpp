@@ -50,6 +50,7 @@
 #include <string>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -502,7 +503,8 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                 : TimingPathRenderer::signal_color_;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
-              node->getNet(), painter, sink_node->getPin());
+              DbNetDescriptor::NetWithSink{node->getNet(), sink_node->getPin()},
+              painter);
         }
       }
     }
@@ -552,7 +554,9 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
 
   for (const auto& highlight : highlight_stage_) {
     if (highlight->net != nullptr) {
-      net_descriptor->highlight(highlight->net, painter, highlight->sink);
+      net_descriptor->highlight(
+          DbNetDescriptor::NetWithSink{highlight->net, highlight->sink},
+          painter);
     }
   }
 }

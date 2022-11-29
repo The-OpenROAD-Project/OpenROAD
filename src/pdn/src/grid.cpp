@@ -191,7 +191,22 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     const int min_width = techlayer.getMinWidth();
     const int min_spacing = techlayer.getSpacing(0);
 
-    for (const auto& [box, shape] : itr->second) {
+    std::vector<ShapeValue> all_shapes;
+    for (const auto& shape_value : itr->second) {
+      all_shapes.push_back(shape_value);
+    }
+
+    // sort shapes so they get written to db in the same order.  Shapes
+    // are non-overlapping so comparing one corner should be a total order.
+    std::sort(
+        all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
+          auto lc = l.first.min_corner();
+          auto rc = r.first.min_corner();
+          return std::make_tuple(bg::get<0>(lc), bg::get<1>(lc))
+                 < std::make_tuple(bg::get<0>(rc), bg::get<1>(rc));
+        });
+
+    for (const auto& [box, shape] : all_shapes) {
       const auto& rect = shape->getRect();
       // bloat to block routing based on spacing
       const int width = is_horizontal ? rect.dy() : rect.dx();
