@@ -296,7 +296,9 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations, float par_margin)
+void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
+                                  int iterations,
+                                  float par_margin)
 {
   if (repair_antennas_ == nullptr)
     repair_antennas_

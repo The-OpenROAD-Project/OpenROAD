@@ -1926,7 +1926,6 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
       double diffPAR_ratio = getPwlFactor(diffPAR, diff_area, 0.0);
       diffPAR_ratio *= (1.0 - par_margin_ / 100.0);
 
-
       if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
         return true;
     }
@@ -1940,7 +1939,6 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
       dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
       double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
       diffPSR_ratio *= (1.0 - par_margin_ / 100.0);
-
 
       if (diffPSR_ratio != 0 && diff_psr > diffPSR_ratio)
         return true;
