@@ -129,9 +129,5 @@ Total            31824           655            2.06%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2347 um
 [INFO GRT-0014] Routed nets: 87
-Differences found at line 4.
-58800 105000 63000 113400 metal2
-58800 105000 63000 109200 metal1
-Differences found at line 4.
-58800 105000 63000 113400 metal2
-58800 105000 63000 109200 metal1
+No differences found.
+No differences found.
