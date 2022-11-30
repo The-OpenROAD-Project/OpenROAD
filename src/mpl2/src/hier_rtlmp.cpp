@@ -206,9 +206,8 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 void HierRTLMP::hierRTLMacroPlacer()
 {
   //
-  // user just need to specify the leaf cluster size
-  // the cluster sizes for the parent levels are determined by the coarsening
-  // ratio
+  // Determine the size thresholds of parent clusters based on leaf cluster
+  // thresholds and the coarsening factor
   //
   unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ - 1);
   max_num_macro_base_ = max_num_macro_base_ * coarsening_factor;
@@ -238,17 +237,32 @@ void HierRTLMP::hierRTLMacroPlacer()
   floorplan_ly_ = dbuToMicron(die_box.yMin(), dbu_);
   floorplan_ux_ = dbuToMicron(die_box.xMax(), dbu_);
   floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
-  logger_->info(MPL,
-                2023,
-                "Basic Floorplan Information\n"
-                "Floorplan_lx : {}\n"
-                "Floorplan_lx : {}\n"
-                "Floorplan_lx : {}\n"
-                "Floorplan_lx : {}",
-                floorplan_lx_,
-                floorplan_ly_,
-                floorplan_ux_,
-                floorplan_uy_);
+
+  odb::Rect core_box = block_->getCoreArea();
+  int core_lx = dbuToMicron(core_box.xMin(), dbu_);
+  int core_ly = dbuToMicron(core_box.yMin(), dbu_);
+  int core_ux = dbuToMicron(core_box.xMax(), dbu_);
+  int core_uy = dbuToMicron(core_box.yMax(), dbu_);
+
+  logger_->info(
+      MPL,
+      2023,
+      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({} {} {} {})",
+      floorplan_lx_,
+      floorplan_ly_,
+      floorplan_ux_,
+      floorplan_uy_,
+      core_lx,
+      core_ly,
+      core_ux,
+      core_uy);
+  logger_->report(
+      "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
+      max_num_level_,
+      max_num_macro_base_,
+      min_num_macro_base_,
+      max_num_inst_base_,
+      min_num_inst_base_);
 
   //
   // Compute metrics for dbModules
@@ -256,9 +270,12 @@ void HierRTLMP::hierRTLMacroPlacer()
   // and report the statistics
   //
   metric_ = computeMetric(block_->getTopModule());
-  float util = metric_->getStdCellArea() + metric_->getMacroArea();
-  util /= floorplan_uy_ - floorplan_ly_;
-  util /= floorplan_ux_ - floorplan_lx_;
+  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
+  float util
+      = (metric_->getStdCellArea() + metric_->getMacroArea()) / core_area;
+  float core_util
+      = metric_->getStdCellArea() / (core_area - metric_->getMacroArea());
+
   logger_->info(MPL,
                 402,
                 "Traversed logical hierarchy\n"
@@ -267,13 +284,15 @@ void HierRTLMP::hierRTLMacroPlacer()
                 "\tNumber of macros : {}\n"
                 "\tArea of macros : {}\n"
                 "\tTotal area : {}\n"
-                "\tUtilization : {}\n",
+                "\tDesign Utilization : {}\n"
+                "\tCore Utilization: {}\n",
                 metric_->getNumStdCell(),
                 metric_->getStdCellArea(),
                 metric_->getNumMacro(),
                 metric_->getMacroArea(),
                 metric_->getStdCellArea() + metric_->getMacroArea(),
-                util);
+                util,
+                core_util);
 
   //
   // Initialize the physcial hierarchy tree
@@ -303,9 +322,9 @@ void HierRTLMP::hierRTLMacroPlacer()
   createBundledIOs();
 
   // create data flow information
-  calDataFlow();
+  createDataFlow();
 
-  logger_->report("Finish Calculate Data Flow");
+  logger_->report("Finish Calculate Data Flow detailed CR done");
 
   // Create physical hierarchy tree in a post-order DFS manner
   multiLevelCluster(root_cluster_);  // Recursive call for creating the tree
@@ -405,10 +424,12 @@ void HierRTLMP::hierRTLMacroPlacer()
 /////////////////////////////////////////////////////////////////////////
 // Hierarchical clustering related functions
 
+//
 // Traverse Logical Hierarchy
 // Recursive function to collect the design metrics (number of std cells,
 // area of std cells, number of macros and area of macros) in the logical
 // hierarchy
+//
 Metric* HierRTLMP::computeMetric(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;
@@ -419,10 +440,8 @@ Metric* HierRTLMP::computeMetric(odb::dbModule* module)
   for (odb::dbInst* inst : module->getInsts()) {
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad, a cover or
-    // empty block (such as marker)
-    if (master->isPad() || master->isCover()
-        || (master->isBlock() && liberty_cell == nullptr)) {
+    // check if the instance is a pad or a cover macro
+    if (master->isPad() || master->isCover()) {
       continue;
     }
 
@@ -442,6 +461,7 @@ Metric* HierRTLMP::computeMetric(odb::dbModule* module)
   // Be careful about the relationship between
   // odb::dbModule and odb::dbInst
   // odb::dbModule and odb::dbModInst
+  // recursively traverse the hierarchical module instances
   for (odb::dbModInst* inst : module->getChildren()) {
     Metric* metric = computeMetric(inst->getMaster());
     num_std_cell += metric->getNumStdCell();
@@ -506,10 +526,12 @@ void HierRTLMP::setClusterMetric(Cluster* cluster)
   }
 }
 
-// Handle IOS
+//
+// Handle IOs
 // Map IOs to Pads for designs with IO pads
 // If the design does not have IO pads,
 // do nothing
+//
 void HierRTLMP::mapIOPads()
 {
   // Check if this design has IO pads
@@ -520,6 +542,7 @@ void HierRTLMP::mapIOPads()
       break;
     }
   }
+
   if (!is_pad_design) {
     return;
   }
@@ -529,8 +552,10 @@ void HierRTLMP::mapIOPads()
       continue;
     }
 
-    // If the design has IO pads, there is a net only
+    //
+    // If the design has IO pads, there is a net
     // connecting the IO pin and IO pad instance
+    //
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       for (odb::dbITerm* iterm : net->getITerms()) {
         odb::dbInst* inst = iterm->getInst();
@@ -540,16 +565,20 @@ void HierRTLMP::mapIOPads()
   }
 }
 
-// Create Bunded IOs following the order : L, T, R, B
+//
+// Create Bundled IOs in the following the order : L, T, R, B
 // We will have num_bundled_IOs_ x 4 clusters for bundled IOs
+// Bundled IOs are only created for pins in the region
+//
 void HierRTLMP::createBundledIOs()
 {
-  // convert from micro to dbu
+  // convert from micron to dbu
   floorplan_lx_ = micronToDbu(floorplan_lx_, dbu_);
   floorplan_ly_ = micronToDbu(floorplan_ly_, dbu_);
   floorplan_ux_ = micronToDbu(floorplan_ux_, dbu_);
   floorplan_uy_ = micronToDbu(floorplan_uy_, dbu_);
-  // Get the floorplan information
+
+  // Get the floorplan information and get the range of bundled IO regions
   odb::Rect die_box = block_->getCoreArea();
   int core_lx = die_box.xMin();
   int core_ly = die_box.yMin();
@@ -558,6 +587,7 @@ void HierRTLMP::createBundledIOs()
   const int x_base = (floorplan_ux_ - floorplan_lx_) / num_bundled_IOs_;
   const int y_base = (floorplan_uy_ - floorplan_ly_) / num_bundled_IOs_;
   int cluster_id_base = cluster_id_;
+
   // Map all the BTerms / Pads to Bundled IOs (cluster)
   std::vector<std::string> prefix_vec;
   prefix_vec.push_back(std::string("L"));
@@ -578,23 +608,24 @@ void HierRTLMP::createBundledIOs()
       int y = 0.0;
       int width = 0;
       int height = 0;
-      if (i == 0) {
+      if (i == 0) {  // Left boundary
         x = floorplan_lx_;
         y = floorplan_ly_ + y_base * j;
         height = y_base;
-      } else if (i == 1) {
+      } else if (i == 1) {  // Top boundary
         x = floorplan_lx_ + x_base * j;
         y = floorplan_uy_;
         width = x_base;
-      } else if (i == 2) {
+      } else if (i == 2) {  // Right boundary
         x = floorplan_ux_;
         y = floorplan_uy_ - y_base * (j + 1);
         height = y_base;
-      } else {
+      } else {  // Bottom boundary
         x = floorplan_ux_ - x_base * (j + 1);
         y = floorplan_ly_;
         width = x_base;
       }
+
       // set the cluster to a IO cluster
       cluster->setIOClusterFlag(
           std::pair<float, float>(dbuToMicron(x, dbu_), dbuToMicron(y, dbu_)),
@@ -609,7 +640,7 @@ void HierRTLMP::createBundledIOs()
     int ly = std::numeric_limits<int>::max();
     int ux = 0;
     int uy = 0;
-    // If the design with IO pads, these block terms
+    // If the design has IO pads, these block terms
     // will not have block pins.
     // Otherwise, the design will have IO pins.
     for (const auto pin : term->getBPins()) {
@@ -625,7 +656,7 @@ void HierRTLMP::createBundledIOs()
       continue;
     }
 
-    // If the design with Pads
+    // If the term has a connected pad, get the bbox from the pad inst
     if (io_pad_map_.find(term) != io_pad_map_.end()) {
       lx = io_pad_map_[term]->getBBox()->xMin();
       ly = io_pad_map_[term]->getBBox()->yMin();
@@ -673,21 +704,22 @@ void HierRTLMP::createBundledIOs()
     }
     cluster_io_map[cluster_id] = true;
   }
-  // convert from dbu to micro
+  // convert from dbu to micron
   floorplan_lx_ = dbuToMicron(floorplan_lx_, dbu_);
   floorplan_ly_ = dbuToMicron(floorplan_ly_, dbu_);
   floorplan_ux_ = dbuToMicron(floorplan_ux_, dbu_);
   floorplan_uy_ = dbuToMicron(floorplan_uy_, dbu_);
 
+  // delete the IO clusters that do not have any pins assigned to them
   for (auto& [cluster_id, flag] : cluster_io_map) {
     if (!flag) {
-      logger_->report("remove cluster : {}",
-                      cluster_map_[cluster_id]->getName());
+      logger_->report("remove cluster : {}, id: {}",
+                      cluster_map_[cluster_id]->getName(),
+                      cluster_id);
       cluster_map_[cluster_id]->getParent()->removeChild(
           cluster_map_[cluster_id]);
       delete cluster_map_[cluster_id];
       cluster_map_.erase(cluster_id);
-      logger_->report("cluster_id : {}", cluster_id);
     }
   }
 }
@@ -1150,7 +1182,7 @@ void HierRTLMP::calculateConnection()
 
 // Create Dataflow Information
 // model each std cell instance, IO pin and macro pin as vertices
-void HierRTLMP::calDataFlow()
+void HierRTLMP::createDataFlow()
 {
   if (max_num_ff_dist_ <= 0) {
     return;
@@ -1162,6 +1194,7 @@ void HierRTLMP::calDataFlow()
 
   std::vector<bool> stop_flag_vec;
   // assign vertex_id property of each Bterm
+  // All boundary terms are marked as sequential stopping pts
   for (odb::dbBTerm* term : block_->getBTerms()) {
     odb::dbIntProperty::create(term, "vertex_id", stop_flag_vec.size());
     io_pin_vertex[stop_flag_vec.size()] = term;
@@ -1171,11 +1204,14 @@ void HierRTLMP::calDataFlow()
   for (auto inst : block_->getInsts()) {
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a Pad, Cover or empty block (such as marker)
-    // We ignore nets connecting Pads, Covers, or markers
+    // check if the instance is a Pad, Cover or a block
+    // We ignore nets connecting Pads, Covers
+    // for blocks, we iterate over the block pins
     if (master->isPad() || master->isCover() || master->isBlock()) {
       continue;
     }
+
+    // mark sequential instances
     odb::dbIntProperty::create(inst, "vertex_id", stop_flag_vec.size());
     std_cell_vertex[stop_flag_vec.size()] = inst;
     if (liberty_cell->hasSequentials()) {
@@ -1185,6 +1221,7 @@ void HierRTLMP::calDataFlow()
     }
   }
   // assign vertex_id property of each macro pin
+  // all macro pins are flagged as sequential stopping pt
   for (auto& [macro, hard_macro] : hard_macro_map_) {
     for (odb::dbITerm* pin : macro->getITerms()) {
       if (pin->getSigType() != odb::dbSigType::SIGNAL) {
@@ -1196,7 +1233,12 @@ void HierRTLMP::calDataFlow()
     }
   }
 
-  logger_->report("Finish Creating Vertices");
+  //
+  // Num of vertices will be # of boundary pins + number of logical std cells +
+  // number of macro pins)
+  //
+  logger_->report("Finish Creating Vertices. Num of Vertices: {}",
+                  stop_flag_vec.size());
 
   // create hypergraphs
   std::vector<std::vector<int>> vertices(stop_flag_vec.size());
@@ -1209,7 +1251,7 @@ void HierRTLMP::calDataFlow()
       continue;
     }
     int driver_id = -1;      // driver vertex id
-    std::set<int> loads_id;  // loas vertex id
+    std::set<int> loads_id;  // load vertex id
     bool pad_flag = false;
     // check the connected instances
     for (odb::dbITerm* iterm : net->getITerms()) {
@@ -1238,7 +1280,8 @@ void HierRTLMP::calDataFlow()
     if (pad_flag) {
       continue;  // the nets with Pads should be ignored
     }
-    // check the connected IO pins
+
+    // check the connected IO pins  of the net
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int vertex_id
           = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
@@ -1248,18 +1291,22 @@ void HierRTLMP::calDataFlow()
         loads_id.insert(vertex_id);
       }
     }
+
+    //
+    // Skip high fanout nets or nets that do not have valid driver or loads
+    //
     if (driver_id < 0 || loads_id.size() < 1
         || loads_id.size() > large_net_threshold_) {
       continue;
     }
+
+    // Create the hyperedge
     std::vector<int> hyperedge{driver_id};
     for (auto& load : loads_id) {
       if (load != driver_id) {
         hyperedge.push_back(load);
       }
     }
-    // for (auto& vertex_id : hyperedge)
-    //  vertices[vertex_id].push_back(hyperedges.size());
     vertices[driver_id].push_back(hyperedges.size());
     for (int i = 1; i < hyperedge.size(); i++) {
       backward_vertices[hyperedge[i]].push_back(hyperedges.size());
@@ -1339,6 +1386,10 @@ void HierRTLMP::calDataFlow()
   }
 }
 
+//
+// Forward or Backward DFS search to find sequential paths from/to IO pins based
+// on hop count to macro pins
+//
 void HierRTLMP::dataFlowDFSIOPin(int parent,
                                  int idx,
                                  std::vector<std::set<odb::dbInst*>>& insts,
@@ -1409,6 +1460,10 @@ void HierRTLMP::dataFlowDFSIOPin(int parent,
   }    // finish current vertex
 }
 
+//
+// Forward or Backward DFS search to find sequential paths between Macros based
+// on hop count
+//
 void HierRTLMP::dataFlowDFSMacroPin(
     int parent,
     int idx,

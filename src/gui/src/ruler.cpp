@@ -143,9 +143,7 @@ bool RulerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void RulerDescriptor::highlight(std::any object,
-                                Painter& painter,
-                                void* additional_data) const
+void RulerDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   if (ruler->isEuclidian()) {
@@ -249,11 +247,10 @@ Descriptor::Actions RulerDescriptor::getActions(std::any object) const
            }}};
 }
 
-Selected RulerDescriptor::makeSelected(std::any object,
-                                       void* additional_data) const
+Selected RulerDescriptor::makeSelected(std::any object) const
 {
   if (auto ruler = std::any_cast<Ruler*>(&object)) {
-    return Selected(*ruler, this, additional_data);
+    return Selected(*ruler, this);
   }
   return Selected();
 }
@@ -269,7 +266,7 @@ bool RulerDescriptor::lessThan(std::any l, std::any r) const
 bool RulerDescriptor::getAllObjects(SelectionSet& objects) const
 {
   for (auto& ruler : rulers_) {
-    objects.insert(makeSelected(ruler.get(), nullptr));
+    objects.insert(makeSelected(ruler.get()));
   }
   return true;
 }

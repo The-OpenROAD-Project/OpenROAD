@@ -71,7 +71,7 @@ class TimingPathsModel : public QAbstractTableModel
   Q_OBJECT
 
  public:
-  TimingPathsModel(sta::dbSta* sta, QObject* parent = nullptr);
+  TimingPathsModel(STAGuiInterface* sta, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -86,25 +86,19 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(bool get_max,
-                     int path_count,
-                     const std::set<sta::Pin*>& from,
+  void populateModel(const std::set<sta::Pin*>& from,
                      const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to,
-                     bool unconstrainted);
+                     const std::set<sta::Pin*>& to);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max,
-                     int path_count,
-                     const std::set<sta::Pin*>& from,
+  bool populatePaths(const std::set<sta::Pin*>& from,
                      const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to,
-                     bool unconstrainted);
+                     const std::set<sta::Pin*>& to);
 
-  sta::dbSta* sta_;
+  STAGuiInterface* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
   enum Column
@@ -362,15 +356,13 @@ class TimingControlsDialog : public QDialog
   TimingControlsDialog(QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta);
+  STAGuiInterface* getSTA() const { return sta_.get(); }
 
-  void setPathCount(int path_count)
-  {
-    path_count_spin_box_->setValue(path_count);
-  }
-  int getPathCount() const { return path_count_spin_box_->value(); }
+  void setPathCount(int path_count);
+  int getPathCount() const { return sta_->getMaxPathCount(); }
 
   void setUnconstrained(bool uncontrained);
-  bool getUnconstrained() const;
+  bool getUnconstrained() const { return sta_->isIncludeUnconstrainedPaths(); }
 
   void setExpandClock(bool expand);
   bool getExpandClock() const;
@@ -385,6 +377,9 @@ class TimingControlsDialog : public QDialog
 
   sta::Pin* convertTerm(Gui::odbTerm term) const;
 
+  sta::Corner* getCorner() const { return sta_->getCorner(); }
+  void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
+
  signals:
   void inspect(const Selected& selected);
   void expandClock(bool expand);
@@ -396,14 +391,14 @@ class TimingControlsDialog : public QDialog
   void addRemoveThru(PinSetWidget* row);
 
  private:
-  sta::dbSta* sta_;
+  std::unique_ptr<STAGuiInterface> sta_;
 
   QFormLayout* layout_;
 
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
 
-  QCheckBox* uncontrained_;
+  QCheckBox* unconstrained_;
   QCheckBox* expand_clk_;
 
   PinSetWidget* from_;

@@ -1,0 +1,36 @@
+name: Test DependencyInstaller script
+on:
+  schedule:
+  - cron: "0 8 * * MON"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:     
+  testInstaller:
+    strategy:
+      matrix:
+        os: ["ubuntu20", "ubuntu22", "centos7"]
+        args: ["", "-local"]
+        compilers: ["gcc", "clang"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          submodules: recursive
+      - name: Network Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bridge-utils
+          sudo pkill docker
+          sudo iptables -t nat -F
+          sudo ifconfig docker0 down
+          sudo brctl delbr docker0
+          sudo service docker restart
+      - name: Runs installer
+        run: |
+          ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
+      - name: Build project
+        run: |
+          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}

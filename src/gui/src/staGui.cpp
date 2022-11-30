@@ -50,6 +50,7 @@
 #include <string>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -91,7 +92,7 @@ static QString convertDelay(float time, sta::Unit* convert)
 
 /////////
 
-TimingPathsModel::TimingPathsModel(sta::dbSta* sta, QObject* parent)
+TimingPathsModel::TimingPathsModel(STAGuiInterface* sta, QObject* parent)
     : QAbstractTableModel(parent), sta_(sta)
 {
 }
@@ -127,7 +128,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
-    auto time_units = sta_->units()->timeUnit();
+    auto time_units = sta_->getSTA()->units()->timeUnit();
     auto* timing_path = getPathAt(index);
     switch (col_index) {
       case Clock:
@@ -228,37 +229,25 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 }
 
 void TimingPathsModel::populateModel(
-    bool setup_hold,
-    int path_count,
     const std::set<sta::Pin*>& from,
     const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to,
-    bool unconstrainted)
+    const std::set<sta::Pin*>& to)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(setup_hold, path_count, from, thru, to, unconstrainted);
+  populatePaths(from, thru, to);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
-    bool get_max,
-    int path_count,
     const std::set<sta::Pin*>& from,
     const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to,
-    bool unconstrainted)
+    const std::set<sta::Pin*>& to)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
-  STAGuiInterface stagui(sta_);
-  stagui.setUseMax(get_max);
-  stagui.setMaxPathCount(path_count);
-  stagui.setIncludeUnconstrainedPaths(unconstrainted);
-  stagui.setIncludeCaptruePaths(true);
-
-  timing_paths_ = stagui.getTimingPaths(from, thru, to);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to);
 
   QApplication::restoreOverrideCursor();
   return true;
@@ -514,7 +503,8 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                 : TimingPathRenderer::signal_color_;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
-              node->getNet(), painter, sink_node->getPin());
+              DbNetDescriptor::NetWithSink{node->getNet(), sink_node->getPin()},
+              painter);
         }
       }
     }
@@ -564,7 +554,9 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
 
   for (const auto& highlight : highlight_stage_) {
     if (highlight->net != nullptr) {
-      net_descriptor->highlight(highlight->net, painter, highlight->sink);
+      net_descriptor->highlight(
+          DbNetDescriptor::NetWithSink{highlight->net, highlight->sink},
+          painter);
     }
   }
 }
@@ -640,6 +632,7 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   const int path_count = 1000;
 
   STAGuiInterface stagui(sta_);
+  stagui.setCorner(sta_->cmdCorner());
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
@@ -1056,11 +1049,11 @@ void PinSetWidget::showMenu(const QPoint& point)
 
 TimingControlsDialog::TimingControlsDialog(QWidget* parent)
     : QDialog(parent),
-      sta_(nullptr),
+      sta_(std::make_unique<STAGuiInterface>()),
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
-      uncontrained_(new QCheckBox(this)),
+      unconstrained_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
       thru_({}),
@@ -1073,16 +1066,24 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
-  layout_->addRow("Command corner:", corner_box_);
+  layout_->addRow("Corner:", corner_box_);
 
   setupPinRow("From:", from_);
   setThruPin({});
   setupPinRow("To:", to_);
 
   setUnconstrained(false);
-  layout_->addRow("Unconstrained:", uncontrained_);
+  layout_->addRow("Unconstrained:", unconstrained_);
 
   setLayout(layout_);
+
+  connect(path_count_spin_box_,
+          QOverload<int>::of(&QSpinBox::valueChanged),
+          [this](int value) { sta_->setMaxPathCount(value); });
+  connect(unconstrained_, &QCheckBox::stateChanged, [this]() {
+    sta_->setIncludeUnconstrainedPaths(unconstrained_->checkState()
+                                       == Qt::Checked);
+  });
 
   connect(corner_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1091,7 +1092,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
               return;
             }
             auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
-            sta_->setCmdCorner(corner);
+            sta_->setCorner(corner);
           });
 
   connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
@@ -1107,7 +1108,7 @@ void TimingControlsDialog::setupPinRow(const QString& label,
     layout_->insertRow(row_index, label, row);
   }
 
-  row->setSTA(sta_);
+  row->setSTA(sta_->getSTA());
 
   connect(row,
           SIGNAL(inspect(const Selected&)),
@@ -1117,22 +1118,24 @@ void TimingControlsDialog::setupPinRow(const QString& label,
 
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
 {
-  sta_ = sta;
-  from_->setSTA(sta_);
+  sta_->setSTA(sta);
+  from_->setSTA(sta_->getSTA());
   for (auto* row : thru_) {
-    row->setSTA(sta_);
+    row->setSTA(sta_->getSTA());
   }
-  to_->setSTA(sta_);
+  to_->setSTA(sta_->getSTA());
 }
 
 void TimingControlsDialog::setUnconstrained(bool unconstrained)
 {
-  uncontrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+  sta_->setIncludeUnconstrainedPaths(unconstrained);
+  unconstrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
 }
 
-bool TimingControlsDialog::getUnconstrained() const
+void TimingControlsDialog::setPathCount(int path_count)
 {
-  return uncontrained_->checkState() == Qt::Checked;
+  sta_->setMaxPathCount(path_count);
+  path_count_spin_box_->setValue(path_count);
 }
 
 void TimingControlsDialog::setExpandClock(bool expand)
@@ -1149,10 +1152,10 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->cmdCorner();
+  auto* current_corner = sta_->getCorner();
   corner_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->corners()->corners()) {
+  for (auto* corner : sta_->getSTA()->corners()->corners()) {
     if (corner == current_corner) {
       selection = corner_box_->count();
     }
@@ -1182,7 +1185,7 @@ void TimingControlsDialog::setPinSelections()
 
 sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
 {
-  auto* network = sta_->getDbNetwork();
+  sta::dbNetwork* network = sta_->getNetwork();
 
   if (std::holds_alternative<odb::dbITerm*>(term)) {
     return network->dbToSta(std::get<odb::dbITerm*>(term));
@@ -1251,5 +1254,4 @@ const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
   }
   return pins;
 }
-
 }  // namespace gui

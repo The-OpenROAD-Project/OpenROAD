@@ -322,8 +322,7 @@ class Descriptor
   virtual Actions getActions(std::any /* object */) const { return Actions(); }
   virtual Editors getEditors(std::any /* object */) const { return Editors(); }
 
-  virtual Selected makeSelected(std::any object,
-                                void* additional_data) const = 0;
+  virtual Selected makeSelected(std::any object) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
@@ -339,9 +338,7 @@ class Descriptor
 
   // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
-  virtual void highlight(std::any object,
-                         Painter& painter,
-                         void* additional_data = nullptr) const = 0;
+  virtual void highlight(std::any object, Painter& painter) const = 0;
   virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
@@ -353,14 +350,10 @@ class Selected
 {
  public:
   // Null case
-  Selected() : additional_data_(nullptr), descriptor_(nullptr) {}
+  Selected() : object_({}), descriptor_(nullptr) {}
 
-  Selected(std::any object,
-           const Descriptor* descriptor,
-           void* additional_data = nullptr)
-      : object_(object),
-        additional_data_(additional_data),
-        descriptor_(descriptor)
+  Selected(std::any object, const Descriptor* descriptor)
+      : object_(object), descriptor_(descriptor)
   {
   }
 
@@ -429,8 +422,6 @@ class Selected
 
  private:
   std::any object_;
-  void* additional_data_;  // Will only be required for highlighting input nets,
-                           // in which case it will store the input instTerm
   const Descriptor* descriptor_;
 };
 
@@ -548,7 +539,7 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object, void* additional_data = nullptr);
+  Selected makeSelected(std::any object);
 
   // Set the current selected object in the gui.
   void setSelected(Selected selection);
