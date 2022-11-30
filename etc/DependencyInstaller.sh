@@ -263,7 +263,8 @@ _installOpenSuseDev() {
         tcl-devel \
         wget \
         git \
-        gzip
+        gzip \
+        libomp11-devel
     
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50

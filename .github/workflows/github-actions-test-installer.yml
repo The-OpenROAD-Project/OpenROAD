@@ -2,6 +2,8 @@ name: Test DependencyInstaller script
 on:
   schedule:
   - cron: "0 8 * * MON"
+  push:
+  pull_request:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -9,7 +11,7 @@ jobs:
   testInstaller:
     strategy:
       matrix:
-        os: ["ubuntu20", "ubuntu22", "centos7"]
+        os: ["ubuntu20", "ubuntu22", "centos7", "opensuse"]
         args: ["", "-local"]
         compilers: ["gcc", "clang"]
     runs-on: ubuntu-latest
