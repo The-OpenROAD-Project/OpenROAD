@@ -201,6 +201,10 @@ void Opendp::setGridCell(Cell& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
+  if (isBlock(&cell)) {
+    // Try the is_hopeless strategy to get off of a block
+    pixel->is_hopeless = true;
+  }
 }
 
 void Opendp::groupAssignCellRegions()

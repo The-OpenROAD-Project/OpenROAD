@@ -10,8 +10,11 @@ FROM $fromImage
 
 ARG compiler=gcc
 ARG numThreads=$(nproc)
+ARG LOCAL_PATH=""
 
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -cmake="-DCMAKE_PREFIX_PATH=/opt/or-tools/lib/cmake"
+ENV PATH=${LOCAL_PATH}:${PATH}
+
+RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads}

@@ -324,7 +324,7 @@ void dbSBox::destroy(dbSBox* box_)
 {
   _dbSWire* wire = (_dbSWire*) box_->getSWire();
   _dbBlock* block = (_dbBlock*) wire->getOwner();
-  _dbSBox* box = (_dbSBox*)box_;
+  _dbSBox* box = (_dbSBox*) box_;
 
   wire->removeSBox(box);
 

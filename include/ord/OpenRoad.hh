@@ -97,8 +97,11 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
+}
+
+namespace mpl2 {
 class MacroPlacer2;
-}  // namespace mpl
+}
 
 namespace gpl {
 class Replace;
@@ -170,7 +173,7 @@ class OpenRoad
   fin::Finale* getFinale() { return finale_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
-  mpl::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
+  mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   triton_route::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -223,6 +226,8 @@ class OpenRoad
   void readDb(const char* filename);
   void writeDb(const char* filename);
 
+  void diffDbs(const char* filename1, const char* filename2, const char* diffs);
+
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
@@ -263,7 +268,7 @@ class OpenRoad
   dpo::Optdp* optdp_;
   fin::Finale* finale_;
   mpl::MacroPlacer* macro_placer_;
-  mpl::MacroPlacer2* macro_placer2_;
+  mpl2::MacroPlacer2* macro_placer2_;
   grt::GlobalRouter* global_router_;
   rmp::Restructure* restructure_;
   cts::TritonCTS* tritonCts_;

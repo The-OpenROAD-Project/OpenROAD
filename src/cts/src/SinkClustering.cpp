@@ -166,7 +166,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
     writePlotFile(groupSize);
 
   if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
-    clusteringVisualizer(original_points, groupSize);
+    clusteringVisualizer(original_points);
   }
 }
 
@@ -370,10 +370,9 @@ bool SinkClustering::isLimitExceeded(unsigned size,
 }
 
 void SinkClustering::clusteringVisualizer(
-    const std::vector<Point<double>>& points,
-    unsigned groupSize)
+    const std::vector<Point<double>>& points)
 {
-  graphics_ = std::make_unique<Graphics>(logger_, this, groupSize, points);
+  graphics_ = std::make_unique<Graphics>(this, points);
   if (Graphics::guiActive())
     graphics_->clockPlot(true);
 }

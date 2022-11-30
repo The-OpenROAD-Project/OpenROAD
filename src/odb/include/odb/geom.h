@@ -36,8 +36,8 @@
 #include <iosfwd>
 #include <vector>
 
-#include "odb.h"
 #include "isotropy.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -337,12 +337,14 @@ class Rect
   void set_ylo(int x1);
   void set_yhi(int x1);
 
-  int xMin() const { return _xlo; };
-  int yMin() const { return _ylo; };
-  int xMax() const { return _xhi; };
-  int yMax() const { return _yhi; };
-  uint dx() const { return (uint) (_xhi - _xlo); };
-  uint dy() const { return (uint) (_yhi - _ylo); };
+  int xMin() const { return _xlo; }
+  int yMin() const { return _ylo; }
+  int xMax() const { return _xhi; }
+  int yMax() const { return _yhi; }
+  uint dx() const { return (uint) (_xhi - _xlo); }
+  uint dy() const { return (uint) (_yhi - _ylo); }
+  int xCenter() const { return (_xlo + _xhi) / 2; }
+  int yCenter() const { return (_ylo + _yhi) / 2; }
   std::vector<Point> getPoints() const
   {
     std::vector<Point> points(5);

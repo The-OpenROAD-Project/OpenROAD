@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "odb/lefout.h"
+
 #include <stdio.h>
 
 #include <algorithm>
@@ -38,7 +40,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
-#include "odb/lefout.h"
 
 using namespace boost::polygon::operators;
 using namespace odb;
@@ -61,7 +62,9 @@ void lefout::insertObstruction(dbBox* box, ObstructionMap& obstructions) const
   insertObstruction(box->getTechLayer(), box->getBox(), obstructions);
 }
 
-void lefout::insertObstruction(dbTechLayer* layer, const Rect& rect, ObstructionMap& obstructions) const
+void lefout::insertObstruction(dbTechLayer* layer,
+                               const Rect& rect,
+                               ObstructionMap& obstructions) const
 {
   if (layer->getType() == odb::dbTechLayerType::CUT) {
     return;
@@ -69,10 +72,8 @@ void lefout::insertObstruction(dbTechLayer* layer, const Rect& rect, Obstruction
 
   const int bloat = determineBloat(layer);
   boost::polygon::polygon_90_set_data<int> poly;
-  poly = boost::polygon::rectangle_data<int>{rect.xMax(),
-                                             rect.yMax(),
-                                             rect.xMin(),
-                                             rect.yMin()};
+  poly = boost::polygon::rectangle_data<int>{
+      rect.xMax(), rect.yMax(), rect.xMin(), rect.yMin()};
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
@@ -146,7 +147,8 @@ void lefout::writeBox(const std::string& indent, dbBox* box)
           lefdist(y2));
 }
 
-void lefout::writeRect(const std::string& indent, const boost::polygon::rectangle_data<int>& rect)
+void lefout::writeRect(const std::string& indent,
+                       const boost::polygon::rectangle_data<int>& rect)
 {
   int x1 = boost::polygon::xl(rect);
   int y1 = boost::polygon::yl(rect);
@@ -196,33 +198,32 @@ void lefout::writeObstructions(dbBlock* db_block)
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers_) {
-	    writeBox("   ", block_bounding_box);	
+      writeBox("   ", block_bounding_box);
     } else {
       const int bloat = determineBloat(tech_layer);
-    	boost::polygon::polygon_90_set_data<int> shrink_poly = polySet; 
-    	shrink_poly.shrink2(bloat, bloat, bloat, bloat);
-    	
-    	// Decompose the polygon set to rectanges in non-preferred direction
-    	std::vector<boost::polygon::rectangle_data<int>> rects;
-    	if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    	  shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL); 
-    	} else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    	  shrink_poly.get_rectangles(rects, boost::polygon::HORIZONTAL); 
-    	} else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
-    	  shrink_poly.get_rectangles(rects); 
-    	}
+      boost::polygon::polygon_90_set_data<int> shrink_poly = polySet;
+      shrink_poly.shrink2(bloat, bloat, bloat, bloat);
 
-    	for (const auto& rect : rects) {
-    	  writeRect("   ",rect);
-    	}
+      // Decompose the polygon set to rectanges in non-preferred direction
+      std::vector<boost::polygon::rectangle_data<int>> rects;
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL);
+      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+        shrink_poly.get_rectangles(rects, boost::polygon::HORIZONTAL);
+      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::NONE) {
+        shrink_poly.get_rectangles(rects);
+      }
+
+      for (const auto& rect : rects) {
+        writeRect("   ", rect);
+      }
     }
   }
   fprintf(_out, "  END\n");
 }
 
-void lefout::getObstructions(
-    dbBlock* db_block,
-    ObstructionMap& obstructions) const
+void lefout::getObstructions(dbBlock* db_block,
+                             ObstructionMap& obstructions) const
 {
   for (dbObstruction* obs : db_block->getObstructions()) {
     insertObstruction(obs->getBBox(), obstructions);
@@ -236,15 +237,14 @@ void lefout::getObstructions(
   }
 }
 
-void lefout::findInstsObstructions(
-    ObstructionMap& obstructions,
-    dbBlock* db_block) const
+void lefout::findInstsObstructions(ObstructionMap& obstructions,
+                                   dbBlock* db_block) const
 {  // Find all insts obsturctions and Iterms
-  
+
   for (auto* inst : db_block->getInsts()) {
     dbTransform trans;
     inst->getTransform(trans);
-    
+
     // Add insts obstructions
     for (auto* obs : inst->getMaster()->getObstructions()) {
       Rect obs_rect = obs->getBox();
@@ -252,7 +252,7 @@ void lefout::findInstsObstructions(
       insertObstruction(obs->getTechLayer(), obs_rect, obstructions);
     }
 
-    // Add inst Iterms to obstructions 
+    // Add inst Iterms to obstructions
     for (auto* iterm : inst->getITerms()) {
       dbShape shape;
       dbITermShapeItr iterm_shape_itr;
@@ -263,9 +263,8 @@ void lefout::findInstsObstructions(
   }
 }
 
-void lefout::findSWireLayerObstructions(
-    ObstructionMap& obstructions,
-    dbNet* net) const
+void lefout::findSWireLayerObstructions(ObstructionMap& obstructions,
+                                        dbNet* net) const
 {  // Find all layers where an swire exists
   for (dbSWire* swire : net->getSWires()) {
     for (dbSBox* box : swire->getWires()) {
@@ -283,9 +282,8 @@ void lefout::findSWireLayerObstructions(
   }
 }
 
-void lefout::findLayerViaObstructions(
-    ObstructionMap& obstructions,
-    dbSBox* box) const
+void lefout::findLayerViaObstructions(ObstructionMap& obstructions,
+                                      dbSBox* box) const
 {
   std::vector<dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
@@ -297,9 +295,8 @@ void lefout::findLayerViaObstructions(
   }
 }
 
-void lefout::findWireLayerObstructions(
-    ObstructionMap& obstructions,
-    dbNet* net) const
+void lefout::findWireLayerObstructions(ObstructionMap& obstructions,
+                                       dbNet* net) const
 {
   // Find all metal layers where a wire exists.
   dbWire* wire = net->getWire();
@@ -1326,7 +1323,7 @@ bool lefout::writeAbstractLef(dbBlock* db_block, const char* lef_file)
   _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
 
-  writeHeader(db_block);  
+  writeHeader(db_block);
   writeBlock(db_block);
   fprintf(_out, "END LIBRARY\n");
   fclose(_out);

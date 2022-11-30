@@ -44,17 +44,17 @@ inline dbMap<T, D>::dbMap(const dbSet<T>& set)
   // Use a vector if this set represents a sequential iterator
   if (_set.sequential()) {
     _vector = new std::vector<D>(_set.sequential() + 1);
-    _map    = NULL;
+    _map = NULL;
   }
 
   // Use a map if this set represents random iterator
   else {
     _vector = NULL;
-    _map    = new std::map<T*, D>;
+    _map = new std::map<T*, D>;
     typename dbSet<T>::iterator itr;
 
     for (itr = _set.begin(); itr != _set.end(); ++itr) {
-      T* object       = *itr;
+      T* object = *itr;
       (*_map)[object] = D();
     }
   }
@@ -99,5 +99,3 @@ inline D& dbMap<T, D>::operator[](T* object)
 }
 
 }  // namespace odb
-
-
