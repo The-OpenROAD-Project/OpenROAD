@@ -133,8 +133,7 @@ void Optdp::improvePlacement(int seed,
     // improvement.  If it errors or prints a warning when
     // given a legal placement, that likely means there is
     // a bug in my code somewhere.
-    dpo::ShiftLegalizerParams lgParams;
-    dpo::ShiftLegalizer lg(lgParams);
+    dpo::ShiftLegalizer lg;
     lg.legalize(mgr);
 
     // Detailed improvement.  Runs through a number of different

@@ -46,6 +46,7 @@ class FlexGRCMap
   FlexGRCMap(frDesign* designIn) : design_(designIn), bits_()
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+    numLayers_ = design_->getTech()->getLayers().size();
     xgp_ = &(gCellPatterns.at(0));
     ygp_ = &(gCellPatterns.at(1));
   }

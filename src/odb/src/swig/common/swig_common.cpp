@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "swig_common.h"
+
 #include <libgen.h>
 
 #include <array>
@@ -34,7 +36,6 @@
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
-#include "swig_common.h"
 #include "utl/Logger.h"
 
 using namespace boost::polygon::operators;
@@ -43,7 +44,9 @@ bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2)
 {
   // Sadly the diff report is too implementation specific to reveal much about
   // the structural differences.
-  bool diffs = odb::dbDatabase::diff(db1, db2, nullptr, 2);
+  FILE* report = fopen("diffs.rpt", "w");
+  bool diffs = odb::dbDatabase::diff(db1, db2, report, 2);
+  fclose(report);
   if (diffs) {
     printf("Differences found.\n");
     odb::dbChip* chip1 = db1->getChip();
@@ -326,7 +329,7 @@ void dumpAPs(odb::dbBlock* block, const std::string file_name)
           os << "layer=" << ap->getLayer()->getName() << " ";
           os << "type=" << ap->getLowType().getString() << "/"
              << ap->getHighType().getString() << " ";
-          for (auto dir : dirs) {
+          for (const auto& dir : dirs) {
             os << dir.getString() << " ";
           }
           os << "\n";

@@ -23,37 +23,37 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CDEFIPROP_H
 #define CDEFIPROP_H
 
 #include <stdio.h>
+
 #include "defiTypedefs.h"
 
 /* Struct holds the data for one property.                                    */
 
-EXTERN const char* defiProp_string (const defiProp* obj);
-EXTERN const char* defiProp_propType (const defiProp* obj);
-EXTERN const char* defiProp_propName (const defiProp* obj);
-EXTERN char defiProp_dataType (const defiProp* obj);
-       /* either I:integer R:real S:string Q:quotedstring N:nameMapString     */
-EXTERN int defiProp_hasNumber (const defiProp* obj);
-EXTERN int defiProp_hasRange (const defiProp* obj);
-EXTERN int defiProp_hasString (const defiProp* obj);
-EXTERN int defiProp_hasNameMapString (const defiProp* obj);
-EXTERN double defiProp_number (const defiProp* obj);
-EXTERN double defiProp_left (const defiProp* obj);
-EXTERN double defiProp_right (const defiProp* obj);
+EXTERN const char* defiProp_string(const defiProp* obj);
+EXTERN const char* defiProp_propType(const defiProp* obj);
+EXTERN const char* defiProp_propName(const defiProp* obj);
+EXTERN char defiProp_dataType(const defiProp* obj);
+/* either I:integer R:real S:string Q:quotedstring N:nameMapString     */
+EXTERN int defiProp_hasNumber(const defiProp* obj);
+EXTERN int defiProp_hasRange(const defiProp* obj);
+EXTERN int defiProp_hasString(const defiProp* obj);
+EXTERN int defiProp_hasNameMapString(const defiProp* obj);
+EXTERN double defiProp_number(const defiProp* obj);
+EXTERN double defiProp_left(const defiProp* obj);
+EXTERN double defiProp_right(const defiProp* obj);
 
-EXTERN void defiProp_print (const defiProp* obj, FILE*  f);
+EXTERN void defiProp_print(const defiProp* obj, FILE* f);
 
-                        /*   N:nameMapString                                  */
+/*   N:nameMapString                                  */
 
 #endif

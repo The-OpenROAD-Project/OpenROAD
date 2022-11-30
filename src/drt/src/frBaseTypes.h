@@ -31,9 +31,9 @@
 
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/serialization/base_object.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
+#include <boost/serialization/base_object.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -45,10 +45,10 @@
 #include "utl/Logger.h"
 
 namespace odb {
-  class Rect;
+class Rect;
 }
-namespace boost::serialization{
-  class access;
+namespace boost::serialization {
+class access;
 }
 
 namespace fr {
@@ -203,6 +203,7 @@ enum class frConstraintTypeEnum
   frcSpacingTableInfluenceConstraint,
   frcLef58EolExtensionConstraint,
   frcLef58EolKeepOutConstraint,
+  frcMetalWidthViaConstraint,
   frcLef58AreaConstraint
 };
 
@@ -291,6 +292,7 @@ struct frDebugSettings
         debugDumpDR(false),
         debugMaze(false),
         debugPA(false),
+        debugTA(false),
         draw(true),
         allowPause(true),
         x(-1),
@@ -314,6 +316,7 @@ struct frDebugSettings
   bool debugDumpDR;
   bool debugMaze;
   bool debugPA;
+  bool debugTA;
   bool draw;
   bool allowPause;
   std::string netName;

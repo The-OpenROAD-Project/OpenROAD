@@ -33,6 +33,7 @@ usage: $0 [CMD] [OPTIONS]
   -sha                          Use git commit sha as the tag image. Default is
                                   'latest'.
   -h -help                      Show this message and exits
+  -local                        Installs with prefix /home/openroad-deps
 
 EOF
     exit "${1:-1}"
@@ -75,12 +76,19 @@ _setup() {
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
+            if [[ "${isLocal}" == "yes" ]]; then
+                buildArgs="${buildArgs} --build-arg LOCAL_PATH=${LOCAL_PATH}/bin"
+            fi
             imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
         "dev" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
-            buildArgs=""
+            if [[ "${isLocal}" == "yes" ]]; then
+                buildArgs="--build-arg INSTALLER_ARGS=-prefix=${LOCAL_PATH}"
+            else
+                buildArgs=""
+            fi
             ;;
         "runtime" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
@@ -204,7 +212,9 @@ os="centos7"
 target="dev"
 compiler="gcc"
 useCommitSha="no"
+isLocal="no"
 numThreads="$(nproc)"
+LOCAL_PATH="/home/openroad-deps"
 
 while [ "$#" -gt 0 ]; do
     case "${1}" in
@@ -225,6 +235,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -sha )
             useCommitSha=yes
+            ;;
+        -local )
+            isLocal=yes
             ;;
         -compiler | -os | -target )
             echo "${1} requires an argument" >&2

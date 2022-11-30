@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2012, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author$
 //  $Revision$
 //  $Date$
@@ -27,31 +27,33 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
-#   include <unistd.h>
+#include <unistd.h>
 #endif /* not WIN32 */
 #include "lefwWriter.hpp"
 #include "lefwWriterCalls.hpp"
 
 // Global variables
-char  defaultOut[128];
+char defaultOut[128];
 FILE* fout;
-int   userData;
+int userData;
 
 #define CHECK_STATUS(status) \
   if (status) {              \
-     lefwPrintError(status); \
-     return(status);         \
+    lefwPrintError(status);  \
+    return (status);         \
   }
 
-void dataError() {
+void dataError()
+{
   fprintf(fout, "ERROR: returned user data is not correct!\n");
 }
 
-void checkType(lefwCallbackType_e c) {
+void checkType(lefwCallbackType_e c)
+{
   if (c >= 0 && c <= lefwEndLibCbkType) {
     // OK
   } else {
@@ -59,31 +61,37 @@ void checkType(lefwCallbackType_e c) {
   }
 }
 
-int versionCB(lefwCallbackType_e c, lefiUserData ud) {
+int versionCB(lefwCallbackType_e c, lefiUserData ud)
+{
   int status;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
+  if ((int) ud != userData)
+    dataError();
   status = lefwVersion(5, 6);
   CHECK_STATUS(status);
   return 0;
 }
 
-int busBitCharsCB(lefwCallbackType_e c, lefiUserData ud) {
+int busBitCharsCB(lefwCallbackType_e c, lefiUserData ud)
+{
   int status;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
+  if ((int) ud != userData)
+    dataError();
   status = lefwBusBitChars("<>");
   CHECK_STATUS(status);
   return 0;
 }
 
-int dividerCB(lefwCallbackType_e c, lefiUserData ud) {
+int dividerCB(lefwCallbackType_e c, lefiUserData ud)
+{
   int status;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
+  if ((int) ud != userData)
+    dataError();
   status = lefwDividerChar(":");
   CHECK_STATUS(status);
   status = lefwNewLine();
@@ -92,11 +100,13 @@ int dividerCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // UNITS
-int unitsCB(lefwCallbackType_e c, lefiUserData ud) {
+int unitsCB(lefwCallbackType_e c, lefiUserData ud)
+{
   int status;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
+  if ((int) ud != userData)
+    dataError();
   status = lefwStartUnits();
   CHECK_STATUS(status);
   status = lefwUnits(100, 10, 10000, 10000, 10000, 1000, 0);
@@ -107,11 +117,13 @@ int unitsCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // PROPERTYDEFINITIONS
-int propDefCB(lefwCallbackType_e c, lefiUserData ud) {
+int propDefCB(lefwCallbackType_e c, lefiUserData ud)
+{
   int status;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
+  if ((int) ud != userData)
+    dataError();
   status = lefwStartPropDef();
   CHECK_STATUS(status);
   status = lefwStringPropDef("LIBRARY", "NAME", 0, 0, "Cadence96");
@@ -161,13 +173,15 @@ int propDefCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // LAYERS
-int layerCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
-  double *current;
+int layerCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
+  double* current;
 
   checkType(c);
-  if ((int)ud != userData) dataError();
-  current = (double*)malloc(sizeof(double)*15);
+  if ((int) ud != userData)
+    dataError();
+  current = (double*) malloc(sizeof(double) * 15);
 
   status = lefwStartLayer("POLYS", "MASTERSLICE");
   CHECK_STATUS(status);
@@ -372,7 +386,7 @@ int layerCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwEndLayer("CA");
   CHECK_STATUS(status);
-  free((char*)current);
+  free((char*) current);
 
   status = lefwStartLayerRouting("M1");
   CHECK_STATUS(status);
@@ -465,8 +479,9 @@ int layerCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // VIA
-int viaCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int viaCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwStartVia("RX_PC", "DEFAULT");
@@ -531,8 +546,9 @@ int viaCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // VIARULE
-int viaRuleCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int viaRuleCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwStartViaRule("VIALIST12");
@@ -571,12 +587,13 @@ int viaRuleCB(lefwCallbackType_e c, lefiUserData ud) {
   return 0;
 }
 
-  // NONDEFAULTRULE
-int nonDefaultCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+// NONDEFAULTRULE
+int nonDefaultCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
-  status = lefwStartNonDefaultRule("RULE1"); 
+  status = lefwStartNonDefaultRule("RULE1");
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("RX", 10.0, 2.2, 6, 0, 0, 0);
   CHECK_STATUS(status);
@@ -602,14 +619,15 @@ int nonDefaultCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwEndVia("nd1VARX0");
   CHECK_STATUS(status);
-  status = lefwEndNonDefaultRule("RULE1"); 
+  status = lefwEndNonDefaultRule("RULE1");
   CHECK_STATUS(status);
   return 0;
 }
 
 // MINFEATURE & DIELECTRIC
-int minFeatureCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int minFeatureCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwMinFeature(0.1, 0.1);
@@ -618,8 +636,9 @@ int minFeatureCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // SITE
-int siteCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int siteCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwSite("CORE1", "CORE", "X", 67.2, 6);
@@ -648,10 +667,11 @@ int siteCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // MACRO
-int macroCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
-  double *xpath;
-  double *ypath;
+int macroCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
+  double* xpath;
+  double* ypath;
 
   checkType(c);
   status = lefwStartMacro("CHK3A");
@@ -681,7 +701,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0);
   CHECK_STATUS(status);
-  status = lefwMacroPinPortLayerRect(-0.9, 3, 9.9, 6, 0, 0, 0, 0); 
+  status = lefwMacroPinPortLayerRect(-0.9, 3, 9.9, 6, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
@@ -703,7 +723,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwMacroPinUse("POWER");
   CHECK_STATUS(status);
-  status = lefwMacroPinShape("ABUTMENT"); 
+  status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
   // MACRO - PIN - PORT
   status = lefwStartMacroPinPort(NULL);
@@ -724,7 +744,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwEndMacroPin("VDD");
   CHECK_STATUS(status);
-  status = lefwStartMacroPin("PA3"); 
+  status = lefwStartMacroPin("PA3");
   CHECK_STATUS(status);
   status = lefwMacroPinDirection("INPUT");
   CHECK_STATUS(status);
@@ -744,7 +764,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayerRect(-0.45, 12.15, 0.45, 13.05, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwEndMacroPinPort(); 
+  status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
   status = lefwStartMacroPinPort(NULL);
   CHECK_STATUS(status);
@@ -760,7 +780,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwEndMacroPin("PA3"); 
+  status = lefwEndMacroPin("PA3");
   CHECK_STATUS(status);
   // MACRO - OBS
   status = lefwStartMacroObs();
@@ -811,8 +831,8 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M2", 5.6);
   CHECK_STATUS(status);
-  xpath = (double*)malloc(sizeof(double)*7);
-  ypath = (double*)malloc(sizeof(double)*7);
+  xpath = (double*) malloc(sizeof(double) * 7);
+  ypath = (double*) malloc(sizeof(double) * 7);
   xpath[0] = 30.8;
   ypath[0] = 9;
   xpath[1] = 42;
@@ -831,9 +851,9 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwEndMacroPin("Z"); 
-  free((char*)xpath);
-  free((char*)ypath);
+  status = lefwEndMacroPin("Z");
+  free((char*) xpath);
+  free((char*) ypath);
   // MACRO - OBS
   status = lefwStartMacroObs();
   CHECK_STATUS(status);
@@ -841,8 +861,8 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   CHECK_STATUS(status);
   status = lefwMacroObsLayerRect(24.1, 1.5, 43.5, 208.5, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  xpath = (double*)malloc(sizeof(double)*2);
-  ypath = (double*)malloc(sizeof(double)*2);
+  xpath = (double*) malloc(sizeof(double) * 2);
+  ypath = (double*) malloc(sizeof(double) * 2);
   xpath[0] = 8.4;
   ypath[0] = 3;
   xpath[1] = 8.4;
@@ -861,8 +881,8 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
   ypath[1] = 123;
   status = lefwMacroObsLayerPath(2, xpath, ypath, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  free((char*)xpath);
-  free((char*)ypath);
+  free((char*) xpath);
+  free((char*) ypath);
   status = lefwEndMacroObs();
   CHECK_STATUS(status);
   status = lefwEndMacro("INV");
@@ -871,8 +891,9 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // ANTENNA
-int antennaCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int antennaCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwAntenna("INPUTPINANTENNASIZE", 1);
@@ -887,23 +908,25 @@ int antennaCB(lefwCallbackType_e c, lefiUserData ud) {
 }
 
 // BEGINEXT
-int extCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int extCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwStartBeginext("SIGNATURE");
   CHECK_STATUS(status);
   status = lefwBeginextCreator("CADENCE");
   CHECK_STATUS(status);
-  status = lefwBeginextDate(); 
+  status = lefwBeginextDate();
   CHECK_STATUS(status);
   status = lefwEndBeginext();
   CHECK_STATUS(status);
   return 0;
 }
 
-int endLibCB(lefwCallbackType_e c, lefiUserData ud) {
-  int    status;
+int endLibCB(lefwCallbackType_e c, lefiUserData ud)
+{
+  int status;
 
   checkType(c);
   status = lefwEnd();
@@ -911,15 +934,16 @@ int endLibCB(lefwCallbackType_e c, lefiUserData ud) {
   return 0;
 }
 
-main(int argc, char** argv) {
+main(int argc, char** argv)
+{
   char* outfile;
-  int   status;    // return code, if none 0 means error
-  int   res;
+  int status;  // return code, if none 0 means error
+  int res;
 
   // assign the default
   strcpy(defaultOut, "lef.in");
-  outfile  = defaultOut;
-  fout     = stdout;
+  outfile = defaultOut;
+  fout = stdout;
   userData = 0x01020304;
 
   double* axis;
@@ -927,29 +951,29 @@ main(int argc, char** argv) {
   double* num2;
   double* num3;
 
-  int     encrypt = 0; // if user wants encrypted output
+  int encrypt = 0;  // if user wants encrypted output
 
   argc--;
   argv++;
   while (argc--) {
-     if (strcmp(*argv, "-o") == 0) {   // output filename
-        argv++;
-        argc--;
-        outfile = *argv;
-        if ((fout = fopen(outfile, "w")) == 0) {
-           fprintf(stderr, "ERROR: could not open output file\n");
-           return 2;
-        }
-     } else if (strncmp(*argv,  "-h", 2) == 0) {  // compare with -h[elp]
-        fprintf(stderr, "Usage: lefwrite [-o <filename>] [-help] [-e]\n");
-        return 1;
-     } else if (strcmp(*argv, "-e") == 0) { // user wants to write out encrpyted
-        encrypt = 1;
-     } else {
-        fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+    if (strcmp(*argv, "-o") == 0) {  // output filename
+      argv++;
+      argc--;
+      outfile = *argv;
+      if ((fout = fopen(outfile, "w")) == 0) {
+        fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
-     }
-     argv++;
+      }
+    } else if (strncmp(*argv, "-h", 2) == 0) {  // compare with -h[elp]
+      fprintf(stderr, "Usage: lefwrite [-o <filename>] [-help] [-e]\n");
+      return 1;
+    } else if (strcmp(*argv, "-e") == 0) {  // user wants to write out encrpyted
+      encrypt = 1;
+    } else {
+      fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+      return 2;
+    }
+    argv++;
   }
 
   // initalize
@@ -959,10 +983,10 @@ main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   if (encrypt) {
-     // user wants encrypted output, make sure to call lefwCloseEncrypt()
-     // before calling fclose();
-     status = lefwEncrypt();
-     CHECK_STATUS(status);
+    // user wants encrypted output, make sure to call lefwCloseEncrypt()
+    // before calling fclose();
+    status = lefwEncrypt();
+    CHECK_STATUS(status);
   }
 
   // set the callback functions
@@ -978,18 +1002,18 @@ main(int argc, char** argv) {
   lefwSetPropDefCbk(propDefCB);
   lefwSetSiteCbk(siteCB);
   lefwSetUnitsCbk(unitsCB);
-  lefwSetUserData((void*)3);
+  lefwSetUserData((void*) 3);
   lefwSetVersionCbk(versionCB);
   lefwSetViaCbk(viaCB);
   lefwSetViaRuleCbk(viaRuleCB);
 
-  res = lefwWrite(fout, outfile, (void*)userData);
+  res = lefwWrite(fout, outfile, (void*) userData);
 
   if (encrypt) {
-     // output has been written in encrypted, need to close the encrypted
-     // buffer
-     status = lefwCloseEncrypt();
-     CHECK_STATUS(status);
+    // output has been written in encrypted, need to close the encrypted
+    // buffer
+    status = lefwCloseEncrypt();
+    CHECK_STATUS(status);
   }
 
   fclose(fout);

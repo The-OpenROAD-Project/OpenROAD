@@ -42,6 +42,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     src/staGui.cpp
+    src/staGuiInterface.cpp
     src/timingWidget.cpp
     src/drcWidget.cpp
     src/ruler.cpp
@@ -49,6 +50,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMapSetup.cpp
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
+    src/globalConnectDialog.cpp
     resources/resource.qrc
   )
 

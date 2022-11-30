@@ -51,8 +51,8 @@ class pin
  private:
   Point _origOffset;  // original offset wrt center. In relative terms
   Point _offset;      // offsets during iteration. to account for orientation
-                  // changes
-  ORIENT _orient;  // keeps track of orientation of the node
+                      // changes
+  ORIENT _orient;     // keeps track of orientation of the node
   std::string _name;
   bool _type;
   int _nodeIndex;  // index of the node in which the pin is located

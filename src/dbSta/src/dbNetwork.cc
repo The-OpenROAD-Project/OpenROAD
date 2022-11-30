@@ -72,7 +72,8 @@ using odb::dbSet;
 using odb::dbSigType;
 
 // TODO: move to StringUtil
-char* tmpStringCopy(const char* str)
+char*
+tmpStringCopy(const char* str)
 {
   char* tmp = makeTmpString(strlen(str) + 1);
   strcpy(tmp, str);
@@ -81,18 +82,18 @@ char* tmpStringCopy(const char* str)
 
 class DbLibraryIterator1 : public Iterator<Library*>
 {
- public:
+public:
   DbLibraryIterator1(ConcreteLibraryIterator* iter);
   ~DbLibraryIterator1();
   virtual bool hasNext();
   virtual Library* next();
 
- private:
+private:
   ConcreteLibraryIterator* iter_;
 };
 
-DbLibraryIterator1::DbLibraryIterator1(ConcreteLibraryIterator* iter)
-    : iter_(iter)
+DbLibraryIterator1::DbLibraryIterator1(ConcreteLibraryIterator* iter) :
+  iter_(iter)
 {
 }
 
@@ -101,12 +102,14 @@ DbLibraryIterator1::~DbLibraryIterator1()
   delete iter_;
 }
 
-bool DbLibraryIterator1::hasNext()
+bool
+DbLibraryIterator1::hasNext()
 {
   return iter_->hasNext();
 }
 
-Library* DbLibraryIterator1::next()
+Library*
+DbLibraryIterator1::next()
 {
   return reinterpret_cast<Library*>(iter_->next());
 }
@@ -115,12 +118,12 @@ Library* DbLibraryIterator1::next()
 
 class DbInstanceChildIterator : public InstanceChildIterator
 {
- public:
+public:
   DbInstanceChildIterator(const Instance* instance, const dbNetwork* network);
   bool hasNext();
   Instance* next();
 
- private:
+private:
   const dbNetwork* network_;
   bool top_;
   dbSet<dbInst>::iterator iter_;
@@ -128,8 +131,8 @@ class DbInstanceChildIterator : public InstanceChildIterator
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
-                                                 const dbNetwork* network)
-    : network_(network)
+                                                 const dbNetwork* network) :
+  network_(network)
 {
   dbBlock* block = network->block();
   if (instance == network->topInstance() && block) {
@@ -137,16 +140,19 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     top_ = true;
     iter_ = insts.begin();
     end_ = insts.end();
-  } else
+  }
+  else
     top_ = false;
 }
 
-bool DbInstanceChildIterator::hasNext()
+bool
+DbInstanceChildIterator::hasNext()
 {
   return top_ && iter_ != end_;
 }
 
-Instance* DbInstanceChildIterator::next()
+Instance*
+DbInstanceChildIterator::next()
 {
   dbInst* child = *iter_;
   iter_++;
@@ -155,12 +161,12 @@ Instance* DbInstanceChildIterator::next()
 
 class DbInstanceNetIterator : public InstanceNetIterator
 {
- public:
+public:
   DbInstanceNetIterator(const Instance* instance, const dbNetwork* network);
   bool hasNext();
   Net* next();
 
- private:
+private:
   const dbNetwork* network_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
@@ -168,8 +174,9 @@ class DbInstanceNetIterator : public InstanceNetIterator
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
-                                             const dbNetwork* network)
-    : network_(network), next_(nullptr)
+                                             const dbNetwork* network) :
+  network_(network),
+  next_(nullptr)
 {
   if (instance == network->topInstance()) {
     dbSet<dbNet> nets = network->block()->getNets();
@@ -178,7 +185,8 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
   }
 }
 
-bool DbInstanceNetIterator::hasNext()
+bool
+DbInstanceNetIterator::hasNext()
 {
   while (iter_ != end_) {
     dbNet* net = *iter_;
@@ -192,7 +200,8 @@ bool DbInstanceNetIterator::hasNext()
   return false;
 }
 
-Net* DbInstanceNetIterator::next()
+Net*
+DbInstanceNetIterator::next()
 {
   return next_;
 }
@@ -201,12 +210,12 @@ Net* DbInstanceNetIterator::next()
 
 class DbInstancePinIterator : public InstancePinIterator
 {
- public:
+public:
   DbInstancePinIterator(const Instance* inst, const dbNetwork* network);
   bool hasNext();
   Pin* next();
 
- private:
+private:
   const dbNetwork* network_;
   bool top_;
   dbSet<dbITerm>::iterator iitr_;
@@ -217,15 +226,16 @@ class DbInstancePinIterator : public InstancePinIterator
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
-                                             const dbNetwork* network)
-    : network_(network)
+                                             const dbNetwork* network) :
+  network_(network)
 {
   top_ = (inst == network->topInstance());
   if (top_) {
     dbBlock* block = network->block();
     bitr_ = block->getBTerms().begin();
     bitr_end_ = block->getBTerms().end();
-  } else {
+  }
+  else {
     dbInst* db_inst;
     dbModInst* mod_inst;  // has no inst pins in odb
     network_->staToDb(inst, db_inst, mod_inst);
@@ -236,7 +246,8 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
   }
 }
 
-bool DbInstancePinIterator::hasNext()
+bool
+DbInstancePinIterator::hasNext()
 {
   if (top_) {
     if (bitr_ == bitr_end_)
@@ -247,11 +258,11 @@ bool DbInstancePinIterator::hasNext()
       bitr_++;
       return true;
     }
-  } else {
+  }
+  else {
     while (iitr_ != iitr_end_) {
       dbITerm* iterm = *iitr_;
-      if (!(iterm->getSigType() == dbSigType::POWER
-            || iterm->getSigType() == dbSigType::GROUND)) {
+      if (!(iterm->getSigType() == dbSigType::POWER || iterm->getSigType() == dbSigType::GROUND)) {
         next_ = network_->dbToSta(*iitr_);
         ++iitr_;
         return true;
@@ -262,7 +273,8 @@ bool DbInstancePinIterator::hasNext()
   }
 }
 
-Pin* DbInstancePinIterator::next()
+Pin*
+DbInstancePinIterator::next()
 {
   return next_;
 }
@@ -271,12 +283,12 @@ Pin* DbInstancePinIterator::next()
 
 class DbNetPinIterator : public NetPinIterator
 {
- public:
+public:
   DbNetPinIterator(const Net* net, const dbNetwork* network);
   bool hasNext();
   Pin* next();
 
- private:
+private:
   dbSet<dbITerm>::iterator iitr_;
   dbSet<dbITerm>::iterator iitr_end_;
   Pin* next_;
@@ -291,12 +303,12 @@ DbNetPinIterator::DbNetPinIterator(const Net* net,
   next_ = nullptr;
 }
 
-bool DbNetPinIterator::hasNext()
+bool
+DbNetPinIterator::hasNext()
 {
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
-    if (!(iterm->getSigType() == dbSigType::POWER
-          || iterm->getSigType() == dbSigType::GROUND)) {
+    if (!(iterm->getSigType() == dbSigType::POWER || iterm->getSigType() == dbSigType::GROUND)) {
       next_ = reinterpret_cast<Pin*>(*iitr_);
       ++iitr_;
       return true;
@@ -306,7 +318,8 @@ bool DbNetPinIterator::hasNext()
   return false;
 }
 
-Pin* DbNetPinIterator::next()
+Pin*
+DbNetPinIterator::next()
 {
   return next_;
 }
@@ -315,19 +328,19 @@ Pin* DbNetPinIterator::next()
 
 class DbNetTermIterator : public NetTermIterator
 {
- public:
+public:
   DbNetTermIterator(const Net* net, const dbNetwork* network);
   bool hasNext();
   Term* next();
 
- private:
+private:
   const dbNetwork* network_;
   dbSet<dbBTerm>::iterator iter_;
   dbSet<dbBTerm>::iterator end_;
 };
 
-DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
-    : network_(network)
+DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network) :
+  network_(network)
 {
   dbNet* dnet = network_->staToDb(net);
   dbSet<dbBTerm> terms = dnet->getBTerms();
@@ -335,12 +348,14 @@ DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
   end_ = terms.end();
 }
 
-bool DbNetTermIterator::hasNext()
+bool
+DbNetTermIterator::hasNext()
 {
   return iter_ != end_;
 }
 
-Term* DbNetTermIterator::next()
+Term*
+DbNetTermIterator::next()
 {
   dbBTerm* bterm = *iter_;
   iter_++;
@@ -349,13 +364,13 @@ Term* DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-dbNetwork::dbNetwork()
-    : ConcreteNetwork(),
-      db_(nullptr),
-      logger_(nullptr),
-      block_(nullptr),
-      top_instance_(reinterpret_cast<Instance*>(1)),
-      top_cell_(nullptr)
+dbNetwork::dbNetwork() :
+  ConcreteNetwork(),
+  db_(nullptr),
+  logger_(nullptr),
+  block_(nullptr),
+  top_instance_(reinterpret_cast<Instance*>(1)),
+  top_cell_(nullptr)
 {
 }
 
@@ -363,25 +378,29 @@ dbNetwork::~dbNetwork()
 {
 }
 
-void dbNetwork::init(dbDatabase* db, Logger* logger)
+void
+dbNetwork::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
 }
 
-void dbNetwork::setBlock(dbBlock* block)
+void
+dbNetwork::setBlock(dbBlock* block)
 {
   block_ = block;
   readDbNetlistAfter();
 }
 
-void dbNetwork::clear()
+void
+dbNetwork::clear()
 {
   ConcreteNetwork::clear();
   db_ = nullptr;
 }
 
-Instance* dbNetwork::topInstance() const
+Instance*
+dbNetwork::topInstance() const
 {
   if (top_cell_)
     return top_instance_;
@@ -389,13 +408,15 @@ Instance* dbNetwork::topInstance() const
     return nullptr;
 }
 
-double dbNetwork::dbuToMeters(int dist) const
+double
+dbNetwork::dbuToMeters(int dist) const
 {
   int dbu = db_->getTech()->getDbUnitsPerMicron();
   return dist / (dbu * 1e+6);
 }
 
-int dbNetwork::metersToDbu(double dist) const
+int
+dbNetwork::metersToDbu(double dist) const
 {
   int dbu = db_->getTech()->getDbUnitsPerMicron();
   return dist * dbu * 1e+6;
@@ -403,7 +424,8 @@ int dbNetwork::metersToDbu(double dist) const
 
 ////////////////////////////////////////////////////////////////
 
-const char* dbNetwork::name(const Instance* instance) const
+const char*
+dbNetwork::name(const Instance* instance) const
 {
   if (instance == top_instance_)
     return tmpStringCopy(block_->getConstName());
@@ -418,7 +440,8 @@ const char* dbNetwork::name(const Instance* instance) const
   }
 }
 
-Cell* dbNetwork::cell(const Instance* instance) const
+Cell*
+dbNetwork::cell(const Instance* instance) const
 {
   if (instance == top_instance_)
     return reinterpret_cast<Cell*>(top_cell_);
@@ -437,27 +460,31 @@ Cell* dbNetwork::cell(const Instance* instance) const
   }
 }
 
-Instance* dbNetwork::parent(const Instance* instance) const
+Instance*
+dbNetwork::parent(const Instance* instance) const
 {
   if (instance == top_instance_)
     return nullptr;
   return top_instance_;
 }
 
-bool dbNetwork::isLeaf(const Instance* instance) const
+bool
+dbNetwork::isLeaf(const Instance* instance) const
 {
   if (instance == top_instance_)
     return false;
   return true;
 }
 
-Instance* dbNetwork::findInstance(const char* path_name) const
+Instance*
+dbNetwork::findInstance(const char* path_name) const
 {
   dbInst* inst = block_->findInst(path_name);
   return dbToSta(inst);
 }
 
-Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
+Instance*
+dbNetwork::findChild(const Instance* parent, const char* name) const
 {
   if (parent == top_instance_) {
     dbInst* inst = block_->findInst(name);
@@ -487,12 +514,14 @@ Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
   return dbToSta(inst);
 }
 
-Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
+Pin*
+dbNetwork::findPin(const Instance* instance, const char* port_name) const
 {
   if (instance == top_instance_) {
     dbBTerm* bterm = block_->findBTerm(port_name);
     return dbToSta(bterm);
-  } else {
+  }
+  else {
     dbInst* db_inst;
     dbModInst* mod_inst;
     staToDb(instance, db_inst, mod_inst);
@@ -504,13 +533,15 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
   }
 }
 
-Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
+Pin*
+dbNetwork::findPin(const Instance* instance, const Port* port) const
 {
   const char* port_name = this->name(port);
   return findPin(instance, port_name);
 }
 
-Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
+Net*
+dbNetwork::findNet(const Instance* instance, const char* net_name) const
 {
   if (instance == top_instance_) {
     dbNet* dnet = block_->findNet(net_name);
@@ -522,10 +553,11 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
   return dbToSta(dnet);
 }
 
-void dbNetwork::findInstNetsMatching(const Instance* instance,
-                                     const PatternMatch* pattern,
-                                     // Return value.
-                                     NetSeq* nets) const
+void
+dbNetwork::findInstNetsMatching(const Instance* instance,
+                                const PatternMatch* pattern,
+                                // Return value.
+                                NetSeq* nets) const
 {
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
@@ -534,7 +566,8 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
         if (pattern->match(net_name))
           nets->push_back(dbToSta(dnet));
       }
-    } else {
+    }
+    else {
       dbNet* dnet = block_->findNet(pattern->pattern());
       if (dnet)
         nets->push_back(dbToSta(dnet));
@@ -542,24 +575,28 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
   }
 }
 
-InstanceChildIterator* dbNetwork::childIterator(const Instance* instance) const
+InstanceChildIterator*
+dbNetwork::childIterator(const Instance* instance) const
 {
   return new DbInstanceChildIterator(instance, this);
 }
 
-InstancePinIterator* dbNetwork::pinIterator(const Instance* instance) const
+InstancePinIterator*
+dbNetwork::pinIterator(const Instance* instance) const
 {
   return new DbInstancePinIterator(instance, this);
 }
 
-InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
+InstanceNetIterator*
+dbNetwork::netIterator(const Instance* instance) const
 {
   return new DbInstanceNetIterator(instance, this);
 }
 
 ////////////////////////////////////////////////////////////////
 
-Instance* dbNetwork::instance(const Pin* pin) const
+Instance*
+dbNetwork::instance(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -567,13 +604,15 @@ Instance* dbNetwork::instance(const Pin* pin) const
   if (iterm) {
     dbInst* dinst = iterm->getInst();
     return dbToSta(dinst);
-  } else if (bterm)
+  }
+  else if (bterm)
     return top_instance_;
   else
     return nullptr;
 }
 
-Net* dbNetwork::net(const Pin* pin) const
+Net*
+dbNetwork::net(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -581,11 +620,13 @@ Net* dbNetwork::net(const Pin* pin) const
   if (iterm) {
     dbNet* dnet = iterm->getNet();
     return dbToSta(dnet);
-  } else
+  }
+  else
     return nullptr;
 }
 
-Term* dbNetwork::term(const Pin* pin) const
+Term*
+dbNetwork::term(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -598,7 +639,8 @@ Term* dbNetwork::term(const Pin* pin) const
     return nullptr;
 }
 
-Port* dbNetwork::port(const Pin* pin) const
+Port*
+dbNetwork::port(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -606,14 +648,17 @@ Port* dbNetwork::port(const Pin* pin) const
   if (iterm) {
     dbMTerm* mterm = iterm->getMTerm();
     return dbToSta(mterm);
-  } else if (bterm) {
+  }
+  else if (bterm) {
     const char* port_name = bterm->getConstName();
     return findPort(top_cell_, port_name);
-  } else
+  }
+  else
     return nullptr;
 }
 
-PortDirection* dbNetwork::direction(const Pin* pin) const
+PortDirection*
+dbNetwork::direction(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -621,14 +666,17 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   if (iterm) {
     PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
     return dir;
-  } else if (bterm) {
+  }
+  else if (bterm) {
     PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
-  } else
+  }
+  else
     return nullptr;
 }
 
-VertexId dbNetwork::vertexId(const Pin* pin) const
+VertexId
+dbNetwork::vertexId(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -640,7 +688,8 @@ VertexId dbNetwork::vertexId(const Pin* pin) const
   return object_id_null;
 }
 
-void dbNetwork::setVertexId(Pin* pin, VertexId id)
+void
+dbNetwork::setVertexId(Pin* pin, VertexId id)
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -651,25 +700,28 @@ void dbNetwork::setVertexId(Pin* pin, VertexId id)
     return bterm->staSetVertexId(id);
 }
 
-void dbNetwork::location(const Pin* pin,
-                         // Return values.
-                         double& x,
-                         double& y,
-                         bool& exists) const
+void
+dbNetwork::location(const Pin* pin,
+                    // Return values.
+                    double& x,
+                    double& y,
+                    bool& exists) const
 {
   if (isPlaced(pin)) {
     Point pt = location(pin);
     x = dbuToMeters(pt.getX());
     y = dbuToMeters(pt.getY());
     exists = true;
-  } else {
+  }
+  else {
     x = 0;
     y = 0;
     exists = false;
   }
 }
 
-Point dbNetwork::location(const Pin* pin) const
+Point
+dbNetwork::location(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -693,7 +745,8 @@ Point dbNetwork::location(const Pin* pin) const
   return Point(0, 0);
 }
 
-bool dbNetwork::isPlaced(const Pin* pin) const
+bool
+dbNetwork::isPlaced(const Pin* pin) const
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -710,44 +763,51 @@ bool dbNetwork::isPlaced(const Pin* pin) const
 
 ////////////////////////////////////////////////////////////////
 
-const char* dbNetwork::name(const Net* net) const
+const char*
+dbNetwork::name(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   const char* name = dnet->getConstName();
   return tmpStringCopy(name);
 }
 
-Instance* dbNetwork::instance(const Net*) const
+Instance*
+dbNetwork::instance(const Net*) const
 {
   return top_instance_;
 }
 
-bool dbNetwork::isPower(const Net* net) const
+bool
+dbNetwork::isPower(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
 }
 
-bool dbNetwork::isGround(const Net* net) const
+bool
+dbNetwork::isGround(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::GROUND);
 }
 
-NetPinIterator* dbNetwork::pinIterator(const Net* net) const
+NetPinIterator*
+dbNetwork::pinIterator(const Net* net) const
 {
   return new DbNetPinIterator(net, this);
 }
 
-NetTermIterator* dbNetwork::termIterator(const Net* net) const
+NetTermIterator*
+dbNetwork::termIterator(const Net* net) const
 {
   return new DbNetTermIterator(net, this);
 }
 
 // override ConcreteNetwork::visitConnectedPins
-void dbNetwork::visitConnectedPins(const Net* net,
-                                   PinVisitor& visitor,
-                                   ConstNetSet& visited_nets) const
+void
+dbNetwork::visitConnectedPins(const Net* net,
+                              PinVisitor& visitor,
+                              ConstNetSet& visited_nets) const
 {
   dbNet* db_net = staToDb(net);
   for (dbITerm* iterm : db_net->getITerms()) {
@@ -760,20 +820,23 @@ void dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
-Net* dbNetwork::highestConnectedNet(Net* net) const
+Net*
+dbNetwork::highestConnectedNet(Net* net) const
 {
   return net;
 }
 
 ////////////////////////////////////////////////////////////////
 
-Pin* dbNetwork::pin(const Term* term) const
+Pin*
+dbNetwork::pin(const Term* term) const
 {
   // Only terms are for top level instance pins, which are also BTerms.
   return reinterpret_cast<Pin*>(const_cast<Term*>(term));
 }
 
-Net* dbNetwork::net(const Term* term) const
+Net*
+dbNetwork::net(const Term* term) const
 {
   dbBTerm* bterm = staToDb(term);
   dbNet* dnet = bterm->getNet();
@@ -782,23 +845,27 @@ Net* dbNetwork::net(const Term* term) const
 
 ////////////////////////////////////////////////////////////////
 
-bool dbNetwork::isLinked() const
+bool
+dbNetwork::isLinked() const
 {
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(const char*, bool, Report*)
+bool
+dbNetwork::linkNetwork(const char*, bool, Report*)
 {
   // Not called.
   return true;
 }
 
-void dbNetwork::readLefAfter(dbLib* lib)
+void
+dbNetwork::readLefAfter(dbLib* lib)
 {
   makeLibrary(lib);
 }
 
-void dbNetwork::readDefAfter(dbBlock* block)
+void
+dbNetwork::readDefAfter(dbBlock* block)
 {
   db_ = block->getDataBase();
   block_ = block;
@@ -807,7 +874,8 @@ void dbNetwork::readDefAfter(dbBlock* block)
 
 // Make ConcreteLibrary/Cell/Port objects for the
 // db library/master/MTerm objects.
-void dbNetwork::readDbAfter(odb::dbDatabase* db)
+void
+dbNetwork::readDbAfter(odb::dbDatabase* db)
 {
   db_ = db;
   dbChip* chip = db_->getChip();
@@ -823,7 +891,8 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
   }
 }
 
-void dbNetwork::makeLibrary(dbLib* lib)
+void
+dbNetwork::makeLibrary(dbLib* lib)
 {
   const char* lib_name = lib->getConstName();
   Library* library = makeLibrary(lib_name, nullptr);
@@ -831,7 +900,8 @@ void dbNetwork::makeLibrary(dbLib* lib)
     makeCell(library, master);
 }
 
-void dbNetwork::makeCell(Library* library, dbMaster* master)
+void
+dbNetwork::makeCell(Library* library, dbMaster* master)
 {
   const char* cell_name = master->getConstName();
   Cell* cell = makeCell(library, cell_name, true, nullptr);
@@ -860,7 +930,8 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
       if (lib_port) {
         cport->setLibertyPort(lib_port);
         lib_port->setExtPort(mterm);
-      } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name))
+      }
+      else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name))
         logger_->warn(ORD,
                       1001,
                       "LEF macro {} pin {} missing from liberty cell.",
@@ -891,13 +962,16 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   delete lib_iter;
 }
 
-void dbNetwork::readDbNetlistAfter()
+void
+dbNetwork::readDbNetlistAfter()
 {
   makeTopCell();
   findConstantNets();
+  checkLibertyCorners();
 }
 
-void dbNetwork::makeTopCell()
+void
+dbNetwork::makeTopCell()
 {
   if (top_cell_) {
     // Reading DEF or linking when a network already exists; remove previous top
@@ -914,7 +988,8 @@ void dbNetwork::makeTopCell()
                 [=](const char* port_name) { return portMsbFirst(port_name); });
 }
 
-void dbNetwork::makeTopPort(dbBTerm* bterm)
+void
+dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
@@ -924,7 +999,8 @@ void dbNetwork::makeTopPort(dbBTerm* bterm)
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
-bool dbNetwork::portMsbFirst(const char* port_name)
+bool
+dbNetwork::portMsbFirst(const char* port_name)
 {
   string key = "bus_msb_first ";
   key += port_name;
@@ -936,7 +1012,8 @@ bool dbNetwork::portMsbFirst(const char* port_name)
     return true;
 }
 
-void dbNetwork::findConstantNets()
+void
+dbNetwork::findConstantNets()
 {
   clearConstantNets();
   for (dbNet* dnet : block_->getNets()) {
@@ -948,7 +1025,8 @@ void dbNetwork::findConstantNets()
 }
 
 // Setup mapping from Cell/Port to LibertyCell/LibertyPort.
-void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
+void
+dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 {
   for (ConcreteLibrary* clib : library_seq_) {
     if (!clib->isLiberty()) {
@@ -969,8 +1047,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               if (lport) {
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
-              } else if (!cport->direction()->isPowerGround()
-                         && !lcell->findPgPort(port_name))
+              }
+              else if (!cport->direction()->isPowerGround() && !lcell->findPgPort(port_name))
                 logger_->warn(ORD,
                               1002,
                               "Liberty cell {} pin {} missing from LEF macro.",
@@ -994,9 +1072,10 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 
 // Edit functions
 
-Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,
-                                  Instance* parent)
+Instance*
+dbNetwork::makeInstance(LibertyCell* cell,
+                        const char* name,
+                        Instance* parent)
 {
   if (parent == top_instance_) {
     const char* cell_name = cell->name();
@@ -1009,12 +1088,14 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
   return nullptr;
 }
 
-void dbNetwork::makePins(Instance*)
+void
+dbNetwork::makePins(Instance*)
 {
   // This space intentionally left blank.
 }
 
-void dbNetwork::replaceCell(Instance* inst, Cell* cell)
+void
+dbNetwork::replaceCell(Instance* inst, Cell* cell)
 {
   dbMaster* master = staToDb(cell);
   dbInst* db_inst;
@@ -1025,19 +1106,22 @@ void dbNetwork::replaceCell(Instance* inst, Cell* cell)
   }
 }
 
-void dbNetwork::deleteInstance(Instance* inst)
+void
+dbNetwork::deleteInstance(Instance* inst)
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(inst, db_inst, mod_inst);
   if (db_inst) {
     dbInst::destroy(db_inst);
-  } else {
+  }
+  else {
     dbModInst::destroy(mod_inst);
   }
 }
 
-Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
+Pin*
+dbNetwork::connect(Instance* inst, Port* port, Net* net)
 {
   Pin* pin = nullptr;
   dbNet* dnet = staToDb(net);
@@ -1056,7 +1140,8 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
       bterm->setIoType(io_type);
     }
     pin = dbToSta(bterm);
-  } else {
+  }
+  else {
     dbInst* db_inst;
     dbModInst* mod_inst;
     staToDb(inst, db_inst, mod_inst);
@@ -1072,7 +1157,8 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 
 // Used by dbStaCbk
 // Incrementally update drivers.
-void dbNetwork::connectPinAfter(Pin* pin)
+void
+dbNetwork::connectPinAfter(Pin* pin)
 {
   if (isDriver(pin)) {
     Net* net = this->net(pin);
@@ -1082,7 +1168,8 @@ void dbNetwork::connectPinAfter(Pin* pin)
   }
 }
 
-Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
+Pin*
+dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
 {
   dbNet* dnet = staToDb(net);
   const char* port_name = port->name();
@@ -1100,7 +1187,8 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     bterm->setSigType(sig_type);
     bterm->setIoType(io_type);
     pin = dbToSta(bterm);
-  } else {
+  }
+  else {
     dbInst* db_inst;
     dbModInst* mod_inst;
     staToDb(inst, db_inst, mod_inst);
@@ -1115,7 +1203,8 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
   return pin;
 }
 
-void dbNetwork::disconnectPin(Pin* pin)
+void
+dbNetwork::disconnectPin(Pin* pin)
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -1126,7 +1215,8 @@ void dbNetwork::disconnectPin(Pin* pin)
     bterm->disconnect();
 }
 
-void dbNetwork::disconnectPinBefore(Pin* pin)
+void
+dbNetwork::disconnectPinBefore(Pin* pin)
 {
   Net* net = this->net(pin);
   // Incrementally update drivers.
@@ -1137,7 +1227,8 @@ void dbNetwork::disconnectPinBefore(Pin* pin)
   }
 }
 
-void dbNetwork::deletePin(Pin* pin)
+void
+dbNetwork::deletePin(Pin* pin)
 {
   dbITerm* iterm;
   dbBTerm* bterm;
@@ -1148,7 +1239,8 @@ void dbNetwork::deletePin(Pin* pin)
     dbBTerm::destroy(bterm);
 }
 
-Net* dbNetwork::makeNet(const char* name, Instance* parent)
+Net*
+dbNetwork::makeNet(const char* name, Instance* parent)
 {
   if (parent == top_instance_) {
     dbNet* dnet = dbNet::create(block_, name, false);
@@ -1157,32 +1249,37 @@ Net* dbNetwork::makeNet(const char* name, Instance* parent)
   return nullptr;
 }
 
-void dbNetwork::deleteNet(Net* net)
+void
+dbNetwork::deleteNet(Net* net)
 {
   deleteNetBefore(net);
   dbNet* dnet = staToDb(net);
   dbNet::destroy(dnet);
 }
 
-void dbNetwork::deleteNetBefore(Net* net)
+void
+dbNetwork::deleteNetBefore(Net* net)
 {
   PinSet* drvrs = net_drvr_pin_map_.findKey(net);
   delete drvrs;
   net_drvr_pin_map_.erase(net);
 }
 
-void dbNetwork::mergeInto(Net*, Net*)
+void
+dbNetwork::mergeInto(Net*, Net*)
 {
   logger_->critical(ORD, 1004, "unimplemented network function mergeInto");
 }
 
-Net* dbNetwork::mergedInto(Net*)
+Net*
+dbNetwork::mergedInto(Net*)
 {
   logger_->critical(ORD, 1005, "unimplemented network function mergeInto");
   return nullptr;
 }
 
-bool dbNetwork::isSpecial(Net* net)
+bool
+dbNetwork::isSpecial(Net* net)
 {
   dbNet* db_net = staToDb(net);
   return db_net->isSpecial();
@@ -1190,7 +1287,8 @@ bool dbNetwork::isSpecial(Net* net)
 
 ////////////////////////////////////////////////////////////////
 
-dbInst* dbNetwork::staToDb(const Instance* instance) const
+dbInst*
+dbNetwork::staToDb(const Instance* instance) const
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
@@ -1198,38 +1296,43 @@ dbInst* dbNetwork::staToDb(const Instance* instance) const
   return db_inst;
 }
 
-void dbNetwork::staToDb(const Instance* instance,
-                        // Return values.
-                        dbInst*& db_inst,
-                        dbModInst*& mod_inst) const
+void
+dbNetwork::staToDb(const Instance* instance,
+                   // Return values.
+                   dbInst*& db_inst,
+                   dbModInst*& mod_inst) const
 {
   if (instance) {
-    dbObject* obj
-        = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
     dbObjectType type = obj->getObjectType();
     if (type == dbInstObj) {
       db_inst = static_cast<dbInst*>(obj);
       mod_inst = nullptr;
-    } else if (type == dbModInstObj) {
+    }
+    else if (type == dbModInstObj) {
       db_inst = nullptr;
       mod_inst = static_cast<dbModInst*>(obj);
-    } else
+    }
+    else
       logger_->critical(ORD, 1016, "instance is not Inst or ModInst");
-  } else {
+  }
+  else {
     db_inst = nullptr;
     mod_inst = nullptr;
   }
 }
 
-dbNet* dbNetwork::staToDb(const Net* net) const
+dbNet*
+dbNetwork::staToDb(const Net* net) const
 {
   return reinterpret_cast<dbNet*>(const_cast<Net*>(net));
 }
 
-void dbNetwork::staToDb(const Pin* pin,
-                        // Return values.
-                        dbITerm*& iterm,
-                        dbBTerm*& bterm) const
+void
+dbNetwork::staToDb(const Pin* pin,
+                   // Return values.
+                   dbITerm*& iterm,
+                   dbBTerm*& bterm) const
 {
   if (pin) {
     dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
@@ -1237,117 +1340,141 @@ void dbNetwork::staToDb(const Pin* pin,
     if (type == dbITermObj) {
       iterm = static_cast<dbITerm*>(obj);
       bterm = nullptr;
-    } else if (type == dbBTermObj) {
+    }
+    else if (type == dbBTermObj) {
       iterm = nullptr;
       bterm = static_cast<dbBTerm*>(obj);
-    } else
+    }
+    else
       logger_->critical(ORD, 1006, "pin is not ITerm or BTerm");
-  } else {
+  }
+  else {
     iterm = nullptr;
     bterm = nullptr;
   }
 }
 
-dbBTerm* dbNetwork::staToDb(const Term* term) const
+dbBTerm*
+dbNetwork::staToDb(const Term* term) const
 {
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
 }
 
-dbMaster* dbNetwork::staToDb(const Cell* cell) const
+dbMaster*
+dbNetwork::staToDb(const Cell* cell) const
 {
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
   return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
-dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
+dbMaster*
+dbNetwork::staToDb(const LibertyCell* cell) const
 {
   const ConcreteCell* ccell = cell;
   return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
-dbMTerm* dbNetwork::staToDb(const Port* port) const
+dbMTerm*
+dbNetwork::staToDb(const Port* port) const
 {
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
 
-dbMTerm* dbNetwork::staToDb(const LibertyPort* port) const
+dbMTerm*
+dbNetwork::staToDb(const LibertyPort* port) const
 {
   return reinterpret_cast<dbMTerm*>(port->extPort());
 }
 
-void dbNetwork::staToDb(PortDirection* dir,
-                        // Return values.
-                        dbSigType& sig_type,
-                        dbIoType& io_type) const
+void
+dbNetwork::staToDb(PortDirection* dir,
+                   // Return values.
+                   dbSigType& sig_type,
+                   dbIoType& io_type) const
 {
   if (dir == PortDirection::input()) {
     sig_type = dbSigType::SIGNAL;
     io_type = dbIoType::INPUT;
-  } else if (dir == PortDirection::output()) {
+  }
+  else if (dir == PortDirection::output()) {
     sig_type = dbSigType::SIGNAL;
     io_type = dbIoType::OUTPUT;
-  } else if (dir == PortDirection::bidirect()) {
+  }
+  else if (dir == PortDirection::bidirect()) {
     sig_type = dbSigType::SIGNAL;
     io_type = dbIoType::INOUT;
-  } else if (dir == PortDirection::power()) {
+  }
+  else if (dir == PortDirection::power()) {
     sig_type = dbSigType::POWER;
     io_type = dbIoType::INOUT;
-  } else if (dir == PortDirection::ground()) {
+  }
+  else if (dir == PortDirection::ground()) {
     sig_type = dbSigType::GROUND;
     io_type = dbIoType::INOUT;
-  } else
+  }
+  else
     logger_->critical(ORD, 1007, "unhandled port direction");
 }
 
 ////////////////////////////////////////////////////////////////
 
-Instance* dbNetwork::dbToSta(dbInst* inst) const
+Instance*
+dbNetwork::dbToSta(dbInst* inst) const
 {
   return reinterpret_cast<Instance*>(inst);
 }
 
-Instance* dbNetwork::dbToSta(dbModInst* inst) const
+Instance*
+dbNetwork::dbToSta(dbModInst* inst) const
 {
   return reinterpret_cast<Instance*>(inst);
 }
 
-Net* dbNetwork::dbToSta(dbNet* net) const
+Net*
+dbNetwork::dbToSta(dbNet* net) const
 {
   return reinterpret_cast<Net*>(net);
 }
 
-const Net* dbNetwork::dbToSta(const dbNet* net) const
+const Net*
+dbNetwork::dbToSta(const dbNet* net) const
 {
   return reinterpret_cast<const Net*>(net);
 }
 
-Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
+Pin*
+dbNetwork::dbToSta(dbBTerm* bterm) const
 {
   return reinterpret_cast<Pin*>(bterm);
 }
 
-Pin* dbNetwork::dbToSta(dbITerm* iterm) const
+Pin*
+dbNetwork::dbToSta(dbITerm* iterm) const
 {
   return reinterpret_cast<Pin*>(iterm);
 }
 
-Term* dbNetwork::dbToStaTerm(dbBTerm* bterm) const
+Term*
+dbNetwork::dbToStaTerm(dbBTerm* bterm) const
 {
   return reinterpret_cast<Term*>(bterm);
 }
 
-Port* dbNetwork::dbToSta(dbMTerm* mterm) const
+Port*
+dbNetwork::dbToSta(dbMTerm* mterm) const
 {
   return reinterpret_cast<Port*>(mterm->staPort());
 }
 
-Cell* dbNetwork::dbToSta(dbMaster* master) const
+Cell*
+dbNetwork::dbToSta(dbMaster* master) const
 {
   return reinterpret_cast<Cell*>(master->staCell());
 }
 
-PortDirection* dbNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
+PortDirection*
+dbNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 {
   if (sig_type == dbSigType::POWER)
     return PortDirection::power();
@@ -1369,7 +1496,8 @@ PortDirection* dbNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 
 ////////////////////////////////////////////////////////////////
 
-LibertyCell* dbNetwork::libertyCell(dbInst* inst)
+LibertyCell*
+dbNetwork::libertyCell(dbInst* inst)
 {
   return libertyCell(dbToSta(inst));
 }
@@ -1377,13 +1505,15 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 ////////////////////////////////////////////////////////////////
 // Observer
 
-void dbNetwork::addObserver(dbNetworkObserver* observer)
+void
+dbNetwork::addObserver(dbNetworkObserver* observer)
 {
   observer->owner_ = this;
   observers_.insert(observer);
 }
 
-void dbNetwork::removeObserver(dbNetworkObserver* observer)
+void
+dbNetwork::removeObserver(dbNetworkObserver* observer)
 {
   observer->owner_ = nullptr;
   observers_.erase(observer);

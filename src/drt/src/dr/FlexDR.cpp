@@ -109,6 +109,8 @@ FlexDR::FlexDR(triton_route::TritonRoute* router,
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
+      numWorkUnits_(0),
+      dist_(nullptr),
       dist_on_(false),
       dist_port_(0),
       increaseClipsize_(false),
@@ -619,20 +621,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), min(prl1, prl2));
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, min(prl1, prl2));
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, width2, min(prl1, prl2), false);
     if (isH) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
@@ -658,21 +648,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   width1 = viaBox1.minDXDY();
   prl1 = isH ? (viaBox1.yMax() - viaBox1.yMin())
              : (viaBox1.xMax() - viaBox1.xMin());
-  reqDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, prl1);
-    }
-  }
+  reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, prl1, false);
   if (isH) {
     reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
@@ -922,20 +899,8 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), min(prl1, prl2));
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, min(prl1, prl2));
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, width2, min(prl1, prl2), false);
     if (isCurrDirX) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
@@ -961,21 +926,8 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   width1 = viaBox1.minDXDY();
   prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
                     : (viaBox1.xMax() - viaBox1.xMin());
-  reqDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, prl1);
-    }
-  }
+  reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, prl1, false);
   if (isCurrDirX) {
     reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
@@ -1373,20 +1325,8 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
-    auto con = getTech()->getLayer(lNum)->getMinSpacing();
-    if (con) {
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, defaultWidth), prl1);
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, defaultWidth, prl1);
-      }
-    }
+    reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+        width1, defaultWidth, prl1, false);
     if (isCurrDirX) {
       reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += defaultWidth;
@@ -2099,7 +2039,7 @@ void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
   using namespace boost::polygon::operators;
   gtl::polygon_90_data<frCoord> poly;
   vector<gtl::point_data<frCoord>> points;
-  for (auto point : rect.getPoints()) {
+  for (const auto& point : rect.getPoints()) {
     points.push_back({point.x(), point.y()});
   }
   poly.set(points.begin(), points.end());
@@ -2226,7 +2166,7 @@ int FlexDR::main()
   init();
   frTime t;
 
-  for (auto args : strategy()) {
+  for (auto& args : strategy()) {
     if (iter_ < 3)
       FIXEDSHAPECOST = ROUTESHAPECOST;
     else if (iter_ < 10)
@@ -2380,7 +2320,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & isCongested_;
   if (is_loading(ar)) {
     // boundaryPin_
-    int sz;
+    int sz = 0;
     (ar) & sz;
     while (sz--) {
       frBlockObject* obj;

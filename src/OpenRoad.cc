@@ -33,10 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ord/OpenRoad.hh"
+
 #include <iostream>
 #include <thread>
-
-#include "ord/OpenRoad.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -65,6 +65,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
+#include "pad/MakePad.h"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
@@ -81,15 +82,15 @@
 #include "utl/MakeLogger.h"
 
 namespace sta {
-extern const char *openroad_swig_tcl_inits[];
-extern const char *upf_tcl_inits[];
-}
+extern const char* openroad_swig_tcl_inits[];
+extern const char* upf_tcl_inits[];
+}  // namespace sta
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_swig_Init(Tcl_Interp *interp);
-extern int Odbtcl_Init(Tcl_Interp *interp);
-extern int Upf_Init(Tcl_Interp *interp);
+extern int Openroad_swig_Init(Tcl_Interp* interp);
+extern int Odbtcl_Init(Tcl_Interp* interp);
+extern int Upf_Init(Tcl_Interp* interp);
 }
 
 // Main.cc set by main()
@@ -248,6 +249,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer(this);
   initMacroPlacer2(this);
   initOpenRCX(this);
+  initPad(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
@@ -361,11 +363,21 @@ void OpenRoad::writeLef(const char* filename)
   odb::lefout lef_writer(logger_);
   if (num_libs > 0) {
     if (num_libs > 1) {
-      logger_->warn(
-          ORD, 34, "More than one lib exists, only one will be written.");
+      logger_->info(
+          ORD, 34, "More than one lib exists, multiple files will be written.");
     }
 
-    lef_writer.writeTechAndLib(*libs.begin(), filename);
+    int cnt = 0;
+    for (auto lib : libs) {
+      std::string name(filename);
+      if (cnt > 0) {
+        name += "_" + std::to_string(cnt);
+        lef_writer.writeLib(lib, name.c_str());
+      } else {
+        lef_writer.writeTechAndLib(lib, name.c_str());
+      }
+      ++cnt;
+    }
   } else if (db_->getTech()) {
     lef_writer.writeTech(db_->getTech(), filename);
   }
@@ -407,6 +419,38 @@ void OpenRoad::writeDb(const char* filename)
     db_->write(stream);
     fclose(stream);
   }
+}
+
+void OpenRoad::diffDbs(const char* filename1,
+                       const char* filename2,
+                       const char* diffs)
+{
+  FILE* stream1 = fopen(filename1, "r");
+  if (stream1 == nullptr) {
+    logger_->error(ORD, 103, "Can't open {}", filename1);
+  }
+
+  FILE* stream2 = fopen(filename2, "r");
+  if (stream2 == nullptr) {
+    logger_->error(ORD, 104, "Can't open {}", filename1);
+  }
+
+  FILE* out = fopen(diffs, "w");
+  if (out == nullptr) {
+    logger_->error(ORD, 105, "Can't open {}", diffs);
+  }
+
+  auto db1 = odb::dbDatabase::create();
+  auto db2 = odb::dbDatabase::create();
+
+  db1->read(stream1);
+  db2->read(stream2);
+
+  odb::dbDatabase::diff(db1, db2, out, 2);
+
+  fclose(stream1);
+  fclose(stream2);
+  fclose(out);
 }
 
 void OpenRoad::readVerilog(const char* filename)
@@ -470,14 +514,6 @@ OpenRoad::Observer::~Observer()
     owner_->removeObserver(this);
   }
 }
-
-#ifdef ENABLE_PYTHON3
-void OpenRoad::pythonCommand(const char* py_command)
-{
-  PyRun_SimpleString(py_command);
-}
-#endif
-
 void OpenRoad::setThreadCount(int threads, bool printInfo)
 {
   int max_threads = std::thread::hardware_concurrency();

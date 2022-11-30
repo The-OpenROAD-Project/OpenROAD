@@ -30,5 +30,5 @@ metal2     Vertical            0             0          0.00%
 metal3     Horizontal      33840          2806          91.71%
 ---------------------------------------------------------------
 
-[ERROR GRT-0229] Vertical edge usage exceeds the maximum allowed.
+[ERROR GRT-0229] Vertical edge usage exceeds the maximum allowed. (0, 0) usage=0 limit=0
 GRT-0229

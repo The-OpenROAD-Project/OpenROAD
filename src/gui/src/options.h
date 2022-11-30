@@ -73,6 +73,7 @@ class Options
   virtual bool areObstructionsVisible() = 0;
   virtual bool areObstructionsSelectable() = 0;
   virtual bool areRowsVisible() = 0;
+  virtual bool areRowsSelectable() = 0;
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
 

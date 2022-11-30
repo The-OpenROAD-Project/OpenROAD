@@ -61,6 +61,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
+    [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
 }
@@ -80,6 +81,7 @@ proc global_placement { args } {
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
+      -timing_driven_nets_percentage \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
@@ -133,6 +135,10 @@ proc global_placement { args } {
 
     if { [info exists keys(-timing_driven_net_weight_max)] } {
       gpl::set_timing_driven_net_weight_max_cmd $keys(-timing_driven_net_weight_max)
+    }
+
+    if { [info exists keys(-timing_driven_nets_percentage)] } {
+      rsz::set_worst_slack_nets_percent $keys(-timing_driven_nets_percentage)
     }
   }
 

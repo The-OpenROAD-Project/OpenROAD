@@ -33,12 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ifp/InitFloorplan.hh"
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
-#include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/util.h"
@@ -232,8 +233,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
       int domain_yMin = std::numeric_limits<int>::max();
       int domain_xMax = std::numeric_limits<int>::min();
       int domain_yMax = std::numeric_limits<int>::min();
-      for(auto boundary : domain_region->getBoundaries())
-      {
+      for (auto boundary : domain_region->getBoundaries()) {
         domain_xMin = std::min(domain_xMin, boundary->xMin());
         domain_yMin = std::min(domain_yMin, boundary->yMin());
         domain_xMax = std::max(domain_xMax, boundary->xMax());
@@ -299,7 +299,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
           int rcr_xMin = domain_xMax + rcr_dx_site_number * site_dx;
           // snap to the site grid rightward
           rcr_xMin = odb::makeSiteLoc(rcr_xMin, site_dx, false, 0);
-          
+
           // in case there is at least one valid site width on the right, create
           // right core rows
           if (rcr_xMin + site_dx < core_ux) {
@@ -407,6 +407,13 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
 
   auto* port = network_->dbToSta(tie_term);
   auto* lib_port = network_->libertyPort(port);
+  if (!lib_port) {
+    logger_->error(utl::IFP,
+                   39,
+                   "Liberty cell or port {}/{} not found.",
+                   master->getName(),
+                   tie_term->getName());
+  }
   auto func_operation = lib_port->function()->op();
   const bool is_zero = func_operation == sta::FuncExpr::op_zero;
   const bool is_one = func_operation == sta::FuncExpr::op_one;
@@ -478,14 +485,14 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   v.check_positive("y_pitch", y_pitch, 42);
 
   Rect die_area = block_->getDieArea();
-  auto grid = block_->findTrackGrid(layer);
-  if (!grid) {
-    grid = dbTrackGrid::create(block_, layer);
-  }
 
+  if (x_offset == 0) {
+    x_offset = x_pitch;
+  }
   if (y_offset == 0) {
     y_offset = y_pitch;
   }
+
   if (x_offset > die_area.dx()) {
     logger_->warn(
         IFP,
@@ -502,14 +509,46 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
         layer->getName());
     return;
   }
-  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
-  grid->addGridPatternX(die_area.xMin() + x_offset, x_track_count, x_pitch);
 
-  if (x_offset == 0) {
-    x_offset = x_pitch;
+  auto grid = block_->findTrackGrid(layer);
+  if (!grid) {
+    grid = dbTrackGrid::create(block_, layer);
   }
+
+  int layer_min_width = layer->getMinWidth();
+
+  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  int origin_x = die_area.xMin() + x_offset;
+  // Check if the track origin is not usable during routing
+
+  if (origin_x - layer_min_width / 2 < die_area.xMin()) {
+    origin_x += x_pitch;
+    x_track_count--;
+  }
+
+  // Check if the last track is not usable during routing
+  int last_x = origin_x + (x_track_count - 1) * x_pitch;
+  if (last_x + layer_min_width / 2 > die_area.xMax()) {
+    x_track_count--;
+  }
+
+  grid->addGridPatternX(origin_x, x_track_count, x_pitch);
+
   auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
-  grid->addGridPatternY(die_area.yMin() + y_offset, y_track_count, y_pitch);
+  int origin_y = die_area.yMin() + y_offset;
+  // Check if the track origin is not usable during routing
+  if (origin_y - layer_min_width / 2 < die_area.yMin()) {
+    origin_y += y_pitch;
+    y_track_count--;
+  }
+
+  // Check if the last track is not usable during routing
+  int last_y = origin_y + (y_track_count - 1) * y_pitch;
+  if (last_y + layer_min_width / 2 > die_area.yMax()) {
+    y_track_count--;
+  }
+
+  grid->addGridPatternY(origin_y, y_track_count, y_pitch);
 }
 
 }  // namespace ifp

@@ -23,38 +23,38 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFIPROP_H
 #define CLEFIPROP_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /* Struct holds the data for one property.                                    */
 
-EXTERN const char* lefiProp_string (const lefiProp* obj);
-EXTERN const char* lefiProp_propType (const lefiProp* obj);
-EXTERN const char* lefiProp_propName (const lefiProp* obj);
-EXTERN char lefiProp_dataType (const lefiProp* obj);
-      /* either I:integer R:real S:string Q:quotedstring                      */
-      /* N:property name is not defined in the property definition section    */
-EXTERN int lefiProp_hasNumber (const lefiProp* obj);
-EXTERN int lefiProp_hasRange (const lefiProp* obj);
-EXTERN int lefiProp_hasString (const lefiProp* obj);
-EXTERN int lefiProp_hasNameMapString (const lefiProp* obj);
-EXTERN double lefiProp_number (const lefiProp* obj);
-EXTERN double lefiProp_left (const lefiProp* obj);
-EXTERN double lefiProp_right (const lefiProp* obj);
+EXTERN const char* lefiProp_string(const lefiProp* obj);
+EXTERN const char* lefiProp_propType(const lefiProp* obj);
+EXTERN const char* lefiProp_propName(const lefiProp* obj);
+EXTERN char lefiProp_dataType(const lefiProp* obj);
+/* either I:integer R:real S:string Q:quotedstring                      */
+/* N:property name is not defined in the property definition section    */
+EXTERN int lefiProp_hasNumber(const lefiProp* obj);
+EXTERN int lefiProp_hasRange(const lefiProp* obj);
+EXTERN int lefiProp_hasString(const lefiProp* obj);
+EXTERN int lefiProp_hasNameMapString(const lefiProp* obj);
+EXTERN double lefiProp_number(const lefiProp* obj);
+EXTERN double lefiProp_left(const lefiProp* obj);
+EXTERN double lefiProp_right(const lefiProp* obj);
 
-EXTERN void lefiProp_print (const lefiProp* obj, FILE*  f);
+EXTERN void lefiProp_print(const lefiProp* obj, FILE* f);
 
-            /* N:property name is not defined.                                */
+/* N:property name is not defined.                                */
 
 #endif

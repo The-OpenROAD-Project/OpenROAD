@@ -27,6 +27,7 @@
  */
 
 #include "frRPin.h"
+
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 
@@ -37,17 +38,16 @@ Rect frRPin::getBBox()
 {
   Point pt;
 
-  switch(term->typeId()) {
-    case frcInstTerm:
-      {
-        auto inst = static_cast<frInstTerm*>(term)->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+  switch (term->typeId()) {
+    case frcInstTerm: {
+      auto inst = static_cast<frInstTerm*>(term)->getInst();
+      dbTransform shiftXform = inst->getTransform();
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
-        pt = accessPoint->getPoint();
-        shiftXform.apply(pt);
-        break;
-      }
+      pt = accessPoint->getPoint();
+      shiftXform.apply(pt);
+      break;
+    }
     case frcBTerm:
       pt = accessPoint->getPoint();
       break;

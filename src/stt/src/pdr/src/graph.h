@@ -53,7 +53,10 @@ using utl::Logger;
 class Graph
 {
  public:
-  Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger);
+  Graph(const vector<int>& x,
+        const vector<int>& y,
+        int root_index,
+        Logger* logger);
   void buildNearestNeighborsForSPT();
   void run_PD_brute_force(float alpha);
   void doSteiner_HoVW();

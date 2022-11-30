@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "layoutViewer.h"
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDebug>
@@ -58,10 +60,10 @@
 #include <vector>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "highlightGroupDialog.h"
-#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -184,13 +186,12 @@ class GuiPainter : public Painter
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
     if (roundX > 0 || roundY > 0)
-      painter_->drawRoundRect(QRect(rect.xMin(), rect.yMin(),
-                                    rect.dx(), rect.dy()),
-                              roundX,
-                              roundY);
+      painter_->drawRoundRect(
+          QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
+          roundX,
+          roundY);
     else
-      painter_->drawRect(QRect(rect.xMin(), rect.yMin(),
-                               rect.dx(), rect.dy()));
+      painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
   }
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
@@ -462,16 +463,15 @@ class GuiPainter : public Painter
   }
 };
 
-LayoutViewer::LayoutViewer(
-    Options* options,
-    ScriptWidget* output_widget,
-    const SelectionSet& selected,
-    const HighlightSet& highlighted,
-    const std::vector<std::unique_ptr<Ruler>>& rulers,
-    std::function<Selected(const std::any&)> makeSelected,
-    std::function<bool(void)> usingDBU,
-    std::function<bool(void)> showRulerAsEuclidian,
-    QWidget* parent)
+LayoutViewer::LayoutViewer(Options* options,
+                           ScriptWidget* output_widget,
+                           const SelectionSet& selected,
+                           const HighlightSet& highlighted,
+                           const std::vector<std::unique_ptr<Ruler>>& rulers,
+                           Gui* gui,
+                           std::function<bool(void)> usingDBU,
+                           std::function<bool(void)> showRulerAsEuclidian,
+                           QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
       options_(options),
@@ -485,7 +485,7 @@ LayoutViewer::LayoutViewer(
       min_depth_(0),
       max_depth_(99),
       rubber_band_showing_(false),
-      makeSelected_(makeSelected),
+      gui_(gui),
       usingDBU_(usingDBU),
       showRulerAsEuclidian_(showRulerAsEuclidian),
       building_ruler_(false),
@@ -1050,7 +1050,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   if (options_->areRowsVisible()) {
-    for (const auto& row_site : getRowRects(search_line)) {
+    for (const auto& [row, row_site] : getRowRects(search_line)) {
       check_rect(row_site);
     }
   }
@@ -1102,7 +1102,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.yMax(),
                                              shape_limit);
     for (auto& [box, blockage] : blockages) {
-      selections.push_back(makeSelected_(blockage));
+      selections.push_back(gui_->makeSelected(blockage));
     }
   }
 
@@ -1118,7 +1118,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
 
     for (auto* renderer : renderers) {
-      for (auto selected : renderer->select(layer, region)) {
+      for (auto& selected : renderer->select(layer, region)) {
         // copy selected items from the renderer
         selections.push_back(selected);
       }
@@ -1133,7 +1133,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.yMax(),
                                             shape_limit);
       for (auto& [box, obs] : obs) {
-        selections.push_back(makeSelected_(obs));
+        selections.push_back(gui_->makeSelected(obs));
       }
     }
 
@@ -1147,7 +1147,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto& [box, net] : box_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(makeSelected_(net));
+        selections.push_back(gui_->makeSelected(net));
       }
     }
 
@@ -1161,14 +1161,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(makeSelected_(net));
+        selections.push_back(gui_->makeSelected(net));
       }
     }
   }
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    for (auto selected : renderer->select(nullptr, region)) {
+    for (auto& selected : renderer->select(nullptr, region)) {
       selections.push_back(selected);
     }
   }
@@ -1183,7 +1183,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   for (auto& [box, inst] : insts) {
     if (options_->isInstanceVisible(inst)
         && options_->isInstanceSelectable(inst)) {
-      selections.push_back(makeSelected_(inst));
+      selections.push_back(gui_->makeSelected(inst));
     }
   }
 
@@ -1194,7 +1194,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     const int ruler_margin = 4 / pixels_per_dbu_;  // 4 pixels in each direction
     for (auto& ruler : rulers_) {
       if (ruler->fuzzyIntersection(region, ruler_margin)) {
-        selections.push_back(makeSelected_(ruler.get()));
+        selections.push_back(gui_->makeSelected(ruler.get()));
       }
     }
   }
@@ -1203,8 +1203,20 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     for (auto db_region : block_->getRegions()) {
       for (auto box : db_region->getBoundaries()) {
         if (box->getBox().intersects(region)) {
-          selections.push_back(makeSelected_(db_region));
+          selections.push_back(gui_->makeSelected(db_region));
         }
+      }
+    }
+  }
+
+  if (options_->areRowsVisible() && options_->areRowsSelectable()) {
+    for (const auto& [row_obj, rect] : getRowRects(region)) {
+      if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
+        selections.push_back(
+            gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
+      } else {
+        selections.push_back(gui_->makeSelected(DbSiteDescriptor::SpecificSite{
+            static_cast<odb::dbSite*>(row_obj), rect}));
       }
     }
   }
@@ -1558,8 +1570,10 @@ void LayoutViewer::addInstTransform(QTransform& xfm,
 void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
   auto box_to_qrect = [](odb::dbBox* box) -> QRect {
-    return QRect(box->xMin(), box->yMin(),
-                 box->xMax() - box->xMin(), box->yMax() - box->yMin());
+    return QRect(box->xMin(),
+                 box->yMin(),
+                 box->xMax() - box->xMin(),
+                 box->yMax() - box->yMin());
   };
 
   // store obstructions
@@ -1621,9 +1635,12 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = shapeSizeLimit();
-  Rect block_bounds = block_->getBBox()->getBox();
+  Rect block_bounds = block_->getDieArea();
+  if (!block_bounds.intersects(bounds)) {
+    return;
+  }
   const Rect draw_bounds = block_bounds.intersect(bounds);
+  const int min_resolution = shapeSizeLimit();
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
@@ -1685,13 +1702,14 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
   painter->setPen(pen);
   painter->setBrush(Qt::NoBrush);
 
-  for (const auto& row_site : getRowRects(bounds)) {
+  for (const auto& [row, row_site] : getRowRects(bounds)) {
     painter->drawRect(
         row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
   }
 }
 
-std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
+std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
+    const odb::Rect& bounds)
 {
   int min_resolution = nominalViewableResolution();
   if (options_->isDetailedVisibility()) {
@@ -1704,11 +1722,13 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
                                  bounds.yMax(),
                                  min_resolution);
 
-  std::vector<odb::Rect> rects;
+  std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
     int x;
     int y;
     row->getOrigin(x, y);
+
+    rects.emplace_back(row, row->getBBox());
 
     dbSite* site = row->getSite();
     int spacing = row->getSpacing();
@@ -1735,6 +1755,7 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
 
     dbRowDir dir = row->getDirection();
     int count = row->getSiteCount();
+    odb::dbObject* obj = row;
     if (!w_visible) {
       // individual sites not visible, just draw the row
       if (dir == dbRowDir::HORIZONTAL) {
@@ -1743,14 +1764,16 @@ std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
         h = spacing * count;
       }
       count = 1;
+    } else {
+      obj = site;
     }
     if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
-        const Rect row(x, y, x + w, y + h);
-        if (row.intersects(bounds)) {
+        const Rect row_rect(x, y, x + w, y + h);
+        if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
-          rects.push_back({x, y, x + w, y + h});
+          rects.emplace_back(obj, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
@@ -2231,7 +2254,8 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         }
         const auto& ll = box.min_corner();
         const auto& ur = box.max_corner();
-        painter->drawRect(QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        painter->drawRect(
+            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
       }
 
       auto polygon_iter = search_.searchPolygonShapes(layer,
@@ -2311,8 +2335,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   }
 }
 
-void LayoutViewer::drawGCellGrid(QPainter* painter,
-                                 const odb::Rect& bounds)
+void LayoutViewer::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
 {
   if (!options_->isGCellGridVisible()) {
     return;

@@ -193,7 +193,7 @@ inline void dbMatrix<T>::differences(dbDiff& diff,
 
   for (i = 0; i < _n && i < rhs._n; ++i) {
     for (j = 0; j < _m && j < rhs._m; ++j) {
-      const T& o1 = (*this) (i, j);
+      const T& o1 = (*this)(i, j);
       const T& o2 = rhs(i, j);
 
       if (o1 != o2) {
@@ -208,7 +208,7 @@ inline void dbMatrix<T>::differences(dbDiff& diff,
 
     if (j < _m) {
       for (j = 0; j < _m; ++j) {
-        const T& o1 = (*this) (i, j);
+        const T& o1 = (*this)(i, j);
 
         diff.report("< %s[%d][%d] = ", field, i, j);
         diff << o1;
@@ -229,7 +229,7 @@ inline void dbMatrix<T>::differences(dbDiff& diff,
   if (i < _n) {
     for (; i < _n; ++i) {
       for (j = 0; j < _m; ++j) {
-        const T& o1 = (*this) (i, j);
+        const T& o1 = (*this)(i, j);
         diff.report("< %s[%d][%d] = ", field, i, j);
         diff << o1;
         diff << "\n";
@@ -256,7 +256,7 @@ inline void dbMatrix<T>::out(dbDiff& diff, char side, const char* field) const
 
   for (i = 0; i < _n; ++i) {
     for (j = 0; j < _m; ++j) {
-      const T& o1 = (*this) (i, j);
+      const T& o1 = (*this)(i, j);
       diff.report("%c %s[%d][%d] = ", side, field, i, j);
       diff << o1;
       diff << "\n";

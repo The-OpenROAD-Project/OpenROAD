@@ -1,4 +1,4 @@
-import opendbpy as odb
+import odbpy as odb
 import os 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 tests_dir = os.path.abspath(os.path.join(current_dir, os.pardir))

@@ -25,9 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-
 #include "frBaseTypes.h"
+
+#include <iostream>
 
 namespace fr {
 
@@ -281,6 +281,8 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcLef58EolExtensionConstraint";
     case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
       return os << "frcLef58EolKeepOutConstraint";
+    case frConstraintTypeEnum::frcMetalWidthViaConstraint:
+      return os << "frcMetalWidthViaConstraint";
     case frConstraintTypeEnum::frcLef58AreaConstraint:
       return os << "frcLef58AreaConstraint";
   }

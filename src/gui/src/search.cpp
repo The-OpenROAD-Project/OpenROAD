@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "search.h"
+
 #include <tuple>
 #include <utility>
 
 #include "dbShape.h"
-#include "search.h"
 
 namespace gui {
 
@@ -363,8 +364,9 @@ void Search::addSNet(odb::dbNet* net)
           points = rect.getPoints();
         }
         Polygon poly;
-        for (auto point : points)
+        for (const auto& point : points) {
           bg::append(poly.outer(), Point(point.getX(), point.getY()));
+        }
         polygon_shapes_[box->getTechLayer()].insert({bbox, poly, net});
       }
     }

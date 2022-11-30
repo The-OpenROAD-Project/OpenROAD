@@ -55,6 +55,7 @@
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "globalConnectDialog.h"
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -86,9 +87,7 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [](const std::any& object) {
-            return Gui::get()->makeSelected(object);
-          },
+          Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           this)),
@@ -317,8 +316,13 @@ MainWindow::MainWindow(QWidget* parent)
     setSelected(selected, false);
     odb::Rect bbox;
     selected.getBBox(bbox);
-    // 10 microns
-    const int zoomout_dist = 10 * getBlock()->getDbUnitsPerMicron();
+
+    auto* block = getBlock();
+    int zoomout_dist = std::numeric_limits<int>::max();
+    if (block != nullptr) {
+      // 10 microns
+      zoomout_dist = 10 * block->getDbUnitsPerMicron();
+    }
     // twice the largest dimension of bounding box
     const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
     // pick smallest
@@ -381,6 +385,7 @@ MainWindow::~MainWindow()
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
+  gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -416,6 +421,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
       db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(new DbNetDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -430,6 +437,16 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
       new DbGenerateViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
+      new DbNonDefaultRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayerRule*>(
+      new DbTechLayerRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechSameNetRule*>(
+      new DbTechSameNetRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
+  gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
+      new DbSiteDescriptor(db_));
+  gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   controls_->setDBInstDescriptor(inst_descriptor);
@@ -498,6 +515,9 @@ void MainWindow::createActions()
 
   font_ = new QAction("Application font", this);
 
+  global_connect_ = new QAction("Global connect", this);
+  global_connect_->setShortcut(QString("Ctrl+G"));
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -520,6 +540,9 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
 
   connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
+
+  connect(
+      global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
@@ -560,6 +583,7 @@ void MainWindow::createMenus()
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     registerHeatMap(heat_map);
   }
+  tools_menu_->addAction(global_connect_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -1129,7 +1153,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto sel_obj : selected_) {
+  for (auto& sel_obj : selected_) {
     if (sel_obj.isInst()) {
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
@@ -1145,8 +1169,8 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(
-              Gui::get()->makeSelected(inst_term->getNet(), inst_term));
+          connected_nets.insert(Gui::get()->makeSelected(
+              DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
       }
     }
   }
@@ -1389,6 +1413,17 @@ void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)
   auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
   heat_maps->removeAction(heatmap_actions_[heatmap]);
   heatmap_actions_.erase(heatmap);
+}
+
+void MainWindow::showGlobalConnect()
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  GlobalConnectDialog dialog(block, this);
+  dialog.exec();
 }
 
 }  // namespace gui

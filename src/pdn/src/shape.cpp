@@ -103,8 +103,7 @@ void Shape::merge(Shape* shape)
 
 const Box Shape::rectToBox(const odb::Rect& rect)
 {
-  return Box(Point(rect.xMin(), rect.yMin()),
-             Point(rect.xMax(), rect.yMax()));
+  return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
 }
 
 const Box Shape::getRectBox() const
@@ -179,7 +178,7 @@ void Shape::updateIBTermConnections(std::set<odb::Rect>& terms)
     }
   }
   for (const odb::Rect& term : remove_terms) {
-      terms.erase(term);
+    terms.erase(term);
   }
 }
 
@@ -493,9 +492,10 @@ bool Shape::isModifiable() const
 
 const std::string Shape::getReportText() const
 {
-  std::string text = fmt::format("{} on {}",
-                                 getRectText(rect_, layer_->getTech()->getLefUnits()),
-                                 layer_->getName());
+  std::string text
+      = fmt::format("{} on {}",
+                    getRectText(rect_, layer_->getTech()->getLefUnits()),
+                    layer_->getName());
 
   if (net_ != nullptr) {
     text = net_->getName() + " " + text;

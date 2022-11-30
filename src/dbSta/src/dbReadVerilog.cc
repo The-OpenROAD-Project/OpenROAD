@@ -95,37 +95,42 @@ using sta::PortDirection;
 using utl::Logger;
 using utl::STA;
 
-dbVerilogNetwork::dbVerilogNetwork() : ConcreteNetwork(), db_network_(nullptr)
+dbVerilogNetwork::dbVerilogNetwork() :
+  ConcreteNetwork(), db_network_(nullptr)
 {
   report_ = nullptr;
   debug_ = nullptr;
 }
 
-void dbVerilogNetwork::init(dbNetwork* db_network)
+void
+dbVerilogNetwork::init(dbNetwork* db_network)
 {
   db_network_ = db_network;
-  report_ = db_network_->report();
-  debug_ = db_network_->debug();
+  copyState(db_network_);
 }
 
-dbVerilogNetwork* makeDbVerilogNetwork()
+dbVerilogNetwork*
+makeDbVerilogNetwork()
 {
   return new dbVerilogNetwork;
 }
 
-void initDbVerilogNetwork(ord::OpenRoad* openroad)
+void
+initDbVerilogNetwork(ord::OpenRoad* openroad)
 {
   openroad->getVerilogNetwork()->init(openroad->getDbNetwork());
 }
 
-void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
+void
+deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
 {
   delete verilog_network;
 }
 
 // Facade that looks in the db network for a liberty cell if
 // there isn't one in the verilog network.
-Cell* dbVerilogNetwork::findAnyCell(const char* name)
+Cell*
+dbVerilogNetwork::findAnyCell(const char* name)
 {
   Cell* cell = ConcreteNetwork::findAnyCell(name);
   if (cell == nullptr)
@@ -133,7 +138,8 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
+void
+dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
 {
   sta::readVerilogFile(filename, verilog_network);
 }
@@ -142,12 +148,12 @@ void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
 
 class Verilog2db
 {
- public:
+public:
   Verilog2db(Network* verilog_network, dbDatabase* db, Logger* logger);
   void makeBlock();
   void makeDbNetlist();
 
- protected:
+protected:
   void makeDbModule(Instance* inst, dbModule* parent);
   dbIoType staToDb(PortDirection* dir);
   void recordBusPortsOrder();
@@ -164,14 +170,17 @@ class Verilog2db
   std::map<std::string, int> uniquify_id_;  // key: module name
 };
 
-void dbLinkDesign(const char* top_cell_name,
-                  dbVerilogNetwork* verilog_network,
-                  dbDatabase* db,
-                  Logger* logger)
+void
+dbLinkDesign(const char* top_cell_name,
+             dbVerilogNetwork* verilog_network,
+             dbDatabase* db,
+             Logger* logger)
 {
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
-      top_cell_name, link_make_black_boxes, verilog_network->report());
+      top_cell_name,
+      link_make_black_boxes,
+      verilog_network->report());
   if (success) {
     Verilog2db v2db(verilog_network, db, logger);
     v2db.makeBlock();
@@ -180,12 +189,13 @@ void dbLinkDesign(const char* top_cell_name,
   }
 }
 
-Verilog2db::Verilog2db(Network* network, dbDatabase* db, Logger* logger)
-    : network_(network), db_(db), block_(nullptr), logger_(logger)
+Verilog2db::Verilog2db(Network* network, dbDatabase* db, Logger* logger) :
+  network_(network), db_(db), block_(nullptr), logger_(logger)
 {
 }
 
-void Verilog2db::makeBlock()
+void
+Verilog2db::makeBlock()
 {
   dbChip* chip = db_->getChip();
   if (chip == nullptr)
@@ -209,9 +219,9 @@ void Verilog2db::makeBlock()
     for (auto iter = mod_insts.begin(); iter != mod_insts.end();) {
       iter = dbModInst::destroy(iter);
     }
-  } else {
-    const char* design
-        = network_->name(network_->cell(network_->topInstance()));
+  }
+  else {
+    const char* design = network_->name(network_->cell(network_->topInstance()));
     block_ = dbBlock::create(chip, design, network_->pathDivider());
   }
   dbTech* tech = db_->getTech();
@@ -219,14 +229,16 @@ void Verilog2db::makeBlock()
   block_->setBusDelimeters('[', ']');
 }
 
-void Verilog2db::makeDbNetlist()
+void
+Verilog2db::makeDbNetlist()
 {
   recordBusPortsOrder();
   makeDbModule(network_->topInstance(), /* parent */ nullptr);
   makeDbNets(network_->topInstance());
 }
 
-void Verilog2db::recordBusPortsOrder()
+void
+Verilog2db::recordBusPortsOrder()
 {
   // OpenDB does not have any concept of bus ports.
   // Use a property to annotate the bus names as msb or lsb first for writing
@@ -247,7 +259,8 @@ void Verilog2db::recordBusPortsOrder()
   delete bus_iter;
 }
 
-dbModule* Verilog2db::makeUniqueDbModule(const char* name)
+dbModule*
+Verilog2db::makeUniqueDbModule(const char* name)
 {
   dbModule* module;
   do {
@@ -266,17 +279,18 @@ dbModule* Verilog2db::makeUniqueDbModule(const char* name)
 // to the sta network rooted at inst.  parent is the dbModule to build
 // the hierarchy under. If null the top module is used.
 
-void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
+void
+Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
 {
   Cell* cell = network_->cell(inst);
 
   dbModule* module;
   if (parent == nullptr) {
     module = block_->getTopModule();
-  } else {
+  }
+  else {
     module = makeUniqueDbModule(network_->name(cell));
-    dbModInst* modinst
-        = dbModInst::create(parent, module, network_->name(inst));
+    dbModInst* modinst = dbModInst::create(parent, module, network_->name(inst));
     if (modinst == nullptr) {
       logger_->warn(ORD,
                     1014,
@@ -291,7 +305,8 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
     Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
       makeDbModule(child, module);
-    } else {
+    }
+    else {
       const char* child_name = network_->pathName(child);
       Cell* cell = network_->cell(child);
       dbMaster* master = getMaster(cell);
@@ -317,14 +332,14 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
   }
   delete child_iter;
 
-  if (module->getChildren().reversible()
-      && module->getChildren().orderReversed())
+  if (module->getChildren().reversible() && module->getChildren().orderReversed())
     module->getChildren().reverse();
   if (module->getInsts().reversible() && module->getInsts().orderReversed())
     module->getInsts().reverse();
 }
 
-dbIoType Verilog2db::staToDb(PortDirection* dir)
+dbIoType
+Verilog2db::staToDb(PortDirection* dir)
 {
   if (dir == PortDirection::input())
     return dbIoType::INPUT;
@@ -340,7 +355,8 @@ dbIoType Verilog2db::staToDb(PortDirection* dir)
     return dbIoType::INOUT;
 }
 
-void Verilog2db::makeDbNets(const Instance* inst)
+void
+Verilog2db::makeDbNets(const Instance* inst)
 {
   bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
@@ -373,7 +389,8 @@ void Verilog2db::makeDbNets(const Instance* inst)
             dbIoType io_type = staToDb(network_->direction(pin));
             bterm->setIoType(io_type);
           }
-        } else if (network_->isLeaf(pin)) {
+        }
+        else if (network_->isLeaf(pin)) {
           const char* port_name = network_->portName(pin);
           Instance* inst = network_->instance(pin);
           const char* inst_name = network_->pathName(inst);
@@ -398,7 +415,8 @@ void Verilog2db::makeDbNets(const Instance* inst)
   delete child_iter;
 }
 
-bool Verilog2db::hasTerminals(Net* net) const
+bool
+Verilog2db::hasTerminals(Net* net) const
 {
   NetTermIterator* term_iter = network_->termIterator(net);
   bool has_terms = term_iter->hasNext();
@@ -406,7 +424,8 @@ bool Verilog2db::hasTerminals(Net* net) const
   return has_terms;
 }
 
-dbMaster* Verilog2db::getMaster(Cell* cell)
+dbMaster*
+Verilog2db::getMaster(Cell* cell)
 {
   auto miter = master_map_.find(cell);
   if (miter != master_map_.end())
@@ -420,13 +439,20 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
       LibertyCell* lib_cell = network_->libertyCell(cell);
       if (lib_cell == nullptr)
         logger_->warn(
-            ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
+            ORD,
+            1011,
+            "LEF master {} has no liberty cell.",
+            cell_name);
       return master;
-    } else {
+    }
+    else {
       LibertyCell* lib_cell = network_->libertyCell(cell);
       if (lib_cell)
         logger_->warn(
-            ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
+            ORD,
+            1012,
+            "Liberty cell {} has no LEF master.",
+            cell_name);
       // OpenSTA read_verilog warns about missing cells.
       master_map_[cell] = nullptr;
       return nullptr;
