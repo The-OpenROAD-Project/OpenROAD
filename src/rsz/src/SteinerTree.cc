@@ -137,10 +137,10 @@ connectedPins(const Net *net,
 }
 
 void
-SteinerTree::setTree(stt::Tree tree,
+SteinerTree::setTree(const stt::Tree& tree,
                      const dbNetwork *network)
 {
-  tree_ = std::move(tree);
+  tree_ = tree;
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
