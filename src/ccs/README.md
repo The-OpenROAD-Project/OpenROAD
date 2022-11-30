@@ -8,4 +8,11 @@ Currently OpenROAD only supports NLDM which is innacurate below 130nm. This proj
 will implement CCS timing support in OpenROAD to enable better STA at those nodes.
 
 We'll eventually implement this in C++, but currently have a python notebook that we're
-using to sketch the process out which can be found in [ccs_calculator.ipynb](ccs_calculator.ipynb)
+using to sketch the process.
+
+## Interacting With Notebook
+
+Click the [Google CoLab](https://colab.sandbox.google.com/github/The-OpenROAD-Project/OpenROAD/blob/master/src/ccs/ccs_calculator.ipynb) link. Modify the doc
+and upload changes as you see fit.
+
+While it's possible to interact with the notebook on Github's interface the experience isn't always the best.
