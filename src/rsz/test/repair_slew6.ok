@@ -14,7 +14,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-rdrv/Y                                  1.48    3.33   -1.84 (VIOLATED)
+rdrv/Y                                  1.48    3.33   -1.85 (VIOLATED)
 r0/D                                    1.50    3.33   -1.83 (VIOLATED)
 r1/D                                    1.50    3.33   -1.83 (VIOLATED)
 r10/D                                   1.50    3.33   -1.83 (VIOLATED)
