@@ -50,28 +50,13 @@
 #include <string>
 
 #include "db.h"
+#include "dbDescriptors.h"
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/PathAnalysisPt.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
 #include "sta/Units.hh"
-#include "sta/VertexVisitor.hh"
 
 Q_DECLARE_METATYPE(sta::Corner*);
 
@@ -107,7 +92,7 @@ static QString convertDelay(float time, sta::Unit* convert)
 
 /////////
 
-TimingPathsModel::TimingPathsModel(sta::dbSta* sta, QObject* parent)
+TimingPathsModel::TimingPathsModel(STAGuiInterface* sta, QObject* parent)
     : QAbstractTableModel(parent), sta_(sta)
 {
 }
@@ -143,7 +128,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
-    auto time_units = sta_->search()->units()->timeUnit();
+    auto time_units = sta_->getSTA()->units()->timeUnit();
     auto* timing_path = getPathAt(index);
     switch (col_index) {
       case Clock:
@@ -244,448 +229,28 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 }
 
 void TimingPathsModel::populateModel(
-    bool setup_hold,
-    int path_count,
     const std::set<sta::Pin*>& from,
     const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to,
-    bool unconstrainted)
+    const std::set<sta::Pin*>& to)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(setup_hold, path_count, from, thru, to, unconstrainted);
+  populatePaths(from, thru, to);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
-    bool get_max,
-    int path_count,
     const std::set<sta::Pin*>& from,
     const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to,
-    bool unconstrainted)
+    const std::set<sta::Pin*>& to)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
-  TimingPath::buildPaths(sta_,
-                         get_max,
-                         unconstrainted,  // unconstrained
-                         path_count,
-                         from,  // from
-                         thru,  // through
-                         to,    // to
-                         true,
-                         timing_paths_);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to);
 
   QApplication::restoreOverrideCursor();
   return true;
-}
-
-/////////
-
-void TimingPath::buildPaths(sta::dbSta* sta,
-                            bool get_max,
-                            bool include_unconstrained,
-                            int path_count,
-                            const std::set<sta::Pin*>& from,
-                            const std::vector<std::set<sta::Pin*>>& thrus,
-                            const std::set<sta::Pin*>& to,
-                            bool include_capture,
-                            std::vector<std::unique_ptr<TimingPath>>& paths)
-{
-  sta->ensureGraph();
-  sta->searchPreamble();
-
-  sta::ExceptionFrom* e_from = nullptr;
-  if (!from.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
-    pins->insert(from.begin(), from.end());
-    e_from = sta->makeExceptionFrom(
-        pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
-  }
-  sta::ExceptionThruSeq* e_thrus = nullptr;
-  if (!thrus.empty()) {
-    for (const auto& thru_set : thrus) {
-      if (thru_set.empty()) {
-        continue;
-      }
-      if (e_thrus == nullptr) {
-        e_thrus = new sta::ExceptionThruSeq;
-      }
-      sta::PinSet* pins = new sta::PinSet;
-      pins->insert(thru_set.begin(), thru_set.end());
-      e_thrus->push_back(sta->makeExceptionThru(
-          pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
-    }
-  }
-  sta::ExceptionTo* e_to = nullptr;
-  if (!to.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
-    pins->insert(to.begin(), to.end());
-    e_to = sta->makeExceptionTo(pins,
-                                nullptr,
-                                nullptr,
-                                sta::RiseFallBoth::riseFall(),
-                                sta::RiseFallBoth::riseFall());
-  }
-
-  sta::PathEndSeq* path_ends
-      = sta->search()->findPathEnds(  // from, thrus, to, unconstrained
-          e_from,
-          e_thrus,
-          e_to,
-          include_unconstrained,
-          // corner, min_max,
-          sta->cmdCorner(),
-          get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
-          // group_count, endpoint_count, unique_pins
-          path_count,
-          path_count,
-          true,
-          -sta::INF,
-          sta::INF,  // slack_min, slack_max,
-          true,      // sort_by_slack
-          nullptr,   // group_names
-          // setup, hold, recovery, removal,
-          get_max,
-          !get_max,
-          false,
-          false,
-          // clk_gating_setup, clk_gating_hold
-          false,
-          false);
-
-  for (auto& path_end : *path_ends) {
-    TimingPath* timing_path = new TimingPath();
-    auto* path = path_end->path();
-
-    sta::DcalcAnalysisPt* dcalc_ap
-        = path->pathAnalysisPt(sta)->dcalcAnalysisPt();
-
-    auto* start_clock_edge = path_end->sourceClkEdge(sta);
-    if (start_clock_edge != nullptr) {
-      timing_path->setStartClock(start_clock_edge->clock()->name());
-    } else {
-      timing_path->setStartClock("<No clock>");
-    }
-    auto* end_clock = path_end->targetClk(sta);
-    if (end_clock != nullptr) {
-      timing_path->setEndClock(end_clock->name());
-    } else {
-      timing_path->setEndClock("<No clock>");
-    }
-
-    auto* path_delay = path_end->pathDelay();
-    if (path_delay != nullptr) {
-      timing_path->setPathDelay(path_delay->delay());
-    } else {
-      timing_path->setPathDelay(0.0);
-    }
-    timing_path->setSlack(path_end->slack(sta));
-    timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta));
-    timing_path->setPathRequiredTime(path_end->requiredTime(sta));
-
-    bool clock_propagated = false;
-    if (start_clock_edge != nullptr) {
-      clock_propagated = start_clock_edge->clock()->isPropagated();
-    }
-
-    const bool clock_expaneded = clock_propagated;
-
-    timing_path->populatePath(path, sta, dcalc_ap, clock_expaneded);
-    if (include_capture) {
-      timing_path->populateCapturePath(path_end->targetClkPath(),
-                                       sta,
-                                       dcalc_ap,
-                                       path_end->targetClkOffset(sta),
-                                       clock_expaneded);
-    }
-
-    timing_path->computeClkEndIndex();
-    timing_path->setSlackOnPathNodes();
-
-    paths.push_back(std::unique_ptr<TimingPath>(timing_path));
-  }
-
-  delete path_ends;
-}
-
-void TimingPath::populateNodeList(sta::Path* path,
-                                  sta::dbSta* sta,
-                                  sta::DcalcAnalysisPt* dcalc_ap,
-                                  float offset,
-                                  bool clock_expanded,
-                                  TimingNodeList& list)
-{
-  float arrival_prev_stage = 0;
-  float arrival_cur_stage = 0;
-
-  sta::PathExpanded expand(path, sta);
-  auto* graph = sta->graph();
-  auto* network = sta->network();
-  auto* sdc = sta->sdc();
-  for (size_t i = 0; i < expand.size(); i++) {
-    const auto* ref = expand.path(i);
-    sta::Vertex* vertex = ref->vertex(sta);
-    const auto pin = vertex->pin();
-    const bool pin_is_clock = sta->isClock(pin);
-    const auto slew = ref->slew(sta);
-    const bool is_driver = network->isDriver(pin);
-    const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
-    const auto arrival = ref->arrival(sta);
-
-    // based on:
-    // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
-    int fanout = 0;
-    sta::VertexOutEdgeIterator iter(vertex, graph);
-    while (iter.hasNext()) {
-      sta::Edge* edge = iter.next();
-      if (edge->isWire()) {
-        sta::Pin* pin = edge->to(graph)->pin();
-        if (network->isTopLevelPort(pin)) {
-          // Output port counts as a fanout.
-          sta::Port* port = network->port(pin);
-          fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
-        } else {
-          fanout++;
-        }
-      }
-    }
-
-    float cap = 0.0;
-    if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
-      sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      sta::Parasitic* parasitic
-          = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
-      sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(
-          pin, parasitic, ref->transition(sta), dcalc_ap);
-    }
-
-    odb::dbITerm* term;
-    odb::dbBTerm* port;
-    sta->getDbNetwork()->staToDb(pin, term, port);
-    odb::dbObject* pin_object = term;
-    if (term == nullptr) {
-      pin_object = port;
-    }
-    arrival_cur_stage = arrival;
-
-    list.push_back(
-        std::make_unique<TimingPathNode>(pin_object,
-                                         pin_is_clock,
-                                         is_rising,
-                                         !is_driver,
-                                         true,
-                                         arrival + offset,
-                                         arrival_cur_stage - arrival_prev_stage,
-                                         slew,
-                                         cap,
-                                         fanout));
-    arrival_prev_stage = arrival_cur_stage;
-  }
-
-  // populate list with source/sink nodes
-  for (int i = 0; i < list.size(); i++) {
-    auto* node = list[i].get();
-    if (node->isSource()) {
-      if (i < (list.size() - 1)) {
-        // get the next node
-        node->addPairedNode(list[i + 1].get());
-      }
-    } else {
-      // node is sink
-      node->addPairedNode(node);
-    }
-  }
-
-  // first find the first instance node
-  TimingPathNode* instance_node = nullptr;
-  for (auto& node : list) {
-    if (node->hasInstance()) {
-      instance_node = node.get();
-      break;
-    }
-  }
-  // populate with instance nodes
-  for (auto& node : list) {
-    if (node->hasInstance()) {
-      instance_node = node.get();
-    }
-    node->setInstanceNode(instance_node);
-  }
-}
-
-void TimingPath::populatePath(sta::Path* path,
-                              sta::dbSta* sta,
-                              sta::DcalcAnalysisPt* dcalc_ap,
-                              bool clock_expanded)
-{
-  populateNodeList(path, sta, dcalc_ap, 0, clock_expanded, path_nodes_);
-}
-
-void TimingPath::populateCapturePath(sta::Path* path,
-                                     sta::dbSta* sta,
-                                     sta::DcalcAnalysisPt* dcalc_ap,
-                                     float offset,
-                                     bool clock_expanded)
-{
-  populateNodeList(path, sta, dcalc_ap, offset, clock_expanded, capture_nodes_);
-}
-
-std::string TimingPath::getStartStageName() const
-{
-  const int start_idx = getClkPathEndIndex() + 1;
-  if (start_idx >= path_nodes_.size()) {
-    return path_nodes_[0]->getNodeName();
-  }
-  return path_nodes_[start_idx]->getNodeName();
-}
-
-std::string TimingPath::getEndStageName() const
-{
-  return path_nodes_.back()->getNodeName();
-}
-
-void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
-{
-  for (int i = 0; i < nodes.size(); i++) {
-    if (!nodes[i]->isClock()) {
-      index = i - 1;
-      return;
-    }
-  }
-
-  index = nodes.size() - 1;  // assume last index is the end of the clock path
-}
-
-void TimingPath::computeClkEndIndex()
-{
-  computeClkEndIndex(path_nodes_, clk_path_end_index_);
-  computeClkEndIndex(capture_nodes_, clk_capture_end_index_);
-}
-
-void TimingPath::setSlackOnPathNodes()
-{
-  for (const auto& node : path_nodes_) {
-    node->setPathSlack(slack_);
-  }
-}
-
-/////////////
-
-std::string TimingPathNode::getNodeName(bool include_master) const
-{
-  if (isPinITerm()) {
-    odb::dbITerm* db_iterm = getPinAsITerm();
-    return db_iterm->getInst()->getName() + "/"
-           + db_iterm->getMTerm()->getName()
-           + (include_master
-                  ? " (" + db_iterm->getInst()->getMaster()->getName() + ")"
-                  : "");
-  }
-  return getNetName();
-}
-
-std::string TimingPathNode::getNetName() const
-{
-  return getNet()->getName();
-}
-
-odb::dbNet* TimingPathNode::getNet() const
-{
-  if (isPinITerm()) {
-    return getPinAsITerm()->getNet();
-  }
-  return getPinAsBTerm()->getNet();
-}
-
-odb::dbInst* TimingPathNode::getInstance() const
-{
-  if (isPinITerm()) {
-    return getPinAsITerm()->getInst();
-  }
-
-  return nullptr;
-}
-
-odb::dbITerm* TimingPathNode::getPinAsITerm() const
-{
-  if (isPinITerm()) {
-    return static_cast<odb::dbITerm*>(pin_);
-  }
-
-  return nullptr;
-}
-
-odb::dbBTerm* TimingPathNode::getPinAsBTerm() const
-{
-  if (isPinBTerm()) {
-    return static_cast<odb::dbBTerm*>(pin_);
-  }
-
-  return nullptr;
-}
-
-void TimingPathNode::copyData(TimingPathNode* other) const
-{
-  other->pin_ = pin_;
-  other->is_clock_ = is_clock_;
-  other->is_rising_ = is_rising_;
-  other->is_sink_ = is_sink_;
-  other->has_values_ = has_values_;
-  other->arrival_ = arrival_;
-  other->delay_ = delay_;
-  other->slew_ = slew_;
-  other->load_ = load_;
-  other->path_slack_ = path_slack_;
-  other->fanout_ = fanout_;
-}
-
-const odb::Rect TimingPathNode::getPinBBox() const
-{
-  if (isPinITerm()) {
-    return getPinAsITerm()->getBBox();
-  } else {
-    return getPinAsBTerm()->getBBox();
-  }
-}
-
-const odb::Rect TimingPathNode::getPinLargestBox() const
-{
-  if (isPinITerm()) {
-    auto* iterm = getPinAsITerm();
-    odb::dbTransform transform;
-    iterm->getInst()->getTransform(transform);
-
-    odb::Rect pin_rect;
-    auto* mterm = iterm->getMTerm();
-    for (auto* pin : mterm->getMPins()) {
-      for (auto* box : pin->getGeometry()) {
-        odb::Rect box_rect = box->getBox();
-        transform.apply(box_rect);
-        if (pin_rect.dx() < box_rect.dx()) {
-          pin_rect = box_rect;
-        }
-      }
-    }
-
-    return pin_rect;
-  } else {
-    auto* bterm = getPinAsBTerm();
-
-    odb::Rect pin_rect;
-    for (auto* pin : bterm->getBPins()) {
-      for (auto* box : pin->getBoxes()) {
-        odb::Rect box_rect = box->getBox();
-        if (pin_rect.dx() < box_rect.dx()) {
-          pin_rect = box_rect;
-        }
-      }
-    }
-    return pin_rect;
-  }
 }
 
 /////////
@@ -750,7 +315,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         return Qt::AlignCenter;
     }
   } else if (role == Qt::DisplayRole) {
-    const auto time_units = sta_->search()->units()->timeUnit();
+    const auto time_units = sta_->units()->timeUnit();
 
     if (index.row() == clock_summary_row_) {
       int start_idx = getClockEndIndex();
@@ -787,7 +352,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case Load: {
           if (node->getLoad() == 0)
             return "";
-          const auto cap_units = sta_->search()->units()->capacitanceUnit();
+          const auto cap_units = sta_->units()->capacitanceUnit();
           return cap_units->asString(node->getLoad());
         }
         case Fanout: {
@@ -859,7 +424,7 @@ QVariant TimingPathDetailModel::headerData(int section,
 }
 
 void TimingPathDetailModel::populateModel(TimingPath* path,
-                                          TimingPath::TimingNodeList* nodes)
+                                          TimingNodeList* nodes)
 {
   beginResetModel();
   path_ = path;
@@ -909,7 +474,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
   }
 }
 
-void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
+void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                        gui::Painter& painter,
                                        const gui::Descriptor* net_descriptor,
                                        const gui::Descriptor* inst_descriptor,
@@ -938,7 +503,8 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
                                 : TimingPathRenderer::signal_color_;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
-              node->getNet(), painter, sink_node->getPin());
+              DbNetDescriptor::NetWithSink{node->getNet(), sink_node->getPin()},
+              painter);
         }
       }
     }
@@ -955,13 +521,13 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
-  drawNodesList(path_->getCaptureNodes(),
+  drawNodesList(&path_->getCaptureNodes(),
                 painter,
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
                 capture_clock_color_);
-  drawNodesList(path_->getPathNodes(),
+  drawNodesList(&path_->getPathNodes(),
                 painter,
                 net_descriptor,
                 inst_descriptor,
@@ -988,7 +554,9 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
 
   for (const auto& highlight : highlight_stage_) {
     if (highlight->net != nullptr) {
-      net_descriptor->highlight(highlight->net, painter, highlight->sink);
+      net_descriptor->highlight(
+          DbNetDescriptor::NetWithSink{highlight->net, highlight->sink},
+          painter);
     }
   }
 }
@@ -1001,8 +569,6 @@ TimingConeRenderer::TimingConeRenderer()
       fanin_(false),
       fanout_(false),
       map_(),
-      min_map_index_(0),
-      max_map_index_(0),
       min_timing_(0.0),
       max_timing_(0.0),
       color_generator_(SpectrumGenerator(1.0))
@@ -1062,34 +628,40 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
 
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
-  sta_->ensureGraph();
+  // populate with max number of unique paths, all other paths will appear as 0
+  const int path_count = 1000;
 
-  map_.clear();
+  STAGuiInterface stagui(sta_);
+  stagui.setCorner(sta_->cmdCorner());
+  stagui.setUseMax(true);
+  stagui.setIncludeUnconstrainedPaths(true);
+  stagui.setMaxPathCount(path_count);
+  stagui.setIncludeCaptruePaths(false);
 
-  DepthMapSet depth_map;
+  ConeDepthMapPinSet pin_map;
   if (fanin_) {
-    getFaninCone(pin, depth_map);
+    const auto fanin = stagui.getFaninCone(pin);
+    pin_map.insert(fanin.begin(), fanin.end());
   }
   if (fanout_) {
-    getFanoutCone(pin, depth_map);
+    const auto fanout = stagui.getFanoutCone(pin);
+    pin_map.insert(fanout.begin(), fanout.end());
   }
 
-  for (const auto& [level, pins] : depth_map) {
-    auto& map_level = map_[level];
-    for (auto* pin : pins) {
-      map_level.push_back(std::make_unique<TimingPathNode>(pin));
+  map_ = stagui.buildConeConnectivity(pin, pin_map);
+
+  min_timing_ = std::numeric_limits<float>::max();
+  max_timing_ = std::numeric_limits<float>::lowest();
+  for (const auto& [level, pin_list] : map_) {
+    for (const auto& pin : pin_list) {
+      if (sta::delayInf(pin->getPathSlack()) || !pin->hasValues()) {
+        continue;
+      }
+
+      min_timing_ = std::min(min_timing_, pin->getPathSlack());
+      max_timing_ = std::max(max_timing_, pin->getPathSlack());
     }
   }
-
-  min_map_index_ = std::numeric_limits<int>::max();
-  max_map_index_ = std::numeric_limits<int>::min();
-  for (const auto& [level, pins_list] : map_) {
-    min_map_index_ = std::min(min_map_index_, level);
-    max_map_index_ = std::max(max_map_index_, level);
-  }
-
-  buildConnectivity();
-  annotateTiming(pin);
 
   QApplication::restoreOverrideCursor();
 
@@ -1241,244 +813,6 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     }
     std::reverse(legend.begin(), legend.end());
     color_generator_.drawLegend(painter, legend);
-  }
-}
-
-void TimingConeRenderer::getFaninCone(sta::Pin* source_pin,
-                                      DepthMapSet& depth_map)
-{
-  sta::PinSeq pins_to;
-  pins_to.push_back(source_pin);
-
-  auto* pins = sta_->findFaninPins(&pins_to,
-                                   true,   // flat
-                                   false,  // startpoints_only
-                                   0,
-                                   0,
-                                   true,   // thru_disabled
-                                   true);  // thru_constants
-
-  DepthMapSet depth_map_set;
-  getCone(source_pin, pins, depth_map_set, true);
-  for (auto& [level, pin_list] : depth_map_set) {
-    depth_map[-level].insert(pin_list.begin(), pin_list.end());
-  }
-}
-
-void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin,
-                                       DepthMapSet& depth_map)
-{
-  sta::PinSeq pins_from;
-  pins_from.push_back(source_pin);
-
-  auto* pins = sta_->findFanoutPins(&pins_from,
-                                    true,   // flat
-                                    false,  // startpoints_only
-                                    0,
-                                    0,
-                                    true,   // thru_disabled
-                                    true);  // thru_constants
-  getCone(source_pin, pins, depth_map, false);
-}
-
-void TimingConeRenderer::getCone(sta::Pin* source_pin,
-                                 sta::PinSet* pins,
-                                 DepthMapSet& depth_map,
-                                 bool is_fanin)
-{
-  auto* network = sta_->getDbNetwork();
-  auto* graph = sta_->graph();
-
-  auto filter_pins
-      = [network](sta::Pin* pin) { return network->isRegClkPin(pin); };
-
-  auto pin_to_object = [network](sta::Pin* pin) -> odb::dbObject* {
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
-    network->staToDb(pin, iterm, bterm);
-    odb::dbObject* pin_term = nullptr;
-    if (iterm != nullptr) {
-      pin_term = iterm;
-    } else {
-      pin_term = bterm;
-    }
-    return pin_term;
-  };
-
-  pins->erase(source_pin);
-
-  int level = 0;
-  std::map<int, std::set<sta::Pin*>> mapped_pins;
-  mapped_pins[level].insert(source_pin);
-  int pins_size = -1;
-  while (!pins->empty() && pins_size != pins->size()) {
-    pins_size = pins->size();
-    int next_level = level + 1;
-
-    auto& source_pins = mapped_pins[level];
-    auto& next_pins = mapped_pins[next_level];
-
-    for (auto* pin : source_pins) {
-      auto* pin_vertex = graph->pinDrvrVertex(pin);
-
-      sta::VertexEdgeIterator* itr = nullptr;
-      if (is_fanin) {
-        itr = new sta::VertexInEdgeIterator(pin_vertex, graph);
-      } else {
-        itr = new sta::VertexOutEdgeIterator(pin_vertex, graph);
-      }
-
-      while (itr->hasNext()) {
-        auto* next_edge = itr->next();
-        sta::Vertex* next_vertex = next_edge->to(graph);
-        if (next_vertex == pin_vertex) {
-          next_vertex = next_edge->from(graph);
-        }
-        auto* next_pin = next_vertex->pin();
-        auto pin_find = pins->find(next_pin);
-        if (pin_find != pins->end()) {
-          if (!filter_pins(next_pin)) {
-            next_pins.insert(next_pin);
-          }
-
-          pins->erase(pin_find);
-        }
-      }
-
-      delete itr;
-    }
-
-    level = next_level;
-  }
-  delete pins;
-
-  for (const auto& [level, pin_list] : mapped_pins) {
-    auto& dmap = depth_map[level];
-    for (auto* pin : pin_list) {
-      dmap.insert(pin_to_object(pin));
-    }
-  }
-}
-
-void TimingConeRenderer::buildConnectivity()
-{
-  auto* network = sta_->getDbNetwork();
-  auto* graph = sta_->graph();
-
-  // clear map pairs
-  for (const auto& [level, pin_list] : map_) {
-    for (const auto& pin : pin_list) {
-      pin->clearPairedNodes();
-    }
-  }
-
-  for (const auto& [level, pin_list] : map_) {
-    int next_level = level + 1;
-    if (map_.count(next_level) == 0) {
-      break;
-    }
-
-    std::map<sta::Vertex*, TimingPathNode*> next_pins;
-    for (const auto& pin : map_[next_level]) {
-      sta::Pin* sta_pin = nullptr;
-      if (pin->isPinITerm()) {
-        sta_pin = network->dbToSta(pin->getPinAsITerm());
-      } else {
-        sta_pin = network->dbToSta(pin->getPinAsBTerm());
-      }
-      next_pins[graph->pinDrvrVertex(sta_pin)] = pin.get();
-      next_pins[graph->pinLoadVertex(sta_pin)] = pin.get();
-    }
-
-    for (const auto& source_pin : pin_list) {
-      sta::Pin* sta_pin = nullptr;
-      if (source_pin->isPinITerm()) {
-        sta_pin = network->dbToSta(source_pin->getPinAsITerm());
-      } else {
-        sta_pin = network->dbToSta(source_pin->getPinAsBTerm());
-      }
-      sta::VertexOutEdgeIterator fanout_iter(graph->pinDrvrVertex(sta_pin),
-                                             graph);
-      while (fanout_iter.hasNext()) {
-        sta::Edge* edge = fanout_iter.next();
-        sta::Vertex* fanout = edge->to(graph);
-        auto next_pins_find = next_pins.find(fanout);
-        if (next_pins_find != next_pins.end()) {
-          next_pins_find->second->addPairedNode(source_pin.get());
-        }
-      }
-    }
-  }
-}
-
-void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
-{
-  // annotate critical path and work forwards/backwards until all pins have
-  // timing
-  std::vector<TimingPathNode*> pin_order;
-  for (int i = 0; i <= std::max(-min_map_index_, max_map_index_); i++) {
-    if (i <= -min_map_index_) {
-      for (const auto& pin : map_[-i]) {
-        pin_order.push_back(pin.get());
-      }
-    }
-    if (i <= max_map_index_) {
-      for (const auto& pin : map_[i]) {
-        pin_order.push_back(pin.get());
-      }
-    }
-  }
-
-  // populate with max number of unique paths, all other paths will appear as 0
-  const int path_count = 1000;
-
-  std::vector<std::unique_ptr<TimingPath>> paths;
-  TimingPath::buildPaths(sta_,
-                         true,            // max
-                         true,            // unconstrained
-                         path_count,      // paths
-                         {},              // from
-                         {{source_pin}},  // thru
-                         {},              // to
-                         false,
-                         paths);
-  for (const auto& path : paths) {
-    for (const auto& node : *path->getPathNodes()) {
-      auto pin_find = std::find_if(pin_order.begin(),
-                                   pin_order.end(),
-                                   [&node](const TimingPathNode* other) {
-                                     return node->getPin() == other->getPin();
-                                   });
-
-      if (pin_find != pin_order.end()) {
-        TimingPathNode* pin_node = *pin_find;
-        if (pin_node->hasValues()) {
-          continue;
-        }
-
-        node->copyData(pin_node);
-      }
-    }
-  }
-
-  min_timing_ = std::numeric_limits<float>::max();
-  max_timing_ = std::numeric_limits<float>::lowest();
-  for (const auto& [level, pin_list] : map_) {
-    for (const auto& pin : pin_list) {
-      if (sta::delayInf(pin->getPathSlack()) || !pin->hasValues()) {
-        continue;
-      }
-
-      min_timing_ = std::min(min_timing_, pin->getPathSlack());
-      max_timing_ = std::max(max_timing_, pin->getPathSlack());
-    }
-  }
-
-  for (auto& [level, pin_list] : map_) {
-    std::sort(
-        pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
-          return l->getPathSlack() > r->getPathSlack();
-        });
   }
 }
 
@@ -1715,11 +1049,11 @@ void PinSetWidget::showMenu(const QPoint& point)
 
 TimingControlsDialog::TimingControlsDialog(QWidget* parent)
     : QDialog(parent),
-      sta_(nullptr),
+      sta_(std::make_unique<STAGuiInterface>()),
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
-      uncontrained_(new QCheckBox(this)),
+      unconstrained_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
       thru_({}),
@@ -1732,16 +1066,24 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
-  layout_->addRow("Command corner:", corner_box_);
+  layout_->addRow("Corner:", corner_box_);
 
   setupPinRow("From:", from_);
   setThruPin({});
   setupPinRow("To:", to_);
 
   setUnconstrained(false);
-  layout_->addRow("Unconstrained:", uncontrained_);
+  layout_->addRow("Unconstrained:", unconstrained_);
 
   setLayout(layout_);
+
+  connect(path_count_spin_box_,
+          QOverload<int>::of(&QSpinBox::valueChanged),
+          [this](int value) { sta_->setMaxPathCount(value); });
+  connect(unconstrained_, &QCheckBox::stateChanged, [this]() {
+    sta_->setIncludeUnconstrainedPaths(unconstrained_->checkState()
+                                       == Qt::Checked);
+  });
 
   connect(corner_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1750,7 +1092,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
               return;
             }
             auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
-            sta_->setCmdCorner(corner);
+            sta_->setCorner(corner);
           });
 
   connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
@@ -1766,7 +1108,7 @@ void TimingControlsDialog::setupPinRow(const QString& label,
     layout_->insertRow(row_index, label, row);
   }
 
-  row->setSTA(sta_);
+  row->setSTA(sta_->getSTA());
 
   connect(row,
           SIGNAL(inspect(const Selected&)),
@@ -1776,22 +1118,24 @@ void TimingControlsDialog::setupPinRow(const QString& label,
 
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
 {
-  sta_ = sta;
-  from_->setSTA(sta_);
+  sta_->setSTA(sta);
+  from_->setSTA(sta_->getSTA());
   for (auto* row : thru_) {
-    row->setSTA(sta_);
+    row->setSTA(sta_->getSTA());
   }
-  to_->setSTA(sta_);
+  to_->setSTA(sta_->getSTA());
 }
 
 void TimingControlsDialog::setUnconstrained(bool unconstrained)
 {
-  uncontrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+  sta_->setIncludeUnconstrainedPaths(unconstrained);
+  unconstrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
 }
 
-bool TimingControlsDialog::getUnconstrained() const
+void TimingControlsDialog::setPathCount(int path_count)
 {
-  return uncontrained_->checkState() == Qt::Checked;
+  sta_->setMaxPathCount(path_count);
+  path_count_spin_box_->setValue(path_count);
 }
 
 void TimingControlsDialog::setExpandClock(bool expand)
@@ -1808,10 +1152,10 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->cmdCorner();
+  auto* current_corner = sta_->getCorner();
   corner_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->corners()->corners()) {
+  for (auto* corner : sta_->getSTA()->corners()->corners()) {
     if (corner == current_corner) {
       selection = corner_box_->count();
     }
@@ -1841,7 +1185,7 @@ void TimingControlsDialog::setPinSelections()
 
 sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
 {
-  auto* network = sta_->getDbNetwork();
+  sta::dbNetwork* network = sta_->getNetwork();
 
   if (std::holds_alternative<odb::dbITerm*>(term)) {
     return network->dbToSta(std::get<odb::dbITerm*>(term));
@@ -1910,5 +1254,4 @@ const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
   }
   return pins;
 }
-
 }  // namespace gui

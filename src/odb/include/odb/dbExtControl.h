@@ -67,8 +67,7 @@ class dbExtControl : public dbObject
   std::string _cornerIndexList;
   std::string _resFactorList;
   std::string _gndcFactorList;
-  std::string
-  _ccFactorList;
+  std::string _ccFactorList;
 
   dbExtControl();
 };

@@ -6,7 +6,7 @@
  * License and an agreement to abide by its  terms.   If you  don't  agree
  * with  this, you must remove this and any other files which are part of the
  * distribution and  destroy any  copies made.
- * 
+ *
  * For updates, support, or to become part of the LEF/DEF Community, check
  * www.openeda.org for details.
  */
@@ -14,4 +14,5 @@
 
 /*
  * Global variables
- */ int lefrReadEncrypted = 0;
+ */
+int lefrReadEncrypted = 0;

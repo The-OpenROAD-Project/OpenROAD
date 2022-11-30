@@ -23,18 +23,18 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFWWRITERCALLS_H
 #define CLEFWWRITERCALLS_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /*
@@ -45,15 +45,15 @@
  * a colon-delimited list of directories in which to find
  * include files.
  */
-EXTERN int lefwWrite (FILE * file, const char * fileName, lefiUserData  userData);
+EXTERN int lefwWrite(FILE* file, const char* fileName, lefiUserData userData);
 
 /*
  * Set all of the callbacks that have not yet been set to a function
  * that will add up how many times a given lef data type was ignored
  * (ie no callback was done).  The statistics can later be printed out.
  */
-EXTERN void lefwSetRegisterUnusedCallbacks ();
-EXTERN void lefwPrintUnusedCallbacks (FILE*  f);
+EXTERN void lefwSetRegisterUnusedCallbacks();
+EXTERN void lefwPrintUnusedCallbacks(FILE* f);
 
 /*
  * Set/get the client-provided user data.  lefi doesn't look at
@@ -63,13 +63,14 @@ EXTERN void lefwPrintUnusedCallbacks (FILE*  f);
  * next callback.  The lefi writer and writer maintain separate
  * user data pointers.
  */
-EXTERN void lefwSetUserData (lefiUserData  p0);
-EXTERN lefiUserData lefwGetUserData ();
+EXTERN void lefwSetUserData(lefiUserData p0);
+EXTERN lefiUserData lefwGetUserData();
 
 /*
  * An enum describing all of the types of writer callbacks.
  */
-typedef enum {
+typedef enum
+{
   lefwUnspecifiedCbkType = 0,
   lefwVersionCbkType = 1,
   lefwCaseSensitiveCbkType = 2,
@@ -141,43 +142,43 @@ typedef enum {
  */
 
 /* A declaration of the signature of all callbacks that return nothing.       */
-typedef int (*lefwVoidCbkFnType) ( lefwCallbackType_e, lefiUserData );
+typedef int (*lefwVoidCbkFnType)(lefwCallbackType_e, lefiUserData);
 
- /* NEW CALLBACK - If your callback returns a pointer to a new class then
-  * you must add a type function here. */
+/* NEW CALLBACK - If your callback returns a pointer to a new class then
+ * you must add a type function here. */
 
 /* Functions to call to register a callback function.
  */
-EXTERN void lefwSetVersionCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetCaseSensitiveCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetNoWireExtensionCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetBusBitCharsCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetDividerCharCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetManufacturingGridCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetUseMinSpacingCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetClearanceMeasureCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetUnitsCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwAntennaInputGateAreaCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwAntennaInOutDiffAreaCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwAntennaOutputDiffAreaCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetPropDefCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetLayerCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetViaCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetViaRuleCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetNonDefaultCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetCrossTalkCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetNoiseTableCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetCorrectionTableCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetSpacingCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetMinFeatureCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetDielectricCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetIRDropCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetSiteCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetArrayCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetMacroCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetAntennaCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetExtCbk (lefwVoidCbkFnType p0);
-EXTERN void lefwSetEndLibCbk (lefwVoidCbkFnType p0);
+EXTERN void lefwSetVersionCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetCaseSensitiveCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetNoWireExtensionCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetBusBitCharsCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetDividerCharCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetManufacturingGridCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetUseMinSpacingCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetClearanceMeasureCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetUnitsCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwAntennaInputGateAreaCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwAntennaInOutDiffAreaCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwAntennaOutputDiffAreaCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetPropDefCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetLayerCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetViaCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetViaRuleCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetNonDefaultCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetCrossTalkCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetNoiseTableCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetCorrectionTableCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetSpacingCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetMinFeatureCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetDielectricCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetIRDropCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetSiteCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetArrayCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetMacroCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetAntennaCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetExtCbk(lefwVoidCbkFnType p0);
+EXTERN void lefwSetEndLibCbk(lefwVoidCbkFnType p0);
 
 /* NEW CALLBACK - each callback must have a function to allow the user
  * to set it.  Add the function here. */
@@ -187,14 +188,14 @@ EXTERN void lefwSetEndLibCbk (lefwVoidCbkFnType p0);
  * function.  This is especially useful if you want to check to see
  * if you forgot anything.
  */
-EXTERN void lefwSetUnusedCallbacks (lefwVoidCbkFnType  func);
+EXTERN void lefwSetUnusedCallbacks(lefwVoidCbkFnType func);
 
 /* Routine to set the message logging routine for errors                      */
 typedef void (*LEFI_LOG_FUNCTION)(const char*);
-EXTERN void lefwSetLogFunction (LEFI_LOG_FUNCTION  p0);
+EXTERN void lefwSetLogFunction(LEFI_LOG_FUNCTION p0);
 
 /* Routine to set the message logging routine for warnings                    */
 typedef void (*LEFI_WARNING_LOG_FUNCTION)(const char*);
-EXTERN void lefwSetWarningLogFunction (LEFI_WARNING_LOG_FUNCTION  p0);
+EXTERN void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION p0);
 
 #endif

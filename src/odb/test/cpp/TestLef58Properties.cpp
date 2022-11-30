@@ -15,7 +15,6 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
-
 BOOST_AUTO_TEST_CASE(lef58_class)
 {
   utl::Logger* logger = new utl::Logger();
@@ -182,7 +181,8 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   auto widthTableRules = layer->getTechLayerWidthTableRules();
   BOOST_TEST(widthTableRules.size() == 1);
-  auto widthTableRule = (odb::dbTechLayerWidthTableRule*) *(widthTableRules.begin());
+  auto widthTableRule
+      = (odb::dbTechLayerWidthTableRule*) *(widthTableRules.begin());
   BOOST_TEST(widthTableRule->isOrthogonal());
   BOOST_TEST(!widthTableRule->isWrongDirection());
   BOOST_TEST(widthTableRule->getWidthTable().size() == 5);
@@ -228,8 +228,9 @@ BOOST_AUTO_TEST_CASE(test_default)
       BOOST_TEST(std::string(subRule->getSecondLayer()->getName()) == "metal1");
     } else if (i == 2) {
       BOOST_TEST(subRule->getCutSpacing() == 0.2 * distFactor);
-      BOOST_TEST(subRule->getType()
-                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
+      BOOST_TEST(
+          subRule->getType()
+          == odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
       BOOST_TEST(subRule->getAdjacentCuts() == 3);
       BOOST_TEST(subRule->getTwoCuts() == 1);
     } else {
@@ -304,13 +305,15 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   auto viaMaps = dbTech->getMetalWidthViaMap();
   BOOST_TEST(viaMaps.size() == 1);
-  auto viaMap = (dbMetalWidthViaMap*)(*viaMaps.begin());
+  auto viaMap = (dbMetalWidthViaMap*) (*viaMaps.begin());
   BOOST_TEST(viaMap->getCutLayer()->getName() == "via1");
   BOOST_TEST(!viaMap->isPgVia());
   BOOST_TEST(!viaMap->isViaCutClass());
-  BOOST_TEST(viaMap->getBelowLayerWidthLow() == viaMap->getBelowLayerWidthHigh());
+  BOOST_TEST(viaMap->getBelowLayerWidthLow()
+             == viaMap->getBelowLayerWidthHigh());
   BOOST_TEST(viaMap->getBelowLayerWidthHigh() == 0.5 * distFactor);
-  BOOST_TEST(viaMap->getAboveLayerWidthLow() == viaMap->getAboveLayerWidthHigh());
+  BOOST_TEST(viaMap->getAboveLayerWidthLow()
+             == viaMap->getAboveLayerWidthHigh());
   BOOST_TEST(viaMap->getAboveLayerWidthHigh() == 0.8 * distFactor);
   BOOST_TEST(viaMap->getViaName() == "M2_M1_via");
 

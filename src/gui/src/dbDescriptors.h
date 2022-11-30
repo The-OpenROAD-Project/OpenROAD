@@ -90,16 +90,14 @@ class DbInstDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   bool isInst(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
   Actions getActions(std::any object) const override;
   Editors getEditors(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -127,12 +125,10 @@ class DbMasterDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -151,6 +147,12 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
+  struct NetWithSink
+  {
+    odb::dbNet* net;
+    odb::dbObject* sink;
+  };
+
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
                   const std::set<odb::dbNet*>& focus_nets,
@@ -160,9 +162,7 @@ class DbNetDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
   bool isSlowHighlight(std::any object) const override;
 
   bool isNet(std::any object) const override;
@@ -170,7 +170,7 @@ class DbNetDescriptor : public Descriptor
   Properties getProperties(std::any object) const override;
   Editors getEditors(std::any object) const override;
   Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -206,6 +206,9 @@ class DbNetDescriptor : public Descriptor
   const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
 
+  odb::dbNet* getNet(std::any object) const;
+  odb::dbObject* getSink(std::any object) const;
+
   static const int max_iterms_ = 10000;
 };
 
@@ -219,13 +222,11 @@ class DbITermDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
   Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -243,14 +244,12 @@ class DbBTermDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
   Editors getEditors(std::any object) const override;
   Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -268,13 +267,11 @@ class DbBlockageDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
   Editors getEditors(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -292,13 +289,11 @@ class DbObstructionDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
   Actions getActions(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -316,12 +311,10 @@ class DbTechLayerDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -347,12 +340,10 @@ class DbItermAccessPointDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -370,12 +361,10 @@ class DbGroupDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -393,12 +382,10 @@ class DbRegionDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -417,12 +404,10 @@ class DbModuleDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -443,12 +428,10 @@ class DbTechViaDescriptor : public Descriptor
 
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
@@ -467,12 +450,130 @@ class DbGenerateViaDescriptor : public Descriptor
 
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbNonDefaultRuleDescriptor : public Descriptor
+{
+ public:
+  DbNonDefaultRuleDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbTechLayerRuleDescriptor : public Descriptor
+{
+ public:
+  DbTechLayerRuleDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbTechSameNetRuleDescriptor : public Descriptor
+{
+ public:
+  DbTechSameNetRuleDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any /* object */, odb::Rect& /* bbox */) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbSiteDescriptor : public Descriptor
+{
+ public:
+  struct SpecificSite
+  {
+    odb::dbSite* site;
+    odb::Rect rect;
+  };
+
+  DbSiteDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+
+  odb::dbSite* getSite(std::any object) const;
+  odb::Rect getRect(std::any object) const;
+  bool isSpecificSite(std::any object) const;
+};
+
+class DbRowDescriptor : public Descriptor
+{
+ public:
+  DbRowDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;

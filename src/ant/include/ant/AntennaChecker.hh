@@ -86,6 +86,7 @@ class AntennaChecker
 
   vector<Violation> getAntennaViolations(dbNet* net, odb::dbMTerm* diode_mterm);
   void initAntennaRules();
+  void setReportFileName(const char* file_name);
 
  private:
   bool haveRoutedNets();
@@ -147,17 +148,26 @@ class AntennaChecker
   std::pair<bool, bool> checkWirePar(const ARinfo& AntennaRatio,
                                      dbNet* net,
                                      bool verbose,
-                                     bool report);
+                                     bool report,
+                                     std::ofstream& report_file);
   std::pair<bool, bool> checkWireCar(const ARinfo& AntennaRatio,
                                      bool par_checked,
                                      bool verbose,
-                                     bool report);
-  bool checkViaPar(const ARinfo& AntennaRatio, bool verbose, bool report);
-  bool checkViaCar(const ARinfo& AntennaRatio, bool verbose, bool report);
+                                     bool report,
+                                     std::ofstream& report_file);
+  bool checkViaPar(const ARinfo& AntennaRatio,
+                   bool verbose,
+                   bool report,
+                   std::ofstream& report_file);
+  bool checkViaCar(const ARinfo& AntennaRatio,
+                   bool verbose,
+                   bool report,
+                   std::ofstream& report_file);
 
   void checkNet(dbNet* net,
                 bool report_if_no_violation,
                 bool verbose,
+                std::ofstream& report_file,
                 // Return values.
                 int& net_violation_count,
                 int& pin_violation_count);
@@ -167,6 +177,7 @@ class AntennaChecker
                  vector<ARinfo>& VIA_CARtable,
                  bool report,
                  bool verbose,
+                 std::ofstream& report_file,
                  // Return values.
                  bool& violation,
                  std::unordered_set<dbWireGraph::Node*>& violated_gates);
@@ -192,6 +203,7 @@ class AntennaChecker
   utl::Logger* logger_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_;
+  std::string report_file_name_;
 
   static constexpr int max_diode_count_per_gate = 10;
 };

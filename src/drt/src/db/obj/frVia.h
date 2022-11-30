@@ -124,10 +124,7 @@ class frVia : public frRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override
-  {
-    return origin_;
-  }
+  dbTransform getTransform() const override { return origin_; }
   void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
@@ -138,8 +135,8 @@ class frVia : public frRef
    */
   bool hasPin() const override
   {
-    return (owner_) && ((owner_->typeId() == frcBPin) ||
-                         owner_->typeId() == frcMPin);
+    return (owner_)
+           && ((owner_->typeId() == frcBPin) || owner_->typeId() == frcMPin);
   }
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
   void addToPin(frPin* in) override

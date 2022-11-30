@@ -262,7 +262,6 @@ class dbBlockSearch
   void addNetShapesOnSearch(dbNet* net, bool skipVias);
   void makeGrouteSearchDb();
 
-
   uint getViaLevel(dbShape* s);
   uint getViaLevel(dbSBox* s);
 

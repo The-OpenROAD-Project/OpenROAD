@@ -246,6 +246,15 @@ void GlobalRouter::saveCongestion()
   }
 }
 
+bool GlobalRouter::haveRoutes()
+{
+  if (routes_.empty()) {
+    loadGuidesFromDB();
+  }
+
+  return !routes_.empty();
+}
+
 void GlobalRouter::globalRoute(bool save_guides)
 {
   clear();
@@ -304,9 +313,11 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm, int iterations)
 
   if (diode_mterm == nullptr) {
     diode_mterm = repair_antennas_->findDiodeMTerm();
-    if (diode_mterm == nullptr)
-      logger_->error(
+    if (diode_mterm == nullptr) {
+      logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
+      return;
+    }
   }
   if (repair_antennas_->diffArea(diode_mterm) == 0.0)
     logger_->error(GRT,
@@ -1397,13 +1408,8 @@ void GlobalRouter::perturbCapacities()
   }
 }
 
-void GlobalRouter::readGuides(const char* file_name)
+void GlobalRouter::initGridAndNets()
 {
-  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
-      || db_->getTech() == nullptr) {
-    logger_->error(GRT, 249, "Load design before reading guides");
-  }
-
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
@@ -1422,6 +1428,16 @@ void GlobalRouter::readGuides(const char* file_name)
   }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
+}
+
+void GlobalRouter::readGuides(const char* file_name)
+{
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 249, "Load design before reading guides");
+  }
+
+  initGridAndNets();
 
   odb::dbTech* tech = db_->getTech();
 
@@ -1484,6 +1500,8 @@ void GlobalRouter::readGuides(const char* file_name)
     }
   }
 
+  updateVias();
+
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
@@ -1494,6 +1512,52 @@ void GlobalRouter::readGuides(const char* file_name)
   updateDbCongestionFromGuides();
   heatmap_->update();
   saveGuidesFromFile(guides);
+}
+
+void GlobalRouter::loadGuidesFromDB()
+{
+  initGridAndNets();
+  for (odb::dbNet* net : block_->getNets()) {
+    for (odb::dbGuide* guide : net->getGuides()) {
+      boxToGlobalRouting(
+          guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
+    }
+  }
+
+  updateVias();
+
+  for (auto& net_route : routes_) {
+    std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
+    GRoute& route = net_route.second;
+    mergeSegments(pins, route);
+  }
+
+  updateEdgesUsage();
+  heatmap_->update();
+}
+
+void GlobalRouter::updateVias()
+{
+  for (auto& net_route : routes_) {
+    GRoute& route = net_route.second;
+    for (int i = 0; i < route.size() - 1; i++) {
+      GSegment& seg1 = route[i];
+      GSegment& seg2 = route[i + 1];
+
+      odb::Point seg1_init(seg1.init_x, seg1.init_y);
+      odb::Point seg1_final(seg1.final_x, seg1.final_y);
+      odb::Point seg2_init(seg2.init_x, seg2.init_y);
+      odb::Point seg2_final(seg2.final_x, seg2.final_y);
+
+      if (seg1.isVia() && seg1.init_layer < seg2.init_layer
+          && (seg1_init == seg2_init || seg1_init == seg2_final)) {
+        seg1.final_layer = seg2.init_layer;
+      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer
+                 && (seg2_init == seg1_init || seg2_init == seg1_final)) {
+        seg2.init_layer = seg1.final_layer;
+      }
+    }
+  }
 }
 
 void GlobalRouter::updateEdgesUsage()
@@ -1576,12 +1640,8 @@ void GlobalRouter::saveGuidesFromFile(
 
 void GlobalRouter::saveGuides()
 {
-  odb::dbTechLayer* ph_layer_final = nullptr;
-
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
-
-  int final_layer;
 
   for (odb::dbNet* db_net : block_->getNets()) {
     db_net->clearGuides();
@@ -1589,21 +1649,34 @@ void GlobalRouter::saveGuides()
     if (iter == routes_.end()) {
       continue;
     }
+    Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
+
     if (!route.empty()) {
-      std::vector<odb::Rect> guide_box;
-      final_layer = -1;
       for (GSegment& segment : route) {
-        if (segment.init_layer != final_layer && final_layer != -1) {
-          mergeBox(guide_box);
-          for (odb::Rect& guide : guide_box) {
-            guide.moveDelta(offset_x, offset_y);
-            odb::dbGuide::create(db_net, ph_layer_final, guide);
+        odb::Rect box = globalRoutingToBox(segment);
+        box.moveDelta(offset_x, offset_y);
+        if (segment.isVia()) {
+          if (abs(segment.final_layer - segment.init_layer) > 1) {
+            logger_->error(GRT,
+                           75,
+                           "Connection between non-adjacent layers in net {}.",
+                           db_net->getConstName());
           }
-          guide_box.clear();
-          final_layer = segment.init_layer;
-        }
-        if (segment.init_layer == segment.final_layer) {
+
+          if (net->isLocal()) {
+            int layer_idx1 = segment.init_layer;
+            int layer_idx2 = segment.final_layer;
+            odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
+            odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
+            odb::dbGuide::create(db_net, layer1, box);
+            odb::dbGuide::create(db_net, layer2, box);
+          } else {
+            int layer_idx = std::min(segment.init_layer, segment.final_layer);
+            odb::dbTechLayer* layer = routing_layers_[layer_idx];
+            odb::dbGuide::create(db_net, layer, box);
+          }
+        } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
               && segment.init_x != segment.final_x
               && segment.init_y != segment.final_y) {
@@ -1613,38 +1686,9 @@ void GlobalRouter::saveGuides()
                            db_net->getConstName());
           }
 
-          guide_box.push_back(globalRoutingToBox(segment));
-          ph_layer_final = routing_layers_[segment.final_layer];
-          final_layer = segment.final_layer;
-        } else {
-          if (abs(segment.final_layer - segment.init_layer) > 1) {
-            logger_->error(GRT,
-                           75,
-                           "Connection between non-adjacent layers in net {}.",
-                           db_net->getConstName());
-          } else {
-            odb::dbTechLayer* ph_layer_init;
-            ph_layer_init = routing_layers_[segment.init_layer];
-            ph_layer_final = routing_layers_[segment.final_layer];
-
-            final_layer = segment.final_layer;
-            odb::Rect box;
-            guide_box.push_back(globalRoutingToBox(segment));
-            mergeBox(guide_box);
-            for (odb::Rect& guide : guide_box) {
-              guide.moveDelta(offset_x, offset_y);
-              odb::dbGuide::create(db_net, ph_layer_init, guide);
-            }
-            guide_box.clear();
-
-            guide_box.push_back(globalRoutingToBox(segment));
-          }
+          odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
+          odb::dbGuide::create(db_net, layer, box);
         }
-      }
-      mergeBox(guide_box);
-      for (odb::Rect& guide : guide_box) {
-        guide.moveDelta(offset_x, offset_y);
-        odb::dbGuide::create(db_net, ph_layer_final, guide);
       }
     }
     auto dbGuides = db_net->getGuides();
@@ -1814,7 +1858,8 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
   }
 }
 
-void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box)
+void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box,
+                            const std::set<odb::Point>& via_positions)
 {
   std::vector<odb::Rect> final_box;
   if (guide_box.empty()) {
@@ -1824,7 +1869,15 @@ void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box)
   for (size_t i = 1; i < guide_box.size(); i++) {
     odb::Rect box = guide_box[i];
     odb::Rect& lastBox = final_box.back();
-    if (lastBox.overlaps(box)) {
+
+    GRoute segs;
+    boxToGlobalRouting(box, 0, segs);
+    odb::Point seg_init(segs[0].init_x, segs[0].init_y);
+    odb::Point seg_final(segs.back().init_x, segs.back().init_y);
+
+    if (lastBox.overlaps(box)
+        && (via_positions.find(seg_init) == via_positions.end()
+            || via_positions.find(seg_final) == via_positions.end())) {
       int lowerX = std::min(lastBox.xMin(), box.xMin());
       int lowerY = std::min(lastBox.yMin(), box.yMin());
       int upperX = std::max(lastBox.xMax(), box.xMax());

@@ -168,4 +168,16 @@ mpl::MacroPlacer* Design::getMacroPlacer()
   return app->getMacroPlacer();
 }
 
+ppl::IOPlacer* Design::getIOPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getIOPlacer();
+}
+
+tap::Tapcell* Design::getTapcell()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTapcell();
+}
+
 }  // namespace ord

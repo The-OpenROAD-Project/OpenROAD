@@ -170,7 +170,8 @@ class GlobalRouter
   int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
-  void readGuides(const char* file_name);  // just for display
+  void readGuides(const char* file_name);
+  void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
@@ -183,7 +184,7 @@ class GlobalRouter
   void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
-  bool haveRoutes() const { return !routes_.empty(); }
+  bool haveRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
 
@@ -226,6 +227,7 @@ class GlobalRouter
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
   void boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route);
+  void updateVias();
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
@@ -298,7 +300,8 @@ class GlobalRouter
                           int min_routing_layer,
                           int max_routing_layer);
   void connectPadPins(NetRouteMap& routes);
-  void mergeBox(std::vector<odb::Rect>& guide_box);
+  void mergeBox(std::vector<odb::Rect>& guide_box,
+                const std::set<odb::Point>& via_positions);
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& new_seg,
@@ -359,6 +362,7 @@ class GlobalRouter
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
+  void initGridAndNets();
 
   utl::Logger* logger_;
   gui::Gui* gui_;

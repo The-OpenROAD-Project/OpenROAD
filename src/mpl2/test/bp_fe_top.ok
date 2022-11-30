@@ -1,0 +1,6054 @@
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45.lef
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via4Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via5Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via6Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
+read lef file ./Nangate45/fakeram45_512x64.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_512x64.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_512x64.lef
+read lef file ./Nangate45/fakeram45_64x7.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_64x7.lef
+read lef file ./Nangate45/fakeram45_64x96.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_64x96.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_64x96.lef
+read_lib file ./Nangate45/fakeram45_512x64.lib
+read_lib file ./Nangate45/fakeram45_64x7.lib
+read_lib file ./Nangate45/fakeram45_64x96.lib
+[WARNING STA-0337] port 'icache_id_i[0]' not found.
+[WARNING STA-0337] port 'bp_fe_cmd_i[108:0]' not found.
+[WARNING STA-0337] port 'cce_lce_cmd_i[35:0]' not found.
+[WARNING STA-0337] port 'cce_lce_data_cmd_i[539:0]' not found.
+[WARNING STA-0337] port 'lce_lce_tr_resp_i[538:0]' not found.
+[WARNING STA-0337] port 'bp_fe_queue_o[133:0]' not found.
+[WARNING STA-0337] port 'lce_cce_req_o[29:0]' not found.
+[WARNING STA-0337] port 'lce_cce_resp_o[25:0]' not found.
+[WARNING STA-0337] port 'lce_cce_data_resp_o[536:0]' not found.
+[WARNING STA-0337] port 'lce_lce_tr_resp_o[538:0]' not found.
+[INFO ODB-0128] Design: bp_fe_top
+[INFO ODB-0252]     Updated 2511 pins.
+[INFO ODB-0253]     Updated 26858 components.
+[INFO ODB-0254]     Updated 33221 nets and 105444 connections.
+Hier_RTLMP report dir: results/bp_fe_top
+[INFO MPL-2023] Basic Floorplan Information
+Floorplan_lx : 0.0
+Floorplan_lx : 0.0
+Floorplan_lx : 899.97
+Floorplan_lx : 699.4
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 60.65
+pin_x : 5.035
+pin_y : 20.645
+pin_x : 5.035
+pin_y : 42.8
+[INFO MPL-0402] Traversed logical hierarchy
+	Number of std cell instances : 29855
+	Area of std cell instances : 48869.88
+	Number of macros : 11
+	Area of macros : 160299.05
+	Total area : 209168.92
+	Utilization : 0.33231008
+
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  L1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B2 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  R0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  R2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  R0 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  L2 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  R1 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  T0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T0 
+cluster_name :  R1 
+cluster_name :  L2 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  T0 
+cluster_name :  T2 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  T0 
+cluster_name :  L2 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  T2 
+cluster_name :  T2 
+cluster_name :  B0 
+cluster_name :  T2 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  T0 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  L1 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  L2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  R1 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  R2 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  L1 
+cluster_name :  L1 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  L2 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  T2 
+cluster_name :  L0 
+cluster_name :  B0 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B2 
+cluster_name :  R0 
+cluster_name :  B0 
+cluster_name :  R1 
+cluster_name :  L0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  R1 
+cluster_name :  T1 
+cluster_name :  T2 
+cluster_name :  R2 
+cluster_name :  B2 
+cluster_name :  R1 
+cluster_name :  B2 
+cluster_name :  T2 
+cluster_name :  T1 
+cluster_name :  R2 
+cluster_name :  T1 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  B1 
+cluster_name :  B2 
+cluster_name :  B0 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  T0 
+cluster_name :  L0 
+cluster_name :  B2 
+cluster_name :  B2 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  R2 
+cluster_name :  L1 
+cluster_name :  R0 
+cluster_name :  B2 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  R0 
+cluster_name :  B1 
+cluster_name :  T1 
+cluster_name :  T1 
+cluster_name :  T0 
+cluster_name :  T0 
+cluster_name :  B1 
+cluster_name :  L0 
+cluster_name :  L2 
+cluster_name :  R1 
+Finish Creating Vertices
+Finish hypergraph creation
+Finish Calculate Data Flow
+[Debug][HierRTLMP::MultiLevelCluster]  root 1:  num_macro 11 num_stdcell 29855
+[Debug][HierRTLMP::MultiLevelCluster]  root 2:  num_macro 11 num_stdcell 29855
+[Debug][HierRTLMP::MultiLevelCluster]  root 3:  num_macro 11 num_stdcell 29855
+[Debug][HierRTLMP::BreakCluster] cluster_name : root
+[Debug][HierRTLMP::SetClusterMetric] icache_1 
+num_macro : 10 num_std_cell : 23995 
+[Debug][HierRTLMP::SetClusterMetric] (root)_glue_logic 
+num_macro : 1 num_std_cell : 5860 
+[Debug][HierRTLMP::BreakCluster] cluster_name : icache_1
+
+
+[Debug][HierRTLMP::MergeCluster]  Iter : 0
+[Debug][HierRTLMP::MergeCluster]  Finish MergeCluster
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  L0  cluster_id : 1  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 0.000000 , 0.000000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  L1  cluster_id : 2  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 0.000000 , 233.132996 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  L2  cluster_id : 3  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 0.000000 , 466.265991 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  T0  cluster_id : 4  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 0.000000 , 699.400024 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  T1  cluster_id : 5  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 299.989990 , 699.400024 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  T2  cluster_id : 6  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 599.979980 , 699.400024 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  R0  cluster_id : 7  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 899.969971 , 466.266998 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  R1  cluster_id : 8  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 899.969971 , 233.134003 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  R2  cluster_id : 9  
+num_std_cell : 0  num_macro : 0
+width : 0.000000  height : 233.132996  location :  ( 899.969971 , 0.001000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  B0  cluster_id : 10  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 599.979980 , 0.000000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  B1  cluster_id : 11  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 299.989990 , 0.000000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  B2  cluster_id : 12  
+num_std_cell : 0  num_macro : 0
+width : 299.989990  height : 0.000000  location :  ( 0.000000 , 0.000000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  icache_1  cluster_id : 13  
+num_std_cell : 23995  num_macro : 10
+width : 0.000000  height : 0.000000  location :  ( 0.000000 , 0.000000 )
+
+[INFO MPL-2022] 
+********************************************************************************
+[INFO] cluster_name :  (root)_glue_logic  cluster_id : 14  
+num_std_cell : 5860  num_macro : 1
+width : 0.000000  height : 0.000000  location :  ( 0.000000 , 0.000000 )
+
+[INFO MPL-2025] root  (0)    num_macro :  11  num_std_cell :  29855  macro_area :  160299.046875  std_cell_area : 48869.878906
+tot_num_macro_in_children = 11
+[INFO MPL-2025] +----L0  (1)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----L1  (2)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----L2  (3)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T0  (4)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T1  (5)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T2  (6)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R0  (7)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R1  (8)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R2  (9)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B0  (10)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B1  (11)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B2  (12)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----icache_1  (13)    num_macro :  10  num_std_cell :  23995  macro_area :  142997.609375  std_cell_area : 39331.500000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----(root)_glue_logic  (14)    num_macro :  1  num_std_cell :  5860  macro_area :  17301.437500  std_cell_area : 9538.378906
+tot_num_macro_in_children = 0
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/metadata_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/tag_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 162.57  height_ :  123.4  macro.height_ : 123.4   1
+width_ :  162.57  macro.width_ : 20.64  height_ :  123.4  macro.height_ : 46.4   0
+width_ :  162.57  macro.width_ : 64.53  height_ :  123.4  macro.height_ : 87   0
+width_ :  20.64  macro.width_ : 64.53  height_ :  46.4  macro.height_ : 87   0
+-1   
+0   
+0   
+0   
+0   
+0   
+0   
+0   
+-1   
+-1   
+
+
+  0
+  0
+  0
+  0
+  0
+  0
+  0
+  0
+  8
+  9
+
+
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 0 
+ 8 
+ 0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem
+ icache_1 459.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem
+ icache_1 397.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem
+ icache_1 649.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem
+ icache_1 456.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem
+ icache_1 712.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem
+ icache_1 266.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem
+ icache_1 270.0 
+
+
+**************************************************
+Macro Signature : icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ icache_1 266.0 
+
+
+**************************************************
+Macro Signature : icache_1/metadata_mem.macro_mem.mem
+ icache_1 31.0 
+
+
+**************************************************
+Macro Signature : icache_1/tag_mem.macro_mem.mem
+ icache_1 295.0 
+
+
+Finish  Macro Classification
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem 
+merge icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem  icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 8
+ 9
+
+
+[Debug][HierRTLMP::SetClusterMetric] icache_1 
+num_macro : 0 num_std_cell : 23995 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 
+num_macro : 8 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/metadata_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] icache_1/tag_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[Debug][HierRTLMP::SetClusterMetric] bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+-1   
+
+
+  0
+
+
+ 0 
+
+
+**************************************************
+Macro Signature : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ L0 4.0 
+ L1 4.0 
+ L2 6.0 
+ T0 7.0 
+ T1 10.0 
+ T2 5.0 
+ R0 4.0 
+ R1 8.0 
+ R2 4.0 
+ B0 2.0 
+ B1 6.0 
+ B2 4.0 
+ (root)_glue_logic 74.0 
+
+
+Finish  Macro Classification
+ 0
+
+
+[Debug][HierRTLMP::SetClusterMetric] (root)_glue_logic 
+num_macro : 0 num_std_cell : 5860 
+[Debug][HierRTLMP::SetClusterMetric] bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 
+num_macro : 1 num_std_cell : 0 
+[INFO MPL-2025] root  (0)    num_macro :  11  num_std_cell :  29855  macro_area :  160299.046875  std_cell_area : 48869.878906
+tot_num_macro_in_children = 11
+[INFO MPL-2025] +----L0  (1)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----L1  (2)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----L2  (3)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T0  (4)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T1  (5)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----T2  (6)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R0  (7)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R1  (8)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----R2  (9)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B0  (10)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B1  (11)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----B2  (12)    num_macro :  0  num_std_cell :  0  macro_area :  0.000000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----icache_1  (13)    num_macro :  10  num_std_cell :  23995  macro_area :  142997.609375  std_cell_area : 39331.500000
+tot_num_macro_in_children = 10
+[INFO MPL-2025] +----+----icache_1  (25)    num_macro :  0  num_std_cell :  23995  macro_area :  0.000000  std_cell_area : 39331.500000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----+----icache_1/metadata_mem.macro_mem.mem  (23)    num_macro :  1  num_std_cell :  0  macro_area :  387.295990  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----+----icache_1/tag_mem.macro_mem.mem  (24)    num_macro :  1  num_std_cell :  0  macro_area :  4198.810059  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----+----icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  (15)    num_macro :  8  num_std_cell :  0  macro_area :  138411.500000  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----(root)_glue_logic  (14)    num_macro :  1  num_std_cell :  5860  macro_area :  17301.437500  std_cell_area : 9538.378906
+tot_num_macro_in_children = 1
+[INFO MPL-2025] +----+----(root)_glue_logic  (27)    num_macro :  0  num_std_cell :  5860  macro_area :  0.000000  std_cell_area : 9538.378906
+tot_num_macro_in_children = 0
+[INFO MPL-2025] +----+----bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem  (26)    num_macro :  1  num_std_cell :  0  macro_area :  17301.437500  std_cell_area : 0.000000
+tot_num_macro_in_children = 0
+root
+width_list : 879.7  -  879.7   
+height_list : 679 -  679   
+Enter CalHardMacroCluster : icache_1/metadata_mem.macro_mem.mem
+width:  20.64 height: 46.4
+Enter CalHardMacroCluster : icache_1/tag_mem.macro_mem.mem
+width:  64.53 height: 87.0
+Enter CalHardMacroCluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+width_ :  325.14  outline_width_ :  879.7 
+height_ : 493.6 outline_height_: 679.0
+width_ :  650.28  outline_width_ :  791.73 
+height_ : 246.8 outline_height_: 679.0
+width_ :  650.28  outline_width_ :  703.76 
+height_ : 246.8 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  615.79 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  527.82 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  439.85 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  351.87997 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  263.91 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  175.93999 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  87.96997 
+height_ : 493.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  879.7 
+height_ : 493.6 outline_height_: 679.0
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 611.1
+width_ :  325.14  outline_width_ :  879.7 
+height_ : 493.6 outline_height_: 543.2
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 475.3
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 407.40002
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 339.5
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 271.59998
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 203.70001
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 135.79999
+width_ :  650.28  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 67.89998
+width:  325.14  height: 493.6
+width:  650.28  height: 246.8
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 679.0
+width_ :  714.81006  outline_width_ :  791.73 
+height_ : 246.8 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  703.76 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  615.79 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  527.82 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  439.85 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  351.87997 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  263.91 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  175.93999 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  87.96997 
+height_ : 580.6 outline_height_: 679.0
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 679.0
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 611.1
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 543.2
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 475.3
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 407.40002
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 339.5
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 271.59998
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 203.70001
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 135.79999
+width_ :  714.81006  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 67.89998
+width:  714.81006 height: 246.8
+width:  325.14 height: 580.6
+tiling.second / tiling.first :  0.34526655 min_ar_: 0.33
+tiling.second / tiling.first :  1.7856922 min_ar_: 0.33
+[INFO MPL-2035] The macro tiling for icache_1   < 714.810059 , 246.800003 >   < 325.140015 , 580.599976 >  
+
+Enter CalHardMacroCluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+width:  162.57 height: 123.4
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 679.0
+width_ :  714.81006  outline_width_ :  791.73 
+height_ : 370.2 outline_height_: 679.0
+width_ :  487.71002  outline_width_ :  703.76 
+height_ : 580.6 outline_height_: 679.0
+width_ :  487.71002  outline_width_ :  615.79 
+height_ : 580.6 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  527.82 
+height_ : 704.0 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  439.85 
+height_ : 704.0 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  351.87997 
+height_ : 704.0 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  263.91 
+height_ : 704.0 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  175.93999 
+height_ : 704.0 outline_height_: 679.0
+width_ :  325.14  outline_width_ :  87.96997 
+height_ : 704.0 outline_height_: 679.0
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 679.0
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 611.1
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 543.2
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 475.3
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 407.40002
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 339.5
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 271.59998
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 203.70001
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 135.79999
+width_ :  877.38007  outline_width_ :  879.7 
+height_ : 246.8 outline_height_: 67.89998
+width:  877.38007 height: 246.8
+width:  714.81006 height: 370.2
+width:  487.71002 height: 580.6
+tiling.second / tiling.first :  0.28129202 min_ar_: 0.33
+tiling.second / tiling.first :  0.5178998 min_ar_: 0.33
+tiling.second / tiling.first :  1.1904614 min_ar_: 0.33
+[INFO MPL-2035] The macro tiling for root   < 714.810059 , 370.200012 >   < 487.710022 , 580.599976 >  
+
+Cluster: L0
+Cluster: L1
+Cluster: L2
+Cluster: T0
+Cluster: T1
+Cluster: T2
+Cluster: R0
+Cluster: R1
+Cluster: R2
+Cluster: B0
+Cluster: B1
+Cluster: B2
+Cluster: icache_1
+Cluster: (root)_glue_logic
+[Debug][HierRTLMP::MultiLevelMacroPlacement] : root 10.07 9.8 879.7 679.0
+finish calculate connection
+finish updating dataflow
+********************************************
+ L0 icache_1 355.5 
+
+
+********************************************
+ L0 (root)_glue_logic 32.25 
+
+
+********************************************
+ L1 icache_1 356.0 
+
+
+********************************************
+ L1 (root)_glue_logic 22.75 
+
+
+********************************************
+ L2 icache_1 336.75 
+
+
+********************************************
+ L2 (root)_glue_logic 27.75 
+
+
+********************************************
+ T0 icache_1 428.5 
+
+
+********************************************
+ T0 (root)_glue_logic 45.25 
+
+
+********************************************
+ T1 icache_1 441.75 
+
+
+********************************************
+ T1 (root)_glue_logic 50.25 
+
+
+********************************************
+ T2 icache_1 453.5 
+
+
+********************************************
+ T2 (root)_glue_logic 27.5 
+
+
+********************************************
+ R0 icache_1 345.0 
+
+
+********************************************
+ R0 (root)_glue_logic 24.0 
+
+
+********************************************
+ R1 icache_1 344.0 
+
+
+********************************************
+ R1 (root)_glue_logic 49.5 
+
+
+********************************************
+ R2 icache_1 332.25 
+
+
+********************************************
+ R2 (root)_glue_logic 24.75 
+
+
+********************************************
+ B0 icache_1 445.25 
+
+
+********************************************
+ B0 (root)_glue_logic 21.5 
+
+
+********************************************
+ B1 icache_1 452.25 
+
+
+********************************************
+ B1 (root)_glue_logic 26.75 
+
+
+********************************************
+ B2 icache_1 443.5 
+
+
+********************************************
+ B2 (root)_glue_logic 26.25 
+
+
+********************************************
+ icache_1 L0 355.5 
+
+
+********************************************
+ icache_1 L1 356.0 
+
+
+********************************************
+ icache_1 L2 336.75 
+
+
+********************************************
+ icache_1 T0 428.5 
+
+
+********************************************
+ icache_1 T1 441.75 
+
+
+********************************************
+ icache_1 T2 453.5 
+
+
+********************************************
+ icache_1 R0 345.0 
+
+
+********************************************
+ icache_1 R1 344.0 
+
+
+********************************************
+ icache_1 R2 332.25 
+
+
+********************************************
+ icache_1 B0 445.25 
+
+
+********************************************
+ icache_1 B1 452.25 
+
+
+********************************************
+ icache_1 B2 443.5 
+
+
+********************************************
+ icache_1 icache_1 4038.5 
+
+
+********************************************
+ icache_1 (root)_glue_logic 914.25 
+
+
+********************************************
+ (root)_glue_logic L0 32.25 
+
+
+********************************************
+ (root)_glue_logic L1 22.75 
+
+
+********************************************
+ (root)_glue_logic L2 27.75 
+
+
+********************************************
+ (root)_glue_logic T0 45.25 
+
+
+********************************************
+ (root)_glue_logic T1 50.25 
+
+
+********************************************
+ (root)_glue_logic T2 27.5 
+
+
+********************************************
+ (root)_glue_logic R0 24.0 
+
+
+********************************************
+ (root)_glue_logic R1 49.5 
+
+
+********************************************
+ (root)_glue_logic R2 24.75 
+
+
+********************************************
+ (root)_glue_logic B0 21.5 
+
+
+********************************************
+ (root)_glue_logic B1 26.75 
+
+
+********************************************
+ (root)_glue_logic B2 26.25 
+
+
+********************************************
+ (root)_glue_logic icache_1 638.25 
+
+
+********************************************
+ (root)_glue_logic (root)_glue_logic 310.5 
+
+
+net : icache_1  L0
+net : icache_1  L1
+net : icache_1  L2
+net : icache_1  T0
+net : icache_1  T1
+net : icache_1  T2
+net : icache_1  R0
+net : icache_1  R1
+net : icache_1  R2
+net : icache_1  B0
+net : icache_1  B1
+net : icache_1  B2
+net : (root)_glue_logic  L0
+net : (root)_glue_logic  L1
+net : (root)_glue_logic  L2
+net : (root)_glue_logic  T0
+net : (root)_glue_logic  T1
+net : (root)_glue_logic  T2
+net : (root)_glue_logic  R0
+net : (root)_glue_logic  R1
+net : (root)_glue_logic  R2
+net : (root)_glue_logic  B0
+net : (root)_glue_logic  B1
+net : (root)_glue_logic  B2
+net : (root)_glue_logic  icache_1
+Start Simulated Annealing Core
+start run_id : 0 
+Enter ShapeChildrenCluster
+target_dead_space : 0.25 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  1
+start run_id : 1 
+Enter ShapeChildrenCluster
+target_dead_space : 0.3 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  2
+start run_id : 2 
+Enter ShapeChildrenCluster
+target_dead_space : 0.35 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  3
+start run_id : 3 
+Enter ShapeChildrenCluster
+target_dead_space : 0.4 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  4
+start run_id : 4 
+Enter ShapeChildrenCluster
+target_dead_space : 0.45 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  5
+start run_id : 5 
+Enter ShapeChildrenCluster
+target_dead_space : 0.5 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  6
+start run_id : 6 
+Enter ShapeChildrenCluster
+target_dead_space : 0.55 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  7
+start run_id : 7 
+Enter ShapeChildrenCluster
+target_dead_space : 0.6 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  8
+start run_id : 8 
+Enter ShapeChildrenCluster
+target_dead_space : 0.65 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  9
+start run_id : 9 
+Enter ShapeChildrenCluster
+target_dead_space : 0.70000005 target util 0.25 outline width 879.7 height 679.0 macro area 160299.05 std cell area 48869.88
+pin access area 0.0 
+std_cell_inflat : inf
+shape.first 714.81006 shape.second 246.8
+shape.first 325.14 shape.second 580.6
+[Debug][CalShape] name:  icache_1 area: 427286.78
+width_list :  
+ [  794.2334 1558.177  ] 
+ [  361.2667 662.34607  ] 
+icache_1
+width_list : 361.267  -  662.346   794.233  -  1558.18   
+height_list : 1182.75 -  645.111   537.986 -  274.222   
+shape.first 162.57 shape.second 123.4
+[Debug][CalShape] name:  (root)_glue_logic area: 71869.95
+width_list :  
+ [  180.63335 524.1731  ] 
+(root)_glue_logic
+width_list : 180.633  -  524.173   
+height_list : 397.878 -  137.111   
+Finish shape function
+finish run_id :  10
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+width_ :  879.7  outline_width_ :  879.7 
+height_ : 622.82983 outline_height_: 679.0
+Finish SA
+Print Results
+outline_penalty : 0.0
+wirelength : 0.85276735
+guidance_penalty : -nan
+fence_penalty : -nan
+boundary_penalty : -nan
+macro_blockage_penalty : 1.0221525
+notch_penalty : 0.0
+ L0 -10.07 -9.8 0.0 233.133 
+width_list : 
+width_list : 
+ L1 -10.07 223.333 0.0 233.133 
+width_list : 
+width_list : 
+ L2 -10.07 456.466 0.0 233.133 
+width_list : 
+width_list : 
+ T0 -10.07 689.60004 299.99 0.0 
+width_list : 
+width_list : 
+ T1 289.91998 689.60004 299.99 0.0 
+width_list : 
+width_list : 
+ T2 589.91 689.60004 299.99 0.0 
+width_list : 
+width_list : 
+ R0 889.89996 456.467 0.0 233.133 
+width_list : 
+width_list : 
+ R1 889.89996 223.334 0.0 233.133 
+width_list : 
+width_list : 
+ R2 889.89996 -9.799 0.0 233.133 
+width_list : 
+width_list : 
+ B0 589.91 -9.8 299.99 0.0 
+width_list : 
+width_list : 
+ B1 289.91998 -9.8 299.99 0.0 
+width_list : 
+width_list : 
+ B2 -10.07 -9.8 299.99 0.0 
+width_list : 
+width_list : 
+ icache_1 0.0 137.1111 879.7 541.8889 
+width_list :  <361.267 , 662.346 >   <794.233 , 1558.18 >  
+width_list :  <1182.75 , 645.111 >   <537.986 , 274.222 >  
+ (root)_glue_logic 0.0 0.0 879.7 137.1111 
+width_list :  <180.633 , 524.173 >  
+width_list :  <397.878 , 137.111 >  
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+L0 -10.07 -9.8 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+L1 -10.07 223.333 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+L2 -10.07 456.466 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+T0 -10.07 689.60004 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+T1 289.91998 689.60004 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+T2 589.91 689.60004 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+R0 889.89996 456.467 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+R1 889.89996 223.334 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+R2 889.89996 -9.799 0.0 233.133
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+B0 589.91 -9.8 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+B1 289.91998 -9.8 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+B2 -10.07 -9.8 299.99 0.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+icache_1 0.0 137.1111 879.7 541.8889
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+(root)_glue_logic 0.0 0.0 879.7 137.1111
+
+
+ Call Bus Synthesis
+
+
+net.weight : 355.5
+net.weight : 356.0
+net.weight : 336.75
+net.weight : 428.5
+net.weight : 441.75
+net.weight : 453.5
+net.weight : 345.0
+net.weight : 344.0
+net.weight : 332.25
+net.weight : 445.25
+net.weight : 452.25
+net.weight : 443.5
+net.weight : 32.25
+net.weight : 22.75
+net.weight : 27.75
+net.weight : 45.25
+net.weight : 50.25
+net.weight : 27.5
+net.weight : 24.0
+net.weight : 49.5
+net.weight : 24.75
+net.weight : 21.5
+net.weight : 26.75
+net.weight : 26.25
+net.weight : 638.25
+Finish Creating vertex list
+x_grid:  
+ -10.0 
+ -5.0 
+ 140.0 
+ 145.0 
+ 440.0 
+ 735.0 
+ 740.0 
+ 885.0 
+ 890.0 
+
+
+y_grid:  
+ -10.0 
+ -5.0 
+ 69.0 
+ 107.0 
+ 180.0 
+ 340.0 
+ 408.0 
+ 568.0 
+ 573.0 
+ 685.0 
+ 690.0 
+
+
+vertices in macro : L0
+x_start :  0 x_end: 1 y_start: 0 y_end: 5
+lx  :  -10.0 ux: 107.0
+ly  :  -10.0 uy: 107.0
+cx  :  -10.0 cy: 107.0
+macro_id : 1  1
+vertices in macro : L1
+x_start :  0 x_end: 1 y_start: 5 y_end: 7
+lx  :  -10.0 ux: 340.0
+ly  :  -10.0 uy: 340.0
+cx  :  -10.0 cy: 340.0
+macro_id : 2  2
+vertices in macro : L2
+x_start :  0 x_end: 1 y_start: 7 y_end: 11
+lx  :  -10.0 ux: 573.0
+ly  :  -10.0 uy: 573.0
+cx  :  -10.0 cy: 573.0
+macro_id : 3  3
+vertices in macro : T0
+x_start :  0 x_end: 4 y_start: 10 y_end: 11
+lx  :  140.0 ux: 690.0
+ly  :  140.0 uy: 690.0
+cx  :  140.0 cy: 690.0
+macro_id : 4  4
+vertices in macro : T1
+x_start :  4 x_end: 5 y_start: 10 y_end: 11
+lx  :  440.0 ux: 690.0
+ly  :  440.0 uy: 690.0
+cx  :  440.0 cy: 690.0
+macro_id : 5  5
+vertices in macro : T2
+x_start :  5 x_end: 9 y_start: 10 y_end: 11
+lx  :  740.0 ux: 690.0
+ly  :  740.0 uy: 690.0
+cx  :  740.0 cy: 690.0
+macro_id : 6  6
+vertices in macro : R0
+x_start :  8 x_end: 9 y_start: 7 y_end: 11
+lx  :  890.0 ux: 573.0
+ly  :  890.0 uy: 573.0
+cx  :  890.0 cy: 573.0
+macro_id : 7  7
+vertices in macro : R1
+x_start :  8 x_end: 9 y_start: 5 y_end: 7
+lx  :  890.0 ux: 340.0
+ly  :  890.0 uy: 340.0
+cx  :  890.0 cy: 340.0
+macro_id : 8  8
+vertices in macro : R2
+x_start :  8 x_end: 9 y_start: 0 y_end: 5
+lx  :  890.0 ux: 107.0
+ly  :  890.0 uy: 107.0
+cx  :  890.0 cy: 107.0
+macro_id : 9  9
+vertices in macro : B0
+x_start :  5 x_end: 9 y_start: 0 y_end: 1
+lx  :  740.0 ux: -10.0
+ly  :  740.0 uy: -10.0
+cx  :  740.0 cy: -10.0
+macro_id : 10  10
+vertices in macro : B1
+x_start :  4 x_end: 5 y_start: 0 y_end: 1
+lx  :  440.0 ux: -10.0
+ly  :  440.0 uy: -10.0
+cx  :  440.0 cy: -10.0
+macro_id : 11  11
+vertices in macro : B2
+x_start :  0 x_end: 4 y_start: 0 y_end: 1
+lx  :  140.0 ux: -10.0
+ly  :  140.0 uy: -10.0
+cx  :  140.0 cy: -10.0
+macro_id : 12  12
+vertices in macro : icache_1
+x_start :  2 x_end: 7 y_start: 4 y_end: 9
+lx  :  440.0 ux: 408.0
+ly  :  440.0 uy: 408.0
+cx  :  440.0 cy: 408.0
+vertices in macro : (root)_glue_logic
+x_start :  2 x_end: 7 y_start: 2 y_end: 4
+lx  :  440.0 ux: 69.0
+ly  :  440.0 uy: 69.0
+cx  :  440.0 cy: 69.0
+soft_macro_vertex_id.size() : 14 soft_macros.size(): 14
+Finish macro_id assignment
+macro_id : 0 vertex_id: 27 macro_id: 27
+macro_id : 1 vertex_id: 45 macro_id: 45
+macro_id : 2 vertex_id: 72 macro_id: 72
+macro_id : 3 vertex_id: 92 macro_id: 92
+macro_id : 4 vertex_id: 94 macro_id: 94
+macro_id : 5 vertex_id: 96 macro_id: 96
+macro_id : 6 vertex_id: 80 macro_id: 80
+macro_id : 7 vertex_id: 53 macro_id: 53
+macro_id : 8 vertex_id: 35 macro_id: 35
+macro_id : 9 vertex_id: 6 macro_id: 6
+macro_id : 10 vertex_id: 4 macro_id: 4
+macro_id : 11 vertex_id: 2 macro_id: 2
+macro_id : 12 vertex_id: 58 macro_id: 58
+macro_id : 13 vertex_id: 22 macro_id: 22
+finish edge list
+finish boundary edges
+macro_id : 0
+step1
+step2
+step3
+step4
+macro_id : 1
+step1
+step2
+step3
+step4
+macro_id : 2
+step1
+step2
+step3
+step4
+macro_id : 3
+step1
+step2
+step3
+step4
+macro_id : 4
+step1
+step2
+step3
+step4
+macro_id : 5
+step1
+step2
+step3
+step4
+macro_id : 6
+step1
+step2
+step3
+step4
+macro_id : 7
+step1
+step2
+step3
+step4
+macro_id : 8
+step1
+step2
+step3
+step4
+macro_id : 9
+step1
+step2
+step3
+step4
+macro_id : 10
+step1
+step2
+step3
+step4
+macro_id : 11
+step1
+step2
+step3
+step4
+finish io cluster related edges
+
+****************************************
+macro_id,  macro,  vertex_id, macro_id
+i:  0  L0  27 0
+i:  1  L1  45 1
+i:  2  L2  72 2
+i:  3  T0  92 3
+i:  4  T1  94 4
+i:  5  T2  96 5
+i:  6  R0  80 6
+i:  7  R1  53 7
+i:  8  R2  35 8
+i:  9  B0  6 9
+i:  10  B1  4 10
+i:  11  B2  2 11
+i:  12  icache_1  58 12
+i:  13  (root)_glue_logic  22 13
+exiting create graph
+calculate the path for net: 12 . 0
+cluster :  icache_1   L0
+58  27
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+173 
+258 
+113 
+255 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 1
+cluster :  icache_1   L1
+58  45
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+173 
+258 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 2
+cluster :  icache_1   L2
+58  72
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+85 
+263 
+119 
+261 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 3
+cluster :  icache_1   T0
+58  92
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+85 
+263 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 4
+cluster :  icache_1   T1
+58  94
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+85 
+264 
+
+
+path :  
+85 
+265 
+
+
+number candidate paths is 2
+calculate the path for net: 12 . 5
+cluster :  icache_1   T2
+58  96
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+85 
+266 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 6
+cluster :  icache_1   R0
+58  80
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+85 
+266 
+124 
+270 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 7
+cluster :  icache_1   R1
+58  53
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+35 
+273 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 8
+cluster :  icache_1   R2
+58  35
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+35 
+273 
+128 
+276 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 9
+cluster :  icache_1   B0
+58  6
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+223 
+221 
+281 
+139 
+277 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 10
+cluster :  icache_1   B1
+58  4
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+223 
+221 
+281 
+
+
+number candidate paths is 1
+calculate the path for net: 12 . 11
+cluster :  icache_1   B2
+58  2
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+223 
+221 
+281 
+137 
+285 
+
+
+number candidate paths is 1
+calculate the path for net: 13 . 0
+cluster :  (root)_glue_logic   L0
+22  27
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+221 
+281 
+137 
+285 
+140 
+253 
+
+
+number candidate paths is 1
+calculate the path for net: 13 . 3
+cluster :  (root)_glue_logic   T0
+22  92
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+221 
+281 
+137 
+285 
+140 
+253 
+112 
+256 
+115 
+259 
+118 
+262 
+
+
+number candidate paths is 1
+calculate the path for net: 13 . 4
+cluster :  (root)_glue_logic   T1
+22  94
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+221 
+281 
+137 
+285 
+140 
+253 
+112 
+256 
+115 
+259 
+118 
+262 
+120 
+264 
+
+
+path :  
+221 
+281 
+139 
+277 
+136 
+274 
+133 
+271 
+130 
+268 
+127 
+267 
+123 
+265 
+
+
+number candidate paths is 2
+calculate the path for net: 13 . 7
+cluster :  (root)_glue_logic   R1
+22  53
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+221 
+281 
+139 
+277 
+136 
+274 
+133 
+271 
+
+
+number candidate paths is 1
+calculate the path for net: 13 . 12
+cluster :  (root)_glue_logic   icache_1
+22  58
+Enter CalNetEdgePaths
+Finish CalShortPathParentVertices
+Finish CalShortPaths
+Finish CalEdgePaths
+path :  
+80 
+
+
+number candidate paths is 1
+All the candidate paths
+Total number of candidate paths : 19
+*****************************************
+src :  12  target 0
+path :  
+ 173  
+ 258  
+ 113  
+ 255  
+
+
+*****************************************
+src :  12  target 1
+path :  
+ 173  
+ 258  
+
+
+*****************************************
+src :  12  target 2
+path :  
+ 85  
+ 263  
+ 119  
+ 261  
+
+
+*****************************************
+src :  12  target 3
+path :  
+ 85  
+ 263  
+
+
+*****************************************
+src :  12  target 4
+path :  
+ 85  
+ 264  
+
+
+path :  
+ 85  
+ 265  
+
+
+*****************************************
+src :  12  target 5
+path :  
+ 85  
+ 266  
+
+
+*****************************************
+src :  12  target 6
+path :  
+ 85  
+ 266  
+ 124  
+ 270  
+
+
+*****************************************
+src :  12  target 7
+path :  
+ 35  
+ 273  
+
+
+*****************************************
+src :  12  target 8
+path :  
+ 35  
+ 273  
+ 128  
+ 276  
+
+
+*****************************************
+src :  12  target 9
+path :  
+ 223  
+ 221  
+ 281  
+ 139  
+ 277  
+
+
+*****************************************
+src :  12  target 10
+path :  
+ 223  
+ 221  
+ 281  
+
+
+*****************************************
+src :  12  target 11
+path :  
+ 223  
+ 221  
+ 281  
+ 137  
+ 285  
+
+
+*****************************************
+src :  13  target 0
+path :  
+ 221  
+ 281  
+ 137  
+ 285  
+ 140  
+ 253  
+
+
+*****************************************
+src :  13  target 3
+path :  
+ 221  
+ 281  
+ 137  
+ 285  
+ 140  
+ 253  
+ 112  
+ 256  
+ 115  
+ 259  
+ 118  
+ 262  
+
+
+*****************************************
+src :  13  target 4
+path :  
+ 221  
+ 281  
+ 137  
+ 285  
+ 140  
+ 253  
+ 112  
+ 256  
+ 115  
+ 259  
+ 118  
+ 262  
+ 120  
+ 264  
+
+
+path :  
+ 221  
+ 281  
+ 139  
+ 277  
+ 136  
+ 274  
+ 133  
+ 271  
+ 130  
+ 268  
+ 127  
+ 267  
+ 123  
+ 265  
+
+
+*****************************************
+src :  13  target 7
+path :  
+ 221  
+ 281  
+ 139  
+ 277  
+ 136  
+ 274  
+ 133  
+ 271  
+
+
+*****************************************
+src :  13  target 12
+path :  
+ 80  
+
+
+Number of variables = 305
+Number of constraints = 113
+Soluton : 
+Optimal objective value = 1.6433125734329224
+working on path 0
+src_cluster_id : 13 target_cluster_id: 1 
+src_macro_id : 12  target_macro_id 0
+edge_terminals : 56  55
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 55  45
+edge_terminals_macro_id : -1  1 
+end_name : L1
+end_cluster_id : 2
+edge_terminals : 45  37
+edge_terminals_macro_id : 1  -1 
+start_name : L1
+start_cluster_id : 2
+edge_terminals : 37  27
+edge_terminals_macro_id : -1  0 
+end_name : L0
+end_cluster_id : 1
+end_cluster_id : 1
+finish path 0
+working on path 1
+src_cluster_id : 13 target_cluster_id: 2 
+src_macro_id : 12  target_macro_id 1
+edge_terminals : 56  55
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 55  45
+edge_terminals_macro_id : -1  1 
+end_name : L1
+end_cluster_id : 2
+end_cluster_id : 2
+finish path 1
+working on path 2
+src_cluster_id : 13 target_cluster_id: 3 
+src_macro_id : 12  target_macro_id 2
+edge_terminals : 76  85
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 84  92
+edge_terminals_macro_id : -1  3 
+end_name : T0
+end_cluster_id : 4
+edge_terminals : 92  82
+edge_terminals_macro_id : 3  -1 
+start_name : T0
+start_cluster_id : 4
+edge_terminals : 82  72
+edge_terminals_macro_id : -1  2 
+end_name : L2
+end_cluster_id : 3
+end_cluster_id : 3
+finish path 2
+working on path 3
+src_cluster_id : 13 target_cluster_id: 4 
+src_macro_id : 12  target_macro_id 3
+edge_terminals : 76  85
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 84  92
+edge_terminals_macro_id : -1  3 
+end_name : T0
+end_cluster_id : 4
+end_cluster_id : 4
+finish path 3
+working on path 4
+src_cluster_id : 13 target_cluster_id: 5 
+src_macro_id : 12  target_macro_id 4
+edge_terminals : 76  85
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 84  94
+edge_terminals_macro_id : -1  4 
+end_name : T1
+end_cluster_id : 5
+end_cluster_id : 5
+finish path 4
+working on path 6
+src_cluster_id : 13 target_cluster_id: 6 
+src_macro_id : 12  target_macro_id 5
+edge_terminals : 76  85
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 86  96
+edge_terminals_macro_id : -1  5 
+end_name : T2
+end_cluster_id : 6
+end_cluster_id : 6
+finish path 6
+working on path 7
+src_cluster_id : 13 target_cluster_id: 7 
+src_macro_id : 12  target_macro_id 6
+edge_terminals : 76  85
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 86  96
+edge_terminals_macro_id : -1  5 
+end_name : T2
+end_cluster_id : 6
+edge_terminals : 96  88
+edge_terminals_macro_id : 5  -1 
+start_name : T2
+start_cluster_id : 6
+edge_terminals : 88  80
+edge_terminals_macro_id : -1  6 
+end_name : R0
+end_cluster_id : 7
+end_cluster_id : 7
+finish path 7
+working on path 8
+src_cluster_id : 13 target_cluster_id: 8 
+src_macro_id : 12  target_macro_id 7
+edge_terminals : 60  61
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 61  53
+edge_terminals_macro_id : -1  7 
+end_name : R1
+end_cluster_id : 8
+end_cluster_id : 8
+finish path 8
+working on path 9
+src_cluster_id : 13 target_cluster_id: 9 
+src_macro_id : 12  target_macro_id 8
+edge_terminals : 60  61
+edge_terminals_macro_id : 12  -1 
+start_name : icache_1
+start_cluster_id : 13
+edge_terminals : 61  53
+edge_terminals_macro_id : -1  7 
+end_name : R1
+end_cluster_id : 8
+edge_terminals : 53  43
+edge_terminals_macro_id : 7  -1 
+start_name : R1
+start_cluster_id : 8
+edge_terminals : 43  35
+edge_terminals_macro_id : -1  8 
+end_name : R2
+end_cluster_id : 9
+end_cluster_id : 9
+finish path 9
+working on path 10
+src_cluster_id : 13 target_cluster_id: 10 
+src_macro_id : 12  target_macro_id 9
+edge_terminals : 40  31
+edge_terminals_macro_id : 12  13 
+start_name : icache_1
+start_cluster_id : 13
+end_name : (root)_glue_logic
+end_cluster_id : 14
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  14
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 14  6
+edge_terminals_macro_id : -1  9 
+end_name : B0
+end_cluster_id : 10
+end_cluster_id : 10
+finish path 10
+working on path 11
+src_cluster_id : 13 target_cluster_id: 11 
+src_macro_id : 12  target_macro_id 10
+edge_terminals : 40  31
+edge_terminals_macro_id : 12  13 
+start_name : icache_1
+start_cluster_id : 13
+end_name : (root)_glue_logic
+end_cluster_id : 14
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+end_cluster_id : 11
+finish path 11
+working on path 12
+src_cluster_id : 13 target_cluster_id: 12 
+src_macro_id : 12  target_macro_id 11
+edge_terminals : 40  31
+edge_terminals_macro_id : 12  13 
+start_name : icache_1
+start_cluster_id : 13
+end_name : (root)_glue_logic
+end_cluster_id : 14
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  12
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 12  2
+edge_terminals_macro_id : -1  11 
+end_name : B2
+end_cluster_id : 12
+end_cluster_id : 12
+finish path 12
+working on path 13
+src_cluster_id : 14 target_cluster_id: 1 
+src_macro_id : 13  target_macro_id 0
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  12
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 12  2
+edge_terminals_macro_id : -1  11 
+end_name : B2
+end_cluster_id : 12
+edge_terminals : 2  10
+edge_terminals_macro_id : 11  -1 
+start_name : B2
+start_cluster_id : 12
+edge_terminals : 19  27
+edge_terminals_macro_id : -1  0 
+end_name : L0
+end_cluster_id : 1
+end_cluster_id : 1
+finish path 13
+working on path 14
+src_cluster_id : 14 target_cluster_id: 4 
+src_macro_id : 13  target_macro_id 3
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  12
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 12  2
+edge_terminals_macro_id : -1  11 
+end_name : B2
+end_cluster_id : 12
+edge_terminals : 2  10
+edge_terminals_macro_id : 11  -1 
+start_name : B2
+start_cluster_id : 12
+edge_terminals : 19  27
+edge_terminals_macro_id : -1  0 
+end_name : L0
+end_cluster_id : 1
+edge_terminals : 27  37
+edge_terminals_macro_id : 0  -1 
+start_name : L0
+start_cluster_id : 1
+edge_terminals : 37  45
+edge_terminals_macro_id : -1  1 
+end_name : L1
+end_cluster_id : 2
+edge_terminals : 45  55
+edge_terminals_macro_id : 1  -1 
+start_name : L1
+start_cluster_id : 2
+edge_terminals : 64  72
+edge_terminals_macro_id : -1  2 
+end_name : L2
+end_cluster_id : 3
+edge_terminals : 72  82
+edge_terminals_macro_id : 2  -1 
+start_name : L2
+start_cluster_id : 3
+edge_terminals : 82  92
+edge_terminals_macro_id : -1  3 
+end_name : T0
+end_cluster_id : 4
+end_cluster_id : 4
+finish path 14
+working on path 15
+src_cluster_id : 14 target_cluster_id: 5 
+src_macro_id : 13  target_macro_id 4
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  12
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 12  2
+edge_terminals_macro_id : -1  11 
+end_name : B2
+end_cluster_id : 12
+edge_terminals : 2  10
+edge_terminals_macro_id : 11  -1 
+start_name : B2
+start_cluster_id : 12
+edge_terminals : 19  27
+edge_terminals_macro_id : -1  0 
+end_name : L0
+end_cluster_id : 1
+edge_terminals : 27  37
+edge_terminals_macro_id : 0  -1 
+start_name : L0
+start_cluster_id : 1
+edge_terminals : 37  45
+edge_terminals_macro_id : -1  1 
+end_name : L1
+end_cluster_id : 2
+edge_terminals : 45  55
+edge_terminals_macro_id : 1  -1 
+start_name : L1
+start_cluster_id : 2
+edge_terminals : 64  72
+edge_terminals_macro_id : -1  2 
+end_name : L2
+end_cluster_id : 3
+edge_terminals : 72  82
+edge_terminals_macro_id : 2  -1 
+start_name : L2
+start_cluster_id : 3
+edge_terminals : 82  92
+edge_terminals_macro_id : -1  3 
+end_name : T0
+end_cluster_id : 4
+edge_terminals : 92  84
+edge_terminals_macro_id : 3  -1 
+start_name : T0
+start_cluster_id : 4
+edge_terminals : 84  94
+edge_terminals_macro_id : -1  4 
+end_name : T1
+end_cluster_id : 5
+end_cluster_id : 5
+finish path 15
+working on path 17
+src_cluster_id : 14 target_cluster_id: 8 
+src_macro_id : 13  target_macro_id 7
+edge_terminals : 22  13
+edge_terminals_macro_id : 13  -1 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+edge_terminals : 13  4
+edge_terminals_macro_id : -1  10 
+end_name : B1
+end_cluster_id : 11
+edge_terminals : 4  14
+edge_terminals_macro_id : 10  -1 
+start_name : B1
+start_cluster_id : 11
+edge_terminals : 14  6
+edge_terminals_macro_id : -1  9 
+end_name : B0
+end_cluster_id : 10
+edge_terminals : 6  16
+edge_terminals_macro_id : 9  -1 
+start_name : B0
+start_cluster_id : 10
+edge_terminals : 25  35
+edge_terminals_macro_id : -1  8 
+end_name : R2
+end_cluster_id : 9
+edge_terminals : 35  43
+edge_terminals_macro_id : 8  -1 
+start_name : R2
+start_cluster_id : 9
+edge_terminals : 43  53
+edge_terminals_macro_id : -1  7 
+end_name : R1
+end_cluster_id : 8
+end_cluster_id : 8
+finish path 17
+working on path 18
+src_cluster_id : 14 target_cluster_id: 13 
+src_macro_id : 13  target_macro_id 12
+edge_terminals : 31  40
+edge_terminals_macro_id : 13  12 
+start_name : (root)_glue_logic
+start_cluster_id : 14
+end_name : icache_1
+end_cluster_id : 13
+start_cluster_id : 14
+end_cluster_id : 13
+finish path 18
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : L0 -10.07 -9.8
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : L1 -10.07 223.333
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : L2 -10.07 456.466
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : T0 -10.07 689.60004
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : T1 289.91998 689.60004
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : T2 589.91 689.60004
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : R0 889.89996 456.467
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : R1 889.89996 223.334
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : R2 889.89996 -9.799
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : B0 589.91 -9.8
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : B1 289.91998 -9.8
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : B2 -10.07 -9.8
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : icache_1 10.07 146.9111
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : (root)_glue_logic 10.07 9.8
+pin access :  L0
+ R 
+
+
+pin access :  L1
+ R 
+
+
+pin access :  L2
+ R 
+
+
+pin access :  T0
+ T 
+
+
+pin access :  T1
+ T 
+
+
+pin access :  T2
+ T 
+
+
+pin access :  R0
+ R 
+
+
+pin access :  R1
+ R 
+
+
+pin access :  R2
+ R 
+
+
+pin access :  B0
+ T 
+
+
+pin access :  B1
+ T 
+
+
+pin access :  B2
+ T 
+
+
+pin access :  icache_1
+ B 
+ L 
+ T 
+ R 
+
+
+pin access :  (root)_glue_logic
+ B 
+ T 
+
+
+Cluster: icache_1
+Cluster: icache_1/metadata_mem.macro_mem.mem
+Cluster: icache_1/tag_mem.macro_mem.mem
+Cluster: icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+[Debug][HierRTLMP::MultiLevelMacroPlacement] : icache_1 10.07 146.9111 879.7 541.8889
+finish calculate connection
+finish updating dataflow
+********************************************
+ icache_1 L0 328.5 
+
+
+********************************************
+ icache_1 L1 329.5 
+
+
+********************************************
+ icache_1 L2 312.5 
+
+
+********************************************
+ icache_1 T0 399.25 
+
+
+********************************************
+ icache_1 T1 409.75 
+
+
+********************************************
+ icache_1 T2 420.25 
+
+
+********************************************
+ icache_1 R0 319.0 
+
+
+********************************************
+ icache_1 R1 318.0 
+
+
+********************************************
+ icache_1 R2 309.25 
+
+
+********************************************
+ icache_1 B0 411.5 
+
+
+********************************************
+ icache_1 B1 420.0 
+
+
+********************************************
+ icache_1 B2 412.75 
+
+
+********************************************
+ icache_1 (root)_glue_logic 388.0 
+
+
+********************************************
+ icache_1 icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 4053.0 
+
+
+********************************************
+ icache_1 icache_1/metadata_mem.macro_mem.mem 49.5 
+
+
+********************************************
+ icache_1 icache_1/tag_mem.macro_mem.mem 516.25 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem L0 0.75 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem L1 0.25 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem T0 1.25 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem T1 0.75 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem R0 0.25 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem R1 0.75 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem R2 1.0 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem B0 0.75 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem B1 0.75 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem B2 0.5 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem (root)_glue_logic 3.5 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem icache_1/metadata_mem.macro_mem.mem 30.0 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem icache_1/tag_mem.macro_mem.mem 56.0 
+
+
+********************************************
+ icache_1/metadata_mem.macro_mem.mem icache_1 49.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem L0 1.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem L1 0.75 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem L2 0.75 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem T0 2.75 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem T1 1.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem T2 2.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem R0 1.25 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem R1 2.0 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem R2 1.75 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem B0 1.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem B1 1.5 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem B2 1.25 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem (root)_glue_logic 52.75 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem icache_1/metadata_mem.macro_mem.mem 384.0 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem icache_1/tag_mem.macro_mem.mem 685.0 
+
+
+********************************************
+ icache_1/tag_mem.macro_mem.mem icache_1 516.25 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem L0 34.25 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem L1 35.75 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem L2 31.5 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem T0 43.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem T1 41.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem T2 48.25 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem R0 31.75 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem R1 31.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem R2 31.25 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem B0 42.25 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem B1 42.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem B2 37.75 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem (root)_glue_logic 470.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 1632.0 
+
+
+********************************************
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem icache_1 4053.0 
+
+
+net : icache_1  icache_1
+net : icache_1  L
+net : icache_1  T
+net : icache_1  R
+net : icache_1  B
+net : icache_1  icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+net : icache_1  icache_1/metadata_mem.macro_mem.mem
+net : icache_1  icache_1/tag_mem.macro_mem.mem
+net : icache_1/metadata_mem.macro_mem.mem  L
+net : icache_1/metadata_mem.macro_mem.mem  T
+net : icache_1/metadata_mem.macro_mem.mem  R
+net : icache_1/metadata_mem.macro_mem.mem  B
+net : icache_1/tag_mem.macro_mem.mem  L
+net : icache_1/tag_mem.macro_mem.mem  T
+net : icache_1/tag_mem.macro_mem.mem  R
+net : icache_1/tag_mem.macro_mem.mem  B
+net : icache_1/tag_mem.macro_mem.mem  icache_1/metadata_mem.macro_mem.mem
+net : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  L
+net : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  T
+net : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  R
+net : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  B
+ icache_1 icache_1 
+ icache_1 L 
+ icache_1 T 
+ icache_1 R 
+ icache_1 B 
+ icache_1 icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 
+ icache_1 icache_1/metadata_mem.macro_mem.mem 
+ icache_1 icache_1/tag_mem.macro_mem.mem 
+ icache_1/metadata_mem.macro_mem.mem L 
+ icache_1/metadata_mem.macro_mem.mem T 
+ icache_1/metadata_mem.macro_mem.mem R 
+ icache_1/metadata_mem.macro_mem.mem B 
+ icache_1/tag_mem.macro_mem.mem L 
+ icache_1/tag_mem.macro_mem.mem T 
+ icache_1/tag_mem.macro_mem.mem R 
+ icache_1/tag_mem.macro_mem.mem B 
+ icache_1/tag_mem.macro_mem.mem icache_1/metadata_mem.macro_mem.mem 
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem L 
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem T 
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem R 
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem B 
+ 4 1316073.25 
+ 5 3721706.5 
+ 6 1254567.75 
+ 7 3265154.5 
+pin_access_net_width_ratio_:  0.00027267222
+Start Simulated Annealing Core
+start run_id : 0 
+Enter ShapeChildrenCluster
+target_dead_space : 0.25 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 3.9103963
+icache_1
+width_list : 765.018  -  252.456   
+height_list : 252.456 -  765.018   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  1
+start run_id : 1 
+Enter ShapeChildrenCluster
+target_dead_space : 0.3 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 3.649703
+icache_1
+width_list : 744.433  -  245.663   
+height_list : 245.663 -  744.433   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  2
+start run_id : 2 
+Enter ShapeChildrenCluster
+target_dead_space : 0.35 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 3.3890102
+icache_1
+width_list : 723.264  -  238.677   
+height_list : 238.677 -  723.264   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  3
+start run_id : 3 
+Enter ShapeChildrenCluster
+target_dead_space : 0.4 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 3.1283169
+icache_1
+width_list : 701.455  -  231.48   
+height_list : 231.48 -  701.455   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  4
+start run_id : 4 
+Enter ShapeChildrenCluster
+target_dead_space : 0.45 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 2.867624
+icache_1
+width_list : 678.946  -  224.052   
+height_list : 224.052 -  678.946   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  5
+start run_id : 5 
+Enter ShapeChildrenCluster
+target_dead_space : 0.5 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 2.6069307
+icache_1
+width_list : 655.665  -  216.37   
+height_list : 216.37 -  655.665   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  6
+start run_id : 6 
+Enter ShapeChildrenCluster
+target_dead_space : 0.55 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 2.3462377
+icache_1
+width_list : 631.527  -  208.404   
+height_list : 208.404 -  631.527   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  7
+start run_id : 7 
+Enter ShapeChildrenCluster
+target_dead_space : 0.6 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 2.0855446
+icache_1
+width_list : 606.428  -  200.121   
+height_list : 200.121 -  606.428   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  8
+start run_id : 8 
+Enter ShapeChildrenCluster
+target_dead_space : 0.65 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 1.8248518
+icache_1
+width_list : 580.245  -  191.481   
+height_list : 191.481 -  580.245   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  9
+start run_id : 9 
+Enter ShapeChildrenCluster
+target_dead_space : 0.70000005 target util 0.25 outline width 879.7 height 541.8889 macro area 142997.61 std cell area 39331.5
+pin access area 65238.26 
+std_cell_inflat : 1.5641582
+icache_1
+width_list : 552.822  -  182.431   
+height_list : 182.431 -  552.822   
+[Debug][CalShape] std_cell_cluster : icache_1
+[Debug][CalShape] hard_macro_cluster : icache_1/metadata_mem.macro_mem.mem
+ ( 20.64 , 46.4 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/tag_mem.macro_mem.mem
+ ( 64.53 , 87.0 ) 
+
+
+[Debug][CalShape] hard_macro_cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+ ( 325.14 , 493.6 ) 
+ ( 650.28 , 246.8 ) 
+
+
+Finish shape function
+finish run_id :  10
+width_ :  836.9897  outline_width_ :  879.7 
+height_ : 587.9242 outline_height_: 541.8889
+width_ :  816.40533  outline_width_ :  879.7 
+height_ : 581.1314 outline_height_: 541.8889
+width_ :  858.7537  outline_width_ :  879.7 
+height_ : 574.14526 outline_height_: 541.8889
+width_ :  879.3259  outline_width_ :  879.7 
+height_ : 540.0 outline_height_: 541.8889
+width_ :  879.39374  outline_width_ :  879.7 
+height_ : 559.52057 outline_height_: 541.8889
+width_ :  836.96185  outline_width_ :  879.7 
+height_ : 493.6 outline_height_: 541.8889
+width_ :  857.60187  outline_width_ :  879.7 
+height_ : 493.6 outline_height_: 541.8889
+width_ :  807.4219  outline_width_ :  879.7 
+height_ : 535.58954 outline_height_: 541.8889
+width_ :  836.96185  outline_width_ :  879.7 
+height_ : 540.0 outline_height_: 541.8889
+width_ :  761.2962  outline_width_ :  879.7 
+height_ : 519.9656 outline_height_: 541.8889
+Finish SA
+Print Results
+outline_penalty : 0.0
+wirelength : 0.36149183
+guidance_penalty : -nan
+fence_penalty : 0.07949315
+boundary_penalty : 0.0018650171
+macro_blockage_penalty : 0.30100852
+notch_penalty : 0.0
+ icache_1 136.50186 291.13416 552.8225 182.43143 
+width_list :  <552.822 , 182.431 >  
+width_list :  <182.431 , 552.822 >  
+ icache_1/metadata_mem.macro_mem.mem 136.50186 495.48892 20.64 46.4 
+width_list :  <20.64 , 20.64 >  
+width_list :  <46.4 , 46.4 >  
+ icache_1/tag_mem.macro_mem.mem 0.0 0.0 64.53 87.0 
+width_list :  <64.53 , 64.53 >  
+width_list :  <87 , 87 >  
+ icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 64.53 0.0 650.28 246.8 
+width_list :  <325.14 , 325.14 >   <650.28 , 650.28 >  
+width_list :  <493.6 , 493.6 >   <246.8 , 246.8 >  
+ L 64.53 246.8 71.97186 226.6103 
+width_list : 
+width_list : 
+ T 157.14186 473.56558 367.87814 44.334152 
+width_list : 
+width_list : 
+ R 689.32434 291.13416 71.97186 226.6103 
+width_list : 
+width_list : 
+ B 136.50186 246.8 367.87814 44.334152 
+width_list : 
+width_list : 
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+icache_1 136.50186 291.13416 552.8225 182.43143
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+icache_1/metadata_mem.macro_mem.mem 136.50186 495.48892 20.64 46.4
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+icache_1/tag_mem.macro_mem.mem 0.0 0.0 64.53 87.0
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 64.53 0.0 650.28 246.8
+lx :  10.07 ly: 146.9111
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : icache_1 146.57187 438.04526
+lx :  10.07 ly: 146.9111
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : icache_1/metadata_mem.macro_mem.mem 146.57187 642.4
+lx :  10.07 ly: 146.9111
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : icache_1/tag_mem.macro_mem.mem 10.07 146.9111
+lx :  10.07 ly: 146.9111
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem 74.6 146.9111
+pin access :  icache_1
+
+
+pin access :  icache_1/metadata_mem.macro_mem.mem
+
+
+pin access :  icache_1/tag_mem.macro_mem.mem
+
+
+pin access :  icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+
+
+Enter the HardMacroClusterMacroPlacement :  icache_1/metadata_mem.macro_mem.mem
+terminal : lx = 276.4112548828125 ly = -113.13905334472656
+width_ :  20.64  outline_width_ :  20.64 
+height_ : 46.4 outline_height_: 46.4
+width_ :  20.64  outline_width_ :  21.0528 
+height_ : 46.4 outline_height_: 45.490196
+width_ :  20.64  outline_width_ :  20.2272 
+height_ : 46.4 outline_height_: 47.34694
+width_ :  20.64  outline_width_ :  21.4656 
+height_ : 46.4 outline_height_: 44.615387
+width_ :  20.64  outline_width_ :  19.8144 
+height_ : 46.4 outline_height_: 48.333332
+width_ :  20.64  outline_width_ :  21.878399 
+height_ : 46.4 outline_height_: 43.773586
+width_ :  20.64  outline_width_ :  19.4016 
+height_ : 46.4 outline_height_: 49.361702
+width_ :  20.64  outline_width_ :  22.2912 
+height_ : 46.4 outline_height_: 42.96296
+width_ :  20.64  outline_width_ :  18.9888 
+height_ : 46.4 outline_height_: 50.43478
+width_ :  20.64  outline_width_ :  22.704 
+height_ : 46.4 outline_height_: 42.181816
+SACoreHardMacro
+outline_penalty_  = 0.0
+wirelength_  = 12232.3
+net  src = 0 target = 1 weight = 31.0
+name : icache_1/metadata_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 15.605 pin_y = 20.645 orientation = MY
+name : icache_1 lx = 276.41125 ly = -113.13905 pin_x = 276.41125 pin_y = -113.13905 orientation = MY
+wirelength_  = 12232.3
+name : icache_1/metadata_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 15.605 pin_y = 20.645 orientation = MY
+name : icache_1 lx = 276.41125 ly = -113.13905 pin_x = 276.41125 pin_y = -113.13905 orientation = MY
+guidance_penalty_  = 0.0
+fence_penalty_  = 0.0
+Update macro icache_1/metadata_mem.macro_mem.mem
+lx :  151.48  ly :  647.36  ux :  162.12  uy :  683.76  orientation : MY
+Enter the HardMacroClusterMacroPlacement :  icache_1/tag_mem.macro_mem.mem
+terminal : lx = 412.91312408447266 ly = 382.34986877441406
+width_ :  64.53  outline_width_ :  64.53 
+height_ : 87.0 outline_height_: 87.0
+width_ :  64.53  outline_width_ :  65.820595 
+height_ : 87.0 outline_height_: 85.29412
+width_ :  64.53  outline_width_ :  63.2394 
+height_ : 87.0 outline_height_: 88.77551
+width_ :  64.53  outline_width_ :  67.1112 
+height_ : 87.0 outline_height_: 83.65385
+width_ :  64.53  outline_width_ :  61.9488 
+height_ : 87.0 outline_height_: 90.625
+width_ :  64.53  outline_width_ :  68.401794 
+height_ : 87.0 outline_height_: 82.07548
+width_ :  64.53  outline_width_ :  60.6582 
+height_ : 87.0 outline_height_: 92.55319
+width_ :  64.53  outline_width_ :  69.6924 
+height_ : 87.0 outline_height_: 80.55556
+width_ :  64.53  outline_width_ :  59.3676 
+height_ : 87.0 outline_height_: 94.565216
+width_ :  64.53  outline_width_ :  70.983 
+height_ : 87.0 outline_height_: 79.090904
+SACoreHardMacro
+outline_penalty_  = 0.0
+wirelength_  = 204425.56
+net  src = 0 target = 1 weight = 295.0
+name : icache_1/tag_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 59.495 pin_y = 42.8 orientation = MY
+name : icache_1 lx = 412.91312 ly = 382.34985 pin_x = 412.91312 pin_y = 382.34985 orientation = MY
+wirelength_  = 204425.56
+name : icache_1/tag_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 59.495 pin_y = 42.8 orientation = MY
+name : icache_1 lx = 412.91312 ly = 382.34985 pin_x = 412.91312 pin_y = 382.34985 orientation = MY
+guidance_penalty_  = 0.0
+fence_penalty_  = 0.0
+Update macro icache_1/tag_mem.macro_mem.mem
+lx :  15.12  ly :  152.04  ux :  69.72  uy :  229.04  orientation : MY
+Enter the HardMacroClusterMacroPlacement :  icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+terminal : lx = 348.3831253051758 ly = 382.34986877441406
+width_ :  650.28  outline_width_ :  650.28 
+height_ : 246.8 outline_height_: 246.8
+width_ :  650.28  outline_width_ :  663.28564 
+height_ : 246.8 outline_height_: 241.96077
+width_ :  650.28  outline_width_ :  637.2744 
+height_ : 246.8 outline_height_: 251.83673
+width_ :  650.28  outline_width_ :  676.2912 
+height_ : 246.8 outline_height_: 237.3077
+width_ :  650.28  outline_width_ :  624.2688 
+height_ : 246.8 outline_height_: 257.08334
+width_ :  650.28  outline_width_ :  689.2968 
+height_ : 246.8 outline_height_: 232.83018
+width_ :  650.28  outline_width_ :  611.26324 
+height_ : 246.8 outline_height_: 262.5532
+width_ :  650.28  outline_width_ :  702.3024 
+height_ : 246.8 outline_height_: 228.51852
+width_ :  650.28  outline_width_ :  598.2576 
+height_ : 246.8 outline_height_: 268.26086
+width_ :  650.28  outline_width_ :  715.30804 
+height_ : 246.8 outline_height_: 224.36363
+SACoreHardMacro
+outline_penalty_  = 0.0
+wirelength_  = 1330864.4
+net  src = 0 target = 8 weight = 459.0
+net  src = 1 target = 8 weight = 397.0
+net  src = 2 target = 8 weight = 649.0
+net  src = 3 target = 8 weight = 456.0
+net  src = 4 target = 8 weight = 712.0
+net  src = 5 target = 8 weight = 266.0
+net  src = 6 target = 8 weight = 270.0
+net  src = 7 target = 8 weight = 266.0
+name : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem lx = 162.57 ly = 0.0 pin_x = 320.105 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem lx = 325.14 ly = 0.0 pin_x = 482.67502 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem lx = 325.14 ly = 123.4 pin_x = 482.67502 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem lx = 0.0 ly = 123.4 pin_x = 157.535 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem lx = 162.57 ly = 123.4 pin_x = 320.105 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem lx = 487.71002 ly = 0.0 pin_x = 645.245 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem lx = 487.71002 ly = 123.4 pin_x = 645.245 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 157.535 pin_y = 60.65 orientation = MY
+name : icache_1 lx = 348.38312 ly = 382.34985 pin_x = 348.38312 pin_y = 382.34985 orientation = MY
+wirelength_  = 1330864.4
+name : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem lx = 162.57 ly = 0.0 pin_x = 320.105 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem lx = 325.14 ly = 0.0 pin_x = 482.67502 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem lx = 325.14 ly = 123.4 pin_x = 482.67502 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem lx = 0.0 ly = 123.4 pin_x = 157.535 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem lx = 162.57 ly = 123.4 pin_x = 320.105 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem lx = 487.71002 ly = 0.0 pin_x = 645.245 pin_y = 60.65 orientation = MY
+name : icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem lx = 487.71002 ly = 123.4 pin_x = 645.245 pin_y = 184.05 orientation = MY
+name : icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 157.535 pin_y = 60.65 orientation = MY
+name : icache_1 lx = 348.38312 ly = 382.34985 pin_x = 348.38312 pin_y = 382.34985 orientation = MY
+guidance_penalty_  = 0.0
+fence_penalty_  = 0.0
+Update macro icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem
+lx :  242.2  ly :  152.04  ux :  394.8  uy :  265.44  orientation : MY
+Update macro icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem
+lx :  404.88  ly :  152.04  ux :  557.2  uy :  265.44  orientation : MY
+Update macro icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem
+lx :  404.88  ly :  275.24  ux :  557.2  uy :  388.64  orientation : MY
+Update macro icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem
+lx :  79.52  ly :  275.24  ux :  232.12  uy :  388.64  orientation : MY
+Update macro icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem
+lx :  242.2  ly :  275.24  ux :  394.8  uy :  388.64  orientation : MY
+Update macro icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem
+lx :  567.28  ly :  152.04  ux :  719.88  uy :  265.44  orientation : MY
+Update macro icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem
+lx :  567.28  ly :  275.24  ux :  719.88  uy :  388.64  orientation : MY
+Update macro icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+lx :  79.52  ly :  152.04  ux :  232.12  uy :  265.44  orientation : MY
+Cluster: (root)_glue_logic
+Cluster: bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+[Debug][HierRTLMP::MultiLevelMacroPlacement] : (root)_glue_logic 10.07 9.8 879.7 137.1111
+finish calculate connection
+finish updating dataflow
+********************************************
+ (root)_glue_logic L0 28.25 
+
+
+********************************************
+ (root)_glue_logic L1 18.75 
+
+
+********************************************
+ (root)_glue_logic L2 21.75 
+
+
+********************************************
+ (root)_glue_logic T0 38.25 
+
+
+********************************************
+ (root)_glue_logic T1 40.25 
+
+
+********************************************
+ (root)_glue_logic T2 22.5 
+
+
+********************************************
+ (root)_glue_logic R0 20.0 
+
+
+********************************************
+ (root)_glue_logic R1 41.5 
+
+
+********************************************
+ (root)_glue_logic R2 20.75 
+
+
+********************************************
+ (root)_glue_logic B0 19.5 
+
+
+********************************************
+ (root)_glue_logic B1 20.75 
+
+
+********************************************
+ (root)_glue_logic B2 22.25 
+
+
+********************************************
+ (root)_glue_logic icache_1 586.25 
+
+
+********************************************
+ (root)_glue_logic bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 127.25 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem L0 6.5 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem L1 7.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem L2 9.5 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem T0 11.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem T1 16.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem T2 7.5 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem R0 7.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem R1 13.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem R2 6.5 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem B0 4.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem B1 9.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem B2 6.5 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem icache_1 52.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 204.0 
+
+
+********************************************
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem (root)_glue_logic 127.25 
+
+
+net : T  B
+net : (root)_glue_logic  (root)_glue_logic
+net : (root)_glue_logic  B
+net : (root)_glue_logic  T
+net : (root)_glue_logic  bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+net : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem  B
+net : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem  (root)_glue_logic
+net : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem  T
+ T B 
+ (root)_glue_logic (root)_glue_logic 
+ (root)_glue_logic B 
+ (root)_glue_logic T 
+ (root)_glue_logic bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem B 
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem (root)_glue_logic 
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem T 
+ 2 0.0 
+ 3 1173893.0 
+ 4 0.0 
+ 5 297887.5 
+pin_access_net_width_ratio_:  0.00027267222
+Start Simulated Annealing Core
+start run_id : 0 
+Enter ShapeChildrenCluster
+target_dead_space : 0.25 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 6.262069
+(root)_glue_logic
+width_list : 458.153  -  151.19   
+height_list : 151.19 -  458.153   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  1
+start run_id : 1 
+Enter ShapeChildrenCluster
+target_dead_space : 0.3 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 5.844598
+(root)_glue_logic
+width_list : 444.789  -  146.78   
+height_list : 146.78 -  444.789   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  2
+start run_id : 2 
+Enter ShapeChildrenCluster
+target_dead_space : 0.35 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 5.4271264
+(root)_glue_logic
+width_list : 431.011  -  142.234   
+height_list : 142.234 -  431.011   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  3
+start run_id : 3 
+Enter ShapeChildrenCluster
+target_dead_space : 0.4 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 5.0096555
+(root)_glue_logic
+width_list : 416.778  -  137.537   
+height_list : 137.537 -  416.778   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  4
+start run_id : 4 
+Enter ShapeChildrenCluster
+target_dead_space : 0.45 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 4.592184
+(root)_glue_logic
+width_list : 402.042  -  132.674   
+height_list : 132.674 -  402.042   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  5
+start run_id : 5 
+Enter ShapeChildrenCluster
+target_dead_space : 0.5 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 4.1747127
+(root)_glue_logic
+width_list : 386.744  -  127.625   
+height_list : 127.625 -  386.744   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  6
+start run_id : 6 
+Enter ShapeChildrenCluster
+target_dead_space : 0.55 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 3.7572415
+(root)_glue_logic
+width_list : 370.816  -  122.369   
+height_list : 122.369 -  370.816   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  7
+start run_id : 7 
+Enter ShapeChildrenCluster
+target_dead_space : 0.6 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 3.33977
+(root)_glue_logic
+width_list : 354.172  -  116.877   
+height_list : 116.877 -  354.172   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  8
+start run_id : 8 
+Enter ShapeChildrenCluster
+target_dead_space : 0.65 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 2.9222991
+(root)_glue_logic
+width_list : 336.706  -  111.113   
+height_list : 111.113 -  336.706   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  9
+start run_id : 9 
+Enter ShapeChildrenCluster
+target_dead_space : 0.70000005 target util 0.25 outline width 879.7 height 137.1111 macro area 17301.4375 std cell area 9538.379
+pin access area 11377.14 
+std_cell_inflat : 2.5048273
+(root)_glue_logic
+width_list : 318.283  -  105.033   
+height_list : 105.033 -  318.283   
+[Debug][CalShape] std_cell_cluster : (root)_glue_logic
+[Debug][CalShape] hard_macro_cluster : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+ ( 162.57 , 123.4 ) 
+
+
+Finish shape function
+finish run_id :  10
+width_ :  787.0243  outline_width_ :  879.7 
+height_ : 168.4878 outline_height_: 137.1111
+width_ :  773.66064  outline_width_ :  879.7 
+height_ : 164.07774 outline_height_: 137.1111
+width_ :  759.8827  outline_width_ :  879.7 
+height_ : 159.53105 outline_height_: 137.1111
+width_ :  745.64966  outline_width_ :  879.7 
+height_ : 154.83415 outline_height_: 137.1111
+width_ :  730.9132  outline_width_ :  879.7 
+height_ : 149.97098 outline_height_: 137.1111
+width_ :  878.18536  outline_width_ :  879.7 
+height_ : 127.62548 outline_height_: 137.1111
+width_ :  862.257  outline_width_ :  879.7 
+height_ : 123.4 outline_height_: 137.1111
+width_ :  845.61304  outline_width_ :  879.7 
+height_ : 134.17386 outline_height_: 137.1111
+width_ :  828.14734  outline_width_ :  879.7 
+height_ : 128.41019 outline_height_: 137.1111
+width_ :  809.7247  outline_width_ :  879.7 
+height_ : 123.4 outline_height_: 137.1111
+Finish SA
+Print Results
+outline_penalty : 0.0
+wirelength : 0.46916544
+guidance_penalty : -nan
+fence_penalty : 0.0024791264
+boundary_penalty : 0.0
+macro_blockage_penalty : 1.0298514
+notch_penalty : 0.018480148
+ (root)_glue_logic 0.0 0.0 336.70584 111.11294 
+width_list :  <336.706 , 111.113 >  
+width_list :  <111.113 , 336.706 >  
+ bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 336.70584 0.0 162.57 123.4 
+width_list :  <162.57 , 162.57 >  
+width_list :  <123.4 , 123.4 >  
+ L 0.0 0.0 0.0 0.0 
+width_list : 
+width_list : 
+ T 0.0 111.11294 328.87152 17.297241 
+width_list : 
+width_list : 
+ R 0.0 0.0 0.0 0.0 
+width_list : 
+width_list : 
+ B 499.27585 0.0 328.87152 17.297241 
+width_list : 
+width_list : 
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+(root)_glue_logic 0.0 0.0 336.70584 111.11294
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : 
+bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 336.70584 0.0 162.57 123.4
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : (root)_glue_logic 10.07 9.8
+lx :  10.07 ly: 9.8
+[Debug][HierRTLMP::MultiLevelMacroPlacement] Child : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem 346.77585 9.8
+pin access :  (root)_glue_logic
+
+
+pin access :  bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+
+
+Enter the HardMacroClusterMacroPlacement :  bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+terminal : lx = -168.3529281616211 ly = 55.55646896362305
+width_ :  162.57  outline_width_ :  162.57 
+height_ : 123.4 outline_height_: 123.4
+width_ :  162.57  outline_width_ :  165.82141 
+height_ : 123.4 outline_height_: 120.980385
+width_ :  162.57  outline_width_ :  159.3186 
+height_ : 123.4 outline_height_: 125.918365
+width_ :  162.57  outline_width_ :  169.0728 
+height_ : 123.4 outline_height_: 118.65385
+width_ :  162.57  outline_width_ :  156.0672 
+height_ : 123.4 outline_height_: 128.54167
+width_ :  162.57  outline_width_ :  172.3242 
+height_ : 123.4 outline_height_: 116.41509
+width_ :  162.57  outline_width_ :  152.81581 
+height_ : 123.4 outline_height_: 131.2766
+width_ :  162.57  outline_width_ :  175.5756 
+height_ : 123.4 outline_height_: 114.25926
+width_ :  162.57  outline_width_ :  149.5644 
+height_ : 123.4 outline_height_: 134.13043
+width_ :  162.57  outline_width_ :  178.82701 
+height_ : 123.4 outline_height_: 112.181816
+SACoreHardMacro
+outline_penalty_  = 0.0
+wirelength_  = 13207.629
+net  src = 0 target = 1 weight = 74.0
+name : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 5.0350037 pin_y = 60.65 orientation = R0
+name : (root)_glue_logic lx = -168.35294 ly = 55.55647 pin_x = -168.35294 pin_y = 55.55647 orientation = R0
+wirelength_  = 13207.629
+name : bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem lx = 0.0 ly = 0.0 pin_x = 5.0350037 pin_y = 60.65 orientation = R0
+name : (root)_glue_logic lx = -168.35294 ly = 55.55647 pin_x = -168.35294 pin_y = 55.55647 orientation = R0
+guidance_penalty_  = 0.0
+fence_penalty_  = 0.0
+Update macro bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+lx :  351.68  ly :  14.84  ux :  504.28  uy :  128.24  orientation : R0
+number of updated macros : 11
+number of macros in HardMacroCluster : 11
+Differences found at line 6373.
+    - bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem fakeram45_512x64 + FIXED ( 743120 29680 ) N ;
+    - bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem fakeram45_512x64 + FIXED ( 703360 29680 ) N ;

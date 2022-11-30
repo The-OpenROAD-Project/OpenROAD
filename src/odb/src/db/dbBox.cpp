@@ -33,10 +33,10 @@
 #include "dbBox.h"
 
 #include "db.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbBlockage.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
@@ -514,11 +514,8 @@ Rect dbBox::getBox()
   _dbBox* box = (_dbBox*) this;
   if (box->isOct()) {
     Oct oct = box->_shape._oct;
-    return Rect(oct.xMin(),
-                oct.yMin(),
-                oct.xMax(),
-                oct.yMax());
-  } 
+    return Rect(oct.xMin(), oct.yMin(), oct.xMax(), oct.yMax());
+  }
   return box->_shape._rect;
 }
 

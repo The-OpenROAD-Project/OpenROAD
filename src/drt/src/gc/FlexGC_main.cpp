@@ -2301,11 +2301,12 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
     auto cutClassIdx = layer->getCutClassIdx(ptr->width(), ptr->length());
     if (cutClassIdx == conCutClassIdx) {
       if (con->isNoPrl()) {
-        bool no_prl = (objBox.xMin() >= gtl::xh(*rect) ||
-                       objBox.xMax() <= gtl::xl(*rect)) &&
-                      (objBox.yMin() >= gtl::yh(*rect) ||
-                       objBox.yMax() <= gtl::yl(*rect));
-        // increment cnt when distSquare == 0 to account the current cut being evaluated
+        bool no_prl = (objBox.xMin() >= gtl::xh(*rect)
+                       || objBox.xMax() <= gtl::xl(*rect))
+                      && (objBox.yMin() >= gtl::yh(*rect)
+                          || objBox.yMax() <= gtl::yl(*rect));
+        // increment cnt when distSquare == 0 to account the current cut being
+        // evaluated
         if (no_prl || distSquare == 0) {
           cnt++;
         }

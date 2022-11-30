@@ -152,10 +152,7 @@ class grVia : public grRef
    * overlaps
    */
 
-  Rect getBBox() const override
-  {
-    return Rect(origin, origin);
-  }
+  Rect getBBox() const override { return Rect(origin, origin); }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter = in; }
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter; }

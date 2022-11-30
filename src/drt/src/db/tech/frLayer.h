@@ -43,7 +43,8 @@ namespace io {
 class Parser;
 }
 
-class frLayer {
+class frLayer
+{
  public:
   friend class io::Parser;
   // constructor
@@ -86,7 +87,9 @@ class frLayer {
         lef58SameNetInterCutSpacingTableConstraint(nullptr),
         lef58SameMetalInterCutSpacingTableConstraint(nullptr),
         lef58DefaultInterCutSpacingTableConstraint(nullptr),
-        drEolCon() {}
+        drEolCon()
+  {
+  }
   frLayer(frLayerNum layerNumIn,
           const frString& nameIn)  // remove name from signature
       : db_layer_(nullptr),
@@ -118,11 +121,14 @@ class frLayer {
         minWidthConstraint(nullptr),
         minimumcutConstraints(),
         lef58RectOnlyConstraint(nullptr),
-        lef58RightWayOnGridOnlyConstraint(nullptr) {}
+        lef58RightWayOnGridOnlyConstraint(nullptr)
+  {
+  }
   // setters
   void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
   void setFakeCut(bool fakeCutIn) { fakeCut = fakeCutIn; }
-  void setFakeMasterslice(bool fakeMastersliceIn) {
+  void setFakeMasterslice(bool fakeMastersliceIn)
+  {
     fakeMasterslice = fakeMastersliceIn;
   }
   void setLayerNum(frLayerNum layerNumIn) { layerNum = layerNumIn; }
@@ -137,45 +143,57 @@ class frLayer {
   odb::dbTechLayer* getDbLayer() const { return db_layer_; }
   bool isFakeCut() const { return fakeCut; }
   bool isFakeMasterslice() const { return fakeMasterslice; }
-  frUInt4 getNumMasks() const {
+  frUInt4 getNumMasks() const
+  {
     return (fakeCut || fakeMasterslice) ? 1 : db_layer_->getNumMasks();
   }
   frLayerNum getLayerNum() const { return layerNum; }
-  void getName(frString& nameIn) const {
-    nameIn = (fakeCut) ? "FR_VIA" : (fakeMasterslice) ? "FR_MASTERSLICE"
-                                                      : db_layer_->getName();
+  void getName(frString& nameIn) const
+  {
+    nameIn = (fakeCut)           ? "FR_VIA"
+             : (fakeMasterslice) ? "FR_MASTERSLICE"
+                                 : db_layer_->getName();
   }
-  frString getName() const {
-    return (fakeCut) ? "Fr_VIA" : (fakeMasterslice) ? "FR_MASTERSLICE"
-                                                    : db_layer_->getName();
+  frString getName() const
+  {
+    return (fakeCut)           ? "Fr_VIA"
+           : (fakeMasterslice) ? "FR_MASTERSLICE"
+                               : db_layer_->getName();
   }
-  frUInt4 getPitch() const {
+  frUInt4 getPitch() const
+  {
     return (fakeCut || fakeMasterslice) ? 0 : db_layer_->getPitch();
   }
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
-  dbTechLayerDir getDir() const {
+  dbTechLayerDir getDir() const
+  {
     if (fakeCut || fakeMasterslice)
       return dbTechLayerDir::NONE;
     return db_layer_->getDirection();
   }
-  bool isVertical() {
-    return (fakeCut || fakeMasterslice) ? false : db_layer_->getDirection() ==
-                                                      dbTechLayerDir::VERTICAL;
+  bool isVertical()
+  {
+    return (fakeCut || fakeMasterslice)
+               ? false
+               : db_layer_->getDirection() == dbTechLayerDir::VERTICAL;
   }
-  bool isHorizontal() {
+  bool isHorizontal()
+  {
     return (fakeCut || fakeMasterslice)
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL;
   }
-  bool isUnidirectional() const {
+  bool isUnidirectional() const
+  {
     // We don't handle coloring so any double/triple patterned
     // layer is treated as unidirectional.
     // RectOnly could allow for a purely wrong-way rect but
     // we ignore that rare case and treat it as unidirectional.
     return getNumMasks() > 1 || getLef58RectOnlyConstraint() || unidirectional;
   }
-  frSegStyle getDefaultSegStyle() const {
+  frSegStyle getDefaultSegStyle() const
+  {
     frSegStyle style;
     style.setWidth(width);
     style.setBeginStyle(frcExtendEndStyle, width / 2);
@@ -185,7 +203,8 @@ class frLayer {
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
-  dbTechLayerType getType() const {
+  dbTechLayerType getType() const
+  {
     if (fakeCut)
       return dbTechLayerType::CUT;
 
@@ -196,24 +215,27 @@ class frLayer {
   }
 
   // cut class (new)
-  void addCutClass(frLef58CutClass* in) {
+  void addCutClass(frLef58CutClass* in)
+  {
     name2CutClassIdxMap[in->getName()] = cutClasses.size();
     cutClasses.push_back(in);
   }
 
-  int getCutClassIdx(frCoord width, frCoord length) const {
+  int getCutClassIdx(frCoord width, frCoord length) const
+  {
     int cutClassIdx = -1;
-    for (int i = 0; i < (int)cutClasses.size(); i++) {
+    for (int i = 0; i < (int) cutClasses.size(); i++) {
       auto cutClass = cutClasses[i];
-      if (cutClass->getViaWidth() == width &&
-          cutClass->getViaLength() == length) {
+      if (cutClass->getViaWidth() == width
+          && cutClass->getViaLength() == length) {
         cutClassIdx = i;
       }
     }
     return cutClassIdx;
   }
 
-  int getCutClassIdx(std::string name) {
+  int getCutClassIdx(std::string name)
+  {
     if (name2CutClassIdxMap.find(name) != name2CutClassIdxMap.end()) {
       return name2CutClassIdxMap[name];
     } else {
@@ -221,7 +243,8 @@ class frLayer {
     }
   }
 
-  frLef58CutClass* getCutClass(frCoord width, frCoord length) const {
+  frLef58CutClass* getCutClass(frCoord width, frCoord length) const
+  {
     int cutClassIdx = getCutClassIdx(width, length);
     if (cutClassIdx != -1) {
       return cutClasses[cutClassIdx];
@@ -230,103 +253,119 @@ class frLayer {
     }
   }
 
-  frLef58CutClass* getCutClass(int cutClassIdx) {
+  frLef58CutClass* getCutClass(int cutClassIdx)
+  {
     return cutClasses[cutClassIdx];
   }
 
-  void printCutClasses() {
-    for (auto & [ name, idx ] : name2CutClassIdxMap) {
+  void printCutClasses()
+  {
+    for (auto& [name, idx] : name2CutClassIdxMap) {
       std::cout << "cutClass name: " << name << ", idx: " << idx << "\n";
     }
   }
 
   // cut spacing table
 
-  void setLef58SameNetCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+  void setLef58SameNetCutSpcTblConstraint(frLef58CutSpacingTableConstraint* con)
+  {
     lef58CutSpacingTableSameNetMetalConstraint = con;
   }
 
-  bool hasLef58SameNetCutSpcTblConstraint() const {
-    return lef58CutSpacingTableSameNetMetalConstraint != nullptr &&
-           lef58CutSpacingTableSameNetMetalConstraint->getODBRule()
-               ->isSameNet();
+  bool hasLef58SameNetCutSpcTblConstraint() const
+  {
+    return lef58CutSpacingTableSameNetMetalConstraint != nullptr
+           && lef58CutSpacingTableSameNetMetalConstraint->getODBRule()
+                  ->isSameNet();
   }
 
-  frLef58CutSpacingTableConstraint* getLef58SameNetCutSpcTblConstraint() const {
+  frLef58CutSpacingTableConstraint* getLef58SameNetCutSpcTblConstraint() const
+  {
     if (hasLef58SameNetCutSpcTblConstraint())
       return lef58CutSpacingTableSameNetMetalConstraint;
     return nullptr;
   }
 
   void setLef58SameMetalCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+      frLef58CutSpacingTableConstraint* con)
+  {
     lef58CutSpacingTableSameNetMetalConstraint = con;
   }
 
-  bool hasLef58SameMetalCutSpcTblConstraint() const {
-    return lef58CutSpacingTableSameNetMetalConstraint != nullptr &&
-           lef58CutSpacingTableSameNetMetalConstraint->getODBRule()
-               ->isSameMetal();
+  bool hasLef58SameMetalCutSpcTblConstraint() const
+  {
+    return lef58CutSpacingTableSameNetMetalConstraint != nullptr
+           && lef58CutSpacingTableSameNetMetalConstraint->getODBRule()
+                  ->isSameMetal();
   }
 
-  frLef58CutSpacingTableConstraint* getLef58SameMetalCutSpcTblConstraint()
-      const {
+  frLef58CutSpacingTableConstraint* getLef58SameMetalCutSpcTblConstraint() const
+  {
     if (hasLef58SameMetalCutSpcTblConstraint())
       return lef58CutSpacingTableSameNetMetalConstraint;
     return nullptr;
   }
 
-  void setLef58DiffNetCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+  void setLef58DiffNetCutSpcTblConstraint(frLef58CutSpacingTableConstraint* con)
+  {
     lef58CutSpacingTableDiffNetConstraint = con;
   }
 
-  bool hasLef58DiffNetCutSpcTblConstraint() const {
+  bool hasLef58DiffNetCutSpcTblConstraint() const
+  {
     return lef58CutSpacingTableDiffNetConstraint != nullptr;
   }
 
-  frLef58CutSpacingTableConstraint* getLef58DiffNetCutSpcTblConstraint() const {
+  frLef58CutSpacingTableConstraint* getLef58DiffNetCutSpcTblConstraint() const
+  {
     return lef58CutSpacingTableDiffNetConstraint;
   }
 
   // spacing end of line
-  bool hasLef58SpacingEndOfLineConstraints() const {
+  bool hasLef58SpacingEndOfLineConstraints() const
+  {
     return !lef58SpacingEndOfLineConstraints.empty();
   }
   const frCollection<frLef58SpacingEndOfLineConstraint*>&
-  getLef58SpacingEndOfLineConstraints() const {
+  getLef58SpacingEndOfLineConstraints() const
+  {
     return lef58SpacingEndOfLineConstraints;
   }
 
   void addLef58SpacingEndOfLineConstraint(
-      frLef58SpacingEndOfLineConstraint* constraintIn) {
+      frLef58SpacingEndOfLineConstraint* constraintIn)
+  {
     lef58SpacingEndOfLineConstraints.push_back(constraintIn);
   }
   // new functions
   bool hasMinSpacing() const { return (minSpc); }
   frConstraint* getMinSpacing() const { return minSpc; }
-  void setMinSpacing(frConstraint* in, bool verbose = false) {
+  frCoord getMinSpacingValue(frCoord width1,
+                             frCoord width2,
+                             frCoord prl,
+                             bool use_min_spacing);
+  void setMinSpacing(frConstraint* in, bool verbose = false)
+  {
     if (verbose && minSpc != nullptr) {
       std::cout << "Warning: override minspacing rule, ";
       if (minSpc->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
         std::cout << "original type is SPACING, ";
-      } else if (minSpc->typeId() ==
-                 frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
+      } else if (minSpc->typeId()
+                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
         std::cout << "original type is SPACINGTABLE PARALLELRUNLENGTH, ";
-      } else if (minSpc->typeId() ==
-                 frConstraintTypeEnum::frcSpacingTableTwConstraint) {
+      } else if (minSpc->typeId()
+                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         std::cout << "original type is SPACINGTABLE TWOWIDTHS, ";
       } else {
         std::cout << "original type is UNKNWON, ";
       }
       if (in->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
         std::cout << "new type is SPACING";
-      } else if (in->typeId() ==
-                 frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
+      } else if (in->typeId()
+                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
         std::cout << "new type is SPACINGTABLE PARALLELRUNLENGTH";
-      } else if (in->typeId() ==
-                 frConstraintTypeEnum::frcSpacingTableTwConstraint) {
+      } else if (in->typeId()
+                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         std::cout << "new type is SPACINGTABLE TWOWIDTHS";
       } else {
         std::cout << "new type is UNKNWON";
@@ -336,26 +375,32 @@ class frLayer {
     minSpc = in;
   }
   bool hasSpacingSamenet() const { return (spacingSamenet); }
-  frSpacingSamenetConstraint* getSpacingSamenet() const {
+  frSpacingSamenetConstraint* getSpacingSamenet() const
+  {
     return spacingSamenet;
   }
-  void setSpacingSamenet(frSpacingSamenetConstraint* in) {
+  void setSpacingSamenet(frSpacingSamenetConstraint* in)
+  {
     spacingSamenet = in;
   }
   bool hasSpacingTableInfluence() const { return (spacingInfluence); }
-  frSpacingTableInfluenceConstraint* getSpacingTableInfluence() const {
+  frSpacingTableInfluenceConstraint* getSpacingTableInfluence() const
+  {
     return spacingInfluence;
   }
-  void setSpacingTableInfluence(frSpacingTableInfluenceConstraint* in) {
+  void setSpacingTableInfluence(frSpacingTableInfluenceConstraint* in)
+  {
     spacingInfluence = in;
   }
   bool hasEolSpacing() const { return (eols.empty() ? false : true); }
   void addEolSpacing(frSpacingEndOfLineConstraint* in) { eols.push_back(in); }
-  const std::vector<frSpacingEndOfLineConstraint*>& getEolSpacing() const {
+  const std::vector<frSpacingEndOfLineConstraint*>& getEolSpacing() const
+  {
     return eols;
   }
   // lef58
-  void addLef58CutSpacingConstraint(frLef58CutSpacingConstraint* in) {
+  void addLef58CutSpacingConstraint(frLef58CutSpacingConstraint* in)
+  {
     if (in->isSameNet()) {
       lef58CutSpacingSamenetConstraints.push_back(in);
     } else {
@@ -363,30 +408,36 @@ class frLayer {
     }
   }
   const std::vector<frLef58CutSpacingConstraint*>&
-  getLef58CutSpacingConstraints(bool samenet = false) const {
+  getLef58CutSpacingConstraints(bool samenet = false) const
+  {
     if (samenet) {
       return lef58CutSpacingSamenetConstraints;
     } else {
       return lef58CutSpacingConstraints;
     }
   }
-  void addLef58MinStepConstraint(frLef58MinStepConstraint* in) {
+  void addLef58MinStepConstraint(frLef58MinStepConstraint* in)
+  {
     lef58MinStepConstraints.push_back(in);
   }
   const std::vector<frLef58MinStepConstraint*>& getLef58MinStepConstraints()
-      const {
+      const
+  {
     return lef58MinStepConstraints;
   }
 
-  void addLef58EolExtConstraint(frLef58EolExtensionConstraint* in) {
+  void addLef58EolExtConstraint(frLef58EolExtensionConstraint* in)
+  {
     lef58EolExtConstraints.push_back(in);
   }
   const std::vector<frLef58EolExtensionConstraint*>& getLef58EolExtConstraints()
-      const {
+      const
+  {
     return lef58EolExtConstraints;
   }
 
-  void addCutSpacingConstraint(frCutSpacingConstraint* in) {
+  void addCutSpacingConstraint(frCutSpacingConstraint* in)
+  {
     if (!(in->isLayer())) {
       if (in->hasSameNet()) {
         cutSpacingSamenetConstraints.push_back(in);
@@ -395,8 +446,8 @@ class frLayer {
       }
     } else {
       if (!(in->hasSameNet())) {
-        if (interLayerCutSpacingConstraintsMap.find(in->getSecondLayerName()) !=
-            interLayerCutSpacingConstraintsMap.end()) {
+        if (interLayerCutSpacingConstraintsMap.find(in->getSecondLayerName())
+            != interLayerCutSpacingConstraintsMap.end()) {
           std::cout << "Error: Up to one diff-net inter-layer cut spacing rule "
                        "can be specified for one layer pair. Rule ignored\n";
         } else {
@@ -404,19 +455,20 @@ class frLayer {
         }
       } else {
         if (interLayerCutSpacingSamenetConstraintsMap.find(
-                in->getSecondLayerName()) !=
-            interLayerCutSpacingSamenetConstraintsMap.end()) {
+                in->getSecondLayerName())
+            != interLayerCutSpacingSamenetConstraintsMap.end()) {
           std::cout << "Error: Up to one same-net inter-layer cut spacing rule "
                        "can be specified for one layer pair. Rule ignored\n";
         } else {
-          interLayerCutSpacingSamenetConstraintsMap[in->getSecondLayerName()] =
-              in;
+          interLayerCutSpacingSamenetConstraintsMap[in->getSecondLayerName()]
+              = in;
         }
       }
     }
   }
   frCutSpacingConstraint* getInterLayerCutSpacing(frLayerNum layerNum,
-                                                  bool samenet = false) const {
+                                                  bool samenet = false) const
+  {
     if (!samenet) {
       return interLayerCutSpacingConstraints[layerNum];
     } else {
@@ -424,7 +476,8 @@ class frLayer {
     }
   }
   const std::vector<frCutSpacingConstraint*>& getInterLayerCutSpacingConstraint(
-      bool samenet = false) const {
+      bool samenet = false) const
+  {
     if (!samenet) {
       return interLayerCutSpacingConstraints;
     } else {
@@ -433,7 +486,8 @@ class frLayer {
   }
   // do not use this after initialization
   std::vector<frCutSpacingConstraint*>& getInterLayerCutSpacingConstraintRef(
-      bool samenet = false) {
+      bool samenet = false)
+  {
     if (!samenet) {
       return interLayerCutSpacingConstraints;
     } else {
@@ -441,45 +495,50 @@ class frLayer {
     }
   }
   const std::map<std::string, frCutSpacingConstraint*>&
-  getInterLayerCutSpacingConstraintMap(bool samenet = false) const {
+  getInterLayerCutSpacingConstraintMap(bool samenet = false) const
+  {
     if (!samenet) {
       return interLayerCutSpacingConstraintsMap;
     } else {
       return interLayerCutSpacingSamenetConstraintsMap;
     }
   }
-  const std::vector<frCutSpacingConstraint*>& getCutConstraint(
-      bool samenet = false) const {
+  const std::vector<frCutSpacingConstraint*>& getCutConstraint(bool samenet
+                                                               = false) const
+  {
     if (samenet) {
       return cutSpacingSamenetConstraints;
     } else {
       return cutConstraints;
     }
   }
-  const std::vector<frCutSpacingConstraint*>& getCutSpacing(bool samenet =
-                                                                false) const {
+  const std::vector<frCutSpacingConstraint*>& getCutSpacing(bool samenet
+                                                            = false) const
+  {
     if (samenet) {
       return cutSpacingSamenetConstraints;
     } else {
       return cutConstraints;
     }
   }
-  frCoord getCutSpacingValue() const {
+  frCoord getCutSpacingValue() const
+  {
     frCoord s = 0;
     for (auto con : getCutSpacing()) {
       s = max(s, con->getCutSpacing());
     }
     return s;
   }
-  bool hasCutSpacing(bool samenet = false) const {
+  bool hasCutSpacing(bool samenet = false) const
+  {
     if (samenet) {
       return (!cutSpacingSamenetConstraints.empty());
     } else {
       return (!cutConstraints.empty());
     }
   }
-  bool hasInterLayerCutSpacing(frLayerNum layerNum,
-                               bool samenet = false) const {
+  bool hasInterLayerCutSpacing(frLayerNum layerNum, bool samenet = false) const
+  {
     if (samenet) {
       return (!(interLayerCutSpacingSamenetConstraints[layerNum] == nullptr));
     } else {
@@ -492,80 +551,98 @@ class frLayer {
   frShortConstraint* getShortConstraint() { return shortConstraint; }
   void setOffGridConstraint(frOffGridConstraint* in) { offGridConstraint = in; }
   frOffGridConstraint* getOffGridConstraint() { return offGridConstraint; }
-  void setNonSufficientMetalConstraint(frNonSufficientMetalConstraint* in) {
+  void setNonSufficientMetalConstraint(frNonSufficientMetalConstraint* in)
+  {
     nonSufficientMetalConstraint = in;
   }
-  frNonSufficientMetalConstraint* getNonSufficientMetalConstraint() {
+  frNonSufficientMetalConstraint* getNonSufficientMetalConstraint()
+  {
     return nonSufficientMetalConstraint;
   }
   void setAreaConstraint(frAreaConstraint* in) { areaConstraint = in; }
   frAreaConstraint* getAreaConstraint() { return areaConstraint; }
   void setMinStepConstraint(frMinStepConstraint* in) { minStepConstraint = in; }
   frMinStepConstraint* getMinStepConstraint() { return minStepConstraint; }
-  void setMinWidthConstraint(frMinWidthConstraint* in) {
+  void setMinWidthConstraint(frMinWidthConstraint* in)
+  {
     minWidthConstraint = in;
   }
   frMinWidthConstraint* getMinWidthConstraint() { return minWidthConstraint; }
 
-  void addMinimumcutConstraint(frMinimumcutConstraint* in) {
+  void addMinimumcutConstraint(frMinimumcutConstraint* in)
+  {
     minimumcutConstraints.push_back(in);
   }
-  const std::vector<frMinimumcutConstraint*>& getMinimumcutConstraints() const {
+  const std::vector<frMinimumcutConstraint*>& getMinimumcutConstraints() const
+  {
     return minimumcutConstraints;
   }
   bool hasMinimumcut() const { return (!minimumcutConstraints.empty()); }
 
-  void addMinEnclosedAreaConstraint(frMinEnclosedAreaConstraint* in) {
+  void addMinEnclosedAreaConstraint(frMinEnclosedAreaConstraint* in)
+  {
     minEnclosedAreaConstraints.push_back(in);
   }
 
   const std::vector<frMinEnclosedAreaConstraint*>&
-  getMinEnclosedAreaConstraints() const {
+  getMinEnclosedAreaConstraints() const
+  {
     return minEnclosedAreaConstraints;
   }
 
-  bool hasMinEnclosedArea() const {
+  bool hasMinEnclosedArea() const
+  {
     return (!minEnclosedAreaConstraints.empty());
   }
 
-  void setLef58RectOnlyConstraint(frLef58RectOnlyConstraint* in) {
+  void setLef58RectOnlyConstraint(frLef58RectOnlyConstraint* in)
+  {
     lef58RectOnlyConstraint = in;
   }
-  frLef58RectOnlyConstraint* getLef58RectOnlyConstraint() const {
+  frLef58RectOnlyConstraint* getLef58RectOnlyConstraint() const
+  {
     return lef58RectOnlyConstraint;
   }
 
   void setLef58RightWayOnGridOnlyConstraint(
-      frLef58RightWayOnGridOnlyConstraint* in) {
+      frLef58RightWayOnGridOnlyConstraint* in)
+  {
     lef58RightWayOnGridOnlyConstraint = in;
   }
-  frLef58RightWayOnGridOnlyConstraint* getLef58RightWayOnGridOnlyConstraint() {
+  frLef58RightWayOnGridOnlyConstraint* getLef58RightWayOnGridOnlyConstraint()
+  {
     return lef58RightWayOnGridOnlyConstraint;
   }
 
-  void addLef58CornerSpacingConstraint(frLef58CornerSpacingConstraint* in) {
+  void addLef58CornerSpacingConstraint(frLef58CornerSpacingConstraint* in)
+  {
     lef58CornerSpacingConstraints.push_back(in);
   }
 
   const std::vector<frLef58CornerSpacingConstraint*>&
-  getLef58CornerSpacingConstraints() const {
+  getLef58CornerSpacingConstraints() const
+  {
     return lef58CornerSpacingConstraints;
   }
 
-  bool hasLef58CornerSpacingConstraint() const {
+  bool hasLef58CornerSpacingConstraint() const
+  {
     return (!lef58CornerSpacingConstraints.empty());
   }
 
-  void addLef58EolKeepOutConstraint(frLef58EolKeepOutConstraint* in) {
+  void addLef58EolKeepOutConstraint(frLef58EolKeepOutConstraint* in)
+  {
     lef58EolKeepOutConstraints.push_back(in);
   }
 
   const std::vector<frLef58EolKeepOutConstraint*>&
-  getLef58EolKeepOutConstraints() const {
+  getLef58EolKeepOutConstraints() const
+  {
     return lef58EolKeepOutConstraints;
   }
 
-  bool hasLef58EolKeepOutConstraint() const {
+  bool hasLef58EolKeepOutConstraint() const
+  {
     return (!lef58EolKeepOutConstraints.empty());
   }
 
@@ -579,68 +656,81 @@ class frLayer {
   {
     return metalWidthViaConstraints;
   }
-  void addLef58AreaConstraint(frLef58AreaConstraint* in) {
+  void addLef58AreaConstraint(frLef58AreaConstraint* in)
+  {
     lef58AreaConstraints.push_back(in);
   }
 
-  const std::vector<frLef58AreaConstraint*>&
-  getLef58AreaConstraints() const {
+  const std::vector<frLef58AreaConstraint*>& getLef58AreaConstraints() const
+  {
     return lef58AreaConstraints;
   }
 
-  bool hasLef58AreaConstraint() const {
+  bool hasLef58AreaConstraint() const
+  {
     return (!lef58AreaConstraints.empty());
   }
 
   void setLef58SameNetInterCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+      frLef58CutSpacingTableConstraint* con)
+  {
     lef58SameNetInterCutSpacingTableConstraint = con;
   }
 
-  bool hasLef58SameNetInterCutSpcTblConstraint() const {
+  bool hasLef58SameNetInterCutSpcTblConstraint() const
+  {
     return lef58SameNetInterCutSpacingTableConstraint != nullptr;
   }
 
   frLef58CutSpacingTableConstraint* getLef58SameNetInterCutSpcTblConstraint()
-      const {
+      const
+  {
     return lef58SameNetInterCutSpacingTableConstraint;
   }
 
   void setLef58SameMetalInterCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+      frLef58CutSpacingTableConstraint* con)
+  {
     lef58SameMetalInterCutSpacingTableConstraint = con;
   }
 
-  bool hasLef58SameMetalInterCutSpcTblConstraint() const {
+  bool hasLef58SameMetalInterCutSpcTblConstraint() const
+  {
     return lef58SameMetalInterCutSpacingTableConstraint != nullptr;
   }
 
   frLef58CutSpacingTableConstraint* getLef58SameMetalInterCutSpcTblConstraint()
-      const {
+      const
+  {
     return lef58SameMetalInterCutSpacingTableConstraint;
   }
 
   void setLef58DefaultInterCutSpcTblConstraint(
-      frLef58CutSpacingTableConstraint* con) {
+      frLef58CutSpacingTableConstraint* con)
+  {
     lef58DefaultInterCutSpacingTableConstraint = con;
   }
 
-  bool hasLef58DefaultInterCutSpcTblConstraint() const {
+  bool hasLef58DefaultInterCutSpcTblConstraint() const
+  {
     return lef58DefaultInterCutSpacingTableConstraint != nullptr;
   }
 
   frLef58CutSpacingTableConstraint* getLef58DefaultInterCutSpcTblConstraint()
-      const {
+      const
+  {
     return lef58DefaultInterCutSpacingTableConstraint;
   }
 
-  void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within) {
+  void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
+  {
     drEolCon.eolWidth = width;
     drEolCon.eolSpace = space;
     drEolCon.eolWithin = within;
   }
 
-  const drEolSpacingConstraint& getDrEolSpacingConstraint() const {
+  const drEolSpacingConstraint& getDrEolSpacingConstraint() const
+  {
     return drEolCon;
   }
 

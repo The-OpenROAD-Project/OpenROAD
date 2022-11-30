@@ -9,27 +9,17 @@
 namespace cts {
 using utl::CTS;
 
-Graphics::Graphics(utl::Logger* logger,
-                   HTreeBuilder* h_tree_builder,
-                   Clock* clock_)
-    : clock_(clock_),
-      h_tree_builder_(h_tree_builder),
-      group_size_(0),
-      sink_clustering_(nullptr),
-      logger_(logger)
+Graphics::Graphics(HTreeBuilder* h_tree_builder, Clock* clock_)
+    : clock_(clock_), h_tree_builder_(h_tree_builder), sink_clustering_(nullptr)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
-Graphics::Graphics(utl::Logger* logger,
-                   SinkClustering* SinkClustering,
-                   unsigned groupSize,
+Graphics::Graphics(SinkClustering* SinkClustering,
                    const std::vector<Point<double>>& points)
     : clock_(nullptr),
       h_tree_builder_(nullptr),
-      group_size_(groupSize),
       sink_clustering_(SinkClustering),
-      logger_(logger),
       points_(points)
 {
   gui::Gui::get()->registerRenderer(this);
@@ -49,7 +39,6 @@ void Graphics::drawCluster(gui::Painter& painter)
                                           gui::Painter::cyan};
 
   unsigned clusterCounter = 0;
-  double totalWL = 0;
   bool first = true;
   odb::Point last;
   for (const std::vector<unsigned>& clusters :
@@ -84,8 +73,6 @@ void Graphics::drawCluster(gui::Painter& painter)
       painter.setPenWidth(2500);
       painter.drawCircle(xreal, yreal, 500);
     }
-    const double wl = sink_clustering_->getWireLength(clusterNodes);
-    totalWL += wl;
     clusterCounter++;
   }
 }

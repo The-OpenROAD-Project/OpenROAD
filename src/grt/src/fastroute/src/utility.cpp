@@ -995,29 +995,31 @@ void FastRouteCore::checkRoute3D()
       gridFlag = false;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        debugPrint(logger_,
-                   GRT,
-                   "checkRoute3D",
-                   1,
-                   "net {} edge[{}] start node wrong, net num_terminals {}, n1 {}",
-                   nets_[netID]->getName(),
-                   edgeID,
-                   num_terminals,
-                   n1);
+        debugPrint(
+            logger_,
+            GRT,
+            "checkRoute3D",
+            1,
+            "net {} edge[{}] start node wrong, net num_terminals {}, n1 {}",
+            nets_[netID]->getName(),
+            edgeID,
+            num_terminals,
+            n1);
         if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        debugPrint(logger_,
-                   GRT,
-                   "checkRoute3D",
-                   1,
-                   "net {} edge[{}] end node wrong, net num_terminals {}, n2 {}",
-                   nets_[netID]->getName(),
-                   edgeID,
-                   num_terminals,
-                   n2);
+        debugPrint(
+            logger_,
+            GRT,
+            "checkRoute3D",
+            1,
+            "net {} edge[{}] end node wrong, net num_terminals {}, n2 {}",
+            nets_[netID]->getName(),
+            edgeID,
+            num_terminals,
+            n2);
         if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
