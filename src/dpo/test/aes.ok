@@ -67,6 +67,4 @@ Original HPWL           372201.2 u
 Final HPWL              354084.4 u
 Delta HPWL                  -4.9 %
 
-Differences found at line 2836.
-    - _18498_ BUF_X4 + PLACED ( 609400 610400 ) FS ;
-    - _18498_ BUF_X4 + PLACED ( 607120 607600 ) N ;
+No differences found.
