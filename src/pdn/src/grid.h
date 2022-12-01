@@ -213,7 +213,7 @@ class Grid
   std::vector<std::unique_ptr<Connect>> connect_;
 
   std::set<odb::dbTechLayer*> pin_layers_;
-  std::set<odb::dbTechLayer*> obstruction_layers_;
+  std::vector<odb::dbTechLayer*> obstruction_layers_;
 
   ViaTree vias_;
 

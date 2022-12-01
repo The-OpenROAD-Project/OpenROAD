@@ -255,7 +255,7 @@ void dbTechLayerSpacingTablePrlRule::setTable(
       = (_dbTechLayerSpacingTablePrlRule*) this;
   obj->width_tbl_ = width_tbl;
   obj->length_tbl_ = length_tbl;
-  for (auto spacing : spacing_tbl) {
+  for (const auto& spacing : spacing_tbl) {
     dbVector<int> tmp;
     tmp = spacing;
     obj->spacing_tbl_.push_back(tmp);
@@ -274,7 +274,7 @@ void dbTechLayerSpacingTablePrlRule::getTable(
   width_tbl = obj->width_tbl_;
   length_tbl = obj->length_tbl_;
   excluded_map = obj->_within_tbl;
-  for (auto spacing : obj->spacing_tbl_) {
+  for (const auto& spacing : obj->spacing_tbl_) {
     spacing_tbl.push_back(spacing);
   }
 }

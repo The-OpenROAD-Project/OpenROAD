@@ -37,22 +37,26 @@
 #include "frDesign.h"
 
 namespace fr {
+class FlexTAGraphics;
+
 class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger)
-      : tech_(in->getTech()), design_(in), logger_(logger){};
+  FlexTA(frDesign* in, Logger* logger);
+  ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
   // others
   int main();
+  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
 
  private:
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  std::unique_ptr<FlexTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
   void initTA(int size);
@@ -173,7 +177,6 @@ class FlexTAWorker
   FlexTAWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
   int getNumAssigned() const { return numAssigned_; }
   // others
-  int main();
   int main_mt();
 
  private:

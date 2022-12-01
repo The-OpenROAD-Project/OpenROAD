@@ -25,11 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <functional>
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -47,8 +47,10 @@ bool WidthTableParser::parseSubRule(std::string s)
   qi::rule<std::string::iterator, space_type> LEF58_WIDTHTABLE
       = (lit("WIDTHTABLE")
          >> +double_[boost::bind(&WidthTableParser::addWidth, this, _1)]
-         >> -lit("WRONGDIRECTION")[boost::bind(&dbTechLayerWidthTableRule::setWrongDirection, rule_, true)]
-         >> -lit("ORTHOGONAL")[boost::bind(&dbTechLayerWidthTableRule::setOrthogonal, rule_, true)]
+         >> -lit("WRONGDIRECTION")[boost::bind(
+             &dbTechLayerWidthTableRule::setWrongDirection, rule_, true)]
+         >> -lit("ORTHOGONAL")[boost::bind(
+             &dbTechLayerWidthTableRule::setOrthogonal, rule_, true)]
          >> lit(";"));
 
   auto first = s.begin();
@@ -61,11 +63,11 @@ bool WidthTableParser::parseSubRule(std::string s)
   return valid;
 }
 
-void WidthTableParser::parse(std::string s)
+void WidthTableParser::parse(const std::string& s)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;

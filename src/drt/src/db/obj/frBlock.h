@@ -32,13 +32,13 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frBTerm.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
 
@@ -51,10 +51,7 @@ class frBlock : public frBlockObject
 {
  public:
   // constructors
-  frBlock(const frString& name)
-      : frBlockObject(),
-        name_(name),
-        dbUnit_(0){};
+  frBlock(const frString& name) : frBlockObject(), name_(name), dbUnit_(0){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   Rect getBBox() const
@@ -158,14 +155,14 @@ class frBlock : public frBlockObject
     }
     return sol;
   }
-  //isHorizontal means vertical tracks
-  std::vector<frTrackPattern*> getTrackPatterns(frCoord layerNum, 
+  // isHorizontal means vertical tracks
+  std::vector<frTrackPattern*> getTrackPatterns(frCoord layerNum,
                                                 bool isHorizontal) const
   {
     std::vector<frTrackPattern*> tps;
     for (auto& t : trackPatterns_.at(layerNum)) {
-        if (t->isHorizontal() == isHorizontal)
-            tps.push_back(t.get());
+      if (t->isHorizontal() == isHorizontal)
+        tps.push_back(t.get());
     }
     return tps;
   }
@@ -330,7 +327,7 @@ class frBlock : public frBlockObject
                                 }),
                  insts_.end());
     int id = 0;
-    for(const auto& inst : insts_)
+    for (const auto& inst : insts_)
       inst->setId(id++);
   }
   void addNet(std::unique_ptr<frNet> in)

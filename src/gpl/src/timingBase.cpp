@@ -47,45 +47,42 @@ namespace gpl {
 using utl::GPL;
 
 // TimingBase
-TimingBase::TimingBase() 
-  : rs_(nullptr),
-    log_(nullptr),
-    nb_(nullptr),
-    net_weight_max_(1.9)
+TimingBase::TimingBase()
+    : rs_(nullptr), log_(nullptr), nb_(nullptr), net_weight_max_(1.9)
 {
 }
 
-TimingBase::TimingBase(
-    std::shared_ptr<NesterovBase> nb, 
-    rsz::Resizer* rs,
-    utl::Logger* log)
-  : TimingBase() {
-    rs_ = rs;
-    nb_ = nb;
-    log_ = log;
-  }
+TimingBase::TimingBase(std::shared_ptr<NesterovBase> nb,
+                       rsz::Resizer* rs,
+                       utl::Logger* log)
+    : TimingBase()
+{
+  rs_ = rs;
+  nb_ = nb;
+  log_ = log;
+}
 
-void
-TimingBase::initTimingOverflowChk() {
+void TimingBase::initTimingOverflowChk()
+{
   timingOverflowChk_.clear();
   timingOverflowChk_.resize(timingNetWeightOverflow_.size(), false);
 }
 
-bool
-TimingBase::isTimingNetWeightOverflow(float overflow) {
+bool TimingBase::isTimingNetWeightOverflow(float overflow)
+{
   int intOverflow = std::round(overflow * 100);
   // exception case handling
-  if ( timingNetWeightOverflow_.empty()
-       || intOverflow > timingNetWeightOverflow_[0] ) { 
+  if (timingNetWeightOverflow_.empty()
+      || intOverflow > timingNetWeightOverflow_[0]) {
     return false;
-  } 
+  }
 
   bool needTdRun = false;
-  for(int i=0; i<timingNetWeightOverflow_.size(); i++) {
-    if( timingNetWeightOverflow_[i] > intOverflow ) {
-      if( !timingOverflowChk_[i] ) {
+  for (int i = 0; i < timingNetWeightOverflow_.size(); i++) {
+    if (timingNetWeightOverflow_[i] > intOverflow) {
+      if (!timingOverflowChk_[i]) {
         timingOverflowChk_[i] = true;
-        needTdRun = true; 
+        needTdRun = true;
       }
       continue;
     }
@@ -94,76 +91,75 @@ TimingBase::isTimingNetWeightOverflow(float overflow) {
   return needTdRun;
 }
 
-void
-TimingBase::addTimingNetWeightOverflow(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingNetWeightOverflow_.begin(), 
-        timingNetWeightOverflow_.end(), 
-        overflow);
+void TimingBase::addTimingNetWeightOverflow(int overflow)
+{
+  std::vector<int>::iterator it = std::find(timingNetWeightOverflow_.begin(),
+                                            timingNetWeightOverflow_.end(),
+                                            overflow);
 
   // only push overflow when the overflow is not in vector.
-  if( it == timingNetWeightOverflow_.end() ) {
+  if (it == timingNetWeightOverflow_.end()) {
     timingNetWeightOverflow_.push_back(overflow);
   }
 
   // do sort in reverse order
-  std::sort(timingNetWeightOverflow_.begin(), 
-      timingNetWeightOverflow_.end(),
-      std::greater <int> ());
+  std::sort(timingNetWeightOverflow_.begin(),
+            timingNetWeightOverflow_.end(),
+            std::greater<int>());
 }
 
-void
-TimingBase::setTimingNetWeightOverflows(std::vector<int>& overflows) {
+void TimingBase::setTimingNetWeightOverflows(std::vector<int>& overflows)
+{
   // sort by decreasing order
   std::sort(overflows.begin(), overflows.end(), std::greater<int>());
-  for(auto& overflow : overflows) {
+  for (auto& overflow : overflows) {
     addTimingNetWeightOverflow(overflow);
   }
   initTimingOverflowChk();
 }
 
-void
-TimingBase::deleteTimingNetWeightOverflow(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingNetWeightOverflow_.begin(), 
-        timingNetWeightOverflow_.end(), 
-        overflow);
+void TimingBase::deleteTimingNetWeightOverflow(int overflow)
+{
+  std::vector<int>::iterator it = std::find(timingNetWeightOverflow_.begin(),
+                                            timingNetWeightOverflow_.end(),
+                                            overflow);
   // only erase overflow when the overflow is in vector.
-  if( it != timingNetWeightOverflow_.end() ) {
+  if (it != timingNetWeightOverflow_.end()) {
     timingNetWeightOverflow_.erase(it);
   }
 }
 
-void
-TimingBase::clearTimingNetWeightOverflow() {
+void TimingBase::clearTimingNetWeightOverflow()
+{
   timingNetWeightOverflow_.clear();
 }
 
-size_t
-TimingBase::getTimingNetWeightOverflowSize() const {
+size_t TimingBase::getTimingNetWeightOverflowSize() const
+{
   return timingNetWeightOverflow_.size();
 }
 
-void
-TimingBase::setTimingNetWeightMax(float max) {
+void TimingBase::setTimingNetWeightMax(float max)
+{
   net_weight_max_ = max;
 }
 
-bool
-TimingBase::updateGNetWeights(float overflow) {
+bool TimingBase::updateGNetWeights(float overflow)
+{
   rs_->findResizeSlacks();
 
   // get worst resize nets
-  sta::NetSeq &worst_slack_nets = rs_->resizeWorstSlackNets();
+  sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
 
-  if( worst_slack_nets.empty()) {
+  if (worst_slack_nets.empty()) {
     log_->warn(GPL, 114, "No net slacks found. Timing-driven mode disabled.");
     return false;
   }
-  
+
   // min/max slack for worst nets
   sta::Slack slack_min = rs_->resizeNetSlack(worst_slack_nets[0]);
-  sta::Slack slack_max = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size()-1]);
+  sta::Slack slack_max
+      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1]);
 
   log_->info(GPL, 100, "worst slack {:.3g}", slack_min);
 
@@ -173,7 +169,7 @@ TimingBase::updateGNetWeights(float overflow) {
   }
 
   int weighted_net_count = 0;
-  for(auto& gNet : nb_->gNets()) {
+  for (auto& gNet : nb_->gNets()) {
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {
@@ -181,14 +177,20 @@ TimingBase::updateGNetWeights(float overflow) {
       if (net_slack < slack_max) {
         // weight(min_slack) = net_weight_max_
         // weight(max_slack) = 1
-        float weight = 1 + (net_weight_max_ - 1)
-          * (slack_max - net_slack) / (slack_max - slack_min);
+        float weight = 1
+                       + (net_weight_max_ - 1) * (slack_max - net_slack)
+                             / (slack_max - slack_min);
         gNet->setTimingWeight(weight);
         weighted_net_count++;
       }
-      debugPrint(log_, GPL, "replace", 3, "timing: net:{} slack:{} weight:{}", 
-          gNet->net()->dbNet()->getConstName(), 
-          net_slack, gNet->totalWeight());
+      debugPrint(log_,
+                 GPL,
+                 "replace",
+                 3,
+                 "timing: net:{} slack:{} weight:{}",
+                 gNet->net()->dbNet()->getConstName(),
+                 net_slack,
+                 gNet->totalWeight());
     }
   }
 
@@ -196,5 +198,4 @@ TimingBase::updateGNetWeights(float overflow) {
   return true;
 }
 
-
-}
+}  // namespace gpl

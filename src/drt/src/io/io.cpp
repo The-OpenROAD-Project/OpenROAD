@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +37,6 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
-#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -643,10 +644,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              endX = endX;
-              endY = endY;
               break;
             case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
@@ -656,13 +653,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              beginExt = beginExt;
-              endX = endX;
-              endY = endY;
-              endExt = endExt;
-
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
@@ -672,10 +662,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
-              left = left;
-              bottom = bottom;
-              right = right;
-              top = top;
               hasRect = true;
               break;
             case odb::dbWireDecoder::ITERM:
@@ -966,7 +952,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
         auto db_pas = db_pin->getPinAccess();
-        for (auto db_aps : db_pas) {
+        for (const auto& db_aps : db_pas) {
           std::unique_ptr<frPinAccess> pa = make_unique<frPinAccess>();
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();

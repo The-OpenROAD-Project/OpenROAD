@@ -43,8 +43,8 @@
 #include <string>
 #include <tuple>
 
-#include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -165,9 +165,8 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   if (logger_->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
 
-  if (options_->getGuiDebug()
-      || logger_->debugCheck(CTS, "Stree", 1) ) {
-    clusteringVisualizer(original_points, groupSize);
+  if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
+    clusteringVisualizer(original_points);
   }
 }
 
@@ -371,10 +370,9 @@ bool SinkClustering::isLimitExceeded(unsigned size,
 }
 
 void SinkClustering::clusteringVisualizer(
-    const std::vector<Point<double>>& points,
-    unsigned groupSize)
+    const std::vector<Point<double>>& points)
 {
-  graphics_ = std::make_unique<Graphics>(logger_, this, groupSize, points);
+  graphics_ = std::make_unique<Graphics>(this, points);
   if (Graphics::guiActive())
     graphics_->clockPlot(true);
 }

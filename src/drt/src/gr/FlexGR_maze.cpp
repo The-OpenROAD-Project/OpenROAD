@@ -257,7 +257,7 @@ void FlexGRWorker::mazeNetInit_addHistCost(grNet* net)
       }
     }
   }
-  for (auto pt : pts) {
+  for (const auto& pt : pts) {
     if (gridGraph_.getRawDemand(pt.x(), pt.y(), pt.z(), frDirEnum::E)
             > getCongThresh()
                   * gridGraph_.getRawSupply(
@@ -295,7 +295,7 @@ void FlexGRWorker::mazeNetInit_decayHistCost(grNet* net)
       }
     }
   }
-  for (auto pt : pts) {
+  for (const auto& pt : pts) {
     gridGraph_.decayHistoryCost(pt.x(), pt.y(), pt.z());
   }
 }

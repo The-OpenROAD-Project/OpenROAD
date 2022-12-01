@@ -71,10 +71,16 @@ extern int Drt_Init(Tcl_Interp* interp);
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      db_(nullptr),
+      logger_(nullptr),
+      stt_builder_(nullptr),
       num_drvs_(-1),
       gui_(gui::Gui::get()),
+      dist_(nullptr),
       distributed_(false),
+      dist_port_(0),
       results_sz_(0),
+      cloud_sz_(0),
       dist_pool_(1)
 {
 }
@@ -102,6 +108,11 @@ void TritonRoute::setDebugMaze(bool on)
 void TritonRoute::setDebugPA(bool on)
 {
   debug_->debugPA = on;
+}
+
+void TritonRoute::setDebugTA(bool on)
+{
+  debug_->debugTA = on;
 }
 
 void TritonRoute::setDistributed(bool on)
@@ -559,6 +570,7 @@ void TritonRoute::gr()
 void TritonRoute::ta()
 {
   FlexTA ta(getDesign(), logger_);
+  ta.setDebug(debug_.get(), db_);
   ta.main();
 }
 

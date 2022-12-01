@@ -26,12 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexGridGraph.h"
+
 #include <fstream>
 #include <iostream>
 #include <map>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexGridGraph.h"
 
 using namespace std;
 using namespace fr;
@@ -302,10 +303,9 @@ void FlexGridGraph::initEdges(
            zIdx += inc, nextLNum += inc * 2) {
         addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
         frLayer* nextLayer = getTech()->getLayer(nextLNum);
-        const bool restrictedRouting
-            = nextLayer->isUnidirectional()
-              || nextLNum < BOTTOM_ROUTING_LAYER
-              || nextLNum > TOP_ROUTING_LAYER;
+        const bool restrictedRouting = nextLayer->isUnidirectional()
+                                       || nextLNum < BOTTOM_ROUTING_LAYER
+                                       || nextLNum > TOP_ROUTING_LAYER;
         if (!restrictedRouting || nextLayer->isVertical()) {
           auto& xSubMap = xMap[apPt.x()];
           auto xTrack = xSubMap.find(nextLNum);

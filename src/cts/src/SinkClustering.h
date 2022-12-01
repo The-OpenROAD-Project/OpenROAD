@@ -41,9 +41,9 @@
 #include <vector>
 
 #include "CtsOptions.h"
+#include "Graphics.h"
 #include "TechChar.h"
 #include "Util.h"
-#include "Graphics.h"
 
 namespace utl {
 class Logger;
@@ -95,8 +95,7 @@ class SinkClustering
   void writePlotFile();
   void findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
-  void clusteringVisualizer(const std::vector<Point<double>>& points,
-                            unsigned groupSize);
+  void clusteringVisualizer(const std::vector<Point<double>>& points);
 
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;

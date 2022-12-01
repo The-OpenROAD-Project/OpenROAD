@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -105,11 +105,12 @@ bool parse(Iterator first,
              odb::dbTechLayerCornerSpacingRule::CONVEXCORNER)]
          >> -(lit("SAMEMASK")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setSameMask, rule, true)])
-         >> -( 
-               (lit("CORNERONLY") >> double_[boost::bind(&setWithin, _1, rule, lefin)])
-               |
-               lit("CORNERTOCORNER")[boost::bind(&odb::dbTechLayerCornerSpacingRule::setCornerToCorner, rule, true)]
-             )
+         >> -((lit("CORNERONLY")
+               >> double_[boost::bind(&setWithin, _1, rule, lefin)])
+              | lit("CORNERTOCORNER")[boost::bind(
+                  &odb::dbTechLayerCornerSpacingRule::setCornerToCorner,
+                  rule,
+                  true)])
          >> -(lit("EXCEPTEOL")
               >> double_[boost::bind(&setEolWidth, _1, rule, lefin)]
               >> -(lit("EXCEPTJOGLENGTH")

@@ -33,111 +33,93 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "LoggerCommon.h"
 
 #include "utl/Logger.h"
-#include "LoggerCommon.h"
 
 namespace ord {
 // Defined in OpenRoad.i
-utl::Logger *
-getLogger();
-}
-
+utl::Logger* getLogger();
+}  // namespace ord
 
 namespace utl {
 
 using ord::getLogger;
 
-void
-report(const char *msg)
+void report(const char* msg)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->report(msg);
 }
 
-void
-info(utl::ToolId tool,
-     int id,
-     const char *msg)
+void info(utl::ToolId tool, int id, const char* msg)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->info(tool, id, msg);
 }
 
-void
-warn(utl::ToolId tool,
-     int id,
-     const char *msg)
+void warn(utl::ToolId tool, int id, const char* msg)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->warn(tool, id, msg);
 }
 
-void
-error(utl::ToolId tool,
-      int id,
-      const char *msg)
+void error(utl::ToolId tool, int id, const char* msg)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->error(tool, id, msg);
 }
 
-void
-critical(utl::ToolId tool,
-         int id,
-         const char *msg)
+void critical(utl::ToolId tool, int id, const char* msg)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->critical(tool, id, msg);
 }
 
-void
-open_metrics(const char *metrics_filename)
+void open_metrics(const char* metrics_filename)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->addMetricsSink(metrics_filename);
 }
 
-void
-metric(const char *metric,
-       const char *value)
+void metric(const char* metric, const char* value)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->metric(metric, value);
 }
 
-void
-metric_integer(const char *metric,
-       const int value)
+void metric_integer(const char* metric, const int value)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->metric(metric, value);
 }
 
-void
-metric_float(const char *metric,
-       const float value)
+void metric_float(const char* metric, const float value)
 {
-  Logger *logger = getLogger();
+  Logger* logger = getLogger();
   logger->metric(metric, value);
 }
 
-void set_metrics_stage(const char *fmt) {
+void set_metrics_stage(const char* fmt)
+{
   Logger* logger = getLogger();
   logger->setMetricsStage(fmt);
 }
 
-void clear_metrics_stage() {
+void clear_metrics_stage()
+{
   Logger* logger = getLogger();
   logger->clearMetricsStage();
 }
 
-void push_metrics_stage(const char *fmt){
+void push_metrics_stage(const char* fmt)
+{
   Logger* logger = getLogger();
   logger->pushMetricsStage(fmt);
 }
 
-void pop_metrics_stage(){
+void pop_metrics_stage()
+{
   Logger* logger = getLogger();
   logger->popMetricsStage();
 }
@@ -148,4 +130,4 @@ void suppress_message(utl::ToolId tool, int id)
   logger->suppressMessage(tool, id);
 }
 
-} // namespace
+}  // namespace utl

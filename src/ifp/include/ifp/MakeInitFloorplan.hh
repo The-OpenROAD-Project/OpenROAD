@@ -42,7 +42,6 @@ class OpenRoad;
 namespace ord {
 
 // No constructor or destructor required.
-void
-initInitFloorplan(OpenRoad *openroad);
+void initInitFloorplan(OpenRoad* openroad);
 
-} // namespace
+}  // namespace ord

@@ -16,6 +16,4 @@ original HPWL            6950.8 u
 legalized HPWL           7611.3 u
 delta HPWL                   10 %
 
-Differences found at line 113.
-    - PHY_1 FILLCELL_X1 + SOURCE DIST + FIXED ( 148080 28000 ) FS ;
-    - PHY_1 TAPCELL_X1 + SOURCE DIST + FIXED ( 148080 28000 ) FS ;
+No differences found.

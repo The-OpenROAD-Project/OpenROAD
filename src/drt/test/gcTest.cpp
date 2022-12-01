@@ -720,9 +720,9 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
   makeLef58SpacingEolConstraint(2,    // layer_num
                                 200,  // space
                                 200,  // width
-                                 50,  // within
+                                50,   // within
                                 400,  // end_prl_spacing
-                                 50); // end_prl
+                                50);  // end_prl
 
   frNet* n1 = makeNet("n1");
 
@@ -1099,4 +1099,33 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
              frConstraintTypeEnum::frcMetalWidthViaConstraint,
              Rect(100, 0, 200, 100));
 }
+
+BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "VA", 110, 110);
+  if (lef58) {
+    makeLef58CutSpacingConstraint_adjacentCut(3, 190, 3, 1, 200);
+    frNet* n1 = makeNet("n1");
+    frNet* n2 = makeNet("n2");
+    frNet* n3 = makeNet("n3");
+    frNet* n4 = makeNet("n4");
+    frViaDef* vd = makeViaDef("v", 3, {0, 0}, {110, 110});
+
+    makeVia(vd, n1, {1000, 1000});
+    makeVia(vd, n2, {1000, 820});
+    makeVia(vd, n3, {820, 1000});
+    makeVia(vd, n4, {1000, 1180});
+
+    runGC();
+
+    // Test the results
+    auto& markers = worker.getMarkers();
+
+    BOOST_TEST(markers.size() == 3);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();
