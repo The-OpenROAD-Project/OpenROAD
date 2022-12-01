@@ -318,7 +318,9 @@ proc repair_antennas { args } {
     set ratio_margin 0
     if { [info exists keys(-ratio_margin)] } {
       set ratio_margin $keys(-ratio_margin)
-      sta::check_positive_float "-ratio_margin" $ratio_margin
+      if { !($ratio_margin >= 0 && $ratio_margin < 100) } {
+        utl::warn GRT 215 "-ratio_margin must be between 0 and 100 percent."
+      }
     }
 
     grt::repair_antennas $diode_mterm $iterations $ratio_margin
