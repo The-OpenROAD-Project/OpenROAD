@@ -1169,6 +1169,16 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
+ 
+  // Debug mode Tree 3D after layer assignament
+  if (debug_->isOn_ && debug_->tree3D_) {
+    for (int netID = 0; netID < netCount(); netID++) {
+      if (nets_[netID]->getDbNet() == debug_->net_
+          && !nets_[netID]->isRouted()) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], true);
+      }
+    }
+  }
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
