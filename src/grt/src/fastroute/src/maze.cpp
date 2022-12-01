@@ -191,7 +191,6 @@ void FastRouteCore::fixOverlappingEdge(
     routeLShape(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
-<<<<<<< HEAD
     // Updates the usage of the altered edge
     const int edgeCost = nets_[net_id]->getEdgeCost();
     for (int k = 0; k < treeedge->route.routelen;
@@ -223,22 +222,6 @@ void FastRouteCore::fixOverlappingEdge(
     treeedge->route.gridsX = new_route_x;
     treeedge->route.gridsY = new_route_y;
     treeedge->route.routelen = new_route_x.size() - 1;
-=======
-    treeedge->route.gridsX = new_route_x;
-    treeedge->route.gridsY = new_route_y;
-    treeedge->route.routelen = new_route_x.size() - 1;
-
-    // update usage
-    for (int i = 0; i < treeedge->route.routelen; i++) {
-      if (new_route_x[i] == new_route_x[i + 1]) {  // a vertical edge
-        const int ymin = std::min(new_route_y[i], new_route_y[i + 1]);
-        v_edges_[ymin][new_route_x[i]].usage += edgeCost;
-      } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-        const int xmin = std::min(new_route_x[i], new_route_x[i + 1]);
-        h_edges_[new_route_y[i]][xmin].usage += edgeCost;
-      }
-    } 
->>>>>>> 164de0bc0 (grt: fix update usage on fixOverlapping function)
   }
 }
 
