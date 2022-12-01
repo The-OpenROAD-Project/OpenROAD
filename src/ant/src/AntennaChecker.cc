@@ -143,7 +143,7 @@ AntennaChecker::AntennaChecker()
       global_router_(nullptr),
       logger_(nullptr),
       net_violation_count_(0),
-      violation_margin_(0)
+      ratio_margin_(0)
 {
 }
 
@@ -1917,28 +1917,28 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
   if (layer->hasDefaultAntennaRule()) {
     const dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
     double PAR_ratio = antenna_rule->getPAR();
-    PAR_ratio *= (1.0 - violation_margin_ / 100.0);
+    PAR_ratio *= (1.0 - ratio_margin_ / 100.0);
     if (PAR_ratio != 0) {
       if (par > PAR_ratio)
         return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
       double diffPAR_ratio = getPwlFactor(diffPAR, diff_area, 0.0);
-      diffPAR_ratio *= (1.0 - violation_margin_ / 100.0);
+      diffPAR_ratio *= (1.0 - ratio_margin_ / 100.0);
 
       if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
         return true;
     }
 
     double PSR_ratio = antenna_rule->getPSR();
-    PSR_ratio *= (1.0 - violation_margin_ / 100.0);
+    PSR_ratio *= (1.0 - ratio_margin_ / 100.0);
     if (PSR_ratio != 0) {
       if (psr > PSR_ratio)
         return true;
     } else {
       dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
       double diffPSR_ratio = getPwlFactor(diffPSR, diff_area, 0.0);
-      diffPSR_ratio *= (1.0 - violation_margin_ / 100.0);
+      diffPSR_ratio *= (1.0 - ratio_margin_ / 100.0);
 
       if (diffPSR_ratio != 0 && diff_psr > diffPSR_ratio)
         return true;
@@ -1950,9 +1950,9 @@ bool AntennaChecker::checkViolation(const PARinfo& par_info, dbTechLayer* layer)
 
 vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
                                                        dbMTerm* diode_mterm,
-                                                       float violation_margin)
+                                                       float ratio_margin)
 {
-  violation_margin_ = violation_margin;
+  ratio_margin_ = ratio_margin;
   double diode_diff_area = 0.0;
   if (diode_mterm)
     diode_diff_area = diffArea(diode_mterm);

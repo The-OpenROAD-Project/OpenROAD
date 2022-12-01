@@ -190,7 +190,7 @@ class GlobalRouter
   // repair antenna public functions
   void repairAntennas(odb::dbMTerm* diode_mterm,
                       int iterations,
-                      float violation_margin);
+                      float ratio_margin);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.

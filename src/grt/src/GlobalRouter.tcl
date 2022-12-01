@@ -275,11 +275,11 @@ proc global_route { args } {
 
 sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
                                          [-iterations iterations] \
-                                         [-violation_margin violation_margin]}
+                                         [-ratio_margin ratio_margin]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-                 keys {-iterations -violation_margin}
+                 keys {-iterations -ratio_margin}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
@@ -315,13 +315,13 @@ proc repair_antennas { args } {
       sta::check_positive_integer "-iterations" $iterations
     }
 
-    set violation_margin 0
-    if { [info exists keys(-violation_margin)] } {
-      set violation_margin $keys(-violation_margin)
-      sta::check_positive_float "-violation_margin" $violation_margin
+    set ratio_margin 0
+    if { [info exists keys(-ratio_margin)] } {
+      set ratio_margin $keys(-ratio_margin)
+      sta::check_positive_float "-ratio_margin" $ratio_margin
     }
 
-    grt::repair_antennas $diode_mterm $iterations $violation_margin
+    grt::repair_antennas $diode_mterm $iterations $ratio_margin
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
