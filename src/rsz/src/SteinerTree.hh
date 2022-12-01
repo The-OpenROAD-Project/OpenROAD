@@ -115,7 +115,7 @@ public:
                    const Network *network);
   const PinSeq *pins(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
-  void setTree(stt::Tree tree,
+  void setTree(const stt::Tree& tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
   stt::Tree &fluteTree() { return tree_; }
