@@ -1412,7 +1412,9 @@ void FastRouteCore::routeLVEnew(int netID,
 
   for (int j = ymin; j <= ymax; j++) {
     for (int i = xmin; i < xmax; i++) {
-      const float tmp = h_cost_table_[h_edges_[j][i].usage_red()];
+      size_t index = h_edges_[j][i].usage_red();
+      index = std::min(index, h_cost_table_.size() - 1);
+      const float tmp = h_cost_table_[index];
       d1[j][i + 1] = d1[j][i] + tmp;
     }
     // update the cost of a column of grids by v-edges
@@ -1421,7 +1423,9 @@ void FastRouteCore::routeLVEnew(int netID,
   for (int j = ymin; j < ymax; j++) {
     // update the cost of a column of grids by h-edges
     for (int i = xmin; i <= xmax; i++) {
-      const float tmp = h_cost_table_[v_edges_[j][i].usage_red()];
+      size_t index = v_edges_[j][i].usage_red();
+      index = std::min(index, h_cost_table_.size() - 1);
+      const float tmp = h_cost_table_[index];
       d2[j + 1][i] = d2[j][i] + tmp;
     }
     // update the cost of a column of grids by v-edges
