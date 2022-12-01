@@ -1122,7 +1122,7 @@ NetRouteMap FastRouteCore::run()
 
   freeRR();
 
-  checkUsage();
+  removeLoops();
 
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
