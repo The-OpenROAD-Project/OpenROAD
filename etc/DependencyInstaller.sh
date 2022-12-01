@@ -132,7 +132,7 @@ _installOrTools() {
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
     if [[ $os == "MacOsX" ]]; then
-        orToolsPath="$(brew --prefix)$orToolsPath"
+        orToolsPath="$(brew --prefix or-tools)"
     fi
     mkdir -p $orToolsPath
     tar --strip 1 --dir $orToolsPath -xf ${orToolsFile}
@@ -568,7 +568,7 @@ EOF
 
 To install or run openroad, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
-    export CMAKE_PREFIX_PATH=\$(brew --prefix)/opt/or-tools
+    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 
 You may wish to add these lines to your .bashrc file.
 EOF
