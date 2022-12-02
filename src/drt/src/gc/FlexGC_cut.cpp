@@ -366,12 +366,20 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     cutClass = layer1->getCutClass(cutClassIdx)->getName();
 
   auto dbRule = con->getODBRule();
+  bool isUpperVia = true;
   frLayerNum queryLayerNum;
-  if (dbRule->isLayerValid())
-    queryLayerNum = getTech()
-                        ->getLayer(dbRule->getSecondLayer()->getName())
-                        ->getLayerNum();
-  else
+  if (dbRule->isLayerValid()) {
+    if (dbRule->getSecondLayer()->getName() == layer1->getName())
+      isUpperVia = false;
+    if (isUpperVia)
+      queryLayerNum = getTech()
+                          ->getLayer(dbRule->getSecondLayer()->getName())
+                          ->getLayerNum();
+    else
+      queryLayerNum = getTech()
+                          ->getLayer(dbRule->getTechLayer()->getName())
+                          ->getLayerNum();
+  } else
     queryLayerNum = layerNum1;
   frCoord maxSpc;
 
@@ -392,7 +400,10 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaRect->getPin())
       continue;
-    checkLef58CutSpacingTbl_main(viaRect, ptr, con);
+    if (isUpperVia)
+      checkLef58CutSpacingTbl_main(viaRect, ptr, con);
+    else
+      checkLef58CutSpacingTbl_main(ptr, viaRect, con);
   }
 }
 
