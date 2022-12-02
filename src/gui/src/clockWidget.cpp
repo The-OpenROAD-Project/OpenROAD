@@ -898,9 +898,9 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
     } else {
       PinArrival input_pin;
       if (parent_tree != nullptr) {
-        const auto in = parent_tree->getPairedReciever(driver);
-        input_pin.pin = in.first;
-        input_pin.delay = in.second;
+        const auto& [receiver, time] = parent_tree->getPairedReciever(driver);
+        input_pin.pin = receiver;
+        input_pin.delay = time;
       }
 
       node = addBufferToScene(driver_offset, input_pin, output_pin, network);

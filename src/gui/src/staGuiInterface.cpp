@@ -482,8 +482,8 @@ sta::Delay ClockTree::getMinimumDriverDelay() const
 
   if (parent_ != nullptr) {
     for (const auto& [driver, arrival] : drivers_) {
-      const auto other = parent_->getPairedReciever(driver);
-      minimum = std::min(minimum, arrival - other.second);
+      const auto& [receiver, time] = parent_->getPairedReciever(driver);
+      minimum = std::min(minimum, arrival - time);
     }
   }
 
@@ -664,15 +664,6 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       include_unconstrained_(false),
       include_capture_path_(false)
 {
-}
-
-sta::MinMax* STAGuiInterface::getMinMax() const
-{
-  if (use_max_) {
-    return sta::MinMax::max();
-  } else {
-    return sta::MinMax::min();
-  }
 }
 
 std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
