@@ -52,6 +52,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/clockWidget.cpp
+    src/gui_utils.cpp
     resources/resource.qrc
   )
 

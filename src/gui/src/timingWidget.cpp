@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <QClipboard>
-#include <QDebug>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>

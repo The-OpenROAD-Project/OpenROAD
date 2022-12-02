@@ -52,11 +52,11 @@
 #include <vector>
 
 #include "browserWidget.h"
+#include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
-#include "clockWidget.h"
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
@@ -218,10 +218,6 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(focus(const Selected&)),
           viewer_,
           SLOT(selectionFocus(const Selected&)));
-  connect(clock_viewer_,
-          SIGNAL(focus(const Selected&)),
-          viewer_,
-          SLOT(selectionFocus(const Selected&)));
   connect(
       this, SIGNAL(highlightChanged()), inspector_, SLOT(highlightChanged()));
   connect(viewer_,
@@ -279,6 +275,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           selection_browser_,
           SLOT(updateHighlightModel()));
+  connect(clock_viewer_,
+          SIGNAL(selected(const Selected&)),
+          this,
+          SLOT(addSelected(const Selected&)));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
@@ -349,7 +349,6 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, &MainWindow::selectionChanged, [this]() {
     if (!selected_.empty()) {
       drc_viewer_->updateSelection(*selected_.begin());
-      clock_viewer_->updateSelection(*selected_.begin());
     }
   });
 

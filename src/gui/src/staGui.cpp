@@ -38,7 +38,6 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
-#include <QDebug>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
