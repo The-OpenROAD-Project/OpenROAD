@@ -79,6 +79,7 @@ class ClockTreeRenderer : public Renderer
   odb::dbITerm* path_to_;
 };
 
+// Handles drawing a dbNet in the clock tree scene
 class ClockNetGraphicsViewItem : public QGraphicsItem
 {
  public:
@@ -117,6 +118,8 @@ class ClockNetGraphicsViewItem : public QGraphicsItem
   void setNetInformation();
 };
 
+// Base class for handling drawing of clock tree objects like buffers, roots,
+// and leaves.
 class ClockNodeGraphicsViewItem : public QGraphicsItem
 {
  public:
@@ -132,7 +135,9 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   qreal getSize() const { return size_; }
   void scaleSize(double scale) { size_ *= scale; }
 
+  // returns the input pin location in the scene
   virtual QPointF getTopAnchor() const;
+  // returns the output pin location in the scene
   virtual QPointF getBottomAnchor() const;
 
   void setName(odb::dbInst* inst);
@@ -154,6 +159,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   QString extra_tooltip_;
 };
 
+// Handles drawing the root node for a tree
 class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
@@ -179,6 +185,7 @@ class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QPolygonF getPolygon() const;
 };
 
+// Handles drawing the buffer nodes in the tree
 class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
@@ -207,6 +214,7 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QString output_pin_;
 };
 
+// Handles drawing the register node for a tree
 class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
