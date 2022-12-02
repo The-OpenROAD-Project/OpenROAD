@@ -356,6 +356,17 @@ class ClockTreeView : public QGraphicsView
                      sta::Delay min_time,
                      sta::Delay max_time,
                      sta::Delay mouse_time) const;
+
+  template <typename T>
+  bool canConvertAndEmit(const QVariant& data)
+  {
+    T value = data.value<T>();
+    if (value != nullptr) {
+      emit selected(Gui::get()->makeSelected(value));
+      return true;
+    }
+    return false;
+  }
 };
 
 class ClockWidget : public QDockWidget, sta::dbNetworkObserver

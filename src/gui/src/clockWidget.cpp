@@ -801,25 +801,18 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 void ClockTreeView::selectionChanged()
 {
   for (const auto& sel : scene_->selectedItems()) {
-    QVariant data = sel->data(0);
-    odb::dbBTerm* bterm = data.value<odb::dbBTerm*>();
-    if (bterm != nullptr) {
-      emit selected(Gui::get()->makeSelected(bterm));
-    } else {
-      odb::dbITerm* iterm = data.value<odb::dbITerm*>();
-      if (iterm != nullptr) {
-        emit selected(Gui::get()->makeSelected(iterm));
-      } else {
-        odb::dbNet* net = data.value<odb::dbNet*>();
-        if (net != nullptr) {
-          emit selected(Gui::get()->makeSelected(net));
-        } else {
-          odb::dbInst* inst = data.value<odb::dbInst*>();
-          if (inst != nullptr) {
-            emit selected(Gui::get()->makeSelected(inst));
-          }
-        }
-      }
+    const QVariant data = sel->data(0);
+    if (canConvertAndEmit<odb::dbBTerm*>(data)) {
+      continue;
+    }
+    if (canConvertAndEmit<odb::dbITerm*>(data)) {
+      continue;
+    }
+    if (canConvertAndEmit<odb::dbNet*>(data)) {
+      continue;
+    }
+    if (canConvertAndEmit<odb::dbInst*>(data)) {
+      continue;
     }
   }
 }
