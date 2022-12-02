@@ -584,11 +584,13 @@ void ClockTreeScene::triggeredClearPath()
 
 ClockTreeView::ClockTreeView(ClockTree* tree,
                              const STAGuiInterface* sta,
+                             utl::Logger* logger,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
       tree_(tree),
       renderer_(nullptr),
       scene_(nullptr),
+      logger_(logger),
       show_mouse_time_tick_(true),
       min_delay_(tree_->getMinimumArrival()),
       max_delay_(tree_->getMaximumArrival()),
@@ -1068,7 +1070,7 @@ void ClockTreeView::save(const QString& path)
       return;
     }
   }
-  save_path = Utils::fixImagePath(save_path, nullptr);
+  save_path = Utils::fixImagePath(save_path, logger_);
 
   const QRect render_rect = viewport()->rect();
   show_mouse_time_tick_ = false;
@@ -1078,7 +1080,7 @@ void ClockTreeView::save(const QString& path)
                      render_rect.height(),
                      render_rect,
                      Qt::white,
-                     nullptr);
+                     logger_);
   show_mouse_time_tick_ = true;
 }
 
@@ -1152,7 +1154,7 @@ void ClockWidget::populate()
   stagui.setCorner(corner_box_->currentData().value<sta::Corner*>());
 
   for (auto& tree : stagui.getClockTrees()) {
-    auto* view = new ClockTreeView(tree.release(), &stagui, this);
+    auto* view = new ClockTreeView(tree.release(), &stagui, logger_, this);
     views_.emplace_back(view);
     clocks_tab_->addTab(view, view->getClockName());
     clocks_tab_->setCurrentWidget(view);
@@ -1189,6 +1191,34 @@ void ClockWidget::postReadLiberty()
   corner_box_->clear();
   for (sta::Corner* corner : *sta_->corners()) {
     corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+  }
+}
+
+void ClockWidget::saveImage(const std::string& clock_name,
+                            const std::string& path)
+{
+  const bool visible = isVisible();
+  if (!visible) {
+    setVisible(true);
+  }
+
+  if (views_.empty()) {
+    populate();
+  }
+
+  bool found = false;
+  for (const auto& view : views_) {
+    if (view->getClockName() == clock_name) {
+      found = true;
+      view->fit();
+      view->save(QString::fromStdString(path));
+    }
+  }
+
+  setVisible(visible);
+
+  if (!found) {
+    logger_->error(utl::GUI, 74, "Unable to find clock: {}", clock_name);
   }
 }
 

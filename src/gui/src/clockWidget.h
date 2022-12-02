@@ -282,6 +282,7 @@ class ClockTreeView : public QGraphicsView
  public:
   ClockTreeView(ClockTree* tree,
                 const STAGuiInterface* sta,
+                utl::Logger* logger,
                 QWidget* parent = nullptr);
   ~ClockTreeView();
 
@@ -314,6 +315,7 @@ class ClockTreeView : public QGraphicsView
   std::unique_ptr<ClockTree> tree_;
   std::unique_ptr<ClockTreeRenderer> renderer_;
   ClockTreeScene* scene_;
+  utl::Logger* logger_;
   bool show_mouse_time_tick_;
 
   sta::Delay min_delay_;
@@ -387,6 +389,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
+
+  void saveImage(const std::string& clock_name, const std::string& path);
 
   virtual void postReadLiberty() override;
 
