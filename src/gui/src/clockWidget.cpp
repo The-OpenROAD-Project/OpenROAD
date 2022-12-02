@@ -632,11 +632,11 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
     net->buildPath();
   }
 
-  QRectF scene_margin = scene()->sceneRect();
+  QRectF scene_margin = scene_->sceneRect();
   const qreal x_margin = 0.1 * scene_margin.width();
   const qreal y_margin = 0.1 * scene_margin.height();
   scene_margin.adjust(-x_margin, -y_margin, x_margin, y_margin);
-  scene()->setSceneRect(scene_margin);
+  scene_->setSceneRect(scene_margin);
 
   connect(scene_, SIGNAL(selectionChanged()), this, SLOT(selectionChanged()));
   connect(
@@ -654,7 +654,7 @@ ClockTreeView::~ClockTreeView()
 
 void ClockTreeView::fit()
 {
-  fitInView(scene()->sceneRect(), Qt::KeepAspectRatio);
+  fitInView(scene_->sceneRect(), Qt::KeepAspectRatio);
 }
 
 void ClockTreeView::mouseMoveEvent(QMouseEvent* event)
@@ -800,7 +800,7 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 
 void ClockTreeView::selectionChanged()
 {
-  for (const auto& sel : scene()->selectedItems()) {
+  for (const auto& sel : scene_->selectedItems()) {
     QVariant data = sel->data(0);
     odb::dbBTerm* bterm = data.value<odb::dbBTerm*>();
     if (bterm != nullptr) {
@@ -955,7 +955,7 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
     auto* net_view = new ClockNetGraphicsViewItem(
         network->staToDb(tree->getNet()), drivers, fanout);
     nets_.push_back(net_view);
-    scene()->addItem(net_view);
+    scene_->addItem(net_view);
   }
 
   for (auto* driver : drivers) {
@@ -985,7 +985,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
   }
 
   node->setPos(x, convertDelayToY(output_pin.delay));
-  scene()->addItem(node);
+  scene_->addItem(node);
 
   node->setExtraToolTip("Launch: " + convertDelayToString(output_pin.delay));
 
@@ -1007,7 +1007,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
 
   node->setPos({x, convertDelayToY(input_pin.delay)});
   node->setExtraToolTip("Arrival: " + convertDelayToString(input_pin.delay));
-  scene()->addItem(node);
+  scene_->addItem(node);
 
   connect(node->getHighlightAction(), &QAction::triggered, [this, iterm]() {
     emit highlightTo(iterm);
@@ -1038,7 +1038,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
   ClockNodeGraphicsViewItem* node
       = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
   node->setPos({x, convertDelayToY(input_pin.delay)});
-  scene()->addItem(node);
+  scene_->addItem(node);
 
   QString tooltip;
   tooltip += "Input: " + ClockNodeGraphicsViewItem::getITermName(input_term);
@@ -1162,12 +1162,16 @@ void ClockWidget::populate()
     auto* view = new ClockTreeView(tree.release(), &stagui, this);
     views_.emplace_back(view);
     clocks_tab_->addTab(view, view->getClockName());
+    clocks_tab_->setCurrentWidget(view);
     view->fit();
 
     connect(view,
             SIGNAL(selected(const Selected&)),
             this,
             SIGNAL(selected(const Selected&)));
+  }
+  if (clocks_tab_->count() > 0) {
+    clocks_tab_->setCurrentIndex(0);
   }
 
   QApplication::restoreOverrideCursor();
