@@ -32,7 +32,6 @@
 
 #include "mainWindow.h"
 
-#include <QDebug>
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QFontDialog>

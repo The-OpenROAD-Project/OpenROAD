@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <QDateTime>
-#include <QDebug>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>

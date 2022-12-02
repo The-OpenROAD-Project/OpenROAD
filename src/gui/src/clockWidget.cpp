@@ -36,7 +36,6 @@
 #include "clockWidget.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QFontMetrics>
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneHoverEvent>

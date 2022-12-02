@@ -35,8 +35,6 @@
 
 #include "staGuiInterface.h"
 
-#include <QDebug>
-
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbTransform.h"
 #include "sta/ArcDelayCalc.hh"

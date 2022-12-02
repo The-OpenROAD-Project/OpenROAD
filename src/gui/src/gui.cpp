@@ -33,7 +33,6 @@
 #include "gui/gui.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
