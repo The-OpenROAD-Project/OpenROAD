@@ -264,7 +264,8 @@ _installOpenSuseDev() {
         wget \
         git \
         gzip \
-        libomp11-devel
+        libomp11-devel \
+        zlib
     
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
