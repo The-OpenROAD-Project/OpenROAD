@@ -255,11 +255,10 @@ class ClockTree
   sta::Clock* getClock() const { return clock_; }
 
   const PinDelays& getDriverDelays() const { return drivers_; }
-  const PinDelays& getRecieverDelays() const { return receivers_; }
+  const PinDelays& getChildSinkDelays() const { return child_sinks_; }
   const PinDelays& getLeavesDelays() const { return leaves_; }
 
-  std::pair<sta::Pin*, sta::Delay> getPairedReciever(
-      sta::Pin* paired_pin) const;
+  std::pair<sta::Pin*, sta::Delay> getPairedSink(sta::Pin* paired_pin) const;
 
   int getTotalFanout() const;
   int getTotalLeaves() const;
@@ -284,7 +283,7 @@ class ClockTree
   int level_;
 
   PinDelays drivers_;
-  PinDelays receivers_;
+  PinDelays child_sinks_;
   PinDelays leaves_;
 
   std::vector<std::unique_ptr<ClockTree>> fanout_;

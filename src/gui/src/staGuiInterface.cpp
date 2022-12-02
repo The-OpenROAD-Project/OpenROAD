@@ -482,7 +482,7 @@ sta::Delay ClockTree::getMinimumDriverDelay() const
 
   if (parent_ != nullptr) {
     for (const auto& [driver, arrival] : drivers_) {
-      const auto& [receiver, time] = parent_->getPairedReciever(driver);
+      const auto& [parent_sink, time] = parent_->getPairedSink(driver);
       minimum = std::min(minimum, arrival - time);
     }
   }
@@ -573,13 +573,13 @@ bool ClockTree::addVertex(sta::Vertex* vertex, sta::Delay delay)
     if (vertex->isDriver(network_)) {
       drivers_[pin] = delay;
     } else {
-      receivers_[pin] = delay;
+      child_sinks_[pin] = delay;
     }
     return true;
   }
 }
 
-std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedReciever(
+std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedSink(
     sta::Pin* paired_pin) const
 {
   sta::Instance* inst = network_->instance(paired_pin);
@@ -588,9 +588,9 @@ std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedReciever(
     return {nullptr, 0.0};
   }
 
-  for (const auto& [receiver, delay] : receivers_) {
-    if (network_->instance(receiver) == inst) {
-      return {receiver, delay};
+  for (const auto& [sink, delay] : child_sinks_) {
+    if (network_->instance(sink) == inst) {
+      return {sink, delay};
     }
   }
 
@@ -634,14 +634,14 @@ std::map<sta::Pin*, std::set<sta::Pin*>> ClockTree::getPinMapping() const
     pins[leaf].insert(drivers.begin(), drivers.end());
   }
 
-  for (const auto& [receiver, arrival] : receivers_) {
-    pins[receiver].insert(drivers.begin(), drivers.end());
+  for (const auto& [sink, arrival] : child_sinks_) {
+    pins[sink].insert(drivers.begin(), drivers.end());
   }
 
   if (parent_ != nullptr) {
     for (sta::Pin* driver : drivers) {
-      const auto& [receiver, time] = parent_->getPairedReciever(driver);
-      pins[driver].insert(receiver);
+      const auto& [parent_sink, time] = parent_->getPairedSink(driver);
+      pins[driver].insert(parent_sink);
     }
   }
 
