@@ -79,13 +79,13 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
     return;
   }
 
-  painter.setPen(Painter::magenta);
+  painter.setPenAndBrush(Painter::magenta, true);
   for (auto* net : tree_->getNets()) {
     descriptor->highlight(net, painter);
   }
 
   if (path_to_ != nullptr) {
-    painter.setPen(Painter::cyan);
+    painter.setPen(Painter::cyan, true, 2);
     auto* network = tree_->getNetwork();
     sta::Pin* pin = network->dbToSta(path_to_);
     if (pin == nullptr) {
