@@ -36,7 +36,6 @@
 #include "drcWidget.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
