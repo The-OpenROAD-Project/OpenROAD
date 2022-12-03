@@ -180,4 +180,10 @@ tap::Tapcell* Design::getTapcell()
   return app->getTapcell();
 }
 
+cts::TritonCTS* Design::getTritonCts()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonCts();
+}
+
 }  // namespace ord

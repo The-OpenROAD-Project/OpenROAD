@@ -33,7 +33,6 @@
 #include "heatMapSetup.h"
 
 #include <QComboBox>
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>

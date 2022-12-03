@@ -789,21 +789,8 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
     obsWidth = layer->getWidth();
   }
 
-  frCoord bloatDist = 0;
-  auto con = layer->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          obsWidth, viaWidth /*prl*/);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          obsWidth, viaWidth, viaWidth /*prl*/);
-    }
-  }
+  frCoord bloatDist
+      = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
   auto& eol = layer->getDrEolSpacingConstraint();
   if (viaBox.minDXDY() < eol.eolWidth)
     bloatDist = std::max(bloatDist, eol.eolSpace);
@@ -824,8 +811,6 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
 {
   auto layer = getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();
-  // use width if minSpc does not exist
-  frCoord bloatDist = width;
   frCoord objWidth = box.minDXDY();
   frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
                     ? (box.xMax() - box.xMin())
@@ -835,19 +820,11 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
       objWidth = width;
     }
   }
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist
-          = static_cast<frSpacingTablePrlConstraint*>(con)->find(objWidth, prl);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          objWidth, width, prl);
-    }
+
+  // use width if minSpc does not exist
+  frCoord bloatDist = width;
+  if (layer->hasMinSpacing()) {
+    bloatDist = layer->getMinSpacingValue(objWidth, width, prl, false);
   }
   // assuming the wire width is width
   bloatDist += width / 2;

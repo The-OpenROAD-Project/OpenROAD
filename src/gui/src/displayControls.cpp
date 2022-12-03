@@ -33,7 +33,6 @@
 #include "displayControls.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QFontDialog>
 #include <QHeaderView>
 #include <QKeyEvent>

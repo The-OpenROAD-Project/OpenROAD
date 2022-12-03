@@ -33,7 +33,6 @@
 #include "selectHighlightWindow.h"
 
 #include <QComboBox>
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QString>

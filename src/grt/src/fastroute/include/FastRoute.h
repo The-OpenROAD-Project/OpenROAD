@@ -443,7 +443,7 @@ class FastRouteCore
   void checkRoute3D();
   void StNetOrder();
   bool checkRoute2DTree(int netID);
-  void checkUsage();
+  void removeLoops();
   void netedgeOrderDec(int netID);
   void printTree2D(int netID);
   void printEdge2D(int netID, int edgeID);
