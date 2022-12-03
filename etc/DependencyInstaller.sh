@@ -179,10 +179,10 @@ _installUbuntuRuntime() {
 
     if [[ $1 == 22.04 ]]; then
         apt-get install -y \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
     else
         apt-get install -y qt5-default
     fi
@@ -330,26 +330,21 @@ _installDebianRuntime() {
     apt-get install -y \
         binutils \
         libgomp1 \
-        libpython3.8 \
         libtcl \
         qt5-image-formats-plugins \
-        tcl-tclreadline \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+        tcl-tclreadline
     
     if [[ $1 == 11 ]]; then
         apt-get install -y \
-        libpython3.8 \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+            libpython3.8 \
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
     else
         apt-get install -y \
-        libpython3.7 \
-        qt5-default
+            libpython3.7 \
+            qt5-default
     fi
 
     # need the strip "hack" above to run on docker
