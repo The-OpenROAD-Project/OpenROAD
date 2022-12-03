@@ -1290,8 +1290,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         bool force_to_die_bound)
 {
   if (width == 0 && height == 0) {
-    int database_unit = getTech()->getLefUnits();
-    int min_area = layer->getArea() * database_unit * database_unit;
+    const int database_unit = getTech()->getLefUnits();
+    const int min_area = layer->getArea() * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
       height = int(std::max((double)width, ceil(min_area / width)));
