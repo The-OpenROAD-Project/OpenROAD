@@ -191,9 +191,9 @@ route_layer_lengths(odb::dbNet* db_net)
 }
 
 void
-repair_antennas(odb::dbMTerm* diode_mterm, int iterations)
+repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations);
+  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin);
 }
 
 void

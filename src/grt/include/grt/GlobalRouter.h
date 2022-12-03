@@ -189,7 +189,9 @@ class GlobalRouter
   int getTileSize() const;
 
   // repair antenna public functions
-  void repairAntennas(odb::dbMTerm* diode_mterm, int iterations);
+  void repairAntennas(odb::dbMTerm* diode_mterm,
+                      int iterations,
+                      float ratio_margin);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.

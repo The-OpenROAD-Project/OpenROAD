@@ -86,7 +86,8 @@ class RepairAntennas
 
   bool checkAntennaViolations(NetRouteMap& routing,
                               int max_routing_layer,
-                              odb::dbMTerm* diode_mterm);
+                              odb::dbMTerm* diode_mterm,
+                              float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
   int illegalDiodePlacementCount() const
   {
