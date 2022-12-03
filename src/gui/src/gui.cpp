@@ -33,11 +33,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
 
+#include "clockWidget.h"
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
@@ -629,6 +629,15 @@ void Gui::saveImage(const std::string& filename,
     // restore settings
     main_window->getControls()->restore();
   }
+}
+
+void Gui::saveClockTreeImage(const std::string& clock_name,
+                             const std::string& filename)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->saveImage(clock_name, filename);
 }
 
 void Gui::showWidget(const std::string& name, bool show)
