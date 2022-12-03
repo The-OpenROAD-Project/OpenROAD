@@ -1294,10 +1294,10 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     const int min_area = layer->getArea() * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
-      height = int(std::max((double)width, ceil(min_area / width)));
+      height = int(std::max((double) width, ceil(min_area / width)));
     } else {
       height = layer->getMinWidth();
-      width = int(std::max((double)height, ceil(min_area / height)));
+      width = int(std::max((double) height, ceil(min_area / height)));
     }
   }
   const int mfg_grid = getTech()->getManufacturingGrid();
