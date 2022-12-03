@@ -1,8 +1,5 @@
 name: Test RHEL Dependency Installation script
 on:
-  # Triggers the workflow on push or pull request events
-  push:
-  pull_request:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
