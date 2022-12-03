@@ -1540,6 +1540,8 @@ void GlobalRouter::updateVias()
 {
   for (auto& net_route : routes_) {
     GRoute& route = net_route.second;
+    if (route.empty())
+      continue;
     for (int i = 0; i < route.size() - 1; i++) {
       GSegment& seg1 = route[i];
       GSegment& seg2 = route[i + 1];
