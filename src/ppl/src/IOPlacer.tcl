@@ -294,7 +294,7 @@ proc place_pin { args } {
   if [info exists keys(-pin_size)] {
     set pin_size $keys(-pin_size)
   } else {
-    utl::error PPL 67 "-pin_size is required."
+    set pin_size {0 0}
   }
 
   if { [llength $pin_size] != 2 } {
