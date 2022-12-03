@@ -40,7 +40,7 @@ def clock_tree_synthesis(design, *,
                          root_buf=None,
                          clk_nets=None,
                          tree_buf=None,
-                         post_cts_disable=True,
+                         post_cts_disable=False,
                          distance_between_buffers=None,
                          branching_point_buffers_distance=None,
                          clustering_exponent=None,
@@ -58,7 +58,7 @@ def clock_tree_synthesis(design, *,
     parms = cts.getParms()
 
     # Boolean
-    parms.setRunPostCtsOpt(post_cts_disable)
+    parms.setRunPostCtsOpt(not post_cts_disable)
     parms.setSinkClustering(sink_clustering_enable)
     parms.setBalanceLevels(balance_levels)
     
