@@ -84,7 +84,6 @@ struct TopLayerGrid
 
 struct Constraint
 {
-  Constraint() = default;
   Constraint(PinList pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
   {

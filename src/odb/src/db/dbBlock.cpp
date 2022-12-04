@@ -81,18 +81,18 @@
 #include "dbInst.h"
 #include "dbInstHdr.h"
 #include "dbIntHashTable.hpp"
+#include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLogicPort.h"
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
 #include "dbModuleModInstItr.h"
-#include "dbPowerDomain.h"
-#include "dbLogicPort.h"
-#include "dbPowerSwitch.h"
-#include "dbIsolation.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
+#include "dbPowerDomain.h"
+#include "dbPowerSwitch.h"
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
@@ -198,10 +198,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
 
-  _logicport_tbl= new dbTable<_dbLogicPort>(
+  _logicport_tbl = new dbTable<_dbLogicPort>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLogicPortObj);
 
-  _powerswitch_tbl = new dbTable<_dbPowerSwitch>( 
+  _powerswitch_tbl = new dbTable<_dbPowerSwitch>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerSwitchObj);
 
   _isolation_tbl = new dbTable<_dbIsolation>(
@@ -434,11 +434,13 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _modinst_tbl = new dbTable<_dbModInst>(db, this, *block._modinst_tbl);
 
-  _powerdomain_tbl = new dbTable<_dbPowerDomain>(db, this, *block._powerdomain_tbl);
-  
+  _powerdomain_tbl
+      = new dbTable<_dbPowerDomain>(db, this, *block._powerdomain_tbl);
+
   _logicport_tbl = new dbTable<_dbLogicPort>(db, this, *block._logicport_tbl);
 
-  _powerswitch_tbl = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
+  _powerswitch_tbl
+      = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
   _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
 
@@ -446,7 +448,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
 
-  global_connect_tbl_ = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
+  global_connect_tbl_
+      = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
 
   _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
 
@@ -515,7 +518,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
 
-
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
   _net_iterm_itr = new dbNetITermItr(_iterm_tbl);
@@ -557,6 +559,10 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _bpin_itr = new dbBPinItr(_bpin_tbl);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
+
+  _num_ext_dbs = 0;
+  _ptFile = nullptr;
+  _bterm_pins = nullptr;
 
   // ??? Initialize search-db on copy?
   _searchDb = NULL;
@@ -1160,7 +1166,7 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (_logicport_hash != rhs._logicport_hash)
     return false;
-  
+
   if (_powerswitch_hash != rhs._powerswitch_hash)
     return false;
 
@@ -1220,7 +1226,7 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (*_powerdomain_tbl != *rhs._powerdomain_tbl)
     return false;
-  
+
   if (*_logicport_tbl != *rhs._logicport_tbl)
     return false;
 
@@ -1698,7 +1704,6 @@ dbSet<dbModInst> dbBlock::getModInsts()
   return dbSet<dbModInst>(block, block->_modinst_tbl);
 }
 
-
 dbSet<dbPowerDomain> dbBlock::getPowerDomains()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1753,7 +1758,6 @@ dbModule* dbBlock::findModule(const char* name)
   return (dbModule*) block->_module_hash.find(name);
 }
 
-
 dbPowerDomain* dbBlock::findPowerDomain(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1771,7 +1775,6 @@ dbPowerSwitch* dbBlock::findPowerSwitch(const char* name)
   _dbBlock* block = (_dbBlock*) this;
   return (dbPowerSwitch*) block->_powerswitch_hash.find(name);
 }
-
 
 dbIsolation* dbBlock::findIsolation(const char* name)
 {
@@ -2097,7 +2100,7 @@ Rect dbBlock::getCoreArea()
       rect.merge(row->getBBox());
     }
     return rect;
-  } 
+  }
   // Default to die area if there aren't any rows.
   return getDieArea();
 }
@@ -3422,10 +3425,14 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 // Utility to save_lef
 //
 
-void dbBlock::saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers)
+void dbBlock::saveLef(char* filename,
+                      int bloat_factor,
+                      bool bloat_occupied_layers)
 {
   lefout writer(getImpl()->getLogger());
-  writer.writeAbstractLef(this, filename, bloat_factor, bloat_occupied_layers);
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
+  writer.writeAbstractLef(this, filename);
 }
 
 //
@@ -3995,17 +4002,21 @@ int dbBlock::addGlobalConnect(dbRegion* region,
   }
 
   if (net->isDoNotTouch()) {
-    logger->warn(utl::ODB, 382, "{} is marked do not touch, which will cause the global connect rule to be ignored.", net->getName());
+    logger->warn(utl::ODB,
+                 382,
+                 "{} is marked do not touch, which will cause the global "
+                 "connect rule to be ignored.",
+                 net->getName());
   }
 
-  dbGlobalConnect* gc = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
+  dbGlobalConnect* gc
+      = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (do_connect) {
     return globalConnect(gc);
   }
   return 0;
 }
-
 
 int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 {
@@ -4026,7 +4037,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
   for (dbGlobalConnect* connect : connects) {
-    _dbGlobalConnect* gc = (_dbGlobalConnect*)connect;
+    _dbGlobalConnect* gc = (_dbGlobalConnect*) connect;
     if (gc->region_ != 0) {
       region_rules.push_back(gc);
     } else {
@@ -4045,9 +4056,13 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(), insts.end(), [&](dbInst* inst) {
-      return remove_insts.find(inst) != remove_insts.end();
-    }), insts.end());
+    insts.erase(std::remove_if(insts.begin(),
+                               insts.end(),
+                               [&](dbInst* inst) {
+                                 return remove_insts.find(inst)
+                                        != remove_insts.end();
+                               }),
+                insts.end());
 
     inst_map[inst_pattern] = insts;
     donottouchinsts.insert(remove_insts.begin(), remove_insts.end());
@@ -4055,7 +4070,11 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
 
   if (!donottouchinsts.empty()) {
     for (dbInst* inst : donottouchinsts) {
-      logger->warn(utl::ODB, 383, "{} is marked do not touch and will be skipped in global connections.", inst->getName());
+      logger->warn(utl::ODB,
+                   383,
+                   "{} is marked do not touch and will be skipped in global "
+                   "connections.",
+                   inst->getName());
     }
   }
 

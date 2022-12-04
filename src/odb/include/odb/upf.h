@@ -47,47 +47,46 @@
 
 namespace upf {
 
-  bool create_power_domain(utl::Logger* logger,
-                                  odb::dbBlock* block,
-                                  const char* name);
+bool create_power_domain(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name);
 
-  bool update_power_domain(utl::Logger* logger,
-                                  odb::dbBlock* block,
-                                  const char* name,
-                                  const char* element);
+bool update_power_domain(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name,
+                         const char* element);
 
-  bool create_logic_port(utl::Logger* logger,
-                                odb::dbBlock* block,
-                                const char* name,
-                                const char* direction);
+bool create_logic_port(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const char* name,
+                       const char* direction);
 
-  bool create_power_switch(utl::Logger* logger,
-                                  odb::dbBlock* block,
-                                  const char* name,
-                                  const char* power_domain,
-                                  const char* out_port,
-                                  const char* in_port);
+bool create_power_switch(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         const char* name,
+                         const char* power_domain,
+                         const char* out_port,
+                         const char* in_port);
 
-  bool update_power_switch_control(utl::Logger* logger,
-                                          odb::dbBlock* block,
-                                          const char* name,
-                                          const char* control_port);
+bool update_power_switch_control(utl::Logger* logger,
+                                 odb::dbBlock* block,
+                                 const char* name,
+                                 const char* control_port);
 
-  bool update_power_switch_on(utl::Logger* logger,
-                                     odb::dbBlock* block,
-                                     const char* name,
-                                     const char* on_state);
-
-  bool set_isolation(utl::Logger* logger,
+bool update_power_switch_on(utl::Logger* logger,
                             odb::dbBlock* block,
                             const char* name,
-                            const char* power_domain,
-                            bool update,
-                            const char* applies_to,
-                            const char* clamp_value,
-                            const char* signal,
-                            const char* sense,
-                            const char* location);
+                            const char* on_state);
 
+bool set_isolation(utl::Logger* logger,
+                   odb::dbBlock* block,
+                   const char* name,
+                   const char* power_domain,
+                   bool update,
+                   const char* applies_to,
+                   const char* clamp_value,
+                   const char* signal,
+                   const char* sense,
+                   const char* location);
 
 }  // namespace upf

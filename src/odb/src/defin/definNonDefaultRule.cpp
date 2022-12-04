@@ -215,6 +215,20 @@ void definNonDefaultRule::endRule()
 
     if (!props.empty() && props.orderReversed())
       props.reverse();
+
+    // Verify all routing layers have a rule
+    for (int level = 1; level < _tech->getRoutingLayerCount(); ++level) {
+      auto layer = _tech->findRoutingLayer(level);
+      auto rule = _cur_rule->getLayerRule(layer);
+      if (!rule) {
+        _logger->warn(utl::ODB,
+                      387,
+                      "error: Non-default rule ({}) has no rule for layer {}.",
+                      _cur_rule->getName(),
+                      layer->getName());
+        ++_errors;
+      }
+    }
   }
 }
 

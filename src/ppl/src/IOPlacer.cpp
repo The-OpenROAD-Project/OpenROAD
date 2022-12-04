@@ -968,13 +968,13 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
 
     if (pin.getArea() < required_min_area) {
-      logger_->error(
-          PPL,
-          79,
-          "Pin {} area {:2.4f}um^2 is lesser than the minimum required area {:2.4f}um^2.",
-          pin.getName(),
-          dbuToMicrons(dbuToMicrons(pin.getArea())),
-          dbuToMicrons(dbuToMicrons(required_min_area)));
+      logger_->error(PPL,
+                     79,
+                     "Pin {} area {:2.4f}um^2 is lesser than the minimum "
+                     "required area {:2.4f}um^2.",
+                     pin.getName(),
+                     dbuToMicrons(dbuToMicrons(pin.getArea())),
+                     dbuToMicrons(dbuToMicrons(required_min_area)));
     }
   } else {
     int pin_width = top_grid_->pin_width;
@@ -1289,6 +1289,17 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         int height,
                         bool force_to_die_bound)
 {
+  if (width == 0 && height == 0) {
+    const int database_unit = getTech()->getLefUnits();
+    const int min_area = layer->getArea() * database_unit * database_unit;
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      width = layer->getMinWidth();
+      height = int(std::max((double) width, ceil(min_area / width)));
+    } else {
+      height = layer->getMinWidth();
+      width = int(std::max((double) height, ceil(min_area / height)));
+    }
+  }
   const int mfg_grid = getTech()->getManufacturingGrid();
   if (width % mfg_grid != 0) {
     width = mfg_grid * std::ceil(static_cast<float>(width) / mfg_grid);
@@ -1428,7 +1439,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
-      int new_y = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
+      int new_y
+          = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
       pos.setY(new_y);
     }
   }

@@ -33,11 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ord/Tech.h"
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
-#include "ord/Tech.h"
 
 namespace ord {
 

@@ -124,6 +124,7 @@ class TritonRoute
   void setDebugDumpDR(bool on, const std::string& dumpDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
+  void setDebugTA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
   void setDebugWorker(int x, int y);
@@ -155,6 +156,7 @@ class TritonRoute
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
+  void clearDesign();
   void updateDesign(const std::vector<std::string>& updates);
   void updateDesign(const std::string& updates);
   void addWorkerResults(

@@ -31,7 +31,8 @@
 #include "db.h"
 
 namespace odb {
-class lefMacroClassTypeParser {
+class lefMacroClassTypeParser
+{
  public:
   static bool parse(std::string_view, dbMaster*);
 };

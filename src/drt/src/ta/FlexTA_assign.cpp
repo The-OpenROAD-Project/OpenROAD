@@ -54,31 +54,12 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord width1 = box.minDXDY();
   frCoord length1 = box.maxDXDY();
   // obj2 = other obj
+  auto layer = getDesign()->getTech()->getLayer(lNum);
   // layer default width
-  frCoord width2 = getDesign()->getTech()->getLayer(lNum)->getWidth();
+  frCoord width2 = layer->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
-  frCoord bloatDist = 0;
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), length1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, length1);
-    } else {
-      cout << "Warning: min spacing rule not supporterd" << endl;
-      return;
-    }
-  } else {
-    cout << "Warning: no min spacing rule" << endl;
-    return;
-  }
+  frCoord bloatDist = layer->getMinSpacingValue(width1, width2, length1, false);
   if (fig->getNet()->getNondefaultRule())
     bloatDist
         = max(bloatDist,
@@ -115,8 +96,8 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
     if (dy >= bloatDist) {
       continue;
     }
-    frCoord maxX = (frCoord)(
-        sqrt(1.0 * bloatDistSquare - 1.0 * (frSquaredDistance) dy * dy));
+    frCoord maxX = (frCoord) (sqrt(1.0 * bloatDistSquare
+                                   - 1.0 * (frSquaredDistance) dy * dy));
     if ((frSquaredDistance) maxX * maxX + (frSquaredDistance) dy * dy
         == bloatDistSquare) {
       maxX = max(0, maxX - 1);
@@ -129,6 +110,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
     } else {
       tmpBox.init(trackLoc, blockLeft, trackLoc, blockRight);
     }
+    auto con = layer->getMinSpacing();
     if (isAddCost) {
       workerRegionQuery.addCost(tmpBox, lNum, fig, con);
       if (pinS) {
@@ -206,27 +188,9 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   }
 
   // spacing value needed
-  frCoord bloatDist = 0;
-  auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), isCurrPs ? length2 : min(length1, length2));
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, isCurrPs ? length2 : min(length1, length2));
-    } else {
-      cout << "Warning: min spacing rule not supporterd" << endl;
-      return;
-    }
-  } else {
-    cout << "Warning: no min spacing rule" << endl;
-    return;
-  }
+  auto layer = getTech()->getLayer(lNum);
+  frCoord bloatDist = layer->getMinSpacingValue(
+      width1, width2, isCurrPs ? length2 : min(length1, length2), false);
   if (fig->getNet()->getNondefaultRule())
     bloatDist
         = max(bloatDist,
@@ -251,7 +215,6 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   Rect tmpBx;
   dbTransform xform;
   frCoord dx, dy, prl;
-  frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
   Rect blockBox;
   for (int i = idx1; i <= idx2; i++) {
@@ -296,17 +259,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       }
     }
 
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      reqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          width1, width2, prl);
-    }
+    frCoord reqDist = layer->getMinSpacingValue(width1, width2, prl, false);
     if (fig->getNet()->getNondefaultRule())
       reqDist
           = max(reqDist,
@@ -316,7 +269,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       if (dy >= reqDist) {
         continue;
       }
-      maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
+      maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
       if (maxX * maxX + dy * dy == reqDist * reqDist) {
         maxX = max(0, maxX - 1);
       }
@@ -328,7 +281,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       if (dx >= reqDist) {
         continue;
       }
-      maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
+      maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
       if (maxX * maxX + dx * dx == reqDist * reqDist) {
         maxX = max(0, maxX - 1);
       }
@@ -338,6 +291,7 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
       blockBox.init(trackLoc, blockLeft, trackLoc, blockRight);
     }
 
+    auto con = layer->getMinSpacing();
     if (isAddCost) {
       workerRegionQuery.addCost(blockBox, cutLNum, fig, con);
       if (pinS) {
@@ -452,10 +406,10 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           }
         }
         if (isC2C) {
-          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist
-                                - 1.0 * c2ctrackdist * c2ctrackdist));
+          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist
+                                 - 1.0 * c2ctrackdist * c2ctrackdist));
         } else {
-          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
+          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
         }
         if (maxX * maxX + dy * dy == reqDist * reqDist) {
           maxX = max(0, maxX - 1);
@@ -479,10 +433,10 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           }
         }
         if (isC2C) {
-          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist
-                                - 1.0 * c2ctrackdist * c2ctrackdist));
+          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist
+                                 - 1.0 * c2ctrackdist * c2ctrackdist));
         } else {
-          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
+          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
         }
         if (maxX * maxX + dx * dx == reqDist * reqDist) {
           maxX = max(0, maxX - 1);
@@ -527,8 +481,8 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           hasViol = true;
         }
       } else if (con->isArea()) {
-        auto currArea
-            = max(box.maxDXDY() * box.minDXDY(), tmpBx.maxDXDY() * tmpBx.minDXDY());
+        auto currArea = max(box.maxDXDY() * box.minDXDY(),
+                            tmpBx.maxDXDY() * tmpBx.minDXDY());
         if (currArea >= con->getCutArea()) {
           hasViol = true;
         }
@@ -577,7 +531,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     // assumes enclosure for via is always rectangle
-    Rect box = obj->getLayer1BBox(); 
+    Rect box = obj->getLayer1BBox();
     auto layerNum = obj->getViaDef()->getLayer1Num();
     // current TA layer
     if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
@@ -587,7 +541,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
     // assumes enclosure for via is always rectangle
-    box = obj->getLayer2BBox(); 
+    box = obj->getLayer2BBox();
     layerNum = obj->getViaDef()->getLayer2Num();
     // current TA layer
     if (getDir() == getDesign()->getTech()->getLayer(layerNum)->getDir()) {
@@ -629,26 +583,26 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
     frViaDef* via = nullptr;
     Rect testBox;
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
-        via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-        testBox = via->getLayer1ShapeBox();
-        testBox.merge(via->getLayer2ShapeBox());
+      via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+      testBox = via->getLayer1ShapeBox();
+      testBox.merge(via->getLayer2ShapeBox());
     } else {
-        via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-        testBox = via->getLayer1ShapeBox();
-        testBox.merge(via->getLayer2ShapeBox());
+      via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+      testBox = via->getLayer1ShapeBox();
+      testBox.merge(via->getLayer2ShapeBox());
     }
     int diffLow, diffHigh;
     if (isH) {
-        diffLow = dieBx.yMin() - (coordLow - testBox.dy()/2);
-        diffHigh = coordHigh + testBox.dy()/2 - dieBx.yMax();
+      diffLow = dieBx.yMin() - (coordLow - testBox.dy() / 2);
+      diffHigh = coordHigh + testBox.dy() / 2 - dieBx.yMax();
     } else {
-        diffLow = dieBx.xMin() - (coordLow - testBox.dx()/2);
-        diffHigh = coordHigh + testBox.dx()/2 - dieBx.xMax();
+      diffLow = dieBx.xMin() - (coordLow - testBox.dx() / 2);
+      diffHigh = coordHigh + testBox.dx() / 2 - dieBx.xMax();
     }
     if (diffLow > 0)
-        coordLow += diffLow;
+      coordLow += diffLow;
     if (diffHigh > 0)
-        coordHigh -= diffHigh;
+      coordHigh -= diffHigh;
   }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
 }
@@ -679,8 +633,8 @@ frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     cout << "Error: getWlenCost has wlenCost < 0"
          << ", trackLoc@" << trackLoc / dbu << " box (" << endBox.xMin() / dbu
-         << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu
-         << ", " << endBox.yMax() / dbu << ")" << endl;
+         << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
+         << endBox.yMax() / dbu << ")" << endl;
     return (frUInt4) 0;
   } else {
     return (frUInt4) wlen;
@@ -736,16 +690,15 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
             / 2;
     r += iroute->getGuide()->getNet()->getNondefaultRule()->getSpacing(lNum / 2
                                                                        - 1);
-                                                                       box.bloat(r, box);
+    box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
   bool isCut = false;
   for (auto& [bounds, pr] : result) {
     auto& [obj, con] = pr;
-    frCoord tmpOvlp = -max(box.xMin(), bounds.xMin())
-                      + min(box.xMax(), bounds.xMax())
-                      - max(box.yMin(), bounds.yMin())
-                      + min(box.yMax(), bounds.yMax()) + 1;
+    frCoord tmpOvlp
+        = -max(box.xMin(), bounds.xMin()) + min(box.xMax(), bounds.xMax())
+          - max(box.yMin(), bounds.yMin()) + min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
       cout << "Error: assignIroute_getDRCCost_helper overlap < 0" << endl;
       exit(1);
@@ -1132,7 +1085,7 @@ void FlexTAWorker::assignIroute_updateOthers(
   }
   for (auto& iroute : pinS) {
     if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode)
-        continue;
+      continue;
     removeFromReassignIroutes(iroute);
     // recalculate cost
     frUInt4 drcCost = 0;
@@ -1179,9 +1132,6 @@ void FlexTAWorker::assignIroute(taPin* iroute)
 
 void FlexTAWorker::assign()
 {
-  if (getTAIter() == -1) {
-    return;
-  }
   int maxBufferSize = 20;
   vector<taPin*> buffers(maxBufferSize, nullptr);
   int currBufferIdx = 0;

@@ -63,3 +63,21 @@ messages(
   TARGET tap
   OUTPUT_DIR ..
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          tap_py
+           NAMESPACE     tap
+           LANGUAGE      python
+           I_FILE        tapcell-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src/tap/include
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/tap_py.py
+  )
+
+  target_link_libraries(tap_py
+    PUBLIC
+      tap
+      odb
+      OpenSTA
+  )
+
+endif()

@@ -56,13 +56,16 @@ struct tcs_shape
 
 struct tcs_lev
 {
-  tcs_shape* shape_list;
-  tcs_shape* last_shape;
-  int xlo, ylo, xhi, yhi;
-  int n;
-  tcs_lev* left;
-  tcs_lev* right;
-  tcs_lev* parent;
+  tcs_shape* shape_list = nullptr;
+  tcs_shape* last_shape = nullptr;
+  int xlo = 0;
+  int ylo = 0;
+  int xhi = 0;
+  int yhi = 0;
+  int n = 0;
+  tcs_lev* left = nullptr;
+  tcs_lev* right = nullptr;
+  tcs_lev* parent = nullptr;
 };
 
 class tmg_conn_search_internal
@@ -111,6 +114,14 @@ tmg_conn_search_internal::tmg_conn_search_internal()
   for (j = 0; j < _shJmax; j++)
     _shV[j] = NULL;
   _shV[0] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
+  _sxlo = 0;
+  _sylo = 0;
+  _sxhi = 0;
+  _syhi = 0;
+  _srcVia = 0;
+  _bin = nullptr;
+  _cur = nullptr;
+  _pcur = nullptr;
   clear();
 }
 

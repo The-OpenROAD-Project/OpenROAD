@@ -490,7 +490,7 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
   frCoord sp, wext;
   frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
   sp = max(ndr_->getSpacing(gridZ),
-           getMinSpacingValue(layer, layerWidth, layer->getWidth(), 0));
+           layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
   wext = max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
          - layer->getWidth() / 2;
 
@@ -580,9 +580,9 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   frMIdx startX, startY, endX, endY;
   frCoord x1, x2, y1, y2;
   frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  frCoord r,
-      sp = max(ndr_->getSpacing(gridZ),
-               getMinSpacingValue(layer, layerWidth, layer->getWidth(), 0));
+  frCoord r, sp;
+  sp = max(ndr_->getSpacing(gridZ),
+           layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
 
   // get iteration bounds
   r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
@@ -673,24 +673,6 @@ bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
     return true;
   }
   return false;
-}
-frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer,
-                                          frCoord width1,
-                                          frCoord width2,
-                                          frCoord prl) const
-{
-  auto con = layer->getMinSpacing();
-  if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint)
-    return static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-
-  if (con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint)
-    return static_cast<frSpacingTablePrlConstraint*>(con)->find(width1, prl);
-
-  if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
-    return static_cast<frSpacingTableTwConstraint*>(con)->find(
-        width1, width2, prl);
-  drWorker_->getLogger()->error(
-      utl::ToolId::DRT, 0, "ERROR FlexGridGraph::getMinSpacingValue");
 }
 
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks,

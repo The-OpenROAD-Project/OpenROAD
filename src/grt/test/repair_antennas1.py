@@ -20,9 +20,9 @@ gr.globalRoute(True)
 
 ant = design.getAntennaChecker()
 
-ant.checkAntennas("", False)
-gr.repairAntennas(None, 1)
-ant.checkAntennas("", False)
+ant.checkAntennas()
+gr.repairAntennas(None, 1, 0)
+ant.checkAntennas()
 
 design.evalTclString("check_placement")
 

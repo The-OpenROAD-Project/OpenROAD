@@ -234,11 +234,12 @@ RepairSetup::repairSetup(PathRef &path,
     sort(load_delays.begin(), load_delays.end(),
          [](pair<int, Delay> pair1,
             pair<int, Delay> pair2) {
-           return pair1.second > pair2.second;
+           return pair1.second > pair2.second
+             || (pair1.second == pair2.second
+                 && pair1.first > pair2.first);
          });
     // Attack gates with largest load delays first.
-    for (auto index_delay : load_delays) {
-      int drvr_index = index_delay.first;
+    for (const auto& [drvr_index, ignored] : load_delays) {
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       const Pin *drvr_pin = drvr_vertex->pin();
@@ -350,7 +351,15 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
               const LibertyCell *cell2) {
            LibertyPort *port1=cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            LibertyPort *port2=cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           return port1->driveResistance() > port2->driveResistance();
+           float drive1 = port1->driveResistance();
+           float drive2 = port2->driveResistance();
+           ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           return drive1 > drive2
+             || ((drive1 == drive2
+                  && intrinsic1 < intrinsic2)
+                 || (intrinsic1 == intrinsic2
+                     && port1->capacitance() < port2->capacitance()));
          });
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
@@ -405,13 +414,15 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   }
 
   sort(fanout_slacks.begin(), fanout_slacks.end(),
-       [](pair<Vertex*, Slack> pair1,
-          pair<Vertex*, Slack> pair2) {
-         return pair1.second > pair2.second;
+       [=](pair<Vertex*, Slack> pair1,
+           pair<Vertex*, Slack> pair2) {
+         return (pair1.second > pair2.second
+                 || (pair1.second == pair2.second
+                     && network_->pathNameLess(pair1.first->pin(),
+                                               pair2.first->pin())));
        });
 
   Net *net = network_->net(drvr_pin);
-
   string buffer_name = resizer_->makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
   LibertyCell *buffer_cell = resizer_->buffer_lowest_drive_;

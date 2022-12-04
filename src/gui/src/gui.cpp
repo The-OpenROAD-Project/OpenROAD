@@ -33,11 +33,11 @@
 #include "gui/gui.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
 
+#include "clockWidget.h"
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
@@ -227,7 +227,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object, void* additional_data)
+Selected Gui::makeSelected(std::any object)
 {
   if (!object.has_value()) {
     return Selected();
@@ -235,7 +235,7 @@ Selected Gui::makeSelected(std::any object, void* additional_data)
 
   auto it = descriptors_.find(object.type());
   if (it != descriptors_.end()) {
-    return it->second->makeSelected(object, additional_data);
+    return it->second->makeSelected(object);
   } else {
     logger_->warn(utl::GUI,
                   33,
@@ -629,6 +629,15 @@ void Gui::saveImage(const std::string& filename,
     // restore settings
     main_window->getControls()->restore();
   }
+}
+
+void Gui::saveClockTreeImage(const std::string& clock_name,
+                             const std::string& filename)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->saveImage(clock_name, filename);
 }
 
 void Gui::showWidget(const std::string& name, bool show)
@@ -1195,7 +1204,7 @@ void Selected::highlight(Painter& painter,
   painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
-  return descriptor_->highlight(object_, painter, additional_data_);
+  return descriptor_->highlight(object_, painter);
 }
 
 Descriptor::Properties Selected::getProperties() const

@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -461,13 +461,13 @@ bool parse(Iterator first,
 
 namespace odb {
 
-void lefTechLayerSpacingEolParser::parse(std::string s,
+void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
                                          odb::lefin* l)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;

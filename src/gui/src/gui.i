@@ -279,6 +279,15 @@ void save_image(const char* filename, double xlo, double ylo, double xhi, double
   gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), dbu_per_pixel, display_settings);
 }
 
+void save_clocktree_image(const char* filename, const char* clock_name)
+{
+  if (!check_gui("save_clocktree_image")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveClockTreeImage(clock_name, filename);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {

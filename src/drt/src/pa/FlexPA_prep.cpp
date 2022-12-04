@@ -37,7 +37,6 @@
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
-
 #include "utl/exception.h"
 
 using namespace std;
@@ -102,7 +101,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       auto layerNum = obj->getLayerNum();
       vector<gtl::point_data<frCoord>> points;
       // must be copied pts
-      for (auto pt : obj->getPoints()) {
+      for (Point pt : obj->getPoints()) {
         xform.apply(pt);
         points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
       }
@@ -238,46 +237,47 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   }
   ap->setType((frAccessPointEnum) lowCost, true);
   ap->setType((frAccessPointEnum) highCost, false);
-  if ((lowCost == frAccessPointEnum::NearbyGrid || 
-        highCost == frAccessPointEnum::NearbyGrid)) {
-      Point end;
-      int halfWidth = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth()/2;
-      if (fpt.x() < gtl::xl(maxrect)+halfWidth) {
-          end.setX(gtl::xl(maxrect)+halfWidth);
-      } else if (fpt.x() > gtl::xh(maxrect)-halfWidth)
-          end.setX(gtl::xh(maxrect)-halfWidth);
-      else 
-          end.setX(fpt.x());
-      if (fpt.y() < gtl::yl(maxrect)+halfWidth)
-          end.setY(gtl::yl(maxrect)+halfWidth);
-      else if (fpt.y() > gtl::yh(maxrect)-halfWidth)
-          end.setY(gtl::yh(maxrect)-halfWidth);
-      else 
-          end.setY(fpt.y());
-      
-      Point e = fpt;
-      if (fpt.x() != end.x())
-          e.x() = end.x();
-      else if (fpt.y() != end.y())
-          e.y() = end.y();
-      if (!(e == fpt)) {
-        frPathSeg ps;
-        ps.setPoints_safe(fpt, e);
+  if ((lowCost == frAccessPointEnum::NearbyGrid
+       || highCost == frAccessPointEnum::NearbyGrid)) {
+    Point end;
+    int halfWidth
+        = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
+    if (fpt.x() < gtl::xl(maxrect) + halfWidth) {
+      end.setX(gtl::xl(maxrect) + halfWidth);
+    } else if (fpt.x() > gtl::xh(maxrect) - halfWidth)
+      end.setX(gtl::xh(maxrect) - halfWidth);
+    else
+      end.setX(fpt.x());
+    if (fpt.y() < gtl::yl(maxrect) + halfWidth)
+      end.setY(gtl::yl(maxrect) + halfWidth);
+    else if (fpt.y() > gtl::yh(maxrect) - halfWidth)
+      end.setY(gtl::yh(maxrect) - halfWidth);
+    else
+      end.setY(fpt.y());
+
+    Point e = fpt;
+    if (fpt.x() != end.x())
+      e.x() = end.x();
+    else if (fpt.y() != end.y())
+      e.y() = end.y();
+    if (!(e == fpt)) {
+      frPathSeg ps;
+      ps.setPoints_safe(fpt, e);
+      if (ps.getBeginPoint() == end)
+        ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+      else if (ps.getEndPoint() == end)
+        ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+      ap->addPathSeg(std::move(ps));
+      if (!(e == end)) {
+        fpt = e;
+        ps.setPoints_safe(fpt, end);
         if (ps.getBeginPoint() == end)
-            ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-        else if (ps.getEndPoint() == end)
-            ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+          ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+        else
+          ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         ap->addPathSeg(std::move(ps));
-        if (!(e == end)) {
-            fpt = e;
-            ps.setPoints_safe(fpt, end);
-            if (ps.getBeginPoint() == end)
-                ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-            else
-                ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
-            ap->addPathSeg(std::move(ps));
-        }
       }
+    }
   }
   aps.push_back(std::move(ap));
   apset.insert(make_pair(fpt, layerNum));
@@ -763,35 +763,35 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
   frCoord pitch = getDesign()->getTech()->getLayer(layerNum)->getPitch();
   gtl::rectangle_data<frCoord> rect;
   if (isBlock) {
-      gtl::extents(rect, layerPolys[0]);
-      if (layerPolys.size() > 1)
-          logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
+    gtl::extents(rect, layerPolys[0]);
+    if (layerPolys.size() > 1)
+      logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
   }
   switch (dir) {
     case (frDirEnum::W):
-        if (isBlock)
-            x = gtl::xl(rect) - pitch;
-        else 
-            x -= stepSize;
-        break;
+      if (isBlock)
+        x = gtl::xl(rect) - pitch;
+      else
+        x -= stepSize;
+      break;
     case (frDirEnum::E):
-        if (isBlock)
-            x = gtl::xh(rect) + pitch;
-        else 
-            x += stepSize;
-        break;
+      if (isBlock)
+        x = gtl::xh(rect) + pitch;
+      else
+        x += stepSize;
+      break;
     case (frDirEnum::S):
-        if (isBlock)
-            y = gtl::yl(rect) - pitch;
-        else 
-            y -= stepSize;
-        break;
+      if (isBlock)
+        y = gtl::yl(rect) - pitch;
+      else
+        y -= stepSize;
+      break;
     case (frDirEnum::N):
-        if (isBlock)
-            y = gtl::yh(rect) + pitch;
-        else 
-            y += stepSize;
-        break;
+      if (isBlock)
+        y = gtl::yh(rect) + pitch;
+      else
+        y += stepSize;
+      break;
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
@@ -821,15 +821,15 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (!ap->hasAccess(dir)) {
     return;
   }
-  bool isBlock = instTerm && 
-                instTerm->getInst()->getMaster()->getMasterType().isBlock();
+  bool isBlock
+      = instTerm && instTerm->getInst()->getMaster()->getMasterType().isBlock();
   Point ep;
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
       ep, layerPolys, bp, ap->getLayerNum(), dir, isBlock);
   // skip if two width within shape for standard cell
   if (!isOutSide) {
-        ap->setAccess(dir, false);
-        return;
+    ap->setAccess(dir, false);
+    return;
   }
 
   auto ps = make_unique<frPathSeg>();
@@ -881,7 +881,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   }
   gcWorker.addPAObj(ps.get(), owner);
   for (auto& apPs : ap->getPathSegs())
-      gcWorker.addPAObj(&apPs, owner);
+    gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -911,8 +911,8 @@ void FlexPA::getViasFromMetalWidthMap(
   // If the upper layer has an NDR special handling will be needed
   // here. Assuming normal min-width routing for now.
   const frCoord top_width = tech->getLayer(layerNum + 2)->getMinWidth();
-  const auto width_orient = tech->isHorizontalLayer(layerNum) ? gtl::VERTICAL
-                                                              : gtl::HORIZONTAL;
+  const auto width_orient
+      = tech->isHorizontalLayer(layerNum) ? gtl::VERTICAL : gtl::HORIZONTAL;
   frCoord bottom_width = -1;
   auto viaMap = cutLayer->getTech()->getMetalWidthViaMap();
   for (auto entry : viaMap) {
@@ -990,7 +990,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   vector<pair<int, frViaDef*>> viaDefs;
   getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
 
-  if (viaDefs.empty()) { // no via map entry
+  if (viaDefs.empty()) {  // no via map entry
     // hardcode first two single vias
     int cnt = 0;
     for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
@@ -1112,7 +1112,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   }
   gcWorker.addPAObj(via, owner);
   for (auto& apPs : ap->getPathSegs())
-      gcWorker.addPAObj(&apPs, owner);
+    gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -1656,16 +1656,16 @@ void FlexPA::revertAccessPoints()
           revertXform.apply(uniqueAPPoint);
           accessPoint->setPoint(uniqueAPPoint);
           for (auto& ps : accessPoint->getPathSegs()) {
-              Point begin = ps.getBeginPoint();
-              Point end = ps.getEndPoint();
-              revertXform.apply(begin);
-              revertXform.apply(end);
-              if (end < begin ) {
-                  Point tmp = begin;
-                  begin = end;
-                  end = tmp;
-              }
-              ps.setPoints(begin, end);
+            Point begin = ps.getBeginPoint();
+            Point end = ps.getEndPoint();
+            revertXform.apply(begin);
+            revertXform.apply(end);
+            if (end < begin) {
+              Point tmp = begin;
+              begin = end;
+              end = tmp;
+            }
+            ps.setPoints(begin, end);
           }
         }
       }
@@ -2064,7 +2064,7 @@ int FlexPA::prepPattern_inst(frInst* inst,
       if (cnt != 0) {
         const double coord
             = (xWeight * sumXCoord + (1.0 - xWeight) * sumYCoord) / cnt;
-        pins.push_back({(int)std::round(coord), {pin.get(), instTerm.get()}});
+        pins.push_back({(int) std::round(coord), {pin.get(), instTerm.get()}});
       }
     }
     if (nAps == 0 && instTerm->getTerm()->getPins().size())
@@ -2278,7 +2278,7 @@ bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
   gcWorker.setDrcBox(extBox);
 
   gcWorker.setTargetObjs(targetObjs);
-  if(targetObjs.empty())
+  if (targetObjs.empty())
     gcWorker.setIgnoreDB();
   // cout <<flush;
   gcWorker.initPA0(getDesign());

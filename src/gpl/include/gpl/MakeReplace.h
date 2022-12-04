@@ -41,13 +41,10 @@ namespace ord {
 
 class OpenRoad;
 
-gpl::Replace*
-makeReplace();
+gpl::Replace* makeReplace();
 
-void
-initReplace(OpenRoad* openroad);
+void initReplace(OpenRoad* openroad);
 
-void
-deleteReplace(gpl::Replace *replace);
+void deleteReplace(gpl::Replace* replace);
 
-}
+}  // namespace ord

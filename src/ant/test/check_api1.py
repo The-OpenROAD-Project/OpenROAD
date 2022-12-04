@@ -9,7 +9,7 @@ design = Design(tech)
 design.readDef("sw130_random.def")
 ack = design.getAntennaChecker()
 
-ack.checkAntennas("", False)
+ack.checkAntennas()
 count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
 
@@ -19,6 +19,6 @@ print(f"violation count = {count}", flush=True)
 
 net_name = "net50"
 net = design.getBlock().findNet(net_name)
-viol = len(ack.getAntennaViolations(net, None)) > 0
+viol = len(ack.getAntennaViolations(net, None, 0)) > 0
 
 print(f"Net {net_name} violations: {int(viol)}")

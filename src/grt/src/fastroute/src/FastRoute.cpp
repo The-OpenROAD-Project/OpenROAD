@@ -525,14 +525,14 @@ void FastRouteCore::addHorizontalAdjustments(
 void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 {
   // Calculate reduce for vertical tiles
-  for (auto it : vertical_blocked_intervals_) {
-    int x = std::get<0>(it.first);
-    int y = std::get<1>(it.first);
-    int layer = std::get<2>(it.first);
+  for (const auto& [tile, intervals] : vertical_blocked_intervals_) {
+    int x = std::get<0>(tile);
+    int y = std::get<1>(tile);
+    int layer = std::get<2>(tile);
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : it.second) {
+      for (auto interval_it : intervals) {
         reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
                        / track_space[layer - 1]);
       }
@@ -543,14 +543,14 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     }
   }
   // Calculate reduce for horizontal tiles
-  for (auto it : horizontal_blocked_intervals_) {
-    int x = std::get<0>(it.first);
-    int y = std::get<1>(it.first);
-    int layer = std::get<2>(it.first);
+  for (const auto& [tile, intervals] : horizontal_blocked_intervals_) {
+    int x = std::get<0>(tile);
+    int y = std::get<1>(tile);
+    int layer = std::get<2>(tile);
     int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : it.second) {
+      for (const auto& interval_it : intervals) {
         reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
                        / track_space[layer - 1]);
       }
@@ -654,9 +654,9 @@ NetRouteMap FastRouteCore::getRoutes()
     std::unordered_set<GSegment, GSegmentHash> net_segs;
 
     const auto& treeedges = sttrees_[netID].edges;
-    const int deg = sttrees_[netID].deg;
+    const int num_edges = sttrees_[netID].num_edges();
 
-    for (int edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
@@ -1122,7 +1122,7 @@ NetRouteMap FastRouteCore::run()
 
   freeRR();
 
-  checkUsage();
+  removeLoops();
 
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1317,7 +1317,7 @@ void FastRouteRenderer::setSteinerTree(const stt::Tree& stree)
 void FastRouteRenderer::setStTreeValues(const StTree& stree)
 {
   treeEdges_.clear();
-  const int num_edges = 2 * stree.deg - 3;
+  const int num_edges = stree.num_edges();
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     treeEdges_.push_back(stree.edges[edgeID]);
   }

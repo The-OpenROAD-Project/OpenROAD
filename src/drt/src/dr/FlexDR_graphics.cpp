@@ -55,13 +55,10 @@ class GridGraphDescriptor : public gui::Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 gui::Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, gui::Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  gui::Selected makeSelected(std::any object,
-                             void* additional_data) const override;
+  gui::Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(gui::SelectionSet& objects) const override;
@@ -90,8 +87,7 @@ bool GridGraphDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 }
 
 void GridGraphDescriptor::highlight(std::any object,
-                                    gui::Painter& painter,
-                                    void* additional_data) const
+                                    gui::Painter& painter) const
 {
   odb::Rect bbox;
   getBBox(object, bbox);
@@ -197,11 +193,10 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   return props;
 }
 
-gui::Selected GridGraphDescriptor::makeSelected(std::any object,
-                                                void* additional_data) const
+gui::Selected GridGraphDescriptor::makeSelected(std::any object) const
 {
   if (auto data = std::any_cast<Data>(&object)) {
-    return gui::Selected(*data, this, additional_data);
+    return gui::Selected(*data, this);
   }
   return gui::Selected();
 }
@@ -248,6 +243,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     : worker_(nullptr),
       design_(design),
       net_(nullptr),
+      grid_graph_(nullptr),
       settings_(settings),
       current_iter_(-1),
       last_pt_layer_(-1),
@@ -261,7 +257,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
-    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
+    auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }

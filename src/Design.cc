@@ -132,10 +132,11 @@ ant::AntennaChecker* Design::getAntennaChecker()
   return app->getAntennaChecker();
 }
 
-int Design::evalTclString(const std::string& cmd)
+const std::string Design::evalTclString(const std::string& cmd)
 {
   Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
-  return Tcl_Eval(tcl_interp, cmd.c_str());
+  Tcl_Eval(tcl_interp, cmd.c_str());
+  return std::string(Tcl_GetStringResult(tcl_interp));
 }
 
 Tech* Design::getTech()
@@ -147,6 +148,42 @@ grt::GlobalRouter* Design::getGlobalRouter()
 {
   auto app = OpenRoad::openRoad();
   return app->getGlobalRouter();
+}
+
+gpl::Replace* Design::getReplace()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getReplace();
+}
+
+dpl::Opendp* Design::getOpendp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpendp();
+}
+
+mpl::MacroPlacer* Design::getMacroPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getMacroPlacer();
+}
+
+ppl::IOPlacer* Design::getIOPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getIOPlacer();
+}
+
+tap::Tapcell* Design::getTapcell()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTapcell();
+}
+
+cts::TritonCTS* Design::getTritonCts()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonCts();
 }
 
 }  // namespace ord

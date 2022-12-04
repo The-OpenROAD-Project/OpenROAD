@@ -33,6 +33,7 @@
 #pragma once
 
 #include <stdarg.h>
+
 #include <stdexcept>
 
 #include "odb.h"
@@ -45,8 +46,8 @@
 
 namespace odb {
 
-inline
-std::runtime_error ZException(const char* fmt, ...) // ADS_FORMAT_PRINTF(2, 3)
+inline std::runtime_error ZException(const char* fmt,
+                                     ...)  // ADS_FORMAT_PRINTF(2, 3)
 {
   char buffer[8192];
   va_list args;

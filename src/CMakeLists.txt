@@ -33,6 +33,14 @@
 ##
 ###############################################################################
 
+# The location used by etc/DependencyInstaller.sh
+# lib64 is used for CentOS and openSUSE
+# lib is used for Ubuntu and MacOS
+list(APPEND CMAKE_INSTALL_RPATH
+  "/opt/or-tools/lib64"
+  "/opt/or-tools/lib"
+)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 include("openroad")
@@ -150,6 +158,9 @@ if (BUILD_TCLX AND TCLX_H)
 endif()
 
 find_package(SWIG 3.0 REQUIRED)
+if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
+  message(WARNING "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
+endif()
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
@@ -366,6 +377,12 @@ if (Python3_FOUND AND BUILD_PYTHON)
     utl_py
     ant_py
     grt_py
+    gpl_py
+    dpl_py
+    mpl_py
+    ppl_py
+    tap_py
+    cts_py
   )
 else()
   message(STATUS "Python3 disabled")

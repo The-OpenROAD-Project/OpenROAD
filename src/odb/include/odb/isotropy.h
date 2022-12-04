@@ -293,7 +293,6 @@ std::ostream& operator<<(std::ostream& os, const Direction1D& dir);
 std::ostream& operator<<(std::ostream& os, const Direction2D& dir);
 std::ostream& operator<<(std::ostream& os, const Direction3D& dir);
 
-
 // Convenience objects that will be commonly used.
 inline constexpr Orientation2D horizontal{Orientation2D::Horizontal};
 inline constexpr Orientation2D vertical{Orientation2D::Vertical};
