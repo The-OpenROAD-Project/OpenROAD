@@ -770,6 +770,10 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   int root_idx;
   findPins(net, pins_on_grid, root_idx);
 
+  if (pins_on_grid.size() <= 1) {
+    return false;
+  }
+
   // check if net is local in the global routing grid position
   // the (x,y) pin positions here may be different from the original
   // (x,y) pin positions because of findFakePinPosition function
@@ -782,7 +786,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     }
   }
 
-  if (pins_on_grid.size() > 1 && !on_grid_local) {
+  if (!on_grid_local) {
     bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
     std::vector<int>* edge_cost_per_layer;
     int edge_cost_for_net;
