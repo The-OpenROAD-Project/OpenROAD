@@ -383,6 +383,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     ppl_py
     tap_py
     cts_py
+    drt_py
   )
 else()
   message(STATUS "Python3 disabled")
