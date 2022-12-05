@@ -2839,7 +2839,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
       FlexMazeIdx mIdx = ap->getMazeIdx();
       auto it = areaMap.find(mIdx);
       if (it != areaMap.end()) {
-        it->second = max(it->second, ap->getBeginArea());
+        areaMap[mIdx] = max(it->second, ap->getBeginArea());
       } else {
         areaMap[mIdx] = ap->getBeginArea();
       }
