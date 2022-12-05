@@ -303,6 +303,9 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {
+      // Run detailed placement before grt
+      dpl::Opendp* opendp_ = openroad_->getOpendp();
+      opendp_->detailedPlacement(0, 0);
       grt::IncrementalGRoute incr_groute(global_router_, block_);
       global_router_->addDirtyNet(db_network_->staToDb(net));
       incr_groute.updateRoutes();
