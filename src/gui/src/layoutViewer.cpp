@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <QDateTime>
-#include <QDebug>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
@@ -63,6 +62,7 @@
 #include "dbDescriptors.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+#include "gui_utils.h"
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
 #include "ruler.h"
@@ -3153,39 +3153,16 @@ void LayoutViewer::saveImage(const QString& filepath,
     return;
   }
 
-  QList<QByteArray> valid_extensions = QImageWriter::supportedImageFormats();
-
-  QString save_filepath;
+  QString save_filepath = filepath;
   if (filepath.isEmpty()) {
-    QString images_filter = "Images (";
-    for (const QByteArray& ext : valid_extensions) {
-      images_filter += "*." + ext + " ";
-    }
-    images_filter += ")";
-
-    save_filepath = QFileDialog::getSaveFileName(
-        this, tr("Save Layout"), "", images_filter);
-  } else {
-    save_filepath = filepath;
+    save_filepath = Utils::requestImageSavePath(this, "Save layout");
   }
 
   if (save_filepath.isEmpty()) {
     return;
   }
 
-  // check for a valid extension, if not found add .png
-  if (!std::any_of(valid_extensions.begin(),
-                   valid_extensions.end(),
-                   [save_filepath](const QString& ext) {
-                     return save_filepath.endsWith("." + ext);
-                   })) {
-    save_filepath += ".png";
-    logger_->warn(
-        utl::GUI,
-        10,
-        "File path does not end with a valid extension, new path is: {}",
-        save_filepath.toStdString());
-  }
+  save_filepath = Utils::fixImagePath(save_filepath, logger_);
 
   Rect save_area = region;
   if (region.dx() == 0 || region.dy() == 0) {
@@ -3206,33 +3183,22 @@ void LayoutViewer::saveImage(const QString& filepath,
                                       screen_region.height());
 
   const QRect bounding_rect = save_region.boundingRect();
-  QImage img(bounding_rect.width(),
-             bounding_rect.height(),
-             QImage::Format_ARGB32_Premultiplied);
-  if (!img.isNull()) {
-    img.fill(background_);
-    // need to remove cache to ensure image is correct
-    std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
-    const auto last_paint_time = last_paint_time_;
-    block_drawing_ = nullptr;
+  // need to remove cache to ensure image is correct
+  std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
+  const auto last_paint_time = last_paint_time_;
+  block_drawing_ = nullptr;
 
-    render(&img, {0, 0}, save_region);
-    if (!img.save(save_filepath)) {
-      logger_->warn(utl::GUI,
-                    11,
-                    "Failed to write image: {}",
-                    save_filepath.toStdString());
-    }
-    // restore cache
-    block_drawing_ = std::move(saved_cache);
-    last_paint_time_ = last_paint_time;
-  } else {
-    logger_->warn(utl::GUI,
-                  12,
-                  "Image is too big to be generated: {}px x {}px",
-                  bounding_rect.width(),
-                  bounding_rect.height());
-  }
+  Utils::renderImage(save_filepath,
+                     this,
+                     bounding_rect.width(),
+                     bounding_rect.height(),
+                     bounding_rect,
+                     background_,
+                     logger_);
+
+  // restore cache
+  block_drawing_ = std::move(saved_cache);
+  last_paint_time_ = last_paint_time;
 
   pixels_per_dbu_ = old_pixels_per_dbu;
 }

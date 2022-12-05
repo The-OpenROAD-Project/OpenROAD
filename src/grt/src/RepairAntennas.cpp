@@ -69,14 +69,15 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
 
 bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
                                             int max_routing_layer,
-                                            odb::dbMTerm* diode_mterm)
+                                            odb::dbMTerm* diode_mterm,
+                                            float ratio_margin)
 {
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
   for (auto& [db_net, route] : routing) {
     if (db_net->getWire()) {
       std::vector<ant::Violation> net_violations
-          = arc_->getAntennaViolations(db_net, diode_mterm);
+          = arc_->getAntennaViolations(db_net, diode_mterm, ratio_margin);
       if (!net_violations.empty()) {
         antenna_violations_[db_net] = net_violations;
         debugPrint(logger_,
