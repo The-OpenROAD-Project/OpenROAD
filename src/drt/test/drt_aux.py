@@ -19,7 +19,6 @@ def detailed_route(design, *,
                    bottom_routing_layer="",
                    top_routing_layer="",
                    verbose=1,
-                   param="",
                    distributed=False,
                    remote_host=None,
                    remote_port=None,
@@ -32,13 +31,6 @@ def detailed_route(design, *,
                    save_guide_updates=False):
 
     router = design.getTritonRoute()
-
-    if param != "":
-        utl.warn(utl.DRT, 8001, "param file overrides all other arguments")
-        router.readParams(param)
-        router.main()
-        return    
-
     params = drt.ParamStruct()
     params.outputMazeFile = output_maze
     params.outputDrcFile = output_drc

@@ -4,7 +4,7 @@
 # regression is here as an example only (note the use of the global router 
 # for reading in the guide file and also using tech to set the number of
 # threads for multi-threaded execution)
-from openroad import Design, Tech
+from openroad import Design, Tech, set_thread_count
 import helpers
 import drt_aux
 import grt
@@ -18,7 +18,7 @@ design.readDef("aes_nangate45_preroute.def")
 
 gr = design.getGlobalRouter()
 gr.readGuides("aes_nangate45.route_guide")
-tech.set_thread_count(4)
+set_thread_count(4)
 
 drt_aux.detailed_route(design, output_drc="results/aes_nangate45.output.drc-py.rpt",
                        output_maze="results/aes_nangate45.output.maze-py.log",

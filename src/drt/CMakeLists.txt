@@ -240,16 +240,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(drt_py
     PUBLIC
-      odb
-      stt
-      OpenSTA
-      utl
-      dst
-      dbSta
-      Threads::Threads
-      OpenMP::OpenMP_CXX
-      ${Boost_LIBRARIES}
-      ZLIB::ZLIB
+      drt
   )
 
 endif()
