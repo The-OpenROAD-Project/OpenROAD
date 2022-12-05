@@ -605,6 +605,16 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
       coordHigh -= diffHigh;
   }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
+  if (idx2 < idx1) {
+    const double dbu = getDesign()->getTopBlock()->getDBUPerUU();
+    logger_->error(DRT,
+                   406,
+                   "No {} tracks found in ({}, {}) for layer {}",
+                   isH ? "horizontal" : "vertical",
+                   coordLow / dbu,
+                   coordHigh / dbu,
+                   getTech()->getLayer(lNum)->getName());
+  }
 }
 
 frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)

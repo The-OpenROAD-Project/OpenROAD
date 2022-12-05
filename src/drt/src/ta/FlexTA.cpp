@@ -120,7 +120,7 @@ int FlexTA::initTA_helper(int iter,
   vector<vector<unique_ptr<FlexTAWorker>>> workers;
   if (isH) {
     for (int i = offset; i < (int) ygp.getCount(); i += size) {
-      auto uworker = make_unique<FlexTAWorker>(getDesign());
+      auto uworker = make_unique<FlexTAWorker>(getDesign(), logger_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -141,7 +141,7 @@ int FlexTA::initTA_helper(int iter,
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      auto uworker = make_unique<FlexTAWorker>(getDesign());
+      auto uworker = make_unique<FlexTAWorker>(getDesign(), logger_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
