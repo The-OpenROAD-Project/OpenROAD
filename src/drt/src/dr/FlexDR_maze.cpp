@@ -3079,13 +3079,15 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       }
       // init for next path
       if (currIdx.z() < prevIdx.z()) {
+        // get the bottom layer box of the current via to initialize the area
+        // for the next shape
         currArea = getHalfViaEncArea(
-            prevIdx.z() - 1, true, net->getFrNet()->getNondefaultRule());
+            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
         startViaHalfEncArea = getHalfViaEncArea(
-            prevIdx.z() - 1, true, net->getFrNet()->getNondefaultRule());
+            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
       } else {
-        currArea = getHalfViaEncArea(
-            prevIdx.z(), false, net->getFrNet()->getNondefaultRule());
+        // get the top layer box of the current via to initialize the area
+        // for the next shape
         currArea = getHalfViaEncArea(
             prevIdx.z(), false, net->getFrNet()->getNondefaultRule());
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(prevIdx.z(), false);
