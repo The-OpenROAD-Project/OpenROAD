@@ -1,0 +1,23 @@
+name: Feature Requests and Enhancements
+description: Have any ideas? Find any shortcomings? Feel free to share them.
+
+body:
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Description
+      description: What do you think is missing from OpenROAD? Be clear and concise.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested Solution
+      description: Do you have any thoughts on how to address this?
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about your proposal here.
+    validations:
+      required: false

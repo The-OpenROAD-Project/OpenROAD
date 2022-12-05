@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <QComboBox>
-#include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
