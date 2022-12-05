@@ -61,6 +61,52 @@ extern char** cmd_argv;
 
 namespace gui {
 
+static QApplication* application = nullptr;
+static void message_handler(QtMsgType type,
+                            const QMessageLogContext& context,
+                            const QString& msg)
+{
+  auto* logger = ord::OpenRoad::openRoad()->getLogger();
+
+  bool suppress_warning = false;
+#if NDEBUG
+  if (application != nullptr) {
+    if (application->platformName() == "offscreen"
+        && msg.contains("This plugin does not support")) {
+      suppress_warning = true;
+    }
+  }
+#endif
+
+  std::string print_msg;
+  if (context.file != nullptr && context.function != nullptr) {
+    print_msg = fmt::format("{}:{}:{}: {}",
+                            context.file,
+                            context.function,
+                            context.line,
+                            msg.toStdString());
+  } else {
+    print_msg = msg.toStdString();
+  }
+  switch (type) {
+    case QtDebugMsg:
+      logger->debug(utl::GUI, 1, print_msg);
+      break;
+    case QtInfoMsg:
+      logger->info(utl::GUI, 75, print_msg);
+      break;
+    case QtWarningMsg:
+      if (!suppress_warning) {
+        logger->warn(utl::GUI, 76, print_msg);
+      }
+      break;
+    case QtCriticalMsg:
+    case QtFatalMsg:
+      logger->error(utl::GUI, 77, print_msg);
+      break;
+  }
+}
+
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
 {
   if (!db) {
@@ -1060,6 +1106,8 @@ int startGui(int& argc,
   gui->clearContinueAfterClose();
 
   QApplication app(argc, argv);
+  application = &app;
+  qInstallMessageHandler(message_handler);
 
   // Default to 12 point for easier reading
   QFont font = QApplication::font();
@@ -1181,6 +1229,8 @@ int startGui(int& argc,
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
+  application = nullptr;
+  qInstallMessageHandler(0);
 
   resetConversions();
 
