@@ -35,11 +35,11 @@
 
 %{
 
-#include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 %}
 
+%include <std_string.i>
 %include "../../Exception-py.i"
 %include "triton_route/TritonRoute.h"

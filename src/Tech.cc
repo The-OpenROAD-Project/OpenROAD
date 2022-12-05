@@ -83,4 +83,16 @@ void Tech::readLiberty(const std::string& file_name)
                    true /* infer_latches */);
 }
 
+void Tech::set_thread_count(int threads)
+{
+  auto app = OpenRoad::openRoad();
+  app->setThreadCount(threads);
+}
+
+int Tech::thread_count()
+{
+  auto app = OpenRoad::openRoad();
+  app->getThreadCount();
+}
+
 }  // namespace ord

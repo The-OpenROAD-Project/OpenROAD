@@ -54,6 +54,8 @@ class Tech
   void readLef(const std::string& file_name);
   void readLiberty(const std::string& file_name);
   odb::dbDatabase* getDB();
+  void set_thread_count(const int threads);
+  int thread_count();
 
  private:
   odb::dbDatabase* db_;
