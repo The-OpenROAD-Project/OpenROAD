@@ -164,7 +164,7 @@ OpenRoad::~OpenRoad()
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
 #if (CMAKE_SYSTEM_NAME != Darwin)
-   deleteMacroPlacer2(macro_placer2_);
+  deleteMacroPlacer2(macro_placer2_);
 #endif
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
