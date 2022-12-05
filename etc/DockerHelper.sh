@@ -20,7 +20,7 @@ usage: $0 [CMD] [OPTIONS]
   OPTIONS:
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
                                   only if the target is 'builder'.
-  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20 and ubuntu22.
+  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20, ubuntu22 and rhel.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -58,6 +58,9 @@ _setup() {
             ;;
         "ubuntu22")
             osBaseImage="ubuntu:22.04"
+            ;;
+        "rhel")
+            osBaseImage="redhat/ubi8"
             ;;
         *)
             echo "Target OS ${os} not supported" >&2
@@ -155,6 +158,10 @@ _push() {
                     2>&1 | tee build/create-ubuntu22-latest.log
                 ./etc/DockerHelper.sh create -target=dev -os=ubuntu22 -sha \
                     2>&1 | tee build/create-ubuntu22-${commitSha}.log
+                ./etc/DockerHelper.sh create -target=dev -os=rhel \
+                    2>&1 | tee build/create-rhel-latest.log
+                ./etc/DockerHelper.sh create -target=dev -os=rhel -sha \
+                    2>&1 | tee build/create-rhel-${commitSha}.log
 
                 # test image with sha and latest tag for all os and compiler
                 ./etc/DockerHelper.sh test -target=builder \
@@ -169,13 +176,19 @@ _push() {
                     2>&1 | tee build/test-ubuntu22-gcc-latest.log
                 ./etc/DockerHelper.sh test -target=builder -os=ubuntu22 -compiler=clang \
                     2>&1 | tee build/test-ubuntu22-clang-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=rhel \
+                    2>&1 | tee build/test-rhel-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=rhel -compiler=clang \
+                    2>&1 | tee build/test-rhel-clang-latest.log
 
                 echo [DRY-RUN] docker push openroad/centos7-dev:latest
                 echo [DRY-RUN] docker push openroad/centos7-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/ubuntu20-dev:latest
                 echo [DRY-RUN] docker push openroad/ubuntu20-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/ubuntu22-dev:latest
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}                
+                echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}
+                echo [DRY-RUN] docker push openroad/rhel-dev:latest
+                echo [DRY-RUN] docker push openroad/rhel-dev:${commitSha}              
 
             else
                 echo "Will not push."
