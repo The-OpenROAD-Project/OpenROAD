@@ -2,8 +2,6 @@ name: Test DependencyInstaller script
 on:
   schedule:
   - cron: "0 8 * * MON"
-  push:
-  pull_request:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
