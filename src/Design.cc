@@ -192,4 +192,10 @@ triton_route::TritonRoute* Design::getTritonRoute()
   return app->getTritonRoute();
 }
 
+dpo::Optdp* Design::getOptdp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOptdp();
+}
+
 }  // namespace ord

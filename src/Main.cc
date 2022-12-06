@@ -91,6 +91,7 @@ using std::string;
   X(tap)                                 \
   X(cts)                                 \
   X(drt)                                 \
+  X(dpo)                                 \
   X(odb)
 
 #define FOREACH_TOOL(X)            \
