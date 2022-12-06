@@ -1018,7 +1018,7 @@ void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
-  stagui.setIncludeCaptruePaths(false);
+  stagui.setIncludeCapturePaths(false);
 
   TimingPathList paths = stagui.getTimingPaths(source_pin);
 

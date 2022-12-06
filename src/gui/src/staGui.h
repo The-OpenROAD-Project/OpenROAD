@@ -71,7 +71,9 @@ class TimingPathsModel : public QAbstractTableModel
   Q_OBJECT
 
  public:
-  TimingPathsModel(STAGuiInterface* sta, QObject* parent = nullptr);
+  TimingPathsModel(bool is_setup,
+                   STAGuiInterface* sta,
+                   QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -99,6 +101,7 @@ class TimingPathsModel : public QAbstractTableModel
                      const std::set<sta::Pin*>& to);
 
   STAGuiInterface* sta_;
+  bool is_setup_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
   enum Column
@@ -115,7 +118,7 @@ class TimingPathsModel : public QAbstractTableModel
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel(bool is_hold,
+  TimingPathDetailModel(bool is_capture,
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
 

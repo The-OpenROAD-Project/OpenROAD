@@ -323,7 +323,7 @@ class STAGuiInterface
   }
 
   bool isIncludeCapturePaths() const { return include_capture_path_; }
-  void setIncludeCaptruePaths(bool value) { include_capture_path_ = value; }
+  void setIncludeCapturePaths(bool value) { include_capture_path_ = value; }
 
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
