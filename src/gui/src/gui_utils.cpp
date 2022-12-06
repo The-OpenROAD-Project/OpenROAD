@@ -86,6 +86,19 @@ void Utils::renderImage(const QString& path,
                         const QColor& background,
                         utl::Logger* logger)
 {
+  const int max_size
+      = 7200;  // real max per Qt: 32768 (~1.5GB in memory max @ 7200)
+  if (std::max(width_px, height_px) >= max_size) {
+    if (width_px > height_px) {
+      const double ratio = static_cast<double>(height_px) / width_px;
+      width_px = max_size;
+      height_px = ratio * max_size;
+    } else {
+      const double ratio = static_cast<double>(width_px) / height_px;
+      height_px = max_size;
+      width_px = ratio * max_size;
+    }
+  }
   QImage img(width_px, height_px, QImage::Format_ARGB32_Premultiplied);
   if (!img.isNull()) {
     img.fill(background);
@@ -99,7 +112,7 @@ void Utils::renderImage(const QString& path,
     if (logger != nullptr) {
       logger->warn(utl::GUI,
                    12,
-                   "Image is too big to be generated: {}px x {}px",
+                   "Image size is not valid: {}px x {}px",
                    width_px,
                    height_px);
     }
