@@ -2982,28 +2982,28 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     currArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
   }
   frCoord startViaHalfEncArea = 0, endViaHalfEncArea = 0;
-  FlexMazeIdx prevIdx = points[0], currIdx;
+  FlexMazeIdx currIdx = points[0], nextIdx;
   int i;
   int prev_i = 0;  // path start point
   for (i = 1; i < (int) points.size(); ++i) {
-    currIdx = points[i];
+    nextIdx = points[i];
     // check minAreaViolation when change layer, or last segment
-    if (currIdx.z() != prevIdx.z()) {
-      layerNum = gridGraph_.getLayerNum(prevIdx.z());
+    if (nextIdx.z() != currIdx.z()) {
+      layerNum = gridGraph_.getLayerNum(currIdx.z());
       minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-      // add next via enclosure
-      if (currIdx.z() < prevIdx.z()) {
+      // add curr via enclosure
+      if (nextIdx.z() < currIdx.z()) {
         currArea += getHalfViaEncArea(
-            prevIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
+            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
         endViaHalfEncArea = getHalfViaEncArea(
-            prevIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
+            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
       } else {
         currArea += getHalfViaEncArea(
-            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
         endViaHalfEncArea = getHalfViaEncArea(
-            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
       }
       // push to minArea violation
       if (currArea < reqArea) {
@@ -3078,46 +3078,46 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
       }
       // init for next path
-      if (currIdx.z() < prevIdx.z()) {
+      if (nextIdx.z() < currIdx.z()) {
         // get the bottom layer box of the current via to initialize the area
         // for the next shape
         currArea = getHalfViaEncArea(
-            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
         startViaHalfEncArea = getHalfViaEncArea(
-            prevIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
       } else {
         // get the top layer box of the current via to initialize the area
         // for the next shape
         currArea = getHalfViaEncArea(
-            prevIdx.z(), false, net->getFrNet()->getNondefaultRule());
-        startViaHalfEncArea = gridGraph_.getHalfViaEncArea(prevIdx.z(), false);
+            currIdx.z() + 1, true, net->getFrNet()->getNondefaultRule());
+        startViaHalfEncArea = gridGraph_.getHalfViaEncArea(nextIdx.z(), false);
       }
       prev_i = i;
     }
     // add the wire area
     else {
-      layerNum = gridGraph_.getLayerNum(prevIdx.z());
+      layerNum = gridGraph_.getLayerNum(currIdx.z());
       minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       auto pathWidth = getTech()->getLayer(layerNum)->getWidth();
       Point bp, ep;
-      gridGraph_.getPoint(bp, prevIdx.x(), prevIdx.y());
-      gridGraph_.getPoint(ep, currIdx.x(), currIdx.y());
+      gridGraph_.getPoint(bp, currIdx.x(), currIdx.y());
+      gridGraph_.getPoint(ep, nextIdx.x(), nextIdx.y());
       frCoord pathLength = abs(bp.x() - ep.x()) + abs(bp.y() - ep.y());
       if (currArea < reqArea) {
         currArea += pathLength * pathWidth;
       }
     }
-    prevIdx = currIdx;
+    currIdx = nextIdx;
   }
   // add boundary area for last segment
   if (ENABLE_BOUNDARY_MAR_FIX) {
-    layerNum = gridGraph_.getLayerNum(prevIdx.z());
+    layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-    if (areaMap.find(prevIdx) != areaMap.end()) {
-      currArea += areaMap.find(prevIdx)->second;
+    if (areaMap.find(currIdx) != areaMap.end()) {
+      currArea += areaMap.find(currIdx)->second;
     }
     endViaHalfEncArea = 0;
     if (currArea < reqArea) {
