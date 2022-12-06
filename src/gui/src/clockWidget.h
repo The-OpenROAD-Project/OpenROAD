@@ -185,7 +185,7 @@ class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QPolygonF getPolygon() const;
 };
 
-// Handles drawing the buffer nodes in the tree
+// Handles drawing the buffer/inverter nodes in the tree
 class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
@@ -195,7 +195,12 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
                                   QGraphicsItem* parent = nullptr);
   ~ClockBufferNodeGraphicsViewItem() {}
 
-  virtual QString getType() const override { return "Buffer"; }
+  void setIsInverter(bool inverter) { inverter_ = inverter; }
+
+  virtual QString getType() const override
+  {
+    return inverter_ ? "Inverter" : "Buffer";
+  }
 
   virtual QPointF getBottomAnchor() const override;
 
@@ -212,35 +217,10 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   qreal delay_y_;
   QString input_pin_;
   QString output_pin_;
-};
 
-// Handles drawing the inverter nodes in the tree
-class ClockInverterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
-{
- public:
-  ClockInverterNodeGraphicsViewItem(odb::dbITerm* input_term,
-                                    odb::dbITerm* output_term,
-                                    qreal delay_y,
-                                    QGraphicsItem* parent = nullptr);
-  ~ClockInverterNodeGraphicsViewItem() {}
+  bool inverter_;
 
-  virtual QString getType() const override { return "Inverter"; }
-
-  virtual QPointF getBottomAnchor() const override;
-
-  QRectF boundingRect() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
-
-  virtual QPainterPath shape() const override;
-
- private:
-  qreal delay_y_;
-  QString input_pin_;
-  QString output_pin_;
-
-  constexpr qreal bar_scale_size_ = 0.1;
+  constexpr static qreal bar_scale_size_ = 0.1;
 };
 
 // Handles drawing the register node for a tree
