@@ -2998,10 +2998,13 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       if (nextIdx.z() < currIdx.z()) {
         if (prev_is_wire) {
           currArea += getHalfViaEncArea(
-            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
+              currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
         } else {
-          currArea = std::max((frArea)getHalfViaEncArea(
-            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule()) * 2, currArea);
+          currArea = std::max(
+              (frArea) getHalfViaEncArea(
+                  currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule())
+                  * 2,
+              currArea);
         }
         endViaHalfEncArea = getHalfViaEncArea(
             currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
@@ -3010,8 +3013,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           currArea += getHalfViaEncArea(
               currIdx.z(), true, net->getFrNet()->getNondefaultRule());
         } else {
-          currArea = std::max((frArea)getHalfViaEncArea(
-              currIdx.z(), true, net->getFrNet()->getNondefaultRule()) * 2, currArea);
+          currArea = std::max(
+              (frArea) getHalfViaEncArea(
+                  currIdx.z(), true, net->getFrNet()->getNondefaultRule())
+                  * 2,
+              currArea);
         }
         endViaHalfEncArea = getHalfViaEncArea(
             currIdx.z(), true, net->getFrNet()->getNondefaultRule());
@@ -3092,15 +3098,18 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       if (nextIdx.z() < currIdx.z()) {
         // get the bottom layer box of the current via to initialize the area
         // for the next shape
-        currArea = getHalfViaEncArea(
-            currIdx.z() - 1, true, net->getFrNet()->getNondefaultRule()) * 2;
+        currArea
+            = getHalfViaEncArea(
+                  currIdx.z() - 1, true, net->getFrNet()->getNondefaultRule())
+              * 2;
         startViaHalfEncArea = getHalfViaEncArea(
             currIdx.z() - 1, true, net->getFrNet()->getNondefaultRule());
       } else {
         // get the top layer box of the current via to initialize the area
         // for the next shape
         currArea = getHalfViaEncArea(
-            currIdx.z(), false, net->getFrNet()->getNondefaultRule()) * 2;
+                       currIdx.z(), false, net->getFrNet()->getNondefaultRule())
+                   * 2;
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(nextIdx.z(), false);
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(currIdx.z(), false);
       }
