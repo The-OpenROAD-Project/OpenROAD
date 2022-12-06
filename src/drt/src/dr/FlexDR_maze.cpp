@@ -2985,6 +2985,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
   FlexMazeIdx currIdx = points[0], nextIdx;
   int i;
   int prev_i = 0;  // path start point
+  bool prev_is_wire = true;
   for (i = 1; i < (int) points.size(); ++i) {
     nextIdx = points[i];
     // check minAreaViolation when change layer, or last segment
@@ -2995,13 +2996,23 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add curr via enclosure
       if (nextIdx.z() < currIdx.z()) {
-        currArea += getHalfViaEncArea(
+        if (prev_is_wire) {
+          currArea += getHalfViaEncArea(
             currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
+        } else {
+          currArea = std::max((frArea)getHalfViaEncArea(
+            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule()) * 2, currArea);
+        }
         endViaHalfEncArea = getHalfViaEncArea(
             currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
       } else {
-        currArea += getHalfViaEncArea(
-            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
+        if (prev_is_wire) {
+          currArea += getHalfViaEncArea(
+              currIdx.z(), true, net->getFrNet()->getNondefaultRule());
+        } else {
+          currArea = std::max((frArea)getHalfViaEncArea(
+              currIdx.z(), true, net->getFrNet()->getNondefaultRule()) * 2, currArea);
+        }
         endViaHalfEncArea = getHalfViaEncArea(
             currIdx.z(), true, net->getFrNet()->getNondefaultRule());
       }
@@ -3082,17 +3093,19 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         // get the bottom layer box of the current via to initialize the area
         // for the next shape
         currArea = getHalfViaEncArea(
-            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z() - 1, true, net->getFrNet()->getNondefaultRule()) * 2;
         startViaHalfEncArea = getHalfViaEncArea(
-            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
+            currIdx.z() - 1, true, net->getFrNet()->getNondefaultRule());
       } else {
         // get the top layer box of the current via to initialize the area
         // for the next shape
         currArea = getHalfViaEncArea(
-            currIdx.z() + 1, true, net->getFrNet()->getNondefaultRule());
+            currIdx.z(), false, net->getFrNet()->getNondefaultRule()) * 2;
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(nextIdx.z(), false);
+        startViaHalfEncArea = gridGraph_.getHalfViaEncArea(currIdx.z(), false);
       }
       prev_i = i;
+      prev_is_wire = false;
     }
     // add the wire area
     else {
@@ -3106,8 +3119,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       gridGraph_.getPoint(ep, nextIdx.x(), nextIdx.y());
       frCoord pathLength = abs(bp.x() - ep.x()) + abs(bp.y() - ep.y());
       if (currArea < reqArea) {
+        currArea /= 2;
         currArea += pathLength * pathWidth;
       }
+      prev_is_wire = true;
     }
     currIdx = nextIdx;
   }
