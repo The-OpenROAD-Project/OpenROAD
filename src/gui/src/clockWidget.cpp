@@ -564,6 +564,8 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
   connect(menu_->addAction("Save"), SIGNAL(triggered()), this, SIGNAL(save()));
 
   clear_path_->setEnabled(false);
+
+  setBackgroundBrush(Qt::white);
 }
 
 void ClockTreeScene::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
