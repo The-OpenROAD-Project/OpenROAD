@@ -54,6 +54,7 @@
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
 #include "sta/Corner.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
@@ -376,6 +377,73 @@ QPainterPath ClockBufferNodeGraphicsViewItem::shape() const
 }
 
 void ClockBufferNodeGraphicsViewItem::paint(
+    QPainter* painter,
+    const QStyleOptionGraphicsItem* option,
+    QWidget* widget)
+{
+  const QColor outline = buffer_color_;
+  const QColor fill(outline.lighter());
+
+  QPen pen(outline);
+  pen.setWidth(1);
+  pen.setCosmetic(true);
+
+  if (isSelected()) {
+    pen.setWidth(2);
+  }
+
+  painter->setBrush(QBrush(fill, Qt::SolidPattern));
+
+  painter->setPen(pen);
+  painter->drawPath(shape());
+}
+
+////////////////
+
+ClockInverterNodeGraphicsViewItem::ClockInverterNodeGraphicsViewItem(
+    odb::dbITerm* input_term,
+    odb::dbITerm* output_term,
+    qreal delay_y,
+    QGraphicsItem* parent)
+    : ClockNodeGraphicsViewItem(parent),
+      delay_y_(delay_y),
+      input_pin_(input_term->getMTerm()->getConstName()),
+      output_pin_(output_term->getMTerm()->getConstName())
+{
+  odb::dbInst* inst = input_term->getInst();
+  setName(inst);
+  setData(0, QVariant::fromValue(inst));
+}
+
+QPointF ClockInverterNodeGraphicsViewItem::getBottomAnchor() const
+{
+  QPointF pt = pos();
+  pt.setY(pt.y() + delay_y_);
+  return pt;
+}
+
+QRectF ClockInverterNodeGraphicsViewItem::boundingRect() const
+{
+  return shape().boundingRect();
+}
+
+QPainterPath ClockInverterNodeGraphicsViewItem::shape() const
+{
+  const qreal size = getSize();
+  const qreal bar_size = size * bar_scale_size_;
+  QPainterPath path;
+  path.addPolygon(
+      ClockBufferNodeGraphicsViewItem::getBufferShape(size - bar_size));
+  path.addEllipse(QPointF(0, size - bar_size / 2), bar_size / 2, bar_size / 2);
+  path.moveTo(0, size);
+  path.lineTo(0, delay_y_);
+  const qreal fin_width = size / 10;
+  path.moveTo(-fin_width / 2, delay_y_);
+  path.lineTo(fin_width / 2, delay_y_);
+  return path;
+}
+
+void ClockInverterNodeGraphicsViewItem::paint(
     QPainter* painter,
     const QStyleOptionGraphicsItem* option,
     QWidget* widget)
@@ -1030,8 +1098,18 @@ ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
   const qreal delay_y
       = convertDelayToY(output_pin.delay) - convertDelayToY(input_pin.delay);
 
-  ClockNodeGraphicsViewItem* node
-      = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
+  ClockNodeGraphicsViewItem* node = nullptr;
+  auto* lib_port = network->libertyPort(output_pin.pin);
+  if (lib_port != nullptr) {
+    if (lib_port->function()->op() == sta::FuncExpr::op_not) {
+      node = new ClockInverterNodeGraphicsViewItem(
+          input_term, output_term, delay_y);
+    }
+  }
+  if (node == nullptr) {
+    node
+        = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
+  }
   node->setPos({x, convertDelayToY(input_pin.delay)});
   scene_->addItem(node);
 

@@ -214,6 +214,35 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QString output_pin_;
 };
 
+// Handles drawing the inverter nodes in the tree
+class ClockInverterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
+{
+ public:
+  ClockInverterNodeGraphicsViewItem(odb::dbITerm* input_term,
+                                    odb::dbITerm* output_term,
+                                    qreal delay_y,
+                                    QGraphicsItem* parent = nullptr);
+  ~ClockInverterNodeGraphicsViewItem() {}
+
+  virtual QString getType() const override { return "Inverter"; }
+
+  virtual QPointF getBottomAnchor() const override;
+
+  QRectF boundingRect() const override;
+  void paint(QPainter* painter,
+             const QStyleOptionGraphicsItem* option,
+             QWidget* widget) override;
+
+  virtual QPainterPath shape() const override;
+
+ private:
+  qreal delay_y_;
+  QString input_pin_;
+  QString output_pin_;
+
+  constexpr qreal bar_scale_size_ = 0.1;
+};
+
 // Handles drawing the register node for a tree
 class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
