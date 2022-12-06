@@ -1,8 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,50 +30,32 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#include "findDialog.h"
+#pragma once
 
-#include <string>
+#include <QString>
+#include <QWidget>
 
-#include "gui/gui.h"
+namespace utl {
+class Logger;
+}
 
 namespace gui {
-FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
+
+class Utils
 {
-  setupUi(this);
-}
-
-void FindObjectDialog::accept()
-{
-  std::string pattern_to_find = findObjEdit->text().toStdString();
-  bool match_case = false;
-  if (matchCaseCheckBox->isEnabled()) {
-    match_case = matchCaseCheckBox->isChecked();
-  }
-
-  if (findObjType->currentText() == "Instance") {
-    Gui::get()->select("Inst",
-                       pattern_to_find.c_str(),
-                       match_case,
-                       addToHighlightCheckBox->isChecked() ? 0 : -1);
-  } else if (findObjType->currentText() == "Net") {
-    Gui::get()->select("Net",
-                       pattern_to_find.c_str(),
-                       match_case,
-                       addToHighlightCheckBox->isChecked() ? 0 : -1);
-  } else {
-    Gui::get()->select("BTerm",
-                       pattern_to_find.c_str(),
-                       match_case,
-                       addToHighlightCheckBox->isChecked() ? 0 : -1);
-  }
-
-  QDialog::accept();
-}
-
-void FindObjectDialog::reject()
-{
-  QDialog::reject();
-}
+ public:
+  static QString requestImageSavePath(QWidget* parent, const QString& title);
+  static QString fixImagePath(const QString& path, utl::Logger* logger);
+  static void renderImage(const QString& path,
+                          QWidget* widget,
+                          int width_px,
+                          int height_px,
+                          const QRect& render_rect,
+                          const QColor& background,
+                          utl::Logger* logger);
+};
 
 }  // namespace gui
