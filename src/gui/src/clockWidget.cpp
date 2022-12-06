@@ -1072,7 +1072,12 @@ void ClockTreeView::save(const QString& path)
   }
   save_path = Utils::fixImagePath(save_path, logger_);
 
-  const QRect render_rect = viewport()->rect();
+  QRect render_rect = viewport()->rect();
+  if (!render_rect.isValid()) {
+    // When in offscreen mode the viewport is not sized
+    render_rect = scene_->sceneRect().toRect();
+    render_rect.translate(-render_rect.left(), -render_rect.top());
+  }
   show_mouse_time_tick_ = false;
   Utils::renderImage(save_path,
                      viewport(),
