@@ -616,6 +616,7 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
 
   setRenderHint(QPainter::Antialiasing);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+  setBackgroundBrush(Qt::white);
 
   scene_ = static_cast<ClockTreeScene*>(scene());
 
