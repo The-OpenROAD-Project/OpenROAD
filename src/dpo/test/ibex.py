@@ -8,7 +8,7 @@ design = Design(tech)
 design.readDef("ibex.def")
 
 design.getOptdp().improvePlacement(1, 0, 0)
-design.evalTclString("check_placement")
+design.getOpendp().checkPlacement(False)
 
 def_file = helpers.make_result_file("ibex.def")
 design.writeDef(def_file)
