@@ -78,16 +78,11 @@ QString Utils::fixImagePath(const QString& path, utl::Logger* logger)
   return fixed_path;
 }
 
-void Utils::renderImage(const QString& path,
-                        QWidget* widget,
-                        int width_px,
-                        int height_px,
-                        const QRect& render_rect,
-                        const QColor& background,
-                        utl::Logger* logger)
+QSize Utils::adjustMaxImageSize(const QSize& size)
 {
-  const int max_size
-      = 7200;  // real max per Qt: 32768 (~1.5GB in memory max @ 7200)
+  int width_px = size.width();
+  int height_px = size.height();
+  const int max_size = 7200;  // ~1.5GB in memory max @ 7200
   if (std::max(width_px, height_px) >= max_size) {
     if (width_px > height_px) {
       const double ratio = static_cast<double>(height_px) / width_px;
@@ -99,7 +94,23 @@ void Utils::renderImage(const QString& path,
       width_px = ratio * max_size;
     }
   }
-  QImage img(width_px, height_px, QImage::Format_ARGB32_Premultiplied);
+  return QSize(width_px, height_px);
+}
+
+void Utils::renderImage(const QString& path,
+                        QWidget* widget,
+                        int width_px,
+                        int height_px,
+                        const QRect& render_rect,
+                        const QColor& background,
+                        utl::Logger* logger)
+{
+  const QSize img_size = adjustMaxImageSize(QSize(width_px, height_px));
+  QImage img(img_size, QImage::Format_ARGB32_Premultiplied);
+  const qreal render_ratio
+      = static_cast<qreal>(std::max(img_size.width(), img_size.height()))
+        / std::max(render_rect.width(), render_rect.height());
+  img.setDevicePixelRatio(render_ratio);
   if (!img.isNull()) {
     img.fill(background);
 
