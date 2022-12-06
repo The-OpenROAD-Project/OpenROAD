@@ -54,6 +54,7 @@
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"
 #include "sta/Corner.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
@@ -332,7 +333,8 @@ ClockBufferNodeGraphicsViewItem::ClockBufferNodeGraphicsViewItem(
     : ClockNodeGraphicsViewItem(parent),
       delay_y_(delay_y),
       input_pin_(input_term->getMTerm()->getConstName()),
-      output_pin_(output_term->getMTerm()->getConstName())
+      output_pin_(output_term->getMTerm()->getConstName()),
+      inverter_(false)
 {
   odb::dbInst* inst = input_term->getInst();
   setName(inst);
@@ -365,8 +367,18 @@ QRectF ClockBufferNodeGraphicsViewItem::boundingRect() const
 QPainterPath ClockBufferNodeGraphicsViewItem::shape() const
 {
   const qreal size = getSize();
+  const qreal bar_size = size * bar_scale_size_;
+
   QPainterPath path;
-  path.addPolygon(getBufferShape(size));
+  qreal buffer_size = size;
+  if (inverter_) {
+    buffer_size -= bar_size;
+  }
+  path.addPolygon(getBufferShape(buffer_size));
+  if (inverter_) {
+    path.addEllipse(
+        QPointF(0, size - bar_size / 2), bar_size / 2, bar_size / 2);
+  }
   path.moveTo(0, size);
   path.lineTo(0, delay_y_);
   const qreal fin_width = size / 10;
@@ -1030,8 +1042,15 @@ ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
   const qreal delay_y
       = convertDelayToY(output_pin.delay) - convertDelayToY(input_pin.delay);
 
-  ClockNodeGraphicsViewItem* node
+  ClockBufferNodeGraphicsViewItem* node
       = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
+
+  auto* lib_port = network->libertyPort(output_pin.pin);
+  if (lib_port != nullptr) {
+    if (lib_port->function()->op() == sta::FuncExpr::op_not) {
+      node->setIsInverter(true);
+    }
+  }
   node->setPos({x, convertDelayToY(input_pin.delay)});
   scene_->addItem(node);
 
