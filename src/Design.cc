@@ -186,4 +186,10 @@ cts::TritonCTS* Design::getTritonCts()
   return app->getTritonCts();
 }
 
+triton_route::TritonRoute* Design::getTritonRoute()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonRoute();
+}
+
 }  // namespace ord

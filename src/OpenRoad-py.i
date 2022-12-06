@@ -89,3 +89,12 @@ db_has_tech();
 
 odb::dbBlock *
 get_db_block();
+
+%inline %{
+
+namespace ord {
+  void set_thread_count(int threads);
+  int thread_count();
+}
+
+%}
