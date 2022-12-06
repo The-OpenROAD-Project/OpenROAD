@@ -91,8 +91,7 @@ void Utils::renderImage(const QString& path,
     img.fill(background);
 
     widget->render(&img, {0, 0}, render_rect);
-    if (!img.convertToFormat(QImage::Format_RGB32).save(path)
-        && logger != nullptr) {
+    if (!img.save(path) && logger != nullptr) {
       logger->warn(
           utl::GUI, 11, "Failed to write image: {}", path.toStdString());
     }
