@@ -84,7 +84,9 @@ class AntennaChecker
 
   void findMaxWireLength();
 
-  vector<Violation> getAntennaViolations(dbNet* net, odb::dbMTerm* diode_mterm);
+  vector<Violation> getAntennaViolations(dbNet* net,
+                                         odb::dbMTerm* diode_mterm,
+                                         float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
 
@@ -203,6 +205,7 @@ class AntennaChecker
   utl::Logger* logger_;
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_;
+  float ratio_margin_;
   std::string report_file_name_;
 
   static constexpr int max_diode_count_per_gate = 10;

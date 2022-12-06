@@ -17,7 +17,7 @@ jobs:
   testInstaller:
     strategy:
       matrix:
-        os: ["ubuntu20", "ubuntu22", "centos7", "debian10", "debian11"]
+        os: ["ubuntu20", "ubuntu22", "centos7", "rhel", "debian10", "debian11"]
         args: ["", "-local"]
         compilers: ["gcc", "clang"]
     runs-on: ubuntu-latest

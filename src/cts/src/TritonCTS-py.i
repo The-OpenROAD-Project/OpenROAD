@@ -1,6 +1,8 @@
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,72 +30,22 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 %{
-
-#include "ant/AntennaChecker.hh"
+#include "cts/TritonCTS.h"
+#include "CtsOptions.h"
+#include "TechChar.h"
 #include "ord/OpenRoad.hh"
 
-ant::AntennaChecker *
-getAntennaChecker()
-{
-  return ord::OpenRoad::openRoad()->getAntennaChecker();
-}
-
-namespace ord {
-// Defined in OpenRoad.i
-odb::dbDatabase *getDb();
-}
-
+using namespace cts;
 %}
 
-%include "../../Exception.i"
+%include "../../Exception-py.i"
 
-%inline %{
+%include <std_string.i>
+%include <std_vector.i>
 
-namespace ant {
-
-int
-check_antennas(const char *net_name, bool verbose)
-{
-  auto app = ord::OpenRoad::openRoad();
-  auto block = app->getDb()->getChip()->getBlock();
-  dbNet* net = nullptr;
-  if (strlen(net_name) > 0) {
-    net = block->findNet(net_name);
-    if (!net) {
-      auto logger = app->getLogger();
-      logger->error(utl::ANT, 12, "Net {} not found.", net_name);
-    }
-  }
-  return getAntennaChecker()->checkAntennas(net, verbose);
-}
-
-int
-antenna_violation_count()
-{
-  return getAntennaChecker()->antennaViolationCount();
-}
-
-// check a net for antenna violations
-bool
-check_net_violation(char* net_name)
-{ 
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  if (net) {
-    auto vios = getAntennaChecker()->getAntennaViolations(net, nullptr, 0);
-    return !vios.empty();
-  }
-  else
-    return false;
-}
-
-void
-set_report_file_name(char* file_name)
-{
-  getAntennaChecker()->setReportFileName(file_name);
-}
-
-} // namespace
-
-%} // inline
+%include "CtsOptions.h"
+%include "cts/TritonCTS.h"

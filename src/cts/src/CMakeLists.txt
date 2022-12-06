@@ -80,3 +80,28 @@ messages(
   TARGET cts
   OUTPUT_DIR ..
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          cts_py
+           NAMESPACE     cts
+           LANGUAGE      python
+           I_FILE        TritonCTS-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include/cts
+                         ${PROJECT_SOURCE_DIR}
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/cts_py.py
+  )
+
+  target_include_directories(cts_py
+    PUBLIC
+      .
+  )
+  
+  target_link_libraries(cts_py
+    PUBLIC
+      cts
+      dbSta
+      OpenSTA
+      odb
+  )
+
+endif()
