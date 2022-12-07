@@ -49,6 +49,7 @@ class Utils
  public:
   static QString requestImageSavePath(QWidget* parent, const QString& title);
   static QString fixImagePath(const QString& path, utl::Logger* logger);
+  static QSize adjustMaxImageSize(const QSize& size);
   static void renderImage(const QString& path,
                           QWidget* widget,
                           int width_px,
