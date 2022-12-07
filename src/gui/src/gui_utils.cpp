@@ -37,6 +37,7 @@
 
 #include <QFileDialog>
 #include <QImageWriter>
+#include <QPainter>
 
 #include "utl/Logger.h"
 
@@ -107,14 +108,15 @@ void Utils::renderImage(const QString& path,
 {
   const QSize img_size = adjustMaxImageSize(QSize(width_px, height_px));
   QImage img(img_size, QImage::Format_ARGB32_Premultiplied);
-  const qreal render_ratio
-      = static_cast<qreal>(std::max(img_size.width(), img_size.height()))
-        / std::max(render_rect.width(), render_rect.height());
-  img.setDevicePixelRatio(render_ratio);
   if (!img.isNull()) {
+    const qreal render_ratio
+        = static_cast<qreal>(std::max(img_size.width(), img_size.height()))
+          / std::max(render_rect.width(), render_rect.height());
+    QPainter painter(&img);
+    painter.scale(render_ratio, render_ratio);
     img.fill(background);
 
-    widget->render(&img, {0, 0}, render_rect);
+    widget->render(&painter, {0, 0}, render_rect);
     if (!img.save(path) && logger != nullptr) {
       logger->warn(
           utl::GUI, 11, "Failed to write image: {}", path.toStdString());
