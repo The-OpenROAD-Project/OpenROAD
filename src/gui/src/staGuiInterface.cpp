@@ -1018,7 +1018,7 @@ void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
-  stagui.setIncludeCaptruePaths(false);
+  stagui.setIncludeCapturePaths(false);
 
   TimingPathList paths = stagui.getTimingPaths(source_pin);
 
@@ -1075,8 +1075,9 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
       sta::PathExpanded expand(path, sta_);
 
       sta::Clock* clock = path->clock(sta_);
-
-      roots[clock]->addPath(expand, sta_);
+      if (clock) {
+        roots[clock]->addPath(expand, sta_);
+      }
     }
   }
 

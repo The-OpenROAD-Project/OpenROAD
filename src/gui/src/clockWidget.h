@@ -185,7 +185,7 @@ class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QPolygonF getPolygon() const;
 };
 
-// Handles drawing the buffer nodes in the tree
+// Handles drawing the buffer/inverter nodes in the tree
 class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
@@ -195,7 +195,12 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
                                   QGraphicsItem* parent = nullptr);
   ~ClockBufferNodeGraphicsViewItem() {}
 
-  virtual QString getType() const override { return "Buffer"; }
+  void setIsInverter(bool inverter) { inverter_ = inverter; }
+
+  virtual QString getType() const override
+  {
+    return inverter_ ? "Inverter" : "Buffer";
+  }
 
   virtual QPointF getBottomAnchor() const override;
 
@@ -212,6 +217,10 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   qreal delay_y_;
   QString input_pin_;
   QString output_pin_;
+
+  bool inverter_;
+
+  constexpr static qreal bar_scale_size_ = 0.1;
 };
 
 // Handles drawing the register node for a tree

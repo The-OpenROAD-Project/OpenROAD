@@ -168,7 +168,6 @@ class TritonRoute
   void sendDesignUpdates(const std::string& globals_path);
   void sendGlobalsUpdates(const std::string& globals_path,
                           const std::string& serializedViaData);
-  void setGuideFile(const std::string& guide_path);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
                  odb::Rect bbox = odb::Rect(0, 0, 0, 0));

@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,33 +29,19 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%{
 
-#include <QString>
-#include <QWidget>
+#include "dpo/Optdp.h"
+#include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 
-namespace utl {
-class Logger;
-}
+using namespace dpo;
+%}
 
-namespace gui {
+%include "../../Exception-py.i"
 
-class Utils
-{
- public:
-  static QString requestImageSavePath(QWidget* parent, const QString& title);
-  static QString fixImagePath(const QString& path, utl::Logger* logger);
-  static QSize adjustMaxImageSize(const QSize& size);
-  static void renderImage(const QString& path,
-                          QWidget* widget,
-                          int width_px,
-                          int height_px,
-                          const QRect& render_rect,
-                          const QColor& background,
-                          utl::Logger* logger);
-};
+%import "odb.i"
+%import "odb/dbTypes.h"
 
-}  // namespace gui
+%include "Optdp.h"
