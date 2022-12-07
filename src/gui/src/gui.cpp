@@ -1052,6 +1052,7 @@ void Gui::setLogger(utl::Logger* logger)
   }
 
   logger_ = logger;
+  qInstallMessageHandler(message_handler);
 
   if (enabled()) {
     // gui already requested, so go ahead and set the logger
@@ -1107,7 +1108,6 @@ int startGui(int& argc,
 
   QApplication app(argc, argv);
   application = &app;
-  qInstallMessageHandler(message_handler);
 
   // Default to 12 point for easier reading
   QFont font = QApplication::font();
@@ -1230,7 +1230,6 @@ int startGui(int& argc,
   delete main_window;
   main_window = nullptr;
   application = nullptr;
-  qInstallMessageHandler(0);
 
   resetConversions();
 
