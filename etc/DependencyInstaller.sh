@@ -179,10 +179,10 @@ _installUbuntuRuntime() {
 
     if [[ $1 == 22.04 ]]; then
         apt-get install -y \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
     else
         apt-get install -y qt5-default
     fi
@@ -351,6 +351,62 @@ EOF
     _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
 }
 
+_installDebianCleanUp() {
+    apt-get autoclean -y
+    apt-get autoremove -y
+}
+
+_installDebianDev() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get -y install \
+        automake \
+        autotools-dev \
+        build-essential \
+        bison \
+        flex \
+        clang \
+        g++ \
+        gcc \
+        git \
+        lcov \
+        libpcre2-dev \
+        libpcre3-dev \
+        python3-dev \
+        libreadline-dev \
+        tcl-dev \
+        tcllib \
+        wget \
+        zlib1g-dev \
+        libomp-dev
+}
+
+_installDebianRuntime() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get install -y \
+        binutils \
+        libgomp1 \
+        libtcl \
+        qt5-image-formats-plugins \
+        tcl-tclreadline
+    
+    if [[ $1 == 10 ]]; then
+        apt-get install -y \
+            libpython3.7 \
+            qt5-default
+    else
+        apt-get install -y \
+            libpython3.8 \
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
+    fi
+}
+
 _help() {
     cat <<EOF
 
@@ -462,6 +518,18 @@ To install or run openroad, update your path with:
 
 You may wish to add this line to your .bashrc file
 EOF
+        ;;
+    "Debian GNU/Linux" )
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installDebianRuntime "${version}"
+        if [[ "${option}" == "dev" ]]; then
+            _installDebianDev
+            _installCommonDev
+        fi
+        _installOrTools "debian" "${version}" "amd64"
+        _installDebianCleanUp
         ;;
     *)
         echo "unsupported system: ${os}" >&2
