@@ -1075,8 +1075,9 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
       sta::PathExpanded expand(path, sta_);
 
       sta::Clock* clock = path->clock(sta_);
-
-      roots[clock]->addPath(expand, sta_);
+      if (clock) {
+        roots[clock]->addPath(expand, sta_);
+      }
     }
   }
 
