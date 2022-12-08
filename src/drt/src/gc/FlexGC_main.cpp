@@ -3337,7 +3337,7 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
       continue;
     auto& workerRegionQuery = getWorkerRegionQuery();
     gtl::rectangle_data<frCoord> queryBox = *rect;
-    if(con->hasLength())
+    if (con->hasLength())
       gtl::bloat(queryBox, con->getDistance());
     vector<rq_box_value_t<gcRect*>> result;
     if (con->getConnection() != frMinimumcutConnectionEnum::FROMABOVE
@@ -3360,9 +3360,9 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
         continue;
       if (via->isFixed() && rect->isFixed())
         continue;
-      if(con->hasLength() && wideRect.contains(viaBox))
+      if (con->hasLength() && wideRect.contains(viaBox))
         continue;
-      if(!con->hasLength()) {
+      if (!con->hasLength()) {
         checkMinimumCut_marker(rect, via, con);
         continue;
       }

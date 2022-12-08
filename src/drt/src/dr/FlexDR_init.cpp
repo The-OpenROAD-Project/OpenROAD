@@ -3189,7 +3189,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             }
             // temporary solution, only add cost around macro pins
             if ((masterType.isBlock() || masterType.isPad()
-                || masterType == dbMasterType::RING) && !isSkipVia) {
+                 || masterType == dbMasterType::RING)
+                && !isSkipVia) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
             }

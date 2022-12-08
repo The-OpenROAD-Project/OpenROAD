@@ -480,7 +480,7 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
-  void checkMinimumCut_marker(gcRect* wideRect, 
+  void checkMinimumCut_marker(gcRect* wideRect,
                               gcRect* viaRect,
                               frMinimumcutConstraint* con);
   void checkMinimumCut_main(gcRect* rect);

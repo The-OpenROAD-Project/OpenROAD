@@ -1798,18 +1798,18 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     }
     if (rule->isSameMetalOverlap()) {
       logger_->warn(DRT,
-                   318,
-                   "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
-                   "Skipping for layer {}",
-                   layer->getName());
+                    318,
+                    "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
       continue;
     }
     if (rule->isFullyEnclosed()) {
       logger_->warn(DRT,
-                   319,
-                   "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
-                   "for layer {}",
-                   layer->getName());
+                    319,
+                    "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
       continue;
     }
     unique_ptr<frConstraint> uCon
