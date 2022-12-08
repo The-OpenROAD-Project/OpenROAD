@@ -175,12 +175,16 @@ bool TimingBase::updateGNetWeights(float overflow)
     if (gNet->gPins().size() > 1) {
       float net_slack = rs_->resizeNetSlack(gNet->net()->dbNet());
       if (net_slack < slack_max) {
-        // weight(min_slack) = net_weight_max_
-        // weight(max_slack) = 1
-        float weight = 1
-                       + (net_weight_max_ - 1) * (slack_max - net_slack)
-                             / (slack_max - slack_min);
-        gNet->setTimingWeight(weight);
+        if (slack_max == slack_min) {
+          gNet->setTimingWeight(1.0);
+        } else {
+          // weight(min_slack) = net_weight_max_
+          // weight(max_slack) = 1
+          const float weight = 1
+                               + (net_weight_max_ - 1) * (slack_max - net_slack)
+                                     / (slack_max - slack_min);
+          gNet->setTimingWeight(weight);
+        }
         weighted_net_count++;
       }
       debugPrint(log_,
