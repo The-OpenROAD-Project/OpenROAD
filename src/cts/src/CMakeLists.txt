@@ -49,7 +49,6 @@ target_sources(cts
     Clock.cpp
     HTreeBuilder.cpp
     MakeTritoncts.cpp
-    PostCtsOpt.cpp
     SinkClustering.cpp
     TechChar.cpp
     TritonCTS.cpp
