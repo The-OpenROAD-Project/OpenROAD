@@ -167,6 +167,7 @@ class frConstraint
         return "Lef58CutSpacingLayer";
 
       case frConstraintTypeEnum::frcMinimumcutConstraint:
+      case frConstraintTypeEnum::frcLef58MinimumCutConstraint:
         return "Minimum Cut";
 
       case frConstraintTypeEnum::frcLef58CornerSpacingConcaveCornerConstraint:
@@ -562,6 +563,29 @@ class frMinimumcutConstraint : public frConstraint
   frMinimumcutConnectionEnum connection;
   frCoord length;
   frCoord distance;
+};
+
+// LEF58_MINIMUMCUT
+class frLef58MinimumcutConstraint : public frConstraint
+{
+ public:
+  frLef58MinimumcutConstraint(odb::dbTechLayerMinCutRule* rule) : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerMinCutRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58MinimumCutConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_MINIMUMCUT");
+  }
+
+ private:
+  odb::dbTechLayerMinCutRule* db_rule_;
 };
 
 // minArea

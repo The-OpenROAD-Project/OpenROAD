@@ -3188,8 +3188,9 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               modInterLayerCutSpacingCost(box, zIdx, type, false);
             }
             // temporary solution, only add cost around macro pins
-            if (masterType.isBlock() || masterType.isPad()
-                || masterType == dbMasterType::RING) {
+            if ((masterType.isBlock() || masterType.isPad()
+                 || masterType == dbMasterType::RING)
+                && !isSkipVia) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
             }

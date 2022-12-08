@@ -480,6 +480,11 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
+  void checkMinimumCut_marker(gcRect* wideRect,
+                              gcRect* viaRect,
+                              frMinimumcutConstraint* con);
+  void checkMinimumCut_main(gcRect* rect);
+  void checkMinimumCut();
   void checkMetalShape_lef58Area(gcPin* pin);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,
