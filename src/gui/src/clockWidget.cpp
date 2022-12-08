@@ -1175,7 +1175,7 @@ void ClockWidget::populate()
 
   STAGuiInterface stagui(sta_);
   stagui.setMaxPathCount(1);
-  stagui.setIncludeUnconstrainedPaths(true);
+  stagui.setIncludeUnconstrainedPaths(false);
   stagui.setCorner(corner_box_->currentData().value<sta::Corner*>());
 
   for (auto& tree : stagui.getClockTrees()) {
