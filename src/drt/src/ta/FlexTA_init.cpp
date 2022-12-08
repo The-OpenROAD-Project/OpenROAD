@@ -144,11 +144,13 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
           if (!pin->hasPinAccess()) {
+            pinIdx++;
             continue;
           }
           frAccessPoint* ap
               = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
           if (ap == nullptr) {
+            pinIdx++;
             continue;
           }
           Point bp = ap->getPoint();
@@ -259,11 +261,13 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
           if (!pin->hasPinAccess()) {
+            pinIdx++;
             continue;
           }
           frAccessPoint* ap
               = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
           if (ap == nullptr) {
+            pinIdx++;
             continue;
           }
           Point bp = ap->getPoint();
