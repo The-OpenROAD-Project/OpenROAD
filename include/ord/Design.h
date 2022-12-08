@@ -77,6 +77,18 @@ namespace tap {
 class Tapcell;
 }
 
+namespace cts {
+class TritonCTS;
+}
+
+namespace triton_route {
+class TritonRoute;
+}
+
+namespace dpo {
+class Optdp;
+}
+
 namespace ord {
 
 class Tech;
@@ -114,6 +126,9 @@ class Design
   mpl::MacroPlacer* getMacroPlacer();
   ppl::IOPlacer* getIOPlacer();
   tap::Tapcell* getTapcell();
+  cts::TritonCTS* getTritonCts();
+  triton_route::TritonRoute* getTritonRoute();
+  dpo::Optdp* getOptdp();
 
  private:
   Tech* tech_;

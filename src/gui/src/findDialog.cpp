@@ -32,7 +32,6 @@
 
 #include "findDialog.h"
 
-#include <QDebug>
 #include <string>
 
 #include "gui/gui.h"

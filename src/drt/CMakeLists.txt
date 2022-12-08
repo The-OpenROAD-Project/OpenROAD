@@ -223,3 +223,24 @@ if (VTune_FOUND)
   )
 
 endif(VTune_FOUND)
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          drt_py
+           NAMESPACE     drt
+           LANGUAGE      python
+           I_FILE        src/TritonRoute-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/drt
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/drt_py.py
+  )
+
+  target_include_directories(drt_py
+    PUBLIC
+      include
+  )
+
+  target_link_libraries(drt_py
+    PUBLIC
+      drt
+  )
+
+endif()

@@ -57,7 +57,10 @@
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#if (CMAKE_SYSTEM_NAME != Darwin)
+// mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
+#endif
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -160,7 +163,9 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
+#if (CMAKE_SYSTEM_NAME != Darwin)
   deleteMacroPlacer2(macro_placer2_);
+#endif
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -213,7 +218,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
+#if (CMAKE_SYSTEM_NAME != Darwin)
   macro_placer2_ = makeMacroPlacer2();
+#endif
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
@@ -247,7 +254,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);
+#if (CMAKE_SYSTEM_NAME != Darwin)
   initMacroPlacer2(this);
+#endif
   initOpenRCX(this);
   initPad(this);
   initRestructure(this);

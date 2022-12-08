@@ -38,7 +38,6 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
-#include <QDebug>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMenu>
@@ -92,8 +91,10 @@ static QString convertDelay(float time, sta::Unit* convert)
 
 /////////
 
-TimingPathsModel::TimingPathsModel(STAGuiInterface* sta, QObject* parent)
-    : QAbstractTableModel(parent), sta_(sta)
+TimingPathsModel::TimingPathsModel(bool is_setup,
+                                   STAGuiInterface* sta,
+                                   QObject* parent)
+    : QAbstractTableModel(parent), sta_(sta), is_setup_(is_setup)
 {
 }
 
@@ -247,7 +248,10 @@ bool TimingPathsModel::populatePaths(
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
+  const bool sta_max = sta_->isUseMax();
+  sta_->setUseMax(is_setup_);
   timing_paths_ = sta_->getTimingPaths(from, thru, to);
+  sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();
   return true;
@@ -636,7 +640,7 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
-  stagui.setIncludeCaptruePaths(false);
+  stagui.setIncludeCapturePaths(false);
 
   ConeDepthMapPinSet pin_map;
   if (fanin_) {
@@ -1096,6 +1100,8 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
           });
 
   connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
+
+  sta_->setIncludeCapturePaths(true);
 }
 
 void TimingControlsDialog::setupPinRow(const QString& label,
