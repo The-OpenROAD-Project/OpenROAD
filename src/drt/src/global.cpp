@@ -114,7 +114,7 @@ int MISALIGNMENTCOST = 8;
 
 int CONGCOST = 8;
 int HISTCOST = 32;
-
+bool GC_IGNORE_PDN = true;
 namespace fr {
 
 ostream& operator<<(ostream& os, const frRect& pinFigIn)

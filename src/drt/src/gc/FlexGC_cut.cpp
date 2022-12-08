@@ -400,6 +400,10 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaRect->getPin())
       continue;
+    if (GC_IGNORE_PDN && ptr->isFixed() && ptr->hasNet()
+        && ptr->getNet()->getFrNet()
+        && ptr->getNet()->getFrNet()->getType().isSupply())
+      continue;
     if (isUpperVia)
       checkLef58CutSpacingTbl_main(viaRect, ptr, con);
     else
