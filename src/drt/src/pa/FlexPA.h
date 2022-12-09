@@ -127,6 +127,7 @@ class FlexPA
   void initPinAccess();
   void initTrackCoords();
   void initViaRawPriority();
+  void checkFigsOnGrid(const frMPin* pin);
   // prep
   void prep();
   void prepPoint();
