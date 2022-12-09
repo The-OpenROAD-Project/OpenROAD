@@ -1,9 +1,9 @@
 #include <string>
 #include <vector>
-#include "spdlog/fmt/fmt.h"
 
 #include "db.h"
 #include "dbBlockCallBackObj.h"
+#include "spdlog/fmt/fmt.h"
 using namespace odb;
 using namespace std;
 class CallBack : public dbBlockCallBackObj

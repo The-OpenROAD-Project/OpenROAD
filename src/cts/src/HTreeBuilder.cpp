@@ -902,7 +902,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::treeVisualizer()
 {
-  graphics_ = std::make_unique<Graphics>(logger_, this, &(clock_));
+  graphics_ = std::make_unique<Graphics>(this, &(clock_));
   if (Graphics::guiActive())
     graphics_->clockPlot(true);
 }

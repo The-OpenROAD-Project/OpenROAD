@@ -167,6 +167,7 @@ class frConstraint
         return "Lef58CutSpacingLayer";
 
       case frConstraintTypeEnum::frcMinimumcutConstraint:
+      case frConstraintTypeEnum::frcLef58MinimumCutConstraint:
         return "Minimum Cut";
 
       case frConstraintTypeEnum::frcLef58CornerSpacingConcaveCornerConstraint:
@@ -217,7 +218,7 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
         return "Lef58EolKeepOut";
-      
+
       case frConstraintTypeEnum::frcMetalWidthViaConstraint:
         return "MetalWidthViaMap";
 
@@ -562,6 +563,29 @@ class frMinimumcutConstraint : public frConstraint
   frMinimumcutConnectionEnum connection;
   frCoord length;
   frCoord distance;
+};
+
+// LEF58_MINIMUMCUT
+class frLef58MinimumcutConstraint : public frConstraint
+{
+ public:
+  frLef58MinimumcutConstraint(odb::dbTechLayerMinCutRule* rule) : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerMinCutRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58MinimumCutConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_MINIMUMCUT");
+  }
+
+ private:
+  odb::dbTechLayerMinCutRule* db_rule_;
 };
 
 // minArea
@@ -2354,10 +2378,7 @@ class frLef58AreaConstraint : public frConstraint
 {
  public:
   // constructor
-  frLef58AreaConstraint(odb::dbTechLayerAreaRule* dbRule)
-      : db_rule_(dbRule)
-  {
-  }
+  frLef58AreaConstraint(odb::dbTechLayerAreaRule* dbRule) : db_rule_(dbRule) {}
   // getter
   odb::dbTechLayerAreaRule* getODBRule() const { return db_rule_; }
 
@@ -2370,7 +2391,8 @@ class frLef58AreaConstraint : public frConstraint
   void report(utl::Logger* logger) const override
   {
     auto trim_layer = db_rule_->getTrimLayer();
-    std::string trim_layer_name = trim_layer != nullptr ? db_rule_->getTrimLayer()->getName() : "";
+    std::string trim_layer_name
+        = trim_layer != nullptr ? db_rule_->getTrimLayer()->getName() : "";
     logger->report(
         "LEF58 AREA rule: area {}, exceptMinWidth {}, exceptEdgeLength {}, "
         "exceptEdgeLengths ({} {}), exceptMinSize ({} {}), exceptStep ({} {}), "

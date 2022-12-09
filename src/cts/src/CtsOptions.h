@@ -113,8 +113,6 @@ class CtsOptions
     forceBuffersOnLeafLevel_ = force;
   }
   bool forceBuffersOnLeafLevel() const { return forceBuffersOnLeafLevel_; }
-  void setRunPostCtsOpt(bool run) { runPostCtsOpt_ = run; }
-  bool runPostCtsOpt() { return runPostCtsOpt_; }
   void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
   double getBufDistRatio() { return bufDistRatio_; }
   void setClockNetsObjs(std::vector<odb::dbNet*> nets)
@@ -212,7 +210,6 @@ class CtsOptions
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
-  bool runPostCtsOpt_ = true;
   double bufDistRatio_ = 0.1;
   long int clockRoots_ = 0;
   long int clockSubnets_ = 0;

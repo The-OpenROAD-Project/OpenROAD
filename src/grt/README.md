@@ -125,7 +125,9 @@ Example:
   -perturbation_amount 2`
 
 ```
-repair_antennas [diode_cell] [-iterations iterations]
+repair_antennas [diode_cell]
+                [-iterations iterations]
+                [-ratio_margin margin]
 ```
 
 The repair_antenna command checks the global routing for antenna
@@ -133,7 +135,8 @@ violations and repairs the violations by inserting diodes near the
 gates of the violating nets.  By default the command runs only one
 iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when
-`repair_antennas` is called.
+`repair_antennas` is called. Use `-ratio_margin` to add a margin
+to the antenna ratios. `-ratio_margin` is between 0 and 100.
 
 See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
 Fixing Process Antenna Violations" for a description of antenna

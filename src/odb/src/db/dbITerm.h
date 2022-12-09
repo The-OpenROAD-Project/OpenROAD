@@ -32,11 +32,12 @@
 
 #pragma once
 
+#include <map>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbId.h"
 #include "odb.h"
-#include <map>
 
 namespace odb {
 

@@ -26,12 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexPA_graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 
 namespace fr {
 
@@ -55,7 +56,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
-    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
+    auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
@@ -75,13 +76,14 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
     term_name_ = settings_->pinName.substr(pos + 1);
     auto inst_name = settings_->pinName.substr(0, pos);
-    logger_->info(DRT, 4000, "DEBUGGING inst {} term {}", inst_name, term_name_);
+    logger_->info(
+        DRT, 4000, "DEBUGGING inst {} term {}", inst_name, term_name_);
     if (inst_name == "PIN") {  // top level bterm
       inst_ = nullptr;
     } else {
       inst_ = design->getTopBlock()->getInst(inst_name);
       if (!inst_)
-          logger_->warn(DRT, 5000, "INST NOT FOUND!");
+        logger_->warn(DRT, 5000, "INST NOT FOUND!");
     }
   }
 

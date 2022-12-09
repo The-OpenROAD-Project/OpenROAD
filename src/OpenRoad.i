@@ -141,7 +141,7 @@ getMacroPlacer()
   return openroad->getMacroPlacer();
 }
 
-mpl::MacroPlacer2 *
+mpl2::MacroPlacer2 *
 getMacroPlacer2()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -357,6 +357,13 @@ write_db_cmd(const char *filename)
 }
 
 void
+diff_dbs(const char *filename1, const char *filename2, const char* diffs)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->diffDbs(filename1, filename2, diffs);
+}
+
+void
 read_verilog_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
@@ -515,15 +522,6 @@ units_initialized()
   OpenRoad *openroad = getOpenRoad();
   return openroad->unitsInitialized();
 }
-
-#ifdef ENABLE_PYTHON3
-void
-python_cmd(const char* py_command)
-{
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->pythonCommand(py_command);
-}
-#endif
 
 namespace ord {
 

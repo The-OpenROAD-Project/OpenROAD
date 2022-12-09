@@ -95,7 +95,6 @@ class TritonCTS
   void checkCharacterization();
   void findClockRoots();
   void buildClockTrees();
-  void runPostCtsOpt();
   void writeDataToDb();
 
   // db functions

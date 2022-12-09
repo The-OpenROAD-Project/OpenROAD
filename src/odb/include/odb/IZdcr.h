@@ -142,19 +142,6 @@ class IZdcr : public ZObject
                       uint ownId,
                       const char* boxType = NULL)
       = 0;
-  virtual uint addArrow(bool right,
-                        uint boxType,
-                        uint hier,
-                        int layer,
-                        int labelCnt,
-                        char** label,
-                        double* val,
-                        int x1,
-                        int y1,
-                        int x2,
-                        int y2,
-                        uint boxFilter)
-      = 0;
   virtual uint addBoxAndMsg(uint id,
                             uint subMenuId,
                             uint menuId,

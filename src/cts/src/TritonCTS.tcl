@@ -73,7 +73,6 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-root_buf buf] \
                                              [-clk_nets nets] \
                                              [-tree_buf buf] \
-                                             [-post_cts_disable] \
                                              [-distance_between_buffers] \
                                              [-branching_point_buffers_distance] \
                                              [-clustering_exponent] \
@@ -96,8 +95,10 @@ proc clock_tree_synthesis { args } {
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
-  cts::set_disable_post_cts [info exists flags(-post_cts_disable)]
-
+  if { [info exists flags(-post_cts_disable)] } {
+    utl::warn GRT 115 "-post_cts_disable is obsolete."
+  }
+  
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
 
   if { [info exists keys(-sink_clustering_size)] } {
@@ -219,10 +220,9 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-      keys {-plot}
+    keys {} flags {-plot}
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
-
   cts::set_plot_option [info exists flags(-plot)]
 
   cts::set_debug_cmd

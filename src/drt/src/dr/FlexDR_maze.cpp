@@ -578,7 +578,9 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
               continue;
             }
           } else {
-            if (dx > 0 && dy > 0 && dx + dy < dist) {
+            dx = std::max(dx, 0);
+            dy = std::max(dy, 0);
+            if (((dx > 0) ^ (dy > 0)) && dx + dy < dist) {
               ;
             } else {
               continue;
@@ -597,6 +599,11 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
             case addFixedShape:
               gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
               break;
+            case resetFixedShape:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
+              break;
+            case setFixedShape:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
             default:;
           }
         }
@@ -1441,7 +1448,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     // new
 
     // assumes enclosure for via is always rectangle
-    Rect box = obj->getLayer1BBox();  
+    Rect box = obj->getLayer1BBox();
     ndr = connFig->getNet()->getFrNet()->getNondefaultRule();
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
@@ -1801,11 +1808,11 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->main();
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
-	drNet* currNet = net;
+        drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
-	  if (!net)
-		net = currNet;
+          if (!net)
+            net = currNet;
           auto tmpPWire = make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
@@ -1813,7 +1820,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           Rect box = pwire->getOffsetBox();
           tmpPWire->setOffsetBox(box);
           tmpPWire->addToNet(net);
-	  pwire->addToNet(net);
+          pwire->addToNet(net);
 
           unique_ptr<drConnFig> tmp(std::move(tmpPWire));
           auto& workerRegionQuery = getWorkerRegionQuery();

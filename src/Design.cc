@@ -156,4 +156,46 @@ gpl::Replace* Design::getReplace()
   return app->getReplace();
 }
 
+dpl::Opendp* Design::getOpendp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpendp();
+}
+
+mpl::MacroPlacer* Design::getMacroPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getMacroPlacer();
+}
+
+ppl::IOPlacer* Design::getIOPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getIOPlacer();
+}
+
+tap::Tapcell* Design::getTapcell()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTapcell();
+}
+
+cts::TritonCTS* Design::getTritonCts()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonCts();
+}
+
+triton_route::TritonRoute* Design::getTritonRoute()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonRoute();
+}
+
+dpo::Optdp* Design::getOptdp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOptdp();
+}
+
 }  // namespace ord

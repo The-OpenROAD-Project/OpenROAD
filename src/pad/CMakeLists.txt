@@ -39,6 +39,7 @@ swig_lib(NAME      pad
          NAMESPACE pad
          I_FILE    src/pad.i
          SCRIPTS   src/pad.tcl
+                   src/PdnGen.tcl
 )
 
 target_sources(pad

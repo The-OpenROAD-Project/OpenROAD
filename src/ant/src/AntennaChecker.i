@@ -81,11 +81,17 @@ check_net_violation(char* net_name)
 { 
   odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
   if (net) {
-    auto vios = getAntennaChecker()->getAntennaViolations(net, nullptr);
+    auto vios = getAntennaChecker()->getAntennaViolations(net, nullptr, 0);
     return !vios.empty();
   }
   else
     return false;
+}
+
+void
+set_report_file_name(char* file_name)
+{
+  getAntennaChecker()->setReportFileName(file_name);
 }
 
 } // namespace

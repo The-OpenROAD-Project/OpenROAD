@@ -146,12 +146,6 @@ set_branching_point_buffers_distance(double distance)
 }
 
 void
-set_disable_post_cts(bool disable)
-{
-  getTritonCts()->getParms()->setRunPostCtsOpt(!(disable));
-}
-
-void
 set_clustering_exponent(unsigned power)
 {
   getTritonCts()->getParms()->setClusteringPower(power);

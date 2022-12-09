@@ -35,16 +35,14 @@ TritonCTS forced slew degradation on these wires.
     Key: 60 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 22.
-[INFO CTS-0036]  Average source sink dist: 36612.30 dbu.
-[INFO CTS-0037]  Number of outlier sinks: 1.
-[INFO CTS-0018]     Created 28 clock buffers.
+[INFO CTS-0018]     Created 25 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 6.
-[INFO CTS-0015]     Created 28 clock nets.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
+[INFO CTS-0015]     Created 25 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 11:2, 12:1, 13:5, 14:16..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 301
 [INFO CTS-0100]  Leaf buffers 22
-[INFO CTS-0101]  Average sink wire length 124.42 um
-[INFO CTS-0102]  Path depth 3 - 6
+[INFO CTS-0101]  Average sink wire length 123.61 um
+[INFO CTS-0102]  Path depth 3 - 3

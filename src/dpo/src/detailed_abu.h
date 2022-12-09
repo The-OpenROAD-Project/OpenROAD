@@ -50,7 +50,7 @@ class DetailedABU : public DetailedObjective
   // This class maintains the ABU metric which can be used as part of a cost
   // function for detailed improvement.
  public:
-  DetailedABU(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedABU(Architecture* arch, Network* network);
 
   // Those that must be overridden.
   double curr() override;
@@ -107,7 +107,6 @@ class DetailedABU : public DetailedObjective
 
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   // Utilization monitoring for ABU (if paying attention to ABU).
   std::vector<DensityBin> abuBins_;

@@ -747,7 +747,7 @@ uint extSpef::computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap)
   //	uint min= 200000000;
   //	uint max= 0;
 
-  double cap[10];  // TODO: allow more
+  double cap[ADS_MAX_CORNER];
   for (rc_itr = rcSet.begin(); rc_itr != rcSet.end(); ++rc_itr) {
     odb::dbRSeg* rc = *rc_itr;
 
@@ -782,7 +782,7 @@ uint extSpef::computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet,
   //`	uint min= 200000000;
   //	uint max= 0;
 
-  double cap[10];  // TODO: allow more
+  double cap[ADS_MAX_CORNER];
   for (rc_itr = rcSet.begin(); rc_itr != rcSet.end(); ++rc_itr) {
     odb::dbRSeg* rc = *rc_itr;
 
@@ -807,7 +807,7 @@ void extSpef::getCaps(odb::dbNet* net, double* totCap)
   for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
     odb::dbCapNode* node = *rc_itr;
 
-    double cap[16];
+    double cap[ADS_MAX_CORNER];
     for (uint ii = 0; ii < _cornersPerBlock; ii++)
       cap[ii] = node->getCapacitance(ii);
 
@@ -816,7 +816,7 @@ void extSpef::getCaps(odb::dbNet* net, double* totCap)
 }
 void extSpef::addCouplingCaps(odb::dbNet* net, double* totCap)
 {
-  double cap[16];
+  double cap[ADS_MAX_CORNER];
   for (uint ii = 0; ii < _cornersPerBlock; ii++)
     cap[ii] = net->getTotalCouplingCap(ii);
 
@@ -828,7 +828,7 @@ void extSpef::addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap)
   for (cap_itr = capSet.begin(); cap_itr != capSet.end(); ++cap_itr) {
     odb::dbCCSeg* cc = *cap_itr;
 
-    double cap[16];
+    double cap[ADS_MAX_CORNER];
     for (uint ii = 0; ii < _cornerCnt; ii++)
       cap[ii] = cc->getCapacitance(ii);
 
@@ -1369,7 +1369,7 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug)
 
     _cCnt = 1;
 
-    double totCap[5];
+    double totCap[ADS_MAX_CORNER];
     resetCap(totCap);
 
     /* dimitris_change_

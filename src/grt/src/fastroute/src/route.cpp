@@ -552,7 +552,14 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
         continue;
       }
       // ripup the original routing
-      if (newRipupType2(treeedge, treenodes.get(), x1, y1, x2, y2, num_terminals, netID)) {
+      if (newRipupType2(treeedge,
+                        treenodes.get(),
+                        x1,
+                        y1,
+                        x2,
+                        y2,
+                        num_terminals,
+                        netID)) {
         const int n1a = treenodes[n1].stackAlias;
         const int n2a = treenodes[n2].stackAlias;
         const int status1 = treenodes[n1a].status;
@@ -1405,7 +1412,9 @@ void FastRouteCore::routeLVEnew(int netID,
 
   for (int j = ymin; j <= ymax; j++) {
     for (int i = xmin; i < xmax; i++) {
-      const float tmp = h_cost_table_[h_edges_[j][i].usage_red()];
+      size_t index = h_edges_[j][i].usage_red();
+      index = std::min(index, h_cost_table_.size() - 1);
+      const float tmp = h_cost_table_[index];
       d1[j][i + 1] = d1[j][i] + tmp;
     }
     // update the cost of a column of grids by v-edges
@@ -1414,7 +1423,9 @@ void FastRouteCore::routeLVEnew(int netID,
   for (int j = ymin; j < ymax; j++) {
     // update the cost of a column of grids by h-edges
     for (int i = xmin; i <= xmax; i++) {
-      const float tmp = h_cost_table_[v_edges_[j][i].usage_red()];
+      size_t index = v_edges_[j][i].usage_red();
+      index = std::min(index, h_cost_table_.size() - 1);
+      const float tmp = h_cost_table_[index];
       d2[j + 1][i] = d2[j][i] + tmp;
     }
     // update the cost of a column of grids by v-edges

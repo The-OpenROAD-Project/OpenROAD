@@ -995,29 +995,31 @@ void FastRouteCore::checkRoute3D()
       gridFlag = false;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        debugPrint(logger_,
-                   GRT,
-                   "checkRoute3D",
-                   1,
-                   "net {} edge[{}] start node wrong, net num_terminals {}, n1 {}",
-                   nets_[netID]->getName(),
-                   edgeID,
-                   num_terminals,
-                   n1);
+        debugPrint(
+            logger_,
+            GRT,
+            "checkRoute3D",
+            1,
+            "net {} edge[{}] start node wrong, net num_terminals {}, n1 {}",
+            nets_[netID]->getName(),
+            edgeID,
+            num_terminals,
+            n1);
         if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        debugPrint(logger_,
-                   GRT,
-                   "checkRoute3D",
-                   1,
-                   "net {} edge[{}] end node wrong, net num_terminals {}, n2 {}",
-                   nets_[netID]->getName(),
-                   edgeID,
-                   num_terminals,
-                   n2);
+        debugPrint(
+            logger_,
+            GRT,
+            "checkRoute3D",
+            1,
+            "net {} edge[{}] end node wrong, net num_terminals {}, n2 {}",
+            nets_[netID]->getName(),
+            edgeID,
+            num_terminals,
+            n2);
         if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
           printEdge3D(netID, edgeID);
         }
@@ -1199,61 +1201,51 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
   }
 }
 
-void FastRouteCore::checkUsage()
+void FastRouteCore::removeLoops()
 {
-  int netID, i, k, edgeID;
-  int j, cnt;
-  bool redsus;
-  TreeEdge edge;
-
-  for (netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+  for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
       continue;
+    }
 
     const auto& treeedges = sttrees_[netID].edges;
 
     const int edgeCost = nets_[netID]->getEdgeCost();
 
-    for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
-      edge = sttrees_[netID].edges[edgeID];
+    for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
+      TreeEdge edge = sttrees_[netID].edges[edgeID];
       TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        std::vector<short>& gridsX = treeedge->route.gridsX;
-        std::vector<short>& gridsY = treeedge->route.gridsY;
+      if (treeedge->len <= 0) {
+        continue;
+      }
+      std::vector<short>& gridsX = treeedge->route.gridsX;
+      std::vector<short>& gridsY = treeedge->route.gridsY;
 
-        redsus = true;
-
-        while (redsus) {
-          redsus = false;
-
-          for (i = 0; i <= treeedge->route.routelen; i++) {
-            for (j = 0; j < i; j++) {
-              if (gridsX[i] == gridsX[j]
-                  && gridsY[i] == gridsY[j])  // a vertical edge
-              {
-                // Update usage for edges to be removed
-                for (k = j; k < i; k++) {
-                  if (gridsX[k] == gridsX[k + 1]) {
-                    int min_y = std::min(gridsY[k], gridsY[k + 1]);
-                    v_edges_[min_y][gridsX[k]].usage -= edgeCost;
-                  } else {
-                    int min_x = std::min(gridsX[k], gridsX[k + 1]);
-                    h_edges_[gridsY[k]][min_x].usage -= edgeCost;
-                  }
+      for (int i = 1; i <= treeedge->route.routelen; i++) {
+        for (int j = 0; j < i; j++) {
+          if (gridsX[i] == gridsX[j] && gridsY[i] == gridsY[j]) {
+            // Update usage for loop edges to be removed
+            for (int k = j; k < i; k++) {
+              if (gridsX[k] == gridsX[k + 1]) {
+                if (gridsY[k] != gridsY[k + 1]) {
+                  const int min_y = std::min(gridsY[k], gridsY[k + 1]);
+                  v_edges_[min_y][gridsX[k]].usage -= edgeCost;
                 }
-
-                cnt = 1;
-                for (k = i + 1; k <= treeedge->route.routelen; k++) {
-                  gridsX[j + cnt] = gridsX[k];
-                  gridsY[j + cnt] = gridsY[k];
-                  cnt++;
-                }
-                treeedge->route.routelen -= i - j;
-                redsus = true;
-                i = 0;
-                j = 0;
+              } else {
+                const int min_x = std::min(gridsX[k], gridsX[k + 1]);
+                h_edges_[gridsY[k]][min_x].usage -= edgeCost;
               }
             }
+
+            int cnt = 1;
+            for (int k = i + 1; k <= treeedge->route.routelen; k++) {
+              gridsX[j + cnt] = gridsX[k];
+              gridsY[j + cnt] = gridsY[k];
+              cnt++;
+            }
+            treeedge->route.routelen -= i - j;
+            i = 0;
+            j = 0;
           }
         }
       }

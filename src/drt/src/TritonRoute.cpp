@@ -110,6 +110,11 @@ void TritonRoute::setDebugPA(bool on)
   debug_->debugPA = on;
 }
 
+void TritonRoute::setDebugTA(bool on)
+{
+  debug_->debugTA = on;
+}
+
 void TritonRoute::setDistributed(bool on)
 {
   distributed_ = on;
@@ -274,6 +279,11 @@ void TritonRoute::resetDb(const char* file_name)
   initGuide();
   prep();
   design_->getRegionQuery()->initDRObj();
+}
+
+void TritonRoute::clearDesign()
+{
+  design_ = std::make_unique<frDesign>(logger_);
 }
 
 static void deserializeUpdate(frDesign* design,
@@ -565,6 +575,7 @@ void TritonRoute::gr()
 void TritonRoute::ta()
 {
   FlexTA ta(getDesign(), logger_);
+  ta.setDebug(debug_.get(), db_);
   ta.main();
 }
 
@@ -779,6 +790,7 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 {
+  clearDesign();
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   ENABLE_VIA_GEN = true;
   initDesign();
