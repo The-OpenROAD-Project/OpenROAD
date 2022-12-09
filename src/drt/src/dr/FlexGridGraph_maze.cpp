@@ -234,7 +234,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   getNextGrid(gridX, gridY, gridZ, dir);
   Point nextPoint;
   getPoint(nextPoint, gridX, gridY);
-  // avoid propagating to location that will cause fobidden via spacing to
+  // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
     if (drWorker_ && drWorker_->getDRIter() >= 30

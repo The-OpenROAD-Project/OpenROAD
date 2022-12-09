@@ -871,7 +871,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
-        // We allow for multuple pins
+        // We allow for multiple pins
         break;
       case odb::dbSigType::TIEOFF:
       case odb::dbSigType::SIGNAL:

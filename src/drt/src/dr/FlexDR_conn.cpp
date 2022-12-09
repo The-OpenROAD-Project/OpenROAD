@@ -648,7 +648,7 @@ void FlexDRConnectivityChecker::finish(
       validPoints.insert(make_pair(bp, lNum));
       validPoints.insert(make_pair(ep, lNum));
     } else {
-      cout << "Error: finish unsupporterd type" << endl;
+      cout << "Error: finish unsupported type" << endl;
       exit(1);
     }
   }
@@ -661,7 +661,7 @@ void FlexDRConnectivityChecker::finish(
       lNum = obj->getViaDef()->getLayer2Num();
       validPoints.insert(make_pair(origin, lNum));
     } else {
-      cout << "Error: finish unsupporterd type" << endl;
+      cout << "Error: finish unsupported type" << endl;
       exit(1);
     }
   }

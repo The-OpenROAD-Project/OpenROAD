@@ -2456,7 +2456,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     } else if (startX == endX && startY == endY && startZ == endZ) {
       std::cout << "Warning: zero-length path in updateFlexPin\n";
     } else {
-      std::cout << "Error: non-colinear path in updateFlexPin\n";
+      std::cout << "Error: non-collinear path in updateFlexPin\n";
     }
   }
 }
@@ -2490,7 +2490,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       trans.setOrient(dbOrientType(dbOrientType::R0));
       trans.apply(begin);
       trans.apply(end);
-      if (end < begin) {  // if rotation swaped order, correct it
+      if (end < begin) {  // if rotation swapped order, correct it
         if (connecting == &begin)
           connecting = &end;
         else
