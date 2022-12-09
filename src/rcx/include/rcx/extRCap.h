@@ -2939,11 +2939,6 @@ class extMain
                   bool skipFirst);
   // 021411D END
   // 021511D BEGIN
-  void writeViaRC(FILE* fp,
-                  uint level,
-                  odb::dbTechLayer* layer,
-                  odb::dbBox* v,
-                  odb::dbBox* w);
   uint connectStackedVias(odb::dbNet* net,
                           odb::dbTechLayer* layer,
                           bool mergeViaRes);
