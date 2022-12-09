@@ -46,6 +46,10 @@ if (NOT USE_SYSTEM_ABC)
   # readline is not needed since we call abc from c++
   set(READLINE_FOUND FALSE)
 
+# apple clang 14.0.0 seg faults on abc without -g
+add_compile_options(
+  $<$<CXX_COMPILER_ID:AppleClang>:-g>
+)
   add_subdirectory(abc)
 
 endif()

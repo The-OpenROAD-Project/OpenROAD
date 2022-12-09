@@ -323,7 +323,7 @@ class STAGuiInterface
   }
 
   bool isIncludeCapturePaths() const { return include_capture_path_; }
-  void setIncludeCaptruePaths(bool value) { include_capture_path_ = value; }
+  void setIncludeCapturePaths(bool value) { include_capture_path_ = value; }
 
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
@@ -353,6 +353,8 @@ class STAGuiInterface
                              sta::PinSet* pin_set,
                              bool is_fanin) const;
   void annotateConeTiming(sta::Pin* pin, ConeDepthMap& map) const;
+
+  void initSTA() const;
 };
 
 }  // namespace gui

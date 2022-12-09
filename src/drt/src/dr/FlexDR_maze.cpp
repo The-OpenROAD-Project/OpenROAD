@@ -578,7 +578,9 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
               continue;
             }
           } else {
-            if (dx > 0 && dy > 0 && dx + dy < dist) {
+            dx = std::max(dx, 0);
+            dy = std::max(dy, 0);
+            if (((dx > 0) ^ (dy > 0)) && dx + dy < dist) {
               ;
             } else {
               continue;
@@ -597,6 +599,11 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
             case addFixedShape:
               gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
               break;
+            case resetFixedShape:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
+              break;
+            case setFixedShape:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
             default:;
           }
         }

@@ -182,7 +182,8 @@ add_compile_options(
   -Wno-sign-compare
   -Wp,-D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
-  $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
+  # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
 )
 
 ################################################################
@@ -314,7 +315,6 @@ target_link_libraries(openroad
   drt
   dst
   mpl
-  mpl2
   psm
   ant
   par
@@ -324,6 +324,13 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # mpl2 aborts with link error on darwin so do not link it.
+  target_link_libraries(openroad mpl2)
+else()
+  message(STATUS "Removing MPL2 to avoid run time fatal error.")
+endif()
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
@@ -383,6 +390,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
     ppl_py
     tap_py
     cts_py
+    drt_py
+    dpo_py
   )
 else()
   message(STATUS "Python3 disabled")
