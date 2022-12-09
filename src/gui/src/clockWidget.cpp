@@ -1048,7 +1048,8 @@ ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
 
   auto* lib_port = network->libertyPort(output_pin.pin);
   if (lib_port != nullptr) {
-    if (lib_port->function()->op() == sta::FuncExpr::op_not) {
+    auto function = lib_port->function();
+    if (function && function->op() == sta::FuncExpr::op_not) {
       node->setIsInverter(true);
     }
   }
