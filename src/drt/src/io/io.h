@@ -104,6 +104,7 @@ class Parser
 
   void setNDRs(odb::dbDatabase* db);
   void createNDR(odb::dbTechNonDefaultRule* ndr);
+  void convertLef58MinCutConstraints();
 
   // postProcess functions
   void buildGCellPatterns(odb::dbDatabase* db);

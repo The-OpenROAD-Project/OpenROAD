@@ -43,8 +43,6 @@ TritonCTS forced slew degradation on these wires.
       location: 1.0 buffer: sky130_fd_sc_hs__clkbuf_1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
-[INFO CTS-0036]  Average source sink dist: 363200.30 dbu.
-[INFO CTS-0037]  Number of outlier sinks: 0.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.

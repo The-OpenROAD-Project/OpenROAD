@@ -353,6 +353,8 @@ class STAGuiInterface
                              sta::PinSet* pin_set,
                              bool is_fanin) const;
   void annotateConeTiming(sta::Pin* pin, ConeDepthMap& map) const;
+
+  void initSTA() const;
 };
 
 }  // namespace gui
