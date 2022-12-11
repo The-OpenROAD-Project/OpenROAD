@@ -804,6 +804,7 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 
 void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
+  GC_IGNORE_PDN = false;
   initDesign();
   Rect box(x1, y1, x2, y2);
   if (box.area() == 0) {
@@ -977,6 +978,7 @@ void TritonRoute::setParams(const ParamStruct& params)
     MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
   SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
+  GC_IGNORE_PDN = params.ignorePdnViaDrvs;
 }
 
 void TritonRoute::addWorkerResults(
