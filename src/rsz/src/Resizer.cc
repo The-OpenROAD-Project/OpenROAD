@@ -175,7 +175,8 @@ Resizer::Resizer() :
   resize_count_(0),
   inserted_buffer_count_(0),
   buffer_moved_into_core_(false),
-  max_wire_length_(0)
+  max_wire_length_(0),
+  worst_slack_nets_percent_(10)
 {
 }
 
@@ -934,13 +935,13 @@ Resizer::findResizeSlacks1()
   }
 
   // Find the nets with the worst slack.
-  double worst_percent = .1;
+
   //  sort(nets.begin(), nets.end(). [&](const Net *net1,
   sort(nets, [this](const Net *net1,
                  const Net *net2)
              { return resizeNetSlack(net1) < resizeNetSlack(net2); });
   worst_slack_nets_.clear();
-  for (int i = 0; i < nets.size() * worst_percent; i++)
+  for (int i = 0; i < nets.size() * worst_slack_nets_percent_ / 100.0; i++)
     worst_slack_nets_.push_back(nets[i]);
 }
 
@@ -1475,8 +1476,24 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
           Net *tie_net = network_->net(tie_pin);
           sta_->deleteNet(tie_net);
           parasitics_invalid_.erase(tie_net);
-          // Delete the tie instance.
-          sta_->deleteInstance(inst);
+          // Delete the tie instance if no other ports are in use.
+          // A tie cell can have both tie hi and low outputs.
+          bool has_other_fanout = false;
+          std::unique_ptr<InstancePinIterator> inst_pin_iter{
+              network_->pinIterator(inst)};
+          while (inst_pin_iter->hasNext()) {
+            Pin *pin = inst_pin_iter->next();
+            if (pin != drvr_pin) {
+              Net* net = network_->net(pin);
+              if (net && !network_->isPower(net) && !network_->isGround(net)) {
+                has_other_fanout = true;
+                break;
+              }
+            }
+          }
+          if (!has_other_fanout) {
+            sta_->deleteInstance(inst);
+          }
         }
       }
     }
@@ -2303,10 +2320,8 @@ void
 Resizer::journalRestore(int &resize_count,
                         int &inserted_buffer_count)
 {
-  for (auto inst_cell : resized_inst_map_) {
-    Instance *inst = inst_cell.first;
+  for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
-      LibertyCell *lib_cell = inst_cell.second;
       debugPrint(logger_, RSZ, "journal", 1, "journal restore {} ({})",
                  network_->pathName(inst),
                  lib_cell->name());
@@ -2458,6 +2473,12 @@ void
 Resizer::setDebugPin(const Pin *pin)
 {
   debug_pin_ = pin;
+}
+
+void
+Resizer::setWorstSlackNetsPercent(float percent)
+{
+  worst_slack_nets_percent_ = percent;
 }
 
 } // namespace

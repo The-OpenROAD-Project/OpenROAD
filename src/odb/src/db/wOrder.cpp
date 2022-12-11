@@ -110,8 +110,8 @@ void orderWires(dbBlock* block,
     return;
   }
   _conn->resetSplitCnt();
-  _conn->analyzeNet(net, force, verbose, no_convert,
-                    cutLength, maxLength, no_patch);
+  _conn->analyzeNet(
+      net, force, verbose, no_convert, cutLength, maxLength, no_patch);
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0 && verbose)
     notice(0, "Split top of %d T shapes.\n", splitcnt);

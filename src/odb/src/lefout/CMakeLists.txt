@@ -11,6 +11,7 @@ target_include_directories(lefout
 target_link_libraries(lefout
     db
     utl
+    Boost::boost
 )
 
 set_target_properties(lefout

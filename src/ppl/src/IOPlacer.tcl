@@ -219,7 +219,7 @@ sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
 }
 
 proc set_pin_length_extension { args } {
-  sta::parse_key_args "set_pin_length" args \
+  sta::parse_key_args "set_pin_length_extension" args \
   keys {-hor_extension -ver_extension}
 
   sta::check_argc_eq0 "set_pin_length_extension" $args
@@ -238,7 +238,7 @@ sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
 }
 
 proc set_pin_thick_multiplier { args } {
-  sta::parse_key_args "set_pin_length" args \
+  sta::parse_key_args "set_pin_thick_multiplier" args \
   keys {-hor_multiplier -ver_multiplier}
 
   sta::check_argc_eq0 "set_pin_thick_multiplier" $args
@@ -294,7 +294,7 @@ proc place_pin { args } {
   if [info exists keys(-pin_size)] {
     set pin_size $keys(-pin_size)
   } else {
-    utl::error PPL 67 "-pin_size is required."
+    set pin_size {0 0}
   }
 
   if { [llength $pin_size] != 2 } {

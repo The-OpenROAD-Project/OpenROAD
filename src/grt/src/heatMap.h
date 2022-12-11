@@ -57,7 +57,8 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource
 
  private:
   odb::dbDatabase* db_;
-  enum Direction {
+  enum Direction
+  {
     ALL,
     HORIZONTAL,
     VERTICAL

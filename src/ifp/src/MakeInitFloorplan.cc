@@ -33,9 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ifp/MakeInitFloorplan.hh"
+
 #include <tcl.h>
 
-#include "ifp/MakeInitFloorplan.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 

@@ -47,6 +47,7 @@ record_tests {
   top_layer7
   top_layer_error
   pin_length
+  pin_length_error
   pin_extension
   pin_thick_multiplier
   place_pin1
@@ -54,6 +55,7 @@ record_tests {
   place_pin3
   place_pin4
   place_pin5
+  place_pin6
   place_pin_error1
   place_pin_error2
   place_pin_error3

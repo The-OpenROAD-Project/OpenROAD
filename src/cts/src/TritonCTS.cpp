@@ -45,7 +45,6 @@
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
 #include "LevelBalancer.h"
-#include "PostCtsOpt.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "db_sta/dbNetwork.hh"
@@ -96,9 +95,6 @@ void TritonCTS::runTritonCts()
   } else {
     checkCharacterization();
     buildClockTrees();
-    if (options_->runPostCtsOpt()) {
-      runPostCtsOpt();
-    }
     writeDataToDb();
   }
 }
@@ -165,16 +161,6 @@ void TritonCTS::buildClockTrees()
         LevelBalancer balancer(builder, options_, logger_);
         balancer.run();
       }
-    }
-  }
-}
-
-void TritonCTS::runPostCtsOpt()
-{
-  if (options_->runPostCtsOpt()) {
-    for (TreeBuilder* builder : *builders_) {
-      PostCtsOpt opt(builder, options_, techChar_, logger_);
-      opt.run();
     }
   }
 }
@@ -456,7 +442,8 @@ void TritonCTS::populateTritonCTS()
       findClockRoots(clk, clkNets);
       for (auto net : clkNets) {
         if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          logger_->error(
+              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
         }
       }
       clockNetsInfo.emplace_back(make_pair(clkNets, clkName));

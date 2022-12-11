@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <iostream>
-
 #include "dbStream.h"
+
+#include <iostream>
 
 #include "db.h"
 
@@ -119,8 +119,8 @@ dbIStream::dbIStream(_dbDatabase* db, FILE* f)
 
 std::ostream& operator<<(std::ostream& os, const Rect& box)
 {
-  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
-     << " " << box.yMax() << " )";
+  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax() << " "
+     << box.yMax() << " )";
   return os;
 }
 

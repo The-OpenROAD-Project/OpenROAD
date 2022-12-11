@@ -8,8 +8,10 @@ record_tests {
   congestion4
   congestion5
   congestion6
+  critical_nets_percentage
   est_rc1
   est_rc2
+  est_rc3
   gcd
   gcd_flute
   inst_pin_out_of_die

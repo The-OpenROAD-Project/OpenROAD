@@ -362,46 +362,46 @@ class dbMasterType
  public:
   enum Value
   {
-    NONE,              /** */
-    COVER,             /** */
-    COVER_BUMP,        /** */
-    RING,              /** */
-    BLOCK,             /** */
-    BLOCK_BLACKBOX,    /** */
-    BLOCK_SOFT,        /** */
-    PAD,               /** */
-    PAD_INPUT,         /** */
-    PAD_OUTPUT,        /** */
-    PAD_INOUT,         /** */
-    PAD_POWER,         /** */
-    PAD_SPACER,        /** */
-    PAD_AREAIO,        /** */
-    CORE,              /** */
-    CORE_FEEDTHRU,     /** */
-    CORE_TIEHIGH,      /** */
-    CORE_TIELOW,       /** */
-    CORE_SPACER,       /** */
-    CORE_ANTENNACELL,  /** */
-    CORE_WELLTAP,      /** */
-    ENDCAP,            /** */
-    ENDCAP_PRE,        /** */
-    ENDCAP_POST,       /** */
-    ENDCAP_TOPLEFT,    /** */
-    ENDCAP_TOPRIGHT,   /** */
-    ENDCAP_BOTTOMLEFT, /** */
-    ENDCAP_BOTTOMRIGHT, /** */
-    ENDCAP_LEF58_BOTTOMEDGE, /** */
-    ENDCAP_LEF58_TOPEDGE, /** */
-    ENDCAP_LEF58_LEFTEDGE, /** */
-    ENDCAP_LEF58_RIGHTEDGE, /** */
-    ENDCAP_LEF58_RIGHTBOTTOMEDGE, /** */
-    ENDCAP_LEF58_LEFTBOTTOMEDGE, /** */
-    ENDCAP_LEF58_RIGHTTOPEDGE, /** */
-    ENDCAP_LEF58_LEFTTOPEDGE, /** */
+    NONE,                           /** */
+    COVER,                          /** */
+    COVER_BUMP,                     /** */
+    RING,                           /** */
+    BLOCK,                          /** */
+    BLOCK_BLACKBOX,                 /** */
+    BLOCK_SOFT,                     /** */
+    PAD,                            /** */
+    PAD_INPUT,                      /** */
+    PAD_OUTPUT,                     /** */
+    PAD_INOUT,                      /** */
+    PAD_POWER,                      /** */
+    PAD_SPACER,                     /** */
+    PAD_AREAIO,                     /** */
+    CORE,                           /** */
+    CORE_FEEDTHRU,                  /** */
+    CORE_TIEHIGH,                   /** */
+    CORE_TIELOW,                    /** */
+    CORE_SPACER,                    /** */
+    CORE_ANTENNACELL,               /** */
+    CORE_WELLTAP,                   /** */
+    ENDCAP,                         /** */
+    ENDCAP_PRE,                     /** */
+    ENDCAP_POST,                    /** */
+    ENDCAP_TOPLEFT,                 /** */
+    ENDCAP_TOPRIGHT,                /** */
+    ENDCAP_BOTTOMLEFT,              /** */
+    ENDCAP_BOTTOMRIGHT,             /** */
+    ENDCAP_LEF58_BOTTOMEDGE,        /** */
+    ENDCAP_LEF58_TOPEDGE,           /** */
+    ENDCAP_LEF58_LEFTEDGE,          /** */
+    ENDCAP_LEF58_RIGHTEDGE,         /** */
+    ENDCAP_LEF58_RIGHTBOTTOMEDGE,   /** */
+    ENDCAP_LEF58_LEFTBOTTOMEDGE,    /** */
+    ENDCAP_LEF58_RIGHTTOPEDGE,      /** */
+    ENDCAP_LEF58_LEFTTOPEDGE,       /** */
     ENDCAP_LEF58_RIGHTBOTTOMCORNER, /** */
-    ENDCAP_LEF58_LEFTBOTTOMCORNER, /** */
-    ENDCAP_LEF58_RIGHTTOPCORNER, /** */
-    ENDCAP_LEF58_LEFTTOPCORNER, /** */
+    ENDCAP_LEF58_LEFTBOTTOMCORNER,  /** */
+    ENDCAP_LEF58_RIGHTTOPCORNER,    /** */
+    ENDCAP_LEF58_LEFTTOPCORNER,     /** */
   };
 
   ///
@@ -1199,7 +1199,6 @@ class Ads_NoCopy
   Ads_NoCopy& operator=(const Ads_NoCopy& q);
 };
 
-
 ///
 /// Defines the type of shapes.
 ///
@@ -1311,7 +1310,5 @@ class dbAccessType
  private:
   Value _value;
 };
-
-
 
 }  // namespace odb

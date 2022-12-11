@@ -1,0 +1,31 @@
+name: Format Code with pre commit trigger
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  format:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: setup
+        run: |
+          sudo apt update 
+          sudo apt install -y clang-14 clang-format-14
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v32
+      - name: Check format of cpp changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* && "${file}" != "src/dbSta/"* && "${file}" != "src/rsz/"* ]]; then
+              clang-format --dry-run --Werror $file
+            fi
+          done
+        

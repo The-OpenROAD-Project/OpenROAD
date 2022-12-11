@@ -45,9 +45,8 @@
 #include <variant>
 
 #include "gui/gui.h"
-#include "odb/db.h"
-
 #include "inspector.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -120,12 +119,10 @@ class DRCDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
-  void highlight(std::any object,
-                 Painter& painter,
-                 void* additional_data) const override;
+  void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object, void* additional_data) const override;
+  Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;

@@ -36,7 +36,6 @@
 #include "drcWidget.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -157,9 +156,7 @@ bool DRCDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void DRCDescriptor::highlight(std::any object,
-                              Painter& painter,
-                              void* additional_data) const
+void DRCDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
   vio->paint(painter);
@@ -180,7 +177,7 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   auto srcs = vio->getSources();
   if (!srcs.empty()) {
     SelectionSet sources;
-    for (auto src : srcs) {
+    for (auto& src : srcs) {
       auto select = gui->makeSelected(src);
       if (select) {
         sources.insert(select);
@@ -202,11 +199,10 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   return props;
 }
 
-Selected DRCDescriptor::makeSelected(std::any object,
-                                     void* additional_data) const
+Selected DRCDescriptor::makeSelected(std::any object) const
 {
   if (auto vio = std::any_cast<DRCViolation*>(&object)) {
-    return Selected(*vio, this, additional_data);
+    return Selected(*vio, this);
   }
   return Selected();
 }
@@ -221,7 +217,7 @@ bool DRCDescriptor::lessThan(std::any l, std::any r) const
 bool DRCDescriptor::getAllObjects(SelectionSet& objects) const
 {
   for (auto& violation : violations_) {
-    objects.insert(makeSelected(violation.get(), nullptr));
+    objects.insert(makeSelected(violation.get()));
   }
   return true;
 }
@@ -350,8 +346,10 @@ void DRCWidget::toggleParent(QStandardItem* child)
     states.push_back(pchild->checkState() == Qt::Checked);
   }
 
-  const bool all_on = std::all_of(states.begin(), states.end(), [](bool v){return v;});
-  const bool any_on = std::any_of(states.begin(), states.end(), [](bool v){return v;});
+  const bool all_on
+      = std::all_of(states.begin(), states.end(), [](bool v) { return v; });
+  const bool any_on
+      = std::any_of(states.begin(), states.end(), [](bool v) { return v; });
 
   if (all_on) {
     parent->setCheckState(Qt::Checked);
@@ -362,7 +360,9 @@ void DRCWidget::toggleParent(QStandardItem* child)
   }
 }
 
-bool DRCWidget::setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent)
+bool DRCWidget::setVisibleDRC(QStandardItem* item,
+                              bool visible,
+                              bool announce_parent)
 {
   QVariant data = item->data();
   if (data.isValid()) {
@@ -467,7 +467,8 @@ void DRCWidget::updateModel()
           = makeItem(QString::number(violation_idx++));
       violation_index->setData(QVariant::fromValue(violation));
       violation_index->setCheckable(true);
-      violation_index->setCheckState(violation->isVisible() ? Qt::Checked : Qt::Unchecked);
+      violation_index->setCheckState(violation->isVisible() ? Qt::Checked
+                                                            : Qt::Unchecked);
 
       type_group->appendRow({violation_index, violation_item});
     }

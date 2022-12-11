@@ -37,22 +37,26 @@
 #include "frDesign.h"
 
 namespace fr {
+class FlexTAGraphics;
+
 class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger)
-      : tech_(in->getTech()), design_(in), logger_(logger){};
+  FlexTA(frDesign* in, Logger* logger);
+  ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
   // others
   int main();
+  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
 
  private:
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  std::unique_ptr<FlexTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
   void initTA(int size);
@@ -100,9 +104,9 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn)
-      : tech_(nullptr),
-        design_(designIn),
+  FlexTAWorker(frDesign* designIn, Logger* logger)
+      : design_(designIn),
+        logger_(logger),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
@@ -173,19 +177,18 @@ class FlexTAWorker
   FlexTAWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
   int getNumAssigned() const { return numAssigned_; }
   // others
-  int main();
   int main_mt();
 
  private:
-  frTechObject* tech_;  // not set
   frDesign* design_;
+  Logger* logger_;
   Rect routeBox_;
   Rect extBox_;
   dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 
-  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorterd iroutes
+  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorted iroutes
   std::vector<std::unique_ptr<taPin>> extIroutes_;
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>

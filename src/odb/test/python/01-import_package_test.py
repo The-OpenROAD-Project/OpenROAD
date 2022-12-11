@@ -1,3 +1,3 @@
-import opendbpy as odb
+import odbpy as odb
 
-print('opendbpy package import successful!')
+print('odbpy package import successful!')

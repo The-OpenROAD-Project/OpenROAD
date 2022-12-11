@@ -31,11 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "power_cells.h"
+
 #include "domain.h"
 #include "grid.h"
-#include "straps.h"
-
 #include "odb/db.h"
+#include "straps.h"
 #include "utl/Logger.h"
 
 namespace pdn {
@@ -89,11 +89,17 @@ void PowerCell::populateAlwaysOnPinPositions(int site_width)
   }
 }
 
-std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect, int site_width, int offset)
+std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect,
+                                             int site_width,
+                                             int offset)
 {
   std::set<int> pos;
-  const int x_start = std::ceil(static_cast<double>(rect.xMin() - offset) / site_width) * site_width;
-  const int x_end = std::floor(static_cast<double>(rect.xMax() - offset) / site_width) * site_width;
+  const int x_start
+      = std::ceil(static_cast<double>(rect.xMin() - offset) / site_width)
+        * site_width;
+  const int x_end
+      = std::floor(static_cast<double>(rect.xMax() - offset) / site_width)
+        * site_width;
   for (int x = x_start; x <= x_end; x += site_width) {
     pos.insert(x + offset);
   }
@@ -102,7 +108,8 @@ std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect, int site_wid
 
 bool PowerCell::appliesToRow(odb::dbRow* row) const
 {
-  // double height cell with switched power in the center needs to be placed in MX rows
+  // double height cell with switched power in the center needs to be placed in
+  // MX rows
   return row->getOrient() == odb::dbOrientType::MX;
 }
 
@@ -112,28 +119,31 @@ GridSwitchedPower::GridSwitchedPower(Grid* grid,
                                      PowerCell* cell,
                                      odb::dbNet* control,
                                      NetworkType network)
-  : grid_(grid),
-    cell_(cell),
-    control_(control),
-    network_(network)
+    : grid_(grid), cell_(cell), control_(control), network_(network)
 {
   if (network_ == DAISY && !cell->hasAcknowledge()) {
-    grid->getLogger()->error(utl::PDN, 198, "{} requires the power cell to have an acknowledge pin.", toString(DAISY));
+    grid->getLogger()->error(
+        utl::PDN,
+        198,
+        "{} requires the power cell to have an acknowledge pin.",
+        toString(DAISY));
   }
 }
 
 const std::string GridSwitchedPower::toString(NetworkType type)
 {
   switch (type) {
-  case STAR:
-    return "STAR";
-  case DAISY:
-    return "DAISY";
+    case STAR:
+      return "STAR";
+    case DAISY:
+      return "DAISY";
   }
   return "unknown";
 }
 
-GridSwitchedPower::NetworkType GridSwitchedPower::fromString(const std::string& type, utl::Logger* logger)
+GridSwitchedPower::NetworkType GridSwitchedPower::fromString(
+    const std::string& type,
+    utl::Logger* logger)
 {
   if (type == "STAR") {
     return STAR;
@@ -198,7 +208,9 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
   return row_search;
 }
 
-std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(odb::dbInst* inst, const RowTree& row_search) const
+std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(
+    odb::dbInst* inst,
+    const RowTree& row_search) const
 {
   std::set<odb::dbRow*> rows;
 
@@ -223,9 +235,10 @@ void GridSwitchedPower::build()
 {
   if (!insts_.empty()) {
     // power switches already built and need to be ripped up to try again
-    grid_->getLogger()->warn(utl::PDN,
-                             222,
-                             "Power switch insertion has already run. To reset use -ripup option.");
+    grid_->getLogger()->warn(
+        utl::PDN,
+        222,
+        "Power switch insertion has already run. To reset use -ripup option.");
     return;
   }
 
@@ -233,7 +246,8 @@ void GridSwitchedPower::build()
 
   auto* target = getLowestStrap();
   if (target == nullptr) {
-    grid_->getLogger()->error(utl::PDN, 220, "Unable to find a strap to connect power switched to.");
+    grid_->getLogger()->error(
+        utl::PDN, 220, "Unable to find a strap to connect power switched to.");
   }
 
   const InstTree exisiting_insts = buildInstanceSearchTree();
@@ -256,7 +270,12 @@ void GridSwitchedPower::build()
     const std::string inst_prefix = inst_prefix_ + row->getName() + "_";
     int idx = 0;
 
-    debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 2, "Adding power switches in row: {}", row->getName());
+    debugPrint(grid_->getLogger(),
+               utl::PDN,
+               "PowerSwitch",
+               2,
+               "Adding power switches in row: {}",
+               row->getName());
 
     odb::Rect bbox = row->getBBox();
     std::vector<odb::Rect> straps;
@@ -267,16 +286,16 @@ void GridSwitchedPower::build()
       straps.push_back(shape->getRect());
     }
 
-    std::sort(straps.begin(), straps.end(), [](const odb::Rect& lhs, const odb::Rect& rhs) {
-      return lhs.xMin() < rhs.xMin();
-    });
+    std::sort(straps.begin(),
+              straps.end(),
+              [](const odb::Rect& lhs, const odb::Rect& rhs) {
+                return lhs.xMin() < rhs.xMin();
+              });
 
     for (const auto& strap : straps) {
       const std::string new_name = inst_prefix + std::to_string(idx++);
-      auto* inst = odb::dbInst::create(grid_->getBlock(),
-                                       cell_->getMaster(),
-                                       new_name.c_str(),
-                                       true);
+      auto* inst = odb::dbInst::create(
+          grid_->getBlock(), cell_->getMaster(), new_name.c_str(), true);
       if (inst == nullptr) {
         inst = grid_->getBlock()->findInst(new_name.c_str());
         if (inst->getMaster() != cell_->getMaster()) {
@@ -293,7 +312,12 @@ void GridSwitchedPower::build()
         region->addInst(inst);
       }
 
-      debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 3, "Adding switch {}", new_name);
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "PowerSwitch",
+                 3,
+                 "Adding switch {}",
+                 new_name);
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
@@ -303,12 +327,14 @@ void GridSwitchedPower::build()
         // inst is not in multiple rows, so remove
         odb::dbInst::destroy(inst);
         const double dbu_to_microns = grid_->getBlock()->getDbUnitsPerMicron();
-        grid_->getLogger()->warn(utl::PDN,
-                                 223,
-                                 "Unable to insert power switch ({}) at ({:.4f}, {:.4f}), due to lack of available rows.",
-                                 new_name,
-                                 *locations.begin() / dbu_to_microns,
-                                 bbox.yMin() / dbu_to_microns);
+        grid_->getLogger()->warn(
+            utl::PDN,
+            223,
+            "Unable to insert power switch ({}) at ({:.4f}, {:.4f}), due to "
+            "lack of available rows.",
+            new_name,
+            *locations.begin() / dbu_to_microns,
+            bbox.yMin() / dbu_to_microns);
         continue;
       }
 
@@ -331,13 +357,13 @@ void GridSwitchedPower::build()
 
 void GridSwitchedPower::updateControlNetwork()
 {
-  switch(network_) {
-  case STAR:
-    updateControlNetworkSTAR();
-    break;
-  case DAISY:
-    updateControlNetworkDAISY(true);
-    break;
+  switch (network_) {
+    case STAR:
+      updateControlNetworkSTAR();
+      break;
+    case DAISY:
+      updateControlNetworkDAISY(true);
+      break;
   }
 }
 
@@ -366,22 +392,25 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
   }
 
   for (auto& [pos, insts] : inst_order) {
-    std::sort(insts.begin(), insts.end(), [order_by_x](odb::dbInst* lhs, odb::dbInst* rhs) {
-      int lhs_x, lhs_y;
-      lhs->getLocation(lhs_x, lhs_y);
-      int rhs_x, rhs_y;
-      rhs->getLocation(rhs_x, rhs_y);
+    std::sort(insts.begin(),
+              insts.end(),
+              [order_by_x](odb::dbInst* lhs, odb::dbInst* rhs) {
+                int lhs_x, lhs_y;
+                lhs->getLocation(lhs_x, lhs_y);
+                int rhs_x, rhs_y;
+                rhs->getLocation(rhs_x, rhs_y);
 
-      if (order_by_x) {
-        return lhs_y < rhs_y;
-      } else {
-        return lhs_x < rhs_x;
-      }
-    });
+                if (order_by_x) {
+                  return lhs_y < rhs_y;
+                } else {
+                  return lhs_x < rhs_x;
+                }
+              });
   }
 
   auto get_next_ack = [this](const std::string& inst_name) {
-    std::string net_name = inst_name + "_" + cell_->getAcknowledgePin()->getName();
+    std::string net_name
+        = inst_name + "_" + cell_->getAcknowledgePin()->getName();
     auto* ack = odb::dbNet::create(grid_->getBlock(), net_name.c_str());
     if (ack == nullptr) {
       return grid_->getBlock()->findNet(net_name.c_str());
@@ -446,14 +475,16 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
 
       inst->setLocation(new_pos, y);
       if (checkInstanceOverlap(inst, overlapping)) {
-        debugPrint(grid_->getLogger(),
-                   utl::PDN,
-                   "PowerSwitch",
-                   3,
-                   "Fixed by moving {} to ({}, {})",
-                   inst->getName(),
-                   new_pos / static_cast<double>(grid_->getBlock()->getDbUnitsPerMicron()),
-                   y / static_cast<double>(grid_->getBlock()->getDbUnitsPerMicron()));
+        debugPrint(
+            grid_->getLogger(),
+            utl::PDN,
+            "PowerSwitch",
+            3,
+            "Fixed by moving {} to ({}, {})",
+            inst->getName(),
+            new_pos
+                / static_cast<double>(grid_->getBlock()->getDbUnitsPerMicron()),
+            y / static_cast<double>(grid_->getBlock()->getDbUnitsPerMicron()));
         fixed = true;
         break;
       }
@@ -500,14 +531,17 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
                3,
                "Fixed by moving {} to ({}, {}) and {} to ({}, {})",
                inst->getName(),
-               pws_new_loc, y,
+               pws_new_loc,
+               y,
                overlapping->getName(),
-               other_new_loc, overlap_y);
+               other_new_loc,
+               overlap_y);
     fixed = true;
   }
 }
 
-bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const
+bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0,
+                                             odb::dbInst* inst1) const
 {
   odb::Rect inst0_bbox = inst0->getBBox()->getBox();
   odb::Rect inst1_bbox = inst1->getBBox()->getBox();
@@ -519,7 +553,9 @@ bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* in
   return overlap.area() == 0;
 }
 
-odb::dbInst* GridSwitchedPower::checkOverlappingInst(odb::dbInst* cell, const InstTree& insts) const
+odb::dbInst* GridSwitchedPower::checkOverlappingInst(
+    odb::dbInst* cell,
+    const InstTree& insts) const
 {
   odb::Rect bbox = cell->getBBox()->getBox();
 
@@ -586,30 +622,32 @@ const ShapeTreeMap GridSwitchedPower::getShapes() const
   ShapeTreeMap shapes;
 
   for (const auto& [inst, inst_info] : insts_) {
-    for (const auto& [layer, inst_shapes] : InstanceGrid::getInstancePins(inst)) {
+    for (const auto& [layer, inst_shapes] :
+         InstanceGrid::getInstancePins(inst)) {
       auto& layer_shapes = shapes[layer];
       for (const auto& [box, shape] : inst_shapes) {
         if (shape->getNet() == alwayson) {
           layer_shapes.insert({box, shape});
         }
       }
-
     }
   }
 
   return shapes;
 }
 
-std::set<int> GridSwitchedPower::computeLocations(const odb::Rect& strap,
-                                                  int site_width,
-                                                  const odb::Rect& corearea) const
+std::set<int> GridSwitchedPower::computeLocations(
+    const odb::Rect& strap,
+    int site_width,
+    const odb::Rect& corearea) const
 {
   const auto& pin_pos = cell_->getAlwaysOnPowerPinPositions();
   const int min_pin = *pin_pos.begin();
   const int max_pin = *pin_pos.rbegin();
 
   std::set<int> pos;
-  for (auto strap_pos : PowerCell::getRectAsSiteWidths(strap, site_width, corearea.xMin())) {
+  for (auto strap_pos :
+       PowerCell::getRectAsSiteWidths(strap, site_width, corearea.xMin())) {
     for (auto pin : cell_->getAlwaysOnPowerPinPositions()) {
       const int new_pos = strap_pos - pin;
 

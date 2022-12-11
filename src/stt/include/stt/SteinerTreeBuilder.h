@@ -74,7 +74,7 @@ struct Tree
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger) const;
-  int branchCount() const { return deg * 2 - 2; }
+  int branchCount() const { return branch.size(); }
 };
 
 class SteinerTreeBuilder
@@ -85,17 +85,17 @@ class SteinerTreeBuilder
 
   void init(odb::dbDatabase* db, Logger* logger);
 
-  Tree makeSteinerTree(std::vector<int>& x,
-                       std::vector<int>& y,
-                       int drvr_index,
-                       float alpha);
-  Tree makeSteinerTree(std::vector<int>& x,
-                       std::vector<int>& y,
-                       int drvr_index);
+  Tree makeSteinerTree(const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const int drvr_index,
+                       const float alpha);
+  Tree makeSteinerTree(const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const int drvr_index);
   Tree makeSteinerTree(odb::dbNet* net,
-                       std::vector<int>& x,
-                       std::vector<int>& y,
-                       int drvr_index);
+                       const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
   Tree makeSteinerTree(const std::vector<int>& x,

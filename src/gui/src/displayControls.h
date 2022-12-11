@@ -216,6 +216,7 @@ class DisplayControls : public QDockWidget,
   bool areObstructionsVisible() override;
   bool areObstructionsSelectable() override;
   bool areRowsVisible() override;
+  bool areRowsSelectable() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 

@@ -45,6 +45,50 @@ namespace ifp {
 class InitFloorplan;
 }
 
+namespace utl {
+class Logger;
+}
+
+namespace ant {
+class AntennaChecker;
+}
+
+namespace grt {
+class GlobalRouter;
+}
+
+namespace gpl {
+class Replace;
+}
+
+namespace dpl {
+class Opendp;
+}
+
+namespace mpl {
+class MacroPlacer;
+}
+
+namespace ppl {
+class IOPlacer;
+}
+
+namespace tap {
+class Tapcell;
+}
+
+namespace cts {
+class TritonCTS;
+}
+
+namespace triton_route {
+class TritonRoute;
+}
+
+namespace dpo {
+class Optdp;
+}
+
 namespace ord {
 
 class Tech;
@@ -54,6 +98,10 @@ class Design
  public:
   Design(Tech* tech);
   void readVerilog(const std::string& file_name);
+  void readDef(const std::string& file_name,
+               bool continue_on_errors = false,
+               bool floorplan_init = false,
+               bool incremental = false);
   void link(const std::string& design_name);
 
   void writeDb(const std::string& file_name);
@@ -64,8 +112,23 @@ class Design
 
   int micronToDBU(double coord);
 
+  // This is intended as a temporary back door to tcl from Python
+  const std::string evalTclString(const std::string& cmd);
+
+  Tech* getTech();
+
   // Services
   ifp::InitFloorplan* getFloorplan();
+  ant::AntennaChecker* getAntennaChecker();
+  grt::GlobalRouter* getGlobalRouter();
+  gpl::Replace* getReplace();
+  dpl::Opendp* getOpendp();
+  mpl::MacroPlacer* getMacroPlacer();
+  ppl::IOPlacer* getIOPlacer();
+  tap::Tapcell* getTapcell();
+  cts::TritonCTS* getTritonCts();
+  triton_route::TritonRoute* getTritonRoute();
+  dpo::Optdp* getOptdp();
 
  private:
   Tech* tech_;

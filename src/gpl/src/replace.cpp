@@ -32,16 +32,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "gpl/Replace.h"
+
+#include <iostream>
+
 #include "initialPlace.h"
-#include "nesterovPlace.h"
-#include "placerBase.h"
 #include "nesterovBase.h"
-#include "routeBase.h" 
+#include "nesterovPlace.h"
+#include "odb/db.h"
+#include "placerBase.h"
+#include "routeBase.h"
+#include "rsz/Resizer.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
-#include "rsz/Resizer.hh"
-#include "odb/db.h"
-#include <iostream>
 
 namespace gpl {
 
@@ -49,60 +51,68 @@ using namespace std;
 using utl::GPL;
 
 Replace::Replace()
-  : db_(nullptr),
-  rs_(nullptr),
-  fr_(nullptr),
-  log_(nullptr),
-  pb_(nullptr), nb_(nullptr), 
-  rb_(nullptr), tb_(nullptr), 
-  ip_(nullptr), np_(nullptr),
-  initialPlaceMaxIter_(20), 
-  initialPlaceMinDiffLength_(1500),
-  initialPlaceMaxSolverIter_(100),
-  initialPlaceMaxFanout_(200),
-  initialPlaceNetWeightScale_(800),
-  forceCPU_(false),
-  nesterovPlaceMaxIter_(5000),
-  binGridCntX_(0), binGridCntY_(0), 
-  overflow_(0.1), density_(1.0),
-  initDensityPenalityFactor_(0.00008), 
-  initWireLengthCoef_(0.25),
-  minPhiCoef_(0.95), maxPhiCoef_(1.05),
-  referenceHpwl_(446000000),
-  routabilityCheckOverflow_(0.20),
-  routabilityMaxDensity_(0.99),
-  routabilityTargetRcMetric_(1.25),
-  routabilityInflationRatioCoef_(2.5),
-  routabilityMaxInflationRatio_(2.5),
-  routabilityRcK1_(1.0),
-  routabilityRcK2_(1.0),
-  routabilityRcK3_(0.0),
-  routabilityRcK4_(0.0),
-  routabilityMaxBloatIter_(1),
-  routabilityMaxInflationIter_(4),
-  timingNetWeightMax_(1.9),
-  timingDrivenMode_(true),
-  routabilityDrivenMode_(true),
-  uniformTargetDensityMode_(false),
-  skipIoMode_(false),
-  padLeft_(0), padRight_(0),
-  gui_debug_(false),
-  gui_debug_pause_iterations_(10),
-  gui_debug_update_iterations_(10),
-  gui_debug_draw_bins_(false),
-  gui_debug_initial_(false),
-  gui_debug_inst_(nullptr)
-{
-};
+    : db_(nullptr),
+      rs_(nullptr),
+      fr_(nullptr),
+      log_(nullptr),
+      pb_(nullptr),
+      nb_(nullptr),
+      rb_(nullptr),
+      tb_(nullptr),
+      ip_(nullptr),
+      np_(nullptr),
+      initialPlaceMaxIter_(20),
+      initialPlaceMinDiffLength_(1500),
+      initialPlaceMaxSolverIter_(100),
+      initialPlaceMaxFanout_(200),
+      initialPlaceNetWeightScale_(800),
+      forceCPU_(false),
+      nesterovPlaceMaxIter_(5000),
+      binGridCntX_(0),
+      binGridCntY_(0),
+      overflow_(0.1),
+      density_(1.0),
+      initDensityPenalityFactor_(0.00008),
+      initWireLengthCoef_(0.25),
+      minPhiCoef_(0.95),
+      maxPhiCoef_(1.05),
+      referenceHpwl_(446000000),
+      routabilityCheckOverflow_(0.20),
+      routabilityMaxDensity_(0.99),
+      routabilityTargetRcMetric_(1.25),
+      routabilityInflationRatioCoef_(2.5),
+      routabilityMaxInflationRatio_(2.5),
+      routabilityRcK1_(1.0),
+      routabilityRcK2_(1.0),
+      routabilityRcK3_(0.0),
+      routabilityRcK4_(0.0),
+      routabilityMaxBloatIter_(1),
+      routabilityMaxInflationIter_(4),
+      timingNetWeightMax_(1.9),
+      timingDrivenMode_(true),
+      routabilityDrivenMode_(true),
+      uniformTargetDensityMode_(false),
+      skipIoMode_(false),
+      padLeft_(0),
+      padRight_(0),
+      gui_debug_(false),
+      gui_debug_pause_iterations_(10),
+      gui_debug_update_iterations_(10),
+      gui_debug_draw_bins_(false),
+      gui_debug_initial_(false),
+      gui_debug_inst_(nullptr){};
 
-Replace::~Replace() {
+Replace::~Replace()
+{
   reset();
 }
 
-void Replace::init() {
+void Replace::init()
+{
 }
 
-void Replace::reset() {
+void Replace::reset()
+{
   // two pointers should not be freed.
   db_ = nullptr;
   fr_ = nullptr;
@@ -132,7 +142,7 @@ void Replace::reset() {
   initWireLengthCoef_ = 0.25;
   minPhiCoef_ = 0.95;
   maxPhiCoef_ = 1.05;
-  referenceHpwl_= 446000000;
+  referenceHpwl_ = 446000000;
 
   routabilityCheckOverflow_ = 0.20;
   routabilityMaxDensity_ = 0.99;
@@ -145,7 +155,7 @@ void Replace::reset() {
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
-  routabilityDrivenMode_ = true; 
+  routabilityDrivenMode_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
 
@@ -162,16 +172,20 @@ void Replace::reset() {
   gui_debug_initial_ = false;
 }
 
-void Replace::setDb(odb::dbDatabase* db) {
+void Replace::setDb(odb::dbDatabase* db)
+{
   db_ = db;
 }
-void Replace::setGlobalRouter(grt::GlobalRouter* fr) {
+void Replace::setGlobalRouter(grt::GlobalRouter* fr)
+{
   fr_ = fr;
 }
-void Replace::setResizer(rsz::Resizer* rs) {
+void Replace::setResizer(rsz::Resizer* rs)
+{
   rs_ = rs;
 }
-void Replace::setLogger(utl::Logger* logger) {
+void Replace::setLogger(utl::Logger* logger)
+{
   log_ = logger;
 }
 
@@ -188,7 +202,7 @@ void Replace::doIncrementalPlace()
   int locked_cnt = 0;
   int unplaced_cnt = 0;
   auto block = db_->getChip()->getBlock();
-  for(auto inst : block->getInsts()) {
+  for (auto inst : block->getInsts()) {
     auto status = inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::PLACED) {
       pb_->dbToPb(inst)->lock();
@@ -251,14 +265,15 @@ void Replace::doInitialPlace()
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.debug = gui_debug_initial_;
   ipVars.forceCPU = forceCPU_;
-  
+
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
 
-bool Replace::initNesterovPlace() {
-  if( !pb_ ) {
+bool Replace::initNesterovPlace()
+{
+  if (!pb_) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
@@ -272,26 +287,26 @@ bool Replace::initNesterovPlace() {
     return false;
   }
 
-  if( !nb_ ) {
+  if (!nb_) {
     NesterovBaseVars nbVars;
     nbVars.targetDensity = density_;
 
-    if( binGridCntX_ != 0 ) {
+    if (binGridCntX_ != 0) {
       nbVars.isSetBinCntX = 1;
       nbVars.binCntX = binGridCntX_;
     }
 
-    if( binGridCntY_ != 0 ) {
+    if (binGridCntY_ != 0) {
       nbVars.isSetBinCntY = 1;
       nbVars.binCntY = binGridCntY_;
     }
-    
+
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
     nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
   }
-  
-  if( !rb_ ) {
+
+  if (!rb_) {
     RouteBaseVars rbVars;
     rbVars.maxDensity = routabilityMaxDensity_;
     rbVars.maxBloatIter = routabilityMaxBloatIter_;
@@ -307,13 +322,13 @@ bool Replace::initNesterovPlace() {
     rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
   }
 
-  if( !tb_ ) {
+  if (!tb_) {
     tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
     tb_->setTimingNetWeightOverflows(timingNetWeightOverflows_);
     tb_->setTimingNetWeightMax(timingNetWeightMax_);
   }
 
-  if( !np_ ) {
+  if (!np_) {
     NesterovPlaceVars npVars;
 
     npVars.minPhiCoef = minPhiCoef_;
@@ -323,7 +338,7 @@ bool Replace::initNesterovPlace() {
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
-    npVars.maxNesterovIter = nesterovPlaceMaxIter_; 
+    npVars.maxNesterovIter = nesterovPlaceMaxIter_;
     npVars.timingDrivenMode = timingDrivenMode_;
     npVars.routabilityDrivenMode = routabilityDrivenMode_;
     npVars.debug = gui_debug_;
@@ -332,13 +347,15 @@ bool Replace::initNesterovPlace() {
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
 
-    std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
+    std::unique_ptr<NesterovPlace> np(
+        new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
     np_ = std::move(np);
   }
   return true;
 }
 
-int Replace::doNesterovPlace(int start_iter) {
+int Replace::doNesterovPlace(int start_iter)
+{
   if (!initNesterovPlace()) {
     return 0;
   }
@@ -347,104 +364,104 @@ int Replace::doNesterovPlace(int start_iter) {
   return np_->doNesterovPlace(start_iter);
 }
 
-void
-Replace::setInitialPlaceMaxIter(int iter) {
-  initialPlaceMaxIter_ = iter; 
+void Replace::setInitialPlaceMaxIter(int iter)
+{
+  initialPlaceMaxIter_ = iter;
 }
 
-void
-Replace::setInitialPlaceMinDiffLength(int length) {
-  initialPlaceMinDiffLength_ = length; 
+void Replace::setInitialPlaceMinDiffLength(int length)
+{
+  initialPlaceMinDiffLength_ = length;
 }
 
-void
-Replace::setInitialPlaceMaxSolverIter(int iter) {
+void Replace::setInitialPlaceMaxSolverIter(int iter)
+{
   initialPlaceMaxSolverIter_ = iter;
 }
 
-void
-Replace::setInitialPlaceMaxFanout(int fanout) {
+void Replace::setInitialPlaceMaxFanout(int fanout)
+{
   initialPlaceMaxFanout_ = fanout;
 }
 
-void
-Replace::setInitialPlaceNetWeightScale(float scale) {
+void Replace::setInitialPlaceNetWeightScale(float scale)
+{
   initialPlaceNetWeightScale_ = scale;
 }
 
-void
-Replace::setNesterovPlaceMaxIter(int iter) {
+void Replace::setNesterovPlaceMaxIter(int iter)
+{
   nesterovPlaceMaxIter_ = iter;
   if (np_) {
     np_->setMaxIters(iter);
   }
 }
 
-void 
-Replace::setBinGridCntX(int binGridCntX) {
+void Replace::setBinGridCntX(int binGridCntX)
+{
   binGridCntX_ = binGridCntX;
 }
 
-void 
-Replace::setBinGridCntY(int binGridCntY) {
+void Replace::setBinGridCntY(int binGridCntY)
+{
   binGridCntY_ = binGridCntY;
 }
 
-void 
-Replace::setTargetOverflow(float overflow) {
+void Replace::setTargetOverflow(float overflow)
+{
   overflow_ = overflow;
   if (np_) {
     np_->setTargetOverflow(overflow);
   }
 }
 
-void
-Replace::setTargetDensity(float density) {
+void Replace::setTargetDensity(float density)
+{
   density_ = density;
 }
 
-void
-Replace::setUniformTargetDensityMode(bool mode) {
+void Replace::setUniformTargetDensityMode(bool mode)
+{
   uniformTargetDensityMode_ = mode;
 }
 
-float
-Replace::getUniformTargetDensity() {
+float Replace::getUniformTargetDensity()
+{
   initNesterovPlace();
-  return nb_->uniformTargetDensity(); 
+  return nb_->uniformTargetDensity();
 }
 
-void
-Replace::setInitDensityPenalityFactor(float penaltyFactor) {
+void Replace::setInitDensityPenalityFactor(float penaltyFactor)
+{
   initDensityPenalityFactor_ = penaltyFactor;
 }
 
-void
-Replace::setInitWireLengthCoef(float coef) {
+void Replace::setInitWireLengthCoef(float coef)
+{
   initWireLengthCoef_ = coef;
 }
 
-void
-Replace::setMinPhiCoef(float minPhiCoef) {
+void Replace::setMinPhiCoef(float minPhiCoef)
+{
   minPhiCoef_ = minPhiCoef;
 }
 
-void
-Replace::setMaxPhiCoef(float maxPhiCoef) {
+void Replace::setMaxPhiCoef(float maxPhiCoef)
+{
   maxPhiCoef_ = maxPhiCoef;
 }
 
-void
-Replace::setReferenceHpwl(float refHpwl) {
+void Replace::setReferenceHpwl(float refHpwl)
+{
   referenceHpwl_ = refHpwl;
 }
 
-void
-Replace::setDebug(int pause_iterations,
-                  int update_iterations,
-                  bool draw_bins,
-                  bool initial,
-                  odb::dbInst* inst) {
+void Replace::setDebug(int pause_iterations,
+                       int update_iterations,
+                       bool draw_bins,
+                       bool initial,
+                       odb::dbInst* inst)
+{
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
   gui_debug_update_iterations_ = update_iterations;
@@ -453,88 +470,90 @@ Replace::setDebug(int pause_iterations,
   gui_debug_inst_ = inst;
 }
 
-void
-Replace::setSkipIoMode(bool mode) {
+void Replace::setSkipIoMode(bool mode)
+{
   skipIoMode_ = mode;
 }
 
-void
-Replace::setForceCPU(bool force_cpu) {
+void Replace::setForceCPU(bool force_cpu)
+{
   forceCPU_ = force_cpu;
 }
 
-void
-Replace::setTimingDrivenMode(bool mode) {
+void Replace::setTimingDrivenMode(bool mode)
+{
   timingDrivenMode_ = mode;
 }
 
-void
-Replace::setRoutabilityDrivenMode(bool mode) {
-  routabilityDrivenMode_ = mode;  
+void Replace::setRoutabilityDrivenMode(bool mode)
+{
+  routabilityDrivenMode_ = mode;
 }
 
-void
-Replace::setRoutabilityCheckOverflow(float overflow) {
+void Replace::setRoutabilityCheckOverflow(float overflow)
+{
   routabilityCheckOverflow_ = overflow;
 }
 
-void
-Replace::setRoutabilityMaxDensity(float density) {
+void Replace::setRoutabilityMaxDensity(float density)
+{
   routabilityMaxDensity_ = density;
 }
 
-void
-Replace::setRoutabilityMaxBloatIter(int iter) {
-  routabilityMaxBloatIter_ = iter; 
+void Replace::setRoutabilityMaxBloatIter(int iter)
+{
+  routabilityMaxBloatIter_ = iter;
 }
 
-void
-Replace::setRoutabilityMaxInflationIter(int iter) {
+void Replace::setRoutabilityMaxInflationIter(int iter)
+{
   routabilityMaxInflationIter_ = iter;
 }
 
-void
-Replace::setRoutabilityTargetRcMetric(float rc) {
+void Replace::setRoutabilityTargetRcMetric(float rc)
+{
   routabilityTargetRcMetric_ = rc;
 }
 
-void
-Replace::setRoutabilityInflationRatioCoef(float coef) {
+void Replace::setRoutabilityInflationRatioCoef(float coef)
+{
   routabilityInflationRatioCoef_ = coef;
 }
 
-void
-Replace::setRoutabilityMaxInflationRatio(float ratio) {
+void Replace::setRoutabilityMaxInflationRatio(float ratio)
+{
   routabilityMaxInflationRatio_ = ratio;
 }
 
-void
-Replace::setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4) {
+void Replace::setRoutabilityRcCoefficients(float k1,
+                                           float k2,
+                                           float k3,
+                                           float k4)
+{
   routabilityRcK1_ = k1;
   routabilityRcK2_ = k2;
   routabilityRcK3_ = k3;
   routabilityRcK4_ = k4;
 }
 
-void
-Replace::setPadLeft(int pad) {
+void Replace::setPadLeft(int pad)
+{
   padLeft_ = pad;
 }
 
-void
-Replace::setPadRight(int pad) {
+void Replace::setPadRight(int pad)
+{
   padRight_ = pad;
 }
 
-void
-Replace::addTimingNetWeightOverflow(int overflow) {
+void Replace::addTimingNetWeightOverflow(int overflow)
+{
   timingNetWeightOverflows_.push_back(overflow);
 }
 
-void
-Replace::setTimingNetWeightMax(float max) {
+void Replace::setTimingNetWeightMax(float max)
+{
   timingNetWeightMax_ = max;
 }
 
-}
-
+}  // namespace gpl

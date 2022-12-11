@@ -178,9 +178,7 @@ void FlexGRWorker::endAddNets(set<frNet*, frBlockObjectComp>& modNets)
 void FlexGRWorker::endAddNets_stitchRouteBound(grNet* net)
 {
   auto& pinNodePairs = net->getPinNodePairs();
-  for (auto pinNodePair : pinNodePairs) {
-    auto pinNode = pinNodePair.second;
-
+  for (auto [ignored, pinNode] : pinNodePairs) {
     if (pinNode->getType() == frNodeTypeEnum::frcPin) {
       continue;
     }

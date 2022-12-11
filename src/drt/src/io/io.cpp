@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +37,6 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
-#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -643,10 +644,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              endX = endX;
-              endY = endY;
               break;
             case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
@@ -656,13 +653,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              beginExt = beginExt;
-              endX = endX;
-              endY = endY;
-              endExt = endExt;
-
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
@@ -672,10 +662,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
-              left = left;
-              bottom = bottom;
-              right = right;
-              top = top;
               hasRect = true;
               break;
             case odb::dbWireDecoder::ITERM:
@@ -885,7 +871,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
-        // We allow for multuple pins
+        // We allow for multiple pins
         break;
       case odb::dbSigType::TIEOFF:
       case odb::dbSigType::SIGNAL:
@@ -966,7 +952,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
         auto db_pas = db_pin->getPinAccess();
-        for (auto db_aps : db_pas) {
+        for (const auto& db_aps : db_pas) {
           std::unique_ptr<frPinAccess> pa = make_unique<frPinAccess>();
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();
@@ -1280,6 +1266,11 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     con->setMinSpacing(rule->getSpacing());
     con->setParallelOnly(rule->isParallelOnly());
     tmpLayer->addLef58EolExtConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
+  for (auto rule : layer->getTechLayerAreaRules()) {
+    auto con = make_unique<frLef58AreaConstraint>(rule);
+    tmpLayer->addLef58AreaConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
 }
@@ -1796,6 +1787,37 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
+  for (auto rule : layer->getTechLayerMinCutRules()) {
+    if (rule->isAreaValid()) {
+      logger_->warn(
+          DRT,
+          317,
+          "LEF58_MINIMUMCUT AREA is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isSameMetalOverlap()) {
+      logger_->warn(DRT,
+                    318,
+                    "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isFullyEnclosed()) {
+      logger_->warn(DRT,
+                    319,
+                    "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58MinimumcutConstraint>(rule);
+    auto rptr = static_cast<frLef58MinimumcutConstraint*>(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58MinimumcutConstraint(rptr);
+  }
 
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
     unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
@@ -1912,6 +1934,16 @@ void io::Parser::setLayers(odb::dbTech* db_tech)
       default:
         break;
     }
+  }
+  // MetalWidthViaMap
+  for (auto rule : db_tech->getMetalWidthViaMap()) {
+    auto db_layer = rule->getCutLayer();
+    auto layer = tech_->getLayer(db_layer->getName());
+    if (layer == nullptr)
+      continue;
+    auto uCon = std::make_unique<frMetalWidthViaConstraint>(rule);
+    layer->addMetalWidthViaConstraint(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
   }
 }
 

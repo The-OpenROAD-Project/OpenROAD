@@ -38,6 +38,10 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
+namespace utl {
+class Logger;
+}
+
 namespace psm {
 
 //!  Calculates the power per instance using OpenSTA

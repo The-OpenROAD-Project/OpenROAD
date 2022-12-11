@@ -41,13 +41,13 @@ lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefin* l)
 }
 
 void lefTechLayerAreaRuleParser::parse(
-    std::string s,
+    const std::string& s,
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
@@ -115,8 +115,6 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::iterator, std::string(), ascii::space_type> _string;
-  _string %= lexeme[+(char_ - ' ')];
   odb::dbTechLayerAreaRule* rule = odb::dbTechLayerAreaRule::create(layer);
 
   qi::rule<std::string::iterator, space_type> EXCEPT_EDGE_LENGTH
@@ -146,9 +144,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                  layer,
                                  boost::ref(incomplete_props))])
          >> lit("OVERLAP")
-         >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap,
-                                rule,
-                                _1)]);
+         >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap, rule, _1)]);
 
   qi::rule<std::string::iterator, space_type> AREA
       = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
@@ -156,10 +152,9 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                             _1,
                                             rule,
                                             &odb::dbTechLayerAreaRule::setArea)]
-         >> -(lit("MASK")
-              >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask,
-                                     rule,
-                                     _1)])
+         >> -(
+             lit("MASK")
+             >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask, rule, _1)])
          >> -(lit("EXCEPTMINWIDTH") >> double_[boost::bind(
                   &lefTechLayerAreaRuleParser::setInt,
                   this,
@@ -180,8 +175,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
   auto last = s.end();
   bool valid = qi::phrase_parse(first, last, AREA, space) && first == last;
   if (!valid) {
-    if (!incomplete_props.empty()
-        && incomplete_props.back().first == rule)
+    if (!incomplete_props.empty() && incomplete_props.back().first == rule)
       incomplete_props.pop_back();
     odb::dbTechLayerAreaRule::destroy(rule);
   }

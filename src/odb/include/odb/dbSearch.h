@@ -262,7 +262,6 @@ class dbBlockSearch
   void addNetShapesOnSearch(dbNet* net, bool skipVias);
   void makeGrouteSearchDb();
 
-
   uint getViaLevel(dbShape* s);
   uint getViaLevel(dbSBox* s);
 
@@ -274,11 +273,9 @@ class dbBlockSearch
   void getNetShapesFromSearch(dbNet* net,
                               Ath__array1D<uint>* idTable,
                               Ath__searchBox* maxBox);
-  void getWireIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
 
   uint addBlockagesOnSearch(dbBlock* block);
   uint getBlockObs(bool ignoreFlag);
-  uint getDbBoxId(uint wid, uint wireType);
 
   bool setInterface2SdbAtDB();  // ISDB
   bool connect2BlockSdb();      // ISDB
@@ -301,20 +298,6 @@ class dbBlockSearch
                  int* bb_ur,
                  uint level,
                  uint dir);
-
-  uint addArrow(dbInst* inst1,
-                dbInst* inst2,
-                int labelCnt,
-                char** label,
-                double* val);
-  uint addArrow(int x1,
-                int y1,
-                int x2,
-                int y2,
-                int labelCnt,
-                char** label,
-                double* val);
-  uint addFlightLines(dbInst* inst);
 
   // 2/10/2011
   uint getPowerWiresAndVias(int x1,

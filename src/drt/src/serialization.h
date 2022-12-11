@@ -50,11 +50,11 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "distributed/drUpdate.h"
 #include "frDesign.h"
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "distributed/drUpdate.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -458,14 +458,14 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
   frDesign* design = ar.getDesign();
   if (is_loading(ar)) {
     obj = nullptr;
-    frBlockObjectEnum type;
+    frBlockObjectEnum type = frcBlock;
     (ar) & type;
     switch (type) {
       case frcNet: {
-        bool fake;
-        bool special;
-        int id;
-        bool modified;
+        bool fake = false;
+        bool special = false;
+        int id = -1;
+        bool modified = false;
         (ar) & fake;
         (ar) & special;
         (ar) & id;
@@ -486,15 +486,15 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         break;
       }
       case frcBTerm: {
-        int id;
+        int id = -1;
         (ar) & id;
         if (!inBounds(id, design->getTopBlock()->getTerms().size()))
-          exit(1); // should throw error
+          exit(1);  // should throw error
         obj = design->getTopBlock()->getTerms().at(id).get();
         break;
       }
       case frcBlockage: {
-        int id;
+        int id = -1;
         (ar) & id;
         if (!inBounds(id, design->getTopBlock()->getBlockages().size()))
           exit(1);
@@ -502,7 +502,8 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         break;
       }
       case frcInstTerm: {
-        int inst_id, id;
+        int inst_id = 0;
+        int id = 0;
         (ar) & inst_id;
         (ar) & id;
         if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
@@ -514,7 +515,8 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         break;
       }
       case frcInstBlockage: {
-        int inst_id, id;
+        int inst_id = 0;
+        int id = 0;
         (ar) & inst_id;
         (ar) & id;
         if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
@@ -594,7 +596,7 @@ void serializeViaDef(Archive& ar, frViaDef*& viadef)
 {
   frDesign* design = ar.getDesign();
   if (is_loading(ar)) {
-    int via_id;
+    int via_id = -1;
     (ar) & via_id;
     if (via_id >= 0)
       viadef = design->getTech()->getVias().at(via_id).get();

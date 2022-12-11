@@ -63,7 +63,7 @@ class DetailedHPWL : public DetailedObjective
 {
   // For WL objective.
  public:
-  DetailedHPWL(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedHPWL(Network* network);
 
   void init();
   double curr() override;
@@ -92,9 +92,7 @@ class DetailedHPWL : public DetailedObjective
   ////////////////////////////////////////////////////////////////////////////////
 
  private:
-  Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   DetailedMgr* mgrPtr_;
   DetailedOrient* orientPtr_;

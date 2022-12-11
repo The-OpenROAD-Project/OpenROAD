@@ -4,7 +4,7 @@ import helpers
 import ifp_helpers as ifph
 
 tech = Tech()
-tech.readLEF("Nangate45/Nangate45.lef")
+tech.readLef("Nangate45/Nangate45.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 
 design = Design(tech)

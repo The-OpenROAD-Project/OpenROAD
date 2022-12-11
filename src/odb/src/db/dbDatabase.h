@@ -67,10 +67,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 59;  // Current revision number
-const uint db_schema_add_global_connect = 58; // Revision where dbGlobalConnect was added
-const uint db_schema_wrongway_width = 59; // Revision where _dbTechLayer::wrong_way_width_ was added
-
+const uint db_schema_minor = 60;  // Current revision number
+const uint db_schema_wrongway_width = 60; // Revision where _dbTechLayer::wrong_way_width_ was added
+const uint db_schema_add_global_connect
+    = 58;  // Revision where dbGlobalConnect was added
 template <class T>
 class dbTable;
 class _dbProperty;

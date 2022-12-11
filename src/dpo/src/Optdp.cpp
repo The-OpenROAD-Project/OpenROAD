@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dpo/Optdp.h"
+
 #include <odb/db.h>
 
 #include <boost/format.hpp>
@@ -40,7 +42,6 @@
 #include <map>
 
 #include "dpl/Opendp.h"
-#include "dpo/Optdp.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 #include "utl/Logger.h"
 
@@ -132,8 +133,7 @@ void Optdp::improvePlacement(int seed,
     // improvement.  If it errors or prints a warning when
     // given a legal placement, that likely means there is
     // a bug in my code somewhere.
-    dpo::ShiftLegalizerParams lgParams;
-    dpo::ShiftLegalizer lg(lgParams);
+    dpo::ShiftLegalizer lg;
     lg.legalize(mgr);
 
     // Detailed improvement.  Runs through a number of different

@@ -23,23 +23,23 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFIENCRYPTINT_H
 #define CLEFIENCRYPTINT_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /* Unable the reader to read encrypted lef file.                              */
 /*  This function must be called before lefrRead().                           */
 /* /                                                                          */
-EXTERN void lefrEnableReadEncrypted ();
+EXTERN void lefrEnableReadEncrypted();
 
 #endif

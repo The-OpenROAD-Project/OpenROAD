@@ -3188,8 +3188,9 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               modInterLayerCutSpacingCost(box, zIdx, type, false);
             }
             // temporary solution, only add cost around macro pins
-            if (masterType.isBlock() || masterType.isPad()
-                || masterType == dbMasterType::RING) {
+            if ((masterType.isBlock() || masterType.isPad()
+                 || masterType == dbMasterType::RING)
+                && !isSkipVia) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
             }
@@ -3212,7 +3213,8 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING) {
+    frLayer* layer = getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     zIdx = gridGraph_.getMazeZIdx(layerNum);
@@ -3223,14 +3225,13 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
         case frcBTerm: {
           FlexMazeIdx mIdx1, mIdx2;
           gridGraph_.getIdxBox(mIdx1, mIdx2, box);
-          bool isPinRectHorz
-              = (box.xMax() - box.xMin()) > (box.yMax() - box.yMin());
+          bool isLayerHorz = layer->isHorizontal();
           for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
             for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
               FlexMazeIdx mIdx(i, j, zIdx);
               gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
               gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
-              if (isPinRectHorz) {
+              if (isLayerHorz) {
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::N);
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::S);
               } else {
