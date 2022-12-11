@@ -713,7 +713,13 @@ void lefin::layer(lefiLayer* layer)
                     layer->name(),
                     layer->propValue(iii));
   }
-
+  // update wrong way width
+  for (auto rule : l->getTechLayerWidthTableRules()) {
+    if (rule->isWrongDirection()) {
+      l->setWrongWayWidth(*rule->getWidthTable().begin());
+      break;
+    }
+  }
   if (layer->hasWidth())
     l->setWidth(dbdist(layer->width()));
 

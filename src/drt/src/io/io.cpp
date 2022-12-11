@@ -2816,23 +2816,31 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
             auto [begin, end] = pathSeg->getPoints();
             frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y());
+              if (segStyle.getBeginExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    begin.x(), begin.y(), segStyle.getBeginExt(), 0);
+              else
+                _wire_encoder.addPoint(begin.x(), begin.y());
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y(), 0);
+              _wire_encoder.addPoint(begin.x(), begin.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
               _wire_encoder.addPoint(
-                  begin.x(), begin.y(), segStyle.getBeginExt());
+                  begin.x(), begin.y(), segStyle.getBeginExt(), 0);
             }
             if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y());
+              if (segStyle.getEndExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    end.x(), end.y(), segStyle.getEndExt(), 0);
+              else
+                _wire_encoder.addPoint(end.x(), end.y());
             } else if (segStyle.getEndStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), 0);
+              _wire_encoder.addPoint(end.x(), end.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt());
+              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
             }
             break;
           }
