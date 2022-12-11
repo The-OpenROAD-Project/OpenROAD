@@ -777,8 +777,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   else {
     obj.wrong_way_width_ = obj._width;
     for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules())
-      if (rule->isWrongDirection())
-      {
+      if (rule->isWrongDirection()) {
         obj.wrong_way_width_ = *rule->getWidthTable().begin();
         break;
       }
@@ -845,7 +844,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._two_widths_sp_spacing;
   stream << obj._oxide1;
   stream << obj._oxide2;
-  if(obj.getDatabase()->isSchema(db_schema_wrongway_width))
+  if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
     stream << obj.wrong_way_width_;
   // User Code End <<
   return stream;
