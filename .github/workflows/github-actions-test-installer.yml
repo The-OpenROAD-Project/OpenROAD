@@ -6,10 +6,12 @@ on:
     paths:
       - 'etc/DependencyInstaller.sh'
       - 'docker/*'
+      - '.github/workflows/github-actions-test-installer.yml'
   pull_request:
     paths:
       - 'etc/DependencyInstaller.sh'
       - 'docker/*'
+      - '.github/workflows/github-actions-test-installer.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -38,7 +40,7 @@ jobs:
           sudo service docker restart
       - name: Runs installer
         run: |
-          ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
+          ./etc/DockerHelper.sh create -target=installer -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
