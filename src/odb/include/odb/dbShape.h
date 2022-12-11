@@ -121,6 +121,7 @@ class dbShape
                   int cur_ext,
                   bool has_cur_ext,
                   int dw,
+                  int default_ext,
                   dbTechLayer* layer);
 
   void setSegmentFromRect(int x1, int y1, int x2, int y2, dbTechLayer* layer);
@@ -619,6 +620,7 @@ inline void dbShape::setSegment(int prev_x,
                                 int cur_ext,
                                 bool has_cur_ext,
                                 int dw,
+                                int default_ext,
                                 dbTechLayer* layer)
 {
   int x1, x2, y1, y2;
@@ -631,22 +633,22 @@ inline void dbShape::setSegment(int prev_x,
       if (has_prev_ext)
         y1 = prev_y - prev_ext;
       else
-        y1 = prev_y - dw;
+        y1 = prev_y - default_ext;
 
       if (has_cur_ext)
         y2 = cur_y + cur_ext;
       else
-        y2 = cur_y + dw;
+        y2 = cur_y + default_ext;
     } else if (cur_y < prev_y) {
       if (has_cur_ext)
         y1 = cur_y - cur_ext;
       else
-        y1 = cur_y - dw;
+        y1 = cur_y - default_ext;
 
       if (has_prev_ext)
         y2 = prev_y + prev_ext;
       else
-        y2 = prev_y + dw;
+        y2 = prev_y + default_ext;
     } else {
       y1 = cur_y - dw;
       y2 = cur_y + dw;
@@ -660,22 +662,22 @@ inline void dbShape::setSegment(int prev_x,
       if (has_prev_ext)
         x1 = prev_x - prev_ext;
       else
-        x1 = prev_x - dw;
+        x1 = prev_x - default_ext;
 
       if (has_cur_ext)
         x2 = cur_x + cur_ext;
       else
-        x2 = cur_x + dw;
+        x2 = cur_x + default_ext;
     } else if (cur_x < prev_x) {
       if (has_cur_ext)
         x1 = cur_x - cur_ext;
       else
-        x1 = cur_x - dw;
+        x1 = cur_x - default_ext;
 
       if (has_prev_ext)
         x2 = prev_x + prev_ext;
       else
-        x2 = prev_x + dw;
+        x2 = prev_x + default_ext;
     } else {
       x1 = cur_x - dw;
       x2 = cur_x + dw;

@@ -11,7 +11,6 @@ set_wire_rc -clock -layer metal5
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
-                     -post_cts_disable \
                      -sink_clustering_enable \
                      -distance_between_buffers 100 \
                      -sink_clustering_size 10 \

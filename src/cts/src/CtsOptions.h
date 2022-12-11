@@ -133,8 +133,6 @@ class CtsOptions
     writeOnlyClockNets_ = writeOnlyClk;
   }
   bool writeOnlyClockNets() const { return writeOnlyClockNets_; }
-  void setRunPostCtsOpt(bool run) { runPostCtsOpt_ = run; }
-  bool runPostCtsOpt() { return runPostCtsOpt_; }
   void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
   double getBufDistRatio() { return bufDistRatio_; }
   void setClockNetsObjs(std::vector<odb::dbNet*> nets)
@@ -237,7 +235,6 @@ class CtsOptions
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
   bool writeOnlyClockNets_ = false;
-  bool runPostCtsOpt_ = true;
   double bufDistRatio_ = 0.1;
   long int clockRoots_ = 0;
   long int clockSubnets_ = 0;

@@ -45,10 +45,11 @@ metal10    Vertical         2256            47          97.92%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2385
-[INFO GRT-0198] Via related Steiner nodes: 134
+[INFO GRT-0103] Extra Run for hard benchmark.
+[INFO GRT-0197] Via related to pin nodes: 2391
+[INFO GRT-0198] Via related Steiner nodes: 58
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3370
-[INFO GRT-0112] Final usage 3D: 15281
+[INFO GRT-0111] Final number of vias: 3567
+[INFO GRT-0112] Final usage 3D: 16253
 [ERROR GRT-0118] Routing congestion too high. Check the congestion heatmap in the GUI.
 GRT-0118

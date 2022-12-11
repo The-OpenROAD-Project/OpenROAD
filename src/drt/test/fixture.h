@@ -143,6 +143,13 @@ class Fixture
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
 
+  void makeMinimumCut(frLayerNum layerNum,
+                      frCoord width,
+                      frCoord length,
+                      frCoord distance,
+                      frMinimumcutConnectionEnum connection
+                      = frMinimumcutConnectionEnum::UNKNOWN);
+
   frNet* makeNet(const char* name);
 
   frViaDef* makeViaDef(const char* name,
