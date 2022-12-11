@@ -46,5 +46,4 @@ jobs:
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
       - name: Test build
         run: |
-          ./etc/DockerHelper.sh create -target=binary -os=${{ matrix.os }}
-          docker run openroad/${{ matrix.os }}-binary -help
+          docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help

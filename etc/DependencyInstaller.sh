@@ -295,6 +295,7 @@ _installCentosRuntime() {
     yum update -y
     yum install -y \
         libgomp \
+        libomp5 \
         python36-libs \
         qt5-qtbase-devel \
         qt5-qtimageformats \
