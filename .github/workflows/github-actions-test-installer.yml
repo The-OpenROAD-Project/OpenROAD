@@ -1,15 +1,17 @@
 name: Test DependencyInstaller script
 on:
   schedule:
-  - cron: "0 8 * * MON"
+  - cron: "0 8 * * SUN"
   push:
     paths:
       - 'etc/DependencyInstaller.sh'
       - 'docker/*'
+      - '.github/workflows/github-actions-test-installer.yml'
   pull_request:
     paths:
       - 'etc/DependencyInstaller.sh'
       - 'docker/*'
+      - '.github/workflows/github-actions-test-installer.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -42,3 +44,7 @@ jobs:
       - name: Build project
         run: |
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+      - name: Test build
+        run: |
+          ./etc/DockerHelper.sh create -target=binary -os=${{ matrix.os }}
+          docker run openroad/${{ matrix.os }}-binary -help
