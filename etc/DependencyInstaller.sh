@@ -419,8 +419,7 @@ EOF
     exit "${1:-1}"
 }
 
-# default option
-option="runtime"
+#default prefix
 PREFIX=""
 
 # default values, can be overwritten by cmdline args
@@ -428,12 +427,6 @@ while [ "$#" -gt 0 ]; do
     case "${1}" in
         -h|-help)
             _help 0
-            ;;
-        -run|-runtime)
-            option="runtime"
-            ;;
-        -dev|-development)
-            option="dev"
             ;;
         -local)
             export PREFIX="$HOME/.local"
@@ -473,10 +466,8 @@ case "${os}" in
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         _installCentosRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installCentosDev
-            _installCommonDev
-        fi
+        _installCentosDev
+        _installCommonDev
         _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         cat <<EOF
@@ -490,10 +481,8 @@ EOF
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         _installUbuntuRuntime "${version}"
-        if [[ "${option}" == "dev" ]]; then
-            _installUbuntuDev
-            _installCommonDev
-        fi
+        _installUbuntuDev
+        _installCommonDev
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
@@ -501,10 +490,8 @@ EOF
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         _installRHELRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installRHELDev
-            _installCommonDev
-        fi
+        _installRHELDev
+        _installCommonDev
         _installOrTools "centos" "8" "amd64"
         _installRHELCleanUp
         ;;
@@ -524,10 +511,8 @@ EOF
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         _installDebianRuntime "${version}"
-        if [[ "${option}" == "dev" ]]; then
-            _installDebianDev
-            _installCommonDev
-        fi
+        _installDebianDev
+        _installCommonDev
         _installOrTools "debian" "${version}" "amd64"
         _installDebianCleanUp
         ;;

@@ -22,10 +22,9 @@ usage: $0 [CMD] [OPTIONS]
                                   only if the target is 'builder'.
   -os=OS_NAME                   Choose beween centos7 (default), ubuntu20, ubuntu22, rhel, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
-                                  'dev': os + packages to compile app
+                                  'installer': os + packages to compile app
                                   'builder': os + packages to compile app +
                                              copy source code and build app
-                                  'runtime': os + packages to run a compiled app
                                   'binary': os + packages to run a compiled
                                             app + binary set as entrypoint
   -threads                      Max number of threads to use if compiling.
@@ -81,7 +80,7 @@ _setup() {
     fi
     case "${target}" in
         "builder" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-"${org}/${os}-dev"}:${imageTag}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-"${org}/${os}-installer"}:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
@@ -90,7 +89,7 @@ _setup() {
             fi
             imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
-        "dev" )
+        "installer" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
             if [[ "${isLocal}" == "yes" ]]; then
@@ -99,14 +98,8 @@ _setup() {
                 buildArgs=""
             fi
             ;;
-        "runtime" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
-            context="etc"
-            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
-            buildArgs="--build-arg copyImage=${copyImage}"
-            ;;
         "binary" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-runtime}:${imageTag}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-installer}:${imageTag}"
             context="etc"
             copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
@@ -145,36 +138,36 @@ _create() {
 
 _push() {
     case "${target}" in
-        "dev" )
+        "installer" )
             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$  ]]; then
                 mkdir -p build
 
                 # create image with sha and latest tag for all os
-                ./etc/DockerHelper.sh create -target=dev \
+                ./etc/DockerHelper.sh create -target=installer \
                     2>&1 | tee build/create-centos-latest.log
-                ./etc/DockerHelper.sh create -target=dev -sha \
+                ./etc/DockerHelper.sh create -target=installer -sha \
                     2>&1 | tee build/create-centos-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 \
+                ./etc/DockerHelper.sh create -target=installer -os=ubuntu20 \
                     2>&1 | tee build/create-ubuntu20-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha \
+                ./etc/DockerHelper.sh create -target=installer -os=ubuntu20 -sha \
                     2>&1 | tee build/create-ubuntu20-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22 \
+                ./etc/DockerHelper.sh create -target=installer -os=ubuntu22 \
                     2>&1 | tee build/create-ubuntu22-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22 -sha \
+                ./etc/DockerHelper.sh create -target=installer -os=ubuntu22 -sha \
                     2>&1 | tee build/create-ubuntu22-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=debian10 \
+                ./etc/DockerHelper.sh create -target=installer -os=debian10 \
                     2>&1 | tee build/create-debian10-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=debian10 -sha \
+                ./etc/DockerHelper.sh create -target=installer -os=debian10 -sha \
                     2>&1 | tee build/create-debian10-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=debian11 \
+                ./etc/DockerHelper.sh create -target=installer -os=debian11 \
                     2>&1 | tee build/create-debian11-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=debian11 -sha \
+                ./etc/DockerHelper.sh create -target=installer -os=debian11 -sha \
                     2>&1 | tee build/create-debian11-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=rhel \
+                ./etc/DockerHelper.sh create -target=installer -os=rhel \
                     2>&1 | tee build/create-rhel-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=rhel -sha \
+                ./etc/DockerHelper.sh create -target=installer -os=rhel -sha \
                     2>&1 | tee build/create-rhel-${commitSha}.log
 
                 # test image with sha and latest tag for all os and compiler
@@ -203,18 +196,18 @@ _push() {
                 ./etc/DockerHelper.sh test -target=builder -os=rhel -compiler=clang \
                     2>&1 | tee build/test-rhel-clang-latest.log
 
-                echo [DRY-RUN] docker push openroad/centos7-dev:latest
-                echo [DRY-RUN] docker push openroad/centos7-dev:${commitSha}
-                echo [DRY-RUN] docker push openroad/ubuntu20-dev:latest
-                echo [DRY-RUN] docker push openroad/ubuntu20-dev:${commitSha}
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:latest
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}
-                echo [DRY-RUN] docker push openroad/debian10-dev:latest
-                echo [DRY-RUN] docker push openroad/debian10-dev:${commitSha}
-                echo [DRY-RUN] docker push openroad/debian11-dev:latest
-                echo [DRY-RUN] docker push openroad/debian11-dev:${commitSha}                 
-                echo [DRY-RUN] docker push openroad/rhel-dev:latest
-                echo [DRY-RUN] docker push openroad/rhel-dev:${commitSha}              
+                echo [DRY-RUN] docker push openroad/centos7-installer:latest
+                echo [DRY-RUN] docker push openroad/centos7-installer:${commitSha}
+                echo [DRY-RUN] docker push openroad/ubuntu20-installer:latest
+                echo [DRY-RUN] docker push openroad/ubuntu20-installer:${commitSha}
+                echo [DRY-RUN] docker push openroad/ubuntu22-installer:latest
+                echo [DRY-RUN] docker push openroad/ubuntu22-installer:${commitSha}
+                echo [DRY-RUN] docker push openroad/debian10-installer:latest
+                echo [DRY-RUN] docker push openroad/debian10-installer:${commitSha}
+                echo [DRY-RUN] docker push openroad/debian11-installer:latest
+                echo [DRY-RUN] docker push openroad/debian11-installer:${commitSha}                 
+                echo [DRY-RUN] docker push openroad/rhel-installer:latest
+                echo [DRY-RUN] docker push openroad/rhel-installer:${commitSha}              
 
             else
                 echo "Will not push."
@@ -248,7 +241,7 @@ fi
 
 # default values, can be overwritten by cmdline args
 os="centos7"
-target="dev"
+target="installer"
 compiler="gcc"
 useCommitSha="no"
 isLocal="no"
