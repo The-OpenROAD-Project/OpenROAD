@@ -1690,11 +1690,11 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
   genInstRowPattern_commit(nodes, insts);
 }
 
-// init dp node array for valide access patterns
+// init dp node array for valid access patterns
 void FlexPA::genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
                                     const std::vector<frInst*>& insts)
 {
-  // init virutal nodes
+  // init virtual nodes
   int startNodeIdx = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
   int endNodeIdx
       = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);

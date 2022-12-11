@@ -81,8 +81,8 @@ static int mapxy(const int nx,
 void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
 {
   const int d = rsmt.deg;
-  const int numnodes = 2 * d - 2;
-  const int numedges = 2 * d - 3;
+  const int numnodes = rsmt.branchCount();
+  const int numedges = numnodes - 1;
   sttrees_[ind].num_nodes = numnodes;
   sttrees_[ind].num_terminals = d;
   sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
@@ -305,9 +305,9 @@ void FastRouteCore::fluteNormal(const int netID,
 
     t = stt_builder_->makeSteinerTree(tmp_xs, tmp_ys, s, acc);
 
-    for (int i = 0; i < 2 * d - 2; i++) {
-      t.branch[i].x = t.branch[i].x / 100;
-      t.branch[i].y = t.branch[i].y / ((int) (100 * coeffV));
+    for (auto& branch : t.branch) {
+      branch.x /= 100;
+      branch.y /= ((int) (100 * coeffV));
     }
 
     delete[] pt;
@@ -455,9 +455,9 @@ void FastRouteCore::fluteCongest(const int netID,
     t = stt_builder_->makeSteinerTree(nxs, nys, s, acc);
 
     // map the new coordinates back to original coordinates
-    for (int i = 0; i < 2 * d - 2; i++) {
-      t.branch[i].x = mapxy(t.branch[i].x, xs, nxs, d);
-      t.branch[i].y = mapxy(t.branch[i].y, ys, nys, d);
+    for (auto& branch : t.branch) {
+      branch.x = mapxy(branch.x, xs, nxs, d);
+      branch.y = mapxy(branch.y, ys, nys, d);
     }
   }
 }
@@ -672,7 +672,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       if (newType) {
         const auto& treeedges = sttrees_[i].edges;
         const auto& treenodes = sttrees_[i].nodes;
-        for (int j = 0; j < 2 * d - 3; j++) {
+        for (int j = 0; j < sttrees_[i].num_edges(); j++) {
           // only route the non-degraded edges (len>0)
           if (sttrees_[i].edges[j].len > 0) {
             const TreeEdge* treeedge = &(treeedges[j]);
@@ -736,11 +736,11 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     }
 
     if (congestionDriven) {
-      for (int j = 0; j < 2 * d - 3; j++)
+      for (int j = 0; j < sttrees_[i].num_edges(); j++)
         wl1 += sttrees_[i].edges[j].len;
     }
 
-    for (int j = 0; j < 2 * d - 2; j++) {
+    for (int j = 0; j < rsmt.branchCount(); j++) {
       const int x1 = rsmt.branch[j].x;
       const int y1 = rsmt.branch[j].y;
       const int n = rsmt.branch[j].n;

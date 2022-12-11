@@ -293,32 +293,10 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord width2 = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
-  frCoord bloatDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist
-          = (isBlockage && USEMINSPACING_OBS)
-                ? static_cast<frSpacingTablePrlConstraint*>(con)->findMin()
-                : static_cast<frSpacingTablePrlConstraint*>(con)->find(
-                    max(width1, width2), length1);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = (isBlockage && USEMINSPACING_OBS)
-                      ? static_cast<frSpacingTableTwConstraint*>(con)->findMin()
-                      : static_cast<frSpacingTableTwConstraint*>(con)->find(
-                          width1, width2, length1);
-    } else {
-      cout << "Warning: min spacing rule not supporterd" << endl;
-      return;
-    }
-  } else {
-    cout << "Warning: no min spacing rule" << endl;
-    return;
-  }
+  bool use_min_spacing = isBlockage && USEMINSPACING_OBS;
+  frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, length1, use_min_spacing);
+
   if (ndr)
     bloatDist = max(bloatDist, ndr->getSpacing(z));
   frSquaredDistance bloatDistSquare = bloatDist;
@@ -666,35 +644,11 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   }
 
   // spacing value needed
-  frCoord bloatDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist
-          = (isBlockage && USEMINSPACING_OBS && !isFatVia)
-                ? static_cast<frSpacingTablePrlConstraint*>(con)->findMin()
-                : static_cast<frSpacingTablePrlConstraint*>(con)->find(
-                    max(width1, width2),
-                    isCurrPs ? (length2_mar) : min(length1, length2_mar));
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = (isBlockage && USEMINSPACING_OBS && !isFatVia)
-                      ? static_cast<frSpacingTableTwConstraint*>(con)->findMin()
-                      : static_cast<frSpacingTableTwConstraint*>(con)->find(
-                          width1,
-                          width2,
-                          isCurrPs ? (length2_mar) : min(length1, length2_mar));
-    } else {
-      cout << "Warning: min spacing rule not supporterd" << endl;
-      return;
-    }
-  } else {
-    cout << "Warning: no min spacing rule" << endl;
-    return;
-  }
+  frCoord prl = isCurrPs ? (length2_mar) : min(length1, length2_mar);
+  bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
+  frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+      width1, width2, prl, use_min_spacing);
+
   drEolSpacingConstraint drCon;
   if (ndr) {
     bloatDist = max(bloatDist, ndr->getSpacing(z));
@@ -725,9 +679,8 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   Point pt;
   Rect tmpBx;
   frSquaredDistance distSquare = 0;
-  frCoord dx, dy, prl;
+  frCoord dx, dy;
   dbTransform xform;
-  frCoord reqDist = 0;
   frVia sVia;
   frMIdx zIdx = isUpperVia ? z : z - 1;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -763,25 +716,11 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
             prl = max(prl, patchLength);
           }
         }
-      } else {
-        ;
       }
-      if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-        reqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        reqDist
-            = (isBlockage && USEMINSPACING_OBS && !isFatVia)
-                  ? static_cast<frSpacingTablePrlConstraint*>(con)->findMin()
-                  : static_cast<frSpacingTablePrlConstraint*>(con)->find(
-                      max(width1, width2), prl);
-      } else if (con->typeId()
-                 == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        reqDist = (isBlockage && USEMINSPACING_OBS && !isFatVia)
-                      ? static_cast<frSpacingTableTwConstraint*>(con)->findMin()
-                      : static_cast<frSpacingTableTwConstraint*>(con)->find(
-                          width1, width2, prl);
-      }
+      bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
+      frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
+          width1, width2, prl, use_min_spacing);
+
       if (ndr)
         reqDist = max(reqDist, ndr->getSpacing(z));
       if (distSquare < (frSquaredDistance) reqDist * reqDist) {
@@ -2456,7 +2395,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     } else if (startX == endX && startY == endY && startZ == endZ) {
       std::cout << "Warning: zero-length path in updateFlexPin\n";
     } else {
-      std::cout << "Error: non-colinear path in updateFlexPin\n";
+      std::cout << "Error: non-collinear path in updateFlexPin\n";
     }
   }
 }
@@ -2490,7 +2429,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       trans.setOrient(dbOrientType(dbOrientType::R0));
       trans.apply(begin);
       trans.apply(end);
-      if (end < begin) {  // if rotation swaped order, correct it
+      if (end < begin) {  // if rotation swapped order, correct it
         if (connecting == &begin)
           connecting = &end;
         else
