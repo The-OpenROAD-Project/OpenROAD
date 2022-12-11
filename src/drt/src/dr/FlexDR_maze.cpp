@@ -293,8 +293,9 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord width2 = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
+  bool use_min_spacing = isBlockage && USEMINSPACING_OBS;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
-      width1, width2, length1, false);
+      width1, width2, length1, use_min_spacing);
 
   if (ndr)
     bloatDist = max(bloatDist, ndr->getSpacing(z));
@@ -715,11 +716,10 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
             prl = max(prl, patchLength);
           }
         }
-      } else {
-        ;
       }
+      bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
       frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
-          width1, width2, prl, false);
+          width1, width2, prl, use_min_spacing);
 
       if (ndr)
         reqDist = max(reqDist, ndr->getSpacing(z));
