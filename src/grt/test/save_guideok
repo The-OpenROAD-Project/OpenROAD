@@ -83,7 +83,8 @@ proc test_guideok_file { test } {
 
 proc test_guide_result_file { test } {
   global result_dir
-  return [file join $result_dir "$test.guide"]
+  set lang [result_lang $test]
+  return [file join $result_dir "$test-$lang.guide"]
 }
 
 save_guideok_main

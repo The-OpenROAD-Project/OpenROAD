@@ -36,7 +36,7 @@
 %{
 
 #include "stt/SteinerTreeBuilder.h"
-#include "stt/pdrev.h"
+#include "stt/pd.h"
 #include "stt/flute.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
@@ -57,7 +57,7 @@ using odb::dbNet;
 
 %import <std_vector.i>
 namespace std {
-%template(pdrev_xy) vector<int>;
+%template(xy) vector<int>;
 }
 
 %inline %{
@@ -110,17 +110,6 @@ report_pd_tree(std::vector<int> x,
 }
 
 void
-report_pdrev_tree(std::vector<int> x,
-                  std::vector<int> y,
-                  int drvr_index,
-                  float alpha)
-{
-  utl::Logger *logger = ord::getLogger();
-  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
-  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
-}
-
-void
 report_stt_tree(std::vector<int> x,
                 std::vector<int> y,
                 int drvr_index,
@@ -155,18 +144,6 @@ highlight_pd_tree(std::vector<int> x,
   utl::Logger *logger = ord::getLogger();
   gui::Gui *gui = gui::Gui::get();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
-  stt::highlightSteinerTree(tree, gui);
-}
-
-void
-highlight_pdrev_tree(std::vector<int> x,
-                     std::vector<int> y,
-                     int drvr_index,
-                     float alpha)
-{
-  utl::Logger *logger = ord::getLogger();
-  gui::Gui *gui = gui::Gui::get();
-  stt::Tree tree = pdr::primDijkstraRevII(x, y, drvr_index, alpha, logger);
   stt::highlightSteinerTree(tree, gui);
 }
 
