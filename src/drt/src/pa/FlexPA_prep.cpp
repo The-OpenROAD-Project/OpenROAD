@@ -831,10 +831,8 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     ap->setAccess(dir, false);
     return;
   }
-  //TODO: EDIT HERE Wrongdirection segments
-  auto layer = getDesign()
-                   ->getTech()
-                   ->getLayer(ap->getLayerNum());
+  // TODO: EDIT HERE Wrongdirection segments
+  auto layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
   auto ps = make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
