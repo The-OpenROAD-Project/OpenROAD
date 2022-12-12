@@ -41,4 +41,6 @@ jobs:
           ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
-          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+          if [[ ${{ matrix.os }} != "opensuse" && ${{ matrix.compilers }} != "clang" ]]; then
+            ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+          fi
