@@ -389,7 +389,7 @@ void FlexGridGraph::initTracks(
     frLayerNum currLayerNum = layer->getLayerNum();
     dbTechLayerDir currPrefRouteDir = layer->getDir();
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
-      // allow wrongway if global varialble and design rule allow
+      // allow wrongway if global variable and design rule allow
       bool flag
           = (USENONPREFTRACKS && !layer->isUnidirectional())
                 ? (tp->isHorizontal()

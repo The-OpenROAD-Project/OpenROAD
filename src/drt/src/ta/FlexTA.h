@@ -188,7 +188,7 @@ class FlexTAWorker
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 
-  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorterd iroutes
+  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorted iroutes
   std::vector<std::unique_ptr<taPin>> extIroutes_;
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>

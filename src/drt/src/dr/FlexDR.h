@@ -557,7 +557,7 @@ class FlexDRWorker
   std::vector<frMarker> bestMarkers_;
   FlexDRWorkerRegionQuery rq_;
 
-  // persistant gc worker
+  // persistent gc worker
   unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
@@ -941,6 +941,12 @@ class FlexDRWorker
                    frMIdx z,
                    FlexMazeIdx* prev,
                    FlexMazeIdx* next);
+  void editStyleExt(frSegStyle& currStyle,
+                    frMIdx startX,
+                    frMIdx endX,
+                    frMIdx z,
+                    FlexMazeIdx* prev,
+                    FlexMazeIdx* next);
   bool isInsideTaperBox(frMIdx x,
                         frMIdx y,
                         frMIdx startZ,

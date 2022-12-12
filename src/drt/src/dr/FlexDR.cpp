@@ -282,7 +282,7 @@ void FlexDR::initFromTA()
 
 void FlexDR::initGCell2BoundaryPin()
 {
-  // initiailize size
+  // initialize size
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
