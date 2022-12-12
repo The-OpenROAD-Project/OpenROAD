@@ -115,6 +115,26 @@ void ClockTreeRenderer::clearPathTo()
   redraw();
 }
 
+void ClockTreeRenderer::setTree(ClockTree* tree)
+{
+  if (tree == nullptr) {
+    resetTree();
+  } else {
+    tree_ = tree;
+    redraw();
+  }
+}
+
+void ClockTreeRenderer::resetTree()
+{
+  ClockTree* parent = tree_->getParent();
+  while (parent != nullptr) {
+    tree_ = parent;
+    parent = tree_->getParent();
+  }
+  redraw();
+}
+
 ////////////////
 
 ClockNetGraphicsViewItem::ClockNetGraphicsViewItem(
@@ -339,6 +359,7 @@ ClockBufferNodeGraphicsViewItem::ClockBufferNodeGraphicsViewItem(
   odb::dbInst* inst = input_term->getInst();
   setName(inst);
   setData(0, QVariant::fromValue(inst));
+  setData(1, QVariant::fromValue(output_term->getNet()));
 }
 
 QPointF ClockBufferNodeGraphicsViewItem::getBottomAnchor() const
@@ -815,6 +836,10 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 
 void ClockTreeView::selectionChanged()
 {
+  if (renderer_ != nullptr) {
+    renderer_->resetTree();
+  }
+
   for (const auto& sel : scene_->selectedItems()) {
     const QVariant data = sel->data(0);
     if (canConvertAndEmit<odb::dbBTerm*>(data)) {
@@ -827,6 +852,7 @@ void ClockTreeView::selectionChanged()
       continue;
     }
     if (canConvertAndEmit<odb::dbInst*>(data)) {
+      selectRendererTreeNet(sel->data(1).value<odb::dbNet*>());
       continue;
     }
   }
@@ -1108,6 +1134,15 @@ void ClockTreeView::save(const QString& path)
                      Qt::white,
                      logger_);
   show_mouse_time_tick_ = true;
+}
+
+void ClockTreeView::selectRendererTreeNet(odb::dbNet* net)
+{
+  if (renderer_ == nullptr) {
+    return;
+  }
+
+  renderer_->setTree(tree_->findTree(net));
 }
 
 ////////////////

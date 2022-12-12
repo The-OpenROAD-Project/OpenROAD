@@ -73,6 +73,9 @@ class ClockTreeRenderer : public Renderer
   void setPathTo(odb::dbITerm* term);
   void clearPathTo();
 
+  void setTree(ClockTree* tree);
+  void resetTree();
+
  private:
   ClockTree* tree_;
 
@@ -265,7 +268,6 @@ class ClockTreeScene : public QGraphicsScene
   void setClearPathEnable(bool enable) { clear_path_->setEnabled(enable); };
 
  signals:
-  void selected(const Selected& selected);
   void enableRenderer(bool enable);
   void fit();
   void clearPath();
@@ -386,6 +388,8 @@ class ClockTreeView : public QGraphicsView
     }
     return false;
   }
+
+  void selectRendererTreeNet(odb::dbNet* net);
 };
 
 class ClockWidget : public QDockWidget, sta::dbNetworkObserver
