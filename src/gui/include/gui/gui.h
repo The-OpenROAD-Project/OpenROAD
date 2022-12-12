@@ -609,6 +609,10 @@ class Gui
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 
+  // Save clock tree view
+  void saveClockTreeImage(const std::string& clock_name,
+                          const std::string& filename);
+
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);

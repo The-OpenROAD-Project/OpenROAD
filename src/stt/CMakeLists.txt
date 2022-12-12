@@ -35,6 +35,8 @@
 
 include("openroad")
 
+find_package(LEMON NAMES LEMON lemon REQUIRED)
+
 set(FLUTE_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/flt)
 set(PDR_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/pdr)
 
@@ -66,15 +68,14 @@ target_sources(stt
     ${FLUTE_HOME}/flute.cpp
     ${POWV9_CPP}
     ${POST9_CPP}
-    ${PDR_HOME}/src/pdrev.cpp
-    ${PDR_HOME}/src/graph.cpp
-    ${PDR_HOME}/src/node.cpp
-    ${PDR_HOME}/src/edge.cpp
+    ${PDR_HOME}/src/pd.cpp
 )
 
 target_include_directories(stt
   PUBLIC
     include
+  PRIVATE
+    ${LEMON_INCLUDE_DIRS}
 )
 
 target_link_libraries(stt

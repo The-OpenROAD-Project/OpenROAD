@@ -175,20 +175,81 @@ _installUbuntuRuntime() {
         libpython3.8 \
         libtcl \
         qt5-image-formats-plugins \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
 
     if [[ $1 == 22.04 ]]; then
         apt-get install -y \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
     else
         apt-get install -y qt5-default
     fi
 
     # need the strip "hack" above to run on docker
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+}
+
+_installRHELCleanUp() {
+    yum clean -y all
+    rm -rf /var/lib/apt/lists/*
+}
+
+_installRHELDev() {
+    yum -y install \
+        autoconf \
+        automake \
+        gcc \
+        gcc-c++ \
+        gdb \
+        glibc-devel \
+        libtool	\
+        make \
+        pkgconf \
+        pkgconf-m4 \
+        pkgconf-pkg-config \
+        redhat-rpm-config \
+        rpm-build \
+        wget \
+        git \
+        llvm7.0 \
+        llvm7.0-libs \
+        llvm7.0-devel \
+        pcre-devel \
+        pcre2-devel \
+        tcl-tclreadline-devel \
+        readline \
+        tcllib \
+        tcl-tclreadline-devel \
+        tcl-thread-devel \
+        zlib-devel \
+        python3 \
+        python3-pip \
+        python3-devel \
+        clang \
+        clang-devel
+
+    yum install -y \
+        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
+        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm \
+        https://vault.centos.org/centos/8/BaseOS/x86_64/os/Packages/tcl-devel-8.6.8-2.el8.i686.rpm
+}
+
+_installRHELRuntime() {
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+    yum -y update
+    yum -y install \
+        tzdata \
+        binutils \
+        libgomp \
+        python3-libs \
+        tcl \
+        tcl-tclreadline \
+        qt5-srpm-macros.noarch \
+        wget
 }
 
 _installCentosCleanUp() {
@@ -228,16 +289,17 @@ _installCentosDev() {
 }
 
 _installCentosRuntime() {
-    yum update -y
     if [[ -z $(yum list installed epel-release) ]]; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     fi
+    yum update -y
     yum install -y \
         libgomp \
         python36-libs \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
     yum update -y
 }
 
@@ -337,6 +399,63 @@ EOF
     _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
 }
 
+_installDebianCleanUp() {
+    apt-get autoclean -y
+    apt-get autoremove -y
+}
+
+_installDebianDev() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get -y install \
+        automake \
+        autotools-dev \
+        build-essential \
+        bison \
+        flex \
+        clang \
+        g++ \
+        gcc \
+        git \
+        lcov \
+        libpcre2-dev \
+        libpcre3-dev \
+        python3-dev \
+        libreadline-dev \
+        tcl-dev \
+        tcllib \
+        wget \
+        zlib1g-dev \
+        libomp-dev
+}
+
+_installDebianRuntime() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get install -y \
+        binutils \
+        libgomp1 \
+        libtcl \
+        qt5-image-formats-plugins \
+        tcl-tclreadline \
+        wget
+
+    if [[ $1 == 10 ]]; then
+        apt-get install -y \
+            libpython3.7 \
+            qt5-default
+    else
+        apt-get install -y \
+            libpython3.8 \
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
+    fi
+}
+
 _help() {
     cat <<EOF
 
@@ -427,6 +546,17 @@ EOF
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
+    "Red Hat Enterprise Linux")
+        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installRHELRuntime
+        if [[ "${option}" == "dev" ]]; then
+            _installRHELDev
+            _installCommonDev
+        fi
+        _installOrTools "centos" "8" "amd64"
+        _installRHELCleanUp
+        ;;
     "Darwin" )
         _installDarwin
         _installOrTools "MacOsX" "12.5" $(uname -m)
@@ -454,6 +584,18 @@ To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
+    "Debian GNU/Linux" )
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installDebianRuntime "${version}"
+        if [[ "${option}" == "dev" ]]; then
+            _installDebianDev
+            _installCommonDev
+        fi
+        _installOrTools "debian" "${version}" "amd64"
+        _installDebianCleanUp
+        ;;
     *)
         echo "unsupported system: ${os}" >&2
         echo "supported systems are CentOS 7 and Ubuntu 20.04" >&2
@@ -464,10 +606,9 @@ esac
 if [[ ! -z ${PREFIX} ]]; then
             cat <<EOF
 To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake' 
+    alias cmake='${PREFIX}/bin/cmake'
     or  run
     echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
     source ~/.bash_profile
 EOF
 fi
-

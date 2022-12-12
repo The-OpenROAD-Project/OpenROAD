@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,54 +33,19 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <unordered_map>
-
-#include "Clock.h"
+%{
+#include "cts/TritonCTS.h"
 #include "CtsOptions.h"
-#include "HTreeBuilder.h"
+#include "TechChar.h"
+#include "ord/OpenRoad.hh"
 
-namespace utl {
-class Logger;
-}  // namespace utl
+using namespace cts;
+%}
 
-namespace cts {
+%include "../../Exception-py.i"
 
-using utl::Logger;
+%include <std_string.i>
+%include <std_vector.i>
 
-class PostCtsOpt
-{
- public:
-  PostCtsOpt(TreeBuilder* builder,
-             CtsOptions* options,
-             TechChar* techChar,
-             Logger* logger);
-
-  void run();
-
- private:
-  void initSourceSinkDists();
-  void computeNetSourceSinkDists(const Clock::SubNet& subNet);
-  void fixSourceSinkDists();
-  void fixNetSourceSinkDists(Clock::SubNet& subNet);
-  void fixLongWire(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
-  void createSubClockNet(Clock::SubNet& net,
-                         ClockInst* driver,
-                         ClockInst* sink);
-  Point<int> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
-
-  Clock* clock_;
-  CtsOptions* options_;
-  TechChar* techChar_;
-  Logger* logger_;
-  HTreeBuilder* builder_;
-  unsigned numViolatingSinks_ = 0;
-  unsigned numInsertedBuffers_ = 0;
-  double avgSourceSinkDist_ = 0.0;
-  double bufDistRatio_ = 0.0;
-  int bufIndex = 1;
-  std::unordered_map<std::string, int> sinkDistMap_;
-};
-
-}  // namespace cts
+%include "CtsOptions.h"
+%include "cts/TritonCTS.h"

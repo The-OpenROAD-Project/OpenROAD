@@ -3,7 +3,13 @@ on:
   schedule:
   - cron: "0 8 * * MON"
   push:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - 'docker/*'
   pull_request:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - 'docker/*'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -11,7 +17,7 @@ jobs:
   testInstaller:
     strategy:
       matrix:
-        os: ["ubuntu20", "ubuntu22", "centos7", "opensuse"]
+        os: ["ubuntu20", "ubuntu22", "centos7", "rhel", "debian10", "debian11", "opensuse"]
         args: ["", "-local"]
         compilers: ["gcc", "clang"]
     runs-on: ubuntu-latest

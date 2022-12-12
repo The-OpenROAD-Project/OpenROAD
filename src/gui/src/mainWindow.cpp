@@ -32,7 +32,6 @@
 
 #include "mainWindow.h"
 
-#include <QDebug>
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QFontDialog>
@@ -52,6 +51,7 @@
 #include <vector>
 
 #include "browserWidget.h"
+#include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "drcWidget.h"
@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
+      clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(new BrowserWidget(viewer_->getModuleSettings(), this)),
       find_dialog_(new FindObjectDialog(this))
 {
@@ -116,6 +117,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, hierarchy_widget_);
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
+  addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -123,7 +125,9 @@ MainWindow::MainWindow(QWidget* parent)
   tabifyDockWidget(inspector_, hierarchy_widget_);
   tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
+  tabifyDockWidget(inspector_, clock_viewer_);
   drc_viewer_->hide();
+  clock_viewer_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
@@ -270,6 +274,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           selection_browser_,
           SLOT(updateHighlightModel()));
+  connect(clock_viewer_,
+          SIGNAL(selected(const Selected&)),
+          this,
+          SLOT(addSelected(const Selected&)));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
@@ -311,6 +319,10 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           drc_viewer_,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          clock_viewer_,
           SLOT(setBlock(odb::dbBlock*)));
   connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
     setSelected(selected, false);
@@ -414,6 +426,7 @@ void MainWindow::init(sta::dbSta* sta)
   timing_widget_->init(sta);
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
+  clock_viewer_->setSTA(sta);
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
@@ -593,6 +606,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
+  windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
@@ -1230,6 +1244,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
+  clock_viewer_->setLogger(logger);
 }
 
 void MainWindow::fit()

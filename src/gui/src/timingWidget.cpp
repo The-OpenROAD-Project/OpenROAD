@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <QClipboard>
-#include <QDebug>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -127,8 +126,10 @@ void TimingWidget::init(sta::dbSta* sta)
   cone_renderer_->setSTA(sta);
   settings_->setSTA(sta);
 
-  setup_timing_paths_model_ = new TimingPathsModel(settings_->getSTA(), this);
-  hold_timing_paths_model_ = new TimingPathsModel(settings_->getSTA(), this);
+  setup_timing_paths_model_
+      = new TimingPathsModel(true, settings_->getSTA(), this);
+  hold_timing_paths_model_
+      = new TimingPathsModel(false, settings_->getSTA(), this);
   path_details_model_ = new TimingPathDetailModel(false, sta, this);
   capture_details_model_ = new TimingPathDetailModel(true, sta, this);
 

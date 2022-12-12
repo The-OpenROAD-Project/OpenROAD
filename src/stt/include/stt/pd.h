@@ -31,73 +31,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "node.h"
+#include <vector>
 
-#include <limits>
+#include "stt/SteinerTreeBuilder.h"
+
+namespace utl {
+class Logger;
+}
 
 namespace pdr {
 
-using std::ostream;
-using std::vector;
-
-Node::Node(int _idx, int _x, int _y) : idx(_idx), x(_x), y(_y), maxPLToChild(0)
-{
-  parent = 0;
-  min_dist = 0;
-  path_length = 0;
-  detcost_edgePToNode = -1;
-  detcost_edgeNodeToP = -1;
-  src_to_sink_dist = 0;
-  K_t = 1;
-  level = 0;
-  conn_to_parent = false;
-  idx_of_current_node_x = std::numeric_limits<int>::max();
-  idx_of_current_node_y = std::numeric_limits<int>::max();
-};
-
-void Node::report(ostream& os, int level) const
-{
-  os << idx << " (" << x << ", " << y << ")";
-  if (level > 1) {
-    os << " parent: " << parent << " children: ";
-    for (int i = 0; i < children.size(); ++i) {
-      os << children[i] << " ";
-    }
-  }
-  if (level > 2) {
-#ifdef PDREVII
-    os << " N: ";
-    for (int i = 0; i < N.size(); ++i) {
-      os << N[i] << " ";
-    }
-    os << " S: ";
-    for (int i = 0; i < S.size(); ++i) {
-      os << S[i] << " ";
-    }
-    os << " E: ";
-    for (int i = 0; i < E.size(); ++i) {
-      os << E[i] << " ";
-    }
-    os << " W: ";
-    for (int i = 0; i < W.size(); ++i) {
-      os << W[i] << " ";
-    }
-#endif
-    os << "PL: " << src_to_sink_dist << " MaxPLToChild: " << maxPLToChild;
-  }
-}
-
-ostream& operator<<(ostream& os, const Node& n)
-{
-  n.report(os, 1);
-  return os;
-}
-
-Node1::Node1(int _idx, int _x, int _y)
-{
-  idx = _idx;
-  x = _x;
-  y = _y;
-}
+stt::Tree primDijkstra(const std::vector<int>& x,
+                       const std::vector<int>& y,
+                       const int drvr_index,
+                       const float alpha,
+                       utl::Logger* logger);
 
 }  // namespace pdr

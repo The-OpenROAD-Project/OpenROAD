@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,34 +29,19 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+%{
 
-#include "SteinerTreeBuilder.h"
+#include "dpo/Optdp.h"
+#include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 
-namespace utl {
-class Logger;
-}
-namespace gui {
-class Gui;
-}
+using namespace dpo;
+%}
 
-namespace pdr {
+%include "../../Exception-py.i"
 
-using stt::Tree;
-using utl::Logger;
+%import "odb.i"
+%import "odb/dbTypes.h"
 
-Tree primDijkstra(const std::vector<int>& x,
-                  const std::vector<int>& y,
-                  int drvr_index,
-                  float alpha,
-                  Logger* logger);
-
-Tree primDijkstraRevII(const std::vector<int>& x,
-                       const std::vector<int>& y,
-                       int drvr_index,
-                       float alpha,
-                       Logger* logger);
-
-}  // namespace pdr
+%include "Optdp.h"

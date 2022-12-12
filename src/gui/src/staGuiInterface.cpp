@@ -38,6 +38,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbTransform.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -348,6 +349,317 @@ void TimingPath::setSlackOnPathNodes()
 
 /////////////
 
+ClockTree::ClockTree(ClockTree* parent)
+    : parent_(parent),
+      clock_(parent->clock_),
+      network_(parent->network_),
+      net_(nullptr),
+      level_(parent_->level_ + 1)
+{
+}
+
+ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
+    : parent_(nullptr),
+      clock_(clock),
+      network_(network),
+      net_(nullptr),
+      level_(0)
+{
+  setNet(getNet(*clock_->pins().begin()));
+}
+
+std::set<sta::Pin*> ClockTree::getDrivers() const
+{
+  std::set<sta::Pin*> drivers;
+  for (const auto& [driver, arrival] : drivers_) {
+    drivers.insert(driver);
+  }
+  return drivers;
+}
+
+std::set<sta::Pin*> ClockTree::getLeaves() const
+{
+  std::set<sta::Pin*> leaves;
+  for (auto& [leaf, arrival] : leaves_) {
+    leaves.insert(leaf);
+  }
+  return leaves;
+}
+
+ClockTree* ClockTree::getTree(sta::Net* net)
+{
+  if (net == net_) {
+    return this;
+  }
+
+  for (const auto& fanout : fanout_) {
+    if (fanout->getNet() == net) {
+      return fanout.get();
+    }
+  }
+  ClockTree* tree = new ClockTree(this);
+  tree->setNet(net);
+  fanout_.emplace_back(tree);
+  return tree;
+}
+
+int ClockTree::getTotalLeaves() const
+{
+  int total = leaves_.size();
+
+  for (const auto& fanout : fanout_) {
+    total += fanout->getTotalLeaves();
+  }
+
+  return total;
+}
+
+int ClockTree::getTotalFanout() const
+{
+  int total = 0;
+  if (!leaves_.empty()) {
+    total = 1;
+  }
+
+  for (const auto& fanout : fanout_) {
+    total += fanout->getTotalFanout();
+  }
+
+  return total;
+}
+
+int ClockTree::getMaxLeaves() const
+{
+  int width = leaves_.size();
+
+  for (const auto& fanout : fanout_) {
+    width = std::max(width, fanout->getMaxLeaves());
+  }
+
+  return width;
+}
+
+sta::Delay ClockTree::getMinimumArrival() const
+{
+  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+
+  for (const auto& [driver, arrival] : drivers_) {
+    minimum = std::min(minimum, arrival);
+  }
+
+  for (const auto& [leaf, arrival] : leaves_) {
+    minimum = std::min(minimum, arrival);
+  }
+
+  for (const auto& fanout : fanout_) {
+    minimum = std::min(minimum, fanout->getMinimumArrival());
+  }
+
+  return minimum;
+}
+
+sta::Delay ClockTree::getMaximumArrival() const
+{
+  sta::Delay maximum = std::numeric_limits<sta::Delay>::min();
+
+  for (const auto& [driver, arrival] : drivers_) {
+    maximum = std::max(maximum, arrival);
+  }
+
+  for (const auto& [leaf, arrival] : leaves_) {
+    maximum = std::max(maximum, arrival);
+  }
+
+  for (const auto& fanout : fanout_) {
+    maximum = std::max(maximum, fanout->getMaximumArrival());
+  }
+
+  return maximum;
+}
+
+sta::Delay ClockTree::getMinimumDriverDelay() const
+{
+  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+
+  if (parent_ != nullptr) {
+    for (const auto& [driver, arrival] : drivers_) {
+      const auto& [parent_sink, time] = parent_->getPairedSink(driver);
+      minimum = std::min(minimum, arrival - time);
+    }
+  }
+
+  for (const auto& fanout : fanout_) {
+    minimum = std::min(minimum, fanout->getMinimumDriverDelay());
+  }
+
+  return minimum;
+}
+
+std::set<odb::dbNet*> ClockTree::getNets() const
+{
+  std::set<odb::dbNet*> nets;
+
+  if (net_ != nullptr) {
+    nets.insert(network_->staToDb(net_));
+  }
+
+  for (const auto& fanout : fanout_) {
+    const auto fanout_nets = fanout->getNets();
+    nets.insert(fanout_nets.begin(), fanout_nets.end());
+  }
+
+  return nets;
+}
+
+void ClockTree::addPath(sta::PathExpanded& path,
+                        int idx,
+                        const sta::StaState* sta)
+{
+  if (idx == path.size()) {
+    return;
+  }
+
+  sta::PathRef* ref = path.path(idx);
+  sta::Vertex* vertex = ref->vertex(sta);
+  sta::Pin* pin = vertex->pin();
+  sta::Net* net = getNet(pin);
+
+  ClockTree* add_to_tree = getTree(net);
+  if (add_to_tree->addVertex(vertex, ref->arrival(sta))) {
+    add_to_tree->addPath(path, idx + 1, sta);
+  }
+}
+
+void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
+{
+  sta::PathRef* start = path.startPath();
+  if (start->clkEdge(sta)->transition() != sta::RiseFall::rise()) {
+    // only populate with rising edges
+    return;
+  }
+
+  if (start->dcalcAnalysisPt(sta)->delayMinMax() != sta::MinMax::max()) {
+    // only populate with max delay
+    return;
+  }
+
+  if (getNet(start->pin(sta)) != net_) {
+    // dont add paths that do not share a net at the root
+    return;
+  }
+
+  addPath(path, 0, sta);
+}
+
+sta::Net* ClockTree::getNet(sta::Pin* pin) const
+{
+  sta::Term* term = network_->term(pin);
+  if (term != nullptr) {
+    return network_->net(term);
+  } else {
+    return network_->net(pin);
+  }
+}
+
+bool ClockTree::isLeaf(sta::Pin* pin) const
+{
+  return network_->isRegClkPin(pin) || network_->isLatchData(pin);
+}
+
+bool ClockTree::addVertex(sta::Vertex* vertex, sta::Delay delay)
+{
+  sta::Pin* pin = vertex->pin();
+
+  if (isLeaf(pin)) {
+    leaves_[pin] = delay;
+    return false;
+  } else {
+    if (vertex->isDriver(network_)) {
+      drivers_[pin] = delay;
+    } else {
+      child_sinks_[pin] = delay;
+    }
+    return true;
+  }
+}
+
+std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedSink(
+    sta::Pin* paired_pin) const
+{
+  sta::Instance* inst = network_->instance(paired_pin);
+
+  if (inst == nullptr) {
+    return {nullptr, 0.0};
+  }
+
+  for (const auto& [sink, delay] : child_sinks_) {
+    if (network_->instance(sink) == inst) {
+      return {sink, delay};
+    }
+  }
+
+  return {nullptr, 0.0};
+}
+
+std::vector<std::pair<sta::Pin*, sta::Pin*>> ClockTree::findPathTo(
+    sta::Pin* pin) const
+{
+  auto pin_map = getPinMapping();
+
+  std::vector<std::pair<sta::Pin*, sta::Pin*>> path;
+
+  // looking for path to root
+  sta::Pin* root = drivers_.begin()->first;
+
+  sta::Pin* search_pin = pin;
+  while (search_pin != root) {
+    const auto connections = pin_map[search_pin];
+
+    for (sta::Pin* connect : connections) {
+      path.emplace_back(connect, search_pin);
+    }
+
+    if (connections.find(root) != connections.end()) {
+      break;
+    }
+
+    search_pin = *connections.begin();
+  }
+
+  return path;
+}
+
+std::map<sta::Pin*, std::set<sta::Pin*>> ClockTree::getPinMapping() const
+{
+  std::map<sta::Pin*, std::set<sta::Pin*>> pins;
+
+  const auto drivers = getDrivers();
+  for (const auto& [leaf, arrival] : leaves_) {
+    pins[leaf].insert(drivers.begin(), drivers.end());
+  }
+
+  for (const auto& [sink, arrival] : child_sinks_) {
+    pins[sink].insert(drivers.begin(), drivers.end());
+  }
+
+  if (parent_ != nullptr) {
+    for (sta::Pin* driver : drivers) {
+      const auto& [parent_sink, time] = parent_->getPairedSink(driver);
+      pins[driver].insert(parent_sink);
+    }
+  }
+
+  for (const auto& fanout : fanout_) {
+    for (const auto& [pin, connections] : fanout->getPinMapping()) {
+      pins[pin].insert(connections.begin(), connections.end());
+    }
+  }
+
+  return pins;
+}
+
+/////////////
+
 STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
       corner_(nullptr),
@@ -387,8 +699,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
 {
   TimingPathList paths;
 
-  sta_->ensureGraph();
-  sta_->searchPreamble();
+  initSTA();
 
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
@@ -546,8 +857,8 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
                                             sta::PinSet* pins,
                                             bool is_fanin) const
 {
+  initSTA();
   auto* network = sta_->getDbNetwork();
-  sta_->ensureGraph();
   auto* graph = sta_->graph();
 
   auto filter_pins
@@ -710,7 +1021,7 @@ void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
-  stagui.setIncludeCaptruePaths(false);
+  stagui.setIncludeCapturePaths(false);
 
   TimingPathList paths = stagui.getTimingPaths(source_pin);
 
@@ -739,6 +1050,48 @@ void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
           return l->getPathSlack() > r->getPathSlack();
         });
   }
+}
+
+std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
+{
+  initSTA();
+  sta_->ensureClkNetwork();
+  sta_->ensureClkArrivals();
+
+  std::vector<std::unique_ptr<ClockTree>> trees;
+  std::map<sta::Clock*, ClockTree*> roots;
+  for (sta::Clock* clk : *sta_->sdc()->clocks()) {
+    ClockTree* root = new ClockTree(clk, getNetwork());
+    roots[clk] = root;
+    trees.emplace_back(root);
+  }
+
+  sta::Graph* graph = sta_->graph();
+  for (sta::Vertex* src_vertex : *graph->regClkVertices()) {
+    sta::VertexPathIterator path_iter(src_vertex, sta_);
+    while (path_iter.hasNext()) {
+      sta::PathVertex* path = path_iter.next();
+
+      if (path->dcalcAnalysisPt(sta_)->corner() != corner_) {
+        continue;
+      }
+
+      sta::PathExpanded expand(path, sta_);
+
+      sta::Clock* clock = path->clock(sta_);
+      if (clock) {
+        roots[clock]->addPath(expand, sta_);
+      }
+    }
+  }
+
+  return trees;
+}
+
+void STAGuiInterface::initSTA() const
+{
+  sta_->ensureGraph();
+  sta_->searchPreamble();
 }
 
 }  // namespace gui

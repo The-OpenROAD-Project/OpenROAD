@@ -177,26 +177,6 @@ class sortInst_x
     return bb1->xMin() < bb2->xMin();
   }
 };
-// static void print_wire( odb::dbWire * wire );
-void extMain::writeViaRC(FILE* fp,
-                         uint level,
-                         odb::dbTechLayer* layer,
-                         odb::dbBox* v,
-                         odb::dbBox* w)
-{
-  uint top;
-  uint bot = _block->getSearchDb()->getViaLevels(v, top);
-
-  fprintf(fp, "R_%d_%d_v%d ", v->xMin(), v->yMin(), v->getId());
-  writeViaName(fp, v, bot, " ");
-
-  level = _block->getSearchDb()->getViaLevels(w, top);
-  writeViaName(fp, w, top, " ");
-  float res = getPowerViaRes(v, 0.1);
-  fprintf(fp, " %g\n", res);
-
-  _stackedViaResCnt++;
-}
 void extMain::writeResNode(char* nodeName, odb::dbCapNode* capNode, uint level)
 {
   if (!_wireInfra)

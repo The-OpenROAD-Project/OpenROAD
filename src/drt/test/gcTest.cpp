@@ -64,11 +64,7 @@ struct GCFixture : public Fixture
     BOOST_TEST(marker->getConstraint());
     TEST_ENUM_EQUAL(marker->getConstraint()->typeId(), type);
 
-    // TODO this expression can't be evaluated directly likely due to lack of
-    // iostream support in odb. Try removing this workaround after dbStreams are
-    // replaced with iostreams
-    bool test = (bbox == expected_bbox);
-    BOOST_TEST(test);
+    BOOST_TEST(bbox == expected_bbox);
   }
 
   void runGC()
@@ -194,6 +190,38 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
              2,
              frConstraintTypeEnum::frcNonSufficientMetalConstraint,
              Rect(0, 0, 50, 50));
+}
+
+// Path seg less than min width flags a violation
+BOOST_DATA_TEST_CASE(min_cut,
+                     (bdata::make({1000, 199}) ^ bdata::make({false, true})),
+                     spacing,
+                     legal)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeMinimumCut(2, 200, 200, spacing);
+  frNet* n1 = makeNet("n1");
+  frViaDef* vd1 = makeViaDef("v1", 3, {0, 0}, {200, 200});
+  makeVia(vd1, n1, {0, 0});
+  makePathseg(n1, 2, {0, 100}, {200, 100}, 200);
+  makePathseg(n1, 2, {200, 100}, {400, 100}, 100);
+  frViaDef* vd2 = makeViaDef("v2", 3, {0, 0}, {100, 100});
+  makeVia(vd2, n1, {400, 50});
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcMinimumcutConstraint,
+               Rect(200, 50, 400, 150));
+  }
 }
 
 // Path seg less than min width flags a violation

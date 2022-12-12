@@ -471,6 +471,65 @@ void io::Parser::initDefaultVias_GF14(const string& node)
   }
 }
 
+void io::Parser::convertLef58MinCutConstraints()
+{
+  auto bottomLayerNum = tech_->getBottomLayerNum();
+  auto topLayerNum = tech_->getTopLayerNum();
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    frLayer* layer = tech_->getLayer(lNum);
+    if (layer->getType() != dbTechLayerType::ROUTING)
+      continue;
+    if (!layer->hasLef58Minimumcut())
+      continue;
+    for (auto con : layer->getLef58MinimumcutConstraints()) {
+      auto dbRule = con->getODBRule();
+      unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
+      auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+      if (dbRule->isPerCutClass()) {
+        frViaDef* viaDefBelow = nullptr;
+        if (lNum > bottomLayerNum)
+          viaDefBelow = tech_->getLayer(lNum - 1)->getDefaultViaDef();
+        frViaDef* viaDefAbove = nullptr;
+        if (lNum < topLayerNum)
+          viaDefAbove = tech_->getLayer(lNum + 1)->getDefaultViaDef();
+        bool found = false;
+        rptr->setNumCuts(dbRule->getNumCuts());
+        for (auto [cutclass, numcuts] : dbRule->getCutClassCutsMap()) {
+          if (viaDefBelow && !dbRule->isFromAbove()
+              && viaDefBelow->getCutClass()->getName() == cutclass) {
+            found = true;
+            rptr->setNumCuts(numcuts);
+            break;
+          }
+          if (viaDefAbove && !dbRule->isFromBelow()
+              && viaDefAbove->getCutClass()->getName() == cutclass) {
+            found = true;
+
+            rptr->setNumCuts(numcuts);
+            break;
+          }
+        }
+        if (!found)
+          continue;
+      }
+
+      if (dbRule->isLengthValid()) {
+        MTSAFEDIST = std::max(MTSAFEDIST, dbRule->getLengthWithinDist());
+        rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
+      }
+      rptr->setWidth(dbRule->getWidth());
+      if (dbRule->isWithinCutDistValid())
+        rptr->setWithin(dbRule->getWithinCutDist());
+      if (dbRule->isFromAbove())
+        rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
+      if (dbRule->isFromBelow())
+        rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
+      tech_->addUConstraint(std::move(uCon));
+      layer->addMinimumcutConstraint(rptr);
+    }
+  }
+}
+
 void io::Parser::postProcess()
 {
   initDefaultVias();
@@ -480,8 +539,8 @@ void io::Parser::postProcess()
   initCutLayerWidth();
   initConstraintLayerIdx();
   tech_->printDefaultVias(logger_);
-
   instAnalysis();
+  convertLef58MinCutConstraints();
   // init region query
   logger_->info(DRT, 168, "Init region query.");
   design_->getRegionQuery()->init();

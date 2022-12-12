@@ -104,9 +104,9 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn)
-      : tech_(nullptr),
-        design_(designIn),
+  FlexTAWorker(frDesign* designIn, Logger* logger)
+      : design_(designIn),
+        logger_(logger),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
@@ -180,15 +180,15 @@ class FlexTAWorker
   int main_mt();
 
  private:
-  frTechObject* tech_;  // not set
   frDesign* design_;
+  Logger* logger_;
   Rect routeBox_;
   Rect extBox_;
   dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 
-  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorterd iroutes
+  std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorted iroutes
   std::vector<std::unique_ptr<taPin>> extIroutes_;
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>

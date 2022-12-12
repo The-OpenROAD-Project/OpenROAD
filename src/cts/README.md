@@ -44,7 +44,6 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
                      [-root_buf <root_buf>] \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] \
-                     [-post_cts_disable] \
                      [-distance_between_buffers] \
                      [-branching_point_buffers_distance] \
                      [-clustering_exponent] \
@@ -66,9 +65,6 @@ Argument description:
     the height of `-root_buffer`.
 -   `-clk_nets` is a string containing the names of the clock roots. If
     this parameter is omitted, TritonCTS looks for the clock roots automatically.
--   `-post_cts_disable` is a flag that, when specified, disables the
-    post-processing operation for outlier sinks (buffer insertion on 10% of
-    the way between source and sink).
 -   `-distance_between_buffers` is the distance (in micron) between buffers
     that TritonCTS should use when creating the tree. When using this parameter,
     the clock tree algorithm is simplified, and only uses a fraction of the
