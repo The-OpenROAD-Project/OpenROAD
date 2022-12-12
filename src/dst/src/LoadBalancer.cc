@@ -101,7 +101,8 @@ bool LoadBalancer::addWorker(std::string ip, unsigned short port)
         asio::streambuf receive_buffer;
         asio::read(socket, receive_buffer, asio::transfer_all());
       } catch (std::exception const& ex) {
-        if (std::string(ex.what()) != "read: End of file") {
+        if (std::string(ex.what()).find("read: End of file")
+            == std::string::npos) {
           // Since asio::transfer_all() used with a stream buffer it
           // always reach an eof file exception!
           validWorkerState = false;
