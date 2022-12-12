@@ -3,7 +3,7 @@
 Thank you for taking the time to read this document and to contribute.
 The OpenROAD project will not reach all of its objectives without help!
 
-Possible ways to contribute in the scope of OpenROAD tool:
+Possible ways to contribute to the OpenROAD application:
 
 - Tool improvements
 - New tools
