@@ -967,7 +967,7 @@ void HTreeBuilder::plotSolution()
   file.close();
 }
 
-void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
+void SegmentBuilder::build(std::string forceBuffer)
 {
   double lengthX = std::abs(root_.getX() - target_.getX());
   bool isLowToHiX = root_.getX() < target_.getX();
@@ -977,9 +977,6 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
   for (unsigned techCharWireIdx : techCharWires_) {
     const WireSegment& wireSegment = techChar_->getWireSegment(techCharWireIdx);
     unsigned wireSegLen = wireSegment.getLength();
-    if (wireSegment.getNumBuffers() < 1 && sink) {
-      connectionLength += wireSegLen;
-    }
     for (int buffer = 0; buffer < wireSegment.getNumBuffers(); ++buffer) {
       const double location
           = wireSegment.getBufferLocation(buffer) * wireSegLen;
@@ -997,7 +994,7 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
                          : (root_.getY() - (connectionLength - lengthX));
       }
 
-      std::string buffMaster = (forceBuffer != "")
+      std::string buffMaster = (!forceBuffer.empty())
                                    ? forceBuffer
                                    : wireSegment.getBufferMaster(buffer);
       ClockInst& newBuffer = clock_->addClockBuffer(
@@ -1007,20 +1004,10 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
           y * techCharDistUnit_);
       tree_->addTreeLevelBuffer(&newBuffer);
 
-      if (sink) {
-        drivingSubNet_->replaceSink(sink, &newBuffer);
-        drivingSubNet_
-            = &clock_->addSubNet(netPrefix_ + std::to_string(numBufferLevels_));
-        drivingSubNet_->addInst(newBuffer);
-        drivingSubNet_->addInst(*sink);
-        // sink = newBuffer;
-
-      } else {
-        drivingSubNet_->addInst(newBuffer);
-        drivingSubNet_
-            = &clock_->addSubNet(netPrefix_ + std::to_string(numBufferLevels_));
-        drivingSubNet_->addInst(newBuffer);
-      }
+      drivingSubNet_->addInst(newBuffer);
+      drivingSubNet_
+          = &clock_->addSubNet(netPrefix_ + std::to_string(numBufferLevels_));
+      drivingSubNet_->addInst(newBuffer);
 
       ++numBufferLevels_;
     }
