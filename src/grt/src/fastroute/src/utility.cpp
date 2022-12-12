@@ -1210,7 +1210,7 @@ void FastRouteCore::removeLoops()
 
     const auto& treeedges = sttrees_[netID].edges;
 
-    const int edgeCost = nets_[netID]->getEdgeCost();
+    const unsigned short edgeCost = nets_[netID]->getEdgeCost();
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge edge = sttrees_[netID].edges[edgeID];
@@ -1229,11 +1229,15 @@ void FastRouteCore::removeLoops()
               if (gridsX[k] == gridsX[k + 1]) {
                 if (gridsY[k] != gridsY[k + 1]) {
                   const int min_y = std::min(gridsY[k], gridsY[k + 1]);
-                  v_edges_[min_y][gridsX[k]].usage -= edgeCost;
+                  const unsigned short reduce
+                      = std::min(edgeCost, v_edges_[min_y][gridsX[k]].usage);
+                  v_edges_[min_y][gridsX[k]].usage -= reduce;
                 }
               } else {
                 const int min_x = std::min(gridsX[k], gridsX[k + 1]);
-                h_edges_[gridsY[k]][min_x].usage -= edgeCost;
+                const unsigned short reduce
+                    = std::min(edgeCost, h_edges_[gridsY[k]][min_x].usage);
+                h_edges_[gridsY[k]][min_x].usage -= reduce;
               }
             }
 
