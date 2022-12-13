@@ -323,6 +323,42 @@ void ClockNodeGraphicsViewItem::setName(odb::dbInst* inst)
   name_ = inst->getConstName();
 }
 
+void ClockNodeGraphicsViewItem::addDelayFin(QPainterPath& path,
+                                            const qreal delay) const
+{
+  path.moveTo(0, size_);
+  path.lineTo(0, delay);
+  const qreal fin_width = size_ / 10;
+  path.moveTo(-fin_width / 2, delay);
+  path.lineTo(fin_width / 2, delay);
+}
+
+void ClockNodeGraphicsViewItem::paint(QPainter* painter,
+                                      const QStyleOptionGraphicsItem* option,
+                                      QWidget* widget)
+{
+  const QColor outline = getColor();
+  const QColor fill(outline.lighter());
+
+  QPen pen(outline);
+  pen.setWidth(1);
+  pen.setCosmetic(true);
+
+  if (isSelected()) {
+    pen.setWidth(2);
+  }
+
+  painter->setBrush(QBrush(fill, Qt::SolidPattern));
+
+  painter->setPen(pen);
+  painter->drawPath(shape());
+}
+
+QRectF ClockNodeGraphicsViewItem::boundingRect() const
+{
+  return shape().boundingRect();
+}
+
 ////////////////
 
 ClockBufferNodeGraphicsViewItem::ClockBufferNodeGraphicsViewItem(
@@ -359,11 +395,6 @@ QPolygonF ClockBufferNodeGraphicsViewItem::getBufferShape(qreal size)
   return buffer;
 }
 
-QRectF ClockBufferNodeGraphicsViewItem::boundingRect() const
-{
-  return shape().boundingRect();
-}
-
 QPainterPath ClockBufferNodeGraphicsViewItem::shape() const
 {
   const qreal size = getSize();
@@ -379,34 +410,52 @@ QPainterPath ClockBufferNodeGraphicsViewItem::shape() const
     path.addEllipse(
         QPointF(0, size - bar_size / 2), bar_size / 2, bar_size / 2);
   }
-  path.moveTo(0, size);
-  path.lineTo(0, delay_y_);
-  const qreal fin_width = size / 10;
-  path.moveTo(-fin_width / 2, delay_y_);
-  path.lineTo(fin_width / 2, delay_y_);
+  addDelayFin(path, delay_y_);
   return path;
 }
 
-void ClockBufferNodeGraphicsViewItem::paint(
-    QPainter* painter,
-    const QStyleOptionGraphicsItem* option,
-    QWidget* widget)
+////////////////
+
+ClockGateNodeGraphicsViewItem::ClockGateNodeGraphicsViewItem(
+    odb::dbITerm* input_term,
+    odb::dbITerm* output_term,
+    qreal delay_y,
+    QGraphicsItem* parent)
+    : ClockNodeGraphicsViewItem(parent),
+      delay_y_(delay_y),
+      input_pin_(input_term->getMTerm()->getConstName()),
+      output_pin_(output_term->getMTerm()->getConstName()),
+      is_clock_gate_(true)
 {
-  const QColor outline = buffer_color_;
-  const QColor fill(outline.lighter());
+  odb::dbInst* inst = input_term->getInst();
+  setName(inst);
+  setData(0, QVariant::fromValue(inst));
+}
 
-  QPen pen(outline);
-  pen.setWidth(1);
-  pen.setCosmetic(true);
+QPointF ClockGateNodeGraphicsViewItem::getBottomAnchor() const
+{
+  QPointF pt = pos();
+  pt.setY(pt.y() + delay_y_);
+  return pt;
+}
 
-  if (isSelected()) {
-    pen.setWidth(2);
+QPainterPath ClockGateNodeGraphicsViewItem::shape() const
+{
+  const qreal size = getSize();
+
+  QPainterPath path;
+  path.addEllipse(QPointF(0, size / 2), size / 2, size / 2);
+  addDelayFin(path, delay_y_);
+  return path;
+}
+
+QString ClockGateNodeGraphicsViewItem::getType() const
+{
+  if (is_clock_gate_) {
+    return "Clock gate";
+  } else {
+    return "Assumed clock gate";
   }
-
-  painter->setBrush(QBrush(fill, Qt::SolidPattern));
-
-  painter->setPen(pen);
-  painter->drawPath(shape());
 }
 
 ////////////////
@@ -449,38 +498,11 @@ QPolygonF ClockRootNodeGraphicsViewItem::getPolygon() const
   return buffer;
 }
 
-QRectF ClockRootNodeGraphicsViewItem::boundingRect() const
-{
-  return getPolygon().boundingRect();
-}
-
 QPainterPath ClockRootNodeGraphicsViewItem::shape() const
 {
   QPainterPath path;
   path.addPolygon(getPolygon());
   return path;
-}
-
-void ClockRootNodeGraphicsViewItem::paint(
-    QPainter* painter,
-    const QStyleOptionGraphicsItem* option,
-    QWidget* widget)
-{
-  const QColor outline = root_color_;
-  const QColor fill(outline.lighter());
-
-  QPen pen(outline);
-  pen.setWidth(1);
-  pen.setCosmetic(true);
-
-  if (isSelected()) {
-    pen.setWidth(2);
-  }
-
-  painter->setBrush(QBrush(fill, Qt::SolidPattern));
-
-  painter->setPen(pen);
-  painter->drawPolygon(getPolygon());
 }
 
 ////////////////
@@ -911,7 +933,7 @@ std::vector<ClockNodeGraphicsViewItem*> ClockTreeView::buildTree(
         input_pin.delay = time;
       }
 
-      node = addBufferToScene(driver_offset, input_pin, output_pin, network);
+      node = addCellToScene(driver_offset, input_pin, output_pin, network);
     }
 
     const QRectF bbox = node->boundingRect();
@@ -1024,7 +1046,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   return node;
 }
 
-ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
+ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     qreal x,
     const PinArrival& input_pin,
     const PinArrival& output_pin,
@@ -1043,16 +1065,43 @@ ClockNodeGraphicsViewItem* ClockTreeView::addBufferToScene(
   const qreal delay_y
       = convertDelayToY(output_pin.delay) - convertDelayToY(input_pin.delay);
 
-  ClockBufferNodeGraphicsViewItem* node
-      = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
-
-  auto* lib_port = network->libertyPort(output_pin.pin);
+  ClockNodeGraphicsViewItem* node = nullptr;
+  bool is_clockgate = false;
+  bool is_inverter_buffer = false;
+  sta::LibertyPort* lib_port = network->libertyPort(output_pin.pin);
   if (lib_port != nullptr) {
-    auto function = lib_port->function();
-    if (function && function->op() == sta::FuncExpr::op_not) {
-      node->setIsInverter(true);
+    sta::LibertyCell* cell = lib_port->libertyCell();
+    if (cell->isClockGate()) {
+      is_clockgate = true;
+    } else {
+      if (cell->isBuffer() || cell->isInverter()) {
+        is_inverter_buffer = true;
+      }
     }
+  } else {
+    is_inverter_buffer = true;
   }
+
+  if (is_clockgate) {
+    node = new ClockGateNodeGraphicsViewItem(input_term, output_term, delay_y);
+  } else if (is_inverter_buffer) {
+    ClockBufferNodeGraphicsViewItem* buf_node
+        = new ClockBufferNodeGraphicsViewItem(input_term, output_term, delay_y);
+    node = buf_node;
+
+    if (lib_port != nullptr) {
+      auto function = lib_port->function();
+      if (function && function->op() == sta::FuncExpr::op_not) {
+        buf_node->setIsInverter(true);
+      }
+    }
+  } else {
+    ClockGateNodeGraphicsViewItem* gate_node
+        = new ClockGateNodeGraphicsViewItem(input_term, output_term, delay_y);
+    gate_node->setIsClockGate(false);
+    node = gate_node;
+  }
+
   node->setPos({x, convertDelayToY(input_pin.delay)});
   scene_->addItem(node);
 
