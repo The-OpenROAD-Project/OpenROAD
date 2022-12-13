@@ -427,6 +427,11 @@ ClockTree* ClockTree::findTree(sta::Net* net, bool include_children)
   return tree;
 }
 
+int ClockTree::getSinkCount() const
+{
+  return leaves_.size() + fanout_.size();
+}
+
 int ClockTree::getTotalLeaves() const
 {
   int total = leaves_.size();

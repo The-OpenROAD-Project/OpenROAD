@@ -48,7 +48,9 @@
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <QWidgetAction>
 
+#include "colorGenerator.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -69,24 +71,26 @@ Q_DECLARE_METATYPE(sta::Corner*);
 namespace gui {
 
 ClockTreeRenderer::ClockTreeRenderer(ClockTree* tree)
-    : tree_(tree), path_to_(nullptr)
+    : tree_(tree), max_depth_(1), path_to_(nullptr)
 {
 }
 
 void ClockTreeRenderer::drawObjects(Painter& painter)
 {
+  if (tree_ == nullptr) {
+    return;
+  }
+
   auto* descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
   if (descriptor == nullptr) {
     return;
   }
 
-  painter.setPenAndBrush(Painter::magenta, true);
-  for (auto* net : tree_->getNets()) {
-    descriptor->highlight(net, painter);
-  }
+  ColorGenerator generator;
+  drawTree(painter, descriptor, generator, tree_, 0);
 
   if (path_to_ != nullptr) {
-    painter.setPen(Painter::cyan, true, 2);
+    painter.setPen(Painter::cyan, true, pen_width_);
     auto* network = tree_->getNetwork();
     sta::Pin* pin = network->dbToSta(path_to_);
     if (pin == nullptr) {
@@ -101,6 +105,35 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
           DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
     }
   }
+}
+
+void ClockTreeRenderer::drawTree(Painter& painter,
+                                 const Descriptor* descriptor,
+                                 ColorGenerator& colorgenerator,
+                                 ClockTree* tree,
+                                 int depth)
+{
+  odb::dbNet* net = tree->getNetwork()->staToDb(tree->getNet());
+  descriptor->highlight(net, painter);
+
+  const Painter::Color pen_color = painter.getPenColor();
+  const bool change_color = depth < max_depth_ && tree->getSinkCount() > 1;
+  if (change_color) {
+    depth++;
+  }
+  for (const auto& fanout : tree->getFanout()) {
+    if (change_color) {
+      setPen(painter, colorgenerator.getColor());
+    }
+    drawTree(painter, descriptor, colorgenerator, fanout.get(), depth);
+  }
+
+  setPen(painter, pen_color);
+}
+
+void ClockTreeRenderer::setPen(Painter& painter, const Painter::Color& color)
+{
+  painter.setPenAndBrush(color, true, Painter::SOLID, pen_width_);
 }
 
 void ClockTreeRenderer::setPathTo(odb::dbITerm* term)
@@ -132,6 +165,12 @@ void ClockTreeRenderer::resetTree()
     tree_ = parent;
     parent = tree_->getParent();
   }
+  redraw();
+}
+
+void ClockTreeRenderer::setMaxColorDepth(int depth)
+{
+  max_depth_ = depth;
   redraw();
 }
 
@@ -584,19 +623,30 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
     : QGraphicsScene(parent),
       menu_(new QMenu(parent)),
       draw_tree_(new QAction("Draw tree", menu_)),
-      clear_path_(new QAction("Clear path", menu_))
+      clear_path_(new QAction("Clear path", menu_)),
+      color_depth_(new QSpinBox(menu_))
 {
   draw_tree_->setCheckable(true);
   draw_tree_->setChecked(true);
   menu_->addAction(draw_tree_);
+  QWidgetAction* color_depth_widget = new QWidgetAction(menu_);
+  color_depth_widget->setDefaultWidget(color_depth_);
+  color_depth_->setToolTip("Tree color depth");
+  menu_->addAction(color_depth_widget);
   menu_->addAction(clear_path_);
   connect(
       draw_tree_, SIGNAL(toggled(bool)), this, SIGNAL(enableRenderer(bool)));
+  connect(draw_tree_, &QAction::toggled, color_depth_, &QSpinBox::setEnabled);
   connect(clear_path_, SIGNAL(triggered()), this, SLOT(triggeredClearPath()));
   connect(menu_->addAction("Fit"), SIGNAL(triggered()), this, SIGNAL(fit()));
   connect(menu_->addAction("Save"), SIGNAL(triggered()), this, SIGNAL(save()));
 
   clear_path_->setEnabled(false);
+
+  color_depth_->setRange(0, 5);
+  color_depth_->setValue(1);
+  connect(
+      color_depth_, SIGNAL(valueChanged(int)), this, SIGNAL(colorDepth(int)));
 }
 
 void ClockTreeScene::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
@@ -611,6 +661,12 @@ void ClockTreeScene::triggeredClearPath()
 {
   emit clearPath();
   setClearPathEnable(false);
+}
+
+void ClockTreeScene::setRendererEnabled(bool enabled)
+{
+  draw_tree_->setChecked(enabled);
+  color_depth_->setEnabled(enabled);
 }
 
 ////////////////
@@ -680,6 +736,7 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
   connect(scene_, SIGNAL(fit()), this, SLOT(fit()));
   connect(scene_, SIGNAL(clearPath()), this, SLOT(clearHighlightTo()));
   connect(scene_, SIGNAL(save()), this, SLOT(save()));
+  connect(scene_, SIGNAL(colorDepth(int)), this, SLOT(updateColorDepth(int)));
   enableRenderer(scene_->isRendererEnabled());
 }
 
@@ -872,6 +929,7 @@ void ClockTreeView::showRenderer(bool show) const
   auto* gui = Gui::get();
   if (show) {
     gui->registerRenderer(renderer_.get());
+    renderer_->setMaxColorDepth(scene_->getMaxColorDepth());
   } else {
     gui->unregisterRenderer(renderer_.get());
   }
@@ -1143,6 +1201,15 @@ void ClockTreeView::selectRendererTreeNet(odb::dbNet* net)
   }
 
   renderer_->setTree(tree_->findTree(net));
+}
+
+void ClockTreeView::updateColorDepth(int depth)
+{
+  if (renderer_ == nullptr) {
+    return;
+  }
+
+  renderer_->setMaxColorDepth(depth);
 }
 
 ////////////////

@@ -265,6 +265,7 @@ class ClockTree
   sta::Delay getMinimumArrival() const;
   sta::Delay getMaximumArrival() const;
   sta::Delay getMinimumDriverDelay() const;
+  int getSinkCount() const;
 
   std::set<odb::dbNet*> getNets() const;
 
