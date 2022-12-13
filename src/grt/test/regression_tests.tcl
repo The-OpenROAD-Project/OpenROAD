@@ -29,6 +29,7 @@ record_tests {
   pd4
   pin_access1
   pin_access2
+  pin_track_not_aligned
   pre_routed1
   region_adjustment
   repair_antennas1
