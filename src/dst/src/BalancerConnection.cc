@@ -125,7 +125,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               } catch (std::exception const& ex) {
                 if (socket.is_open())
                   socket.close();
-                if (std::string(ex.what()) == "read: End of file") {
+                if (std::string(ex.what()).find("read: End of file")
+                    != std::string::npos) {
                   // Since asio::transfer_all() used with a stream buffer it
                   // always reach an eof file exception!
                   failure = false;
@@ -184,7 +185,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                   asio::streambuf receive_buffer;
                   asio::read(socket, receive_buffer, asio::transfer_all());
                 } catch (std::exception const& ex) {
-                  if (std::string(ex.what()) != "read: End of file") {
+                  if (std::string(ex.what()).find("read: End of file")
+                      == std::string::npos) {
                     // Since asio::transfer_all() used with a stream buffer it
                     // always reach an eof file exception!
                     std::lock_guard<std::mutex> lock(broadcast_failure_mutex);
