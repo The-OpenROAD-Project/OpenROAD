@@ -65,7 +65,7 @@ void Clock::report(utl::Logger* logger) const
 
 Box<int> Clock::computeSinkRegion()
 {
-  double percentile = 0.01;
+  const double percentile = 0.01;
 
   std::vector<int> allPositionsX;
   std::vector<int> allPositionsY;
@@ -77,12 +77,12 @@ Box<int> Clock::computeSinkRegion()
   std::sort(allPositionsX.begin(), allPositionsX.end());
   std::sort(allPositionsY.begin(), allPositionsY.end());
 
-  unsigned numSinks = allPositionsX.size();
-  unsigned numOutliers = percentile * numSinks;
-  int xMin = allPositionsX[numOutliers];
-  int xMax = allPositionsX[numSinks - numOutliers - 1];
-  int yMin = allPositionsY[numOutliers];
-  int yMax = allPositionsY[numSinks - numOutliers - 1];
+  const unsigned numSinks = allPositionsX.size();
+  const unsigned numOutliers = percentile * numSinks;
+  const int xMin = allPositionsX[numOutliers];
+  const int xMax = allPositionsX[numSinks - numOutliers - 1];
+  const int yMin = allPositionsY[numOutliers];
+  const int yMax = allPositionsY[numSinks - numOutliers - 1];
 
   return Box<int>(xMin, yMin, xMax, yMax);
 }
@@ -107,8 +107,7 @@ Box<double> Clock::computeSinkRegionClustered(
 
 Box<double> Clock::computeNormalizedSinkRegion(double factor)
 {
-  Box<int> sinkRegion = computeSinkRegion();
-  return sinkRegion.normalize(factor);
+  return computeSinkRegion().normalize(factor);
 }
 
 void Clock::forEachSink(const std::function<void(const ClockInst&)>& func) const
