@@ -90,20 +90,17 @@ Box<int> Clock::computeSinkRegion()
 Box<double> Clock::computeSinkRegionClustered(
     std::vector<std::pair<float, float>> sinks)
 {
-  std::vector<double> allPositionsX;
-  std::vector<double> allPositionsY;
-  for (const std::pair<float, float>& sinkLocation : sinks) {
-    allPositionsX.push_back(sinkLocation.first);
-    allPositionsY.push_back(sinkLocation.second);
+  double xMin = std::numeric_limits<double>::max();
+  double xMax = std::numeric_limits<double>::lowest();
+  double yMin = std::numeric_limits<double>::max();
+  double yMax = std::numeric_limits<double>::lowest();
+
+  for (const std::pair<double, double>& sinkLocation : sinks) {
+    xMin = std::min(xMin, sinkLocation.first);
+    xMax = std::max(xMax, sinkLocation.first);
+    yMin = std::min(yMin, sinkLocation.second);
+    yMax = std::max(yMax, sinkLocation.second);
   }
-
-  std::sort(allPositionsX.begin(), allPositionsX.end());
-  std::sort(allPositionsY.begin(), allPositionsY.end());
-
-  double xMin = allPositionsX[0];
-  double xMax = allPositionsX[(allPositionsX.size() - 1)];
-  double yMin = allPositionsY[0];
-  double yMax = allPositionsY[(allPositionsY.size() - 1)];
 
   return Box<double>(xMin, yMin, xMax, yMax);
 }
