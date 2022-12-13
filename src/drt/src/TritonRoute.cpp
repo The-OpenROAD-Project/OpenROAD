@@ -809,16 +809,77 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   if (box.area() == 0) {
     box = design_->getTopBlock()->getBBox();
   }
-  auto gcWorker = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
-  gcWorker->setDrcBox(box);
-  gcWorker->setExtBox(box);
-  gcWorker->init(design_.get());
-  gcWorker->main();
-  logger_->info(
-      utl::DRT, 614, "Found {} violations", gcWorker->getMarkers().size());
+  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  std::vector<std::unique_ptr<FlexGCWorker>> workers;
+  auto size = 7;
+  auto offset = 0;
+  auto gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+  auto& xgp = gCellPatterns.at(0);
+  auto& ygp = gCellPatterns.at(1);
+  for (int i = offset; i < (int) xgp.getCount(); i += size) {
+    for (int j = offset; j < (int) ygp.getCount(); j += size) {
+      Rect routeBox1 = design_->getTopBlock()->getGCellBox(Point(i, j));
+      const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
+      const int max_j = min((int) ygp.getCount(), j + size - 1);
+      Rect routeBox2 = design_->getTopBlock()->getGCellBox(Point(max_i, max_j));
+      Rect routeBox(routeBox1.xMin(),
+                    routeBox1.yMin(),
+                    routeBox2.xMax(),
+                    routeBox2.yMax());
+      Rect extBox;
+      Rect drcBox;
+      routeBox.bloat(DRCSAFEDIST, drcBox);
+      routeBox.bloat(MTSAFEDIST, extBox);
+      if (!drcBox.intersects(box))
+        continue;
+      auto gcWorker
+          = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
+      gcWorker->setDrcBox(drcBox);
+      gcWorker->setExtBox(extBox);
+      workers.push_back(std::move(gcWorker));
+    }
+  }
   frList<std::unique_ptr<frMarker>> markers;
-  for (auto& marker : gcWorker->getMarkers())
-    markers.push_back(std::make_unique<frMarker>(*marker));
+  std::map<std::tuple<Rect,
+                      frLayerNum,
+                      frConstraint*,
+                      frBlockObject*,
+                      frBlockObject*>,
+           frMarker*>
+      mapMarkers_;
+  omp_set_num_threads(MAX_THREADS);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < workers.size(); i++) {
+    workers[i]->init(design_.get());
+    workers[i]->main();
+#pragma omp critical
+    {
+      for (auto& marker : workers[i]->getMarkers()) {
+        Rect bbox = marker->getBBox();
+        auto layerNum = marker->getLayerNum();
+        auto con = marker->getConstraint();
+        std::vector<frBlockObject*> srcs(2, nullptr);
+        int i = 0;
+        for (auto& src : marker->getSrcs()) {
+          srcs.at(i) = src;
+          i++;
+        }
+        if (mapMarkers_.find(
+                std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1]))
+            != mapMarkers_.end()) {
+          continue;
+        }
+        if (mapMarkers_.find(
+                std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0]))
+            != mapMarkers_.end()) {
+          continue;
+        }
+        markers.push_back(std::make_unique<frMarker>(*marker));
+        mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])]
+            = markers.back().get();
+      }
+    }
+  }
   reportDRC(filename, markers, box);
 }
 
