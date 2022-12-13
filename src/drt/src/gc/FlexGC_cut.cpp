@@ -366,8 +366,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     cutClass = layer1->getCutClass(cutClassIdx)->getName();
 
   auto dbRule = con->getODBRule();
-  if (dbRule->isLayerValid() && GC_IGNORE_PDN && viaRect->isFixed()
-      && viaRect->hasNet() && viaRect->getNet()->getFrNet()
+  if (GC_IGNORE_PDN && viaRect->isFixed() && viaRect->hasNet()
+      && viaRect->getNet()->getFrNet()
       && viaRect->getNet()->getFrNet()->getType().isSupply())
     return;
 
@@ -405,8 +405,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaRect->getPin())
       continue;
-    if (dbRule->isLayerValid() && GC_IGNORE_PDN && ptr->isFixed()
-        && ptr->hasNet() && ptr->getNet()->getFrNet()
+    if (GC_IGNORE_PDN && ptr->isFixed() && ptr->hasNet()
+        && ptr->getNet()->getFrNet()
         && ptr->getNet()->getFrNet()->getType().isSupply())
       continue;
     if (isUpperVia)
