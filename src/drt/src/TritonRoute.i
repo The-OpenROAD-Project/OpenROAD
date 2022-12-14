@@ -94,7 +94,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool singleStepDR,
                         int minAccessPoints,
                         bool saveGuideUpdates,
-                        bool ignorePdnViaDrvs)
+                        const char* gcIgnorePdnLayer)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({outputMazeFile,
@@ -116,7 +116,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     singleStepDR,
                     minAccessPoints,
                     saveGuideUpdates,
-                    ignorePdnViaDrvs});
+                    gcIgnorePdnLayer});
   router->main();
 }
 

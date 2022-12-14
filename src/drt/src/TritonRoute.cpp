@@ -554,6 +554,16 @@ void TritonRoute::initDesign()
                     VIAINPIN_TOPLAYER_NAME);
     }
   }
+
+  if (!GC_IGNORE_PDN_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(GC_IGNORE_PDN_LAYER_NAME);
+    if (layer) {
+      GC_IGNORE_PDN_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(
+          utl::DRT, 617, "PDN layer {} not found.", GC_IGNORE_PDN_LAYER_NAME);
+    }
+  }
   parser.postProcess();
   if (db_ != nullptr && db_->getChip() != nullptr
       && db_->getChip()->getBlock() != nullptr)
@@ -804,7 +814,7 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 
 void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
-  GC_IGNORE_PDN = false;
+  GC_IGNORE_PDN_LAYER = -1;
   initDesign();
   Rect box(x1, y1, x2, y2);
   if (box.area() == 0) {
@@ -978,7 +988,7 @@ void TritonRoute::setParams(const ParamStruct& params)
     MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
   SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
-  GC_IGNORE_PDN = params.ignorePdnViaDrvs;
+  GC_IGNORE_PDN_LAYER_NAME = params.gcIgnorePdnLayer;
 }
 
 void TritonRoute::addWorkerResults(

@@ -352,6 +352,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   }
 }
 
+inline bool isSkipVia(gcRect* rect)
+{
+  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
+         && rect->hasNet() && rect->getNet()->getFrNet()
+         && rect->getNet()->getFrNet()->getType().isSupply();
+}
+
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     gcRect* viaRect,
     frLef58CutSpacingTableConstraint* con)
@@ -366,9 +373,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     cutClass = layer1->getCutClass(cutClassIdx)->getName();
 
   auto dbRule = con->getODBRule();
-  if (GC_IGNORE_PDN && viaRect->isFixed() && viaRect->hasNet()
-      && viaRect->getNet()->getFrNet()
-      && viaRect->getNet()->getFrNet()->getType().isSupply())
+  if (isSkipVia(viaRect))
     return;
 
   bool isUpperVia = true;
@@ -405,9 +410,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaRect->getPin())
       continue;
-    if (GC_IGNORE_PDN && ptr->isFixed() && ptr->hasNet()
-        && ptr->getNet()->getFrNet()
-        && ptr->getNet()->getFrNet()->getType().isSupply())
+    if (isSkipVia(ptr))
       continue;
     if (isUpperVia)
       checkLef58CutSpacingTbl_main(viaRect, ptr, con);
