@@ -34,7 +34,6 @@
 
 #include <QApplication>
 #include <boost/algorithm/string/predicate.hpp>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -70,8 +69,9 @@ static void message_handler(QtMsgType type,
   auto* logger = ord::OpenRoad::openRoad()->getLogger();
 
   bool suppress = false;
-  bool to_cout = false;
 #if NDEBUG
+  // suppress messages when built as a release, but preserve them in debug
+  // builds
   if (application != nullptr) {
     if (application->platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
@@ -79,9 +79,6 @@ static void message_handler(QtMsgType type,
     }
   }
 #endif
-  if (msg.contains("QXcbShmImage")) {
-    to_cout = true;
-  }
 
   if (suppress) {
     return;
@@ -96,25 +93,6 @@ static void message_handler(QtMsgType type,
                             msg.toStdString());
   } else {
     print_msg = msg.toStdString();
-  }
-  if (to_cout) {
-    switch (type) {
-      case QtDebugMsg:
-        std::cout << "DEBUG ";
-        break;
-      case QtInfoMsg:
-        std::cout << "INFO ";
-        break;
-      case QtWarningMsg:
-        std::cout << "WARNING ";
-        break;
-      case QtCriticalMsg:
-      case QtFatalMsg:
-        std::cout << "ERROR ";
-        break;
-    }
-    std::cout << print_msg << std::endl;
-    return;
   }
   switch (type) {
     case QtDebugMsg:
