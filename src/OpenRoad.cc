@@ -417,7 +417,7 @@ void OpenRoad::readDb(const char* filename)
 {
   if (db_->getChip() && db_->getChip()->getBlock()) {
     logger_->error(
-        ORD, 47, "You can't load a new db file as the db is already populated");
+        ORD, 49, "You can't load a new db file as the db is already populated");
   }
 
   FILE* stream = fopen(filename, "r");
