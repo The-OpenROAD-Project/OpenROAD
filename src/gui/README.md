@@ -2,6 +2,18 @@
 
 The graphical user interface can be access by launching OpenROAD with ``-gui`` or by opening it from the command-line with ``gui::show``.
 
+## Reading files
+
+The GUI is used to inspect files generated at various stages of design flow. Once the gui is running, you can use the ``read_db`` command to read a ``.odb`` file for inspection:
+
+```
+read_db results/placement/project.odb
+```
+
+The GUI can be used to inspect the following files:
+- ``.odb``: OpenROAD database files, loaded with ``read_db``
+- ``.def``: Design Exchange Format files, loaded with ``read_def``
+
 ## Commands
 
 ### Add buttons to the toolbar
