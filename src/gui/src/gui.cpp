@@ -68,15 +68,21 @@ static void message_handler(QtMsgType type,
 {
   auto* logger = ord::OpenRoad::openRoad()->getLogger();
 
-  bool suppress_warning = false;
+  bool suppress = false;
 #if NDEBUG
+  // suppress messages when built as a release, but preserve them in debug
+  // builds
   if (application != nullptr) {
     if (application->platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
-      suppress_warning = true;
+      suppress = true;
     }
   }
 #endif
+
+  if (suppress) {
+    return;
+  }
 
   std::string print_msg;
   if (context.file != nullptr && context.function != nullptr) {
@@ -96,9 +102,7 @@ static void message_handler(QtMsgType type,
       logger->info(utl::GUI, 75, print_msg);
       break;
     case QtWarningMsg:
-      if (!suppress_warning) {
-        logger->warn(utl::GUI, 76, print_msg);
-      }
+      logger->warn(utl::GUI, 76, print_msg);
       break;
     case QtCriticalMsg:
     case QtFatalMsg:

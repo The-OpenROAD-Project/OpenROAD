@@ -416,7 +416,10 @@ void ScriptWidget::outputChanged()
   output_->ensureCursorVisible();
   // Make changes visible
   if (!buffer_outputs_) {
+    // buffer outputs in case additional outputs are generated
+    buffer_outputs_ = true;
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    buffer_outputs_ = false;
   }
 }
 
