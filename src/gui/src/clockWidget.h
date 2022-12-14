@@ -126,8 +126,14 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   ClockNodeGraphicsViewItem(QGraphicsItem* parent = nullptr);
   ~ClockNodeGraphicsViewItem() {}
 
+  QRectF boundingRect() const override;
+  void paint(QPainter* painter,
+             const QStyleOptionGraphicsItem* option,
+             QWidget* widget) override;
+
   virtual QString getType() const = 0;
   virtual QString getName() const { return name_; };
+  virtual QColor getColor() const = 0;
 
   void setupToolTip();
   void setExtraToolTip(const QString& tooltip) { extra_tooltip_ = tooltip; }
@@ -147,11 +153,15 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   constexpr static Qt::GlobalColor buffer_color_ = Qt::blue;
   constexpr static Qt::GlobalColor root_color_ = Qt::red;
   constexpr static Qt::GlobalColor clock_gate_color_ = Qt::magenta;
+  constexpr static Qt::GlobalColor unknown_color_ = Qt::darkGray;
   constexpr static Qt::GlobalColor leaf_color_ = Qt::red;
 
   constexpr static qreal default_size_ = 100.0;
 
   static QString getITermName(odb::dbITerm* term);
+
+ protected:
+  void addDelayFin(QPainterPath& path, const qreal delay) const;
 
  private:
   qreal size_;
@@ -173,11 +183,7 @@ class ClockRootNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   virtual QPointF getBottomAnchor() const override;
 
   virtual QString getType() const override { return "Root"; }
-
-  QRectF boundingRect() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
+  virtual QColor getColor() const override { return root_color_; }
 
   virtual QPainterPath shape() const override;
 
@@ -201,13 +207,9 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   {
     return inverter_ ? "Inverter" : "Buffer";
   }
+  virtual QColor getColor() const override { return buffer_color_; }
 
   virtual QPointF getBottomAnchor() const override;
-
-  QRectF boundingRect() const override;
-  void paint(QPainter* painter,
-             const QStyleOptionGraphicsItem* option,
-             QWidget* widget) override;
 
   virtual QPainterPath shape() const override;
 
@@ -232,6 +234,7 @@ class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   ~ClockRegisterNodeGraphicsViewItem() {}
 
   virtual QString getType() const override { return "Register"; }
+  virtual QColor getColor() const override { return leaf_color_; }
 
   QRectF boundingRect() const override;
   void paint(QPainter* painter,
@@ -250,6 +253,36 @@ class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 
   QRectF getOutlineRect() const;
   QPolygonF getClockInputPolygon() const;
+};
+
+// Handles drawing the clock gate and non-inverter/buffers nodes in the tree
+class ClockGateNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
+{
+ public:
+  ClockGateNodeGraphicsViewItem(odb::dbITerm* input_term,
+                                odb::dbITerm* output_term,
+                                qreal delay_y,
+                                QGraphicsItem* parent = nullptr);
+  ~ClockGateNodeGraphicsViewItem() {}
+
+  void setIsClockGate(bool gate) { is_clock_gate_ = gate; }
+
+  virtual QString getType() const override;
+  virtual QColor getColor() const override
+  {
+    return is_clock_gate_ ? clock_gate_color_ : unknown_color_;
+  }
+
+  virtual QPointF getBottomAnchor() const override;
+
+  virtual QPainterPath shape() const override;
+
+ private:
+  qreal delay_y_;
+  QString input_pin_;
+  QString output_pin_;
+
+  bool is_clock_gate_;
 };
 
 class ClockTreeScene : public QGraphicsScene
@@ -351,10 +384,10 @@ class ClockTreeView : public QGraphicsView
     sta::Pin* pin = nullptr;
     sta::Delay delay = 0.0;
   };
-  ClockNodeGraphicsViewItem* addBufferToScene(qreal x,
-                                              const PinArrival& input_pin,
-                                              const PinArrival& output_pin,
-                                              sta::dbNetwork* network);
+  ClockNodeGraphicsViewItem* addCellToScene(qreal x,
+                                            const PinArrival& input_pin,
+                                            const PinArrival& output_pin,
+                                            sta::dbNetwork* network);
   ClockNodeGraphicsViewItem* addRootToScene(qreal x,
                                             const PinArrival& output_pin,
                                             sta::dbNetwork* network);
