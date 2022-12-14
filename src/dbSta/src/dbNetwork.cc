@@ -465,6 +465,17 @@ dbNetwork::parent(const Instance* instance) const
 {
   if (instance == top_instance_)
     return nullptr;
+
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+  if (mod_inst) {
+    auto parent_module = mod_inst->getParent();
+    if (auto parent_inst = parent_module->getModInst()) {
+      return dbToSta(parent_inst);
+    }
+  }
+
   return top_instance_;
 }
 
@@ -547,7 +558,7 @@ dbNetwork::findNet(const Instance* instance, const char* net_name) const
     dbNet* dnet = block_->findNet(net_name);
     return dbToSta(dnet);
   }
-  std::string flat_net_name = name(instance);
+  std::string flat_net_name = pathName(instance);
   flat_net_name += pathDivider() + std::string(net_name);
   dbNet* dnet = block_->findNet(flat_net_name.c_str());
   return dbToSta(dnet);
