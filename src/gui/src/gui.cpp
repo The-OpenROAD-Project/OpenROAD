@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -68,15 +69,23 @@ static void message_handler(QtMsgType type,
 {
   auto* logger = ord::OpenRoad::openRoad()->getLogger();
 
-  bool suppress_warning = false;
+  bool suppress = false;
+  bool to_cout = false;
 #if NDEBUG
   if (application != nullptr) {
     if (application->platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
-      suppress_warning = true;
+      suppress_allways = true;
     }
   }
 #endif
+  if (msg.contains("QXcbShmImage")) {
+    to_cout = true;
+  }
+
+  if (suppress) {
+    return;
+  }
 
   std::string print_msg;
   if (context.file != nullptr && context.function != nullptr) {
@@ -88,6 +97,25 @@ static void message_handler(QtMsgType type,
   } else {
     print_msg = msg.toStdString();
   }
+  if (to_cout) {
+    switch (type) {
+      case QtDebugMsg:
+        std::cout << "DEBUG ";
+        break;
+      case QtInfoMsg:
+        std::cout << "INFO ";
+        break;
+      case QtWarningMsg:
+        std::cout << "WARNING ";
+        break;
+      case QtCriticalMsg:
+      case QtFatalMsg:
+        std::cout << "ERROR ";
+        break;
+    }
+    std::cout << print_msg << std::endl;
+    return;
+  }
   switch (type) {
     case QtDebugMsg:
       logger->debug(utl::GUI, 1, print_msg);
@@ -96,9 +124,7 @@ static void message_handler(QtMsgType type,
       logger->info(utl::GUI, 75, print_msg);
       break;
     case QtWarningMsg:
-      if (!suppress_warning) {
-        logger->warn(utl::GUI, 76, print_msg);
-      }
+      logger->warn(utl::GUI, 76, print_msg);
       break;
     case QtCriticalMsg:
     case QtFatalMsg:
