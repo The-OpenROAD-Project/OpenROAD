@@ -1078,8 +1078,6 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
         is_inverter_buffer = true;
       }
     }
-  } else {
-    is_inverter_buffer = true;
   }
 
   if (is_clockgate) {
