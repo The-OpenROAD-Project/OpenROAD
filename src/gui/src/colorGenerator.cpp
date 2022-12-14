@@ -36,39 +36,17 @@ namespace gui {
 
 // https://mokole.com/palette.html
 const std::array<QColor, 31> ColorGenerator::colors_{
-    QColor{105, 105, 105},
-    QColor{85, 107, 47},
-    QColor{34, 139, 34},
-    QColor{139, 0, 0},
-    QColor{72, 61, 139},
-    QColor{184, 134, 11},
-    QColor{0, 139, 139},
-    QColor{70, 130, 180},
-    QColor{0, 0, 139},
-    QColor{143, 188, 143},
-    QColor{128, 0, 128},
-    QColor{176, 48, 96},
-    QColor{255, 0, 0},
-    QColor{255, 140, 0},
-    //    QColor{255, 255, 0}, // removed because it is the same as OpenROAD
-    //    highlight yellow.
-    QColor{0, 255, 0},
-    QColor{138, 43, 226},
-    QColor{0, 255, 127},
-    QColor{0, 255, 255},
-    QColor{0, 0, 255},
-    QColor{173, 255, 47},
-    QColor{255, 99, 71},
-    QColor{255, 0, 255},
-    QColor{30, 144, 255},
-    QColor{144, 238, 144},
-    QColor{173, 216, 230},
-    QColor{255, 20, 147},
-    QColor{123, 104, 238},
-    QColor{255, 160, 122},
-    QColor{245, 222, 179},
-    QColor{238, 130, 238},
-    QColor{255, 192, 203}};
+    QColor{255, 0, 0},     QColor{255, 140, 0},   QColor{255, 215, 0},
+    QColor{0, 255, 0},     QColor{148, 0, 211},   QColor{0, 250, 154},
+    QColor{220, 20, 60},   QColor{0, 255, 255},   QColor{0, 191, 255},
+    QColor{0, 0, 255},     QColor{173, 255, 47},  QColor{218, 112, 214},
+    QColor{255, 0, 255},   QColor{30, 144, 255},  QColor{250, 128, 114},
+    QColor{176, 224, 230}, QColor{255, 20, 147},  QColor{123, 104, 238},
+    QColor{255, 250, 205}, QColor{255, 182, 193}, QColor{85, 107, 47},
+    QColor{139, 69, 19},   QColor{72, 61, 139},   QColor{0, 128, 0},
+    QColor{60, 179, 113},  QColor{184, 134, 11},  QColor{0, 139, 139},
+    QColor{0, 0, 139},     QColor{50, 205, 50},   QColor{128, 0, 128},
+    QColor{176, 48, 96}};
 
 ColorGenerator::ColorGenerator() : index_(0)
 {
