@@ -43,6 +43,7 @@
 #include <QMenu>
 #include <QPainterPath>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
 #include <variant>
@@ -61,6 +62,7 @@ class Logger;
 namespace gui {
 
 class ClockNodeGraphicsViewItem;
+class ColorGenerator;
 
 class ClockTreeRenderer : public Renderer
 {
@@ -73,10 +75,26 @@ class ClockTreeRenderer : public Renderer
   void setPathTo(odb::dbITerm* term);
   void clearPathTo();
 
+  void setTree(ClockTree* tree);
+  void resetTree();
+
+  void setMaxColorDepth(int depth);
+  int getMaxColorDepth() const { return max_depth_; }
+
  private:
   ClockTree* tree_;
+  int max_depth_;
 
   odb::dbITerm* path_to_;
+
+  static constexpr int pen_width_ = 2;
+
+  void drawTree(Painter& painter,
+                const Descriptor* descriptor,
+                ColorGenerator& colorgenerator,
+                ClockTree* tree,
+                int depth);
+  void setPen(Painter& painter, const Painter::Color& color);
 };
 
 // Handles drawing a dbNet in the clock tree scene
@@ -293,16 +311,17 @@ class ClockTreeScene : public QGraphicsScene
   ClockTreeScene(QWidget* parent = nullptr);
 
   bool isRendererEnabled() const { return draw_tree_->isChecked(); }
-  void setRendererEnabled(bool enabled) { draw_tree_->setChecked(enabled); }
+  void setRendererEnabled(bool enabled);
 
   void setClearPathEnable(bool enable) { clear_path_->setEnabled(enable); };
+  int getMaxColorDepth() const { return color_depth_->value(); }
 
  signals:
-  void selected(const Selected& selected);
   void enableRenderer(bool enable);
   void fit();
   void clearPath();
   void save();
+  void colorDepth(int depth);
 
  private slots:
   void triggeredClearPath();
@@ -315,6 +334,7 @@ class ClockTreeScene : public QGraphicsScene
   QMenu* menu_;
   QAction* draw_tree_;
   QAction* clear_path_;
+  QSpinBox* color_depth_;
 };
 
 class ClockTreeView : public QGraphicsView
@@ -345,6 +365,7 @@ class ClockTreeView : public QGraphicsView
   void selectionChanged();
   void highlightTo(odb::dbITerm* term);
   void clearHighlightTo();
+  void updateColorDepth(int depth);
 
  protected:
   void wheelEvent(QWheelEvent* event) override;
@@ -419,6 +440,8 @@ class ClockTreeView : public QGraphicsView
     }
     return false;
   }
+
+  void selectRendererTreeNet(odb::dbNet* net);
 };
 
 class ClockWidget : public QDockWidget, sta::dbNetworkObserver
