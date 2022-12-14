@@ -1461,6 +1461,11 @@ void MainWindow::openDesign()
   try {
     if (file.endsWith(".odb", Qt::CaseInsensitive)) {
       ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+      logger_->warn(utl::GUI,
+                    77,
+                    "Timing data is not stored in {} and must be loaded "
+                    "separately, if needed.",
+                    file.toStdString());
     } else {
       logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
     }
