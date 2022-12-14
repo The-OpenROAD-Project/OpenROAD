@@ -75,7 +75,7 @@ static void message_handler(QtMsgType type,
   if (application != nullptr) {
     if (application->platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
-      suppress_allways = true;
+      suppress = true;
     }
   }
 #endif
