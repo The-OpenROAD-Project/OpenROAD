@@ -496,7 +496,7 @@ void MainWindow::createActions()
   hide_option_->setChecked(true);
   exit_ = new QAction("Exit", this);
 
-  open_ = new QAction("Open", this);
+  open_ = new QAction("Open DB", this);
 
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
@@ -1450,7 +1450,7 @@ void MainWindow::showGlobalConnect()
 
 void MainWindow::openDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB);;DEF (*.def *.DEF)";
+  const QString filefilter = "OpenDB (*.odb *.ODB)";
   const QString file = QFileDialog::getOpenFileName(
       this, "Open Design", QString(), filefilter);
 
@@ -1461,9 +1461,6 @@ void MainWindow::openDesign()
   try {
     if (file.endsWith(".odb", Qt::CaseInsensitive)) {
       ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
-    } else if (file.endsWith(".def", Qt::CaseInsensitive)) {
-      ord::OpenRoad::openRoad()->readDef(
-          file.toStdString().c_str(), false, false, false);
     } else {
       logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
     }
