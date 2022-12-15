@@ -27,7 +27,7 @@ entries:
   - file: main/src/README
     title: OpenROAD TCL
   - file: main/src/odb/README
-    title: OpenDB
+    title: Database
     entries:
       - file: main/src/odb/src/codeGenerator/README
         title: Code Generator
@@ -110,7 +110,7 @@ entries:
     - file: main/src/gpl/doc/TclCommands
       title: Tclcommands
   - file: main/src/sta/README
-    title: OpenSTA (external)
+    title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizer
   - file: main/src/dpl/README
@@ -128,7 +128,6 @@ entries:
     title: Detail Routing
   - file: main/src/fin/README
     title: Metal Fill
-
   - file: main/src/stt/src/flt/README
     title: Flute
   - file: main/src/stt/src/pdr/README
