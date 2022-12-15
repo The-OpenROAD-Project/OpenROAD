@@ -20,7 +20,7 @@ entries:
 
 
 - file: main/README
-  title: Getting Started with OpenROAD App
+  title: Getting Started
   entries:
   - file: main/src/README
     title: OpenROAD TCL
