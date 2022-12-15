@@ -34,6 +34,7 @@
 
 #include <QDesktopServices>
 #include <QDesktopWidget>
+#include <QFileDialog>
 #include <QFontDialog>
 #include <QInputDialog>
 #include <QMenu>
@@ -495,6 +496,8 @@ void MainWindow::createActions()
   hide_option_->setChecked(true);
   exit_ = new QAction("Exit", this);
 
+  open_ = new QAction("Open DB", this);
+
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
 
@@ -531,6 +534,9 @@ void MainWindow::createActions()
   global_connect_ = new QAction("Global connect", this);
   global_connect_->setShortcut(QString("Ctrl+G"));
 
+  connect(open_, SIGNAL(triggered()), this, SLOT(openDesign()));
+  connect(
+      this, &MainWindow::designLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -580,6 +586,7 @@ void MainWindow::showApplicationFont()
 void MainWindow::createMenus()
 {
   file_menu_ = menuBar()->addMenu("&File");
+  file_menu_->addAction(open_);
   file_menu_->addAction(hide_);
   file_menu_->addAction(exit_);
 
@@ -1439,6 +1446,32 @@ void MainWindow::showGlobalConnect()
 
   GlobalConnectDialog dialog(block, this);
   dialog.exec();
+}
+
+void MainWindow::openDesign()
+{
+  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const QString file = QFileDialog::getOpenFileName(
+      this, "Open Design", QString(), filefilter);
+
+  if (file.isEmpty()) {
+    return;
+  }
+
+  try {
+    if (file.endsWith(".odb", Qt::CaseInsensitive)) {
+      ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+      logger_->warn(utl::GUI,
+                    77,
+                    "Timing data is not stored in {} and must be loaded "
+                    "separately, if needed.",
+                    file.toStdString());
+    } else {
+      logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
+    }
+  } catch (const std::exception&) {
+    // do nothing
+  }
 }
 
 }  // namespace gui
