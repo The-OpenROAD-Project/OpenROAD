@@ -313,7 +313,8 @@ void OpenRoad::readDef(const char* filename,
                        bool floorplan_init,
                        bool incremental)
 {
-  if (!incremental && db_->getChip() && db_->getChip()->getBlock()) {
+  if (!floorplan_init && !incremental && db_->getChip()
+      && db_->getChip()->getBlock()) {
     logger_->error(
         ORD,
         48,
