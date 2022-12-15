@@ -382,6 +382,7 @@ Resizer::removeBuffer(Instance *buffer)
     delete pin_iter;
     sta_->deleteNet(removed);
     parasitics_invalid_.erase(removed);
+    parasiticsInvalid(survivor);
   }
 }
 
@@ -852,11 +853,12 @@ Resizer::replaceCell(Instance *inst,
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
         const Net *net = network_->net(pin);
+        // ODB is clueless about tristates so go to liberty for reality.
+        const LibertyPort *port = network_->libertyPort(pin);
         // Invalidate estimated parasitics on all instance input pins.
-        // Outputs change location (slightly) but do not update because
-        // tristate nets have multiple drivers and this is drivers^2 if
-        // they the parasitics are updated for each resize.
-        if (net && network_->direction(pin)->isAnyInput())
+        // Tristate nets have multiple drivers and this is drivers^2 if
+        // the parasitics are updated for each resize.
+        if (net && !port->direction()->isAnyTristate())
           parasiticsInvalid(net);
       }
       delete pin_iter;
@@ -2220,10 +2222,11 @@ Resizer::cloneClkInverter(Instance *inv)
 
 void
 Resizer::repairSetup(double setup_margin,
+                     double repair_tns_end_percent,
                      int max_passes)
 {
   resizePreamble();
-  repair_setup_->repairSetup(setup_margin, max_passes);
+  repair_setup_->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
 }
 
 void

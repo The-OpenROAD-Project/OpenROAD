@@ -193,6 +193,7 @@ public:
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net *net);
   void parasiticsInvalid(const dbNet *net);
+  bool parasiticsValid() const;
 
   // Core area (meters).
   double coreArea() const;
@@ -227,6 +228,9 @@ public:
   ////////////////////////////////////////////////////////////////
 
   void repairSetup(double setup_margin,
+                   // Percent of violating ends to repair to
+                   // reduce tns (0.0-1.0).
+                   double repair_tns_end_percent,
                    int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
