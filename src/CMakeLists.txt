@@ -33,13 +33,6 @@
 ##
 ###############################################################################
 
-# The location used by etc/DependencyInstaller.sh
-# lib64 is used for CentOS and openSUSE
-# lib is used for Ubuntu and MacOS
-list(APPEND CMAKE_INSTALL_RPATH
-  "/opt/or-tools/lib64"
-  "/opt/or-tools/lib"
-)
 
 ################
 ##  OR_TOOLS  ##

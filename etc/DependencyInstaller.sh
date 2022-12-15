@@ -122,18 +122,6 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 }
 
-_installOrTools() {
-    os=$1
-    version=$2
-    arch=$3
-    orToolsVersionBig=9.4
-    orToolsVersionSmall=${orToolsVersionBig}.1874
-    orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
-    wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-    mkdir -p /opt/or-tools
-    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
-}
-
 _installUbuntuCleanUp() {
     apt-get autoclean -y
     apt-get autoremove -y
@@ -481,7 +469,6 @@ case "${os}" in
             _installCentosDev
             _installCommonDev
         fi
-        _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
@@ -498,7 +485,6 @@ EOF
             _installUbuntuDev
             _installCommonDev
         fi
-        _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
     "Red Hat Enterprise Linux")
@@ -509,12 +495,10 @@ EOF
             _installRHELDev
             _installCommonDev
         fi
-        _installOrTools "centos" "8" "amd64"
         _installRHELCleanUp
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "MacOsX" "12.5" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
@@ -532,7 +516,6 @@ EOF
             _installDebianDev
             _installCommonDev
         fi
-        _installOrTools "debian" "${version}" "amd64"
         _installDebianCleanUp
         ;;
     *)
