@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.8)
+
+project(ortools-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(ortools_project
+  GIT_REPOSITORY https://github.com/google/or-tools.git
+  GIT_TAG "92eab40155d5566039c92662632f196174f8da47"
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+  CMAKE_ARGS
+    "-G@CMAKE_GENERATOR@"
+    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+    "-DBUILD_DEPS=ON"
+    "-DBUILD_SAMPLES=OFF"
+    "-DBUILD_EXAMPLES=OFF"
+    "-DBUILD_TESTING=OFF"
+    "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/deps"
+)

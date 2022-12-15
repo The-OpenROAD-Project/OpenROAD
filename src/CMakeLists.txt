@@ -41,6 +41,33 @@ list(APPEND CMAKE_INSTALL_RPATH
   "/opt/or-tools/lib"
 )
 
+################
+##  OR_TOOLS  ##
+################
+message(STATUS "Installing OR-Tools...")
+# Download and install or-tools at configure time
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake/ortools.CMakeLists.txt
+	${CMAKE_BINARY_DIR}/ortools-download/CMakeLists.txt)
+# CMake configure
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" . -DCMAKE_BUILD_TYPE=Release
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/ortools-download)
+if(result)
+  message(FATAL_ERROR "CMake step for ortools failed: ${result}")
+endif()
+# CMake Build/Install
+execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/ortools-download)
+if(result)
+  message(FATAL_ERROR "Build step for ortools failed: ${result}")
+endif()
+message(STATUS "Installing OR-Tools...DONE")
+
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/deps)
+find_package(ortools REQUIRED)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 include("openroad")
