@@ -854,6 +854,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
 
+    printf("Dirty net route: %s\n", net->getDbNet()->getConstName());
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
                                        root_idx,
@@ -3949,6 +3950,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 
 void GlobalRouter::updateDirtyRoutes()
 {
+  setVerbose(false);
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     if (verbose_)
@@ -3964,9 +3966,11 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets.reserve(dirty_nets_.size());
     for (odb::dbNet* db_net : dirty_nets_) {
       // check if the pins changes positions 
-      if( checkPinPositions(db_net))
+      if( checkPinPositions(db_net)){
         dirty_nets.push_back(db_net_map_[db_net]);
+      }
     }
+    printf("NumDirtyNets: %ld\n", dirty_nets.size());
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route

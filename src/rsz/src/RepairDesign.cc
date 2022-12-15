@@ -167,6 +167,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
   resizer_->incrementalParasiticsBegin();
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    printf("Iter %d\n", i);
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->isTopLevelPort(drvr_pin)
@@ -185,6 +186,9 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                 fanout_violations, length_violations);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 0);
+
+    printf("Inserted Buffers %d in %d Nets\n", inserted_buffer_count_, repaired_net_count);
+    printf("Resizes instances: %d\n", resize_count_);
   }
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();

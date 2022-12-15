@@ -196,6 +196,8 @@ public:
   void parasiticsInvalid(const dbNet *net);
   bool parasiticsValid() const;
 
+  bool hasMacros();
+
   // Core area (meters).
   double coreArea() const;
   // 0.0 - 1.0 (100%) of core size.
