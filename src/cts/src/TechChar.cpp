@@ -1185,7 +1185,8 @@ void TechChar::create()
   }
   logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Post-processing of the results.
-  const std::vector<ResultData> convertedSolutions = characterizationPostProcess();
+  const std::vector<ResultData> convertedSolutions
+      = characterizationPostProcess();
   // Changes the segment units back to micron and creates the wire segments.
   const float dbUnitsPerMicron = charBlock_->getDbUnitsPerMicron();
   const float segmentDistance = options_->getWireSegmentUnit();
