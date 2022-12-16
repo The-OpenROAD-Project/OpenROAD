@@ -18,6 +18,7 @@ on:
 jobs:     
   testInstaller:
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu20", "ubuntu22", "centos7", "rhel", "debian10", "debian11", "opensuse"]
         args: ["", "-local"]
@@ -43,7 +44,7 @@ jobs:
           sudo service docker restart
       - name: Run installer
         run: |
-          ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
+          sudo ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
-          ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+          sudo ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
