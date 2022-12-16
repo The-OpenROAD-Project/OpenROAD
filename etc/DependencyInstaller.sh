@@ -258,12 +258,10 @@ _installCentosCleanUp() {
 }
 
 _installCentosDev() {
-    if [[ -z $(yum list installed lcov) ]]; then
-        yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
-    fi
-    if [[ -z $(yum list installed ius-release) ]]; then
-        yum install -y https://repo.ius.io/ius-release-el7.rpm
-    fi
+
+    yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
+    yum install -y https://repo.ius.io/ius-release-el7.rpm
+
     yum groupinstall -y "Development Tools"
     yum install -y centos-release-scl
     yum install -y \
@@ -289,13 +287,11 @@ _installCentosDev() {
 }
 
 _installCentosRuntime() {
-    if [[ -z $(yum list installed epel-release) ]]; then
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    fi
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
     yum update -y
     yum install -y \
         libgomp \
-        libomp5 \
         python36-libs \
         qt5-qtbase-devel \
         qt5-qtimageformats \
