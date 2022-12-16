@@ -9392,7 +9392,14 @@ class dbPowerDomain : public dbObject
   // User Code End dbPowerDomainEnums
   const char* getName() const;
 
+  dbGroup* getGroup() const;
+
+  void setParent(dbPowerDomain* parent);
+
+  dbPowerDomain* getParent() const;
+
   // User Code Begin dbPowerDomain
+  void setGroup(dbGroup* group);
   static dbPowerDomain* create(dbBlock* block, const char* name);
   static void destroy(dbPowerDomain* pd);
 
@@ -9404,6 +9411,9 @@ class dbPowerDomain : public dbObject
 
   std::vector<dbPowerSwitch*> getPowerSwitches();
   std::vector<dbIsolation*> getIsolations();
+
+  bool setArea(float x1, float y1, float x2, float y2);
+  bool getArea(float& x1, float& y1, float& x2, float& y2);
 
   // User Code End dbPowerDomain
 };
@@ -9490,6 +9500,11 @@ class dbIsolation : public dbObject
   void setIsolationSense(const std::string& isolation_sense);
 
   void setLocation(const std::string& location);
+
+  void addIsolationCell(std::string& master);
+
+  std::vector<dbMaster*> getIsolationCells();
+
   // User Code End dbIsolation
 };
 

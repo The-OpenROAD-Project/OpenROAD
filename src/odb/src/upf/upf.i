@@ -78,4 +78,34 @@
                             location);
   }
 
+  void use_interface_cell_cmd(char* name,
+                              char* domain,
+                              char* strategy,
+                              char* lib_cell)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::use_interface_cell(getOpenRoad()->getLogger(),
+                            db->getChip()->getBlock(), 
+                            name,
+                            domain,
+                            strategy,
+                            lib_cell);
+  }
+
+  void set_domain_area_cmd(char* domain,
+                           float x1,
+                           float y1,
+                           float x2,
+                           float y2)
+  {
+
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_domain_area(getOpenRoad()->getLogger(),
+                        db->getChip()->getBlock(), 
+                        domain,
+                        x1,
+                        y1,
+                        x2,
+                        y2);
+  }
 %}  // inline

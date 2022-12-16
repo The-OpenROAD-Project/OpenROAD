@@ -195,3 +195,66 @@ proc set_isolation { args } {
 
 
 
+sta::define_cmd_args "use_interface_cell" { \
+    [-domain domain] \
+    [-strategy strategy] \
+    [-lib_cells lib_cells] \
+    name 
+}
+proc use_interface_cell { args } {
+    sta::parse_key_args "use_interface_cell" args \
+        keys {-domain -strategy -lib_cells} flags {-update}
+
+    sta::check_argc_eq1 "use_interface_cell" $args
+
+    set name [lindex $args 0]
+    set domain ""
+    set strategy ""
+    set lib_cells {}
+
+    if { [info exists keys(-domain)] } {
+        set domain $keys(-domain)
+    }
+
+    if { [info exists keys(-strategy)] } {
+        set strategy $keys(-strategy)
+    }
+
+    if { [info exists keys(-lib_cells)] } {
+        set lib_cells $keys(-lib_cells)
+    }
+
+    foreach {cell} $lib_cells {
+        upf::use_interface_cell_cmd $name $domain $strategy $cell 
+    }
+   
+}
+
+
+
+sta::define_cmd_args "set_domain_area" {domain_name -area {llx lly urx ury}}
+
+proc set_domain_area { args } {
+  sta::parse_key_args "set_domain_area" args keys {-area} flags {}
+  set domain_name [lindex $args 0]
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    if { [llength $area] != 4 } {
+      utl::error ODB 9315 "-area is a list of 4 coordinates"
+    }
+    lassign $area llx lly urx ury
+    sta::check_positive_float "-area" $llx
+    sta::check_positive_float "-area" $lly
+    sta::check_positive_float "-area" $urx
+    sta::check_positive_float "-area" $ury
+  } else {
+    utl::error ODB 9316 "please define area"
+  }
+  sta::check_argc_eq1 "set_domain_area" $args
+  set domain_name $args
+  
+  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+}
+
+
+
