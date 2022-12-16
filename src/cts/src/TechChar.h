@@ -62,18 +62,6 @@ using utl::Logger;
 
 class WireSegment
 {
-  uint8_t length_;
-  uint8_t load_;
-  uint8_t outputSlew_;
-
-  double power_;
-  unsigned delay_;
-  uint8_t inputCap_;
-  uint8_t inputSlew_;
-
-  std::vector<double> bufferLocations_;
-  std::vector<std::string> bufferMasters_;
-
  public:
   WireSegment(uint8_t length,
               uint8_t load,
@@ -116,11 +104,24 @@ class WireSegment
     return bufferLocations_[idx];
   }
 
-  std::string getBufferMaster(unsigned idx) const
+  const std::string& getBufferMaster(unsigned idx) const
   {
     assert(idx >= 0 || idx < bufferMasters_.size());
     return bufferMasters_[idx];
   }
+
+ private:
+  uint8_t length_;
+  uint8_t load_;
+  uint8_t outputSlew_;
+
+  double power_;
+  unsigned delay_;
+  uint8_t inputCap_;
+  uint8_t inputSlew_;
+
+  std::vector<double> bufferLocations_;
+  std::vector<std::string> bufferMasters_;
 };
 
 //-----------------------------------------------------------------------------
@@ -136,11 +137,40 @@ class TechChar
            sta::dbNetwork* db_network,
            Logger* logger);
 
-  typedef uint32_t Key;
-  static constexpr unsigned NUM_BITS_PER_FIELD = 10;
-  static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
+  void create();
 
+  void report() const;
+  void reportSegment(unsigned key) const;
+  void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
+
+  void forEachWireSegment(
+      const std::function<void(unsigned, const WireSegment&)> func) const;
+
+  void forEachWireSegment(
+      uint8_t length,
+      uint8_t load,
+      uint8_t outputSlew,
+      const std::function<void(unsigned, const WireSegment&)> func) const;
+
+  const WireSegment& getWireSegment(unsigned idx) const
+  {
+    return wireSegments_[idx];
+  }
+
+  unsigned getMinSegmentLength() const { return minSegmentLength_; }
+  unsigned getMaxSegmentLength() const { return maxSegmentLength_; }
+  unsigned getMaxCapacitance() const { return maxCapacitance_; }
+  unsigned getMaxSlew() const { return maxSlew_; }
+  void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
+  unsigned getActualMinInputCap() const { return actualMinInputCap_; }
+  unsigned getLengthUnit() const { return lengthUnit_; }
+
+  void createFakeEntries(unsigned length, unsigned fakeLength);
+
+  double getCapPerDBU() const { return capPerDBU_; }
+  utl::Logger* getLogger() { return options_->getLogger(); }
+
+ protected:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
@@ -185,23 +215,10 @@ class TechChar
     }
   };
 
-  void create();
-  void compileLut(const std::vector<ResultData>& lutSols);
+  typedef uint32_t Key;
+
   void printCharacterization() const;
   void printSolution() const;
-
-  void report() const;
-  void reportSegment(unsigned key) const;
-  void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
-
-  void forEachWireSegment(
-      const std::function<void(unsigned, const WireSegment&)> func) const;
-
-  void forEachWireSegment(
-      uint8_t length,
-      uint8_t load,
-      uint8_t outputSlew,
-      const std::function<void(unsigned, const WireSegment&)> func) const;
 
   WireSegment& createWireSegment(uint8_t length,
                                  uint8_t load,
@@ -211,34 +228,14 @@ class TechChar
                                  uint8_t inputCap,
                                  uint8_t inputSlew);
 
-  const WireSegment& getWireSegment(unsigned idx) const
-  {
-    return wireSegments_[idx];
-  }
-
-  unsigned getMinSegmentLength() const { return minSegmentLength_; }
-  unsigned getMaxSegmentLength() const { return maxSegmentLength_; }
-  unsigned getMaxCapacitance() const { return maxCapacitance_; }
-  unsigned getMaxSlew() const { return maxSlew_; }
-  void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
-  unsigned getActualMinInputCap() const { return actualMinInputCap_; }
-  void setLenghthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
-  unsigned getLengthUnit() const { return lengthUnit_; }
-
-  void createFakeEntries(unsigned length, unsigned fakeLength);
-
+  void compileLut(const std::vector<ResultData>& lutSols);
+  void setLengthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
   unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const
   {
     return length | (load << NUM_BITS_PER_FIELD)
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
-  float getCharMaxCap() const { return charMaxCap_; }
-  double getCapPerDBU() const { return capPerDBU_; }
-  float getCharMaxSlew() const { return charMaxSlew_; }
-  utl::Logger* getLogger() { return options_->getLogger(); }
-
- protected:
   void initLengthUnits();
   void reportCharacterizationBounds() const;
   void checkCharacterizationBounds() const;
@@ -247,23 +244,6 @@ class TechChar
   {
     return length * lengthUnitRatio_;
   }
-
-  unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
-  unsigned lengthUnitRatio_ = 0;
-
-  unsigned minSegmentLength_ = 0;
-  unsigned maxSegmentLength_ = 0;
-  unsigned minCapacitance_ = 0;
-  unsigned maxCapacitance_ = 0;
-  unsigned minSlew_ = 0;
-  unsigned maxSlew_ = 0;
-
-  unsigned actualMinInputCap_ = 0;
-  unsigned actualMinInputSlew_ = 0;
-
-  std::deque<WireSegment> wireSegments_;
-  std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   // Characterization attributes
 
@@ -283,7 +263,28 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
-  void getClockLayerResCap(float dbUnitsPerMicron);
+  void initClockLayerResCap(float dbUnitsPerMicron);
+
+  static constexpr unsigned NUM_BITS_PER_FIELD = 10;
+  static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
+  unsigned LENGTH_UNIT_MICRON = 10;
+
+  unsigned lengthUnit_ = 0;
+  unsigned charLengthUnit_ = 0;
+  unsigned lengthUnitRatio_ = 0;
+
+  unsigned minSegmentLength_ = 0;
+  unsigned maxSegmentLength_ = 0;
+  unsigned minCapacitance_ = 0;
+  unsigned maxCapacitance_ = 0;
+  unsigned minSlew_ = 0;
+  unsigned maxSlew_ = 0;
+
+  unsigned actualMinInputCap_ = 0;
+  unsigned actualMinInputSlew_ = 0;
+
+  std::deque<WireSegment> wireSegments_;
+  std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   CtsOptions* options_;
   ord::OpenRoad* openroad_;
@@ -297,14 +298,12 @@ class TechChar
   sta::Corner* charCorner_ = nullptr;
   odb::dbBlock* charBlock_ = nullptr;
   odb::dbMaster* charBuf_ = nullptr;
-  std::string charBufIn_ = "";
-  std::string charBufOut_ = "";
+  odb::dbMTerm* charBufIn_ = nullptr;
+  odb::dbMTerm* charBufOut_ = nullptr;
   double resPerDBU_;  // ohms/dbu
   double capPerDBU_;  // farads/dbu
-  float charMaxSlew_ = 0.0;
-  float charMaxCap_ = 0.0;
-  float charSlewInter_ = 5.0e-12;  // Hard-coded interval
-  float charCapInter_ = 5.0e-15;
+  float charSlewStepSize_ = 0.0;
+  float charCapStepSize_ = 0.0;
   std::set<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;

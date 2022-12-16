@@ -67,9 +67,9 @@ struct Sink
       : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
 
   // location
-  float x, y;
+  const float x, y;
   int cluster_idx;
-  unsigned sink_idx;  // index in sinks_
+  const unsigned sink_idx;  // index in sinks_
 };
 
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
