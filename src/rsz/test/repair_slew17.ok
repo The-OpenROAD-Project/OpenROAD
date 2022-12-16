@@ -27,7 +27,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u6/A                                    0.08    0.04    0.04 (MET)
+u3/A                                    0.08    0.04    0.04 (MET)
 
 max capacitance
 
