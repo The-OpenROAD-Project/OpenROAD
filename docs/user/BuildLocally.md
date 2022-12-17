@@ -9,7 +9,7 @@ During initial setup or if you have a new machine, run this script:
 
 ``` shell
 # either run as root or use sudo
-./etc/DependencyInstaller.sh -dev
+./etc/DependencyInstaller.sh
 ```
 
 ### KLayout

@@ -410,9 +410,7 @@ _installDebianRuntime() {
 _help() {
     cat <<EOF
 
-Usage: $0 -run[time]
-       $0 -dev[elopment]
-       $0 -prefix=DIR
+Usage: $0 -prefix=DIR
        $0 -local
 
 EOF
@@ -427,6 +425,12 @@ while [ "$#" -gt 0 ]; do
     case "${1}" in
         -h|-help)
             _help 0
+            ;;
+        -run|-runtime)
+            echo "The use of this flag is deprecated and will be removed soon"
+            ;;
+        -dev|-development)
+            echo "The use of this flag is deprecated and will be removed soon"
             ;;
         -local)
             export PREFIX="$HOME/.local"

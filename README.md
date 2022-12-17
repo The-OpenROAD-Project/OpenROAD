@@ -139,14 +139,14 @@ transceivers, OpenPower-based Microwatt etc.
 
 For a limited number of configurations, the following script can be used
 to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7 and Ubuntu 20.04. To correctly install the dependencies with the
+Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
 script you need to run as root or prepend `sudo` to the commands below.
 
 ``` shell
 ./etc/DependencyInstaller.sh -help
 
-Usage: ./etc/DependencyInstaller.sh -run[time]      # installs dependencies to run a pre-compiled binary
-       ./etc/DependencyInstaller.sh -dev[elopment]  # installs dependencies to compile the openroad binary
+Usage: ./etc/DependencyInstaller.sh -prefix=DIR    # installs dependencies in an existing user specified directory
+       ./etc/DependencyInstaller.sh -local         # installs dependencies in "$HOME/.local"
 
 ```
 

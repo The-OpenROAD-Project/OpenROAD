@@ -5,7 +5,7 @@
 
 # https://github.com/moby/moby/issues/38379#issuecomment-448445652
 ARG copyImage=openroad/centos7-builder:latest
-ARG fromImage=openroad/centos7-installer:latest
+ARG fromImage=openroad/centos7-dev:latest
 
 # need to use the line below as the "COPY --from" does not accept an ARG
 FROM $copyImage AS copyfrom
