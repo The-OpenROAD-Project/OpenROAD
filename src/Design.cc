@@ -198,4 +198,10 @@ dpo::Optdp* Design::getOptdp()
   return app->getOptdp();
 }
 
+fin::Finale* Design::getFinale()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getFinale();
+}
+
 }  // namespace ord

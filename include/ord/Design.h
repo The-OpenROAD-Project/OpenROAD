@@ -89,6 +89,10 @@ namespace dpo {
 class Optdp;
 }
 
+namespace fin {
+class Finale;
+}
+
 namespace ord {
 
 class Tech;
@@ -129,6 +133,7 @@ class Design
   cts::TritonCTS* getTritonCts();
   triton_route::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
+  fin::Finale* getFinale();
 
  private:
   Tech* tech_;
