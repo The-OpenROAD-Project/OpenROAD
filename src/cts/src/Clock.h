@@ -129,7 +129,7 @@ class Clock
 
     void replaceSink(ClockInst* curSink, ClockInst* newSink)
     {
-      unsigned idx = findIndex(curSink);
+      const unsigned idx = findIndex(curSink);
       instances_[idx] = newSink;
       mapInstToIdx_.erase(curSink);
       mapInstToIdx_[newSink] = idx;

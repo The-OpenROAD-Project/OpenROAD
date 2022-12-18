@@ -244,6 +244,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void setClearLocation();
   void showApplicationFont();
   void showGlobalConnect();
+  void openDesign();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -297,6 +298,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QToolBar* view_tool_bar_;
 
+  QAction* open_;
   QAction* exit_;
   QAction* hide_option_;
   QAction* hide_;

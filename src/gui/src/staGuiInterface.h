@@ -232,13 +232,12 @@ class ClockTree
  public:
   using PinDelays = std::map<sta::Pin*, sta::Delay>;
 
-  ClockTree(ClockTree* parent);
+  ClockTree(ClockTree* parent, sta::Net* net);
   ClockTree(sta::Clock* clock, sta::dbNetwork* network);
 
   ClockTree* getParent() const { return parent_; }
   sta::dbNetwork* getNetwork() const { return network_; }
 
-  void setNet(sta::Net* net) { net_ = net; }
   sta::Net* getNet() const { return net_; }
 
   int getLevel() const { return level_; }
@@ -266,12 +265,15 @@ class ClockTree
   sta::Delay getMinimumArrival() const;
   sta::Delay getMaximumArrival() const;
   sta::Delay getMinimumDriverDelay() const;
+  int getSinkCount() const;
 
   std::set<odb::dbNet*> getNets() const;
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 
   std::vector<std::pair<sta::Pin*, sta::Pin*>> findPathTo(sta::Pin* pin) const;
+  ClockTree* findTree(odb::dbNet* net, bool include_children = true);
+  ClockTree* findTree(sta::Net* net, bool include_children = true);
 
  private:
   ClockTree* parent_;

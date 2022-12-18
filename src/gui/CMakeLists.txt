@@ -53,6 +53,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/globalConnectDialog.cpp
     src/clockWidget.cpp
     src/gui_utils.cpp
+    src/colorGenerator.cpp
     resources/resource.qrc
   )
 

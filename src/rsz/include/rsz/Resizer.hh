@@ -344,7 +344,7 @@ protected:
                         LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
-  bool hasTristateDriver(const Net *net);
+  bool hasTristateOrDontTouchDriver(const Net *net);
   bool isTristateDriver(const Pin *pin);
   void makeEquivCells();
   void findBuffers();
