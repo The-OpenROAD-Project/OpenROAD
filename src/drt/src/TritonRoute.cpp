@@ -48,6 +48,7 @@
 #include "gr/FlexGR.h"
 #include "gui/gui.h"
 #include "io/io.h"
+#include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -555,13 +556,13 @@ void TritonRoute::initDesign()
     }
   }
 
-  if (!GC_IGNORE_PDN_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(GC_IGNORE_PDN_LAYER_NAME);
+  if (!REPAIR_PDN_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(REPAIR_PDN_LAYER_NAME);
     if (layer) {
       GC_IGNORE_PDN_LAYER = layer->getLayerNum();
     } else {
       logger_->warn(
-          utl::DRT, 617, "PDN layer {} not found.", GC_IGNORE_PDN_LAYER_NAME);
+          utl::DRT, 617, "PDN layer {} not found.", REPAIR_PDN_LAYER_NAME);
     }
   }
   parser.postProcess();
@@ -631,6 +632,68 @@ void TritonRoute::endFR()
   writer.updateDb(db_);
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
+  if (!REPAIR_PDN_LAYER_NAME.empty()) {
+    auto pdnLayer = design_->getTech()->getLayer(REPAIR_PDN_LAYER_NAME);
+    frLayerNum pdnLayerNum = pdnLayer->getLayerNum();
+    frList<std::unique_ptr<frMarker>> markers;
+    auto blockBox = design_->getTopBlock()->getBBox();
+    GC_IGNORE_PDN_LAYER = -1;
+    getDRCMarkers(markers, blockBox);
+    RTree<odb::dbSBox*> pdnTree;
+    for (auto* net : db_->getChip()->getBlock()->getNets()) {
+      if (!net->getSigType().isSupply())
+        continue;
+      for (auto* swire : net->getSWires()) {
+        for (auto* wire : swire->getWires()) {
+          if (!wire->isVia()) {
+            continue;
+          }
+          //
+          std::vector<odb::dbShape> via_boxes;
+          wire->getViaBoxes(via_boxes);
+          for (const auto& via_box : via_boxes) {
+            auto* layer = via_box.getTechLayer();
+            if (layer->getType() != odb::dbTechLayerType::CUT)
+              continue;
+            if (layer->getName() != pdnLayer->getName())
+              continue;
+            pdnTree.insert({via_box.getBox(), wire});
+          }
+        }
+      }
+    }
+    std::set<odb::dbSBox*> removedBoxes;
+    for (const auto& marker : markers) {
+      if (marker->getLayerNum() != pdnLayerNum)
+        continue;
+      bool supply = false;
+      for (auto src : marker->getSrcs()) {
+        if (src->typeId() == frcNet) {
+          frNet* net = static_cast<frNet*>(src);
+          if (net->getType().isSupply()) {
+            supply = true;
+            break;
+          }
+        }
+      }
+      if (!supply)
+        continue;
+      auto markerBox = marker->getBBox();
+      odb::Rect queryBox;
+      markerBox.bloat(1, queryBox);
+      std::vector<rq_box_value_t<odb::dbSBox*>> results;
+      pdnTree.query(bgi::intersects(queryBox), back_inserter(results));
+      for (auto& [rect, sbox] : results) {
+        if (removedBoxes.find(sbox) == removedBoxes.end()) {
+          removedBoxes.insert(sbox);
+          odb::dbSBox::destroy(sbox);
+        }
+      }
+    }
+    logger_->report("Removed {} pdn vias on layer {}",
+                    removedBoxes.size(),
+                    pdnLayer->getName());
+  }
 }
 
 void TritonRoute::reportConstraints()
@@ -1049,7 +1112,7 @@ void TritonRoute::setParams(const ParamStruct& params)
     MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
   SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
-  GC_IGNORE_PDN_LAYER_NAME = params.gcIgnorePdnLayer;
+  REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
 }
 
 void TritonRoute::addWorkerResults(

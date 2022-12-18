@@ -58,7 +58,7 @@ sta::define_cmd_args "detailed_route" {
     [-no_pin_access]
     [-min_access_points count]
     [-save_guide_updates]
-    [-ignore_pdn_drvs_layer layer]
+    [-repair_pdn_vias layer]
 }
 
 proc detailed_route { args } {
@@ -67,7 +67,7 @@ proc detailed_route { args } {
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
-      -cloud_size -min_access_points -ignore_pdn_drvs_layer} \
+      -cloud_size -min_access_points -repair_pdn_vias} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
@@ -85,10 +85,10 @@ proc detailed_route { args } {
       drt::detailed_route_cmd $keys(-param)
     }
   } else {
-    if { [info exists keys(-ignore_pdn_drvs_layer)] } {
-      set ignore_pdn_drvs_layer $keys(-ignore_pdn_drvs_layer)
+    if { [info exists keys(-repair_pdn_vias)] } {
+      set repair_pdn_vias $keys(-repair_pdn_vias)
     } else {
-      set ignore_pdn_drvs_layer ""
+      set repair_pdn_vias ""
     }
     if { [info exists keys(-output_maze)] } {
       set output_maze $keys(-output_maze)
@@ -195,7 +195,7 @@ proc detailed_route { args } {
       $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $no_pin_access $single_step_dr $min_access_points $save_guide_updates $ignore_pdn_drvs_layer
+      $clean_patches $no_pin_access $single_step_dr $min_access_points $save_guide_updates $repair_pdn_vias
   }
 }
 

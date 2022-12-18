@@ -91,7 +91,7 @@ struct ParamStruct
   bool singleStepDR = false;
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
-  std::string gcIgnorePdnLayer;
+  std::string repairPDNLayerName;
 };
 
 class TritonRoute

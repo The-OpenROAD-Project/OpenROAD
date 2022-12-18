@@ -111,7 +111,7 @@ extern int MISALIGNMENTCOST;
 extern int HISTCOST;
 extern int CONGCOST;
 
-extern std::string GC_IGNORE_PDN_LAYER_NAME;
+extern std::string REPAIR_PDN_LAYER_NAME;
 extern fr::frLayerNum GC_IGNORE_PDN_LAYER;
 
 #define DIRBITSIZE 3
