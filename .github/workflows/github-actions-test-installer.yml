@@ -48,7 +48,7 @@ jobs:
       - name: Test build
         run: |
           if [[ ${{ matrix.os }} == "centos7" ]]; then
-            docker run openroad/centos7-builder-clang /bin/bash -c "source /opt/rh/llvm-toolset-7.0/enable; source /opt/rh/devtoolset-8/enable; build/src/openroad -help;"
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} /bin/bash -c "source /opt/rh/llvm-toolset-7.0/enable; source /opt/rh/devtoolset-8/enable; build/src/openroad -help;"
           else
             docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
           fi
