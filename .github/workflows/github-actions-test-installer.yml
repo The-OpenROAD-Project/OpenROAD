@@ -47,4 +47,8 @@ jobs:
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
       - name: Test build
         run: |
-          docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
+          if [[ ${{ matrix.os }} == "centos7" ]]; then
+            docker run openroad/centos7-builder-clang /bin/bash -c "source /opt/rh/llvm-toolset-7.0/enable; source /opt/rh/devtoolset-8/enable; build/src/openroad -help;"
+          else
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
+          fi

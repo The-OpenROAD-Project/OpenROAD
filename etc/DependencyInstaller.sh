@@ -480,8 +480,6 @@ case "${os}" in
         fi
         _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
-        echo "/usr/local/clang/lib" | tee /etc/ld.so.conf
-        ldconfig
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
