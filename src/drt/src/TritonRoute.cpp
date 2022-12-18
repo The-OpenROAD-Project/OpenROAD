@@ -802,13 +802,9 @@ void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
   writer.updateDb(db_, true);
 }
 
-void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
+void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
+                                const Rect& requiredDrcBox)
 {
-  initDesign();
-  Rect box(x1, y1, x2, y2);
-  if (box.area() == 0) {
-    box = design_->getTopBlock()->getBBox();
-  }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   std::vector<std::unique_ptr<FlexGCWorker>> workers;
   auto size = 7;
@@ -830,7 +826,7 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
       Rect drcBox;
       routeBox.bloat(DRCSAFEDIST, drcBox);
       routeBox.bloat(MTSAFEDIST, extBox);
-      if (!drcBox.intersects(box))
+      if (!drcBox.intersects(requiredDrcBox))
         continue;
       auto gcWorker
           = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
@@ -839,14 +835,7 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
       workers.push_back(std::move(gcWorker));
     }
   }
-  frList<std::unique_ptr<frMarker>> markers;
-  std::map<std::tuple<Rect,
-                      frLayerNum,
-                      frConstraint*,
-                      frBlockObject*,
-                      frBlockObject*>,
-           frMarker*>
-      mapMarkers_;
+  std::map<MarkerId, frMarker*> mapMarkers;
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < workers.size(); i++) {
@@ -856,6 +845,8 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
     {
       for (auto& marker : workers[i]->getMarkers()) {
         Rect bbox = marker->getBBox();
+        if (!bbox.intersects(requiredDrcBox))
+          continue;
         auto layerNum = marker->getLayerNum();
         auto con = marker->getConstraint();
         std::vector<frBlockObject*> srcs(2, nullptr);
@@ -864,23 +855,32 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
           srcs.at(i) = src;
           i++;
         }
-        if (mapMarkers_.find(
-                std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1]))
-            != mapMarkers_.end()) {
+        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
+            != mapMarkers.end()) {
           continue;
         }
-        if (mapMarkers_.find(
-                std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0]))
-            != mapMarkers_.end()) {
+        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+            != mapMarkers.end()) {
           continue;
         }
         markers.push_back(std::make_unique<frMarker>(*marker));
-        mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])]
+        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
             = markers.back().get();
       }
     }
   }
-  reportDRC(filename, markers, box);
+}
+
+void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
+{
+  initDesign();
+  Rect requiredDrcBox(x1, y1, x2, y2);
+  if (requiredDrcBox.area() == 0) {
+    requiredDrcBox = design_->getTopBlock()->getBBox();
+  }
+  frList<std::unique_ptr<frMarker>> markers;
+  getDRCMarkers(markers, requiredDrcBox);
+  reportDRC(filename, markers, requiredDrcBox);
 }
 
 void TritonRoute::readParams(const string& fileName)

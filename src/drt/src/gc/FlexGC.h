@@ -84,6 +84,28 @@ class FlexGCWorker
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
+struct MarkerId
+{
+  Rect box;
+  frLayerNum lNum;
+  frConstraint* con;
+  frBlockObject* src1;
+  frBlockObject* src2;
+  bool operator<(const MarkerId& rhs) const
+  {
+    if (box < rhs.box)
+      return true;
+    if (lNum < rhs.lNum)
+      return true;
+    if (con < rhs.con)
+      return true;
+    if (src1 < rhs.src1)
+      return true;
+    if (src2 < rhs.src2)
+      return true;
+    return false;
+  }
+};
 }  // namespace fr
 
 #endif
