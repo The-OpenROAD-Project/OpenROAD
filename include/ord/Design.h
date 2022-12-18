@@ -108,6 +108,7 @@ class Design
                bool incremental = false);
   void link(const std::string& design_name);
 
+  void readDb(const std::string& file_name);
   void writeDb(const std::string& file_name);
   void writeDef(const std::string& file_name);
 
