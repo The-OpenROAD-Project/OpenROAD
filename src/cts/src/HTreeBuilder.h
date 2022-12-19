@@ -75,7 +75,7 @@ class SegmentBuilder
   {
   }
 
-  void build(std::string forceBuffer = "", ClockInst* sink = nullptr);
+  void build(std::string forceBuffer = "");
   void forceBufferInSegment(std::string master);
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
