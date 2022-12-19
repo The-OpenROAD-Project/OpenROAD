@@ -2184,12 +2184,12 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
       return false;
     }
 
-    if (nearest_track >= min && nearest_track <= max) {
+    if (nearest_track > min && nearest_track < max) {
       track_position = horizontal
                            ? odb::Point(track_position.x(), nearest_track)
                            : odb::Point(nearest_track, track_position.y());
       return true;
-    } else if (nearest_track2 >= min && nearest_track2 <= max) {
+    } else if (nearest_track2 > min && nearest_track2 < max) {
       track_position = horizontal
                            ? odb::Point(track_position.x(), nearest_track2)
                            : odb::Point(nearest_track2, track_position.y());

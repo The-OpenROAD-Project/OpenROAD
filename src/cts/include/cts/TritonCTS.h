@@ -104,7 +104,6 @@ class TritonCTS
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
-  void parseClockNames(std::vector<std::string>& clockNetNames) const;
   void initOneClockTree(odb::dbNet* driverNet,
                         std::string sdcClockName,
                         TreeBuilder* parent);
@@ -115,7 +114,6 @@ class TritonCTS
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clk);
-  void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,

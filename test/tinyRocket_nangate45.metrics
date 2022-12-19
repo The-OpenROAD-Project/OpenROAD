@@ -1,26 +1,57 @@
 {
-    "IFP::ord_version" : ""
-  , "IFP::instance_count" : "23878"
-  , "RSZ::repair_design_buffer_count" : "696"
-  , "RSZ::max_slew_slack" : "46.67471838016827"
-  , "RSZ::max_fanout_slack" : "100.0"
-  , "RSZ::max_capacitance_slack" : "35.56674071730643"
-  , "RSZ::worst_slack_min" : "0.050394634336379154"
-  , "RSZ::worst_slack_max" : "0.1561109063983154"
-  , "RSZ::tns_max" : "0.0"
-  , "RSZ::hold_buffer_count" : "0"
-  , "DPL::utilization" : "8.4"
-  , "DPL::design_area" : "59062"
-  , "GRT::ANT::errors" : "0"
-  , "drt::wire length::total" : 816131
-  , "drt::vias::total" : 183034
-  , "DRT::drv" : "0"
-  , "DRT::worst_slack_min" : "0.047729627157121764"
-  , "DRT::worst_slack_max" : "0.07265921403535106"
-  , "DRT::tns_max" : "0.0"
-  , "DRT::clock_skew" : "0.07126502367717201"
-  , "DRT::max_slew_slack" : "41.3958223157982"
-  , "DRT::max_fanout_slack" : "100.0"
-  , "DRT::max_capacitance_slack" : "9.63697175745076"
-  , "DRT::clock_period" : "2.030000"
+	"IFP::ord_version": "",
+	"IFP::instance_count": "23878",
+	"floorplan__design__instance__count__macros": 2,
+	"floorplan__design__io": 269,
+	"design__instance__displacement__total": 17802.0950,
+	"design__instance__displacement__mean": 0.6885,
+	"design__instance__displacement__max": 5.5925,
+	"route__wirelength__estimated": 653638.4905,
+	"RSZ::repair_design_buffer_count": "650",
+	"RSZ::max_slew_slack": "48.227367099442205",
+	"RSZ::max_fanout_slack": "100.0",
+	"RSZ::max_capacitance_slack": "31.856221437298913",
+	"design__instance__displacement__total": 189.6270,
+	"design__instance__displacement__mean": 0.0070,
+	"design__instance__displacement__max": 2.1930,
+	"route__wirelength__estimated": 675174.2640,
+	"RSZ::worst_slack_min": "0.0705733547132688",
+	"RSZ::worst_slack_max": "0.16948709582190868",
+	"RSZ::tns_max": "0.0",
+	"RSZ::hold_buffer_count": "0",
+	"design__instance__displacement__total": 0.0000,
+	"design__instance__displacement__mean": 0.0000,
+	"design__instance__displacement__max": 0.0000,
+	"route__wirelength__estimated": 675174.2640,
+	"DPL::utilization": "8.5",
+	"DPL::design_area": "59747",
+	"route__net": 28113,
+	"route__net__special": 2,
+	"GRT::ANT::errors": "0",
+	"design__violations": 0,
+	"route__net": 28113,
+	"route__net__special": 2,
+	"route__drc_errors__iter:1": 7164,
+	"route__wirelength__iter:1": 803695,
+	"route__drc_errors__iter:2": 295,
+	"route__wirelength__iter:2": 801544,
+	"route__drc_errors__iter:3": 110,
+	"route__wirelength__iter:3": 801394,
+	"route__drc_errors__iter:4": 0,
+	"route__wirelength__iter:4": 801409,
+	"route__drc_errors": 0,
+	"route__wirelength": 801409,
+	"route__vias": 180797,
+	"route__vias__singlecut": 180797,
+	"route__vias__multicut": 0,
+	"DRT::drv": "0",
+	"DRT::ANT::errors": "0",
+	"DRT::worst_slack_min": "0.06763867435370308",
+	"DRT::worst_slack_max": "0.07942136062498453",
+	"DRT::tns_max": "0.0",
+	"DRT::clock_skew": "-0.06542228055580875",
+	"DRT::max_slew_slack": "40.41266539062157",
+	"DRT::max_fanout_slack": "100.0",
+	"DRT::max_capacitance_slack": "26.155224033570214",
+	"DRT::clock_period": "2.030000"
 }

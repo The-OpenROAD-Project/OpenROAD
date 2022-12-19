@@ -175,7 +175,8 @@ _installUbuntuRuntime() {
         libpython3.8 \
         libtcl \
         qt5-image-formats-plugins \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
 
     if [[ $1 == 22.04 ]]; then
         apt-get install -y \
@@ -247,7 +248,8 @@ _installRHELRuntime() {
         python3-libs \
         tcl \
         tcl-tclreadline \
-        qt5-srpm-macros.noarch
+        qt5-srpm-macros.noarch \
+        wget
 }
 
 _installCentosCleanUp() {
@@ -296,7 +298,8 @@ _installCentosRuntime() {
         python36-libs \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
     yum update -y
 }
 
@@ -391,8 +394,9 @@ _installDebianRuntime() {
         libgomp1 \
         libtcl \
         qt5-image-formats-plugins \
-        tcl-tclreadline
-    
+        tcl-tclreadline \
+        wget
+
     if [[ $1 == 10 ]]; then
         apt-get install -y \
             libpython3.7 \
@@ -530,10 +534,9 @@ esac
 if [[ ! -z ${PREFIX} ]]; then
             cat <<EOF
 To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake' 
+    alias cmake='${PREFIX}/bin/cmake'
     or  run
     echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
     source ~/.bash_profile
 EOF
 fi
-

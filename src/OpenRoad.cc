@@ -313,6 +313,14 @@ void OpenRoad::readDef(const char* filename,
                        bool floorplan_init,
                        bool incremental)
 {
+  if (!floorplan_init && !incremental && db_->getChip()
+      && db_->getChip()->getBlock()) {
+    logger_->error(
+        ORD,
+        48,
+        "You can't load a new DEF file as the db is already populated.");
+  }
+
   odb::defin::MODE mode = odb::defin::DEFAULT;
   if (floorplan_init)
     mode = odb::defin::FLOORPLAN;
@@ -408,6 +416,11 @@ void OpenRoad::writeCdl(const char* outFilename,
 
 void OpenRoad::readDb(const char* filename)
 {
+  if (db_->getChip() && db_->getChip()->getBlock()) {
+    logger_->error(
+        ORD, 47, "You can't load a new db file as the db is already populated");
+  }
+
   FILE* stream = fopen(filename, "r");
   if (stream == nullptr) {
     return;

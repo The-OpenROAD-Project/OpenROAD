@@ -80,12 +80,12 @@ class SinkClustering
 
   const std::vector<Matching>& allMatchings() const { return matchings_; }
 
-  std::vector<std::vector<unsigned>> sinkClusteringSolution()
+  const std::vector<std::vector<unsigned>>& sinkClusteringSolution() const
   {
     return bestSolution_;
   }
 
-  double getWireLength(std::vector<Point<double>> points);
+  double getWireLength(const std::vector<Point<double>>& points) const;
   int getScaleFactor() const { return scaleFactor_; }
 
  private:
@@ -120,8 +120,8 @@ class SinkClustering
   float capPerUnit_;
   bool useMaxCapLimit_;
   int scaleFactor_;
-  static constexpr double max_cap__factor_ = 10;
   std::unique_ptr<Graphics> graphics_;
+  static constexpr double max_cap__factor_ = 10;
 };
 
 }  // namespace cts

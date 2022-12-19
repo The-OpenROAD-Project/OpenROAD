@@ -92,6 +92,12 @@ void Design::link(const std::string& design_name)
   app->linkDesign(design_name.c_str());
 }
 
+void Design::readDb(const std::string& file_name)
+{
+  auto app = OpenRoad::openRoad();
+  app->readDb(file_name.c_str());
+}
+
 void Design::writeDb(const std::string& file_name)
 {
   auto app = OpenRoad::openRoad();
@@ -196,6 +202,12 @@ dpo::Optdp* Design::getOptdp()
 {
   auto app = OpenRoad::openRoad();
   return app->getOptdp();
+}
+
+fin::Finale* Design::getFinale()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getFinale();
 }
 
 }  // namespace ord

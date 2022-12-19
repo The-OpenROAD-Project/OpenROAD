@@ -425,7 +425,7 @@ proc check_drc { args } {
   } else {
     utl::error DRT 613 "-output_file is required for check_drc command"
   }
-  drt::check_drc $output_file $x1 $y1 $x2 $y2
+  drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
 }
 
 }

@@ -48,7 +48,7 @@ using utl::CTS;
 void LevelBalancer::run()
 {
   debugPrint(logger_, CTS, "levelizer", 1, "Computing Max Tree Depth");
-  unsigned maxTreeDepth = computeMaxTreeDepth(root_);
+  const unsigned maxTreeDepth = computeMaxTreeDepth(root_);
   logger_->info(CTS, 93, "Fixing tree levels for max depth {}", maxTreeDepth);
   levelBufCount_ = 0;
   fixTreeLevels(root_, 0, maxTreeDepth);
@@ -58,8 +58,8 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 {
   unsigned maxDepth = 0;
   for (const auto& child : parent->getChildren()) {
-    unsigned depth
-        = computeMaxTreeDepth(child) + 1;  // also count itself - non sink inst
+    // also count itself - non sink inst
+    const unsigned depth = computeMaxTreeDepth(child) + 1;
     odb::dbObject* driverPin = child->getClock().getDriverPin();
     if (driverPin && driverPin->getObjectType() == odb::dbITermObj) {
       odb::dbInst* drivingInst
@@ -93,10 +93,10 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
     totalX += clockInstObj->getX();
     totalY += clockInstObj->getY();
   }
-  double centroidX = totalX / cluster.size();
-  double centroidY = totalY / cluster.size();
-  int driverX = prevLevelSubNet->getDriver()->getX();
-  int driverY = prevLevelSubNet->getDriver()->getY();
+  const double centroidX = totalX / cluster.size();
+  const double centroidY = totalY / cluster.size();
+  const int driverX = prevLevelSubNet->getDriver()->getX();
+  const int driverY = prevLevelSubNet->getDriver()->getY();
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
@@ -130,9 +130,10 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
                                   unsigned parentDepth,
                                   unsigned maxTreeDepth)
 {
-  unsigned currLevel = builder->getTreeBufLevels() + parentDepth;
-  if (currLevel >= maxTreeDepth)
+  const unsigned currLevel = builder->getTreeBufLevels() + parentDepth;
+  if (currLevel >= maxTreeDepth) {
     return;
+  }
 
   logger_->report(
       "Fixing from level {} (parent={} + current={}) to max {} for driver {}",
@@ -165,8 +166,8 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
     subNet.setLeafLevel(false);
     unsigned subClusterCnt = 0;
     for (const auto& cluster : subClusters) {
-      unsigned clusterLevel = cluster.first;
-      unsigned bufLevels = maxTreeDepth - clusterLevel;
+      const unsigned clusterLevel = cluster.first;
+      const unsigned bufLevels = maxTreeDepth - clusterLevel;
       subClusterCnt++;
       const std::string suffix
           = std::to_string(subClusterCnt) + "_" + std::to_string(clusterCnt);

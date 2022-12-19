@@ -48,6 +48,9 @@ class Point
   T getX() const { return x_; }
   T getY() const { return y_; }
 
+  void setX(T x) { x_ = x; }
+  void setY(T y) { y_ = y; }
+
   T computeDist(const Point<T>& other) const
   {
     T dx = (getX() > other.getX()) ? (getX() - other.getX())
