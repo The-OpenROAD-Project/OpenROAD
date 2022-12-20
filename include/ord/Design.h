@@ -93,6 +93,10 @@ namespace fin {
 class Finale;
 }
 
+namespace par {
+class PartitionMgr;
+}
+
 namespace ord {
 
 class Tech;
@@ -135,6 +139,7 @@ class Design
   triton_route::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
   fin::Finale* getFinale();
+  par::PartitionMgr* getPartitionMgr();
 
  private:
   Tech* tech_;
