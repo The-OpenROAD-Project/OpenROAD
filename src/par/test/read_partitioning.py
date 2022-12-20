@@ -7,7 +7,7 @@ tech.readLiberty("Nangate45/Nangate45_typ.lib")
 design = Design(tech)
 
 design.readVerilog("gcd.v")
-design.evalTclString("link_design gcd")
+design.link("gcd")
 
 pmgr = design.getPartitionMgr()
 

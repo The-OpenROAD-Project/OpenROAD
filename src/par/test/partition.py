@@ -1,4 +1,4 @@
-# Check partitioning
+n# Check partitioning
 from openroad import Design, Tech
 import helpers
 import par
@@ -10,7 +10,7 @@ tech.readLiberty("Nangate45/Nangate45_typ.lib")
 design = Design(tech)
 
 design.readVerilog("gcd.v")
-design.evalTclString("link_design gcd")
+design.link("gcd")
 
 pid = par_aux.partition_netlist(design, tool="mlpart", num_partitions=2, seeds=[-289663928])
 par_file = helpers.make_result_file("partition.par")

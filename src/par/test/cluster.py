@@ -8,7 +8,7 @@ tech.readLiberty("Nangate45/Nangate45_typ.lib")
 design = Design(tech)
 
 design.readVerilog("gcd.v")
-design.evalTclString("link_design gcd")
+design.link("gcd")
 
 cid = par_aux.cluster_netlist(design, tool="mlpart", coarsening_ratio=0.6)
 clus_file = helpers.make_result_file("cluster.par")
