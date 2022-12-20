@@ -352,6 +352,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   }
 }
 
+inline bool isSkipVia(gcRect* rect)
+{
+  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
+         && rect->hasNet() && rect->getNet()->getFrNet()
+         && rect->getNet()->getFrNet()->getType().isSupply();
+}
+
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     gcRect* viaRect,
     frLef58CutSpacingTableConstraint* con)
@@ -366,12 +373,23 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
     cutClass = layer1->getCutClass(cutClassIdx)->getName();
 
   auto dbRule = con->getODBRule();
+  if (isSkipVia(viaRect))
+    return;
+
+  bool isUpperVia = true;
   frLayerNum queryLayerNum;
-  if (dbRule->isLayerValid())
-    queryLayerNum = getTech()
-                        ->getLayer(dbRule->getSecondLayer()->getName())
-                        ->getLayerNum();
-  else
+  if (dbRule->isLayerValid()) {
+    if (dbRule->getSecondLayer()->getName() == layer1->getName())
+      isUpperVia = false;
+    if (isUpperVia)
+      queryLayerNum = getTech()
+                          ->getLayer(dbRule->getSecondLayer()->getName())
+                          ->getLayerNum();
+    else
+      queryLayerNum = getTech()
+                          ->getLayer(dbRule->getTechLayer()->getName())
+                          ->getLayerNum();
+  } else
     queryLayerNum = layerNum1;
   frCoord maxSpc;
 
@@ -392,7 +410,12 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (ptr->getPin() == viaRect->getPin())
       continue;
-    checkLef58CutSpacingTbl_main(viaRect, ptr, con);
+    if (isSkipVia(ptr))
+      continue;
+    if (isUpperVia)
+      checkLef58CutSpacingTbl_main(viaRect, ptr, con);
+    else
+      checkLef58CutSpacingTbl_main(ptr, viaRect, con);
   }
 }
 

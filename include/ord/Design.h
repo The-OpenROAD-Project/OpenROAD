@@ -89,6 +89,14 @@ namespace dpo {
 class Optdp;
 }
 
+namespace fin {
+class Finale;
+}
+
+namespace par {
+class PartitionMgr;
+}
+
 namespace ord {
 
 class Tech;
@@ -104,6 +112,7 @@ class Design
                bool incremental = false);
   void link(const std::string& design_name);
 
+  void readDb(const std::string& file_name);
   void writeDb(const std::string& file_name);
   void writeDef(const std::string& file_name);
 
@@ -129,6 +138,8 @@ class Design
   cts::TritonCTS* getTritonCts();
   triton_route::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
+  fin::Finale* getFinale();
+  par::PartitionMgr* getPartitionMgr();
 
  private:
   Tech* tech_;
