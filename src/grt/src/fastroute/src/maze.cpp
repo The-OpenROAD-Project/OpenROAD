@@ -176,18 +176,22 @@ void FastRouteCore::fixOverlappingEdge(
 
     // Updates the usage of the altered edge
     const int edgeCost = nets_[net_id]->getEdgeCost();
-    for (int k = 0; k < treeedge->route.routelen; k++) { // Remove the usages of the old edges
+    for (int k = 0; k < treeedge->route.routelen;
+         k++) {  // remove the usages of the old edges
       if (treeedge->route.gridsX[k] == treeedge->route.gridsX[k + 1]) {
         if (treeedge->route.gridsY[k] != treeedge->route.gridsY[k + 1]) {
-          const int min_y = std::min(treeedge->route.gridsY[k], treeedge->route.gridsY[k + 1]);
+          const int min_y = std::min(treeedge->route.gridsY[k],
+                                     treeedge->route.gridsY[k + 1]);
           v_edges_[min_y][treeedge->route.gridsX[k]].usage -= edgeCost;
         }
       } else {
-        const int min_x = std::min(treeedge->route.gridsX[k], treeedge->route.gridsX[k + 1]);
+        const int min_x = std::min(treeedge->route.gridsX[k],
+                                   treeedge->route.gridsX[k + 1]);
         h_edges_[treeedge->route.gridsY[k]][min_x].usage -= edgeCost;
       }
     }
-    for (int k = 0; k < new_route_x.size() - 1; k++) { // Update the usage for the new edges
+    for (int k = 0; k < new_route_x.size() - 1;
+         k++) {  // update the usage for the new edges
       if (new_route_x[k] == new_route_x[k + 1]) {
         if (new_route_y[k] != new_route_y[k + 1]) {
           const int min_y = std::min(new_route_y[k], new_route_y[k + 1]);
