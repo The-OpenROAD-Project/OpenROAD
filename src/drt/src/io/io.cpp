@@ -1991,6 +1991,12 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           auto pinIn = make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
+            if (box->getTechLayer() == NULL) {
+              logger_->warn(
+                  DRT, 137, "No layer found for terminal {}", _term->getName());
+              continue;
+            }
+
             frLayerNum layerNum = -1;
             string layer = box->getTechLayer()->getName();
             if (tech_->name2layer.find(layer) == tech_->name2layer.end()) {
