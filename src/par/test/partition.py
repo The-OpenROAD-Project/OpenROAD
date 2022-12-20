@@ -1,4 +1,4 @@
-n# Check partitioning
+# Check partitioning
 from openroad import Design, Tech
 import helpers
 import par
