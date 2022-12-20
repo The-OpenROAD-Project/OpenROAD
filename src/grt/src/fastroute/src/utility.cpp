@@ -1228,10 +1228,12 @@ void FastRouteCore::removeLoops()
             for (int k = j; k < i; k++) {
               if (gridsX[k] == gridsX[k + 1]) {
                 if (gridsY[k] != gridsY[k + 1]) {
-                  v_edges_[gridsY[k]][gridsX[k]].usage -= edgeCost;
+                  const int min_y = std::min(gridsY[k], gridsY[k + 1]);
+                  v_edges_[min_y][gridsX[k]].usage -= edgeCost;
                 }
               } else {
-                h_edges_[gridsY[k]][gridsX[k]].usage -= edgeCost;
+                const int min_x = std::min(gridsX[k], gridsX[k + 1]);
+                h_edges_[gridsY[k]][min_x].usage -= edgeCost;
               }
             }
 
