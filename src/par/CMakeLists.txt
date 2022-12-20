@@ -119,3 +119,24 @@ target_link_libraries(par
 )
 
 unset(LOAD_PARTITIONERS)
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          par_py
+           NAMESPACE     par
+           LANGUAGE      python
+           I_FILE        src/partitionmgr-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/par
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/par_py.py
+  )
+
+  target_include_directories(par_py
+    PUBLIC
+      include
+  )
+
+  target_link_libraries(par_py
+    PUBLIC
+      par
+  )
+
+endif()

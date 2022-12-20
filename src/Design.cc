@@ -210,4 +210,10 @@ fin::Finale* Design::getFinale()
   return app->getFinale();
 }
 
+par::PartitionMgr* Design::getPartitionMgr()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPartitionMgr();
+}
+
 }  // namespace ord

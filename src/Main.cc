@@ -93,6 +93,7 @@ using std::string;
   X(drt)                                 \
   X(dpo)                                 \
   X(fin)                                 \
+  X(par)                                 \
   X(odb)
 
 #define FOREACH_TOOL(X)            \
