@@ -3161,6 +3161,15 @@ int GlobalRouter::findInstancesObstructions(
         int pin_layer;
 
         for (odb::dbBox* box : mpin->getGeometry()) {
+          if (box->getTechLayer() == NULL) {
+            logger_->warn(utl::GRT,
+                          251,
+                          "No layer found for terminal {} of instance {}",
+                          mterm->getName(),
+                          inst->getName());
+            continue;
+          }
+
           odb::Rect rect = box->getBox();
           transform.apply(rect);
 
