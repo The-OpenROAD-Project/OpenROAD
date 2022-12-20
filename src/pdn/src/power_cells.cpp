@@ -623,7 +623,7 @@ const ShapeTreeMap GridSwitchedPower::getShapes() const
 
   for (const auto& [inst, inst_info] : insts_) {
     for (const auto& [layer, inst_shapes] :
-         InstanceGrid::getInstancePins(inst)) {
+         InstanceGrid::getInstancePins(grid_->getLogger(), inst)) {
       auto& layer_shapes = shapes[layer];
       for (const auto& [box, shape] : inst_shapes) {
         if (shape->getNet() == alwayson) {

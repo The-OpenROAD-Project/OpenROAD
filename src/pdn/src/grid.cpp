@@ -877,7 +877,8 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-void Grid::makeInitialObstructions(odb::dbBlock* block,
+void Grid::makeInitialObstructions(utl::Logger* logger,
+                                   odb::dbBlock* block,
                                    ShapeTreeMap& obs,
                                    const std::set<odb::dbInst*>& skip_insts)
 {
@@ -921,7 +922,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     }
 
     for (const auto& [layer, shapes] :
-         InstanceGrid::getInstanceObstructions(inst)) {
+         InstanceGrid::getInstanceObstructions(logger, inst)) {
       obs[layer].insert(shapes.begin(), shapes.end());
     }
   }
@@ -1183,6 +1184,7 @@ const odb::Rect InstanceGrid::getGridBoundary() const
 }
 
 ShapeTreeMap InstanceGrid::getInstanceObstructions(
+    utl::Logger* logger,
     odb::dbInst* inst,
     const InstanceGrid::Halo& halo)
 {
@@ -1208,7 +1210,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
   }
 
   // generate obstructions based on pins
-  for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
+  for (const auto& [layer, pin_shapes] : getInstancePins(logger, inst)) {
     const bool is_horizontal
         = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const bool is_vertical
@@ -1239,7 +1241,8 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 
   // copy instance obstructions
-  for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
+  for (const auto& [layer, shapes] :
+       getInstanceObstructions(getLogger(), inst_, halos_)) {
     local_obs[layer].insert(shapes.begin(), shapes.end());
   }
 
@@ -1249,7 +1252,8 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
+ShapeTreeMap InstanceGrid::getInstancePins(utl::Logger* logger,
+                                           odb::dbInst* inst)
 {
   // add instance pins
   std::vector<ShapePtr> pins;
@@ -1285,7 +1289,8 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
   // add instance pins
   ShapeTreeMap inst_shapes = shapes;
   for (auto* net : getNets(false)) {
-    for (const auto& [layer, shapes_on_layer] : getInstancePins(inst_)) {
+    for (const auto& [layer, shapes_on_layer] :
+         InstanceGrid::getInstancePins(getLogger(), inst_)) {
       auto& layer_shapes = inst_shapes[layer];
       for (const auto& [box, shape] : shapes_on_layer) {
         if (shape->getNet() == net) {
@@ -1395,7 +1400,8 @@ void ExistingGrid::populate()
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {
-      for (const auto& [layer, shapes] : InstanceGrid::getInstancePins(inst)) {
+      for (const auto& [layer, shapes] :
+           InstanceGrid::getInstancePins(getLogger(), inst)) {
         shapes_[layer].insert(shapes.begin(), shapes.end());
       }
     }

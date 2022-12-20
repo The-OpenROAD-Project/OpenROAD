@@ -179,7 +179,8 @@ class Grid
                  const ShapeTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block,
+  static void makeInitialObstructions(utl::Logger* logger,
+                                      odb::dbBlock* block,
                                       ShapeTreeMap& obs,
                                       const std::set<odb::dbInst*>& skip_insts);
   static void makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes);
@@ -280,9 +281,10 @@ class InstanceGrid : public Grid
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
   virtual bool isReplaceable() const override { return replaceable_; }
 
-  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst,
+  static ShapeTreeMap getInstanceObstructions(utl::Logger* logger,
+                                              odb::dbInst* inst,
                                               const Halo& halo = {0, 0, 0, 0});
-  static ShapeTreeMap getInstancePins(odb::dbInst* inst);
+  static ShapeTreeMap getInstancePins(utl::Logger* logger, odb::dbInst* inst);
 
  protected:
   // find all intersections that also overlap with the power/ground pins based

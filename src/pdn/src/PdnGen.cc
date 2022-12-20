@@ -106,7 +106,7 @@ void PdnGen::buildGrids(bool trim)
   }
 
   ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
+  Grid::makeInitialObstructions(logger_, block, block_obs, insts_in_grids);
 
   ShapeTreeMap all_shapes;
 

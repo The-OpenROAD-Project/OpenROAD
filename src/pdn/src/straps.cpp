@@ -1165,7 +1165,7 @@ void PadDirectConnectionStraps::getConnectableShapes(ShapeTreeMap& shapes) const
   auto& pin_shapes = shapes[pin_layer];
 
   for (const auto& [layer, layer_pins] :
-       InstanceGrid::getInstancePins(iterm_->getInst())) {
+       InstanceGrid::getInstancePins(getLogger(), iterm_->getInst())) {
     if (layer != pin_layer) {
       continue;
     }
