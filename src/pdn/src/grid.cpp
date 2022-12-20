@@ -1264,6 +1264,14 @@ ShapeTreeMap InstanceGrid::getInstancePins(utl::Logger* logger,
     if (net != nullptr) {
       for (auto* mpin : iterm->getMTerm()->getMPins()) {
         for (auto* box : mpin->getGeometry()) {
+          if (box->getTechLayer() == NULL) {
+            logger->warn(utl::PDN,
+                         200,
+                         "No layer found for terminal {} of instance {}",
+                         iterm->getMTerm()->getName(),
+                         inst->getName());
+            continue;
+          }
           odb::Rect box_rect = box->getBox();
           transform.apply(box_rect);
           auto shape
