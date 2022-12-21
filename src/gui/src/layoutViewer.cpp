@@ -1541,6 +1541,9 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   // store obstructions
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
+    if (!layer) {
+      continue;
+    }
     dbTechLayerType type = layer->getType();
     if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
       continue;
@@ -1553,6 +1556,9 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
     for (dbMPin* mpin : mterm->getMPins()) {
       for (dbBox* box : mpin->getGeometry()) {
         dbTechLayer* layer = box->getTechLayer();
+        if (!layer) {
+          continue;
+        }
         dbTechLayerType type = layer->getType();
         if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
           continue;
