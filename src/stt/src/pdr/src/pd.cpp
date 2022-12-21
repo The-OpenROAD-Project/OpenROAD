@@ -361,7 +361,14 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
 static void splitDegree4Nodes(ListGraph& graph,
                               ListGraph::NodeMap<Point>& node_point)
 {
+  std::deque<ListGraph::Node> to_process;
   for (ListGraph::NodeIt node(graph); node != INVALID; ++node) {
+    to_process.push_back(node);
+  }
+
+  while (!to_process.empty()) {
+    ListGraph::Node node = to_process.front();
+    to_process.pop_front();
     int edge_cnt = 0;
     for (ListGraph::IncEdgeIt edge(graph, node); edge != INVALID; ++edge) {
       ++edge_cnt;
@@ -389,6 +396,7 @@ static void splitDegree4Nodes(ListGraph& graph,
       }
     }
     graph.addEdge(node, new_node);
+    to_process.push_back(new_node);
   }
 }
 
