@@ -321,7 +321,8 @@ void FastRouteCore::routeLShape(
       x = startpoint.x;
       // point (startpoint.x, startpoint.y) already
       // added, so can be skiped in the for below
-      first_y = startpoint.y + 1;
+      first_y
+          = (startpoint.y < endpoint.y) ? startpoint.y + 1 : startpoint.y - 1;
     } else {
       x = endpoint.x;
       // point (endpoint.x, startpoint.y) not added yet, so it
