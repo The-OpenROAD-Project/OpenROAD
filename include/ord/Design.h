@@ -97,6 +97,10 @@ namespace par {
 class PartitionMgr;
 }
 
+namespace rcx {
+class Ext;
+}
+
 namespace ord {
 
 class Tech;
@@ -140,6 +144,7 @@ class Design
   dpo::Optdp* getOptdp();
   fin::Finale* getFinale();
   par::PartitionMgr* getPartitionMgr();
+  rcx::Ext* getOpenRCX();
 
  private:
   Tech* tech_;

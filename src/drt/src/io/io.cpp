@@ -1986,26 +1986,39 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
 
+        bool warned = false;
         int i = 0;
         for (auto mpin : _term->getMPins()) {
           auto pinIn = make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
-            string layer = box->getTechLayer()->getName();
-            if (tech_->name2layer.find(layer) == tech_->name2layer.end()) {
+            auto layer = box->getTechLayer();
+            if (!layer) {
+              if (!warned) {
+                logger_->warn(DRT,
+                              323,
+                              "Via(s) in pin {} of {} will be ignored",
+                              _term->getName(),
+                              master->getName());
+                warned = true;
+              }
+              continue;
+            }
+            string layer_name = layer->getName();
+            if (tech_->name2layer.find(layer_name) == tech_->name2layer.end()) {
               auto type = box->getTechLayer()->getType();
               if (type == odb::dbTechLayerType::ROUTING
                   || type == odb::dbTechLayerType::CUT)
                 logger_->warn(DRT,
                               122,
                               "Layer {} is skipped for {}/{}.",
-                              layer,
+                              layer_name,
                               tmpMaster->getName(),
                               _term->getName());
               continue;
             } else
-              layerNum = tech_->name2layer.at(layer)->getLayerNum();
+              layerNum = tech_->name2layer.at(layer_name)->getLayerNum();
 
             frCoord xl = box->xMin();
             frCoord yl = box->yMin();
