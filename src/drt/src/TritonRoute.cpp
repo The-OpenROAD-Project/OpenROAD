@@ -914,32 +914,31 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   for (int i = 0; i < workers.size(); i++) {
     workers[i]->init(design_.get());
     workers[i]->main();
-#pragma omp critical
-    {
-      for (auto& marker : workers[i]->getMarkers()) {
-        Rect bbox = marker->getBBox();
-        if (!bbox.intersects(requiredDrcBox))
-          continue;
-        auto layerNum = marker->getLayerNum();
-        auto con = marker->getConstraint();
-        std::vector<frBlockObject*> srcs(2, nullptr);
-        int i = 0;
-        for (auto& src : marker->getSrcs()) {
-          srcs.at(i) = src;
-          i++;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
-            != mapMarkers.end()) {
-          continue;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
-            != mapMarkers.end()) {
-          continue;
-        }
-        markers.push_back(std::make_unique<frMarker>(*marker));
-        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
-            = markers.back().get();
+  }
+  for (const auto& worker : workers) {
+    for (auto& marker : worker->getMarkers()) {
+      Rect bbox = marker->getBBox();
+      if (!bbox.intersects(requiredDrcBox))
+        continue;
+      auto layerNum = marker->getLayerNum();
+      auto con = marker->getConstraint();
+      std::vector<frBlockObject*> srcs(2, nullptr);
+      int i = 0;
+      for (auto& src : marker->getSrcs()) {
+        srcs.at(i) = src;
+        i++;
       }
+      if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
+          != mapMarkers.end()) {
+        continue;
+      }
+      if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+          != mapMarkers.end()) {
+        continue;
+      }
+      markers.push_back(std::make_unique<frMarker>(*marker));
+      mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
+          = markers.back().get();
     }
   }
 }
