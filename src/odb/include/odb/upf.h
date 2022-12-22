@@ -92,7 +92,6 @@ bool set_isolation(utl::Logger* logger,
                    
   bool use_interface_cell(utl::Logger* logger,
                             odb::dbBlock* block,
-                            const char* name,
                             const char* power_domain,
                             const char* strategy,
                             const char* cell);

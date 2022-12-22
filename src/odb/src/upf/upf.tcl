@@ -198,16 +198,14 @@ proc set_isolation { args } {
 sta::define_cmd_args "use_interface_cell" { \
     [-domain domain] \
     [-strategy strategy] \
-    [-lib_cells lib_cells] \
-    name 
+    [-lib_cells lib_cells]  
 }
 proc use_interface_cell { args } {
     sta::parse_key_args "use_interface_cell" args \
-        keys {-domain -strategy -lib_cells} flags {-update}
+        keys {-domain -strategy -lib_cells} flags {}
 
-    sta::check_argc_eq1 "use_interface_cell" $args
+    sta::check_argc_eq0 "use_interface_cell" $args
 
-    set name [lindex $args 0]
     set domain ""
     set strategy ""
     set lib_cells {}
@@ -225,7 +223,7 @@ proc use_interface_cell { args } {
     }
 
     foreach {cell} $lib_cells {
-        upf::use_interface_cell_cmd $name $domain $strategy $cell 
+        upf::use_interface_cell_cmd $domain $strategy $cell 
     }
    
 }

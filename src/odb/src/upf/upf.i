@@ -78,15 +78,13 @@
                             location);
   }
 
-  void use_interface_cell_cmd(char* name,
-                              char* domain,
+  void use_interface_cell_cmd(char* domain,
                               char* strategy,
                               char* lib_cell)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::use_interface_cell(getOpenRoad()->getLogger(),
                             db->getChip()->getBlock(), 
-                            name,
                             domain,
                             strategy,
                             lib_cell);

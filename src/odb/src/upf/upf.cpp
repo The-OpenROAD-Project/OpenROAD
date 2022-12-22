@@ -223,7 +223,6 @@ bool set_isolation(utl::Logger* logger,
 
 bool use_interface_cell(utl::Logger* logger,
                         odb::dbBlock* block,
-                        const char* name,
                         const char* power_domain,
                         const char* strategy,
                         const char* cell)
@@ -260,7 +259,6 @@ bool set_domain_area(utl::Logger* logger,
                      float x2,
                      float y2)
 {
-
   odb::dbPowerDomain* pd = block->findPowerDomain(domain);
   if (pd == nullptr) {
     logger->warn(utl::ODB,
@@ -387,35 +385,13 @@ int check_isolation_match(sta::FuncExpr* func,
   return 2;
 }
 
-bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
+bool associate_groups(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    std::map<std::string, std::vector<odb::dbPowerDomain*>>& path_to_domain,
+    odb::dbPowerDomain*& top_domain)
 {
-  // TODO: NEXT: Lock any further UPF reads
-  // Remove all regions and recreate everything
-
-  // Create dbNet for each logic port defined in UPF
-  auto lps = block->getLogicPorts();
-  for (auto&& port : lps) {
-    if (!odb::dbNet::create(block, port->getName())) {
-      logger->warn(utl::ODB,
-                   10010,
-                   "Creation of '%s' dbNet from UPF Logic Port failed",
-                   port->getName());
-      return false;
-    }
-  }
-
-  // For each power domain
-  // 1. Create a dbGroup associated to it
-  // 2. Create a dbRegion associated to it
   auto pds = block->getPowerDomains();
-  if (pds.size() == 0) {  // No power domains defined
-    return true;
-  }
-
-  // Create a lookup table 'path' -> 'power domain'
-  std::map<std::string, std::vector<odb::dbPowerDomain*>> path_to_domain;
-  odb::dbPowerDomain* top_domain = nullptr;
-
   const int dbu = block->getDb()->getTech()->getLefUnits();
 
   for (auto&& domain : pds) {
@@ -449,7 +425,6 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
       return false;
     }
 
-
     // Specifying region area
     float _x1, _x2, _y1, _y2;
     if (domain->getArea(_x1, _y1, _x2, _y2)) {
@@ -459,10 +434,10 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
                          std::round(_x2 * dbu),
                          std::round(_y2 * dbu));
     } else {
-
-      logger->warn(
-          utl::ODB, 120011, "No area specified for '%s' power domain", domain->getName());
-
+      logger->warn(utl::ODB,
+                   120011,
+                   "No area specified for '%s' power domain",
+                   domain->getName());
     }
 
     auto group = odb::dbGroup::create(region, domain->getName());
@@ -475,13 +450,30 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     domain->setGroup(group);
   }
 
-  if (top_domain == nullptr) {
-    // A TOP DOMAIN should always exist
-    logger->warn(utl::ODB, 10022, "No TOP DOMAIN found, aborting");
-    return false;
+  return true;
+}
+
+bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
+{
+  auto lps = block->getLogicPorts();
+  for (auto&& port : lps) {
+    if (!odb::dbNet::create(block, port->getName())) {
+      logger->warn(utl::ODB,
+                   10010,
+                   "Creation of '%s' dbNet from UPF Logic Port failed",
+                   port->getName());
+      return false;
+    }
   }
 
-  // Creating hierarchy of power domains
+  return true;
+}
+
+bool build_domain_hierarchy(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            odb::dbPowerDomain* top_domain,
+                            odb::dbSet<odb::dbPowerDomain>& pds)
+{
   // Currently only support TOP DOMAIN + children domains
   // TODO: NEXT: Support nested domains
   for (auto&& domain : pds) {
@@ -490,6 +482,15 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     }
   }
 
+  return true;
+}
+
+bool add_insts_to_group(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    odb::dbPowerDomain* top_domain,
+    std::map<std::string, std::vector<odb::dbPowerDomain*>>& path_to_domain)
+{
   // Create a reverse lookup table
   // Module Path (Including empty i.e top module) -> Power Domain
   // If nothing matches then there's no power domain matching
@@ -527,6 +528,81 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     }
   }
 
+  return true;
+}
+
+bool find_smallest_inverter(utl::Logger* logger, odb::dbBlock* block, odb::dbMaster*& inverter_m, odb::dbMTerm*& input_m, odb::dbMTerm*& output_m){
+    
+    auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
+    float smallest_area = MAXFLOAT;
+    sta::LibertyCell* smallest_inverter = nullptr;
+    sta::LibertyPort *inverter_input = nullptr, *inverter_output = nullptr;
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+
+    bool found = false;
+
+    auto libs = block->getDataBase()->getLibs();
+    for (auto&& lib : libs) {
+      auto masters = lib->getMasters();
+      for (auto&& master : masters) {
+        auto master_cell_ = network_->dbToSta(master);
+        auto libcell_ = network_->libertyCell(master_cell_);
+
+        if (libcell_ && libcell_->isInverter()
+            && libcell_->area() < smallest_area) {
+          smallest_area = libcell_->area();
+          smallest_inverter = libcell_;
+          smallest_inverter->bufferPorts(inverter_input, inverter_output);
+          inverter_m = network_->staToDb(smallest_inverter);
+          input_m = network_->staToDb(inverter_input);
+          output_m = network_->staToDb(inverter_output);
+          found = true;
+        }
+      }
+    }
+
+    return found;
+}
+
+bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
+{
+  // TODO: NEXT: Lock any further UPF reads
+  // Remove all regions and recreate everything
+
+  // Create dbNet for each logic port defined in UPF
+  instantiate_logic_ports(logger, block);
+
+  auto pds = block->getPowerDomains();
+  if (pds.size() == 0) {  // No power domains defined
+    return true;
+  }
+
+  // lookup table 'defined path' -> 'power domain'
+  std::map<std::string, std::vector<odb::dbPowerDomain*>> path_to_domain;
+  odb::dbPowerDomain* top_domain = nullptr;
+
+  // For each power domain
+  // 1. Create a dbGroup associated to it
+  // 2. Create a dbRegion associated to it
+  // 3. map defined path to the power domain
+  if (associate_groups(logger, block, path_to_domain, top_domain) == false) {
+    return false;
+  }
+
+  if (top_domain == nullptr) {
+    // A TOP DOMAIN should always exist
+    logger->warn(utl::ODB, 10022, "No TOP DOMAIN found, aborting");
+    return false;
+  }
+
+  // Creating hierarchy of power domains
+  build_domain_hierarchy(logger, block, top_domain, pds);
+
+
+  // Associate each instance with its power domain group
+  add_insts_to_group(logger, block, top_domain, path_to_domain);
+
+
   // PowerDomains have a hierarchy and when the isolation's
   // location is parent, it should be placed in the parent's power domain
   // For each domain, determine for each net, if there's an input to another
@@ -542,8 +618,8 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
       continue;
 
     // For now we're only using the first isolation
-    // TODO: ASK: determine what needs to be done in case of multiple strategies for
-    // same domain
+    // TODO: determine what needs to be done in case of multiple strategies
+    // for same domain
     auto isos = domain->getIsolations();
 
     if (isos.size() < 1)
@@ -562,12 +638,30 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     }
 
     // For now using the first defined isolaton cell
-    // TODO: LATER: change it to use the smallest cell
-    odb::dbMaster* iso_cell_master = iso_cells[0];
-    sta::Cell* masterCell = network_->dbToSta(iso_cell_master);
-    sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+    odb::dbMaster* smallest_iso_m = nullptr;
+    sta::LibertyCell* smallest_iso_l = nullptr;
+    float smallest_area = MAXFLOAT;
 
-    auto cell_terms = iso_cell_master->getMTerms();
+    for (auto&& iso : iso_cells) {
+      sta::Cell* masterCell = network_->dbToSta(iso);
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+      if (libertyCell->area() < smallest_area) {
+        smallest_iso_l = libertyCell;
+        smallest_iso_m = iso;
+        smallest_area = libertyCell->area();
+      }
+    }
+
+    if (smallest_iso_m == nullptr) {
+      logger->warn(utl::ODB,
+                   130122,
+                   "Isolation %s cells defined, but can't find any in the lib.",
+                   iso->getName());
+      continue;
+    }
+
+    auto cell_terms = smallest_iso_m->getMTerms();
 
     // Find enable & data pins for the isolation cell
     odb::dbMTerm* enable_term = nullptr;
@@ -578,7 +672,12 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     sta::LibertyPort* data_lib_port = nullptr;
     for (auto&& term : cell_terms) {
       sta::LibertyPort* lib_port
-          = libertyCell->findLibertyPort(term->getName().c_str());
+          = smallest_iso_l->findLibertyPort(term->getName().c_str());
+
+      if (!lib_port) {
+        continue;
+      }
+
       if (lib_port->isolationCellData()) {
         data_term = term;
         data_lib_port = lib_port;
@@ -595,27 +694,27 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
       }
     }
 
+    if (!output_term || !data_term || !enable_term) {
+      logger->warn(utl::ODB,
+                   130152,
+                   "Isolation %s cells defined, but can't find one of output, "
+                   "data or enable terms.",
+                   iso->getName());
+      continue;
+    }
+
     // Determine if an inverter is needed for the control pin & output
     auto func = out_lib_port->function();
     int inv_needed = check_isolation_match(
         func, enable_lib_port, isolation_sense, isolation_clamp_val);
 
-    // find smallest inverter cell
-    float smallest_area = -1;
-    sta::LibertyCell* smallest_inverter = nullptr;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      sta::LibertyCellIterator cell_iter(lib);
-      if (cell_iter.hasNext()) {
-        sta::LibertyCell* cell = cell_iter.next();
-        if (cell->isInverter()) {
-          if (smallest_area == -1 || cell->area() < smallest_area) {
-            smallest_area = cell->area();
-            smallest_inverter = cell;
-          }
-        }
-      }
+    // find the smallest possible inverter
+    odb::dbMaster* inverter_m = nullptr;
+    odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
+
+    if (inv_needed > 0 && find_smallest_inverter(logger, block, inverter_m, input_m, output_m) == false) {
+      logger->warn(utl::ODB, 130482, "can't find any inverters");
+      continue;
     }
 
     // Iterate through all pd's instances and determine if any signal needs
@@ -634,6 +733,11 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
           continue;
 
         auto net = iterm->getNet();
+
+        if (!net) {
+          continue;
+        }
+
         auto connectedIterms = net->getITerms();
 
         if (connectedIterms.size() < 2)
@@ -643,7 +747,10 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
         std::vector<odb::dbITerm*> external_iterms;
         for (auto&& connectedIterm : connectedIterms) {
           auto connectedInst = connectedIterm->getInst();
-          if (connectedInst->getGroup()->getName() != curr_group->getName()) {
+
+          if (!connectedInst->getGroup()
+              || connectedInst->getGroup()->getName()
+                     != curr_group->getName()) {
             external_iterms.push_back(connectedIterm);
           }
         }
@@ -654,13 +761,14 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
         // the power domain Add it to its specified location
         std::string inst_name = inst->getName() + "_isolation_cell";
         auto isolation_inst
-            = odb::dbInst::create(block, iso_cell_master, inst_name.c_str());
+            = odb::dbInst::create(block, smallest_iso_m, inst_name.c_str());
 
         if (iso->getLocation() == "self") {
           curr_group->addInst(isolation_inst);
         } else if (iso->getLocation() == "parent") {
           auto ppd = domain->getParent();
-          if (ppd && ppd->getGroup()) {
+          if (ppd && ppd->getGroup()) {  // if the parent domain is the top
+                                         // domain, don't add to any group
             ppd->getGroup()->addInst(isolation_inst);
           }
         } else {
@@ -680,16 +788,29 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
         data_iterm->connect(net);
         // Create new net to connect from isolation output to iterms outside the
         // domain
-        // TODO: NEXT: Add inverter to output if needed
         std::string net_out_name = net->getName() + "_o";
         auto net_out = odb::dbNet::create(block, net_out_name.c_str());
         output_iterm->connect(net_out);
+
+        // Add inverter to output
+        if (inv_needed == 2 || inv_needed == 3) {
+          std::string inv_name = inst->getName() + "_isolation_inv_out";
+          auto inv_inst
+              = odb::dbInst::create(block, inverter_m, inv_name.c_str());
+          inv_inst->getITerm(input_m)->connect(net_out);
+          // overwrite output net to external domain
+          net_out_name = net->getName() + "_inv";
+          net_out = odb::dbNet::create(block, net_out_name.c_str());
+
+          inv_inst->getITerm(output_m)->connect(net_out);
+        }
+
         for (auto&& external_iterm : external_iterms) {
           external_iterm->disconnect();
           external_iterm->connect(net_out);
         }
+
         // Find control net and connect it to control port of isolation cell
-        // TODO: NEXT: Add inverter to control signal if needed
         auto control_net = block->findNet(iso->getIsolationSignal().c_str());
         if (!control_net) {
           logger->warn(utl::ODB,
@@ -699,14 +820,28 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
                        iso->getName(),
                        iso->getIsolationSignal());
         } else {
+          // Add inverter to control signal if needed
+          if (inv_needed == 1 || inv_needed == 3) {
+            std::string inv_name = inst->getName() + "_isolation_inv_control";
+
+            auto inv_inst
+                = odb::dbInst::create(block, inverter_m, inv_name.c_str());
+            inv_inst->getITerm(input_m)->connect(control_net);
+            // overwrite output net to external domain
+            std::string control_net_out_name
+                = control_net->getName() + "_inv_" + inst->getName();
+
+            control_net
+                = odb::dbNet::create(block, control_net_out_name.c_str());
+            inv_inst->getITerm(output_m)->connect(control_net);
+          }
           enable_iterm->connect(control_net);
         }
       }
     }
   }
 
-  // TODO: NEXT: Call this method from initfp and then call the function that cuts the
-  // rows
+  return true;
 }
 
 }  // namespace upf
