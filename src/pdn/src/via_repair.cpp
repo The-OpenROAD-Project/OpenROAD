@@ -35,6 +35,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <set>
 
+#include "grid.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
@@ -252,17 +253,13 @@ ViaRepair::ObsRect ViaRepair::collectInstanceObstructions(odb::dbBlock* block)
       obstructions[layer].insert(obs_rect);
     }
 
-    for (auto* mterm : master->getMTerms()) {
-      for (auto* mpin : mterm->getMPins()) {
-        for (auto* box : mpin->getGeometry()) {
-          auto* layer = box->getTechLayer();
-          if (layer->getType() != odb::dbTechLayerType::CUT) {
-            continue;
-          }
-          odb::Rect obs_rect = box->getBox();
-          xform.apply(obs_rect);
-          obstructions[layer].insert(obs_rect);
-        }
+    for (const auto& [layer, shapes] : InstanceGrid::getInstancePins(inst)) {
+      if (layer->getType() != odb::dbTechLayerType::CUT) {
+        continue;
+      }
+      auto& layer_obs = obstructions[layer];
+      for (const auto& [box, shape] : shapes) {
+        layer_obs.insert(shape->getRect());
       }
     }
   }
