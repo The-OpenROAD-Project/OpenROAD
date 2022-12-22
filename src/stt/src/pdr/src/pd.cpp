@@ -80,7 +80,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   // sort in y-axis
   vector<int> sorted(pt_count);
   std::iota(sorted.begin(), sorted.end(), 0);
-  sort(sorted.begin(), sorted.end(), [=](int i, int j) {
+  stable_sort(sorted.begin(), sorted.end(), [=](int i, int j) {
     return std::make_pair(pts[i].getY(), pts[i].getX())
            < std::make_pair(pts[j].getY(), pts[j].getX());
   });
