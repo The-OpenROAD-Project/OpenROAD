@@ -3165,7 +3165,8 @@ int GlobalRouter::findInstancesObstructions(
           transform.apply(rect);
 
           odb::dbTechLayer* tech_layer = box->getTechLayer();
-          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          if (!tech_layer
+              || tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
             continue;
           }
 
