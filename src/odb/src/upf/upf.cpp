@@ -531,37 +531,41 @@ bool add_insts_to_group(
   return true;
 }
 
-bool find_smallest_inverter(utl::Logger* logger, odb::dbBlock* block, odb::dbMaster*& inverter_m, odb::dbMTerm*& input_m, odb::dbMTerm*& output_m){
-    
-    auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
-    float smallest_area = MAXFLOAT;
-    sta::LibertyCell* smallest_inverter = nullptr;
-    sta::LibertyPort *inverter_input = nullptr, *inverter_output = nullptr;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+bool find_smallest_inverter(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            odb::dbMaster*& inverter_m,
+                            odb::dbMTerm*& input_m,
+                            odb::dbMTerm*& output_m)
+{
+  auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
+  float smallest_area = MAXFLOAT;
+  sta::LibertyCell* smallest_inverter = nullptr;
+  sta::LibertyPort *inverter_input = nullptr, *inverter_output = nullptr;
+  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
-    bool found = false;
+  bool found = false;
 
-    auto libs = block->getDataBase()->getLibs();
-    for (auto&& lib : libs) {
-      auto masters = lib->getMasters();
-      for (auto&& master : masters) {
-        auto master_cell_ = network_->dbToSta(master);
-        auto libcell_ = network_->libertyCell(master_cell_);
+  auto libs = block->getDataBase()->getLibs();
+  for (auto&& lib : libs) {
+    auto masters = lib->getMasters();
+    for (auto&& master : masters) {
+      auto master_cell_ = network_->dbToSta(master);
+      auto libcell_ = network_->libertyCell(master_cell_);
 
-        if (libcell_ && libcell_->isInverter()
-            && libcell_->area() < smallest_area) {
-          smallest_area = libcell_->area();
-          smallest_inverter = libcell_;
-          smallest_inverter->bufferPorts(inverter_input, inverter_output);
-          inverter_m = network_->staToDb(smallest_inverter);
-          input_m = network_->staToDb(inverter_input);
-          output_m = network_->staToDb(inverter_output);
-          found = true;
-        }
+      if (libcell_ && libcell_->isInverter()
+          && libcell_->area() < smallest_area) {
+        smallest_area = libcell_->area();
+        smallest_inverter = libcell_;
+        smallest_inverter->bufferPorts(inverter_input, inverter_output);
+        inverter_m = network_->staToDb(smallest_inverter);
+        input_m = network_->staToDb(inverter_input);
+        output_m = network_->staToDb(inverter_output);
+        found = true;
       }
     }
+  }
 
-    return found;
+  return found;
 }
 
 bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
@@ -598,10 +602,8 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   // Creating hierarchy of power domains
   build_domain_hierarchy(logger, block, top_domain, pds);
 
-
   // Associate each instance with its power domain group
   add_insts_to_group(logger, block, top_domain, path_to_domain);
-
 
   // PowerDomains have a hierarchy and when the isolation's
   // location is parent, it should be placed in the parent's power domain
@@ -712,7 +714,9 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     odb::dbMaster* inverter_m = nullptr;
     odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
 
-    if (inv_needed > 0 && find_smallest_inverter(logger, block, inverter_m, input_m, output_m) == false) {
+    if (inv_needed > 0
+        && find_smallest_inverter(logger, block, inverter_m, input_m, output_m)
+               == false) {
       logger->warn(utl::ODB, 130482, "can't find any inverters");
       continue;
     }

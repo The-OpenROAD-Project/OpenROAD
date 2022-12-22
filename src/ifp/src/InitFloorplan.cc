@@ -42,6 +42,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/upf.h"
 #include "odb/util.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -50,7 +51,6 @@
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 #include "utl/validation.h"
-#include "odb/upf.h"
 
 namespace ifp {
 
@@ -231,7 +231,8 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
-    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN || group->getType() == dbGroupType::POWER_DOMAIN ) {
+    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN
+        || group->getType() == dbGroupType::POWER_DOMAIN) {
       dbRegion* domain_region = group->getRegion();
       int domain_xMin = std::numeric_limits<int>::max();
       int domain_yMin = std::numeric_limits<int>::max();
