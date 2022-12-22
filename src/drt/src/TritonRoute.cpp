@@ -879,7 +879,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const Rect& requiredDrcBox)
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
-  std::vector<std::unique_ptr<FlexGCWorker>> workers;
+  std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
   auto offset = 0;
   auto gCellPatterns = design_->getTopBlock()->getGCellPatterns();
@@ -905,41 +905,47 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
           = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
       gcWorker->setDrcBox(drcBox);
       gcWorker->setExtBox(extBox);
-      workers.push_back(std::move(gcWorker));
+      if(workersBatches.back().size() >= BATCHSIZE)
+        workersBatches.push_back(std::vector<std::unique_ptr<FlexGCWorker>>());
+      workersBatches.back().push_back(std::move(gcWorker));
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
   omp_set_num_threads(MAX_THREADS);
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < workers.size(); i++) {
-    workers[i]->init(design_.get());
-    workers[i]->main();
-  }
-  for (const auto& worker : workers) {
-    for (auto& marker : worker->getMarkers()) {
-      Rect bbox = marker->getBBox();
-      if (!bbox.intersects(requiredDrcBox))
-        continue;
-      auto layerNum = marker->getLayerNum();
-      auto con = marker->getConstraint();
-      std::vector<frBlockObject*> srcs(2, nullptr);
-      int i = 0;
-      for (auto& src : marker->getSrcs()) {
-        srcs.at(i) = src;
-        i++;
-      }
-      if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
-          != mapMarkers.end()) {
-        continue;
-      }
-      if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
-          != mapMarkers.end()) {
-        continue;
-      }
-      markers.push_back(std::make_unique<frMarker>(*marker));
-      mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
-          = markers.back().get();
+  for(auto& workers : workersBatches)
+  {
+    #pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < workers.size(); i++) {
+      workers[i]->init(design_.get());
+      workers[i]->main();
     }
+    for (const auto& worker : workers) {
+      for (auto& marker : worker->getMarkers()) {
+        Rect bbox = marker->getBBox();
+        if (!bbox.intersects(requiredDrcBox))
+          continue;
+        auto layerNum = marker->getLayerNum();
+        auto con = marker->getConstraint();
+        std::vector<frBlockObject*> srcs(2, nullptr);
+        int i = 0;
+        for (auto& src : marker->getSrcs()) {
+          srcs.at(i) = src;
+          i++;
+        }
+        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
+            != mapMarkers.end()) {
+          continue;
+        }
+        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+            != mapMarkers.end()) {
+          continue;
+        }
+        markers.push_back(std::make_unique<frMarker>(*marker));
+        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
+            = markers.back().get();
+      }
+    }
+    workers.clear();
   }
 }
 
