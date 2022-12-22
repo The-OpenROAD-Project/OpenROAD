@@ -859,9 +859,24 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
                                     std::vector<GraphTarget>& targets) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* box : mpin->getGeometry()) {
-        odb::Rect rect = box->getBox();
-        transform.apply(rect);
-        targets.push_back({rect, box->getTechLayer()});
+        if (box->isVia()) {
+          odb::dbTechVia* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
+
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect box_rect = via_box->getBox();
+            via_transform.apply(box_rect);
+            transform.apply(box_rect);
+            targets.push_back({box_rect, via_box->getTechLayer()});
+          }
+        } else {
+          odb::Rect rect = box->getBox();
+          transform.apply(rect);
+          targets.push_back({rect, box->getTechLayer()});
+        }
       }
     }
   };

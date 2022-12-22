@@ -1552,12 +1552,33 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbMTerm* mterm : master->getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
       for (dbBox* box : mpin->getGeometry()) {
-        dbTechLayer* layer = box->getTechLayer();
-        dbTechLayerType type = layer->getType();
-        if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
-          continue;
+        if (box->isVia()) {
+          odb::dbTechVia* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
+
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect box_rect = via_box->getBox();
+            dbTechLayer* layer = via_box->getTechLayer();
+            dbTechLayerType type = layer->getType();
+            if (type != dbTechLayerType::ROUTING
+                && type != dbTechLayerType::CUT) {
+              continue;
+            }
+            via_transform.apply(box_rect);
+            boxes[layer].mterms.emplace_back(box_to_qrect(via_box));
+          }
+        } else {
+          dbTechLayer* layer = box->getTechLayer();
+          dbTechLayerType type = layer->getType();
+          if (type != dbTechLayerType::ROUTING
+              && type != dbTechLayerType::CUT) {
+            continue;
+          }
+          boxes[layer].mterms.emplace_back(box_to_qrect(box));
         }
-        boxes[layer].mterms.emplace_back(box_to_qrect(box));
       }
     }
   }
