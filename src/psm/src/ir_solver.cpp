@@ -491,7 +491,9 @@ bool IRSolver::createJ()
           for (auto mpin : mterm->getMPins()) {
             for (auto box : mpin->getGeometry()) {
               dbTechLayer* pin_layer = box->getTechLayer();
-              pin_layers.insert(pin_layer->getRoutingLevel());
+              if (pin_layer) {
+                pin_layers.insert(pin_layer->getRoutingLevel());
+              }
             }
           }
         }
