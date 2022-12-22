@@ -383,27 +383,18 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
     // get the on grid min distance
-    int min_dst_ver
+    int tech_min_dst
+        = vertical ? core_->getMinDstPinsX()[i] : core_->getMinDstPinsY()[i];
+    int min_dst_pins
         = dist_in_tracks
-              ? core_->getMinDstPinsX()[i] * parms_->getMinDistance()
-              : core_->getMinDstPinsX()[i]
+              ? tech_min_dst * parms_->getMinDistance()
+              : tech_min_dst
                     * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                / core_->getMinDstPinsX()[i]);
-    int min_dst_hor
-        = dist_in_tracks
-              ? core_->getMinDstPinsY()[i] * parms_->getMinDistance()
-              : core_->getMinDstPinsY()[i]
-                    * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                / core_->getMinDstPinsY()[i]);
+                                / tech_min_dst);
 
-    min_dst_ver = (min_dst_ver == 0)
-                      ? default_min_dist * core_->getMinDstPinsX()[i]
-                      : min_dst_ver;
-    min_dst_hor = (min_dst_hor == 0)
-                      ? default_min_dist * core_->getMinDstPinsY()[i]
-                      : min_dst_hor;
+    min_dst_pins
+        = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
 
-    int min_dst_pins = vertical ? min_dst_ver : min_dst_hor;
     int init_tracks
         = vertical ? core_->getInitTracksX()[i] : core_->getInitTracksY()[i];
     int num_tracks
@@ -418,8 +409,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     half_width *= thickness_multiplier;
 
-    int num_tracks_offset
-        = std::ceil(offset / (std::max(min_dst_ver, min_dst_hor)));
+    int num_tracks_offset = std::ceil(offset / min_dst_pins);
 
     start_idx
         = std::max(0.0, ceil((min + half_width - init_tracks) / min_dst_pins))
