@@ -905,16 +905,15 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
           = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
       gcWorker->setDrcBox(drcBox);
       gcWorker->setExtBox(extBox);
-      if(workersBatches.back().size() >= BATCHSIZE)
+      if (workersBatches.back().size() >= BATCHSIZE)
         workersBatches.push_back(std::vector<std::unique_ptr<FlexGCWorker>>());
       workersBatches.back().push_back(std::move(gcWorker));
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
   omp_set_num_threads(MAX_THREADS);
-  for(auto& workers : workersBatches)
-  {
-    #pragma omp parallel for schedule(dynamic)
+  for (auto& workers : workersBatches) {
+#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < workers.size(); i++) {
       workers[i]->init(design_.get());
       workers[i]->main();
