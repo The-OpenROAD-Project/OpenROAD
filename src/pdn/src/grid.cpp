@@ -1266,8 +1266,10 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
               continue;
             }
 
+            const odb::dbTransform via_transform(box->getViaXY());
             for (auto* via_box : tech_via->getBoxes()) {
               odb::Rect box_rect = via_box->getBox();
+              via_transform.apply(box_rect);
               transform.apply(box_rect);
               auto shape = std::make_shared<Shape>(
                   via_box->getTechLayer(), net, box_rect);
