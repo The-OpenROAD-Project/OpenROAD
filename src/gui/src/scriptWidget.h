@@ -32,21 +32,21 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <QDockWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
 
-#include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
 }  // namespace odb
 
+class Tcl_Interp;
+
 namespace gui {
+class TclCmdInputWidget;
 
 // This shows a line edit to enter tcl commands and a
 // text area that is used to show the commands and their
@@ -85,7 +85,7 @@ class ScriptWidget : public QDockWidget
 
   // tcl exit has been initiated, want the gui to handle
   // shutdown
-  void tclExiting();
+  void exiting();
 
   void addToOutput(const QString& text, const QColor& color);
 
@@ -95,6 +95,9 @@ class ScriptWidget : public QDockWidget
 
   // Use to execute a command silently, ie. without echo or return.
   void executeSilentCommand(const QString& command);
+
+  void addResultToOutput(const QString& result, bool is_ok);
+  void addCommandToOutput(const QString& cmd);
 
  private slots:
   void outputChanged();
@@ -108,17 +111,16 @@ class ScriptWidget : public QDockWidget
 
   void addTextToOutput(const QString& text, const QColor& color);
 
+  void setPauserToRunning();
+  void resetPauser();
+
  protected:
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  int executeTclCommand(const QString& command);
-
   void triggerPauseCountDown(int timeout);
 
-  void addCommandToOutput(const QString& cmd);
-  void addTclResultToOutput(int return_code);
   void addReportToOutput(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
 
@@ -126,7 +128,6 @@ class ScriptWidget : public QDockWidget
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;
-  Tcl_Interp* interp_;
   bool paused_;
   utl::Logger* logger_;
 
@@ -142,8 +143,8 @@ class ScriptWidget : public QDockWidget
   const int max_output_line_length_ = 1000;
 
   const QColor cmd_msg_ = Qt::black;
-  const QColor tcl_error_msg_ = Qt::red;
-  const QColor tcl_ok_msg_ = Qt::blue;
+  const QColor error_msg_ = Qt::red;
+  const QColor ok_msg_ = Qt::blue;
   const QColor buffer_msg_ = QColor(0x30, 0x30, 0x30);
 };
 

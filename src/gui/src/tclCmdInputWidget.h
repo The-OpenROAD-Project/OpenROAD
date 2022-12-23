@@ -58,8 +58,9 @@ class TclCmdInputWidget : public QPlainTextEdit
   TclCmdInputWidget(QWidget* parent = nullptr);
   ~TclCmdInputWidget();
 
-  void setTclInterp(Tcl_Interp* interp);
-  void init();
+  void setTclInterp(Tcl_Interp* interp,
+                    bool do_init_openroad,
+                    const std::function<void(void)>& post_or_init);
 
   void setFont(const QFont& font);
 
@@ -71,16 +72,21 @@ class TclCmdInputWidget : public QPlainTextEdit
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
- public slots:
-  void commandExecuted(int return_code);
-
  signals:
-  // complete TCL command available
-  void completeCommand(const QString& command);
-
   // tcl exit has been initiated, want the gui to handle
   // shutdown
   void tclExiting();
+
+  void commandAboutToExecute();
+  void commandFinishedExecuting(int code);
+
+  void addResultToOutput(const QString& result, int code);
+  void addCommandToOutput(const QString& cmd);
+
+ public slots:
+  void executeCommand(const QString& cmd,
+                      bool echo = true,
+                      bool silent = false);
 
  private slots:
   void updateSize();
@@ -103,7 +109,9 @@ class TclCmdInputWidget : public QPlainTextEdit
   // forward in history
   void goForwardHistory();
 
-  void setupTclHandler();
+  void init();
+  void processTclResult(int result_code);
+
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp* interp,
                             int argc,

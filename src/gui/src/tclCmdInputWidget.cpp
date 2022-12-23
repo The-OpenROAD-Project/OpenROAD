@@ -33,13 +33,15 @@
 #include "tclCmdInputWidget.h"
 
 #include <QAbstractItemView>
+#include <QCoreApplication>
 #include <QMimeData>
 #include <QScrollBar>
 #include <QTextStream>
 #include <regex>
 
 #include "gui/gui.h"
-#include "utl/Logger.h"
+#include "ord/OpenRoad.hh"
+#include "spdlog/formatter.h"
 
 namespace gui {
 
@@ -104,21 +106,33 @@ TclCmdInputWidget::~TclCmdInputWidget()
   Tcl_Eval(interp_, exit_rename.c_str());
 }
 
-void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp)
+void TclCmdInputWidget::setTclInterp(
+    Tcl_Interp* interp,
+    bool do_init_openroad,
+    const std::function<void(void)>& post_or_init)
 {
   interp_ = interp;
 
-  setupTclHandler();
-}
-
-void TclCmdInputWidget::setupTclHandler()
-{
   // Overwrite exit to allow Qt to handle exit
   std::string exit_rename
       = fmt::format("rename exit {}exit", command_rename_prefix_);
   Tcl_Eval(interp_, exit_rename.c_str());
   Tcl_CreateCommand(
       interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
+
+  if (do_init_openroad) {
+    // OpenRoad is not initialized
+    emit commandAboutToExecute();
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    const int setup_tcl_result = ord::tclAppInit(interp_);
+    post_or_init();
+    processTclResult(setup_tcl_result);
+    emit commandFinishedExecuting(setup_tcl_result);
+  } else {
+    post_or_init();
+  }
+
+  init();
 }
 
 int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
@@ -186,7 +200,7 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
       // Check if command complete and attempt to execute, otherwise do nothing
       if (isCommandComplete(toPlainText().simplified().toStdString())) {
         // execute command
-        emit completeCommand(text());
+        executeCommand(text());
         return;
       }
     }
@@ -310,26 +324,6 @@ bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
   }
 
   return Tcl_CommandComplete(cmd.c_str());
-}
-
-// Slot to announce command executed
-void TclCmdInputWidget::commandExecuted(int return_code)
-{
-  if (return_code == TCL_OK) {
-    // Update history; ignore repeated commands and keep last 100
-    const QString command = text();  // TODO: this shouldn't be needed
-    const int history_limit = 100;
-    if (history_.empty() || command != history_.last()) {
-      if (history_.size() == history_limit) {
-        history_.pop_front();
-      }
-
-      history_.append(command);
-    }
-    historyPosition_ = history_.size();
-
-    clear();
-  }
 }
 
 // Update the size of the widget to match text
@@ -843,6 +837,59 @@ void TclCmdInputWidget::goBackHistory()
     --historyPosition_;
     setText(history_[historyPosition_]);
   }
+}
+
+void TclCmdInputWidget::executeCommand(const QString& cmd,
+                                       bool echo,
+                                       bool silent)
+{
+  if (cmd.isEmpty()) {
+    return;
+  }
+
+  if (echo) {
+    // Show the command that we executed
+    emit addCommandToOutput(cmd);
+  }
+
+  emit commandAboutToExecute();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+  const char* command = cmd.toLatin1().data();
+
+  int return_code = Tcl_Eval(interp_, command);
+
+  if (!silent) {
+    // Show its output
+    processTclResult(return_code);
+
+    if (return_code == TCL_OK && echo) {
+      // record the successful command to tcl history command
+      Tcl_RecordAndEval(interp_, command, TCL_NO_EVAL);
+
+      // Update history; ignore repeated commands and keep last 100
+      const QString command = text();  // TODO: this shouldn't be needed
+      const int history_limit = 100;
+      if (history_.empty() || command != history_.last()) {
+        if (history_.size() == history_limit) {
+          history_.pop_front();
+        }
+
+        history_.append(command);
+      }
+      historyPosition_ = history_.size();
+
+      clear();
+    }
+  }
+
+  emit commandFinishedExecuting(return_code);
+}
+
+void TclCmdInputWidget::processTclResult(int return_code)
+{
+  emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)),
+                         return_code == TCL_OK);
 }
 
 }  // namespace gui
