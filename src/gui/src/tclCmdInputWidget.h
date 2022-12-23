@@ -77,12 +77,6 @@ class TclCmdInputWidget : public QPlainTextEdit
   // complete TCL command available
   void completeCommand(const QString& command);
 
-  // back in history
-  void historyGoBack();
-
-  // forward in history
-  void historyGoForward();
-
  private slots:
   void updateSize();
 
@@ -95,10 +89,14 @@ class TclCmdInputWidget : public QPlainTextEdit
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
-
- private:
   void keyPressEvent(QKeyEvent* e) override;
   void keyReleaseEvent(QKeyEvent* e) override;
+
+ private:
+  // back in history
+  void goBackHistory();
+  // forward in history
+  void goForwardHistory();
 
   bool isCommandComplete(const std::string& cmd);
 
@@ -123,6 +121,9 @@ class TclCmdInputWidget : public QPlainTextEdit
   int max_height_;
 
   Tcl_Interp* interp_;
+  QStringList history_;
+  QString history_buffer_last_;
+  int historyPosition_;
 
   std::unique_ptr<QMenu> context_menu_;
   std::unique_ptr<QAction> enable_highlighting_;

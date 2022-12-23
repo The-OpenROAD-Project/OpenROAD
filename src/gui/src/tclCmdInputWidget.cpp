@@ -46,6 +46,9 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
       document_margins_(0),
       max_height_(QWIDGETSIZE_MAX),
       interp_(nullptr),
+      history_(),
+      history_buffer_last_(),
+      historyPosition_(0),
       context_menu_(nullptr),
       enable_highlighting_(nullptr),
       enable_completion_(nullptr),
@@ -152,7 +155,7 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     if ((!textCursor().hasSelection()
          && !textCursor().movePosition(QTextCursor::Down))
         || has_control) {
-      emit historyGoForward();
+      goForwardHistory();
       return;
     }
   } else if (key == Qt::Key_Up) {
@@ -161,7 +164,7 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     if ((!textCursor().hasSelection()
          && !textCursor().movePosition(QTextCursor::Up))
         || has_control) {
-      emit historyGoBack();
+      goBackHistory();
       return;
     }
   }
@@ -272,6 +275,18 @@ bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
 void TclCmdInputWidget::commandExecuted(int return_code)
 {
   if (return_code == TCL_OK) {
+    // Update history; ignore repeated commands and keep last 100
+    const QString command = text();  // TODO: this shouldn't be needed
+    const int history_limit = 100;
+    if (history_.empty() || command != history_.last()) {
+      if (history_.size() == history_limit) {
+        history_.pop_front();
+      }
+
+      history_.append(command);
+    }
+    historyPosition_ = history_.size();
+
     clear();
   }
 }
@@ -434,6 +449,9 @@ void TclCmdInputWidget::updateCompletion()
 void TclCmdInputWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
+  history_ = settings->value("history").toStringList();
+  historyPosition_ = history_.size();
+
   enable_highlighting_->setChecked(
       settings->value(enable_highlighting_keyword_, true).toBool());
   enable_completion_->setChecked(
@@ -444,6 +462,8 @@ void TclCmdInputWidget::readSettings(QSettings* settings)
 void TclCmdInputWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
+  settings->setValue("history", history_);
+
   settings->setValue(enable_highlighting_keyword_,
                      enable_highlighting_->isChecked());
   settings->setValue(enable_completion_keyword_,
@@ -761,6 +781,29 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   }
 
   return nullptr;
+}
+
+void TclCmdInputWidget::goForwardHistory()
+{
+  if (historyPosition_ < history_.size() - 1) {
+    ++historyPosition_;
+    setText(history_[historyPosition_]);
+  } else if (historyPosition_ == history_.size() - 1) {
+    ++historyPosition_;
+    setText(history_buffer_last_);
+  }
+}
+
+void TclCmdInputWidget::goBackHistory()
+{
+  if (historyPosition_ > 0) {
+    if (historyPosition_ == history_.size()) {
+      // whats in the buffer is the last thing the user was editing
+      history_buffer_last_ = text();
+    }
+    --historyPosition_;
+    setText(history_[historyPosition_]);
+  }
 }
 
 }  // namespace gui

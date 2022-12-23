@@ -57,9 +57,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
       interp_(nullptr),
-      history_(),
-      history_buffer_last_(),
-      historyPosition_(0),
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
@@ -89,8 +86,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           SLOT(executeCommand(const QString&)));
   connect(
       this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
-  connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
-  connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
@@ -180,17 +175,6 @@ void ScriptWidget::executeCommand(const QString& command, bool echo)
       // record the successful command to tcl history command
       Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
     }
-
-    // Update history; ignore repeated commands and keep last 100
-    const int history_limit = 100;
-    if (history_.empty() || command != history_.last()) {
-      if (history_.size() == history_limit) {
-        history_.pop_front();
-      }
-
-      history_.append(command);
-    }
-    historyPosition_ = history_.size();
   }
 
   emit commandExecuted(return_code);
@@ -295,47 +279,17 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
   output_->appendHtml(html);
 }
 
-void ScriptWidget::goForwardHistory()
-{
-  if (historyPosition_ < history_.size() - 1) {
-    ++historyPosition_;
-    input_->setText(history_[historyPosition_]);
-  } else if (historyPosition_ == history_.size() - 1) {
-    ++historyPosition_;
-    input_->setText(history_buffer_last_);
-  }
-}
-
-void ScriptWidget::goBackHistory()
-{
-  if (historyPosition_ > 0) {
-    if (historyPosition_ == history_.size()) {
-      // whats in the buffer is the last thing the user was editing
-      history_buffer_last_ = input_->text();
-    }
-    --historyPosition_;
-    input_->setText(history_[historyPosition_]);
-  }
-}
-
 void ScriptWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup("scripting");
-  history_ = settings->value("history").toStringList();
-  historyPosition_ = history_.size();
-
   input_->readSettings(settings);
-
   settings->endGroup();
 }
 
 void ScriptWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup("scripting");
-  settings->setValue("history", history_);
-
   input_->writeSettings(settings);
-
   settings->endGroup();
 }
 

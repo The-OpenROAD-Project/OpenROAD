@@ -38,7 +38,6 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
-#include <QStringList>
 
 #include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
@@ -105,9 +104,6 @@ class ScriptWidget : public QDockWidget
 
   void pauserClicked();
 
-  void goBackHistory();
-  void goForwardHistory();
-
   void updatePauseTimeout();
 
   void addTextToOutput(const QString& text, const QColor& color);
@@ -136,9 +132,6 @@ class ScriptWidget : public QDockWidget
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;
   Tcl_Interp* interp_;
-  QStringList history_;
-  QString history_buffer_last_;
-  int historyPosition_;
   bool paused_;
   utl::Logger* logger_;
 
