@@ -222,4 +222,10 @@ rcx::Ext* Design::getOpenRCX()
   return app->getOpenRCX();
 }
 
+rmp::Restructure* Design::getRestructure()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getRestructure();
+}
+
 }  // namespace ord
