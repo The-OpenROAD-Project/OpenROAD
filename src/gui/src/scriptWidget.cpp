@@ -259,14 +259,14 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
 
 void ScriptWidget::readSettings(QSettings* settings)
 {
-  settings->beginGroup("scripting");
+  settings->beginGroup(objectName());
   input_->readSettings(settings);
   settings->endGroup();
 }
 
 void ScriptWidget::writeSettings(QSettings* settings)
 {
-  settings->beginGroup("scripting");
+  settings->beginGroup(objectName());
   input_->writeSettings(settings);
   settings->endGroup();
 }
