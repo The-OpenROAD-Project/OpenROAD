@@ -38,6 +38,9 @@
 #include <QTextStream>
 #include <regex>
 
+#include "gui/gui.h"
+#include "utl/Logger.h"
+
 namespace gui {
 
 TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
@@ -94,6 +97,44 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
 
 TclCmdInputWidget::~TclCmdInputWidget()
 {
+  // restore old exit
+  Tcl_DeleteCommand(interp_, "exit");
+  std::string exit_rename
+      = fmt::format("rename {}exit exit", command_rename_prefix_);
+  Tcl_Eval(interp_, exit_rename.c_str());
+}
+
+void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp)
+{
+  interp_ = interp;
+
+  setupTclHandler();
+}
+
+void TclCmdInputWidget::setupTclHandler()
+{
+  // Overwrite exit to allow Qt to handle exit
+  std::string exit_rename
+      = fmt::format("rename exit {}exit", command_rename_prefix_);
+  Tcl_Eval(interp_, exit_rename.c_str());
+  Tcl_CreateCommand(
+      interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
+}
+
+int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
+                                      Tcl_Interp* interp,
+                                      int argc,
+                                      const char** argv)
+{
+  TclCmdInputWidget* widget = (TclCmdInputWidget*) instance_data;
+
+  // exit was called, so ensure continue after close is cleared
+  Gui::get()->clearContinueAfterClose();
+
+  // announces exit to Qt
+  emit widget->tclExiting();
+
+  return TCL_OK;
 }
 
 void TclCmdInputWidget::setFont(const QFont& font)
@@ -335,10 +376,8 @@ void TclCmdInputWidget::dropEvent(QDropEvent* event)
 }
 
 // setup syntax highlighter
-void TclCmdInputWidget::init(Tcl_Interp* interp)
+void TclCmdInputWidget::init()
 {
-  interp_ = interp;
-
   initOpenRoadCommands();
 
   const char* start_of_command = "(?:^|(?<=(?:\\s|\\[|\\{)))";

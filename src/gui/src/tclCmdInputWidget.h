@@ -58,7 +58,8 @@ class TclCmdInputWidget : public QPlainTextEdit
   TclCmdInputWidget(QWidget* parent = nullptr);
   ~TclCmdInputWidget();
 
-  void init(Tcl_Interp* interp);
+  void setTclInterp(Tcl_Interp* interp);
+  void init();
 
   void setFont(const QFont& font);
 
@@ -76,6 +77,10 @@ class TclCmdInputWidget : public QPlainTextEdit
  signals:
   // complete TCL command available
   void completeCommand(const QString& command);
+
+  // tcl exit has been initiated, want the gui to handle
+  // shutdown
+  void tclExiting();
 
  private slots:
   void updateSize();
@@ -97,6 +102,12 @@ class TclCmdInputWidget : public QPlainTextEdit
   void goBackHistory();
   // forward in history
   void goForwardHistory();
+
+  void setupTclHandler();
+  static int tclExitHandler(ClientData instance_data,
+                            Tcl_Interp* interp,
+                            int argc,
+                            const char** argv);
 
   bool isCommandComplete(const std::string& cmd);
 
@@ -144,6 +155,7 @@ class TclCmdInputWidget : public QPlainTextEdit
   static constexpr const char* enable_highlighting_keyword_ = "highlighting";
   static constexpr const char* enable_completion_keyword_ = "completion";
   static const int completer_mimimum_length_ = 2;
+  static constexpr const char* command_rename_prefix_ = "::tcl::openroad::";
 };
 
 }  // namespace gui

@@ -122,11 +122,6 @@ class ScriptWidget : public QDockWidget
   void addReportToOutput(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
 
-  static int tclExitHandler(ClientData instance_data,
-                            Tcl_Interp* interp,
-                            int argc,
-                            const char** argv);
-
   QPlainTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;

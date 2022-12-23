@@ -87,6 +87,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   connect(
       this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(input_, SIGNAL(tclExiting()), this, SIGNAL(tclExiting()));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
   connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
@@ -106,26 +107,6 @@ ScriptWidget::~ScriptWidget()
     // make sure to remove the Gui sink from logger
     logger_->removeSink(sink_);
   }
-
-  // restore old exit
-  Tcl_DeleteCommand(interp_, "exit");
-  Tcl_Eval(interp_, "rename ::tcl::openroad::exit exit");
-}
-
-int ScriptWidget::tclExitHandler(ClientData instance_data,
-                                 Tcl_Interp* interp,
-                                 int argc,
-                                 const char** argv)
-{
-  ScriptWidget* widget = (ScriptWidget*) instance_data;
-
-  // exit was called, so ensure continue after close is cleared
-  Gui::get()->clearContinueAfterClose();
-
-  // announces exit to Qt
-  emit widget->tclExiting();
-
-  return TCL_OK;
 }
 
 void ScriptWidget::setupTcl(Tcl_Interp* interp,
@@ -136,10 +117,7 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
   is_interactive_ = interactive;
   interp_ = interp;
 
-  // Overwrite exit to allow Qt to handle exit
-  Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
-  Tcl_CreateCommand(
-      interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
+  input_->setTclInterp(interp_);
 
   if (do_init_openroad) {
     // OpenRoad is not initialized
@@ -155,7 +133,7 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
     post_or_init();
   }
 
-  input_->init(interp_);
+  input_->init();
 }
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)
