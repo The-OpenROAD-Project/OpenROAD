@@ -63,7 +63,7 @@ class TclCmdInputWidget : public QPlainTextEdit
 
   void setFont(const QFont& font);
 
-  QString text();
+  QString text() const;
   void setText(const QString& text);
 
   void setMaximumHeight(int height);

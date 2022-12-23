@@ -414,7 +414,7 @@ void TclCmdInputWidget::init()
 }
 
 // replicate QLineEdit function
-QString TclCmdInputWidget::text()
+QString TclCmdInputWidget::text() const
 {
   return toPlainText();
 }
