@@ -303,6 +303,51 @@ _installCentosRuntime() {
     yum update -y
 }
 
+_installOpenSuseCleanUp() {
+    zypper -n clean --all
+    zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
+}
+
+_installOpenSuseDev() {
+    zypper -n install -t pattern devel_basis
+    zypper -n install \
+        lcov \
+        llvm \
+        clang \
+        gcc \
+        gcc11-c++ \
+        libstdc++6-devel-gcc8 \
+        pcre-devel \
+        pcre2-devel \
+        python3-devel \
+        python3-pip \
+        readline5-devel \
+        tcl-devel \
+        wget \
+        git \
+        gzip \
+        libomp11-devel \
+        zlib-devel
+    
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
+}
+
+_installOpenSuseRuntime() {
+    zypper refresh && zypper -n update
+    zypper -n install \
+        binutils \
+        libgomp1 \
+        libpython3_6m1_0 \
+        libqt5-qtbase \
+        libqt5-creator \
+        libqt5-qtstyleplugins \
+        qimgv \
+        tcl \
+        tcllib
+    zypper refresh && zypper -n update
+}
+
 _installHomebrewPackage() {
     package=$1
     commit=$2
@@ -521,6 +566,22 @@ To install or run openroad, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
 
 You may wish to add this line to your .bashrc file
+EOF
+        ;;
+    "openSUSE Leap" )
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installOpenSuseRuntime
+        if [[ "${option}" == "dev" ]]; then
+            _installOpenSuseDev
+            _installCommonDev
+        fi
+        _installOrTools "opensuse" "leap" "amd64"
+        _installOpenSuseCleanUp
+        cat <<EOF
+To enable GCC-11 you need to run:
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
     "Debian GNU/Linux" )
