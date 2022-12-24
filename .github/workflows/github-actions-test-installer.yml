@@ -1,7 +1,7 @@
 name: Test DependencyInstaller script
 on:
   schedule:
-  - cron: "0 8 * * MON"
+  - cron: "0 8 * * SUN"
   push:
     paths:
       - 'etc/DependencyInstaller.sh'
@@ -48,3 +48,10 @@ jobs:
       - name: Build project
         run: |
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+      - name: Test build
+        run: |
+          if [[ ${{ matrix.os }} == "centos7" ]]; then
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} /bin/bash -c "source /opt/rh/llvm-toolset-7.0/enable; source /opt/rh/devtoolset-8/enable; build/src/openroad -help;"
+          else
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
+          fi
