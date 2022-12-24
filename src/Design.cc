@@ -228,4 +228,10 @@ rmp::Restructure* Design::getRestructure()
   return app->getRestructure();
 }
 
+stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSteinerTreeBuilder();
+}
+
 }  // namespace ord
