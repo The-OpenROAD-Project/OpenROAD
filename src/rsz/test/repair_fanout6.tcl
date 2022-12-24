@@ -27,5 +27,5 @@ report_check_types -max_fanout
 # but there is no point in inserting extra buffers to fix non critical
 # paths. What matters is repair_timning's ability to optimize the timing
 # when it matters.
-repair_timing -setup -repair_tns_end_percent 0.0
+repair_timing -setup -repair_tns 0
 report_worst_slack -max

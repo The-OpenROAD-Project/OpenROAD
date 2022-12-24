@@ -390,7 +390,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
-                                        [-repair_tns_end_percent tns_end_percent]\
+                                        [-repair_tns tns_end_percent]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util]}
 
@@ -398,7 +398,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
-            -repair_tns_end_percent -max_passes} \
+            -repair_tns -max_passes} \
     flags {-setup -hold -allow_setup_violations}
   
   set setup [info exists flags(-setup)]
@@ -432,10 +432,10 @@ proc repair_timing { args } {
     set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
   
-  set repair_tns_end_percent 1.0
-  if { [info exists keys(-repair_tns_end_percent)] } {
-    set repair_tns_end_percent $keys(-repair_tns_end_percent)
-    sta::check_percent "-repair_tns_end_percent" $repair_tns_end_percent
+  set repair_tns_end_percent 0.0
+  if { [info exists keys(-repair_tns)] } {
+    set repair_tns_end_percent $keys(-repair_tns)
+    sta::check_percent "-repair_tns" $repair_tns_end_percent
     set repair_tns_end_percent [expr $repair_tns_end_percent / 100.0]
   }
 
