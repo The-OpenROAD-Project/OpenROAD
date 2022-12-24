@@ -23,7 +23,7 @@ _installCommonDev() {
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
-    if [[ ! -z $PREFIX ]]; then mkdir -p ${PREFIX}; fi
+    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
@@ -118,7 +118,7 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
-    cd "$lastDir"
+    cd "${lastDir}"
     rm -rf "${baseDir}"
 }
 
@@ -130,8 +130,13 @@ _installOrTools() {
     orToolsVersionSmall=${orToolsVersionBig}.1874
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-    mkdir -p /opt/or-tools
-    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
+    orToolsPath="/opt/or-tools"
+    if [[ "${os}" == "MacOsX" ]]; then
+        orToolsPath="$(brew --prefix or-tools)"
+    fi
+    mkdir -p ${orToolsPath}
+    tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
+    rm -f ${orToolsFile}
 }
 
 _installUbuntuCleanUp() {
@@ -351,12 +356,12 @@ _installHomebrewPackage() {
     url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
     curl -L ${url} > ${package}.rb
 
-    if brew list $package &> /dev/null
+    if brew list "${package}" &> /dev/null
         then
         # Homebrew is awful at letting you use the version you want if a newer
         # version is installed. The package must be completely removed to ensure
         # only the correct version is installed
-        brew remove --force --ignore-dependencies $package
+        brew remove --force --ignore-dependencies "${package}"
     fi
 
     # Must ignore dependencies to avoid automatic upgrade
@@ -386,6 +391,9 @@ EOF
       exit 1
     fi
     brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+
+    # Some systems neeed this to correclty find OpenMP package during build
+    brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
@@ -482,7 +490,7 @@ while [ "$#" -gt 0 ]; do
             option="dev"
             ;;
         -local)
-            export PREFIX="$HOME/.local"
+            export PREFIX="${HOME}/.local"
             ;;
         -prefix=*)
             export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
@@ -560,9 +568,10 @@ EOF
         cat <<EOF
 
 To install or run openroad, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
+    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 
-You may wish to add this line to your .bashrc file
+You may wish to add these lines to your .bashrc file.
 EOF
         ;;
     "openSUSE Leap" )
@@ -600,12 +609,12 @@ EOF
         ;;
 esac
 
-if [[ ! -z ${PREFIX} ]]; then
+if [[ ! -z "${PREFIX}" ]]; then
             cat <<EOF
 To use cmake, set cmake as an alias:
     alias cmake='${PREFIX}/bin/cmake'
     or  run
-    echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
+    echo export PATH=${PREFIX}/bin:'${PATH}' >> ~/.bash_profile
     source ~/.bash_profile
 EOF
 fi
