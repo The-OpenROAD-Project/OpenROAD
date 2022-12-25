@@ -44,6 +44,11 @@ navigate Jenkins to access these features are available
     -   Target: all branches. Note that PRs will be run on public side after
         "Ready to Sync Public" workflow.
 
+
+## OpenROAD Flow
+
+-  Information about OpenROAD Flow CI jobs can be found [here](https://openroadflow.readthedocs.io/en/latest/contrib/CI.html)
+
 ## OpenLane
 
 -   OpenLane-MPW-CI-Public

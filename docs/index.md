@@ -58,7 +58,7 @@ See documentation for the application [here](../README.md).
 The flow is a set of integrated scripts that allow for RTL-to-GDSII flow
 using open-source tools.
 
-See documentation for the flow [here](https://openroadflowscripts.readthedocs.io).
+See documentation for the flow [here](https://openroadflow.readthedocs.io).
 
 ## How to contribute
 
