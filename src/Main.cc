@@ -95,6 +95,7 @@ using std::string;
   X(fin)                                 \
   X(par)                                 \
   X(rcx)                                 \
+  X(rmp)                                 \
   X(odb)
 
 #define FOREACH_TOOL(X)            \

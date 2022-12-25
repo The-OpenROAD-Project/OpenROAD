@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
+// BSD 3-Clause License
+//
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,60 +33,33 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ord/Tech.h"
-
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/lefin.h"
+%{
+#include "rmp/Restructure.h"
+#include "rmp/blif.h"
 #include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include "sta/Liberty.hh"
+#include <string>
 
 namespace ord {
+// Defined in OpenRoad.i
+rmp::Restructure *
+getRestructure();
 
-Tech::Tech()
-{
-  auto app = OpenRoad::openRoad();
-  db_ = app->getDb();
+OpenRoad *
+getOpenRoad();
 }
 
-odb::dbDatabase* Tech::getDB()
-{
-  return db_;
-}
+using namespace rmp;
+using ord::getRestructure;
+using ord::getOpenRoad;
+using odb::dbInst;
+using sta::LibertyPort;
+%}
 
-void Tech::readLef(const std::string& file_name)
-{
-  auto app = OpenRoad::openRoad();
-  const bool make_tech = db_->getTech() == nullptr;
-  const bool make_library = true;
-  std::string lib_name = file_name;
+%include "../../Exception-py.i"
 
-  // Hacky but easier than dealing with stdc++fs linking
-  auto slash_pos = lib_name.find_last_of('/');
-  if (slash_pos != std::string::npos) {
-    lib_name.erase(0, slash_pos + 1);
-  }
-  auto dot_pos = lib_name.find_last_of('.');
-  if (dot_pos != std::string::npos) {
-    lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
-  }
-
-  app->readLef(file_name.c_str(), lib_name.c_str(), make_tech, make_library);
-}
-
-void Tech::readLiberty(const std::string& file_name)
-{
-  auto sta = OpenRoad::openRoad()->getSta();
-  // TODO: take corner & min/max args
-  sta->readLiberty(file_name.c_str(),
-                   sta->cmdCorner(),
-                   sta::MinMaxAll::all(),
-                   true /* infer_latches */);
-}
-
-sta::dbSta* Tech::getSta()
-{
-  auto sta = OpenRoad::openRoad()->getSta();
-  return sta;
-}
-
-}  // namespace ord
+%include <typemaps.i>
+%include <std_string.i>
+%include "rmp/blif.h"
+%include "rmp/Restructure.h"
