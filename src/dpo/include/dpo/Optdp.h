@@ -75,7 +75,6 @@ class Optdp
   Optdp(const Optdp&&) = delete;
   Optdp& operator=(const Optdp&&) = delete;
 
-  void clear();
   void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
 
   void improvePlacement(int seed,

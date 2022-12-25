@@ -309,23 +309,6 @@ class PartitionMgr
                              const char* port_prefix,
                              const char* module_suffix);
 
-  void partitionDesign(unsigned int max_num_macro,
-                       unsigned int min_num_macro,
-                       unsigned int max_num_inst,
-                       unsigned int min_num_inst,
-                       unsigned int net_threshold,
-                       unsigned int ignore_net_threshold,
-                       unsigned int virtual_weight,
-                       unsigned int num_hops,
-                       unsigned int timing_weight,
-                       bool std_cell_timing_flag_,
-                       const char* report_directory,
-                       const char* file_name,
-                       float keepin_lx,
-                       float keepin_ly,
-                       float keepin_ux,
-                       float keepin_uy);
-
  private:
   sta::Instance* buildPartitionedInstance(
       const char* name,

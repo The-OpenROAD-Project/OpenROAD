@@ -61,6 +61,56 @@ extern char** cmd_argv;
 
 namespace gui {
 
+static QApplication* application = nullptr;
+static void message_handler(QtMsgType type,
+                            const QMessageLogContext& context,
+                            const QString& msg)
+{
+  auto* logger = ord::OpenRoad::openRoad()->getLogger();
+
+  bool suppress = false;
+#if NDEBUG
+  // suppress messages when built as a release, but preserve them in debug
+  // builds
+  if (application != nullptr) {
+    if (application->platformName() == "offscreen"
+        && msg.contains("This plugin does not support")) {
+      suppress = true;
+    }
+  }
+#endif
+
+  if (suppress) {
+    return;
+  }
+
+  std::string print_msg;
+  if (context.file != nullptr && context.function != nullptr) {
+    print_msg = fmt::format("{}:{}:{}: {}",
+                            context.file,
+                            context.function,
+                            context.line,
+                            msg.toStdString());
+  } else {
+    print_msg = msg.toStdString();
+  }
+  switch (type) {
+    case QtDebugMsg:
+      logger->debug(utl::GUI, 1, print_msg);
+      break;
+    case QtInfoMsg:
+      logger->info(utl::GUI, 75, print_msg);
+      break;
+    case QtWarningMsg:
+      logger->warn(utl::GUI, 76, print_msg);
+      break;
+    case QtCriticalMsg:
+    case QtFatalMsg:
+      logger->error(utl::GUI, 77, print_msg);
+      break;
+  }
+}
+
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
 {
   if (!db) {
@@ -1006,6 +1056,7 @@ void Gui::setLogger(utl::Logger* logger)
   }
 
   logger_ = logger;
+  qInstallMessageHandler(message_handler);
 
   if (enabled()) {
     // gui already requested, so go ahead and set the logger
@@ -1060,6 +1111,7 @@ int startGui(int& argc,
   gui->clearContinueAfterClose();
 
   QApplication app(argc, argv);
+  application = &app;
 
   // Default to 12 point for easier reading
   QFont font = QApplication::font();
@@ -1181,6 +1233,7 @@ int startGui(int& argc,
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
+  application = nullptr;
 
   resetConversions();
 

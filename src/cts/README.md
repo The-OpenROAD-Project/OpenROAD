@@ -15,8 +15,8 @@ set clock routing layer.
 ```
 configure_cts_characterization [-max_slew <max_slew>] \
                                [-max_cap <max_cap>] \
-                               [-slew_inter <slew_inter>] \
-                               [-cap_inter <cap_inter>]
+                               [-slew_steps <slew_steps>] \
+                               [-cap_steps <cap_steps>]
 ```
 
 Argument description:
@@ -27,14 +27,11 @@ Argument description:
 -   `-max_cap` is the max capacitance value (in farad) that the
     characterization will test. If this parameter is omitted, the code would
     use max cap value for specified buffer in `buf_list` from liberty file.
--   `-slew_inter` is the time value (in seconds) that the characterization
-    will consider for results. If this parameter is omitted, the code gets the
-    default value (`5.0e-12`). Be careful that this value can be quite low for
-    bigger technologies (`>65nm`).
--   `-cap_inter` is the capacitance value (in farad) that the characterization
-    will consider for results. If this parameter is omitted, the code gets the
-    default value (`5.0e-15`). Be careful that this value can be quite low for
-    bigger technologies (`>65nm`).
+-   `-slew_steps` is the number of steps that max_slew will be divided into
+    for characterization. If this parameter is omitted, the default is
+    12.
+-   `-cap_steps` is the number of steps that max_cap will be divided into
+    for characterization. If this parameter is omitted, the default is 34.
 
 
 ### Clock Tree Synthesis
@@ -44,7 +41,6 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
                      [-root_buf <root_buf>] \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] \
-                     [-post_cts_disable] \
                      [-distance_between_buffers] \
                      [-branching_point_buffers_distance] \
                      [-clustering_exponent] \
@@ -66,9 +62,6 @@ Argument description:
     the height of `-root_buffer`.
 -   `-clk_nets` is a string containing the names of the clock roots. If
     this parameter is omitted, TritonCTS looks for the clock roots automatically.
--   `-post_cts_disable` is a flag that, when specified, disables the
-    post-processing operation for outlier sinks (buffer insertion on 10% of
-    the way between source and sink).
 -   `-distance_between_buffers` is the distance (in micron) between buffers
     that TritonCTS should use when creating the tree. When using this parameter,
     the clock tree algorithm is simplified, and only uses a fraction of the

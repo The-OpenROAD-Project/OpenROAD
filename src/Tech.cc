@@ -83,4 +83,10 @@ void Tech::readLiberty(const std::string& file_name)
                    true /* infer_latches */);
 }
 
+sta::dbSta* Tech::getSta()
+{
+  auto sta = OpenRoad::openRoad()->getSta();
+  return sta;
+}
+
 }  // namespace ord

@@ -110,6 +110,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (flags_.lef58_type_ != rhs.flags_.lef58_type_)
     return false;
 
+  if (wrong_way_width_ != rhs.wrong_way_width_)
+    return false;
+
   if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
     return false;
 
@@ -317,6 +320,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_FIELD(flags_.right_way_on_grid_only_check_mask_);
   DIFF_FIELD(flags_.rect_only_except_non_core_pins_);
   DIFF_FIELD(flags_.lef58_type_);
+  DIFF_FIELD(wrong_way_width_);
   DIFF_TABLE(cut_class_rules_tbl_);
   DIFF_HASH_TABLE(cut_class_rules_hash_);
   DIFF_TABLE(spacing_eol_rules_tbl_);
@@ -393,6 +397,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(flags_.right_way_on_grid_only_check_mask_);
   DIFF_OUT_FIELD(flags_.rect_only_except_non_core_pins_);
   DIFF_OUT_FIELD(flags_.lef58_type_);
+  DIFF_OUT_FIELD(wrong_way_width_);
   DIFF_OUT_TABLE(cut_class_rules_tbl_);
   DIFF_OUT_HASH_TABLE(cut_class_rules_hash_);
   DIFF_OUT_TABLE(spacing_eol_rules_tbl_);
@@ -617,6 +622,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = r.flags_.rect_only_except_non_core_pins_;
   flags_.lef58_type_ = r.flags_.lef58_type_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
+  wrong_way_width_ = r.wrong_way_width_;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r.cut_class_rules_tbl_);
   cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
@@ -766,6 +772,16 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._two_widths_sp_spacing;
   stream >> obj._oxide1;
   stream >> obj._oxide2;
+  if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
+    stream >> obj.wrong_way_width_;
+  else {
+    obj.wrong_way_width_ = obj._width;
+    for (auto rule : ((dbTechLayer*) &obj)->getTechLayerWidthTableRules())
+      if (rule->isWrongDirection()) {
+        obj.wrong_way_width_ = *rule->getWidthTable().begin();
+        break;
+      }
+  }
   // User Code End >>
   return stream;
 }
@@ -828,6 +844,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._two_widths_sp_spacing;
   stream << obj._oxide1;
   stream << obj._oxide2;
+  if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
+    stream << obj.wrong_way_width_;
   // User Code End <<
   return stream;
 }
@@ -951,6 +969,19 @@ uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 // dbTechLayer - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbTechLayer::setWrongWayWidth(uint wrong_way_width)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->wrong_way_width_ = wrong_way_width;
+}
+
+uint dbTechLayer::getWrongWayWidth() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return obj->wrong_way_width_;
+}
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
 {
@@ -1243,6 +1274,9 @@ void dbTechLayer::setWidth(int width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_width = width;
+  if (layer->wrong_way_width_ == 0) {
+    layer->wrong_way_width_ = width;
+  }
 }
 
 int dbTechLayer::getSpacing()

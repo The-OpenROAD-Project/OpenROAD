@@ -80,7 +80,6 @@ using utl::Logger;
 //
 //
 
-typedef std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>> CellLevelMap;
 class LevelBalancer
 {
  public:
@@ -101,6 +100,9 @@ class LevelBalancer
   unsigned computeMaxTreeDepth(TreeBuilder* parent);
 
  private:
+  using CellLevelMap
+      = std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>>;
+
   TreeBuilder* root_;
   CtsOptions* options_;
   Logger* logger_;

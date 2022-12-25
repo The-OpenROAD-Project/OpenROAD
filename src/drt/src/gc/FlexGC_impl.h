@@ -147,13 +147,7 @@ class FlexGCWorker::Impl
   std::vector<std::unique_ptr<gcNet>> nets_;
 
   std::vector<std::unique_ptr<frMarker>> markers_;
-  std::map<std::tuple<Rect,
-                      frLayerNum,
-                      frConstraint*,
-                      frBlockObject*,
-                      frBlockObject*>,
-           frMarker*>
-      mapMarkers_;
+  std::map<MarkerId, frMarker*> mapMarkers_;
   std::vector<std::unique_ptr<drPatchWire>> pwires_;
 
   FlexGCWorkerRegionQuery rq_;
@@ -480,6 +474,11 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
+  void checkMinimumCut_marker(gcRect* wideRect,
+                              gcRect* viaRect,
+                              frMinimumcutConstraint* con);
+  void checkMinimumCut_main(gcRect* rect);
+  void checkMinimumCut();
   void checkMetalShape_lef58Area(gcPin* pin);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,

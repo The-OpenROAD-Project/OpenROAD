@@ -23,7 +23,7 @@ _installCommonDev() {
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
-    if [[ ! -z $PREFIX ]]; then mkdir -p ${PREFIX}; fi
+    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
@@ -118,7 +118,7 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
-    cd "$lastDir"
+    cd "${lastDir}"
     rm -rf "${baseDir}"
 }
 
@@ -130,8 +130,13 @@ _installOrTools() {
     orToolsVersionSmall=${orToolsVersionBig}.1874
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-    mkdir -p /opt/or-tools
-    tar --strip 1 --dir /opt/or-tools -xf ${orToolsFile}
+    orToolsPath="/opt/or-tools"
+    if [[ "${os}" == "MacOsX" ]]; then
+        orToolsPath="$(brew --prefix or-tools)"
+    fi
+    mkdir -p ${orToolsPath}
+    tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
+    rm -f ${orToolsFile}
 }
 
 _installUbuntuCleanUp() {
@@ -175,14 +180,15 @@ _installUbuntuRuntime() {
         libpython3.8 \
         libtcl \
         qt5-image-formats-plugins \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
 
     if [[ $1 == 22.04 ]]; then
         apt-get install -y \
-        qtbase5-dev \
-        qtchooser \
-        qt5-qmake \
-        qtbase5-dev-tools
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
     else
         apt-get install -y qt5-default
     fi
@@ -247,7 +253,8 @@ _installRHELRuntime() {
         python3-libs \
         tcl \
         tcl-tclreadline \
-        qt5-srpm-macros.noarch
+        qt5-srpm-macros.noarch \
+        wget
 }
 
 _installCentosCleanUp() {
@@ -256,12 +263,10 @@ _installCentosCleanUp() {
 }
 
 _installCentosDev() {
-    if [[ -z $(yum list installed lcov) ]]; then
-        yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
-    fi
-    if [[ -z $(yum list installed ius-release) ]]; then
-        yum install -y https://repo.ius.io/ius-release-el7.rpm
-    fi
+
+    yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
+    yum install -y https://repo.ius.io/ius-release-el7.rpm
+
     yum groupinstall -y "Development Tools"
     yum install -y centos-release-scl
     yum install -y \
@@ -287,17 +292,62 @@ _installCentosDev() {
 }
 
 _installCentosRuntime() {
-    if [[ -z $(yum list installed epel-release) ]]; then
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    fi
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
     yum update -y
     yum install -y \
         libgomp \
         python36-libs \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        tcl-tclreadline
+        tcl-tclreadline \
+        wget
     yum update -y
+}
+
+_installOpenSuseCleanUp() {
+    zypper -n clean --all
+    zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
+}
+
+_installOpenSuseDev() {
+    zypper -n install -t pattern devel_basis
+    zypper -n install \
+        lcov \
+        llvm \
+        clang \
+        gcc \
+        gcc11-c++ \
+        libstdc++6-devel-gcc8 \
+        pcre-devel \
+        pcre2-devel \
+        python3-devel \
+        python3-pip \
+        readline5-devel \
+        tcl-devel \
+        wget \
+        git \
+        gzip \
+        libomp11-devel \
+        zlib-devel
+    
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
+}
+
+_installOpenSuseRuntime() {
+    zypper refresh && zypper -n update
+    zypper -n install \
+        binutils \
+        libgomp1 \
+        libpython3_6m1_0 \
+        libqt5-qtbase \
+        libqt5-creator \
+        libqt5-qtstyleplugins \
+        qimgv \
+        tcl \
+        tcllib
+    zypper refresh && zypper -n update
 }
 
 _installHomebrewPackage() {
@@ -306,12 +356,12 @@ _installHomebrewPackage() {
     url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
     curl -L ${url} > ${package}.rb
 
-    if brew list $package &> /dev/null
+    if brew list "${package}" &> /dev/null
         then
         # Homebrew is awful at letting you use the version you want if a newer
         # version is installed. The package must be completely removed to ensure
         # only the correct version is installed
-        brew remove --force --ignore-dependencies $package
+        brew remove --force --ignore-dependencies "${package}"
     fi
 
     # Must ignore dependencies to avoid automatic upgrade
@@ -342,6 +392,9 @@ EOF
     fi
     brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
 
+    # Some systems neeed this to correclty find OpenMP package during build
+    brew link --force libomp
+
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
@@ -349,6 +402,63 @@ EOF
     _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
     # Install spdlog 1.9.2
     _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+}
+
+_installDebianCleanUp() {
+    apt-get autoclean -y
+    apt-get autoremove -y
+}
+
+_installDebianDev() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get -y install \
+        automake \
+        autotools-dev \
+        build-essential \
+        bison \
+        flex \
+        clang \
+        g++ \
+        gcc \
+        git \
+        lcov \
+        libpcre2-dev \
+        libpcre3-dev \
+        python3-dev \
+        libreadline-dev \
+        tcl-dev \
+        tcllib \
+        wget \
+        zlib1g-dev \
+        libomp-dev
+}
+
+_installDebianRuntime() {
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get -y update
+    apt-get -y install tzdata
+    apt-get install -y \
+        binutils \
+        libgomp1 \
+        libtcl \
+        qt5-image-formats-plugins \
+        tcl-tclreadline \
+        wget
+
+    if [[ $1 == 10 ]]; then
+        apt-get install -y \
+            libpython3.7 \
+            qt5-default
+    else
+        apt-get install -y \
+            libpython3.8 \
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools
+    fi
 }
 
 _help() {
@@ -380,7 +490,7 @@ while [ "$#" -gt 0 ]; do
             option="dev"
             ;;
         -local)
-            export PREFIX="$HOME/.local"
+            export PREFIX="${HOME}/.local"
             ;;
         -prefix=*)
             export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
@@ -458,10 +568,39 @@ EOF
         cat <<EOF
 
 To install or run openroad, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\$PATH"
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
+    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 
-You may wish to add this line to your .bashrc file
+You may wish to add these lines to your .bashrc file.
 EOF
+        ;;
+    "openSUSE Leap" )
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installOpenSuseRuntime
+        if [[ "${option}" == "dev" ]]; then
+            _installOpenSuseDev
+            _installCommonDev
+        fi
+        _installOrTools "opensuse" "leap" "amd64"
+        _installOpenSuseCleanUp
+        cat <<EOF
+To enable GCC-11 you need to run:
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
+EOF
+        ;;
+    "Debian GNU/Linux" )
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
+        export spdlogFolder
+        _installDebianRuntime "${version}"
+        if [[ "${option}" == "dev" ]]; then
+            _installDebianDev
+            _installCommonDev
+        fi
+        _installOrTools "debian" "${version}" "amd64"
+        _installDebianCleanUp
         ;;
     *)
         echo "unsupported system: ${os}" >&2
@@ -470,13 +609,12 @@ EOF
         ;;
 esac
 
-if [[ ! -z ${PREFIX} ]]; then
+if [[ ! -z "${PREFIX}" ]]; then
             cat <<EOF
 To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake' 
+    alias cmake='${PREFIX}/bin/cmake'
     or  run
-    echo export PATH=${PREFIX}/bin:'$PATH' >> ~/.bash_profile
+    echo export PATH=${PREFIX}/bin:'${PATH}' >> ~/.bash_profile
     source ~/.bash_profile
 EOF
 fi
-

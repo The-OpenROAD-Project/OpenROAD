@@ -167,9 +167,10 @@ class Painter
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,
                       bool cosmetic = false,
-                      const Brush& style = SOLID)
+                      const Brush& style = SOLID,
+                      int width = 1)
   {
-    setPen(color, cosmetic);
+    setPen(color, cosmetic, width);
     setBrush(color, style);
   }
 

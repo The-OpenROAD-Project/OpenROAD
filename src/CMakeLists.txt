@@ -328,6 +328,7 @@ target_link_libraries(openroad
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # mpl2 aborts with link error on darwin so do not link it.
   target_link_libraries(openroad mpl2)
+  target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
 else()
   message(STATUS "Removing MPL2 to avoid run time fatal error.")
 endif()
@@ -391,6 +392,11 @@ if (Python3_FOUND AND BUILD_PYTHON)
     tap_py
     cts_py
     drt_py
+    dpo_py
+    fin_py
+    par_py
+    rcx_py
+    rmp_py
   )
 else()
   message(STATUS "Python3 disabled")

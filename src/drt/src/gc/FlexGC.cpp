@@ -85,16 +85,15 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
     srcs.at(i) = src;
     i++;
   }
-  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1]))
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
       != mapMarkers_.end()) {
     return;
   }
-  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0]))
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[1], srcs[0]})
       != mapMarkers_.end()) {
     return;
   }
-  mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])]
-      = in.get();
+  mapMarkers_[{bbox, layerNum, con, srcs[0], srcs[1]}] = in.get();
   markers_.push_back(std::move(in));
 }
 

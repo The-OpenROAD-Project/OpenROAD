@@ -674,6 +674,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   // length/max_cap/max_slew violations.
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
+             && max_cap_ > 0.0
              && load_cap > max_cap_)
          || load_slew > max_load_slew_margined) {
     // Make the wire a bit shorter than necessary to allow for
@@ -703,8 +704,11 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  "", level,
                  units_->capacitanceUnit()->asString(load_cap, 3),
                  units_->capacitanceUnit()->asString(max_cap_, 3));
-      split_length = min(split_length,
-                         metersToDbu((max_cap_ - ref_cap) / wire_cap));
+      if (ref_cap > max_cap_)
+        split_length = 0;
+      else
+        split_length = min(split_length,
+                           metersToDbu((max_cap_ - ref_cap) / wire_cap));
       split_wire = true;
     }
     if (load_slew > max_load_slew_margined) { 

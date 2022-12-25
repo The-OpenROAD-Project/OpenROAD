@@ -349,11 +349,11 @@ void TimingPath::setSlackOnPathNodes()
 
 /////////////
 
-ClockTree::ClockTree(ClockTree* parent)
+ClockTree::ClockTree(ClockTree* parent, sta::Net* net)
     : parent_(parent),
       clock_(parent->clock_),
       network_(parent->network_),
-      net_(nullptr),
+      net_(net),
       level_(parent_->level_ + 1)
 {
 }
@@ -365,6 +365,7 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
       net_(nullptr),
       level_(0)
 {
+  net_ = getNet(*clock_->pins().begin());
 }
 
 std::set<sta::Pin*> ClockTree::getDrivers() const
@@ -387,19 +388,48 @@ std::set<sta::Pin*> ClockTree::getLeaves() const
 
 ClockTree* ClockTree::getTree(sta::Net* net)
 {
+  ClockTree* tree = findTree(net, false);
+  if (tree != nullptr) {
+    return tree;
+  }
+
+  tree = new ClockTree(this, net);
+  fanout_.emplace_back(tree);
+  return tree;
+}
+
+ClockTree* ClockTree::findTree(odb::dbNet* net, bool include_children)
+{
+  return findTree(network_->dbToSta(net), include_children);
+}
+
+ClockTree* ClockTree::findTree(sta::Net* net, bool include_children)
+{
   if (net == net_) {
     return this;
   }
 
+  ClockTree* tree = nullptr;
   for (const auto& fanout : fanout_) {
     if (fanout->getNet() == net) {
       return fanout.get();
     }
+
+    if (include_children) {
+      tree = fanout->findTree(net);
+
+      if (tree != nullptr) {
+        break;
+      }
+    }
   }
-  ClockTree* tree = new ClockTree(this);
-  tree->setNet(net);
-  fanout_.emplace_back(tree);
+
   return tree;
+}
+
+int ClockTree::getSinkCount() const
+{
+  return leaves_.size() + fanout_.size();
 }
 
 int ClockTree::getTotalLeaves() const
@@ -542,7 +572,10 @@ void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
     return;
   }
 
-  setNet(getNet(start->pin(sta)));
+  if (getNet(start->pin(sta)) != net_) {
+    // dont add paths that do not share a net at the root
+    return;
+  }
 
   addPath(path, 0, sta);
 }
@@ -695,8 +728,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
 {
   TimingPathList paths;
 
-  sta_->ensureGraph();
-  sta_->searchPreamble();
+  initSTA();
 
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
@@ -854,8 +886,8 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
                                             sta::PinSet* pins,
                                             bool is_fanin) const
 {
+  initSTA();
   auto* network = sta_->getDbNetwork();
-  sta_->ensureGraph();
   auto* graph = sta_->graph();
 
   auto filter_pins
@@ -1051,6 +1083,7 @@ void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
 
 std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
 {
+  initSTA();
   sta_->ensureClkNetwork();
   sta_->ensureClkArrivals();
 
@@ -1075,12 +1108,19 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
       sta::PathExpanded expand(path, sta_);
 
       sta::Clock* clock = path->clock(sta_);
-
-      roots[clock]->addPath(expand, sta_);
+      if (clock) {
+        roots[clock]->addPath(expand, sta_);
+      }
     }
   }
 
   return trees;
+}
+
+void STAGuiInterface::initSTA() const
+{
+  sta_->ensureGraph();
+  sta_->searchPreamble();
 }
 
 }  // namespace gui

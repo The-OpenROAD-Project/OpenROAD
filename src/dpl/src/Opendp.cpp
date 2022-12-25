@@ -204,7 +204,10 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
   findDisplacementStats();
   updateDbInstLocations();
   if (!placement_failures_.empty()) {
-    logger_->info(DPL, 34, "Detailed placement failed on:");
+    logger_->info(DPL,
+                  34,
+                  "Detailed placement failed on the following {} instances:",
+                  placement_failures_.size());
     for (auto inst : placement_failures_)
       logger_->info(DPL, 35, " {}", inst->getName());
     logger_->error(DPL, 36, "Detailed placement failed.");

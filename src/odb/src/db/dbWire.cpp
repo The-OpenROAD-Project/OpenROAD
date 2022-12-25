@@ -1221,11 +1221,24 @@ state_machine_update : {
   }
 
   int dw;
+  int default_ext;
 
-  if (default_width)
+  if (default_width) {
     dw = layer->getWidth() >> 1;
-  else
+    default_ext = dw;
+    if (prev[0] != cur[0] || prev[1] != cur[1]) {
+      if (prev[0] != cur[0]
+          && layer->getDirection() == dbTechLayerDir::VERTICAL)
+        dw = layer->getWrongWayWidth() >> 1;
+      else if (prev[1] != cur[1]
+               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+        dw = layer->getWrongWayWidth() >> 1;
+    }
+
+  } else {
     dw = width >> 1;
+    default_ext = dw;
+  }
 
   shape.setSegment(prev[0],
                    prev[1],
@@ -1236,6 +1249,7 @@ state_machine_update : {
                    cur_ext,
                    has_cur_ext,
                    dw,
+                   default_ext,
                    layer);
 }
 
@@ -1372,11 +1386,23 @@ state_machine_update : {
   }
 
   int dw;
-
-  if (default_width)
+  int default_ext;
+  if (default_width) {
     dw = layer->getWidth() >> 1;
-  else
+    default_ext = dw;
+    if (prev[0] != cur[0] || prev[1] != cur[1]) {
+      if (prev[0] != cur[0]
+          && layer->getDirection() == dbTechLayerDir::VERTICAL)
+        dw = layer->getWrongWayWidth() >> 1;
+      else if (prev[1] != cur[1]
+               && layer->getDirection() == dbTechLayerDir::HORIZONTAL)
+        dw = layer->getWrongWayWidth() >> 1;
+    }
+
+  } else {
     dw = width >> 1;
+    default_ext = dw;
+  }
 
   shape.setSegment(prev[0],
                    prev[1],
@@ -1387,6 +1413,7 @@ state_machine_update : {
                    cur_ext,
                    has_cur_ext,
                    dw,
+                   default_ext,
                    layer);
 }
 

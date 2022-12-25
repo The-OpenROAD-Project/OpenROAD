@@ -74,7 +74,7 @@ struct Tree
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger) const;
-  int branchCount() const { return deg * 2 - 2; }
+  int branchCount() const { return branch.size(); }
 };
 
 class SteinerTreeBuilder

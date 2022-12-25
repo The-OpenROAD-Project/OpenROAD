@@ -65,7 +65,7 @@ void Clock::report(utl::Logger* logger) const
 
 Box<int> Clock::computeSinkRegion()
 {
-  double percentile = 0.01;
+  const double percentile = 0.01;
 
   std::vector<int> allPositionsX;
   std::vector<int> allPositionsY;
@@ -77,12 +77,12 @@ Box<int> Clock::computeSinkRegion()
   std::sort(allPositionsX.begin(), allPositionsX.end());
   std::sort(allPositionsY.begin(), allPositionsY.end());
 
-  unsigned numSinks = allPositionsX.size();
-  unsigned numOutliers = percentile * numSinks;
-  int xMin = allPositionsX[numOutliers];
-  int xMax = allPositionsX[numSinks - numOutliers - 1];
-  int yMin = allPositionsY[numOutliers];
-  int yMax = allPositionsY[numSinks - numOutliers - 1];
+  const unsigned numSinks = allPositionsX.size();
+  const unsigned numOutliers = percentile * numSinks;
+  const int xMin = allPositionsX[numOutliers];
+  const int xMax = allPositionsX[numSinks - numOutliers - 1];
+  const int yMin = allPositionsY[numOutliers];
+  const int yMax = allPositionsY[numSinks - numOutliers - 1];
 
   return Box<int>(xMin, yMin, xMax, yMax);
 }
@@ -90,28 +90,24 @@ Box<int> Clock::computeSinkRegion()
 Box<double> Clock::computeSinkRegionClustered(
     std::vector<std::pair<float, float>> sinks)
 {
-  std::vector<double> allPositionsX;
-  std::vector<double> allPositionsY;
-  for (const std::pair<float, float>& sinkLocation : sinks) {
-    allPositionsX.push_back(sinkLocation.first);
-    allPositionsY.push_back(sinkLocation.second);
+  double xMin = std::numeric_limits<double>::max();
+  double xMax = std::numeric_limits<double>::lowest();
+  double yMin = std::numeric_limits<double>::max();
+  double yMax = std::numeric_limits<double>::lowest();
+
+  for (const std::pair<double, double>& sinkLocation : sinks) {
+    xMin = std::min(xMin, sinkLocation.first);
+    xMax = std::max(xMax, sinkLocation.first);
+    yMin = std::min(yMin, sinkLocation.second);
+    yMax = std::max(yMax, sinkLocation.second);
   }
-
-  std::sort(allPositionsX.begin(), allPositionsX.end());
-  std::sort(allPositionsY.begin(), allPositionsY.end());
-
-  double xMin = allPositionsX[0];
-  double xMax = allPositionsX[(allPositionsX.size() - 1)];
-  double yMin = allPositionsY[0];
-  double yMax = allPositionsY[(allPositionsY.size() - 1)];
 
   return Box<double>(xMin, yMin, xMax, yMax);
 }
 
 Box<double> Clock::computeNormalizedSinkRegion(double factor)
 {
-  Box<int> sinkRegion = computeSinkRegion();
-  return sinkRegion.normalize(factor);
+  return computeSinkRegion().normalize(factor);
 }
 
 void Clock::forEachSink(const std::function<void(const ClockInst&)>& func) const

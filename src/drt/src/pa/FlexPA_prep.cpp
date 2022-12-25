@@ -831,18 +831,20 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     ap->setAccess(dir, false);
     return;
   }
-
+  // TODO: EDIT HERE Wrongdirection segments
+  auto layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
   auto ps = make_unique<frPathSeg>();
-  auto style = getDesign()
-                   ->getTech()
-                   ->getLayer(ap->getLayerNum())
-                   ->getDefaultSegStyle();
+  auto style = layer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(ep, bp);
     style.setEndStyle(frcTruncateEndStyle, 0);
+    if (layer->getDir() == dbTechLayerDir::VERTICAL)
+      style.setWidth(layer->getWrongDirWidth());
   } else {
     ps->setPoints(bp, ep);
     style.setBeginStyle(frcTruncateEndStyle, 0);
+    if (layer->getDir() == dbTechLayerDir::HORIZONTAL)
+      style.setWidth(layer->getWrongDirWidth());
   }
   ps->setLayerNum(ap->getLayerNum());
   ps->setStyle(style);
@@ -1690,11 +1692,11 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
   genInstRowPattern_commit(nodes, insts);
 }
 
-// init dp node array for valide access patterns
+// init dp node array for valid access patterns
 void FlexPA::genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
                                     const std::vector<frInst*>& insts)
 {
-  // init virutal nodes
+  // init virtual nodes
   int startNodeIdx = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
   int endNodeIdx
       = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);

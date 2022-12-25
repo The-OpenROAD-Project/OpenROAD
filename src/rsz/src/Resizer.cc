@@ -540,7 +540,7 @@ Resizer::bufferOutputs()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         // DEF does not have tristate output types so we have look at the drivers.
-        && !hasTristateDriver(net)
+        && !hasTristateOrDontTouchDriver(net)
         && !vertex->isConstant()
         && hasPins(net)) {
       bufferOutput(pin, buffer_lowest_drive_);
@@ -557,13 +557,25 @@ Resizer::bufferOutputs()
 }
 
 bool
-Resizer::hasTristateDriver(const Net *net)
+Resizer::hasTristateOrDontTouchDriver(const Net *net)
 {
   PinSet *drivers = network_->drivers(net);
   if (drivers) {
     for (Pin *pin : *drivers) {
-      if (isTristateDriver(pin))
+      if (isTristateDriver(pin)) {
         return true;
+      }
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      db_network_->staToDb(pin, iterm, bterm);
+      if (iterm && iterm->getInst()->isDoNotTouch()) {
+        logger_->warn(RSZ,
+                      84,
+                      "Output {} can't be buffered due to dont-touch driver {}",
+                      network_->name(net),
+                      network_->name(pin));
+        return true;
+      }
     }
   }
   return false;

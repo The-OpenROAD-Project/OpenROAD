@@ -85,6 +85,26 @@ namespace triton_route {
 class TritonRoute;
 }
 
+namespace dpo {
+class Optdp;
+}
+
+namespace fin {
+class Finale;
+}
+
+namespace par {
+class PartitionMgr;
+}
+
+namespace rcx {
+class Ext;
+}
+
+namespace rmp {
+class Restructure;
+}
+
 namespace ord {
 
 class Tech;
@@ -100,6 +120,7 @@ class Design
                bool incremental = false);
   void link(const std::string& design_name);
 
+  void readDb(const std::string& file_name);
   void writeDb(const std::string& file_name);
   void writeDef(const std::string& file_name);
 
@@ -124,6 +145,11 @@ class Design
   tap::Tapcell* getTapcell();
   cts::TritonCTS* getTritonCts();
   triton_route::TritonRoute* getTritonRoute();
+  dpo::Optdp* getOptdp();
+  fin::Finale* getFinale();
+  par::PartitionMgr* getPartitionMgr();
+  rcx::Ext* getOpenRCX();
+  rmp::Restructure* getRestructure();
 
  private:
   Tech* tech_;
