@@ -200,6 +200,16 @@ _installRHELCleanUp() {
 _installRHELPackages() {
     yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
+    yum -y install \
+        tzdata \
+        binutils \
+        libgomp \
+        python3-libs \
+        tcl \
+        tcl-tclreadline \
+        qt5-srpm-macros.noarch \
+        wget
+
     yum -y update
     yum -y install \
         autoconf \
@@ -234,15 +244,10 @@ _installRHELPackages() {
         clang \
         clang-devel
 
-    yum -y install \
-        tzdata \
-        binutils \
-        libgomp \
-        python3-libs \
-        tcl \
-        tcl-tclreadline \
-        qt5-srpm-macros.noarch \
-        wget
+    yum install -y \
+        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
+        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm \
+        https://vault.centos.org/centos/8/BaseOS/x86_64/os/Packages/tcl-devel-8.6.8-2.el8.i686.rpm
 }
 
 _installCentosCleanUp() {
@@ -295,7 +300,20 @@ _installOpenSuseCleanUp() {
     zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
 }
 
-_installOpenSuseDev() {
+_installOpenSusePackages() {
+    zypper refresh && zypper -n update
+    zypper -n install \
+        binutils \
+        libgomp1 \
+        libpython3_6m1_0 \
+        libqt5-qtbase \
+        libqt5-creator \
+        libqt5-qtstyleplugins \
+        qimgv \
+        tcl \
+        tcllib
+
+    zypper refresh && zypper -n update
     zypper -n install -t pattern devel_basis
     zypper -n install \
         lcov \
@@ -318,21 +336,6 @@ _installOpenSuseDev() {
     
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
-}
-
-_installOpenSuseRuntime() {
-    zypper refresh && zypper -n update
-    zypper -n install \
-        binutils \
-        libgomp1 \
-        libpython3_6m1_0 \
-        libqt5-qtbase \
-        libqt5-creator \
-        libqt5-qtstyleplugins \
-        qimgv \
-        tcl \
-        tcllib
-    zypper refresh && zypper -n update
 }
 
 _installHomebrewPackage() {
@@ -545,11 +548,8 @@ EOF
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installOpenSuseRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installOpenSuseDev
-            _installCommonDev
-        fi
+        _installOpenSusePackages
+        _installCommonDev
         _installOrTools "opensuse" "leap" "amd64"
         _installOpenSuseCleanUp
         cat <<EOF
