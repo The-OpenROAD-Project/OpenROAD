@@ -43,14 +43,6 @@
 #include "odb/db.h"
 #include <vector>
 
-    //namespace ord {
-// Defined in OpenRoad.i
-//stt::SteinerTreeBuilder* getSteinerTreeBuilder();
-//utl::Logger* getLogger();
-//}  // namespace ord
-
-    //using ord::getSteinerTreeBuilder;
-    //using odb::dbNet;
 %}
 
 %include "../../Exception-py.i"
