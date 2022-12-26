@@ -139,7 +139,7 @@ _installUbuntuCleanUp() {
     apt-get autoremove -y
 }
 
-_installUbuntuDev() {
+_installUbuntuPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install tzdata
@@ -163,12 +163,7 @@ _installUbuntuDev() {
         wget \
         zlib1g-dev \
         libomp-dev
-}
 
-_installUbuntuRuntime() {
-    export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install tzdata
     apt-get install -y \
         binutils \
         libgomp1 \
@@ -197,7 +192,10 @@ _installRHELCleanUp() {
     rm -rf /var/lib/apt/lists/*
 }
 
-_installRHELDev() {
+_installRHELPackages() {
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+    yum -y update
     yum -y install \
         autoconf \
         automake \
@@ -231,16 +229,6 @@ _installRHELDev() {
         clang \
         clang-devel
 
-    yum install -y \
-        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm \
-        https://vault.centos.org/centos/8/BaseOS/x86_64/os/Packages/tcl-devel-8.6.8-2.el8.i686.rpm
-}
-
-_installRHELRuntime() {
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-
-    yum -y update
     yum -y install \
         tzdata \
         binutils \
@@ -257,13 +245,18 @@ _installCentosCleanUp() {
     rm -rf /var/lib/apt/lists/*
 }
 
-_installCentosDev() {
+_installCentosPackages() {
     if [[ -z $(yum list installed lcov) ]]; then
         yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
     fi
     if [[ -z $(yum list installed ius-release) ]]; then
         yum install -y https://repo.ius.io/ius-release-el7.rpm
     fi
+    if [[ -z $(yum list installed epel-release) ]]; then
+        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    fi
+    
+    yum update -y
     yum groupinstall -y "Development Tools"
     yum install -y centos-release-scl
     yum install -y \
@@ -281,18 +274,13 @@ _installCentosDev() {
         tcl-tclreadline-devel \
         zlib-devel \
         wget
+
     yum install -y \
         python-devel \
         python36 \
         python36-devel \
         python36-pip
-}
 
-_installCentosRuntime() {
-    if [[ -z $(yum list installed epel-release) ]]; then
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    fi
-    yum update -y
     yum install -y \
         libgomp \
         python36-libs \
@@ -300,7 +288,6 @@ _installCentosRuntime() {
         qt5-qtimageformats \
         tcl-tclreadline \
         wget
-    yum update -y
 }
 
 _installHomebrewPackage() {
@@ -359,7 +346,7 @@ _installDebianCleanUp() {
     apt-get autoremove -y
 }
 
-_installDebianDev() {
+_installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install tzdata
@@ -383,12 +370,7 @@ _installDebianDev() {
         wget \
         zlib1g-dev \
         libomp-dev
-}
 
-_installDebianRuntime() {
-    export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install tzdata
     apt-get install -y \
         binutils \
         libgomp1 \
@@ -473,8 +455,7 @@ case "${os}" in
     "CentOS Linux" )
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installCentosRuntime
-        _installCentosDev
+        _installCentosPackages
         _installCommonDev
         _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
@@ -488,8 +469,7 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installUbuntuRuntime "${version}"
-        _installUbuntuDev
+        _installUbuntuPackages "${version}"
         _installCommonDev
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
@@ -497,8 +477,7 @@ EOF
     "Red Hat Enterprise Linux")
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installRHELRuntime
-        _installRHELDev
+        _installRHELPackages
         _installCommonDev
         _installOrTools "centos" "8" "amd64"
         _installRHELCleanUp
@@ -518,8 +497,7 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installDebianRuntime "${version}"
-        _installDebianDev
+        _installDebianPackages "${version}"
         _installCommonDev
         _installOrTools "debian" "${version}" "amd64"
         _installDebianCleanUp
