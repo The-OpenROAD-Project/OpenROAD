@@ -28,7 +28,7 @@ OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
-# Introduction
+## Getting Started with OpenROAD
 
 [OpenROAD](https://theopenroadproject.org/) is the leading
 open-source, foundational application for semiconductor digital design.
@@ -63,7 +63,7 @@ implementation.
 
 ![rtl2gds.webp](./docs/images/rtl2gds.webp)
 
-## GUI
+### GUI
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
@@ -72,15 +72,15 @@ CTS.
 
 ![ibexGui.webp](./docs/images/ibexGui.webp)
 
-## Placement Congestion View:
+### Placement Congestion View:
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-## CTS:
+### CTS:
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
 
-# PDK Support
+### PDK Support
 
 The OpenROAD application is PDK independent. However, it has been tested
 and validated with specific PDKs in the context of various flow
@@ -91,13 +91,13 @@ OpenLane supports Skywater130.
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
 
-## Open-Source PDKs
+#### Open-Source PDKs
 
 -   `Skywater130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
 
-## Proprietary PDKs
+#### Proprietary PDKs
 
 These PDKS are supported in OpenROAD-flow-scripts only. They are used to
 test and calibrate OpenROAD against commercial platforms and ensure good
@@ -113,7 +113,7 @@ platform-specific files yourself.
 -   `Intel16` - 16nm
 -   `TSMC65` - 65nm
 
-# Tapeouts
+## Tapeouts
 
 OpenROAD has been used for full physical implementation in over 240 tapeouts
 in Sky130 through the Google-sponsored, Efabless [MPW
@@ -122,11 +122,11 @@ shuttle](https://efabless.com/open_shuttle_program) and
 
 ![shuttle.webp](./docs/images/shuttle.webp)
 
-## OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
+### OpenTitan SoC on GF12LP - Physical design and optimization using OpenROAD
 
 ![OpenTitan_SoC.webp](./docs/images/OpenTitan_SoC.webp)
 
-## Continuous Tapeout Integration into CI
+### Continuous Tapeout Integration into CI
 
 The OpenROAD project actively adds successfully taped out MPW shuttle
 designs to the [CI regression

@@ -40,6 +40,7 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsTextItem>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QKeyEvent>
@@ -644,21 +645,33 @@ void ClockRegisterNodeGraphicsViewItem::contextMenuEvent(
 ClockTreeScene::ClockTreeScene(QWidget* parent)
     : QGraphicsScene(parent),
       menu_(new QMenu(parent)),
-      draw_tree_(new QAction("Draw tree", menu_)),
       clear_path_(new QAction("Clear path", menu_)),
       color_depth_(new QSpinBox(menu_))
 {
-  draw_tree_->setCheckable(true);
-  draw_tree_->setChecked(true);
-  menu_->addAction(draw_tree_);
+  QWidgetAction* renderer_widget = new QWidgetAction(menu_);
+  QGroupBox* renderer_group = new QGroupBox("Draw tree", menu_);
+  QVBoxLayout* renderer_layout = new QVBoxLayout;
+  renderer_state_[RendererState::OnlyShowOnActiveWidget]
+      = new QRadioButton("Only show when clock is selected", menu_);
+  renderer_state_[RendererState::AlwaysShow]
+      = new QRadioButton("Always show", menu_);
+  renderer_state_[RendererState::NeverShow]
+      = new QRadioButton("Never show", menu_);
+  renderer_state_[RendererState::OnlyShowOnActiveWidget]->setChecked(true);
+  for (const auto& [state, button] : renderer_state_) {
+    renderer_layout->addWidget(button);
+    connect(button, SIGNAL(toggled(bool)), this, SLOT(updateRendererState()));
+  }
+  renderer_group->setLayout(renderer_layout);
+  renderer_widget->setDefaultWidget(renderer_group);
+  menu_->addAction(renderer_widget);
+
   QWidgetAction* color_depth_widget = new QWidgetAction(menu_);
   color_depth_widget->setDefaultWidget(color_depth_);
   color_depth_->setToolTip("Tree color depth");
   menu_->addAction(color_depth_widget);
   menu_->addAction(clear_path_);
-  connect(
-      draw_tree_, SIGNAL(toggled(bool)), this, SIGNAL(enableRenderer(bool)));
-  connect(draw_tree_, &QAction::toggled, color_depth_, &QSpinBox::setEnabled);
+
   connect(clear_path_, SIGNAL(triggered()), this, SLOT(triggeredClearPath()));
   connect(menu_->addAction("Fit"), SIGNAL(triggered()), this, SIGNAL(fit()));
   connect(menu_->addAction("Save"), SIGNAL(triggered()), this, SIGNAL(save()));
@@ -685,10 +698,19 @@ void ClockTreeScene::triggeredClearPath()
   setClearPathEnable(false);
 }
 
-void ClockTreeScene::setRendererEnabled(bool enabled)
+void ClockTreeScene::updateRendererState()
 {
-  draw_tree_->setChecked(enabled);
-  color_depth_->setEnabled(enabled);
+  for (const auto& [state, button] : renderer_state_) {
+    if (button->isChecked()) {
+      emit changeRendererState(state);
+    }
+  }
+}
+
+void ClockTreeScene::setRendererState(RendererState state)
+{
+  renderer_state_[state]->setChecked(true);
+  updateRendererState();
 }
 
 ////////////////
@@ -699,7 +721,8 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
       tree_(tree),
-      renderer_(nullptr),
+      renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
+      renderer_state_(RendererState::OnlyShowOnActiveWidget),
       scene_(nullptr),
       logger_(logger),
       show_mouse_time_tick_(true),
@@ -753,18 +776,14 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
   scene_->setSceneRect(scene_margin);
 
   connect(scene_, SIGNAL(selectionChanged()), this, SLOT(selectionChanged()));
-  connect(
-      scene_, SIGNAL(enableRenderer(bool)), this, SLOT(enableRenderer(bool)));
   connect(scene_, SIGNAL(fit()), this, SLOT(fit()));
   connect(scene_, SIGNAL(clearPath()), this, SLOT(clearHighlightTo()));
   connect(scene_, SIGNAL(save()), this, SLOT(save()));
   connect(scene_, SIGNAL(colorDepth(int)), this, SLOT(updateColorDepth(int)));
-  enableRenderer(scene_->isRendererEnabled());
-}
-
-ClockTreeView::~ClockTreeView()
-{
-  renderer_ = nullptr;
+  connect(scene_,
+          SIGNAL(changeRendererState(RendererState)),
+          this,
+          SLOT(setRendererState(RendererState)));
 }
 
 void ClockTreeView::fit()
@@ -915,9 +934,7 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 
 void ClockTreeView::selectionChanged()
 {
-  if (renderer_ != nullptr) {
-    renderer_->resetTree();
-  }
+  renderer_->resetTree();
 
   for (const auto& sel : scene_->selectedItems()) {
     const QVariant data = sel->data(0);
@@ -942,30 +959,38 @@ const char* ClockTreeView::getClockName() const
   return tree_->getClock()->name();
 }
 
-void ClockTreeView::showRenderer(bool show) const
+void ClockTreeView::setRendererState(RendererState state)
 {
-  if (renderer_ == nullptr) {
+  if (renderer_state_ == state) {
     return;
   }
 
-  auto* gui = Gui::get();
-  if (show) {
-    gui->registerRenderer(renderer_.get());
-    renderer_->setMaxColorDepth(scene_->getMaxColorDepth());
-  } else {
-    gui->unregisterRenderer(renderer_.get());
-  }
+  renderer_state_ = state;
+  updateRendererState();
 }
 
-void ClockTreeView::enableRenderer(bool enable)
+void ClockTreeView::updateRendererState() const
 {
+  bool enable = false;
+  switch (renderer_state_) {
+    case RendererState::AlwaysShow:
+      enable = true;
+      break;
+    case RendererState::NeverShow:
+      enable = false;
+      break;
+    case RendererState::OnlyShowOnActiveWidget:
+      enable = isVisible();
+      break;
+  }
+
+  auto* gui = Gui::get();
   if (enable) {
-    renderer_ = std::make_unique<ClockTreeRenderer>(tree_.get());
-    scene_->setRendererEnabled(true);
-    showRenderer(true);
+    gui->registerRenderer(renderer_.get());
+    scene_->setClearPathEnable(true);
   } else {
+    gui->unregisterRenderer(renderer_.get());
     scene_->setClearPathEnable(false);
-    renderer_ = nullptr;
   }
 }
 
@@ -1202,9 +1227,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
 
 void ClockTreeView::highlightTo(odb::dbITerm* term)
 {
-  enableRenderer(true);
-  scene_->setClearPathEnable(true);
-
+  if (renderer_state_ == RendererState::NeverShow) {
+    // need to enable the renderer
+    scene_->setRendererState(RendererState::OnlyShowOnActiveWidget);
+  }
   renderer_->setPathTo(term);
 }
 
@@ -1243,19 +1269,11 @@ void ClockTreeView::save(const QString& path)
 
 void ClockTreeView::selectRendererTreeNet(odb::dbNet* net)
 {
-  if (renderer_ == nullptr) {
-    return;
-  }
-
   renderer_->setTree(tree_->findTree(net));
 }
 
 void ClockTreeView::updateColorDepth(int depth)
 {
-  if (renderer_ == nullptr) {
-    return;
-  }
-
   renderer_->setMaxColorDepth(depth);
 }
 
@@ -1289,10 +1307,16 @@ ClockWidget::ClockWidget(QWidget* parent)
 
   connect(update_button_, SIGNAL(clicked()), this, SLOT(populate()));
   update_button_->setEnabled(false);
+
+  connect(clocks_tab_,
+          SIGNAL(currentChanged(int)),
+          this,
+          SLOT(currentClockChanged(int)));
 }
 
 ClockWidget::~ClockWidget()
 {
+  clocks_tab_->clear();
   views_.clear();
 }
 
@@ -1349,15 +1373,16 @@ void ClockWidget::populate()
 
 void ClockWidget::hideEvent(QHideEvent* event)
 {
+  auto* gui = Gui::get();
   for (const auto& view : views_) {
-    view->showRenderer(false);
+    gui->unregisterRenderer(view->getRenderer());
   }
 }
 
 void ClockWidget::showEvent(QShowEvent* event)
 {
   for (const auto& view : views_) {
-    view->showRenderer(true);
+    view->updateRendererState();
   }
 }
 
@@ -1394,6 +1419,13 @@ void ClockWidget::saveImage(const std::string& clock_name,
 
   if (!found) {
     logger_->error(utl::GUI, 74, "Unable to find clock: {}", clock_name);
+  }
+}
+
+void ClockWidget::currentClockChanged(int index)
+{
+  for (const auto& view : views_) {
+    view->updateRendererState();
   }
 }
 

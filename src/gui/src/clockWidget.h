@@ -43,6 +43,7 @@
 #include <QMenu>
 #include <QPainterPath>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
@@ -63,6 +64,13 @@ namespace gui {
 
 class ClockNodeGraphicsViewItem;
 class ColorGenerator;
+
+enum class RendererState
+{
+  OnlyShowOnActiveWidget,
+  AlwaysShow,
+  NeverShow
+};
 
 class ClockTreeRenderer : public Renderer
 {
@@ -310,20 +318,19 @@ class ClockTreeScene : public QGraphicsScene
  public:
   ClockTreeScene(QWidget* parent = nullptr);
 
-  bool isRendererEnabled() const { return draw_tree_->isChecked(); }
-  void setRendererEnabled(bool enabled);
-
+  void setRendererState(RendererState state);
   void setClearPathEnable(bool enable) { clear_path_->setEnabled(enable); };
   int getMaxColorDepth() const { return color_depth_->value(); }
 
  signals:
-  void enableRenderer(bool enable);
+  void changeRendererState(RendererState state);
   void fit();
   void clearPath();
   void save();
   void colorDepth(int depth);
 
  private slots:
+  void updateRendererState();
   void triggeredClearPath();
 
  protected:
@@ -332,9 +339,9 @@ class ClockTreeScene : public QGraphicsScene
 
  private:
   QMenu* menu_;
-  QAction* draw_tree_;
   QAction* clear_path_;
   QSpinBox* color_depth_;
+  std::map<RendererState, QRadioButton*> renderer_state_;
 };
 
 class ClockTreeView : public QGraphicsView
@@ -346,22 +353,22 @@ class ClockTreeView : public QGraphicsView
                 const STAGuiInterface* sta,
                 utl::Logger* logger,
                 QWidget* parent = nullptr);
-  ~ClockTreeView();
 
   ClockTree* getClockTree() const { return tree_.get(); }
   const char* getClockName() const;
 
-  void showRenderer(bool show) const;
+  void updateRendererState() const;
+  ClockTreeRenderer* getRenderer() const { return renderer_.get(); }
 
  signals:
   void selected(const Selected& selected);
 
  public slots:
+  void setRendererState(RendererState state);
   void fit();
   void save(const QString& path = "");
 
  private slots:
-  void enableRenderer(bool enable);
   void selectionChanged();
   void highlightTo(odb::dbITerm* term);
   void clearHighlightTo();
@@ -377,6 +384,7 @@ class ClockTreeView : public QGraphicsView
  private:
   std::unique_ptr<ClockTree> tree_;
   std::unique_ptr<ClockTreeRenderer> renderer_;
+  RendererState renderer_state_;
   ClockTreeScene* scene_;
   utl::Logger* logger_;
   bool show_mouse_time_tick_;
@@ -465,6 +473,9 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate();
+
+ private slots:
+  void currentClockChanged(int index);
 
  protected:
   void hideEvent(QHideEvent* event) override;

@@ -1260,12 +1260,30 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
     if (net != nullptr) {
       for (auto* mpin : iterm->getMTerm()->getMPins()) {
         for (auto* box : mpin->getGeometry()) {
-          odb::Rect box_rect = box->getBox();
-          transform.apply(box_rect);
-          auto shape
-              = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
-          shape->setShapeType(Shape::FIXED);
-          pins.push_back(shape);
+          if (box->isVia()) {
+            odb::dbTechVia* tech_via = box->getTechVia();
+            if (tech_via == nullptr) {
+              continue;
+            }
+
+            const odb::dbTransform via_transform(box->getViaXY());
+            for (auto* via_box : tech_via->getBoxes()) {
+              odb::Rect box_rect = via_box->getBox();
+              via_transform.apply(box_rect);
+              transform.apply(box_rect);
+              auto shape = std::make_shared<Shape>(
+                  via_box->getTechLayer(), net, box_rect);
+              shape->setShapeType(Shape::FIXED);
+              pins.push_back(shape);
+            }
+          } else {
+            odb::Rect box_rect = box->getBox();
+            transform.apply(box_rect);
+            auto shape
+                = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+            shape->setShapeType(Shape::FIXED);
+            pins.push_back(shape);
+          }
         }
       }
     }

@@ -394,6 +394,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
     drt_py
     dpo_py
     fin_py
+    par_py
+    rcx_py
+    rmp_py
+    stt_py
   )
 else()
   message(STATUS "Python3 disabled")

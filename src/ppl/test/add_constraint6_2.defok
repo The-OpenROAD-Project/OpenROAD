@@ -266,7 +266,7 @@ PINS 54 ;
     - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 88060 ) N ;
+        + PLACED ( 70 87500 ) N ;
     - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )

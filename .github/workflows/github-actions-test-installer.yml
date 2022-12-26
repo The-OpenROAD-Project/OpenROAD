@@ -1,7 +1,7 @@
 name: Test DependencyInstaller script
 on:
   schedule:
-  - cron: "0 8 * * MON"
+  - cron: "0 8 * * SUN"
   push:
     paths:
       - 'etc/DependencyInstaller.sh'
@@ -18,10 +18,14 @@ on:
 jobs:     
   testInstaller:
     strategy:
+      fail-fast: false
       matrix:
-        os: ["ubuntu20", "ubuntu22", "centos7", "rhel", "debian10", "debian11"]
+        os: ["ubuntu20", "ubuntu22", "centos7", "rhel", "debian10", "debian11", "opensuse"]
         args: ["", "-local"]
         compilers: ["gcc", "clang"]
+        exclude:
+          - os: "opensuse"
+            compilers: "clang"
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -38,9 +42,16 @@ jobs:
           sudo ifconfig docker0 down
           sudo brctl delbr docker0
           sudo service docker restart
-      - name: Runs installer
+      - name: Run installer
         run: |
           ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }} ${{ matrix.args }}
       - name: Build project
         run: |
           ./etc/DockerHelper.sh create -target=builder -os=${{ matrix.os }} -compiler=${{ matrix.compilers }} ${{ matrix.args }}
+      - name: Test build
+        run: |
+          if [[ ${{ matrix.os }} == "centos7" ]]; then
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} /bin/bash -c "source /opt/rh/llvm-toolset-7.0/enable; source /opt/rh/devtoolset-8/enable; build/src/openroad -help;"
+          else
+            docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
+          fi

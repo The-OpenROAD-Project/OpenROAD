@@ -210,4 +210,28 @@ fin::Finale* Design::getFinale()
   return app->getFinale();
 }
 
+par::PartitionMgr* Design::getPartitionMgr()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPartitionMgr();
+}
+
+rcx::Ext* Design::getOpenRCX()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpenRCX();
+}
+
+rmp::Restructure* Design::getRestructure()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getRestructure();
+}
+
+stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSteinerTreeBuilder();
+}
+
 }  // namespace ord

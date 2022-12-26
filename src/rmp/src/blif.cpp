@@ -96,6 +96,11 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
   std::ofstream f(file_name);
 
+  // These always need to be done before writing blif
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
+
   if (f.bad()) {
     logger_->error(RMP, 1, "Cannot open file {}.", file_name);
     return false;
