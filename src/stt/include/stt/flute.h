@@ -93,11 +93,6 @@ Tree flutes_MD(int d,
                const std::vector<DTYPE>& ys,
                const std::vector<int>& s,
                int acc);
-Tree flutes_HD(int d,
-               const std::vector<DTYPE>& xs,
-               const std::vector<DTYPE>& ys,
-               const std::vector<int>& s,
-               int acc);
 Tree flutes_RDP(int d,
                 std::vector<DTYPE> xs,
                 std::vector<DTYPE> ys,
