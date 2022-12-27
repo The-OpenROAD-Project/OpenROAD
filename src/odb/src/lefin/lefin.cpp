@@ -713,7 +713,13 @@ void lefin::layer(lefiLayer* layer)
                     layer->name(),
                     layer->propValue(iii));
   }
-
+  // update wrong way width
+  for (auto rule : l->getTechLayerWidthTableRules()) {
+    if (rule->isWrongDirection()) {
+      l->setWrongWayWidth(*rule->getWidthTable().begin());
+      break;
+    }
+  }
   if (layer->hasWidth())
     l->setWidth(dbdist(layer->width()));
 
@@ -801,6 +807,25 @@ void lefin::layer(lefiLayer* layer)
         cur_rule->setCutLayer4Spacing(tmply);
       } else
         l->setSpacing(dbdist(layer->spacing(j)));
+    }
+  }
+
+  if (layer->hasArraySpacing()) {
+    const bool is_long = layer->hasLongArray();
+    const int cut_spacing = dbdist(layer->cutSpacing());
+    int width = 0;
+    if (layer->hasViaWidth()) {
+      width = dbdist(layer->viaWidth());
+    }
+    for (j = 0; j < layer->numArrayCuts(); j++) {
+      const int array_spacing = dbdist(layer->arraySpacing(j));
+      const int cuts = layer->arrayCuts(j);
+
+      auto* rule = odb::dbTechLayerArraySpacingRule::create(l);
+      rule->setCutSpacing(cut_spacing);
+      rule->setArrayWidth(width);
+      rule->setLongArray(is_long);
+      rule->setCutsArraySpacing(cuts, array_spacing);
     }
   }
 

@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "io/io.h"
+
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -35,7 +37,6 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
-#include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
@@ -643,10 +644,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              endX = endX;
-              endY = endY;
               break;
             case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
@@ -656,13 +653,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
-              beginX = beginX;
-              beginY = beginY;
-              beginExt = beginExt;
-              endX = endX;
-              endY = endY;
-              endExt = endExt;
-
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
@@ -672,10 +662,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
-              left = left;
-              bottom = bottom;
-              right = right;
-              top = top;
               hasRect = true;
               break;
             case odb::dbWireDecoder::ITERM:
@@ -885,7 +871,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
-        // We allow for multuple pins
+        // We allow for multiple pins
         break;
       case odb::dbSigType::TIEOFF:
       case odb::dbSigType::SIGNAL:
@@ -966,7 +952,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
         auto db_pas = db_pin->getPinAccess();
-        for (auto db_aps : db_pas) {
+        for (const auto& db_aps : db_pas) {
           std::unique_ptr<frPinAccess> pa = make_unique<frPinAccess>();
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();
@@ -1801,6 +1787,37 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
+  for (auto rule : layer->getTechLayerMinCutRules()) {
+    if (rule->isAreaValid()) {
+      logger_->warn(
+          DRT,
+          317,
+          "LEF58_MINIMUMCUT AREA is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isSameMetalOverlap()) {
+      logger_->warn(DRT,
+                    318,
+                    "LEF58_MINIMUMCUT SAMEMETALOVERLAP is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isFullyEnclosed()) {
+      logger_->warn(DRT,
+                    319,
+                    "LEF58_MINIMUMCUT FULLYENCLOSED is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58MinimumcutConstraint>(rule);
+    auto rptr = static_cast<frLef58MinimumcutConstraint*>(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58MinimumcutConstraint(rptr);
+  }
 
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
     unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
@@ -1969,26 +1986,39 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
 
+        bool warned = false;
         int i = 0;
         for (auto mpin : _term->getMPins()) {
           auto pinIn = make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
-            string layer = box->getTechLayer()->getName();
-            if (tech_->name2layer.find(layer) == tech_->name2layer.end()) {
+            auto layer = box->getTechLayer();
+            if (!layer) {
+              if (!warned) {
+                logger_->warn(DRT,
+                              323,
+                              "Via(s) in pin {} of {} will be ignored",
+                              _term->getName(),
+                              master->getName());
+                warned = true;
+              }
+              continue;
+            }
+            string layer_name = layer->getName();
+            if (tech_->name2layer.find(layer_name) == tech_->name2layer.end()) {
               auto type = box->getTechLayer()->getType();
               if (type == odb::dbTechLayerType::ROUTING
                   || type == odb::dbTechLayerType::CUT)
                 logger_->warn(DRT,
                               122,
                               "Layer {} is skipped for {}/{}.",
-                              layer,
+                              layer_name,
                               tmpMaster->getName(),
                               _term->getName());
               continue;
             } else
-              layerNum = tech_->name2layer.at(layer)->getLayerNum();
+              layerNum = tech_->name2layer.at(layer_name)->getLayerNum();
 
             frCoord xl = box->xMin();
             frCoord yl = box->yMin();
@@ -2799,23 +2829,31 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
             auto [begin, end] = pathSeg->getPoints();
             frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y());
+              if (segStyle.getBeginExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    begin.x(), begin.y(), segStyle.getBeginExt(), 0);
+              else
+                _wire_encoder.addPoint(begin.x(), begin.y());
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(begin.x(), begin.y(), 0);
+              _wire_encoder.addPoint(begin.x(), begin.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
               _wire_encoder.addPoint(
-                  begin.x(), begin.y(), segStyle.getBeginExt());
+                  begin.x(), begin.y(), segStyle.getBeginExt(), 0);
             }
             if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y());
+              if (segStyle.getEndExt() != layer->getWidth() / 2)
+                _wire_encoder.addPoint(
+                    end.x(), end.y(), segStyle.getEndExt(), 0);
+              else
+                _wire_encoder.addPoint(end.x(), end.y());
             } else if (segStyle.getEndStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), 0);
+              _wire_encoder.addPoint(end.x(), end.y(), 0, 0);
             } else if (segStyle.getBeginStyle()
                        == frEndStyle(frcVariableEndStyle)) {
-              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt());
+              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
             }
             break;
           }

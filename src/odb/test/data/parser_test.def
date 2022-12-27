@@ -231,31 +231,12 @@ VIAS 36 ;
 END VIAS
 
 NONDEFAULTRULES 1 ;
- - matt + HARDSPACING + LAYER metal2 WIDTH 1 SPACING 2 WIREEXT 3
-   + MINCUTS via1 2
-;
  - DEFAULT
-  + LAYER metal1
-      WIDTH 10.1
-      SPACING 2.2
-      WIREEXT 1.1
-  + LAYER metal2
-      WIDTH 10.1
-      SPACING 2.2
-  + LAYER metal3
-      WIDTH 11.1
-      SPACING 3.2
-  + VIA M2_M1_via
-  + VIA M3_M2_via
-  + VIARULE M2_M1
-  + MINCUTS via1 2
-  + PROPERTY strprop "aString" 
-  + PROPERTY intprop 1 
-  + PROPERTY realprop 1.1 
-  + PROPERTY intrangeprop 25
-  + PROPERTY realrangeprop 25.25 ;
- - RULE2
   + HARDSPACING 
+  + LAYER poly
+      WIDTH 10.1
+      SPACING 2.2
+      WIREEXT 1.1
   + LAYER metal1
       WIDTH 10.1
       SPACING 2.2
@@ -266,6 +247,31 @@ NONDEFAULTRULES 1 ;
   + LAYER metal3
       WIDTH 11.1
       SPACING 3.2
+      WIREEXT 3
+  + LAYER metal4
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
+  + LAYER metal5
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
+  + LAYER metal6
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
+  + LAYER metal7
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
+  + LAYER metal8
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
+  + LAYER metal9
+      WIDTH 11.1
+      SPACING 3.2
+      WIREEXT 3
   + VIA M2_M1_via
   + VIA M3_M2_via
   + VIARULE M2_M1
@@ -283,7 +289,7 @@ NETS 24 ;
         NEW    metal3 ( 4 5 ) ( 6 * ) ;        
 - _w1_ ( _d5_ D ) ( _g1_ Y ) ( _d3_ D ) ( _d4_ D ) ;
 - _w2_ ( _g2_ Y ) ( _d6_ D ) ( _d8_ D ) ( _d7_ D ) ;
-- _xout0 ( _d0_ Q ) + NONDEFAULTRULE matt + ROUTED  metal2 ( 0 0 ) M2_M1_via E 
+- _xout0 ( _d0_ Q ) + NONDEFAULTRULE DEFAULT + ROUTED  metal2 ( 0 0 ) M2_M1_via E 
            NEW metal2 TAPER ( 0 0 ) ( * 10 ) ;
 - _xout1 ( _d1_ Q ) + FIXEDBUMP ;
 - _xout2 ( _d2_ Q ) ;

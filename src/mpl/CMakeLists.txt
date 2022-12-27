@@ -67,3 +67,23 @@ target_link_libraries(mpl
 messages(
   TARGET mpl
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          mpl_py
+           NAMESPACE     mpl
+           LANGUAGE      python
+           I_FILE        src/MacroPlacer-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/mpl
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/mpl_py.py
+  )
+
+  target_link_libraries(mpl_py
+    PUBLIC
+      mpl
+      OpenSTA
+      odb
+  )
+
+endif()

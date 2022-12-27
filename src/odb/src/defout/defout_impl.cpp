@@ -786,9 +786,8 @@ void defout_impl::writeGroups(dbBlock* block)
 {
   auto groups = block->getGroups();
   uint cnt = 0;
-  for(auto group : groups)
-  {
-    if(!group->getInsts().empty())
+  for (auto group : groups) {
+    if (!group->getInsts().empty())
       cnt++;
   }
   if (cnt == 0)
@@ -796,7 +795,7 @@ void defout_impl::writeGroups(dbBlock* block)
   fprintf(_out, "GROUPS %u ;\n", cnt);
 
   for (auto group : groups) {
-    if(group->getInsts().empty())
+    if (group->getInsts().empty())
       continue;
     std::string name = group->getName();
     fprintf(_out, "    - %s", name.c_str());

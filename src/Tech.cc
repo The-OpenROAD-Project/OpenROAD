@@ -33,11 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "ord/Tech.h"
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
-#include "ord/Tech.h"
 
 namespace ord {
 
@@ -80,6 +81,12 @@ void Tech::readLiberty(const std::string& file_name)
                    sta->cmdCorner(),
                    sta::MinMaxAll::all(),
                    true /* infer_latches */);
+}
+
+sta::dbSta* Tech::getSta()
+{
+  auto sta = OpenRoad::openRoad()->getSta();
+  return sta;
 }
 
 }  // namespace ord

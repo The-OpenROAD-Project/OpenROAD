@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2012 - 2017, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author$
 //  $Revision$
 //  $Date$
@@ -27,11 +27,11 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
-#   include <unistd.h>
+#include <unistd.h>
 #endif /* not WIN32 */
 #include "lefwWriter.hpp"
 
@@ -42,54 +42,55 @@ FILE* fout;
 
 #define CHECK_STATUS(status) \
   if (status) {              \
-     lefwPrintError(status); \
-     return(status);         \
+    lefwPrintError(status);  \
+    return (status);         \
   }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   char* outfile;
-  int   status;    // return code, if none 0 means error
-  int   lineNum = 0;
+  int status;  // return code, if none 0 means error
+  int lineNum = 0;
 
   // assign the default
   strcpy(defaultOut, "lef.in");
   outfile = defaultOut;
   fout = stdout;
 
-  double *xpath;
-  double *ypath;
-  double *xl;
-  double *yl;
+  double* xpath;
+  double* ypath;
+  double* xl;
+  double* yl;
   double *wthn, *spng;
-  int    *aspc;
-  int    encrypt = 0;
+  int* aspc;
+  int encrypt = 0;
 
 #ifdef WIN32
-    // Enable two-digit exponent format
-    _set_output_format(_TWO_DIGIT_EXPONENT);
+  // Enable two-digit exponent format
+  _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
   argc--;
   argv++;
   while (argc--) {
-     if (strcmp(*argv, "-o") == 0) {   // output filename
-        argv++;
-        argc--;
-        outfile = *argv;
-        if ((fout = fopen(outfile, "w")) == 0) {
-           fprintf(stderr, "ERROR: could not open output file\n");
-           return 2;
-        }
-     } else if (strncmp(*argv,  "-h", 2) == 0) {  // compare with -h[elp]
-        fprintf(stderr, "Usage: lefwrite [-o <filename>] [-e] [-help]\n");
-        return 1;
-     } else if (strncmp(*argv,  "-e", 2) == 0) {  // compare with -e[ncrypt]
-        encrypt = 1; 
-     } else {
-        fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+    if (strcmp(*argv, "-o") == 0) {  // output filename
+      argv++;
+      argc--;
+      outfile = *argv;
+      if ((fout = fopen(outfile, "w")) == 0) {
+        fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
-     }
-     argv++;
+      }
+    } else if (strncmp(*argv, "-h", 2) == 0) {  // compare with -h[elp]
+      fprintf(stderr, "Usage: lefwrite [-o <filename>] [-e] [-help]\n");
+      return 1;
+    } else if (strncmp(*argv, "-e", 2) == 0) {  // compare with -e[ncrypt]
+      encrypt = 1;
+    } else {
+      fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+      return 2;
+    }
+    argv++;
   }
 
   // initalize
@@ -98,16 +99,16 @@ int main(int argc, char** argv) {
 
   // set to write an encrypted file
   if (encrypt) {
-     status = lefwEncrypt();
-     CHECK_STATUS(status);
+    status = lefwEncrypt();
+    CHECK_STATUS(status);
   }
 
   status = lefwVersion(5, 8);
   CHECK_STATUS(status);
-//  status = lefwCaseSensitive("ON");   5.6
-//  CHECK_STATUS(status);
-//  status = lefwNoWireExtensionAtPin("ON");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwCaseSensitive("ON");   5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwNoWireExtensionAtPin("ON");  5.6
+  //  CHECK_STATUS(status);
   status = lefwBusBitChars("<>");
   CHECK_STATUS(status);
   status = lefwDividerChar(":");
@@ -118,8 +119,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwUseMinSpacing("OBS", "OFF");
   CHECK_STATUS(status);
-//  status = lefwUseMinSpacing("PIN", "ON");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwUseMinSpacing("PIN", "ON");  5.6
+  //  CHECK_STATUS(status);
   status = lefwClearanceMeasure("EUCLIDEAN");
   CHECK_STATUS(status);
   // status = lefwClearanceMeasure("MAXXY");  5.6
@@ -196,15 +197,15 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   // LAYERS
-  double *current;
-  double *diffs;
-  double *ratios;
-  double *area;
-  double *width;
+  double* current;
+  double* diffs;
+  double* ratios;
+  double* area;
+  double* width;
 
-  current = (double*)malloc(sizeof(double)*15);
-  diffs = (double*)malloc(sizeof(double)*15);
-  ratios = (double*)malloc(sizeof(double)*15);
+  current = (double*) malloc(sizeof(double) * 15);
+  diffs = (double*) malloc(sizeof(double) * 15);
+  ratios = (double*) malloc(sizeof(double) * 15);
 
   status = lefwStartLayer("POLYS", "MASTERSLICE");
   CHECK_STATUS(status);
@@ -250,16 +251,16 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingArea(34.1);
   CHECK_STATUS(status);
-  xl = (double*)malloc(sizeof(double)*2);
-  yl = (double*)malloc(sizeof(double)*2);
+  xl = (double*) malloc(sizeof(double) * 2);
+  yl = (double*) malloc(sizeof(double) * 2);
   xl[0] = 0.14;
   yl[0] = 0.30;
   xl[1] = 0.08;
   yl[1] = 0.33;
   status = lefwLayerRoutingMinsize(2, xl, yl);
   CHECK_STATUS(status);
-  free((char*)xl);
-  free((char*)yl);
+  free((char*) xl);
+  free((char*) yl);
   status = lefwLayerRoutingWireExtension(0.75);
   CHECK_STATUS(status);
   status = lefwLayerRoutingOffset(0.9);
@@ -282,22 +283,22 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingCapMultiplier(1);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingMinwidth(0.15); 
+  status = lefwLayerRoutingMinwidth(0.15);
   CHECK_STATUS(status);
   status = lefwLayerRoutingAntennaArea(1);
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumAreaRatio(6.7);              // 5.7
+  status = lefwLayerAntennaCumAreaRatio(6.7);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumRoutingPlusCut();            // 5.7
+  status = lefwLayerAntennaCumRoutingPlusCut();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaAreaMinusDiff(100.0);           // 5.7
+  status = lefwLayerAntennaAreaMinusDiff(100.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaGatePlusDiff(2.0);              // 5.7
+  status = lefwLayerAntennaGatePlusDiff(2.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumDiffAreaRatio(1000);         // 5.7
+  status = lefwLayerAntennaCumDiffAreaRatio(1000);  // 5.7
   CHECK_STATUS(status);
-  xl = (double*)malloc(sizeof(double)*5);
-  yl = (double*)malloc(sizeof(double)*5);
+  xl = (double*) malloc(sizeof(double) * 5);
+  yl = (double*) malloc(sizeof(double) * 5);
   xl[0] = 0.0;
   yl[0] = 1.0;
   xl[1] = 0.09999;
@@ -308,11 +309,11 @@ int main(int argc, char** argv) {
   yl[3] = 0.1;
   xl[4] = 100;
   yl[4] = 0.1;
-  status = lefwLayerAntennaAreaDiffReducePwl(5, xl, yl);   // 5.7
+  status = lefwLayerAntennaAreaDiffReducePwl(5, xl, yl);  // 5.7
   CHECK_STATUS(status);
-  free((char*)xl);
-  free((char*)yl);
-  status = lefwLayerAntennaCumDiffAreaRatio(1000);         // 5.7
+  free((char*) xl);
+  free((char*) yl);
+  status = lefwLayerAntennaCumDiffAreaRatio(1000);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerRoutingAntennaLength(1);
   CHECK_STATUS(status);
@@ -398,23 +399,23 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerResistancePerCut(8.0);
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(0.22);                // 5.7
+  status = lefwLayerCutSpacing(0.22);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerCutSpacingAdjacent(3, 0.25, 0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                 // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(1.5);                 // 5.7
+  status = lefwLayerCutSpacing(1.5);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingParallel();            // 5.7
+  status = lefwLayerCutSpacingParallel();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                 // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(1.2);                 // 5.7
+  status = lefwLayerCutSpacing(1.2);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingAdjacent(2, 1.5, 0);   // 5.7
+  status = lefwLayerCutSpacingAdjacent(2, 1.5, 0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                 // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerAntennaModel("OXIDE1");
   CHECK_STATUS(status);
@@ -440,18 +441,18 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerAntennaCumAreaRatio(300);
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumRoutingPlusCut();            // 5.7
+  status = lefwLayerAntennaCumRoutingPlusCut();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaAreaMinusDiff(100.0);           // 5.7
+  status = lefwLayerAntennaAreaMinusDiff(100.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaGatePlusDiff(2.0);              // 5.7
+  status = lefwLayerAntennaGatePlusDiff(2.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaDiffAreaRatio(1000);            // 5.7
+  status = lefwLayerAntennaDiffAreaRatio(1000);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumDiffAreaRatio(5000);         // 5.7
+  status = lefwLayerAntennaCumDiffAreaRatio(5000);  // 5.7
   CHECK_STATUS(status);
-  xl = (double*)malloc(sizeof(double)*5);
-  yl = (double*)malloc(sizeof(double)*5);
+  xl = (double*) malloc(sizeof(double) * 5);
+  yl = (double*) malloc(sizeof(double) * 5);
   xl[0] = 0.0;
   yl[0] = 1.0;
   xl[1] = 0.09999;
@@ -462,10 +463,10 @@ int main(int argc, char** argv) {
   yl[3] = 0.1;
   xl[4] = 100;
   yl[4] = 0.1;
-  status = lefwLayerAntennaAreaDiffReducePwl(5, xl, yl);   // 5.7
+  status = lefwLayerAntennaAreaDiffReducePwl(5, xl, yl);  // 5.7
   CHECK_STATUS(status);
-  free((char*)xl);
-  free((char*)yl);
+  free((char*) xl);
+  free((char*) yl);
   diffs[0] = 1;
   ratios[0] = 4;
   diffs[1] = 2;
@@ -515,21 +516,21 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingSpacing(0.6);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(1.2);                    // 5.7
+  status = lefwLayerRoutingSpacing(1.2);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEndOfLine(1.3, 0.6);      // 5.7
+  status = lefwLayerRoutingSpacingEndOfLine(1.3, 0.6);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(1.3);                    // 5.7
+  status = lefwLayerRoutingSpacing(1.3);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEndOfLine(1.4, 0.7);      // 5.7
+  status = lefwLayerRoutingSpacingEndOfLine(1.4, 0.7);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEOLParallel(1.1, 0.5, 1); // 5.7
+  status = lefwLayerRoutingSpacingEOLParallel(1.1, 0.5, 1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(1.4);                    // 5.7
+  status = lefwLayerRoutingSpacing(1.4);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEndOfLine(1.5, 0.8);      // 5.7
+  status = lefwLayerRoutingSpacingEndOfLine(1.5, 0.8);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEOLParallel(1.2, 0.6, 0); // 5.7
+  status = lefwLayerRoutingSpacingEOLParallel(1.2, 0.6, 0);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerRoutingOffsetXYDistance(0.9, 0.7);
   CHECK_STATUS(status);
@@ -599,11 +600,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwStartLayer("CA", "CUT");
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(0.15);                // 5.7
+  status = lefwLayerCutSpacing(0.15);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingCenterToCenter();      // 5.7
+  status = lefwLayerCutSpacingCenterToCenter();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                 // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerEnclosure("BELOW", 0.3, 0.01, 0);
   CHECK_STATUS(status);
@@ -755,14 +756,14 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutineEndSpacingtable();
   CHECK_STATUS(status);
-  free((char*)current);
-  free((char*)diffs);
-  free((char*)ratios);
-  status = lefwLayerAntennaGatePlusDiff(2.0);      // 5.7 
+  free((char*) current);
+  free((char*) diffs);
+  free((char*) ratios);
+  status = lefwLayerAntennaGatePlusDiff(2.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaDiffAreaRatio(1000);    // 5.7
+  status = lefwLayerAntennaDiffAreaRatio(1000);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerAntennaCumDiffAreaRatio(5000); // 5.7
+  status = lefwLayerAntennaCumDiffAreaRatio(5000);  // 5.7
   CHECK_STATUS(status);
   status = lefwEndLayerRouting("M1");
   CHECK_STATUS(status);
@@ -798,13 +799,13 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingSpacingLengthThreshold(1.9, 0, 0);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(1.0);              // 5.7
+  status = lefwLayerRoutingSpacing(1.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingSameNet(1);         // 5.7
+  status = lefwLayerRoutingSpacingSameNet(1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(1.1);              // 5.7
+  status = lefwLayerRoutingSpacing(1.1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingSameNet(0);         // 5.7
+  status = lefwLayerRoutingSpacingSameNet(0);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerRoutingResistance("0.0608");
   CHECK_STATUS(status);
@@ -837,8 +838,8 @@ int main(int argc, char** argv) {
   status = lefwEndLayerRouting("M3");
   CHECK_STATUS(status);
 
-  area = (double*)malloc(sizeof(double)*3);
-  width = (double*)malloc(sizeof(double)*3);
+  area = (double*) malloc(sizeof(double) * 3);
+  width = (double*) malloc(sizeof(double) * 3);
 
   status = lefwStartLayerRouting("M4");
   CHECK_STATUS(status);
@@ -858,11 +859,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingMinimumcutLengthWithin(20.0, 5.0);
   CHECK_STATUS(status);
-  area[0]  = 0.40;
+  area[0] = 0.40;
   width[0] = 0;
-  area[1]  = 0.40;
+  area[1] = 0.40;
   width[1] = 0.15;
-  area[2]  = 0.80;
+  area[2] = 0.80;
   width[2] = 0.50;
   status = lefwLayerRoutingMinenclosedarea(3, area, width);
   CHECK_STATUS(status);
@@ -888,12 +889,12 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwLayerRoutingMinstepWithOptions(0.04, "STEP", 0);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingMinstepMaxEdges(1.0, 2);    // 5.7
+  status = lefwLayerRoutingMinstepMaxEdges(1.0, 2);  // 5.7
   CHECK_STATUS(status);
   status = lefwEndLayerRouting("M4");
   CHECK_STATUS(status);
-  free((char*)area);
-  free((char*)width);
+  free((char*) area);
+  free((char*) width);
 
   status = lefwStartLayer("implant1", "IMPLANT");
   CHECK_STATUS(status);
@@ -965,66 +966,66 @@ int main(int argc, char** argv) {
   status = lefwEndLayerRouting("MET2");
   CHECK_STATUS(status);
 
-  status = lefwStartLayer("via34", "CUT");                 // 5.7
+  status = lefwStartLayer("via34", "CUT");  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerWidth(0.25);                           // 5.7
+  status = lefwLayerWidth(0.25);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(0.1);                       // 5.7
+  status = lefwLayerCutSpacing(0.1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingCenterToCenter();            // 5.7
+  status = lefwLayerCutSpacingCenterToCenter();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                       // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosure(0, .05, .01, 0);             // 5.7
+  status = lefwLayerEnclosure(0, .05, .01, 0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosureLength(0, .05, 0, 0.7);       // 5.7
+  status = lefwLayerEnclosureLength(0, .05, 0, 0.7);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosure("BELOW", .07, .07, 1.0);     // 5.7
+  status = lefwLayerEnclosure("BELOW", .07, .07, 1.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosure("ABOVE", .09, .09, 1.0);     // 5.7
+  status = lefwLayerEnclosure("ABOVE", .09, .09, 1.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosureWidth(0, .03, .03, 1.0, 0.2); // 5.7
+  status = lefwLayerEnclosureWidth(0, .03, .03, 1.0, 0.2);  // 5.7
   CHECK_STATUS(status);
-  status = lefwEndLayer("via34");                          // 5.7
-  CHECK_STATUS(status);
-
-  status = lefwStartLayer("cut23", "CUT");                 // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacing(0.20);                      // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacingSameNet();                   // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacingLayer("cut12", 1);           // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                       // 5.7
+  status = lefwEndLayer("via34");  // 5.7
   CHECK_STATUS(status);
 
-  status = lefwLayerCutSpacing(0.30);                      // 5.7
+  status = lefwStartLayer("cut23", "CUT");  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingCenterToCenter();            // 5.7
+  status = lefwLayerCutSpacing(0.20);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingSameNet();                   // 5.7
+  status = lefwLayerCutSpacingSameNet();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingArea(0.02);                  // 5.7
+  status = lefwLayerCutSpacingLayer("cut12", 1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                       // 5.7
-  CHECK_STATUS(status);
-
-  status = lefwLayerCutSpacing(0.40);                      // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacingArea(0.5);                   // 5.7
-  CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                       // 5.7
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
 
-  status = lefwLayerCutSpacing(0.10);                      // 5.7
+  status = lefwLayerCutSpacing(0.30);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerCutSpacingEnd();                       // 5.7
+  status = lefwLayerCutSpacingCenterToCenter();  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingSameNet();  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingArea(0.02);  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
 
-  wthn = (double*)malloc(sizeof(double)*3);                // 5.7
-  spng = (double*)malloc(sizeof(double)*3);
-  aspc = (int*)malloc(sizeof(int)*3);
+  status = lefwLayerCutSpacing(0.40);  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingArea(0.5);  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingEnd();  // 5.7
+  CHECK_STATUS(status);
+
+  status = lefwLayerCutSpacing(0.10);  // 5.7
+  CHECK_STATUS(status);
+  status = lefwLayerCutSpacingEnd();  // 5.7
+  CHECK_STATUS(status);
+
+  wthn = (double*) malloc(sizeof(double) * 3);  // 5.7
+  spng = (double*) malloc(sizeof(double) * 3);
+  aspc = (int*) malloc(sizeof(int) * 3);
   wthn[0] = 0.15;
   spng[0] = 0.11;
   wthn[1] = 0.13;
@@ -1046,42 +1047,42 @@ int main(int argc, char** argv) {
   spng[2] = 2.0;
   status = lefwLayerArraySpacing(1, 2.0, 0.2, 3, aspc, spng);
   CHECK_STATUS(status);
-  free((char*)wthn);
-  free((char*)spng);
-  free((char*)aspc);
+  free((char*) wthn);
+  free((char*) spng);
+  free((char*) aspc);
   status = lefwEndLayer("cut23");
   CHECK_STATUS(status);
 
-  status = lefwStartLayerRouting("cut24");                 // 5.7
+  status = lefwStartLayerRouting("cut24");  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRouting("HORIZONTAL", 1);              // 5.7
+  status = lefwLayerRouting("HORIZONTAL", 1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingPitch(1.2);                     // 5.7
+  status = lefwLayerRoutingPitch(1.2);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(0.10);                  // 5.7
+  status = lefwLayerRoutingSpacing(0.10);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(0.12);                  // 5.7
+  status = lefwLayerRoutingSpacing(0.12);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingNotchLength(0.15);       // 5.7
+  status = lefwLayerRoutingSpacingNotchLength(0.15);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacing(0.14);                  // 5.7
+  status = lefwLayerRoutingSpacing(0.14);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingSpacingEndOfNotchWidth(0.15, 0.16, 0.08); // 5.7
+  status = lefwLayerRoutingSpacingEndOfNotchWidth(0.15, 0.16, 0.08);  // 5.7
   CHECK_STATUS(status);
-  status = lefwEndLayerRouting("cut24");                   // 5.7
+  status = lefwEndLayerRouting("cut24");  // 5.7
   CHECK_STATUS(status);
 
-  status = lefwStartLayerRouting("cut25");                 // 5.7
+  status = lefwStartLayerRouting("cut25");  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingPitch(1.2);                     // 5.7
+  status = lefwLayerRoutingPitch(1.2);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRouting("HORIZONTAL", 1);              // 5.7
+  status = lefwLayerRouting("HORIZONTAL", 1);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingWireExtension(7);               // 5.7
+  status = lefwLayerRoutingWireExtension(7);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerRoutingStartSpacingtableTwoWidths();   // 5.7
+  status = lefwLayerRoutingStartSpacingtableTwoWidths();  // 5.7
   CHECK_STATUS(status);
-  wthn = (double*)malloc(sizeof(double)*4);                // 5.7
+  wthn = (double*) malloc(sizeof(double) * 4);  // 5.7
   wthn[0] = 0.15;
   wthn[1] = 0.20;
   wthn[2] = 0.50;
@@ -1092,24 +1093,27 @@ int main(int argc, char** argv) {
   wthn[1] = 0.25;
   wthn[2] = 0.50;
   wthn[3] = 1.00;
-  status = lefwLayerRoutingSpacingtableTwoWidthsWidth(0.25, 0.1, 4, wthn);// 5.7
+  status
+      = lefwLayerRoutingSpacingtableTwoWidthsWidth(0.25, 0.1, 4, wthn);  // 5.7
   CHECK_STATUS(status);
   wthn[0] = 0.50;
   wthn[1] = 0.50;
   wthn[2] = 0.60;
   wthn[3] = 1.00;
-  status = lefwLayerRoutingSpacingtableTwoWidthsWidth(1.5, 1.5, 4, wthn);// 5.7
+  status
+      = lefwLayerRoutingSpacingtableTwoWidthsWidth(1.5, 1.5, 4, wthn);  // 5.7
   CHECK_STATUS(status);
   wthn[0] = 1.00;
   wthn[1] = 1.00;
   wthn[2] = 1.00;
   wthn[3] = 1.20;
-  status = lefwLayerRoutingSpacingtableTwoWidthsWidth(3.0, 3.0, 4, wthn);// 5.7
+  status
+      = lefwLayerRoutingSpacingtableTwoWidthsWidth(3.0, 3.0, 4, wthn);  // 5.7
   CHECK_STATUS(status);
   free(wthn);
   status = lefwLayerRoutineEndSpacingtable();
   CHECK_STATUS(status);
-  status = lefwEndLayerRouting("cut25");                   // 5.7
+  status = lefwEndLayerRouting("cut25");  // 5.7
   CHECK_STATUS(status);
 
   // MAXVIASTACK
@@ -1165,14 +1169,14 @@ int main(int argc, char** argv) {
   status = lefwEndVia("M2_M3_PWR");
   CHECK_STATUS(status);
 
-  xl = (double*)malloc(sizeof(double)*6);
-  yl = (double*)malloc(sizeof(double)*6);
+  xl = (double*) malloc(sizeof(double) * 6);
+  yl = (double*) malloc(sizeof(double) * 6);
   status = lefwStartVia("IN1X", 0);
   CHECK_STATUS(status);
-//  status = lefwViaTopofstackonly();  5.6
-//  CHECK_STATUS(status);
-//  status = lefwViaForeign("IN1X", 0, 0, -1);  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwViaTopofstackonly();  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwViaForeign("IN1X", 0, 0, -1);  5.6
+  //  CHECK_STATUS(status);
   status = lefwViaLayer("metal2");
   CHECK_STATUS(status);
   xl[0] = -2.1;
@@ -1238,8 +1242,18 @@ int main(int argc, char** argv) {
 
   status = lefwStartVia("myBlockVia", NULL);
   CHECK_STATUS(status);
-  status = lefwViaViarule("DEFAULT", 0.1, 0.1, "metal1", "via12", "metal2",
-                          0.1, 0.1, 0.05, 0.01, 0.01, 0.05);
+  status = lefwViaViarule("DEFAULT",
+                          0.1,
+                          0.1,
+                          "metal1",
+                          "via12",
+                          "metal2",
+                          0.1,
+                          0.1,
+                          0.05,
+                          0.01,
+                          0.01,
+                          0.05);
   CHECK_STATUS(status);
   status = lefwViaViaruleRowCol(1, 2);
   CHECK_STATUS(status);
@@ -1254,33 +1268,33 @@ int main(int argc, char** argv) {
 
   status = lefwStartVia("myVia23", NULL);
   CHECK_STATUS(status);
-  status = lefwViaLayer("metal2"); 
+  status = lefwViaLayer("metal2");
   CHECK_STATUS(status);
   status = lefwViaLayerPolygon(6, xl, yl);
   CHECK_STATUS(status);
-  status = lefwViaLayer("cut23"); 
+  status = lefwViaLayer("cut23");
   CHECK_STATUS(status);
   status = lefwViaLayerRect(-0.4, -0.4, 0.4, 0.4);
   CHECK_STATUS(status);
-  status = lefwViaLayer("metal3"); 
+  status = lefwViaLayer("metal3");
   CHECK_STATUS(status);
   status = lefwViaLayerPolygon(5, xl, yl);
   CHECK_STATUS(status);
   status = lefwEndVia("myVia23");
   CHECK_STATUS(status);
 
-  free((char*)xl);
-  free((char*)yl);
+  free((char*) xl);
+  free((char*) yl);
 
   // VIARULE
   status = lefwStartViaRule("VIALIST12");
   CHECK_STATUS(status);
   lefwAddComment("Break up the old lefwViaRule into 2 routines");
   lefwAddComment("lefwViaRuleLayer and lefwViaRuleVia");
-//  status = lefwViaRuleLayer("M1", "VERTICAL", 9.0, 9.6, 4.5, 0);  5.6
-//  CHECK_STATUS(status);
-//  status = lefwViaRuleLayer("M2", "HORIZONTAL", 3.0, 3.0, 0, 0);  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwViaRuleLayer("M1", "VERTICAL", 9.0, 9.6, 4.5, 0);  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwViaRuleLayer("M2", "HORIZONTAL", 3.0, 3.0, 0, 0);  5.6
+  //  CHECK_STATUS(status);
   status = lefwViaRuleLayer("M1", NULL, 9.0, 9.6, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleLayer("M2", NULL, 3.0, 3.0, 0, 0);
@@ -1302,10 +1316,10 @@ int main(int argc, char** argv) {
   lefwAddComment("lefwViaRuleGenLayer3, and lefwEndViaRuleGen");
   status = lefwStartViaRuleGen("VIAGEN12");
   CHECK_STATUS(status);
-//  status = lefwViaRuleGenLayer("M1", "VERTICAL", 0.1, 19, 1.4, 0);  5.6
-//  CHECK_STATUS(status);
-//  status = lefwViaRuleGenLayer("M2", "HORIZONTAL", 0, 0, 1.4, 0);  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwViaRuleGenLayer("M1", "VERTICAL", 0.1, 19, 1.4, 0);  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwViaRuleGenLayer("M2", "HORIZONTAL", 0, 0, 1.4, 0);  5.6
+  //  CHECK_STATUS(status);
   status = lefwViaRuleGenLayer("M1", NULL, 0.1, 19, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleGenLayer("M2", NULL, 0, 0, 0, 0);
@@ -1315,7 +1329,7 @@ int main(int argc, char** argv) {
   status = lefwEndViaRuleGen("VIAGEN12");
   CHECK_STATUS(status);
 
-  // VIARULE with GENERATE & ENCLOSURE & DEFAULT	
+  // VIARULE with GENERATE & ENCLOSURE & DEFAULT
   status = lefwStartViaRuleGen("via12");
   CHECK_STATUS(status);
   status = lefwViaRuleGenDefault();
@@ -1324,22 +1338,23 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwViaRuleGenLayerEnclosure("m2", 0.05, 0.005, 1.0, 100.0);
   CHECK_STATUS(status);
-  status = lefwViaRuleGenLayer3("cut12", -0.07, -0.07, 0.07, 0.07, 0.16, 0.16, 0);
+  status
+      = lefwViaRuleGenLayer3("cut12", -0.07, -0.07, 0.07, 0.07, 0.16, 0.16, 0);
   CHECK_STATUS(status);
   status = lefwEndViaRuleGen("via12");
   CHECK_STATUS(status);
 
   // NONDEFAULTRULE
-  status = lefwStartNonDefaultRule("RULE1"); 
+  status = lefwStartNonDefaultRule("RULE1");
   CHECK_STATUS(status);
-  status = lefwNonDefaultRuleHardspacing(); 
+  status = lefwNonDefaultRuleHardspacing();
   CHECK_STATUS(status);
-//  status = lefwNonDefaultRuleLayer("RX", 10.0, 2.2, 6, 6.5, 6.5, 6.5);  5.6
-//  CHECK_STATUS(status);
-//  status = lefwNonDefaultRuleLayer("PC", 10.0, 2.2, 0, 0, 6.5, 0);  5.6
-//  CHECK_STATUS(status);
-//  status = lefwNonDefaultRuleLayer("M1", 10.0, 2.2, 0, 6.5, 0, 0);  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwNonDefaultRuleLayer("RX", 10.0, 2.2, 6, 6.5, 6.5, 6.5);  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwNonDefaultRuleLayer("PC", 10.0, 2.2, 0, 0, 6.5, 0);  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwNonDefaultRuleLayer("M1", 10.0, 2.2, 0, 6.5, 0, 0);  5.6
+  //  CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("RX", 10.0, 2.2, 6, 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("PC", 10.0, 2.2, 0, 0, 0, 0);
@@ -1350,8 +1365,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwViaResistance(0.2);
   CHECK_STATUS(status);
-//  status = lefwViaForeignStr("IN1X", 0, 0, "N");  5.6
-// CHECK_STATUS(status);
+  //  status = lefwViaForeignStr("IN1X", 0, 0, "N");  5.6
+  // CHECK_STATUS(status);
   status = lefwViaLayer("RX");
   CHECK_STATUS(status);
   status = lefwViaLayerRect(-3, -3, 3, 3);
@@ -1372,18 +1387,18 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwEndSpacing();
   CHECK_STATUS(status);
-  status = lefwEndNonDefaultRule("RULE1"); 
+  status = lefwEndNonDefaultRule("RULE1");
   CHECK_STATUS(status);
-  status = lefwStartNonDefaultRule("wide1_5x"); 
+  status = lefwStartNonDefaultRule("wide1_5x");
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("fw", 4.8, 4.8, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleStartVia("nd1VIARX0", "DEFAULT");
   CHECK_STATUS(status);
-//  status = lefwViaTopofstackonly();  5.6
-//  CHECK_STATUS(status);
-//  status = lefwViaForeign("IN1X", 0, 0, -1);  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwViaTopofstackonly();  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwViaForeign("IN1X", 0, 0, -1);  5.6
+  //  CHECK_STATUS(status);
   status = lefwViaResistance(0.2);
   CHECK_STATUS(status);
   status = lefwViaLayer("RX");
@@ -1410,7 +1425,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleUseViaRule("viaRule23_fixed_analog_via");
   CHECK_STATUS(status);
-  status = lefwEndNonDefaultRule("wide1_5x"); 
+  status = lefwEndNonDefaultRule("wide1_5x");
   CHECK_STATUS(status);
 
   // UNIVERSALNOISEMARGIN
@@ -1436,7 +1451,7 @@ int main(int argc, char** argv) {
   holder[0] = 3;
   status = lefwOutputResistance(1, holder);
   CHECK_STATUS(status);
-  holder[0] = 10; 
+  holder[0] = 10;
   status = lefwVictims(25, 1, holder);
   CHECK_STATUS(status);
   status = lefwEndNoiseTable();
@@ -1452,7 +1467,7 @@ int main(int argc, char** argv) {
   holder[0] = 3;
   status = lefwOutputResistance(1, holder); // Share the same functions with
   CHECK_STATUS(status);                     // noisetable
-  holder[0] = 10.5; 
+  holder[0] = 10.5;
   status = lefwVictims(25, 1, holder);
   CHECK_STATUS(status);
   status = lefwEndCorrectTable();
@@ -1492,16 +1507,13 @@ int main(int argc, char** argv) {
   /* obsolete in 5.4
   status = lefwStartIrdrop();
   CHECK_STATUS(status);
-  status = lefwIrdropTable("DRESHI", "0.0001 -0.7 0.001 -0.8 0.01 -0.9 0.1 -1.0");
+  status = lefwIrdropTable("DRESHI", "0.0001 -0.7 0.001 -0.8 0.01 -0.9 0.1
+  -1.0"); CHECK_STATUS(status); status = lefwIrdropTable("DRESLO", "0.0001 -1.7
+  0.001 -1.6 0.01 -1.5 0.1 -1.3"); CHECK_STATUS(status); status =
+  lefwIrdropTable("DNORESHI", "0.0001 -0.6 0.001 -0.7 0.01 -0.9 0.1 -1.1");
   CHECK_STATUS(status);
-  status = lefwIrdropTable("DRESLO", "0.0001 -1.7 0.001 -1.6 0.01 -1.5 0.1 -1.3");
-  CHECK_STATUS(status);
-  status = lefwIrdropTable("DNORESHI", "0.0001 -0.6 0.001 -0.7 0.01 -0.9 0.1 -1.1");
-  CHECK_STATUS(status);
-  status = lefwIrdropTable("DNORESLO", "0.0001 -1.5 0.001 -1.5 0.01 -1.4 0.1 -1.4");
-  CHECK_STATUS(status);
-  status = lefwEndIrdrop();
-  CHECK_STATUS(status);
+  status = lefwIrdropTable("DNORESLO", "0.0001 -1.5 0.001 -1.5 0.01 -1.4 0.1
+  -1.4"); CHECK_STATUS(status); status = lefwEndIrdrop(); CHECK_STATUS(status);
   */
 
   // SITE
@@ -1531,11 +1543,11 @@ int main(int argc, char** argv) {
   // ARRAY
   status = lefwStartArray("M7E4XXX");
   CHECK_STATUS(status);
-  status = lefwArraySite("CORE", -5021.450, -4998.000, 0, 14346, 595, 0.700,
-                         16.800);
+  status = lefwArraySite(
+      "CORE", -5021.450, -4998.000, 0, 14346, 595, 0.700, 16.800);
   CHECK_STATUS(status);
-  status = lefwArraySiteStr("CORE", -5021.450, -4998.600, "FS", 14346, 595,
-                            0.700, 16.800);
+  status = lefwArraySiteStr(
+      "CORE", -5021.450, -4998.600, "FS", 14346, 595, 0.700, 16.800);
   CHECK_STATUS(status);
   status = lefwArraySite("IO", 6148.800, 5800.000, 3, 1, 1, 0.000, 0.000);
   CHECK_STATUS(status);
@@ -1543,19 +1555,20 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwArraySite("COVER", -7315.0, -7315.000, 1, 1, 1, 0.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArraySiteStr("COVER", 7315.0, 7315.000, "FN", 1, 1, 0.000, 0.000);
+  status
+      = lefwArraySiteStr("COVER", 7315.0, 7315.000, "FN", 1, 1, 0.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArrayCanplace("COVER", -7315.000, -7315.000, 0, 1, 1, 0.000,
-                             0.000);
+  status
+      = lefwArrayCanplace("COVER", -7315.000, -7315.000, 0, 1, 1, 0.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArrayCanplaceStr("COVER", -7250.000, -7250.000, "N", 5, 1,
-                                40.000, 0.000);
+  status = lefwArrayCanplaceStr(
+      "COVER", -7250.000, -7250.000, "N", 5, 1, 40.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArrayCannotoccupy("CORE", -5021.450, -4989.600, 6, 100, 595,
-                                 0.700, 16.800);
+  status = lefwArrayCannotoccupy(
+      "CORE", -5021.450, -4989.600, 6, 100, 595, 0.700, 16.800);
   CHECK_STATUS(status);
-  status = lefwArrayCannotoccupyStr("CORE", -5021.450, -4989.600, "N", 100, 595,
-                                 0.700, 16.800);
+  status = lefwArrayCannotoccupyStr(
+      "CORE", -5021.450, -4989.600, "N", 100, 595, 0.700, 16.800);
   CHECK_STATUS(status);
   status = lefwArrayTracks("X", -6148.800, 17569, 0.700, "RX");
   CHECK_STATUS(status);
@@ -1563,23 +1576,37 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwStartArrayFloorplan("100%");
   CHECK_STATUS(status);
-  status = lefwArrayFloorplan("CANPLACE", "COVER", -7315.000, -7315.000, 1, 1,
-                              1, 0.000, 0.000);
+  status = lefwArrayFloorplan(
+      "CANPLACE", "COVER", -7315.000, -7315.000, 1, 1, 1, 0.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArrayFloorplanStr("CANPLACE", "COVER", -7250.000, -7250.000,
-                                 "N", 5, 1, 40.000, 0.000);
+  status = lefwArrayFloorplanStr(
+      "CANPLACE", "COVER", -7250.000, -7250.000, "N", 5, 1, 40.000, 0.000);
   CHECK_STATUS(status);
-  status = lefwArrayFloorplan("CANPLACE", "CORE", -5021.000, -4998.000, 1,
-                              14346, 595, 0.700, 16.800);
+  status = lefwArrayFloorplan(
+      "CANPLACE", "CORE", -5021.000, -4998.000, 1, 14346, 595, 0.700, 16.800);
   CHECK_STATUS(status);
-  status = lefwArrayFloorplanStr("CANPLACE", "CORE", -5021.000, -4998.000, "FS",
-                                 100, 595, 0.700, 16.800);
+  status = lefwArrayFloorplanStr(
+      "CANPLACE", "CORE", -5021.000, -4998.000, "FS", 100, 595, 0.700, 16.800);
   CHECK_STATUS(status);
-  status = lefwArrayFloorplan("CANNOTOCCUPY", "CORE", -5021.000, -4998.000, 7,
-                              14346, 595, 0.700, 16.800);
+  status = lefwArrayFloorplan("CANNOTOCCUPY",
+                              "CORE",
+                              -5021.000,
+                              -4998.000,
+                              7,
+                              14346,
+                              595,
+                              0.700,
+                              16.800);
   CHECK_STATUS(status);
-  status = lefwArrayFloorplanStr("CANNOTOCCUPY", "CORE", -5021.000, -4998.000,
-                                 "E", 100, 595, 0.700, 16.800);
+  status = lefwArrayFloorplanStr("CANNOTOCCUPY",
+                                 "CORE",
+                                 -5021.000,
+                                 -4998.000,
+                                 "E",
+                                 100,
+                                 595,
+                                 0.700,
+                                 16.800);
   CHECK_STATUS(status);
   status = lefwEndArrayFloorplan("100%");
   CHECK_STATUS(status);
@@ -1597,8 +1624,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroFixedMask();
   CHECK_STATUS(status);
-//  status = lefwMacroSource("USER");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwMacroSource("USER");  5.6
+  //  CHECK_STATUS(status);
   status = lefwMacroOrigin(0.9, 0.9);
   CHECK_STATUS(status);
   status = lefwMacroSize(10.8, 28.8);
@@ -1619,8 +1646,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
-//  status = lefwMacroPinLEQ("A");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwMacroPinLEQ("A");  5.6
+  //  CHECK_STATUS(status);
   status = lefwMacroPinSupplySensitivity("vddpin1");
   CHECK_STATUS(status);
   status = lefwMacroPinNetExpr("power1 VDD1");
@@ -1630,13 +1657,13 @@ int main(int argc, char** argv) {
   // MACRO - PIN
   status = lefwStartMacroPinPort(NULL);
   CHECK_STATUS(status);
-//  status = lefwMacroPinForeign("GROUND", 4, 7, 6);  5.6
-//  CHECK_STATUS(status);
-//  status = lefwMacroPinForeignStr("VSS", 4, 7, "W");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwMacroPinForeign("GROUND", 4, 7, 6);  5.6
+  //  CHECK_STATUS(status);
+  //  status = lefwMacroPinForeignStr("VSS", 4, 7, "W");  5.6
+  //  CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0.05);
   CHECK_STATUS(status);
-  status = lefwMacroPinPortLayerRect(-0.9, 3, 9.9, 6, 0, 0, 0, 0, 3); 
+  status = lefwMacroPinPortLayerRect(-0.9, 3, 9.9, 6, 0, 0, 0, 0, 3);
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
@@ -1646,11 +1673,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwRealProperty("realProp", 24.25);
   CHECK_STATUS(status);
-/* WMD - Comment them out due to mix 5.3 & 5.4 syntax
-  status = lefwMacroPinAntennasize(1, "M1");
-  CHECK_STATUS(status);
-  status = lefwMacroPinAntennasize(2, "M2");
-*/
+  /* WMD - Comment them out due to mix 5.3 & 5.4 syntax
+    status = lefwMacroPinAntennasize(1, "M1");
+    CHECK_STATUS(status);
+    status = lefwMacroPinAntennasize(2, "M2");
+  */
   status = lefwMacroPinAntennaModel("OXIDE1");
   CHECK_STATUS(status);
   status = lefwEndMacroPin("GND");
@@ -1661,7 +1688,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroPinUse("POWER");
   CHECK_STATUS(status);
-  status = lefwMacroPinShape("ABUTMENT"); 
+  status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
   status = lefwMacroPinNetExpr("power2 VDD2");
   CHECK_STATUS(status);
@@ -1682,8 +1709,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  xl = (double*)malloc(sizeof(double)*5);
-  yl = (double*)malloc(sizeof(double)*5);
+  xl = (double*) malloc(sizeof(double) * 5);
+  yl = (double*) malloc(sizeof(double) * 5);
   xl[0] = 30.8;
   yl[0] = 30.5;
   xl[1] = 42;
@@ -1704,21 +1731,21 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  free((char*)xl);
-  free((char*)yl);
-/* WMD - Comment them out due to mix 5.3 & 5.4 syntax
-  status = lefwMacroPinAntennaMetalArea(3, "M1");
-  CHECK_STATUS(status);
-  status = lefwMacroPinAntennaMetalArea(4, "M2");
-  CHECK_STATUS(status);
-  status = lefwMacroPinAntennaMetalLength(5, "M1");
-  CHECK_STATUS(status);
-  status = lefwMacroPinAntennaMetalLength(6, "M2");
-  CHECK_STATUS(status);
-*/
+  free((char*) xl);
+  free((char*) yl);
+  /* WMD - Comment them out due to mix 5.3 & 5.4 syntax
+    status = lefwMacroPinAntennaMetalArea(3, "M1");
+    CHECK_STATUS(status);
+    status = lefwMacroPinAntennaMetalArea(4, "M2");
+    CHECK_STATUS(status);
+    status = lefwMacroPinAntennaMetalLength(5, "M1");
+    CHECK_STATUS(status);
+    status = lefwMacroPinAntennaMetalLength(6, "M2");
+    CHECK_STATUS(status);
+  */
   status = lefwEndMacroPin("VDD");
   CHECK_STATUS(status);
-  status = lefwStartMacroPin("PA3"); 
+  status = lefwStartMacroPin("PA3");
   CHECK_STATUS(status);
   status = lefwMacroPinDirection("INPUT");
   CHECK_STATUS(status);
@@ -1769,7 +1796,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayerRect(-0.45, 12.15, 0.45, 13.05, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwEndMacroPinPort(); 
+  status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
   status = lefwStartMacroPinPort(NULL);
   CHECK_STATUS(status);
@@ -1785,7 +1812,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwEndMacroPin("PA3"); 
+  status = lefwEndMacroPin("PA3");
   CHECK_STATUS(status);
   // MACRO - OBS
   status = lefwStartMacroObs();
@@ -1818,8 +1845,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroEEQ("CHK1");
   CHECK_STATUS(status);
-//  status = lefwMacroLEQ("CHK2");  5.6
-//  CHECK_STATUS(status);
+  //  status = lefwMacroLEQ("CHK2");  5.6
+  //  CHECK_STATUS(status);
   status = lefwMacroClass("CORE", "SPACER");
   CHECK_STATUS(status);
   status = lefwMacroForeign("INVS", 0, 0, -1);
@@ -1882,8 +1909,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayerWidth(5.6);
   CHECK_STATUS(status);
-  xpath = (double*)malloc(sizeof(double)*7);
-  ypath = (double*)malloc(sizeof(double)*7);
+  xpath = (double*) malloc(sizeof(double) * 7);
+  ypath = (double*) malloc(sizeof(double) * 7);
   xpath[0] = 30.8;
   ypath[0] = 9;
   xpath[1] = 42;
@@ -1902,9 +1929,9 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwEndMacroPin("Z"); 
-  free((char*)xpath);
-  free((char*)ypath);
+  status = lefwEndMacroPin("Z");
+  free((char*) xpath);
+  free((char*) ypath);
   // MACRO - TIMING
   /* obsolete in 5.4
   status = lefwStartMacroTiming();
@@ -1945,8 +1972,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = lefwMacroObsLayerRect(24.1, 1.5, 43.5, 208.5, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  xpath = (double*)malloc(sizeof(double)*2);
-  ypath = (double*)malloc(sizeof(double)*2);
+  xpath = (double*) malloc(sizeof(double) * 2);
+  ypath = (double*) malloc(sizeof(double) * 2);
   xpath[0] = 8.4;
   ypath[0] = 3;
   xpath[1] = 8.4;
@@ -1965,10 +1992,10 @@ int main(int argc, char** argv) {
   ypath[1] = 123;
   status = lefwMacroObsLayerPath(2, xpath, ypath, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  free((char*)xpath);
-  free((char*)ypath);
-  xl = (double*)malloc(sizeof(double)*5);
-  yl = (double*)malloc(sizeof(double)*5);
+  free((char*) xpath);
+  free((char*) ypath);
+  xl = (double*) malloc(sizeof(double) * 5);
+  yl = (double*) malloc(sizeof(double) * 5);
   xl[0] = 6.4;
   xl[1] = 3.4;
   xl[2] = 5.4;
@@ -1981,8 +2008,8 @@ int main(int argc, char** argv) {
   yl[4] = 1.2;
   status = lefwMacroObsLayerPolygon(5, xl, yl, 0, 0, 0, 0, 3);
   CHECK_STATUS(status);
-  free((char*)xl);
-  free((char*)yl);
+  free((char*) xl);
+  free((char*) yl);
   status = lefwEndMacroObs();
   CHECK_STATUS(status);
   status = lefwEndMacro("INV");
@@ -2096,7 +2123,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   // since the date is different each run,
   // comment it out, so the quick test will not fail
-  // status = lefwBeginextDate(); 
+  // status = lefwBeginextDate();
   // CHECK_STATUS(status);
   status = lefwEndBeginext();
   CHECK_STATUS(status);
@@ -2106,11 +2133,9 @@ int main(int argc, char** argv) {
 
   lineNum = lefwCurrentLineNumber();
   if (lineNum == 0)
-     fprintf(stderr, "ERROR: Nothing has been written!!!\n");
+    fprintf(stderr, "ERROR: Nothing has been written!!!\n");
 
   fclose(fout);
 
   return 0;
 }
-
-

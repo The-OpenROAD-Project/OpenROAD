@@ -70,11 +70,8 @@ void frShape::serialize(Archive& ar, const unsigned int version)
   serializeBlockObject(ar, owner_);
 }
 
+template void frShape::serialize<frIArchive>(frIArchive& ar,
+                                             const unsigned int file_version);
 
-template void frShape::serialize<frIArchive>(
-    frIArchive& ar,
-    const unsigned int file_version);
-
-template void frShape::serialize<frOArchive>(
-    frOArchive& ar,
-    const unsigned int file_version);
+template void frShape::serialize<frOArchive>(frOArchive& ar,
+                                             const unsigned int file_version);

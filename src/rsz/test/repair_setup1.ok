@@ -27,7 +27,7 @@ Path Type: max
    0.042    0.375 ^ u3/Z (BUF_X1)
    0.002    0.377 ^ u4/A (BUF_X1)
    0.042    0.419 ^ u4/Z (BUF_X1)
-   0.002    0.421 ^ u5/A (BUF_X1)
+   0.002    0.420 ^ u5/A (BUF_X1)
    0.116    0.536 ^ u5/Z (BUF_X1)
    0.049    0.585 ^ r2/D (DFF_X1)
             0.585   data arrival time
@@ -59,18 +59,18 @@ Path Type: max
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X2)
    0.123    0.123 ^ r1/Q (DFF_X2)
-   0.004    0.128 ^ u1/A (BUF_X4)
-   0.028    0.155 ^ u1/Z (BUF_X4)
-   0.004    0.159 ^ u2/A (BUF_X8)
-   0.021    0.180 ^ u2/Z (BUF_X8)
-   0.004    0.184 ^ u3/A (BUF_X8)
-   0.020    0.204 ^ u3/Z (BUF_X8)
-   0.004    0.207 ^ u4/A (BUF_X8)
-   0.021    0.228 ^ u4/Z (BUF_X8)
-   0.005    0.234 ^ u5/A (BUF_X16)
-   0.022    0.255 ^ u5/Z (BUF_X16)
-   0.038    0.294 ^ r2/D (DFF_X1)
-            0.294   data arrival time
+   0.004    0.126 ^ u1/A (BUF_X4)
+   0.027    0.154 ^ u1/Z (BUF_X4)
+   0.004    0.157 ^ u2/A (BUF_X8)
+   0.021    0.179 ^ u2/Z (BUF_X8)
+   0.004    0.182 ^ u3/A (BUF_X8)
+   0.020    0.202 ^ u3/Z (BUF_X8)
+   0.004    0.206 ^ u4/A (BUF_X8)
+   0.021    0.227 ^ u4/Z (BUF_X8)
+   0.005    0.232 ^ u5/A (BUF_X16)
+   0.022    0.254 ^ u5/Z (BUF_X16)
+   0.038    0.292 ^ r2/D (DFF_X1)
+            0.292   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -80,8 +80,8 @@ Path Type: max
             0.258   data required time
 -----------------------------------------------------------
             0.258   data required time
-           -0.294   data arrival time
+           -0.292   data arrival time
 -----------------------------------------------------------
-           -0.035   slack (VIOLATED)
+           -0.034   slack (VIOLATED)
 
 

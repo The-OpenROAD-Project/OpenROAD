@@ -42,7 +42,9 @@ class frBPin : public frPin
   frBPin() : frPin(), term_(nullptr) {}
   frBPin(const frBPin& in) : frPin(in), term_(in.term_) {}
   frBPin(const frBPin& in, const dbTransform& xform)
-      : frPin(in, xform), term_(in.term_) {}
+      : frPin(in, xform), term_(in.term_)
+  {
+  }
 
   // getters
   frBTerm* getTerm() const { return term_; }
@@ -55,7 +57,6 @@ class frBPin : public frPin
 
  protected:
   frBTerm* term_;
-
 };
 }  // namespace fr
 

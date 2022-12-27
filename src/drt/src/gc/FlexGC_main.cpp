@@ -587,7 +587,7 @@ inline gtl::polygon_90_set_data<frCoord> bg2gtl(const polygon_t& p)
   gtl::polygon_90_set_data<frCoord> set;
   gtl::polygon_90_data<frCoord> poly;
   std::vector<gtl::point_data<frCoord>> points;
-  for (auto pt : p.outer()) {
+  for (const auto& pt : p.outer()) {
     points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
   }
   poly.set(points.begin(), points.end());
@@ -634,10 +634,10 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
   } else {
     bg::difference(markerPoly, pins, result);
   }
-  for (auto poly : result) {
+  for (const auto& poly : result) {
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
-    for (auto rect : res) {
+    for (const auto& rect : res) {
       gcRect* rect3 = new gcRect(*rect2);
       rect3->setRect(rect);
       gtl::rectangle_data<frCoord> newMarkerRect(markerRect);
@@ -2301,10 +2301,15 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
     auto cutClassIdx = layer->getCutClassIdx(ptr->width(), ptr->length());
     if (cutClassIdx == conCutClassIdx) {
       if (con->isNoPrl()) {
-        if ((objBox.xMin() >= gtl::xh(*rect) || objBox.xMax() <= gtl::xl(*rect))
-            && (objBox.yMin() >= gtl::yh(*rect)
-                || objBox.yMax() <= gtl::yl(*rect)))
+        bool no_prl = (objBox.xMin() >= gtl::xh(*rect)
+                       || objBox.xMax() <= gtl::xl(*rect))
+                      && (objBox.yMin() >= gtl::yh(*rect)
+                          || objBox.yMax() <= gtl::yl(*rect));
+        // increment cnt when distSquare == 0 to account the current cut being
+        // evaluated
+        if (no_prl || distSquare == 0) {
           cnt++;
+        }
       } else
         cnt++;
     }
@@ -3064,6 +3069,28 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   if (layer->hasLef58DefaultInterCutSpcTblConstraint())
     checkLef58CutSpacingTbl(rect,
                             layer->getLef58DefaultInterCutSpcTblConstraint());
+  if (layer->getLayerNum() + 2 < TOP_ROUTING_LAYER
+      && layer->getLayerNum() + 2 < getTech()->getLayers().size()) {
+    auto aboveLayer = getTech()->getLayer(layer->getLayerNum() + 2);
+    if (aboveLayer->hasLef58SameMetalCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(
+          rect, aboveLayer->getLef58SameMetalCutSpcTblConstraint());
+    if (aboveLayer->hasLef58SameNetCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(rect,
+                              aboveLayer->getLef58SameNetCutSpcTblConstraint());
+    if (aboveLayer->hasLef58DiffNetCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(rect,
+                              aboveLayer->getLef58DiffNetCutSpcTblConstraint());
+    if (aboveLayer->hasLef58SameNetInterCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(
+          rect, aboveLayer->getLef58SameNetInterCutSpcTblConstraint());
+    if (aboveLayer->hasLef58SameMetalInterCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(
+          rect, aboveLayer->getLef58SameMetalInterCutSpcTblConstraint());
+    if (aboveLayer->hasLef58DefaultInterCutSpcTblConstraint())
+      checkLef58CutSpacingTbl(
+          rect, aboveLayer->getLef58DefaultInterCutSpcTblConstraint());
+  }
 }
 
 void FlexGCWorker::Impl::checkCutSpacing()
@@ -3285,6 +3312,144 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
   }
 }
 
+void FlexGCWorker::Impl::checkMinimumCut_marker(gcRect* wideRect,
+                                                gcRect* viaRect,
+                                                frMinimumcutConstraint* con)
+{
+  auto net = wideRect->getNet();
+  gtl::rectangle_data<frCoord> markerRect(*wideRect);
+  gtl::generalized_intersect(markerRect, *viaRect);
+  auto marker = make_unique<frMarker>();
+  Rect box(gtl::xl(markerRect),
+           gtl::yl(markerRect),
+           gtl::xh(markerRect),
+           gtl::yh(markerRect));
+  marker->setBBox(box);
+  marker->setLayerNum(wideRect->getLayerNum());
+  marker->setConstraint(con);
+  marker->addSrc(net->getOwner());
+  marker->addVictim(net->getOwner(),
+                    make_tuple(wideRect->getLayerNum(),
+                               Rect(gtl::xl(*wideRect),
+                                    gtl::yl(*wideRect),
+                                    gtl::xh(*wideRect),
+                                    gtl::yh(*wideRect)),
+                               wideRect->isFixed()));
+  marker->addSrc(net->getOwner());
+  marker->addAggressor(net->getOwner(),
+                       make_tuple(viaRect->getLayerNum(),
+                                  Rect(gtl::xl(*viaRect),
+                                       gtl::yl(*viaRect),
+                                       gtl::xh(*viaRect),
+                                       gtl::yh(*viaRect)),
+                                  viaRect->isFixed()));
+  addMarker(std::move(marker));
+}
+
+void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
+{
+  auto layerNum = rect->getLayerNum();
+  auto layer = getTech()->getLayer(layerNum);
+  auto width = rect->width();
+  auto length = rect->length();
+  for (auto con : layer->getMinimumcutConstraints()) {
+    if (width < con->getWidth())
+      continue;
+    if (con->hasLength() && length < con->getLength())
+      continue;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    gtl::rectangle_data<frCoord> queryBox = *rect;
+    if (con->hasLength())
+      gtl::bloat(queryBox, con->getDistance());
+    vector<rq_box_value_t<gcRect*>> result;
+    if (con->getConnection() != frMinimumcutConnectionEnum::FROMABOVE
+        && layerNum > getTech()->getBottomLayerNum()) {
+      vector<rq_box_value_t<gcRect*>> below_result;
+      workerRegionQuery.queryMaxRectangle(queryBox, layerNum - 1, below_result);
+      result.insert(result.end(), below_result.begin(), below_result.end());
+    }
+    if (con->getConnection() != frMinimumcutConnectionEnum::FROMBELOW
+        && layerNum < getTech()->getTopLayerNum()) {
+      vector<rq_box_value_t<gcRect*>> above_result;
+      workerRegionQuery.queryMaxRectangle(queryBox, layerNum + 1, result);
+      result.insert(result.end(), above_result.begin(), above_result.end());
+    }
+
+    Rect wideRect(
+        gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+    for (auto [viaBox, via] : result) {
+      if (via->getNet() != rect->getNet())
+        continue;
+      if (via->isFixed() && rect->isFixed())
+        continue;
+      if (con->hasLength() && wideRect.contains(viaBox))
+        continue;
+      if (!con->hasLength()) {
+        checkMinimumCut_marker(rect, via, con);
+        continue;
+      }
+      vector<rq_box_value_t<gcRect*>> encResult;
+      workerRegionQuery.queryMaxRectangle(viaBox, layerNum, encResult);
+      bool viol = false;
+
+      for (auto [encBox, encObj] : encResult) {
+        if (encObj->getNet() != via->getNet())
+          continue;
+
+        if (encBox.intersects(viaBox) && encBox.intersects(wideRect)) {
+          viol = true;
+          break;
+        }
+      }
+      if (viol)
+        checkMinimumCut_marker(rect, via, con);
+    }
+  }
+}
+
+void FlexGCWorker::Impl::checkMinimumCut()
+{
+  if (targetNet_) {
+    // layer --> net --> polygon --> maxrect
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+         i++) {
+      auto currLayer = getTech()->getLayer(i);
+      if (currLayer->getType() != dbTechLayerType::ROUTING)
+        continue;
+      if (!currLayer->hasMinimumcut())
+        continue;
+      for (auto& pin : targetNet_->getPins(i)) {
+        for (auto& maxrect : pin->getMaxRectangles()) {
+          checkCutSpacing_main(maxrect.get());
+        }
+      }
+    }
+  } else {
+    // layer --> net --> polygon --> maxrect
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+         i++) {
+      auto currLayer = getTech()->getLayer(i);
+      if (currLayer->getType() != dbTechLayerType::ROUTING)
+        continue;
+      if (!currLayer->hasMinimumcut())
+        continue;
+      for (auto& net : getNets()) {
+        for (auto& pin : net->getPins(i)) {
+          for (auto& maxrect : pin->getMaxRectangles()) {
+            checkMinimumCut_main(maxrect.get());
+          }
+        }
+      }
+    }
+  }
+}
+
 int FlexGCWorker::Impl::main()
 {
   // ProfileTask profile("GC:main");
@@ -3312,6 +3477,8 @@ int FlexGCWorker::Impl::main()
   checkCutSpacing();
   // check SpacingTable Influence
   checkMetalSpacingTableInfluence();
+  // check MINIMUMCUT
+  checkMinimumCut();
   // check LEF58_METALWIDTHVIATABLE
   checkMetalWidthViaTable();
   return 0;

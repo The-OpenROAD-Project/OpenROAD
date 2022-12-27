@@ -41,7 +41,7 @@
 namespace odb {
 class dbDatabase;
 class Rect;
-}
+}  // namespace odb
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -52,8 +52,15 @@ class FlexGR
 {
  public:
   // constructors
-  FlexGR(frDesign* designIn, Logger* logger, stt::SteinerTreeBuilder* stt_builder)
-      : db_(nullptr), design_(designIn), cmap_(nullptr), cmap2D_(nullptr), logger_(logger), stt_builder_(stt_builder)
+  FlexGR(frDesign* designIn,
+         Logger* logger,
+         stt::SteinerTreeBuilder* stt_builder)
+      : db_(nullptr),
+        design_(designIn),
+        cmap_(nullptr),
+        cmap2D_(nullptr),
+        logger_(logger),
+        stt_builder_(stt_builder)
   {
   }
 

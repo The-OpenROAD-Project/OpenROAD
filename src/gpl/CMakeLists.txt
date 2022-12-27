@@ -113,3 +113,30 @@ if (GPU)
 else()
   message(STATUS "GPU is not enabled")
 endif()
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          gpl_py
+           NAMESPACE     gpl
+           LANGUAGE      python
+           I_FILE        src/replace-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/gpl
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/gpl_py.py
+  )
+
+  target_include_directories(gpl_py
+    PUBLIC
+      include
+  )
+
+  target_link_libraries(gpl_py
+    PUBLIC
+      utl
+      Eigen3::Eigen
+      gui
+      odb
+      OpenSTA
+      rsz
+      grt
+  )
+
+endif()

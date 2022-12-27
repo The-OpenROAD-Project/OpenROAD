@@ -91,6 +91,7 @@ struct ParamStruct
   bool singleStepDR = false;
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
+  std::string repairPDNLayerName;
 };
 
 class TritonRoute
@@ -124,6 +125,7 @@ class TritonRoute
   void setDebugDumpDR(bool on, const std::string& dumpDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
+  void setDebugTA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
   void setDebugWorker(int x, int y);
@@ -155,6 +157,7 @@ class TritonRoute
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
+  void clearDesign();
   void updateDesign(const std::vector<std::string>& updates);
   void updateDesign(const std::string& updates);
   void addWorkerResults(
@@ -166,7 +169,6 @@ class TritonRoute
   void sendDesignUpdates(const std::string& globals_path);
   void sendGlobalsUpdates(const std::string& globals_path,
                           const std::string& serializedViaData);
-  void setGuideFile(const std::string& guide_path);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
                  odb::Rect bbox = odb::Rect(0, 0, 0, 0));
@@ -200,6 +202,8 @@ class TritonRoute
   void ta();
   void dr();
   void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
+  void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
+                     const odb::Rect& requiredDrcBox);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

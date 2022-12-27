@@ -85,16 +85,15 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
     srcs.at(i) = src;
     i++;
   }
-  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1]))
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
       != mapMarkers_.end()) {
     return;
   }
-  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0]))
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[1], srcs[0]})
       != mapMarkers_.end()) {
     return;
   }
-  mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])]
-      = in.get();
+  mapMarkers_[{bbox, layerNum, con, srcs[0], srcs[1]}] = in.get();
   markers_.push_back(std::move(in));
 }
 
@@ -118,7 +117,8 @@ void FlexGCWorker::checkMinStep(gcPin* pin)
   impl_->checkMetalShape_minStep(pin);
 }
 
-void FlexGCWorker::updateGCWorker() {
+void FlexGCWorker::updateGCWorker()
+{
   impl_->updateGCWorker();
 }
 
@@ -167,7 +167,8 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in)
     return false;
   }
 }
-gcNet* FlexGCWorker::getTargetNet() {
+gcNet* FlexGCWorker::getTargetNet()
+{
   return impl_->targetNet_;
 }
 void FlexGCWorker::setEnableSurgicalFix(bool in)
@@ -215,6 +216,7 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
   return impl_->getNets();
 }
 
-gcNet* FlexGCWorker::getNet(frNet* net) {
+gcNet* FlexGCWorker::getNet(frNet* net)
+{
   return impl_->getNet(net);
 }

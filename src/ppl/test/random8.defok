@@ -142,19 +142,19 @@ PINS 54 ;
     - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 200060 ) N ;
+        + PLACED ( 70 199500 ) N ;
     - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 199500 ) N ;
+        + PLACED ( 70 198940 ) N ;
     - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 198940 ) N ;
+        + PLACED ( 70 198380 ) N ;
     - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 198380 ) N ;
+        + PLACED ( 70 197820 ) N ;
     - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )

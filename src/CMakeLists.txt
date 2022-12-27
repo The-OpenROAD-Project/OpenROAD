@@ -33,6 +33,14 @@
 ##
 ###############################################################################
 
+# The location used by etc/DependencyInstaller.sh
+# lib64 is used for CentOS and openSUSE
+# lib is used for Ubuntu and MacOS
+list(APPEND CMAKE_INSTALL_RPATH
+  "/opt/or-tools/lib64"
+  "/opt/or-tools/lib"
+)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 include("openroad")
@@ -48,7 +56,6 @@ endif()
 set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
-set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
   Design.cc
@@ -151,6 +158,9 @@ if (BUILD_TCLX AND TCLX_H)
 endif()
 
 find_package(SWIG 3.0 REQUIRED)
+if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
+  message(WARNING "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
+endif()
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
@@ -172,7 +182,8 @@ add_compile_options(
   -Wno-sign-compare
   -Wp,-D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
-  $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
+  # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
 )
 
 ################################################################
@@ -183,7 +194,6 @@ swig_lib(NAME      openroad_swig
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${PAD_HOME}/src/pad.tcl
                    ${ODB_HOME}/src/db/odb.tcl
 )
 
@@ -222,6 +232,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Build flow tools
 add_subdirectory(ifp)
+add_subdirectory(pad)
 add_subdirectory(odb)
 if (NOT USE_SYSTEM_OPENSTA)
   add_subdirectory(sta)
@@ -282,6 +293,7 @@ target_include_directories(openroad
 
 target_link_libraries(openroad
   ifp
+  pad
   openroad_swig
   gpl
   dpl
@@ -303,7 +315,6 @@ target_link_libraries(openroad
   drt
   dst
   mpl
-  mpl2
   psm
   ant
   par
@@ -313,6 +324,14 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # mpl2 aborts with link error on darwin so do not link it.
+  target_link_libraries(openroad mpl2)
+  target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
+else()
+  message(STATUS "Removing MPL2 to avoid run time fatal error.")
+endif()
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
@@ -361,11 +380,24 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
   target_link_libraries(openroad
     openroad_swig_py
-    odbpy
+    odb_py
     ifp_py
     utl_py
     ant_py
     grt_py
+    gpl_py
+    dpl_py
+    mpl_py
+    ppl_py
+    tap_py
+    cts_py
+    drt_py
+    dpo_py
+    fin_py
+    par_py
+    rcx_py
+    rmp_py
+    stt_py
   )
 else()
   message(STATUS "Python3 disabled")

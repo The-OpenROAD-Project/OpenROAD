@@ -93,7 +93,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool noPa,
                         bool singleStepDR,
                         int minAccessPoints,
-                        bool saveGuideUpdates)
+                        bool saveGuideUpdates,
+                        const char* repairPDNLayerName)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({outputMazeFile,
@@ -114,7 +115,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                     !noPa,
                     singleStepDR,
                     minAccessPoints,
-                    saveGuideUpdates});
+                    saveGuideUpdates,
+                    repairPDNLayerName});
   router->main();
 }
 
@@ -160,7 +162,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa_markers,
                              bool pa_edge,
                              bool pa_commit,
-                             const char* dumpDir)
+                             const char* dumpDir,
+                             bool ta)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -176,6 +179,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaMarkers(pa_markers);
   router->setDebugPaEdge(pa_edge);
   router->setDebugPaCommit(pa_commit);
+  router->setDebugTA(ta);
 }
 
 void
@@ -221,7 +225,7 @@ void step_end()
   router->endFR();
 }
 
-void check_drc(const char* drc_file, int x1, int y1, int x2, int y2)
+void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->checkDRC(drc_file, x1, y1, x2, y2);

@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -122,7 +122,7 @@ bool parse(Iterator first,
   else {
     if (parser->spacing_tbl.size() != parser->width_tbl.size())
       valid = false;
-    for (auto spacing : parser->spacing_tbl)
+    for (const auto& spacing : parser->spacing_tbl)
       if (spacing.size() != parser->length_tbl.size())
         valid = false;
     if (valid) {

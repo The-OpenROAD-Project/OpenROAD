@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "swig_common.h"
+
 #include <libgen.h>
 
 #include <array>
@@ -34,7 +36,6 @@
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
-#include "swig_common.h"
 #include "utl/Logger.h"
 
 using namespace boost::polygon::operators;
@@ -328,7 +329,7 @@ void dumpAPs(odb::dbBlock* block, const std::string file_name)
           os << "layer=" << ap->getLayer()->getName() << " ";
           os << "type=" << ap->getLowType().getString() << "/"
              << ap->getHighType().getString() << " ";
-          for (auto dir : dirs) {
+          for (const auto& dir : dirs) {
             os << dir.getString() << " ";
           }
           os << "\n";

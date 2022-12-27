@@ -383,27 +383,18 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
     // get the on grid min distance
-    int min_dst_ver
+    int tech_min_dst
+        = vertical ? core_->getMinDstPinsX()[i] : core_->getMinDstPinsY()[i];
+    int min_dst_pins
         = dist_in_tracks
-              ? core_->getMinDstPinsX()[i] * parms_->getMinDistance()
-              : core_->getMinDstPinsX()[i]
+              ? tech_min_dst * parms_->getMinDistance()
+              : tech_min_dst
                     * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                / core_->getMinDstPinsX()[i]);
-    int min_dst_hor
-        = dist_in_tracks
-              ? core_->getMinDstPinsY()[i] * parms_->getMinDistance()
-              : core_->getMinDstPinsY()[i]
-                    * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                / core_->getMinDstPinsY()[i]);
+                                / tech_min_dst);
 
-    min_dst_ver = (min_dst_ver == 0)
-                      ? default_min_dist * core_->getMinDstPinsX()[i]
-                      : min_dst_ver;
-    min_dst_hor = (min_dst_hor == 0)
-                      ? default_min_dist * core_->getMinDstPinsY()[i]
-                      : min_dst_hor;
+    min_dst_pins
+        = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
 
-    int min_dst_pins = vertical ? min_dst_ver : min_dst_hor;
     int init_tracks
         = vertical ? core_->getInitTracksX()[i] : core_->getInitTracksY()[i];
     int num_tracks
@@ -418,8 +409,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     half_width *= thickness_multiplier;
 
-    int num_tracks_offset
-        = std::ceil(offset / (std::max(min_dst_ver, min_dst_hor)));
+    int num_tracks_offset = std::ceil(offset / min_dst_pins);
 
     start_idx
         = std::max(0.0, ceil((min + half_width - init_tracks) / min_dst_pins))
@@ -968,13 +958,13 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
 
     if (pin.getArea() < required_min_area) {
-      logger_->error(
-          PPL,
-          79,
-          "Pin {} area {:2.4f}um^2 is lesser than the minimum required area {:2.4f}um^2.",
-          pin.getName(),
-          dbuToMicrons(dbuToMicrons(pin.getArea())),
-          dbuToMicrons(dbuToMicrons(required_min_area)));
+      logger_->error(PPL,
+                     79,
+                     "Pin {} area {:2.4f}um^2 is lesser than the minimum "
+                     "required area {:2.4f}um^2.",
+                     pin.getName(),
+                     dbuToMicrons(dbuToMicrons(pin.getArea())),
+                     dbuToMicrons(dbuToMicrons(required_min_area)));
     }
   } else {
     int pin_width = top_grid_->pin_width;
@@ -1289,6 +1279,17 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         int height,
                         bool force_to_die_bound)
 {
+  if (width == 0 && height == 0) {
+    const int database_unit = getTech()->getLefUnits();
+    const int min_area = layer->getArea() * database_unit * database_unit;
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      width = layer->getMinWidth();
+      height = int(std::max((double) width, ceil(min_area / width)));
+    } else {
+      height = layer->getMinWidth();
+      width = int(std::max((double) height, ceil(min_area / height)));
+    }
+  }
   const int mfg_grid = getTech()->getManufacturingGrid();
   if (width % mfg_grid != 0) {
     width = mfg_grid * std::ceil(static_cast<float>(width) / mfg_grid);
@@ -1428,7 +1429,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
-      int new_y = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
+      int new_y
+          = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
       pos.setY(new_y);
     }
   }

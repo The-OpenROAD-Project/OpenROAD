@@ -274,11 +274,12 @@ proc global_route { args } {
 }
 
 sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
-                                         [-iterations iterations]}
+                                         [-iterations iterations] \
+                                         [-ratio_margin ratio_margin]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-                 keys {-iterations}
+                 keys {-iterations -ratio_margin}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
@@ -314,7 +315,15 @@ proc repair_antennas { args } {
       sta::check_positive_integer "-iterations" $iterations
     }
 
-    grt::repair_antennas $diode_mterm $iterations
+    set ratio_margin 0
+    if { [info exists keys(-ratio_margin)] } {
+      set ratio_margin $keys(-ratio_margin)
+      if { !($ratio_margin >= 0 && $ratio_margin < 100) } {
+        utl::warn GRT 215 "-ratio_margin must be between 0 and 100 percent."
+      }
+    }
+
+    grt::repair_antennas $diode_mterm $iterations $ratio_margin
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }

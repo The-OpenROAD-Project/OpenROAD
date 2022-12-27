@@ -54,12 +54,6 @@ using ord::getTritonCts;
 %inline %{
 
 void
-set_simple_cts(bool enable)
-{
-  getTritonCts()->getParms()->setSimpleCts(enable);
-}
-
-void
 set_sink_clustering(bool enable)
 {
   getTritonCts()->getParms()->setSinkClustering(enable);
@@ -102,15 +96,15 @@ set_root_buffer(const char* buffer)
 }
 
 void
-set_slew_inter(double slew)
+set_slew_steps(int steps)
 {
-  getTritonCts()->getParms()->setSlewInter(slew);
+  getTritonCts()->getParms()->setSlewSteps(steps);
 }
 
 void
-set_cap_inter(double cap)
+set_cap_steps(int steps)
 {
-  getTritonCts()->getParms()->setCapInter(cap);
+  getTritonCts()->getParms()->setCapSteps(steps);
 }
 
 void
@@ -149,12 +143,6 @@ set_branching_point_buffers_distance(double distance)
 {
   getTritonCts()->getParms()->setVertexBuffersEnabled(true);
   getTritonCts()->getParms()->setVertexBufferDistance(distance);
-}
-
-void
-set_disable_post_cts(bool disable)
-{
-  getTritonCts()->getParms()->setRunPostCtsOpt(!(disable));
 }
 
 void

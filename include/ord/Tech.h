@@ -45,6 +45,13 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class dbSta;
+class dbNetwork;
+class Resizer;
+class LibertyCell;
+}  // namespace sta
+
 namespace ord {
 
 class Tech
@@ -54,6 +61,7 @@ class Tech
   void readLef(const std::string& file_name);
   void readLiberty(const std::string& file_name);
   odb::dbDatabase* getDB();
+  sta::dbSta* getSta();
 
  private:
   odb::dbDatabase* db_;

@@ -44,9 +44,7 @@ class frMaster : public frBlockObject
  public:
   // constructors
   frMaster(const frString& name)
-      : frBlockObject(),
-        name_(name),
-        masterType_(dbMasterType::NONE){};
+      : frBlockObject(), name_(name), masterType_(dbMasterType::NONE){};
   // getters
   Rect getBBox() const
   {

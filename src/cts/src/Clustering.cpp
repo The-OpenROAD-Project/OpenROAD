@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "Clustering.h"
+
 #include <float.h>
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
@@ -52,7 +54,6 @@
 #include <string>
 #include <vector>
 
-#include "Clustering.h"
 #include "utl/Logger.h"
 
 namespace cts::CKMeans {
@@ -63,12 +64,12 @@ using utl::CTS;
 struct Sink
 {
   Sink(const float x, const float y, unsigned idx)
-      : x(x), y(y), sink_idx(idx){};
+      : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
 
   // location
-  float x, y;
+  const float x, y;
   int cluster_idx;
-  unsigned sink_idx;  // index in sinks_
+  const unsigned sink_idx;  // index in sinks_
 };
 
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,

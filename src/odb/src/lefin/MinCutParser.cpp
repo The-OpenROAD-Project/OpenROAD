@@ -25,11 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "boostParser.h"
 #include <functional>
 #include <iostream>
 #include <string>
 
+#include "boostParser.h"
 #include "db.h"
 #include "lefLayerPropParser.h"
 #include "lefin.h"
@@ -77,11 +77,11 @@ void MinCutParser::setAreaWithin(double within)
   rule_->setAreaWithinDistValid(true);
 }
 
-void MinCutParser::parse(std::string s)
+void MinCutParser::parse(const std::string& s)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty())
       continue;
@@ -99,43 +99,35 @@ bool MinCutParser::parseSubRule(std::string s)
 {
   rule_ = dbTechLayerMinCutRule::create(layer_);
   qi::rule<std::string::iterator, space_type> CUTCLASS
-      = (lit("CUTCLASS") >> _string >> int_) [boost::bind(&MinCutParser::addCutClass, this, _1)] ;
+      = (lit("CUTCLASS") >> _string
+         >> int_)[boost::bind(&MinCutParser::addCutClass, this, _1)];
   qi::rule<std::string::iterator, space_type> WITHIN
-      = (lit("WITHIN") >> double_) [boost::bind(&MinCutParser::setWithinCutDist, this, _1)] ;
+      = (lit("WITHIN")
+         >> double_)[boost::bind(&MinCutParser::setWithinCutDist, this, _1)];
   qi::rule<std::string::iterator, space_type> LENGTH
-      = (lit("LENGTH") 
-         >> double_ [boost::bind(&MinCutParser::setLength, this, _1)]
-         >> lit("WITHIN") 
-         >> double_ [boost::bind(&MinCutParser::setLengthWithin, this, _1)]
-      );
+      = (lit("LENGTH")
+         >> double_[boost::bind(&MinCutParser::setLength, this, _1)]
+         >> lit("WITHIN")
+         >> double_[boost::bind(&MinCutParser::setLengthWithin, this, _1)]);
   qi::rule<std::string::iterator, space_type> AREA
-      = (lit("AREA") 
-         >> double_ [boost::bind(&MinCutParser::setArea, this, _1)]
-         >> -(lit("WITHIN") >> double_ [boost::bind(&MinCutParser::setAreaWithin, this, _1)])
-      );
+      = (lit("AREA") >> double_[boost::bind(&MinCutParser::setArea, this, _1)]
+         >> -(lit("WITHIN")
+              >> double_[boost::bind(&MinCutParser::setAreaWithin, this, _1)]));
   qi::rule<std::string::iterator, space_type> LEF58_MINCUT
       = (lit("MINIMUMCUT")
-         >> (
-           int_[boost::bind(&dbTechLayerMinCutRule::setNumCuts, rule_, _1)]
-           |
-           +CUTCLASS
-         )
-         >> lit("WIDTH") >> double_ [boost::bind(&MinCutParser::setWidth, this, _1)]
-         >> -WITHIN
-         >> -(
-           lit("FROMABOVE")[boost::bind(&dbTechLayerMinCutRule::setFromAbove, rule_, true)]
-           |
-           lit("FROMBELOW")[boost::bind(&dbTechLayerMinCutRule::setFromBelow, rule_, true)]
-         )
-         >> -(
-           LENGTH
-           |
-           AREA
-           |
-           lit("SAMEMETALOVERLAP")[boost::bind(&dbTechLayerMinCutRule::setSameMetalOverlap, rule_, true)]
-           |
-           lit("FULLYENCLOSED")[boost::bind(&dbTechLayerMinCutRule::setFullyEnclosed, rule_, true)]
-         )
+         >> (int_[boost::bind(&dbTechLayerMinCutRule::setNumCuts, rule_, _1)]
+             | +CUTCLASS)
+         >> lit("WIDTH")
+         >> double_[boost::bind(&MinCutParser::setWidth, this, _1)] >> -WITHIN
+         >> -(lit("FROMABOVE")[boost::bind(
+                  &dbTechLayerMinCutRule::setFromAbove, rule_, true)]
+              | lit("FROMBELOW")[boost::bind(
+                  &dbTechLayerMinCutRule::setFromBelow, rule_, true)])
+         >> -(LENGTH | AREA
+              | lit("SAMEMETALOVERLAP")[boost::bind(
+                  &dbTechLayerMinCutRule::setSameMetalOverlap, rule_, true)]
+              | lit("FULLYENCLOSED")[boost::bind(
+                  &dbTechLayerMinCutRule::setFullyEnclosed, rule_, true)])
          >> lit(";"));
   auto first = s.begin();
   auto last = s.end();

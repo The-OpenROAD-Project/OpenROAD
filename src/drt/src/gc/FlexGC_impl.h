@@ -88,18 +88,19 @@ class FlexGCWorker::Impl
 
  public:
   // constructors
-  Impl(); // for serialization
+  Impl();  // for serialization
   Impl(frTechObject* techIn,
        Logger* logger,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
   {
-    return std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
+    return std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                    minLayerNum_);
   }
   frLayerNum getMaxLayerNum()  // inclusive
   {
-    return std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
+    return std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
@@ -146,13 +147,7 @@ class FlexGCWorker::Impl
   std::vector<std::unique_ptr<gcNet>> nets_;
 
   std::vector<std::unique_ptr<frMarker>> markers_;
-  std::map<std::tuple<Rect,
-                      frLayerNum,
-                      frConstraint*,
-                      frBlockObject*,
-                      frBlockObject*>,
-           frMarker*>
-      mapMarkers_;
+  std::map<MarkerId, frMarker*> mapMarkers_;
   std::vector<std::unique_ptr<drPatchWire>> pwires_;
 
   FlexGCWorkerRegionQuery rq_;
@@ -200,15 +195,13 @@ class FlexGCWorker::Impl
       gcPin* pin,
       gcPolygon* poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>&
-          fixedPolygonEdges);
+      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
   void initNet_pins_polygonEdges_helper_inner(
       gcNet* net,
       gcPin* pin,
       const gtl::polygon_90_data<frCoord>& hole_poly,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>&
-          fixedPolygonEdges);
+      const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges);
   void initNet_pins_polygonCorners(gcNet* net);
   void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
   void initNet_pins_maxRectangles(gcNet* net);
@@ -220,8 +213,7 @@ class FlexGCWorker::Impl
       gcPin* pin,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum i,
-      const std::vector<std::set<std::pair<Point, Point>>>&
-          fixedMaxRectangles);
+      const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles);
 
   void initRegionQuery();
 
@@ -482,6 +474,11 @@ class FlexGCWorker::Impl
                                       const frCoord dist,
                                       const frDirEnum dir,
                                       box_t& box);
+  void checkMinimumCut_marker(gcRect* wideRect,
+                              gcRect* viaRect,
+                              frMinimumcutConstraint* con);
+  void checkMinimumCut_main(gcRect* rect);
+  void checkMinimumCut();
   void checkMetalShape_lef58Area(gcPin* pin);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,
@@ -498,14 +495,12 @@ class FlexGCWorker::Impl
   void patchMetalShape_minStep();
   void patchMetalShape_cornerSpacing();
 
-
   // utility
   bool isCornerOverlap(gcCorner* corner, const Rect& box);
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
   bool isWrongDir(gcSegment* edge);
-  
 };
 }  // namespace fr
 

@@ -55,7 +55,7 @@ class DetailedDisplacement : public DetailedObjective
 {
   // For WL objective.
  public:
-  DetailedDisplacement(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedDisplacement(Architecture* arch);
 
   void init();
   double curr() override;
@@ -82,8 +82,6 @@ class DetailedDisplacement : public DetailedObjective
 
  private:
   Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
 
   DetailedMgr* mgrPtr_;
   DetailedOrient* orientPtr_;

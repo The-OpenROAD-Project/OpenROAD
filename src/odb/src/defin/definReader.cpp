@@ -1839,7 +1839,7 @@ bool definReader::createBlock(const char* file)
     defGZipClose(f);
   }
 
-  if (res != 0 || _errors != 0) {
+  if (res != 0 || errors() != 0) {
     _logger->warn(utl::ODB, 149, "DEF parser returns an error!");
     if (!_continue_on_errors) {
       exit(2);

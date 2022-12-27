@@ -81,3 +81,22 @@ add_custom_target(opendp_tags etags -o TAGS
   ${OPENDP_HOME}/include/dpl/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          dpl_py
+           NAMESPACE     dpl
+           LANGUAGE      python
+           I_FILE        src/Opendp-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/dpl
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/dpl_py.py
+  )
+
+  target_link_libraries(dpl_py
+    PUBLIC
+      dpl
+      odb
+  )
+
+endif()

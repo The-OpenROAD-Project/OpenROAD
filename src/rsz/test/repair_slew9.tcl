@@ -1,4 +1,3 @@
-source "helpers.tcl"
 # repair_design -slew_margin
 source "max_slew_cap.tcl"
 repair_design -slew_margin 5

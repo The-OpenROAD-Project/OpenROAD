@@ -40,9 +40,8 @@
 
 namespace pdn {
 
-GridComponent::GridComponent(Grid* grid) :
-    grid_(grid),
-    starts_with_power_(grid_->startsWithPower())
+GridComponent::GridComponent(Grid* grid)
+    : grid_(grid), starts_with_power_(grid_->startsWithPower())
 {
 }
 
@@ -468,7 +467,11 @@ void GridComponent::setNets(const std::vector<odb::dbNet*>& nets)
   const auto grid_nets = grid_->getNets();
   for (auto* net : nets) {
     if (std::find(grid_nets.begin(), grid_nets.end(), net) == grid_nets.end()) {
-      getLogger()->error(utl::PDN, 224, "{} is not a net in {}.", net->getName(), grid_->getLongName());
+      getLogger()->error(utl::PDN,
+                         224,
+                         "{} is not a net in {}.",
+                         net->getName(),
+                         grid_->getLongName());
     }
   }
 

@@ -72,7 +72,6 @@ class gcShape : public gcPinFig
   // constructors
   gcShape() : gcPinFig() {}
   gcShape(const gcShape& in) : gcPinFig(in) {}
-
 };
 
 class gcCorner : public gtl::point_data<frCoord>
@@ -117,7 +116,6 @@ class gcCorner : public gtl::point_data<frCoord>
   frCornerTypeEnum cornerType_;
   frCornerDirEnum cornerDir_;  // points away from poly for convex and concave
   bool fixed_;
-
 };
 
 class gcSegment : public gtl::segment_data<frCoord>, public gcShape
@@ -180,8 +178,9 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
     }
     return dir;
   }
-  //returns the direction to the inner side of the polygon
-  frDirEnum getInnerDir() {
+  // returns the direction to the inner side of the polygon
+  frDirEnum getInnerDir()
+  {
     switch (getDir()) {
       case frDirEnum::N:
         return frDirEnum::W;
@@ -195,8 +194,9 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
         return frDirEnum::UNKNOWN;
     }
   }
-  //returns the direction to the outer side of the polygon
-  frDirEnum getOuterDir() {
+  // returns the direction to the outer side of the polygon
+  frDirEnum getOuterDir()
+  {
     switch (getDir()) {
       case frDirEnum::N:
         return frDirEnum::E;
@@ -263,9 +263,8 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   void addToNet(gcNet* in) override { net_ = in; }
 
   void removeFromNet() override { net_ = nullptr; }
-  int length() {
-    return gtl::length(*this);
-  }
+  int length() { return gtl::length(*this); }
+
  private:
   frLayerNum layer_;
   gcPin* pin_;
@@ -275,7 +274,6 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   gcCorner* lowCorner_;
   gcCorner* highCorner_;
   bool fixed_;
-
 };
 
 class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
@@ -408,7 +406,6 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
   gcNet* net_;
   bool fixed_;
   bool tapered_;
-
 };
 
 class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
@@ -508,7 +505,6 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
   frLayerNum layer_;
   gcPin* pin_;
   gcNet* net_;
-
 };
 
 }  // namespace fr

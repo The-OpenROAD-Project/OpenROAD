@@ -23,11 +23,12 @@ entries:
 
 - file: main/README
   title: Getting Started with OpenROAD App
+
+- file: main/src/README
+  title: OpenROAD Tools and Tcl Commands
   entries:
-  - file: main/src/README
-    title: OpenROAD TCL
   - file: main/src/odb/README
-    title: OpenDB
+    title: Database
     entries:
       - file: main/src/odb/src/codeGenerator/README
         title: Code Generator
@@ -36,7 +37,7 @@ entries:
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
   - file: main/src/rcx/README
-    title: OpenRCX
+    title: Parasitics Extraction
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
@@ -45,14 +46,14 @@ entries:
   - file: main/src/ifp/README
     title: Floorplan Initialization
   - file: main/src/ppl/README
-    title: ioPlacer
+    title: Pin Placement
   - file: main/src/gui/README
     title: GUI
   - file: main/src/pad/README
-    title: ICeWall
+    title: Chip-level Connections
     entries:
     - file: main/src/pad/doc/README
-      title: ICeWall Documentation
+      title: Chip-level Connections Documentation
       entries:
       - file: main/src/pad/doc/add_pad
         title: Add Pad
@@ -71,14 +72,14 @@ entries:
       - file: main/src/pad/doc/TCL_Interface
         title: TCL Interface
   - file: main/src/mpl/README
-    title: TritonMacroPlacer
+    title: Macro Placement
   - file: main/src/tap/README
-    title: Tapcell
+    title: Tapcell Insertion
   - file: main/src/pdn/README
-    title: OpenROAD-pdn
+    title: PDN Analysis
     entries:
     - file: main/src/pdn/doc/README
-      title: OpenROAD-pdn Documentation
+      title: PDN Analysis Documentation
       entries:
       - file: main/src/pdn/doc/PDN
         title: PDN
@@ -100,39 +101,38 @@ entries:
       - file: main/src/pdn/doc/pdngen.md
         title: pdngen
   - file: main/src/psm/README
-    title: PDNSim
+    title: IR Drop Analysis
     entries:
     - file: main/src/psm/doc/Vsrc_description
       title: VSRC description
   - file: main/src/gpl/README
-    title: RePlAce
+    title: Global Placement
     entries:
     - file: main/src/gpl/doc/TclCommands
       title: Tclcommands
   - file: main/src/sta/README
-    title: OpenSTA (external)
+    title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizer
   - file: main/src/dpl/README
-    title: OpenDP
+    title: Detailed Placement
   - file: main/src/cts/README
-    title: Triton CTS 2.0
+    title: Clock Tree Synthesis
     entries:
     - file: main/src/cts/doc/cts_lut_characterization
       title: CTS LUT Characterization
   - file: main/src/grt/README
-    title: FastRoute
+    title: Global Routing
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
-    title: TritonRoute
+    title: Detail Routing
   - file: main/src/fin/README
     title: Metal Fill
-
   - file: main/src/stt/src/flt/README
     title: Flute
   - file: main/src/stt/src/pdr/README
-    title: PDRev
+    title: Prim-Dijkstra Revisited
   - file: main/src/par/README
     title: Partition Manager
 

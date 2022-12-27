@@ -30,12 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "util.h"
+
 #include <map>
 #include <numeric>
 #include <string>
 
 #include "db.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -186,7 +187,8 @@ void cutRows(dbBlock* block,
     if (!inst->isFixed()) {
       continue;
     }
-    if (inst->getMaster()->isCoreAutoPlaceable() && !inst->getMaster()->isBlock()) {
+    if (inst->getMaster()->isCoreAutoPlaceable()
+        && !inst->getMaster()->isBlock()) {
       const Rect inst_bbox = inst->getBBox()->getBox();
       for (dbRow* row : block->getRows()) {
         const Rect row_bbox = row->getBBox();
@@ -208,7 +210,11 @@ void cutRows(dbBlock* block,
     // Cut row around macros
     if (!row_blockages.empty()) {
       if (placed_row_insts.find(row) != placed_row_insts.end()) {
-        logger->warn(utl::ODB, 386, "{} contains {} placed instances and will not be cut.", row->getName(), placed_row_insts[row]);
+        logger->warn(utl::ODB,
+                     386,
+                     "{} contains {} placed instances and will not be cut.",
+                     row->getName(),
+                     placed_row_insts[row]);
       } else {
         cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
       }

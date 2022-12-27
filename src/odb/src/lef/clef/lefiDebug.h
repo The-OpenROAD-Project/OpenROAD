@@ -23,29 +23,29 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CLEFIDEBUG_H
 #define CLEFIDEBUG_H
 
 #include <stdio.h>
+
 #include "lefiTypedefs.h"
 
 /* Set flag                                                                   */
-EXTERN void lefiSetDebug (int  num, int  value);
+EXTERN void lefiSetDebug(int num, int value);
 
 /* Read flag                                                                  */
-EXTERN int lefiDebug (int  num);
+EXTERN int lefiDebug(int num);
 
 /* Error reporting routine                                                    */
-EXTERN void lefiError (int  check, int  msgNum, const char*  msg);
+EXTERN void lefiError(int check, int msgNum, const char* msg);
 
-EXTERN const char* CASE (const char * x);
+EXTERN const char* CASE(const char* x);
 
 #endif

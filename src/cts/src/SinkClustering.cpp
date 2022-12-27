@@ -43,8 +43,8 @@
 #include <string>
 #include <tuple>
 
-#include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -75,13 +75,13 @@ void SinkClustering::normalizePoints(float maxDiameter)
     yMin = std::min(p.getY(), yMin);
   }
 
-  double xSpan = xMax - xMin;
-  double ySpan = yMax - yMin;
+  const double xSpan = xMax - xMin;
+  const double ySpan = yMax - yMin;
   for (Point<double>& p : points_) {
-    double x = p.getX();
-    double xNorm = (x - xMin) / xSpan;
-    double y = p.getY();
-    double yNorm = (y - yMin) / ySpan;
+    const double x = p.getX();
+    const double xNorm = (x - xMin) / xSpan;
+    const double y = p.getY();
+    const double yNorm = (y - yMin) / ySpan;
     p = Point<double>(xNorm, yNorm);
   }
   maxInternalDiameter_ = maxDiameter / std::min(xSpan, ySpan);
@@ -121,8 +121,8 @@ double SinkClustering::computeTheta(double x, double y) const
     return 0.5;
   }
 
-  unsigned quad = numVertex(std::min(unsigned(2.0 * x), (unsigned) 1),
-                            std::min(unsigned(2.0 * y), (unsigned) 1));
+  const unsigned quad = numVertex(std::min(unsigned(2.0 * x), (unsigned) 1),
+                                  std::min(unsigned(2.0 * y), (unsigned) 1));
 
   double t = computeTheta(2 * std::fabs(x - 0.5), 2 * std::fabs(y - 0.5));
 
@@ -131,7 +131,7 @@ double SinkClustering::computeTheta(double x, double y) const
   }
 
   double integral;
-  double fractal = std::modf((quad + t) / 4.0 + 7.0 / 8.0, &integral);
+  const double fractal = std::modf((quad + t) / 4.0 + 7.0 / 8.0, &integral);
   return fractal;
 }
 
@@ -157,7 +157,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
 {
   scaleFactor_ = scaleFactor;
 
-  auto original_points = points_;
+  const auto original_points = points_;
   normalizePoints(maxDiameter);
   computeAllThetas();
   sortPoints();
@@ -165,9 +165,8 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   if (logger_->debugCheck(CTS, "Stree", 1))
     writePlotFile(groupSize);
 
-  if (options_->getGuiDebug()
-      || logger_->debugCheck(CTS, "Stree", 1) ) {
-    clusteringVisualizer(original_points, groupSize);
+  if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
+    clusteringVisualizer(original_points);
   }
 }
 
@@ -371,10 +370,9 @@ bool SinkClustering::isLimitExceeded(unsigned size,
 }
 
 void SinkClustering::clusteringVisualizer(
-    const std::vector<Point<double>>& points,
-    unsigned groupSize)
+    const std::vector<Point<double>>& points)
 {
-  graphics_ = std::make_unique<Graphics>(logger_, this, groupSize, points);
+  graphics_ = std::make_unique<Graphics>(this, points);
   if (Graphics::guiActive())
     graphics_->clockPlot(true);
 }
@@ -422,7 +420,7 @@ void SinkClustering::writePlotFile(unsigned groupSize)
   file.close();
 }
 
-double SinkClustering::getWireLength(vector<Point<double>> points)
+double SinkClustering::getWireLength(const vector<Point<double>>& points) const
 {
   vector<int> vecX;
   vector<int> vecY;
@@ -442,8 +440,8 @@ double SinkClustering::getWireLength(vector<Point<double>> points)
     vecY.emplace_back(point.getY() * options_->getDbUnits());
   }
   stt::SteinerTreeBuilder* sttBuilder = options_->getSttBuilder();
-  stt::Tree pdTree = sttBuilder->makeSteinerTree(vecX, vecY, 0);
-  int wl = pdTree.length;
+  const stt::Tree pdTree = sttBuilder->makeSteinerTree(vecX, vecY, 0);
+  const int wl = pdTree.length;
   return wl / double(options_->getDbUnits());
 }
 }  // namespace cts

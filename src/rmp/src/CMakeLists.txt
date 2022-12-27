@@ -72,3 +72,30 @@ target_link_libraries(rmp
     utl
     ${ABC_LIBRARY}
  )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          rmp_py
+           NAMESPACE     rmp
+           LANGUAGE      python
+           I_FILE        rmp-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/rmp_py.py
+  )
+
+  target_include_directories(rmp_py
+    PUBLIC
+      ../include
+  )
+
+  target_link_libraries(rmp_py
+    PUBLIC
+      rmp
+      odb
+      dbSta
+      OpenSTA
+      rsz
+  )
+
+endif()

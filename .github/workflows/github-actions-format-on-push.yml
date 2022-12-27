@@ -8,11 +8,11 @@ on:
 
 jobs:
   format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: setup
         run: |
-          sudo apt update 
+          sudo apt update
           sudo apt install -y clang-14 clang-format-14
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -24,8 +24,7 @@ jobs:
       - name: Check format of cpp changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* ]]; then
+            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* && "${file}" != "src/dbSta/"* && "${file}" != "src/rsz/"* ]]; then
               clang-format --dry-run --Werror $file
             fi
           done
-        

@@ -11,6 +11,7 @@ record_tests {
   critical_nets_percentage
   est_rc1
   est_rc2
+  est_rc3
   gcd
   gcd_flute
   inst_pin_out_of_die
@@ -28,6 +29,7 @@ record_tests {
   pd4
   pin_access1
   pin_access2
+  pin_track_not_aligned
   pre_routed1
   region_adjustment
   repair_antennas1

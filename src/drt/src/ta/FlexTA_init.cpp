@@ -47,12 +47,12 @@ void FlexTAWorker::initTracks()
       continue;
     }
     for (auto& tp : getDesign()->getTopBlock()->getTrackPatterns(lNum)) {
-      if ((getDir() == dbTechLayerDir::HORIZONTAL && tp->isHorizontal() == false)
+      if ((getDir() == dbTechLayerDir::HORIZONTAL
+           && tp->isHorizontal() == false)
           || (getDir() == dbTechLayerDir::VERTICAL
               && tp->isHorizontal() == true)) {
         bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-        frCoord lowCoord
-            = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
+        frCoord lowCoord = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
@@ -129,76 +129,81 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   vector<frBlockObject*> result;
   box = Rect(bp, bp);
   rq->queryGRPin(box, result);
-  dbTransform instXform;  // (0,0), R0
-  dbTransform shiftXform;
+
   for (auto& term : result) {
-    frMTerm* trueTerm = nullptr;
-    frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto iterm = static_cast<frInstTerm*>(term);
         if (iterm->getNet() != net) {
           continue;
         }
-        inst = iterm->getInst();
-        shiftXform = inst->getTransform();
+        frInst* inst = iterm->getInst();
+        dbTransform shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
-        trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+        frMTerm* mterm = iterm->getTerm();
+        int pinIdx = 0;
+        for (auto& pin : mterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            pinIdx++;
+            continue;
+          }
+          frAccessPoint* ap
+              = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+          if (ap == nullptr) {
+            pinIdx++;
+            continue;
+          }
+          Point bp = ap->getPoint();
+          auto bNum = ap->getLayerNum();
+          shiftXform.apply(bp);
+          if (layerNum == bNum && getRouteBox().intersects(bp)) {
+            wlen2 = isH ? bp.y() : bp.x();
+            maxBegin = isH ? bp.x() : bp.y();
+            minEnd = isH ? bp.x() : bp.y();
+            wlen = 0;
+            if (hasDown) {
+              downViaCoordSet.insert(maxBegin);
+            }
+            if (hasUp) {
+              upViaCoordSet.insert(maxBegin);
+            }
+            return true;
+          }
+          pinIdx++;
+        }
         break;
       }
-      // TODO FIXME
-      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
-      // actually act on BTerms. This code can be removed without changing
-      // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what the
-      // anticipated behavior should be.
       case frcBTerm: {
-        /*auto bterm = static_cast<frBTerm*>(term);
+        auto bterm = static_cast<frBTerm*>(term);
         if (bterm->getNet() != net) {
           continue;
         }
-        trueTerm = bterm;*/
+        for (auto& pin : bterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
+            Point bp = ap->getPoint();
+            auto bNum = ap->getLayerNum();
+            if (layerNum == bNum && getRouteBox().intersects(bp)) {
+              wlen2 = isH ? bp.y() : bp.x();
+              maxBegin = isH ? bp.x() : bp.y();
+              minEnd = isH ? bp.x() : bp.y();
+              wlen = 0;
+              if (hasDown) {
+                downViaCoordSet.insert(maxBegin);
+              }
+              if (hasUp) {
+                upViaCoordSet.insert(maxBegin);
+              }
+              return true;
+            }
+          }
+        }
         break;
       }
       default:
-       break;
-    }
-    if (trueTerm) {
-      int pinIdx = 0;
-      int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-      for (auto& pin : trueTerm->getPins()) {
-        frAccessPoint* ap = nullptr;
-        if (inst) {
-          ap = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-        }
-        if (!pin->hasPinAccess()) {
-          continue;
-        }
-        if (pinAccessIdx == -1) {
-          continue;
-        }
-        if (ap == nullptr) {
-          continue;
-        }
-        Point apBp = ap->getPoint();
-        auto bNum = ap->getLayerNum();
-        shiftXform.apply(apBp);
-        if (layerNum == bNum && getRouteBox().intersects(apBp)) {
-          wlen2 = isH ? apBp.y() : apBp.x();
-          maxBegin = isH ? apBp.x() : apBp.y();
-          minEnd = isH ? apBp.x() : apBp.y();
-          wlen = 0;
-          if (hasDown) {
-            downViaCoordSet.insert(maxBegin);
-          }
-          if (hasUp) {
-            upViaCoordSet.insert(maxBegin);
-          }
-          return true;
-        }
-        pinIdx++;
-      }
+        break;
     }
   }
 
@@ -242,70 +247,61 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
     box = Rect(ep, ep);
     rq->queryGRPin(box, result);
   }
-  dbTransform instXform;  // (0,0), R0
-  dbTransform shiftXform;
   for (auto& term : result) {
-    frMTerm* trueTerm = nullptr;
-    frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto iterm = static_cast<frInstTerm*>(term);
         if (iterm->getNet() != net) {
           continue;
         }
-        inst = iterm->getInst();
-        shiftXform = inst->getTransform();
+        frInst* inst = iterm->getInst();
+        dbTransform shiftXform = inst->getTransform();
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
-        trueTerm = iterm->getTerm();
+        frMTerm* mterm = iterm->getTerm();
+        int pinIdx = 0;
+        for (auto& pin : mterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            pinIdx++;
+            continue;
+          }
+          frAccessPoint* ap
+              = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+          if (ap == nullptr) {
+            pinIdx++;
+            continue;
+          }
+          Point bp = ap->getPoint();
+          shiftXform.apply(bp);
+          if (getRouteBox().intersects(bp)) {
+            wlen2 = isH ? bp.y() : bp.x();
+            return;
+          }
+          pinIdx++;
+        }
         break;
       }
-      // TODO FIXME
-      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
-      // actually act on BTerms. This code can be removed without changing
-      // functionality, but it is being left commented because it appears to be
-      // a bug with the way BTerms are handled and it may give a clue to what the
-      // anticipated behavior should be. Note that the bTerm can still affect
-      // whether wlen2 is set to 0 or not after if (trueTerm)...
       case frcBTerm: {
-        auto bTerm = static_cast<frBTerm*>(term);
-        if (bTerm->getNet() != net) {
+        auto bterm = static_cast<frBTerm*>(term);
+        if (bterm->getNet() != net) {
           continue;
         }
-        //trueTerm = bterm;
+        for (auto& pin : bterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
+            Point bp = ap->getPoint();
+            if (getRouteBox().intersects(bp)) {
+              wlen2 = isH ? bp.y() : bp.x();
+              return;
+            }
+          }
+        }
         break;
       }
       default:
         break;
     }
-
-    if (trueTerm) {
-      int pinIdx = 0;
-      int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-      for (auto& pin : trueTerm->getPins()) {
-        frAccessPoint* ap = nullptr;
-        if (inst) {
-          ap = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-        }
-        if (!pin->hasPinAccess()) {
-          continue;
-        }
-        if (pinAccessIdx == -1) {
-          continue;
-        }
-        if (ap == nullptr) {
-          continue;
-        }
-        Point apBp = ap->getPoint();
-        shiftXform.apply(apBp);
-        if (getRouteBox().intersects(apBp)) {
-          wlen2 = isH ? apBp.y() : apBp.x();
-          return;
-        }
-        pinIdx++;
-      }
-    };  // to do @@@@@
-    wlen2 = 0;
   }
 }
 
@@ -483,8 +479,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
-                           : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   for (auto coord : downViaCoordSet) {
@@ -498,8 +493,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
-                           : Point(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   iroute->setWlenHelper(wlen);
@@ -597,16 +591,16 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock()) ||
-            (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
-            addToReassignIroutes(iroute.get());
+      if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
+          || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+        addToReassignIroutes(iroute.get());
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-          if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock()) ||
-            (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
-            addToReassignIroutes(iroute.get());
+        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
+            || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+          addToReassignIroutes(iroute.get());
       }
     }
   }
@@ -689,7 +683,7 @@ void FlexTAWorker::initFixedObjs()
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
         if (getTech()->getLayer(layerNum)->getType()
-                   == dbTechLayerType::ROUTING) {
+            == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
               && getTech()->getLayer(layerNum - 2)->getType()
@@ -739,7 +733,7 @@ void FlexTAWorker::initFixedObjs()
             }
           }
           bool isFatOBS = true;
-          if ((int)bounds.minDXDY() <= 2 * width) {
+          if ((int) bounds.minDXDY() <= 2 * width) {
             isFatOBS = false;
           }
           if (isMacro && isFatOBS) {
@@ -791,24 +785,11 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
     obsWidth = layer->getWidth();
   }
 
-  frCoord bloatDist = 0;
-  auto con = layer->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          obsWidth, viaWidth /*prl*/);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          obsWidth, viaWidth, viaWidth /*prl*/);
-    }
-  }
-   auto& eol = layer->getDrEolSpacingConstraint();
-   if (viaBox.minDXDY() < eol.eolWidth)
-       bloatDist = std::max(bloatDist, eol.eolSpace);
+  frCoord bloatDist
+      = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
+  auto& eol = layer->getDrEolSpacingConstraint();
+  if (viaBox.minDXDY() < eol.eolWidth)
+    bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following
@@ -826,8 +807,6 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
 {
   auto layer = getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();
-  // use width if minSpc does not exist
-  frCoord bloatDist = width;
   frCoord objWidth = box.minDXDY();
   frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
                     ? (box.xMax() - box.xMin())
@@ -837,19 +816,11 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
       objWidth = width;
     }
   }
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
-  if (con) {
-    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-      bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-      bloatDist
-          = static_cast<frSpacingTablePrlConstraint*>(con)->find(objWidth, prl);
-    } else if (con->typeId()
-               == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-      bloatDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-          objWidth, width, prl);
-    }
+
+  // use width if minSpc does not exist
+  frCoord bloatDist = width;
+  if (layer->hasMinSpacing()) {
+    bloatDist = layer->getMinSpacingValue(objWidth, width, prl, false);
   }
   // assuming the wire width is width
   bloatDist += width / 2;
@@ -860,11 +831,7 @@ void FlexTAWorker::init()
 {
   rq_.init();
   initTracks();
-  if (getTAIter() != -1) {
-    initFixedObjs();
-  }
+  initFixedObjs();
   initIroutes();
-  if (getTAIter() != -1) {
-    initCosts();
-  }
+  initCosts();
 }

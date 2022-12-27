@@ -380,7 +380,8 @@ Resizer::makeBufferedNet(const Pin *drvr_pin,
   return nullptr;
 }
 
-typedef vector<vector<SteinerPt>> SteinerPtAdjacents;
+using SteinerPtAdjacents = vector<vector<SteinerPt>>;
+using SteinerPtPinVisited = std::unordered_set<Point, PointHash, PointEqual>;
 
 static BufferedNetPtr
 makeBufferedNet(SteinerTree *tree,
@@ -388,45 +389,7 @@ makeBufferedNet(SteinerTree *tree,
                 SteinerPt to,
                 SteinerPtAdjacents &adjacents,
                 int level,
-                const Corner *corner,
-                Resizer *resizer,
-                Logger *logger,
-                Network *network);
-
-// Make BufferedNet from steiner tree.
-BufferedNetPtr
-Resizer::makeBufferedNetSteiner(const Pin *drvr_pin,
-                                const Corner *corner)
-{
-  BufferedNetPtr bnet = nullptr;
-  SteinerTree *tree = makeSteinerTree(drvr_pin);
-  if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(network_);
-    if (drvr_pt != SteinerTree::null_pt) {
-      int branch_count = tree->branchCount();
-      SteinerPtAdjacents adjacents(branch_count);
-      for (int i = 0; i < branch_count; i++) {
-        stt::Branch &branch_pt = tree->branch(i);
-        SteinerPt j = branch_pt.n;
-        if (j != i) {
-          adjacents[i].push_back(j);
-          adjacents[j].push_back(i);
-        }
-      }
-      bnet = rsz::makeBufferedNet(tree, SteinerTree::null_pt, drvr_pt,
-                                  adjacents, 0, corner, this, logger_, network_);
-    }
-    delete tree;
-  }
-  return bnet;
-}
-
-static BufferedNetPtr
-makeBufferedNet(SteinerTree *tree,
-                SteinerPt from,
-                SteinerPt to,
-                SteinerPtAdjacents &adjacents,
-                int level,
+                SteinerPtPinVisited& pins_visited,
                 const Corner *corner,
                 Resizer *resizer,
                 Logger *logger,
@@ -434,7 +397,11 @@ makeBufferedNet(SteinerTree *tree,
 {
   BufferedNetPtr bnet = nullptr;
   const PinSeq *pins = tree->pins(to);
-  if (pins) {
+  const Point to_loc = tree->location(to);
+  // If there is more than one node at a location we don't want to
+  // add the pins repeatedly.  The first node wins and the rest are skipped.
+  if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
+    pins_visited.insert(to_loc);
     for (Pin *pin : *pins) {
       if (network->isLoad(pin)) {
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(BufferedNetType::load,
@@ -458,6 +425,7 @@ makeBufferedNet(SteinerTree *tree,
     if (adj != from) {
       BufferedNetPtr bnet1 = makeBufferedNet(tree, to, adj,
                                              adjacents, level + 1,
+                                             pins_visited,
                                              corner, resizer, logger, network);
       if (bnet1) {
         if (bnet)
@@ -476,6 +444,36 @@ makeBufferedNet(SteinerTree *tree,
                                     tree->location(from),
                                     BufferedNet::null_layer, bnet,
                                     corner, resizer);
+  return bnet;
+}
+
+// Make BufferedNet from steiner tree.
+BufferedNetPtr
+Resizer::makeBufferedNetSteiner(const Pin *drvr_pin,
+                                const Corner *corner)
+{
+  BufferedNetPtr bnet = nullptr;
+  SteinerTree *tree = makeSteinerTree(drvr_pin);
+  if (tree) {
+    SteinerPt drvr_pt = tree->drvrPt(network_);
+    if (drvr_pt != SteinerTree::null_pt) {
+      int branch_count = tree->branchCount();
+      SteinerPtAdjacents adjacents(branch_count);
+      for (int i = 0; i < branch_count; i++) {
+        stt::Branch &branch_pt = tree->branch(i);
+        SteinerPt j = branch_pt.n;
+        if (j != i) {
+          adjacents[i].push_back(j);
+          adjacents[j].push_back(i);
+        }
+      }
+      SteinerPtPinVisited pins_visited;
+      bnet = rsz::makeBufferedNet(tree, SteinerTree::null_pt, drvr_pt,
+                                  adjacents, 0, pins_visited, corner,
+                                  this, logger_, network_);
+    }
+    delete tree;
+  }
   return bnet;
 }
 

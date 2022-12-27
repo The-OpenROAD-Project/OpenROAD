@@ -92,6 +92,12 @@ void Design::link(const std::string& design_name)
   app->linkDesign(design_name.c_str());
 }
 
+void Design::readDb(const std::string& file_name)
+{
+  auto app = OpenRoad::openRoad();
+  app->readDb(file_name.c_str());
+}
+
 void Design::writeDb(const std::string& file_name)
 {
   auto app = OpenRoad::openRoad();
@@ -132,10 +138,11 @@ ant::AntennaChecker* Design::getAntennaChecker()
   return app->getAntennaChecker();
 }
 
-int Design::evalTclString(const std::string& cmd)
+const std::string Design::evalTclString(const std::string& cmd)
 {
   Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
-  return Tcl_Eval(tcl_interp, cmd.c_str());
+  Tcl_Eval(tcl_interp, cmd.c_str());
+  return std::string(Tcl_GetStringResult(tcl_interp));
 }
 
 Tech* Design::getTech()
@@ -147,6 +154,84 @@ grt::GlobalRouter* Design::getGlobalRouter()
 {
   auto app = OpenRoad::openRoad();
   return app->getGlobalRouter();
+}
+
+gpl::Replace* Design::getReplace()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getReplace();
+}
+
+dpl::Opendp* Design::getOpendp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpendp();
+}
+
+mpl::MacroPlacer* Design::getMacroPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getMacroPlacer();
+}
+
+ppl::IOPlacer* Design::getIOPlacer()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getIOPlacer();
+}
+
+tap::Tapcell* Design::getTapcell()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTapcell();
+}
+
+cts::TritonCTS* Design::getTritonCts()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonCts();
+}
+
+triton_route::TritonRoute* Design::getTritonRoute()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getTritonRoute();
+}
+
+dpo::Optdp* Design::getOptdp()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOptdp();
+}
+
+fin::Finale* Design::getFinale()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getFinale();
+}
+
+par::PartitionMgr* Design::getPartitionMgr()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPartitionMgr();
+}
+
+rcx::Ext* Design::getOpenRCX()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getOpenRCX();
+}
+
+rmp::Restructure* Design::getRestructure()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getRestructure();
+}
+
+stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSteinerTreeBuilder();
 }
 
 }  // namespace ord

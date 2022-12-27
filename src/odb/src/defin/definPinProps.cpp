@@ -42,7 +42,7 @@
 
 namespace odb {
 
-definPinProps::definPinProps()
+definPinProps::definPinProps() : _cur_obj(nullptr)
 {
 }
 

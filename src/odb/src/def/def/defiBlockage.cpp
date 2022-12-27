@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2013 - 2015, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author: dell $
 //  $Revision: #1 $
 //  $Date: 2017/06/06 $
@@ -27,12 +27,14 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <string.h>
+#include "defiBlockage.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "lex.h"
-#include "defiBlockage.hpp"
+#include <string.h>
+
 #include "defiDebug.hpp"
+#include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
@@ -44,14 +46,13 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 
-defiBlockage::defiBlockage(defrData *data) 
- : defData(data)
+defiBlockage::defiBlockage(defrData* data) : defData(data)
 {
   Init();
 }
 
-
-void defiBlockage::Init() {
+void defiBlockage::Init()
+{
   numPolys_ = 0;
   clear();
   layerName_ = 0;
@@ -67,84 +68,87 @@ void defiBlockage::Init() {
   polygons_ = 0;
 }
 
-DEF_COPY_CONSTRUCTOR_C( defiBlockage ) {
+DEF_COPY_CONSTRUCTOR_C(defiBlockage)
+{
   this->Init();
-  DEF_COPY_FUNC( hasLayer_ );
-  DEF_MALLOC_FUNC( layerName_, char, sizeof(char) * 
-      (strlen(prev.layerName_) +1));
+  DEF_COPY_FUNC(hasLayer_);
+  DEF_MALLOC_FUNC(
+      layerName_, char, sizeof(char) * (strlen(prev.layerName_) + 1));
 
-  DEF_COPY_FUNC( layerNameLength_ );
-  DEF_COPY_FUNC( hasPlacement_ );
-  DEF_COPY_FUNC( hasComponent_ );
-  DEF_MALLOC_FUNC( componentName_, char, sizeof(char) * 
-      (strlen(prev.componentName_) +1));
-  
-  DEF_COPY_FUNC( componentNameLength_ );
-  DEF_COPY_FUNC( hasSlots_ );
-  DEF_COPY_FUNC( hasFills_ );
-  DEF_COPY_FUNC( hasPushdown_ );
-  DEF_COPY_FUNC( hasExceptpgnet_ );
-  DEF_COPY_FUNC( hasSoft_ );
-  DEF_COPY_FUNC( maxDensity_ );
-  DEF_COPY_FUNC( minSpacing_ );
-  DEF_COPY_FUNC( width_ );
-  DEF_COPY_FUNC( numRectangles_ );
-  DEF_COPY_FUNC( rectsAllocated_ );
-  DEF_COPY_FUNC( mask_ );
-  
-  DEF_MALLOC_FUNC( xl_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( yl_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( xh_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( yh_, int, sizeof(int) * numRectangles_ );
-  
-  DEF_COPY_FUNC( numPolys_ );
-  DEF_COPY_FUNC( polysAllocated_ );
-  DEF_MALLOC_FUNC_FOR_2D_POINT ( polygons_, numPolys_ );
+  DEF_COPY_FUNC(layerNameLength_);
+  DEF_COPY_FUNC(hasPlacement_);
+  DEF_COPY_FUNC(hasComponent_);
+  DEF_MALLOC_FUNC(
+      componentName_, char, sizeof(char) * (strlen(prev.componentName_) + 1));
+
+  DEF_COPY_FUNC(componentNameLength_);
+  DEF_COPY_FUNC(hasSlots_);
+  DEF_COPY_FUNC(hasFills_);
+  DEF_COPY_FUNC(hasPushdown_);
+  DEF_COPY_FUNC(hasExceptpgnet_);
+  DEF_COPY_FUNC(hasSoft_);
+  DEF_COPY_FUNC(maxDensity_);
+  DEF_COPY_FUNC(minSpacing_);
+  DEF_COPY_FUNC(width_);
+  DEF_COPY_FUNC(numRectangles_);
+  DEF_COPY_FUNC(rectsAllocated_);
+  DEF_COPY_FUNC(mask_);
+
+  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numRectangles_);
+
+  DEF_COPY_FUNC(numPolys_);
+  DEF_COPY_FUNC(polysAllocated_);
+  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
 }
 
-DEF_ASSIGN_OPERATOR_C( defiBlockage ) {
+DEF_ASSIGN_OPERATOR_C(defiBlockage)
+{
   CHECK_SELF_ASSIGN
   this->Init();
-  DEF_COPY_FUNC( hasLayer_ );
-  DEF_MALLOC_FUNC( layerName_, char, sizeof(char) * 
-      (strlen(prev.layerName_) +1));
+  DEF_COPY_FUNC(hasLayer_);
+  DEF_MALLOC_FUNC(
+      layerName_, char, sizeof(char) * (strlen(prev.layerName_) + 1));
 
-  DEF_COPY_FUNC( layerNameLength_ );
-  DEF_COPY_FUNC( hasPlacement_ );
-  DEF_COPY_FUNC( hasComponent_ );
-  DEF_MALLOC_FUNC( componentName_, char, sizeof(char) * 
-      (strlen(prev.componentName_) +1));
-  
-  DEF_COPY_FUNC( componentNameLength_ );
-  DEF_COPY_FUNC( hasSlots_ );
-  DEF_COPY_FUNC( hasFills_ );
-  DEF_COPY_FUNC( hasPushdown_ );
-  DEF_COPY_FUNC( hasExceptpgnet_ );
-  DEF_COPY_FUNC( hasSoft_ );
-  DEF_COPY_FUNC( maxDensity_ );
-  DEF_COPY_FUNC( minSpacing_ );
-  DEF_COPY_FUNC( width_ );
-  DEF_COPY_FUNC( numRectangles_ );
-  DEF_COPY_FUNC( rectsAllocated_ );
-  DEF_COPY_FUNC( mask_ );
-  
-  DEF_MALLOC_FUNC( xl_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( yl_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( xh_, int, sizeof(int) * numRectangles_ );
-  DEF_MALLOC_FUNC( yh_, int, sizeof(int) * numRectangles_ );
-  
-  DEF_COPY_FUNC( numPolys_ );
-  DEF_COPY_FUNC( polysAllocated_ );
-  DEF_MALLOC_FUNC_FOR_2D_POINT ( polygons_, numPolys_ );
+  DEF_COPY_FUNC(layerNameLength_);
+  DEF_COPY_FUNC(hasPlacement_);
+  DEF_COPY_FUNC(hasComponent_);
+  DEF_MALLOC_FUNC(
+      componentName_, char, sizeof(char) * (strlen(prev.componentName_) + 1));
+
+  DEF_COPY_FUNC(componentNameLength_);
+  DEF_COPY_FUNC(hasSlots_);
+  DEF_COPY_FUNC(hasFills_);
+  DEF_COPY_FUNC(hasPushdown_);
+  DEF_COPY_FUNC(hasExceptpgnet_);
+  DEF_COPY_FUNC(hasSoft_);
+  DEF_COPY_FUNC(maxDensity_);
+  DEF_COPY_FUNC(minSpacing_);
+  DEF_COPY_FUNC(width_);
+  DEF_COPY_FUNC(numRectangles_);
+  DEF_COPY_FUNC(rectsAllocated_);
+  DEF_COPY_FUNC(mask_);
+
+  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numRectangles_);
+  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numRectangles_);
+
+  DEF_COPY_FUNC(numPolys_);
+  DEF_COPY_FUNC(polysAllocated_);
+  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
   return *this;
 }
 
-defiBlockage::~defiBlockage() {
+defiBlockage::~defiBlockage()
+{
   Destroy();
 }
 
-
-void defiBlockage::clear() {
+void defiBlockage::clear()
+{
   hasLayer_ = 0;
   hasPlacement_ = 0;
   hasComponent_ = 0;
@@ -160,30 +164,33 @@ void defiBlockage::clear() {
   mask_ = 0;
 }
 
-
-void defiBlockage::clearPoly() {
+void defiBlockage::clearPoly()
+{
   struct defiPoints* p;
   int i;
 
   for (i = 0; i < numPolys_; i++) {
     p = polygons_[i];
-    free((char*)(p->x));
-    free((char*)(p->y));
-    free((char*)(polygons_[i]));
+    free((char*) (p->x));
+    free((char*) (p->y));
+    free((char*) (polygons_[i]));
   }
   numPolys_ = 0;
 }
 
-void defiBlockage::Destroy() {
-  if (layerName_) free(layerName_);
-  if (componentName_) free(componentName_);
+void defiBlockage::Destroy()
+{
+  if (layerName_)
+    free(layerName_);
+  if (componentName_)
+    free(componentName_);
   layerName_ = 0;
   componentName_ = 0;
   if (rectsAllocated_) {
-    free((char*)(xl_));
-    free((char*)(yl_));
-    free((char*)(xh_));
-    free((char*)(yh_));
+    free((char*) (xl_));
+    free((char*) (yl_));
+    free((char*) (xh_));
+    free((char*) (yh_));
     rectsAllocated_ = 0;
     xl_ = 0;
     yl_ = 0;
@@ -191,103 +198,115 @@ void defiBlockage::Destroy() {
     yh_ = 0;
   }
   clearPoly();
-  free((char*)(polygons_));
+  free((char*) (polygons_));
   polygons_ = 0;
   clear();
 }
 
-
-void defiBlockage::setLayer(const char* name) {
+void defiBlockage::setLayer(const char* name)
+{
   int len = strlen(name) + 1;
   if (layerNameLength_ < len) {
-    if (layerName_) free(layerName_);
-    layerName_ = (char*)malloc(len);
+    if (layerName_)
+      free(layerName_);
+    layerName_ = (char*) malloc(len);
     layerNameLength_ = len;
   }
   strcpy(layerName_, defData->DEFCASE(name));
   hasLayer_ = 1;
 }
 
-
-void defiBlockage::setPlacement() {
-
+void defiBlockage::setPlacement()
+{
   /* 10/29/2001 - Wanda da Rosa, new enhancement */
   hasPlacement_ = 1;
   return;
 }
 
-void defiBlockage::setComponent(const char* name) {
+void defiBlockage::setComponent(const char* name)
+{
   int len;
 
   /* 10/29/2001 - Wanda da Rosa, component name is required */
   len = strlen(name) + 1;
   if (componentNameLength_ < len) {
-    if (componentName_) free(componentName_);
-    componentName_ = (char*)malloc(len);
+    if (componentName_)
+      free(componentName_);
+    componentName_ = (char*) malloc(len);
     componentNameLength_ = len;
   }
   strcpy(componentName_, defData->DEFCASE(name));
   hasComponent_ = 1;
 }
 
-void defiBlockage::setSlots() {
+void defiBlockage::setSlots()
+{
   hasSlots_ = 1;
 }
 
-void defiBlockage::setFills() {
+void defiBlockage::setFills()
+{
   hasFills_ = 1;
 }
 
-void defiBlockage::setPushdown() {
+void defiBlockage::setPushdown()
+{
   hasPushdown_ = 1;
 }
 
 // 5.7
-void defiBlockage::setExceptpgnet() {
+void defiBlockage::setExceptpgnet()
+{
   hasExceptpgnet_ = 1;
 }
 
 // 5.7
-void defiBlockage::setSoft() {
+void defiBlockage::setSoft()
+{
   hasSoft_ = 1;
 }
 
 // 5.7
-void defiBlockage::setPartial(double maxDensity) {
+void defiBlockage::setPartial(double maxDensity)
+{
   maxDensity_ = maxDensity;
 }
 
-void defiBlockage::setSpacing(int minSpacing) {
+void defiBlockage::setSpacing(int minSpacing)
+{
   minSpacing_ = minSpacing;
 }
 
-void defiBlockage::setDesignRuleWidth(int width) {
+void defiBlockage::setDesignRuleWidth(int width)
+{
   width_ = width;
 }
 
-void defiBlockage::setMask(int colorMask) {
+void defiBlockage::setMask(int colorMask)
+{
   mask_ = colorMask;
 }
 
-void defiBlockage::addRect(int xl, int yl, int xh, int yh) {
+void defiBlockage::addRect(int xl, int yl, int xh, int yh)
+{
   if (numRectangles_ == rectsAllocated_) {
     int i;
-    int max = rectsAllocated_ = (rectsAllocated_ == 0) ?
-          2 : rectsAllocated_ * 2;
-    int* newxl = (int*)malloc(sizeof(int)*max);
-    int* newyl = (int*)malloc(sizeof(int)*max);
-    int* newxh = (int*)malloc(sizeof(int)*max);
-    int* newyh = (int*)malloc(sizeof(int)*max);
+    int max = rectsAllocated_
+        = (rectsAllocated_ == 0) ? 2 : rectsAllocated_ * 2;
+    int* newxl = (int*) malloc(sizeof(int) * max);
+    int* newyl = (int*) malloc(sizeof(int) * max);
+    int* newxh = (int*) malloc(sizeof(int) * max);
+    int* newyh = (int*) malloc(sizeof(int) * max);
     for (i = 0; i < numRectangles_; i++) {
       newxl[i] = xl_[i];
       newyl[i] = yl_[i];
       newxh[i] = xh_[i];
       newyh[i] = yh_[i];
     }
-    free((char*)(xl_));
-    free((char*)(yl_));
-    free((char*)(xh_));
-    free((char*)(yh_));
+    free((char*) (xl_));
+    free((char*) (yl_));
+    free((char*) (xh_));
+    free((char*) (yh_));
     xl_ = newxl;
     yl_ = newyl;
     xh_ = newxh;
@@ -300,29 +319,28 @@ void defiBlockage::addRect(int xl, int yl, int xh, int yh) {
   numRectangles_ += 1;
 }
 
-
 // 5.6
-void defiBlockage::addPolygon(defiGeometries* geom) {
+void defiBlockage::addPolygon(defiGeometries* geom)
+{
   struct defiPoints* p;
   int x, y;
   int i;
 
   if (numPolys_ == polysAllocated_) {
     struct defiPoints** poly;
-    polysAllocated_ = (polysAllocated_ == 0) ?
-          2 : polysAllocated_ * 2;
-    poly = (struct defiPoints**)malloc(sizeof(struct defiPoints*) *
-            polysAllocated_);
+    polysAllocated_ = (polysAllocated_ == 0) ? 2 : polysAllocated_ * 2;
+    poly = (struct defiPoints**) malloc(sizeof(struct defiPoints*)
+                                        * polysAllocated_);
     for (i = 0; i < numPolys_; i++)
       poly[i] = polygons_[i];
     if (polygons_)
-      free((char*)(polygons_));
+      free((char*) (polygons_));
     polygons_ = poly;
   }
-  p = (struct defiPoints*)malloc(sizeof(struct defiPoints));
+  p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
   p->numPoints = geom->numPoints();
-  p->x = (int*)malloc(sizeof(int)*p->numPoints);
-  p->y = (int*)malloc(sizeof(int)*p->numPoints);
+  p->x = (int*) malloc(sizeof(int) * p->numPoints);
+  p->y = (int*) malloc(sizeof(int) * p->numPoints);
   for (i = 0; i < p->numPoints; i++) {
     geom->points(i, &x, &y);
     p->x[i] = x;
@@ -332,109 +350,118 @@ void defiBlockage::addPolygon(defiGeometries* geom) {
   numPolys_ += 1;
 }
 
-
-int defiBlockage::hasLayer() const {
+int defiBlockage::hasLayer() const
+{
   return hasLayer_;
 }
 
-
-int defiBlockage::hasPlacement() const {
+int defiBlockage::hasPlacement() const
+{
   return hasPlacement_;
 }
 
-
-int defiBlockage::hasComponent() const {
+int defiBlockage::hasComponent() const
+{
   return hasComponent_;
 }
 
-
-int defiBlockage::hasSlots() const {
+int defiBlockage::hasSlots() const
+{
   return hasSlots_;
 }
 
-
-int defiBlockage::hasFills() const {
+int defiBlockage::hasFills() const
+{
   return hasFills_;
 }
 
-
-int defiBlockage::hasPushdown() const {
+int defiBlockage::hasPushdown() const
+{
   return hasPushdown_;
 }
 
 // 5.7
-int defiBlockage::hasExceptpgnet() const {
+int defiBlockage::hasExceptpgnet() const
+{
   return hasExceptpgnet_;
 }
 
 // 5.7
-int defiBlockage::hasSoft() const {
+int defiBlockage::hasSoft() const
+{
   return hasSoft_;
 }
 
 // 5.7
-int defiBlockage::hasPartial() const {
+int defiBlockage::hasPartial() const
+{
   if (maxDensity_ == -1)
     return 0;
   return 1;
 }
 
 // 5.7
-double defiBlockage::placementMaxDensity() const {
+double defiBlockage::placementMaxDensity() const
+{
   return maxDensity_;
 }
 
-int defiBlockage::hasSpacing() const {
+int defiBlockage::hasSpacing() const
+{
   if (minSpacing_ == -1)
     return 0;
   return 1;
 }
 
-
-int defiBlockage::hasDesignRuleWidth() const {
+int defiBlockage::hasDesignRuleWidth() const
+{
   if (width_ == -1)
     return 0;
   return 1;
 }
 
-int defiBlockage::hasMask() const {
-    return mask_;
-}
-
-int defiBlockage::minSpacing() const {
-  return minSpacing_;
-}
-
-
-int defiBlockage::designRuleWidth() const {
-  return width_;
-}
-
-int defiBlockage::mask() const {
+int defiBlockage::hasMask() const
+{
   return mask_;
 }
 
-const char* defiBlockage::layerName() const {
+int defiBlockage::minSpacing() const
+{
+  return minSpacing_;
+}
+
+int defiBlockage::designRuleWidth() const
+{
+  return width_;
+}
+
+int defiBlockage::mask() const
+{
+  return mask_;
+}
+
+const char* defiBlockage::layerName() const
+{
   return layerName_;
 }
 
-
-const char* defiBlockage::layerComponentName() const {
+const char* defiBlockage::layerComponentName() const
+{
   return componentName_;
 }
 
-
-const char* defiBlockage::placementComponentName() const {
+const char* defiBlockage::placementComponentName() const
+{
   return componentName_;
 }
 
-
-int defiBlockage::numRectangles() const {
+int defiBlockage::numRectangles() const
+{
   return numRectangles_;
 }
 
-
-int defiBlockage::xl(int index) const {
+int defiBlockage::xl(int index) const
+{
   if (index < 0 || index >= numRectangles_) {
     defiError(1, 0, "bad index for blockage xl", defData);
     return 0;
@@ -442,8 +469,8 @@ int defiBlockage::xl(int index) const {
   return xl_[index];
 }
 
-
-int defiBlockage::yl(int index) const {
+int defiBlockage::yl(int index) const
+{
   if (index < 0 || index >= numRectangles_) {
     defiError(1, 0, "bad index for blockage yl", defData);
     return 0;
@@ -451,8 +478,8 @@ int defiBlockage::yl(int index) const {
   return yl_[index];
 }
 
-
-int defiBlockage::xh(int index) const {
+int defiBlockage::xh(int index) const
+{
   if (index < 0 || index >= numRectangles_) {
     defiError(1, 0, "bad index for blockage xh", defData);
     return 0;
@@ -460,8 +487,8 @@ int defiBlockage::xh(int index) const {
   return xh_[index];
 }
 
-
-int defiBlockage::yh(int index) const {
+int defiBlockage::yh(int index) const
+{
   if (index < 0 || index >= numRectangles_) {
     defiError(1, 0, "bad index for blockage yh", defData);
     return 0;
@@ -469,20 +496,20 @@ int defiBlockage::yh(int index) const {
   return yh_[index];
 }
 
-
 // 5.6
-int defiBlockage::numPolygons() const {
+int defiBlockage::numPolygons() const
+{
   return numPolys_;
 }
 
-
 // 5.6
-struct defiPoints defiBlockage::getPolygon(int index) const {
+struct defiPoints defiBlockage::getPolygon(int index) const
+{
   return *(polygons_[index]);
 }
 
-
-void defiBlockage::print(FILE* f) const {
+void defiBlockage::print(FILE* f) const
+{
   int i, j;
   struct defiPoints points;
 
@@ -522,9 +549,8 @@ void defiBlockage::print(FILE* f) const {
     points = getPolygon(i);
     for (j = 0; j < points.numPoints; j++)
       fprintf(f, "%d %d ", points.x[j], points.y[j]);
-    fprintf(f,"\n");
+    fprintf(f, "\n");
   }
-  fprintf(f,"\n");
+  fprintf(f, "\n");
 }
 END_LEFDEF_PARSER_NAMESPACE
-

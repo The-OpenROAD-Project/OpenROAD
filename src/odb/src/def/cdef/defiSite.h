@@ -23,18 +23,18 @@
 /* For updates, support, or to become part of the LEF/DEF Community,          */
 /* check www.openeda.org for details.                                         */
 /*                                                                            */
-/*  $Author: dell $                                                                  */
-/*  $Revision: #1 $                                                                */
-/*  $Date: 2017/06/06 $                                                                    */
+/*  $Author: dell $ */
+/*  $Revision: #1 $ */
+/*  $Date: 2017/06/06 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
-
 
 #ifndef CDEFISITE_H
 #define CDEFISITE_H
 
 #include <stdio.h>
+
 #include "defiTypedefs.h"
 
 /*
@@ -42,33 +42,33 @@
  * It is also used for a canplace and cannotoccupy.
  */
 
-EXTERN double defiSite_x_num (const defiSite* obj);
-EXTERN double defiSite_y_num (const defiSite* obj);
-EXTERN double defiSite_x_step (const defiSite* obj);
-EXTERN double defiSite_y_step (const defiSite* obj);
-EXTERN double defiSite_x_orig (const defiSite* obj);
-EXTERN double defiSite_y_orig (const defiSite* obj);
-EXTERN int defiSite_orient (const defiSite* obj);
-EXTERN const char* defiSite_orientStr (const defiSite* obj);
-EXTERN const char* defiSite_name (const defiSite* obj);
+EXTERN double defiSite_x_num(const defiSite* obj);
+EXTERN double defiSite_y_num(const defiSite* obj);
+EXTERN double defiSite_x_step(const defiSite* obj);
+EXTERN double defiSite_y_step(const defiSite* obj);
+EXTERN double defiSite_x_orig(const defiSite* obj);
+EXTERN double defiSite_y_orig(const defiSite* obj);
+EXTERN int defiSite_orient(const defiSite* obj);
+EXTERN const char* defiSite_orientStr(const defiSite* obj);
+EXTERN const char* defiSite_name(const defiSite* obj);
 
-EXTERN void defiSite_print (const defiSite* obj, FILE*  f);
+EXTERN void defiSite_print(const defiSite* obj, FILE* f);
 
 /* Struct holds the data for a Box */
-  /* Use the default destructor and constructor.                              */
-  /* 5.6 changed to use it own constructor & destructor                       */
+/* Use the default destructor and constructor.                              */
+/* 5.6 changed to use it own constructor & destructor                       */
 
-  /* NOTE: 5.6                                                                */
-  /* The following methods are still here for backward compatibility          */
-  /* For new reader they should use numPoints & getPoint to get the           */
-  /* data.                                                                    */
-EXTERN int defiBox_xl (const defiBox* obj);
-EXTERN int defiBox_yl (const defiBox* obj);
-EXTERN int defiBox_xh (const defiBox* obj);
-EXTERN int defiBox_yh (const defiBox* obj);
+/* NOTE: 5.6                                                                */
+/* The following methods are still here for backward compatibility          */
+/* For new reader they should use numPoints & getPoint to get the           */
+/* data.                                                                    */
+EXTERN int defiBox_xl(const defiBox* obj);
+EXTERN int defiBox_yl(const defiBox* obj);
+EXTERN int defiBox_xh(const defiBox* obj);
+EXTERN int defiBox_yh(const defiBox* obj);
 
-EXTERN struct defiPoints defiBox_getPoint (const defiBox* obj);
+EXTERN struct defiPoints defiBox_getPoint(const defiBox* obj);
 
-EXTERN void defiBox_print (const defiBox* obj, FILE*  f);
+EXTERN void defiBox_print(const defiBox* obj, FILE* f);
 
 #endif

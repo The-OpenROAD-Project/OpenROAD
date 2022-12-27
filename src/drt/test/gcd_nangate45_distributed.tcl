@@ -1,10 +1,10 @@
 source "helpers.tcl"
 
 set OR $argv0
-set server1 [$OR server1.tcl > results/server1.log &]
-set server2 [$OR server2.tcl > results/server2.log &]
-set balancer [$OR balancer.tcl > results/balancer.log &]
-set base [$OR -exit gcd_nangate45.tcl > results/base.log &]
+set server1 [exec $OR server1.tcl > results/server1.log &]
+set server2 [exec $OR server2.tcl > results/server2.log &]
+set balancer [exec $OR balancer.tcl > results/balancer.log &]
+set base [exec $OR -exit gcd_nangate45.tcl > results/base.log &]
 
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef

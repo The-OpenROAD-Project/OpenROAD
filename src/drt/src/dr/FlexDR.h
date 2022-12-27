@@ -294,6 +294,7 @@ class FlexDRWorker
       : design_(design),
         logger_(logger),
         graphics_(nullptr),
+        debugSettings_(nullptr),
         via_data_(via_data),
         routeBox_(),
         extBox_(),
@@ -319,6 +320,7 @@ class FlexDRWorker
         markers_(),
         rq_(this),
         gcWorker_(nullptr),
+        dist_(nullptr),
         dist_port_(0),
         dist_on_(false),
         isCongested_(false),
@@ -327,13 +329,26 @@ class FlexDRWorker
   }
   FlexDRWorker()
       :  // for serialization
+        design_(nullptr),
         logger_(nullptr),
         graphics_(nullptr),
         debugSettings_(nullptr),
         via_data_(nullptr),
+        drIter_(0),
+        mazeEndIter_(0),
+        followGuide_(false),
+        needRecheck_(false),
+        skipRouting_(false),
+        ripupMode_(0),
+        workerDRCCost_(0),
+        workerMarkerCost_(0),
         boundaryPin_(),
+        pinCnt_(0),
+        initNumMarkers_(0),
         rq_(this),
         gcWorker_(nullptr),
+        dist_(nullptr),
+        dist_port_(0),
         dist_on_(false),
         isCongested_(false),
         save_updates_(false)
@@ -542,7 +557,7 @@ class FlexDRWorker
   std::vector<frMarker> bestMarkers_;
   FlexDRWorkerRegionQuery rq_;
 
-  // persistant gc worker
+  // persistent gc worker
   unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
@@ -926,6 +941,12 @@ class FlexDRWorker
                    frMIdx z,
                    FlexMazeIdx* prev,
                    FlexMazeIdx* next);
+  void editStyleExt(frSegStyle& currStyle,
+                    frMIdx startX,
+                    frMIdx endX,
+                    frMIdx z,
+                    FlexMazeIdx* prev,
+                    FlexMazeIdx* next);
   bool isInsideTaperBox(frMIdx x,
                         frMIdx y,
                         frMIdx startZ,
