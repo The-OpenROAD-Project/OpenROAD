@@ -636,35 +636,132 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
   return power_wires;
 }
 
+map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
+                                        dbSet<dbBox> via_boxes,
+                                        int lb,
+                                        int lt,
+                                        bool has_params,
+                                        dbViaParams params)
+{
+  int num_rows = 1;
+  int num_cols = 1;
+  if (has_params) {
+    num_rows = params.getNumCutRows();
+    num_cols = params.getNumCutCols();
+  }
+  NodeEnclosure bot_encl = getViaEnclosure(lb, via_boxes);
+  NodeEnclosure top_encl = getViaEnclosure(lt, via_boxes);
+  map<Point, ViaCut> via_cuts;
+
+  // create multiple cuts only if the overall enclosure is larger than
+  // node_density
+  if ((bot_encl.dx() > node_density_ || bot_encl.dy() > node_density_
+       || top_encl.dy() > node_density_ || top_encl.dx() > node_density_)
+      && num_rows * num_cols > 1) {
+    for (auto* via_box : via_boxes) {
+      auto* layer = via_box->getTechLayer();
+      // Only capture shapes from the cut layer
+      if (layer == nullptr) {
+        continue;
+      }
+      int layer_num = layer->getRoutingLevel();
+      if (layer_num == lb || layer_num == lt) {
+        continue;
+      }
+      // Find the relative location and absolute of the via cut
+      odb::Rect cut = via_box->getBox();
+      int cut_x = (cut.xMin() + cut.xMax()) / 2;
+      int cut_y = (cut.yMin() + cut.yMax()) / 2;
+      Point cut_loc = Point(loc.getX() + cut_x, loc.getY() + cut_y);
+      NodeEnclosure cut_bot_encl{0, 0, 0, 0};
+      NodeEnclosure cut_top_encl{0, 0, 0, 0};
+
+      // create a default enclosure of node_density/2 while ensuring
+      // it does not exceed the overall enclosure
+      cut_bot_encl.neg_x = std::min(cut_x + bot_encl.neg_x, node_density_);
+      cut_bot_encl.pos_x = std::min(bot_encl.pos_x - cut_x, node_density_);
+      cut_bot_encl.neg_y = std::min(cut_y + bot_encl.neg_y, node_density_);
+      cut_bot_encl.pos_y = std::min(bot_encl.pos_y - cut_y, node_density_);
+
+      cut_top_encl.neg_x = std::min(cut_x + top_encl.neg_x, node_density_);
+      cut_top_encl.pos_x = std::min(top_encl.pos_x - cut_x, node_density_);
+      cut_top_encl.neg_y = std::min(cut_y + top_encl.neg_y, node_density_);
+      cut_top_encl.pos_y = std::min(top_encl.pos_y - cut_y, node_density_);
+
+      ViaCut via_cut{cut_loc, cut_bot_encl, cut_top_encl};
+      via_cuts.insert({cut_loc, via_cut});
+    }
+    // Reduce the number of nodes to speedup the computation
+    int cut_x = 0;
+    int cut_y = 0;
+    auto prev_cut = via_cuts.begin();
+    int x_st = prev_cut->first.getX();
+    int y_st = prev_cut->first.getY();
+    for (auto it = via_cuts.begin(); it != via_cuts.end();) {
+      if (it->first.getX() >= x_st + cut_x * node_density_) {
+        cut_x++;  // Keep Via if x distance is large
+        cut_y = 1;
+        prev_cut = it++;
+      } else if ((it->first.getX() == prev_cut->first.getX())
+                 && (it->first.getY() >= y_st + cut_y * node_density_)) {
+        cut_y++;  // Keep via if Y distance is large
+        prev_cut = it++;
+      } else {
+        it = via_cuts.erase(it);  // else delete via
+      }
+    }
+  } else {
+    ViaCut via_cut{loc, bot_encl, top_encl};
+    via_cuts.insert({loc, via_cut});
+  }
+
+  if (via_cuts.size() < 1) {
+    logger_->error(utl::PSM,
+                   81,
+                   "Via connection failed at {}, {}",
+                   loc.getX(),
+                   loc.getY());
+  }
+  return via_cuts;
+}
+
 //! Function to create the nodes of the G matrix
 void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
 {
   for (auto curWire : power_wires) {
     // For a Via we create the nodes at the top and bottom ends of the via
-    if (curWire->isVia()) {
-      dbTechLayer* via_bottom_layer;
-      dbTechLayer* via_top_layer;
-      dbSet<dbBox> via_boxes;
-      if (curWire->getBlockVia()) {
-        dbVia* via = curWire->getBlockVia();
-        via_top_layer = via->getTopLayer();
-        via_bottom_layer = via->getBottomLayer();
-        via_boxes = via->getBoxes();
-      } else {
-        dbTechVia* via = curWire->getTechVia();
-        via_top_layer = via->getTopLayer();
-        via_bottom_layer = via->getBottomLayer();
-        via_boxes = via->getBoxes();
-      }
-      const Point loc = curWire->getViaXY();
-      const int lb = via_bottom_layer->getRoutingLevel();
-      NodeEnclosure bot_encl = getViaEnclosure(lb, via_boxes);
-      auto bot_node = Gmat_->setNode(loc, lb);
-      bot_node->setEnclosure(bot_encl);
-      const int lt = via_top_layer->getRoutingLevel();
-      NodeEnclosure top_encl = getViaEnclosure(lt, via_boxes);
-      auto top_node = Gmat_->setNode(loc, lt);
-      top_node->setEnclosure(top_encl);
+    if (!(curWire->isVia()))
+      continue;
+    dbTechLayer* via_bottom_layer;
+    dbTechLayer* via_top_layer;
+    dbSet<dbBox> via_boxes;
+    dbViaParams params;
+    bool has_params;
+    if (curWire->getBlockVia()) {
+      dbVia* via = curWire->getBlockVia();
+      via_top_layer = via->getTopLayer();
+      via_bottom_layer = via->getBottomLayer();
+      via_boxes = via->getBoxes();
+      via->getViaParams(params);
+      has_params = via->hasParams();
+    } else {
+      dbTechVia* via = curWire->getTechVia();
+      via_top_layer = via->getTopLayer();
+      via_bottom_layer = via->getBottomLayer();
+      via_boxes = via->getBoxes();
+      via->getViaParams(params);
+      has_params = via->hasParams();
+    }
+    const Point loc = curWire->getViaXY();
+    const int lb = via_bottom_layer->getRoutingLevel();
+    const int lt = via_top_layer->getRoutingLevel();
+    // For large block vias that have multiple cuts
+    auto via_cuts = getViaCuts(loc, via_boxes, lb, lt, has_params, params);
+    for (auto& [cut_loc, via_cut] : via_cuts) {
+      auto bot_node = Gmat_->setNode(cut_loc, lb);
+      bot_node->setEnclosure(via_cut.bot_encl);
+      auto top_node = Gmat_->setNode(cut_loc, lt);
+      top_node->setEnclosure(via_cut.top_encl);
     }
   }
 }
@@ -841,10 +938,17 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       }
       int x, y;
       curWire->getViaXY(x, y);
+      const Point loc = curWire->getViaXY();
 
-      // Find the resistance of the via
+      const int bot_l = via_bottom_layer->getRoutingLevel();
+      const int top_l = via_top_layer->getRoutingLevel();
+
+      auto via_cuts
+          = getViaCuts(loc, via_boxes, bot_l, top_l, has_params, params);
+
+      // Find the resistance of each via cut
       const double R = via_bottom_layer->getUpperLayer()->getResistance()
-                       / (num_via_rows * num_via_cols);
+                       * via_cuts.size() / (num_via_rows * num_via_cols);
       if (!checkValidR(R) && !connection_only) {
         logger_->error(utl::PSM,
                        35,
@@ -852,46 +956,50 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                        "set it using the 'set_layer_rc' command.",
                        via_bottom_layer->getName());
       }
-      // Find the nodes of the via
-      const int bot_l = via_bottom_layer->getRoutingLevel();
-      const Node* node_bot
-          = Gmat_->getNode(x, y, bot_l, bot_l == bottom_layer_);
-      const Point bot_node_loc = node_bot->getLoc();
-      if (abs(bot_node_loc.getX() - x) > node_density_
-          || abs(bot_node_loc.getY() - y) > node_density_) {
-        logger_->warn(utl::PSM,
-                      32,
-                      "Node at ({}, {}) and layer {} moved from ({}, {}).",
-                      bot_node_loc.getX(),
-                      bot_node_loc.getY(),
-                      bot_l,
-                      x,
-                      y);
-      }
+      // Create a connection at each via cut
+      for (auto& [cut_loc, via_cut] : via_cuts) {
+        // Find the nodes of the via
+        const Node* node_bot = Gmat_->getNode(
+            cut_loc.getX(), cut_loc.getY(), bot_l, bot_l == bottom_layer_);
+        const Node* node_top
+            = Gmat_->getNode(cut_loc.getX(), cut_loc.getY(), top_l, false);
 
-      const int top_l = via_top_layer->getRoutingLevel();
-      const Node* node_top
-          = Gmat_->getNode(x, y, top_l, top_l == bottom_layer_);
-      const Point top_node_loc = node_top->getLoc();
-      if (abs(top_node_loc.getX() - x) > node_density_
-          || abs(top_node_loc.getY() - y) > node_density_) {
-        logger_->warn(utl::PSM,
-                      33,
-                      "Node at ({}, {}) and layer {} moved from ({}, {}).",
-                      top_node_loc.getX(),
-                      top_node_loc.getY(),
-                      top_l,
-                      x,
-                      y);
-      }
-      // Make a connection between the top and bottom nodes of the via
-      if (R <= 1e-12) {  // if the resistance was not set.
-        Gmat_->setConductance(node_bot, node_top, 0);
-      } else {
-        Gmat_->setConductance(node_bot, node_top, 1 / R);
+        // Get the exact location from the node
+        const Point bot_node_loc = node_bot->getLoc();
+        const Point top_node_loc = node_top->getLoc();
+
+        if (abs(bot_node_loc.getX() - cut_loc.getX()) > node_density_
+            || abs(bot_node_loc.getY() - cut_loc.getY()) > node_density_) {
+          logger_->warn(utl::PSM,
+                        32,
+                        "Node at ({}, {}) and layer {} moved from ({}, {}).",
+                        bot_node_loc.getX(),
+                        bot_node_loc.getY(),
+                        bot_l,
+                        cut_loc.getX(),
+                        cut_loc.getY());
+        }
+        if (abs(top_node_loc.getX() - cut_loc.getX()) > node_density_
+            || abs(top_node_loc.getY() - y) > node_density_) {
+          logger_->warn(utl::PSM,
+                        33,
+                        "Node at ({}, {}) and layer {} moved from ({}, {}).",
+                        top_node_loc.getX(),
+                        top_node_loc.getY(),
+                        top_l,
+                        cut_loc.getX(),
+                        cut_loc.getY());
+        }
+        // Make a connection between the top and bottom nodes of the via
+        if (R <= 1e-12) {  // if the resistance was not set.
+          Gmat_->setConductance(node_bot, node_top, 0);
+        } else {
+          Gmat_->setConductance(node_bot, node_top, 1 / R);
+        }
       }
       // Create the connections in the bottom enclosure
       const auto bot_layer_dir = via_bottom_layer->getDirection();
+      // The bottom layer must be connected by a rail and not by the enclosure.
       if (bot_l != bottom_layer_) {
         const double rho = via_bottom_layer->getResistance();
         if (!checkValidR(rho) && !connection_only) {
@@ -903,6 +1011,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                          via_bottom_layer->getName());
         }
         int x_loc1, x_loc2, y_loc1, y_loc2;
+        // Create a conductance over the entire original enclosure
         NodeEnclosure bot_encl = getViaEnclosure(bot_l, via_boxes);
         y_loc1 = y - bot_encl.neg_y;
         y_loc2 = y + bot_encl.pos_y;
