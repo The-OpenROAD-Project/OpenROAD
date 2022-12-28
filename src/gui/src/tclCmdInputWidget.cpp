@@ -46,14 +46,8 @@
 namespace gui {
 
 TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
-    : QPlainTextEdit(parent),
-      line_height_(0),
-      document_margins_(0),
-      max_height_(QWIDGETSIZE_MAX),
+    : CmdInputWidget("TCL", parent),
       interp_(nullptr),
-      history_(),
-      history_buffer_last_(),
-      historyPosition_(0),
       context_menu_(nullptr),
       enable_highlighting_(nullptr),
       enable_completion_(nullptr),
@@ -65,10 +59,6 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
       completer_end_of_command_(nullptr)
 {
   setObjectName("tcl_scripting");  // for settings
-  setPlaceholderText("TCL commands");
-  setAcceptDrops(true);
-
-  determineLineHeight();
 
   // add option to default context menu to enable or disable syntax highlighting
   context_menu_.reset(createStandardContextMenu());
@@ -89,12 +79,6 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
           SIGNAL(triggered()),
           this,
           SLOT(updateCompletion()));
-
-  // precompute size for updating text box size
-  document_margins_ = 2 * (document()->documentMargin() + 3);
-
-  connect(this, SIGNAL(textChanged()), this, SLOT(updateSize()));
-  updateSize();
 }
 
 TclCmdInputWidget::~TclCmdInputWidget()
@@ -127,7 +111,7 @@ void TclCmdInputWidget::setTclInterp(
     const int setup_tcl_result = ord::tclAppInit(interp_);
     post_or_init();
     processTclResult(setup_tcl_result);
-    emit commandFinishedExecuting(setup_tcl_result);
+    emit commandFinishedExecuting(setup_tcl_result == TCL_OK);
   } else {
     post_or_init();
   }
@@ -146,30 +130,9 @@ int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
   Gui::get()->clearContinueAfterClose();
 
   // announces exit to Qt
-  emit widget->tclExiting();
+  emit widget->exiting();
 
   return TCL_OK;
-}
-
-void TclCmdInputWidget::setFont(const QFont& font)
-{
-  QPlainTextEdit::setFont(font);
-
-  determineLineHeight();
-}
-
-void TclCmdInputWidget::determineLineHeight()
-{
-  QFontMetrics font_metrics = fontMetrics();
-  line_height_ = font_metrics.lineSpacing();
-
-  double tab_indent_width = 2 * font_metrics.averageCharWidth();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
-  // setTabStopWidth deprecated in 5.10
-  setTabStopDistance(tab_indent_width);
-#else
-  setTabStopWidth(tab_indent_width);
-#endif
 }
 
 void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
@@ -185,6 +148,10 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
       e->ignore();
       return;
     }
+  }
+
+  if (handleHistoryKeyPress(e)) {
+    return;
   }
 
   // handle regular command typing
@@ -204,35 +171,17 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
         return;
       }
     }
-  } else if (key == Qt::Key_Down) {
-    // Handle down through history
-    // control+down immediate
-    if ((!textCursor().hasSelection()
-         && !textCursor().movePosition(QTextCursor::Down))
-        || has_control) {
-      goForwardHistory();
-      return;
-    }
-  } else if (key == Qt::Key_Up) {
-    // Handle up through history
-    // control+up immediate
-    if ((!textCursor().hasSelection()
-         && !textCursor().movePosition(QTextCursor::Up))
-        || has_control) {
-      goBackHistory();
-      return;
-    }
   }
 
   // handle completer
   if (completer_ == nullptr) {
     // no completer
-    QPlainTextEdit::keyPressEvent(e);
+    CmdInputWidget::keyPressEvent(e);
   } else {
     bool is_completer_shortcut = has_control && key == Qt::Key_E;  // CTRL+E
     if (!is_completer_shortcut) {
       // forward keypress if it is not the completer shortcut
-      QPlainTextEdit::keyPressEvent(e);
+      CmdInputWidget::keyPressEvent(e);
     }
 
     if (e->text().isEmpty()) {
@@ -326,49 +275,6 @@ bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
   return Tcl_CommandComplete(cmd.c_str());
 }
 
-// Update the size of the widget to match text
-void TclCmdInputWidget::updateSize()
-{
-  int height = document()->size().toSize().height();
-  if (height < 1) {
-    height = 1;  // ensure minimum is 1 line
-  }
-
-  // in px
-  int desired_height = height * line_height_ + document_margins_;
-
-  if (desired_height > max_height_) {
-    desired_height = max_height_;  // ensure maximum from Qt suggestion
-  }
-
-  setFixedHeight(desired_height);
-
-  ensureCursorVisible();
-}
-
-// Handle dragged and drop script files
-void TclCmdInputWidget::dragEnterEvent(QDragEnterEvent* event)
-{
-  if (event->mimeData()->text().startsWith("file://")) {
-    event->accept();
-  }
-}
-
-void TclCmdInputWidget::dropEvent(QDropEvent* event)
-{
-  if (event->mimeData()->text().startsWith("file://")) {
-    event->accept();
-
-    // replace the content in the text area with the file
-    QFile drop_file(event->mimeData()->text().remove(0, 7).simplified());
-    if (drop_file.open(QIODevice::ReadOnly)) {
-      QTextStream file_data(&drop_file);
-      setText(file_data.readAll());
-      drop_file.close();
-    }
-  }
-}
-
 // setup syntax highlighter
 void TclCmdInputWidget::init()
 {
@@ -405,33 +311,6 @@ void TclCmdInputWidget::init()
   *completer_commands_ << namespaces;
 
   updateCompletion();
-}
-
-// replicate QLineEdit function
-QString TclCmdInputWidget::text() const
-{
-  return toPlainText();
-}
-
-// replicate QLineEdit function
-void TclCmdInputWidget::setText(const QString& text)
-{
-  setPlainText(text);
-  emit textChanged();
-}
-
-void TclCmdInputWidget::setMaximumHeight(int height)
-{
-  int min_height = line_height_ + document_margins_;  // atleast one line
-  if (height < min_height) {
-    height = min_height;
-  }
-
-  // save max height, since it's overwritten by setFixedHeight
-  max_height_ = height;
-  QPlainTextEdit::setMaximumHeight(height);
-
-  updateSize();
 }
 
 void TclCmdInputWidget::contextMenuEvent(QContextMenuEvent* event)
@@ -482,8 +361,7 @@ void TclCmdInputWidget::updateCompletion()
 void TclCmdInputWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
-  history_ = settings->value("history").toStringList();
-  historyPosition_ = history_.size();
+  CmdInputWidget::readSettings(settings);
 
   enable_highlighting_->setChecked(
       settings->value(enable_highlighting_keyword_, true).toBool());
@@ -495,7 +373,7 @@ void TclCmdInputWidget::readSettings(QSettings* settings)
 void TclCmdInputWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
-  settings->setValue("history", history_);
+  CmdInputWidget::writeSettings(settings);
 
   settings->setValue(enable_highlighting_keyword_,
                      enable_highlighting_->isChecked());
@@ -816,29 +694,6 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   return nullptr;
 }
 
-void TclCmdInputWidget::goForwardHistory()
-{
-  if (historyPosition_ < history_.size() - 1) {
-    ++historyPosition_;
-    setText(history_[historyPosition_]);
-  } else if (historyPosition_ == history_.size() - 1) {
-    ++historyPosition_;
-    setText(history_buffer_last_);
-  }
-}
-
-void TclCmdInputWidget::goBackHistory()
-{
-  if (historyPosition_ > 0) {
-    if (historyPosition_ == history_.size()) {
-      // whats in the buffer is the last thing the user was editing
-      history_buffer_last_ = text();
-    }
-    --historyPosition_;
-    setText(history_[historyPosition_]);
-  }
-}
-
 void TclCmdInputWidget::executeCommand(const QString& cmd,
                                        bool echo,
                                        bool silent)
@@ -847,7 +702,7 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
     return;
   }
 
-  if (echo) {
+  if (echo && !silent) {
     // Show the command that we executed
     emit addCommandToOutput(cmd);
   }
@@ -855,9 +710,9 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   emit commandAboutToExecute();
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-  const char* command = cmd.toLatin1().data();
+  const std::string command = cmd.toStdString();
 
-  int return_code = Tcl_Eval(interp_, command);
+  int return_code = Tcl_Eval(interp_, command.c_str());
 
   if (!silent) {
     // Show its output
@@ -865,25 +720,13 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
 
     if (return_code == TCL_OK && echo) {
       // record the successful command to tcl history command
-      Tcl_RecordAndEval(interp_, command, TCL_NO_EVAL);
-
-      // Update history; ignore repeated commands and keep last 100
-      const QString command = text();  // TODO: this shouldn't be needed
-      const int history_limit = 100;
-      if (history_.empty() || command != history_.last()) {
-        if (history_.size() == history_limit) {
-          history_.pop_front();
-        }
-
-        history_.append(command);
-      }
-      historyPosition_ = history_.size();
-
-      clear();
+      Tcl_RecordAndEval(interp_, command.c_str(), TCL_NO_EVAL);
     }
+
+    addCommandToHistory(QString::fromStdString(command));
   }
 
-  emit commandFinishedExecuting(return_code);
+  emit commandFinishedExecuting(return_code == TCL_OK);
 }
 
 void TclCmdInputWidget::processTclResult(int return_code)

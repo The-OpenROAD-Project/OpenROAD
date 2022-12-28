@@ -45,12 +45,13 @@
 #include <set>
 #include <string>
 
+#include "cmdInputWidget.h"
 #include "tclCmdHighlighter.h"
 #include "tclSwig.h"  // generated header
 
 namespace gui {
 
-class TclCmdInputWidget : public QPlainTextEdit
+class TclCmdInputWidget : public CmdInputWidget
 {
   Q_OBJECT
 
@@ -62,53 +63,26 @@ class TclCmdInputWidget : public QPlainTextEdit
                     bool do_init_openroad,
                     const std::function<void(void)>& post_or_init);
 
-  void setFont(const QFont& font);
-
-  QString text() const;
-  void setText(const QString& text);
-
-  void setMaximumHeight(int height);
-
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
- signals:
-  // tcl exit has been initiated, want the gui to handle
-  // shutdown
-  void tclExiting();
-
-  void commandAboutToExecute();
-  void commandFinishedExecuting(int code);
-
-  void addResultToOutput(const QString& result, int code);
-  void addCommandToOutput(const QString& cmd);
-
  public slots:
-  void executeCommand(const QString& cmd,
-                      bool echo = true,
-                      bool silent = false);
+  virtual void executeCommand(const QString& cmd,
+                              bool echo = true,
+                              bool silent = false) override;
 
  private slots:
-  void updateSize();
-
   void updateHighlighting();
   void updateCompletion();
 
   void insertCompletion(const QString& text);
 
  protected:
-  void dragEnterEvent(QDragEnterEvent* event) override;
-  void dropEvent(QDropEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
   void keyPressEvent(QKeyEvent* e) override;
   void keyReleaseEvent(QKeyEvent* e) override;
 
  private:
-  // back in history
-  void goBackHistory();
-  // forward in history
-  void goForwardHistory();
-
   void init();
   void processTclResult(int result_code);
 
@@ -118,8 +92,6 @@ class TclCmdInputWidget : public QPlainTextEdit
                             const char** argv);
 
   bool isCommandComplete(const std::string& cmd);
-
-  void determineLineHeight();
 
   void initOpenRoadCommands();
   void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);
@@ -134,15 +106,7 @@ class TclCmdInputWidget : public QPlainTextEdit
   void setCompleterArguments(const std::set<int>& cmds);
   void setCompleterVariables();
 
-  int line_height_;
-  int document_margins_;
-
-  int max_height_;
-
   Tcl_Interp* interp_;
-  QStringList history_;
-  QString history_buffer_last_;
-  int historyPosition_;
 
   std::unique_ptr<QMenu> context_menu_;
   std::unique_ptr<QAction> enable_highlighting_;

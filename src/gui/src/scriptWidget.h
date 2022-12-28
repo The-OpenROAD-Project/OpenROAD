@@ -79,7 +79,7 @@ class ScriptWidget : public QDockWidget
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
-  void commandExecuted(int return_code);
+  void commandExecuted(bool is_ok);
   void commandAboutToExecute();
   void executionPaused();
 

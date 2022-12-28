@@ -132,7 +132,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(exiting()), this, SIGNAL(exit()));
-  connect(script_, SIGNAL(commandExecuted(int)), viewer_, SLOT(update()));
+  connect(script_, SIGNAL(commandExecuted(bool)), viewer_, SLOT(update()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,

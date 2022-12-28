@@ -80,17 +80,28 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   container->setLayout(layout);
 
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
-  connect(input_, SIGNAL(tclExiting()), this, SIGNAL(exiting()));
+
+  connect(input_, SIGNAL(exiting()), this, SIGNAL(exiting()));
+  connect(input_,
+          SIGNAL(commandAboutToExecute()),
+          this,
+          SIGNAL(commandAboutToExecute()));
   connect(input_,
           SIGNAL(commandAboutToExecute()),
           this,
           SLOT(setPauserToRunning()));
-  connect(
-      input_, SIGNAL(commandFinishedExecuting(int)), this, SLOT(resetPauser()));
   connect(input_,
-          SIGNAL(commandFinishedExecuting(int)),
+          SIGNAL(addCommandToOutput(const QString&)),
           this,
-          SIGNAL(commandExecuted(int)));
+          SLOT(addCommandToOutput(const QString&)));
+  connect(input_,
+          SIGNAL(commandFinishedExecuting(bool)),
+          this,
+          SLOT(resetPauser()));
+  connect(input_,
+          SIGNAL(commandFinishedExecuting(bool)),
+          this,
+          SIGNAL(commandExecuted(bool)));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
   connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
