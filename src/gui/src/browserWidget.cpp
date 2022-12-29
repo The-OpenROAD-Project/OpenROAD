@@ -44,6 +44,7 @@
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
+#include "displayControls.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
@@ -57,11 +58,15 @@ namespace gui {
 BrowserWidget::BrowserWidget(
     const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
         modulesettings,
+    DisplayControls* controls,
     QWidget* parent)
     : QDockWidget("Hierarchy Browser", parent),
       block_(nullptr),
       sta_(nullptr),
       inst_descriptor_(nullptr),
+      display_controls_(controls),
+      display_controls_warning_(
+          new QPushButton("Module view is not enabled", this)),
       modulesettings_(modulesettings),
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
@@ -70,6 +75,14 @@ BrowserWidget::BrowserWidget(
       menu_(new QMenu(this))
 {
   setObjectName("hierarchy_viewer");  // for settings
+
+  QWidget* widget = new QWidget(this);
+  QVBoxLayout* layout = new QVBoxLayout;
+  widget->setLayout(layout);
+  layout->addWidget(display_controls_warning_);
+  layout->addWidget(view_);
+
+  display_controls_warning_->setStyleSheet("color: red;");
 
   model_->setHorizontalHeaderLabels(
       {"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
@@ -90,7 +103,7 @@ BrowserWidget::BrowserWidget(
   header->setSectionResizeMode(Modules, QHeaderView::Interactive);
   header->setSectionResizeMode(Area, QHeaderView::Interactive);
 
-  setWidget(view_);
+  setWidget(widget);
 
   connect(view_,
           SIGNAL(clicked(const QModelIndex&)),
@@ -126,6 +139,25 @@ BrowserWidget::BrowserWidget(
           SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
           this,
           SLOT(updateModuleColorIcon(odb::dbModule*, const QColor&)));
+
+  connect(display_controls_warning_,
+          SIGNAL(pressed()),
+          this,
+          SLOT(enableModuleView()));
+}
+
+void BrowserWidget::displayControlsUpdated()
+{
+  const bool show_warning = !display_controls_->isModuleView();
+  if (display_controls_warning_->isEnabled() != show_warning) {
+    display_controls_warning_->setEnabled(show_warning);
+    display_controls_warning_->setVisible(show_warning);
+  }
+}
+
+void BrowserWidget::enableModuleView()
+{
+  display_controls_->setControlByPath("Misc/Module view", true, Qt::Checked);
 }
 
 void BrowserWidget::makeMenu()

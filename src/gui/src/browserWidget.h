@@ -37,6 +37,7 @@
 
 #include <QDockWidget>
 #include <QMenu>
+#include <QPushButton>
 #include <QSettings>
 #include <QStandardItemModel>
 #include <QTreeView>
@@ -55,6 +56,7 @@ class dbSta;
 
 namespace gui {
 class DbInstDescriptor;
+class DisplayControls;
 
 class BrowserWidget : public QDockWidget,
                       public odb::dbBlockCallBackObj,
@@ -65,6 +67,7 @@ class BrowserWidget : public QDockWidget,
  public:
   BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
                     modulesettings,
+                DisplayControls* controls,
                 QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta);
@@ -104,6 +107,7 @@ class BrowserWidget : public QDockWidget,
   void clicked(const QModelIndex& index);
   void selectionChanged(const QItemSelection& selected,
                         const QItemSelection& deselected);
+  void displayControlsUpdated();
 
  protected:
   void showEvent(QShowEvent* event) override;
@@ -116,6 +120,7 @@ class BrowserWidget : public QDockWidget,
   void itemCollapsed(const QModelIndex& index);
   void itemExpanded(const QModelIndex& index);
   void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
+  void enableModuleView();
 
  private:
   void updateModel();
@@ -131,6 +136,8 @@ class BrowserWidget : public QDockWidget,
   odb::dbBlock* block_;
   sta::dbSta* sta_;
   DbInstDescriptor* inst_descriptor_;
+  DisplayControls* display_controls_;
+  QPushButton* display_controls_warning_;
 
   const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
 
