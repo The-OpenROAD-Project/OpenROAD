@@ -82,6 +82,8 @@ class TclCmdInputWidget : public CmdInputWidget
   void keyPressEvent(QKeyEvent* e) override;
   void keyReleaseEvent(QKeyEvent* e) override;
 
+  virtual bool isCommandComplete(const std::string& cmd) const override;
+
  private:
   void init();
   void processTclResult(int result_code);
@@ -90,8 +92,6 @@ class TclCmdInputWidget : public CmdInputWidget
                             Tcl_Interp* interp,
                             int argc,
                             const char** argv);
-
-  bool isCommandComplete(const std::string& cmd);
 
   void initOpenRoadCommands();
   void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);

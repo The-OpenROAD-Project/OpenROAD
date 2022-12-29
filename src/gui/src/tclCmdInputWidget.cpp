@@ -154,24 +154,11 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     return;
   }
 
-  // handle regular command typing
-  bool has_control = e->modifiers().testFlag(Qt::ControlModifier);
-  if (key == Qt::Key_Enter || key == Qt::Key_Return) {
-    // Handle enter
-    if (has_control) {
-      // don't execute just insert the newline
-      // does not get inserted by Qt, so manually inserting
-      insertPlainText("\n");
-      return;
-    } else {
-      // Check if command complete and attempt to execute, otherwise do nothing
-      if (isCommandComplete(toPlainText().simplified().toStdString())) {
-        // execute command
-        executeCommand(text());
-        return;
-      }
-    }
+  if (handleEnterKeyPress(e)) {
+    return;
   }
+
+  const bool has_control = e->modifiers().testFlag(Qt::ControlModifier);
 
   // handle completer
   if (completer_ == nullptr) {
@@ -258,10 +245,10 @@ void TclCmdInputWidget::keyReleaseEvent(QKeyEvent* e)
     emit textChanged();
   }
 
-  QPlainTextEdit::keyReleaseEvent(e);
+  CmdInputWidget::keyReleaseEvent(e);
 }
 
-bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
+bool TclCmdInputWidget::isCommandComplete(const std::string& cmd) const
 {
   if (cmd.empty()) {
     return false;

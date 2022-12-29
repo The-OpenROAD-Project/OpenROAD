@@ -79,8 +79,11 @@ class CmdInputWidget : public QPlainTextEdit
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
   bool handleHistoryKeyPress(QKeyEvent* event);
+  bool handleEnterKeyPress(QKeyEvent* event);
 
   void addCommandToHistory(const QString& command);
+
+  virtual bool isCommandComplete(const std::string& cmd) const = 0;
 
  private:
   // back in history

@@ -119,6 +119,32 @@ bool CmdInputWidget::handleHistoryKeyPress(QKeyEvent* event)
   return false;
 }
 
+bool CmdInputWidget::handleEnterKeyPress(QKeyEvent* event)
+{
+  const int key = event->key();
+
+  // handle regular command typing
+  const bool has_control = event->modifiers().testFlag(Qt::ControlModifier);
+  if (key == Qt::Key_Enter || key == Qt::Key_Return) {
+    // Handle enter
+    if (has_control) {
+      // don't execute just insert the newline
+      // does not get inserted by Qt, so manually inserting
+      insertPlainText("\n");
+      return true;
+    } else {
+      // Check if command complete and attempt to execute, otherwise do nothing
+      if (isCommandComplete(toPlainText().simplified().toStdString())) {
+        // execute command
+        executeCommand(text());
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 // Update the size of the widget to match text
 void CmdInputWidget::updateSize()
 {
