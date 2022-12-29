@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
-  script_->setFont(font);
+  script_->setWidgetFont(font);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);

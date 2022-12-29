@@ -330,16 +330,15 @@ void ScriptWidget::bufferOutputs(bool state)
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)
 {
-  input_->setMaximumHeight(event->size().height()
-                           - output_->sizeHint().height());
+  input_->setMaxHeight(event->size().height() - output_->sizeHint().height());
   QDockWidget::resizeEvent(event);
 }
 
-void ScriptWidget::setFont(const QFont& font)
+void ScriptWidget::setWidgetFont(const QFont& font)
 {
   QDockWidget::setFont(font);
   output_->setFont(font);
-  input_->setFont(font);
+  input_->setWidgetFont(font);
 }
 
 // This class is an spdlog sink that writes the messages into the output

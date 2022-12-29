@@ -68,9 +68,9 @@ CmdInputWidget::~CmdInputWidget()
 {
 }
 
-void CmdInputWidget::setFont(const QFont& font)
+void CmdInputWidget::setWidgetFont(const QFont& font)
 {
-  QPlainTextEdit::setFont(font);
+  setFont(font);
 
   determineLineHeight();
 }
@@ -201,7 +201,7 @@ void CmdInputWidget::setText(const QString& text)
   emit textChanged();
 }
 
-void CmdInputWidget::setMaximumHeight(int height)
+void CmdInputWidget::setMaxHeight(int height)
 {
   const int min_height = line_height_ + document_margins_;  // atleast one line
   if (height < min_height) {
@@ -210,7 +210,7 @@ void CmdInputWidget::setMaximumHeight(int height)
 
   // save max height, since it's overwritten by setFixedHeight
   max_height_ = height;
-  QPlainTextEdit::setMaximumHeight(height);
+  setMaximumHeight(height);
 
   updateSize();
 }

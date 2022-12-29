@@ -46,12 +46,12 @@ class CmdInputWidget : public QPlainTextEdit
   CmdInputWidget(const QString& interp_name, QWidget* parent = nullptr);
   virtual ~CmdInputWidget();
 
-  void setFont(const QFont& font);
+  void setWidgetFont(const QFont& font);
 
   QString text() const;
   void setText(const QString& text);
 
-  void setMaximumHeight(int height);
+  void setMaxHeight(int height);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);

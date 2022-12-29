@@ -72,7 +72,7 @@ class ScriptWidget : public QDockWidget
                 bool do_init_openroad,
                 const std::function<void(void)>& post_or_init);
 
-  void setFont(const QFont& font);
+  void setWidgetFont(const QFont& font);
 
   void bufferOutputs(bool state);
 
