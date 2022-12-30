@@ -47,7 +47,7 @@ navigate Jenkins to access these features are available
 
 ## OpenROAD Flow
 
--  Information about OpenROAD Flow CI jobs can be found [here](https://openroadflow.readthedocs.io/en/latest/contrib/CI.html)
+-  Information about OpenROAD Flow CI jobs can be found [here](https://openroad-flow-scripts.readthedocs.io/en/latest/contrib/CI.html)
 
 ## OpenLane
 
