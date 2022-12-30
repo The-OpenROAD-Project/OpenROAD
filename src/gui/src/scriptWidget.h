@@ -32,22 +32,21 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <QDockWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
-#include <QStringList>
 
-#include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
 }  // namespace odb
 
+class Tcl_Interp;
+
 namespace gui {
+class TclCmdInputWidget;
 
 // This shows a line edit to enter tcl commands and a
 // text area that is used to show the commands and their
@@ -73,20 +72,20 @@ class ScriptWidget : public QDockWidget
                 bool do_init_openroad,
                 const std::function<void(void)>& post_or_init);
 
-  void setFont(const QFont& font);
+  void setWidgetFont(const QFont& font);
 
   void bufferOutputs(bool state);
 
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
-  void commandExecuted(int return_code);
+  void commandExecuted(bool is_ok);
   void commandAboutToExecute();
   void executionPaused();
 
   // tcl exit has been initiated, want the gui to handle
   // shutdown
-  void tclExiting();
+  void exiting();
 
   void addToOutput(const QString& text, const QColor& color);
 
@@ -97,6 +96,9 @@ class ScriptWidget : public QDockWidget
   // Use to execute a command silently, ie. without echo or return.
   void executeSilentCommand(const QString& command);
 
+  void addResultToOutput(const QString& result, bool is_ok);
+  void addCommandToOutput(const QString& cmd);
+
  private slots:
   void outputChanged();
 
@@ -105,40 +107,27 @@ class ScriptWidget : public QDockWidget
 
   void pauserClicked();
 
-  void goBackHistory();
-  void goForwardHistory();
-
   void updatePauseTimeout();
 
   void addTextToOutput(const QString& text, const QColor& color);
+
+  void setPauserToRunning();
+  void resetPauser();
 
  protected:
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  int executeTclCommand(const QString& command);
-
   void triggerPauseCountDown(int timeout);
 
-  void addCommandToOutput(const QString& cmd);
-  void addTclResultToOutput(int return_code);
   void addReportToOutput(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
-
-  static int tclExitHandler(ClientData instance_data,
-                            Tcl_Interp* interp,
-                            int argc,
-                            const char** argv);
 
   QPlainTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;
-  Tcl_Interp* interp_;
-  QStringList history_;
-  QString history_buffer_last_;
-  int historyPosition_;
   bool paused_;
   utl::Logger* logger_;
 
@@ -154,8 +143,8 @@ class ScriptWidget : public QDockWidget
   const int max_output_line_length_ = 1000;
 
   const QColor cmd_msg_ = Qt::black;
-  const QColor tcl_error_msg_ = Qt::red;
-  const QColor tcl_ok_msg_ = Qt::blue;
+  const QColor error_msg_ = Qt::red;
+  const QColor ok_msg_ = Qt::blue;
   const QColor buffer_msg_ = QColor(0x30, 0x30, 0x30);
 };
 
