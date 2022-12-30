@@ -222,4 +222,16 @@ rcx::Ext* Design::getOpenRCX()
   return app->getOpenRCX();
 }
 
+rmp::Restructure* Design::getRestructure()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getRestructure();
+}
+
+stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSteinerTreeBuilder();
+}
+
 }  // namespace ord

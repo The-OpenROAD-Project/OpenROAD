@@ -47,6 +47,13 @@ namespace psm {
  * Builds the equations GV=J and uses SuperLU
  * to solve the matrix equations
  */
+struct ViaCut
+{
+  Point loc = Point(0, 0);
+  NodeEnclosure bot_encl{0, 0, 0, 0};
+  NodeEnclosure top_encl{0, 0, 0, 0};
+};
+
 class IRSolver
 {
  public:
@@ -128,7 +135,16 @@ class IRSolver
                            const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
+
   NodeEnclosure getViaEnclosure(int layer, odb::dbSet<odb::dbBox> via_boxes);
+
+  std::map<Point, ViaCut> getViaCuts(Point loc,
+                                     odb::dbSet<odb::dbBox> via_boxes,
+                                     int lb,
+                                     int lt,
+                                     bool has_params,
+                                     odb::dbViaParams params);
+
   //! Function to create the nodes for the c4 bumps
   int createC4Nodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix

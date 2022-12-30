@@ -91,9 +91,6 @@ void blif_add_instance(Blif* blif_, const char* inst_){
 }
 
 void blif_dump(Blif* blif_, const char* file_name){
-  getOpenRoad()->getSta()->ensureGraph();
-  getOpenRoad()->getSta()->ensureLevelized();
-  getOpenRoad()->getSta()->searchPreamble();
   blif_->writeBlif(file_name);
 }
 

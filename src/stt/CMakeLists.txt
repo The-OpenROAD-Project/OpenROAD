@@ -87,3 +87,24 @@ target_link_libraries(stt
 messages(
   TARGET stt
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          stt_py
+           NAMESPACE     stt
+           LANGUAGE      python
+           I_FILE        src/SteinerTreeBuilder-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/stt
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/stt_py.py
+  )
+
+  target_include_directories(stt_py
+    PUBLIC
+      include
+  )
+
+  target_link_libraries(stt_py
+    PUBLIC
+      stt
+  )
+
+endif()

@@ -98,7 +98,8 @@ MainWindow::MainWindow(QWidget* parent)
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
       clock_viewer_(new ClockWidget(this)),
-      hierarchy_widget_(new BrowserWidget(viewer_->getModuleSettings(), this)),
+      hierarchy_widget_(
+          new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
       find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
@@ -108,7 +109,7 @@ MainWindow::MainWindow(QWidget* parent)
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
-  script_->setFont(font);
+  script_->setWidgetFont(font);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
@@ -131,8 +132,8 @@ MainWindow::MainWindow(QWidget* parent)
   clock_viewer_->hide();
 
   // Hook up all the signals/slots
-  connect(script_, SIGNAL(tclExiting()), this, SIGNAL(exit()));
-  connect(script_, SIGNAL(commandExecuted(int)), viewer_, SLOT(update()));
+  connect(script_, SIGNAL(exiting()), this, SIGNAL(exit()));
+  connect(script_, SIGNAL(commandExecuted(bool)), viewer_, SLOT(update()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
@@ -149,6 +150,10 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
+  connect(controls_,
+          SIGNAL(changed()),
+          hierarchy_widget_,
+          SLOT(displayControlsUpdated()));
   connect(
       viewer_, SIGNAL(location(int, int)), this, SLOT(setLocation(int, int)));
   connect(viewer_,

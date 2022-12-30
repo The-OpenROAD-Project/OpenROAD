@@ -101,6 +101,14 @@ namespace rcx {
 class Ext;
 }
 
+namespace rmp {
+class Restructure;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 namespace ord {
 
 class Tech;
@@ -145,6 +153,8 @@ class Design
   fin::Finale* getFinale();
   par::PartitionMgr* getPartitionMgr();
   rcx::Ext* getOpenRCX();
+  rmp::Restructure* getRestructure();
+  stt::SteinerTreeBuilder* getSteinerTreeBuilder();
 
  private:
   Tech* tech_;
