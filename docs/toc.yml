@@ -134,5 +134,8 @@ entries:
   - file: main/src/par/README
     title: Partition Manager
 
+- file: tutorials/index
+  title: Tutorials
+
 - file: user/FAQS
   title: FAQs
