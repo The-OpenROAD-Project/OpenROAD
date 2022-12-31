@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTSPEF_H
-#define ADS_EXTSPEF_H
+#pragma once
 
 #include "ISdb.h"
 #include "array1.h"
@@ -625,5 +624,3 @@ class extSpef
 };
 
 }  // namespace rcx
-
-#endif

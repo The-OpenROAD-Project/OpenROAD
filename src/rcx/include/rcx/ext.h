@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXT_H
-#define ADS_EXT_H
+#pragma once
 
 #include <tcl.h>
 
@@ -359,5 +358,3 @@ class Ext
 };  // namespace rcx
 
 }  // namespace rcx
-
-#endif

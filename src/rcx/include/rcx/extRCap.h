@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTRCAP_H
-#define ADS_EXTRCAP_H
+#pragma once
 
 #include <darr.h>
 #include <dbExtControl.h>
@@ -3207,5 +3206,3 @@ class extMain
 };
 
 }  // namespace rcx
-
-#endif
