@@ -245,15 +245,6 @@ bool extSpef::readNodeCoords(uint cpos)
   _levelTable->add(level);
   return true;
 }
-void extSpef::adjustNodeCoords()
-{
-  for (uint ii = 0; ii < _capNodeTable->getCnt(); ii++) {
-    char buff[128];
-    sprintf(buff, "*%d%s%d", _tmpNetSpefId, _delimiter, _capNodeTable->get(ii));
-    uint capId = getCapIdFromCapTable(buff);
-    _capNodeTable->set(ii, capId);
-  }
-}
 int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 {
   uint ii;

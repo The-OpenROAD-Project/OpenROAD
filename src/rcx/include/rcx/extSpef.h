@@ -324,7 +324,6 @@ class extSpef
   void resetNodeCoordTables();
   void deleteNodeCoordTables();
   bool readNodeCoords(uint cpos);
-  void adjustNodeCoords();
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
   void initSearchForNets();

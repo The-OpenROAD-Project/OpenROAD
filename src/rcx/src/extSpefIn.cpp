@@ -2149,18 +2149,9 @@ uint extSpef::readDNet(uint debug)
       if (!_testParsing && !_statsOnly)
         _d_corner_net->setSpef(true);
 
-      // if (_readingNodeCoords==1)
-      //	addNetShapesOnSearch(_d_net->getId());
-
-      // if (_readingNodeCoords==1 && s_coordFlag)
-      // 	adjustNodeCoords();
-
       while (_parser->parseNextLine() > 0) {
-        //_parser->printWords(stdout);
 
         if (strcmp("*END", _parser->get(0)) == 0) {
-          // if (_readingNodeCoords==1)
-          //	searchDealloc();
 
           return endNet(_d_corner_net, resCnt);
         }
