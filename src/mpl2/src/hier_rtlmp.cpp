@@ -335,7 +335,6 @@ void HierRTLMP::hierRTLMacroPlacer()
                   max_hier_level_);
   printPhysicalHierarchyTree(root_cluster_, 0);
 
-  // logger_->error( MPL, 9999, "Force exit");
 
   //
   // Break leaf clusters into a standard-cell cluster and a hard-macro cluster
@@ -362,7 +361,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       "Print Physical Hierarchy Tree after breaking mixed clusters **");
   printPhysicalHierarchyTree(root_cluster_, 0);
 
-  logger_->error(MPL, 9991, "Force exit");
+  //logger_->error(MPL, 9991, "Force exit");
 
   // Map the macros in each cluster to their HardMacro objects
   for (auto& [cluster_id, cluster] : cluster_map_) {
