@@ -1955,10 +1955,7 @@ uint extMain::fill_gs4(int dir,
              ll,
              skipMemAlloc);
 
-  int gs_dir = dir;
-#ifndef GS_CROSS_LINES_ONLY
-  gs_dir = -1;
-#endif
+  const int gs_dir = dir;
 
   uint pcnt = 0;
   dbSet<dbNet> nets = _block->getNets();
@@ -2051,10 +2048,7 @@ int extMain::fill_gs3(int dir,
              ll,
              skipMemAlloc);
 
-  int gs_dir = dir;
-#ifndef GS_CROSS_LINES_ONLY
-  gs_dir = -1;
-#endif
+  const int gs_dir = dir;
 
   uint netCnt = powerNetTable->getCnt();
   for (uint ii = 0; ii < netCnt; ii++) {
@@ -2117,10 +2111,7 @@ int extMain::fill_gs2(int dir,
 {
   initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
 
-  int gs_dir = dir;
-#ifndef GS_CROSS_LINES_ONLY
-  gs_dir = -1;
-#endif
+  const int gs_dir = dir;
 
   if (gsTable != NULL) {
     addNetsGs(gsTable[dir][bucket], gs_dir);

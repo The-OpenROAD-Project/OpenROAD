@@ -50,7 +50,6 @@
 
 #define HI_ACC_2
 #define DAVID_ACC_08_02
-#define GS_CROSS_LINES_ONLY 1
 #define BUG_LAYER_CNT 1
 
 #include <map>
