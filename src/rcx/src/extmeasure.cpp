@@ -2754,14 +2754,8 @@ double extMain::updateRes(dbRSeg* rseg, double res, uint model)
   if (rseg == NULL)
     return 0;
 
-  if (_eco && !rseg->getNet()->isWireAltered())
-    return 0.0;
-
   if (_resModify)
     res *= _resFactor;
-
-  if (_eco && !rseg->getNet()->isWireAltered())
-    return 0.0;
 
   double tot = rseg->getResistance(model);
   tot += res;

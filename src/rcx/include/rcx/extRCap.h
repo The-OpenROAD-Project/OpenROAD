@@ -1683,9 +1683,7 @@ class extMain
 
   int _remote;
   bool _extracted;
-  bool _reExtract;
   bool _allNet;
-  bool _eco;
 
   bool _getBandWire;
   bool _printBandInfo;
@@ -2263,8 +2261,6 @@ class extMain
                        double resBound,
                        bool mergeViaRes,
                        int cc_preseve_geom,
-                       bool re_extract,
-                       bool eco,
                        bool gs,
                        bool log,
                        odb::ZPtr<odb::ISdb> sdb,

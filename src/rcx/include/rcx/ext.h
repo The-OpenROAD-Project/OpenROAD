@@ -168,9 +168,7 @@ class Ext
     bool remove_cc = false;
     bool remove_ext = false;
     bool unlink_ext = false;
-    bool eco = false;
     bool no_gs = false;
-    bool re_run = false;
     bool skip_via_wires = false;
     bool tile = false;
     bool skip_m1_caps = false;

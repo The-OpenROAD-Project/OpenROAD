@@ -484,8 +484,6 @@ bool Ext::extract(ExtractOptions opts)
 
   odb::ZPtr<odb::ISdb> dbNetSdb = NULL;
 
-  opts.eco = false;  // tbd
-
   if (_ext->makeBlockRCsegs(opts.tile,
                             opts.cmp_file,
                             opts.wire_density,
@@ -497,8 +495,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.max_res,
                             !opts.no_merge_via_res,
                             opts.preserve_geom,
-                            opts.re_run,
-                            opts.eco,
                             !opts.no_gs,
                             opts.rlog,
                             dbNetSdb,

@@ -649,19 +649,10 @@ uint extMain::addExtModel(dbTech* tech)
   uint layerCnt = getExtLayerCnt(tech);
 
   extRCModel* m = NULL;
-  /*
-  if (_modelTable->getCnt()>0)
-          m= _modelTable->get(0);
-*/
   if (m == NULL) {
     m = new extRCModel(layerCnt, "TYPICAL", logger_);
     _modelTable->add(m);
   }
-
-  // int dbunit = _block->getDbUnitsPerMicron();
-  // double dbFactor = 1;
-  // if (dbunit > 1000)
-  //   dbFactor = dbunit * 0.001;
 
   dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
@@ -679,13 +670,7 @@ uint extMain::addExtModel(dbTech* tech)
 
     double cap = layer->getCapacitance();
 
-    // double cap
-    //    = layer->getCapacitance()
-    //      / (dbFactor * dbFactor);  // PF per square micron : totCap= cap * LW
     double res = layer->getResistance();  // OHMS per square
-    // uint   w   = layer->getWidth();       // nm
-    //		res /= w; // OHMS per nm
-    //		cap *= 0.001 * w; // FF per nm : 0.00
     cap *= 0.001 * 2;
 
     m->addLefTotRC(n, 0, cap, res);
@@ -856,40 +841,7 @@ double extMain::getLefResistance(uint level, uint width, uint len, uint model)
 }
 double extMain::getResistance(uint level, uint width, uint len, uint model)
 {
-  /*
-          if (_lefRC) {
-          double res= _resistanceTable[0][level];
-          // double res= _modelTable->get(0)->getRes(level);
-          res *= len;
-          return res;
-
-      }
-      return getLefResistance(level, width, len, model);
-  */
   return getLefResistance(level, width, len, model);
-  /*This the flow to use extrule esistance. Disable now but will be used in
-     future. if (_lefRC) {
-                  // TO TEST regrs. test and relpace :
-                   return getLefResistance(level, width, len, model);
-          }
-          else {
-                  if (_minWidthTable[level]==width) {
-                          double res= _resistanceTable[0][level];
-                          res *= 2*len;
-                          return res;
-                  } else {
-                          extMeasure m;
-                          m._underMet= 0;
-                          m._overMet= 0;
-                          m._width= width;
-                          m._met= level;
-                          uint modelIndex= _modelMap.get(model);
-                          extDistRC
-     *rc=_currentModel->getMetRCTable(modelIndex)->getOverFringeRC(&m); double
-     res= rc->getRes(); res *= 2*len; return res;
-                  }
-          }
-  */
 }
 void extMain::setBlockFromChip()
 {
@@ -931,7 +883,7 @@ void extMain::setBlock(dbBlock* block)
 
 uint extMain::computeXcaps(uint boxType)
 {
-  ZPtr<ISdb> ccCapSdb = _reExtract ? _reExtCcapSDB : _extCcapSDB;
+  ZPtr<ISdb> ccCapSdb = _extCcapSDB;
   if (ccCapSdb == NULL)
     return 0;
 
@@ -969,8 +921,6 @@ uint extMain::computeXcaps(uint boxType)
     if (srcNet == tgtNet)
       continue;
 
-    // dbCCSeg *ccap= dbCCSeg::create(srcNet, rseg1->getTargetNode(),
-    //		tgtNet, rseg2->getTargetNode(), mergeParallel);
     dbCCSeg* ccap
         = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
                           dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
@@ -1004,7 +954,6 @@ double extMain::getFringe(uint met,
     return 0.0;
 
   if (_lefRC)
-    // return _modelTable->get(0)->getTotCapOverSub(met);
     return _capacitanceTable[0][met];
 
   if (width == _minWidthTable[met])
@@ -1024,12 +973,6 @@ double extMain::getFringe(uint met,
 
   extDistRC* rc = _metRCTable.get(modelIndex)->getOverFringeRC(&m);
 
-  /* TODO 10292011
-          if (width>10*_minWidthTable[met]) {
-                  extDistRC *rc1= m.areaCapOverSub(modelIndex,
-     _metRCTable.get(modelIndex)); areaCap = rc1->_fringe; return 0.0;
-          }
-  */
   if (rc == NULL)
     return 0.0;
   return rc->getFringe();
@@ -1040,16 +983,12 @@ void extMain::updateTotalCap(dbRSeg* rseg,
                              double deltaFr,
                              uint modelIndex)
 {
-  if (_eco && !rseg->getNet()->isWireAltered())
-    return;
-
   double cap = frCap + ccCap - deltaFr;
 
   double tot = rseg->getCapacitance(modelIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, modelIndex);
-  //	double T= rseg->getCapacitance(modelIndex);
 }
 void extMain::updateTotalRes(dbRSeg* rseg1,
                              dbRSeg* rseg2,
@@ -1064,41 +1003,17 @@ void extMain::updateTotalRes(dbRSeg* rseg1,
     if (_resModify)
       res *= _resFactor;
 
-    if ((rseg1 != NULL) && !(_eco && !rseg1->getNet()->isWireAltered())) {
+    if (rseg1 != NULL) {
       double tot = rseg1->getResistance(modelIndex);
       tot += res;
 
-      /*
-      if (_updateTotalCcnt >= 0)
-      {
-      if (_printFile == NULL)
-      _printFile =fopen ("updateRes.1", "w");
-      _updateTotalCcnt++;
-      fprintf (_printFile, "%d %d %g %g\n", _updateTotalCcnt, rseg->getId(),
-      tot, cap);
-      }
-      */
-
       rseg1->setResistance(tot, modelIndex);
-      //			double T= rseg1->getResistance(modelIndex);
     }
-    if ((rseg2 != NULL) && !(_eco && !rseg2->getNet()->isWireAltered())) {
+    if (rseg2 != NULL) {
       double tot = rseg2->getResistance(modelIndex);
       tot += res;
 
-      /*
-      if (_updateTotalCcnt >= 0)
-      {
-      if (_printFile == NULL)
-      _printFile =fopen ("updateRes.1", "w");
-      _updateTotalCcnt++;
-      fprintf (_printFile, "%d %d %g %g\n", _updateTotalCcnt, rseg->getId(),
-      tot, cap);
-      }
-      */
-
       rseg2->setResistance(tot, modelIndex);
-      //			double T= rseg2->getResistance(modelIndex);
     }
   }
 }
@@ -1110,9 +1025,6 @@ void extMain::updateTotalCap(dbRSeg* rseg,
                              bool includeCoupling,
                              bool includeDiag)
 {
-  if (_eco && !rseg->getNet()->isWireAltered())
-    return;
-
   double tot, cap;
   int extDbIndex, sci, scDbIdx;
   for (uint modelIndex = 0; modelIndex < modelCnt; modelIndex++) {

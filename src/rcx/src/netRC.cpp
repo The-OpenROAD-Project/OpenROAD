@@ -437,22 +437,6 @@ void extMain::getShapeRC(dbNet* net,
     if (_usingMetalPlanes && !_alwaysNewGs)
       _geomSeq->box(x1, y1, x2, y2, level);
 
-    if (_useDbSdb) {
-      // net->getWire()->setProperty (pshape.junction_id, rc->getId());
-      if (_eco)
-        _extNetSDB->addBox(x1,
-                           y1,
-                           x2,
-                           y2,
-                           level,
-                           net->getId(),
-                           pshape.junction_id,
-                           _dbSignalId);
-    }
-    // else
-    // _extNetSDB->addBox(x1, y1, x2, y2, level, rc->getId(),
-    // pshape.junction_id, _dbSignalId);
-
     if (!_allNet) {
       _ccMinX = MIN(x1, _ccMinX);
       _ccMinY = MIN(y1, _ccMinY);
@@ -1230,52 +1214,7 @@ uint extMain::setupSearchDb(const char* bbox, ZInterface* Interface)
 {
   if (_couplingFlag == 0)
     return 0;
-  // Ath__overlapAdjust overlapAdj = Z_endAdjust;
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  if (_reExtract) {
-    if (_extNetSDB == NULL || _extNetSDB->getSearchPtr() == NULL) {
-      logger_->info(RCX, 116, "No existing extraction sdb. Can't reExtract.");
-      return 0;
-    }
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-    //		if (_reExtCcapSDB && _reExtCcapSDB->getSearchPtr())
-    //			_reExtCcapSDB->cleanSdb();
-    //		else
-    //		{
-    //			if (adsNewComponent( Interface->_context, ZCID(Sdb),
-    //_reExtCcapSDB
-    //)!= Z_OK)
-    //			{
-    //				assert(0);
-    //			}
-    //			ZALLOCATED(_reExtCcapSDB);
-    //		}
-    //
-    //		_reExtCcapSDB->initSearchForNets(_tech, _block);
-    //		_reExtCcapSDB->setDefaultWireType(_CCsegId);
-    return 0;
-  }
   if (adsNewComponent(Interface->_context, ZCID(Sdb), _extNetSDB) != Z_OK) {
     assert(0);
   }
@@ -1778,12 +1717,10 @@ int extMain::setMinTypMax(bool min,
       _modelMap.add(0);
       _metRCTable.add(_currentModel->getMetRCTable(0));
     }
-    if (!_eco)
-      _block->setCornerCount(2);
+    _block->setCornerCount(2);
     _extDbCnt = 2;
   } else if (extDbCnt > 1) {  // extract first <extDbCnt>
-    if (!_eco)
-      _block->setCornerCount(extDbCnt);
+    _block->setCornerCount(extDbCnt);
     _extDbCnt = extDbCnt;
     //		uint cnt= 0;
 
@@ -1812,8 +1749,7 @@ int extMain::setMinTypMax(bool min,
     }
     _extDbCnt = _modelMap.getCnt();
 
-    if (!_eco)
-      _block->setCornerCount(_extDbCnt);
+    _block->setCornerCount(_extDbCnt);
   } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
     if (setMin >= 0) {
       _modelMap.add(setMin);
@@ -1829,11 +1765,9 @@ int extMain::setMinTypMax(bool min,
     }
     _extDbCnt = _modelMap.getCnt();
 
-    if (!_eco)
-      _block->setCornerCount(_extDbCnt);
+    _block->setCornerCount(_extDbCnt);
   } else if (extDbCnt == 1) {  // extract first <extDbCnt>
-    if (!_eco)
-      _block->setCornerCount(extDbCnt);
+    _block->setCornerCount(extDbCnt);
     _extDbCnt = extDbCnt;
     _modelMap.add(0);
     //_block->setExtMaxCorner(dbIndex);
@@ -2520,8 +2454,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               double resBound,
                               bool mergeViaRes,
                               int preserve_geom,
-                              bool re_extract,
-                              bool eco,
                               bool gs,
                               bool rlog,
                               ZPtr<ISdb> netSdb,
@@ -2551,38 +2483,28 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                   "will not perform extraction!");
     return 0;
   }
-  if (!re_extract) {
-    _couplingFlag = ccFlag;
-    _coupleThreshold = ccThres;
-    _reExtract = re_extract;
-    _ccPreseveGeom = preserve_geom;
 
-    if (!_lefRC) {
-      _usingMetalPlanes = gs;
-      _ccUp = cc_up;
-      _couplingFlag = ccFlag;
-      _ccContextDepth = contextDepth;
-      if (_usingMetalPlanes)
-        _overCell = overCell;
-    } else {
-      _usingMetalPlanes = 0;
-      _ccUp = 0;
-      _couplingFlag = 0;
-      _ccContextDepth = 0;
-    }
-    _mergeViaRes = mergeViaRes;
-    _mergeResBound = resBound;
+  _couplingFlag = ccFlag;
+  _coupleThreshold = ccThres;
+  _ccPreseveGeom = preserve_geom;
+
+  if (!_lefRC) {
+    _usingMetalPlanes = gs;
+    _ccUp = cc_up;
+    _couplingFlag = ccFlag;
+    _ccContextDepth = contextDepth;
+    if (_usingMetalPlanes)
+      _overCell = overCell;
+  } else {
+    _usingMetalPlanes = 0;
+    _ccUp = 0;
+    _couplingFlag = 0;
+    _ccContextDepth = 0;
   }
-  _eco = eco;
-  if (eco && _extRun == 0) {
-    getPrevControl();
-    getExtractedCorners();
-  }
-  if (!eco) {
-    if (netSdb && netSdb == _extNetSDB)
-      netSdb->reMakeSdb(_tech, _block);
-  }
-  // if ( _extRun==0 || (!re_extract && !eco )) {
+  _mergeViaRes = mergeViaRes;
+  _mergeResBound = resBound;
+  if (netSdb && netSdb == _extNetSDB)
+    netSdb->reMakeSdb(_tech, _block);
   if ((_processCornerTable != NULL)
       || ((_processCornerTable == NULL) && (extRules != NULL))) {
     const char* rulesfile
@@ -2611,29 +2533,13 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   }
   _foreign = false;  // extract after read_spef
 
-  if (eco) {
-    _block->getWireUpdatedNets(inets);
-    if (inets.size() != 0)
-      logger_->info(RCX, 132, "Eco extract {} nets.", inets.size());
-    else {
-      logger_->info(RCX, 133, "No nets to eco extract.");
-      return 1;
-    }
-    removeExt(inets);
-    _reExtract = true;
-    _allNet = false;
-    preserve_geom = 1;
-  } else {
-    _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
-  }
+  _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
 
-  if (!_reExtract || _extRun == 0 || _alwaysNewGs) {
-    if (!_lefRC) {
-      if (_ccContextDepth)
-        initContextArray();
-    }
-    initDgContextArray();
+  if (!_lefRC) {
+    if (_ccContextDepth)
+      initContextArray();
   }
+  initDgContextArray();
   _extRun++;
   if (rlog)
     AthResourceLog("start extract", detailRlog);
@@ -2728,7 +2634,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
     for (tt = 0; tt < _connectedITerm.size(); tt++)
       ((dbITerm*) _connectedITerm[tt])->setMark(0);
-    // break;
   }
 
   logger_->info(RCX, 40, "Final {} rc segments", cnt);
@@ -2743,14 +2648,10 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                   getBlock()->getName().c_str());
 
     uint CCflag = _couplingFlag;
-    //		if (_couplingFlag>20) {
-    //			CCflag= _couplingFlag % 10;
-    //		}
 
     if (!_allNet)
       _extNetSDB->setMaxArea(_ccMinX, _ccMinY, _ccMaxX, _ccMaxY);
 
-    // ZPtr<ISdb> ccCapSdb = _reExtract ? _reExtCcapSDB : _extCcapSDB;
     ZPtr<ISdb> ccCapSdb = _extCcapSDB;
 
     _totCCcnt = 0;
