@@ -156,18 +156,9 @@ uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
   if (layerCnt == 0)
     layerCnt = getExtLayerCnt(_tech);
 
-  //	uint planeCnt= layerCnt+1;
-
   _overUnderPlaneLayerMap = NULL;
 
-  // if (! _diagFlow)
-  // 	planeCnt= allocateOverUnderMaps(layerCnt);
-
-#ifdef GS_OLD
-  return initPlanesOld(planeCnt);
-#else
   return initPlanesNew(layerCnt, bb);
-#endif
 }
 uint extMain::makeIntersectPlanes(uint layerCnt)
 {
