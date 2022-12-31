@@ -2804,78 +2804,6 @@ uint extMeasure::ouFlowStep(Ath__array1D<SEQ*>* overTable)
   }
   return len;
 }
-#ifdef DIAG_FIRST
-int extMeasure::underFlowStep(Ath__array1D<SEQ*>* srcTable,
-                              Ath__array1D<SEQ*>* overTable)
-{
-  int totLen = 0;
-
-  Ath__array1D<SEQ*> whiteTable(32);
-  Ath__array1D<SEQ*> table1(32);
-  Ath__array1D<SEQ*> diagTable(32);
-
-  uint diagTotBeforeUnder = 0;
-  for (uint ii = 0; ii < srcTable->getCnt(); ii++) {
-    SEQ* s1 = srcTable->get(ii);
-
-#ifdef HI_ACC_1
-    if ((_overMet < _met + 3) && _diagFlow && _toHi) {
-#else
-    if ((_overMet < _met + 5) && _diagFlow && _toHi) {
-#endif
-      int diagLen = computeDiagOU(s1, 0, 1, _overMet, &diagTable);
-      if (diagLen > 0) {
-        diagTotBeforeUnder += diagLen;
-        for (uint jj = 0; jj < diagTable.getCnt(); jj++) {
-          SEQ* s2 = diagTable.get(jj);
-          int oLen = getOverlapSeq(_overMet, s2, &table1);
-          if (oLen > 0)
-            totLen += oLen;
-        }
-        release(&diagTable);
-        diagTable.resetCnt();
-        //#ifndef HI_ACC_1
-        continue;
-        //#endif
-      } else {
-        release(&diagTable);
-        diagTable.resetCnt();
-      }
-    }
-#ifdef HI_ACC_1
-    else if ((_overMet < _met + 5) && _diagFlow && _toHi) {
-      computeDiagOU(s1, 0, 1, _overMet, NULL);
-    }
-#endif
-    int oLen = getOverlapSeq(_overMet, s1, &table1);
-    if (oLen > 0)
-      totLen += oLen;
-  }
-  bool moreDiag = (_overMet < _met + 5) && _diagFlow
-                  && (diagTotBeforeUnder == 0) && _toHi;
-#ifdef HI_ACC_1
-  int trackDist = _extMain->_couplingFlag;
-#else
-  int trackDist = 3;
-#endif
-  for (uint jj = 0; jj < table1.getCnt(); jj++) {
-    SEQ* s2 = table1.get(jj);
-
-    if (s2->type == 0) {
-      if (moreDiag)
-        computeDiagOU(s2, 2, trackDist, _overMet, NULL);
-      whiteTable.add(s2);
-      continue;
-    }
-    overTable->add(s2);
-    s2->type = 0;
-  }
-  release(srcTable);
-  tableCopyP(&whiteTable, srcTable);
-
-  return totLen;
-}
-#else
 int extMeasure::underFlowStep(Ath__array1D<SEQ*>* srcTable,
                               Ath__array1D<SEQ*>* overTable)
 {
@@ -2908,7 +2836,6 @@ int extMeasure::underFlowStep(Ath__array1D<SEQ*>* srcTable,
 
   return totLen;
 }
-#endif
 uint extMeasure::measureDiagFullOU()
 {
   // DEBUG_HERE

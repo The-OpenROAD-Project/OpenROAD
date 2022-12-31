@@ -35,7 +35,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-//#define DIAG_FIRST
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
