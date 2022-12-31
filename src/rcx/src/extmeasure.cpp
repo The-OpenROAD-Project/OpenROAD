@@ -1695,16 +1695,10 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
   if (len <= 0)
     return 0;
 
-#ifdef MIN_FOR_LOOPS
-  extLenOU* ouLen = _lenOUPool->alloc();
-  ouLen->addOverOrUnderLen(met, over, len);
-  _lenOUtable->add(ouLen);
-#else
   if (over)
     computeOverRC(len);
   else
     computeUnderRC(len);
-#endif
 
   return len;
 }
@@ -1749,13 +1743,7 @@ uint extMeasure::computeOUwith2planes(int* ll,
 }
 void extMeasure::calcOU(uint len)
 {
-#ifdef MIN_FOR_LOOPS
-  extLenOU* ou = _lenOUPool->alloc();
-  ou->addOULen(_underMet, _overMet, len);
-  _lenOUtable->add(ou);
-#else
   computeOverUnderRC(len);
-#endif
 }
 
 uint extMeasure::computeOverUnder(int* ll,
@@ -3677,12 +3665,6 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
     }
   }
   totLenCovered += srcCovered;
-
-#ifdef MIN_FOR_LOOPS
-
-  calcRC(rseg1, rseg2, totLenCovered);
-  return;
-#endif
 
   double deltaFr[10];
   double deltaRes[10];
