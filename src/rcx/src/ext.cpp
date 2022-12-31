@@ -757,46 +757,6 @@ bool Ext::calibrate(const std::string& spef_file,
   return 0;
 }
 
-bool Ext::match(const std::string& spef_file,
-                const std::string& db_corner_name,
-                int corner,
-                int spef_corner,
-                bool m_map)
-{
-  if (spef_file.empty()) {
-    logger_->info(RCX,
-                  20,
-                  "Filename for calibration is not defined. Define the "
-                  "filename using -spef_file");
-  }
-  logger_->info(RCX, 18, "match on spef file  {}", spef_file.c_str());
-  Ath__parser parser;
-  parser.mkWords((char*) spef_file.c_str());
-  _ext->match(
-      parser.get(0), m_map, db_corner_name.c_str(), corner, spef_corner);
-  return 0;
-}
-
-bool Ext::report_total_cap(const std::string& file,
-                           bool res_only,
-                           bool cap_only,
-                           float ccmult,
-                           const std::string& ref,
-                           const std::string& read)
-{
-  _ext->reportTotalCap(
-      file.c_str(), cap_only, res_only, ccmult, ref.c_str(), read.c_str());
-  return 0;
-}
-
-bool Ext::report_total_cc(const std::string& file,
-                          const std::string& ref,
-                          const std::string& read)
-{
-  _ext->reportTotalCc(file.c_str(), ref.c_str(), read.c_str());
-  return 0;
-}
-
 bool Ext::dump(bool open_tree_file,
                bool close_tree_file,
                bool cc_cap_geom,

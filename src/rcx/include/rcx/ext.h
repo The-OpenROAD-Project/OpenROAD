@@ -298,20 +298,6 @@ class Ext
                  bool m_map,
                  float upper_limit,
                  float lower_limit);
-  bool match(const std::string& spef_file,
-             const std::string& db_corner_name,
-             int corner,
-             int spef_corner,
-             bool m_map);
-  bool report_total_cap(const std::string& file,
-                        bool res_only,
-                        bool cap_only,
-                        float ccmult,
-                        const std::string& ref,
-                        const std::string& read);
-  bool report_total_cc(const std::string& file,
-                       const std::string& ref,
-                       const std::string& read);
 
   bool export_sdb(odb::ZPtr<odb::ISdb>& net_sdb, odb::ZPtr<odb::ISdb>& cc_sdb);
   bool dump(bool open_tree_file,

@@ -2316,11 +2316,6 @@ class extMain
   uint openSpefFile(char* filename, uint mode);
 
   //-------------------------------------------------------------- SPEF
-  uint match(char* filename,
-             bool m_map,
-             const char* dbCornerName,
-             int corner,
-             int spefCorner);
   uint calibrate(char* filename,
                  bool m_map,
                  float upperLimit,
@@ -2408,7 +2403,6 @@ class extMain
                       double ccmult,
                       const char* ref,
                       const char* rd_file);
-  void reportTotalCc(const char* file, const char* ref, const char* rd_file);
   double getTotalNetCap(uint netId, uint cornerNum);
   void extDump(char* filename,
                bool openTreeFile,

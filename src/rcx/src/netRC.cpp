@@ -3401,54 +3401,6 @@ uint extMain::readSPEFincr(char* filename)
 
   return cnt;
 }
-uint extMain::match(char* filename,
-                    bool m_map,
-                    const char* dbCornerName,
-                    int corner,
-                    int spefCorner)
-{
-  if (!_spef || _spef->getBlock() != _block) {
-    if (_spef)
-      delete _spef;
-    _spef = new extSpef(_tech, _block, logger_, this);
-  }
-  _spef->setCalibLimit(0.0, 0.0);
-  readSPEF(filename,
-           NULL /*netNames*/,
-           false /*force*/,
-           false /*useIds*/,
-           false /*rConn*/,
-           NULL /*N*/,
-           false /*rCap*/,
-           false /*rOnlyCCcap*/,
-           false /*rRes*/,
-           -1.0 /*cc_thres*/,
-           0.0 /*cc_gnd_factor*/,
-           1.0 /*length_unit*/,
-           m_map,
-           false /*noCapNumCollapse*/,
-           NULL /*capNodeMapFile*/,
-           false /*log*/,
-           corner,
-           0.0 /*low*/,
-           0.0 /*up*/,
-           NULL /*excludeSubWord*/,
-           NULL /*subWord*/,
-           NULL /*statsFile*/,
-           dbCornerName,
-           NULL /*calibrateBaseCorner*/,
-           spefCorner,
-           0 /*fix_loop*/,
-           false /*keepLoadedCorner*/,
-           false /*stampWire*/,
-           NULL /*netSdb*/,
-           0 /*testParsing*/,
-           false /*moreToRead*/,
-           true /*diff*/,
-           true /*calibrate*/,
-           0 /*app_print_limit*/);
-  return 0;
-}
 
 uint extMain::calibrate(char* filename,
                         bool m_map,
