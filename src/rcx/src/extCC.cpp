@@ -37,7 +37,6 @@
 #include "ZInterface.h"
 #include "dbLogger.h"
 #include "wire.h"
-//#define ZDEBUG 1
 //#define TEST_GetDgOverlap
 
 namespace rcx {
@@ -833,9 +832,6 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
       cnt += netGrid->couplingCaps(
           resGrid, couplingDist, context, ccTable, coupleAndCompute, compPtr);
 
-#ifdef ZDEBUG
-      context->event("GRID", "dir", Z_INT, ii, "layer", Z_INT, jj, NULL);
-#endif
     }
   }
   notice(0, "Final %d ccaps\n", cnt);

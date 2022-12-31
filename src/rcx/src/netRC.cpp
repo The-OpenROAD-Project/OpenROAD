@@ -2649,10 +2649,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   if (rlog)
     AthResourceLog("start extract", detailRlog);
 
-#ifdef ZDEBUG
-  Interface->event("CC", "_couplingFlag", Z_INT, _couplingFlag, NULL);
-#endif
-
   extMeasure m;
   m.setLogger(logger_);
 
