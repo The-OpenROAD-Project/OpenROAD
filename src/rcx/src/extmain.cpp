@@ -1128,11 +1128,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     if (includeDiag)
       diagCap = rc->_diag;
 
-#ifdef HI_ACC_1
     cap = frCap + ccCap + diagCap - deltaFr[modelIndex];
-#else
-    cap = frCap + ccCap - deltaFr[modelIndex];
-#endif
     if (_gndcModify)
       cap *= _gndcFactor;
 

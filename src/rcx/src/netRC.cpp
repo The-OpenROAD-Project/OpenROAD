@@ -400,20 +400,10 @@ void extMain::getShapeRC(dbNet* net,
 
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
         getFringe(level, width, ii, areaCap);
-#ifdef HI_ACC_10312011
-        if (width < 400)
-          _tmpCapTable[ii]
-              = (len + width) * 2 * getFringe(level, width, ii, areaCap);
-        else
-          _tmpCapTable[ii] = len * 2 * getFringe(level, width, ii, areaCap);
-#else
         if (USE_DB_UNITS)
           len = GetDBcoords2(len);
 
-        // DF 720	_tmpCapTable[ii]= len*2*c1;
         _tmpCapTable[ii] = 0;
-#endif
-        // _tmpCapTable[ii] += 2 * areaCap * len * width;
         bool newResModel = true;
         if (!newResModel) {
           double r = getResistance(level, width, len, ii);

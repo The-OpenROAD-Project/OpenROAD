@@ -541,12 +541,7 @@ uint extDistRCTable::readRules(Ath__parser* parser,
   _measureTable = table;
 
   if (compute)
-#ifdef HI_ACC_1
-    // interpolate(12, -1, rcPool);
     interpolate(4, -1, rcPool);
-#else
-    interpolate(4, -1, rcPool);
-#endif
 
   return cnt;
 }

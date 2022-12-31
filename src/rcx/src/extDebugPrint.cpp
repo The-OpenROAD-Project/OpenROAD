@@ -35,12 +35,7 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
-#endif
-//#define CHECK_SAME_NET
-//#define DEBUG_NET 208091
-//#define MIN_FOR_LOOPS
 
 namespace rcx {
 

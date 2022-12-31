@@ -35,12 +35,7 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
-#endif
-//#define CHECK_SAME_NET
-//#define DEBUG_NET 208091
-//#define MIN_FOR_LOOPS
 
 namespace rcx {
 
@@ -97,17 +92,6 @@ int extMeasure::computeResDist(SEQ* s,
   for (int kk = (int) trackMin; kk <= (int) trackMax;
        kk++)  // skip overlapping track
   {
-    /* TEST 0322
-    if (!kk)
-      continue; */
-    /*
-#ifdef HI_ACC_1
-    if (kk <= _dgContextHiTrack[planeIndex])
-#else
-    if (kk < _dgContextHiTrack[planeIndex])
-#endif
-      trackTable[cnt++] = *_dgContextTracks / 2 + kk;
-      */
     if (-kk >= _dgContextLowTrack[planeIndex])
       trackTable[cnt++] = *_dgContextTracks / 2 - kk;
   }
@@ -115,10 +99,8 @@ int extMeasure::computeResDist(SEQ* s,
   for (uint ii = 0; ii < cnt; ii++) {
     int trackn = trackTable[ii];
 
-#ifdef HI_ACC_1
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
-#endif
     // Check for same track: 032021 DF
     bool same_track = false;
     Ath__array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
@@ -462,7 +444,6 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
   SEQ* wseq;
   int covered = sseq->_ll[lp];
 
-#ifdef HI_ACC_1
   if (idx == dgContext->getCnt()) {
     rseq = _seqPool->alloc();
     rseq->_ll[wp] = sseq->_ll[wp];
@@ -472,7 +453,6 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
     residueSeq->add(rseq);
     return;
   }
-#endif
 
   dbRSeg* srseg = NULL;
   if (_rsegSrcId > 0)

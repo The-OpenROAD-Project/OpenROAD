@@ -48,21 +48,10 @@
 #include "odb.h"
 #include "wire.h"
 
-#ifndef _WIN32
-#define D2I_ROUND (name) rint(name)
-#else
-#define D2I_ROUND (name) name
-#endif
-
-//#define NEW_GS_FLOW
-
-#define HI_ACC_1
-#ifdef HI_ACC_1
 #define HI_ACC_2
 #define DAVID_ACC_08_02
 #define GS_CROSS_LINES_ONLY 1
 #define BUG_LAYER_CNT 1
-#endif
 
 #include <map>
 

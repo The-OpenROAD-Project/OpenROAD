@@ -35,11 +35,7 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
-#endif
-// #define CHECK_SAME_NET
-//#define MIN_FOR_LOOPS
 
 namespace rcx {
 
@@ -1598,11 +1594,7 @@ uint extMeasure::defineBox(CoupleOptions& options)
   }
   dbTechLayer* layer = _extMain->_tech->findRoutingLayer(_met);
   _minWidth = layer->getWidth();
-#ifdef HI_ACC_1
   _toHi = (options[11] > 0) ? true : false;
-#else
-  _toHi = true;
-#endif
 
   return _len;
 }
@@ -2508,7 +2500,6 @@ uint extMeasure::computeDiag(SEQ* s,
     DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
-#ifdef HI_ACC_1
     bool verticalOverlap = false;
     if (_dist < 0 && !skip_high_acc) {
       if (diagDist <= _width && diagDist >= 0 && (int) _width < 10 * _minWidth
@@ -2538,7 +2529,6 @@ uint extMeasure::computeDiag(SEQ* s,
 
       continue;
     }
-#endif
     if (_diagModel == 2)
       calcDiagRC(_rsegSrcId, tgt->type, len1, tgWidth, diagDist, targetMet);
     if (_diagModel == 1)
@@ -2554,12 +2544,7 @@ int extMeasure::computeDiagOU(SEQ* s,
                               uint targetMet,
                               Ath__array1D<SEQ*>* diagTable)
 {
-#ifdef HI_ACC_1
-  // int trackDist = _extMain->_couplingFlag;
   int trackDist = 2;
-#else
-  int trackDist = 3;
-#endif
   int loTrack;
   int hiTrack;
   int planeIndex
@@ -2579,11 +2564,7 @@ int extMeasure::computeDiagOU(SEQ* s,
   for (int kk = (int) trackMin; kk <= (int) trackMax;
        kk++)  // skip overlapping track
   {
-#ifdef HI_ACC_1
     if (kk <= _dgContextHiTrack[planeIndex])
-#else
-    if (kk < _dgContextHiTrack[planeIndex])
-#endif
       trackTable[cnt++] = *_dgContextTracks / 2 + kk;
 
     if (!kk)
@@ -2599,10 +2580,8 @@ int extMeasure::computeDiagOU(SEQ* s,
   for (uint ii = 0; ii < cnt; ii++) {
     int trackn = trackTable[ii];
 
-#ifdef HI_ACC_1
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
-#endif
     bool add_all_diag = false;
     if (!add_all_diag) {
       for (uint jj = 0; jj < tmpTable.getCnt(); jj++)
@@ -2850,11 +2829,6 @@ uint extMeasure::measureDiagFullOU()
   //	ll[_dir]= ur[_dir];
 
   addSeq(ll, ur, _tmpSrcTable);
-
-#ifndef HI_ACC_1
-  if (_met == 1)
-    return measureUnderOnly(true);
-#endif
 
   if (_met == (int) _layerCnt - 1)
     return measureOverOnly(false);
@@ -3235,11 +3209,7 @@ void extMeasure::calcDiagRC(int rsegId1,
     if (ccCap != NULL)
       addCCcap(ccCap, capTable[model], model);
     else
-#ifdef HI_ACC_1
       addFringe(NULL, rseg2, capTable[model], model);
-#else
-      addFringe(rseg1, rseg2, capTable[model], model);
-#endif
   }
 }
 void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
@@ -3259,14 +3229,10 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
     if (ccCap != NULL)
       addCCcap(ccCap, capTable[model], model);
     else
-#ifdef HI_ACC_1
     {
       _rc[model]->_diag += capTable[model];
       addFringe(NULL, rseg2, capTable[model], model);
     }
-#else
-      addFringe(rseg1, rseg2, capTable[model], model);
-#endif
   }
 }
 void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
@@ -3280,7 +3246,6 @@ void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
     extDistRC* rc = getUnderLastWidthDistRC(rcModel, tgtMet);
     capTable[ii] = 2 * area * rc->_fringe;  //_fringe always 1/2 of rulesGen
 
-#ifdef HI_ACC_1
     dbRSeg* rseg2 = NULL;
     if (rsegId2 > 0)
       rseg2 = dbRSeg::getRSeg(_block, rsegId2);
@@ -3293,10 +3258,6 @@ void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
       double areaCapOverSub = 2 * area * area_rc->_fringe;
       _extMain->updateTotalCap(rseg2, 0.0, 0.0, areaCapOverSub, ii);
     }
-#endif
-
-    // old way capTable[ii]= 2*area*getUnderRC(rcModel)->_fringe; //_fringe
-    // always 1/2 of rulesGen
   }
   createCap(rsegId1, rsegId2, capTable);
 }
@@ -3379,7 +3340,6 @@ void extMeasure::calcDiagRC(int rsegId1,
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
-#ifdef HI_ACC_1
     if (dist != 1000000) {
       double cap = getDiagUnderCC(rcModel, dist, tgtMet);
       double diagCap = DOUBLE_DIAG * len * cap;
@@ -3390,9 +3350,6 @@ void extMeasure::calcDiagRC(int rsegId1,
       Debug_DiagValues(0.0, diagCap, msg);
     } else
       capTable[ii] = 2 * len * getUnderRC(rcModel)->_fringe;
-#else
-    capTable[ii] = len * getDiagUnderCC(rcModel, dist, tgtMet);
-#endif
   }
   createCap(rsegId1, rsegId2, capTable);
 }
@@ -3863,9 +3820,7 @@ void extMeasure::measureRC(CoupleOptions& options)
     tgtNet = rseg2->getNet();
     netId2 = tgtNet->getId();
   }
-#ifdef HI_ACC_1
   _sameNetFlag = (srcNet == tgtNet);
-#endif
 
   _netTgtId = netId2;
 
@@ -4106,11 +4061,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       // _extMain->updateTotalRes(rseg1, rseg2, this, deltaRes, modelCnt);
 
       if (rseg1 != NULL)
-#ifdef HI_ACC_1
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, false);
-#else
-        _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false);
-#endif
       if (rseg2 != NULL)
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);
 
@@ -4139,11 +4090,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       _totCCcnt++;  // TO_TEST
 #ifdef HI_ACC_2
       if (rseg1->getNet() == rseg2->getNet()) {  // same signal net
-#ifdef HI_ACC_1
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, true);
-#else
-        _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false);
-#endif
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);
 
         if (traceFlag)
@@ -4156,11 +4103,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       if ((_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold)
           && !btermConnection) {  // TO_TEST
 
-#ifdef HI_ACC_1
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true, true);
-#else
-        _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true);
-#endif
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, true);
 
         if (traceFlag)
@@ -4210,24 +4153,15 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       }
       // --------------------------- to test it was include_coupling= false
       bool include_coupling = false;
-// updateCCCap(rseg1, rseg2, m._rc->_coupling);
-#ifdef HI_ACC_1
       _extMain->updateTotalCap(
           rseg1, this, deltaFr, modelCnt, include_coupling, true);
-#else
-      _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false);
-#endif
       _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);
 
       if (traceFlag)
         printTraceNet("CC", false, ccap);
 
     } else if (rseg1 != NULL) {
-#ifdef HI_ACC_1
       _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true, true);
-#else
-      _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true);
-#endif
       if (traceFlag)
         printTraceNet("GN", false);
     } else if (rseg2 != NULL) {
@@ -4253,7 +4187,6 @@ void extMeasure::getDgOverlap(SEQ* sseq,
   SEQ* wseq;
   int covered = sseq->_ll[lp];
 
-#ifdef HI_ACC_1
   if (idx == dgContext->getCnt()) {
     rseq = _seqPool->alloc();
     rseq->_ll[wp] = sseq->_ll[wp];
@@ -4263,7 +4196,6 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     residueSeq->add(rseq);
     return;
   }
-#endif
 
   dbRSeg* srseg = NULL;
   if (_rsegSrcId > 0)
