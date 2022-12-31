@@ -1639,38 +1639,10 @@ uint extMain::addNetSboxesGs(dbNet* net,
   }
   return cnt;
 }
-uint extMain::addNetsGs(Ath__array1D<uint>* gsTable, int dir)
-{
-  if (gsTable == NULL)
-    return 0;
-
-  uint cnt = 0;
-  uint netCnt = gsTable->getCnt();
-  for (uint ii = 0; ii < netCnt; ii++) {
-    dbNet* net = dbNet::getNet(_block, gsTable->get(ii));
-
-    if ((net->getSigType().isSupply()))
-      cnt += addNetSboxesGs(net, false, false, dir);
-    else
-      cnt += addNetShapesGs(net, false, false, dir);
-  }
-  return cnt;
-}
 int extMain::getXY_gs(int base, int XY, uint minRes)
 {
   uint maxRow = (XY - base) / minRes;
   int v = base + maxRow * minRes;
-  return v;
-}
-int extMain::getXY_gs2(int base, int hiXY, int loXY, uint minRes)
-{
-  uint hiRow = (hiXY - base) / minRes;
-  uint loRow = (loXY - base) / minRes;
-
-  uint deltaRow = hiRow - loRow;
-
-  int targetRow = hiRow - deltaRow;
-  int v = base + targetRow * minRes;
   return v;
 }
 uint extMain::initPlanes(uint dir,
@@ -1934,35 +1906,6 @@ int extMain::fill_gs3(int dir,
   return lo_gs[dir];
 }
 
-int extMain::fill_gs2(int dir,
-                      int* ll,
-                      int* ur,
-                      int* lo_gs,
-                      int* hi_gs,
-                      uint layerCnt,
-                      uint* dirTable,
-                      uint* pitchTable,
-                      uint* widthTable,
-                      uint bucket,
-                      Ath__array1D<uint>*** gsTable,
-                      Ath__array1D<uint>*** instGsTable)
-{
-  initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
-
-  const int gs_dir = dir;
-
-  if (gsTable != NULL) {
-    addNetsGs(gsTable[dir][bucket], gs_dir);
-    if (bucket > 0)
-      addNetsGs(gsTable[dir][bucket - 1], gs_dir);
-  } else {
-    addPowerGs(gs_dir);
-    addSignalGs(gs_dir);
-  }
-
-  return lo_gs[dir];
-}
-
 void extMain::resetGndCaps()
 {
   uint cornerCnt = _block->getCornerCount();
@@ -2008,7 +1951,6 @@ uint extMain::couplingFlow(Rect& extRect,
                            CoupleAndCompute coupleAndCompute)
 {
   uint ccDist = ccFlag;
-  bool single_gs = false;
 
   uint sigtype = 9;
   uint pwrtype = 11;
@@ -2078,12 +2020,6 @@ uint extMain::couplingFlow(Rect& extRect,
 
   logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
-  if (single_gs) {
-    initPlanes(layerCnt);
-    m->_pixelTable = _geomSeq;
-    addPowerGs();
-    addSignalGs();
-  }
   uint minRes[2];
   minRes[1] = pitchTable[1];
   minRes[0] = widthTable[1];
@@ -2131,7 +2067,6 @@ uint extMain::couplingFlow(Rect& extRect,
                     sdbBucketCnt);
 
     reportTableNetCnt(sdbBucketCnt, sdbSignalTable);
-
   }
   uint totalWiresExtracted = 0;
 
@@ -2173,43 +2108,42 @@ uint extMain::couplingFlow(Rect& extRect,
       if (ur[dir] - hiXY <= (int) step_nm[dir])
         hiXY = ur[dir] + 5 * ccDist * maxPitch;
 
-      if (!single_gs) {
-        lo_gs[dir] = gs_limit;
-        hi_gs[dir] = hiXY;
+      lo_gs[dir] = gs_limit;
+      hi_gs[dir] = hiXY;
 
-        if (use_signal_tables) {
-          tmpNetIdTable.resetCnt();
-          fill_gs3(dir,
-                   ll,
-                   ur,
-                   lo_gs,
-                   hi_gs,
-                   layerCnt,
-                   dirTable,
-                   pitchTable,
-                   widthTable,
-                   sdbTable_ll,
-                   sdbTable_ur,
-                   sdbBucketSize,
-                   &sdbPowerTable,
-                   &tmpNetIdTable,
-                   sdbSignalTable,
-                   gsInstTable);
-        } else
-          fill_gs4(dir,
-                   ll,
-                   ur,
-                   lo_gs,
-                   hi_gs,
-                   layerCnt,
-                   dirTable,
-                   pitchTable,
-                   widthTable,
-                   NULL);
+      if (use_signal_tables) {
+        tmpNetIdTable.resetCnt();
+        fill_gs3(dir,
+                 ll,
+                 ur,
+                 lo_gs,
+                 hi_gs,
+                 layerCnt,
+                 dirTable,
+                 pitchTable,
+                 widthTable,
+                 sdbTable_ll,
+                 sdbTable_ur,
+                 sdbBucketSize,
+                 &sdbPowerTable,
+                 &tmpNetIdTable,
+                 sdbSignalTable,
+                 gsInstTable);
+      } else
+        fill_gs4(dir,
+                 ll,
+                 ur,
+                 lo_gs,
+                 hi_gs,
+                 layerCnt,
+                 dirTable,
+                 pitchTable,
+                 widthTable,
+                 NULL);
 
-        m->_rotatedGs = getRotatedFlag();
-        m->_pixelTable = _geomSeq;
-      }
+      m->_rotatedGs = getRotatedFlag();
+      m->_pixelTable = _geomSeq;
+
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
 
@@ -2289,413 +2223,6 @@ uint extMain::couplingFlow(Rect& extRect,
   return 0;
 }
 
-//=============================================== WINDOW BASED ==============
-void extWindow::initWindowStep(Rect& extRect,
-                               uint trackStep,
-                               uint layerCnt,
-                               uint modelLevelCnt)
-{
-  _maxPitch = _pitchTable[layerCnt - 1];
-
-  _layerCnt = layerCnt > modelLevelCnt ? layerCnt : modelLevelCnt;
-
-  _ll[0] = extRect.xMin();
-  _ll[1] = extRect.yMin();
-  _ur[0] = extRect.xMax();
-  _ur[1] = extRect.yMax();
-
-  uint minRes[2];
-  minRes[1] = _pitchTable[1];
-  minRes[0] = _widthTable[1];
-
-  _step_nm[1] = trackStep * minRes[1];
-  _step_nm[0] = trackStep * minRes[1];
-  if (_maxWidth > _ccDist * _maxPitch) {
-    _step_nm[1] = _ur[1] - _ll[1];
-    _step_nm[0] = _ur[0] - _ll[0];
-  }
-}
-extWindow::extWindow(extWindow* e, uint num, Logger* logger)
-{
-  logger_ = logger;
-  _num = num;
-
-  init(20);
-
-  _ccDist = e->_ccDist;
-
-  _maxPitch = e->_maxPitch;
-
-  _maxWidth = e->_maxWidth;
-  _layerCnt = e->_layerCnt;
-
-  for (uint ii = 0; ii < 2; ii++) {
-    _ll[ii] = e->_ll[ii];
-    _ur[ii] = e->_ur[ii];
-    _step_nm[ii] = e->_step_nm[ii];
-    _lo_gs[ii] = e->_lo_gs[ii];
-    _hi_gs[ii] = e->_hi_gs[ii];
-    _lo_sdb[ii] = e->_lo_sdb[ii];
-    _hi_sdb[ii] = e->_hi_sdb[ii];
-  }
-  _gs_limit = e->_gs_limit;
-  _minExtracted = e->_minExtracted;
-
-  for (uint i = 0; i < _layerCnt + 1; i++) {
-    _dirTable[i] = e->_dirTable[i];
-    _widthTable[i] = e->_widthTable[i];
-    _pitchTable[i] = e->_pitchTable[i];
-    for (uint j = 0; j < 2; j++) {
-      _extTrack[j][i] = e->_extTrack[j][i];
-      _extLimit[j][i] = e->_extLimit[j][i];
-      _cntxTrack[j][i] = e->_cntxTrack[j][i];
-      _cntxLimit[j][i] = e->_cntxLimit[j][i];
-      _sdbBase[j][i] = e->_sdbBase[j][i];
-    }
-  }
-  _extractLimit = e->_extractLimit;
-  _totPowerWireCnt = e->_totPowerWireCnt;
-  _totWireCnt = e->_totPowerWireCnt;
-
-  _currentDir = e->_currentDir;
-  _hiXY = e->_hiXY;
-  _gsRotatedFlag = e->_gsRotatedFlag;
-  _deallocLimit = e->_deallocLimit;
-}
-extWindow* extMain::initWindowSearch(Rect& extRect,
-                                     uint trackStep,
-                                     uint ccFlag,
-                                     uint modelLevelCnt,
-                                     extMeasure* m)
-{
-  extWindow* W = new extWindow(20, logger_);
-  W->_ccDist = ccFlag;
-
-  uint layerCnt = initSearchForNets(W->_sdbBase[0],
-                                    W->_sdbBase[1],
-                                    W->_pitchTable,
-                                    W->_widthTable,
-                                    W->_dirTable,
-                                    extRect,
-                                    false);
-  if (m != NULL) {
-    for (uint i = 0; i < layerCnt + 1; i++)
-      m->_dirTable[i] = W->_dirTable[i];
-  }
-  uint maxWidth = 0;
-  for (uint i = 1; i < layerCnt + 1; i++) {
-    if (W->_widthTable[i] > maxWidth)
-      maxWidth = W->_widthTable[i];
-  }
-
-  W->_maxWidth = maxWidth;
-  W->initWindowStep(extRect, trackStep, layerCnt, modelLevelCnt);
-
-  return W;
-}
-void extWindow::init(uint maxLayerCnt)
-{
-  _sigtype = 9;
-  _pwrtype = 11;
-
-  _maxLayerCnt = maxLayerCnt;
-
-  _dirTable = new uint[maxLayerCnt];
-  _pitchTable = new uint[maxLayerCnt];
-  _widthTable = new uint[maxLayerCnt];
-  for (uint i = 0; i < 2; i++) {
-    _extTrack[i] = new int[maxLayerCnt];
-    _extLimit[i] = new int[maxLayerCnt];
-    _cntxTrack[i] = new int[maxLayerCnt];
-    _cntxLimit[i] = new int[maxLayerCnt];
-    _sdbBase[i] = new int[maxLayerCnt];
-  }
-
-  for (uint ii = 0; ii < maxLayerCnt; ii++) {
-    _dirTable[ii] = 0;
-    _pitchTable[ii] = 0;
-    _widthTable[ii] = 0;
-  }
-  _ccDist = 0;
-  _layerCnt = 0;
-  _maxPitch = 0;
-  _gsRotatedFlag = false;
-  _totalWiresExtracted = 0;
-  _totWireCnt = 0;
-  _prev_percent_extracted = 0;
-}
-void extWindow::updateExtLimits(int** limitArray)
-{
-  for (uint ii = 0; ii < _layerCnt; ii++) {
-    _cntxTrack[0][ii] = limitArray[ii][0];
-    _cntxLimit[0][ii] = limitArray[ii][1];
-
-    _extTrack[0][ii] = limitArray[ii][2];
-    _extLimit[0][ii] = limitArray[ii][3];
-
-    _extTrack[1][ii] = limitArray[ii][4];
-    _extLimit[1][ii] = limitArray[ii][5];
-  }
-  _lo_sdb[_currentDir] = _cntxLimit[0][1];
-  _hi_sdb[_currentDir] = _extLimit[1][1] + _maxPitch * _ccDist;
-}
-void extMain::printLimitArray(int** limitArray, uint layerCnt)
-{
-  logger_->info(RCX, 89, " ------------------------ Context Lower Limits");
-  uint ii;
-  for (ii = 1; ii < layerCnt; ii++)
-    logger_->info(
-        RCX, 469, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
-
-  logger_->info(RCX, 91, "--------------------------- EXT Lower Limits");
-  for (ii = 1; ii < layerCnt; ii++)
-    logger_->info(
-        RCX, 470, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
-
-  logger_->info(RCX, 92, " ------------------------ EXT Upper Limits");
-  for (ii = 1; ii < layerCnt; ii++)
-    logger_->info(
-        RCX, 90, "L={} {}    {}", ii, limitArray[ii][4], limitArray[ii][5]);
-}
-int extWindow::getIntProperty(dbBlock* block, const char* name)
-{
-  dbProperty* p = dbProperty::find(block, name);
-
-  if (p == NULL)
-    return 0;
-  dbIntProperty* ip = (dbIntProperty*) p;
-
-  return ip->getValue();
-}
-
-void extWindow::makeIntArrayProperty(dbBlock* block,
-                                     uint ii,
-                                     int* A,
-                                     const char* name)
-{
-  char bufName[64];
-
-  sprintf(bufName, "%s[%d]", name, ii);
-
-  dbIntProperty::create(block, bufName, A[ii]);
-}
-int extWindow::getIntArrayProperty(dbBlock* block, uint ii, const char* name)
-{
-  char bufName[64];
-
-  sprintf(bufName, "%s[%d]", name, ii);
-
-  return getIntProperty(block, bufName);
-}
-
-void extWindow::printLimits(FILE* fp,
-                            const char* header,
-                            uint maxLayer,
-                            int** limitArray,
-                            int** trackArray)
-{
-  fprintf(fp, "%s\n", header);
-  for (uint ii = 1; ii < _layerCnt; ii++) {
-    fprintf(fp,
-            "\t%d - %d %d  - %d %d\n",
-            ii,
-            trackArray[0][ii],
-            trackArray[1][ii],
-            limitArray[0][ii],
-            limitArray[1][ii]);
-  }
-}
-void extWindow::printExtLimits(FILE* fp)
-{
-  fprintf(fp, "Window[%d]: %d\n", _currentDir, _hiXY);
-  printLimits(fp, "\nExt limits", _maxLayerCnt, _extLimit, _extTrack);
-  printLimits(fp, "\nContext limits", _maxLayerCnt, _cntxLimit, _cntxTrack);
-  fprintf(fp, "\n");
-}
-extWindow::extWindow(uint maxLayerCnt, Logger* logger)
-{
-  logger_ = logger;
-  init(maxLayerCnt);
-}
-void extWindow::makeSdbBuckets(uint sdbBucketCnt[2],
-                               uint sdbBucketSize[2],
-                               int sdbTable_ll[2],
-                               int sdbTable_ur[2])
-{
-  for (uint ii = 0; ii < 2; ii++) {
-    sdbBucketCnt[ii] = 0;
-    sdbBucketSize[ii] = 2 * _step_nm[ii];
-    sdbTable_ll[ii] = _ll[ii] - _step_nm[ii] / 10;
-    sdbTable_ur[ii] = _ur[ii] + _step_nm[ii] / 10;
-  }
-}
-
-int extWindow::setExtBoundaries(uint dir)
-{
-  _currentDir = dir;
-
-  _lo_gs[!dir] = _ll[!dir];
-  _hi_gs[!dir] = _ur[!dir];
-  _lo_sdb[!dir] = _ll[!dir];
-  _hi_sdb[!dir] = _ur[!dir];
-
-  _minExtracted = _ll[dir];
-  _gs_limit = _ll[dir];
-
-  _lo_sdb[dir] = _ll[dir] - _step_nm[dir];
-
-  _hiXY = _ll[dir] + _step_nm[dir];
-  if (_hiXY > _ur[dir])
-    _hiXY = _ur[dir];
-
-  if (dir == 0)
-    _gsRotatedFlag = true;
-
-  if (_gsRotatedFlag)
-    logger_->info(RCX, 93, "======> Fast Mode enabled for d= {} <======", dir);
-
-  return _hiXY;
-}
-int extWindow::adjust_hiXY(int hiXY)
-{
-  _hiXY = hiXY;
-
-  if (_ur[_currentDir] - _hiXY <= (int) _step_nm[_currentDir])
-    _hiXY = _ur[_currentDir] + 5 * _ccDist * _maxPitch;
-
-  _hi_sdb[_currentDir] = _hiXY;
-
-  _lo_gs[_currentDir] = _gs_limit;
-  _hi_gs[_currentDir] = _hiXY;
-
-  return _hiXY;
-}
-void extMain::fillWindowGs(extWindow* W,
-                           int* sdbTable_ll,
-                           int* sdbTable_ur,
-                           uint* bucketSize,
-                           Ath__array1D<uint>* powerNetTable,
-                           Ath__array1D<uint>* tmpNetIdTable,
-                           Ath__array1D<uint>*** sdbSignalTable,
-                           Ath__array1D<uint>*** instGsTable,
-                           dbCreateNetUtil* createDbNet)
-{
-  if (sdbSignalTable != NULL) {
-    tmpNetIdTable->resetCnt();
-    fill_gs3(W->_currentDir,
-             W->_ll,
-             W->_ur,
-             W->_ll,
-             W->_ur,
-             W->_layerCnt,
-             W->_dirTable,
-             W->_pitchTable,
-             W->_widthTable,
-             sdbTable_ll,
-             sdbTable_ur,
-             bucketSize,
-             powerNetTable,
-             tmpNetIdTable,
-             sdbSignalTable,
-             instGsTable,
-             createDbNet);
-  } else {
-    fill_gs4(W->_currentDir,
-             W->_ll,
-             W->_ur,
-             W->_lo_gs,
-             W->_hi_gs,
-             W->_layerCnt,
-             W->_dirTable,
-             W->_pitchTable,
-             W->_widthTable,
-             createDbNet);
-  }
-}
-uint extMain::fillWindowSearch(extWindow* W,
-                               int* lo_sdb,
-                               int* hi_sdb,
-                               int* sdbTable_ll,
-                               int* sdbTable_ur,
-                               uint* bucketSize,
-                               Ath__array1D<uint>* powerNetTable,
-                               Ath__array1D<uint>* tmpNetIdTable,
-                               Ath__array1D<uint>*** sdbSignalTable,
-                               dbCreateNetUtil* createDbNet)
-{
-  int ll[2] = {lo_sdb[0], lo_sdb[1]};
-  int ur[2] = {hi_sdb[0], hi_sdb[1]};
-  char bufname[32];
-  sprintf(bufname, "BOUNDS/%d_%d.sdb", W->_currentDir, W->_hiXY);
-  openSearchFile(bufname);
-
-  if (sdbSignalTable != NULL) {
-    W->_processPowerWireCnt = addPowerNets2(
-        W->_currentDir, ll, ur, W->_pwrtype, powerNetTable, createDbNet);
-    tmpNetIdTable->resetCnt();
-    W->_processSignalWireCnt = addSignalNets2(W->_currentDir,
-                                              ll,
-                                              ur,
-                                              sdbTable_ll,
-                                              sdbTable_ur,
-                                              bucketSize,
-                                              W->_sigtype,
-                                              sdbSignalTable,
-                                              tmpNetIdTable,
-                                              createDbNet);
-  } else {
-    addPowerNets(W->_currentDir, ll, ur, W->_pwrtype, createDbNet);
-    addSignalNets(W->_currentDir, ll, ur, W->_sigtype, createDbNet);
-  }
-  closeSearchFile();
-
-  return W->_processPowerWireCnt + W->_processSignalWireCnt;
-}
-int extWindow::set_extractLimit()
-{
-  _extractLimit = _hiXY - _ccDist * _maxPitch;
-
-  return _extractLimit;
-}
-void extWindow::reportProcessedWires(bool rlog)
-{
-  if (rlog) {
-    char buff[64];
-    sprintf(buff,
-            "CCext %d wires xy[%d]= %d ",
-            _processPowerWireCnt + _processSignalWireCnt,
-            _currentDir,
-            _minExtracted);
-    AthResourceLog(buff, 0);
-  }
-}
-int extWindow::getDeallocLimit()
-{
-  _deallocLimit = _minExtracted - (_ccDist + 1) * _maxPitch;
-  return _deallocLimit;
-}
-void extWindow::updateLoBounds(bool reportFlag)
-{
-  _lo_sdb[_currentDir] = _hiXY;
-  _gs_limit = _minExtracted - (_ccDist + 2) * _maxPitch;
-
-  _totalWiresExtracted += _processPowerWireCnt + _processSignalWireCnt;
-  if (!reportFlag)
-    return;
-
-  double percent_extracted
-      = (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt));
-
-  if ((_totWireCnt > 0) && (_totalWiresExtracted > 0)) {
-    logger_->info(RCX,
-                  441,
-                  "{:d}% completion -- {:d} wires have been extracted",
-                  (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
-                  _totalWiresExtracted);
-
-    _prev_percent_extracted = percent_extracted;
-  }
-}
 uint extMain::mkNetPropertiesForRsegs(dbBlock* blk, uint dir)
 {
   dbSet<dbNet> nets = blk->getNets();
@@ -2897,130 +2424,6 @@ uint extMain::rcGenTile(dbBlock* blk)
   return cnt;
 }
 
-uint extMain::extractWindow(bool rlog,
-                            extWindow* W,
-                            Rect& extRect,
-                            bool single_sdb,
-                            extMeasure* m,
-                            CoupleAndCompute coupleAndCompute,
-                            int* sdbTable_ll,
-                            int* sdbTable_ur,
-                            uint* sdbBucketSize,
-                            Ath__array1D<uint>* sdbPowerTable,
-                            Ath__array1D<uint>* tmpNetIdTable,
-                            Ath__array1D<uint>*** sdbSignalTable,
-                            Ath__array1D<uint>*** gsInstTable)
-{
-  int** limitArray;
-  limitArray = new int*[W->_layerCnt];
-  for (uint k = 0; k < W->_layerCnt; k++)
-    limitArray[k] = new int[10];
-
-  disableRotatedFlag();
-  if (W->_currentDir == 0)
-    enableRotatedFlag();
-
-  if (single_sdb) {
-    uint layerCnt = initSearchForNets(W->_sdbBase[0],
-                                      W->_sdbBase[1],
-                                      W->_pitchTable,
-                                      W->_widthTable,
-                                      W->_dirTable,
-                                      extRect,
-                                      true);
-    for (uint i = 0; i < layerCnt + 1; i++)
-      m->_dirTable[i] = W->_dirTable[i];
-
-    _search->initCouplingCapLoops(
-        W->_currentDir, W->_ccDist, coupleAndCompute, m, W->_extLimit[0]);
-  } else {
-    uint layerCnt = initSearchForNets(W->_sdbBase[0],
-                                      W->_sdbBase[1],
-                                      W->_pitchTable,
-                                      W->_widthTable,
-                                      W->_dirTable,
-                                      extRect,
-                                      true);
-    for (uint i = 0; i < layerCnt + 1; i++)
-      m->_dirTable[i] = W->_dirTable[i];
-
-    Ath__overlapAdjust overlapAdj = Z_noAdjust;
-    _useDbSdb = true;
-    _search->setExtControl(_block,
-                           _useDbSdb,
-                           (uint) overlapAdj,
-                           _CCnoPowerSource,
-                           _CCnoPowerTarget,
-                           _ccUp,
-                           _allNet,
-                           _ccContextDepth,
-                           _ccContextArray,
-                           _ccContextLength,
-                           _dgContextArray,
-                           &_dgContextDepth,
-                           &_dgContextPlanes,
-                           &_dgContextTracks,
-                           &_dgContextBaseLvl,
-                           &_dgContextLowLvl,
-                           &_dgContextHiLvl,
-                           _dgContextBaseTrack,
-                           _dgContextLowTrack,
-                           _dgContextHiTrack,
-                           _dgContextTrackBase,
-                           m->_seqPool);
-    _search->initCouplingCapLoops(
-        W->_currentDir, W->_ccDist, coupleAndCompute, m, W->_extLimit[0]);
-  }
-
-  if (rlog)
-    AthResourceLog("initCouplingCapLoops", 0);
-
-  fillWindowGs(W,
-               sdbTable_ll,
-               sdbTable_ur,
-               sdbBucketSize,
-               sdbPowerTable,
-               tmpNetIdTable,
-               sdbSignalTable,
-               gsInstTable);
-
-  fillWindowSearch(W,
-                   W->_lo_sdb,
-                   W->_hi_sdb,
-                   sdbTable_ll,
-                   sdbTable_ur,
-                   sdbBucketSize,
-                   sdbPowerTable,
-                   tmpNetIdTable,
-                   sdbSignalTable);
-
-  if (rlog)
-    AthResourceLog("Fill GS", 0);
-
-  m->_rotatedGs = getRotatedFlag();
-  m->_pixelTable = _geomSeq;
-
-  if (rlog)
-    AthResourceLog("Fill Sdb", 0);
-
-  uint extractedWireCnt = 0;
-  _search->couplingCaps(W->_extractLimit,
-                        W->_ccDist,
-                        W->_currentDir,
-                        extractedWireCnt,
-                        coupleAndCompute,
-                        m,
-                        false,
-                        limitArray);
-
-  W->reportProcessedWires(true);
-
-  _search->dealloc(W->_currentDir, W->_deallocLimit);
-
-  W->updateExtLimits(limitArray);
-
-  return 0;
-}
 dbNet* extMain::getDstNet(dbNet* net, dbBlock* dstBlock, Ath__parser* parser)
 {
   parser->mkWords(net->getConstName());
@@ -3697,8 +3100,7 @@ uint extMain::rcGen(const char* netNames,
     logger_->warn(RCX, 104, "Can't perform RC generation!");
     return 0;
   }
-  if (setMinTypMax(false, false, false, NULL, false, -1, -1, -1, 1)
-      < 0) {
+  if (setMinTypMax(false, false, false, NULL, false, -1, -1, -1, 1) < 0) {
     logger_->warn(RCX, 105, "Wrong combination of corner related options");
     return 0;
   }

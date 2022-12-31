@@ -1472,95 +1472,6 @@ class extTileSystem
   ~extTileSystem();
 };
 
-class extWindow
-{
- public:
-  uint _num;
-  uint* _dirTable;
-  uint* _minSpaceTable;
-  int _ll[2];
-  int _ur[2];
-
-  uint _maxLayerCnt;  // for allocation
-
-  uint _step_nm[2];
-
-  uint _ccDist;
-
-  uint _sigtype;
-  uint _pwrtype;
-
-  uint* _pitchTable;
-  uint* _widthTable;
-  uint _layerCnt;
-
-  uint _maxPitch;
-  uint _maxWidth;
-
-  int _lo_gs[2];
-  int _hi_gs[2];
-  int _lo_sdb[2];
-  int _hi_sdb[2];
-  int _minExtracted;
-  int _extractLimit;
-  int _gs_limit;
-  int _hiXY;
-  int _deallocLimit;
-
-  int* _extTrack[2];
-  int* _extLimit[2];
-  int* _cntxTrack[2];
-  int* _cntxLimit[2];
-  int* _sdbBase[2];
-
-  uint _totPowerWireCnt;
-  uint _totSignalWireCnt;
-  uint _totWireCnt;
-  uint _processPowerWireCnt;
-  uint _processSignalWireCnt;
-  uint _totalWiresExtracted;
-  double _prev_percent_extracted;
-
-  uint _currentDir;
-  bool _gsRotatedFlag;
-
-  extWindow(uint maxLayerCnt, Logger* logger);
-  void init(uint maxLayerCnt);
-  extWindow(extWindow* e, uint num, Logger* logger);
-  ~extWindow();
-
-  void initWindowStep(odb::Rect& extRect,
-                      uint trackStep,
-                      uint layerCnt,
-                      uint modelLevelCnt);
-  void makeSdbBuckets(uint sdbBucketCnt[2],
-                      uint sdbBucketSize[2],
-                      int sdbTable_ll[2],
-                      int sdbTable_ur[2]);
-  int setExtBoundaries(uint dir);
-  int adjust_hiXY(int hiXY);
-  int set_extractLimit();
-  void reportProcessedWires(bool rlog);
-  int getDeallocLimit();
-  void updateLoBounds(bool reportFlag);
-  void updateExtLimits(int** limitArray);
-  void printExtLimits(FILE* fp);
-  void printLimits(FILE* fp,
-                   const char* header,
-                   uint maxLayer,
-                   int** limitArray,
-                   int** trackArray);
-  int getIntProperty(odb::dbBlock* block, const char* name);
-  void makeIntArrayProperty(odb::dbBlock* block,
-                            uint ii,
-                            int* A,
-                            const char* name);
-  int getIntArrayProperty(odb::dbBlock* block, uint ii, const char* name);
-
- protected:
-  Logger* logger_;
-};
-
 class extMainOptions
 {
  public:
@@ -2050,7 +1961,6 @@ class extMain
                     odb::Rect& maxRectGs,
                     bool* hasSdbWires,
                     bool& hasGsWires);
-  uint addNetsGs(Ath__array1D<uint>* gsTable, int dir);
   uint addNetShapesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
@@ -2064,28 +1974,6 @@ class extMain
 
   uint getBucketNum(int base, int max, uint step, int xy);
   int getXY_gs(int base, int XY, uint minRes);
-  int getXY_gs2(int base, int hiXY, int loXY, uint minRes);
-  int fill_gs(int dir,
-              int* ll,
-              int* ur,
-              int hiXY,
-              int minExt,
-              uint minRes,
-              uint layerCnt,
-              uint* pitchTable,
-              uint* widthTable);
-  int fill_gs2(int dir,
-               int* ll,
-               int* ur,
-               int* lo_gs,
-               int* lo_gst,
-               uint layerCnt,
-               uint* dirTable,
-               uint* pitchTable,
-               uint* widthTable,
-               uint bucket,
-               Ath__array1D<uint>*** gsTable,
-               Ath__array1D<uint>*** instGsTable);
   uint couplingFlow(odb::Rect& extRect,
                     uint ccDist,
                     extMeasure* m,
@@ -2554,30 +2442,6 @@ class extMain
                                 uint wtype);
 
   //--------------- Window
-  extWindow* initWindowSearch(odb::Rect& extRect,
-                              uint trackStep,
-                              uint ccFlag,
-                              uint modelLevelCnt,
-                              extMeasure* m);
-  void fillWindowGs(extWindow* W,
-                    int* sdbTable_ll,
-                    int* sdbTable_ur,
-                    uint* bucketSize,
-                    Ath__array1D<uint>* powerNetTable,
-                    Ath__array1D<uint>* tmpNetIdTable,
-                    Ath__array1D<uint>*** sdbSignalTable,
-                    Ath__array1D<uint>*** instGsTable,
-                    odb::dbCreateNetUtil* createDbNet = NULL);
-  uint fillWindowSearch(extWindow* W,
-                        int* lo_sdb,
-                        int* hi_sdb,
-                        int* sdbTable_ll,
-                        int* sdbTable_ur,
-                        uint* bucketSize,
-                        Ath__array1D<uint>* powerNetTable,
-                        Ath__array1D<uint>* tmpNetIdTable,
-                        Ath__array1D<uint>*** sdbSignalTable,
-                        odb::dbCreateNetUtil* createDbNet = NULL);
   uint addShapeOnGS(odb::dbNet* net,
                     uint sId,
                     odb::Rect& r,
@@ -2588,23 +2452,6 @@ class extMain
                     int dir,
                     bool specialWire = false,
                     odb::dbCreateNetUtil* createDbNet = NULL);
-  uint extractWindow(bool rlog,
-                     extWindow* W,
-                     odb::Rect& extRect,
-                     bool single_sdb,
-                     extMeasure* m,
-                     CoupleAndCompute coupleAndCompute,
-                     int* sdbTable_ll = NULL,
-                     int* sdbTable_ur = NULL,
-                     uint* bucketSize = NULL,
-                     Ath__array1D<uint>* powerNetTable = NULL,
-                     Ath__array1D<uint>* tmpNetIdTable = NULL,
-                     Ath__array1D<uint>*** sdbSignalTable = NULL,
-                     Ath__array1D<uint>*** instGsTable = NULL);
-  uint couplingTileFlow(bool rlog,
-                        odb::Rect& extRect,
-                        extMeasure* m,
-                        CoupleAndCompute coupleAndCompute);
 
   uint fill_gs4(int dir,
                 int* ll,
