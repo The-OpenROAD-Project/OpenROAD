@@ -491,7 +491,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.wire_density,
                             opts.litho,
                             opts.net,
-                            opts.bbox,
                             opts.cc_up,
                             opts.cc_model,
                             opts.signal_table,

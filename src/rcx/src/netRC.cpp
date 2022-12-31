@@ -1218,14 +1218,6 @@ uint extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
 
   return 0;
 }
-bool extMain::getExtAreaCoords(const char* bbox)
-{
-  /*
-  const char * token = strtok( bbox, " \t\n" );
-      const char * busbitchars = strtok(NULL, "\"");
-*/
-  return false;
-}
 ZPtr<ISdb> extMain::getCcSdb()
 {
   return _extCcapSDB;
@@ -1234,30 +1226,15 @@ ZPtr<ISdb> extMain::getNetSdb()
 {
   return _extNetSDB;
 }
-void extMain::setExtractionBbox(const char* bbox)
+void extMain::setExtractionBbox()
 {
-  if ((bbox == NULL) || (strcmp(bbox, "") == 0)) {
-    Rect r = _block->getDieArea();
-    _x1 = r.xMin();
-    _y1 = r.yMin();
-    _x2 = r.xMax();
-    _y2 = r.yMax();
+  const Rect r = _block->getDieArea();
+  _x1 = r.xMin();
+  _y1 = r.yMin();
+  _x2 = r.xMax();
+  _y2 = r.yMax();
 
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  }
-
-  if (getExtAreaCoords(bbox))
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  else {
-    Rect r = _block->getDieArea();
-
-    _x1 = r.xMin();
-    _y1 = r.yMin();
-    _x2 = r.xMax();
-    _y2 = r.yMax();
-
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  }
+  _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
 }
 
 uint extMain::setupSearchDb(const char* bbox, ZInterface* Interface)
@@ -1317,7 +1294,7 @@ uint extMain::setupSearchDb(const char* bbox, ZInterface* Interface)
 
   _extNetSDB->initSearchForNets(_tech, _block);
 
-  setExtractionBbox(bbox);
+  setExtractionBbox();
 
   if (_couplingFlag > 1)
     _extNetSDB->setExtControl(_block,
@@ -2548,7 +2525,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               bool density_model,
                               bool litho,
                               const char* netNames,
-                              const char* bbox,
                               uint cc_up,
                               uint ccFlag,
                               uint use_signal_table,
@@ -2630,18 +2606,17 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     }
     // if (cmp_file!=NULL)
     //	readCmpFile(cmp_file);
-  }
-  else if (setMinTypMax(false,
-                        false,
-                        false,
-                        cmp_file,
-                        density_model,
-                        litho,
-                        -1,
-                        -1,
-                        -1,
-                        1)
-           < 0) {
+  } else if (setMinTypMax(false,
+                          false,
+                          false,
+                          cmp_file,
+                          density_model,
+                          litho,
+                          -1,
+                          -1,
+                          -1,
+                          1)
+             < 0) {
     logger_->warn(RCX, 129, "Wrong combination of corner related options!");
     return 0;
   }
@@ -2709,7 +2684,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               _dgContextHiTrack,
                               _dgContextTrackBase,
                               _seqPool);
-    setExtractionBbox(bbox);
+    setExtractionBbox();
   }
 
   dbNet* net;

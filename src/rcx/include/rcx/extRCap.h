@@ -2242,9 +2242,8 @@ class extMain
   odb::ZPtr<odb::ISdb> getCcSdb();
   odb::ZPtr<odb::ISdb> getNetSdb();
   uint computeXcaps(uint boxType);
-  bool getExtAreaCoords(const char* bbox);
   uint getExtBbox(int* x1, int* y1, int* x2, int* y2);
-  void setExtractionBbox(const char* bbox);
+  void setExtractionBbox();
 
   void setupMapping(uint itermCnt);
   uint getMultiples(uint cnt, uint base);
@@ -2295,7 +2294,6 @@ class extMain
                        bool density_model,
                        bool litho,
                        const char* netNames,
-                       const char* bbox,
                        uint cc_up,
                        uint ccFlag,
                        uint use_signal_table,
