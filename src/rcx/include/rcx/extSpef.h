@@ -41,8 +41,6 @@
 #include "odb.h"
 #include "parse.h"
 
-//#define AFILE FILE
-
 #include <map>
 
 namespace utl {
@@ -85,7 +83,6 @@ class extSpef
   FILE* _inFP;
 
   char _outFile[1024];
-  //	AFILE *_outFP;
   FILE* _outFP;
 
   Ath__parser* _parser;
@@ -179,8 +176,6 @@ class extSpef
 
   Ath__nameTable* _notFoundInst;
   Ath__nameTable* _nodeHashTable;
-  // AthHash<uint> *_nodeHashTable;
-  // HashN<uint> _nodeHashTable;
   uint _tmpCapId;
   Ath__nameTable* _node2nodeHashTable;
   char _tmpBuff1[1024];

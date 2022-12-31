@@ -153,7 +153,6 @@ class extSpef;
 class extDistRC
 {
  private:
-  // double _dist;
   int _sep;
   double _coupling;
   double _fringe;
@@ -210,9 +209,6 @@ class extDistRC
 class extDistRCTable
 {
  private:
-  // Ath__array1D<double> *_distTable;
-  // Ath__array1D<uint> *_distMapTable;
-
   Ath__array1D<extDistRC*>* _measureTable;
   Ath__array1D<extDistRC*>* _computeTable;
   Ath__array1D<extDistRC*>* _measureTableR[16];
@@ -408,7 +404,6 @@ class extDistWidthRCTable
                        bool bin,
                        bool ignore);
 
-  // extDistRC* getRC(uint mou, double w, double s);
   extDistRC* getRes(uint mou, uint w, int dist1, int dist2);
   extDistRC* getRC(uint mou, uint w, uint s);
   extDistRC* getRC(uint mou, uint w, uint dw, uint ds, uint s);
@@ -708,8 +703,6 @@ class extRCModel
                                            int& n,
                                            double dRate);
 
-  // void printCommentLine(char commentChar, double w, double width, double s,
-  // double spacing, double h, double height, double t, double thickeness);
   void printCommentLine(char commentChar, extMeasure* m);
 
   uint linesOver(uint wireCnt,
