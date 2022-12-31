@@ -814,7 +814,6 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
 
       cnt += netGrid->couplingCaps(
           resGrid, couplingDist, context, ccTable, coupleAndCompute, compPtr);
-
     }
   }
   notice(0, "Final %d ccaps\n", cnt);

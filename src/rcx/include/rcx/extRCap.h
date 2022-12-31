@@ -39,6 +39,8 @@
 #include <gseq.h>
 #include <util.h>
 
+#include <map>
+
 #include "ISdb.h"
 #include "ZObject.h"
 #include "db.h"
@@ -46,8 +48,6 @@
 #include "gseq.h"
 #include "odb.h"
 #include "wire.h"
-
-#include <map>
 
 namespace utl {
 class Logger;

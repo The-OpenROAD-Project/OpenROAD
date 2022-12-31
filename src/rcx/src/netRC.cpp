@@ -32,8 +32,8 @@
 
 #include <wire.h>
 
-#include <map>
 #include <limits>
+#include <map>
 #include <vector>
 
 #include "rcx/extRCap.h"

@@ -32,12 +32,11 @@
 
 #include <wire.h>
 
-#include "rcx/extRCap.h"
-#include "rcx/extprocess.h"
-
 #include <map>
 #include <vector>
 
+#include "rcx/extRCap.h"
+#include "rcx/extprocess.h"
 #include "utl/Logger.h"
 
 namespace rcx {

@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "ISdb.h"
 #include "array1.h"
 #include "db.h"
@@ -40,8 +42,6 @@
 #include "name.h"
 #include "odb.h"
 #include "parse.h"
-
-#include <map>
 
 namespace utl {
 class Logger;

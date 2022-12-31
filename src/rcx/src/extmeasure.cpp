@@ -2895,8 +2895,7 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
     //		extMetRCTable* rcModel= _metRCTable.get(model);
     if (ccCap != NULL)
       addCCcap(ccCap, capTable[model], model);
-    else
-    {
+    else {
       _rc[model]->_diag += capTable[model];
       addFringe(NULL, rseg2, capTable[model], model);
     }
@@ -3748,7 +3747,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
 
       bool btermConnection = isBtermConnection(rseg1, rseg2);
 
-      _totCCcnt++;  // TO_TEST
+      _totCCcnt++;                               // TO_TEST
       if (rseg1->getNet() == rseg2->getNet()) {  // same signal net
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, true);
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);

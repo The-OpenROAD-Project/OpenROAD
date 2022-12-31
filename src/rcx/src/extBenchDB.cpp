@@ -1,13 +1,12 @@
 /* Copyright Athena Design Systems 2005 */
 
+#include <map>
+#include <vector>
+
 #include "db.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extprocess.h"
-
-#include <map>
-#include <vector>
-
 #include "utl/Logger.h"
 
 namespace rcx {

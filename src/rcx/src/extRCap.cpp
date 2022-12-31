@@ -32,12 +32,11 @@
 
 #include "rcx/extRCap.h"
 
-#include "odb/wire.h"
-
 #include <map>
 #include <vector>
 
 #include "darr.h"
+#include "odb/wire.h"
 #include "utl/Logger.h"
 
 namespace rcx {
