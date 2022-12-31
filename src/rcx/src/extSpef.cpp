@@ -41,10 +41,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#define ATH__fprintf fprintf
-#define ATH__fopen fopen
-#define ATH__fclose fclose
-
 namespace rcx {
 
 using utl::RCX;
@@ -323,11 +319,11 @@ void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib)
   _diff = diff;
   _calib = calib;
   if (diff && !calib) {
-    _diffLogFP = ATH__fopen("diff_spef.log", "w");
+    _diffLogFP = fopen("diff_spef.log", "w");
     if (_diffLogFP == nullptr)
       logger_->error(
           RCX, 171, "Can't open log file diff_spef.log for writing!");
-    _diffOutFP = ATH__fopen("diff_spef.out", "w");
+    _diffOutFP = fopen("diff_spef.out", "w");
     if (_diffOutFP == nullptr)
       logger_->error(
           RCX, 172, "Can't open output file diff_spef.out for writing!");
@@ -412,7 +408,7 @@ void extSpef::writeNameNode(odb::dbCapNode* node)
     sprintf(_msgBuf1, "%s ", p->getValue().c_str());
     strcat(_bufString, _msgBuf1);
   } else {
-    ATH__fprintf(_outFP, "%s ", p->getValue().c_str());
+    fprintf(_outFP, "%s ", p->getValue().c_str());
   }
 }
 void extSpef::writeITermNode(uint node)
@@ -439,19 +435,17 @@ void extSpef::writeITermNode(uint node)
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
-      ATH__fprintf(
-          _outFP,
-          "*%d%s%s ",
-          getInstMapId(inst->getId()),
-          _delimiter,
-          addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
+      fprintf(_outFP,
+              "*%d%s%s ",
+              getInstMapId(inst->getId()),
+              _delimiter,
+              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     else
-      ATH__fprintf(
-          _outFP,
-          "%s%s%s ",
-          addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
-          _delimiter,
-          addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
+      fprintf(_outFP,
+              "%s%s%s ",
+              addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
+              _delimiter,
+              addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
   }
   /*
   odb::debug("HEXT",
@@ -470,22 +464,22 @@ bool extSpef::writeITerm(uint node)
   if (iterm->getInst()->getMaster()->isMarked())
     return false;
 
-  ATH__fprintf(_outFP, "*I ");
+  fprintf(_outFP, "*I ");
   writeITermNode(node);
 
   char io = iterm->getIoType().getString()[0];
   //	if (io=='I')
   //	{
-  ////		ATH__fprintf(_outFP, " %c\n", io);
-  //		ATH__fprintf(_outFP, " %c *D %s\n", io,
+  ////		fprintf(_outFP, " %c\n", io);
+  //		fprintf(_outFP, " %c *D %s\n", io,
   //			iterm->getMTerm()->getMaster()->getName().c_str());
   //	}
   //	else
   //	{
-  //		ATH__fprintf(_outFP, " %c *D %s\n", io,
+  //		fprintf(_outFP, " %c *D %s\n", io,
   //			iterm->getMTerm()->getMaster()->getName().c_str());
   //	}
-  ATH__fprintf(_outFP, "%c ", io);
+  fprintf(_outFP, "%c ", io);
   // double db2nm= 0.001; // TODO: make it defunits driven
   int dbunit = _block->getDbUnitsPerMicron();
   double db2nm = 1.0 / ((double) dbunit);
@@ -500,12 +494,11 @@ bool extSpef::writeITerm(uint node)
       wire->getCoord(jid, x1, y1);
     } else
       iterm->getAvgXY(&x1, &y1);
-    ATH__fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
+    fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
   }
-  ATH__fprintf(
-      _outFP,
-      "*D %s\n",
-      addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
+  fprintf(_outFP,
+          "*D %s\n",
+          addEscChar(iterm->getMTerm()->getMaster()->getName().c_str(), false));
   return true;
 }
 bool extSpef::writeBTerm(uint node)
@@ -519,9 +512,9 @@ bool extSpef::writeBTerm(uint node)
     strcat(_bufString, _msgBuf1);
   } else {
     if (_useIds)
-      ATH__fprintf(_outFP, "B%d ", bterm->getId());
+      fprintf(_outFP, "B%d ", bterm->getId());
     else
-      ATH__fprintf(_outFP, "%s ", addEscChar(bterm->getName().c_str(), false));
+      fprintf(_outFP, "%s ", addEscChar(bterm->getName().c_str(), false));
   }
 
   return true;
@@ -542,14 +535,13 @@ bool extSpef::writeNode(uint netId, uint node)
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap)
-      ATH__fprintf(_outFP, "*%d%s%d ", netId, _delimiter, node);
+      fprintf(_outFP, "*%d%s%d ", netId, _delimiter, node);
     else
-      ATH__fprintf(
-          _outFP,
-          "%s%s%d ",
-          addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
-          _delimiter,
-          node);
+      fprintf(_outFP,
+              "%s%s%d ",
+              addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+              _delimiter,
+              node);
   }
   return true;
 }
@@ -590,7 +582,7 @@ uint extSpef::writeCapITerm(uint node, uint capIndex)
   writeITermNode(node);
   writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
 
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 
   return 1;
 }
@@ -601,7 +593,7 @@ uint extSpef::writeCapName(odb::dbCapNode* capNode, uint capIndex)
   writeNameNode(capNode);
   writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
 
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 
   return 1;
 }
@@ -612,7 +604,7 @@ uint extSpef::writeCapPort(uint node, uint capIndex)
   writeBTerm(node);
 
   writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 
   return 1;
 }
@@ -620,16 +612,16 @@ uint extSpef::writePort(uint node)
 {
   odb::dbBTerm* bterm = odb::dbBTerm::getBTerm(_block, node);
   if (_useIds) {
-    ATH__fprintf(
+    fprintf(
         _outFP, "*P B%d %c", bterm->getId(), bterm->getIoType().getString()[0]);
   } else {
-    ATH__fprintf(_outFP,
-                 "*P %s %c",
-                 addEscChar(bterm->getName().c_str(), false),
-                 bterm->getIoType().getString()[0]);
+    fprintf(_outFP,
+            "*P %s %c",
+            addEscChar(bterm->getName().c_str(), false),
+            bterm->getIoType().getString()[0]);
   }
   if (_writingNodeCoords != C_ON) {
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
     return 1;
   }
   // double db2nm= 0.001; // TODO: make it defunits driven
@@ -645,21 +637,21 @@ uint extSpef::writePort(uint node)
     wire->getCoord(jid, x1, y1);
   } else
     bterm->getFirstPinLocation(x1, y1);
-  ATH__fprintf(_outFP, " *C %f %f\n", db2nm * x1, db2nm * y1);
+  fprintf(_outFP, " *C %f %f\n", db2nm * x1, db2nm * y1);
   return 1;
 }
 void extSpef::writeSingleRC(double val, bool delimeter)
 {
   if (delimeter)
-    ATH__fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
+    fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
   else
-    ATH__fprintf(_outFP, "%g", val * _cap_unit);
+    fprintf(_outFP, "%g", val * _cap_unit);
 }
 void extSpef::writeRCvalue(double* totCap, double units)
 {
-  ATH__fprintf(_outFP, "%g", totCap[_active_corner_number[0]] * units);
+  fprintf(_outFP, "%g", totCap[_active_corner_number[0]] * units);
   for (int ii = 1; ii < _active_corner_cnt; ii++)
-    ATH__fprintf(
+    fprintf(
         _outFP, "%s%g", _delimiter, totCap[_active_corner_number[ii]] * units);
 }
 void extSpef::writeDnet(uint netId, double* totCap)
@@ -667,19 +659,18 @@ void extSpef::writeDnet(uint netId, double* totCap)
   netId = getNetMapId(netId);
 
   if (_writeNameMap)
-    ATH__fprintf(_outFP, "\n*D_NET *%d ", netId);
+    fprintf(_outFP, "\n*D_NET *%d ", netId);
   else
-    ATH__fprintf(
-        _outFP,
-        "\n*D_NET %s ",
-        addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
+    fprintf(_outFP,
+            "\n*D_NET %s ",
+            addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
 
   writeRCvalue(totCap, _cap_unit);
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 }
 void extSpef::writeKeyword(const char* keyword)
 {
-  ATH__fprintf(_outFP, "%s\n", keyword);
+  fprintf(_outFP, "%s\n", keyword);
 }
 void extSpef::addCap(double* cap, double* totCap, uint n)
 {
@@ -863,7 +854,7 @@ void extSpef::writeCNodeNumber()
 {
   if (_noCnum)
     return;
-  ATH__fprintf(_outFP, "%d ", _cCnt++);
+  fprintf(_outFP, "%d ", _cCnt++);
 }
 // void extSpef::writeNodeCaps(uint netId, uint minNode, uint maxNode)
 //{
@@ -872,7 +863,7 @@ void extSpef::writeCNodeNumber()
 //		writeCNodeNumber();
 //		writeNode(netId, ii);
 //		writeRCvalue(_nodeCapTable->get(ii), _cap_unit);
-//		ATH__fprintf(_outFP, "\n");
+//		fprintf(_outFP, "\n");
 //	}
 //}
 void extSpef::writeNodeCap(uint netId, uint capIndex, uint ii)
@@ -880,7 +871,7 @@ void extSpef::writeNodeCap(uint netId, uint capIndex, uint ii)
   writeCNodeNumber();
   writeNode(netId, ii);
   writeRCvalue(_nodeCapTable->geti(capIndex), _cap_unit);
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 }
 uint extSpef::writePorts(odb::dbNet* net)
 {
@@ -915,7 +906,7 @@ uint extSpef::writeInternalCaps(odb::dbNet* net,
     for (int ii = 1; ii < _active_corner_cnt; ii++)
       writeSingleRC(capNode->getCapacitance(_active_corner_number[ii]), true);
 
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
@@ -948,7 +939,7 @@ uint extSpef::writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet,
     for (int ii = 1; ii < _active_corner_cnt; ii++)
       writeSingleRC(capNode->getCapacitance(_active_corner_number[ii]), true);
 
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
@@ -979,9 +970,9 @@ uint extSpef::writeITerms(odb::dbNet* net)
     if (capNode->isITerm())
       writeITerm(capNode->getNode());
     else if (capNode->isName()) {
-      ATH__fprintf(_outFP, "*I ");
+      fprintf(_outFP, "*I ");
       writeNameNode(capNode);
-      ATH__fprintf(_outFP, "\n");
+      fprintf(_outFP, "\n");
     }
     cnt++;
   }
@@ -1122,15 +1113,15 @@ uint extSpef::writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet,
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    ATH__fprintf(
+    fprintf(
         _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP,
-                   "%s%g",
-                   _delimiter,
-                   cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+      fprintf(_outFP,
+              "%s%g",
+              _delimiter,
+              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
@@ -1156,15 +1147,15 @@ uint extSpef::writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId)
     writeCapNode(cc->getSourceCapNode()->getId(), netId);
     writeCapNode(cc->getTargetCapNode()->getId(), netId);
 
-    ATH__fprintf(
+    fprintf(
         _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP,
-                   "%s%g",
-                   _delimiter,
-                   cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+      fprintf(_outFP,
+              "%s%g",
+              _delimiter,
+              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
@@ -1223,15 +1214,15 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId)
     writeCapNode(cc->getSourceCapNode(), netId);
     writeCapNode(cc->getTargetCapNode(), netId);
 
-    ATH__fprintf(
+    fprintf(
         _outFP, "%g", cc->getCapacitance(_active_corner_number[0]) * _cap_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP,
-                   "%s%g",
-                   _delimiter,
-                   cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
+      fprintf(_outFP,
+              "%s%g",
+              _delimiter,
+              cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
 
-    ATH__fprintf(_outFP, "\n");
+    fprintf(_outFP, "\n");
   }
   return _cCnt;
 }
@@ -1290,13 +1281,13 @@ uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
     if (capNode->isITerm() || capNode->isBTerm())
       continue;
 
-    ATH__fprintf(_outFP, "*N ");
+    fprintf(_outFP, "*N ");
     writeCapNode(rc->getTargetNode(), netId);
     int x1, y1;
 
     rc->getCoords(x1, y1);
 
-    ATH__fprintf(_outFP, "*C %f %f\n", db2nm * x1, db2nm * y1);
+    fprintf(_outFP, "*C %f %f\n", db2nm * x1, db2nm * y1);
   }
   return cnt;
 }
@@ -1327,19 +1318,19 @@ uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
     if (isCapNodeExcluded(rc->getTargetCapNode()))
       continue;
 
-    ATH__fprintf(_outFP, "%d ", cnt++);
+    fprintf(_outFP, "%d ", cnt++);
     writeCapNode(rc->getSourceNode(), netId);
     writeCapNode(rc->getTargetNode(), netId);
 
-    ATH__fprintf(
+    fprintf(
         _outFP, "%g", rc->getResistance(_active_corner_number[0]) * _res_unit);
     for (int ii = 1; ii < _active_corner_cnt; ii++)
-      ATH__fprintf(_outFP,
-                   "%s%g",
-                   _delimiter,
-                   rc->getResistance(_active_corner_number[ii]) * _res_unit);
+      fprintf(_outFP,
+              "%s%g",
+              _delimiter,
+              rc->getResistance(_active_corner_number[ii]) * _res_unit);
 
-    ATH__fprintf(_outFP, " \n");
+    fprintf(_outFP, " \n");
   }
   return cnt;
 }
@@ -1485,7 +1476,7 @@ bool extSpef::setOutSpef(char* filename)
     sprintf(cmd, "gzip -1 > %s.gz", filename);
     _outFP = popen(cmd, "w");
   } else
-    _outFP = ATH__fopen(filename, "w");
+    _outFP = fopen(filename, "w");
 
   if (_outFP == NULL) {
     fprintf(stderr, "Cannot open file %s with permissions \"w\"", filename);
@@ -1499,9 +1490,9 @@ bool extSpef::closeOutFile()
     return false;
 
   if (_gzipFlag)
-    ATH__fclose(_outFP);
+    fclose(_outFP);
   else
-    ATH__fclose(_outFP);
+    fclose(_outFP);
 
   return true;
 }
@@ -1529,12 +1520,12 @@ uint extSpef::writeBlockPorts()
     uint id = bterm->getId();
 
     if (_useIds) {
-      ATH__fprintf(_outFP, "B%d %c\n", id, bterm->getIoType().getString()[0]);
+      fprintf(_outFP, "B%d %c\n", id, bterm->getIoType().getString()[0]);
     } else {
-      ATH__fprintf(_outFP,
-                   "%s %c\n",
-                   addEscChar(bterm->getName().c_str(), false),
-                   bterm->getIoType().getString()[0]);
+      fprintf(_outFP,
+              "%s %c\n",
+              addEscChar(bterm->getName().c_str(), false),
+              bterm->getIoType().getString()[0]);
     }
   }
   return cnt;
@@ -1652,12 +1643,12 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
     uint netMapId = getNetMapId(net->getId());
 
     if (_useIds)
-      ATH__fprintf(_outFP, "*%d N%d\n", netMapId, netMapId);
+      fprintf(_outFP, "*%d N%d\n", netMapId, netMapId);
     else {
       nname = (char*) net->getConstName();
       nname1 = tinkerSpefName(nname);
       nname1 = addEscChar(nname1, false);
-      ATH__fprintf(_outFP, "*%d %s\n", netMapId, nname1);
+      fprintf(_outFP, "*%d %s\n", netMapId, nname1);
     }
 
     cnt++;
@@ -1702,12 +1693,12 @@ uint extSpef::writeInstMap()
     instMapId = getInstMapId(inst->getId());
 
     if (_useIds)
-      ATH__fprintf(_outFP, "*%d I%d\n", instMapId, inst->getId());
+      fprintf(_outFP, "*%d I%d\n", instMapId, inst->getId());
     else {
       nname = (char*) inst->getConstName();
       nname1 = tinkerSpefName(nname);
       nname1 = addEscChar(nname1, true);
-      ATH__fprintf(_outFP, "*%d %s\n", instMapId, nname1);
+      fprintf(_outFP, "*%d %s\n", instMapId, nname1);
     }
 
     cnt++;
@@ -2010,22 +2001,22 @@ bool extSpef::writeHeaderInfo(uint debug)
                   _outFP= stdout;
   */
 
-  ATH__fprintf(_outFP, "*SPEF \"ieee 1481-1999\"\n");
-  ATH__fprintf(_outFP, "*DESIGN \"%s\"\n", _design);
+  fprintf(_outFP, "*SPEF \"ieee 1481-1999\"\n");
+  fprintf(_outFP, "*DESIGN \"%s\"\n", _design);
 
-  ATH__fprintf(_outFP, "*DATE \"11:11:11 Fri 11 11, 1111\"\n");
+  fprintf(_outFP, "*DATE \"11:11:11 Fri 11 11, 1111\"\n");
 
-  ATH__fprintf(_outFP, "*VENDOR \"OpenRCX\"\n");
-  ATH__fprintf(_outFP, "*PROGRAM \"Parallel Extraction\"\n");
-  ATH__fprintf(_outFP, "*VERSION \"1.0\"\n");
-  ATH__fprintf(_outFP, "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"\n");
-  ATH__fprintf(_outFP, "*DIVIDER %s\n", _divider);
-  ATH__fprintf(_outFP, "*DELIMITER %s\n", _delimiter);
-  ATH__fprintf(_outFP, "*BUS_DELIMITER %s\n", _bus_delimiter);
-  ATH__fprintf(_outFP, "*T_UNIT %d %s\n", _time_unit, _time_unit_word);
-  ATH__fprintf(_outFP, "*C_UNIT %d %s\n", 1, _cap_unit_word);
-  ATH__fprintf(_outFP, "*R_UNIT %d %s\n", 1, _res_unit_word);
-  ATH__fprintf(_outFP, "*L_UNIT %d %s\n", _ind_unit, _ind_unit_word);
+  fprintf(_outFP, "*VENDOR \"OpenRCX\"\n");
+  fprintf(_outFP, "*PROGRAM \"Parallel Extraction\"\n");
+  fprintf(_outFP, "*VERSION \"1.0\"\n");
+  fprintf(_outFP, "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"\n");
+  fprintf(_outFP, "*DIVIDER %s\n", _divider);
+  fprintf(_outFP, "*DELIMITER %s\n", _delimiter);
+  fprintf(_outFP, "*BUS_DELIMITER %s\n", _bus_delimiter);
+  fprintf(_outFP, "*T_UNIT %d %s\n", _time_unit, _time_unit_word);
+  fprintf(_outFP, "*C_UNIT %d %s\n", 1, _cap_unit_word);
+  fprintf(_outFP, "*R_UNIT %d %s\n", 1, _res_unit_word);
+  fprintf(_outFP, "*L_UNIT %d %s\n", _ind_unit, _ind_unit_word);
 
   return true;
 }

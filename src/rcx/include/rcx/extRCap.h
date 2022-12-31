@@ -47,8 +47,6 @@
 #include "odb.h"
 #include "wire.h"
 
-#define BUG_LAYER_CNT 1
-
 #include <map>
 
 namespace utl {

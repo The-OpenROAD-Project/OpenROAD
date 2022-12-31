@@ -1252,7 +1252,6 @@ uint extMain::getITermConn2(uint dir,
 
   return instCnt;
 }
-//#define DEBUG_INST_NAME "ledc_3.OPTHOLD_G_11905"
 odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
                                         uint level,
                                         uint dir,

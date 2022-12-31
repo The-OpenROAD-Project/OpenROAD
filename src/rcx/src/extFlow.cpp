@@ -39,11 +39,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-//#define MAXINT 0x7FFFFFFF;
-
-//#define DEBUG_NET_ID 10
-//#define TEST_POWER_LEN 1
-
 namespace rcx {
 
 using utl::RCX;

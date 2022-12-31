@@ -40,10 +40,6 @@
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
-#define ATH__fprintf fprintf
-#define ATH__fopen fopen
-#define ATH__fclose fclose
-
 namespace rcx {
 
 using utl::RCX;
@@ -83,7 +79,7 @@ uint extSpef::writeHierInstNameMap()
 
       char* nname = (char*) ii->getConstName();
       char* nname1 = tinkerSpefName(nname);
-      ATH__fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
+      fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
       debugPrint(logger_,
                  RCX,
                  "hierspef",
@@ -158,7 +154,7 @@ uint extSpef::writeHierNetNameMap()
 
       char* nname = (char*) ii->getConstName();
       char* nname1 = tinkerSpefName(nname);
-      ATH__fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
+      fprintf(_outFP, "*%d %s/%s\n", mapId, inst->getConstName(), nname1);
       debugPrint(logger_,
                  RCX,
                  "hierspef",
@@ -704,12 +700,12 @@ capNodeMap); cc->setMark(true);
 void extSpef::writeDnetHier(uint mapId, double* totCap)
 {
   if (_writeNameMap)
-    ATH__fprintf(_outFP, "\n*D_NET *%d ", mapId);
+    fprintf(_outFP, "\n*D_NET *%d ", mapId);
   // else
-  // ATH__fprintf(_outFP, "\n*D_NET %s ", tinkerSpefName((char
+  // fprintf(_outFP, "\n*D_NET %s ", tinkerSpefName((char
   // *)_d_net->getConstName()));
   writeRCvalue(totCap, _cap_unit);
-  ATH__fprintf(_outFP, "\n");
+  fprintf(_outFP, "\n");
 }
 
 bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg)

@@ -33,13 +33,12 @@
 #include <wire.h>
 
 #include <map>
+#include <limits>
 #include <vector>
 
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
-
-#define MAXINT 0x7FFFFFFF;
 
 namespace rcx {
 
@@ -1642,10 +1641,10 @@ uint extMain::readCmpFile(const char* name)
   logger_->info(RCX, 117, "Read CMP file {} ...", name);
 
   uint tileSize;
-  int X1 = MAXINT;
-  int Y1 = MAXINT;
-  int X2 = -MAXINT;
-  int Y2 = -MAXINT;
+  int X1 = std::numeric_limits<int>::max();
+  int Y1 = std::numeric_limits<int>::max();
+  int X2 = std::numeric_limits<int>::min();
+  int Y2 = std::numeric_limits<int>::min();
   readCmpStats(name, tileSize, X1, Y1, X2, Y2);
 
   uint lefLayerCnt = 20;  // need an API here
