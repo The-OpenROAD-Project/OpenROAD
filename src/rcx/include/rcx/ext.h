@@ -303,10 +303,6 @@ class Ext
              int corner,
              int spef_corner,
              bool m_map);
-  bool set_block(const std::string& block_name,
-                 odb::dbBlock* block,
-                 const std::string& inst_name,
-                 odb::dbInst* inst);
   bool report_total_cap(const std::string& file,
                         bool res_only,
                         bool cap_only,

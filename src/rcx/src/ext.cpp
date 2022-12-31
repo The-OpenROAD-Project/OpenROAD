@@ -777,49 +777,6 @@ bool Ext::match(const std::string& spef_file,
   return 0;
 }
 
-bool Ext::set_block(const std::string& block_name,
-                    odb::dbBlock* block,
-                    const std::string& inst_name,
-                    odb::dbInst* inst)
-{
-  if (!inst_name.empty()) {
-    odb::dbChip* chip = _db->getChip();
-    odb::dbInst* ii = chip->getBlock()->findInst(inst_name.c_str());
-    odb::dbMaster* m = ii->getMaster();
-    logger_->info(RCX,
-                  24,
-                  "Inst={} ==> {} {} of Master {} {}",
-                  inst_name.c_str(),
-                  ii->getId(),
-                  ii->getConstName(),
-                  m->getId(),
-                  m->getConstName());
-  }
-  if (block == NULL) {
-    if (block_name.empty()) {
-      logger_->warn(RCX, 22, "command requires either dbblock or block name{}");
-      return TCL_ERROR;
-    }
-    odb::dbChip* chip = _db->getChip();
-    odb::dbBlock* child = chip->getBlock()->findChild(block_name.c_str());
-    if (child == NULL) {
-      logger_->warn(RCX,
-                    430,
-                    "Cannot find block with master name {}",
-                    block_name.c_str());
-      return TCL_ERROR;
-    }
-    block = child;
-  }
-
-  delete _ext;
-  _ext = new extMain(5);
-  _ext->init(_db, logger_);
-
-  _ext->setBlock(block);
-  return 0;
-}
-
 bool Ext::report_total_cap(const std::string& file,
                            bool res_only,
                            bool cap_only,
@@ -829,16 +786,6 @@ bool Ext::report_total_cap(const std::string& file,
 {
   _ext->reportTotalCap(
       file.c_str(), cap_only, res_only, ccmult, ref.c_str(), read.c_str());
-  /*
-          dbChip *chip= _db->getChip();
-          dbBlock * child = chip->getBlock()->findChild(block_name);
-  if (child==NULL) {
-  logger_->warn(RCX, 23, "Cannot find block with master name {}",
-  block_name);
-  return TCL_ERROR;
-  }
-  block= child;
-  */
   return 0;
 }
 
