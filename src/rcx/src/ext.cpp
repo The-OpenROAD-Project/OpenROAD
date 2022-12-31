@@ -212,11 +212,6 @@ bool Ext::bench_net(const std::string& dir,
   }
   logger_->info(
       RCX, 145, "Benchmarking using 3d field solver net {}...", netId);
-#ifdef ZUI
-  ZPtr<ISdb> dbNetSdb = _ext->getBlock()->getNetSdb(_context, _ext->getTech());
-
-  _ext->benchNets(&opt, netId, trackCnt, dbNetSdb);
-#endif
   logger_->info(RCX, 146, "Finished 3D field solver benchmarking.");
 
   return TCL_OK;
@@ -482,24 +477,6 @@ bool Ext::extract(ExtractOptions opts)
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
 
-#ifdef ZUI
-  bool extract_power_grid_only = opts.power_grid;
-  if (extract_power_grid_only) {
-    dbBlock* block = _ext->getBlock();
-    if (block != NULL) {
-      bool skipCutVias = true;
-      block->initSearchBlock(_db->getTech(), true, true, _context, skipCutVias);
-    } else {
-      logger_->error(RCX, 10, "There is no block to extract!");
-      return TCL_ERROR;
-    }
-    _ext->setPowerExtOptions(skip_power_stubs,
-                             exclude_cells.c_str(),
-                             in_args->skip_m1_caps(),
-                             in_args->power_source_coords());
-  }
-#endif
-
   const char* extRules = opts.ext_model_file;
   const char* cmpFile = opts.cmp_file;
   bool density_model = opts.wire_density;
@@ -529,22 +506,6 @@ bool Ext::extract(ExtractOptions opts)
 
   if (ccBandTracks)
     opts.eco = false;  // tbd
-  else {
-#ifdef ZUI
-    dbNetSdb = _ext->getBlock()->getNetSdb();
-
-    if (dbNetSdb == NULL) {
-      extSdb = true;
-      if (rlog)
-        AthResourceLog("before get sdb", 0);
-
-      dbNetSdb = _ext->getBlock()->getNetSdb(_context, _ext->getTech());
-
-      if (rlog)
-        AthResourceLog("after get sdb", 0);
-    }
-#endif
-  }
 
   if (_ext->makeBlockRCsegs(btermThresholdFlag,
                             cmpFile,
@@ -587,11 +548,6 @@ bool Ext::extract(ExtractOptions opts)
       if (opts.rlog)
         odb::AthResourceLog("before remove sdb", 0);
       dbNetSdb->cleanSdb();
-#ifdef ZUI
-      _ext->getBlock()->resetNetSdb();
-      if (rlog)
-        AthResourceLog("after remove sdb", 0);
-#endif
     }
   }
 
@@ -700,10 +656,6 @@ bool Ext::read_spef(ReadSpefOpts& opt)
 
   odb::ZPtr<odb::ISdb> netSdb = NULL;
   bool stampWire = opt.stamp_wire;
-#ifdef ZUI
-  if (stampWire)
-    netSdb = _ext->getBlock()->getSignalNetSdb(_context, _db->getTech());
-#endif
   bool useIds = opt.use_ids;
   uint testParsing = opt.test_parsing;
 
