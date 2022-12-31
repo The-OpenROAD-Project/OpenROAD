@@ -1889,22 +1889,6 @@ class extMain
                      int* bb_ur,
                      uint wtype,
                      odb::dbCreateNetUtil* netUtil = NULL);
-  uint addInstsGs(Ath__array1D<uint>* instTable,
-                  Ath__array1D<uint>* tmpInstIdTable,
-                  uint dir);
-  uint mkSignalTables(uint* nm_step,
-                      int* bb_ll,
-                      int* bb_ur,
-                      Ath__array1D<uint>*** sdbSignalTable,
-                      Ath__array1D<uint>*** signalGsTable,
-                      uint* bucketCnt);
-  uint mkSignalTables(uint* nm_step,
-                      int* bb_ll,
-                      int* bb_ur,
-                      Ath__array1D<uint>*** sdbSignalTable,
-                      Ath__array1D<uint>*** signalGsTable,
-                      Ath__array1D<uint>*** instTable,
-                      uint* bucketCnt);
   uint addNets(uint dir,
                int* bb_ll,
                int* bb_ur,
@@ -2347,16 +2331,8 @@ class extMain
 
   uint getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
 
-  uint addPowerNets2(uint dir,
-                     int* bb_ll,
-                     int* bb_ur,
-                     uint wtype,
-                     Ath__array1D<uint>* sdbPowerTable,
-                     odb::dbCreateNetUtil* createDbNet = NULL);
   void resetNetSpefFlag(Ath__array1D<uint>* tmpNetIdTable);
 
-  void reportTableNetCnt(uint* sdbBucketCnt,
-                         Ath__array1D<uint>*** sdbSignalTable);
   uint sBoxCounter(odb::dbNet* net, uint& maxWidth);
   uint powerWireCounter(uint& maxWidth);
   uint signalWireCounter(uint& maxWidth);
@@ -2397,24 +2373,6 @@ class extMain
 
   uint createNetShapePropertires(odb::dbBlock* blk);
   void resetGndCaps();
-  uint mkTileNets(uint dir,
-                  int* lo_sdb,
-                  int* hi_sdb,
-                  bool powerNets,
-                  odb::dbCreateNetUtil* createDbNet,
-                  uint& rcCnt,
-                  bool countOnly = false);
-  uint mkTilePowerNets(uint dir,
-                       int* lo_sdb,
-                       int* hi_sdb,
-                       odb::dbCreateNetUtil* createDbNet);
-  uint rcNetGen(odb::dbNet* net);
-  uint rcGen(const char* netNames,
-             double resBound,
-             bool mergeViaRes,
-             uint debug,
-             bool rlog,
-             odb::ZInterface* Interface);
 
   void disableRotatedFlag();
 
