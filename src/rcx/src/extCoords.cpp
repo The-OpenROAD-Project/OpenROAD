@@ -154,68 +154,6 @@ uint extSpef::addNetShapesOnSearch(uint netId)
   }
   return cnt;
 }
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          uint level)
-{
-  _idTable->resetCnt(0);
-
-  if (level > 0) {
-    for (uint dir = 0; dir < _search->getRowCnt(); dir++) {
-      _search->search(x1, y1, x2, y2, dir, level, _idTable, true);
-      if (_idTable->getCnt() > 0)
-        break;
-    }
-  } else {
-    for (uint dir = 0; dir < _search->getRowCnt(); dir++) {
-      for (uint layer = 1; layer < _search->getColCnt(); layer++) {
-        _search->search(x1, y1, x2, y2, dir, layer, _idTable, true);
-        if (_idTable->getCnt() > 0)
-          break;
-      }
-      if (_idTable->getCnt() > 0)
-        break;
-    }
-  }
-  if (_idTable->getCnt() <= 0) {
-    return 0;
-  }
-
-  int loX, loY, hiX, hiY;
-  uint l, id1, id2, wtype;
-
-  uint id = _idTable->get(0);
-  _search->getBox(id, &loX, &loY, &hiX, &hiY, &l, &id1, &id2, &wtype);
-
-  if (netId != id1)
-    return 0;
-
-  return id2;
-}
-
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          char* layer,
-                          bool matchLayer)
-{
-  _idTable->resetCnt(0);
-
-  uint level = 0;
-  if (layer != NULL) {
-    dbTechLayer* dblayer = _tech->findLayer(layer);
-    if (dblayer != NULL)
-      level = dblayer->getRoutingLevel();
-    else if (matchLayer)
-      return 0;
-  }
-  return findShapeId(netId, x1, y1, x2, y2, level);
-}
 
 void extSpef::initNodeCoordTables(uint memChunk)
 {

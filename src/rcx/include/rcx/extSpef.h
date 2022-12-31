@@ -331,16 +331,7 @@ class extSpef
   uint getBTermShapeId(odb::dbBTerm* bterm);
   void initSearchForNets();
   uint addNetShapesOnSearch(uint netId);
-  uint findShapeId(uint netId, int x, int y);
   void readNmCoords();
-  uint findShapeId(uint netId,
-                   int x1,
-                   int y1,
-                   int x2,
-                   int y2,
-                   char* layer,
-                   bool matchLayer = false);
-  uint findShapeId(uint netId, int x1, int y1, int x2, int y2, uint level);
   void searchDealloc();
   void getAnchorCoords(odb::dbNet* net,
                        uint shapeId,
