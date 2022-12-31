@@ -167,7 +167,6 @@ class Ext
     bool unlink_ext = false;
     bool no_gs = false;
     bool skip_via_wires = false;
-    bool tile = false;
     bool skip_m1_caps = false;
     bool power_grid = false;
     bool write_total_caps = false;

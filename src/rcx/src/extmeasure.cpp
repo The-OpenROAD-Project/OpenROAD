@@ -2606,12 +2606,6 @@ bool extMeasure::isConnectedToBterm(dbRSeg* rseg1)
 
   return false;
 }
-bool extMeasure::isBtermConnection(dbRSeg* rseg1, dbRSeg* rseg2)
-{
-  return _btermThreshold
-         && (isConnectedToBterm(rseg1) || isConnectedToBterm(rseg2))
-         && (rseg1 != rseg2);
-}
 
 dbCCSeg* extMeasure::makeCcap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
 {
@@ -2620,9 +2614,7 @@ dbCCSeg* extMeasure::makeCcap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
 
     _totCCcnt++;  // TO_TEST
 
-    bool btermConnection = isBtermConnection(rseg1, rseg2);
-
-    if ((ccCap >= _extMain->_coupleThreshold) || btermConnection) {
+    if (ccCap >= _extMain->_coupleThreshold) {
       _totBigCCcnt++;
 
       dbCapNode* node1 = rseg1->getTargetCapNode();
@@ -2834,8 +2826,6 @@ void extMeasure::calcDiagRC(int rsegId1,
 
 void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
 {
-  bool btermConnection = isBtermConnection(rseg1, rseg2);
-
   int lenOverSub = _len - totLenCovered;
 
   uint modelCnt = _metRCTable.getCnt();
@@ -2896,8 +2886,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
 
         _totCCcnt++;
 
-        if ((_rc[_minModelIndex]->_coupling >= _extMain->_coupleThreshold)
-            || btermConnection) {
+        if (_rc[_minModelIndex]->_coupling >= _extMain->_coupleThreshold) {
           ccap = dbCCSeg::create(
               dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
               dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
@@ -3481,9 +3470,6 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
     _extMain->updateTotalRes(rseg1, rseg2, this, deltaRes, modelCnt);
 
     if ((rseg1 != NULL) && (rseg2 != NULL)) {  // signal nets
-
-      bool btermConnection = isBtermConnection(rseg1, rseg2);
-
       _totCCcnt++;                               
       if (rseg1->getNet() == rseg2->getNet()) {  // same signal net
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, true);
@@ -3495,8 +3481,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
         return totLenCovered;
       }
 
-      if ((_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold)
-          && !btermConnection) {  
+      if (_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold) {  
 
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true, true);
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, true);

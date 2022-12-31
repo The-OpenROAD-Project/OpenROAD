@@ -962,7 +962,6 @@ class extMeasure
                      int* ur,
                      Ath__array1D<odb::SEQ*>* resTable);
 
-  bool isBtermConnection(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2);
   bool isConnectedToBterm(odb::dbRSeg* rseg1);
   uint defineBox(CoupleOptions& options);
   void printCoords(FILE* fp);
@@ -1420,7 +1419,6 @@ class extMeasure
   Ath__array1D<extLenOU*>* _lenOUtable;
 
   bool _diagFlow;
-  bool _btermThreshold;
   bool _toHi;
   bool _sameNetFlag;
 
@@ -2244,8 +2242,7 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  uint makeBlockRCsegs(bool btermThresholdFlag,
-                       const char* cmp,
+  uint makeBlockRCsegs(const char* cmp,
                        bool density_model,
                        bool litho,
                        const char* netNames,

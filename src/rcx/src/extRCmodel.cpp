@@ -2228,7 +2228,6 @@ extMeasure::extMeasure()
 
   _dgContextFile = NULL;
   _diagFlow = false;
-  _btermThreshold = false;
   _rotatedGs = false;
   _sameNetFlag = false;
 }

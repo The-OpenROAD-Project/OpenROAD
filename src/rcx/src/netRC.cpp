@@ -2115,8 +2115,7 @@ void extMain::getPrevControl()
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
 
-uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
-                              const char* cmp_file,
+uint extMain::makeBlockRCsegs(const char* cmp_file,
                               bool density_model,
                               bool litho,
                               const char* netNames,
@@ -2345,8 +2344,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
         m._layerCnt = modelLayerCnt;
       m.getMinWidth(_tech);
       m.allocOUpool();
-
-      m._btermThreshold = btermThresholdFlag;
 
       m._debugFP = NULL;
       m._netId = 0;

@@ -479,8 +479,7 @@ bool Ext::extract(ExtractOptions opts)
   _ext->skip_via_wires(true);
   _ext->_lef_res = opts.lef_res;
 
-  if (_ext->makeBlockRCsegs(opts.tile,
-                            opts.cmp_file,
+  if (_ext->makeBlockRCsegs(opts.cmp_file,
                             opts.wire_density,
                             opts.litho,
                             opts.net,
