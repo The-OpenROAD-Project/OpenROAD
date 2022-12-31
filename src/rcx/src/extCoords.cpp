@@ -273,15 +273,6 @@ uint extSpef::getITermShapeId(dbITerm* iterm)
     return 0;
   return iterm->getNet()->getWire()->getTermJid(iterm->getId());
 }
-uint extSpef::getBTermShapeId(dbBTerm* bterm)
-{
-  dbShape pin;
-  if (!bterm->getFirstPin(pin))  // TWG: added bpins
-    return 0;
-  if (bterm->getNet()->getWire() == NULL)
-    return 0;
-  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
-}
 
 void extSpef::searchDealloc()
 {

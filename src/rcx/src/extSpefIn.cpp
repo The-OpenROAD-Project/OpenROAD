@@ -1752,18 +1752,6 @@ uint extSpef::sortRSegs()
     }
     if (zcfound)
       setJunctionId(tgtCapNode, rc);
-    // dbCapNode *tgtnode = dbCapNode::getCapNode(_cornerBlock, tgtCapn);
-    ////if (!tgtnode->isITerm() && !tgtnode->isBTerm())
-    ////	tgtnode->setNode(rc->getShapeId());
-    // if (rc->getShapeId() == 0 && (tgtnode->isITerm() || tgtnode->isBTerm()))
-    //{
-    //	uint shapeId = 0;
-    //	if (tgtnode->isITerm())
-    //		shapeId = getITermShapeId(dbITerm::getITerm(_cornerBlock,
-    // tgtnode->getNode())); 	else 		shapeId =
-    // getBTermShapeId(dbBTerm::getBTerm(_cornerBlock, tgtnode->getNode()));
-    //	rc->updateShapeId(shapeId);
-    //}
   }
   if (_srsegi->getCnt() != _rsegCnt) {
     if (_diffLogFP) {
