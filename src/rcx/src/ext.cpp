@@ -477,8 +477,6 @@ bool Ext::extract(ExtractOptions opts)
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
 
-  const int ccBandTracks = opts.cc_band_tracks;
-
   _ext->set_debug_nets(opts.debug_net);
   _ext->skip_via_wires(opts.skip_via_wires);
   _ext->skip_via_wires(true);
@@ -486,8 +484,7 @@ bool Ext::extract(ExtractOptions opts)
 
   odb::ZPtr<odb::ISdb> dbNetSdb = NULL;
 
-  if (ccBandTracks)
-    opts.eco = false;  // tbd
+  opts.eco = false;  // tbd
 
   if (_ext->makeBlockRCsegs(opts.tile,
                             opts.cmp_file,
@@ -498,7 +495,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.ibox,
                             opts.cc_up,
                             opts.cc_model,
-                            ccBandTracks,
                             opts.signal_table,
                             opts.max_res,
                             !opts.no_merge_via_res,

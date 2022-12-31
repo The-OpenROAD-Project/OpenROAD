@@ -2552,7 +2552,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               const char* ibox,
                               uint cc_up,
                               uint ccFlag,
-                              int ccBandTracks,
                               uint use_signal_table,
                               double resBound,
                               bool mergeViaRes,
@@ -2574,19 +2573,11 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     preserve_geom = 0;
   }
 
-  _cc_band_tracks = ccBandTracks;
   _use_signal_tables = use_signal_table;
 
-  bool initTiling = false;
-  bool windowFlow = false;
-  bool skipExtractionAfterRcGen = false;
-  bool doExt = false;
   _diagFlow = true;
 
-  int detailRlog = 0;
-  int ttttRemoveSdb = 1;
-  int ttttRemoveGs = 1;
-  int setBlockPtfile = 0;
+  const int detailRlog = 0;
   std::vector<dbNet*> inets;
   if ((_prevControl->_ruleFileName.empty())
       && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
@@ -2695,52 +2686,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
   }
 
-  // if (remove_ext)
-  //{
-  //	removeExt (inets);
-  //	return 1;
-  //}
-  // if (unlink_ext)
-  //{
-  // unlinkExt (inets);
-  //	return 1;
-  //}
-  // if (remove_cc)
-  //{
-  //	removeCC (inets);
-  //	return 1;
-  //}
-
   if (!_reExtract || _extRun == 0 || _alwaysNewGs) {
-    //_block->setCornerCount(extDbCnt);
-    //_extDbCnt = extDbCnt;
-
-    //		if (log)
-    //			AthResourceLog ("Start Planes", 0);
-
     if (!_lefRC) {
-      if (_cc_band_tracks == 0) {
-        //#ifndef NEW_GS_FLOW
-        if (_usingMetalPlanes && (_geoThickTable == NULL)) {
-          if (rlog)
-            AthResourceLog("before initPlanes", detailRlog);
-          initPlanes(_currentModel->getLayerCnt() + 1);
-          if (rlog)
-            AthResourceLog("after initPlanes", detailRlog);
-          addPowerGs();
-          if (rlog)
-            AthResourceLog("after addPowerGs", detailRlog);
-          if (_alwaysNewGs)
-            addSignalGs();
-          if (rlog)
-            AthResourceLog("after addSignalGs", detailRlog);
-          if (_overCell)
-            addInstShapesOnPlanes();
-          if (rlog)
-            AthResourceLog("after addInstShapesOnPlanes", detailRlog);
-        }
-      }
-      //#endif
       if (_ccContextDepth)
         initContextArray();
     }
@@ -2787,10 +2734,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               _seqPool);
     setExtractionBbox(bbox);
   }
-  // else
-  else if (_cc_band_tracks == 0) {
-    setupSearchDb(bbox, Interface);
-  }
 
   dbNet* net;
   uint j;
@@ -2825,13 +2768,10 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
   if (_reuseMetalFill)
     _extNetSDB->adjustMetalFill();
-  //	uint netCnt= 0;
-  //	for( net_itr = bnets.begin(); !windowFlow && net_itr != bnets.end();
-  //++net_itr ) {
 
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
 
-  if ((p == NULL) && !initTiling) {
+  if (p == NULL) {
     if (_power_extract_only) {
       powerRCGen();
       return 1;
@@ -2863,7 +2803,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   if (rlog)
     AthResourceLog("after makeNetRCsegs", detailRlog);
   int ttttPrintDgContext = 0;
-  if (!skipExtractionAfterRcGen && (_couplingFlag > 1)) {
+  if (_couplingFlag > 1) {
     logger_->info(RCX,
                   439,
                   "Coupling Cap extraction {} ...",
@@ -2892,126 +2832,97 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
         AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
-      logger_->info(RCX,
-                    440,
-                    "Coupling threshhold is {:.4f} fF, coupling capacitance "
-                    "less than {:.4f} "
-                    "fF will be grounded.",
-                    _coupleThreshold,
-                    _coupleThreshold);
-      if (_unifiedMeasureInit) {
-        m._extMain = this;
-        m._block = _block;
-        m._diagFlow = _diagFlow;
+    logger_->info(RCX,
+                  440,
+                  "Coupling threshhold is {:.4f} fF, coupling capacitance "
+                  "less than {:.4f} "
+                  "fF will be grounded.",
+                  _coupleThreshold,
+                  _coupleThreshold);
+    if (_unifiedMeasureInit) {
+      m._extMain = this;
+      m._block = _block;
+      m._diagFlow = _diagFlow;
 
-        m._resFactor = _resFactor;
-        m._resModify = _resModify;
-        m._ccFactor = _ccFactor;
-        m._ccModify = _ccModify;
-        m._gndcFactor = _gndcFactor;
-        m._gndcModify = _gndcModify;
+      m._resFactor = _resFactor;
+      m._resModify = _resModify;
+      m._ccFactor = _ccFactor;
+      m._ccModify = _ccModify;
+      m._gndcFactor = _gndcFactor;
+      m._gndcModify = _gndcModify;
 
-        m._dgContextArray = _dgContextArray;
-        m._dgContextDepth = &_dgContextDepth;
-        m._dgContextPlanes = &_dgContextPlanes;
-        m._dgContextTracks = &_dgContextTracks;
-        m._dgContextBaseLvl = &_dgContextBaseLvl;
-        m._dgContextLowLvl = &_dgContextLowLvl;
-        m._dgContextHiLvl = &_dgContextHiLvl;
-        m._dgContextBaseTrack = _dgContextBaseTrack;
-        m._dgContextLowTrack = _dgContextLowTrack;
-        m._dgContextHiTrack = _dgContextHiTrack;
-        m._dgContextTrackBase = _dgContextTrackBase;
-        if (ttttPrintDgContext)
-          m._dgContextFile = fopen("dgCtxtFile", "w");
-        m._dgContextCnt = 0;
+      m._dgContextArray = _dgContextArray;
+      m._dgContextDepth = &_dgContextDepth;
+      m._dgContextPlanes = &_dgContextPlanes;
+      m._dgContextTracks = &_dgContextTracks;
+      m._dgContextBaseLvl = &_dgContextBaseLvl;
+      m._dgContextLowLvl = &_dgContextLowLvl;
+      m._dgContextHiLvl = &_dgContextHiLvl;
+      m._dgContextBaseTrack = _dgContextBaseTrack;
+      m._dgContextLowTrack = _dgContextLowTrack;
+      m._dgContextHiTrack = _dgContextHiTrack;
+      m._dgContextTrackBase = _dgContextTrackBase;
+      if (ttttPrintDgContext)
+        m._dgContextFile = fopen("dgCtxtFile", "w");
+      m._dgContextCnt = 0;
 
-        m._ccContextLength = _ccContextLength;
-        m._ccContextArray = _ccContextArray;
+      m._ccContextLength = _ccContextLength;
+      m._ccContextArray = _ccContextArray;
 
-        m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
-        m._pixelTable = _geomSeq;
-        m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
-        m._maxModelIndex = 0;
-        m._currentModel = _currentModel;
-        m._diagModel = _currentModel[0].getDiagModel();
-        for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
-          uint jj = _modelMap.get(ii);
-          m._metRCTable.add(_currentModel->getMetRCTable(jj));
-        }
-        // m._layerCnt= getExtLayerCnt(_tech); // TEST
-        // m._layerCnt= _currentModel->getLayerCnt(); // TEST
-        uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-        uint modelLayerCnt = _currentModel->getLayerCnt();
-        m._layerCnt
-            = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
-        if (techLayerCnt == 5 && modelLayerCnt == 8)
-          m._layerCnt = modelLayerCnt;
-        //				m._cornerMapTable[0]= 1;
-        //				m._cornerMapTable[1]= 0;
-        m.getMinWidth(_tech);
-        m.allocOUpool();
-
-        m._btermThreshold = btermThresholdFlag;
-
-        m._debugFP = NULL;
-        m._netId = 0;
-        debugNetId = 0;
-        if (debugNetId > 0) {
-          m._netId = debugNetId;
-          char bufName[32];
-          sprintf(bufName, "%d", debugNetId);
-          m._debugFP = fopen(bufName, "w");
-        }
-
-        //#ifndef NEW_GS_FLOW
-        if (_cc_band_tracks == 0) {
-          _extNetSDB->couplingCaps(
-              ccCapSdb, _couplingFlag, Interface, extCompute1, &m);
-        } else {
-          //#else
-          Rect maxRect = _block->getDieArea();
-
-          if (initTiling) {
-            logger_->info(RCX,
-                          123,
-                          "Initial Tiling {} ...",
-                          getBlock()->getName().c_str());
-            _use_signal_tables = 3;
-            createWindowsDB(
-                rlog, maxRect, ccBandTracks, ccFlag, use_signal_table);
-            return 0;
-          }
-          if (windowFlow)
-            couplingWindowFlow(rlog,
-                               maxRect,
-                               _cc_band_tracks,
-                               _couplingFlag,
-                               doExt,
-                               &m,
-                               extCompute1);
-          else
-            couplingFlow(
-                rlog, maxRect, _cc_band_tracks, _couplingFlag, &m, extCompute1);
-
-          if (m._debugFP != NULL)
-            fclose(m._debugFP);
-        }
-        //#endif
-      } else {
-        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, extCompute, this);
+      m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
+      m._pixelTable = _geomSeq;
+      m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
+      m._maxModelIndex = 0;
+      m._currentModel = _currentModel;
+      m._diagModel = _currentModel[0].getDiagModel();
+      for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
+        uint jj = _modelMap.get(ii);
+        m._metRCTable.add(_currentModel->getMetRCTable(jj));
       }
-      if (m._dgContextFile) {
-        fclose(m._dgContextFile);
-        m._dgContextFile = NULL;
+      // m._layerCnt= getExtLayerCnt(_tech); // TEST
+      // m._layerCnt= _currentModel->getLayerCnt(); // TEST
+      uint techLayerCnt = getExtLayerCnt(_tech) + 1;
+      uint modelLayerCnt = _currentModel->getLayerCnt();
+      m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
+      if (techLayerCnt == 5 && modelLayerCnt == 8)
+        m._layerCnt = modelLayerCnt;
+      //				m._cornerMapTable[0]= 1;
+      //				m._cornerMapTable[1]= 0;
+      m.getMinWidth(_tech);
+      m.allocOUpool();
+
+      m._btermThreshold = btermThresholdFlag;
+
+      m._debugFP = NULL;
+      m._netId = 0;
+      debugNetId = 0;
+      if (debugNetId > 0) {
+        m._netId = debugNetId;
+        char bufName[32];
+        sprintf(bufName, "%d", debugNetId);
+        m._debugFP = fopen(bufName, "w");
       }
+
+      Rect maxRect = _block->getDieArea();
+
+      couplingFlow(rlog, maxRect, _couplingFlag, &m, extCompute1);
+
+      if (m._debugFP != NULL)
+        fclose(m._debugFP);
+
+      //#endif
+    } else {
+      _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, extCompute, this);
+    }
+    if (m._dgContextFile) {
+      fclose(m._dgContextFile);
+      m._dgContextFile = NULL;
+    }
 
     removeDgContextArray();
     if (_printFile) {
       fclose(_printFile);
       _printFile = NULL;
-      if (setBlockPtfile)
-        _block->setPtFile(NULL);
       _measureRcCnt = _shapeRcCnt = _updateTotalCcnt = -1;
     }
 
@@ -3034,17 +2945,14 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     }
   }
 
-  if (ttttRemoveSdb)
-    _extNetSDB = NULL;
-  if (ttttRemoveGs) {
-    if (rlog)
-      AthResourceLog("before removeSeq", detailRlog);
-    if (_geomSeq)
-      delete _geomSeq;
-    if (rlog)
-      AthResourceLog("after removeSeq", detailRlog);
-    _geomSeq = NULL;
-  }
+  _extNetSDB = NULL;
+  if (rlog)
+    AthResourceLog("before removeSeq", detailRlog);
+  if (_geomSeq)
+    delete _geomSeq;
+  if (rlog)
+    AthResourceLog("after removeSeq", detailRlog);
+  _geomSeq = NULL;
   _extracted = true;
   updatePrevControl();
   int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
@@ -3079,12 +2987,9 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   if (rlog)
     AthResourceLog("before remove Model", detailRlog);
 
-  if (!windowFlow) {
-    // delete _currentModel;
-    _modelTable->resetCnt(0);
-    if (rlog)
-      AthResourceLog("After remove Model", detailRlog);
-  }
+  _modelTable->resetCnt(0);
+  if (rlog)
+    AthResourceLog("After remove Model", detailRlog);
   if (_batchScaleExt)
     genScaledExt();
 

@@ -158,7 +158,6 @@ class Ext
     const char* net = nullptr;
     const char* bbox = nullptr;
     const char* ibox = nullptr;
-    int cc_band_tracks = 1000;
     int signal_table = 3;
     int cc_up = 2;
     uint preserve_geom = 0;

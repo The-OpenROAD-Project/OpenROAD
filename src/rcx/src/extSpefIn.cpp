@@ -2150,9 +2150,7 @@ uint extSpef::readDNet(uint debug)
         _d_corner_net->setSpef(true);
 
       while (_parser->parseNextLine() > 0) {
-
         if (strcmp("*END", _parser->get(0)) == 0) {
-
           return endNet(_d_corner_net, resCnt);
         }
 

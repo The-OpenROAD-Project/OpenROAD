@@ -1723,7 +1723,6 @@ class extMain
   uint _ccPreseveGeom;
   uint _ccUp;
   uint _couplingFlag;
-  uint _cc_band_tracks;
   uint _use_signal_tables;
   // 1: signal table,  NO rotation;
   // 2: signal table,  rotation;
@@ -2138,11 +2137,8 @@ class extMain
                uint bucket,
                Ath__array1D<uint>*** gsTable,
                Ath__array1D<uint>*** instGsTable);
-  // int fill_gs2(int dir, int *ll, int *ur, int hiXY, int minExt, uint
-  // layerCnt, uint *dirTable, uint *pitchTable, uint *widthTable);
   uint couplingFlow(bool rlog,
                     odb::Rect& extRect,
-                    uint trackStep,
                     uint ccDist,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
@@ -2316,7 +2312,6 @@ class extMain
                        const char* ibox,
                        uint cc_up,
                        uint ccFlag,
-                       int ccBandTracks,
                        uint use_signal_table,
                        double resBound,
                        bool mergeViaRes,

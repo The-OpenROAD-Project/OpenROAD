@@ -2293,7 +2293,6 @@ void extMain::resetGndCaps()
 }
 uint extMain::couplingFlow(bool rlog,
                            Rect& extRect,
-                           uint trackStep,
                            uint ccFlag,
                            extMeasure* m,
                            CoupleAndCompute coupleAndCompute)
@@ -2324,15 +2323,9 @@ uint extMain::couplingFlow(bool rlog,
     logger_->info(RCX, 87, "Extracted {} valid rsegs", rsegCnt);
 
     return 0;
-    // return tileFlow(rlog, extRect, trackStep, ccFlag, m, coupleAndCompute);
   }
 
   uint ccDist = ccFlag;
-  //	if (ccFlag>20) {
-  //		ccDist= ccFlag % 10;
-  //	}
-
-  // trackStep *= 2;
   bool single_gs = false;
 
   uint sigtype = 9;
@@ -2353,7 +2346,6 @@ uint extMain::couplingFlow(bool rlog,
     m->_dirTable[i] = dirTable[i];
 
   uint maxPitch = pitchTable[layerCnt - 1];
-  //	uint minPitch= pitchTable[1];
 
   layerCnt = (int) layerCnt > _currentModel->getLayerCnt()
                  ? layerCnt
@@ -2416,6 +2408,7 @@ uint extMain::couplingFlow(bool rlog,
   minRes[1] = pitchTable[1];
   minRes[0] = widthTable[1];
 
+  const uint trackStep = 1000;
   uint step_nm[2];
   step_nm[1] = trackStep * minRes[1];
   step_nm[0] = trackStep * minRes[1];
