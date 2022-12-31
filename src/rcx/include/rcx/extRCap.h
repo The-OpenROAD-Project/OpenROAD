@@ -1578,9 +1578,6 @@ class extWindow
                    uint maxLayer,
                    int** limitArray,
                    int** trackArray);
-  odb::dbBlock* createExtBlock(extMeasure* m,
-                               odb::dbBlock* mainBlock,
-                               odb::Rect& extRect);
   int getIntProperty(odb::dbBlock* block, const char* name);
   void getExtProperties(odb::dbBlock* block);
   void makeIntArrayProperty(odb::dbBlock* block,
