@@ -34,10 +34,6 @@
 #include "rcx/extSpef.h"
 #include "rcx/extprocess.h"
 
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
 #include <map>
 #include <vector>
 

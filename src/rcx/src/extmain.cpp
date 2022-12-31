@@ -900,9 +900,7 @@ void extMain::setBlockFromChip()
   _block = _db->getChip()->getBlock();
   _blockId = _block->getId();
   _prevControl = _block->getExtControl();
-#ifndef _WIN32
   _block->setExtmi(this);
-#endif
 
   if (_spef != nullptr) {
     _spef = nullptr;
@@ -919,9 +917,7 @@ void extMain::setBlock(dbBlock* block)
 {
   _block = block;
   _prevControl = _block->getExtControl();
-#ifndef _WIN32
   _block->setExtmi(this);
-#endif
   _blockId = _block->getId();
   if (_spef) {
     _spef = NULL;

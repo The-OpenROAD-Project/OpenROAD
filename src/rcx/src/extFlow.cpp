@@ -2894,9 +2894,6 @@ void extWindow::reportProcessedWires(bool rlog)
             _processPowerWireCnt + _processSignalWireCnt,
             _currentDir,
             _minExtracted);
-#ifdef _WIN32
-    logger_->info(RCX, 214, "{}", buff);
-#endif
     AthResourceLog(buff, 0);
   }
 }

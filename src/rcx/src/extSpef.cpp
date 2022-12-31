@@ -41,11 +41,9 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-//#ifdef _WIN32
 #define ATH__fprintf fprintf
 #define ATH__fopen fopen
 #define ATH__fclose fclose
-//#endif
 
 namespace rcx {
 
@@ -1477,26 +1475,16 @@ bool extSpef::setInSpef(char* filename, bool onlyOpen)
 bool extSpef::setOutSpef(char* filename)
 {
   if (filename == NULL) {
-#ifdef _WIN32
-    _outFP = stdout;
-#endif
     return true;
   }
 
   strcpy(_outFile, filename);
 
-#ifndef _WIN32
   if (_gzipFlag) {
     char cmd[2048];
     sprintf(cmd, "gzip -1 > %s.gz", filename);
     _outFP = popen(cmd, "w");
-    /*
-                    char cmd[2048];
-                    sprintf(cmd, "%s.gz", filename);
-                    _outFP= ATH__fopen(cmd, "w");
-    */
   } else
-#endif
     _outFP = ATH__fopen(filename, "w");
 
   if (_outFP == NULL) {
@@ -1510,12 +1498,9 @@ bool extSpef::closeOutFile()
   if (_outFP == NULL)
     return false;
 
-#ifndef _WIN32
   if (_gzipFlag)
     ATH__fclose(_outFP);
-  // pclose(_outFP);
   else
-#endif
     ATH__fclose(_outFP);
 
   return true;

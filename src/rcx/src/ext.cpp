@@ -777,15 +777,6 @@ bool Ext::match(const std::string& spef_file,
   return 0;
 }
 
-#if 0
-TCL_METHOD ( Ext::setRules )
-{
-    ZIn_Ext_setRules * in_args = (ZIn_Ext_setRules *) in;
-	_extModel= (ExtModel *) in_args->model();
-	xm->getFringeCap(....)
-}
-#endif
-
 bool Ext::set_block(const std::string& block_name,
                     odb::dbBlock* block,
                     const std::string& inst_name,

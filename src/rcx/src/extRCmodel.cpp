@@ -35,10 +35,6 @@
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
 #include <map>
 #include <vector>
 
@@ -3851,9 +3847,6 @@ void extRCModel::setOptions(const char* topDir,
     _keepFile = true;
   if (metLevel)
     _metLevel = metLevel;
-#ifdef _WIN32
-  _runSolver = false;
-#endif
 }
 void extRCModel::setOptions(const char* topDir,
                             const char* pattern,
@@ -3883,9 +3876,6 @@ void extRCModel::setOptions(const char* topDir,
     _readSolver = false;
     _runSolver = true;
   }
-#ifdef _WIN32
-  _runSolver = false;
-#endif
 }
 void extRCModel::closeFiles()
 {
@@ -3897,10 +3887,6 @@ void extRCModel::closeFiles()
 void extRCModel::runSolver(const char* solverOption)
 {
   char cmd[4000];
-#ifndef _WIN32
-  //	sprintf(cmd, "cd %s ; /opt/ads/bin/casyn raphael %s %s ; cd
-  //../../../../../../ ", _wireDirName, solverOption, _wireFileName);
-  // this is for check in
   if (_diagModel == 2)
     sprintf(cmd,
             "ca raphael %s %s/%s -o %s/%s.out",
@@ -3918,26 +3904,7 @@ void extRCModel::runSolver(const char* solverOption)
             _wireDirName,
             _wireFileName);
 
-  // this is for local run
-  /*	if (_diagModel==2)
-                  sprintf(cmd, "/opt/ads/bin/casyn raphael %s %s/%s -o
-     %s/%s.out", solverOption, _wireDirName, _wireFileName, _wireDirName,
-     _wireFileName); else sprintf(cmd, "/opt/ads/bin/casyn raphael %s %s/%s -o
-     %s/%s.out", solverOption, _wireDirName, _wireFileName, _wireDirName,
-     _wireFileName);
-  */
-
-  //	sprintf(cmd, "cd %s ; ca raphael %s %s ; cd ../../../../../../ ",
-  //_wireDirName, solverOption, _wireFileName);
   logger_->info(RCX, 69, "{}", cmd);
-#endif
-#ifdef _WIN32
-  if (_diagModel == 2)
-    sprintf(cmd, "cd %s ; dir ; cd ../../../../../../../../ ", _wireDirName);
-  else
-    sprintf(cmd, "cd %s ; dir ; cd ../../../../../../ ", _wireDirName);
-  logger_->info(RCX, 73, "{}", cmd);
-#endif
   if (system(cmd) == -1) {
     logger_->error(RCX, 490, "system failed: {}", cmd);
   }

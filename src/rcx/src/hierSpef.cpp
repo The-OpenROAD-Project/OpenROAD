@@ -40,11 +40,9 @@
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
-//#ifdef _WIN32
 #define ATH__fprintf fprintf
 #define ATH__fopen fopen
 #define ATH__fclose fclose
-//#endif
 
 namespace rcx {
 
