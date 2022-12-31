@@ -3697,7 +3697,7 @@ uint extMain::rcGen(const char* netNames,
     logger_->warn(RCX, 104, "Can't perform RC generation!");
     return 0;
   }
-  if (setMinTypMax(false, false, false, NULL, false, false, -1, -1, -1, 1)
+  if (setMinTypMax(false, false, false, NULL, false, -1, -1, -1, 1)
       < 0) {
     logger_->warn(RCX, 105, "Wrong combination of corner related options");
     return 0;

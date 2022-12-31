@@ -2168,7 +2168,6 @@ class extMain
                    bool maxModel,
                    const char* cmp_file,
                    bool density_model,
-                   bool litho,
                    int setMin,
                    int setTyp,
                    int setMax,
@@ -2244,7 +2243,6 @@ class extMain
 
   uint makeBlockRCsegs(const char* cmp,
                        bool density_model,
-                       bool litho,
                        const char* netNames,
                        uint cc_up,
                        uint ccFlag,

@@ -149,7 +149,6 @@ class Ext
     int set_min = -1;
     int set_typ = -1;
     int set_max = -1;
-    bool litho = false;
     bool wire_density = false;
     const char* debug_net = nullptr;
     const char* cmp_file = nullptr;

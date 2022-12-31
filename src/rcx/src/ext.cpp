@@ -481,7 +481,6 @@ bool Ext::extract(ExtractOptions opts)
 
   if (_ext->makeBlockRCsegs(opts.cmp_file,
                             opts.wire_density,
-                            opts.litho,
                             opts.net,
                             opts.cc_up,
                             opts.cc_model,
