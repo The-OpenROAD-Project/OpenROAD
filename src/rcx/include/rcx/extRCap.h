@@ -1830,7 +1830,6 @@ class extMain
   FILE* _searchFP;
   friend class extMeasure;
 
-  // 021411D BEGIN
   FILE* _blkInfoVDD;
   FILE* _viaInfoVDD;
   FILE* _blkInfoGND;
@@ -1857,25 +1856,19 @@ class extMain
   FILE* _viaStackGlobCir;
   FILE* _viaStackGlobVDD;
   FILE* _viaStackGlobGND;
-  // 021411D END
 
-  // 021511D BEGIN
   Ath__array1D<int>* _junct2viaMap;
   bool _dbgPowerFlow;
   odb::dbCreateNetUtil* _netUtil;
-  // 021511D END
 
-  // 021911D BEGIN
   std::vector<odb::dbBox*> _viaUp_VDDtable;
   std::vector<odb::dbBox*> _viaUp_GNDtable;
   std::vector<odb::dbBox*> _viaM1_GNDtable;
   std::vector<odb::dbBox*> _viaM1_VDDtable;
   std::vector<odb::dbBox*>* _viaM1Table;
   std::vector<odb::dbBox*>* _viaUpTable;
-  // 021911D END
   bool _adjust_colinear;
-  // 032811D END
-  // 061711D BEGIN
+
   uint _stackedViaResCnt;
   uint _totViaResCnt;
   Ath__array1D<int>* _via2JunctionMap;
@@ -1884,13 +1877,10 @@ class extMain
   std::map<uint, float> _capNode_map;
   std::vector<odb::dbInst*> _powerMacroTable;
   std::vector<odb::dbBox*> _viaUpperTable[2];
-  // 061711D END
-  // 021712D BEGIN
   Ath__array1D<char*>** _supplyViaMap[2];
   Ath__array1D<odb::dbBox*>** _supplyViaTable[2];
   char* _power_source_file;
   std::vector<char*> _powerSourceTable[2];
-  // 021712D END
   FILE* _coordsFP;
   FILE* _coordsGND;
   FILE* _coordsVDD;
@@ -1902,16 +1892,13 @@ class extMain
   bool _skip_power_stubs;
   bool _skip_m1_caps;
   const char* _power_exclude_cell_list;
-  // 062212D
   bool _nodeCoords;
   int _prevX;
   int _prevY;
   char _node_blk_dir[1024];
   char _node_blk_prefix[1024];
   char _node_inst_prefix[1024];
-  // 100812D
   Ath__array1D<odb::dbITerm*>* _junct2iterm;
-  // 102912D
   std::map<uint, odb::dbSBox*> _sbox_id_map;
 
   uint _powerWireCnt;
@@ -2783,7 +2770,6 @@ class extMain
                            uint cornerCnt,
                            Logger* logger);
 
-  // 021710D BEGIN
   uint addRCtoTop(odb::dbBlock* blk, bool write_spef);
   uint createCapNodes(odb::dbNet* net,
                       odb::dbNet* parentNet,
@@ -2797,9 +2783,7 @@ class extMain
   // node_num);
   extSpef* getSpef();
   static uint printRSegs(odb::dbNet* net, Logger* logger);
-  // 021710D END
 
-  // 022110D BEGIN
   void adjustChildNode(odb::dbCapNode* childNode,
                        odb::dbNet* parentNet,
                        uint* capNodeMap);
@@ -2816,17 +2800,11 @@ class extMain
                     odb::dbNet* topDummyNet,
                     uint* capNodeMap,
                     uint baseNum);
-  // 022110D END
 
-  // 022210D BEGIN
   uint markCCsegs(odb::dbBlock* blk, bool flag);
-  // 022210D END
 
-  // 022310D BEGIN
   void createTop1stRseg(odb::dbNet* net, odb::dbNet* parentNet);
-  // 022310D END
 
-  // 021111D BEGIN
   uint getLayerSearchBoundaries(odb::dbTechLayer* layer,
                                 int* xyLo,
                                 int* xyHi,
@@ -2841,8 +2819,6 @@ class extMain
   void railConn2(odb::dbNet* net);
   bool isSignalNet(odb::dbNet* net);
   uint powerRCGen();
-  // 021111D END
-  // 021311D BEGIN
   uint mergeRails(uint dir,
                   std::vector<odb::dbBox*>& boxTable,
                   std::vector<odb::Rect*>& mergeTable);
@@ -2872,10 +2848,7 @@ class extMain
   odb::dbNet* createRailNet(odb::dbNet* pnet,
                             odb::dbTechLayer* layer,
                             odb::Rect* w);
-  // void print_shapes(odb::dbWire * wire);
   uint print_shapes(FILE* fp, odb::dbWire* wire);
-  // 021311D END
-  // 021411D BEGIN
   FILE* openNanoFile(const char* name,
                      const char* name2,
                      const char* suffix,
@@ -2890,8 +2863,6 @@ class extMain
                   uint width,
                   uint dir,
                   bool skipFirst);
-  // 021411D END
-  // 021511D BEGIN
   uint connectStackedVias(odb::dbNet* net,
                           odb::dbTechLayer* layer,
                           bool mergeViaRes);
@@ -2899,8 +2870,6 @@ class extMain
                    odb::dbBox* v,
                    odb::dbTechLayer* layer,
                    bool mergeviaRes);
-  // 021511D END
-  // 021611D BEGIN
   void writeSubckt(FILE* fp,
                    const char* keyword,
                    const char* vdd,
@@ -2912,11 +2881,7 @@ class extMain
                      bool onlyVias,
                      bool skipFirst);
   void writeCapNodes_0713(FILE* fp, odb::dbNet* net, uint level, bool onlyVias);
-  // 021611D END
-  // 021811D BEGIN
   bool specialMasterType(odb::dbInst* inst);
-  // 021811D END
-  // 021911D BEGIN
   uint iterm2Vias(odb::dbInst* inst, odb::dbNet* net);
   uint getPowerNets(std::vector<odb::dbNet*>& powerNetTable);
   float getPowerViaRes(odb::dbBox* v, float val);
@@ -2925,10 +2890,8 @@ class extMain
                     std::vector<odb::dbBox*>& viaTable,
                     bool m1Vias,
                     bool power);
-  // 021911D END
 
   void set_adjust_colinear(bool v);
-  // 032811D END
   uint writeViaInfo_old(FILE* fp,
                         std::vector<odb::dbBox*>& viaTable,
                         bool m1Vias);
@@ -2941,46 +2904,34 @@ class extMain
                     const char* post);
   void writeViaName(FILE* fp, odb::dbBox* v, uint level, const char* post);
   void writeViaNameCoords(FILE* fp, odb::dbBox* v);
-  // 041311D END
   float computeViaResistance(odb::dbBox* viaBox, uint& cutCount);
-  // 041511D END
   void printItermNodeSubCkt(FILE* fp, std::vector<uint>& iTable);
   void printViaNodeSubCkt(FILE* fp, std::vector<odb::dbBox*>& viaTable);
-  // 042711D END
 
-  // 061711D BEGIN
   uint mergeStackedVias(FILE* fp,
                         odb::dbNet* net,
                         std::vector<odb::dbBox*>& viaTable,
                         odb::dbBox* botVia,
                         FILE* fp1 = NULL);
-  // 061711D END
-  // 061911D BEGIN
   uint stackedViaConn(FILE* fp, std::vector<odb::dbBox*>& allViaTable);
   bool skipSideMetal(std::vector<odb::dbBox*>& viaTable,
                      uint level,
                      odb::dbNet* net,
                      odb::Rect* w);
   bool overlapWithMacro(odb::Rect& w);
-  // 061911D END
 
-  // 062511D BEGIN
   void powerWireConn(odb::Rect* w,
                      uint dir,
                      odb::dbTechLayer* layer,
                      odb::dbNet* net);
   const char* getBlockType(odb::dbMaster* m);
   void sortViasXY(uint dir, std::vector<odb::dbBox*>& viaTable);
-  // 062511D END
-  // 063011D BEGIN
   void writeViaRes(FILE* fp, odb::dbNet* net, uint level);
   void addUpperVia(uint ii, odb::dbBox* v);
   void writeViaResistors(FILE* fp,
                          uint ii,
                          FILE* fp1,
                          bool skipWireConn = false);
-  // 063011D END
-  // 071211D BEGIN
   void writeGeomHeader(FILE* fp, const char* vdd);
   void writeResNode(char* nodeName, odb::dbCapNode* capNode, uint level);
   float micronCoords(int xy);
@@ -2992,8 +2943,6 @@ class extMain
   bool markExcludedCells();
   float distributeCap(FILE* fp, odb::dbNet* net);
 
-  // 071211D END
-  // 021712D BEGIN
   uint readPowerSupplyCoords(char* filename);
   uint addPowerSources(std::vector<odb::dbBox*>& viaTable,
                        bool power,
@@ -3003,8 +2952,6 @@ class extMain
   char* getPowerSourceName(uint level, uint vid);
   void writeViaInfo(FILE* fp, bool power);
   void addPowerSourceName(uint ii, char* sname);
-  // 021712D END
-  // 062212D
   void writeResCoords(FILE* fp,
                       odb::dbNet* net,
                       uint level,
@@ -3023,19 +2970,15 @@ class extMain
                      int y,
                      int level,
                      odb::dbITerm* t = NULL);
-  // void setNodeCoords_xy(FILE *fp, odb::dbNet *net);
   uint setNodeCoords_xy(odb::dbNet* net, int level);
   bool sameJunctionPoint(int xy[2], int BB[2], uint width, uint dir);
 
-  // 071912D
   bool fisrt_markInst_UserFlag(odb::dbInst* inst, odb::dbNet* net);
 
-  // 093012D
   bool matchLayerDir(odb::dbBox* rail,
                      odb::dbTechLayerDir layerDir,
                      int level,
                      bool debug);
-  // 100512D
   void addSubcktStatement(const char* cirFile1, const char* subcktFile1);
   void setPrefix(char* prefix);
   uint getITermPhysicalConn(uint dir,
@@ -3055,7 +2998,6 @@ class extMain
                              std::vector<odb::dbITerm*>& itermTable);
   bool topHierBlock();
 
-  // 101812D
   void writeNegativeCoords(char* buf,
                            int netId,
                            int x,
@@ -3063,7 +3005,6 @@ class extMain
                            int level,
                            const char* post = "");
 
-  // 101912D
   void writeViasAndClose(odb::dbNet* net, bool m1Vias);
   void closeNanoFilesDomainVDD(char* netName);
   void closeNanoFilesDomainGND(char* netName);
@@ -3079,7 +3020,6 @@ class extMain
                                 const char* netName);
   void initMappingTables();
   void allocMappingTables(int n1, int n2, int n3);
-  // 102812D
   uint addSboxesOnSearch(odb::dbNet* net);
   odb::Rect* getRect_SBox(Ath__array1D<uint>* table,
                           uint ii,
@@ -3108,7 +3048,6 @@ class extMain
                            odb::dbBox* botVia,
                            FILE* fp1,
                            uint stackLevel = 1);
-  // 111112D
   odb::dbCapNode* getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
                                          uint level,
                                          uint dir,
@@ -3173,7 +3112,6 @@ class extMain
   odb::Rect _extMaxRect;
   bool filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth);
 
-  // 031313D
   uint iterm2Vias_cells(odb::dbInst* inst, odb::dbITerm* connectedPowerIterm);
   void writeCapNodesRC(FILE* fp,
                        odb::dbNet* net,
@@ -3185,11 +3123,9 @@ class extMain
                        uint level,
                        bool onlyVias);
 
-  // 032613D
   void findViaMainCoord(odb::dbNet* net, char* buff);
   void replaceItermCoords(odb::dbNet* net, uint dir, int xy[2]);
 
-  // 041713D
   void formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
                        odb::dbNet* pNet);
 

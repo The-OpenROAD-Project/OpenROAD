@@ -268,10 +268,8 @@ class extSpef
   bool _readAllCorners;
   int _in_spef_corner;
 
-  // 021810D BEGIN
   uint _childBlockInstBaseMap;
   uint _childBlockNetBaseMap;
-  // 021810D END
 
  protected:
   Logger* logger_;
@@ -583,22 +581,9 @@ class extSpef
   void copyCap(double* totCap, double* cap, uint n = 0);
   void adjustCap(double* totCap, double* cap, uint n = 0);
   void set_single_pi(bool v);
-  // uint getCapNodeId(std::map<uint,uint> &node_map, char *nodeWord, char
-  // *capWord);
 
   uint getAppPrintLimit() { return _cc_app_print_limit; };
   int* getAppCnt() { return _appcnt; };
-#if 0
-	bool writeITerm(uint node);
-	bool writeBTerm(uint node);
-	void writeITermNode(uint node);
-	uint getMappedBTermId(uint id);
-	uint getITermId(uint id, char *name);
-	uint getITermId(char *name);
-	uint getBTermId(uint id);
-	uint getBTermId(char *name);
-#endif
-  // 021610D BEGIN
   uint writeHierInstNameMap();
   uint writeHierNetNameMap();
   static int getIntProperty(odb::dbBlock* block, const char* name);
@@ -606,19 +591,13 @@ class extSpef
   char* getDelimeter();
   void writeNameNode(odb::dbCapNode* node);
   uint writeCapName(odb::dbCapNode* capNode, uint capIndex);
-  // 021610D END
 
-  // 021810D BEGIN
   void writeDnetHier(uint mapId, double* totCap);
   bool writeHierNet(odb::dbNet* net, double resBound, uint debug);
   void setHierBaseNameMap(uint instBase, uint netBase);
-  // 021810D END
 
-  // 022310D BEGIN
   void setBlock(odb::dbBlock* blk);
-  // 022310D END
 
-  // 620 DF DIFF SPEF
   const char* comp_bounds(double val, double min, double max, double& percent);
   double percentDiff(double dbCap, double refCap);
 };
