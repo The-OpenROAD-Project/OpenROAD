@@ -482,8 +482,6 @@ bool Ext::extract(ExtractOptions opts)
   _ext->skip_via_wires(true);
   _ext->_lef_res = opts.lef_res;
 
-  odb::ZPtr<odb::ISdb> dbNetSdb = NULL;
-
   if (_ext->makeBlockRCsegs(opts.tile,
                             opts.cmp_file,
                             opts.wire_density,
@@ -497,7 +495,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.preserve_geom,
                             !opts.no_gs,
                             opts.rlog,
-                            dbNetSdb,
                             opts.coupling_threshold,
                             opts.context_depth,
                             opts.over_cell,
@@ -505,8 +502,6 @@ bool Ext::extract(ExtractOptions opts)
                             this)
       == 0)
     return TCL_ERROR;
-
-  // report total net cap
 
   if (opts.write_total_caps) {
     char netcapfile[500];

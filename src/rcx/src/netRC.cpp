@@ -2456,7 +2456,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               int preserve_geom,
                               bool gs,
                               bool rlog,
-                              ZPtr<ISdb> netSdb,
                               double ccThres,
                               int contextDepth,
                               bool overCell,
@@ -2503,8 +2502,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   }
   _mergeViaRes = mergeViaRes;
   _mergeResBound = resBound;
-  if (netSdb && netSdb == _extNetSDB)
-    netSdb->reMakeSdb(_tech, _block);
   if ((_processCornerTable != NULL)
       || ((_processCornerTable == NULL) && (extRules != NULL))) {
     const char* rulesfile
@@ -2549,34 +2546,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
   _seqPool = m._seqPool;
   _useDbSdb = false;
-  if (netSdb) {
-    _extNetSDB = netSdb;
-    Ath__overlapAdjust overlapAdj = Z_noAdjust;
-    _useDbSdb = true;
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-    setExtractionBbox();
-  }
 
   dbNet* net;
   uint j;

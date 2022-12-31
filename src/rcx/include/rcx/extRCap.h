@@ -2263,7 +2263,6 @@ class extMain
                        int cc_preseve_geom,
                        bool gs,
                        bool log,
-                       odb::ZPtr<odb::ISdb> sdb,
                        double ccThres,
                        int contextDepth,
                        bool overCell,
