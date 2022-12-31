@@ -283,26 +283,6 @@ uint extSpef::getBTermShapeId(dbBTerm* bterm)
   return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 
-void extSpef::readNmCoords()
-{
-  if (_parser->getWordCnt() < 10)
-    return;
-
-  _nodeCoordParser->mkWords(_parser->get(5));
-
-  int x1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int x2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(6));
-
-  int y1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int y2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _x1CoordTable->add(x1);
-  _y1CoordTable->add(y1);
-  _x2CoordTable->add(x2);
-  _y2CoordTable->add(y2);
-}
 void extSpef::searchDealloc()
 {
   _search->dealloc();
