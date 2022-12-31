@@ -158,7 +158,6 @@ class Ext
     const char* net = nullptr;
     const char* bbox = nullptr;
     const char* ibox = nullptr;
-    int test = 0;
     int cc_band_tracks = 1000;
     int signal_table = 3;
     int cc_up = 2;
@@ -178,7 +177,6 @@ class Ext
     bool re_run = false;
     bool skip_via_wires = false;
     bool tile = false;
-    int tiling = 0;
     bool skip_m1_caps = false;
     bool power_grid = false;
     bool write_total_caps = false;

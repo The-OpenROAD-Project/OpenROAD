@@ -510,7 +510,7 @@ bool Ext::extract(ExtractOptions opts)
   int ccBandTracks = opts.cc_band_tracks;
   uint use_signal_table = opts.signal_table;
   bool merge_via_res = opts.no_merge_via_res ? false : true;
-  uint extdbg = opts.test;
+  const uint extdbg = 0;
   const char* nets = opts.net;
   const char* debug_nets = opts.debug_net;
   bool gs = opts.no_gs ? false : true;
@@ -524,15 +524,9 @@ bool Ext::extract(ExtractOptions opts)
   _ext->skip_via_wires(true);
   _ext->_lef_res = opts.lef_res;
 
-  uint tilingDegree = opts.tiling;
-
   odb::ZPtr<odb::ISdb> dbNetSdb = NULL;
   bool extSdb = false;
 
-  // ccBandTracks = 0;  // tttt no band CC for now
-  if (extdbg == 100 || extdbg == 102)  // 101: activate reuse metal fill
-                                       // 102: no bandTrack
-    ccBandTracks = 0;
   if (ccBandTracks)
     opts.eco = false;  // tbd
   else {
@@ -552,39 +546,6 @@ bool Ext::extract(ExtractOptions opts)
 #endif
   }
 
-  if (tilingDegree == 1)
-    extdbg = 501;
-  else if (tilingDegree == 10)
-    extdbg = 603;
-  else if (tilingDegree == 7)
-    extdbg = 703;
-  else if (tilingDegree == 77) {
-    extdbg = 773;
-    //_ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
-  }
-  /*
-    else if (tilingDegree==77) {
-    extdbg= 703;
-    _ext->rcGen(NULL, max_res, merge_via_res, 77, true, this);
-    }
-  */
-  else if (tilingDegree == 8)
-    extdbg = 803;
-  else if (tilingDegree == 9)
-    extdbg = 603;
-  else if (tilingDegree == 777) {
-    extdbg = 777;
-
-    uint cnt = 0;
-    odb::dbSet<odb::dbNet> bnets = _ext->getBlock()->getNets();
-    odb::dbSet<odb::dbNet>::iterator net_itr;
-    for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-      odb::dbNet* net = *net_itr;
-
-      cnt += _ext->rcNetGen(net);
-    }
-    logger_->info(RCX, 14, "777: Final rc segments = {}", cnt);
-  }
   if (_ext->makeBlockRCsegs(btermThresholdFlag,
                             cmpFile,
                             density_model,
@@ -612,73 +573,6 @@ bool Ext::extract(ExtractOptions opts)
                             this)
       == 0)
     return TCL_ERROR;
-
-  odb::dbBlock* topBlock = _ext->getBlock();
-  if (tilingDegree == 1) {
-    odb::dbSet<odb::dbBlock> children = topBlock->getChildren();
-    odb::dbSet<odb::dbBlock>::iterator itr;
-
-    // Extraction
-
-    logger_->info(RCX, 6, "List of extraction tile blocks:");
-    for (itr = children.begin(); itr != children.end(); ++itr) {
-      odb::dbBlock* blk = *itr;
-      logger_->info(RCX, 377, "{}", blk->getConstName());
-    }
-  } else if (extdbg == 501) {
-    odb::dbSet<odb::dbBlock> children = topBlock->getChildren();
-    odb::dbSet<odb::dbBlock>::iterator itr;
-
-    // Extraction
-    for (itr = children.begin(); itr != children.end(); ++itr) {
-      odb::dbBlock* blk = *itr;
-      logger_->info(RCX, 12, "Extacting block {}...", blk->getConstName());
-      extMain* ext = new extMain(5);
-
-      ext->setBlock(blk);
-
-      if (ext->makeBlockRCsegs(btermThresholdFlag,
-                               cmpFile,
-                               density_model,
-                               opts.litho,
-                               nets,
-                               opts.bbox,
-                               opts.ibox,
-                               ccUp,
-                               ccFlag,
-                               ccBandTracks,
-                               use_signal_table,
-                               opts.max_res,
-                               merge_via_res,
-                               0,
-                               opts.preserve_geom,
-                               opts.re_run,
-                               opts.eco,
-                               gs,
-                               opts.rlog,
-                               dbNetSdb,
-                               ccThres,
-                               ccContextDepth,
-                               overCell,
-                               extRules,
-                               this)
-          == 0) {
-        logger_->warn(
-            RCX, 13, "Failed to Extract block {}...", blk->getConstName());
-        return TCL_ERROR;
-      }
-    }
-
-    for (itr = children.begin(); itr != children.end(); ++itr) {
-      odb::dbBlock* blk = *itr;
-      logger_->info(RCX, 46, "Assembly of block {}...", blk->getConstName());
-
-      extMain::assemblyExt(topBlock, blk, logger_);
-    }
-    //_ext= new extMain(5);
-    //_ext->setDB(_db);
-    //_ext->setBlock(topBlock);
-  }
 
   // report total net cap
 
