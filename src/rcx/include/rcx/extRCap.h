@@ -2158,13 +2158,6 @@ class extMain
                   int* bb_ll,
                   bool skipMemAlloc = false);
 
-  uint couplingWindowFlow(bool rlog,
-                          odb::Rect& extRect,
-                          uint trackStep,
-                          uint ccFlag,
-                          bool doExt,
-                          extMeasure* m,
-                          CoupleAndCompute coupleAndCompute);
   bool isIncluded(odb::Rect& r, uint dir, int* ll, int* ur);
   bool matchDir(uint dir, odb::Rect& r);
   bool isIncludedInsearch(odb::Rect& r, uint dir, int* bb_ll, int* bb_ur);
