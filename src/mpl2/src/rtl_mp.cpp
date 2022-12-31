@@ -84,7 +84,7 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const int snap_layer,
                          const char* report_directory)
 {
-  hier_rtlmp_->setTopLevelClusterSize(
+  hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
   hier_rtlmp_->setClusterSizeTolerance(tolerance);
   hier_rtlmp_->setMaxNumLevel(max_num_level);

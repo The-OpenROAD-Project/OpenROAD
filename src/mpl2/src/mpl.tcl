@@ -72,13 +72,19 @@ proc rtl_macro_placer { args } {
         -target_dead_space -min_ar -snap_layer -report_directory \
     } flag {  }
 
+# Check for valid design
+
+    if {  [ord::get_db_block] == "NULL" } {
+      utl::error MPL 9998 "No block found for Macro Placement."
+    }
 # Set the default parameters for the macro_placer
+
     set max_num_macro 12
-    set min_num_macro 6
+    set min_num_macro 4 
     set max_num_inst  30000
     set min_num_inst  5000
     set tolerance     0.1
-    set max_num_level 3
+    set max_num_level 2
     set coarsening_ratio  10.0
     set num_bundled_ios   3
     set large_net_threshold 50
