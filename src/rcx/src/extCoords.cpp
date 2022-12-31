@@ -345,33 +345,6 @@ uint extSpef::getBTermShapeId(dbBTerm* bterm)
   return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 
-uint extSpef::parseAndFindShapeId()
-{
-  if (_parser->getWordCnt() < 10)
-    return 0;
-
-  _nodeCoordParser->mkWords(_parser->get(5));
-
-  int x1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int x2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(6));
-
-  int y1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int y2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(9));
-
-  char* layer = NULL;
-  if (strcmp(_nodeCoordParser->get(0), "lyr") == 0)
-    layer = _nodeCoordParser->get(1);
-  // bool matchLayer= true;
-  bool matchLayer = false;
-
-  uint shapeId
-      = findShapeId(_d_net->getId(), x1, y1, x2, y2, layer, matchLayer);
-  return shapeId;
-}
 void extSpef::readNmCoords()
 {
   if (_parser->getWordCnt() < 10)

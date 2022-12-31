@@ -332,7 +332,6 @@ class extSpef
   void initSearchForNets();
   uint addNetShapesOnSearch(uint netId);
   uint findShapeId(uint netId, int x, int y);
-  uint parseAndFindShapeId();
   void readNmCoords();
   uint findShapeId(uint netId,
                    int x1,
