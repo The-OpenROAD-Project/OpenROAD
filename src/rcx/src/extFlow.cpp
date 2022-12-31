@@ -2002,8 +2002,7 @@ void extMain::resetGndCaps()
     }
   }
 }
-uint extMain::couplingFlow(bool rlog,
-                           Rect& extRect,
+uint extMain::couplingFlow(Rect& extRect,
                            uint ccFlag,
                            extMeasure* m,
                            CoupleAndCompute coupleAndCompute)
@@ -2084,8 +2083,6 @@ uint extMain::couplingFlow(bool rlog,
     m->_pixelTable = _geomSeq;
     addPowerGs();
     addSignalGs();
-    if (rlog)
-      AthResourceLog("NewFlow single GS ", 0);
   }
   uint minRes[2];
   minRes[1] = pitchTable[1];
@@ -2135,8 +2132,6 @@ uint extMain::couplingFlow(bool rlog,
 
     reportTableNetCnt(sdbBucketCnt, sdbSignalTable);
 
-    if (rlog)
-      AthResourceLog("Making net tables ", 0);
   }
   uint totalWiresExtracted = 0;
 
@@ -2167,8 +2162,6 @@ uint extMain::couplingFlow(bool rlog,
     int gs_limit = ll[dir];
 
     _search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
-    if (rlog)
-      AthResourceLog("initCouplingCapLoops", 0);
 
     lo_sdb[dir] = ll[dir] - step_nm[dir];
     int hiXY = ll[dir] + step_nm[dir];
@@ -2216,8 +2209,6 @@ uint extMain::couplingFlow(bool rlog,
 
         m->_rotatedGs = getRotatedFlag();
         m->_pixelTable = _geomSeq;
-        if (rlog)
-          AthResourceLog("Fill GS", 0);
       }
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
@@ -2241,9 +2232,6 @@ uint extMain::couplingFlow(bool rlog,
         processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
       }
 
-      if (rlog)
-        AthResourceLog("Fill Sdb", 0);
-
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
       minExtracted = _search->couplingCaps(extractLimit,
@@ -2254,17 +2242,6 @@ uint extMain::couplingFlow(bool rlog,
                                            m,
                                            _getBandWire,
                                            limitArray);
-
-      if (rlog) {
-        char buff[64];
-        sprintf(buff,
-                "CCext %d wires xy[%d]= %d ",
-                processWireCnt,
-                dir,
-                minExtracted);
-
-        AthResourceLog(buff, 0);
-      }
 
       int deallocLimit = minExtracted - (ccDist + 1) * maxPitch;
       if (_printBandInfo)

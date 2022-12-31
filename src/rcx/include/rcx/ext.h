@@ -176,7 +176,6 @@ class Ext
     const char* power_source_coords = nullptr;
     bool lef_rc = false;
     bool lef_res = false;
-    bool rlog = false;
   };
 
   bool extract(ExtractOptions options);

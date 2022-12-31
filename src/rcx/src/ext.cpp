@@ -491,7 +491,6 @@ bool Ext::extract(ExtractOptions opts)
                             !opts.no_merge_via_res,
                             opts.preserve_geom,
                             !opts.no_gs,
-                            opts.rlog,
                             opts.coupling_threshold,
                             opts.context_depth,
                             opts.ext_model_file,

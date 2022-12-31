@@ -2127,7 +2127,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               bool mergeViaRes,
                               int preserve_geom,
                               bool gs,
-                              bool rlog,
                               double ccThres,
                               int contextDepth,
                               const char* extRules,
@@ -2143,7 +2142,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
   _diagFlow = true;
 
-  const int detailRlog = 0;
   std::vector<dbNet*> inets;
   if ((_prevControl->_ruleFileName.empty())
       && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
@@ -2204,8 +2202,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   }
   initDgContextArray();
   _extRun++;
-  if (rlog)
-    AthResourceLog("start extract", detailRlog);
 
   extMeasure m;
   m.setLogger(logger_);
@@ -2271,8 +2267,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
   logger_->info(RCX, 40, "Final {} rc segments", cnt);
 
-  if (rlog)
-    AthResourceLog("after makeNetRCsegs", detailRlog);
   int ttttPrintDgContext = 0;
   if (_couplingFlag > 1) {
     logger_->info(RCX,
@@ -2295,8 +2289,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
     if (_usingMetalPlanes && (_geoThickTable == NULL)) {
       makeIntersectPlanes(0);
-      if (rlog)
-        AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
     logger_->info(RCX,
@@ -2368,7 +2360,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
       Rect maxRect = _block->getDieArea();
 
-      couplingFlow(rlog, maxRect, _couplingFlag, &m, extCompute1);
+      couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
       if (m._debugFP != NULL)
         fclose(m._debugFP);
@@ -2387,9 +2379,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       _measureRcCnt = _shapeRcCnt = _updateTotalCcnt = -1;
     }
 
-    if (rlog)
-      AthResourceLog("after couplingCaps", detailRlog);
-
     if (preserve_geom != 1 && !_useDbSdb) {
       if ((_extNetSDB != NULL) && (preserve_geom == 3 || preserve_geom == 0)) {
         _extNetSDB->cleanSdb();
@@ -2397,18 +2386,12 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       }
       if (ccCapSdb != NULL && (preserve_geom == 2 || preserve_geom == 0))
         ccCapSdb->cleanSdb();
-      if (rlog)
-        AthResourceLog("FreeCCgeom", detailRlog);
     }
   }
 
   _extNetSDB = NULL;
-  if (rlog)
-    AthResourceLog("before removeSeq", detailRlog);
   if (_geomSeq)
     delete _geomSeq;
-  if (rlog)
-    AthResourceLog("after removeSeq", detailRlog);
   _geomSeq = NULL;
   _extracted = true;
   updatePrevControl();
@@ -2441,12 +2424,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       net->setWireAltered(false);
     }
   }
-  if (rlog)
-    AthResourceLog("before remove Model", detailRlog);
 
   _modelTable->resetCnt(0);
-  if (rlog)
-    AthResourceLog("After remove Model", detailRlog);
   if (_batchScaleExt)
     genScaledExt();
 

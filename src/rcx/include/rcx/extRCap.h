@@ -2089,8 +2089,7 @@ class extMain
                uint bucket,
                Ath__array1D<uint>*** gsTable,
                Ath__array1D<uint>*** instGsTable);
-  uint couplingFlow(bool rlog,
-                    odb::Rect& extRect,
+  uint couplingFlow(odb::Rect& extRect,
                     uint ccDist,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
@@ -2257,7 +2256,6 @@ class extMain
                        bool mergeViaRes,
                        int cc_preseve_geom,
                        bool gs,
-                       bool log,
                        double ccThres,
                        int contextDepth,
                        const char* extRules,
