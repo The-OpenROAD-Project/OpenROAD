@@ -37,7 +37,6 @@
 #include "ZInterface.h"
 #include "dbLogger.h"
 #include "wire.h"
-//#define TEST_GetDgOverlap
 
 namespace rcx {
 CoupleOptions coupleOptionsNull{};
@@ -400,22 +399,6 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
   Ath__wire* nwire = getNextWire(wire);
   for (wire = nwire; wire; pwire = wire, wire = nwire) {
     nwire = getNextWire(wire);
-#ifdef TEST_GetDgOverlap
-    if (ttttGetDgOverlap) {
-      if (wire->isPower() || wire->_srcId > 0
-          || _grid->getGridTable()->handleEmptyOnly())
-        continue;
-      coupleOptions[0] = -met;
-      coupleOptions[1] = wire->_xy;
-      coupleOptions[2] = wire->_xy + wire->_len;
-      coupleOptions[3] = wire->_base;
-      coupleOptions[4] = wire->_base + wire->_width;
-      coupleOptions[5] = 2;
-      coupleOptions[6] = wire->_dir;
-      coupleAndCompute(coupleOptions, compPtr);
-      continue;
-    }
-#endif
     if (!wire->isPower() && nwire && nwire->isPower()
         && nwire->_xy < wire->_xy + wire->_len)
       coupleOptions[19] = 0;  // bp
