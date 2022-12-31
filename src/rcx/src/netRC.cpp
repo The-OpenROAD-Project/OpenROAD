@@ -408,16 +408,10 @@ void extMain::getShapeRC(dbNet* net,
             _tmpResTable[0]);
   }
   if ((!s.isVia()) && (_couplingFlag > 0)) {
-    dbTechLayer* layer = s.getTechLayer();
-    uint level = layer->getRoutingLevel();
-
     int x1 = s.xMin();
     int y1 = s.yMin();
     int x2 = s.xMax();
     int y2 = s.yMax();
-
-    if (_usingMetalPlanes && !_alwaysNewGs)
-      _geomSeq->box(x1, y1, x2, y2, level);
 
     if (!_allNet) {
       _ccMinX = MIN(x1, _ccMinX);

@@ -473,7 +473,6 @@ extMain::extMain(uint menuId)
 
   _reuseMetalFill = false;
   _usingMetalPlanes = 0;
-  _alwaysNewGs = true;
   _ccUp = 0;
   _couplingFlag = 0;
   _ccContextDepth = 0;
@@ -504,7 +503,6 @@ extMain::extMain(uint menuId)
   _singlePlaneLayerMap = NULL;
   _overUnderPlaneLayerMap = NULL;
   _usingMetalPlanes = false;
-  _alwaysNewGs = true;
   _geomSeq = NULL;
 
   _dgContextArray = NULL;

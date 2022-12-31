@@ -1642,7 +1642,6 @@ class extMain
   uint* _singlePlaneLayerMap;
   uint** _overUnderPlaneLayerMap;
   bool _usingMetalPlanes;
-  bool _alwaysNewGs;
 
   odb::gs* _geomSeq;
 
