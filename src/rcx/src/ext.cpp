@@ -477,60 +477,43 @@ bool Ext::extract(ExtractOptions opts)
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
 
-  const char* extRules = opts.ext_model_file;
-  const char* cmpFile = opts.cmp_file;
-  bool density_model = opts.wire_density;
-
-  uint ccUp = opts.cc_up;
-  uint ccFlag = opts.cc_model;
-  // uint ccFlag= 25;
-  int ccBandTracks = opts.cc_band_tracks;
-  uint use_signal_table = opts.signal_table;
-  bool merge_via_res = opts.no_merge_via_res ? false : true;
+  const int ccBandTracks = opts.cc_band_tracks;
   const uint extdbg = 0;
-  const char* nets = opts.net;
-  const char* debug_nets = opts.debug_net;
-  bool gs = opts.no_gs ? false : true;
-  double ccThres = opts.coupling_threshold;
-  int ccContextDepth = opts.context_depth;
-  bool overCell = opts.over_cell;
-  bool btermThresholdFlag = opts.tile;
 
-  _ext->set_debug_nets(debug_nets);
+  _ext->set_debug_nets(opts.debug_net);
   _ext->skip_via_wires(opts.skip_via_wires);
   _ext->skip_via_wires(true);
   _ext->_lef_res = opts.lef_res;
 
   odb::ZPtr<odb::ISdb> dbNetSdb = NULL;
-  bool extSdb = false;
 
   if (ccBandTracks)
     opts.eco = false;  // tbd
 
-  if (_ext->makeBlockRCsegs(btermThresholdFlag,
-                            cmpFile,
-                            density_model,
+  if (_ext->makeBlockRCsegs(opts.tile,
+                            opts.cmp_file,
+                            opts.wire_density,
                             opts.litho,
-                            nets,
+                            opts.net,
                             opts.bbox,
                             opts.ibox,
-                            ccUp,
-                            ccFlag,
+                            opts.cc_up,
+                            opts.cc_model,
                             ccBandTracks,
-                            use_signal_table,
+                            opts.signal_table,
                             opts.max_res,
-                            merge_via_res,
+                            !opts.no_merge_via_res,
                             extdbg,
                             opts.preserve_geom,
                             opts.re_run,
                             opts.eco,
-                            gs,
+                            !opts.no_gs,
                             opts.rlog,
                             dbNetSdb,
-                            ccThres,
-                            ccContextDepth,
-                            overCell,
-                            extRules,
+                            opts.coupling_threshold,
+                            opts.context_depth,
+                            opts.over_cell,
+                            opts.ext_model_file,
                             this)
       == 0)
     return TCL_ERROR;
@@ -543,16 +526,6 @@ bool Ext::extract(ExtractOptions opts)
     _ext->reportTotalCap(netcapfile, true, false, 1.0, NULL, NULL);
   }
 
-  if (!ccBandTracks) {
-    if (extSdb && extdbg != 99) {
-      if (opts.rlog)
-        odb::AthResourceLog("before remove sdb", 0);
-      dbNetSdb->cleanSdb();
-    }
-  }
-
-  //    fprintf(stdout, "Finished extracting %s.\n",
-  //    _ext->getBlock()->getName().c_str());
   logger_->info(
       RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
   return 0;
