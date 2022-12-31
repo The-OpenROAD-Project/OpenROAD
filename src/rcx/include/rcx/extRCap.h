@@ -2281,10 +2281,6 @@ class extMain
   odb::dbTech* getTech() { return _tech; }
   extRCModel* getRCModel() { return _modelTable->get(0); }
 
-  //	int db_test_wires();
-
-  int db_test_wires(odb::dbDatabase* db = NULL);
-
   void print_RC(odb::dbRSeg* rc);
   void resetMapping(odb::dbBTerm* term, odb::dbITerm* iterm, uint junction);
   uint resetMapNodes(odb::dbNet* net);
