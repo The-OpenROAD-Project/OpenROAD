@@ -2076,7 +2076,6 @@ void extMain::updatePrevControl()
   _prevControl->_extracted = _extracted;
   _prevControl->_lefRC = _lefRC;
   _prevControl->_cornerCnt = _cornerCnt;
-  _prevControl->_ccPreseveGeom = _ccPreseveGeom;
   _prevControl->_ccUp = _ccUp;
   _prevControl->_couplingFlag = _couplingFlag;
   _prevControl->_coupleThreshold = _coupleThreshold;
@@ -2101,7 +2100,6 @@ void extMain::getPrevControl()
   _extracted = _prevControl->_extracted;
   _lefRC = _prevControl->_lefRC;
   _cornerCnt = _prevControl->_cornerCnt;
-  _ccPreseveGeom = _prevControl->_ccPreseveGeom;
   _ccUp = _prevControl->_ccUp;
   _couplingFlag = _prevControl->_couplingFlag;
   _coupleThreshold = _prevControl->_coupleThreshold;
@@ -2122,7 +2120,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                               uint use_signal_table,
                               double resBound,
                               bool mergeViaRes,
-                              int preserve_geom,
                               bool gs,
                               double ccThres,
                               int contextDepth,
@@ -2130,10 +2127,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                               ZInterface* Interface)
 {
   uint debugNetId = 0;
-  if (preserve_geom < 0) {
-    debugNetId = -preserve_geom;
-    preserve_geom = 0;
-  }
 
   _use_signal_tables = use_signal_table;
 
@@ -2151,7 +2144,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
 
   _couplingFlag = ccFlag;
   _coupleThreshold = ccThres;
-  _ccPreseveGeom = preserve_geom;
 
   if (!_lefRC) {
     _usingMetalPlanes = gs;
@@ -2371,15 +2363,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
       fclose(_printFile);
       _printFile = NULL;
       _measureRcCnt = _shapeRcCnt = _updateTotalCcnt = -1;
-    }
-
-    if (preserve_geom != 1 && !_useDbSdb) {
-      if ((_extNetSDB != NULL) && (preserve_geom == 3 || preserve_geom == 0)) {
-        _extNetSDB->cleanSdb();
-        _extNetSDB = NULL;
-      }
-      if (ccCapSdb != NULL && (preserve_geom == 2 || preserve_geom == 0))
-        ccCapSdb->cleanSdb();
     }
   }
 

@@ -1685,7 +1685,6 @@ class extMain
   bool _getBandWire;
   bool _printBandInfo;
   bool _reuseMetalFill;
-  uint _ccPreseveGeom;
   uint _ccUp;
   uint _couplingFlag;
   uint _use_signal_tables;
@@ -2249,7 +2248,6 @@ class extMain
                        uint use_signal_table,
                        double resBound,
                        bool mergeViaRes,
-                       int cc_preseve_geom,
                        bool gs,
                        double ccThres,
                        int contextDepth,

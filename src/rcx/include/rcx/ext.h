@@ -156,7 +156,6 @@ class Ext
     const char* net = nullptr;
     int signal_table = 3;
     int cc_up = 2;
-    uint preserve_geom = 0;
     int corner_cnt = 1;
     double max_res = 50.0;
     bool no_merge_via_res = false;

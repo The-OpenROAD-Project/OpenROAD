@@ -487,7 +487,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.signal_table,
                             opts.max_res,
                             !opts.no_merge_via_res,
-                            opts.preserve_geom,
                             !opts.no_gs,
                             opts.coupling_threshold,
                             opts.context_depth,
