@@ -2679,7 +2679,6 @@ class extMain
                         extMeasure* m,
                         CoupleAndCompute coupleAndCompute);
 
-  uint fillWindowsDB(bool rlog, odb::Rect& extRect, uint use_signal_tables);
   uint fill_gs4(int dir,
                 int* ll,
                 int* ur,
