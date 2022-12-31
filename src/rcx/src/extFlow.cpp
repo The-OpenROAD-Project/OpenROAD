@@ -2297,34 +2297,6 @@ uint extMain::couplingFlow(bool rlog,
                            extMeasure* m,
                            CoupleAndCompute coupleAndCompute)
 {
-  dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
-  if (p != NULL) {
-    _use_signal_tables = 3;
-    int DIR = p->getValue();
-
-    extWindow* W = new extWindow(20, logger_);
-    W->getExtProperties(_block);
-
-    uint propCnt = mkNetPropertiesForRsegs(_block, DIR);
-    logger_->info(RCX, 86, "Created {} Net Properties", propCnt);
-
-    _ignoreWarning_1st = true;
-    rcGenBlock();
-    _ignoreWarning_1st = false;
-    if (m->_netId > 0) {
-      writeMapping();
-      writeMapping(_block->getParent());
-    } else
-      resetGndCaps();
-
-    extractWindow(rlog, W, extRect, false, m, coupleAndCompute);
-
-    uint rsegCnt = invalidateNonDirShapes(_block, (uint) DIR, true);
-    logger_->info(RCX, 87, "Extracted {} valid rsegs", rsegCnt);
-
-    return 0;
-  }
-
   uint ccDist = ccFlag;
   bool single_gs = false;
 
@@ -2813,47 +2785,6 @@ int extWindow::getIntProperty(dbBlock* block, const char* name)
   return ip->getValue();
 }
 
-void extWindow::getExtProperties(dbBlock* block)
-{
-  _num = getIntProperty(block, "_num");
-  _currentDir = getIntProperty(block, "_currentDir");
-  _extractLimit = getIntProperty(block, "_extractLimit");
-  _ccDist = getIntProperty(block, "_ccDist");
-  _maxPitch = getIntProperty(block, "_maxPitch");
-  _lo_gs[0] = getIntProperty(block, "_lo_gs[0]");
-  _lo_gs[1] = getIntProperty(block, "_lo_gs[1]");
-  _hi_gs[0] = getIntProperty(block, "_hi_gs[0]");
-  _hi_gs[1] = getIntProperty(block, "_hi_gs[1]");
-  _gs_limit = getIntProperty(block, "_gs_limit");
-  _layerCnt = getIntProperty(block, "_layerCnt");
-
-  _ll[0] = getIntProperty(block, "_ll[0]");
-  _ll[1] = getIntProperty(block, "_ll[1]");
-  _ur[0] = getIntProperty(block, "_ur[0]");
-  _ur[1] = getIntProperty(block, "_ur[1]");
-  _hiXY = getIntProperty(block, "_hiXY");
-  _step_nm[0] = getIntProperty(block, "_step_nm[0]");
-  _step_nm[1] = getIntProperty(block, "_step_nm[1]");
-
-  for (uint ii = 0; ii < _layerCnt; ii++) {
-    char bufName[64];
-    sprintf(bufName, "_extLimit[0]_%d", ii);
-
-    _extLimit[0][ii] = getIntProperty(block, bufName);
-
-    sprintf(bufName, "_sdbBase[0]_%d", ii);
-
-    _sdbBase[0][ii] = getIntProperty(block, bufName);
-
-    sprintf(bufName, "_sdbBase[1]_%d", ii);
-
-    _sdbBase[1][ii] = getIntProperty(block, bufName);
-  }
-  for (uint j = 0; j < 2; j++) {
-    _lo_sdb[j] = getIntArrayProperty(block, j, "_lo_sdb");
-    _hi_sdb[j] = getIntArrayProperty(block, j, "_hi_sdb");
-  }
-}
 void extWindow::makeIntArrayProperty(dbBlock* block,
                                      uint ii,
                                      int* A,
@@ -2920,45 +2851,6 @@ void extWindow::makeSdbBuckets(uint sdbBucketCnt[2],
     sdbBucketSize[ii] = 2 * _step_nm[ii];
     sdbTable_ll[ii] = _ll[ii] - _step_nm[ii] / 10;
     sdbTable_ur[ii] = _ur[ii] + _step_nm[ii] / 10;
-  }
-}
-void extWindow::printBoundaries(FILE* fp, bool flag)
-{
-  if (!flag && fp == NULL)
-    return;
-
-  if (fp == NULL) {
-    logger_->info(RCX,
-                  238,
-                  "{:15s}= {}"
-                  "\t_currentDir\n"
-                  "{:15s}= {} \t_hiXY\n"
-                  "{:15s}= {} \t_lo_gs\n"
-                  "{:15s}= {} \t_hi_gs\n"
-                  "{:15s}= {} \t_lo_sdb\n"
-                  "{:15s}= {} \t_hi_sdb\n"
-                  "{:15s}= {} \t_gs_limit\n"
-                  "{:15s}= {} \t_minExtracted\n"
-                  "{:15s}= {} \t_deallocLimit",
-                  _currentDir,
-                  _hiXY,
-                  _lo_gs[_currentDir],
-                  _hi_gs[_currentDir],
-                  _lo_sdb[_currentDir],
-                  _hi_sdb[_currentDir],
-                  _gs_limit,
-                  _minExtracted,
-                  _deallocLimit);
-  } else {
-    fprintf(fp, "\n%15s= %d\n", "_currentDir", _currentDir);
-    fprintf(fp, "%15s= %d\n", "_hiXY", _hiXY);
-    fprintf(fp, "%15s= %d\n", "_lo_gs", _lo_gs[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_hi_gs", _hi_gs[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_lo_sdb", _lo_sdb[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_hi_sdb", _hi_sdb[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_gs_limit", _gs_limit);
-    fprintf(fp, "%15s= %d\n", "_minExtracted", _minExtracted);
-    fprintf(fp, "%15s= %d\n\n", "_deallocLimit", _deallocLimit);
   }
 }
 
@@ -3364,13 +3256,6 @@ uint extMain::extractWindow(bool rlog,
                             Ath__array1D<uint>*** sdbSignalTable,
                             Ath__array1D<uint>*** gsInstTable)
 {
-  /*
-  char bufname[128];
-  sprintf(bufname, "BOUNDS/%d_%d.limits", W->_currentDir, W->_hiXY);
-  FILE *limFP= fopen(bufname, "w");
-  sprintf(bufname, "BOUNDS/%d_%d.bounds", W->_currentDir, W->_hiXY);
-  FILE *bndFP= fopen(bufname, "w");
-  */
   int** limitArray;
   limitArray = new int*[W->_layerCnt];
   for (uint k = 0; k < W->_layerCnt; k++)
@@ -3393,12 +3278,6 @@ uint extMain::extractWindow(bool rlog,
 
     _search->initCouplingCapLoops(
         W->_currentDir, W->_ccDist, coupleAndCompute, m, W->_extLimit[0]);
-    /*
-    if (W->_currentDir!=prevDir) {
-            _search->initCouplingCapLoops(W->_currentDir, W->_ccDist,
-    coupleAndCompute, m); prevDir= W->_currentDir;
-    }
-    */
   } else {
     uint layerCnt = initSearchForNets(W->_sdbBase[0],
                                       W->_sdbBase[1],
@@ -3434,13 +3313,6 @@ uint extMain::extractWindow(bool rlog,
                            _dgContextHiTrack,
                            _dgContextTrackBase,
                            m->_seqPool);
-    /*
-                    if (W->_currentDir!=prevDir) {
-                            _search->initCouplingCapLoops(W->_currentDir,
-       W->_ccDist, coupleAndCompute, m); prevDir= W->_currentDir;
-                    }
-                    else
-    */
     _search->initCouplingCapLoops(
         W->_currentDir, W->_ccDist, coupleAndCompute, m, W->_extLimit[0]);
   }
@@ -3476,9 +3348,6 @@ uint extMain::extractWindow(bool rlog,
   if (rlog)
     AthResourceLog("Fill Sdb", 0);
 
-  // W->printExtLimits(limFP);
-  // W->printBoundaries(bndFP, true);
-
   uint extractedWireCnt = 0;
   _search->couplingCaps(W->_extractLimit,
                         W->_ccDist,
@@ -3488,18 +3357,12 @@ uint extMain::extractWindow(bool rlog,
                         m,
                         false,
                         limitArray);
-  // printLimitArray(limitArray, W->_layerCnt);
 
   W->reportProcessedWires(true);
 
   _search->dealloc(W->_currentDir, W->_deallocLimit);
 
-  // W->printBoundaries(bndFP, true);
-
   W->updateExtLimits(limitArray);
-  //	W->printExtLimits(limFP);
-  //	fclose(limFP);
-  //	fclose(bndFP);
 
   return 0;
 }

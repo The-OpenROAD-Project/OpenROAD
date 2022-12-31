@@ -2769,36 +2769,32 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   if (_reuseMetalFill)
     _extNetSDB->adjustMetalFill();
 
-  dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
-
-  if (p == NULL) {
-    if (_power_extract_only) {
-      powerRCGen();
-      return 1;
-    }
-
-    for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-      net = *net_itr;
-
-      dbSigType type = net->getSigType();
-      if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
-        continue;
-      if (!_allNet && !net->isMarked())
-        continue;
-
-      _connectedBTerm.clear();
-      _connectedITerm.clear();
-      cnt += makeNetRCsegs(net);
-      uint tt;
-      for (tt = 0; tt < _connectedBTerm.size(); tt++)
-        ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
-      for (tt = 0; tt < _connectedITerm.size(); tt++)
-        ((dbITerm*) _connectedITerm[tt])->setMark(0);
-      // break;
-    }
-
-    logger_->info(RCX, 40, "Final {} rc segments", cnt);
+  if (_power_extract_only) {
+    powerRCGen();
+    return 1;
   }
+
+  for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
+    net = *net_itr;
+
+    dbSigType type = net->getSigType();
+    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+      continue;
+    if (!_allNet && !net->isMarked())
+      continue;
+
+    _connectedBTerm.clear();
+    _connectedITerm.clear();
+    cnt += makeNetRCsegs(net);
+    uint tt;
+    for (tt = 0; tt < _connectedBTerm.size(); tt++)
+      ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
+    for (tt = 0; tt < _connectedITerm.size(); tt++)
+      ((dbITerm*) _connectedITerm[tt])->setMark(0);
+    // break;
+  }
+
+  logger_->info(RCX, 40, "Final {} rc segments", cnt);
 
   if (rlog)
     AthResourceLog("after makeNetRCsegs", detailRlog);

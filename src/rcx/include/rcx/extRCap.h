@@ -1569,7 +1569,6 @@ class extWindow
   void reportProcessedWires(bool rlog);
   int getDeallocLimit();
   void updateLoBounds(bool reportFlag);
-  void printBoundaries(FILE* fp, bool flag);
   void get_extractLimit(extWindow* e);
   void updateExtLimits(int** limitArray);
   void printExtLimits(FILE* fp);
@@ -1579,7 +1578,6 @@ class extWindow
                    int** limitArray,
                    int** trackArray);
   int getIntProperty(odb::dbBlock* block, const char* name);
-  void getExtProperties(odb::dbBlock* block);
   void makeIntArrayProperty(odb::dbBlock* block,
                             uint ii,
                             int* A,
