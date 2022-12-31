@@ -267,12 +267,6 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
   return ii;
 }
-uint extSpef::getITermShapeId(dbITerm* iterm)
-{
-  if (iterm->getNet()->getWire() == NULL)
-    return 0;
-  return iterm->getNet()->getWire()->getTermJid(iterm->getId());
-}
 
 void extSpef::searchDealloc()
 {
