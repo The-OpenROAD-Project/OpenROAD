@@ -35,8 +35,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#define FRINGE_UP_DOWN
-
 namespace rcx {
 
 using utl::RCX;
@@ -1667,7 +1665,6 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
     }
     len += getOverlapSeq(met, s, resTable);
 
-#ifdef FRINGE_UP_DOWN
     uint startIndex = resTable->getCnt();
     int maxDist = 1000;  // TO_TEST
 
@@ -1691,7 +1688,6 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
           computeOverFringe(met, _width, _width, dist);
       }
     }
-#endif
   }
   if (len > _len)
     return 0;

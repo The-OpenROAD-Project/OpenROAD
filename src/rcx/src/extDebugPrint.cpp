@@ -35,8 +35,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-#define FRINGE_UP_DOWN
-
 namespace rcx {
 
 using utl::RCX;
