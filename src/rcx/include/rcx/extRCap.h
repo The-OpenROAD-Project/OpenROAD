@@ -1592,7 +1592,6 @@ class extMain
   double _mergeResBound;
   bool _mergeViaRes;
   bool _mergeParallelCC;
-  bool _unifiedMeasureInit;
   bool _reportNetNoWire;
   int _netNoWireCnt;
 

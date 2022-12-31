@@ -907,8 +907,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       if (!path.bterm && !path.iterm && path.is_branch && path.junction_id)
         _nodeTable->set(path.junction_id, -1);
 
-      if (path.is_short)  
-      {
+      if (path.is_short) {
         _nodeTable->set(path.short_junction, -1);
         srcJid = path.short_junction;
         for (uint tt = 0; tt < _shortTgtJid.size(); tt++) {
@@ -1486,7 +1485,7 @@ int extMain::setMinTypMax(bool min,
     _extDbCnt = extDbCnt;
     _modelMap.add(0);
   }
-  
+
   if (_currentModel == NULL) {
     _currentModel = getRCmodel(0);
     for (uint ii = 0; (!_lefRC) && ii < _modelMap.getCnt(); ii++) {
@@ -2162,20 +2161,12 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
       || ((_processCornerTable == NULL) && (extRules != NULL))) {
     const char* rulesfile
         = extRules ? extRules : _prevControl->_ruleFileName.c_str();
-    if (!setCorners(rulesfile,
-                    cmp_file)) {  
+    if (!setCorners(rulesfile, cmp_file)) {
       logger_->info(RCX, 128, "skipping Extraction ...");
       return 0;
     }
-  } else if (setMinTypMax(false,
-                          false,
-                          false,
-                          cmp_file,
-                          density_model,
-                          -1,
-                          -1,
-                          -1,
-                          1)
+  } else if (setMinTypMax(
+                 false, false, false, cmp_file, density_model, -1, -1, -1, 1)
              < 0) {
     logger_->warn(RCX, 129, "Wrong combination of corner related options!");
     return 0;
@@ -2262,8 +2253,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                   "Coupling Cap extraction {} ...",
                   getBlock()->getName().c_str());
 
-    uint CCflag = _couplingFlag;
-
     if (!_allNet)
       _extNetSDB->setMaxArea(_ccMinX, _ccMinY, _ccMaxX, _ccMaxY);
 
@@ -2286,73 +2275,71 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                   "fF will be grounded.",
                   _coupleThreshold,
                   _coupleThreshold);
-    if (_unifiedMeasureInit) {
-      m._extMain = this;
-      m._block = _block;
-      m._diagFlow = _diagFlow;
 
-      m._resFactor = _resFactor;
-      m._resModify = _resModify;
-      m._ccFactor = _ccFactor;
-      m._ccModify = _ccModify;
-      m._gndcFactor = _gndcFactor;
-      m._gndcModify = _gndcModify;
+    m._extMain = this;
+    m._block = _block;
+    m._diagFlow = _diagFlow;
 
-      m._dgContextArray = _dgContextArray;
-      m._dgContextDepth = &_dgContextDepth;
-      m._dgContextPlanes = &_dgContextPlanes;
-      m._dgContextTracks = &_dgContextTracks;
-      m._dgContextBaseLvl = &_dgContextBaseLvl;
-      m._dgContextLowLvl = &_dgContextLowLvl;
-      m._dgContextHiLvl = &_dgContextHiLvl;
-      m._dgContextBaseTrack = _dgContextBaseTrack;
-      m._dgContextLowTrack = _dgContextLowTrack;
-      m._dgContextHiTrack = _dgContextHiTrack;
-      m._dgContextTrackBase = _dgContextTrackBase;
-      if (ttttPrintDgContext)
-        m._dgContextFile = fopen("dgCtxtFile", "w");
-      m._dgContextCnt = 0;
+    m._resFactor = _resFactor;
+    m._resModify = _resModify;
+    m._ccFactor = _ccFactor;
+    m._ccModify = _ccModify;
+    m._gndcFactor = _gndcFactor;
+    m._gndcModify = _gndcModify;
 
-      m._ccContextLength = _ccContextLength;
-      m._ccContextArray = _ccContextArray;
+    m._dgContextArray = _dgContextArray;
+    m._dgContextDepth = &_dgContextDepth;
+    m._dgContextPlanes = &_dgContextPlanes;
+    m._dgContextTracks = &_dgContextTracks;
+    m._dgContextBaseLvl = &_dgContextBaseLvl;
+    m._dgContextLowLvl = &_dgContextLowLvl;
+    m._dgContextHiLvl = &_dgContextHiLvl;
+    m._dgContextBaseTrack = _dgContextBaseTrack;
+    m._dgContextLowTrack = _dgContextLowTrack;
+    m._dgContextHiTrack = _dgContextHiTrack;
+    m._dgContextTrackBase = _dgContextTrackBase;
+    if (ttttPrintDgContext)
+      m._dgContextFile = fopen("dgCtxtFile", "w");
+    m._dgContextCnt = 0;
 
-      m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
-      m._pixelTable = _geomSeq;
-      m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
-      m._maxModelIndex = 0;
-      m._currentModel = _currentModel;
-      m._diagModel = _currentModel[0].getDiagModel();
-      for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
-        uint jj = _modelMap.get(ii);
-        m._metRCTable.add(_currentModel->getMetRCTable(jj));
-      }
-      uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-      uint modelLayerCnt = _currentModel->getLayerCnt();
-      m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
-      if (techLayerCnt == 5 && modelLayerCnt == 8)
-        m._layerCnt = modelLayerCnt;
-      m.getMinWidth(_tech);
-      m.allocOUpool();
+    m._ccContextLength = _ccContextLength;
+    m._ccContextArray = _ccContextArray;
 
-      m._debugFP = NULL;
-      m._netId = 0;
-      debugNetId = 0;
-      if (debugNetId > 0) {
-        m._netId = debugNetId;
-        char bufName[32];
-        sprintf(bufName, "%d", debugNetId);
-        m._debugFP = fopen(bufName, "w");
-      }
-
-      Rect maxRect = _block->getDieArea();
-
-      couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
-
-      if (m._debugFP != NULL)
-        fclose(m._debugFP);
-    } else {
-      _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, extCompute, this);
+    m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
+    m._pixelTable = _geomSeq;
+    m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
+    m._maxModelIndex = 0;
+    m._currentModel = _currentModel;
+    m._diagModel = _currentModel[0].getDiagModel();
+    for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
+      uint jj = _modelMap.get(ii);
+      m._metRCTable.add(_currentModel->getMetRCTable(jj));
     }
+    uint techLayerCnt = getExtLayerCnt(_tech) + 1;
+    uint modelLayerCnt = _currentModel->getLayerCnt();
+    m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
+    if (techLayerCnt == 5 && modelLayerCnt == 8)
+      m._layerCnt = modelLayerCnt;
+    m.getMinWidth(_tech);
+    m.allocOUpool();
+
+    m._debugFP = NULL;
+    m._netId = 0;
+    debugNetId = 0;
+    if (debugNetId > 0) {
+      m._netId = debugNetId;
+      char bufName[32];
+      sprintf(bufName, "%d", debugNetId);
+      m._debugFP = fopen(bufName, "w");
+    }
+
+    Rect maxRect = _block->getDieArea();
+
+    couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
+
+    if (m._debugFP != NULL)
+      fclose(m._debugFP);
+
     if (m._dgContextFile) {
       fclose(m._dgContextFile);
       m._dgContextFile = NULL;

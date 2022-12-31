@@ -480,7 +480,6 @@ extMain::extMain(uint menuId)
   _mergeViaRes = false;
   _mergeResBound = 0.0;
   _mergeParallelCC = false;
-  _unifiedMeasureInit = true;
   _reportNetNoWire = false;
   _netNoWireCnt = 0;
 
