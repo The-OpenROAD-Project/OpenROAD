@@ -295,7 +295,7 @@ void extMain::writeResNodeRC(char* capNodeName,
   } else if (capNode->isInternal()) {
     writeInternalNode_xy(capNode, capNodeName);
     uint vid = capNode->getNode();
-    if (vid > 0) {  
+    if (vid > 0) {
       if (level > 0)
         _via2JunctionMap->set(vid, capNode->getId());
     }
@@ -776,8 +776,7 @@ bool extMain::specialMasterType(odb::dbInst* inst)
 {
   odb::dbMaster* master = inst->getMaster();
   if ((master->getType() == odb::dbMasterType::CORE_FEEDTHRU)
-      || (master->getType() == odb::dbMasterType::PAD_SPACER))
-  {
+      || (master->getType() == odb::dbMasterType::PAD_SPACER)) {
     return true;
   }
   if (inst->getUserFlag3())
@@ -1528,8 +1527,7 @@ uint extMain::getITermPhysicalConn(uint dir,
         inst, net, dir, level, xy, xy2, rectTable, itermTable);
   }
 
-  if (_dbgPowerFlow)
-  {
+  if (_dbgPowerFlow) {
     logger_->info(RCX,
                   310,
                   "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
@@ -1589,7 +1587,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
   uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
 
-  if (dir > 0)  { // horiz
+  if (dir > 0) {  // horiz
     sortInst_x sort_by_x;
     std::sort(instTable.begin(), instTable.end(), sort_by_x);
   } else {
@@ -1604,8 +1602,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
     getSpecialItermShapes(
         inst, net, dir, level, xy, xy2, rectTable, itermTable);
   }
-  if (_dbgPowerFlow)
-  {
+  if (_dbgPowerFlow) {
     logger_->info(RCX,
                   388,
                   "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
@@ -1635,7 +1632,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
     odb::dbITerm* iterm = itermTable[k];
     if (!((iterm->getSigType() == odb::dbSigType::POWER)
           || (iterm->getSigType() == odb::dbSigType::GROUND)))
-      continue;  
+      continue;
 
     if (macro)  // if not hierarchical block but macro, check if for any
                 // connection! only one is allowed
@@ -2988,7 +2985,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
         if (!w->overlaps(vr))
           continue;
 
-        overlapviaTable.push_back(v);  
+        overlapviaTable.push_back(v);
 
         vCnt++;
       }
@@ -2997,7 +2994,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
           odb::dbBox* w1 = overlapviaTable[ii];
           w1->setVisited(true);
         }
-        odb::dbBox* W = overlapviaTable[0];  
+        odb::dbBox* W = overlapviaTable[0];
 
         char buf[2048];
         float res = getPowerViaRes(W, 0.1);
@@ -3158,8 +3155,7 @@ void extMain::railConnOpt(odb::dbNet* pNet)
     }
   }
   if (!_wireInfra) {
-    for (uint kk = 0; kk < _viaM1Table->size(); kk++)
-    {
+    for (uint kk = 0; kk < _viaM1Table->size(); kk++) {
       odb::dbBox* v = (*_viaM1Table)[kk];
 
       v->setVisited(false);
@@ -3309,7 +3305,7 @@ void extMain::railConn(odb::dbNet* pNet)
           odb::dbBox* v = railMergeTable[kk];
           odb::Rect a = v->getBox();
           if (r.intersects(a)) {
-            r.merge(a);  
+            r.merge(a);
             if (debug) {
               logger_->info(RCX,
                             333,
@@ -4200,8 +4196,7 @@ uint extMain::mergeStackedViasOpt(FILE* fp,
                   botVia->yMin());
     return 0;
   }
-  if (botVia == topVia)
-  {
+  if (botVia == topVia) {
     return 0;
   }
 
@@ -4338,7 +4333,7 @@ uint extMain::mergeStackedVias(FILE* fp,
                   botVia->yMin());
     return 0;
   }
-  if (botVia == w)  
+  if (botVia == w)
     return 0;
 
   uint top;

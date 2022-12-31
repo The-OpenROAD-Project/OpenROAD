@@ -693,7 +693,7 @@ extRCnode* extRcTree::makeNode(uint startingNodeId,
 
   if (prevNode != NULL) {  // Only if cut wire
     addChild(prevNode, nodeId);
-  } else {  
+  } else {
     extRCnode* junctionNode = _junctionNodeTable->geti(startingNodeId);
     if (junctionNode != NULL) {
       addChild(junctionNode, nodeId);

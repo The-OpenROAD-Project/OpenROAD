@@ -343,11 +343,11 @@ bool extMain::createParentCapNode(odb::dbCapNode* node,
   char buf[1024];
 
   odb::dbCapNode* cap = NULL;
-  if (!node->isBTerm()) {  
+  if (!node->isBTerm()) {
     cap = odb::dbCapNode::create(parentNet, nodeNum, foreign);
     capNodeMap[node->getId()] = cap->getId();
   }
-  if (node->isInternal()) {  
+  if (node->isInternal()) {
     cap->setInternalFlag();
 
     debugPrint(logger_,
@@ -358,7 +358,7 @@ bool extMain::createParentCapNode(odb::dbCapNode* node,
                "\t\tG intrn {} --> {}",
                node->getId(),
                capNodeMap[node->getId()]);
-  } else if (node->isITerm()) {  
+  } else if (node->isITerm()) {
     odb::dbITerm* iterm = node->getITerm();
     odb::dbInst* inst = iterm->getInst();
     uint instId = inst->getId();
@@ -381,8 +381,7 @@ bool extMain::createParentCapNode(odb::dbCapNode* node,
                node->getId(),
                capNodeMap[node->getId()],
                buf);
-  } else if (node->isBTerm()) {  
-
+  } else if (node->isBTerm()) {
     odb::dbBTerm* bterm = node->getBTerm();
     odb::dbITerm* iterm = bterm->getITerm();
     uint parentId = adjustParentNode(parentNet, iterm, nodeNum);
@@ -528,7 +527,7 @@ void extMain::adjustChildNode(odb::dbCapNode* childNode,
   uint parentId = capNodeMap[childNode->getId()];
   odb::dbCapNode* parentNode = odb::dbCapNode::getCapNode(_block, parentId);
 
-  if (childNode->isInternal() || childNode->isBTerm()) {  
+  if (childNode->isInternal() || childNode->isBTerm()) {
     childNode->resetInternalFlag();
     childNode->resetBTermFlag();
 
@@ -549,7 +548,7 @@ void extMain::adjustChildNode(odb::dbCapNode* childNode,
                childNode->getId(),
                parentId,
                buf);
-  } else if (childNode->isITerm()) {  
+  } else if (childNode->isITerm()) {
     childNode->resetITermFlag();
 
     odb::dbStringProperty* p

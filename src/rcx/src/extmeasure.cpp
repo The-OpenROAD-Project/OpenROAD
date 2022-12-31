@@ -287,7 +287,7 @@ void ext2dBox::rotate()
 }
 uint ext2dBox::length()
 {
-  return _ur[_dir] - _ll[_dir];  
+  return _ur[_dir] - _ll[_dir];
 }
 uint ext2dBox::width()
 {
@@ -543,7 +543,7 @@ uint extMeasure::createContextNets(char* dirName,
                                                  met,
                                                  mlayer->getDirection(),
                                                  false);
-    addNew2dBox(net, ll, ur, met, not_dir, net->getId(), true);  
+    addNew2dBox(net, ll, ur, met, not_dir, net->getId(), true);
   }
   return cnt - 1;
 }
@@ -775,7 +775,7 @@ void extMeasure::copySeqUsingPool(SEQ* t, Ath__array1D<SEQ*>* seqTable)
   seqTable->add(s);
 }
 
-uint extMeasure::getOverUnderIndex()  
+uint extMeasure::getOverUnderIndex()
 {
   int n = _layerCnt - _met - 1;
   n *= _underMet - 1;
@@ -1505,8 +1505,7 @@ uint extMeasure::computeDiag(SEQ* s,
         verticalOverlap = true;
       } else if ((int) tgWidth > 2 * _minWidth && tgWidth >= 2 * diagDist) {
         calcDiagRC(_rsegSrcId, tgt->type, len1, 1000000, targetMet);
-      }
-      else if (_diagModel == 2) {
+      } else if (_diagModel == 2) {
         if (_verticalDiag)
           verticalCap(
               _rsegSrcId, tgt->type, len1, tgWidth, diagDist, targetMet);
@@ -2241,7 +2240,7 @@ bool extMeasure::verticalCap(int rsegId1,
         = _metRCTable.get(ii)->_capOver[tgtMet]->getFringeRC(0, tgtWidth);
     if (overSubFringe == NULL)
       continue;
-    double frCap = len * overSubFringe->_fringe;  
+    double frCap = len * overSubFringe->_fringe;
 
     if (diagDist > tgtWidth) {
       double scale = 0.25 * diagDist / tgtWidth;
@@ -2314,7 +2313,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       }
     }
 
-    if (_dist >= 0) { // dist based
+    if (_dist >= 0) {  // dist based
       _underMet = 0;
 
       extDistRC* rcOverSub = getOverRC(rcModel);
@@ -2386,12 +2385,12 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
                            int diagCovered,
                            int srcCovered)
 {
-  int res_lenOverSub = _len - ouCovered;  
-  res_lenOverSub = 0;                     
+  int res_lenOverSub = _len - ouCovered;
+  res_lenOverSub = 0;
   bool SCALING_RES = false;
 
-  // Open ended resitance should account by 1/4 
-  double SUB_MULT_CAP      = 1.0;  
+  // Open ended resitance should account by 1/4
+  double SUB_MULT_CAP = 1.0;
 
   double SUB_MULT_RES = 1.0;
   if (SCALING_RES) {
@@ -2488,8 +2487,8 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   double dist_track = 0.0;
   double SUB_MULT_RES = ScaleResbyTrack(false, dist_track);
   double res_lenOverSub = _len;
-  res_lenOverSub = 0;  
-  // ----------------------------------------- 
+  res_lenOverSub = 0;
+  // -----------------------------------------
   int lenOverSub = _len - ouCovered;
 
   int lenOverSub_bot = _len - srcCovered;
@@ -2535,7 +2534,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
     double fr = 0;
     double cc = 0;
     if (lenOverSub > 0) {
-      if (_sameNetFlag) {  
+      if (_sameNetFlag) {
         fr = SUB_MULT * rc->getFringe() * lenOverSub;
         _extMain->updateTotalCap(rseg1, fr, jj);
       } else {
@@ -2717,7 +2716,7 @@ void extMeasure::measureRC(CoupleOptions& options)
 
   _totSignalSegCnt++;
 
-  if (_met >= (int) _layerCnt)  
+  if (_met >= (int) _layerCnt)
     return;
 
   if (_extMain->_measureRcCnt >= 0) {
@@ -2931,7 +2930,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
     _extMain->updateTotalRes(rseg1, rseg2, this, deltaRes, modelCnt);
 
     if ((rseg1 != NULL) && (rseg2 != NULL)) {  // signal nets
-      _totCCcnt++;                               
+      _totCCcnt++;
       if (rseg1->getNet() == rseg2->getNet()) {  // same signal net
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, true);
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);
@@ -2942,8 +2941,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
         return totLenCovered;
       }
 
-      if (_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold) {  
-
+      if (_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold) {
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, true, true);
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, true);
 
@@ -3018,8 +3016,8 @@ void extMeasure::getDgOverlap(SEQ* sseq,
                               Ath__array1D<SEQ*>* residueSeq)
 {
   int idx = dgContext->get(0)->_ll[0];
-  uint lp = dir ? 0 : 1;  
-  uint wp = dir ? 1 : 0;  
+  uint lp = dir ? 0 : 1;
+  uint wp = dir ? 1 : 0;
   SEQ* rseq;
   SEQ* tseq;
   SEQ* wseq;

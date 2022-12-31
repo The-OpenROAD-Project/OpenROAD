@@ -106,11 +106,10 @@ extSpef::extSpef(odb::dbTech* tech,
   _rRes = false;
   _inputNet = false;
 
-  _cornerCnt = 0;  
+  _cornerCnt = 0;
 
   // for ABNORMAL and sparse map numbers should be a hash table
-  _idMapTable = new Ath__array1D<uint>(
-      128000);  
+  _idMapTable = new Ath__array1D<uint>(128000);
   _nameMapTable = NULL;
   _lastNameMapIndex = 0;
 
@@ -368,7 +367,7 @@ void extSpef::reinitCapTable(Ath__array1D<double*>* table, uint n)
 {
   if (n > table->getSize()) {
     uint prevCnt = table->getSize();
-    table->reSize(n);  
+    table->reSize(n);
     table->resetCnt(prevCnt);
     double* a = new double[_cornerCnt];
     table->add(a);
@@ -1748,10 +1747,9 @@ uint extSpef::writeBlock(char* nodeCoord,
         writeHierInstNameMap();
 
         // Ready for TopNets after spef merging
-        _baseNameMap = lastNetId;  
+        _baseNameMap = lastNetId;
       }
-    }
-    else {
+    } else {
       // avoid writing *PORTS for incremental SPEF
       _btermFound = false;
     }

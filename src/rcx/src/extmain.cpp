@@ -1205,7 +1205,6 @@ bool extGeoVarTable::getThicknessDiff(int n, double& delta_th)
   } else {
     delta_th = 0.001 * _nominal * (1 + thickDiff);
     return true;
-
   }
 }
 bool extGeoThickTable::getThicknessDiff(int x, int y, uint w, double& delta_th)

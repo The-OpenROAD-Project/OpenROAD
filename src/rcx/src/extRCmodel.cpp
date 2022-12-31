@@ -654,7 +654,7 @@ uint extDistWidthRCTable::getWidthIndex(uint w)
 }
 uint extDistWidthRCTable::getDiagWidthIndex(uint m, uint w)
 {
-  if (_lastDiagWidth == NULL)  
+  if (_lastDiagWidth == NULL)
     return -1;
 
   if ((int) w >= _lastDiagWidth->geti(m))
@@ -1918,7 +1918,7 @@ double extMeasure::getDiagUnderCC(extMetRCTable* rcModel,
       int dbUnit = _extMain->_block->getDbUnitsPerMicron();
       rc->printDebugRC_diag(_met, overMet, 0, _width, dist, dbUnit, logger_);
     }
-    return rc->_fringe;  
+    return rc->_fringe;
   } else
     return 0.0;
 }
@@ -2578,10 +2578,8 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
                   n,
                   frCap);
 
-    double res = _extMain->getLefResistance(m->_met,
-                                            m->_w_nm,
-                                            m->_len,
-                                            m->_rIndex);  
+    double res
+        = _extMain->getLefResistance(m->_met, m->_w_nm, m->_len, m->_rIndex);
 
     dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
     rseg1->setResistance(res);
@@ -4093,7 +4091,7 @@ bool extRCModel::readRules(char* name,
       continue;
     }
 
-    if (parser.isKeyword(0, "rcStats")) {  
+    if (parser.isKeyword(0, "rcStats")) {
       _layerCnt = parser.getInt(2);
       createModelTable(1, _layerCnt);
       for (uint kk = 0; kk < _modelCnt; kk++)
@@ -4149,7 +4147,7 @@ bool extRCModel::readRules(char* name,
             return false;
           }
         }
-      } else {  
+      } else {
         createModelTable(1, _layerCnt);
 
         for (uint kk = 0; kk < _modelCnt; kk++) {
@@ -4179,7 +4177,7 @@ bool extRCModel::readRules(char* name,
           skipModel = false;
           modelIndex = jj;
         }
-      } else {  
+      } else {
         if (modelIndex)
           skipModel = true;
       }
@@ -4343,7 +4341,7 @@ bool extRCModel::measurePatternVar(extMeasure* m,
     if (m->_benchFlag) {
       writeBenchWires(wfp, m);
     } else {
-      if (m->_3dFlag) {  
+      if (m->_3dFlag) {
         writeRuleWires_3D(wfp, m, wireCnt);
         writeRaphaelCaps3D(wfp, m, wireCnt);
       } else {

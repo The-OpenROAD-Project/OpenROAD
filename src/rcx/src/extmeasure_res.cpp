@@ -334,7 +334,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   bool found = false;
   extDistRC* rc2 = _measureTableR[1]->geti(0);
   if (rc2 == NULL)
-    return rc1;  
+    return rc1;
 
   if (dist1 <= rc1->_sep) {
     index_dist = 0;
@@ -433,8 +433,8 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
                                   Ath__array1D<SEQ*>* residueSeq)
 {
   int idx = 1;
-  uint lp = dir ? 0 : 1;  
-  uint wp = dir ? 1 : 0;  
+  uint lp = dir ? 0 : 1;
+  uint wp = dir ? 1 : 0;
   SEQ* rseq;
   SEQ* tseq;
   SEQ* wseq;

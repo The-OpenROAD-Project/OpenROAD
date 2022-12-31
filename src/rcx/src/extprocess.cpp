@@ -1546,7 +1546,7 @@ extVarTable* extVariation::readVarTable(Ath__parser* parser,
                                         const char* key3,
                                         const char* endKey)
 {
-  extVarTable* V = new extVarTable(20);  
+  extVarTable* V = new extVarTable(20);
   if (V->readWidthSpacing2D(parser, key1, key2, key3, endKey) < 1) {
     logger_->warn(RCX, 155, "Can't read VarTable section: <{}>", key3);
     delete V;

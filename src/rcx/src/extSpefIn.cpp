@@ -186,7 +186,7 @@ uint extSpef::getNodeCap(dbSet<dbRSeg>& rcSet, uint capNodeId, double* totCap)
 
   resetCap(totCap);
 
-  double cap[10];  
+  double cap[10];
   for (rc_itr = rcSet.begin(); rc_itr != rcSet.end(); ++rc_itr) {
     dbRSeg* rc = *rc_itr;
 
@@ -645,7 +645,6 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
 
   double capVal;
   if (capWord != NULL && _inputNet && _rCap) {
-
     uint capCnt = _nodeParser->mkWords(capWord);
     if (_diff) {
       diffGndCap(cornerNet, capCnt, capId);
@@ -2437,8 +2436,7 @@ uint extSpef::readBlock(uint debug,
         return 0;
       }
       _db_ext_corner = corner;
-    }
-    else if ((corner < 0) && (_cornerCnt == 1)) {
+    } else if ((corner < 0) && (_cornerCnt == 1)) {
       _db_ext_corner = 0;
     }
 

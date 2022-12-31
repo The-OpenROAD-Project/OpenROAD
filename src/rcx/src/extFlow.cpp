@@ -1541,16 +1541,16 @@ uint extMain::couplingFlow(Rect& extRect,
       lo_gs[dir] = gs_limit;
       hi_gs[dir] = hiXY;
 
-        fill_gs4(dir,
-                 ll,
-                 ur,
-                 lo_gs,
-                 hi_gs,
-                 layerCnt,
-                 dirTable,
-                 pitchTable,
-                 widthTable,
-                 NULL);
+      fill_gs4(dir,
+               ll,
+               ur,
+               lo_gs,
+               hi_gs,
+               layerCnt,
+               dirTable,
+               pitchTable,
+               widthTable,
+               NULL);
 
       m->_rotatedGs = getRotatedFlag();
       m->_pixelTable = _geomSeq;
