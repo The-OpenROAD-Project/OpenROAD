@@ -40,7 +40,6 @@
 
 #include "utl/Logger.h"
 
-//#define SKIP_SOLVER
 namespace rcx {
 
 using namespace odb;
@@ -4500,7 +4499,6 @@ double extRCModel::measureResistance(extMeasure* m,
 }
 bool extRCModel::solverStep(extMeasure* m)
 {
-#ifndef SKIP_SOLVER
   if (_runSolver) {
     if (m->_3dFlag)
       runSolver("rc3 -n -x -z");
@@ -4508,7 +4506,6 @@ bool extRCModel::solverStep(extMeasure* m)
       runSolver("rc2 -n -x -z");
     return true;
   }
-#endif
 
   return false;
 }
