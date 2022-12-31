@@ -492,7 +492,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.litho,
                             opts.net,
                             opts.bbox,
-                            opts.ibox,
                             opts.cc_up,
                             opts.cc_model,
                             opts.signal_table,

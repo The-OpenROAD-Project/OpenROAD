@@ -1710,7 +1710,6 @@ class extMain
   bool _reExtract;
   bool _allNet;
   bool _eco;
-  odb::Rect* _ibox;
 
   bool _getBandWire;
   bool _printBandInfo;
@@ -2297,7 +2296,6 @@ class extMain
                        bool litho,
                        const char* netNames,
                        const char* bbox,
-                       const char* ibox,
                        uint cc_up,
                        uint ccFlag,
                        uint use_signal_table,

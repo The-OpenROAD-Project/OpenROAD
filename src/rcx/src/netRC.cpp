@@ -2549,7 +2549,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               bool litho,
                               const char* netNames,
                               const char* bbox,
-                              const char* ibox,
                               uint cc_up,
                               uint ccFlag,
                               uint use_signal_table,
@@ -2632,9 +2631,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     // if (cmp_file!=NULL)
     //	readCmpFile(cmp_file);
   }
-  // removed opptions
-  // else if (setMinTypMax(minModel, typModel, maxModel, cmp_file,
-  // density_model, litho, 	setMin, setTyp, setMax, extDbCnt)<0) {
   else if (setMinTypMax(false,
                         false,
                         false,
@@ -2650,28 +2646,9 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     return 0;
   }
   _foreign = false;  // extract after read_spef
-  // }
 
-  if (ibox) {
-    logger_->info(RCX, 130, "Ibox = {}", ibox);
-    Ath__parser* parser = new Ath__parser();
-    parser->mkWords(ibox, NULL);
-    _ibox = new Rect(atoi(parser->get(0)),
-                     atoi(parser->get(1)),
-                     atoi(parser->get(2)),
-                     atoi(parser->get(3)));
-    logger_->info(RCX,
-                  131,
-                  "_ibox = {} {} {} {}",
-                  _ibox->xMin(),
-                  _ibox->yMin(),
-                  _ibox->xMax(),
-                  _ibox->yMax());
-    eco = true;
-  } else
-    _ibox = NULL;
   if (eco) {
-    _block->getWireUpdatedNets(inets, _ibox);
+    _block->getWireUpdatedNets(inets);
     if (inets.size() != 0)
       logger_->info(RCX, 132, "Eco extract {} nets.", inets.size());
     else {

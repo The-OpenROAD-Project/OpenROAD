@@ -414,7 +414,6 @@ extMain::extMain(uint menuId)
       _origSpefFilePrefix(nullptr),
       _newSpefFilePrefix(nullptr),
       _excludeCells(nullptr),
-      _ibox(nullptr),
       _seqPool(nullptr),
       _dgContextBaseTrack(nullptr),
       _dgContextLowTrack(nullptr),
