@@ -2847,7 +2847,6 @@ void extMeasure::calcDiagRC(int rsegId1,
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
     capTable[ii] = len * getDiagUnderCC(rcModel, diagWidth, diagDist, tgtMet);
-#ifdef DAVID_ACC_08_02
     _rc[ii]->_diag += capTable[ii];
     double ccTable[10];
     if (_dist > 0) {
@@ -2861,7 +2860,6 @@ void extMeasure::calcDiagRC(int rsegId1,
         _rc[ii]->_coupling += ccTable[ii];
       }
     }
-#endif
   }
   dbRSeg* rseg1 = NULL;
   dbRSeg* rseg2 = NULL;
