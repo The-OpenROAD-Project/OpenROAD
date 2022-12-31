@@ -1730,7 +1730,6 @@ class extMain
   // 3: NO signal table,  rotation
   bool _rotatedGs;
   uint _ccContextDepth;
-  uint _debug;
   int _ccMinX;
   int _ccMinY;
   int _ccMaxX;
@@ -2256,7 +2255,7 @@ class extMain
 
   // void extCompute(void *a, void *b, int c);
 
-  uint setupSearchDb(const char* bbox, uint debug, odb::ZInterface* Interface);
+  uint setupSearchDb(const char* bbox, odb::ZInterface* Interface);
   odb::ZPtr<odb::ISdb> getCcSdb();
   odb::ZPtr<odb::ISdb> getNetSdb();
   uint computeXcaps(uint boxType);
@@ -2321,7 +2320,6 @@ class extMain
                        uint use_signal_table,
                        double resBound,
                        bool mergeViaRes,
-                       uint debug,
                        int cc_preseve_geom,
                        bool re_extract,
                        bool eco,

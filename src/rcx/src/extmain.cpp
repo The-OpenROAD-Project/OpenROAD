@@ -483,7 +483,6 @@ extMain::extMain(uint menuId)
   _alwaysNewGs = true;
   _ccUp = 0;
   _couplingFlag = 0;
-  _debug = 0;
   _ccContextDepth = 0;
   _mergeViaRes = false;
   _mergeResBound = 0.0;

@@ -1260,7 +1260,7 @@ void extMain::setExtractionBbox(const char* bbox)
   }
 }
 
-uint extMain::setupSearchDb(const char* bbox, uint debug, ZInterface* Interface)
+uint extMain::setupSearchDb(const char* bbox, ZInterface* Interface)
 {
   if (_couplingFlag == 0)
     return 0;
@@ -1344,17 +1344,6 @@ uint extMain::setupSearchDb(const char* bbox, uint debug, ZInterface* Interface)
                               _seqPool);
   if (!_CCnoPowerSource && !_CCnoPowerTarget)
     _extNetSDB->addPowerNets(_block, _dbPowerId, true);
-  // TODO-EXT: add obstructions
-
-  if (_debug && (_couplingFlag > 1)) {
-    if (adsNewComponent(Interface->_context, ZCID(Sdb), _extCcapSDB) != Z_OK) {
-      assert(0);
-    }
-    ZALLOCATED(_extCcapSDB);
-
-    _extCcapSDB->initSearchForNets(_tech, _block);
-    _extCcapSDB->setDefaultWireType(_CCsegId);
-  }
 
   return 0;
 }
@@ -2567,7 +2556,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               uint use_signal_table,
                               double resBound,
                               bool mergeViaRes,
-                              uint debug,
                               int preserve_geom,
                               bool re_extract,
                               bool eco,
@@ -2589,91 +2577,10 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   _cc_band_tracks = ccBandTracks;
   _use_signal_tables = use_signal_table;
 
-  if (debug == 703) {
-    logger_->info(
-        RCX, 473, "Initial Tiling {} ...", getBlock()->getName().c_str());
-
-    Rect maxRect = _block->getDieArea();
-    logger_->info(RCX,
-                  125,
-                  "Tiling for die area {}x{} = {} {}  {} {}",
-                  maxRect.dx(),
-                  maxRect.dy(),
-                  maxRect.xMin(),
-                  maxRect.yMin(),
-                  maxRect.xMax(),
-                  maxRect.yMax());
-
-    _use_signal_tables = 3;
-    createWindowsDB(rlog, maxRect, ccBandTracks, ccFlag, use_signal_table);
-    return 0;
-  }
-  if (debug == 803) {
-    Rect maxRect = _block->getDieArea();
-
-    _use_signal_tables = 3;
-    uint wireCnt = fillWindowsDB(rlog, maxRect, use_signal_table);
-    logger_->info(RCX,
-                  126,
-                  "Block {} has {} ext Wires",
-                  getBlock()->getName().c_str(),
-                  wireCnt);
-    return wireCnt;
-  }
   bool initTiling = false;
   bool windowFlow = false;
   bool skipExtractionAfterRcGen = false;
   bool doExt = false;
-  if (debug == 101) {
-    _batchScaleExt = false;
-    debug = 0;
-  } else if (debug == 100) {
-    _reuseMetalFill = true;
-    debug = 0;
-  } else if (debug == 99) {
-    _extNetSDB = netSdb;
-    return 0;  // "-test 99", to check sdb tracks and wires
-  } else if (debug == 103) {
-    _getBandWire = true;
-    debug = 0;
-  } else if (debug == 104) {
-    _printBandInfo = true;
-    debug = 0;
-  } else if (debug == 105) {
-    _getBandWire = true;
-    _printBandInfo = true;
-    debug = 0;
-  } else if (debug == 106) {
-    _extRun = 0;
-    removeExt();
-    debug = 0;
-  } else if (debug == 104) {
-    _extRun = 0;
-    removeExt();
-    debug = 0;
-  } else if (debug == 501) {
-    windowFlow = true;
-    debug = 0;
-    _getBandWire = false;
-  } else if (debug == 503) {
-    windowFlow = true;
-    debug = 0;
-    _getBandWire = false;
-    doExt = true;
-  } else if (debug == 603) {
-    windowFlow = false;
-    debug = 0;
-    _getBandWire = false;
-    doExt = false;
-    skipExtractionAfterRcGen = true;
-  } else if (debug == 773) {
-    windowFlow = false;
-    debug = 0;
-    _getBandWire = false;
-    doExt = false;
-    skipExtractionAfterRcGen = false;
-    initTiling = true;
-  }
   _diagFlow = true;
 
   int detailRlog = 0;
@@ -2695,7 +2602,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     _reExtract = re_extract;
     _ccPreseveGeom = preserve_geom;
 
-    _debug = debug;
     if (!_lefRC) {
       _usingMetalPlanes = gs;
       _ccUp = cc_up;
@@ -2726,13 +2632,11 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       || ((_processCornerTable == NULL) && (extRules != NULL))) {
     const char* rulesfile
         = extRules ? extRules : _prevControl->_ruleFileName.c_str();
-    if (debug != 777) {
-      if (!setCorners(rulesfile,
-                      cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
-                                    // eventually: rulesFileName
-        logger_->info(RCX, 128, "skipping Extraction ...");
-        return 0;
-      }
+    if (!setCorners(rulesfile,
+                    cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
+                                  // eventually: rulesFileName
+      logger_->info(RCX, 128, "skipping Extraction ...");
+      return 0;
     }
     // if (cmp_file!=NULL)
     //	readCmpFile(cmp_file);
@@ -2885,7 +2789,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   }
   // else
   else if (_cc_band_tracks == 0) {
-    setupSearchDb(bbox, debug, Interface);
+    setupSearchDb(bbox, Interface);
   }
 
   dbNet* net;
@@ -2927,7 +2831,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
 
-  if ((p == NULL) && (debug != 777) && !initTiling) {
+  if ((p == NULL) && !initTiling) {
     if (_power_extract_only) {
       powerRCGen();
       return 1;
@@ -2954,10 +2858,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     }
 
     logger_->info(RCX, 40, "Final {} rc segments", cnt);
-  } else if (debug == 777) {
-    _debug = 0;
-  } else
-    _debug = 0;
+  }
 
   if (rlog)
     AthResourceLog("after makeNetRCsegs", detailRlog);
@@ -2991,10 +2892,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
         AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
-    if (_debug) {
-      if (_debug != 102)
-        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
-    } else {
       logger_->info(RCX,
                     440,
                     "Coupling threshhold is {:.4f} fF, coupling capacitance "
@@ -3108,7 +3005,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
         fclose(m._dgContextFile);
         m._dgContextFile = NULL;
       }
-    }
+
     removeDgContextArray();
     if (_printFile) {
       fclose(_printFile);
@@ -3124,12 +3021,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
     if (rlog)
       AthResourceLog("after couplingCaps", detailRlog);
-
-    if (_debug)
-      computeXcaps(0);
-
-    //		if (rlog)
-    //			AthResourceLog ("CCcap", detailRlog);
 
     if (preserve_geom != 1 && !_useDbSdb) {
       if ((_extNetSDB != NULL) && (preserve_geom == 3 || preserve_geom == 0)) {

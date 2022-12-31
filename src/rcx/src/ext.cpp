@@ -478,7 +478,6 @@ bool Ext::extract(ExtractOptions opts)
   }
 
   const int ccBandTracks = opts.cc_band_tracks;
-  const uint extdbg = 0;
 
   _ext->set_debug_nets(opts.debug_net);
   _ext->skip_via_wires(opts.skip_via_wires);
@@ -503,7 +502,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.signal_table,
                             opts.max_res,
                             !opts.no_merge_via_res,
-                            extdbg,
                             opts.preserve_geom,
                             opts.re_run,
                             opts.eco,
