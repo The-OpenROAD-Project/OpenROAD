@@ -330,11 +330,11 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   // Create physical hierarchy tree in a post-order DFS manner
   logger_->report("Call multi level clustering max level: {}", max_num_level_);
+
   multiLevelCluster(root_cluster_);  // Recursive call for creating the tree
   logger_->report("Print Physical Hierarchy Tree ** max_hier_level: {}",
                   max_hier_level_);
   printPhysicalHierarchyTree(root_cluster_, 0);
-
 
   //
   // Break leaf clusters into a standard-cell cluster and a hard-macro cluster
@@ -361,7 +361,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       "Print Physical Hierarchy Tree after breaking mixed clusters **");
   printPhysicalHierarchyTree(root_cluster_, 0);
 
-  //logger_->error(MPL, 9991, "Force exit");
+  // logger_->error(MPL, 9991, "Force exit");
 
   // Map the macros in each cluster to their HardMacro objects
   for (auto& [cluster_id, cluster] : cluster_map_) {
@@ -742,6 +742,19 @@ void HierRTLMP::createBundledIOs()
 //
 void HierRTLMP::multiLevelCluster(Cluster* parent)
 {
+  bool force_split = false;
+  if (level_ == 0) {
+    // check if root cluster is below the max size of a leaf cluster
+    // Force create child clusters in this case
+    int leaf_cluster_size
+        = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1);
+    if (parent->getNumStdCell() < leaf_cluster_size)
+      force_split = true;
+    logger_->report(
+        "Set fource split: leaf cluster size: {} root cluster size: {}",
+        leaf_cluster_size,
+        parent->getNumStdCell());
+  }
   if (level_ >= max_num_level_) {  // limited by the user-specified parameter
     return;
   }
@@ -781,8 +794,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
                   max_num_inst_,
                   min_num_inst_);
 
-  if (/*parent->getNumMacro() > max_num_macro_ ||*/ parent->getNumStdCell()
-      > max_num_inst_) {
+  if (force_split || (parent->getNumStdCell() > max_num_inst_)) {
     if ((max_num_level_ - level_) > max_hier_level_)
       max_hier_level_ = max_num_level_ - level_;
     breakCluster(parent);   // Break the parent cluster into children clusters
