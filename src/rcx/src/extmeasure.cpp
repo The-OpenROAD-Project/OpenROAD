@@ -3906,9 +3906,8 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     return;
   }
 
-  dbRSeg* srseg = NULL;
   if (_rsegSrcId > 0)
-    srseg = dbRSeg::getRSeg(_block, _rsegSrcId);
+    dbRSeg::getRSeg(_block, _rsegSrcId);
   for (; idx < (int) dgContext->getCnt(); idx++) {
     tseq = dgContext->get(idx);
     if (tseq->_ur[lp] <= covered)
@@ -3924,28 +3923,6 @@ void extMeasure::getDgOverlap(SEQ* sseq,
       residueSeq->add(rseq);
       break;
     }
-#ifdef CHECK_SAME_NET
-    dbRSeg* trseg = NULL;
-    if (tseq->type > 0)
-      trseg = dbRSeg::getRSeg(_block, tseq->type);
-    if ((trseg != NULL) && (srseg != NULL)
-        && (trseg->getNet() == srseg->getNet())) {
-      if ((tseq->_ur[lp] >= sseq->_ur[lp])
-          || (idx == (int) dgContext->getCnt() - 1)) {
-        rseq = _seqPool->alloc();
-        rseq->_ll[wp] = sseq->_ll[wp];
-        rseq->_ur[wp] = sseq->_ur[wp];
-        rseq->_ll[lp] = covered;
-        rseq->_ur[lp] = sseq->_ur[lp];
-        assert(rseq->_ur[lp] >= rseq->_ll[lp]);
-        residueSeq->add(rseq);
-        break;
-      } else
-        continue;
-    }
-#else
-    (void) srseg;  // silence unused warning
-#endif
     wseq = _seqPool->alloc();
     wseq->type = tseq->type;
     wseq->_ll[wp] = tseq->_ll[wp];
