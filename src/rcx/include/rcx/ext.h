@@ -300,11 +300,6 @@ class Ext
             int layer,
             const std::string& file);
   bool count(bool signal_wire_seg, bool power_wire_seg);
-  bool read_qcap(const std::string& file_name,
-                 const std::string& cap_file,
-                 bool skip_bterms,
-                 bool no_qcap,
-                 const std::string& design);
   bool rc_tree(float max_cap, uint test, int net, const std::string& print_tag);
   bool net_stats(std::list<int>& net_ids,
                  const std::string& tcap,

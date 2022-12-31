@@ -912,12 +912,6 @@ class extMeasure
                      uint covered = 0);
 
   bool parse_setLayer(Ath__parser* parser1, uint& layerNum, bool print = false);
-  odb::dbNet* createSingleWireNet(char* name,
-                                  uint level,
-                                  bool viaFlag,
-                                  bool debug,
-                                  bool skipVias,
-                                  bool skipBterms = false);
   extDistRC* areaCapOverSub(uint modelNum, extMetRCTable* rcModel);
 
   extDistRC* getUnderLastWidthDistRC(extMetRCTable* rcModel, uint overMet);
@@ -934,22 +928,9 @@ class extMeasure
                                 uint tgtWidth,
                                 uint overMet);
 
-  int readQcap(extMain* extmain,
-               const char* filename,
-               const char* design,
-               const char* capFile,
-               bool skipBterms,
-               odb::dbDatabase* db);
-  int readAB(extMain* extMain,
-             const char* filename,
-             const char* design,
-             const char* capFile,
-             bool skipBterms,
-             odb::dbDatabase* db);
   odb::dbRSeg* getRseg(const char* netname,
                        const char* capMsg,
                        const char* tableEntryName);
-  int readCapFile(const char* filename, uint& ccCnt);
   bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
 
   void swap_coords(odb::SEQ* s);
@@ -2462,7 +2443,6 @@ class extMain
 
   uint createNetShapePropertires(odb::dbBlock* blk);
   void resetGndCaps();
-  uint rcGenTile(odb::dbBlock* blk);
   uint mkTileNets(uint dir,
                   int* lo_sdb,
                   int* hi_sdb,
@@ -2500,33 +2480,6 @@ class extMain
   uint getNetBbox(odb::dbNet* net, odb::Rect* maxRect[2]);
 
   static odb::dbRSeg* getRseg(odb::dbNet* net, uint shapeId, Logger* logger);
-
-  static odb::dbNet* getDstNet(odb::dbNet* net,
-                               odb::dbBlock* dstBlock,
-                               Ath__parser* parser);
-  static odb::dbRSeg* getMainRSeg(odb::dbNet* srcNet,
-                                  int srcShapeId,
-                                  odb::dbNet* dstNet);
-  static odb::dbRSeg* getMainRSeg2(odb::dbNet* srcNet,
-                                   int srcShapeId,
-                                   odb::dbNet* dstNet);
-  static odb::dbRSeg* getMainRSeg3(odb::dbNet* srcNet,
-                                   int srcShapeId,
-                                   odb::dbNet* dstNet);
-  static uint assemblyCCs(odb::dbBlock* mainBlock,
-                          odb::dbBlock* blk,
-                          uint cornerCnt,
-                          uint& missCCcnt,
-                          Logger* logger);
-  static odb::dbRSeg* getMainRseg(odb::dbCapNode* node,
-                                  odb::dbBlock* blk,
-                                  Ath__parser* parser,
-                                  Logger* logger);
-  static void updateRseg(odb::dbRSeg* rc1, odb::dbRSeg* rseg2, uint cornerCnt);
-  static uint assembly_RCs(odb::dbBlock* mainBlock,
-                           odb::dbBlock* blk,
-                           uint cornerCnt,
-                           Logger* logger);
 
   uint addRCtoTop(odb::dbBlock* blk, bool write_spef);
   uint createCapNodes(odb::dbNet* net,

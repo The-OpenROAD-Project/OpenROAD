@@ -390,36 +390,6 @@ bool Ext::get_corners(std::list<std::string>& corner_list)
   return TCL_OK;
 }
 
-bool Ext::read_qcap(const std::string& file_name,
-                    const std::string& cap_file,
-                    bool skip_bterms,
-                    bool no_qcap,
-                    const std::string& design)
-{
-  if (file_name.empty()) {
-    logger_->warn(RCX, 32, "-file flag is required on the command!");
-    return TCL_OK;
-  }
-
-  extMeasure m;
-  if (!no_qcap)
-    m.readQcap(_ext,
-               file_name.c_str(),
-               design.c_str(),
-               cap_file.c_str(),
-               skip_bterms,
-               _db);
-  else
-    m.readAB(_ext,
-             file_name.c_str(),
-             design.c_str(),
-             cap_file.c_str(),
-             skip_bterms,
-             _db);
-
-  return TCL_OK;
-}
-
 bool Ext::get_ext_db_corner(int& index, const std::string& name)
 {
   index = _ext->getDbCornerIndex(name.c_str());
