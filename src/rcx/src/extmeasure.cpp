@@ -1606,13 +1606,6 @@ uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
   if ((len1 >= 0) && (len1 <= _len)) {
     return len1;
   } else {
-#ifdef DEBUG_gs
-    logger_->info(RCX,
-                  454,
-                  "pixelTable gave len {}, bigger than expected {}",
-                  len1,
-                  _len);
-#endif
     return 0;
   }
 }
@@ -1648,13 +1641,6 @@ uint extMeasure::getOverlapSeq(uint met,
   if ((len1 >= 0) && (len1 <= _len)) {
     return len1;
   } else {
-#ifdef DEBUG_gs
-    logger_->info(RCX,
-                  455,
-                  "pixelTable gave len {}, bigger than expected {}",
-                  len1,
-                  _len);
-#endif
     return 0;
   }
 }
@@ -1834,16 +1820,6 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
     // if ((len1>=0)&&(len1<=_len))
     if (len1 >= 0)
       len += len1;
-#ifdef DEBUG_gs
-    else
-      //			fprintf(stdout, "pixelTable gave len %d, bigger
-      // than expected %d\n", len1, _len);
-      logger_->info(RCX,
-                    457,
-                    "pixelTable gave len {}, bigger than expected {}",
-                    len1,
-                    _len);
-#endif
   }
   if (len > _len)
     return 0;
