@@ -29,9 +29,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef EXT_SI
-#include "../tmg/tmg_db.h"
-#endif
 #include <math.h>
 
 #include <algorithm>
@@ -44,10 +41,6 @@
 namespace rcx {
 
 using utl::RCX;
-
-#ifdef EXT_SI
-void initExtSi(dbNet* victim, bool is_min, bool is_rise, tmg_db* tm);
-#endif
 
 void extRcTree::free_exttree(extTnode* driver)
 {
@@ -982,12 +975,6 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
   double res[ADS_MAX_CORNER];
   uint cnt = 1;
   bool firstFlag = false;
-
-#ifdef EXT_SI
-  tmg_db* tm = tmg_db::getTmgDb();
-  if (mcf < 0)
-    initExtSi(_cornerNet, is_min, is_rise, tm);
-#endif
 
   zrc->getGndTotalCap(&gndcap[0], &totalcap[0], mcf);
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
