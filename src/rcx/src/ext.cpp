@@ -101,9 +101,6 @@ bool Ext::load_model(const std::string& name,
 
     _ext->setupMapping(3 * numOfNet);
   } else {
-    // fprintf(stdout, "\nHave to specify options:\n\t-lef_rc to read resistance
-    // and capacitance values from LEF or \n\t-file to read high accuracy RC
-    // models\n");
     logger_->info(
         RCX,
         151,
@@ -676,10 +673,6 @@ bool Ext::diff_spef(const DiffOptions& opt)
   Ath__parser parser;
   parser.mkWords(opt.file);
 
-  // char* excludeSubWord = (char*) opt.exclude_net_subword.c_str();
-  // char* subWord        = (char*) opt.net_subword.c_str();
-  // char* statsFile      = (char*) opt.rc_stats_file.c_str();
-
   _ext->readSPEF(parser.get(0),
                  (char*) opt.net,
                  false /*force*/,
@@ -714,9 +707,6 @@ bool Ext::diff_spef(const DiffOptions& opt)
                  true /*diff*/,
                  false /*calibrate*/,
                  0);
-
-  // for (uint ii=1; ii<parser.getWordCnt(); ii++)
-  //	_ext->readSPEFincr(parser.get(ii));
 
   return 0;
 }

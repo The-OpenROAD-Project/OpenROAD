@@ -99,7 +99,7 @@ int extMeasure::computeResDist(SEQ* s,
 
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
-    // Check for same track: 032021 DF
+    // Check for same track
     bool same_track = false;
     Ath__array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
     int cnt = (int) dTable->getCnt();
@@ -130,7 +130,6 @@ int extMeasure::computeResDist(SEQ* s,
     tableCopyP(&residueTable, &tmpTable);
     residueTable.resetCnt();
   }
-  // seq_release(&tmpTable);
   if (diagTable != NULL)
     tableCopyP(&tmpTable, diagTable);
   else
@@ -335,7 +334,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   bool found = false;
   extDistRC* rc2 = _measureTableR[1]->geti(0);
   if (rc2 == NULL)
-    return rc1;  // TO TEST
+    return rc1;  
 
   if (dist1 <= rc1->_sep) {
     index_dist = 0;
@@ -414,7 +413,6 @@ extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
   if (wIndex < 0)
     return NULL;
 
-  // extDistRC *rc= _rcDistTable[mou][wIndex]->findRes(dist1, dist2, false);
   extDistRC* rc = _rcDistTable[mou][wIndex]->getComputeRC_res(dist1, dist2);
 
   return rc;
@@ -435,8 +433,8 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
                                   Ath__array1D<SEQ*>* residueSeq)
 {
   int idx = 1;
-  uint lp = dir ? 0 : 1;  // x : y
-  uint wp = dir ? 1 : 0;  // y : x
+  uint lp = dir ? 0 : 1;  
+  uint wp = dir ? 1 : 0;  
   SEQ* rseq;
   SEQ* tseq;
   SEQ* wseq;

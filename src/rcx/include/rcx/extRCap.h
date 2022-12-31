@@ -1545,7 +1545,6 @@ class extWindow
   void reportProcessedWires(bool rlog);
   int getDeallocLimit();
   void updateLoBounds(bool reportFlag);
-  void get_extractLimit(extWindow* e);
   void updateExtLimits(int** limitArray);
   void printExtLimits(FILE* fp);
   void printLimits(FILE* fp,
@@ -1944,7 +1943,6 @@ class extMain
     _debug_net_id = 0;
     if (nets != NULL) {
       _debug_net_id = atoi(nets);
-      // TODO: 531 - make a list
     }
   }
 
@@ -2196,8 +2194,6 @@ class extMain
   double updateTotalCap(odb::dbRSeg* rseg, double cap, uint modelIndex);
   bool updateCoupCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, int jj, double v);
   double updateRes(odb::dbRSeg* rseg, double res, uint model);
-
-  // void extCompute(void *a, void *b, int c);
 
   uint setupSearchDb(const char* bbox, odb::ZInterface* Interface);
   odb::ZPtr<odb::ISdb> getCcSdb();
@@ -2501,7 +2497,6 @@ class extMain
   void getScaledGndC(int sidx, double& cap);
   void getScaledCC(int sidx, double& cap);
   void genScaledExt();
-  // void makeCornerNameMap(char *buff, int cornerCnt, bool spef);
   void makeCornerNameMap();
   void getExtractedCorners();
   void makeCornerMapFromExtControl();
@@ -2754,11 +2749,7 @@ class extMain
                       uint* capNodeMap,
                       uint baseNum);
   uint createRSegs(odb::dbNet* net, odb::dbNet* parentNet, uint* capNodeMap);
-  // uint createCCsegs(odb::dbNet *net, odb::dbNet *parentNet, uint
-  // *capNodeMap);
   uint write_spef_nets(bool flatten, bool parallel);
-  // uint adjustCapNode(odb::dbNet *net, odb::dbITerm *from_child_iterm, uint
-  // node_num);
   extSpef* getSpef();
   static uint printRSegs(odb::dbNet* net, Logger* logger);
 

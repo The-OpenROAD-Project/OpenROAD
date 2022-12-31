@@ -248,13 +248,6 @@ void extRcTree::initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet)
     odb::dbCapNode* srcNode = odb::dbCapNode::getCapNode(_cornerBlock, srcId);
     odb::dbCapNode* tgtNode = odb::dbCapNode::getCapNode(_cornerBlock, tgtId);
 
-    /*
-    if ( isDangling(srcNode) || isDangling(tgtNode)) {
-            fprintf(stdout, "shape= %d %d (%d-%d) ---> %d (%d-%d)\n",
-    rc->getShapeId(), srcId, srcNode->getChildrenCnt(), srcNode->isTreeNode(),
-                    tgtId, tgtNode->getChildrenCnt(), tgtNode->isTreeNode());
-    }
-    */
     if (!srcNode->isSelect()) {
       _netCapNodeNum.push_back(srcId);
       _cncpy.push_back(srcId);
@@ -337,7 +330,6 @@ extRCnode* extRcTree::init(odb::dbRSeg* zrc,
   _firstBTermIndex = _btermIndexTable->getCnt();
   _firstITermIndex = _itermIndexTable->getCnt();
 
-  // uint childCnt= capNode->getChildrenCnt()+1;
   capNode->getChildrenCnt();
 
   allocNode(0, id);
@@ -371,11 +363,6 @@ extRCnode* extRcTree::allocNode(uint childrenCnt,
   extRCnode* node = _rcPool->alloc();
   assert(node);
   node->reset(_cornerCnt);
-
-  // if (childrenCnt>0)
-  //	*id= _nodeTable->add(node);
-  // else
-  //	*id= _nodeTable->add(NULL);
 
   *id = _nodeTable->add(node);
 
@@ -413,7 +400,6 @@ extTnode* extRcTree::makeTnode(uint nodeId, uint& n)
   if (mapId > 0) {
     tnode = _tnodeTable[mapId];
   } else {
-    //_map[nodeId]= n;
     _map->set(nodeId, n);
     tnode = new extTnode(node, _cornerCnt);
     _tnodeTable[n++] = tnode;
@@ -431,7 +417,6 @@ extTnode* extRcTree::makeTnode(uint nodeId, uint& n)
 uint extRcTree::makeGraph(uint netId)
 {
   for (uint jj = 0; jj < _nodeTable->getCnt() + 1; jj++) {
-    //_map[jj]= 0;
     _map->set(jj, 0);
   }
   if (_tnodeTable != NULL)
@@ -485,7 +470,6 @@ uint extRcTree::printTree(FILE* fp, uint netId, const char* msg)
         break;
       fprintf(fp, "\t%d", _indexTable->get(jj));
     }
-    // fprintf(fp, "\n");
     for (uint jj = 0; jj < _cornerCnt; jj++)
       fprintf(fp, "\t\t\t\t\tR= %g  C= %g\n", node->_res[jj], node->_cap[jj]);
     fprintf(fp, "\t\t\t\t\tX= %d Y= %d\n", node->_x, node->_y);
@@ -558,7 +542,6 @@ void extRcTree::duplicateJunction(extRCnode* node, uint cnt)
   }
   jnode->_x = node->_x;
   jnode->_y = node->_y;
-  // jnode->_termMap = node->_termMap;
   jnode->_netId = node->_netId;
   jnode->_capndId = node->_capndId;
   jnode->_splitCnt = node->_splitCnt;
@@ -692,33 +675,6 @@ bool extRcTree::getCoords(odb::dbNet* net,
   return horizontal;
 }
 
-/*
-                        if (prevNode!=NULL) {
-                                // node->_cap= cap; //TODO: add % if cut in the
-   middle of wire
-                                // node->_res= res;
-
-                                addChild(prevNode, nodeId);
-                                if (tgtNodeFlag)
-                                        prevNode= NULL;
-                                else
-                                        prevNode= node;
-                        }
-                        else { // tgtNodeFlag || cap>cap_max
-                                extRCnode *junctionNode=
-   _junctionNodeTable->geti(netLocalCn(firstRC->getSourceNode())); if
-   (junctionNode!=NULL) { addChild(junctionNode, nodeId);
-                                }
-                                prevNode= node;
-                                if (tgtNodeFlag)
-                                        prevNode= NULL;
-                        }
-                        if (tgtNodeFlag) {
-                                uint index= netLocalCn(lastRC->getTargetNode());
-                                _junctionNodeTable->set(index, node);
-                                firstRC= NULL;
-                        }
-*/
 extRCnode* extRcTree::makeNode(uint startingNodeId,
                                uint endingNodeId,
                                odb::dbCapNode* tgtNode,
@@ -732,13 +688,12 @@ extRCnode* extRcTree::makeNode(uint startingNodeId,
                                FILE* dbgFP)
 {
   uint nodeId = 0;
-  // uint childCnt= tgtNode->getChildrenCnt()+1;
   uint childCnt = tgtNode->getChildrenCnt();
   extRCnode* node = allocNode(childCnt, &nodeId);
 
   if (prevNode != NULL) {  // Only if cut wire
     addChild(prevNode, nodeId);
-  } else {  // tgtNodeFlag || cap>cap_max
+  } else {  
     extRCnode* junctionNode = _junctionNodeTable->geti(startingNodeId);
     if (junctionNode != NULL) {
       addChild(junctionNode, nodeId);
@@ -747,8 +702,6 @@ extRCnode* extRcTree::makeNode(uint startingNodeId,
   prevNode = NULL;
   if (fractionFlag)
     prevNode = node;
-  //	else if (! ((tgtNode->getChildrenCnt()==0)&&(!tgtNode->isTreeNode()))
-  //		prevNode= node;
 
   if (!fractionFlag) {
     _junctionNodeTable->set(endingNodeId, node);
@@ -957,11 +910,6 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
     return NULL;
   odb::dbRSeg* zrc = _cornerNet->getZeroRSeg();
 
-  //	odb::dbCapNode *chkNode= odb::dbCapNode::getCapNode(_block,
-  // rc->getTargetNode()); if (chkNode->isForeign())
-  //        return NULL;
-
-  //	uint size= rSet.size();
   uint firstNodeId;
   if (!init(zrc, rc, rSet, resetFlag, &firstNodeId))
     return NULL;
@@ -969,7 +917,6 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
   extRCnode* prevNode = NULL;
 
   odb::dbRSeg* firstRC = NULL;
-  //	uint nodeId=0;
 
   double gndcap[ADS_MAX_CORNER];
   double totalcap[ADS_MAX_CORNER];
@@ -990,12 +937,9 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
 
     uint srcId = rc->getSourceNode();
     uint tgtId = rc->getTargetNode();
-    //		odb::dbCapNode *srcNode= odb::dbCapNode::getCapNode(_block,
-    // rc->getSourceNode());
     odb::dbCapNode* tgtNode
         = odb::dbCapNode::getCapNode(_cornerBlock, rc->getTargetNode());
 
-    //		bool srcNodeFlag= srcNode->isTreeNode();
     bool tgtNodeFlag = tgtNode->isTreeNode();
 
     if (cnt == 1) {
@@ -1031,14 +975,6 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
       firstRC = NULL;
       continue;
     }
-    // int x1=0, y1=0, x2=0, y2=0;
-    // if (_foreign)
-    //	rc->getCoords(x2, y2);
-    // else if (shapeId>0)
-    //	//getCoords(net, shapeId, &x1, &y1, &x2, &y2);
-    //	net->getWire()->getCoord((int)shapeId, x2, y2);
-    // else if (tgtNodeFlag)
-    //	return NULL;
     int x2, y2;
     rc->getCoords(x2, y2);
 
@@ -1094,12 +1030,6 @@ extRCnode* extRcTree::makeTree(odb::dbNet* net,
   _tnodeCnt = makeGraph(net->getId());
 
   if (test > 1) {
-    /*
-    if (graphFP!=NULL) {
-            printTree(graphFP, net->getId(), _tnodeCnt);
-            fclose(graphFP);
-    }
-    */
     if (flowFP != NULL)
       fclose(flowFP);
     if (nodeFP != NULL)
@@ -1127,8 +1057,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
                               bool is_rise,
                               bool is_min)
 {
-  // if (net->getWire() == NULL)
-  // 	return NULL;
   if (net->isRCDisconnected())
     return NULL;
   if (!_block->isBufferAltered()) {
@@ -1157,14 +1085,11 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
   return _tnodeTable[0];
 }
 
-// DIMITRIS 8/28/07 void free_exttree(extTnode *driver);
-
 void extRcTree::makeTree(double max_cap, uint test, bool for_buffering)
 {
   odb::dbSet<odb::dbNet> nets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
 
-  //	uint cnt= 0;
   extTnode* tnode = NULL;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -1174,7 +1099,6 @@ void extRcTree::makeTree(double max_cap, uint test, bool for_buffering)
     if ((type == odb::dbSigType::POWER) || (type == odb::dbSigType::GROUND))
       continue;
 
-    // extRCnode* node= makeTree(net->getId(), max_cap, 0, true);
     uint cnt;
     tnode = makeTree(net->getId(),
                      max_cap,

@@ -173,7 +173,6 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
     dbSet<dbTechNonDefaultRule> nd_rules = opt->_tech->getNonDefaultRules();
     dbSet<dbTechNonDefaultRule>::iterator nditr;
     dbTechLayerRule* tst_rule;
-    //		dbTechNonDefaultRule  *wdth_rule = NULL;
 
     for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
       tst_rule = (*nditr)->getLayerRule(layer);
@@ -240,7 +239,6 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
   if (opt->_res_patterns)
     sprintf(_patternName, "R%d", opt->_wireCnt + 1);
 
-  // openCapLogFile();
   uint cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt; met++) {
@@ -283,7 +281,6 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
   logger_->info(
       RCX, 55, "Finished {} bench measurements for pattern MET_OVER_MET", cnt);
 
-  // closeCapLogFile();
   return cnt;
 }
 
@@ -299,7 +296,6 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   uint patternSep = 1000;
 
   sprintf(_patternName, "U%d", opt->_wireCnt + 1);
-  // openCapLogFile();
   uint cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
@@ -338,7 +334,6 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   logger_->info(
       RCX, 57, "Finished {} bench measurements for pattern MET_UNDER_MET", cnt);
 
-  // closeCapLogFile();
   return cnt;
 }
 uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
@@ -353,7 +348,6 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
   uint patternSep = 1000;
 
   sprintf(_patternName, "DU%d", opt->_wireCnt + 1);
-  // openCapLogFile();
   uint cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
@@ -396,7 +390,6 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
                 "Finished {} bench measurements for pattern MET_DIAGUNDER_MET",
                 cnt);
 
-  // closeCapLogFile();
   return cnt;
 }
 uint extRCModel::linesOverUnderBench(extMainOptions* opt)
@@ -409,7 +402,6 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   measure._diag = false;
 
   sprintf(_patternName, "OU%d", opt->_wireCnt + 1);
-  // openCapLogFile();
   uint cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
@@ -455,7 +447,6 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   logger_->info(
       RCX, 7, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
-  // closeCapLogFile();
   return cnt;
 }
 uint extMain::benchWires(extMainOptions* opt)
@@ -466,7 +457,6 @@ uint extMain::benchWires(extMainOptions* opt)
     extRCModel* m = new extRCModel(layerCnt, "processName", logger_);
     _modelTable->add(m);
 
-    // m->setProcess(p);
     m->setDataRateTable(1);
   }
   extRCModel* m = _modelTable->get(0);
@@ -684,7 +674,6 @@ bool extRCModel::makePatternNet3D(extMeasure* measure,
 
     double h = _process->getConductor(met)->_height;
     double t = _process->getConductor(met)->_thickness;
-    //		int low= 0;
 
     measure->writeBoxRaphael3D(wfp, bb, measure->_ll, measure->_ur, h, t, 0.0);
   }

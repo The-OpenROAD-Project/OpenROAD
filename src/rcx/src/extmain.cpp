@@ -175,7 +175,6 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
   if (tmiExt == NULL) {
     tmiExt = new extMain(0);
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
-    // tmiExt -> setDesign((char *)block->getConstName());
   }
   tmiExt->writeIncrementalSpef(buf_nets,
                                isftype,
@@ -202,7 +201,6 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
       delete _spef;
     _spef = new extSpef(_tech, _block, logger_, this);
     // copy block name for incremental spef
-    // Mattias - Nov 19/07
     _spef->setDesign((char*) _block->getName().c_str());
   }
   _spef->_writeNameMap = _writeNameMap;
@@ -222,7 +220,6 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
   for (nn = 0; nn < cCnt; nn++) {
     _spef->_active_corner_cnt = 1;
     _spef->_active_corner_number[0] = nn;
-    // _spef->_db_ext_corner= nn;
     _block->getExtCornerName(nn, &cName[0]);
     if (cName[0] == '\0')
       sprintf(&cName[0], "MinMax%d", nn);
@@ -501,11 +498,6 @@ extMain::extMain(uint menuId)
   _dbPowerId = 1;
   _dbSignalId = 2;
   _CCsegId = 3;
-  /*
-  _dbPowerId= ZSUBMENUID(_menuId, 1);
-  _dbSignalId= ZSUBMENUID(_menuId, 2);
-  _CCsegId= ZSUBMENUID(_menuId, 3);
-  */
 
   _CCnoPowerSource = 0;
   _CCnoPowerTarget = 0;
@@ -571,7 +563,6 @@ void extMain::initDgContextArray()
   _dgContextHiTrack = new int[_dgContextPlanes];
   _dgContextTrackBase = new int*[_dgContextPlanes];
   if (_diagFlow)
-    //		_dgContextTracks = (_couplingFlag%10)*2 + 1;
     _dgContextTracks = _couplingFlag * 2 + 1;
   else
     _dgContextTracks = _couplingFlag * 2 + 1;
@@ -1060,7 +1051,6 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     }
 
     rseg->setCapacitance(tot, extDbIndex);
-    //		double T= rseg->getCapacitance(extDbIndex);
     getScaledCornerDbIndex(modelIndex, sci, scDbIdx);
     if (sci == -1)
       continue;
@@ -1077,10 +1067,6 @@ void extMain::updateCCCap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
       = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
                         dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
                         true);
-  /*
-dbCCSeg *ccap= dbCCSeg::create(rseg1->getNet(),
-rseg1->getTargetNode(), rseg2->getNet(), rseg2->getTargetNode(), true);
-*/
   bool mergeParallel = true;
 
   uint lcnt = _block->getCornerCount();
@@ -1159,7 +1145,6 @@ extGeoThickTable::extGeoThickTable(int x1,
                                    uint units)
 {
   _tileSize = tileSize;
-  // char *_layerName;
 
   int nm = units;
   _ll[0] = x1 * nm;
@@ -1228,7 +1213,6 @@ bool extGeoVarTable::getThicknessDiff(int n, double& delta_th)
     delta_th = 0.001 * _nominal * (1 + thickDiff);
     return true;
 
-    // double diff= (th-thRef)/thRef;
   }
 }
 bool extGeoThickTable::getThicknessDiff(int x, int y, uint w, double& delta_th)
@@ -1304,10 +1288,6 @@ void extMain::ccReportProgress()
 {
   uint repChunk = 1000000;
   if ((_totSegCnt > 0) && (_totSegCnt % repChunk == 0)) {
-    // if ((_totSignalSegCnt>0)&&(_totSignalSegCnt%5000000==0))
-    //		fprintf(stdout, "Have processed %d total segments, %d signal
-    // segments, %d CC caps, and stored %d CC caps\n", _totSegCnt,
-    //_totSignalSegCnt, _totCCcnt, _totBigCCcnt);
     logger_->info(RCX,
                   140,
                   "Have processed {} total segments, {} signal segments, {} CC "
@@ -1402,8 +1382,6 @@ void extMain::measureRC(CoupleOptions& options)
         && (!ttttm || m._met == ttttm)) {
       int pxy = m._dir ? m._ll[0] : m._ll[1];
       int pbase = m._dir ? m._ur[1] : m._ur[0];
-      //		  fprintf(stdout, "Context of layer %d, xy=%d len=%d
-      // base=%d width=%d :\n", m._met, pxy, m._len, pbase, m._s_nm);
       logger_->info(RCX,
                     141,
                     "Context of layer {} xy={} len={} base={} width={}",
@@ -1434,16 +1412,10 @@ void extMain::measureRC(CoupleOptions& options)
                         _ccContextArray[m._met - ii]->get(jj));
       }
     }
-    //		for (uint ii= 0; _ccContextArray!=NULL && m._met>1 &&
-    // ii<_ccContextArray[m._met]->getCnt(); ii++) {
-    // fprintf(stdout, "ii= %d
-    // -- %d\n", ii, _ccContextArray[m._met]->get(ii));
-    //		}
     totLenCovered = m.measureOverUnderCap();
   }
   int lenOverSub = m._len - totLenCovered;
 
-  //	int mUnder= m._underMet; // will be replaced
   if (m._dist < 0) {  // dist is infinit
 
     if (totLenCovered > 0) {
@@ -1459,7 +1431,6 @@ void extMain::measureRC(CoupleOptions& options)
       m._underMet = 0;
       m.computeOverRC(lenOverSub);
     }
-    // deltaFr[jj]= getFringe(m._met, m._width, jj) * m._len; TO_TEST
     m.getFringe(m._len, deltaFr);
 
     if ((rsegId1 > 0) && (rsegId2 > 0)) {  // signal nets
@@ -1480,8 +1451,6 @@ void extMain::measureRC(CoupleOptions& options)
           dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
           dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
           true);
-      // dbCCSeg *ccap= dbCCSeg::create(srcNet,
-      // rseg1->getTargetNode(), tgtNet, rseg2->getTargetNode(), true);
 
       int extDbIndex, sci, scDbIdx;
       for (uint jj = 0; jj < m._metRCTable.getCnt(); jj++) {

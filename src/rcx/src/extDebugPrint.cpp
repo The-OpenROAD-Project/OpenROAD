@@ -160,7 +160,6 @@ bool extMeasure::printTraceNet(const char* msg,
       printTraceNetInfo("", _netSrcId, _rsegSrcId);
     else
       printTraceNetInfo("", _netTgtId, _rsegTgtId);
-    //   fprintf(_debugFP, "\n");
 
     return true;
   }
@@ -178,7 +177,7 @@ bool extMeasure::printTraceNet(const char* msg,
   return true;
 }
 
-// ----------------------------------------------------------------- DF 1020
+// -----------------------------------------------------------------
 void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
 {
   if (rsegId <= 0) {
@@ -402,7 +401,6 @@ bool extMeasure::DebugStart(bool allNets)
                _len,
                GetDBcoords(_len));
   }
-  // Added Jeff 1/13
   uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
 
   dbNet* net = dbNet::getNet(_block, debugTgtId);
@@ -416,9 +414,6 @@ bool extMeasure::DebugStart(bool allNets)
              "{:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \n\tDX  : {} "
              "{:3f} \n\tDY  "
              ": {} {:3f}",
-             // _met,
-             // _dist,
-             // _len,
              net->getConstName(),
              debugTgtId,
              _ll[0],
@@ -473,7 +468,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
-// ----------------------------------------------------------------- DF 1020
+// -----------------------------------------------------------------
 //
 // from extRCmodel.cpp
 

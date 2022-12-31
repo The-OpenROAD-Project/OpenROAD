@@ -168,11 +168,7 @@ uint extMain::getExtStats(odb::dbNet* net,
   odb::dbWireShapeItr shapes;
   odb::dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
-    //		uint level= 0;
-
     if (s.isVia()) {
-      // if (!_skip_via_wires)
-      //    continue;
       via_cnt++;
 
       odb::dbTechVia* tvia = s.getTechVia();

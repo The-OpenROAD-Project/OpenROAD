@@ -278,25 +278,6 @@ void extMain::extCount(bool signalWireSeg, bool powerWireSeg)
                   powerWireCnt,
                   powerViaCnt);
 }
-/*
-class extNetStats
-{
-        double _tcap[2];
-        double _ccap[2];
-        double _cc2tcap[2];
-        double _cc[2];
-        uint _len[2];
-        uint _layerCnt[2];
-        uint _wCnt[2];
-        uint _vCnt[2];
-        uint _resCnt[2];
-        uint _ccCnt[2];
-        uint _gndCnt[2];
-        uint _id;
-        bool _layerFilter[20];
-        Rect _bbox;
-};
-*/
 bool extMain::outOfBounds_i(int limit[2], int v)
 {
   if ((v < limit[0]) || (v > limit[1]))
@@ -336,8 +317,6 @@ bool extMain::printNetRC(char* buff, dbNet* net, extNetStats* st)
   if (outOfBounds_d(st->_res, res))
     return false;
 
-  //	fprintf(fp, "C %8.3 CC %8.3f CCr %3.1f R %8.2f maxCC= %8.4f ",
-  //		tCap, ccCap, cc2tcap, res, maxCC);
   sprintf(buff, "C %.3f CC %.3f CCr %2.1f R %.1f ", tCap, ccCap, cc2tcap, res);
 
   return true;
@@ -430,14 +409,10 @@ uint extMain::printNetStats(FILE* fp,
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    //		uint viaCnt = 0;
-    //		uint wireCnt = 0;
-
     dbSigType type = net->getSigType();
     if ((type == dbSigType::POWER) || (type == dbSigType::GROUND)) {
       if (skipPower)
         continue;
-      // net->getPowerWireCount (powerWireCnt, powerViaCnt);
       continue;
     }
     if (!net->isEnclosed(&bbox))

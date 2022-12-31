@@ -63,7 +63,6 @@ void extSpef::initSearchForNets()
       continue;
 
     n = layer->getRoutingLevel();
-    // W[n]= layer->getWidth();
     W[n] = 1;
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
@@ -100,7 +99,6 @@ uint extSpef::addNetShapesOnSearch(uint netId)
     return 0;
 
   uint cnt = 0;
-  //	uint wireId= wire->getId();
 
   int minx = MAX_INT;
   int miny = MAX_INT;

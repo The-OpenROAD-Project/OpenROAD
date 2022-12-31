@@ -53,7 +53,6 @@ class extRCnode
 {
   friend class extRcTree;
 
-  // private:
  public:
   double _gndcap[ADS_MAX_CORNER];
   double _cap[ADS_MAX_CORNER];
