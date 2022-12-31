@@ -47,7 +47,6 @@
 #include "odb.h"
 #include "wire.h"
 
-#define HI_ACC_2
 #define BUG_LAYER_CNT 1
 
 #include <map>

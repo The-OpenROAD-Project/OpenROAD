@@ -3749,7 +3749,6 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       bool btermConnection = isBtermConnection(rseg1, rseg2);
 
       _totCCcnt++;  // TO_TEST
-#ifdef HI_ACC_2
       if (rseg1->getNet() == rseg2->getNet()) {  // same signal net
         _extMain->updateTotalCap(rseg1, this, deltaFr, modelCnt, false, true);
         _extMain->updateTotalCap(rseg2, this, deltaFr, modelCnt, false);
@@ -3759,7 +3758,6 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
 
         return totLenCovered;
       }
-#endif
 
       if ((_rc[_minModelIndex]->_coupling < _extMain->_coupleThreshold)
           && !btermConnection) {  // TO_TEST
