@@ -334,60 +334,6 @@ uint extSpef::getITermShapeId(dbITerm* iterm)
   if (iterm->getNet()->getWire() == NULL)
     return 0;
   return iterm->getNet()->getWire()->getTermJid(iterm->getId());
-  /*
-    uint shapeId = 0;
-    dbMTerm *mterm = iterm->getMTerm();
-    int px,py;
-    iterm->getInst()->getOrigin(px,py);
-    Point origin = adsPoint(px,py);
-    dbOrientType orient = iterm->getInst()->getOrient();
-    dbTransform transform( orient, origin );
-
-    dbSet<dbMPin> mpins = mterm->getMPins();
-    dbSet<dbMPin>::iterator mpin_itr;
-    for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-      dbMPin *mpin = *mpin_itr;
-      dbSet<dbBox> boxes = mpin->getGeometry();
-      dbSet<dbBox>::iterator box_itr;
-      int level, tlevel, blevel;
-      for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
-        dbBox *box = *box_itr;
-        Rect rect;
-        box->getBox( rect );
-        transform.apply( rect );
-        if (box->isVia()) {
-          dbTechVia *tv = box->getTechVia();
-          tlevel = tv->getTopLayer()->getRoutingLevel();
-          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), tlevel); blevel =
-  tv->getBottomLayer()->getRoutingLevel(); if (shapeId == 0) shapeId =
-  findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(), rect.xMax(),
-  rect.yMax(), blevel);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), tlevel+1);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), blevel-1); } else { level =
-  box->getTechLayer()->getRoutingLevel(); shapeId = findShapeId(_d_net->getId(),
-  rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), level);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+1);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+2);
-  //        if (shapeId == 0 && level > 1)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level-1);
-        }
-        if (shapeId!= 0)
-          return shapeId;
-      }
-    }
-    // assert(shapeId);
-    return shapeId;
-  */
 }
 uint extSpef::getBTermShapeId(dbBTerm* bterm)
 {
@@ -397,58 +343,8 @@ uint extSpef::getBTermShapeId(dbBTerm* bterm)
   if (bterm->getNet()->getWire() == NULL)
     return 0;
   return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
-  /*
-    Rect rect;
-    pin.getBox(rect);
-    uint shapeId = 0;
-    int level;
-    if (pin.isVia()) {
-      // TODO
-    } else {
-      level = pin.getTechLayer()->getRoutingLevel();
-      shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level);
-  //    if (shapeId == 0)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+1);
-  //    if (shapeId == 0)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+2);
-  //    if (shapeId == 0 && level > 1)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level-1);
-      // assert(shapeId);
-    }
-    return shapeId;
-  */
-}
-uint extSpef::getShapeIdFromNodeCoords(uint targetCapNodeId)
-{
-  uint shapeId;
-  int ii = findNodeIndexFromNodeCoords(targetCapNodeId);
-  if (ii < 0)
-    return 0;
-
-  int halo = 20;
-  int x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ii));
-  int y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ii));
-  uint level = _levelTable->get(ii);
-  x1 -= halo;
-  y1 -= halo;
-  int x2 = x1 + halo;
-  int y2 = y1 + halo;
-
-  shapeId = findShapeId(_d_net->getId(), x1, y1, x2, y2, level);
-  return shapeId;
 }
 
-/*
-*RES
-1 *1:1 *1:2 7.3792 // x=[782.74,791.7] y=[376.67,376.81] dx=8.96 dy=0.14
-lyr=METAL3 2 *1:5 *1:6 23.1819 // x=[740.11,740.25] y=[340.83,358.11] dx=0.14
-dy=17.28 lyr=METAL4 3 *1:7 *1:8 24.5655 // x=[779.31,779.45] y=[357.85,376.81]
-dx=0.14 dy=18.96 lyr=METAL4
-*/
 uint extSpef::parseAndFindShapeId()
 {
   if (_parser->getWordCnt() < 10)

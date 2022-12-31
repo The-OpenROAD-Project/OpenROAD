@@ -327,7 +327,6 @@ class extSpef
   void adjustNodeCoords();
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  uint getShapeIdFromNodeCoords(uint targetCapNodeId);
   uint getITermShapeId(odb::dbITerm* iterm);
   uint getBTermShapeId(odb::dbBTerm* bterm);
   void initSearchForNets();
