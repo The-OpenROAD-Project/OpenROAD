@@ -42,7 +42,6 @@
 //#define MAXINT 0x7FFFFFFF;
 
 //#define DEBUG_NET_ID 10
-//#define TEST_SIGNAL_TABLE 1
 //#define TEST_POWER_LEN 1
 
 namespace rcx {
@@ -1202,18 +1201,6 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
         }
       }
 
-#ifdef TEST_SIGNAL_TABLE
-      if (fp != NULL) {
-        fprintf(fp,
-                "%d %d  %d %d %d %d\n",
-                net->getId(),
-                level,
-                r.xMin(),
-                r.yMin(),
-                r.xMax(),
-                r.yMax());
-      }
-#endif
       cnt++;
     }
   }
@@ -1289,12 +1276,6 @@ uint extMain::addSignalNets(uint dir,
 
   FILE* fp = NULL;
 
-#ifdef TEST_SIGNAL_TABLE
-  char filename[64];
-  sprintf(filename, "old/%d.%d.%d.sig.sdb", dir, bb_ll[dir], bb_ur[dir]);
-  fp = fopen(filename, "w");
-#endif
-
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
@@ -1306,20 +1287,6 @@ uint extMain::addSignalNets(uint dir,
   if (createDbNet == NULL)
     _search->adjustOverlapMakerEnd();
 
-#ifdef TEST_SIGNAL_TABLE
-
-  fprintf(fp,
-          "dir= %d   %d %d -- %d %d sigCnt= %d\n",
-          dir,
-          bb_ll[0],
-          bb_ur[0],
-          bb_ll[1],
-          bb_ur[1],
-          cnt);
-
-  if (fp != NULL)
-    fclose(fp);
-#endif
   return cnt;
 }
 uint extMain::addPowerNets2(uint dir,
@@ -1549,11 +1516,6 @@ uint extMain::addSignalNets2(uint dir,
       = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize[dir], hi_sdb[dir]);
 
   FILE* fp = NULL;
-#ifdef TEST_SIGNAL_TABLE
-  char filename[64];
-  sprintf(filename, "new/%d.%d.%d.sig.sdb", dir, lo_sdb[dir], hi_sdb[dir]);
-  fp = fopen(filename, "w");
-#endif
 
   uint cnt = 0;
   for (uint bucket = lo_index; bucket <= hi_index; bucket++) {
@@ -1577,20 +1539,6 @@ uint extMain::addSignalNets2(uint dir,
   _search->adjustOverlapMakerEnd();
 
   resetNetSpefFlag(tmpNetIdTable);
-
-#ifdef TEST_SIGNAL_TABLE
-  fprintf(fp,
-          "dir= %d   %d %d -- %d %d sigCnt= %d\n",
-          dir,
-          lo_sdb[0],
-          hi_sdb[0],
-          lo_sdb[1],
-          hi_sdb[1],
-          cnt);
-
-  if (fp != NULL)
-    fclose(fp);
-#endif
 
   return cnt;
 }
@@ -2028,14 +1976,6 @@ uint extMain::fill_gs4(int dir,
     pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
   }
 
-  /*
-          FILE *fp= NULL;
-
-  #ifdef TEST_SIGNAL_TABLE
-          char filename[64];
-          sprintf(filename, "old/%d.%d.%d.sig.sdb", dir, bb_ll[dir],
-  bb_ur[dir]); fp= fopen(filename, "w"); #endif
-  */
   uint scnt = 0;
 
   if (createDbNet != NULL)
@@ -2159,29 +2099,6 @@ int extMain::fill_gs3(int dir,
     }
   }
 
-#ifdef TEST_SIGNAL_TABLE
-  FILE* fp = NULL;
-  char filename[64];
-  sprintf(filename, "new/%d.%d.%d.fill", dir, minExt, hiXY);
-  fp = fopen(filename, "w");
-
-  fprintf(fp,
-          "dir= %d   minExt= %d   hiXY= %d  %d %d -- %d %d pwrCnt= %d  sigCnt= "
-          "%d\n",
-          dir,
-          minExt,
-          hiXY,
-          lo_gs[0],
-          hi_gs[0],
-          lo_gs[1],
-          hi_gs[1],
-          pcnt,
-          scnt);
-
-  if (fp != NULL)
-    fclose(fp);
-#endif
-
   return lo_gs[dir];
 }
 
@@ -2221,29 +2138,6 @@ int extMain::fill_gs2(int dir,
 
     if (_overCell)
       addInstShapesOnPlanes(dir);
-
-#ifdef TEST_SIGNAL_TABLE
-    FILE* fp = NULL;
-    char filename[64];
-    sprintf(filename, "old/%d.%d.%d.fill", dir, minExt, hiXY);
-    fp = fopen(filename, "w");
-
-    fprintf(fp,
-            "dir= %d   minExt= %d   hiXY= %d  %d %d -- %d %d pwrCnt= %d  "
-            "sigCnt= %d\n",
-            dir,
-            minExt,
-            hiXY,
-            lo_gs[0],
-            hi_gs[0],
-            lo_gs[1],
-            hi_gs[1],
-            gsPcnt,
-            gsCnt);
-
-    if (fp != NULL)
-      fclose(fp);
-#endif
   }
 
   return lo_gs[dir];
@@ -2423,9 +2317,6 @@ uint extMain::couplingFlow(bool rlog,
                     sdbBucketCnt);
 
     reportTableNetCnt(sdbBucketCnt, sdbSignalTable);
-#ifdef TEST_SIGNAL_TABLE
-    reportTableNetCnt(sdbBucketCnt, sdbSignalTable);
-#endif
 
     if (rlog)
       AthResourceLog("Making net tables ", 0);
@@ -3902,13 +3793,6 @@ uint extMain::mkTileNets(uint dir,
   uint hi_index = getBucketNum(
       _tiles->_ll[dir], _tiles->_ur[dir], _tiles->_tileSize[dir], hi_sdb[dir]);
 
-#ifdef TEST_SIGNAL_TABLE
-  FILE* fp = NULL;
-  char filename[64];
-  sprintf(filename, "new/%d.%d.%d.sig.sdb", dir, lo_sdb[dir], hi_sdb[dir]);
-  fp = fopen(filename, "w");
-#endif
-
   uint tot = 0;
   uint cnt1 = 0;
   uint local = 0;
@@ -3985,20 +3869,6 @@ uint extMain::mkTileNets(uint dir,
                 tot);
 
   resetNetSpefFlag(_tiles->_tmpIdTable);
-
-#ifdef TEST_SIGNAL_TABLE
-  fprintf(fp,
-          "dir= %d   %d %d -- %d %d sigCnt= %d\n",
-          dir,
-          lo_sdb[0],
-          hi_sdb[0],
-          lo_sdb[1],
-          hi_sdb[1],
-          cnt);
-
-  if (fp != NULL)
-    fclose(fp);
-#endif
 
   return cnt1;
 }
