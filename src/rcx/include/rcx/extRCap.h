@@ -201,7 +201,6 @@ class extDistRC
                          int dbUnit,
                          Logger* logger);
   double GetDBcoords(int x, int db_factor);
-  void debugRC(const char* debugWord, const char* from, int width, int level);
   void set(uint d, double cc, double fr, double a, double r);
   void readRC(Ath__parser* parser, double dbFactor = 1.0);
   void readRC_res2(Ath__parser* parser, double dbFactor = 1.0);

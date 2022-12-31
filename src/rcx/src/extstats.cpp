@@ -103,22 +103,6 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
   }
   return rc;
 }
-void extDistRC::debugRC(const char* debugWord,
-                        const char* from,
-                        int width,
-                        int level)
-{
-  // char tmp[32];
-  // sprintf(tmp, " ");
-  // if (level > 0)
-  //   sprintf(tmp, "%d", level);
-  // if (width > 0)
-  //   sprintf(tmp, "%s %d", tmp, width);
-
-  // debug(debugWord, "C", "%s: %s, tC %g  CC %g F %g D %g   R %g  Sep %d\n",
-  //		from, tmp, _coupling+_fringe+_diag, _coupling,  _fringe, _diag,
-  //_res, _sep);
-}
 uint extMain::calcMinMaxRC()
 {
   uint cornerCnt = _modelTable->getCnt();
@@ -152,9 +136,6 @@ uint extMain::calcMinMaxRC()
 
       setMinRC(met, jj, rcMin);
       setMaxRC(met, jj, rcMax);
-
-      rcMin->debugRC("EXT_STATS", "MinRC", width, met);
-      rcMax->debugRC("EXT_STATS", "MaxRC", width, met);
     }
     cnt++;
   }
