@@ -494,7 +494,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.rlog,
                             opts.coupling_threshold,
                             opts.context_depth,
-                            opts.over_cell,
                             opts.ext_model_file,
                             this)
       == 0)

@@ -2074,7 +2074,6 @@ void extMain::updatePrevControl()
   _prevControl->_independentExtCorners = _independentExtCorners;
   _prevControl->_foreign = _foreign;
   _prevControl->_rsegCoord = _rsegCoord;
-  _prevControl->_overCell = _overCell;
   _prevControl->_extracted = _extracted;
   _prevControl->_lefRC = _lefRC;
   _prevControl->_cornerCnt = _cornerCnt;
@@ -2100,7 +2099,6 @@ void extMain::getPrevControl()
   _independentExtCorners = _prevControl->_independentExtCorners;
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
-  _overCell = _prevControl->_overCell;
   _extracted = _prevControl->_extracted;
   _lefRC = _prevControl->_lefRC;
   _cornerCnt = _prevControl->_cornerCnt;
@@ -2132,7 +2130,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                               bool rlog,
                               double ccThres,
                               int contextDepth,
-                              bool overCell,
                               const char* extRules,
                               ZInterface* Interface)
 {
@@ -2166,8 +2163,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     _ccUp = cc_up;
     _couplingFlag = ccFlag;
     _ccContextDepth = contextDepth;
-    if (_usingMetalPlanes)
-      _overCell = overCell;
   } else {
     _usingMetalPlanes = 0;
     _ccUp = 0;

@@ -533,7 +533,6 @@ extMain::extMain(uint menuId)
   _extRun = 0;
   _independentExtCorners = false;
   _foreign = false;
-  _overCell = false;
   _diagFlow = false;
   _processCornerTable = NULL;
   _scaledCornerTable = NULL;

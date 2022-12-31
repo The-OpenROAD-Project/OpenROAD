@@ -441,22 +441,6 @@ uint extMain::mkSignalTables2(uint* nm_step,
     }
     cnt += cnt1;
   }
-  if (_overCell) {
-    dbSet<dbInst> insts = _block->getInsts();
-    dbSet<dbInst>::iterator inst_itr;
-
-    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
-      dbInst* inst = *inst_itr;
-      dbBox* bb = inst->getBBox();
-
-      Rect s = bb->getBox();
-
-      for (uint dir = 0; dir < 2; dir++)
-        addNetOnTable(inst->getId(), dir, &s, nm_step, bb_ll, bb_ur, instTable);
-
-      inst->clearUserFlag1();
-    }
-  }
   return cnt;
 }
 uint extMain::mkSignalTables(uint* nm_step,
@@ -1867,27 +1851,6 @@ uint extMain::fill_gs4(int dir,
 
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
   }
-  if (_overCell) {
-    Ath__array1D<uint> instGsTable(nets.size());
-    Ath__array1D<uint> tmpNetIdTable(nets.size());
-
-    dbSet<dbInst> insts = _block->getInsts();
-    dbSet<dbInst>::iterator inst_itr;
-    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
-      dbInst* inst = *inst_itr;
-
-      dbBox* R = inst->getBBox();
-
-      int R_ll[2] = {R->xMin(), R->yMin()};
-      int R_ur[2] = {R->xMax(), R->yMax()};
-
-      if ((R_ur[dir] < lo_gs[dir]) || (R_ll[dir] > hi_gs[dir]))
-        continue;
-
-      instGsTable.add(inst->getId());
-    }
-    addInstsGs(&instGsTable, &tmpNetIdTable, dir);
-  }
 
   return pcnt + scnt;
 }
@@ -1968,12 +1931,6 @@ int extMain::fill_gs3(int dir,
   }
   resetNetSpefFlag(tmpNetIdTable);
 
-  if (_overCell) {
-    for (uint bucket = lo_index; bucket <= hi_index; bucket++) {
-      addInstsGs(instGsTable[dir][bucket], tmpNetIdTable, dir);
-    }
-  }
-
   return lo_gs[dir];
 }
 
@@ -1998,18 +1955,9 @@ int extMain::fill_gs2(int dir,
     addNetsGs(gsTable[dir][bucket], gs_dir);
     if (bucket > 0)
       addNetsGs(gsTable[dir][bucket - 1], gs_dir);
-
-    if (_overCell) {
-      addInstsGs(instGsTable[dir][bucket], NULL, 0);
-      if (bucket > 0)
-        addInstsGs(instGsTable[dir][bucket], NULL, 0);
-    }
   } else {
     addPowerGs(gs_dir);
     addSignalGs(gs_dir);
-
-    if (_overCell)
-      addInstShapesOnPlanes(dir);
   }
 
   return lo_gs[dir];
@@ -3579,7 +3527,7 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts)
     }
     cnt += cnt1;
   }
-  if (_overCell || !skipInsts) {
+  if (!skipInsts) {
     dbSet<dbInst> insts = _block->getInsts();
     dbSet<dbInst>::iterator inst_itr;
 

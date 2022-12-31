@@ -164,9 +164,6 @@ class Ext
     float coupling_threshold = 0.1;
     int context_depth = 5;
     int cc_model = 10;
-    bool over_cell = false;
-    bool remove_cc = false;
-    bool remove_ext = false;
     bool unlink_ext = false;
     bool no_gs = false;
     bool skip_via_wires = false;

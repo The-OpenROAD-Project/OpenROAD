@@ -1791,7 +1791,6 @@ class extMain
   bool _independentExtCorners;
   bool _foreign;
   bool _rsegCoord;
-  bool _overCell;
   bool _diagFlow;
 
   std::vector<uint> _rsegJid;
@@ -2261,7 +2260,6 @@ class extMain
                        bool log,
                        double ccThres,
                        int contextDepth,
-                       bool overCell,
                        const char* extRules,
                        odb::ZInterface* context);
 
