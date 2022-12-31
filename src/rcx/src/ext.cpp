@@ -430,26 +430,6 @@ bool Ext::get_ext_db_corner(int& index, const std::string& name)
   return TCL_OK;
 }
 
-bool Ext::assembly(odb::dbBlock* block, odb::dbBlock* main_block)
-{
-  if (main_block == NULL) {
-    logger_->info(RCX,
-                  149,
-                  "Add parasitics of block {} onto nets/wires ...{}",
-                  block->getConstName());
-  } else {
-    logger_->info(RCX,
-                  150,
-                  "Add parasitics of block {} onto block {}...",
-                  block->getConstName(),
-                  main_block->getConstName());
-  }
-
-  extMain::assemblyExt(main_block, block, logger_);
-
-  return TCL_OK;
-}
-
 bool Ext::flatten(odb::dbBlock* block, bool spef)
 {
   if (block == NULL) {

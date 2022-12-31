@@ -134,7 +134,6 @@ class Ext
   };
 
   bool bench_wires(const BenchWiresOptions& bwo);
-  bool assembly(odb::dbBlock* block, odb::dbBlock* main_block);
   bool write_spef_nets(odb::dbObject* block,
                        bool flatten,
                        bool parallel,

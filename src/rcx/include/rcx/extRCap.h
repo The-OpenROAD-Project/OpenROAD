@@ -1712,10 +1712,6 @@ class extMain
 
   int _noVariationIndex;
 
-  extWireBin*** _wireBinTable;
-  extWireBin*** _cntxBinTable;
-  Ath__array1D<uint>*** _cntxInstTable;
-
   extTileSystem* _tiles;
   bool _ignoreWarning_1st;
   bool _keepExtModel;
@@ -2487,41 +2483,7 @@ class extMain
              odb::ZInterface* Interface);
 
   void disableRotatedFlag();
-  FILE* openSearchFile(char* name);
-  void closeSearchFile();
 
-  void addExtWires(odb::Rect& r,
-                   extWireBin*** wireBinTable,
-                   uint netId,
-                   int shapeId,
-                   odb::dbTechLayer* layer,
-                   uint* nm_step,
-                   int* bb_ll,
-                   int* bb_ur,
-                   AthPool<extWire>* wpool,
-                   bool cntxFlag);
-  extWireBin*** mkSignalBins(uint binSize,
-                             int* bb_ll,
-                             int* bb_ur,
-                             uint* bucketCnt,
-                             AthPool<extWire>* wpool,
-                             bool cntxFlag);
-  uint addNets3(uint dir,
-                int* lo_sdb,
-                int* hi_sdb,
-                int* bb_ll,
-                int* bb_ur,
-                uint bucketSize,
-                extWireBin*** wireBinTable,
-                odb::dbCreateNetUtil* createDbNet);
-  uint addNets3GS(uint dir,
-                  int* lo_sdb,
-                  int* hi_sdb,
-                  int* bb_ll,
-                  int* bb_ur,
-                  uint bucketSize,
-                  extWireBin*** wireBinTable,
-                  odb::dbCreateNetUtil* createDbNet);
   Ath__array1D<uint>*** mkInstBins(uint binSize,
                                    int* bb_ll,
                                    int* bb_ur,
@@ -2535,23 +2497,10 @@ class extMain
                 Ath__array1D<uint>*** wireBinTable,
                 odb::dbCreateNetUtil* createDbNet);
 
-  void printLimitArray(int** limitArray, uint layerCnt);
-  uint mkTileBoundaries(bool skipPower, bool skipInsts);
-  uint mkNetPropertiesForRsegs(odb::dbBlock* blk, uint dir);
-  uint rcGenBlock(odb::dbBlock* block = NULL);
-  void writeMapping(odb::dbBlock* block = NULL);
-  uint invalidateNonDirShapes(odb::dbBlock* blk, uint dir, bool setMainNet);
-
   uint getNetBbox(odb::dbNet* net, odb::Rect* maxRect[2]);
 
   static odb::dbRSeg* getRseg(odb::dbNet* net, uint shapeId, Logger* logger);
 
-  static uint assemblyExt(odb::dbBlock* mainBlock,
-                          odb::dbBlock* blk,
-                          Logger* logger);
-  static uint assemblyExt__2(odb::dbBlock* mainBlock,
-                             odb::dbBlock* blk,
-                             Logger* logger);
   static odb::dbNet* getDstNet(odb::dbNet* net,
                                odb::dbBlock* dstBlock,
                                Ath__parser* parser);
