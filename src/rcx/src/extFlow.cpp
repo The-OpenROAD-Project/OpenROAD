@@ -183,26 +183,7 @@ void extMain::getNetSboxes(dbNet* net,
     }
   }
 }
-void extMain::freeSignalTables(bool rlog,
-                               Ath__array1D<uint>*** sdbSignalTable,
-                               Ath__array1D<uint>*** signalGsTable,
-                               uint* bucketCnt)
-{
-  for (uint dd = 0; dd < 2; dd++) {
-    uint n = bucketCnt[dd];
 
-    for (uint jj = 0; jj < n; jj++) {
-      if (sdbSignalTable[dd][jj] != NULL)
-        delete sdbSignalTable[dd][jj];
-
-      if ((signalGsTable != NULL) && (signalGsTable[dd][jj] != NULL))
-        delete signalGsTable[dd][jj];
-    }
-    delete[] sdbSignalTable[dd];
-    if (signalGsTable != NULL)
-      delete[] signalGsTable[dd];
-  }
-}
 extWireBin::extWireBin(uint d,
                        uint num,
                        int base,
@@ -261,53 +242,6 @@ Ath__array1D<uint>*** extMain::mkInstBins(uint binSize,
   return instTable;
 }
 
-uint extMain::mkSignalTables2(uint* nm_step,
-                              int* bb_ll,
-                              int* bb_ur,
-                              Ath__array1D<uint>*** sdbSignalTable,
-                              Ath__array1D<uint>* sdbPowerTable,
-                              Ath__array1D<uint>*** instTable,
-                              uint* bucketCnt)
-{
-  for (uint dd = 0; dd < 2; dd++) {
-    bucketCnt[dd] = (bb_ur[dd] - bb_ll[dd]) / nm_step[dd] + 2;
-    uint n = bucketCnt[dd];
-
-    sdbSignalTable[dd] = new Ath__array1D<uint>*[n];
-    instTable[dd] = new Ath__array1D<uint>*[n];
-
-    for (uint jj = 0; jj < n; jj++) {
-      sdbSignalTable[dd][jj] = NULL;
-      instTable[dd][jj] = NULL;
-    }
-  }
-  uint cnt = 0;
-  dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator net_itr;
-
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
-
-    if ((net->getSigType().isSupply())) {
-      sdbPowerTable->add(net->getId());
-      continue;
-    }
-
-    Rect maxRect;
-    uint cnt1 = getNetBbox(net, maxRect);
-    if (cnt1 == 0)
-      continue;
-
-    net->setSpef(false);
-
-    for (uint dir = 0; dir < 2; dir++) {
-      addNetOnTable(
-          net->getId(), dir, &maxRect, nm_step, bb_ll, bb_ur, sdbSignalTable);
-    }
-    cnt += cnt1;
-  }
-  return cnt;
-}
 uint extMain::mkSignalTables(uint* nm_step,
                              int* bb_ll,
                              int* bb_ur,
@@ -1228,52 +1162,7 @@ uint extMain::addInsts(uint dir,
   }
   return cnt;
 }
-uint extMain::addSignalNets2(uint dir,
-                             int* lo_sdb,
-                             int* hi_sdb,
-                             int* bb_ll,
-                             int* bb_ur,
-                             uint* bucketSize,
-                             uint wtype,
-                             Ath__array1D<uint>*** sdbSignalTable,
-                             Ath__array1D<uint>* tmpNetIdTable,
-                             dbCreateNetUtil* createDbNet)
-{
-  if (sdbSignalTable == NULL)
-    return 0;
 
-  uint lo_index
-      = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize[dir], lo_sdb[dir]);
-  uint hi_index
-      = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize[dir], hi_sdb[dir]);
-
-  FILE* fp = NULL;
-
-  uint cnt = 0;
-  for (uint bucket = lo_index; bucket <= hi_index; bucket++) {
-    if (sdbSignalTable[dir][bucket] == NULL)
-      continue;
-
-    uint netCnt = sdbSignalTable[dir][bucket]->getCnt();
-    for (uint ii = 0; ii < netCnt; ii++) {
-      uint netId = sdbSignalTable[dir][bucket]->get(ii);
-      dbNet* net = dbNet::getNet(_block, netId);
-
-      if (net->isSpef())
-        continue;
-      net->setSpef(true);
-      tmpNetIdTable->add(netId);
-
-      cnt += addNetShapesOnSearch(
-          net, dir, lo_sdb, hi_sdb, wtype, fp, createDbNet);
-    }
-  }
-  _search->adjustOverlapMakerEnd();
-
-  resetNetSpefFlag(tmpNetIdTable);
-
-  return cnt;
-}
 void extMain::reportTableNetCnt(uint* sdbBucketCnt,
                                 Ath__array1D<uint>*** sdbSignalTable)
 {
@@ -1574,7 +1463,7 @@ void extMain::disableRotatedFlag()
 }
 bool extMain::enableRotatedFlag()
 {
-  _rotatedGs = (_use_signal_tables > 1) ? true : false;
+  _rotatedGs = true;
 
   return _rotatedGs;
 }
@@ -1638,85 +1527,6 @@ uint extMain::fill_gs4(int dir,
   }
 
   return pcnt + scnt;
-}
-
-int extMain::fill_gs3(int dir,
-                      int* ll,
-                      int* ur,
-                      int* lo_gs,
-                      int* hi_gs,
-                      uint layerCnt,
-                      uint* dirTable,
-                      uint* pitchTable,
-                      uint* widthTable,
-                      int* sdbTable_ll,
-                      int* sdbTable_ur,
-                      uint* bucketSize,
-                      Ath__array1D<uint>* powerNetTable,
-                      Ath__array1D<uint>* tmpNetIdTable,
-                      Ath__array1D<uint>*** sdbSignalTable,
-                      Ath__array1D<uint>*** instGsTable,
-                      dbCreateNetUtil* createDbNet)
-{
-  if (sdbSignalTable == NULL)
-    return 0;
-
-  bool rotatedGs = getRotatedFlag();
-
-  bool skipMemAlloc = false;
-  if (createDbNet != NULL)
-    skipMemAlloc = true;
-
-  initPlanes(dir,
-             lo_gs,
-             hi_gs,
-             layerCnt,
-             pitchTable,
-             widthTable,
-             dirTable,
-             ll,
-             skipMemAlloc);
-
-  const int gs_dir = dir;
-
-  uint netCnt = powerNetTable->getCnt();
-  for (uint ii = 0; ii < netCnt; ii++) {
-    dbNet* net = dbNet::getNet(_block, powerNetTable->get(ii));
-
-    if (createDbNet != NULL)
-      createDbNet->createSpecialNet(net, NULL);
-
-    addNetSboxesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
-  }
-  uint lo_index = getBucketNum(
-      sdbTable_ll[dir], sdbTable_ur[dir], bucketSize[dir], lo_gs[dir]);
-  uint hi_index = getBucketNum(
-      sdbTable_ll[dir], sdbTable_ur[dir], bucketSize[dir], hi_gs[dir]);
-
-  if (createDbNet != NULL)
-    createDbNet->createSpecialNet(NULL, "SIGNALS_GS");
-
-  for (uint bucket = lo_index; bucket <= hi_index; bucket++) {
-    if (sdbSignalTable[dir][bucket] == NULL)
-      continue;
-
-    uint netCnt = sdbSignalTable[dir][bucket]->getCnt();
-
-    for (uint ii = 0; ii < netCnt; ii++) {
-      uint netId = sdbSignalTable[dir][bucket]->get(ii);
-      dbNet* net = dbNet::getNet(_block, netId);
-
-      if (net->isSpef())  // tmp flag
-        continue;
-      net->setSpef(true);
-      tmpNetIdTable->add(netId);
-
-      addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
-    }
-  }
-  resetNetSpefFlag(tmpNetIdTable);
-
-  return lo_gs[dir];
 }
 
 void extMain::resetGndCaps()
@@ -1846,41 +1656,9 @@ uint extMain::couplingFlow(Rect& extRect,
     step_nm[0] = ur[0] - ll[0];
   }
   // _use_signal_tables
-  Ath__array1D<uint>** sdbSignalTable[2];
-  Ath__array1D<uint>** gsInstTable[2];
   Ath__array1D<uint> sdbPowerTable;
   Ath__array1D<uint> tmpNetIdTable(64000);
-  uint sdbBucketCnt[2];
-  uint sdbBucketSize[2];
-  int sdbTable_ll[2];
-  int sdbTable_ur[2];
 
-  bool use_signal_tables = false;
-  if ((_use_signal_tables == 1) || (_use_signal_tables == 2)) {
-    use_signal_tables = true;
-
-    logger_->info(RCX,
-                  467,
-                  "Signal_table= {} ----------------------------- ",
-                  _use_signal_tables);
-
-    for (uint ii = 0; ii < 2; ii++) {
-      sdbBucketCnt[ii] = 0;
-      sdbBucketSize[ii] = 2 * step_nm[ii];
-      sdbTable_ll[ii] = ll[ii] - step_nm[ii] / 10;
-      sdbTable_ur[ii] = ur[ii] + step_nm[ii] / 10;
-    }
-
-    mkSignalTables2(sdbBucketSize,
-                    sdbTable_ll,
-                    sdbTable_ur,
-                    sdbSignalTable,
-                    &sdbPowerTable,
-                    gsInstTable,
-                    sdbBucketCnt);
-
-    reportTableNetCnt(sdbBucketCnt, sdbSignalTable);
-  }
   uint totalWiresExtracted = 0;
 
   int** limitArray;
@@ -1924,25 +1702,6 @@ uint extMain::couplingFlow(Rect& extRect,
       lo_gs[dir] = gs_limit;
       hi_gs[dir] = hiXY;
 
-      if (use_signal_tables) {
-        tmpNetIdTable.resetCnt();
-        fill_gs3(dir,
-                 ll,
-                 ur,
-                 lo_gs,
-                 hi_gs,
-                 layerCnt,
-                 dirTable,
-                 pitchTable,
-                 widthTable,
-                 sdbTable_ll,
-                 sdbTable_ur,
-                 sdbBucketSize,
-                 &sdbPowerTable,
-                 &tmpNetIdTable,
-                 sdbSignalTable,
-                 gsInstTable);
-      } else
         fill_gs4(dir,
                  ll,
                  ur,
@@ -1961,23 +1720,8 @@ uint extMain::couplingFlow(Rect& extRect,
       hi_sdb[dir] = hiXY;
 
       uint processWireCnt = 0;
-      if (use_signal_tables) {
-        processWireCnt
-            += addPowerNets2(dir, lo_sdb, hi_sdb, pwrtype, &sdbPowerTable);
-        tmpNetIdTable.resetCnt();
-        processWireCnt += addSignalNets2(dir,
-                                         lo_sdb,
-                                         hi_sdb,
-                                         sdbTable_ll,
-                                         sdbTable_ur,
-                                         sdbBucketSize,
-                                         sigtype,
-                                         sdbSignalTable,
-                                         &tmpNetIdTable);
-      } else {
-        processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
-        processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
-      }
+      processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
+      processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
 
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
@@ -2024,9 +1768,6 @@ uint extMain::couplingFlow(Rect& extRect,
   }
   if (_printBandInfo)
     fclose(bandinfo);
-  if (use_signal_tables) {
-    freeSignalTables(true, sdbSignalTable, NULL, sdbBucketCnt);
-  }
 
   if (_geomSeq != NULL) {
     delete _geomSeq;

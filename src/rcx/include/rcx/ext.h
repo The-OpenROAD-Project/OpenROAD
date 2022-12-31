@@ -153,7 +153,6 @@ class Ext
     const char* cmp_file = nullptr;
     const char* ext_model_file = nullptr;
     const char* net = nullptr;
-    int signal_table = 3;
     int cc_up = 2;
     int corner_cnt = 1;
     double max_res = 50.0;

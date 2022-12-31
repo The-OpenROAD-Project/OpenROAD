@@ -1579,10 +1579,6 @@ class extMain
   bool _reuseMetalFill;
   uint _ccUp;
   uint _couplingFlag;
-  uint _use_signal_tables;
-  // 1: signal table,  NO rotation;
-  // 2: signal table,  rotation;
-  // 3: NO signal table,  rotation
   bool _rotatedGs;
   uint _ccContextDepth;
   int _ccMinX;
@@ -1909,10 +1905,6 @@ class extMain
                       Ath__array1D<uint>*** signalGsTable,
                       Ath__array1D<uint>*** instTable,
                       uint* bucketCnt);
-  void freeSignalTables(bool rlog,
-                        Ath__array1D<uint>*** sdbSignalTable,
-                        Ath__array1D<uint>*** signalGsTable,
-                        uint* bucketCnt);
   uint addNets(uint dir,
                int* bb_ll,
                int* bb_ur,
@@ -2108,7 +2100,6 @@ class extMain
                        const char* netNames,
                        uint cc_up,
                        uint ccFlag,
-                       uint use_signal_table,
                        double resBound,
                        bool mergeViaRes,
                        bool gs,
@@ -2355,23 +2346,6 @@ class extMain
   bool checkLayerResistance();
 
   uint getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
-  uint mkSignalTables2(uint* nm_step,
-                       int* bb_ll,
-                       int* bb_ur,
-                       Ath__array1D<uint>*** sdbSignalTable,
-                       Ath__array1D<uint>* sdbPowerTable,
-                       Ath__array1D<uint>*** instTable,
-                       uint* bucketCnt);
-  uint addSignalNets2(uint dir,
-                      int* lo_sdb,
-                      int* hi_sdb,
-                      int* bb_ll,
-                      int* bb_ur,
-                      uint* bucketSize,
-                      uint wtype,
-                      Ath__array1D<uint>*** sdbSignalTable,
-                      Ath__array1D<uint>* tmpNetIdTable,
-                      odb::dbCreateNetUtil* createDbNet = NULL);
 
   uint addPowerNets2(uint dir,
                      int* bb_ll,
@@ -2380,24 +2354,6 @@ class extMain
                      Ath__array1D<uint>* sdbPowerTable,
                      odb::dbCreateNetUtil* createDbNet = NULL);
   void resetNetSpefFlag(Ath__array1D<uint>* tmpNetIdTable);
-
-  int fill_gs3(int dir,
-               int* ll,
-               int* ur,
-               int* lo_gs,
-               int* hi_gs,
-               uint layerCnt,
-               uint* dirTable,
-               uint* pitchTable,
-               uint* widthTable,
-               int* sdbTable_ll,
-               int* sdbTable_ur,
-               uint* bucketSize,
-               Ath__array1D<uint>* powerNetTable,
-               Ath__array1D<uint>* tmpNetIdTable,
-               Ath__array1D<uint>*** sdbSignalTable,
-               Ath__array1D<uint>*** instGsTable,
-               odb::dbCreateNetUtil* createDbNet = NULL);
 
   void reportTableNetCnt(uint* sdbBucketCnt,
                          Ath__array1D<uint>*** sdbSignalTable);

@@ -434,7 +434,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.net,
                             opts.cc_up,
                             opts.cc_model,
-                            opts.signal_table,
                             opts.max_res,
                             !opts.no_merge_via_res,
                             !opts.no_gs,

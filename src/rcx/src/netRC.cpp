@@ -2110,7 +2110,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                               const char* netNames,
                               uint cc_up,
                               uint ccFlag,
-                              uint use_signal_table,
                               double resBound,
                               bool mergeViaRes,
                               bool gs,
@@ -2120,8 +2119,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                               ZInterface* Interface)
 {
   uint debugNetId = 0;
-
-  _use_signal_tables = use_signal_table;
 
   _diagFlow = true;
 
