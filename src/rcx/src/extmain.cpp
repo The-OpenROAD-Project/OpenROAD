@@ -49,14 +49,6 @@ void extMain::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
-{
-  if (_ext == NULL)
-    return;
-  extMain* ext = (extMain*) _ext;
-  ext->removeSdb(nets);
-}
-
 void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
@@ -467,10 +459,6 @@ extMain::extMain(uint menuId)
   _itermTable = NULL;
   _nodeTable = NULL;
 
-  _extNetSDB = NULL;
-  _extCcapSDB = NULL;
-  _reExtCcapSDB = NULL;
-
   _usingMetalPlanes = 0;
   _ccUp = 0;
   _couplingFlag = 0;
@@ -862,64 +850,6 @@ void extMain::setBlock(dbBlock* block)
   _origSpefFilePrefix = NULL;
   _newSpefFilePrefix = NULL;
   _excludeCells = NULL;
-}
-
-uint extMain::computeXcaps(uint boxType)
-{
-  ZPtr<ISdb> ccCapSdb = _extCcapSDB;
-  if (ccCapSdb == NULL)
-    return 0;
-
-  uint cnt = 0;
-  ccCapSdb->searchWireIds(_x1, _y1, _x2, _y2, true, NULL);
-
-  ccCapSdb->startIterator();
-
-  bool mergeParallel = _mergeParallelCC;
-  uint wireId = 0;
-  while ((wireId = ccCapSdb->getNextWireId())) {
-    uint len, dist, id1, id2;
-    ccCapSdb->getCCdist(wireId, &dist, &len, &id1, &id2);
-
-    uint extId1;
-    uint junctionId1;
-    uint wtype1;
-    _extNetSDB->getIds(id1, &extId1, &junctionId1, &wtype1);
-
-    if (wtype1 == _dbPowerId)
-      continue;
-
-    uint extId2, junctionId2, wtype2;
-    _extNetSDB->getIds(id2, &extId2, &junctionId2, &wtype2);
-
-    if (wtype2 == _dbPowerId)
-      continue;
-
-    dbRSeg* rseg1 = dbRSeg::getRSeg(_block, extId1);
-    dbRSeg* rseg2 = dbRSeg::getRSeg(_block, extId2);
-
-    dbNet* srcNet = rseg1->getNet();
-    dbNet* tgtNet = rseg2->getNet();
-
-    if (srcNet == tgtNet)
-      continue;
-
-    dbCCSeg* ccap
-        = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-                          dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
-                          mergeParallel);
-
-    uint lcnt = _block->getCornerCount();
-    for (uint ii = 0; ii < lcnt; ii++) {
-      if (mergeParallel)
-        ccap->addCapacitance(len / dist + ii, ii);
-      else
-        ccap->setCapacitance(len / dist + ii, ii);
-    }
-
-    cnt++;
-  }
-  return cnt;
 }
 
 double extMain::getLoCoupling()

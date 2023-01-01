@@ -1606,9 +1606,6 @@ class extMain
   Ath__array1D<int>* _btermTable;
   Ath__array1D<int>* _itermTable;
 
-  odb::ZPtr<odb::ISdb> _extNetSDB;
-  odb::ZPtr<odb::ISdb> _extCcapSDB;
-  odb::ZPtr<odb::ISdb> _reExtCcapSDB;
   uint _menuId;
   uint _dbPowerId;
   uint _dbSignalId;
@@ -2027,12 +2024,7 @@ class extMain
   bool updateCoupCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, int jj, double v);
   double updateRes(odb::dbRSeg* rseg, double res, uint model);
 
-  uint setupSearchDb(const char* bbox, odb::ZInterface* Interface);
-  odb::ZPtr<odb::ISdb> getCcSdb();
-  odb::ZPtr<odb::ISdb> getNetSdb();
-  uint computeXcaps(uint boxType);
   uint getExtBbox(int* x1, int* y1, int* x2, int* y2);
-  void setExtractionBbox();
 
   void setupMapping(uint itermCnt);
   uint getMultiples(uint cnt, uint base);
@@ -2073,7 +2065,6 @@ class extMain
   void removeCC(std::vector<odb::dbNet*>& nets);
   void removeRSeg(std::vector<odb::dbNet*>& nets);
   void removeCapNode(std::vector<odb::dbNet*>& nets);
-  void removeSdb(std::vector<odb::dbNet*>& nets);
   void adjustRC(double resFactor, double ccFactor, double gndcFactor);
   void updatePrevControl();
   void getPrevControl();
@@ -2092,7 +2083,6 @@ class extMain
                        odb::ZInterface* context);
 
   uint getShortSrcJid(uint jid);
-  void markPathHeadTerm(odb::dbWirePath& path);
   void make1stRSeg(odb::dbNet* net,
                    odb::dbWirePath& path,
                    uint cnid,
@@ -2116,7 +2106,6 @@ class extMain
                   odb::Point& prevPoint,
                   odb::dbWirePathShape& pshape);
   void setResAndCap(odb::dbRSeg* rc, double* restbl, double* captbl);
-  void setBranchCapNodeId(odb::dbNet* net, uint junction);
   odb::dbRSeg* addRSeg(odb::dbNet* net,
                        std::vector<uint>& rsegJid,
                        uint& srcId,
@@ -2221,15 +2210,6 @@ class extMain
                       const char* ref,
                       const char* rd_file);
   double getTotalNetCap(uint netId, uint cornerNum);
-  void extDump(char* filename,
-               bool openTreeFile,
-               bool closeTreeFile,
-               bool ccCapGeom,
-               bool ccNetGeom,
-               bool trackCnt,
-               bool signal,
-               bool power,
-               uint layer);
   void extCount(bool signalWireSeg, bool powerWireSeg);
   void initContextArray();
   void initDgContextArray();
@@ -2264,7 +2244,6 @@ class extMain
   uint benchWires(extMainOptions* options);
   uint GenExtRules(const char* rulesFileName, int pattern);
   FILE* getPtFile() { return _ptFile; };
-  static void destroyExtSdb(std::vector<odb::dbNet*>& nets, void* ext);
   void writeIncrementalSpef(char* filename,
                             std::vector<odb::dbNet*>& buf_nets,
                             uint nn,

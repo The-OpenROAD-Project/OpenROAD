@@ -490,24 +490,6 @@ void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
   }
   _nodeTable->set(junction, 0);
 }
-void extMain::setBranchCapNodeId(dbNet* net, uint junction)
-{
-  int capId = _nodeTable->geti(junction);
-  if (capId != 0)
-    return;
-
-  dbCapNode* cap = dbCapNode::create(net, 0, _foreign);
-
-  cap->setInternalFlag();
-  cap->setBranchFlag();
-
-  cap->setNode(junction);
-
-  capId = cap->getId();
-
-  _nodeTable->set(junction, -capId);
-  return;
-}
 
 bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
 {
@@ -808,17 +790,6 @@ uint extMain::getShortSrcJid(uint jid)
   return jid;
 }
 
-void extMain::markPathHeadTerm(dbWirePath& path)
-{
-  if (path.bterm) {
-    _connectedBTerm.push_back(path.bterm);
-    path.bterm->setMark(1);
-  } else if (path.iterm) {
-    _connectedITerm.push_back(path.iterm);
-    path.iterm->setMark(1);
-  }
-}
-
 void extMain::make1stRSeg(dbNet* net,
                           dbWirePath& path,
                           uint cnid,
@@ -943,7 +914,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       make1stRSeg(net, path, srcId, skipStartWarning);
     }
 
-    bool ADD_VIA_JUNCTION = false;
     prevPoint = path.point;
     sprevPoint = prevPoint;
     resetSumRCtable();
@@ -974,8 +944,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       getShapeRC(net, s, sprevPoint, pshape);
       if (_mergeResBound == 0.0) {
         if (!s.isVia())
-          _rsegJid.push_back(pshape.junction_id);
-        else if (ADD_VIA_JUNCTION)
           _rsegJid.push_back(pshape.junction_id);
 
         addToSumRCtable();
@@ -1118,76 +1086,6 @@ uint extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
   *y2 = _y2;
 
   return 0;
-}
-ZPtr<ISdb> extMain::getCcSdb()
-{
-  return _extCcapSDB;
-}
-ZPtr<ISdb> extMain::getNetSdb()
-{
-  return _extNetSDB;
-}
-void extMain::setExtractionBbox()
-{
-  const Rect r = _block->getDieArea();
-  _x1 = r.xMin();
-  _y1 = r.yMin();
-  _x2 = r.xMax();
-  _y2 = r.yMax();
-
-  _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-}
-
-uint extMain::setupSearchDb(const char* bbox, ZInterface* Interface)
-{
-  if (_couplingFlag == 0)
-    return 0;
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  if (adsNewComponent(Interface->_context, ZCID(Sdb), _extNetSDB) != Z_OK) {
-    assert(0);
-  }
-  ZALLOCATED(_extNetSDB);
-
-  _extNetSDB->initSearchForNets(_tech, _block);
-
-  setExtractionBbox();
-
-  if (_couplingFlag > 1)
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-  if (!_CCnoPowerSource && !_CCnoPowerTarget)
-    _extNetSDB->addPowerNets(_block, _dbPowerId, true);
-
-  return 0;
-}
-
-void extMain::removeSdb(std::vector<dbNet*>& nets)
-{
-  if (_extNetSDB == NULL || _extNetSDB->getSearchPtr() == NULL)
-    return;
-  dbNet::markNets(nets, _block, true);
-  _extNetSDB->removeMarkedNetWires();
-  dbNet::markNets(nets, _block, false);
 }
 
 void extMain::removeCC(std::vector<dbNet*>& nets)
@@ -2241,11 +2139,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
                   "Coupling Cap extraction {} ...",
                   getBlock()->getName().c_str());
 
-    if (!_allNet)
-      _extNetSDB->setMaxArea(_ccMinX, _ccMinY, _ccMaxX, _ccMaxY);
-
-    ZPtr<ISdb> ccCapSdb = _extCcapSDB;
-
     _totCCcnt = 0;
     _totSmallCCcnt = 0;
     _totBigCCcnt = 0;
@@ -2341,7 +2234,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
     }
   }
 
-  _extNetSDB = NULL;
   if (_geomSeq)
     delete _geomSeq;
   _geomSeq = NULL;

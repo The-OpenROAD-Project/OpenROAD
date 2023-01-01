@@ -471,15 +471,6 @@ bool Ext::init_incremental_spef(const std::string& origp,
   return 0;
 }
 
-bool Ext::export_sdb(odb::ZPtr<odb::ISdb>& net_sdb,
-                     odb::ZPtr<odb::ISdb>& cc_sdb)
-{
-  cc_sdb = _ext->getCcSdb();
-  net_sdb = _ext->getNetSdb();
-
-  return 0;
-}
-
 bool Ext::write_spef_nets(odb::dbObject* block,
                           bool flatten,
                           bool parallel,
@@ -679,31 +670,6 @@ bool Ext::calibrate(const std::string& spef_file,
                   db_corner_name.c_str(),
                   corner,
                   spef_corner);
-  return 0;
-}
-
-bool Ext::dump(bool open_tree_file,
-               bool close_tree_file,
-               bool cc_cap_geom,
-               bool cc_net_geom,
-               bool track_cnt,
-               bool signal,
-               bool power,
-               int layer,
-               const std::string& file)
-{
-  logger_->info(RCX, 25, "Printing file {}", file.c_str());
-
-  _ext->extDump((char*) file.c_str(),
-                open_tree_file,
-                close_tree_file,
-                cc_cap_geom,
-                cc_net_geom,
-                track_cnt,
-                signal,
-                power,
-                layer);
-
   return 0;
 }
 

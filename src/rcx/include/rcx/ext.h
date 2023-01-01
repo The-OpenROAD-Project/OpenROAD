@@ -288,16 +288,6 @@ class Ext
                  float upper_limit,
                  float lower_limit);
 
-  bool export_sdb(odb::ZPtr<odb::ISdb>& net_sdb, odb::ZPtr<odb::ISdb>& cc_sdb);
-  bool dump(bool open_tree_file,
-            bool close_tree_file,
-            bool cc_cap_geom,
-            bool cc_net_geom,
-            bool track_cnt,
-            bool signal,
-            bool power,
-            int layer,
-            const std::string& file);
   bool count(bool signal_wire_seg, bool power_wire_seg);
   bool rc_tree(float max_cap, uint test, int net, const std::string& print_tag);
   bool net_stats(std::list<int>& net_ids,
