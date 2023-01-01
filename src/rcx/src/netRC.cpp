@@ -2208,9 +2208,6 @@ uint extMain::makeBlockRCsegs(const char* cmp_file,
   uint itermCntEst = 3 * bnets.size();
   setupMapping(itermCntEst);
 
-  if (_reuseMetalFill)
-    _extNetSDB->adjustMetalFill();
-
   if (_power_extract_only) {
     powerRCGen();
     return 1;

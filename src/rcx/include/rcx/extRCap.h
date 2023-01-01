@@ -1576,7 +1576,6 @@ class extMain
 
   bool _getBandWire;
   bool _printBandInfo;
-  bool _reuseMetalFill;
   uint _ccUp;
   uint _couplingFlag;
   bool _rotatedGs;

@@ -471,7 +471,6 @@ extMain::extMain(uint menuId)
   _extCcapSDB = NULL;
   _reExtCcapSDB = NULL;
 
-  _reuseMetalFill = false;
   _usingMetalPlanes = 0;
   _ccUp = 0;
   _couplingFlag = 0;
