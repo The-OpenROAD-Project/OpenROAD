@@ -32,14 +32,13 @@
 
 #include <wire.h>
 
+#include <limits>
 #include <map>
 #include <vector>
 
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
-
-#define MAXINT 0x7FFFFFFF;
 
 namespace rcx {
 
@@ -158,7 +157,6 @@ void extMain::set_adjust_colinear(bool v)
 
 double extMain::getViaResistance(dbTechVia* tvia)
 {
-  // if (_viaResHash[tvia->getConstName()])
   double res = 0;
   dbSet<dbBox> boxes = tvia->getBoxes();
   dbSet<dbBox>::iterator bitr;
@@ -168,23 +166,11 @@ double extMain::getViaResistance(dbTechVia* tvia)
     dbTechLayer* layer1 = box->getTechLayer();
     if (layer1->getType() == dbTechLayerType::CUT)
       res = layer1->getResistance();
-
-    /* This works
-
-    debug("EXT_RES",
-          "V",
-          "getViaResistance: {} {} %g ohms\n",
-          tvia->getConstName(),
-          layer1->getConstName(),
-          layer1->getResistance());
-
-          */
   }
   return res;
 }
 double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
 {
-  // if (_viaResHash[tvia->getConstName()])
   double tot_res = 0;
   dbSet<dbBox> boxes = tvia->getBoxes();
   dbSet<dbBox>::iterator bitr;
@@ -196,9 +182,6 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
     if (layer1->getType() == dbTechLayerType::CUT) {
       tot_res += layer1->getResistance();
       cutCnt++;
-      // debug("EXT_RES", "R", "getViaResistance_b: {} {} {} %g ohms\n", cutCnt,
-      // tvia->getConstName(),  layer1->getConstName(),
-      // layer1->getResistance());
     }
   }
   double Res = tot_res;
@@ -362,8 +345,6 @@ void extMain::getShapeRC(dbNet* net,
       } else {
         getViaCapacitance(s, net);
         for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-          //_tmpCapTable[ii] = width * 2 * getFringe(level, width, ii, areaCap);
-          //_tmpCapTable[ii] += 2 * areaCap * width * width;
           _tmpResTable[ii] = res;
         }
       }
@@ -400,20 +381,10 @@ void extMain::getShapeRC(dbNet* net,
 
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
         getFringe(level, width, ii, areaCap);
-#ifdef HI_ACC_10312011
-        if (width < 400)
-          _tmpCapTable[ii]
-              = (len + width) * 2 * getFringe(level, width, ii, areaCap);
-        else
-          _tmpCapTable[ii] = len * 2 * getFringe(level, width, ii, areaCap);
-#else
         if (USE_DB_UNITS)
           len = GetDBcoords2(len);
 
-        // DF 720	_tmpCapTable[ii]= len*2*c1;
         _tmpCapTable[ii] = 0;
-#endif
-        // _tmpCapTable[ii] += 2 * areaCap * len * width;
         bool newResModel = true;
         if (!newResModel) {
           double r = getResistance(level, width, len, ii);
@@ -437,32 +408,10 @@ void extMain::getShapeRC(dbNet* net,
             _tmpResTable[0]);
   }
   if ((!s.isVia()) && (_couplingFlag > 0)) {
-    dbTechLayer* layer = s.getTechLayer();
-    uint level = layer->getRoutingLevel();
-
     int x1 = s.xMin();
     int y1 = s.yMin();
     int x2 = s.xMax();
     int y2 = s.yMax();
-
-    if (_usingMetalPlanes && !_alwaysNewGs)
-      _geomSeq->box(x1, y1, x2, y2, level);
-
-    if (_useDbSdb) {
-      // net->getWire()->setProperty (pshape.junction_id, rc->getId());
-      if (_eco)
-        _extNetSDB->addBox(x1,
-                           y1,
-                           x2,
-                           y2,
-                           level,
-                           net->getId(),
-                           pshape.junction_id,
-                           _dbSignalId);
-    }
-    // else
-    // _extNetSDB->addBox(x1, y1, x2, y2, level, rc->getId(),
-    // pshape.junction_id, _dbSignalId);
 
     if (!_allNet) {
       _ccMinX = MIN(x1, _ccMinX);
@@ -496,14 +445,12 @@ void extMain::setResCapFromLef(dbRSeg* rc,
     uint level = s.getTechLayer()->getRoutingLevel();
     res = _modelTable->get(0)->getRes(level) * len;
 
-    // if (_couplingFlag==0)
     cap = _modelTable->get(0)->getTotCapOverSub(level) * len;
   }
   for (uint ii = 0; ii < _extDbCnt; ii++) {
     double xmult = 1.0 + 0.1 * ii;
     rc->setResistance(xmult * res, ii);
 
-    // if (_couplingFlag==0)
     rc->setCapacitance(xmult * cap, ii);
   }
 }
@@ -519,14 +466,12 @@ void extMain::setResAndCap(dbRSeg* rc, double* restbl, double* captbl)
     rc->setCapacitance(cap, 0);
     return;
   }
-  // TO_TEST
   for (uint ii = 0; ii < _extDbCnt; ii++) {
     pcdbIdx = getProcessCornerDbIndex(ii);
     res = _resModify ? restbl[ii] * _resFactor : restbl[ii];
     rc->setResistance(res, pcdbIdx);
     cap = _gndcModify ? captbl[ii] * _gndcFactor : captbl[ii];
     cap = _netGndcCalibration ? cap * _netGndcCalibFactor : cap;
-    // DF 1120 rc->setCapacitance(cap, pcdbIdx);
     getScaledCornerDbIndex(ii, sci, scdbIdx);
     if (sci == -1)
       continue;
@@ -534,15 +479,6 @@ void extMain::setResAndCap(dbRSeg* rc, double* restbl, double* captbl)
     rc->setResistance(res, scdbIdx);
     rc->setCapacitance(cap, scdbIdx);
   }
-  /*
-  for (uint ii= 1; ii<_extDbCnt; ii++)
-  {
-          double xmult = 1.0 + 0.1*ii;
-          rc->setResistance(xmult*res, ii);
-          // if (_couplingFlag==0)
-                  rc->setCapacitance(xmult*cap, ii);
-  }
-  */
 }
 
 void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
@@ -553,24 +489,6 @@ void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
     _itermTable->set(iterm->getId(), 0);
   }
   _nodeTable->set(junction, 0);
-}
-void extMain::setBranchCapNodeId(dbNet* net, uint junction)
-{
-  int capId = _nodeTable->geti(junction);
-  if (capId != 0)
-    return;
-
-  dbCapNode* cap = dbCapNode::create(net, 0, _foreign);
-
-  cap->setInternalFlag();
-  cap->setBranchFlag();
-
-  cap->setNode(junction);
-
-  capId = cap->getId();
-
-  _nodeTable->set(junction, -capId);
-  return;
 }
 
 bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
@@ -621,7 +539,6 @@ uint extMain::getCapNodeId(dbNet* net,
       if (iterm->getNet()->getId() == DEBUG_NET_ID)
         fprintf(fp, "\tOLD I_TERM %d  capNode %d\n", id, capId);
 #endif
-      //(dbCapNode::getCapNode(_block, capId))->incrChildrenCnt();
 
       return capId;
     }
@@ -655,7 +572,6 @@ uint extMain::getCapNodeId(dbNet* net,
 
     cap->setNode(bterm->getId());
     cap->setBTermFlag();
-    // cap->incrChildrenCnt();
 
     capId = cap->getId();
 
@@ -673,7 +589,6 @@ uint extMain::getCapNodeId(dbNet* net,
     if (capId != 0 && capId != -1) {
       capId = abs(capId);
       dbCapNode* cap = dbCapNode::getCapNode(_block, capId);
-      // cap->incrChildrenCnt();
       if (branch) {
         cap->setBranchFlag();
       }
@@ -738,9 +653,6 @@ uint extMain::getCapNodeId(dbNet* net,
 }
 uint extMain::resetMapNodes(dbNet* net)
 {
-  //	uint rcCnt= 0;
-  //	uint netId= net->getId();
-
   dbWire* wire = net->getWire();
   if (wire == NULL) {
     if (_reportNetNoWire)
@@ -775,14 +687,11 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                          double* restbl,
                          double* captbl)
 {
-  // if (!path.iterm && !path.bterm &&isTermPathEnded(pshape.bterm,
-  // pshape.iterm))
   if (!path.bterm && isTermPathEnded(pshape.bterm, pshape.iterm)) {
     rsegJid.clear();
     return NULL;
   }
   uint jidl = rsegJid.size();
-  // assert (jidl>0);
   uint dstId = getCapNodeId(
       net, pshape.bterm, pshape.iterm, pshape.junction_id, isBranch);
   if (dstId == srcId) {
@@ -820,7 +729,6 @@ dbRSeg* extMain::addRSeg(dbNet* net,
   if (pshape.junction_id)
     net->getWire()->getCoord((int) pshape.junction_id, jx, jy);
   dbRSeg* rc = dbRSeg::create(net, jx, jy, pathDir, true);
-  // dbRSeg::setRSeg(rc, net, pshape.junction_id, pathDir, true);
 
   uint rsid = rc->getId();
   for (uint jj = 0; jj < jidl; jj++)
@@ -882,17 +790,6 @@ uint extMain::getShortSrcJid(uint jid)
   return jid;
 }
 
-void extMain::markPathHeadTerm(dbWirePath& path)
-{
-  if (path.bterm) {
-    _connectedBTerm.push_back(path.bterm);
-    path.bterm->setMark(1);
-  } else if (path.iterm) {
-    _connectedITerm.push_back(path.iterm);
-    path.iterm->setMark(1);
-  }
-}
-
 void extMain::make1stRSeg(dbNet* net,
                           dbWirePath& path,
                           uint cnid,
@@ -930,10 +827,7 @@ void extMain::make1stRSeg(dbNet* net,
 
 uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 {
-  //_debug= true;
   net->setRCgraph(true);
-
-  // uint netId= net->getId();
 
   uint rcCnt1 = resetMapNodes(net);
   if (rcCnt1 <= 0)
@@ -946,7 +840,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   dbWirePathShape pshape, ppshape;
   Point prevPoint, sprevPoint;
 
-  // std::vector<uint> rsegJid;
   _rsegJid.clear();
   _shortSrcJid.clear();
   _shortTgtJid.clear();
@@ -978,10 +871,8 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
     for (pitr.begin(wire); pitr.getNextPath(path);) {
       if (!path.bterm && !path.iterm && path.is_branch && path.junction_id)
         _nodeTable->set(path.junction_id, -1);
-      // setBranchCapNodeId(net, path.junction_id);
 
-      if (path.is_short)  // wfs 090106
-      {
+      if (path.is_short) {
         _nodeTable->set(path.short_junction, -1);
         srcJid = path.short_junction;
         for (uint tt = 0; tt < _shortTgtJid.size(); tt++) {
@@ -1020,26 +911,9 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
                            path.is_branch);
     if (!netHeadMarked) {
       netHeadMarked = true;
-      // markPathHeadTerm(path); // may call markPathHeadTerm() later
       make1stRSeg(net, path, srcId, skipStartWarning);
     }
 
-    // srcId= getCapNodeId(net, path.bterm, path.iterm, path.junction_id,
-    // path.is_branch);
-
-    // wfs 090106, adding 0.0001 rseg for short
-    // if (!path.iterm && !path.bterm && !path.is_branch && path.is_short) {
-    //  uint shortId = getCapNodeId(net, NULL, NULL, path.short_junction, true);
-    //  dbRSeg *rc= dbRSeg::create(net, path.junction_id, 0, true);
-    //  rc->setSourceNode(shortId);
-    //  rc->setTargetNode(srcId);
-    //  srcId = shortId;
-    //  for (int jj=0;jj<_extDbCnt;jj++) {
-    //    rc->setResistance(0.0001,jj);
-    //    rc->setCapacitance(0.0,jj);
-    //  }
-
-    bool ADD_VIA_JUNCTION = false;
     prevPoint = path.point;
     sprevPoint = prevPoint;
     resetSumRCtable();
@@ -1071,8 +945,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       if (_mergeResBound == 0.0) {
         if (!s.isVia())
           _rsegJid.push_back(pshape.junction_id);
-        else if (ADD_VIA_JUNCTION)
-          _rsegJid.push_back(pshape.junction_id);
 
         addToSumRCtable();
 
@@ -1088,7 +960,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
                                _tmpSumResTable,
                                _tmpSumCapTable);
           if (s.isVia() && rc != NULL) {
-            // seg->_flags->_spare_bits_29=1;
             createShapeProperty(net, pshape.junction_id, rc->getId());
           }
           resetSumRCtable();
@@ -1148,8 +1019,6 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       } else
         ppshape = pshape;
     }
-    // if (_tmpSumResTable[0] != 0.0 || _tmpSumCapTable[0] != 0.0)
-    // if (_tmpSumResTable[0] != 0.0)
     if (_sumUpdated) {
       addRSeg(net,
               _rsegJid,
@@ -1218,360 +1087,16 @@ uint extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
 
   return 0;
 }
-bool extMain::getExtAreaCoords(const char* bbox)
-{
-  /*
-  const char * token = strtok( bbox, " \t\n" );
-      const char * busbitchars = strtok(NULL, "\"");
-*/
-  return false;
-}
-ZPtr<ISdb> extMain::getCcSdb()
-{
-  return _extCcapSDB;
-}
-ZPtr<ISdb> extMain::getNetSdb()
-{
-  return _extNetSDB;
-}
-void extMain::setExtractionBbox(const char* bbox)
-{
-  if ((bbox == NULL) || (strcmp(bbox, "") == 0)) {
-    Rect r = _block->getDieArea();
-    _x1 = r.xMin();
-    _y1 = r.yMin();
-    _x2 = r.xMax();
-    _y2 = r.yMax();
-
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  }
-
-  if (getExtAreaCoords(bbox))
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  else {
-    Rect r = _block->getDieArea();
-
-    _x1 = r.xMin();
-    _y1 = r.yMin();
-    _x2 = r.xMax();
-    _y2 = r.yMax();
-
-    _extNetSDB->setMaxArea(_x1, _y1, _x2, _y2);
-  }
-}
-
-uint extMain::setupSearchDb(const char* bbox, uint debug, ZInterface* Interface)
-{
-  if (_couplingFlag == 0)
-    return 0;
-  // Ath__overlapAdjust overlapAdj = Z_endAdjust;
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  if (_reExtract) {
-    if (_extNetSDB == NULL || _extNetSDB->getSearchPtr() == NULL) {
-      logger_->info(RCX, 116, "No existing extraction sdb. Can't reExtract.");
-      return 0;
-    }
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-    //		if (_reExtCcapSDB && _reExtCcapSDB->getSearchPtr())
-    //			_reExtCcapSDB->cleanSdb();
-    //		else
-    //		{
-    //			if (adsNewComponent( Interface->_context, ZCID(Sdb),
-    //_reExtCcapSDB
-    //)!= Z_OK)
-    //			{
-    //				assert(0);
-    //			}
-    //			ZALLOCATED(_reExtCcapSDB);
-    //		}
-    //
-    //		_reExtCcapSDB->initSearchForNets(_tech, _block);
-    //		_reExtCcapSDB->setDefaultWireType(_CCsegId);
-    return 0;
-  }
-  if (adsNewComponent(Interface->_context, ZCID(Sdb), _extNetSDB) != Z_OK) {
-    assert(0);
-  }
-  ZALLOCATED(_extNetSDB);
-
-  _extNetSDB->initSearchForNets(_tech, _block);
-
-  setExtractionBbox(bbox);
-
-  if (_couplingFlag > 1)
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-  if (!_CCnoPowerSource && !_CCnoPowerTarget)
-    _extNetSDB->addPowerNets(_block, _dbPowerId, true);
-  // TODO-EXT: add obstructions
-
-  if (_debug && (_couplingFlag > 1)) {
-    if (adsNewComponent(Interface->_context, ZCID(Sdb), _extCcapSDB) != Z_OK) {
-      assert(0);
-    }
-    ZALLOCATED(_extCcapSDB);
-
-    _extCcapSDB->initSearchForNets(_tech, _block);
-    _extCcapSDB->setDefaultWireType(_CCsegId);
-  }
-
-  return 0;
-}
-
-void extMain::removeSdb(std::vector<dbNet*>& nets)
-{
-  if (_extNetSDB == NULL || _extNetSDB->getSearchPtr() == NULL)
-    return;
-  dbNet::markNets(nets, _block, true);
-  _extNetSDB->removeMarkedNetWires();
-  dbNet::markNets(nets, _block, false);
-}
 
 void extMain::removeCC(std::vector<dbNet*>& nets)
 {
   for (uint ii = 0; ii < 15; ii++)
     logger_->warn(RCX, 255, "Need to CODE removeCC.");
-  /*
-          int cnt = 0;
-          bool destroyOnlySrc;
-          dbNet *net;
-          dbSet<dbNet> bnet = _block->getNets();
-          dbSet<dbNet>::iterator nitr;
-          if (nets.size() == 0)
-          {
-                  destroyOnlySrc = true;
-                  for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                  {
-                          net = (dbNet *) *nitr;
-                          cnt += net->destroyCCSegs(destroyOnlySrc);
-                  }
-                  notice (0, "delete {} CC segments.\n", cnt);
-                  return;
-          }
-          int j;
-          for (j=0;j<nets.size();j++)
-          {
-                  net = nets[j];
-                  net->setMark(true);
-                  net->selectCCSegs();
-          }
-          for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-          {
-                  net = (dbNet *) *nitr;
-                  if (net->isSelect()==false)
-                          continue;
-                  net->setSelect(false);
-                  net->detachSelectedCCSegs();
-          }
-          destroyOnlySrc = false;
-          for (j=0;j<nets.size();j++)
-          {
-                  net = nets[j];
-                  net->setMark(false);
-                  cnt += net->destroyCCSegs(destroyOnlySrc);
-          }
-          notice (0, "delete {} CC segments.\n", cnt);
-  */
 }
 
-/*
-void extMain::unlinkCC(std::vector<dbNet *> & nets)
-{
-        int cnt = 0;
-        bool destroyOnlySrc;
-        dbNet *net;
-        dbSet<dbNet> bnet = _block->getNets();
-        dbSet<dbNet>::iterator nitr;
-        if (nets.size() == 0)
-        {
-                destroyOnlySrc = true;
-                for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                {
-                        net = (dbNet *) *nitr;
-                        net->unlinkCCSegs();
-                        cnt++;
-                }
-                notice (0, "unlink CC segments of {} nets.\n", cnt);
-                return;
-        }
-        int j;
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                net->setMark(true);
-                net->selectCCSegs();
-        }
-        for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-        {
-                net = (dbNet *) *nitr;
-                if (net->isSelect()==false)
-                        continue;
-                net->setSelect(false);
-                net->detachSelectedCCSegs();
-        }
-        destroyOnlySrc = false;
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                net->setMark(false);
-                net->unlinkCCSegs();
-                cnt++;
-        }
-        notice (0, "unlink CC segments of {} nets.\n", cnt);
-}
-
-void extMain::removeCapNode(std::vector<dbNet *> & nets)
-{
-        int j;
-        int cnt = 0;
-        dbNet *net;
-        dbSet<dbNet> bnet = _block->getNets();
-        dbSet<dbNet>::iterator nitr;
-        if (nets.size() == 0)
-        {
-                for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                {
-                        net = (dbNet *) *nitr;
-                        cnt += net->destroyCapNodes();
-                }
-                notice (0, "delete {} Cap Nodes.\n", cnt);
-                return;
-        }
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                cnt += net->destroyCapNodes();
-        }
-        notice (0, "delete {} Cap Nodes.\n", cnt);
-}
-
-void extMain::unlinkCapNode(std::vector<dbNet *> & nets)
-{
-        int j;
-        int cnt = 0;
-        dbNet *net;
-        dbSet<dbNet> bnet = _block->getNets();
-        dbSet<dbNet>::iterator nitr;
-        if (nets.size() == 0)
-        {
-                for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                {
-                        net = (dbNet *) *nitr;
-                        net->unlinkCapNodes();
-                        cnt++;
-                }
-                notice (0, "delete {} Cap Nodes.\n", cnt);
-                return;
-        }
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                net->unlinkCapNodes();
-                cnt++;
-        }
-        notice (0, "unlink Cap Nodes of {} nets.\n", cnt);
-}
-
-void extMain::removeRSeg(std::vector<dbNet *> & nets)
-{
-        int j;
-        int cnt = 0;
-        dbNet *net;
-        dbSet<dbNet> bnet = _block->getNets();
-        dbSet<dbNet>::iterator nitr;
-        if (nets.size() == 0)
-        {
-                for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                {
-                        net = (dbNet *) *nitr;
-                        cnt += net->destroyRSegs();
-                }
-                notice (0, "delete {} RC segments.\n", cnt);
-                return;
-        }
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                cnt += net->destroyRSegs();
-        }
-        notice (0, "delete {} RC segments.\n", cnt);
-}
-
-void extMain::unlinkRSeg(std::vector<dbNet *> & nets)
-{
-        int j;
-        int cnt = 0;
-        dbNet *net;
-        dbSet<dbNet> bnet = _block->getNets();
-        dbSet<dbNet>::iterator nitr;
-        if (nets.size() == 0)
-        {
-                for( nitr = bnet.begin(); nitr != bnet.end(); ++nitr)
-                {
-                        net = (dbNet *) *nitr;
-                        net->unlinkRSegs();
-                        cnt++;
-                }
-                notice (0, "unlink RC segments of {} nets.\n", cnt);
-                return;
-        }
-        for (j=0;j<nets.size();j++)
-        {
-                net = nets[j];
-                net->unlinkRSegs();
-                cnt++;
-        }
-        notice (0, "unlink RC segments of {} nets.\n", cnt);
-}
-*/
 void extMain::removeExt(std::vector<dbNet*>& nets)
 {
-  // removeSdb (nets);
   _block->destroyParasitics(nets);
-  // removeCC (nets);
-  // removeRSeg (nets);
-  // removeCapNode (nets);
   _extracted = false;
   if (_spef)
     _spef->reinit();
@@ -1591,17 +1116,6 @@ void extMain::removeExt()
   }
   removeExt(rnets);
 }
-/*
-void extMain::unlinkExt(std::vector<dbNet *> & nets)
-{
-        unlinkCC (nets);
-        unlinkRSeg (nets);
-        unlinkCapNode (nets);
-        _extracted = false;
-        if (_spef)
-                _spef->reinit();
-}
-*/
 void v_printWireNeighbor(void* ip,
                          uint met,
                          void* v_swire,
@@ -1677,7 +1191,6 @@ uint extMain::readCmpStats(const char* name,
   Y1 = y1;
   X2 = x2;
   Y2 = y2;
-  // fclose(fp);
   return lcnt;
 }
 
@@ -1686,10 +1199,10 @@ uint extMain::readCmpFile(const char* name)
   logger_->info(RCX, 117, "Read CMP file {} ...", name);
 
   uint tileSize;
-  int X1 = MAXINT;
-  int Y1 = MAXINT;
-  int X2 = -MAXINT;
-  int Y2 = -MAXINT;
+  int X1 = std::numeric_limits<int>::max();
+  int Y1 = std::numeric_limits<int>::max();
+  int X2 = std::numeric_limits<int>::min();
+  int Y2 = std::numeric_limits<int>::min();
   readCmpStats(name, tileSize, X1, Y1, X2, Y2);
 
   uint lefLayerCnt = 20;  // need an API here
@@ -1706,7 +1219,6 @@ uint extMain::readCmpFile(const char* name)
   uint lCnt = 0;
   uint cnt = 0;
   Ath__parser parser1;
-  // parser1.addSeparator("\r");
   parser1.openFile((char*) name);
   while (parser1.parseNextLine() > 0) {
     if (parser1.isKeyword(0, "VERSION")) {
@@ -1761,7 +1273,6 @@ uint extMain::readCmpFile(const char* name)
           break;
 
         cnt++;
-        // parser1.printWords(stdout);
         int X = Ath__double2int(parser1.getDouble(0) * nm);
         int Y = Ath__double2int(parser1.getDouble(1) * nm);
 
@@ -1807,7 +1318,6 @@ int extMain::setMinTypMax(bool min,
                           bool max,
                           const char* cmp_file,
                           bool density_model,
-                          bool litho,
                           int setMin,
                           int setTyp,
                           int setMax,
@@ -1823,73 +1333,53 @@ int extMain::setMinTypMax(bool min,
       _modelMap.add(0);
       _metRCTable.add(_currentModel->getMetRCTable(0));
     }
-    if (!_eco)
-      _block->setCornerCount(2);
+    _block->setCornerCount(2);
     _extDbCnt = 2;
   } else if (extDbCnt > 1) {  // extract first <extDbCnt>
-    if (!_eco)
-      _block->setCornerCount(extDbCnt);
+    _block->setCornerCount(extDbCnt);
     _extDbCnt = extDbCnt;
-    //		uint cnt= 0;
 
     _modelMap.add(_minModelIndex);
-    //_block->setExtMinCorner(dbIndex);
 
     _modelMap.add(_typModelIndex);
-    //_block->setExtTypCorner(dbIndex);
 
     if (extDbCnt > 2) {
       _modelMap.add(_maxModelIndex);
-      //_block->setExtMaxCorner(dbIndex);
     }
   } else if (min || max || typ) {
     if (min) {
       _modelMap.add(_minModelIndex);
-      //_block->setExtMinCorner(dbIndex);
     }
     if (typ) {
       _modelMap.add(_typModelIndex);
-      //_block->setExtTypCorner(dbIndex);
     }
     if (max) {
       _modelMap.add(_maxModelIndex);
-      //_block->setExtMaxCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
 
-    if (!_eco)
-      _block->setCornerCount(_extDbCnt);
+    _block->setCornerCount(_extDbCnt);
   } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
     if (setMin >= 0) {
       _modelMap.add(setMin);
-      //_block->setExtMinCorner(dbIndex);
     }
     if (setTyp >= 0) {
       _modelMap.add(setTyp);
-      //_block->setExtMinCorner(dbIndex);
     }
     if (setMax >= 0) {
       _modelMap.add(setMax);
-      //_block->setExtMinCorner(dbIndex);
     }
     _extDbCnt = _modelMap.getCnt();
 
-    if (!_eco)
-      _block->setCornerCount(_extDbCnt);
+    _block->setCornerCount(_extDbCnt);
   } else if (extDbCnt == 1) {  // extract first <extDbCnt>
-    if (!_eco)
-      _block->setCornerCount(extDbCnt);
+    _block->setCornerCount(extDbCnt);
     _extDbCnt = extDbCnt;
     _modelMap.add(0);
-    //_block->setExtMaxCorner(dbIndex);
-  } else if (density_model) {
-  } else if (litho) {
   }
 
   if (_currentModel == NULL) {
     _currentModel = getRCmodel(0);
-    // for (uint ii= 0; (_couplingFlag>0) && (!_lefRC) && ii<_modelMap.getCnt();
-    // ii++) {
     for (uint ii = 0; (!_lefRC) && ii < _modelMap.getCnt(); ii++) {
       uint jj = _modelMap.get(ii);
       _metRCTable.add(_currentModel->getMetRCTable(jj));
@@ -1999,8 +1489,6 @@ void extMain::makeCornerMapFromExtControl()
     return;
   if (_processCornerTable == NULL)
     return;
-  // if (_scaledCornerTable==NULL)
-  //	return;
 
   Ath__parser parser;
   uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
@@ -2115,7 +1603,6 @@ char* extMain::addRCCornerScaled(const char* name,
     extCorner* s = _scaledCornerTable->get(ii);
 
     if ((name != NULL) && (strcmp(s->_name, name) == 0)) {
-      // if (s->_model==model) {
       logger_->info(
           RCX,
           122,
@@ -2274,7 +1761,6 @@ int extMain::getDbCornerModel(const char* name)
   }
   return -1;
 }
-// void extMain::makeCornerNameMap(char *buff, int cornerCnt, bool spef)
 void extMain::makeCornerNameMap()
 {
   // This function updates the dbExtControl object and
@@ -2299,14 +1785,6 @@ void extMain::makeCornerNameMap()
     for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
-      // if (spef) {
-      //	map[s->_model]= s;
-      //	A[s->_model]= -(ii+1);
-      //}
-      // else {
-      //	map[s->_dbIndex]= s;
-      //	A[s->_dbIndex]= -(ii+1);
-      //}
       map[s->_dbIndex] = s;
       A[s->_dbIndex] = -(ii + 1);
 
@@ -2331,14 +1809,6 @@ void extMain::makeCornerNameMap()
     for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
 
-      // if (spef) {
-      //	A[s->_model]= ii+1;
-      //	map[s->_model]= s;
-      //}
-      // else {
-      //	A[s->_dbIndex]= ii+1;
-      //	map[s->_dbIndex]= s;
-      //}
       A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
 
@@ -2347,10 +1817,6 @@ void extMain::makeCornerNameMap()
     }
     _prevControl->_extractedCornerList = extList;
   }
-  // if (_extDbCnt<=0) {
-  // 	delete [] map;
-  // 	return;
-  // }
   std::string aList;
 
   for (uint k = 0; k < _cornerCnt; k++) {
@@ -2386,10 +1852,6 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
 
   _modelMap.resetCnt(0);
   uint ii;
-  /*	for (ii= 0; ii<_processCornerTable->getCnt(); ii++) {
-                  extCorner *s= _processCornerTable->get(ii);
-                  _modelMap.add(s->_model);
-          }*/
   _metRCTable.resetCnt(0);
 
   if (rulesFileName != NULL) {  // read rules
@@ -2487,9 +1949,6 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
 #endif
 
-  // char cornerNameList[1024];
-  // makeCornerNameMap(cornerNameList, _cornerCnt, false);
-
   _block->setCornerCount(_cornerCnt, _extDbCnt, NULL);
   return true;
 }
@@ -2505,12 +1964,9 @@ void extMain::updatePrevControl()
   _prevControl->_independentExtCorners = _independentExtCorners;
   _prevControl->_foreign = _foreign;
   _prevControl->_rsegCoord = _rsegCoord;
-  _prevControl->_overCell = _overCell;
   _prevControl->_extracted = _extracted;
   _prevControl->_lefRC = _lefRC;
-  // _prevControl->_extDbCnt = _extDbCnt;
   _prevControl->_cornerCnt = _cornerCnt;
-  _prevControl->_ccPreseveGeom = _ccPreseveGeom;
   _prevControl->_ccUp = _ccUp;
   _prevControl->_couplingFlag = _couplingFlag;
   _prevControl->_coupleThreshold = _coupleThreshold;
@@ -2532,12 +1988,9 @@ void extMain::getPrevControl()
   _independentExtCorners = _prevControl->_independentExtCorners;
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
-  _overCell = _prevControl->_overCell;
   _extracted = _prevControl->_extracted;
   _lefRC = _prevControl->_lefRC;
-  // _extDbCnt = _prevControl->_extDbCnt;
   _cornerCnt = _prevControl->_cornerCnt;
-  _ccPreseveGeom = _prevControl->_ccPreseveGeom;
   _ccUp = _prevControl->_ccUp;
   _couplingFlag = _prevControl->_couplingFlag;
   _coupleThreshold = _prevControl->_coupleThreshold;
@@ -2548,138 +2001,25 @@ void extMain::getPrevControl()
   _CCnoPowerSource = _prevControl->_CCnoPowerSource;
   _CCnoPowerTarget = _prevControl->_CCnoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
-  //	if ((_prevControl->_ruleFileName && !_currentModel->getRuleFileName())
-  //||
-  //	    (!_prevControl->_ruleFileName && !_currentModel->getRuleFileName())
-  //|| (strcmp(_prevControl->_ruleFileName,_currentModel->getRuleFileName())))
 }
 
-uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
-                              const char* cmp_file,
+uint extMain::makeBlockRCsegs(const char* cmp_file,
                               bool density_model,
-                              bool litho,
                               const char* netNames,
-                              const char* bbox,
-                              const char* ibox,
                               uint cc_up,
                               uint ccFlag,
-                              int ccBandTracks,
-                              uint use_signal_table,
                               double resBound,
                               bool mergeViaRes,
-                              uint debug,
-                              int preserve_geom,
-                              bool re_extract,
-                              bool eco,
                               bool gs,
-                              bool rlog,
-                              ZPtr<ISdb> netSdb,
                               double ccThres,
                               int contextDepth,
-                              bool overCell,
                               const char* extRules,
                               ZInterface* Interface)
 {
   uint debugNetId = 0;
-  if (preserve_geom < 0) {
-    debugNetId = -preserve_geom;
-    preserve_geom = 0;
-  }
 
-  _cc_band_tracks = ccBandTracks;
-  _use_signal_tables = use_signal_table;
-
-  if (debug == 703) {
-    logger_->info(
-        RCX, 473, "Initial Tiling {} ...", getBlock()->getName().c_str());
-
-    Rect maxRect = _block->getDieArea();
-    logger_->info(RCX,
-                  125,
-                  "Tiling for die area {}x{} = {} {}  {} {}",
-                  maxRect.dx(),
-                  maxRect.dy(),
-                  maxRect.xMin(),
-                  maxRect.yMin(),
-                  maxRect.xMax(),
-                  maxRect.yMax());
-
-    _use_signal_tables = 3;
-    createWindowsDB(rlog, maxRect, ccBandTracks, ccFlag, use_signal_table);
-    return 0;
-  }
-  if (debug == 803) {
-    Rect maxRect = _block->getDieArea();
-
-    _use_signal_tables = 3;
-    uint wireCnt = fillWindowsDB(rlog, maxRect, use_signal_table);
-    logger_->info(RCX,
-                  126,
-                  "Block {} has {} ext Wires",
-                  getBlock()->getName().c_str(),
-                  wireCnt);
-    return wireCnt;
-  }
-  bool initTiling = false;
-  bool windowFlow = false;
-  bool skipExtractionAfterRcGen = false;
-  bool doExt = false;
-  if (debug == 101) {
-    _batchScaleExt = false;
-    debug = 0;
-  } else if (debug == 100) {
-    _reuseMetalFill = true;
-    debug = 0;
-  } else if (debug == 99) {
-    _extNetSDB = netSdb;
-    return 0;  // "-test 99", to check sdb tracks and wires
-  } else if (debug == 103) {
-    _getBandWire = true;
-    debug = 0;
-  } else if (debug == 104) {
-    _printBandInfo = true;
-    debug = 0;
-  } else if (debug == 105) {
-    _getBandWire = true;
-    _printBandInfo = true;
-    debug = 0;
-  } else if (debug == 106) {
-    _extRun = 0;
-    removeExt();
-    debug = 0;
-  } else if (debug == 104) {
-    _extRun = 0;
-    removeExt();
-    debug = 0;
-  } else if (debug == 501) {
-    windowFlow = true;
-    debug = 0;
-    _getBandWire = false;
-  } else if (debug == 503) {
-    windowFlow = true;
-    debug = 0;
-    _getBandWire = false;
-    doExt = true;
-  } else if (debug == 603) {
-    windowFlow = false;
-    debug = 0;
-    _getBandWire = false;
-    doExt = false;
-    skipExtractionAfterRcGen = true;
-  } else if (debug == 773) {
-    windowFlow = false;
-    debug = 0;
-    _getBandWire = false;
-    doExt = false;
-    skipExtractionAfterRcGen = false;
-    initTiling = true;
-  }
   _diagFlow = true;
 
-  int detailRlog = 0;
-  int ttttRemoveSdb = 1;
-  int ttttRemoveGs = 1;
-  int setBlockPtfile = 0;
   std::vector<dbNet*> inets;
   if ((_prevControl->_ruleFileName.empty())
       && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
@@ -2689,204 +2029,53 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
                   "will not perform extraction!");
     return 0;
   }
-  if (!re_extract) {
-    _couplingFlag = ccFlag;
-    _coupleThreshold = ccThres;
-    _reExtract = re_extract;
-    _ccPreseveGeom = preserve_geom;
 
-    _debug = debug;
-    if (!_lefRC) {
-      _usingMetalPlanes = gs;
-      _ccUp = cc_up;
-      _couplingFlag = ccFlag;
-      _ccContextDepth = contextDepth;
-      if (_usingMetalPlanes)
-        _overCell = overCell;
-    } else {
-      _usingMetalPlanes = 0;
-      _ccUp = 0;
-      _couplingFlag = 0;
-      _ccContextDepth = 0;
-    }
-    _mergeViaRes = mergeViaRes;
-    _mergeResBound = resBound;
+  _couplingFlag = ccFlag;
+  _coupleThreshold = ccThres;
+
+  if (!_lefRC) {
+    _usingMetalPlanes = gs;
+    _ccUp = cc_up;
+    _couplingFlag = ccFlag;
+    _ccContextDepth = contextDepth;
+  } else {
+    _usingMetalPlanes = 0;
+    _ccUp = 0;
+    _couplingFlag = 0;
+    _ccContextDepth = 0;
   }
-  _eco = eco;
-  if (eco && _extRun == 0) {
-    getPrevControl();
-    getExtractedCorners();
-  }
-  if (!eco) {
-    if (netSdb && netSdb == _extNetSDB)
-      netSdb->reMakeSdb(_tech, _block);
-  }
-  // if ( _extRun==0 || (!re_extract && !eco )) {
+  _mergeViaRes = mergeViaRes;
+  _mergeResBound = resBound;
   if ((_processCornerTable != NULL)
       || ((_processCornerTable == NULL) && (extRules != NULL))) {
     const char* rulesfile
         = extRules ? extRules : _prevControl->_ruleFileName.c_str();
-    if (debug != 777) {
-      if (!setCorners(rulesfile,
-                      cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
-                                    // eventually: rulesFileName
-        logger_->info(RCX, 128, "skipping Extraction ...");
-        return 0;
-      }
+    if (!setCorners(rulesfile, cmp_file)) {
+      logger_->info(RCX, 128, "skipping Extraction ...");
+      return 0;
     }
-    // if (cmp_file!=NULL)
-    //	readCmpFile(cmp_file);
-  }
-  // removed opptions
-  // else if (setMinTypMax(minModel, typModel, maxModel, cmp_file,
-  // density_model, litho, 	setMin, setTyp, setMax, extDbCnt)<0) {
-  else if (setMinTypMax(false,
-                        false,
-                        false,
-                        cmp_file,
-                        density_model,
-                        litho,
-                        -1,
-                        -1,
-                        -1,
-                        1)
-           < 0) {
+  } else if (setMinTypMax(
+                 false, false, false, cmp_file, density_model, -1, -1, -1, 1)
+             < 0) {
     logger_->warn(RCX, 129, "Wrong combination of corner related options!");
     return 0;
   }
   _foreign = false;  // extract after read_spef
-  // }
 
-  if (ibox) {
-    logger_->info(RCX, 130, "Ibox = {}", ibox);
-    Ath__parser* parser = new Ath__parser();
-    parser->mkWords(ibox, NULL);
-    _ibox = new Rect(atoi(parser->get(0)),
-                     atoi(parser->get(1)),
-                     atoi(parser->get(2)),
-                     atoi(parser->get(3)));
-    logger_->info(RCX,
-                  131,
-                  "_ibox = {} {} {} {}",
-                  _ibox->xMin(),
-                  _ibox->yMin(),
-                  _ibox->xMax(),
-                  _ibox->yMax());
-    eco = true;
-  } else
-    _ibox = NULL;
-  if (eco) {
-    _block->getWireUpdatedNets(inets, _ibox);
-    if (inets.size() != 0)
-      logger_->info(RCX, 132, "Eco extract {} nets.", inets.size());
-    else {
-      logger_->info(RCX, 133, "No nets to eco extract.");
-      return 1;
-    }
-    removeExt(inets);
-    _reExtract = true;
-    _allNet = false;
-    preserve_geom = 1;
-  } else {
-    _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
+  _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
+
+  if (!_lefRC) {
+    if (_ccContextDepth)
+      initContextArray();
   }
-
-  // if (remove_ext)
-  //{
-  //	removeExt (inets);
-  //	return 1;
-  //}
-  // if (unlink_ext)
-  //{
-  // unlinkExt (inets);
-  //	return 1;
-  //}
-  // if (remove_cc)
-  //{
-  //	removeCC (inets);
-  //	return 1;
-  //}
-
-  if (!_reExtract || _extRun == 0 || _alwaysNewGs) {
-    //_block->setCornerCount(extDbCnt);
-    //_extDbCnt = extDbCnt;
-
-    //		if (log)
-    //			AthResourceLog ("Start Planes", 0);
-
-    if (!_lefRC) {
-      if (_cc_band_tracks == 0) {
-        //#ifndef NEW_GS_FLOW
-        if (_usingMetalPlanes && (_geoThickTable == NULL)) {
-          if (rlog)
-            AthResourceLog("before initPlanes", detailRlog);
-          initPlanes(_currentModel->getLayerCnt() + 1);
-          if (rlog)
-            AthResourceLog("after initPlanes", detailRlog);
-          addPowerGs();
-          if (rlog)
-            AthResourceLog("after addPowerGs", detailRlog);
-          if (_alwaysNewGs)
-            addSignalGs();
-          if (rlog)
-            AthResourceLog("after addSignalGs", detailRlog);
-          if (_overCell)
-            addInstShapesOnPlanes();
-          if (rlog)
-            AthResourceLog("after addInstShapesOnPlanes", detailRlog);
-        }
-      }
-      //#endif
-      if (_ccContextDepth)
-        initContextArray();
-    }
-    initDgContextArray();
-  }
+  initDgContextArray();
   _extRun++;
-  if (rlog)
-    AthResourceLog("start extract", detailRlog);
-
-#ifdef ZDEBUG
-  Interface->event("CC", "_couplingFlag", Z_INT, _couplingFlag, NULL);
-#endif
 
   extMeasure m;
   m.setLogger(logger_);
 
   _seqPool = m._seqPool;
   _useDbSdb = false;
-  if (netSdb) {
-    _extNetSDB = netSdb;
-    Ath__overlapAdjust overlapAdj = Z_noAdjust;
-    _useDbSdb = true;
-    _extNetSDB->setExtControl(_block,
-                              _useDbSdb,
-                              (uint) overlapAdj,
-                              _CCnoPowerSource,
-                              _CCnoPowerTarget,
-                              _ccUp,
-                              _allNet,
-                              _ccContextDepth,
-                              _ccContextArray,
-                              _ccContextLength,
-                              _dgContextArray,
-                              &_dgContextDepth,
-                              &_dgContextPlanes,
-                              &_dgContextTracks,
-                              &_dgContextBaseLvl,
-                              &_dgContextLowLvl,
-                              &_dgContextHiLvl,
-                              _dgContextBaseTrack,
-                              _dgContextLowTrack,
-                              _dgContextHiTrack,
-                              _dgContextTrackBase,
-                              _seqPool);
-    setExtractionBbox(bbox);
-  }
-  // else
-  else if (_cc_band_tracks == 0) {
-    setupSearchDb(bbox, debug, Interface);
-  }
 
   dbNet* net;
   uint j;
@@ -2906,8 +2095,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
     _ccMaxY = -MAX_INT;
   }
   if (_couplingFlag > 1 && !_lefRC) {
-    // if (!getResCapTable(true))
-    //	return 1;
     getResCapTable(true);
   }
 
@@ -2919,65 +2106,38 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
   uint itermCntEst = 3 * bnets.size();
   setupMapping(itermCntEst);
 
-  if (_reuseMetalFill)
-    _extNetSDB->adjustMetalFill();
-  //	uint netCnt= 0;
-  //	for( net_itr = bnets.begin(); !windowFlow && net_itr != bnets.end();
-  //++net_itr ) {
+  if (_power_extract_only) {
+    powerRCGen();
+    return 1;
+  }
 
-  dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
+  for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
+    net = *net_itr;
 
-  if ((p == NULL) && (debug != 777) && !initTiling) {
-    if (_power_extract_only) {
-      powerRCGen();
-      return 1;
-    }
+    dbSigType type = net->getSigType();
+    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+      continue;
+    if (!_allNet && !net->isMarked())
+      continue;
 
-    for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-      net = *net_itr;
+    _connectedBTerm.clear();
+    _connectedITerm.clear();
+    cnt += makeNetRCsegs(net);
+    uint tt;
+    for (tt = 0; tt < _connectedBTerm.size(); tt++)
+      ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
+    for (tt = 0; tt < _connectedITerm.size(); tt++)
+      ((dbITerm*) _connectedITerm[tt])->setMark(0);
+  }
 
-      dbSigType type = net->getSigType();
-      if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
-        continue;
-      if (!_allNet && !net->isMarked())
-        continue;
+  logger_->info(RCX, 40, "Final {} rc segments", cnt);
 
-      _connectedBTerm.clear();
-      _connectedITerm.clear();
-      cnt += makeNetRCsegs(net);
-      uint tt;
-      for (tt = 0; tt < _connectedBTerm.size(); tt++)
-        ((dbBTerm*) _connectedBTerm[tt])->setMark(0);
-      for (tt = 0; tt < _connectedITerm.size(); tt++)
-        ((dbITerm*) _connectedITerm[tt])->setMark(0);
-      // break;
-    }
-
-    logger_->info(RCX, 40, "Final {} rc segments", cnt);
-  } else if (debug == 777) {
-    _debug = 0;
-  } else
-    _debug = 0;
-
-  if (rlog)
-    AthResourceLog("after makeNetRCsegs", detailRlog);
   int ttttPrintDgContext = 0;
-  if (!skipExtractionAfterRcGen && (_couplingFlag > 1)) {
+  if (_couplingFlag > 1) {
     logger_->info(RCX,
                   439,
                   "Coupling Cap extraction {} ...",
                   getBlock()->getName().c_str());
-
-    uint CCflag = _couplingFlag;
-    //		if (_couplingFlag>20) {
-    //			CCflag= _couplingFlag % 10;
-    //		}
-
-    if (!_allNet)
-      _extNetSDB->setMaxArea(_ccMinX, _ccMinY, _ccMaxX, _ccMaxY);
-
-    // ZPtr<ISdb> ccCapSdb = _reExtract ? _reExtCcapSDB : _extCcapSDB;
-    ZPtr<ISdb> ccCapSdb = _extCcapSDB;
 
     _totCCcnt = 0;
     _totSmallCCcnt = 0;
@@ -2987,173 +2147,96 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
 
     if (_usingMetalPlanes && (_geoThickTable == NULL)) {
       makeIntersectPlanes(0);
-      if (rlog)
-        AthResourceLog("after makeIntersectPlanes", detailRlog);
     }
 
-    if (_debug) {
-      if (_debug != 102)
-        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
-    } else {
-      logger_->info(RCX,
-                    440,
-                    "Coupling threshhold is {:.4f} fF, coupling capacitance "
-                    "less than {:.4f} "
-                    "fF will be grounded.",
-                    _coupleThreshold,
-                    _coupleThreshold);
-      if (_unifiedMeasureInit) {
-        m._extMain = this;
-        m._block = _block;
-        m._diagFlow = _diagFlow;
+    logger_->info(RCX,
+                  440,
+                  "Coupling threshhold is {:.4f} fF, coupling capacitance "
+                  "less than {:.4f} "
+                  "fF will be grounded.",
+                  _coupleThreshold,
+                  _coupleThreshold);
 
-        m._resFactor = _resFactor;
-        m._resModify = _resModify;
-        m._ccFactor = _ccFactor;
-        m._ccModify = _ccModify;
-        m._gndcFactor = _gndcFactor;
-        m._gndcModify = _gndcModify;
+    m._extMain = this;
+    m._block = _block;
+    m._diagFlow = _diagFlow;
 
-        m._dgContextArray = _dgContextArray;
-        m._dgContextDepth = &_dgContextDepth;
-        m._dgContextPlanes = &_dgContextPlanes;
-        m._dgContextTracks = &_dgContextTracks;
-        m._dgContextBaseLvl = &_dgContextBaseLvl;
-        m._dgContextLowLvl = &_dgContextLowLvl;
-        m._dgContextHiLvl = &_dgContextHiLvl;
-        m._dgContextBaseTrack = _dgContextBaseTrack;
-        m._dgContextLowTrack = _dgContextLowTrack;
-        m._dgContextHiTrack = _dgContextHiTrack;
-        m._dgContextTrackBase = _dgContextTrackBase;
-        if (ttttPrintDgContext)
-          m._dgContextFile = fopen("dgCtxtFile", "w");
-        m._dgContextCnt = 0;
+    m._resFactor = _resFactor;
+    m._resModify = _resModify;
+    m._ccFactor = _ccFactor;
+    m._ccModify = _ccModify;
+    m._gndcFactor = _gndcFactor;
+    m._gndcModify = _gndcModify;
 
-        m._ccContextLength = _ccContextLength;
-        m._ccContextArray = _ccContextArray;
+    m._dgContextArray = _dgContextArray;
+    m._dgContextDepth = &_dgContextDepth;
+    m._dgContextPlanes = &_dgContextPlanes;
+    m._dgContextTracks = &_dgContextTracks;
+    m._dgContextBaseLvl = &_dgContextBaseLvl;
+    m._dgContextLowLvl = &_dgContextLowLvl;
+    m._dgContextHiLvl = &_dgContextHiLvl;
+    m._dgContextBaseTrack = _dgContextBaseTrack;
+    m._dgContextLowTrack = _dgContextLowTrack;
+    m._dgContextHiTrack = _dgContextHiTrack;
+    m._dgContextTrackBase = _dgContextTrackBase;
+    if (ttttPrintDgContext)
+      m._dgContextFile = fopen("dgCtxtFile", "w");
+    m._dgContextCnt = 0;
 
-        m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
-        m._pixelTable = _geomSeq;
-        m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
-        m._maxModelIndex = 0;
-        m._currentModel = _currentModel;
-        m._diagModel = _currentModel[0].getDiagModel();
-        for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
-          uint jj = _modelMap.get(ii);
-          m._metRCTable.add(_currentModel->getMetRCTable(jj));
-        }
-        // m._layerCnt= getExtLayerCnt(_tech); // TEST
-        // m._layerCnt= _currentModel->getLayerCnt(); // TEST
-        uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-        uint modelLayerCnt = _currentModel->getLayerCnt();
-        m._layerCnt
-            = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
-        if (techLayerCnt == 5 && modelLayerCnt == 8)
-          m._layerCnt = modelLayerCnt;
-        //				m._cornerMapTable[0]= 1;
-        //				m._cornerMapTable[1]= 0;
-        m.getMinWidth(_tech);
-        m.allocOUpool();
+    m._ccContextLength = _ccContextLength;
+    m._ccContextArray = _ccContextArray;
 
-        m._btermThreshold = btermThresholdFlag;
-
-        m._debugFP = NULL;
-        m._netId = 0;
-        debugNetId = 0;
-        if (debugNetId > 0) {
-          m._netId = debugNetId;
-          char bufName[32];
-          sprintf(bufName, "%d", debugNetId);
-          m._debugFP = fopen(bufName, "w");
-        }
-
-        //#ifndef NEW_GS_FLOW
-        if (_cc_band_tracks == 0) {
-          _extNetSDB->couplingCaps(
-              ccCapSdb, _couplingFlag, Interface, extCompute1, &m);
-        } else {
-          //#else
-          Rect maxRect = _block->getDieArea();
-
-          if (initTiling) {
-            logger_->info(RCX,
-                          123,
-                          "Initial Tiling {} ...",
-                          getBlock()->getName().c_str());
-            _use_signal_tables = 3;
-            createWindowsDB(
-                rlog, maxRect, ccBandTracks, ccFlag, use_signal_table);
-            return 0;
-          }
-          if (windowFlow)
-            couplingWindowFlow(rlog,
-                               maxRect,
-                               _cc_band_tracks,
-                               _couplingFlag,
-                               doExt,
-                               &m,
-                               extCompute1);
-          else
-            couplingFlow(
-                rlog, maxRect, _cc_band_tracks, _couplingFlag, &m, extCompute1);
-
-          if (m._debugFP != NULL)
-            fclose(m._debugFP);
-        }
-        //#endif
-      } else {
-        _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, extCompute, this);
-      }
-      if (m._dgContextFile) {
-        fclose(m._dgContextFile);
-        m._dgContextFile = NULL;
-      }
+    m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
+    m._pixelTable = _geomSeq;
+    m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
+    m._maxModelIndex = 0;
+    m._currentModel = _currentModel;
+    m._diagModel = _currentModel[0].getDiagModel();
+    for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
+      uint jj = _modelMap.get(ii);
+      m._metRCTable.add(_currentModel->getMetRCTable(jj));
     }
+    uint techLayerCnt = getExtLayerCnt(_tech) + 1;
+    uint modelLayerCnt = _currentModel->getLayerCnt();
+    m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
+    if (techLayerCnt == 5 && modelLayerCnt == 8)
+      m._layerCnt = modelLayerCnt;
+    m.getMinWidth(_tech);
+    m.allocOUpool();
+
+    m._debugFP = NULL;
+    m._netId = 0;
+    debugNetId = 0;
+    if (debugNetId > 0) {
+      m._netId = debugNetId;
+      char bufName[32];
+      sprintf(bufName, "%d", debugNetId);
+      m._debugFP = fopen(bufName, "w");
+    }
+
+    Rect maxRect = _block->getDieArea();
+
+    couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
+
+    if (m._debugFP != NULL)
+      fclose(m._debugFP);
+
+    if (m._dgContextFile) {
+      fclose(m._dgContextFile);
+      m._dgContextFile = NULL;
+    }
+
     removeDgContextArray();
     if (_printFile) {
       fclose(_printFile);
       _printFile = NULL;
-      if (setBlockPtfile)
-        _block->setPtFile(NULL);
       _measureRcCnt = _shapeRcCnt = _updateTotalCcnt = -1;
     }
-
-    // than
-    // and {} caps greater than %g)", 			_totCCcnt,
-    // _totSmallCCcnt, _totBigCCcnt, _coupleThreshold);
-
-    if (rlog)
-      AthResourceLog("after couplingCaps", detailRlog);
-
-    if (_debug)
-      computeXcaps(0);
-
-    //		if (rlog)
-    //			AthResourceLog ("CCcap", detailRlog);
-
-    if (preserve_geom != 1 && !_useDbSdb) {
-      if ((_extNetSDB != NULL) && (preserve_geom == 3 || preserve_geom == 0)) {
-        _extNetSDB->cleanSdb();
-        _extNetSDB = NULL;
-      }
-      if (ccCapSdb != NULL && (preserve_geom == 2 || preserve_geom == 0))
-        ccCapSdb->cleanSdb();
-      if (rlog)
-        AthResourceLog("FreeCCgeom", detailRlog);
-    }
   }
 
-  if (ttttRemoveSdb)
-    _extNetSDB = NULL;
-  if (ttttRemoveGs) {
-    if (rlog)
-      AthResourceLog("before removeSeq", detailRlog);
-    if (_geomSeq)
-      delete _geomSeq;
-    if (rlog)
-      AthResourceLog("after removeSeq", detailRlog);
-    _geomSeq = NULL;
-  }
+  if (_geomSeq)
+    delete _geomSeq;
+  _geomSeq = NULL;
   _extracted = true;
   updatePrevControl();
   int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
@@ -3185,41 +2268,14 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
       net->setWireAltered(false);
     }
   }
-  if (rlog)
-    AthResourceLog("before remove Model", detailRlog);
 
-  if (!windowFlow) {
-    // delete _currentModel;
-    _modelTable->resetCnt(0);
-    if (rlog)
-      AthResourceLog("After remove Model", detailRlog);
-  }
+  _modelTable->resetCnt(0);
   if (_batchScaleExt)
     genScaledExt();
 
   return 1;
 }
-/*
-void extMain::genScaledExt()
-{
-        if (_processCornerTable == NULL)
-                return;
-        uint frdbid, todbid, scid;
-        uint ii= 0;
-        extCorner *pc, *sc;
-        for (; ii< _processCornerTable->getCnt(); ii++) {
-                pc = _processCornerTable->get(ii);
-                scid = pc->_scaledCornerIdx;
-                if (scid == -1)
-                        continue;
-                frdbid = pc->_dbIndex;
-                sc = _scaledCornerTable->get(scid);
-                todbid = sc->_dbIndex;
-                _block->copyExtDb(frdbid, todbid, _cornerCnt, sc->_resFactor,
-sc->_ccFactor, sc->_gndFactor);
-        }
-}
-*/
+
 void extMain::genScaledExt()
 {
   if (_processCornerTable == NULL || _scaledCornerTable == NULL)
@@ -3435,17 +2491,11 @@ uint extMain::writeSPEF(char* filename,
     getPrevControl();
     getExtractedCorners();
   }
-  // if (_block->getRSegs() == NULL)
-
-  // _spef->preserveFlag(preserveCapValues);
   _spef->preserveFlag(_foreign);
 
   if (gzFlag)
     _spef->setGzipFlag(gzFlag);
 
-  /*	if ( (! preserveCapValues)&& (! useIds))
-                  _spef->preserveFlag(true);
-  */
   _spef->setDesign((char*) _block->getName().c_str());
 
   uint cnt = 0;
@@ -3514,7 +2564,6 @@ uint extMain::readSPEF(char* filename,
                        int fixLoop,
                        bool keepLoadedCorner,
                        bool stampWire,
-                       ZPtr<ISdb> netSdb,
                        uint testParsing,
                        bool moreToRead,
                        bool diff,
@@ -3544,7 +2593,6 @@ uint extMain::readSPEF(char* filename,
   } else if (_extracted && !force && !keepLoadedCorner
              && !_independentExtCorners) {
     logger_->warn(RCX, 3, "Read SPEF into extracted db!");
-    // return 0;
   }
 
   if (openSpefFile(filename, 0) > 0)
@@ -3578,7 +2626,6 @@ uint extMain::readSPEF(char* filename,
                               _extracted,
                               keepLoadedCorner,
                               stampWire,
-                              netSdb,
                               testParsing,
                               app_print_limit,
                               m_map,
@@ -3668,57 +2715,7 @@ uint extMain::readSPEFincr(char* filename)
 
   uint cnt = _spef->readBlockIncr(0);
 
-  // writeSPEF("out.spef", true, true, true);
-
   return cnt;
-}
-uint extMain::match(char* filename,
-                    bool m_map,
-                    const char* dbCornerName,
-                    int corner,
-                    int spefCorner)
-{
-  if (!_spef || _spef->getBlock() != _block) {
-    if (_spef)
-      delete _spef;
-    _spef = new extSpef(_tech, _block, logger_, this);
-  }
-  _spef->setCalibLimit(0.0, 0.0);
-  readSPEF(filename,
-           NULL /*netNames*/,
-           false /*force*/,
-           false /*useIds*/,
-           false /*rConn*/,
-           NULL /*N*/,
-           false /*rCap*/,
-           false /*rOnlyCCcap*/,
-           false /*rRes*/,
-           -1.0 /*cc_thres*/,
-           0.0 /*cc_gnd_factor*/,
-           1.0 /*length_unit*/,
-           m_map,
-           false /*noCapNumCollapse*/,
-           NULL /*capNodeMapFile*/,
-           false /*log*/,
-           corner,
-           0.0 /*low*/,
-           0.0 /*up*/,
-           NULL /*excludeSubWord*/,
-           NULL /*subWord*/,
-           NULL /*statsFile*/,
-           dbCornerName,
-           NULL /*calibrateBaseCorner*/,
-           spefCorner,
-           0 /*fix_loop*/,
-           false /*keepLoadedCorner*/,
-           false /*stampWire*/,
-           NULL /*netSdb*/,
-           0 /*testParsing*/,
-           false /*moreToRead*/,
-           true /*diff*/,
-           true /*calibrate*/,
-           0 /*app_print_limit*/);
-  return 0;
 }
 
 uint extMain::calibrate(char* filename,
@@ -3763,7 +2760,6 @@ uint extMain::calibrate(char* filename,
            0 /*fix_loop*/,
            false /*keepLoadedCorner*/,
            false /*stampWire*/,
-           NULL /*netSdb*/,
            0 /*testParsing*/,
            false /*moreToRead*/,
            true /*diff*/,
