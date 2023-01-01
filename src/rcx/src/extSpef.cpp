@@ -99,7 +99,6 @@ extSpef::extSpef(odb::dbTech* tech,
 
   _rRun = 0;
   _stampWire = false;
-  _netSdb = NULL;
   _rConn = false;
   _rCap = false;
   _rOnlyCCcap = false;

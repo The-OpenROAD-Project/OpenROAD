@@ -1443,52 +1443,6 @@ uint extSpef::endNet(dbNet* net, uint resCnt)
   return resCnt;
 }
 
-void extSpef::setJunctionId(dbCapNode* capnode, dbRSeg* rseg)
-{
-  if (!_stampWire || !_netSdb || !capnode->isInternal())
-    return;
-  int cx, cy, jx, jy;
-  rseg->getCoords(cx, cy);
-  dbNet* cnet = capnode->getNet();
-  dbNet* wnet;
-  int dbs = 10;
-  Ath__wire* awire;
-  uint jid, tjid, wid;
-  int dd;
-  int mindd = MAX_INT;
-  _netSdb->resetMaxArea();
-  _netSdb->searchWireIds(cx - dbs, cy - dbs, cx + dbs, cy + dbs, false, NULL);
-  _netSdb->startIterator();
-  while ((wid = _netSdb->getNextWireId())) {
-    awire = _netSdb->getSearchPtr()->getWirePtr(wid);
-    wnet = awire->getNet();
-    if (wnet != cnet)
-      continue;
-    jid = awire->getOtherId();
-    cnet->getWire()->getCoord((int) jid, jx, jy);
-    dd = abs(jx - cx) + abs(jy - cy);
-    if (dd < mindd) {
-      mindd = dd;
-      tjid = jid;
-    }
-  }
-  if (mindd == MAX_INT)
-    logger_->warn(RCX,
-                  268,
-                  "No junction stamp on the capnode {} at {} {} for net {} {}",
-                  capnode->getId(),
-                  cx,
-                  cy,
-                  cnet->getId(),
-                  cnet->getConstName());
-  else {
-    capnode->setNode(tjid);
-    if (mindd > 255)
-      dd = mindd;  // bp
-  }
-  return;
-}
-
 uint extSpef::sortRSegs()
 {
   dbSet<dbRSeg> rSet = _d_corner_net->getRSegs();
@@ -1684,8 +1638,6 @@ uint extSpef::sortRSegs()
             _d_net->getConstName());
       }
     }
-    if (zcfound)
-      setJunctionId(tgtCapNode, rc);
   }
   if (_srsegi->getCnt() != _rsegCnt) {
     if (_diffLogFP) {
@@ -2311,7 +2263,6 @@ uint extSpef::readBlock(uint debug,
                         bool extracted,
                         bool keepLoadedCorner,
                         bool stampWire,
-                        ZPtr<ISdb> netSdb,
                         uint testParsing,
                         int app_print_limit,
                         bool m_map,
@@ -2328,7 +2279,6 @@ uint extSpef::readBlock(uint debug,
                         bool& rsegCoord)
 {
   _stampWire = stampWire;
-  _netSdb = netSdb;
   _rConn = rConn;
   _rCap = rCap;
   _rOnlyCCcap = rOnlyCCcap;

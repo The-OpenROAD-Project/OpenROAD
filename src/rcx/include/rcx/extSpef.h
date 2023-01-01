@@ -34,7 +34,6 @@
 
 #include <map>
 
-#include "ISdb.h"
 #include "array1.h"
 #include "db.h"
 #include "dbShape.h"
@@ -160,7 +159,6 @@ class extSpef
   bool _foreign;
 
   uint _rRun;
-  odb::ZPtr<odb::ISdb> _netSdb;
   bool _stampWire;
   bool _rConn;
   bool _rCap;
@@ -354,7 +352,6 @@ class extSpef
                  bool extracted,
                  bool keepLoadedCorner,
                  bool stampWire,
-                 odb::ZPtr<odb::ISdb> netSdb,
                  uint testParsing,
                  int app_print_limit,
                  bool m_map,
@@ -497,7 +494,6 @@ class extSpef
   uint matchNetRes(odb::dbNet* net);
   void resetExtIds(uint rit);
   uint endNet(odb::dbNet* net, uint resCnt);
-  void setJunctionId(odb::dbCapNode* capnode, odb::dbRSeg* rseg);
   uint sortRSegs();
   bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
   uint getNetLW(odb::dbNet* net, uint& w);

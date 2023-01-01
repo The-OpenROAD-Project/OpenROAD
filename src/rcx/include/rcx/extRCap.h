@@ -41,7 +41,6 @@
 
 #include <map>
 
-#include "ISdb.h"
 #include "ZObject.h"
 #include "db.h"
 #include "extprocess.h"
@@ -586,10 +585,6 @@ class extRCModel
                          Ath__array1D<ext2dBox*>* boxArray);
   uint writePatternGeoms(extMeasure* m, Ath__array1D<ext2dBox*>* boxArray);
   bool makePatternNet3D(extMeasure* measure, Ath__array1D<ext2dBox*>* boxArray);
-  uint netWiresBench(extMainOptions* opt,
-                     extMain* xMain,
-                     uint netId,
-                     odb::ZPtr<odb::ISdb> netSearch);
   uint runWiresSolver(uint netId, int shapeId);
   uint getNetCapMatrixValues3D(uint nodeCnt, uint shapeId, extMeasure* m);
 
@@ -1946,10 +1941,6 @@ class extMain
   bool isIncludedInsearch(odb::Rect& r, uint dir, int* bb_ll, int* bb_ur);
 
   uint makeTree(uint netId);
-  uint benchNets(extMainOptions* opt,
-                 uint netId,
-                 uint trackCnt,
-                 odb::ZPtr<odb::ISdb> netSdb);
   uint runSolver(extMainOptions* opt, uint netId, int shapeId);
 
   bool printNetStats(FILE* fp,
@@ -2158,7 +2149,6 @@ class extMain
                 int fixLoop,
                 bool keepLoadedCorner,
                 bool stampWire = false,
-                odb::ZPtr<odb::ISdb> netSdb = NULL,
                 uint testParsing = 0,
                 bool moreToRead = false,
                 bool diff = false,

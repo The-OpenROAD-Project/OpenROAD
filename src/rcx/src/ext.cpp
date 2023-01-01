@@ -542,7 +542,6 @@ bool Ext::read_spef(ReadSpefOpts& opt)
   _ext->setBlockFromChip();
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
-  odb::ZPtr<odb::ISdb> netSdb = NULL;
   bool stampWire = opt.stamp_wire;
   bool useIds = opt.use_ids;
   uint testParsing = opt.test_parsing;
@@ -582,7 +581,6 @@ bool Ext::read_spef(ReadSpefOpts& opt)
                  opt.fix_loop,
                  opt.keep_loaded_corner,
                  stampWire,
-                 netSdb,
                  testParsing,
                  opt.more_to_read,
                  false /*diff*/,
@@ -636,7 +634,6 @@ bool Ext::diff_spef(const DiffOptions& opt)
                  0 /*fix_loop*/,
                  false /*keepLoadedCorner*/,
                  false /*stampWire*/,
-                 NULL /*netSdb*/,
                  opt.test_parsing,
                  false /*moreToRead*/,
                  true /*diff*/,

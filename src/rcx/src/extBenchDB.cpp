@@ -62,7 +62,6 @@ using odb::dbTechNonDefaultRule;
 using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
-using odb::ISdb;
 using odb::Rect;
 using odb::ZPtr;
 
