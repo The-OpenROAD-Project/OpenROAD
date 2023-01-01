@@ -300,6 +300,9 @@ void PdnGen::makeRegionVoltageDomain(
     const std::vector<odb::dbNet*>& secondary_nets,
     odb::dbRegion* region)
 {
+  if (region == nullptr) {
+    logger_->error(utl::PDN, 229, "Region must be specified.");
+  }
   for (const auto& domain : domains_) {
     if (domain->getName() == name) {
       logger_->error(utl::PDN,
