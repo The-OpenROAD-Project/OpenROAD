@@ -56,7 +56,6 @@ sta::define_cmd_args "extract_parasitics" {
     [-corner_cnt count]
     [-max_res ohms]
     [-coupling_threshold fF]
-    [-signal_table value]
     [-debug_net_id id]
     [-lef_res]
     [-cc_model track]
@@ -70,7 +69,6 @@ proc extract_parasitics { args } {
         -corner_cnt
         -max_res
         -coupling_threshold
-        -signal_table
         -debug_net_id
         -context_depth
         -cc_model } \
@@ -99,12 +97,6 @@ proc extract_parasitics { args } {
     sta::check_positive_float "-coupling_threshold" $coupling_threshold
   }
 
-  set signal_table 3
-  if { [info exists keys(-signal_table)] } {
-    set signal_table $keys(-signal_table)
-    sta::check_positive_integer "-signal_table" $signal_table
-  }
-
   set lef_res [info exists flags(-lef_res)]
   set no_merge_via_res [info exists flags(-no_merge_via_res)]
 
@@ -125,7 +117,7 @@ proc extract_parasitics { args } {
   }
 
   rcx::extract $ext_model_file $corner_cnt $max_res \
-      $coupling_threshold $signal_table $cc_model \
+      $coupling_threshold $cc_model \
       $depth $debug_net_id $lef_res $no_merge_via_res
 }
 

@@ -2851,7 +2851,7 @@ void dbBlock::updateNetFlags(std::vector<dbNet*>& result)
   }
 }
 
-void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result, Rect* ibox)
+void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
 {
   dbSet<dbNet> nets = getNets();
   dbSet<dbNet>::iterator nitr;
@@ -2868,8 +2868,6 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result, Rect* ibox)
     if (n->_flags._wire_altered != 1)
       continue;
     upd++;
-    if (ibox && !net->isEnclosed(ibox))
-      continue;
     enc++;
 
     result.push_back(net);

@@ -63,7 +63,6 @@ void extSpef::initSearchForNets()
       continue;
 
     n = layer->getRoutingLevel();
-    // W[n]= layer->getWidth();
     W[n] = 1;
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
@@ -100,7 +99,6 @@ uint extSpef::addNetShapesOnSearch(uint netId)
     return 0;
 
   uint cnt = 0;
-  //	uint wireId= wire->getId();
 
   int minx = MAX_INT;
   int miny = MAX_INT;
@@ -153,68 +151,6 @@ uint extSpef::addNetShapesOnSearch(uint netId)
     }
   }
   return cnt;
-}
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          uint level)
-{
-  _idTable->resetCnt(0);
-
-  if (level > 0) {
-    for (uint dir = 0; dir < _search->getRowCnt(); dir++) {
-      _search->search(x1, y1, x2, y2, dir, level, _idTable, true);
-      if (_idTable->getCnt() > 0)
-        break;
-    }
-  } else {
-    for (uint dir = 0; dir < _search->getRowCnt(); dir++) {
-      for (uint layer = 1; layer < _search->getColCnt(); layer++) {
-        _search->search(x1, y1, x2, y2, dir, layer, _idTable, true);
-        if (_idTable->getCnt() > 0)
-          break;
-      }
-      if (_idTable->getCnt() > 0)
-        break;
-    }
-  }
-  if (_idTable->getCnt() <= 0) {
-    return 0;
-  }
-
-  int loX, loY, hiX, hiY;
-  uint l, id1, id2, wtype;
-
-  uint id = _idTable->get(0);
-  _search->getBox(id, &loX, &loY, &hiX, &hiY, &l, &id1, &id2, &wtype);
-
-  if (netId != id1)
-    return 0;
-
-  return id2;
-}
-
-uint extSpef::findShapeId(uint netId,
-                          int x1,
-                          int y1,
-                          int x2,
-                          int y2,
-                          char* layer,
-                          bool matchLayer)
-{
-  _idTable->resetCnt(0);
-
-  uint level = 0;
-  if (layer != NULL) {
-    dbTechLayer* dblayer = _tech->findLayer(layer);
-    if (dblayer != NULL)
-      level = dblayer->getRoutingLevel();
-    else if (matchLayer)
-      return 0;
-  }
-  return findShapeId(netId, x1, y1, x2, y2, level);
 }
 
 void extSpef::initNodeCoordTables(uint memChunk)
@@ -307,15 +243,6 @@ bool extSpef::readNodeCoords(uint cpos)
   _levelTable->add(level);
   return true;
 }
-void extSpef::adjustNodeCoords()
-{
-  for (uint ii = 0; ii < _capNodeTable->getCnt(); ii++) {
-    char buff[128];
-    sprintf(buff, "*%d%s%d", _tmpNetSpefId, _delimiter, _capNodeTable->get(ii));
-    uint capId = getCapIdFromCapTable(buff);
-    _capNodeTable->set(ii, capId);
-  }
-}
 int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 {
   uint ii;
@@ -329,173 +256,7 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
   return ii;
 }
-uint extSpef::getITermShapeId(dbITerm* iterm)
-{
-  if (iterm->getNet()->getWire() == NULL)
-    return 0;
-  return iterm->getNet()->getWire()->getTermJid(iterm->getId());
-  /*
-    uint shapeId = 0;
-    dbMTerm *mterm = iterm->getMTerm();
-    int px,py;
-    iterm->getInst()->getOrigin(px,py);
-    Point origin = adsPoint(px,py);
-    dbOrientType orient = iterm->getInst()->getOrient();
-    dbTransform transform( orient, origin );
 
-    dbSet<dbMPin> mpins = mterm->getMPins();
-    dbSet<dbMPin>::iterator mpin_itr;
-    for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-      dbMPin *mpin = *mpin_itr;
-      dbSet<dbBox> boxes = mpin->getGeometry();
-      dbSet<dbBox>::iterator box_itr;
-      int level, tlevel, blevel;
-      for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
-        dbBox *box = *box_itr;
-        Rect rect;
-        box->getBox( rect );
-        transform.apply( rect );
-        if (box->isVia()) {
-          dbTechVia *tv = box->getTechVia();
-          tlevel = tv->getTopLayer()->getRoutingLevel();
-          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), tlevel); blevel =
-  tv->getBottomLayer()->getRoutingLevel(); if (shapeId == 0) shapeId =
-  findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(), rect.xMax(),
-  rect.yMax(), blevel);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), tlevel+1);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), blevel-1); } else { level =
-  box->getTechLayer()->getRoutingLevel(); shapeId = findShapeId(_d_net->getId(),
-  rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), level);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+1);
-  //        if (shapeId == 0)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+2);
-  //        if (shapeId == 0 && level > 1)
-  //          shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level-1);
-        }
-        if (shapeId!= 0)
-          return shapeId;
-      }
-    }
-    // assert(shapeId);
-    return shapeId;
-  */
-}
-uint extSpef::getBTermShapeId(dbBTerm* bterm)
-{
-  dbShape pin;
-  if (!bterm->getFirstPin(pin))  // TWG: added bpins
-    return 0;
-  if (bterm->getNet()->getWire() == NULL)
-    return 0;
-  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
-  /*
-    Rect rect;
-    pin.getBox(rect);
-    uint shapeId = 0;
-    int level;
-    if (pin.isVia()) {
-      // TODO
-    } else {
-      level = pin.getTechLayer()->getRoutingLevel();
-      shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level);
-  //    if (shapeId == 0)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+1);
-  //    if (shapeId == 0)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level+2);
-  //    if (shapeId == 0 && level > 1)
-  //        shapeId = findShapeId(_d_net->getId(), rect.xMin(), rect.yMin(),
-  rect.xMax(), rect.yMax(), level-1);
-      // assert(shapeId);
-    }
-    return shapeId;
-  */
-}
-uint extSpef::getShapeIdFromNodeCoords(uint targetCapNodeId)
-{
-  uint shapeId;
-  int ii = findNodeIndexFromNodeCoords(targetCapNodeId);
-  if (ii < 0)
-    return 0;
-
-  int halo = 20;
-  int x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ii));
-  int y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ii));
-  uint level = _levelTable->get(ii);
-  x1 -= halo;
-  y1 -= halo;
-  int x2 = x1 + halo;
-  int y2 = y1 + halo;
-
-  shapeId = findShapeId(_d_net->getId(), x1, y1, x2, y2, level);
-  return shapeId;
-}
-
-/*
-*RES
-1 *1:1 *1:2 7.3792 // x=[782.74,791.7] y=[376.67,376.81] dx=8.96 dy=0.14
-lyr=METAL3 2 *1:5 *1:6 23.1819 // x=[740.11,740.25] y=[340.83,358.11] dx=0.14
-dy=17.28 lyr=METAL4 3 *1:7 *1:8 24.5655 // x=[779.31,779.45] y=[357.85,376.81]
-dx=0.14 dy=18.96 lyr=METAL4
-*/
-uint extSpef::parseAndFindShapeId()
-{
-  if (_parser->getWordCnt() < 10)
-    return 0;
-
-  _nodeCoordParser->mkWords(_parser->get(5));
-
-  int x1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int x2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(6));
-
-  int y1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int y2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(9));
-
-  char* layer = NULL;
-  if (strcmp(_nodeCoordParser->get(0), "lyr") == 0)
-    layer = _nodeCoordParser->get(1);
-  // bool matchLayer= true;
-  bool matchLayer = false;
-
-  uint shapeId
-      = findShapeId(_d_net->getId(), x1, y1, x2, y2, layer, matchLayer);
-  return shapeId;
-}
-void extSpef::readNmCoords()
-{
-  if (_parser->getWordCnt() < 10)
-    return;
-
-  _nodeCoordParser->mkWords(_parser->get(5));
-
-  int x1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int x2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _nodeCoordParser->mkWords(_parser->get(6));
-
-  int y1 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(1));
-  int y2 = Ath__double2int(_nodeCoordFactor * _nodeCoordParser->getDouble(2));
-
-  _x1CoordTable->add(x1);
-  _y1CoordTable->add(y1);
-  _x2CoordTable->add(x2);
-  _y2CoordTable->add(y2);
-}
 void extSpef::searchDealloc()
 {
   _search->dealloc();

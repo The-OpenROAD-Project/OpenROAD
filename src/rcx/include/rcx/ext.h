@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXT_H
-#define ADS_EXT_H
+#pragma once
 
 #include <tcl.h>
 
@@ -135,7 +134,6 @@ class Ext
   };
 
   bool bench_wires(const BenchWiresOptions& bwo);
-  bool assembly(odb::dbBlock* block, odb::dbBlock* main_block);
   bool write_spef_nets(odb::dbObject* block,
                        bool flatten,
                        bool parallel,
@@ -150,35 +148,21 @@ class Ext
     int set_min = -1;
     int set_typ = -1;
     int set_max = -1;
-    bool litho = false;
     bool wire_density = false;
     const char* debug_net = nullptr;
     const char* cmp_file = nullptr;
     const char* ext_model_file = nullptr;
     const char* net = nullptr;
-    const char* bbox = nullptr;
-    const char* ibox = nullptr;
-    int test = 0;
-    int cc_band_tracks = 1000;
-    int signal_table = 3;
     int cc_up = 2;
-    uint preserve_geom = 0;
     int corner_cnt = 1;
     double max_res = 50.0;
     bool no_merge_via_res = false;
     float coupling_threshold = 0.1;
     int context_depth = 5;
     int cc_model = 10;
-    bool over_cell = false;
-    bool remove_cc = false;
-    bool remove_ext = false;
     bool unlink_ext = false;
-    bool eco = false;
     bool no_gs = false;
-    bool re_run = false;
     bool skip_via_wires = false;
-    bool tile = false;
-    int tiling = 0;
     bool skip_m1_caps = false;
     bool power_grid = false;
     bool write_total_caps = false;
@@ -187,7 +171,6 @@ class Ext
     const char* power_source_coords = nullptr;
     bool lef_rc = false;
     bool lef_res = false;
-    bool rlog = false;
   };
 
   bool extract(ExtractOptions options);
@@ -304,41 +287,8 @@ class Ext
                  bool m_map,
                  float upper_limit,
                  float lower_limit);
-  bool match(const std::string& spef_file,
-             const std::string& db_corner_name,
-             int corner,
-             int spef_corner,
-             bool m_map);
-  bool set_block(const std::string& block_name,
-                 odb::dbBlock* block,
-                 const std::string& inst_name,
-                 odb::dbInst* inst);
-  bool report_total_cap(const std::string& file,
-                        bool res_only,
-                        bool cap_only,
-                        float ccmult,
-                        const std::string& ref,
-                        const std::string& read);
-  bool report_total_cc(const std::string& file,
-                       const std::string& ref,
-                       const std::string& read);
 
-  bool export_sdb(odb::ZPtr<odb::ISdb>& net_sdb, odb::ZPtr<odb::ISdb>& cc_sdb);
-  bool dump(bool open_tree_file,
-            bool close_tree_file,
-            bool cc_cap_geom,
-            bool cc_net_geom,
-            bool track_cnt,
-            bool signal,
-            bool power,
-            int layer,
-            const std::string& file);
   bool count(bool signal_wire_seg, bool power_wire_seg);
-  bool read_qcap(const std::string& file_name,
-                 const std::string& cap_file,
-                 bool skip_bterms,
-                 bool no_qcap,
-                 const std::string& design);
   bool rc_tree(float max_cap, uint test, int net, const std::string& print_tag);
   bool net_stats(std::list<int>& net_ids,
                  const std::string& tcap,
@@ -364,5 +314,3 @@ class Ext
 };  // namespace rcx
 
 }  // namespace rcx
-
-#endif

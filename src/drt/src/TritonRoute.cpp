@@ -633,14 +633,15 @@ void TritonRoute::endFR()
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
   if (!REPAIR_PDN_LAYER_NAME.empty()) {
+    auto dbBlock = db_->getChip()->getBlock();
     auto pdnLayer = design_->getTech()->getLayer(REPAIR_PDN_LAYER_NAME);
     frLayerNum pdnLayerNum = pdnLayer->getLayerNum();
     frList<std::unique_ptr<frMarker>> markers;
     auto blockBox = design_->getTopBlock()->getBBox();
     GC_IGNORE_PDN_LAYER = -1;
     getDRCMarkers(markers, blockBox);
-    RTree<odb::dbSBox*> pdnTree;
-    for (auto* net : db_->getChip()->getBlock()->getNets()) {
+    std::vector<std::pair<odb::Rect, odb::dbId<odb::dbSBox>>> allWires;
+    for (auto* net : dbBlock->getNets()) {
       if (!net->getSigType().isSupply())
         continue;
       for (auto* swire : net->getSWires()) {
@@ -657,12 +658,13 @@ void TritonRoute::endFR()
               continue;
             if (layer->getName() != pdnLayer->getName())
               continue;
-            pdnTree.insert({via_box.getBox(), wire});
+            allWires.push_back({via_box.getBox(), wire->getId()});
           }
         }
       }
     }
-    std::set<odb::dbSBox*> removedBoxes;
+    RTree<odb::dbId<odb::dbSBox>> pdnTree(allWires);
+    std::set<odb::dbId<odb::dbSBox>> removedBoxes;
     for (const auto& marker : markers) {
       if (marker->getLayerNum() != pdnLayerNum)
         continue;
@@ -681,12 +683,13 @@ void TritonRoute::endFR()
       auto markerBox = marker->getBBox();
       odb::Rect queryBox;
       markerBox.bloat(1, queryBox);
-      std::vector<rq_box_value_t<odb::dbSBox*>> results;
+      std::vector<rq_box_value_t<odb::dbId<odb::dbSBox>>> results;
       pdnTree.query(bgi::intersects(queryBox), back_inserter(results));
-      for (auto& [rect, sbox] : results) {
-        if (removedBoxes.find(sbox) == removedBoxes.end()) {
-          removedBoxes.insert(sbox);
-          odb::dbSBox::destroy(sbox);
+      for (auto& [rect, bid] : results) {
+        if (removedBoxes.find(bid) == removedBoxes.end()) {
+          removedBoxes.insert(bid);
+          auto boxPtr = odb::dbSBox::getSBox(dbBlock, bid);
+          odb::dbSBox::destroy(boxPtr);
         }
       }
     }
@@ -879,7 +882,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const Rect& requiredDrcBox)
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
-  std::vector<std::unique_ptr<FlexGCWorker>> workers;
+  std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
   auto offset = 0;
   auto gCellPatterns = design_->getTopBlock()->getGCellPatterns();
@@ -905,41 +908,46 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
           = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
       gcWorker->setDrcBox(drcBox);
       gcWorker->setExtBox(extBox);
-      workers.push_back(std::move(gcWorker));
+      if (workersBatches.back().size() >= BATCHSIZE)
+        workersBatches.push_back(std::vector<std::unique_ptr<FlexGCWorker>>());
+      workersBatches.back().push_back(std::move(gcWorker));
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
   omp_set_num_threads(MAX_THREADS);
+  for (auto& workers : workersBatches) {
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < workers.size(); i++) {
-    workers[i]->init(design_.get());
-    workers[i]->main();
-  }
-  for (const auto& worker : workers) {
-    for (auto& marker : worker->getMarkers()) {
-      Rect bbox = marker->getBBox();
-      if (!bbox.intersects(requiredDrcBox))
-        continue;
-      auto layerNum = marker->getLayerNum();
-      auto con = marker->getConstraint();
-      std::vector<frBlockObject*> srcs(2, nullptr);
-      int i = 0;
-      for (auto& src : marker->getSrcs()) {
-        srcs.at(i) = src;
-        i++;
-      }
-      if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
-          != mapMarkers.end()) {
-        continue;
-      }
-      if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
-          != mapMarkers.end()) {
-        continue;
-      }
-      markers.push_back(std::make_unique<frMarker>(*marker));
-      mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
-          = markers.back().get();
+    for (int i = 0; i < workers.size(); i++) {
+      workers[i]->init(design_.get());
+      workers[i]->main();
     }
+    for (const auto& worker : workers) {
+      for (auto& marker : worker->getMarkers()) {
+        Rect bbox = marker->getBBox();
+        if (!bbox.intersects(requiredDrcBox))
+          continue;
+        auto layerNum = marker->getLayerNum();
+        auto con = marker->getConstraint();
+        std::vector<frBlockObject*> srcs(2, nullptr);
+        int i = 0;
+        for (auto& src : marker->getSrcs()) {
+          srcs.at(i) = src;
+          i++;
+        }
+        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
+            != mapMarkers.end()) {
+          continue;
+        }
+        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+            != mapMarkers.end()) {
+          continue;
+        }
+        markers.push_back(std::make_unique<frMarker>(*marker));
+        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
+            = markers.back().get();
+      }
+    }
+    workers.clear();
   }
 }
 

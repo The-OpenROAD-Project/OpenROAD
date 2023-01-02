@@ -144,7 +144,7 @@ _installUbuntuCleanUp() {
     apt-get autoremove -y
 }
 
-_installUbuntuDev() {
+_installUbuntuPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install tzdata
@@ -168,12 +168,7 @@ _installUbuntuDev() {
         wget \
         zlib1g-dev \
         libomp-dev
-}
 
-_installUbuntuRuntime() {
-    export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install tzdata
     apt-get install -y \
         binutils \
         libgomp1 \
@@ -202,7 +197,20 @@ _installRHELCleanUp() {
     rm -rf /var/lib/apt/lists/*
 }
 
-_installRHELDev() {
+_installRHELPackages() {
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+    yum -y install \
+        tzdata \
+        binutils \
+        libgomp \
+        python3-libs \
+        tcl \
+        tcl-tclreadline \
+        qt5-srpm-macros.noarch \
+        wget
+
+    yum -y update
     yum -y install \
         autoconf \
         automake \
@@ -242,30 +250,17 @@ _installRHELDev() {
         https://vault.centos.org/centos/8/BaseOS/x86_64/os/Packages/tcl-devel-8.6.8-2.el8.i686.rpm
 }
 
-_installRHELRuntime() {
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-
-    yum -y update
-    yum -y install \
-        tzdata \
-        binutils \
-        libgomp \
-        python3-libs \
-        tcl \
-        tcl-tclreadline \
-        qt5-srpm-macros.noarch \
-        wget
-}
-
 _installCentosCleanUp() {
     yum clean -y all
     rm -rf /var/lib/apt/lists/*
 }
 
-_installCentosDev() {
-
+_installCentosPackages() {
     yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
     yum install -y https://repo.ius.io/ius-release-el7.rpm
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    
+    yum update -y
 
     yum groupinstall -y "Development Tools"
     yum install -y centos-release-scl
@@ -284,17 +279,13 @@ _installCentosDev() {
         tcl-tclreadline-devel \
         zlib-devel \
         wget
+
     yum install -y \
         python-devel \
         python36 \
         python36-devel \
         python36-pip
-}
-
-_installCentosRuntime() {
-    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
-    yum update -y
+ 
     yum install -y \
         libgomp \
         python36-libs \
@@ -302,7 +293,6 @@ _installCentosRuntime() {
         qt5-qtimageformats \
         tcl-tclreadline \
         wget
-    yum update -y
 }
 
 _installOpenSuseCleanUp() {
@@ -310,7 +300,20 @@ _installOpenSuseCleanUp() {
     zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
 }
 
-_installOpenSuseDev() {
+_installOpenSusePackages() {
+    zypper refresh && zypper -n update
+    zypper -n install \
+        binutils \
+        libgomp1 \
+        libpython3_6m1_0 \
+        libqt5-qtbase \
+        libqt5-creator \
+        libqt5-qtstyleplugins \
+        qimgv \
+        tcl \
+        tcllib
+
+    zypper refresh && zypper -n update
     zypper -n install -t pattern devel_basis
     zypper -n install \
         lcov \
@@ -333,21 +336,6 @@ _installOpenSuseDev() {
     
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
-}
-
-_installOpenSuseRuntime() {
-    zypper refresh && zypper -n update
-    zypper -n install \
-        binutils \
-        libgomp1 \
-        libpython3_6m1_0 \
-        libqt5-qtbase \
-        libqt5-creator \
-        libqt5-qtstyleplugins \
-        qimgv \
-        tcl \
-        tcllib
-    zypper refresh && zypper -n update
 }
 
 _installHomebrewPackage() {
@@ -409,7 +397,7 @@ _installDebianCleanUp() {
     apt-get autoremove -y
 }
 
-_installDebianDev() {
+_installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install tzdata
@@ -433,12 +421,7 @@ _installDebianDev() {
         wget \
         zlib1g-dev \
         libomp-dev
-}
 
-_installDebianRuntime() {
-    export DEBIAN_FRONTEND="noninteractive"
-    apt-get -y update
-    apt-get -y install tzdata
     apt-get install -y \
         binutils \
         libgomp1 \
@@ -464,17 +447,14 @@ _installDebianRuntime() {
 _help() {
     cat <<EOF
 
-Usage: $0 -run[time]
-       $0 -dev[elopment]
-       $0 -prefix=DIR
+Usage: $0 -prefix=DIR
        $0 -local
 
 EOF
     exit "${1:-1}"
 }
 
-# default option
-option="runtime"
+#default prefix
 PREFIX=""
 
 # default values, can be overwritten by cmdline args
@@ -484,10 +464,10 @@ while [ "$#" -gt 0 ]; do
             _help 0
             ;;
         -run|-runtime)
-            option="runtime"
+            echo "The use of this flag is deprecated and will be removed soon"
             ;;
         -dev|-development)
-            option="dev"
+            echo "The use of this flag is deprecated and will be removed soon"
             ;;
         -local)
             export PREFIX="${HOME}/.local"
@@ -526,11 +506,8 @@ case "${os}" in
     "CentOS Linux" )
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installCentosRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installCentosDev
-            _installCommonDev
-        fi
+        _installCentosPackages
+        _installCommonDev
         _installOrTools "centos" "7" "amd64"
         _installCentosCleanUp
         cat <<EOF
@@ -543,22 +520,16 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installUbuntuRuntime "${version}"
-        if [[ "${option}" == "dev" ]]; then
-            _installUbuntuDev
-            _installCommonDev
-        fi
+        _installUbuntuPackages "${version}"
+        _installCommonDev
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;
     "Red Hat Enterprise Linux")
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installRHELRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installRHELDev
-            _installCommonDev
-        fi
+        _installRHELPackages
+        _installCommonDev
         _installOrTools "centos" "8" "amd64"
         _installRHELCleanUp
         ;;
@@ -577,11 +548,8 @@ EOF
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installOpenSuseRuntime
-        if [[ "${option}" == "dev" ]]; then
-            _installOpenSuseDev
-            _installCommonDev
-        fi
+        _installOpenSusePackages
+        _installCommonDev
         _installOrTools "opensuse" "leap" "amd64"
         _installOpenSuseCleanUp
         cat <<EOF
@@ -594,11 +562,8 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installDebianRuntime "${version}"
-        if [[ "${option}" == "dev" ]]; then
-            _installDebianDev
-            _installCommonDev
-        fi
+        _installDebianPackages "${version}"
+        _installCommonDev
         _installOrTools "debian" "${version}" "amd64"
         _installDebianCleanUp
         ;;

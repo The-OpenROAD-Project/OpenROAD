@@ -419,27 +419,36 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
   auto block = design->getTopBlock();
   for (auto& net : block->getNets()) {
     // always first generate gcnet in case owner does not have any object
-    auto it = owner2nets_.find(net.get());
-    if (it == owner2nets_.end()) {
-      addNet(net.get());
-    }
+    bool netExists = (owner2nets_.find(net.get()) != owner2nets_.end());
     gcNet* gNet = nullptr;
     // auto net = uDRNet->getFrNet();
     for (auto& obj : net->getShapes()) {
       if (!drcBox_.intersects(obj->getBBox()))
         continue;
+      if (!netExists) {
+        addNet(net.get());
+        netExists = true;
+      }
       gNet = initRouteObj(obj.get());
       cnt++;
     }
     for (auto& obj : net->getVias()) {
       if (!drcBox_.intersects(obj->getBBox()))
         continue;
+      if (!netExists) {
+        addNet(net.get());
+        netExists = true;
+      }
       gNet = initRouteObj(obj.get());
       cnt++;
     }
     for (auto& pwire : net->getPatchWires()) {
       if (!drcBox_.intersects(pwire->getBBox()))
         continue;
+      if (!netExists) {
+        addNet(net.get());
+        netExists = true;
+      }
       gNet = initRouteObj(pwire.get());
       cnt++;
       Rect box = pwire->getBBox();

@@ -32,16 +32,11 @@
 
 #include "rcx/extRCap.h"
 
-#include "odb/wire.h"
-
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
 #include <map>
 #include <vector>
 
 #include "darr.h"
+#include "odb/wire.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -171,349 +166,6 @@ void extMain::reportTotalCap(const char* file,
 
 /////////////////////////////////////////////////////
 
-typedef struct
-{
-  int netid0;
-  int netid1;
-  double cctot;
-  double ccref;
-  double ccdif;
-} ext_cctot;
-
-static bool read_total_cc_file(const char* file,
-                               Darr<ext_cctot>& V,
-                               Logger* logger)
-{
-  FILE* fp = fopen(file, "r");
-  if (!fp) {
-    logger->warn(RCX, 33, "Can't open {}", file);
-    return false;
-  }
-  char line[256];
-  ext_cctot x;
-  x.ccref = x.ccdif = 0.0;
-  while (fgets(line, 256, fp)) {
-    if (3 == sscanf(line, "%d %d %lf", &x.netid0, &x.netid1, &x.cctot)) {
-      V.insert(x);
-    }
-  }
-  fclose(fp);
-  return true;
-}
-
-static int ext_cctot_cmp(const void* a, const void* b)
-{
-  ext_cctot* x = (ext_cctot*) a;
-  ext_cctot* y = (ext_cctot*) b;
-  if (x->ccdif < y->ccdif)
-    return 1;
-  if (x->ccdif > y->ccdif)
-    return -1;
-  return 0;
-}
-
-static bool read_ref_cc_file(const char* file,
-                             int netn,
-                             Darr<ext_cctot>& V,
-                             Logger* logger)
-{
-  FILE* fp = fopen(file, "r");
-  if (!fp) {
-    logger->warn(RCX, 34, "Can't open {}", file);
-    return false;
-  }
-  int* indV = (int*) malloc((2 + netn) * sizeof(int));
-  int nn = V.n();
-  char line[256];
-  ext_cctot x;
-  int j;
-  int netid0 = 0;
-  for (j = 0; j < nn; j++) {
-    x = V.get(j);
-    if (netid0 < x.netid0) {
-      while (++netid0 < x.netid0) {
-        indV[netid0] = j;
-      }
-      indV[netid0] = j;
-    }
-  }
-  indV[netid0 + 1] = j;
-
-  int netid1;
-  double ccref;
-  while (fgets(line, 256, fp)) {
-    if (3 == sscanf(line, "%d %d %lf", &netid0, &netid1, &ccref)) {
-      int j0 = indV[netid0];
-      int j1 = indV[netid0 + 1];
-      if (j0 >= j1)
-        continue;
-      for (j = j0; j < j1; j++) {
-        x = V.get(j);
-        if (x.netid1 == netid1) {
-          x.ccref = ccref;
-          V.set(j, x);
-          break;
-        }
-      }
-      if (j < j1)
-        continue;
-      // not found
-      x.netid0 = netid0;
-      x.netid1 = netid1;
-      x.cctot = 0.0;
-      x.ccref = ccref;
-      x.ccdif = -ccref;
-      V.insert(x);
-    }
-  }
-
-  free(indV);
-  return true;
-}
-
-void extMain::reportTotalCc(const char* file,
-                            const char* ref,
-                            const char* rd_file)
-{
-  Darr<ext_cctot> V;
-  dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator nitr;
-  dbNet *net0, *net1;
-  std::vector<dbNet*> netV;
-  std::vector<double> ccV;
-  //  dbSet<dbCCSeg> ccSet;
-  std::vector<dbCCSeg*>::iterator cc_itr;
-
-  dbCCSeg* cc;
-  int j, nn, netN;
-  ext_cctot x;
-  x.ccref = 0.0;
-  x.ccdif = 0.0;
-  if (rd_file) {
-    if (!read_total_cc_file(rd_file, V, logger_) || V.n() < 1) {
-      logger_->warn(RCX, 35, "Can't read {}", rd_file);
-      return;
-    }
-  } else
-    for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-      net0 = *nitr;
-      netN = 0;
-      netV.clear();
-      ccV.clear();
-
-      std::vector<dbCCSeg*> ccSet1;
-      net0->getSrcCCSegs(ccSet1);
-      for (cc_itr = ccSet1.begin(); cc_itr != ccSet1.end(); ++cc_itr) {
-        cc = *cc_itr;
-        net1 = cc->getTargetNet();
-        if (net1->getId() > net0->getId())
-          continue;
-        for (j = 0; j < netN; j++)
-          if (net1 == netV[j])
-            break;
-        if (j == netN) {
-          netV.push_back(net1);
-          ccV.push_back(0.0);
-          netN++;
-        }
-        ccV[j] += cc->getCapacitance(0);
-      }
-      std::vector<dbCCSeg*> ccSet2;
-      net0->getTgtCCSegs(ccSet2);
-      for (cc_itr = ccSet2.begin(); cc_itr != ccSet2.end(); ++cc_itr) {
-        cc = *cc_itr;
-        net1 = cc->getSourceNet();
-        if (net1->getId() > net0->getId())
-          continue;
-        for (j = 0; j < netN; j++)
-          if (net1 == netV[j])
-            break;
-        if (j == netN) {
-          netV.push_back(net1);
-          ccV.push_back(0.0);
-          netN++;
-        }
-        ccV[j] += cc->getCapacitance(0);
-      }
-      for (j = 0; j < netN; j++) {
-        x.netid0 = net0->getId();
-        x.netid1 = netV[j]->getId();
-        x.cctot = 1e-3 * ccV[j];
-        V.insert(x);
-      }
-    }
-  if (ref) {
-    if (!read_ref_cc_file(ref, nets.size(), V, logger_)) {
-      logger_->warn(RCX, 37, "Can't read {}", ref);
-      return;
-    }
-  }
-  nn = V.n();
-  FILE* fp = NULL;
-  if (file)
-    fp = fopen(file, "w");
-  if (fp && !ref) {
-    for (j = 0; j < nn; j++) {
-      x = V.get(j);
-      fprintf(fp, "%d %d %g\n", x.netid0, x.netid1, x.cctot);
-    }
-  } else if (ref) {
-    double max_abs_cc = 0.0;
-    double abs_ccthresh = 5e-4;   // pf,  so 0.5 ff
-    double abs_ccthresh2 = 1e-4;  // 0.1 ff
-    int nccdif = 0;
-    int nccdif2 = 0;
-    for (j = 0; j < nn; j++) {
-      x = V.get(j);
-      x.ccdif = x.cctot - x.ccref;
-      V.set(j, x);
-      double difabs = (x.ccdif < 0 ? -x.ccdif : x.ccdif);
-      if (difabs >= abs_ccthresh)
-        nccdif++;
-      if (difabs >= abs_ccthresh2)
-        nccdif2++;
-      if (difabs > max_abs_cc) {
-        max_abs_cc = difabs;
-      }
-    }
-    logger_->info(
-        RCX, 196, "Worst abs cctot(net0, net1) diff = {} pF", max_abs_cc);
-    logger_->info(RCX,
-                  197,
-                  "{} net pairs have absolute cctot diff > {} pF",
-                  nccdif,
-                  abs_ccthresh);
-    logger_->info(RCX,
-                  207,
-                  "{} net pairs have absolute cctot diff > {} pF",
-                  nccdif2,
-                  abs_ccthresh2);
-    V.dsort(ext_cctot_cmp);
-    dbNet *net0, *net1;
-    x = V.get(0);
-    if (x.ccdif > 0.0) {
-      logger_->info(RCX, 198, "Max cc_tot diff vs ref = {} pF", x.ccdif);
-      net0 = dbNet::getNet(_block, x.netid0);
-      net1 = dbNet::getNet(_block, x.netid1);
-      logger_->info(
-          RCX, 199, "Net0 {} {}", net0->getId(), net0->getConstName());
-      logger_->info(
-          RCX, 200, "Net1 {} {}", net1->getId(), net1->getConstName());
-      logger_->info(
-          RCX, 201, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
-    }
-    x = V.get(nn - 1);
-    if (x.ccdif < 0.0) {
-      logger_->info(RCX, 202, "Min cc_tot diff vs ref = {} pF", x.ccdif);
-      net0 = dbNet::getNet(_block, x.netid0);
-      net1 = dbNet::getNet(_block, x.netid1);
-      logger_->info(
-          RCX, 420, "Net0 {} {}", net0->getId(), net0->getConstName());
-      logger_->info(
-          RCX, 419, "Net1 {} {}", net1->getId(), net1->getConstName());
-      logger_->info(
-          RCX, 421, "Cc_tot {} cc_ref {} cc_dif {}", x.cctot, x.ccref, x.ccdif);
-    }
-    if (fp) {
-      fprintf(fp, "# netid0 netid1 cctot ccref ccdif\n");
-      for (j = 0; j < nn; j++) {
-        x = V.get(j);
-        if (x.ccdif < abs_ccthresh && x.ccdif > -abs_ccthresh)
-          continue;
-        fprintf(fp,
-                "%6d %6d %8g %8g %8g\n",
-                x.netid0,
-                x.netid1,
-                x.cctot,
-                x.ccref,
-                x.ccdif);
-      }
-    }
-  }
-  if (fp)
-    fclose(fp);
-}
-
-/////////////////////////////////////////////////////
-
-void extMain::extDump(char* file,
-                      bool openTreeFile,
-                      bool closeTreeFile,
-                      bool ccCapGeom,
-                      bool ccNetGeom,
-                      bool trackCnt,
-                      bool signal,
-                      bool power,
-                      uint layer)
-{
-  Ath__searchBox bb;
-  ZPtr<ISdb> targetSdb;
-  if (closeTreeFile) {
-    if (_ptFile)
-      fclose(_ptFile);
-    _ptFile = NULL;
-    _block->setPtFile(NULL);
-    return;
-  } else if (ccCapGeom)
-    targetSdb = _extCcapSDB;
-  else if (ccNetGeom || trackCnt)
-    targetSdb = _extNetSDB;
-  else if (!openTreeFile && !trackCnt)
-    return;
-  if (!file || !file[0]) {
-    logger_->warn(RCX, 203, "Filename is not defined (extDump)!");
-    return;
-  }
-  FILE* fp = fopen(file, "w");
-  if (!fp) {
-    logger_->warn(RCX, 38, "Can't open file {}", file);
-    return;
-  }
-  if (openTreeFile) {
-    _ptFile = fp;
-    _block->setPtFile(fp);
-    return;
-  }
-  if (trackCnt) {
-    targetSdb->dumpTrackCounts(fp);
-    fclose(fp);
-    return;
-  }
-  bool dumpSignalWire = true;
-  bool dumpPowerWire = true;
-  if (signal && !power)
-    dumpPowerWire = false;
-  if (!signal && power)
-    dumpSignalWire = false;
-  bool* etable = (bool*) malloc(100 * sizeof(bool));
-  bool init = layer == 0 ? false : true;
-  for (uint idx = 0; idx < 100; idx++)
-    etable[idx] = init;
-  etable[layer] = false;
-  targetSdb->resetMaxArea();
-  dbBox* tbox = _block->getBBox();
-  targetSdb->searchWireIds(
-      tbox->xMin(), tbox->yMin(), tbox->xMax(), tbox->yMax(), false, etable);
-  targetSdb->startIterator();
-  uint wid, wflags;
-  while ((wid = targetSdb->getNextWireId())) {
-    if (ccNetGeom) {
-      wflags = targetSdb->getSearchPtr()->getWirePtr(wid)->getFlags();
-      if ((wflags == 1 && !dumpPowerWire) || (wflags == 2 && !dumpSignalWire))
-        continue;
-    }
-    targetSdb->getSearchPtr()->getCoords(&bb, wid);
-    fprintf(fp,
-            "m%d %d %d  %d %d\n",
-            bb.getLevel(),
-            bb.loXY(0),
-            bb.loXY(1),
-            bb.hiXY(0),
-            bb.hiXY(1));
-  }
-  if (fp)
-    fclose(fp);
-}
 void extMain::extCount(bool signalWireSeg, bool powerWireSeg)
 {
   if (!signalWireSeg && !powerWireSeg)
@@ -548,25 +200,6 @@ void extMain::extCount(bool signalWireSeg, bool powerWireSeg)
                   powerWireCnt,
                   powerViaCnt);
 }
-/*
-class extNetStats
-{
-        double _tcap[2];
-        double _ccap[2];
-        double _cc2tcap[2];
-        double _cc[2];
-        uint _len[2];
-        uint _layerCnt[2];
-        uint _wCnt[2];
-        uint _vCnt[2];
-        uint _resCnt[2];
-        uint _ccCnt[2];
-        uint _gndCnt[2];
-        uint _id;
-        bool _layerFilter[20];
-        Rect _bbox;
-};
-*/
 bool extMain::outOfBounds_i(int limit[2], int v)
 {
   if ((v < limit[0]) || (v > limit[1]))
@@ -606,8 +239,6 @@ bool extMain::printNetRC(char* buff, dbNet* net, extNetStats* st)
   if (outOfBounds_d(st->_res, res))
     return false;
 
-  //	fprintf(fp, "C %8.3 CC %8.3f CCr %3.1f R %8.2f maxCC= %8.4f ",
-  //		tCap, ccCap, cc2tcap, res, maxCC);
   sprintf(buff, "C %.3f CC %.3f CCr %2.1f R %.1f ", tCap, ccCap, cc2tcap, res);
 
   return true;
@@ -700,14 +331,10 @@ uint extMain::printNetStats(FILE* fp,
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
-    //		uint viaCnt = 0;
-    //		uint wireCnt = 0;
-
     dbSigType type = net->getSigType();
     if ((type == dbSigType::POWER) || (type == dbSigType::GROUND)) {
       if (skipPower)
         continue;
-      // net->getPowerWireCount (powerWireCnt, powerViaCnt);
       continue;
     }
     if (!net->isEnclosed(&bbox))

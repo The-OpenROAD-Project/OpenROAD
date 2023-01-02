@@ -50,6 +50,9 @@ struct NodeEnclosure
   int pos_x = 0;
   int neg_y = 0;
   int pos_y = 0;
+
+  int dx() { return neg_x + pos_x; };
+  int dy() { return neg_y + pos_y; };
 };
 
 //! Node class which stores the properties of the node of the PDN

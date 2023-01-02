@@ -1,7 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,22 +30,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+%{
 
-namespace rcx {
-class Ext;
-}  // namespace rcx
+#include "stt/SteinerTreeBuilder.h"
+#include "stt/pd.h"
+#include "stt/flute.h"
+#include "gui/gui.h"
+#include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include <vector>
 
-namespace ord {
+%}
 
-class OpenRoad;
+%include "../../Exception-py.i"
 
-rcx::Ext* makeOpenRCX();
+%include <std_vector.i>
 
-void deleteOpenRCX(rcx::Ext* extractor);
+namespace std {
+%template(xy) vector<int>;
+}
 
-void initOpenRCX(OpenRoad* openroad);
-
-}  // namespace ord
+%include "stt/SteinerTreeBuilder.h"
+%include "stt/flute.h"
+%include "stt/pd.h"
