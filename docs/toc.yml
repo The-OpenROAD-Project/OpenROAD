@@ -15,8 +15,6 @@ entries:
     title: Database Math
   - file: contrib/Logger
     title: Logger
-  - file: contrib/PlatformBringUp
-    title: Guide to Integrate a New Platform into the OpenROAD Flow
   - file: contrib/CI
     title: CI
 
@@ -136,25 +134,8 @@ entries:
   - file: main/src/par/README
     title: Partition Manager
 
-- file: user/GettingStarted
-  title: Getting Started with OpenROAD Flow
-  entries:
-  - file: user/BuildWithDocker
-    title: Build With Docker
-  - file: user/BuildLocally
-    title: Build Locally
-  - file: user/UserGuide
-    title: User Guide
-  - file: user/FlowVariables
-    title: Flow Variables
-  - file: contrib/Metrics
-    title: Metrics
-  - file: user/InstructionsForAutoTuner
-    title: AutoTuner
-
+- file: tutorials/index
+  title: Tutorials
 
 - file: user/FAQS
   title: FAQs
-
-- file: tutorials/FlowTutorial
-  title: Flow Tutorial

@@ -66,7 +66,6 @@ extract(const char* ext_model_file,
         int corner_cnt,
         double max_res,
         float coupling_threshold,
-        int signal_table,
         int cc_model,
         int context_depth,
         const char* debug_net_id,
@@ -80,7 +79,6 @@ extract(const char* ext_model_file,
   opts.corner_cnt = corner_cnt;
   opts.max_res = max_res;
   opts.coupling_threshold = coupling_threshold;
-  opts.signal_table = signal_table;
   opts.cc_model = cc_model;
   opts.context_depth = context_depth;
   opts.lef_res = lef_res;

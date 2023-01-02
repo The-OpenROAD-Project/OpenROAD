@@ -52,7 +52,6 @@ target_sources(rcx
     extRCmodel.cpp
     extSpef.cpp
     extSpefIn.cpp
-    ext_test_wire.cpp
     extmain.cpp
     extmeasure.cpp
     extDebugPrint.cpp

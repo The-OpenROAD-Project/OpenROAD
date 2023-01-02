@@ -58,7 +58,7 @@ See documentation for the application [here](../README.md).
 The flow is a set of integrated scripts that allow for RTL-to-GDSII flow
 using open-source tools.
 
-See documentation for the flow [here](user/GettingStarted.md).
+See documentation for the flow [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
 ## How to contribute
 
@@ -77,10 +77,8 @@ We maintain the following channels for communication:
 -   Twitter: <https://twitter.com/OpenROAD_EDA>
 -   Issues and bugs:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
-    -   OpenROAD Flow: <https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues>
 -   Discussions:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/discussions>
-    -   OpenROAD Flow: <https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/discussions>
 -   Inquiries: openroad@eng.ucsd.edu
 
 See also our [FAQs](user/FAQS.md).

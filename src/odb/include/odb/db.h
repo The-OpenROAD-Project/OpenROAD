@@ -1472,7 +1472,7 @@ class dbBlock : public dbObject
   ///
   /// get wire_updated nets
   ///
-  void getWireUpdatedNets(std::vector<dbNet*>& nets, Rect* bbox = NULL);
+  void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
   /// return the regions of this design

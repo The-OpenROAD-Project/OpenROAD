@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTSPEF_H
-#define ADS_EXTSPEF_H
+#pragma once
 
-#include "ISdb.h"
+#include <map>
+
 #include "array1.h"
 #include "db.h"
 #include "dbShape.h"
@@ -41,10 +41,6 @@
 #include "name.h"
 #include "odb.h"
 #include "parse.h"
-
-//#define AFILE FILE
-
-#include <map>
 
 namespace utl {
 class Logger;
@@ -86,7 +82,6 @@ class extSpef
   FILE* _inFP;
 
   char _outFile[1024];
-  //	AFILE *_outFP;
   FILE* _outFP;
 
   Ath__parser* _parser;
@@ -164,7 +159,6 @@ class extSpef
   bool _foreign;
 
   uint _rRun;
-  odb::ZPtr<odb::ISdb> _netSdb;
   bool _stampWire;
   bool _rConn;
   bool _rCap;
@@ -180,8 +174,6 @@ class extSpef
 
   Ath__nameTable* _notFoundInst;
   Ath__nameTable* _nodeHashTable;
-  // AthHash<uint> *_nodeHashTable;
-  // HashN<uint> _nodeHashTable;
   uint _tmpCapId;
   Ath__nameTable* _node2nodeHashTable;
   char _tmpBuff1[1024];
@@ -269,10 +261,8 @@ class extSpef
   bool _readAllCorners;
   int _in_spef_corner;
 
-  // 021810D BEGIN
   uint _childBlockInstBaseMap;
   uint _childBlockNetBaseMap;
-  // 021810D END
 
  protected:
   Logger* logger_;
@@ -324,25 +314,10 @@ class extSpef
   void resetNodeCoordTables();
   void deleteNodeCoordTables();
   bool readNodeCoords(uint cpos);
-  void adjustNodeCoords();
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  uint getShapeIdFromNodeCoords(uint targetCapNodeId);
-  uint getITermShapeId(odb::dbITerm* iterm);
-  uint getBTermShapeId(odb::dbBTerm* bterm);
   void initSearchForNets();
   uint addNetShapesOnSearch(uint netId);
-  uint findShapeId(uint netId, int x, int y);
-  uint parseAndFindShapeId();
-  void readNmCoords();
-  uint findShapeId(uint netId,
-                   int x1,
-                   int y1,
-                   int x2,
-                   int y2,
-                   char* layer,
-                   bool matchLayer = false);
-  uint findShapeId(uint netId, int x1, int y1, int x2, int y2, uint level);
   void searchDealloc();
   void getAnchorCoords(odb::dbNet* net,
                        uint shapeId,
@@ -377,7 +352,6 @@ class extSpef
                  bool extracted,
                  bool keepLoadedCorner,
                  bool stampWire,
-                 odb::ZPtr<odb::ISdb> netSdb,
                  uint testParsing,
                  int app_print_limit,
                  bool m_map,
@@ -520,7 +494,6 @@ class extSpef
   uint matchNetRes(odb::dbNet* net);
   void resetExtIds(uint rit);
   uint endNet(odb::dbNet* net, uint resCnt);
-  void setJunctionId(odb::dbCapNode* capnode, odb::dbRSeg* rseg);
   uint sortRSegs();
   bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
   uint getNetLW(odb::dbNet* net, uint& w);
@@ -599,22 +572,9 @@ class extSpef
   void copyCap(double* totCap, double* cap, uint n = 0);
   void adjustCap(double* totCap, double* cap, uint n = 0);
   void set_single_pi(bool v);
-  // uint getCapNodeId(std::map<uint,uint> &node_map, char *nodeWord, char
-  // *capWord);
 
   uint getAppPrintLimit() { return _cc_app_print_limit; };
   int* getAppCnt() { return _appcnt; };
-#if 0
-	bool writeITerm(uint node);
-	bool writeBTerm(uint node);
-	void writeITermNode(uint node);
-	uint getMappedBTermId(uint id);
-	uint getITermId(uint id, char *name);
-	uint getITermId(char *name);
-	uint getBTermId(uint id);
-	uint getBTermId(char *name);
-#endif
-  // 021610D BEGIN
   uint writeHierInstNameMap();
   uint writeHierNetNameMap();
   static int getIntProperty(odb::dbBlock* block, const char* name);
@@ -622,23 +582,15 @@ class extSpef
   char* getDelimeter();
   void writeNameNode(odb::dbCapNode* node);
   uint writeCapName(odb::dbCapNode* capNode, uint capIndex);
-  // 021610D END
 
-  // 021810D BEGIN
   void writeDnetHier(uint mapId, double* totCap);
   bool writeHierNet(odb::dbNet* net, double resBound, uint debug);
   void setHierBaseNameMap(uint instBase, uint netBase);
-  // 021810D END
 
-  // 022310D BEGIN
   void setBlock(odb::dbBlock* blk);
-  // 022310D END
 
-  // 620 DF DIFF SPEF
   const char* comp_bounds(double val, double min, double max, double& percent);
   double percentDiff(double dbCap, double refCap);
 };
 
 }  // namespace rcx
-
-#endif
