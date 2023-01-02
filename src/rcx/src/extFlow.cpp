@@ -1613,6 +1613,10 @@ uint extMain::couplingFlow(Rect& extRect,
     _geomSeq = NULL;
   }
 
+  for (uint jj = 0; jj < layerCnt; jj++)
+    delete[] limitArray[jj];
+  delete[] limitArray;
+
   return 0;
 }
 
