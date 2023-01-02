@@ -126,6 +126,7 @@ class HierRTLMP
   void setFenceWeight(float fence_weight);
   void setBoundaryWeight(float boundary_weight);
   void setNotchWeight(float notch_weight);
+  void setMacroBlockageWeight(float macro_blockage_weight);
   void setPinAccessThreshold(float pin_access_th);
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);

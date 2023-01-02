@@ -77,6 +77,7 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float fence_weight,
                          const float boundary_weight,
                          const float notch_weight,
+                         const float macro_blockage_weight,
                          const float pin_access_th,
                          const float target_util,
                          const float target_dead_space,
@@ -101,6 +102,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->setFenceWeight(fence_weight);
   hier_rtlmp_->setBoundaryWeight(boundary_weight);
   hier_rtlmp_->setNotchWeight(notch_weight);
+  hier_rtlmp_->setMacroBlockageWeight(macro_blockage_weight);
   hier_rtlmp_->setPinAccessThreshold(pin_access_th);
   hier_rtlmp_->setTargetUtil(target_util);
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);

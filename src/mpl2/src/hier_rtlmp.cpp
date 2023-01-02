@@ -112,6 +112,11 @@ void HierRTLMP::setNotchWeight(float weight)
   notch_weight_ = weight;
 }
 
+void HierRTLMP::setMacroBlockageWeight(float weight)
+{
+  macro_blockage_weight_ = weight;
+}
+
 void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ly,
                                float fence_ux,
