@@ -33,18 +33,20 @@
 #include "tclCmdInputWidget.h"
 
 #include <QAbstractItemView>
+#include <QCoreApplication>
 #include <QMimeData>
 #include <QScrollBar>
 #include <QTextStream>
 #include <regex>
 
+#include "gui/gui.h"
+#include "ord/OpenRoad.hh"
+#include "spdlog/formatter.h"
+
 namespace gui {
 
 TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
-    : QPlainTextEdit(parent),
-      line_height_(0),
-      document_margins_(0),
-      max_height_(QWIDGETSIZE_MAX),
+    : CmdInputWidget("TCL", parent),
       interp_(nullptr),
       context_menu_(nullptr),
       enable_highlighting_(nullptr),
@@ -57,10 +59,6 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
       completer_end_of_command_(nullptr)
 {
   setObjectName("tcl_scripting");  // for settings
-  setPlaceholderText("TCL commands");
-  setAcceptDrops(true);
-
-  determineLineHeight();
 
   // add option to default context menu to enable or disable syntax highlighting
   context_menu_.reset(createStandardContextMenu());
@@ -81,37 +79,60 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
           SIGNAL(triggered()),
           this,
           SLOT(updateCompletion()));
-
-  // precompute size for updating text box size
-  document_margins_ = 2 * (document()->documentMargin() + 3);
-
-  connect(this, SIGNAL(textChanged()), this, SLOT(updateSize()));
-  updateSize();
 }
 
 TclCmdInputWidget::~TclCmdInputWidget()
 {
+  // restore old exit
+  Tcl_DeleteCommand(interp_, "exit");
+  std::string exit_rename
+      = fmt::format("rename {}exit exit", command_rename_prefix_);
+  Tcl_Eval(interp_, exit_rename.c_str());
 }
 
-void TclCmdInputWidget::setFont(const QFont& font)
+void TclCmdInputWidget::setTclInterp(
+    Tcl_Interp* interp,
+    bool do_init_openroad,
+    const std::function<void(void)>& post_or_init)
 {
-  QPlainTextEdit::setFont(font);
+  interp_ = interp;
 
-  determineLineHeight();
+  // Overwrite exit to allow Qt to handle exit
+  std::string exit_rename
+      = fmt::format("rename exit {}exit", command_rename_prefix_);
+  Tcl_Eval(interp_, exit_rename.c_str());
+  Tcl_CreateCommand(
+      interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
+
+  if (do_init_openroad) {
+    // OpenRoad is not initialized
+    emit commandAboutToExecute();
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    const int setup_tcl_result = ord::tclAppInit(interp_);
+    post_or_init();
+    processTclResult(setup_tcl_result);
+    emit commandFinishedExecuting(setup_tcl_result == TCL_OK);
+  } else {
+    post_or_init();
+  }
+
+  init();
 }
 
-void TclCmdInputWidget::determineLineHeight()
+int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
+                                      Tcl_Interp* interp,
+                                      int argc,
+                                      const char** argv)
 {
-  QFontMetrics font_metrics = fontMetrics();
-  line_height_ = font_metrics.lineSpacing();
+  TclCmdInputWidget* widget = (TclCmdInputWidget*) instance_data;
 
-  double tab_indent_width = 2 * font_metrics.averageCharWidth();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
-  // setTabStopWidth deprecated in 5.10
-  setTabStopDistance(tab_indent_width);
-#else
-  setTabStopWidth(tab_indent_width);
-#endif
+  // exit was called, so ensure continue after close is cleared
+  Gui::get()->clearContinueAfterClose();
+
+  // announces exit to Qt
+  emit widget->exiting();
+
+  return TCL_OK;
 }
 
 void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
@@ -129,52 +150,25 @@ void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
     }
   }
 
-  // handle regular command typing
-  bool has_control = e->modifiers().testFlag(Qt::ControlModifier);
-  if (key == Qt::Key_Enter || key == Qt::Key_Return) {
-    // Handle enter
-    if (has_control) {
-      // don't execute just insert the newline
-      // does not get inserted by Qt, so manually inserting
-      insertPlainText("\n");
-      return;
-    } else {
-      // Check if command complete and attempt to execute, otherwise do nothing
-      if (isCommandComplete(toPlainText().simplified().toStdString())) {
-        // execute command
-        emit completeCommand(text());
-        return;
-      }
-    }
-  } else if (key == Qt::Key_Down) {
-    // Handle down through history
-    // control+down immediate
-    if ((!textCursor().hasSelection()
-         && !textCursor().movePosition(QTextCursor::Down))
-        || has_control) {
-      emit historyGoForward();
-      return;
-    }
-  } else if (key == Qt::Key_Up) {
-    // Handle up through history
-    // control+up immediate
-    if ((!textCursor().hasSelection()
-         && !textCursor().movePosition(QTextCursor::Up))
-        || has_control) {
-      emit historyGoBack();
-      return;
-    }
+  if (handleHistoryKeyPress(e)) {
+    return;
   }
+
+  if (handleEnterKeyPress(e)) {
+    return;
+  }
+
+  const bool has_control = e->modifiers().testFlag(Qt::ControlModifier);
 
   // handle completer
   if (completer_ == nullptr) {
     // no completer
-    QPlainTextEdit::keyPressEvent(e);
+    CmdInputWidget::keyPressEvent(e);
   } else {
     bool is_completer_shortcut = has_control && key == Qt::Key_E;  // CTRL+E
     if (!is_completer_shortcut) {
       // forward keypress if it is not the completer shortcut
-      QPlainTextEdit::keyPressEvent(e);
+      CmdInputWidget::keyPressEvent(e);
     }
 
     if (e->text().isEmpty()) {
@@ -251,10 +245,10 @@ void TclCmdInputWidget::keyReleaseEvent(QKeyEvent* e)
     emit textChanged();
   }
 
-  QPlainTextEdit::keyReleaseEvent(e);
+  CmdInputWidget::keyReleaseEvent(e);
 }
 
-bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
+bool TclCmdInputWidget::isCommandComplete(const std::string& cmd) const
 {
   if (cmd.empty()) {
     return false;
@@ -268,62 +262,9 @@ bool TclCmdInputWidget::isCommandComplete(const std::string& cmd)
   return Tcl_CommandComplete(cmd.c_str());
 }
 
-// Slot to announce command executed
-void TclCmdInputWidget::commandExecuted(int return_code)
-{
-  if (return_code == TCL_OK) {
-    clear();
-  }
-}
-
-// Update the size of the widget to match text
-void TclCmdInputWidget::updateSize()
-{
-  int height = document()->size().toSize().height();
-  if (height < 1) {
-    height = 1;  // ensure minimum is 1 line
-  }
-
-  // in px
-  int desired_height = height * line_height_ + document_margins_;
-
-  if (desired_height > max_height_) {
-    desired_height = max_height_;  // ensure maximum from Qt suggestion
-  }
-
-  setFixedHeight(desired_height);
-
-  ensureCursorVisible();
-}
-
-// Handle dragged and drop script files
-void TclCmdInputWidget::dragEnterEvent(QDragEnterEvent* event)
-{
-  if (event->mimeData()->text().startsWith("file://")) {
-    event->accept();
-  }
-}
-
-void TclCmdInputWidget::dropEvent(QDropEvent* event)
-{
-  if (event->mimeData()->text().startsWith("file://")) {
-    event->accept();
-
-    // replace the content in the text area with the file
-    QFile drop_file(event->mimeData()->text().remove(0, 7).simplified());
-    if (drop_file.open(QIODevice::ReadOnly)) {
-      QTextStream file_data(&drop_file);
-      setText(file_data.readAll());
-      drop_file.close();
-    }
-  }
-}
-
 // setup syntax highlighter
-void TclCmdInputWidget::init(Tcl_Interp* interp)
+void TclCmdInputWidget::init()
 {
-  interp_ = interp;
-
   initOpenRoadCommands();
 
   const char* start_of_command = "(?:^|(?<=(?:\\s|\\[|\\{)))";
@@ -357,33 +298,6 @@ void TclCmdInputWidget::init(Tcl_Interp* interp)
   *completer_commands_ << namespaces;
 
   updateCompletion();
-}
-
-// replicate QLineEdit function
-QString TclCmdInputWidget::text()
-{
-  return toPlainText();
-}
-
-// replicate QLineEdit function
-void TclCmdInputWidget::setText(const QString& text)
-{
-  setPlainText(text);
-  emit textChanged();
-}
-
-void TclCmdInputWidget::setMaximumHeight(int height)
-{
-  int min_height = line_height_ + document_margins_;  // atleast one line
-  if (height < min_height) {
-    height = min_height;
-  }
-
-  // save max height, since it's overwritten by setFixedHeight
-  max_height_ = height;
-  QPlainTextEdit::setMaximumHeight(height);
-
-  updateSize();
 }
 
 void TclCmdInputWidget::contextMenuEvent(QContextMenuEvent* event)
@@ -434,6 +348,8 @@ void TclCmdInputWidget::updateCompletion()
 void TclCmdInputWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
+  CmdInputWidget::readSettings(settings);
+
   enable_highlighting_->setChecked(
       settings->value(enable_highlighting_keyword_, true).toBool());
   enable_completion_->setChecked(
@@ -444,6 +360,8 @@ void TclCmdInputWidget::readSettings(QSettings* settings)
 void TclCmdInputWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
+  CmdInputWidget::writeSettings(settings);
+
   settings->setValue(enable_highlighting_keyword_,
                      enable_highlighting_->isChecked());
   settings->setValue(enable_completion_keyword_,
@@ -761,6 +679,47 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   }
 
   return nullptr;
+}
+
+void TclCmdInputWidget::executeCommand(const QString& cmd,
+                                       bool echo,
+                                       bool silent)
+{
+  if (cmd.isEmpty()) {
+    return;
+  }
+
+  if (echo && !silent) {
+    // Show the command that we executed
+    emit addCommandToOutput(cmd);
+  }
+
+  emit commandAboutToExecute();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+  const std::string command = cmd.toStdString();
+
+  int return_code = Tcl_Eval(interp_, command.c_str());
+
+  if (!silent) {
+    // Show its output
+    processTclResult(return_code);
+
+    if (return_code == TCL_OK && echo) {
+      // record the successful command to tcl history command
+      Tcl_RecordAndEval(interp_, command.c_str(), TCL_NO_EVAL);
+    }
+
+    addCommandToHistory(QString::fromStdString(command));
+  }
+
+  emit commandFinishedExecuting(return_code == TCL_OK);
+}
+
+void TclCmdInputWidget::processTclResult(int return_code)
+{
+  emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)),
+                         return_code == TCL_OK);
 }
 
 }  // namespace gui

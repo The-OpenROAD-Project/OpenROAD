@@ -44,9 +44,9 @@
 #include <mutex>
 
 #include "gui/gui.h"
-#include "ord/OpenRoad.hh"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
+#include "tclCmdInputWidget.h"
 
 namespace gui {
 
@@ -56,10 +56,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
-      interp_(nullptr),
-      history_(),
-      history_buffer_last_(),
-      historyPosition_(0),
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
@@ -83,15 +79,29 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
-  connect(input_,
-          SIGNAL(completeCommand(const QString&)),
-          this,
-          SLOT(executeCommand(const QString&)));
-  connect(
-      this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
-  connect(input_, SIGNAL(historyGoBack()), this, SLOT(goBackHistory()));
-  connect(input_, SIGNAL(historyGoForward()), this, SLOT(goForwardHistory()));
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+
+  connect(input_, SIGNAL(exiting()), this, SIGNAL(exiting()));
+  connect(input_,
+          SIGNAL(commandAboutToExecute()),
+          this,
+          SIGNAL(commandAboutToExecute()));
+  connect(input_,
+          SIGNAL(commandAboutToExecute()),
+          this,
+          SLOT(setPauserToRunning()));
+  connect(input_,
+          SIGNAL(addCommandToOutput(const QString&)),
+          this,
+          SLOT(addCommandToOutput(const QString&)));
+  connect(input_,
+          SIGNAL(commandFinishedExecuting(bool)),
+          this,
+          SLOT(resetPauser()));
+  connect(input_,
+          SIGNAL(commandFinishedExecuting(bool)),
+          this,
+          SIGNAL(commandExecuted(bool)));
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
   connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
@@ -111,26 +121,6 @@ ScriptWidget::~ScriptWidget()
     // make sure to remove the Gui sink from logger
     logger_->removeSink(sink_);
   }
-
-  // restore old exit
-  Tcl_DeleteCommand(interp_, "exit");
-  Tcl_Eval(interp_, "rename ::tcl::openroad::exit exit");
-}
-
-int ScriptWidget::tclExitHandler(ClientData instance_data,
-                                 Tcl_Interp* interp,
-                                 int argc,
-                                 const char** argv)
-{
-  ScriptWidget* widget = (ScriptWidget*) instance_data;
-
-  // exit was called, so ensure continue after close is cleared
-  Gui::get()->clearContinueAfterClose();
-
-  // announces exit to Qt
-  emit widget->tclExiting();
-
-  return TCL_OK;
 }
 
 void ScriptWidget::setupTcl(Tcl_Interp* interp,
@@ -139,89 +129,29 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
                             const std::function<void(void)>& post_or_init)
 {
   is_interactive_ = interactive;
-  interp_ = interp;
-
-  // Overwrite exit to allow Qt to handle exit
-  Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
-  Tcl_CreateCommand(
-      interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
-
-  if (do_init_openroad) {
-    // OpenRoad is not initialized
-    pauser_->setText("Running");
-    pauser_->setStyleSheet("background-color: red");
-    int setup_tcl_result = ord::tclAppInit(interp_);
-    post_or_init();
-    pauser_->setText("Idle");
-    pauser_->setStyleSheet("");
-
-    addTclResultToOutput(setup_tcl_result);
-  } else {
-    post_or_init();
-  }
-
-  input_->init(interp_);
+  input_->setTclInterp(interp, do_init_openroad, post_or_init);
 }
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
-  if (echo) {
-    // Show the command that we executed
-    addCommandToOutput(command);
-  }
-
-  int return_code = executeTclCommand(command);
-
-  // Show its output
-  addTclResultToOutput(return_code);
-
-  if (return_code == TCL_OK) {
-    if (echo) {
-      // record the successful command to tcl history command
-      Tcl_RecordAndEval(interp_, command.toLatin1().data(), TCL_NO_EVAL);
-    }
-
-    // Update history; ignore repeated commands and keep last 100
-    const int history_limit = 100;
-    if (history_.empty() || command != history_.last()) {
-      if (history_.size() == history_limit) {
-        history_.pop_front();
-      }
-
-      history_.append(command);
-    }
-    historyPosition_ = history_.size();
-  }
-
-  emit commandExecuted(return_code);
+  input_->executeCommand(command, echo);
 }
 
 void ScriptWidget::executeSilentCommand(const QString& command)
 {
-  int return_code = executeTclCommand(command);
-
-  if (return_code != TCL_OK) {
-    // Show its error output
-    addTclResultToOutput(return_code);
-  }
-
-  emit commandExecuted(return_code);
+  input_->executeCommand(command, false, true);
 }
 
-int ScriptWidget::executeTclCommand(const QString& command)
+void ScriptWidget::setPauserToRunning()
 {
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
+}
 
-  emit commandAboutToExecute();
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
-
+void ScriptWidget::resetPauser()
+{
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
-
-  return return_code;
 }
 
 void ScriptWidget::addCommandToOutput(const QString& cmd)
@@ -235,21 +165,21 @@ void ScriptWidget::addCommandToOutput(const QString& cmd)
   addToOutput(command, cmd_msg_);
 }
 
-void ScriptWidget::addTclResultToOutput(int return_code)
+void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
 {
-  // Show the return value color-coded by ok/err.
-  const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
-  if (result[0] != '\0') {
-    if (return_code == TCL_OK) {
-      addToOutput(result, tcl_ok_msg_);
-    } else {
-      try {
-        logger_->error(utl::GUI, 70, result);
-      } catch (const std::runtime_error& e) {
-        if (!is_interactive_) {
-          // rethrow error
-          throw e;
-        }
+  if (result.isEmpty()) {
+    return;
+  }
+
+  if (is_ok) {
+    addToOutput(result, ok_msg_);
+  } else {
+    try {
+      logger_->error(utl::GUI, 70, result.toStdString());
+    } catch (const std::runtime_error& e) {
+      if (!is_interactive_) {
+        // rethrow error
+        throw e;
       }
     }
   }
@@ -295,47 +225,17 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
   output_->appendHtml(html);
 }
 
-void ScriptWidget::goForwardHistory()
-{
-  if (historyPosition_ < history_.size() - 1) {
-    ++historyPosition_;
-    input_->setText(history_[historyPosition_]);
-  } else if (historyPosition_ == history_.size() - 1) {
-    ++historyPosition_;
-    input_->setText(history_buffer_last_);
-  }
-}
-
-void ScriptWidget::goBackHistory()
-{
-  if (historyPosition_ > 0) {
-    if (historyPosition_ == history_.size()) {
-      // whats in the buffer is the last thing the user was editing
-      history_buffer_last_ = input_->text();
-    }
-    --historyPosition_;
-    input_->setText(history_[historyPosition_]);
-  }
-}
-
 void ScriptWidget::readSettings(QSettings* settings)
 {
-  settings->beginGroup("scripting");
-  history_ = settings->value("history").toStringList();
-  historyPosition_ = history_.size();
-
+  settings->beginGroup(objectName());
   input_->readSettings(settings);
-
   settings->endGroup();
 }
 
 void ScriptWidget::writeSettings(QSettings* settings)
 {
-  settings->beginGroup("scripting");
-  settings->setValue("history", history_);
-
+  settings->beginGroup(objectName());
   input_->writeSettings(settings);
-
   settings->endGroup();
 }
 
@@ -430,16 +330,15 @@ void ScriptWidget::bufferOutputs(bool state)
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)
 {
-  input_->setMaximumHeight(event->size().height()
-                           - output_->sizeHint().height());
+  input_->setMaxHeight(event->size().height() - output_->sizeHint().height());
   QDockWidget::resizeEvent(event);
 }
 
-void ScriptWidget::setFont(const QFont& font)
+void ScriptWidget::setWidgetFont(const QFont& font)
 {
   QDockWidget::setFont(font);
   output_->setFont(font);
-  input_->setFont(font);
+  input_->setWidgetFont(font);
 }
 
 // This class is an spdlog sink that writes the messages into the output
@@ -468,7 +367,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
-                                    ? widget_->tcl_error_msg_
+                                    ? widget_->error_msg_
                                     : widget_->buffer_msg_;
 
       widget_->addLogToOutput(formatted_msg, msg_color);
