@@ -1,7 +1,5 @@
 git+https://github.com/f4pga/sphinx_f4pga_theme.git
-git+https://github.com/bashtage/sphinx-material.git
 git+https://github.com/executablebooks/sphinx-external-toc
 sphinx
 sphinx-autobuild
 myst-parser
-sphinx-rtd-theme

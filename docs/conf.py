@@ -117,11 +117,15 @@ html_theme_options = {
     # For details see link.
     # https://getmdl.io/customize/index.html
     #
-    # Values: amber, blue, brown, cyan deep_orange, deep_purple, green, grey, indigo, light_blue,
-    #         light_green, lime, orange, pink, purple, red, teal, yellow(Default: indigo)
-    'primary_color': 'indigo',
-    # Values: Same as primary_color. (Default: pink)
-    'accent_color': 'blue',
+    # Primary colors:
+    # red, pink, purple, deep-purple, indigo, blue, light-blue, cyan,
+    # teal, green, light-green, lime, yellow, amber, orange, deep-orange,
+    # brown, grey, blue-grey, white
+    # (Default: deep-purple)
+    'color_primary': 'indigo',
+    # Values: Same as color_primary. 
+    #(Default: indigo)
+    'color_accent': 'blue',
 
     # Customize layout.
     # For details see link.
