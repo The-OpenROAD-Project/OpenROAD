@@ -515,7 +515,7 @@ LayoutViewer::LayoutViewer(Options* options,
           SLOT(setBlock(odb::dbBlock*)));
 
   connect(output_widget_,
-          SIGNAL(commandExecuted(int)),
+          SIGNAL(commandExecuted(bool)),
           this,
           SLOT(setResetRepaintInterval()));
   connect(output_widget_,

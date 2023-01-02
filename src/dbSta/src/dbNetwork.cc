@@ -671,19 +671,24 @@ dbNetwork::port(const Pin* pin) const
 PortDirection*
 dbNetwork::direction(const Pin* pin) const
 {
-  dbITerm* iterm;
-  dbBTerm* bterm;
-  staToDb(pin, iterm, bterm);
-  if (iterm) {
-    PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
-    return dir;
+  // ODB does not undestand tristates so look to liberty before ODB for port direction.
+  LibertyPort *lib_port = libertyPort(pin);
+  if (lib_port)
+    return lib_port->direction();
+  else {
+    dbITerm* iterm;
+    dbBTerm* bterm;
+    staToDb(pin, iterm, bterm);
+    if (iterm) {
+      PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
+      return dir;
+    }
+    else if (bterm) {
+      PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+      return dir;
+    }
   }
-  else if (bterm) {
-    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
-    return dir;
-  }
-  else
-    return nullptr;
+  return PortDirection::unknown();
 }
 
 VertexId

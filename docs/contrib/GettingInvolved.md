@@ -3,11 +3,8 @@
 Thank you for taking the time to read this document and to contribute.
 The OpenROAD project will not reach all of its objectives without help!
 
-Possible ways to contribute:
+Possible ways to contribute to the OpenROAD application:
 
-- Open-source PDK information
-- Open-source Designs
-- Useful scripts
 - Tool improvements
 - New tools
 - Improvements to documentation, including this document
@@ -22,20 +19,6 @@ made with BSD3 fit best with the spirit of OpenROAD's permissive open-source
 philosophy. We do have exceptions in the project, but over time we hope
 that all contributions will be BSD3, or some other permissive license such as MIT
 or Apache2.0.
-
-## Contributing Open Source PDK information and Designs
-
-If you have new design or PDK information to contribute, please add this
-to the repo
-[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/).
-In the
-[flow directory](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow)
-you will see a directory for
-[designs](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/designs)
-with Makefiles to run them, and one for PDK
-[platforms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms)
-used by the designs. If you add a new PDK platform, be sure to add at
-least one design that uses it.
 
 ## Contributing Scripts and Code
 

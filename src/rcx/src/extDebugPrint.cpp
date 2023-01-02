@@ -35,14 +35,6 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-//#define DIAG_FIRST
-#ifdef HI_ACC_1
-#define FRINGE_UP_DOWN
-#endif
-//#define CHECK_SAME_NET
-//#define DEBUG_NET 208091
-//#define MIN_FOR_LOOPS
-
 namespace rcx {
 
 using utl::RCX;
@@ -168,7 +160,6 @@ bool extMeasure::printTraceNet(const char* msg,
       printTraceNetInfo("", _netSrcId, _rsegSrcId);
     else
       printTraceNetInfo("", _netTgtId, _rsegTgtId);
-    //   fprintf(_debugFP, "\n");
 
     return true;
   }
@@ -186,7 +177,7 @@ bool extMeasure::printTraceNet(const char* msg,
   return true;
 }
 
-// ----------------------------------------------------------------- DF 1020
+// -----------------------------------------------------------------
 void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
 {
   if (rsegId <= 0) {
@@ -410,7 +401,6 @@ bool extMeasure::DebugStart(bool allNets)
                _len,
                GetDBcoords(_len));
   }
-  // Added Jeff 1/13
   uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
 
   dbNet* net = dbNet::getNet(_block, debugTgtId);
@@ -424,9 +414,6 @@ bool extMeasure::DebugStart(bool allNets)
              "{:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \n\tDX  : {} "
              "{:3f} \n\tDY  "
              ": {} {:3f}",
-             // _met,
-             // _dist,
-             // _len,
              net->getConstName(),
              debugTgtId,
              _ll[0],
@@ -481,7 +468,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
-// ----------------------------------------------------------------- DF 1020
+// -----------------------------------------------------------------
 //
 // from extRCmodel.cpp
 

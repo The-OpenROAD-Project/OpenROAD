@@ -74,11 +74,6 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
 {
   _geomSeq->setSlices(planeCnt);
 
-  // odb::Rect rectTable[15];
-  // for (uint k= 0; k<15; k++)
-  //	rectTable[k].reset( INT_MAX, INT_MAX, INT_MIN, INT_MIN );
-  // getBboxPerLayer(rectTable);
-
   odb::Rect maxRect = _block->getDieArea();
 
   if (bb != NULL) {
@@ -105,10 +100,6 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
     uint minWidth = layer->getWidth();
 
     odb::Rect r = maxRect;
-    //_geomSeq->configureSlice(level, pp, pp, r.xMin(), r.yMin(), r.xMax(),
-    // r.yMax());
-
-    // odb::Rect r= rectTable[level];
 
     if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
       _geomSeq->configureSlice(
@@ -156,18 +147,9 @@ uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
   if (layerCnt == 0)
     layerCnt = getExtLayerCnt(_tech);
 
-  //	uint planeCnt= layerCnt+1;
-
   _overUnderPlaneLayerMap = NULL;
 
-  // if (! _diagFlow)
-  // 	planeCnt= allocateOverUnderMaps(layerCnt);
-
-#ifdef GS_OLD
-  return initPlanesOld(planeCnt);
-#else
   return initPlanesNew(layerCnt, bb);
-#endif
 }
 uint extMain::makeIntersectPlanes(uint layerCnt)
 {
@@ -387,7 +369,6 @@ uint extMain::addSignalGs(int dir, int* ll, int* ur)
         dshape = pshape.shape;
         if (dshape.isVia())
           continue;
-        //				uint netId= net->getId();
 
         if (ll == NULL) {
           if (dir >= 0) {

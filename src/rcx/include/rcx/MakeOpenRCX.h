@@ -31,8 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MAKE_OPENRCX_H
-#define MAKE_OPENRCX_H
+#pragma once
 
 namespace rcx {
 class Ext;
@@ -49,4 +48,3 @@ void deleteOpenRCX(rcx::Ext* extractor);
 void initOpenRCX(OpenRoad* openroad);
 
 }  // namespace ord
-#endif

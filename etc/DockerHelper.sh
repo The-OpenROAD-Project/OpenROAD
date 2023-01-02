@@ -26,7 +26,6 @@ usage: $0 [CMD] [OPTIONS]
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
                                              copy source code and build app
-                                  'runtime': os + packages to run a compiled app
                                   'binary': os + packages to run a compiled
                                             app + binary set as entrypoint
   -threads                      Max number of threads to use if compiling.
@@ -103,14 +102,8 @@ _setup() {
                 buildArgs=""
             fi
             ;;
-        "runtime" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
-            context="etc"
-            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
-            buildArgs="--build-arg copyImage=${copyImage}"
-            ;;
         "binary" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-runtime}:${imageTag}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-dev}:${imageTag}"
             context="etc"
             copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
