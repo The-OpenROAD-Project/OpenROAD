@@ -34,7 +34,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx_external_toc',
     'myst_parser',
-    "sphinx_search.extension",
 ]
 
 myst_enable_extensions = [
