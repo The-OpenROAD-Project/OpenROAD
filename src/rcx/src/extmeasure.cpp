@@ -3033,8 +3033,6 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     return;
   }
 
-  if (_rsegSrcId > 0)
-    dbRSeg::getRSeg(_block, _rsegSrcId);
   for (; idx < (int) dgContext->getCnt(); idx++) {
     tseq = dgContext->get(idx);
     if (tseq->_ur[lp] <= covered)

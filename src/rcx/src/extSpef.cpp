@@ -1398,7 +1398,7 @@ bool extSpef::closeOutFile()
     return false;
 
   if (_gzipFlag)
-    fclose(_outFP);
+    pclose(_outFP);
   else
     fclose(_outFP);
 

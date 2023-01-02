@@ -335,7 +335,6 @@ uint extMain::printNetStats(FILE* fp,
     if ((type == dbSigType::POWER) || (type == dbSigType::GROUND)) {
       if (skipPower)
         continue;
-      continue;
     }
     if (!net->isEnclosed(&bbox))
       continue;

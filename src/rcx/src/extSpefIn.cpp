@@ -1598,7 +1598,6 @@ uint extSpef::sortRSegs()
     rc = _nrseg->get(tridx);
     tgtCapn = rc->getTargetNode();
     tgtCapNode = dbCapNode::getCapNode(_cornerBlock, tgtCapn);
-    zcfound = false;
     srcCapn = rc->getSourceNode();
     int srcCapidx
         = dbCapNode::getCapNode(_cornerBlock, srcCapn)->getSortIndex() - 1;
@@ -1627,7 +1626,6 @@ uint extSpef::sortRSegs()
         x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
         y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ncidx));
         rc->setCoords(x1, y1);
-        zcfound = true;
       } else {
         logger_->warn(
             RCX,
