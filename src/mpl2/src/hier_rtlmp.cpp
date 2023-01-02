@@ -751,7 +751,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
     if (parent->getNumStdCell() < leaf_cluster_size)
       force_split = true;
     logger_->report(
-        "Set fource split: leaf cluster size: {} root cluster size: {}",
+        "Set force split: leaf cluster size: {} root cluster size: {}",
         leaf_cluster_size,
         parent->getNumStdCell());
   }
