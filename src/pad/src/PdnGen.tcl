@@ -250,11 +250,11 @@ proc check_core_ring {core_ring_spec} {
     } elseif {[dict exists $core_ring_spec $layer_name pad_offset]} {
       check_layer_spacing $layer_name [dict get $core_ring_spec $layer_name pad_offset]
     } else {
-      utl::error PDN 9146 "Must specifu a pad_offset or core_offset for rings."
+      utl::error PDN 9146 "Must specify a pad_offset or core_offset for rings."
     }
   }
   if {[llength [dict keys $layer_directions]] == 0} {
-    utl::error PDN 9139 "No direction defiend for layers [dict keys $core_ring_spec]."
+    utl::error PDN 9139 "No direction defined for layers [dict keys $core_ring_spec]."
   } elseif {[llength [dict keys $layer_directions]] == 1} {
     set dir [dict keys $layer_directions]
     set direction [expr $dir == "ver" ? "vertical" : "horizontal"]
