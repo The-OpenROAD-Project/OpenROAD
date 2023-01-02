@@ -148,9 +148,6 @@ void HierRTLMP::setClusterSize(int max_num_macro,
   min_num_macro_base_ = min_num_macro;
   max_num_inst_base_ = max_num_inst;
   min_num_inst_base_ = min_num_inst;
-  logger_->report("min_num_inst_base = {}, max = {}",
-                  min_num_inst_base_,
-                  max_num_inst_base_);
 }
 
 void HierRTLMP::setClusterSizeTolerance(float tolerance)
@@ -365,8 +362,6 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report(
       "Print Physical Hierarchy Tree after breaking mixed clusters **");
   printPhysicalHierarchyTree(root_cluster_, 0);
-
-  // logger_->error(MPL, 9991, "Force exit");
 
   // Map the macros in each cluster to their HardMacro objects
   for (auto& [cluster_id, cluster] : cluster_map_) {
@@ -751,7 +746,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
   if (level_ == 0) {
     // check if root cluster is below the max size of a leaf cluster
     // Force create child clusters in this case
-    int leaf_cluster_size
+    const int leaf_cluster_size
         = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1);
     if (parent->getNumStdCell() < leaf_cluster_size)
       force_split = true;
@@ -765,15 +760,13 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
   }
   level_++;
 
-  if (1) {
-    logger_->report(
-        "[Debug][HierRTLMP::MultiLevelCluster]  {} {}:  num_macro {} "
-        "num_stdcell {}",
-        parent->getName(),
-        level_,
-        parent->getNumMacro(),
-        parent->getNumStdCell());
-  }
+  logger_->report(
+      "[Debug][HierRTLMP::MultiLevelCluster]  {} {}:  num_macro {} num_stdcell "
+      "{}",
+      parent->getName(),
+      level_,
+      parent->getNumMacro(),
+      parent->getNumStdCell());
 
   // a large coarsening_ratio_ helps the clustering process converge fast
   max_num_macro_
@@ -782,22 +775,12 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
       = min_num_macro_base_ / std::pow(coarsening_ratio_, level_ - 1);
   max_num_inst_ = max_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
   min_num_inst_ = min_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  logger_->report(" max macro: {} min macro: {} max inst: {} min inst: {}",
-                  max_num_macro_,
-                  min_num_macro_,
-                  max_num_inst_,
-                  min_num_inst_);
   // We define the tolerance to improve the robustness of our hierarchical
   // clustering
   max_num_inst_ = max_num_inst_ * (1 + tolerance_);
   min_num_inst_ = min_num_inst_ * (1 - tolerance_);
   max_num_macro_ = max_num_macro_ * (1 + tolerance_);
   min_num_macro_ = min_num_macro_ * (1 - tolerance_);
-  logger_->report(" max macro: {} min macro: {} max inst: {} min inst: {}",
-                  max_num_macro_,
-                  min_num_macro_,
-                  max_num_inst_,
-                  min_num_inst_);
 
   if (force_split || (parent->getNumStdCell() > max_num_inst_)) {
     if ((max_num_level_ - level_) > max_hier_level_)
@@ -945,7 +928,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
       parent->addChild(cluster);
     }
     // Check the glue logics
-    // Glue login instances are loose instances in a given module that also
+    // Glue logic instances are loose instances in a given module that also
     // contain module instances
     //
     std::string cluster_name
