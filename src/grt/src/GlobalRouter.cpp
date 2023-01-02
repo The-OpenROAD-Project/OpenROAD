@@ -2656,24 +2656,33 @@ std::vector<Net*> GlobalRouter::initNetlist()
 {
   initClockNets();
 
-  std::vector<Net*> nets;
+  std::vector<Net*> clk_nets;
   for (odb::dbNet* db_net : block_->getNets()) {
     Net* net = addNet(db_net);
     // add clock nets not connected to a leaf first
     if (net) {
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
       if (is_non_leaf_clock)
-        nets.push_back(net);
+        clk_nets.push_back(net);
     }
   }
 
+  std::vector<Net*> non_clk_nets;
   for (auto [ignored, net] : db_net_map_) {
     bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
     if (!is_non_leaf_clock) {
-      nets.push_back(net);
+      non_clk_nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), nameLess);
+
+  // Sort the nets to ensure stable results, but keep clk nets
+  // at the front.
+  std::sort(clk_nets.begin(), clk_nets.end(), nameLess);
+  std::sort(non_clk_nets.begin(), non_clk_nets.end(), nameLess);
+
+  std::vector<Net*> nets = clk_nets;
+  nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());
+
   return nets;
 }
 
