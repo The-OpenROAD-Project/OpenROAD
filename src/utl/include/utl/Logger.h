@@ -177,7 +177,7 @@ class Logger
   inline void metric(const std::string_view metric, T value)
   {
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4) << value;
+    oss << std::defaultfloat << std::setprecision(6) << value;
     log_metric(std::string(metric), oss.str());
   }
 
