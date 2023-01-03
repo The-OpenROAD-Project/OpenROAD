@@ -42,6 +42,7 @@
 #include <list>
 #include <utility>
 
+#include "Core.h"
 #include "Hungarian.h"
 #include "Netlist.h"
 #include "Slots.h"
@@ -62,6 +63,7 @@ class HungarianMatching
  public:
   HungarianMatching(Section& section,
                     Netlist* netlist,
+                    Core* core,
                     std::vector<Slot>& slots,
                     Logger* logger);
   virtual ~HungarianMatching() = default;
@@ -69,12 +71,16 @@ class HungarianMatching
   void findAssignmentForGroups();
   void getFinalAssignment(std::vector<IOPin>& assigment) const;
   void getAssignmentForGroups(std::vector<IOPin>& assigment);
+  void getFinalAssignmentForMirroredPins(
+      std::vector<IOPin>& assigment,
+      std::vector<MirroredPins>& mirrored_pins);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
   HungarianAlgorithm hungarian_solver_;
   Netlist* netlist_;
+  Core* core_;
   const std::vector<int>& pin_indices_;
   const std::vector<std::vector<int>>& pin_groups_;
   std::vector<Slot>& slots_;
@@ -92,6 +98,7 @@ class HungarianMatching
 
   void createMatrix();
   void createMatrixForGroups();
+  int getSlotIdxByPosition(const odb::Point& position);
 };
 
 }  // namespace ppl

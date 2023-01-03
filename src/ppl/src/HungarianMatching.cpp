@@ -41,9 +41,11 @@ namespace ppl {
 
 HungarianMatching::HungarianMatching(Section& section,
                                      Netlist* netlist,
+                                     Core* core,
                                      std::vector<Slot>& slots,
                                      Logger* logger)
     : netlist_(netlist),
+      core_(core),
       pin_indices_(section.pin_indices),
       pin_groups_(section.pin_groups),
       slots_(slots)
@@ -103,10 +105,10 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   int slot_index = 0;
   for (int idx : pin_indices_) {
     IOPin& io_pin = netlist_->getIoPin(idx);
-    if (!io_pin.isInGroup()) {
+    if (!io_pin.isInGroup() && !io_pin.isPlaced()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
-        while (slots_[slot_index].blocked && slot_index < slots_.size())
+        while ((slots_[slot_index].blocked || slots_[slot_index].used) && slot_index < slots_.size())
           slot_index++;
         if (assignment_[row] != col) {
           slot_index++;
@@ -136,6 +138,59 @@ void HungarianMatching::findAssignmentForGroups()
 
   if (!hungarian_matrix_.empty())
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
+}
+
+void HungarianMatching::getFinalAssignmentForMirroredPins(
+    std::vector<IOPin>& assigment,
+    std::vector<MirroredPins>& mirrored_pins)
+{
+  for (MirroredPins& pins : mirrored_pins) {
+    odb::dbBTerm* bterm1 = pins.first;
+    odb::dbBTerm* bterm2 = pins.second;
+    int pin_index1 = netlist_->getIoPinIdx(bterm1);
+    int pin_index2 = netlist_->getIoPinIdx(bterm2);
+
+    if (std::find(pin_indices_.begin(), pin_indices_.end(), pin_index1) != pin_indices_.end()) {
+      IOPin& io_pin1 = netlist_->getIoPin(pin_index1);
+      IOPin& io_pin2 = netlist_->getIoPin(pin_index2);
+
+      size_t rows = non_blocked_slots_;
+      size_t col = 0;
+      int slot_index = 0;
+      slot_index = begin_slot_;
+      for (size_t row = 0; row < rows; row++) {
+        while (slots_[slot_index].blocked && slot_index < slots_.size())
+          slot_index++;
+        if (assignment_[row] != col) {
+          slot_index++;
+          continue;
+        }
+        if (hungarian_matrix_[row][col] == hungarian_fail) {
+          logger_->warn(utl::PPL,
+                        35,
+                        "I/O pin {} cannot be placed in the specified region. "
+                        "Not enough space.",
+                        io_pin1.getName().c_str());
+        }
+        io_pin1.setPos(slots_[slot_index].pos);
+        io_pin1.setLayer(slots_[slot_index].layer);
+        io_pin1.setPlaced();
+        slots_[slot_index].used = true;
+
+        odb::Point mirrored_pos = core_->getMirroredPosition(io_pin1.getPos());
+        io_pin2.setPos(mirrored_pos);
+        io_pin2.setLayer(slots_[slot_index].layer);
+        io_pin2.setPlaced();
+        slot_index = getSlotIdxByPosition(mirrored_pos);
+        slots_[slot_index].used = true;
+
+        assigment.push_back(io_pin1);
+        assigment.push_back(io_pin2);
+        break;
+      }
+      col++;
+    }
+  }
 }
 
 void HungarianMatching::createMatrixForGroups()
@@ -236,6 +291,19 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
 
   hungarian_matrix_.clear();
   assignment_.clear();
+}
+
+int HungarianMatching::getSlotIdxByPosition(const odb::Point& position)
+{
+  int slot_idx = -1;
+  for (int i = 0; i < slots_.size(); i++) {
+    if (slots_[i].pos == position) {
+      slot_idx = i;
+      break;
+    }
+  }
+
+  return slot_idx;
 }
 
 }  // namespace ppl

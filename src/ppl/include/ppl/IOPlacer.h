@@ -176,6 +176,13 @@ class IOPlacer
   std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist);
+  int assignMirroredPinsToSections(Netlist* netlist,
+                                   std::vector<Section>& sections);
+  bool assignMirroredPinsToSection(IOPin& io_pin1,
+                                   IOPin& io_pin2,
+                                   int idx1,
+                                   int idx2,
+                                   std::vector<Section>& sections);
   int computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();

@@ -720,6 +720,28 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
   return total_pins_assigned;
 }
 
+int IOPlacer::assignMirroredPinsToSections(Netlist* netlist,
+                                           std::vector<Section>& sections)
+{
+  int assigned_pins_count = 0;
+  for (MirroredPins pins : mirrored_pins_) {
+    int pin_index1, pin_index2;
+    odb::dbBTerm* bterm1 = pins.first;
+    odb::dbBTerm* bterm2 = pins.second;
+
+    pin_index1 = netlist->getIoPinIdx(bterm1);
+    pin_index2 = netlist->getIoPinIdx(bterm2);
+    IOPin& io_pin1 = netlist->getIoPin(pin_index1);
+    IOPin& io_pin2 = netlist->getIoPin(pin_index2);
+
+    if (assignMirroredPinsToSection(io_pin1, io_pin2, pin_index1, pin_index2, sections)) {
+      assigned_pins_count += 2;
+    }
+  }
+
+  return assigned_pins_count;
+}
+
 bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   Netlist* net = netlist_io_pins_.get();
@@ -728,6 +750,7 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   createSections();
 
   int total_pins_assigned = assignGroupsToSections();
+  total_pins_assigned = assignMirroredPinsToSections(net, sections);
 
   int idx = 0;
   for (IOPin& io_pin : net->getIOPins()) {
@@ -769,6 +792,35 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         sections[i].used_slots++;
         pin_assigned = true;
         io_pin.assignToSection();
+        break;
+      }
+    }
+  }
+
+  return pin_assigned;
+}
+
+bool IOPlacer::assignMirroredPinsToSection(IOPin& io_pin1,
+                                           IOPin& io_pin2,
+                                           int idx1,
+                                           int idx2,
+                                           std::vector<Section>& sections)
+{
+  bool pin_assigned = false;
+
+  if (!io_pin1.isInGroup() && !io_pin1.isAssignedToSection()) {
+    std::vector<int> dst(sections.size());
+    for (int i = 0; i < sections.size(); i++) {
+      dst[i] = netlist_io_pins_->computeIONetHPWL(idx1, sections[i].pos);
+    }
+    for (auto i : sortIndexes(dst)) {
+      if (sections[i].used_slots + 1 < sections[i].num_slots) {
+        sections[i].pin_indices.push_back(idx1);
+        sections[i].pin_indices.push_back(idx2);
+        sections[i].used_slots += 2;
+        pin_assigned = true;
+        io_pin1.assignToSection();
+        io_pin2.assignToSection();
         break;
       }
     }
@@ -1038,6 +1090,11 @@ void IOPlacer::addTopLayerConstraint(PinList* pins, const odb::Rect& region)
   constraints_.push_back(constraint);
 }
 
+void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
+{
+  mirrored_pins_.push_back(std::make_pair(bterm1, bterm2));
+}
+
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
 {
   hor_layers_.insert(layer->getRoutingLevel());
@@ -1176,11 +1233,11 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
     if (sections[idx].pin_indices.size() > 0) {
       if (sections[idx].edge == Edge::invalid) {
         HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), top_layer_slots_, logger_);
+            sections[idx], netlist_io_pins_.get(), core_.get(), top_layer_slots_, logger_);
         hg_vec.push_back(hg);
       } else {
         HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), slots_, logger_);
+            sections[idx], netlist_io_pins_.get(), core_.get(), slots_, logger_);
         hg_vec.push_back(hg);
       }
     }
@@ -1196,6 +1253,13 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
 
   for (int idx = 0; idx < hg_vec.size(); idx++) {
     hg_vec[idx].findAssignment();
+  }
+
+  if (!mirrored_pins_.empty()) {
+    for (int idx = 0; idx < hg_vec.size(); idx++) {
+      hg_vec[idx].getFinalAssignmentForMirroredPins(assignment_,
+                                                    mirrored_pins_);
+    }
   }
 
   for (int idx = 0; idx < hg_vec.size(); idx++) {

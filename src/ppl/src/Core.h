@@ -86,6 +86,7 @@ class Core
   std::vector<int> getMinWidthY() const { return min_width_y_; }
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
+  odb::Point getMirroredPosition(const odb::Point& position) const;
 
  private:
   Rect boundary_;
