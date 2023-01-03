@@ -71,6 +71,7 @@ using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
 typedef std::set<odb::dbBTerm*> PinList;
+typedef std::pair<odb::dbBTerm*, odb::dbBTerm*> MirroredPins;
 typedef std::vector<odb::dbBTerm*> PinGroup;
 
 enum class Edge
@@ -110,6 +111,7 @@ class IOPlacer
                               int begin,
                               int end);
   void addTopLayerConstraint(PinList* pins, const odb::Rect& region);
+  void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
   void addPinGroup(PinGroup* group);
@@ -215,6 +217,7 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
+  std::vector<MirroredPins> mirrored_pins_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
