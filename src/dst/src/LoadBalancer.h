@@ -33,6 +33,7 @@
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <fmt/ostream.h>
 
 #include "BalancerConnection.h"
 
@@ -104,3 +105,5 @@ class LoadBalancer
   friend class dst::BalancerConnection;
 };
 }  // namespace dst
+
+template <> struct fmt::formatter<boost::asio::ip::address> : fmt::ostream_formatter {};

@@ -32,6 +32,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <fmt/ostream.h>
 
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
@@ -145,6 +146,7 @@ class frInstTerm;
 class frTerm;
 class frBTerm;
 class frMTerm;
+class frMPin;
 class frPin;
 class frBPin;
 class frRect;
@@ -179,4 +181,34 @@ std::ostream& operator<<(std::ostream& os, const drNet& n);
 std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
+
+// formatters
+template <> struct fmt::formatter<fr::frRect> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frPolygon> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frMPin> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frBTerm> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frInstTerm> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frBlock> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frViaDef> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::drConnFig> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frPathSeg> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frGuide> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frConnFig> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frNet> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::drNet> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frMarker> : fmt::ostream_formatter {};
+
 #endif

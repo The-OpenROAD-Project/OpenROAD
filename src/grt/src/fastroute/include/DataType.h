@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <fmt/ostream.h>
 
 namespace odb {
 class dbNet;
@@ -241,3 +242,5 @@ struct OrderNetEdge
 };
 
 }  // namespace grt
+
+template <> struct fmt::formatter<grt::RouteType> : fmt::ostream_formatter {};

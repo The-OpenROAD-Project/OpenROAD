@@ -36,6 +36,7 @@
 #pragma once
 
 #include <ostream>
+#include <fmt/ostream.h>
 
 namespace cts {
 
@@ -140,3 +141,5 @@ class Box
 };
 
 }  // namespace cts
+
+template <typename T> struct fmt::formatter<cts::Box<T>> : fmt::ostream_formatter {};

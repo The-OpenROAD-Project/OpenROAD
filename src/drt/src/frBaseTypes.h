@@ -40,6 +40,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <fmt/ostream.h>
 
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -347,5 +348,13 @@ inline bool is_loading(const Archive& ar)
 }
 
 }  // namespace fr
+
+template <> struct fmt::formatter<fr::frConstraintTypeEnum> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frCornerTypeEnum> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frMinimumcutConnectionEnum> : fmt::ostream_formatter {};
+
+template <> struct fmt::formatter<fr::frMinstepTypeEnum> : fmt::ostream_formatter {};
 
 #endif

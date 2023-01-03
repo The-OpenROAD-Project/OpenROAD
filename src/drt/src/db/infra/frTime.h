@@ -32,6 +32,7 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <fmt/ostream.h>
 
 #include "frBaseTypes.h"
 
@@ -60,5 +61,7 @@ class frTime
 
 std::ostream& operator<<(std::ostream& os, const frTime& t);
 }  // namespace fr
+
+template <> struct fmt::formatter<fr::frTime> : fmt::ostream_formatter {};
 
 #endif
