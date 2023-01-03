@@ -77,5 +77,6 @@ target_link_libraries(mpl2
     gui
     ortools::ortools
     dl
+    par
 )
 

@@ -53,6 +53,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -fence_weight fence_weight \
                                           -boundary_weight boundary_weight \
                                           -notch_weight notch_weight \
+                                          -macro_blockage_weight macro_blockage_weight \
                                           -pin_access_th pin_access_th \
                                           -target_util   target_util \
                                           -target_dead_space target_dead_space \
@@ -67,18 +68,24 @@ proc rtl_macro_placer { args } {
         -signature_net_threshold -halo_width \
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
-        -boundary_weight -notch_weight \
+        -boundary_weight -notch_weight macro_blockage_weight \
         -pin_access_th -target_util \
         -target_dead_space -min_ar -snap_layer -report_directory \
     } flag {  }
 
+# Check for valid design
+
+    if {  [ord::get_db_block] == "NULL" } {
+      utl::error MPL 9998 "No block found for Macro Placement."
+    }
 # Set the default parameters for the macro_placer
+
     set max_num_macro 12
-    set min_num_macro 6
+    set min_num_macro 4 
     set max_num_inst  30000
     set min_num_inst  5000
     set tolerance     0.1
-    set max_num_level 3
+    set max_num_level 2
     set coarsening_ratio  10.0
     set num_bundled_ios   3
     set large_net_threshold 50
@@ -96,6 +103,7 @@ proc rtl_macro_placer { args } {
     set fence_weight   150.0
     set boundary_weight 5.0
     set notch_weight    150.0
+    set macro_blockage_weight 100.0
     set pin_access_th   0.05
     set target_util 0.25
     set target_dead_space 0.25
@@ -171,6 +179,9 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-notch_weight)] } {
       set notch_weight  $keys(-notch_weight)
     }
+    if { [info exists keys(-macro_blockage_weight)] } {
+      set macro_blockage_weight  $keys(-macro_blockage_weight)
+    }
     if { [info exists keys(-pin_access_th)] } {
       set pin_access_th $keys(-pin_access_th)
     }
@@ -207,7 +218,7 @@ proc rtl_macro_placer { args } {
                                       $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
                                       $area_weight $outline_weight $wirelength_weight \
                                       $guidance_weight $fence_weight $boundary_weight \
-                                      $notch_weight \
+                                      $notch_weight $macro_blockage_weight \
                                       $pin_access_th \
                                       $target_util \
                                       $target_dead_space \

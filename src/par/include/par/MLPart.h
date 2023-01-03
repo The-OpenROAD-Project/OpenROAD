@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //// Authors: Mateus Fogaça, Isadora Oliveira and Marcelo Danigno
-//// 
+////
 ////          (Advisor: Ricardo Reis and Paulo Butzen)
 ////
 //// BSD 3-Clause License
@@ -11,8 +11,8 @@
 //// Redistribution and use in source and binary forms, with or without
 //// modification, are permitted provided that the following conditions are met:
 ////
-//// * Redistributions of source code must retain the above copyright notice, this
-////   list of conditions and the following disclaimer.
+//// * Redistributions of source code must retain the above copyright notice,
+/// this /   list of conditions and the following disclaimer.
 ////
 //// * Redistributions in binary form must reproduce the above copyright notice,
 ////   this list of conditions and the following disclaimer in the documentation
@@ -36,6 +36,32 @@
 //////////////////////////////////////////////////////////////////////////////////
 //
 
-
-int UMpack_mlpart(int nvtxs, int nhedges, double *vwgts, int *eptr, int *eind, double *edgeWeights, int nparts, double *balanceArray, double tolerance, int *part, int startsPerRun, int totalRuns, int debugLevel, unsigned seed);
-int UMpack_mlpart(int nvtxs, int nhedges, double *vwgts, int *eptr, int *eind, double *edgeWeights, int nparts, double *balanceArray, double tolerance, int *part, int startsPerRun, int totalRuns, int debugLevel, unsigned seed, unsigned nLevels);
+int UMpack_mlpart(int nvtxs,
+                  int nhedges,
+                  double* vwgts,
+                  int* eptr,
+                  int* eind,
+                  double* edgeWeights,
+                  int nparts,
+                  double* balanceArray,
+                  double tolerance,
+                  int* part,
+                  int startsPerRun,
+                  int totalRuns,
+                  int debugLevel,
+                  unsigned seed);
+int UMpack_mlpart(int nvtxs,
+                  int nhedges,
+                  double* vwgts,
+                  int* eptr,
+                  int* eind,
+                  double* edgeWeights,
+                  int nparts,
+                  double* balanceArray,
+                  double tolerance,
+                  int* part,
+                  int startsPerRun,
+                  int totalRuns,
+                  int debugLevel,
+                  unsigned seed,
+                  unsigned nLevels);

@@ -45,6 +45,8 @@ add_library(MLPart STATIC ${SRC_FILES})
 target_include_directories(MLPart
   PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/mlpart
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include/par
+
   PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
