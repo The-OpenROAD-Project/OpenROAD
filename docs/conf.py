@@ -94,22 +94,25 @@ pygments_style = None
 html_theme = "sphinx_symbiflow_theme"
 
 html_theme_options = {
-    # Specify a list of menu in Header.
-    # Tuples forms:
-    #  ('Name', 'external url or path of pages in the document', boolean, 'icon name')
-    #
-    # Third argument:
-    # True indicates an external link.
-    # False indicates path of pages in the document.
-    #
-    # Fourth argument:
-    # Specify the icon name.
-    # For details see link.
-    # https://material.io/icons/
-    'header_links': [
-        ('Home', 'index', False, 'home'),
-        ("The OpenROAD Project", "https://theopenroadproject.org", True, 'launch'),
-        ("GitHub", "https://github.com/The-OpenROAD-Project/OpenROAD", True, 'link')
+    # Repository integration
+    # Set the repo url for the link to appear
+    'github_url': 'https://github.com/The-OpenROAD-Project/OpenROAD',
+    # The name of the repo. If must be set if github_url is set
+    'repo_name': 'OpenROAD',
+    # Must be one of github, gitlab or bitbucket
+    'repo_type': 'github',
+
+    # Set the name to appear in the left sidebar/header. If not provided, uses
+    # html_short_title if defined, or html_title
+    'nav_title': "OpenROAD",
+
+    # A list of dictionaries where each has three keys:
+    #   href: The URL or pagename (str)
+    #   title: The title to appear (str)
+    #   internal: Flag indicating to use pathto (bool)
+    'nav_links': [
+        {"title": "Home", "href": "index", "internal": True},
+        {"title": "The OpenROAD Project", "href": "https://theopenroadproject.org", "internal": False},
     ],
 
     # Customize css colors.
@@ -126,26 +129,15 @@ html_theme_options = {
     #(Default: indigo)
     'color_accent': 'blue',
 
-    # Customize layout.
-    # For details see link.
-    # https://getmdl.io/components/index.html#layout-section
-    'fixed_drawer': True,
-    'fixed_header': True,
-    'header_waterfall': True,
-    'header_scroll': False,
-
-    # Render title in header.
-    # Values: True, False (Default: False)
-    'show_header_title': False,
-    # Render title in drawer.
-    # Values: True, False (Default: True)
-    'show_drawer_title': True,
-    # Render footer.
-    # Values: True, False (Default: True)
-    'show_footer': True,
-
     # Hide the symbiflow links
     'hide_symbiflow_links': True,
+    
+    "html_minify": False,
+    "html_prettify": True,
+    "css_minify": True,
+    "globaltoc_depth": 2,
+    "table_classes": ["plain"],
+    "master_doc": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
