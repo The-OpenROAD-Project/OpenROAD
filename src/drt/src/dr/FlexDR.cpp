@@ -1506,12 +1506,6 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
   return bp;
 }
 
-void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
-{
-  batchStepX = 2;
-  batchStepY = 2;
-}
-
 void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
   const int iter = iter_++;
@@ -1562,12 +1556,10 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   bool isExceed = false;
 
   vector<unique_ptr<FlexDRWorker>> uworkers;
-  int batchStepX, batchStepY;
 
-  getBatchInfo(batchStepX, batchStepY);
-
-  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
-                                                           * batchStepY);
+  // We create 2 batches, with each batch containing regions that have no
+  // neighbouring regions on any of the 4 edges.
+  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(2);
 
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
@@ -1609,7 +1601,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setGraphics(graphics_.get());
       worker->setCost(workerDRCCost, workerMarkerCost);
 
-      int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      int batchIdx = (xIdx + yIdx) % 2;
       if (workers[batchIdx].empty()
           || (!dist_on_
               && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {

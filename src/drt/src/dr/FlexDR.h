@@ -185,7 +185,6 @@ class FlexDR
   // others
   void initFromTA();
   void initGCell2BoundaryPin();
-  void getBatchInfo(int& batchStepX, int& batchStepY);
 
   void init_halfViaEncArea();
   void init_via2viaMinLen();
