@@ -1058,6 +1058,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       path_count_spin_box_(new QSpinBox(this)),
       corner_box_(new QComboBox(this)),
       unconstrained_(new QCheckBox(this)),
+      one_path_per_endpoint_(new QCheckBox(this)),
       expand_clk_(new QCheckBox(this)),
       from_(new PinSetWidget(false, this)),
       thru_({}),
@@ -1078,6 +1079,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   setUnconstrained(false);
   layout_->addRow("Unconstrained:", unconstrained_);
+  layout_->addRow("One path per endpoint:", one_path_per_endpoint_);
 
   setLayout(layout_);
 
@@ -1087,6 +1089,10 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(unconstrained_, &QCheckBox::stateChanged, [this]() {
     sta_->setIncludeUnconstrainedPaths(unconstrained_->checkState()
                                        == Qt::Checked);
+  });
+  connect(one_path_per_endpoint_, &QCheckBox::stateChanged, [this]() {
+    sta_->setOnePathPerEndpoint(one_path_per_endpoint_->checkState()
+                                == Qt::Checked);
   });
 
   connect(corner_box_,
@@ -1130,6 +1136,12 @@ void TimingControlsDialog::setSTA(sta::dbSta* sta)
     row->setSTA(sta_->getSTA());
   }
   to_->setSTA(sta_->getSTA());
+}
+
+void TimingControlsDialog::setOnePathPerEndpoint(bool value)
+{
+  sta_->setOnePathPerEndpoint(value);
+  one_path_per_endpoint_->setCheckState(value ? Qt::Checked : Qt::Unchecked);
 }
 
 void TimingControlsDialog::setUnconstrained(bool unconstrained)
