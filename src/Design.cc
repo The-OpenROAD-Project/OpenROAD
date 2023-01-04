@@ -234,4 +234,10 @@ stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
   return app->getSteinerTreeBuilder();
 }
 
+psm::PDNSim* Design::getPDNSim()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPDNSim();
+}
+
 }  // namespace ord
