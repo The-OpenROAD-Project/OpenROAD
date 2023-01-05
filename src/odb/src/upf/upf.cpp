@@ -364,7 +364,6 @@ bool associate_groups(
     odb::dbPowerDomain*& top_domain)
 {
   auto pds = block->getPowerDomains();
-  const int dbu = block->getDb()->getTech()->getLefUnits();
 
   for (auto&& domain : pds) {
     bool is_top_domain = false;
@@ -496,7 +495,6 @@ bool find_smallest_inverter(utl::Logger* logger,
   float smallest_area = std::numeric_limits<float>::max();
   sta::LibertyCell* smallest_inverter = nullptr;
   sta::LibertyPort *inverter_input = nullptr, *inverter_output = nullptr;
-  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
   bool found = false;
 
@@ -575,7 +573,6 @@ bool find_smallest_isolation(utl::Logger* logger,
   // Find enable & data pins for the isolation cell
   sta::LibertyPort* out_lib_port = nullptr;
   sta::LibertyPort* enable_lib_port = nullptr;
-  sta::LibertyPort* data_lib_port = nullptr;
   for (auto&& term : cell_terms) {
     sta::LibertyPort* lib_port
         = smallest_iso_l->findLibertyPort(term->getName().c_str());
@@ -586,7 +583,6 @@ bool find_smallest_isolation(utl::Logger* logger,
 
     if (lib_port->isolationCellData()) {
       data_term = term;
-      data_lib_port = lib_port;
     }
 
     if (lib_port->isolationCellEnable()) {
@@ -689,6 +685,8 @@ bool insert_isolation_cell(utl::Logger* logger,
 
   // connect isolation terms to existing nets
   data_iterm->connect(input_net);
+
+  return true;
 }
 
 bool isolate_port(utl::Logger* logger,
@@ -817,6 +815,8 @@ bool isolate_port(utl::Logger* logger,
       external_iterm->connect(net_out);
     }
   }
+
+  return true;
 }
 
 bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
@@ -868,7 +868,6 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   // enable (or reversed depending on iso sense + cell type) place the isolation
   // cell into either first or second domain?? (Not sure exactly)
 
-  auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
   for (auto&& domain : pds) {
     if (domain == top_domain)
       continue;
