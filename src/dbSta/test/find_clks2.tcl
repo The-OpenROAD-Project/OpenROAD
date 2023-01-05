@@ -8,6 +8,6 @@ create_clock -period 10 clk1
 create_clock -period 10 clk2
 create_clock -period 10 clk3
 
-foreach net [sta::find_all_clk_nets] {
+foreach net [sta::find_clk_nets [get_clock clk3]] {
   puts [$net getName]
 }
