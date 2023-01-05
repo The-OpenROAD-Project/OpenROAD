@@ -737,6 +737,7 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
+  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -787,9 +788,10 @@ NetRouteMap FastRouteCore::run()
   spiralRouteAll();
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
-
+  
+  //verify2DEdgesUsage();
   convertToMazeroute();
-
+  //verifyEdgeUsage();
   int enlarge_ = 10;
   int newTH = 10;
   int healingTrigger = 0;
@@ -828,7 +830,6 @@ NetRouteMap FastRouteCore::run()
 
   // check and fix invalid embedded trees
   fixEmbeddedTrees();
-
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   InitEstUsage();
@@ -1101,7 +1102,7 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
   }  // end overflow iterations
-
+ 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
@@ -1111,9 +1112,9 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-
   has_2D_overflow_ = total_overflow_ > 0;
 
+  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (minofl > 0) {
     debugPrint(logger_,
                GRT,
@@ -1124,7 +1125,7 @@ NetRouteMap FastRouteCore::run()
                minoflrnd);
     copyBR();
   }
-
+  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (overflow_increases > max_overflow_increases) {
     if (verbose_)
       logger_->warn(
@@ -1133,7 +1134,7 @@ NetRouteMap FastRouteCore::run()
           "Congestion iterations cannot increase overflow, reached the "
           "maximum number of times the total overflow can be increased.");
   }
-
+ 
   freeRR();
 
   removeLoops();
@@ -1141,6 +1142,8 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   layerAssignment();
+
+  //verifyEdgeUsage();
 
   costheight_ = 3;
   via_cost_ = 1;
@@ -1154,7 +1157,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-
+ 
   if (goingLV && past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
@@ -1179,7 +1182,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-
+  //verifyEdgeUsage();
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
   return routes;
@@ -1429,7 +1432,7 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
     painter.setPenWidth(700);
 
     const int deg = stree_.deg;
-    for (int i = 0; i < 2 * deg - 2; i++) {
+    for (int i = 0; i < stree_.branchCount()/*2 * deg - 2*/; i++) {
       const int x1 = tile_size_ * (stree_.branch[i].x + 0.5) + x_corner_;
       const int y1 = tile_size_ * (stree_.branch[i].y + 0.5) + y_corner_;
       const int n = stree_.branch[i].n;

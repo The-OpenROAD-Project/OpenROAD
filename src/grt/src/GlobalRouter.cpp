@@ -3978,11 +3978,23 @@ void GlobalRouter::updateDirtyRoutes()
     mergeResults(new_route);
     dirty_nets_.clear();
 
+    bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      logger_->error(GRT,
-                     232,
-                     "Routing congestion too high. Check the congestion "
-                     "heatmap in the GUI.");
+      if (reroutingOverflow){
+        for(odb::dbNet* db_net: fastroute_->getCongestionNets()) {
+          dirty_nets.push_back(db_net_map_[db_net]);
+        }
+        initFastRouteIncr(dirty_nets);
+        NetRouteMap new_route
+            = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+        mergeResults(new_route);
+      }
+      if(fastroute_->has2Doverflow()){
+        logger_->error(GRT,
+                       232,
+                       "Routing congestion too high. Check the congestion "
+                       "heatmap in the GUI.");
+      }
     }
   }
 }
