@@ -971,7 +971,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int remd = ind1 % (grid_hv_);
         const int curX = remd % x_range_;
         const int curY = remd / x_range_;
-        
         removeMin3D(src_heap_3D);
 
         const bool Horizontal = (((curL % 2) - layerOrientation) == 0);
