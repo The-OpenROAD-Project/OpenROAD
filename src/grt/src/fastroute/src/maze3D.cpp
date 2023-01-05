@@ -972,12 +972,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curX = remd % x_range_;
         const int curY = remd / x_range_;
 
-        if (src_heap_3D.empty()) {
-          logger_->error(GRT,
-                         183,
-                         "Net {}: heap underflow during 3D maze routing.",
-                         nets_[netID]->getName());
-        }
+        
         removeMin3D(src_heap_3D);
 
         const bool Horizontal = (((curL % 2) - layerOrientation) == 0);
@@ -1194,6 +1189,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
         }
 
+        if (src_heap_3D.empty()) {
+          logger_->error(GRT,
+                         183,
+                         "Net {}: heap underflow during 3D maze routing.",
+                         nets_[netID]->getName());
+        }
         // update ind1 for next loop
         ind1 = (src_heap_3D[0] - &d1_3D[0][0][0]);
       }  // while loop
