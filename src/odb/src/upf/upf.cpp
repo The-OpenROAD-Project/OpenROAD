@@ -785,7 +785,7 @@ bool isolate_port(utl::Logger* logger,
     } else {
       logger->warn(utl::ODB,
                    15022,
-                   "Isolation %s has location %s, but only self|parent "
+                   "Isolation %s has location %s, but only self|parent|fanout"
                    "supported, defaulting to self.",
                    iso->getName(),
                    iso->getLocation());
