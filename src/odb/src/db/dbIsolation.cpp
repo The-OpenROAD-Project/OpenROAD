@@ -296,8 +296,6 @@ void dbIsolation::addIsolationCell(std::string& master)
 std::vector<dbMaster*> dbIsolation::getIsolationCells()
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-
   std::vector<dbMaster*> masters;
 
   for (const auto& cell : obj->_isolation_cells) {
