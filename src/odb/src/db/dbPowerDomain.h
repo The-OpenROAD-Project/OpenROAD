@@ -66,11 +66,12 @@ class _dbPowerDomain : public _dbObject
   dbVector<dbId<_dbPowerSwitch>> _power_switch;
   dbVector<dbId<_dbIsolation>> _isolation;
   dbId<_dbGroup> _group;
+  bool _top;
   dbId<_dbPowerDomain> _parent;
-  float _x1;
-  float _x2;
-  float _y1;
-  float _y2;
+  int _x1;
+  int _x2;
+  int _y1;
+  int _y2;
 
   // User Code Begin Fields
   // User Code End Fields

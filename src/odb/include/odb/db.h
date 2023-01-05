@@ -9394,6 +9394,10 @@ class dbPowerDomain : public dbObject
 
   dbGroup* getGroup() const;
 
+  void setTop(bool top);
+
+  bool isTop() const;
+
   void setParent(dbPowerDomain* parent);
 
   dbPowerDomain* getParent() const;
@@ -9413,7 +9417,7 @@ class dbPowerDomain : public dbObject
   std::vector<dbIsolation*> getIsolations();
 
   bool setArea(float x1, float y1, float x2, float y2);
-  bool getArea(float& x1, float& y1, float& x2, float& y2);
+  bool getArea(int& x1, int& y1, int& x2, int& y2);
 
   // User Code End dbPowerDomain
 };

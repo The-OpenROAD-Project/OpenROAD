@@ -62,6 +62,9 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   if (_group != rhs._group)
     return false;
 
+  if (_top != rhs._top)
+    return false;
+
   if (_parent != rhs._parent)
     return false;
 
@@ -96,6 +99,7 @@ void _dbPowerDomain::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_group);
+  DIFF_FIELD(_top);
   DIFF_FIELD(_parent);
   DIFF_FIELD(_x1);
   DIFF_FIELD(_x2);
@@ -111,6 +115,7 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_group);
+  DIFF_OUT_FIELD(_top);
   DIFF_OUT_FIELD(_parent);
   DIFF_OUT_FIELD(_x1);
   DIFF_OUT_FIELD(_x2);
@@ -131,6 +136,7 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
   _name = r._name;
   _next_entry = r._next_entry;
   _group = r._group;
+  _top = r._top;
   _parent = r._parent;
   _x1 = r._x1;
   _x2 = r._x2;
@@ -148,6 +154,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._power_switch;
   stream >> obj._isolation;
   stream >> obj._group;
+  stream >> obj._top;
   stream >> obj._parent;
   stream >> obj._x1;
   stream >> obj._x2;
@@ -165,6 +172,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._power_switch;
   stream << obj._isolation;
   stream << obj._group;
+  stream << obj._top;
   stream << obj._parent;
   stream << obj._x1;
   stream << obj._x2;
@@ -205,6 +213,19 @@ dbGroup* dbPowerDomain::getGroup() const
     return NULL;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
+}
+
+void dbPowerDomain::setTop(bool top)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+
+  obj->_top = top;
+}
+
+bool dbPowerDomain::isTop() const
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  return obj->_top;
 }
 
 void dbPowerDomain::setParent(dbPowerDomain* parent)
@@ -304,19 +325,20 @@ std::vector<dbIsolation*> dbPowerDomain::getIsolations()
 bool dbPowerDomain::setArea(float _x1, float _y1, float _x2, float _y2)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const int dbu = obj->getDb()->getTech()->getLefUnits();
 
   if (_x1 >= 0 && _y1 >= 0 && _x2 >= 0 && _y2 >= 0) {
-    obj->_x1 = _x1;
-    obj->_y1 = _y1;
-    obj->_x2 = _x2;
-    obj->_y2 = _y2;
+    obj->_x1 = std::round(_x1 * dbu);
+    obj->_y1 = std::round(_y1 * dbu);
+    obj->_x2 = std::round(_x2 * dbu);
+    obj->_y2 = std::round(_y2 * dbu);
     return true;
   }
 
   return false;
 }
 
-bool dbPowerDomain::getArea(float& _x1, float& _y1, float& _x2, float& _y2)
+bool dbPowerDomain::getArea(int& _x1, int& _y1, int& _x2, int& _y2)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   if (obj->_x1 == -1) {  // area unset
