@@ -1,4 +1,4 @@
-git+https://github.com/SymbiFlow/sphinx_materialdesign_theme.git#egg=sphinx-symbiflow-theme
+git+https://github.com/f4pga/sphinx_f4pga_theme.git
 git+https://github.com/executablebooks/sphinx-external-toc
 sphinx
 sphinx-autobuild
