@@ -4,6 +4,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
+#include "sta/VerilogWriter.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -133,6 +134,22 @@ db_network_defined()
   odb::dbChip *chip = db->getChip();
   odb::dbBlock *block = chip->getBlock();
   db_network->readDefAfter(block);
+}
+
+// Copied from sta/verilog/Verilog.tcl because we don't want sta::read_verilog
+// that is in the same file.
+void
+write_verilog_cmd(const char *filename,
+		  bool sort,
+		  bool include_pwr_gnd,
+		  CellSeq *remove_cells)
+{
+  // This does NOT want the SDC (cmd) network because it wants
+  // to see the sta internal names.
+  Sta *sta = Sta::sta();
+  Network *network = sta->network();
+  sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
+  delete remove_cells;
 }
 
 %} // inline
