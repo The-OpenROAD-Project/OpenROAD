@@ -8,6 +8,6 @@ read_def find_clks1.def
 
 create_clock -name clk -period 10 clk1
 
-foreach clk [sta::find_all_clk_nets] {
-    puts "find_all_clk_nets: [$clk getName]"
+foreach net [sta::find_all_clk_nets] {
+  puts [$net getName]
 }
