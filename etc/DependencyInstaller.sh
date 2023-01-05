@@ -178,7 +178,7 @@ _installUbuntuPackages() {
         tcl-tclreadline \
         wget
 
-    if [[ $1 == 22.04 ]]; then
+    if [[ $1 == 22.04 ]] || [[ $1 == 22.10 ]]; then
         apt-get install -y \
             qtbase5-dev \
             qtchooser \
