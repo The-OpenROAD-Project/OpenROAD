@@ -126,8 +126,8 @@ _installOrTools() {
     os=$1
     version=$2
     arch=$3
-    orToolsVersionBig=9.4
-    orToolsVersionSmall=${orToolsVersionBig}.1874
+    orToolsVersionBig=9.5
+    orToolsVersionSmall=${orToolsVersionBig}.2237
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
@@ -535,7 +535,7 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "MacOsX" "12.5" $(uname -m)
+        _installOrTools "MacOsX" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
