@@ -174,7 +174,7 @@ class IOPlacer
                                          std::vector<Section>& sections);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections);
-  std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint);
+  std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint, int& mirrored_pins_cnt);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist);
   int computeIONetsHPWL(Netlist* netlist);

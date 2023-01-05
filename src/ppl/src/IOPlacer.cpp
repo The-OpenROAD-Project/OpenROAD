@@ -603,7 +603,7 @@ void IOPlacer::createSections()
 }
 
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
-    Constraint& constraint)
+    Constraint& constraint, int& mirrored_pins_cnt)
 {
   bool top_layer = constraint.interval.getEdge() == Edge::invalid;
   std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
@@ -634,6 +634,9 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      mirrored_pins_cnt++;
+    }
     assignPinToSection(io_pin, idx, constraint.sections);
   }
 
@@ -790,7 +793,6 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
           // another section that is not aligned with his pair
           mirrored_pin.assignToSection();
         }
-
         break;
       }
     }
@@ -1268,10 +1270,11 @@ void IOPlacer::run(bool random_mode)
   } else {
     int constrained_pins_cnt = 0;
     for (Constraint& constraint : constraints_) {
+      int mirrored_pins_cnt = 0;
       std::vector<Section> sections_for_constraint
-          = assignConstrainedPinsToSections(constraint);
+          = assignConstrainedPinsToSections(constraint, mirrored_pins_cnt);
       for (Section& sec : sections_for_constraint) {
-        constrained_pins_cnt += sec.pin_indices.size();
+        constrained_pins_cnt += sec.pin_indices.size() + mirrored_pins_cnt;
       }
 
       findPinAssignment(sections_for_constraint);
