@@ -25,10 +25,6 @@ using sta::Instance;
 %include "parasitics/Parasitics.i"
 %include "power/Power.i"
 
-namespace std {
-  %template(dbNetVector) vector<dbNet*>;
-}
-
 %inline %{
 
 sta::Sta *
