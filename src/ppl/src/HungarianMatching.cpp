@@ -98,13 +98,17 @@ inline bool samePos(Point& a, Point& b)
   return (a.x() == b.x() && a.y() == b.y());
 }
 
-void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
+void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment, MirroredPins& mirrored_pins, bool assign_mirrored) const
 {
   size_t rows = non_blocked_slots_;
   size_t col = 0;
   int slot_index = 0;
   for (int idx : pin_indices_) {
     IOPin& io_pin = netlist_->getIoPin(idx);
+    if (assign_mirrored && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end()) {
+      continue;
+    }
+
     if (!io_pin.isInGroup() && !io_pin.isPlaced()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
@@ -123,8 +127,23 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
         }
         io_pin.setPos(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
+        io_pin.setPlaced();
         assigment.push_back(io_pin);
         slots_[slot_index].used = true;
+
+        if (assign_mirrored) {
+          odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
+          int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
+          IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
+
+          odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
+          mirrored_pin.setPos(mirrored_pos);
+          mirrored_pin.setLayer(slots_[slot_index].layer);
+          mirrored_pin.setPlaced();
+          assigment.push_back(mirrored_pin);
+          slot_index = getSlotIdxByPosition(mirrored_pos);
+          slots_[slot_index].used = true;
+        }
         break;
       }
       col++;
@@ -138,59 +157,6 @@ void HungarianMatching::findAssignmentForGroups()
 
   if (!hungarian_matrix_.empty())
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
-}
-
-void HungarianMatching::getFinalAssignmentForMirroredPins(
-    std::vector<IOPin>& assigment,
-    std::vector<MirroredPins>& mirrored_pins)
-{
-  for (MirroredPins& pins : mirrored_pins) {
-    odb::dbBTerm* bterm1 = pins.first;
-    odb::dbBTerm* bterm2 = pins.second;
-    int pin_index1 = netlist_->getIoPinIdx(bterm1);
-    int pin_index2 = netlist_->getIoPinIdx(bterm2);
-
-    if (std::find(pin_indices_.begin(), pin_indices_.end(), pin_index1) != pin_indices_.end()) {
-      IOPin& io_pin1 = netlist_->getIoPin(pin_index1);
-      IOPin& io_pin2 = netlist_->getIoPin(pin_index2);
-
-      size_t rows = non_blocked_slots_;
-      size_t col = 0;
-      int slot_index = 0;
-      slot_index = begin_slot_;
-      for (size_t row = 0; row < rows; row++) {
-        while ((slots_[slot_index].blocked || slots_[slot_index].used) && slot_index < slots_.size())
-          slot_index++;
-        if (assignment_[row] != col) {
-          slot_index++;
-          continue;
-        }
-        if (hungarian_matrix_[row][col] == hungarian_fail) {
-          logger_->warn(utl::PPL,
-                        35,
-                        "I/O pin {} cannot be placed in the specified region. "
-                        "Not enough space.",
-                        io_pin1.getName().c_str());
-        }
-        io_pin1.setPos(slots_[slot_index].pos);
-        io_pin1.setLayer(slots_[slot_index].layer);
-        io_pin1.setPlaced();
-        slots_[slot_index].used = true;
-
-        odb::Point mirrored_pos = core_->getMirroredPosition(io_pin1.getPos());
-        io_pin2.setPos(mirrored_pos);
-        io_pin2.setLayer(slots_[slot_index].layer);
-        io_pin2.setPlaced();
-        slot_index = getSlotIdxByPosition(mirrored_pos);
-        slots_[slot_index].used = true;
-
-        assigment.push_back(io_pin1);
-        assigment.push_back(io_pin2);
-        break;
-      }
-      col++;
-    }
-  }
 }
 
 void HungarianMatching::createMatrixForGroups()
@@ -293,7 +259,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
   assignment_.clear();
 }
 
-int HungarianMatching::getSlotIdxByPosition(const odb::Point& position)
+int HungarianMatching::getSlotIdxByPosition(const odb::Point& position) const
 {
   int slot_idx = -1;
   for (int i = 0; i < slots_.size(); i++) {

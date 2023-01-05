@@ -720,28 +720,6 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
   return total_pins_assigned;
 }
 
-int IOPlacer::assignMirroredPinsToSections(Netlist* netlist,
-                                           std::vector<Section>& sections)
-{
-  int assigned_pins_count = 0;
-  for (MirroredPins pins : mirrored_pins_) {
-    int pin_index1, pin_index2;
-    odb::dbBTerm* bterm1 = pins.first;
-    odb::dbBTerm* bterm2 = pins.second;
-
-    pin_index1 = netlist->getIoPinIdx(bterm1);
-    pin_index2 = netlist->getIoPinIdx(bterm2);
-    IOPin& io_pin1 = netlist->getIoPin(pin_index1);
-    IOPin& io_pin2 = netlist->getIoPin(pin_index2);
-
-    if (assignMirroredPinsToSection(io_pin1, io_pin2, pin_index1, pin_index2, sections)) {
-      assigned_pins_count += 2;
-    }
-  }
-
-  return assigned_pins_count;
-}
-
 bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   Netlist* net = netlist_io_pins_.get();
@@ -750,9 +728,20 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   createSections();
 
   int total_pins_assigned = assignGroupsToSections();
-  total_pins_assigned = assignMirroredPinsToSections(net, sections);
 
+  // Mirrored pins first
   int idx = 0;
+  for (IOPin& io_pin : net->getIOPins()) {
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      if (assignPinToSection(io_pin, idx, sections)) {
+        total_pins_assigned += 2;
+      }
+    }
+    idx++;
+  }
+
+  // Remaining pins
+  idx = 0;
   for (IOPin& io_pin : net->getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
       total_pins_assigned++;
@@ -792,35 +781,16 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         sections[i].used_slots++;
         pin_assigned = true;
         io_pin.assignToSection();
-        break;
-      }
-    }
-  }
 
-  return pin_assigned;
-}
+        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+          odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
+          int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
+          IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
+          // Mark mirrored pin as assigned to section to prevent assigning it to
+          // another section that is not aligned with his pair
+          mirrored_pin.assignToSection();
+        }
 
-bool IOPlacer::assignMirroredPinsToSection(IOPin& io_pin1,
-                                           IOPin& io_pin2,
-                                           int idx1,
-                                           int idx2,
-                                           std::vector<Section>& sections)
-{
-  bool pin_assigned = false;
-
-  if (!io_pin1.isInGroup() && !io_pin1.isAssignedToSection()) {
-    std::vector<int> dst(sections.size());
-    for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_io_pins_->computeIONetHPWL(idx1, sections[i].pos);
-    }
-    for (auto i : sortIndexes(dst)) {
-      if (sections[i].used_slots + 1 < sections[i].num_slots) {
-        sections[i].pin_indices.push_back(idx1);
-        sections[i].pin_indices.push_back(idx2);
-        sections[i].used_slots += 2;
-        pin_assigned = true;
-        io_pin1.assignToSection();
-        io_pin2.assignToSection();
         break;
       }
     }
@@ -1092,7 +1062,7 @@ void IOPlacer::addTopLayerConstraint(PinList* pins, const odb::Rect& region)
 
 void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
 {
-  mirrored_pins_.push_back(std::make_pair(bterm1, bterm2));
+  mirrored_pins_[bterm1] = bterm2;
 }
 
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
@@ -1257,13 +1227,16 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
 
   if (!mirrored_pins_.empty()) {
     for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getFinalAssignmentForMirroredPins(assignment_,
-                                                    mirrored_pins_);
+      hg_vec[idx].getFinalAssignment(assignment_,
+                                     mirrored_pins_,
+                                     true);
     }
   }
 
   for (int idx = 0; idx < hg_vec.size(); idx++) {
-    hg_vec[idx].getFinalAssignment(assignment_);
+    hg_vec[idx].getFinalAssignment(assignment_,
+                                   mirrored_pins_,
+                                   false);
   }
 }
 

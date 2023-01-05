@@ -69,11 +69,8 @@ class HungarianMatching
   virtual ~HungarianMatching() = default;
   void findAssignment();
   void findAssignmentForGroups();
-  void getFinalAssignment(std::vector<IOPin>& assigment) const;
+  void getFinalAssignment(std::vector<IOPin>& assigment, MirroredPins& mirrored_pins, bool assign_mirrored) const;
   void getAssignmentForGroups(std::vector<IOPin>& assigment);
-  void getFinalAssignmentForMirroredPins(
-      std::vector<IOPin>& assigment,
-      std::vector<MirroredPins>& mirrored_pins);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
@@ -98,7 +95,7 @@ class HungarianMatching
 
   void createMatrix();
   void createMatrixForGroups();
-  int getSlotIdxByPosition(const odb::Point& position);
+  int getSlotIdxByPosition(const odb::Point& position) const;
 };
 
 }  // namespace ppl
