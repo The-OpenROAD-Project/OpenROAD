@@ -294,7 +294,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin)
 bool
 Resizer::hasMacros()
 {
-  return true;
+  //return true;
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
     if (master->isBlock()) {
