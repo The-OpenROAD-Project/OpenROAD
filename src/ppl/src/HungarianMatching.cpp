@@ -159,7 +159,7 @@ void HungarianMatching::getFinalAssignmentForMirroredPins(
       int slot_index = 0;
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
-        while (slots_[slot_index].blocked && slot_index < slots_.size())
+        while ((slots_[slot_index].blocked || slots_[slot_index].used) && slot_index < slots_.size())
           slot_index++;
         if (assignment_[row] != col) {
           slot_index++;
