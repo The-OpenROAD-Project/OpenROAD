@@ -71,3 +71,24 @@ messages(
   TARGET psm
   OUTPUT_DIR ..
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          psm_py
+           NAMESPACE     psm
+           LANGUAGE      python
+           I_FILE        pdnsim-py.i
+           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/psm_py.py
+  )
+
+  target_include_directories(psm_py
+    PUBLIC
+      ../include
+  )
+
+  target_link_libraries(psm_py
+    PUBLIC
+      psm
+  )
+
+endif()
