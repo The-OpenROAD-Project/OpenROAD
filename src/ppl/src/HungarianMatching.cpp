@@ -105,11 +105,8 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment, Mirror
   int slot_index = 0;
   for (int idx : pin_indices_) {
     IOPin& io_pin = netlist_->getIoPin(idx);
-    if (assign_mirrored && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end()) {
-      continue;
-    }
 
-    if (!io_pin.isInGroup() && !io_pin.isPlaced()) {
+    if (!io_pin.isInGroup()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
         while ((slots_[slot_index].blocked || slots_[slot_index].used) && slot_index < slots_.size())
@@ -124,6 +121,12 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment, Mirror
                         "I/O pin {} cannot be placed in the specified region. "
                         "Not enough space.",
                         io_pin.getName().c_str());
+        }
+
+        // Make this check here to avoid messing up the correlation between the pin sorting and the hungarian matrix values
+        if ((assign_mirrored && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end()) ||
+            io_pin.isPlaced()) {
+          continue;
         }
         io_pin.setPos(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
