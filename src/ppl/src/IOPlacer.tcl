@@ -192,13 +192,11 @@ proc set_io_pin_constraint { args } {
 
   if [info exists keys(-mirrored_pins)] {
     set mirrored_pins $keys(-mirrored_pins)
-    foreach pin_pair $mirrored_pins {
-      if [regexp -all {(.*):(.*)} $pin_pair - pin1 pin2] {
-        utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
-        set bterm1 [ppl::parse_pin_names "place_pin" $pin1]
-        set bterm2 [ppl::parse_pin_names "place_pin" $pin2]
-        ppl::add_mirrored_pins $bterm1 $bterm2
-      }
+    foreach {pin1 pin2} $mirrored_pins {
+      utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
+      set bterm1 [ppl::parse_pin_names "place_pin" $pin1]
+      set bterm2 [ppl::parse_pin_names "place_pin" $pin2]
+      ppl::add_mirrored_pins $bterm1 $bterm2
     }
   }
 }
