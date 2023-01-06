@@ -21,7 +21,7 @@ usage: $0 [CMD] [OPTIONS]
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
                                   only if the target is 'builder'.
                                   
-  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20, ubuntu22, rhel, opensuse, debian10 and debian11.
+  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20, ubuntu22.04, rhel, opensuse, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -56,7 +56,7 @@ _setup() {
         "ubuntu20")
             osBaseImage="ubuntu:20.04"
             ;;
-        "ubuntu22")
+        "ubuntu22.04")
             osBaseImage="ubuntu:22.04"
             ;;
         "opensuse")
@@ -157,10 +157,10 @@ _push() {
                     2>&1 | tee build/create-ubuntu20-latest.log
                 ./etc/DockerHelper.sh create -target=dev -os=ubuntu20 -sha \
                     2>&1 | tee build/create-ubuntu20-${commitSha}.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22 \
-                    2>&1 | tee build/create-ubuntu22-latest.log
-                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22 -sha \
-                    2>&1 | tee build/create-ubuntu22-${commitSha}.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22.04 \
+                    2>&1 | tee build/create-ubuntu22.04-latest.log
+                ./etc/DockerHelper.sh create -target=dev -os=ubuntu22.04 -sha \
+                    2>&1 | tee build/create-ubuntu22.04-${commitSha}.log
                 ./etc/DockerHelper.sh create -target=dev -os=opensuse \
                     2>&1 | tee build/create-opensuse-latest.log
                 ./etc/DockerHelper.sh create -target=dev -os=opensuse -sha \
@@ -187,10 +187,10 @@ _push() {
                     2>&1 | tee build/test-ubuntu20-gcc-latest.log
                 ./etc/DockerHelper.sh test -target=builder -os=ubuntu20 -compiler=clang \
                     2>&1 | tee build/test-ubuntu20-clang-latest.log
-                ./etc/DockerHelper.sh test -target=builder -os=ubuntu22 \
-                    2>&1 | tee build/test-ubuntu22-gcc-latest.log
-                ./etc/DockerHelper.sh test -target=builder -os=ubuntu22 -compiler=clang \
-                    2>&1 | tee build/test-ubuntu22-clang-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu22.04 \
+                    2>&1 | tee build/test-ubuntu22.04-gcc-latest.log
+                ./etc/DockerHelper.sh test -target=builder -os=ubuntu22.04 -compiler=clang \
+                    2>&1 | tee build/test-ubuntu22.04-clang-latest.log
                 ./etc/DockerHelper.sh test -target=builder -os=opensuse \
                     2>&1 | tee build/test-opensuse-gcc-latest.log
                 ./etc/DockerHelper.sh test -target=builder -os=opensuse -compiler=clang \
@@ -212,8 +212,8 @@ _push() {
                 echo [DRY-RUN] docker push openroad/centos7-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/ubuntu20-dev:latest
                 echo [DRY-RUN] docker push openroad/ubuntu20-dev:${commitSha}
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:latest
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}                
+                echo [DRY-RUN] docker push openroad/ubuntu22.04-dev:latest
+                echo [DRY-RUN] docker push openroad/ubuntu22.04-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/opensuse-dev:latest
                 echo [DRY-RUN] docker push openroad/opensuse-dev:${commitSha}    
                 echo [DRY-RUN] docker push openroad/debian10-dev:latest
