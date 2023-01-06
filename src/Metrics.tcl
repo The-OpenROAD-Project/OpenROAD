@@ -138,7 +138,7 @@ proc report_units_metric { args } {
 define_cmd_args "report_design_area_metrics" {}
 proc report_design_area_metrics {args} {
   set db [::ord::get_db]
-  set dbu_per_uu [[$db getTech] getDbUnitsPerMicron]
+  set dbu_per_uu [expr double([[$db getTech] getDbUnitsPerMicron])]
   set block [[$db getChip] getBlock]
   set die_bbox [$block getDieArea]
   set die_area [expr [$die_bbox dx] * [$die_bbox dy]]
