@@ -1,0 +1,10 @@
+Source: openroad
+Maintainer: Vegard Strand Lende <vegard@ascenium.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: openroad
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: OpenROAD is an integrated chip physical design tool that takes a design from synthesized Verilog to routed layout.
