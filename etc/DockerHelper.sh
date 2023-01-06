@@ -216,7 +216,6 @@ _push() {
                 echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}                
                 echo [DRY-RUN] docker push openroad/opensuse-dev:latest
                 echo [DRY-RUN] docker push openroad/opensuse-dev:${commitSha}    
-                echo [DRY-RUN] docker push openroad/ubuntu22-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/debian10-dev:latest
                 echo [DRY-RUN] docker push openroad/debian10-dev:${commitSha}
                 echo [DRY-RUN] docker push openroad/debian11-dev:latest
