@@ -57,10 +57,6 @@ using odb::dbRegion;
 
 using utl::Logger;
 
-#ifndef SWIG
-using std::regex;
-#endif
-
 enum ExtensionMode
 {
   CORE,
