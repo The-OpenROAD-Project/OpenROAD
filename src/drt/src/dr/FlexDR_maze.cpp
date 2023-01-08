@@ -1690,6 +1690,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       // init
       net->setModified(true);
       if (net->getFrNet()) {
+#pragma omp critical
         net->getFrNet()->setModified(true);
       }
       net->setNumMarkers(0);
