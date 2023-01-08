@@ -559,10 +559,20 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         edge.length = x_grid[x_idx + 1] - x_grid[x_idx - 1];
         // calculate edge type (internal or not)
         // and weighted length
+        std::cout << "src = " << src << "  target = " << target << "  vertex_list.size() = " << vertex_list.size() << std::endl;
         const int& src_macro_id = vertex_list[src].macro_id;
         const int& target_macro_id = vertex_list[target].macro_id;
+        std::cout << "src_macro_id = " << src_macro_id << "  "
+                  << "target_macro_id = " << target_macro_id << "  "
+                  << "soft_macros.size() = " << soft_macros.size() << std::endl;
         // this is an edge crossing boundaries
         edge.internal = false;
+        // exception handling.  Later we should find better way to handle this. [20221202]
+        if (src_macro_id == -1 && target_macro_id == -1) {
+          edge.length_w = edge.length;
+          continue;
+        }
+
         if (src_macro_id == -1) {
           edge.length_w
               = vertex_list[src].weight
@@ -591,6 +601,9 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       }
     }
   }
+  
+  logger->report("finish boundary edges (left and right boundaries)");
+  
   // handle the vertices on top or bottom boundaries
   for (int y_idx = 1; y_idx < y_grid.size() - 1; y_idx++) {
     for (int x_idx = 0; x_idx < x_grid.size(); x_idx++) {
@@ -608,10 +621,20 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         edge.length = y_grid[y_idx + 1] - y_grid[y_idx - 1];
         // calculate edge type (internal or not)
         // and weighted length
+        std::cout << "src = " << src << "  target = " << target << "  vertex_list.size() = " << vertex_list.size() << std::endl;
         const int& src_macro_id = vertex_list[src].macro_id;
         const int& target_macro_id = vertex_list[target].macro_id;
+        std::cout << "src_macro_id = " << src_macro_id << "  "
+                  << "target_macro_id = " << target_macro_id << "  "
+                  << "soft_macros.size() = " << soft_macros.size() << std::endl;
         // this is an edge crossing boundaries
         edge.internal = false;
+        // exception handling.  Later we should find better way to handle this. [20221202]
+        if (src_macro_id == -1 && target_macro_id == -1) {
+          edge.length_w = edge.length;
+          continue;
+        }
+
         if (src_macro_id == -1) {
           edge.length_w
               = vertex_list[src].weight

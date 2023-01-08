@@ -34,6 +34,7 @@
 #include "SimulatedAnnealingCore.h"
 
 #include <fstream>
+#include <iostream>
 
 #include "graphics.h"
 #include "object.h"
@@ -133,12 +134,16 @@ void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
-  logger_->report(
-      "width_ :  {}  outline_width_ :  {} ", width_, outline_width_);
-  logger_->report("height_ : {} outline_height_: {}", height_, outline_height_);
-
   return (width_ <= outline_width_ * (1.0 + acc_tolerance_))
          && (height_ <= outline_height_ * (1.0 + acc_tolerance_));
+}
+
+template <class T>
+bool SimulatedAnnealingCore<T>::isValid(float outline_width,
+                                        float outline_height) const
+{
+  return (width_ <= outline_width * (1.0 + acc_tolerance_))
+         && (height_ <= outline_height * (1.0 + acc_tolerance_));
 }
 
 template <class T>
@@ -219,7 +224,10 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
   const float max_width = std::max(outline_width_, width_);
   const float max_height = std::max(outline_height_, height_);
-  outline_penalty_ = max_width * max_height - outline_width_ * outline_height_;
+  const float outline_area = outline_width_ * outline_height_;
+  outline_penalty_ = max_width * max_height - outline_area;
+  // normalization
+  outline_penalty_ = outline_penalty_ / (outline_area);
 }
 
 template <class T>
@@ -231,6 +239,15 @@ void SimulatedAnnealingCore<T>::calWirelength()
     return;
   }
 
+  // calculate the total net weight
+  float tot_net_weight = 0.0;
+  for (const auto& net : nets_)
+    tot_net_weight += net.weight;
+
+  if (tot_net_weight <= 0.0) {
+    return;
+  }
+
   for (const auto& net : nets_) {
     const float x1 = macros_[net.terminals.first].getPinX();
     const float y1 = macros_[net.terminals.first].getPinY();
@@ -238,6 +255,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
     const float y2 = macros_[net.terminals.second].getPinY();
     wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
   }
+
+  // normalization
+  wirelength_
+      = wirelength_ / tot_net_weight / (outline_height_ + outline_width_);
 }
 
 template <class T>
@@ -245,7 +266,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
-  if (fence_weight_ <= 0.0) {
+  if (fence_weight_ <= 0.0 || fences_.size() <= 0) {
     return;
   }
 
@@ -254,12 +275,29 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const float ly = macros_[id].getY();
     const float ux = lx + macros_[id].getWidth();
     const float uy = ly + macros_[id].getHeight();
-    const float width = std::max(ux, bbox.xMax()) - std::min(lx, bbox.xMin())
-                        - (bbox.xMax() - bbox.xMin());
-    const float height = std::max(uy, bbox.yMax()) - std::min(ly, bbox.yMin())
-                         - (bbox.yMax() - bbox.yMin());
+    // check if the macro is valid
+    if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4)
+      continue;
+    // check if the fence is valid
+    if (macros_[id].getWidth() > (bbox.xMax() - bbox.xMin())
+        || macros_[id].getHeight() > (bbox.yMax() - bbox.yMin()))
+      continue;
+    // check how much the macro is far from no fence violation
+    const float max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2.0;
+    const float max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
+    const float x_dist
+        = std::abs((bbox.xMin() + bbox.xMax()) / 2.0 - (lx + ux) / 2.0);
+    const float y_dist
+        = std::abs((bbox.yMin() + bbox.yMax()) / 2.0 - (ly + uy) / 2.0);
+    // calculate x and y direction independently
+    float width = x_dist <= max_x_dist ? 0.0 : (x_dist - max_x_dist);
+    float height = y_dist <= max_y_dist ? 0.0 : (y_dist - max_y_dist);
+    width = width / outline_width_;
+    height = height / outline_height_;
     fence_penalty_ += width * width + height * height;
   }
+  // normalization
+  fence_penalty_ = fence_penalty_ / fences_.size();
 }
 
 template <class T>
@@ -267,7 +305,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
-  if (guidance_weight_ <= 0.0) {
+  if (guidance_weight_ <= 0.0 || guides_.size() <= 0) {
     return;
   }
 
@@ -277,16 +315,19 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     const float macro_ux = macro_lx + macros_[id].getWidth();
     const float macro_uy = macro_ly + macros_[id].getHeight();
     // center to center distance
-    const float width = (macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin());
-    const float height = (macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin());
+    const float width
+        = ((macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin())) / 2.0;
+    const float height
+        = ((macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin())) / 2.0;
     float x_dist = std::abs((macro_ux + macro_lx) / 2.0
                             - (bbox.xMax() + bbox.xMin()) / 2.0);
     float y_dist = std::abs((macro_uy + macro_ly) / 2.0
                             - (bbox.yMax() + bbox.yMin()) / 2.0);
-    x_dist = std::max(x_dist - width, 0.0f);
-    y_dist = std::max(y_dist - height, 0.0f);
-    guidance_penalty_ += std::min(x_dist, y_dist);
+    x_dist = std::max(x_dist - width, 0.0f) / width;
+    y_dist = std::max(y_dist - height, 0.0f) / height;
+    guidance_penalty_ += x_dist * x_dist + y_dist * y_dist;
   }
+  guidance_penalty_ = guidance_penalty_ / guides_.size();
 }
 
 // Determine the positions of macros based on sequence pair
@@ -450,14 +491,25 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
-  perturb();  // Perturb from beginning
+  // perturb();  // Perturb from beginning
+  std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
+  std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
+  std::iota(pre_pos_seq_.begin(), pre_pos_seq_.end(), 0);
+  std::iota(pre_neg_seq_.begin(), pre_neg_seq_.end(), 0);
+
   // record the previous status
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
   int step = 1;
   float temperature = init_temperature_;
-  notch_weight_ = 0.0;
+  const float min_t = 1e-10;
+  const float t_factor
+      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  // std::cout << "init_temperature_ " << init_temperature_ << std::endl;
+  // std::cout << "t_factor = " << t_factor << std::endl;
+  notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
+                        // calculating notch penalty at very beginning
   // const for restart
   int num_restart = 1;
   const int max_num_restart = 2;
@@ -476,7 +528,10 @@ void SimulatedAnnealingCore<T>::fastSA()
         restore();
       }
     }
-    temperature *= 0.985;
+    // temperature *= 0.985;
+    temperature *= t_factor;
+    cost_list_.push_back(pre_cost);
+    T_list_.push_back(temperature);
     // increase step
     step++;
     // check if restart condition
@@ -489,10 +544,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       pre_cost = calNormCost();
       num_restart++;
       step = 1;
+      num_perturb_per_step_ *= 2;
       temperature = init_temperature_;
     }  // end if
     // only consider the last step to optimize notch weight
-    if (step == max_num_step_ - macros_.size()) {
+    if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
       packFloorplan();
       calPenalty();
@@ -502,13 +558,15 @@ void SimulatedAnnealingCore<T>::fastSA()
   // update the final results
   packFloorplan();
   calPenalty();
+}
 
+template <class T>
+void SimulatedAnnealingCore<T>::writeCostFile(std::string file_name) const
+{
   std::ofstream file;
-  file.open("floorplan.txt");
-  for (auto& macro : macros_) {
-    file << macro.getName() << "    " << macro.getX() << "    " << macro.getY()
-         << "    " << macro.getWidth() << "   " << macro.getHeight()
-         << std::endl;
+  file.open(file_name);
+  for (auto i = 0; i < cost_list_.size(); i++) {
+    file << T_list_[i] << "  " << cost_list_[i] << std::endl;
   }
   file.close();
 }
