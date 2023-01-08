@@ -90,16 +90,16 @@ Box<int> Clock::computeSinkRegion()
 Box<double> Clock::computeSinkRegionClustered(
     std::vector<std::pair<float, float>> sinks)
 {
-  double xMin = std::numeric_limits<double>::max();
-  double xMax = std::numeric_limits<double>::lowest();
-  double yMin = std::numeric_limits<double>::max();
-  double yMax = std::numeric_limits<double>::lowest();
+  auto xMin = std::numeric_limits<float>::max();
+  auto xMax = std::numeric_limits<float>::lowest();
+  auto yMin = std::numeric_limits<float>::max();
+  auto yMax = std::numeric_limits<float>::lowest();
 
-  for (const std::pair<double, double>& sinkLocation : sinks) {
-    xMin = std::min(xMin, sinkLocation.first);
-    xMax = std::max(xMax, sinkLocation.first);
-    yMin = std::min(yMin, sinkLocation.second);
-    yMax = std::max(yMax, sinkLocation.second);
+  for (const auto [sinkX, sinkY] : sinks) {
+    xMin = std::min(xMin, sinkX);
+    xMax = std::max(xMax, sinkX);
+    yMin = std::min(yMin, sinkY);
+    yMax = std::max(yMax, sinkY);
   }
 
   return Box<double>(xMin, yMin, xMax, yMax);
