@@ -44,8 +44,6 @@ using namespace fr;
 
 using utl::ThreadException;
 
-int gcCallCnt = 0;
-
 template <typename T>
 void FlexPA::prepPoint_pin_mergePinShapes(
     vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
@@ -2250,7 +2248,6 @@ bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
                             const PatternType patternType,
                             std::set<frBlockObject*>* owners)
 {
-  gcCallCnt++;
   if (objs.empty()) {
     if (VERBOSE > 1) {
       logger_->warn(DRT, 89, "genPattern_gc objs empty.");
