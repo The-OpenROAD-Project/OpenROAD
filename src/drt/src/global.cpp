@@ -102,13 +102,11 @@ float TASHAPEBLOATWIDTH = 1.5;
 frUInt4 VIACOST = 4;
 // new cost used
 frUInt4 GRIDCOST = 2;
-frUInt4 FIXEDSHAPECOST = 30;
 frUInt4 ROUTESHAPECOST = 8;
 frUInt4 MARKERCOST = 32;
 frUInt4 MARKERBLOATWIDTH = 1;
 frUInt4 BLOCKCOST = 32;
 frUInt4 GUIDECOST = 1;  // disabled change getNextPathCost to enable
-float MARKERDECAY = 0.95;
 float SHAPEBLOATWIDTH = 3;
 int MISALIGNMENTCOST = 8;
 

@@ -349,13 +349,15 @@ sta::define_cmd_args "detailed_route_worker_debug" {
     [-maze_end_iter iter]
     [-drc_cost d_cost]
     [-marker_cost m_cost]
+    [-fixed_shape_cost f_cost]
+    [-marker_decay m_decay]
     [-ripup_mode mode]
     [-follow_guide f_guide]
 }
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
-      keys {-maze_end_iter -drc_cost -marker_cost -ripup_mode -follow_guide} \
+      keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost -marker_decay -ripup_mode -follow_guide} \
       flags {}
   if [info exists keys(-maze_end_iter)] {
     set maze_end_iter $keys(-maze_end_iter)
@@ -375,6 +377,18 @@ proc detailed_route_worker_debug { args } {
     set marker_cost -1
   }
 
+  if [info exists keys(-fixed_shape_cost)] {
+    set fixed_shape_cost $keys(-fixed_shape_cost)
+  } else {
+    set fixed_shape_cost -1
+  }
+
+  if [info exists keys(-marker_decay)] {
+    set marker_decay $keys(-marker_decay)
+  } else {
+    set marker_decay -1
+  }
+
   if [info exists keys(-ripup_mode)] {
     set ripup_mode $keys(-ripup_mode)
   } else {
@@ -386,7 +400,7 @@ proc detailed_route_worker_debug { args } {
   } else {
     set follow_guide -1
   }
-  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $ripup_mode $follow_guide
+  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $fixed_shape_cost $marker_decay $ripup_mode $follow_guide
 }
 
 proc detailed_route_set_default_via { args } {
@@ -403,8 +417,8 @@ namespace eval drt {
 
 proc step_dr { args } {
   # args match FlexDR::SearchRepairArgs
-  if { [llength $args] != 7 } {
-    utl::error DRT 308 "step_dr requires seven positional arguments."
+  if { [llength $args] != 9 } {
+    utl::error DRT 308 "step_dr requires nine positional arguments."
   }
 
   drt::detailed_route_step_drt {*}$args
