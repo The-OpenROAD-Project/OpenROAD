@@ -186,11 +186,14 @@ void
 set_worker_debug_params(int maze_end_iter,
                         int drc_cost,
                         int marker_cost,
+                        int fixed_shape_cost,
+                        int marker_decay,
                         int ripup_mode,
                         int follow_guide)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setDebugWorkerParams(maze_end_iter, drc_cost, marker_cost, ripup_mode, follow_guide);
+  router->setDebugWorkerParams(maze_end_iter, drc_cost, marker_cost, fixed_shape_cost,
+                               marker_decay, ripup_mode, follow_guide);
 }
 
 void

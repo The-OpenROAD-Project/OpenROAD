@@ -174,12 +174,16 @@ void TritonRoute::setDebugPaCommit(bool on)
 void TritonRoute::setDebugWorkerParams(int mazeEndIter,
                                        int drcCost,
                                        int markerCost,
+                                       int fixedShapeCost,
+                                       float markerDecay,
                                        int ripupMode,
                                        int followGuide)
 {
   debug_->mazeEndIter = mazeEndIter;
   debug_->drcCost = drcCost;
   debug_->markerCost = markerCost;
+  debug_->fixedShapeCost = fixedShapeCost;
+  debug_->markerDecay = markerDecay;
   debug_->ripupMode = ripupMode;
   debug_->followGuide = followGuide;
 }
@@ -238,6 +242,10 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     worker->setMarkerCost(debug_->markerCost);
   if (debug_->drcCost != -1)
     worker->setDrcCost(debug_->drcCost);
+  if (debug_->fixedShapeCost != -1)
+    worker->setFixedShapeCost(debug_->fixedShapeCost);
+  if (debug_->markerDecay != -1)
+    worker->setMarkerDecay(debug_->markerDecay);
   if (debug_->ripupMode != -1)
     worker->setRipupMode(debug_->ripupMode);
   if (debug_->followGuide != -1)

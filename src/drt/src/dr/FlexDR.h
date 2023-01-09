@@ -400,6 +400,14 @@ class FlexDRWorker
   }
   void setMarkerCost(frUInt4 markerCostIn) { workerMarkerCost_ = markerCostIn; }
   void setDrcCost(frUInt4 drcCostIn) { workerDRCCost_ = drcCostIn; }
+  void setFixedShapeCost(frUInt4 fixedShapeCostIn)
+  {
+    workerFixedShapeCost_ = fixedShapeCostIn;
+  }
+  void setMarkerDecay(float markerDecayIn)
+  {
+    workerMarkerDecay_ = markerDecayIn;
+  }
   void setMarkers(std::vector<frMarker>& in)
   {
     markers_.clear();

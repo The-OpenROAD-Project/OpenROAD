@@ -136,6 +136,8 @@ class TritonRoute
   void setDebugWorkerParams(int mazeEndIter,
                             int drcCost,
                             int markerCost,
+                            int fixedShapeCost,
+                            float markerDecay,
                             int ripupMode,
                             int followGuide);
   void setDistributed(bool on = true);
