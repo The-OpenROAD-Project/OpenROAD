@@ -192,6 +192,10 @@ proc set_io_pin_constraint { args } {
 
   if [info exists keys(-mirrored_pins)] {
     set mirrored_pins $keys(-mirrored_pins)
+    if { [expr [llength $mirrored_pins] % 2] != 0 } {
+      utl::error PPL 81 "List of pins must have an even number of pins."
+    }
+
     foreach {pin1 pin2} $mirrored_pins {
       utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
       set bterm1 [ppl::parse_pin_names "place_pin" $pin1]
