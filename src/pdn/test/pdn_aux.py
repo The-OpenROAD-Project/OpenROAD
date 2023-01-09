@@ -47,13 +47,6 @@ def add_global_connection(design, *,
     design.getBlock().addGlobalConnect(region, inst_pattern, pin_pattern, net, True)
 
 
-# Only to change the case? Seems weird.
-def modify_voltage_domain_name(name):
-    if name == "CORE":
-      return "Core"
-    return name
-
-
 def check_design_state(design, cmd):
     if not bool(design.getBlock()):
         utl.error(utl.PDN, 1599, f"Design must be loaded before calling {cmd}.")
@@ -93,7 +86,7 @@ def set_voltage_domain(design, *,
             utl.error(utl.PDN, 1510, f"Unable to find region: {region}")
 
         if bool(name):
-            name = modify_voltage_domain_name(name)
+            name = name.capitalize() if name == "CORE" else name
         else:
             name = region.getName()
 
@@ -122,7 +115,7 @@ def set_voltage_domain(design, *,
                           "type {switched_power.getSigType()}.")
 
     if region is None:
-        if bool(name) and modify_voltage_domain_name(name) != "Core":
+        if bool(name) and name.capitalize() != "Core":
             utl.warn(utl.PDN, 1513, "Core voltage domain will be named \"Core\".")
         pdngen.setCoreDomain(pwr,
                              switched_power,
