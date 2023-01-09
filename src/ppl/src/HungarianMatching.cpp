@@ -98,7 +98,9 @@ inline bool samePos(Point& a, Point& b)
   return (a.x() == b.x() && a.y() == b.y());
 }
 
-void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment, MirroredPins& mirrored_pins, bool assign_mirrored) const
+void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
+                                           MirroredPins& mirrored_pins,
+                                           bool assign_mirrored) const
 {
   size_t rows = non_blocked_slots_;
   size_t col = 0;
@@ -123,9 +125,11 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment, Mirror
                         io_pin.getName().c_str());
         }
 
-        // Make this check here to avoid messing up the correlation between the pin sorting and the hungarian matrix values
-        if ((assign_mirrored && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end()) ||
-            io_pin.isPlaced()) {
+        // Make this check here to avoid messing up the correlation between the
+        // pin sorting and the hungarian matrix values
+        if ((assign_mirrored
+             && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end())
+            || io_pin.isPlaced()) {
           continue;
         }
         io_pin.setPos(slots_[slot_index].pos);

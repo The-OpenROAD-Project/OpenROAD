@@ -603,7 +603,8 @@ void IOPlacer::createSections()
 }
 
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
-    Constraint& constraint, int& mirrored_pins_cnt)
+    Constraint& constraint,
+    int& mirrored_pins_cnt)
 {
   bool top_layer = constraint.interval.getEdge() == Edge::invalid;
   std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
@@ -1204,12 +1205,18 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   for (int idx = 0; idx < sections.size(); idx++) {
     if (sections[idx].pin_indices.size() > 0) {
       if (sections[idx].edge == Edge::invalid) {
-        HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), core_.get(), top_layer_slots_, logger_);
+        HungarianMatching hg(sections[idx],
+                             netlist_io_pins_.get(),
+                             core_.get(),
+                             top_layer_slots_,
+                             logger_);
         hg_vec.push_back(hg);
       } else {
-        HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), core_.get(), slots_, logger_);
+        HungarianMatching hg(sections[idx],
+                             netlist_io_pins_.get(),
+                             core_.get(),
+                             slots_,
+                             logger_);
         hg_vec.push_back(hg);
       }
     }
@@ -1229,16 +1236,12 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
 
   if (!mirrored_pins_.empty()) {
     for (int idx = 0; idx < hg_vec.size(); idx++) {
-      hg_vec[idx].getFinalAssignment(assignment_,
-                                     mirrored_pins_,
-                                     true);
+      hg_vec[idx].getFinalAssignment(assignment_, mirrored_pins_, true);
     }
   }
 
   for (int idx = 0; idx < hg_vec.size(); idx++) {
-    hg_vec[idx].getFinalAssignment(assignment_,
-                                   mirrored_pins_,
-                                   false);
+    hg_vec[idx].getFinalAssignment(assignment_, mirrored_pins_, false);
   }
 }
 
