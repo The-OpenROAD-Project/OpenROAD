@@ -659,13 +659,11 @@ void serializeGlobals(Archive& ar)
   (ar) & TASHAPEBLOATWIDTH;
   (ar) & VIACOST;
   (ar) & GRIDCOST;
-  (ar) & FIXEDSHAPECOST;
   (ar) & ROUTESHAPECOST;
   (ar) & MARKERCOST;
   (ar) & MARKERBLOATWIDTH;
   (ar) & BLOCKCOST;
   (ar) & GUIDECOST;
-  (ar) & MARKERDECAY;
   (ar) & SHAPEBLOATWIDTH;
   (ar) & MISALIGNMENTCOST;
   (ar) & HISTCOST;

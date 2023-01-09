@@ -37,7 +37,6 @@ namespace eval sta {
 
 define_cmd_args "report_clock_skew_metric" {[-setup]|[-hold]}
 proc report_clock_skew_metric { args } {
-  global sta_report_default_digits
   parse_key_args "report_clock_skew_metric" args keys {} flags {-setup -hold}
 
   set min_max "-setup"
@@ -54,7 +53,6 @@ proc report_clock_skew_metric { args } {
 
 define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
 proc report_tns_metric { args } {
-  global sta_report_default_digits
   parse_key_args "report_tns_metric" args keys {} flags {-setup -hold}
 
   set min_max "max"
@@ -66,7 +64,7 @@ proc report_tns_metric { args } {
     utl::error ORD 18 "both -setup and -hold specified."
   }
 
-  utl::metric_float $metric_name "[format_time [total_negative_slack_cmd  $min_max] $sta_report_default_digits]"
+  utl::metric_float $metric_name [total_negative_slack_cmd $min_max]
 }
 
 define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
@@ -83,11 +81,11 @@ proc report_worst_slack_metric { args } {
     utl::error ORD 17 "both -steup and -hold specified."
   }
 
-  utl::metric_float $metric_name "[format_time [worst_slack_cmd $min_max] $sta_report_default_digits]"
+  utl::metric_float $metric_name [worst_slack_cmd $min_max]
 }
 
 define_cmd_args "report_erc_metrics" {}
-proc report_erc_metrics { args } {
+proc report_erc_metrics { } {
 
     set max_slew_limit [sta::max_slew_check_slack_limit]
     set max_cap_limit [sta::max_capacitance_check_slack_limit]
@@ -95,8 +93,8 @@ proc report_erc_metrics { args } {
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
-    set setup_violation [llength [find_timing_paths -path_delay max -slack_max 0]]
-    set hold_violation [llength [find_timing_paths -path_delay min -slack_max 0]]
+    set setup_violation [sta::endpoint_violation_count max]
+    set hold_violation [sta::endpoint_violation_count min]
 
     utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
     utl::metric_int "timing__drv__max_slew" $max_slew_violation
@@ -140,8 +138,10 @@ proc report_units_metric { args } {
 define_cmd_args "report_design_area_metrics" {}
 proc report_design_area_metrics {args} {
   set db [::ord::get_db]
-  set dbu_per_uu [[$db getTech] getDbUnitsPerMicron]
+  set dbu_per_uu [expr double([[$db getTech] getDbUnitsPerMicron])]
   set block [[$db getChip] getBlock]
+  set die_bbox [$block getDieArea]
+  set die_area [expr [$die_bbox dx] * [$die_bbox dy]]
   set core_bbox [$block getCoreArea]
   set core_area [expr [$core_bbox dx] * [$core_bbox dy]]
 
@@ -185,6 +185,7 @@ proc report_design_area_metrics {args} {
     }
   }
 
+  set die_area [expr $die_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set core_area [expr $core_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set total_area [expr $total_area / [expr $dbu_per_uu * $dbu_per_uu]]
   set stdcell_area [expr $stdcell_area / [expr $dbu_per_uu * $dbu_per_uu]]
@@ -194,10 +195,21 @@ proc report_design_area_metrics {args} {
 
   set total_active_area [expr $stdcell_area + $macro_area]
 
-  set core_util [expr $total_active_area / $core_area]
-  set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
+  if {$core_area > 0} {
+    set core_util [expr $total_active_area / $core_area]
+    if {$core_area > $macro_area} {
+      set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
+    } else {
+      set stdcell_util 0.0
+    }
+  } else {
+    set core_util -1.0
+    set stdcell_util -1.0
+  }
 
   utl::metric_int "design__io" $num_ios
+  utl::metric_float "design__die__area" $die_area
+  utl::metric_float "design__core__area" $core_area
   utl::metric_int "design__instance__count" $num_insts
   utl::metric_float "design__instance__area" $total_active_area
   utl::metric_int "design__instance__count__stdcell" $num_stdcells

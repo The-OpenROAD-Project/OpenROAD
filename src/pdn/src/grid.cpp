@@ -805,7 +805,11 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
            < std::tie(r_low_level, r_high_level, r_area);
   });
   for (const auto& via : vias) {
-    via->writeToDb(net_map.at(via->getNet()), getBlock(), obstructions);
+    auto net = net_map.find(via->getNet());
+    if (net == net_map.end()) {
+      continue;
+    }
+    via->writeToDb(net->second, getBlock(), obstructions);
   }
   for (const auto& connect : connect_) {
     connect->printViaReport();

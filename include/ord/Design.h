@@ -109,6 +109,10 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace psm {
+class PDNSim;
+}
+
 namespace ord {
 
 class Tech;
@@ -155,6 +159,7 @@ class Design
   rcx::Ext* getOpenRCX();
   rmp::Restructure* getRestructure();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
+  psm::PDNSim* getPDNSim();
 
  private:
   Tech* tech_;

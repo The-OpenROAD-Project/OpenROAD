@@ -85,6 +85,7 @@ class MacroPlacer2
              const float fence_weight,
              const float boundary_weight,
              const float notch_weight,
+             const float macro_blockage_weight,
              const float pin_access_th,
              const float target_util,
              const float target_dead_space,

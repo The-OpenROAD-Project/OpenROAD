@@ -233,7 +233,7 @@ class Cluster
   void addChildren(const std::vector<Cluster*>& children);
   void removeChildren();
   Cluster* getParent() const;
-  std::set<Cluster*> getChildren() const;
+  std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
   bool mergeCluster(Cluster& cluster,
@@ -307,8 +307,8 @@ class Cluster
 
   // Each cluster is a node in the physical hierarchy tree
   // Thus we need to define related to parent and children pointers
-  Cluster* parent_ = nullptr;    // parent of current cluster
-  std::set<Cluster*> children_;  // children of current cluster
+  Cluster* parent_ = nullptr;       // parent of current cluster
+  std::vector<Cluster*> children_;  // children of current cluster
 
   // macro tilings for hard macros
   std::vector<std::pair<float, float>> macro_tilings_;  // <width, height>

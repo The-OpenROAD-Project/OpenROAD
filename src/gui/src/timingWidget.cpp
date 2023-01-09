@@ -212,6 +212,8 @@ void TimingWidget::readSettings(QSettings* settings)
 
   settings_->setPathCount(
       settings->value("path_count", settings_->getPathCount()).toInt());
+  settings_->setOnePathPerEndpoint(
+      settings->value("one_path_per_endpoint").toBool());
   settings_->setExpandClock(
       settings->value("expand_clk", settings_->getExpandClock()).toBool());
   delay_detail_splitter_->restoreState(
@@ -226,6 +228,8 @@ void TimingWidget::writeSettings(QSettings* settings)
   settings->beginGroup(objectName());
 
   settings->setValue("path_count", settings_->getPathCount());
+  settings->setValue("one_path_per_endpoint",
+                     settings_->getOnePathPerEndpoint());
   settings->setValue("expand_clk", settings_->getExpandClock());
   settings->setValue("splitter", delay_detail_splitter_->saveState());
 

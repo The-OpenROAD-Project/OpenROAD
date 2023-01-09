@@ -1772,7 +1772,9 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   }
 
   logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
+  logger_->metric("antenna__violating__nets", net_violation_count);
   logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
+  logger_->metric("antenna__violating__pins", pin_violation_count);
 
   if (!report_file_name_.empty()) {
     report_file.close();

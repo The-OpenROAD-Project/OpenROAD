@@ -110,10 +110,10 @@ class HierRTLMP
   void setHaloWidth(float halo_width);
   // Hierarchical Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
-  void setTopLevelClusterSize(int max_num_macro,
-                              int min_num_macro,
-                              int max_num_inst,
-                              int min_num_inst);
+  void setClusterSize(int max_num_macro,
+                      int min_num_macro,
+                      int max_num_inst,
+                      int min_num_inst);
   void setClusterSizeTolerance(float tolerance);
   void setMaxNumLevel(int max_num_level);
   void setClusterSizeRatioPerLevel(float coarsening_ratio);
@@ -126,6 +126,7 @@ class HierRTLMP
   void setFenceWeight(float fence_weight);
   void setBoundaryWeight(float boundary_weight);
   void setNotchWeight(float notch_weight);
+  void setMacroBlockageWeight(float macro_blockage_weight);
   void setPinAccessThreshold(float pin_access_th);
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);
@@ -352,6 +353,7 @@ class HierRTLMP
 
   // Multilevel support
   int max_num_level_ = 2;
+  int max_hier_level_ = 0;
   int level_ = 0;
   float coarsening_ratio_ = 5.0;
 

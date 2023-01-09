@@ -57,10 +57,12 @@ def detailed_route(design, *,
 
 
 def step_dr(design, size, offset, mazeEndIter, workerDRCCost, 
-            workerMarkerCost, ripupMode, followGuide):
+            workerMarkerCost, workerFixedShapeCost,
+            workerMarkerDecay, ripupMode, followGuide):
     router = design.getTritonRoute()
     router.stepDR(size, offset, mazeEndIter, workerDRCCost,
-                  workerMarkerCost, ripupMode, followGuide)
+                  workerMarkerCost, workerFixedShapeCost,
+                  workerMarkerDecay, ripupMode, followGuide)
 
 
 def step_end(design):

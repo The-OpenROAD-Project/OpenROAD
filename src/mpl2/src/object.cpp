@@ -454,7 +454,7 @@ void Cluster::setParent(Cluster* parent)
 
 void Cluster::addChild(Cluster* child)
 {
-  children_.insert(child);
+  children_.push_back(child);
 }
 
 void Cluster::removeChild(const Cluster* child)
@@ -464,7 +464,7 @@ void Cluster::removeChild(const Cluster* child)
 
 void Cluster::addChildren(const std::vector<Cluster*>& children)
 {
-  children_.insert(children.begin(), children.end());
+  std::copy(children.begin(), children.end(), std::back_inserter(children_));
 }
 
 void Cluster::removeChildren()
@@ -477,7 +477,7 @@ Cluster* Cluster::getParent() const
   return parent_;
 }
 
-std::set<Cluster*> Cluster::getChildren() const
+std::vector<Cluster*> Cluster::getChildren() const
 {
   return children_;
 }
@@ -512,7 +512,7 @@ bool Cluster::mergeCluster(Cluster& cluster, bool& delete_flag)
   delete_flag = true;
   // if current cluster is not a leaf cluster
   if (children_.size() > 0) {
-    children_.insert(&cluster);
+    children_.push_back(&cluster);
     cluster.setParent(this);
     delete_flag = false;
   }
@@ -1259,17 +1259,17 @@ void SoftMacro::setShapes(
     return;
   }
   area_ = area;
+  width_list_.clear();
+  height_list_.clear();
   // sort width list based
   height_list_ = width_list;
   std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
   for (auto& shape : height_list_) {
-    const float min_width = shape.first;
-    const float max_width = shape.second;
     if (width_list_.size() == 0
-        || min_width > width_list_[width_list_.size() - 1].second) {
-      width_list_.push_back(std::pair<float, float>(min_width, max_width));
-    } else {
-      width_list_[width_list_.size() - 1].second = max_width;
+        || shape.first > width_list_[width_list_.size() - 1].second) {
+      width_list_.push_back(shape);
+    } else if (shape.second > width_list_[width_list_.size() - 1].second) {
+      width_list_[width_list_.size() - 1].second = shape.second;
     }
   }
   height_list_.clear();
@@ -1329,7 +1329,7 @@ float SoftMacro::getHeight() const
 
 float SoftMacro::getArea() const
 {
-  return area_;
+  return area_ > 0.01 ? area_ : 0.0;
 }
 
 // Num Macros

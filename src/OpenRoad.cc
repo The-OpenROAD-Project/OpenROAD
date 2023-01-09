@@ -497,15 +497,6 @@ void OpenRoad::designCreated()
   }
 }
 
-void OpenRoad::writeVerilog(const char* filename,
-                            bool sort,
-                            bool include_pwr_gnd,
-                            std::vector<sta::LibertyCell*>* remove_cells)
-{
-  sta::writeVerilog(
-      filename, sort, include_pwr_gnd, remove_cells, sta_->network());
-}
-
 bool OpenRoad::unitsInitialized()
 {
   // Units are set by the first liberty library read.
