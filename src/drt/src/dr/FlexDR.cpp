@@ -1972,473 +1972,75 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
 {
   const fr::frUInt4 shapeCost = ROUTESHAPECOST;
 
+  // clang-format off
   return {
-      /*  0 */ {
-          7, 0, 3, shapeCost, 0 /*MARKERCOST*/, ROUTESHAPECOST, 0.95, 1, true},
-      /*  1 */
-      {7,
-       -2,
-       3,
-       shapeCost,
-       shapeCost /*MARKERCOST*/,
-       ROUTESHAPECOST,
-       0.95,
-       1,
-       true},
-      /*  2 */
-      {7,
-       -5,
-       3,
-       shapeCost,
-       shapeCost /*MAARKERCOST*/,
-       ROUTESHAPECOST,
-       0.95,
-       1,
-       true},
-      /*  3 */
-      {7, 0, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  4 */
-      {7, -1, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  5 */
-      {7, -2, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  6 */
-      {7, -3, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  7 */
-      {7, -4, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  8 */
-      {7, -5, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /*  9 */
-      {7, -6, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 10 */
-      {7, 0, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 11 */
-      {7, -1, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 12 */
-      {7, -2, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 13 */
-      {7, -3, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 14 */
-      {7, -4, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 15 */
-      {7, -5, 8, shapeCost * 2, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 16 */
-      {7, -6, 8, shapeCost * 2, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 17 */
-      {7, -3, 8, shapeCost, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 1, false},
-      /* 18 */
-      {7, 0, 8, shapeCost * 4, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 19 */
-      {7, -1, 8, shapeCost * 4, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
-      /* 20 */
-      {7,
-       -2,
-       8,
-       shapeCost * 4,
-       MARKERCOST,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 21 */
-      {7,
-       -3,
-       8,
-       shapeCost * 4,
-       MARKERCOST,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 22 */
-      {7,
-       -4,
-       8,
-       shapeCost * 4,
-       MARKERCOST,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 23 */
-      {7,
-       -5,
-       8,
-       shapeCost * 4,
-       MARKERCOST,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 24 */
-      {7,
-       -6,
-       8,
-       shapeCost * 4,
-       MARKERCOST,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 25 */
-      {5, -2, 8, shapeCost, MARKERCOST, 10 * ROUTESHAPECOST, 0.95, 1, false},
-      /* 26 */
-      {7,
-       0,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 27 */
-      {7,
-       -1,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 28 */
-      {7,
-       -2,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 29 */
-      {7,
-       -3,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       10 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 30 */
-      {7,
-       -4,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 31 */
-      {7,
-       -5,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 32 */
-      {7,
-       -6,
-       8,
-       shapeCost * 8,
-       MARKERCOST * 2,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 33 */
-      {3, -1, 8, shapeCost, MARKERCOST, 50 * ROUTESHAPECOST, 0.95, 1, false},
-      /* 34 */
-      {7,
-       0,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 35 */
-      {7,
-       -1,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 36 */
-      {7,
-       -2,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 37 */
-      {7,
-       -3,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 38 */
-      {7,
-       -4,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 39 */
-      {7,
-       -5,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       50 * ROUTESHAPECOST,
-       0.95,
-       0,
-       false},
-      /* 40 */
-      {7,
-       -6,
-       8,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 41 */
-      {3, -2, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.99, 1, false},
-      /* 42 */
-      {7,
-       0,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 43 */
-      {7,
-       -1,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 44 */
-      {7,
-       -2,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 45 */
-      {7,
-       -3,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 46 */
-      {7,
-       -4,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 47 */
-      {7,
-       -5,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 48 */
-      {7,
-       -6,
-       16,
-       shapeCost * 16,
-       MARKERCOST * 4,
-       100 * ROUTESHAPECOST,
-       0.99,
-       0,
-       false},
-      /* 49 */
-      {3, -0, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.99, 1, false},
-      /* 50 */
-      {7,
-       0,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 51 */
-      {7,
-       -1,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 52 */
-      {7,
-       -2,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 53 */
-      {7,
-       -3,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 54 */
-      {7,
-       -4,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 55 */
-      {7,
-       -5,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 56 */
-      {7,
-       -6,
-       32,
-       shapeCost * 32,
-       MARKERCOST * 8,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 57 */
-      {3, -1, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.999, 1, false},
-      /* 58 */
-      {7,
-       0,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 59 */
-      {7,
-       -1,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 60 */
-      {7,
-       -2,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 61 */
-      {7,
-       -3,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 62 */
-      {7,
-       -4,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 63 */
-      {7,
-       -5,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false},
-      /* 64 */
-      {7,
-       -6,
-       64,
-       shapeCost * 64,
-       MARKERCOST * 16,
-       100 * ROUTESHAPECOST,
-       0.999,
-       0,
-       false}};
+    {7,  0,  3,      shapeCost,               0,       shapeCost, 0.950, 1,  true}, //  0
+    {7, -2,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, 1,  true}, //  1
+    {7, -5,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, 1,  true}, //  2
+    {7,  0,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  3
+    {7, -1,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  4
+    {7, -2,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  5
+    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  6
+    {7, -4,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  7
+    {7, -5,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  8
+    {7, -6,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  9
+    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 10
+    {7, -1,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 11
+    {7, -2,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 12
+    {7, -3,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 13
+    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 14
+    {7, -5,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 15
+    {7, -6,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 16
+    {7, -3,  8,      shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 1, false}, // 17
+    {7,  0,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 18
+    {7, -1,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 19
+    {7, -2,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 20
+    {7, -3,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 21
+    {7, -4,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 22
+    {7, -5,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 23
+    {7, -6,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 24
+    {5, -2,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 1, false}, // 25
+    {7,  0,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 26
+    {7, -1,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 27
+    {7, -2,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 28
+    {7, -3,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 29
+    {7, -4,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 30
+    {7, -5,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 31
+    {7, -6,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 32
+    {3, -1,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, 1, false}, // 33
+    {7,  0,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 34
+    {7, -1,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 35
+    {7, -2,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 36
+    {7, -3,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 37
+    {7, -4,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 38
+    {7, -5,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 39
+    {7, -6,  8, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 40
+    {3, -2,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 41
+    {7,  0, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 42
+    {7, -1, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 43
+    {7, -2, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 44
+    {7, -3, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 45
+    {7, -4, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 46
+    {7, -5, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 47
+    {7, -6, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 48
+    {3, -0,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 49
+    {7,  0, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 50
+    {7, -1, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 51
+    {7, -2, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 52
+    {7, -3, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 53
+    {7, -4, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 54
+    {7, -5, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 55
+    {7, -6, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 56
+    {3, -1,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, 1, false}, // 57
+    {7,  0, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 58
+    {7, -1, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 59
+    {7, -2, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 60
+    {7, -3, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 61
+    {7, -4, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 62
+    {7, -5, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 63
+    {7, -6, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}  // 64
+  };
+  // clang-format on
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
