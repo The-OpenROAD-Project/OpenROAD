@@ -195,8 +195,17 @@ proc report_design_area_metrics {args} {
 
   set total_active_area [expr $stdcell_area + $macro_area]
 
-  set core_util [expr $total_active_area / $core_area]
-  set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
+  if {$core_area > 0} {
+    set core_util [expr $total_active_area / $core_area]
+    if {$core_area > $macro_area} {
+      set stdcell_util [expr $stdcell_area / [expr $core_area - $macro_area]]
+    } else {
+      set stdcell_util 0.0
+    }
+  } else {
+    set core_util -1.0
+    set stdcell_util -1.0
+  }
 
   utl::metric_int "design__io" $num_ios
   utl::metric_float "design__die__area" $die_area
