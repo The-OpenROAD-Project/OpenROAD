@@ -52,4 +52,25 @@ int Core::getPerimeter() const
   return (x + y) * 2;
 }
 
+odb::Point Core::getMirroredPosition(const odb::Point& position) const
+{
+  odb::Point mirrored_pos = position;
+  const int x_min = boundary_.xMin();
+  const int x_max = boundary_.xMax();
+  const int y_min = boundary_.yMin();
+  const int y_max = boundary_.yMax();
+
+  if (position.x() == x_min) {
+    mirrored_pos.setX(x_max);
+  } else if (position.x() == x_max) {
+    mirrored_pos.setX(x_min);
+  } else if (position.y() == y_min) {
+    mirrored_pos.setY(y_max);
+  } else {
+    mirrored_pos.setY(y_min);
+  }
+
+  return mirrored_pos;
+}
+
 }  // namespace ppl

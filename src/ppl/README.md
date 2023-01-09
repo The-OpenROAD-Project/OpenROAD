@@ -85,6 +85,13 @@ The `-direction` argument is the pin direction (input, output, inout, or
 feedthrough). The `-pin_names` argument is a list of names. The `-region`
 syntax is the same as that of the `-exclude` syntax.
 
+The `-mirrored_pins` argument is a list of pins that sets pairs of pins
+that will be symmetrically placed in the vertical or the horizontal edges.
+The number of pins in this list must be even. For example, in
+`set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`,
+the pins `pin1` and `pin2` will be placed symmetrically to each other.
+Same for `pin3` and `pin4`, and for `pin5` and `pin6`.
+
 Note that if you call `define_pin_shape_pattern` before
 `set_io_pin_constraint`, the `edge` values are (up, top,
 bottom, left, right). Where `up` relates to the layer created by
