@@ -38,7 +38,6 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <regex>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
