@@ -110,6 +110,8 @@ class FlexDR
     int mazeEndIter;
     frUInt4 workerDRCCost;
     frUInt4 workerMarkerCost;
+    frUInt4 workerFixedShapeCost;
+    float workerMarkerDecay;
     int ripupMode;
     bool followGuide;
   };
@@ -307,6 +309,8 @@ class FlexDRWorker
         ripupMode_(1),
         workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
+        workerFixedShapeCost_(0),
+        workerMarkerDecay_(0),
         boundaryPin_(),
         pinCnt_(0),
         initNumMarkers_(0),
@@ -342,6 +346,8 @@ class FlexDRWorker
         ripupMode_(0),
         workerDRCCost_(0),
         workerMarkerCost_(0),
+        workerFixedShapeCost_(0),
+        workerMarkerDecay_(0),
         boundaryPin_(),
         pinCnt_(0),
         initNumMarkers_(0),
@@ -382,10 +388,15 @@ class FlexDRWorker
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
   void setRipupMode(int in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
-  void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn)
+  void setCost(frUInt4 drcCostIn,
+               frUInt4 markerCostIn,
+               frUInt4 workerFixedShapeCostIn,
+               float workerMarkerDecayIn)
   {
     workerDRCCost_ = drcCostIn;
     workerMarkerCost_ = markerCostIn;
+    workerFixedShapeCost_ = workerFixedShapeCostIn;
+    workerMarkerDecay_ = workerMarkerDecayIn;
   }
   void setMarkerCost(frUInt4 markerCostIn) { workerMarkerCost_ = markerCostIn; }
   void setDrcCost(frUInt4 drcCostIn) { workerDRCCost_ = drcCostIn; }
@@ -538,7 +549,8 @@ class FlexDRWorker
   bool skipRouting_;
   int ripupMode_;
   // drNetOrderingEnum netOrderingMode;
-  frUInt4 workerDRCCost_, workerMarkerCost_;
+  frUInt4 workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_;
+  float workerMarkerDecay_;
   // used in init route as gr boundary pin
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       boundaryPin_;

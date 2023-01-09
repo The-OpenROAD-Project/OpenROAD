@@ -116,6 +116,8 @@ class TritonRoute
               int mazeEndIter,
               unsigned int workerDRCCost,
               unsigned int workerMarkerCost,
+              unsigned int workerFixedShapeCost,
+              float workerMarkerDecay,
               int ripupMode,
               bool followGuide);
 

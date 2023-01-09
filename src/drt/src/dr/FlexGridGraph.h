@@ -56,6 +56,7 @@ class FlexGridGraph
         zHeights_(),
         ggDRCCost_(0),
         ggMarkerCost_(0),
+        ggFixedShapeCost_(0),
         halfViaEncArea_(nullptr),
         via2viaMinLen_(nullptr),
         via2viaMinLenNew_(nullptr),
@@ -863,10 +864,13 @@ class FlexGridGraph
               FlexMazeIdx& ccMazeIdx2,
               const Point& centerPt,
               std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
-  void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn)
+  void setCost(frUInt4 drcCostIn,
+               frUInt4 markerCostIn,
+               frUInt4 FixedShapeCostIn)
   {
     ggDRCCost_ = drcCostIn;
     ggMarkerCost_ = markerCostIn;
+    ggFixedShapeCost_ = FixedShapeCostIn;
   }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1) const
   {
@@ -1008,6 +1012,7 @@ class FlexGridGraph
   Rect dieBox_;
   frUInt4 ggDRCCost_;
   frUInt4 ggMarkerCost_;
+  frUInt4 ggFixedShapeCost_;
   // temporary variables
   FlexWavefront wavefront_;
   const std::vector<std::pair<frCoord, frCoord>>*

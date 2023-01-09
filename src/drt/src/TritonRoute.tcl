@@ -403,8 +403,8 @@ namespace eval drt {
 
 proc step_dr { args } {
   # args match FlexDR::SearchRepairArgs
-  if { [llength $args] != 7 } {
-    utl::error DRT 308 "step_dr requires seven positional arguments."
+  if { [llength $args] != 9 } {
+    utl::error DRT 308 "step_dr requires nine positional arguments."
   }
 
   drt::detailed_route_step_drt {*}$args

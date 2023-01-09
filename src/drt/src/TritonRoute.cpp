@@ -609,6 +609,8 @@ void TritonRoute::stepDR(int size,
                          int mazeEndIter,
                          frUInt4 workerDRCCost,
                          frUInt4 workerMarkerCost,
+                         frUInt4 workerFixedShapeCost,
+                         float workerMarkerDecay,
                          int ripupMode,
                          bool followGuide)
 {
@@ -617,6 +619,8 @@ void TritonRoute::stepDR(int size,
                      mazeEndIter,
                      workerDRCCost,
                      workerMarkerCost,
+                     workerFixedShapeCost,
+                     workerMarkerDecay,
                      ripupMode,
                      followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();

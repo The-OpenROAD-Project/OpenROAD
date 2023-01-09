@@ -1520,6 +1520,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   const int mazeEndIter = args.mazeEndIter;
   const frUInt4 workerDRCCost = args.workerDRCCost;
   const frUInt4 workerMarkerCost = args.workerMarkerCost;
+  const frUInt4 workerFixedShapeCost = args.workerFixedShapeCost;
+  const float workerMarkerDecay = args.workerMarkerDecay;
   const int ripupMode = args.ripupMode;
   const bool followGuide = args.followGuide;
 
@@ -1607,7 +1609,10 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setFollowGuide(followGuide);
       // TODO: only pass to relevant workers
       worker->setGraphics(graphics_.get());
-      worker->setCost(workerDRCCost, workerMarkerCost);
+      worker->setCost(workerDRCCost,
+                      workerMarkerCost,
+                      workerFixedShapeCost,
+                      workerMarkerDecay);
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
@@ -1967,71 +1972,473 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
 {
   const fr::frUInt4 shapeCost = ROUTESHAPECOST;
 
-  return {/*  0 */ {7, 0, 3, shapeCost, 0 /*MARKERCOST*/, 1, true},
-          /*  1 */ {7, -2, 3, shapeCost, shapeCost /*MARKERCOST*/, 1, true},
-          /*  2 */ {7, -5, 3, shapeCost, shapeCost /*MAARKERCOST*/, 1, true},
-          /*  3 */ {7, 0, 8, shapeCost, MARKERCOST, 0, false},
-          /*  4 */ {7, -1, 8, shapeCost, MARKERCOST, 0, false},
-          /*  5 */ {7, -2, 8, shapeCost, MARKERCOST, 0, false},
-          /*  6 */ {7, -3, 8, shapeCost, MARKERCOST, 0, false},
-          /*  7 */ {7, -4, 8, shapeCost, MARKERCOST, 0, false},
-          /*  8 */ {7, -5, 8, shapeCost, MARKERCOST, 0, false},
-          /*  9 */ {7, -6, 8, shapeCost, MARKERCOST, 0, false},
-          /* 10 */ {7, 0, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 11 */ {7, -1, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 12 */ {7, -2, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 13 */ {7, -3, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 14 */ {7, -4, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 15 */ {7, -5, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 16 */ {7, -6, 8, shapeCost * 2, MARKERCOST, 0, false},
-          /* 17 */ {7, -3, 8, shapeCost, MARKERCOST, 1, false},
-          /* 18 */ {7, 0, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 19 */ {7, -1, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 20 */ {7, -2, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 21 */ {7, -3, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 22 */ {7, -4, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 23 */ {7, -5, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 24 */ {7, -6, 8, shapeCost * 4, MARKERCOST, 0, false},
-          /* 25 */ {5, -2, 8, shapeCost, MARKERCOST, 1, false},
-          /* 26 */ {7, 0, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 27 */ {7, -1, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 28 */ {7, -2, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 29 */ {7, -3, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 30 */ {7, -4, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 31 */ {7, -5, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 32 */ {7, -6, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
-          /* 33 */ {3, -1, 8, shapeCost, MARKERCOST, 1, false},
-          /* 34 */ {7, 0, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 35 */ {7, -1, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 36 */ {7, -2, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 37 */ {7, -3, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 38 */ {7, -4, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 39 */ {7, -5, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 40 */ {7, -6, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 41 */ {3, -2, 8, shapeCost, MARKERCOST, 1, false},
-          /* 42 */ {7, 0, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 43 */ {7, -1, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 44 */ {7, -2, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 45 */ {7, -3, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 46 */ {7, -4, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 47 */ {7, -5, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 48 */ {7, -6, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
-          /* 49 */ {3, -0, 8, shapeCost, MARKERCOST, 1, false},
-          /* 50 */ {7, 0, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 51 */ {7, -1, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 52 */ {7, -2, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 53 */ {7, -3, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 54 */ {7, -4, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 55 */ {7, -5, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 56 */ {7, -6, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
-          /* 57 */ {3, -1, 8, shapeCost, MARKERCOST, 1, false},
-          /* 58 */ {7, 0, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 59 */ {7, -1, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 60 */ {7, -2, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 61 */ {7, -3, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 62 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 63 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
-          /* 64 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
+  return {
+      /*  0 */ {
+          7, 0, 3, shapeCost, 0 /*MARKERCOST*/, ROUTESHAPECOST, 0.95, 1, true},
+      /*  1 */
+      {7,
+       -2,
+       3,
+       shapeCost,
+       shapeCost /*MARKERCOST*/,
+       ROUTESHAPECOST,
+       0.95,
+       1,
+       true},
+      /*  2 */
+      {7,
+       -5,
+       3,
+       shapeCost,
+       shapeCost /*MAARKERCOST*/,
+       ROUTESHAPECOST,
+       0.95,
+       1,
+       true},
+      /*  3 */
+      {7, 0, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  4 */
+      {7, -1, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  5 */
+      {7, -2, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  6 */
+      {7, -3, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  7 */
+      {7, -4, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  8 */
+      {7, -5, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /*  9 */
+      {7, -6, 8, shapeCost, MARKERCOST, 2 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 10 */
+      {7, 0, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 11 */
+      {7, -1, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 12 */
+      {7, -2, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 13 */
+      {7, -3, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 14 */
+      {7, -4, 8, shapeCost * 2, MARKERCOST, 3 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 15 */
+      {7, -5, 8, shapeCost * 2, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 16 */
+      {7, -6, 8, shapeCost * 2, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 17 */
+      {7, -3, 8, shapeCost, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 1, false},
+      /* 18 */
+      {7, 0, 8, shapeCost * 4, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 19 */
+      {7, -1, 8, shapeCost * 4, MARKERCOST, 4 * ROUTESHAPECOST, 0.95, 0, false},
+      /* 20 */
+      {7,
+       -2,
+       8,
+       shapeCost * 4,
+       MARKERCOST,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 21 */
+      {7,
+       -3,
+       8,
+       shapeCost * 4,
+       MARKERCOST,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 22 */
+      {7,
+       -4,
+       8,
+       shapeCost * 4,
+       MARKERCOST,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 23 */
+      {7,
+       -5,
+       8,
+       shapeCost * 4,
+       MARKERCOST,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 24 */
+      {7,
+       -6,
+       8,
+       shapeCost * 4,
+       MARKERCOST,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 25 */
+      {5, -2, 8, shapeCost, MARKERCOST, 10 * ROUTESHAPECOST, 0.95, 1, false},
+      /* 26 */
+      {7,
+       0,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 27 */
+      {7,
+       -1,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 28 */
+      {7,
+       -2,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 29 */
+      {7,
+       -3,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       10 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 30 */
+      {7,
+       -4,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 31 */
+      {7,
+       -5,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 32 */
+      {7,
+       -6,
+       8,
+       shapeCost * 8,
+       MARKERCOST * 2,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 33 */
+      {3, -1, 8, shapeCost, MARKERCOST, 50 * ROUTESHAPECOST, 0.95, 1, false},
+      /* 34 */
+      {7,
+       0,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 35 */
+      {7,
+       -1,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 36 */
+      {7,
+       -2,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 37 */
+      {7,
+       -3,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 38 */
+      {7,
+       -4,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 39 */
+      {7,
+       -5,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       50 * ROUTESHAPECOST,
+       0.95,
+       0,
+       false},
+      /* 40 */
+      {7,
+       -6,
+       8,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 41 */
+      {3, -2, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.99, 1, false},
+      /* 42 */
+      {7,
+       0,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 43 */
+      {7,
+       -1,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 44 */
+      {7,
+       -2,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 45 */
+      {7,
+       -3,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 46 */
+      {7,
+       -4,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 47 */
+      {7,
+       -5,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 48 */
+      {7,
+       -6,
+       16,
+       shapeCost * 16,
+       MARKERCOST * 4,
+       100 * ROUTESHAPECOST,
+       0.99,
+       0,
+       false},
+      /* 49 */
+      {3, -0, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.99, 1, false},
+      /* 50 */
+      {7,
+       0,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 51 */
+      {7,
+       -1,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 52 */
+      {7,
+       -2,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 53 */
+      {7,
+       -3,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 54 */
+      {7,
+       -4,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 55 */
+      {7,
+       -5,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 56 */
+      {7,
+       -6,
+       32,
+       shapeCost * 32,
+       MARKERCOST * 8,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 57 */
+      {3, -1, 8, shapeCost, MARKERCOST, 100 * ROUTESHAPECOST, 0.999, 1, false},
+      /* 58 */
+      {7,
+       0,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 59 */
+      {7,
+       -1,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 60 */
+      {7,
+       -2,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 61 */
+      {7,
+       -3,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 62 */
+      {7,
+       -4,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 63 */
+      {7,
+       -5,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false},
+      /* 64 */
+      {7,
+       -6,
+       64,
+       shapeCost * 64,
+       MARKERCOST * 16,
+       100 * ROUTESHAPECOST,
+       0.999,
+       0,
+       false}};
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
@@ -2167,26 +2574,6 @@ int FlexDR::main()
   frTime t;
 
   for (auto& args : strategy()) {
-    if (iter_ < 3)
-      FIXEDSHAPECOST = ROUTESHAPECOST;
-    else if (iter_ < 10)
-      FIXEDSHAPECOST = 2 * ROUTESHAPECOST;
-    else if (iter_ < 15)
-      FIXEDSHAPECOST = 3 * ROUTESHAPECOST;
-    else if (iter_ < 20)
-      FIXEDSHAPECOST = 4 * ROUTESHAPECOST;
-    else if (iter_ < 30)
-      FIXEDSHAPECOST = 10 * ROUTESHAPECOST;
-    else if (iter_ < 40)
-      FIXEDSHAPECOST = 50 * ROUTESHAPECOST;
-    else
-      FIXEDSHAPECOST = 100 * ROUTESHAPECOST;
-
-    if (iter_ == 40)
-      MARKERDECAY = 0.99;
-    if (iter_ == 50)
-      MARKERDECAY = 0.999;
-
     int clipSize = args.size;
     if (args.ripupMode != 1) {
       if (increaseClipsize_) {
@@ -2307,6 +2694,8 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & ripupMode_;
   (ar) & workerDRCCost_;
   (ar) & workerMarkerCost_;
+  (ar) & workerFixedShapeCost_;
+  (ar) & workerMarkerDecay_;
   (ar) & pinCnt_;
   (ar) & initNumMarkers_;
   (ar) & apSVia_;

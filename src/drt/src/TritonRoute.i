@@ -211,12 +211,15 @@ void detailed_route_step_drt(int size,
                              int mazeEndIter,
                              int workerDRCCost,
                              int workerMarkerCost,
+                             int workerFixedShapeCost,
+                             float workerMarkerDecay,
                              int ripupMode,
                              bool followGuide)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->stepDR(size, offset, mazeEndIter, workerDRCCost,
-                 workerMarkerCost, ripupMode, followGuide);
+                 workerMarkerCost, workerFixedShapeCost,
+                 workerMarkerDecay, ripupMode, followGuide);
 }
 
 void step_end()
