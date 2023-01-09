@@ -64,7 +64,6 @@ odb::Point Core::getMirroredPosition(const odb::Point& position) const
     mirrored_pos.setX(x_max);
   } else if (position.x() == x_max) {
     mirrored_pos.setX(x_min);
-    ;
   } else if (position.y() == y_min) {
     mirrored_pos.setY(y_max);
   } else {
