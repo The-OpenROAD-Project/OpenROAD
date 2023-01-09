@@ -569,7 +569,6 @@ EOF
         ;;
     *)
         echo "unsupported system: ${os}" >&2
-        echo "supported systems are CentOS 7 and Ubuntu 20.04" >&2
         _help
         ;;
 esac

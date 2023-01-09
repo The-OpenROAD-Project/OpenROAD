@@ -3256,7 +3256,7 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
-                  * FIXEDSHAPECOST;
+                  * workerFixedShapeCost_;
         }
         if (gridGraph_.hasMarkerCostAdj(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
@@ -3278,7 +3278,7 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
-                  * FIXEDSHAPECOST;
+                  * workerFixedShapeCost_;
         }
         if (gridGraph_.hasMarkerCostAdj(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {

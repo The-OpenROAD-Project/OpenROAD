@@ -693,10 +693,16 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
       corner_(nullptr),
       use_max_(true),
+      one_path_per_endpoint_(true),
       max_path_count_(1000),
       include_unconstrained_(false),
       include_capture_path_(false)
 {
+}
+
+int STAGuiInterface::getEndPointCount() const
+{
+  return sta_->endpoints()->size();
 }
 
 std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
@@ -776,7 +782,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           use_max_ ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
           // group_count, endpoint_count, unique_pins
           max_path_count_,
-          max_path_count_,
+          one_path_per_endpoint_ ? 1 : max_path_count_,
           true,
           -sta::INF,
           sta::INF,  // slack_min, slack_max,

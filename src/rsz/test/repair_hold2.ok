@@ -90,12 +90,12 @@ Path Type: min
 
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 10 hold buffers.
-worst slack 0.00
+worst slack 0.01
 worst slack 1.88
 Net in2
- Pin capacitance: 1.25-1.42
+ Pin capacitance: 0.70-0.78
  Wire capacitance: 5.22
- Total capacitance: 6.47-6.64
+ Total capacitance: 5.92-6.00
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -104,18 +104,18 @@ Driver pins
  in2 input port (20, 0)
 
 Load pins
- hold10/A input (CLKBUF_X3) 1.25-1.42 (40, 41)
+ hold10/A input (CLKBUF_X1) 0.70-0.78 (40, 41)
 
 Net out
  Pin capacitance: 0.00
- Wire capacitance: 6.96
- Total capacitance: 6.96
+ Wire capacitance: 6.95
+ Total capacitance: 6.95
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- hold2/Z output (CLKBUF_X3) (41, 41)
+ hold2/Z output (CLKBUF_X1) (41, 41)
 
 Load pins
  out output port (0, 0)

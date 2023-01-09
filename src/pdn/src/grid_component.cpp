@@ -344,10 +344,13 @@ void GridComponent::writeToDb(
       });
 
   for (const auto& shape : all_shapes) {
-    odb::dbNet* net = shape->getNet();
+    auto net = net_map.find(shape->getNet());
+    if (net == net_map.end()) {
+      continue;
+    }
     const bool is_pin_layer = convert_layer_to_pin.find(shape->getLayer())
                               != convert_layer_to_pin.end();
-    shape->writeToDb(net_map.at(net), add_pins, is_pin_layer);
+    shape->writeToDb(net->second, add_pins, is_pin_layer);
   }
 }
 

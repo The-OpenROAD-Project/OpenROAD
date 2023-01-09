@@ -556,8 +556,8 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
   // get costs
   for (frMIdx x = startX; x <= endX; x++) {
     for (frMIdx y = startY; y <= endY; y++) {
-      cost
-          += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
+                                                      : 0);
       cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
       cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
       cost += (isBlocked(x, y, gridZ, dir)
@@ -593,8 +593,9 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
   startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
   endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-  cost += (hasFixedShapeCostAdj(gridX, gridY, gridZ, dir) ? FIXEDSHAPECOST * el
-                                                          : 0);
+  cost += (hasFixedShapeCostAdj(gridX, gridY, gridZ, dir)
+               ? ggFixedShapeCost_ * el
+               : 0);
   cost
       += (hasRouteShapeCostAdj(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
   cost += (hasMarkerCostAdj(gridX, gridY, gridZ, dir) ? ggMarkerCost_ * el : 0);
@@ -630,8 +631,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
   // get costs
   for (frMIdx x = startX; x <= endX; x++) {
     for (frMIdx y = startY; y <= endY; y++) {
-      cost
-          += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? FIXEDSHAPECOST * el : 0);
+      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
+                                                      : 0);
       cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
       cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
     }
@@ -658,7 +659,7 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
          + (gridCost ? GRIDCOST * edgeLength : 0)
          + (drcCost ? ggDRCCost_ * edgeLength : 0)
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
-         + (shapeCost ? FIXEDSHAPECOST * edgeLength : 0)
+         + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
          + (blockCost ? BLOCKCOST * layer->getMinWidth() * 20 : 0)
          + (!guideCost ? GUIDECOST * edgeLength : 0);
 }

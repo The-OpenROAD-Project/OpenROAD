@@ -169,21 +169,53 @@ RepairHold::repairHold(Pin *end_pin,
   resizer_->incrementalParasiticsEnd();
 }
 
-// Find the buffer with the most delay in the fastest corner.
+// Find a good hold buffer using delay/area as the metric.
 LibertyCell *
 RepairHold::findHoldBuffer()
 {
-  LibertyCell *max_buffer = nullptr;
-  float max_delay = 0.0;
+  // Build a vector of buffers sorted by the metric
+  struct MetricBuffer {
+    float metric;
+    LibertyCell* cell;
+  };
+  std::vector<MetricBuffer> buffers;
   for (LibertyCell *buffer : resizer_->buffer_cells_) {
-    float buffer_min_delay = bufferHoldDelay(buffer);
-    if (max_buffer == nullptr
-        || buffer_min_delay > max_delay) {
-      max_buffer = buffer;
-      max_delay = buffer_min_delay;
+    const float buffer_area = buffer->area();
+    if (buffer_area != 0.0) {
+      float buffer_cost = bufferHoldDelay(buffer) / buffer_area;
+      buffers.push_back({buffer_cost, buffer});
     }
   }
-  return max_buffer;
+
+  std::sort(buffers.begin(),
+            buffers.end(),
+            [this](const MetricBuffer& lhs, const MetricBuffer& rhs) {
+              return lhs.metric < rhs.metric;
+            });
+
+  if (buffers.empty()) {
+    return nullptr;
+  }
+
+  // Select the highest metric
+  MetricBuffer& best_buffer = *buffers.rbegin();
+  const MetricBuffer& highest_metric = best_buffer;
+
+  // See if there is a smaller choice with nearly as good a metric.
+  const float margin = 0.95;
+  for (auto itr = buffers.rbegin() + 1; itr != buffers.rend(); itr++) {
+    if (itr->metric >= margin * highest_metric.metric) {
+      // buffer within margin, so check if area is smaller
+      const float best_buffer_area = best_buffer.cell->area();
+      const float buffer_area = itr->cell->area();
+
+      if (buffer_area < best_buffer_area) {
+        best_buffer = *itr;
+      }
+    }
+  }
+
+  return best_buffer.cell;
 }
 
 float

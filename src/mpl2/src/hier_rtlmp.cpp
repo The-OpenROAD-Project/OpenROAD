@@ -709,19 +709,19 @@ void HierRTLMP::createBundledIOs()
     }
     // calculate cluster id based on the location of IO Pins / Pads
     int cluster_id = -1;
-    if (lx == floorplan_lx_) {
+    if (lx <= floorplan_lx_) {
       // The IO is on the left boundary
       cluster_id = cluster_id_base
                    + std::floor(((ly + uy) / 2.0 - floorplan_ly_) / y_base);
-    } else if (uy == floorplan_uy_) {
+    } else if (uy >= floorplan_uy_) {
       // The IO is on the top boundary
       cluster_id = cluster_id_base + num_bundled_IOs_
                    + std::floor(((lx + ux) / 2.0 - floorplan_lx_) / x_base);
-    } else if (ux == floorplan_ux_) {
+    } else if (ux >= floorplan_ux_) {
       // The IO is on the right boundary
       cluster_id = cluster_id_base + num_bundled_IOs_ * 2
                    + std::floor((floorplan_uy_ - (ly + uy) / 2.0) / y_base);
-    } else if (ly == floorplan_ly_) {
+    } else if (ly <= floorplan_ly_) {
       // The IO is on the bottom boundary
       cluster_id = cluster_id_base + num_bundled_IOs_ * 3
                    + std::floor((floorplan_ux_ - (lx + ux) / 2.0) / x_base);
@@ -730,7 +730,10 @@ void HierRTLMP::createBundledIOs()
     // Check if the IO pins / Pads exist
     if (cluster_id == -1) {
       logger_->error(
-          MPL, 2024, "Floorplan has not been initialized? Pin location error.");
+          MPL,
+          2024,
+          "Floorplan has not been initialized? Pin location error for {}.",
+          term->getName());
     } else {
       odb::dbIntProperty::create(term, "cluster_id", cluster_id);
     }

@@ -93,6 +93,7 @@ including:
 
 #### Open-Source PDKs
 
+-   `GF180` - 180nm
 -   `Skywater130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
@@ -106,7 +107,6 @@ provided due to NDA restrictions. However, if you are able to access
 these platforms independently, you can create the necessary
 platform-specific files yourself.
 
--   `GF180` - 180nm
 -   `GF55` - 55nm
 -   `GF12` - 12nm
 -   `Intel22` - 22nm
