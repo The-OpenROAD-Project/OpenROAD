@@ -126,8 +126,9 @@ _installOrTools() {
     os=$1
     version=$2
     arch=$3
-    orToolsVersionBig=9.4
-    orToolsVersionSmall=${orToolsVersionBig}.1874
+    orToolsVersionBig=9.5
+    orToolsVersionSmall=${orToolsVersionBig}.2237
+
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
@@ -172,20 +173,28 @@ _installUbuntuPackages() {
     apt-get install -y \
         binutils \
         libgomp1 \
-        libpython3.8 \
         libtcl \
         qt5-image-formats-plugins \
         tcl-tclreadline \
         wget
 
-    if [[ $1 == 22.04 ]]; then
+    if [[ $1 == 22.10 ]]; then
         apt-get install -y \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
-            qtbase5-dev-tools
+            qtbase5-dev-tools \
+            libpython3.11
+    elif [[ $1 == 22.04 ]]; then
+        apt-get install -y \
+            qtbase5-dev \
+            qtchooser \
+            qt5-qmake \
+            qtbase5-dev-tools \
+            libpython3.8
     else
-        apt-get install -y qt5-default
+        apt-get install -y qt5-default \
+            libpython3.8
     fi
 
     # need the strip "hack" above to run on docker
@@ -535,7 +544,7 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "MacOsX" "12.5" $(uname -m)
+        _installOrTools "MacOsX" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
