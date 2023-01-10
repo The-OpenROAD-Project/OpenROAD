@@ -68,22 +68,22 @@ proc rtl_macro_placer { args } {
         -signature_net_threshold -halo_width \
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
-        -boundary_weight -notch_weight macro_blockage_weight \
+        -boundary_weight -notch_weight -macro_blockage_weight  \
         -pin_access_th -target_util \
         -target_dead_space -min_ar -snap_layer -report_directory \
     } flag {  }
-
+#
 # Check for valid design
-
     if {  [ord::get_db_block] == "NULL" } {
       utl::error MPL 9998 "No block found for Macro Placement."
     }
-# Set the default parameters for the macro_placer
 
-    set max_num_macro 12
-    set min_num_macro 4 
-    set max_num_inst  30000
-    set min_num_inst  5000
+# Set the default parameters for the macro_placer
+# Set auto defaults for min/max std cells and macros based on design
+    set max_num_macro 0 
+    set min_num_macro 0
+    set max_num_inst  0
+    set min_num_inst  0
     set tolerance     0.1
     set max_num_level 2
     set coarsening_ratio  10.0
@@ -99,13 +99,13 @@ proc rtl_macro_placer { args } {
     set area_weight  0.1
     set outline_weight 100.0
     set wirelength_weight 50.0
-    set guidance_weight 150.0
-    set fence_weight   150.0
-    set boundary_weight 5.0
-    set notch_weight    150.0
-    set macro_blockage_weight 100.0
-    set pin_access_th   0.05
-    set target_util 0.25
+    set guidance_weight 5.0
+    set fence_weight   5.0
+    set boundary_weight 1.0
+    set notch_weight    10.0
+    set macro_blockage_weight 5.0
+    set pin_access_th   0.00
+    set target_util 0.5
     set target_dead_space 0.25
     set min_ar  0.33
     set snap_layer 4
