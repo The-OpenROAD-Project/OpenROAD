@@ -1279,8 +1279,10 @@ void IOPlacer::run(bool random_mode)
       std::vector<Section> sections_for_constraint
           = assignConstrainedPinsToSections(constraint, mirrored_pins_cnt);
       for (Section& sec : sections_for_constraint) {
-        constrained_pins_cnt += sec.pin_indices.size() + mirrored_pins_cnt;
+        constrained_pins_cnt += sec.pin_indices.size();
       }
+
+      constrained_pins_cnt += mirrored_pins_cnt;
 
       findPinAssignment(sections_for_constraint);
       updateSlots();
