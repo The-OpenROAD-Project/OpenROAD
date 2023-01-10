@@ -3001,11 +3001,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         currArea += getHalfViaEncArea(
             z, isLayer1, net->getFrNet()->getNondefaultRule());
       } else {
-        currArea = std::max(
-            (frArea) getHalfViaEncArea(
-                z, isLayer1, net->getFrNet()->getNondefaultRule())
-                * 2,
-            currArea);
+        currArea
+            = std::max((frArea) getHalfViaEncArea(
+                           z, isLayer1, net->getFrNet()->getNondefaultRule())
+                           * 2,
+                       currArea);
       }
       endViaHalfEncArea = getHalfViaEncArea(
           z, isLayer1, net->getFrNet()->getNondefaultRule());
