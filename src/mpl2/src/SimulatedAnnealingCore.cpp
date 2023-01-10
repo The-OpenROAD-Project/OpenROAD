@@ -506,8 +506,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
-  // std::cout << "init_temperature_ " << init_temperature_ << std::endl;
-  // std::cout << "t_factor = " << t_factor << std::endl;
   notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
                         // calculating notch penalty at very beginning
   // const for restart
