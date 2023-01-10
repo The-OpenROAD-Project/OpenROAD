@@ -1209,14 +1209,16 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
                              netlist_io_pins_.get(),
                              core_.get(),
                              top_layer_slots_,
-                             logger_);
+                             logger_,
+                             db_);
         hg_vec.push_back(hg);
       } else {
         HungarianMatching hg(sections[idx],
                              netlist_io_pins_.get(),
                              core_.get(),
                              slots_,
-                             logger_);
+                             logger_,
+                             db_);
         hg_vec.push_back(hg);
       }
     }
