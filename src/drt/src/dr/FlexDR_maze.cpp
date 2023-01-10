@@ -2995,33 +2995,21 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add curr via enclosure
-      if (nextIdx.z() < currIdx.z()) {
-        if (prev_is_wire) {
-          currArea += getHalfViaEncArea(
-              currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
-        } else {
-          currArea = std::max(
-              (frArea) getHalfViaEncArea(
-                  currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule())
-                  * 2,
-              currArea);
-        }
-        endViaHalfEncArea = getHalfViaEncArea(
-            currIdx.z() - 1, false, net->getFrNet()->getNondefaultRule());
+      frMIdx z = (nextIdx.z() < currIdx.z()) ? currIdx.z() - 1 : currIdx.z();
+      bool isLayer1 = (nextIdx.z() < currIdx.z()) ? false : true;
+      if (prev_is_wire) {
+        currArea += getHalfViaEncArea(
+            z, isLayer1, net->getFrNet()->getNondefaultRule());
       } else {
-        if (prev_is_wire) {
-          currArea += getHalfViaEncArea(
-              currIdx.z(), true, net->getFrNet()->getNondefaultRule());
-        } else {
-          currArea = std::max(
-              (frArea) getHalfViaEncArea(
-                  currIdx.z(), true, net->getFrNet()->getNondefaultRule())
-                  * 2,
-              currArea);
-        }
-        endViaHalfEncArea = getHalfViaEncArea(
-            currIdx.z(), true, net->getFrNet()->getNondefaultRule());
+        currArea = std::max(
+            (frArea) getHalfViaEncArea(
+                z, isLayer1, net->getFrNet()->getNondefaultRule())
+                * 2,
+            currArea);
       }
+      endViaHalfEncArea = getHalfViaEncArea(
+          z, isLayer1, net->getFrNet()->getNondefaultRule());
+
       // push to minArea violation
       if (currArea < reqArea) {
         FlexMazeIdx bp, ep;
