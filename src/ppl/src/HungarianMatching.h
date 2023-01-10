@@ -99,7 +99,7 @@ class HungarianMatching
 
   void createMatrix();
   void createMatrixForGroups();
-  int getSlotIdxByPosition(const odb::Point& position) const;
+  int getSlotIdxByPosition(const odb::Point& position, int layer) const;
 };
 
 }  // namespace ppl

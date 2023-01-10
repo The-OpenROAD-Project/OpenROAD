@@ -150,7 +150,8 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
           mirrored_pin.setLayer(slots_[slot_index].layer);
           mirrored_pin.setPlaced();
           assigment.push_back(mirrored_pin);
-          slot_index = getSlotIdxByPosition(mirrored_pos);
+          slot_index
+              = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
           if (slot_index < 0) {
             odb::dbTechLayer* layer
                 = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
@@ -279,11 +280,12 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
   assignment_.clear();
 }
 
-int HungarianMatching::getSlotIdxByPosition(const odb::Point& position) const
+int HungarianMatching::getSlotIdxByPosition(const odb::Point& position,
+                                            int layer) const
 {
   int slot_idx = -1;
   for (int i = 0; i < slots_.size(); i++) {
-    if (slots_[i].pos == position) {
+    if (slots_[i].pos == position && slots_[i].layer == layer) {
       slot_idx = i;
       break;
     }
